@@ -1,1 +1,741 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1">
+<meta name="theme-color" content="#FBF9F5">
+<title>BibleTrivia — Quiz Biblique</title>
+<link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 24 24%22><rect width=%2224%22 height=%2224%22 rx=%226%22 fill=%22%23E0573B%22/><path d=%22M4 6.5C4 6.5 6 5.7 8.5 5.7C10.2 5.7 12 6.3 12 6.3V17.3C12 17.3 10.2 16.7 8.5 16.7C6 16.7 4 17.5 4 17.5V6.5Z%22 fill=%22white%22/><path d=%22M20 6.5C20 6.5 18 5.7 15.5 5.7C13.8 5.7 12 6.3 12 6.3V17.3C12 17.3 13.8 16.7 15.5 16.7C18 16.7 20 17.5 20 17.5V6.5Z%22 fill=%22white%22/></svg>">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Poppins:wght@500;600;700&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg:#FBF9F5;
+    --surface:#FFFFFF;
+    --surface-alt:#F4EFE7;
+    --ink:#2A241E;
+    --ink-soft:#7A7269;
+    --border:#EAE3D8;
+    --primary:#E0573B;
+    --primary-dark:#C7452C;
+    --primary-soft:#FCEAE4;
+    --gold:#D6A23C;
+    --gold-soft:#FBF1DD;
+    --green:#4F9B70;
+    --green-soft:#E8F3EC;
+    --plum:#A0475B;
+    --error:#C94F41;
+    --error-soft:#FBEAE7;
+    --shadow:rgba(42,36,30,0.08);
+  }
+  *{ box-sizing:border-box; }
+  html{ -webkit-tap-highlight-color:transparent; }
+  body{
+    margin:0;
+    min-height:100vh;
+    background:
+      radial-gradient(ellipse 800px 400px at 50% -10%, rgba(224,87,59,0.06), transparent 60%),
+      var(--bg);
+    color:var(--ink);
+    font-family:'Inter',sans-serif;
+    -webkit-font-smoothing:antialiased;
+    padding:1.25rem;
+  }
+  button, input{ font-family:'Inter',sans-serif; }
+  button{ cursor:pointer; }
+  button:focus-visible, input:focus-visible{ outline:2px solid var(--primary); outline-offset:2px; }
 
+  #app{ max-width:640px; margin:0 auto; min-height:calc(100vh - 2.5rem); display:flex; flex-direction:column; }
+  .screen{ animation:fadeIn 0.3s ease; display:flex; flex-direction:column; flex:1; }
+
+  svg{ width:100%; height:100%; display:block; }
+
+  /* ---------- Header ---------- */
+  .app-header{ display:flex; align-items:center; justify-content:space-between; gap:0.75rem; margin-bottom:1.3rem; }
+  .header-title{ font-family:'Poppins',sans-serif; font-weight:600; font-size:1.05rem; }
+  .icon-btn{
+    width:2.25rem; height:2.25rem; border-radius:50%;
+    border:1px solid var(--border); background:var(--surface); color:var(--ink-soft);
+    display:flex; align-items:center; justify-content:center; flex-shrink:0; padding:0.5rem;
+  }
+  .icon-btn.spacer{ visibility:hidden; }
+
+  /* ---------- Hero / mode select ---------- */
+  .hero{ position:relative; text-align:center; padding:2.25rem 1rem 2rem; }
+  .hero-mute{ position:absolute; top:0.15rem; right:0.5rem; }
+  .hero-icon{ width:3.5rem; height:3.5rem; margin:0 auto 1rem; border-radius:18px; background:var(--primary-soft); color:var(--primary); display:flex; align-items:center; justify-content:center; padding:0.9rem; }
+  .hero-title{ font-family:'Poppins',sans-serif; font-weight:700; font-size:2rem; margin:0; letter-spacing:-0.01em; }
+  .hero-tag{ color:var(--ink-soft); font-size:0.92rem; margin-top:0.5rem; line-height:1.5; }
+
+  .mode-card{
+    width:100%; display:flex; align-items:center; gap:1rem;
+    background:var(--surface); border:1px solid var(--border); border-radius:18px;
+    padding:1.1rem 1.2rem; margin-bottom:0.9rem; text-align:left;
+    box-shadow:0 2px 10px var(--shadow); transition:transform 0.15s ease;
+  }
+  .mode-card:active{ transform:scale(0.98); }
+  .mode-icon{ width:3rem; height:3rem; border-radius:14px; display:flex; align-items:center; justify-content:center; flex-shrink:0; padding:0.7rem; }
+  .mode-icon.group{ background:var(--primary-soft); color:var(--primary); }
+  .mode-icon.solo{ background:var(--gold-soft); color:var(--gold); }
+  .mode-text{ display:flex; flex-direction:column; gap:0.2rem; }
+  .mode-title{ font-family:'Poppins',sans-serif; font-weight:600; font-size:1.02rem; }
+  .mode-desc{ font-size:0.85rem; color:var(--ink-soft); line-height:1.4; }
+
+  /* ---------- Cards / setup ---------- */
+  .card{ background:var(--surface); border:1px solid var(--border); border-radius:18px; padding:1.3rem 1.2rem; margin-bottom:1.1rem; box-shadow:0 2px 10px var(--shadow); }
+  .card h2{ font-family:'Poppins',sans-serif; font-size:1rem; font-weight:600; margin:0 0 0.9rem; }
+
+  .team-row{ display:flex; align-items:center; gap:0.6rem; margin-bottom:0.6rem; }
+  .team-dot{ width:0.8rem; height:0.8rem; border-radius:50%; flex-shrink:0; }
+  .dot-sm{ display:inline-block; width:0.5rem; height:0.5rem; border-radius:50%; margin-right:0.4rem; vertical-align:middle; flex-shrink:0; }
+  .team-row input{ flex:1; background:var(--surface-alt); border:1px solid var(--border); color:var(--ink); padding:0.65rem 0.8rem; border-radius:10px; font-size:0.95rem; }
+  .team-remove{ background:none; border:none; color:var(--ink-soft); width:1.8rem; height:1.8rem; padding:0.4rem; display:flex; align-items:center; justify-content:center; flex-shrink:0; }
+  .team-remove:disabled{ opacity:0.25; }
+
+  .add-team{ width:100%; display:flex; align-items:center; justify-content:center; gap:0.5rem; margin-top:0.4rem; background:transparent; border:1.5px dashed var(--primary); color:var(--primary); border-radius:12px; padding:0.65rem; font-size:0.9rem; font-weight:600; }
+  .add-team .ico{ width:1rem; height:1rem; }
+  .add-team:disabled{ opacity:0.35; }
+
+  .chip-row{ display:flex; gap:0.5rem; flex-wrap:wrap; }
+  .chip{ flex:1; min-width:30%; text-align:center; background:var(--surface-alt); border:1px solid var(--border); color:var(--ink-soft); padding:0.65rem 0.5rem; border-radius:12px; font-size:0.85rem; font-weight:600; }
+  .chip.active{ background:var(--primary-soft); border-color:var(--primary); color:var(--primary-dark); }
+  .chip .sub{ display:block; font-weight:400; font-size:0.72rem; margin-top:0.15rem; opacity:0.85; }
+
+  .rules{ font-size:0.85rem; color:var(--ink-soft); line-height:1.6; background:var(--surface-alt); border-radius:14px; padding:0.9rem 1rem; margin-bottom:1.1rem; }
+  .rules b{ color:var(--ink); }
+
+  .btn-primary{ width:100%; background:var(--primary); color:#fff; border:none; border-radius:14px; padding:1rem; font-size:1rem; font-weight:700; box-shadow:0 4px 14px rgba(224,87,59,0.28); }
+  .btn-primary:disabled{ opacity:0.4; box-shadow:none; }
+  .error-msg{ color:var(--error); font-size:0.82rem; text-align:center; margin-top:0.6rem; min-height:1.2em; }
+
+  /* ---------- Play ---------- */
+  .play-meta{ display:flex; flex-wrap:wrap; justify-content:space-between; align-items:center; gap:0.5rem 0.75rem; margin-bottom:0.9rem; }
+  .tier-chip{ display:inline-flex; align-items:center; gap:0.4rem; font-size:0.85rem; font-weight:600; }
+  .tier-dots{ display:inline-flex; gap:3px; }
+  .tdot{ width:6px; height:6px; border-radius:50%; background:var(--border); }
+  .tdot.filled{ background:currentColor; }
+  .tier-facile{ color:var(--green); }
+  .tier-moyen{ color:var(--gold); }
+  .tier-difficile{ color:var(--plum); }
+  .q-counter{ font-size:0.82rem; color:var(--ink-soft); font-variant-numeric:tabular-nums; }
+  .streak-chip{ display:flex; align-items:center; gap:0.3rem; background:var(--gold-soft); color:#8f6318; padding:0.28rem 0.65rem; border-radius:20px; font-size:0.8rem; font-weight:700; }
+  .streak-chip .ico{ width:0.85rem; height:0.85rem; }
+
+  .progress-track{ display:flex; gap:4px; margin-bottom:1.4rem; }
+  .progress-seg{ flex:1; height:5px; border-radius:3px; background:var(--border); }
+  .progress-seg.done{ background:var(--primary); }
+  .progress-seg.current{ background:linear-gradient(90deg, var(--primary), var(--border)); }
+
+  .question-card{ background:var(--surface); border:1px solid var(--border); border-radius:20px; padding:1.6rem 1.4rem; margin-bottom:1.1rem; box-shadow:0 2px 12px var(--shadow); text-align:center; }
+  .question-card .qtext{ font-family:'Poppins',sans-serif; font-weight:600; font-size:clamp(1.15rem, 4.2vw, 1.5rem); line-height:1.45; }
+
+  .options-grid{ display:grid; grid-template-columns:1fr 1fr; gap:0.65rem; margin-bottom:1.1rem; }
+  @media (max-width:420px){ .options-grid{ grid-template-columns:1fr; } }
+  .option-btn{
+    display:flex; align-items:center; gap:0.6rem;
+    background:var(--surface); border:1.5px solid var(--border); border-radius:14px;
+    padding:0.8rem 0.85rem; font-size:0.92rem; color:var(--ink); text-align:left; width:100%;
+  }
+  .option-btn .letter{ font-weight:700; color:var(--primary); font-size:0.78rem; flex-shrink:0; width:1.4rem; height:1.4rem; border-radius:50%; background:var(--primary-soft); display:flex; align-items:center; justify-content:center; }
+  .option-btn .opt-text{ flex:1; }
+  .option-btn .opt-icon{ flex-shrink:0; width:1.1rem; height:1.1rem; }
+  .option-btn.correct{ background:var(--green-soft); border-color:var(--green); }
+  .option-btn.correct .letter{ background:var(--green); color:#fff; }
+  .option-btn.correct .opt-icon{ color:var(--green); }
+  .option-btn.incorrect{ background:var(--error-soft); border-color:var(--error); }
+  .option-btn.incorrect .letter{ background:var(--error); color:#fff; }
+  .option-btn.incorrect .opt-icon{ color:var(--error); }
+  .option-btn.dim{ opacity:0.55; }
+
+  .fact-card{ display:flex; gap:0.7rem; align-items:flex-start; background:var(--gold-soft); border:1px solid rgba(214,162,60,0.35); border-radius:14px; padding:0.85rem 1rem; margin-bottom:1.1rem; animation:fadeIn 0.3s ease; }
+  .fact-card .ficon{ width:1.2rem; height:1.2rem; color:var(--gold); flex-shrink:0; margin-top:0.1rem; }
+  .fact-card .ftext{ font-size:0.87rem; color:#6b5219; line-height:1.55; }
+
+  .btn-reveal{ width:100%; background:transparent; border:1.5px solid var(--primary); color:var(--primary); border-radius:14px; padding:0.95rem; font-size:0.95rem; font-weight:700; margin-bottom:1.1rem; }
+  .btn-next{ width:100%; background:var(--primary); color:#fff; border:none; border-radius:14px; padding:1rem; font-size:1rem; font-weight:700; box-shadow:0 4px 14px rgba(224,87,59,0.28); }
+  .btn-next:disabled{ opacity:0.4; box-shadow:none; }
+
+  .award-label{ font-size:0.78rem; text-transform:uppercase; letter-spacing:0.06em; color:var(--ink-soft); font-weight:600; margin-bottom:0.6rem; }
+  .award-grid{ display:flex; flex-wrap:wrap; gap:0.6rem; margin-bottom:1.1rem; }
+  .award-btn{ flex:1; min-width:45%; display:flex; align-items:center; justify-content:space-between; gap:0.5rem; padding:0.7rem 0.9rem; border-radius:12px; border:1.5px solid var(--border); background:var(--surface); color:var(--ink); font-size:0.85rem; font-weight:600; }
+  .award-btn .dot{ width:0.65rem; height:0.65rem; border-radius:50%; flex-shrink:0; }
+  .award-btn.awarded{ background:var(--primary-soft); border-color:var(--primary); color:var(--primary-dark); }
+  .award-btn .pts{ font-variant-numeric:tabular-nums; opacity:0.75; }
+
+  .score-strip{ display:flex; flex-wrap:wrap; gap:0.5rem; margin-top:1.4rem; }
+  .score-pane{ flex:1; min-width:28%; border-radius:12px; padding:0.55rem 0.7rem; border:1px solid var(--border); background:var(--surface); font-size:0.78rem; }
+  .score-pane .nm{ display:flex; align-items:center; font-weight:600; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; margin-bottom:0.2rem; }
+  .score-row{ display:flex; align-items:center; gap:0.3rem; }
+  .score-pane .sc{ font-weight:700; font-variant-numeric:tabular-nums; flex:1; }
+  .adj-btn{ width:1.2rem; height:1.2rem; border-radius:50%; border:1px solid var(--border); background:var(--surface-alt); color:var(--ink-soft); font-size:0.7rem; line-height:1; display:flex; align-items:center; justify-content:center; flex-shrink:0; }
+  .adj-btn:active{ background:var(--primary-soft); color:var(--primary); }
+
+  .solo-score-bar{ display:flex; justify-content:space-between; align-items:center; background:var(--surface); border:1px solid var(--border); border-radius:14px; padding:0.8rem 1rem; margin-top:1.4rem; }
+  .solo-score-bar .label{ font-size:0.78rem; color:var(--ink-soft); }
+  .solo-score-bar .value{ font-family:'Poppins',sans-serif; font-weight:700; font-size:1.2rem; color:var(--primary); }
+
+  /* ---------- End ---------- */
+  .end-hero{ text-align:center; padding:0.5rem 0 1.6rem; }
+  .end-icon{ width:3.5rem; height:3.5rem; margin:0 auto 0.9rem; border-radius:50%; background:var(--gold-soft); color:var(--gold); display:flex; align-items:center; justify-content:center; padding:0.9rem; }
+  .end-title{ font-family:'Poppins',sans-serif; font-weight:700; font-size:clamp(1.4rem,5.5vw,1.85rem); margin:0 0 0.3rem; }
+  .end-sub{ color:var(--ink-soft); font-size:0.9rem; }
+
+  .rank-row{ display:flex; align-items:center; gap:0.75rem; background:var(--surface); border:1px solid var(--border); border-radius:14px; padding:0.85rem 1rem; margin-bottom:0.6rem; }
+  .rank-row.first{ border-color:var(--gold); background:var(--gold-soft); }
+  .rank-medal{ width:1.9rem; height:1.9rem; border-radius:50%; display:flex; align-items:center; justify-content:center; font-weight:700; font-size:0.85rem; flex-shrink:0; background:var(--surface-alt); color:var(--ink-soft); }
+  .rank-row.first .rank-medal{ background:var(--gold); color:#fff; }
+  .rank-dot{ width:0.7rem; height:0.7rem; border-radius:50%; flex-shrink:0; }
+  .rank-name{ flex:1; font-weight:600; font-size:0.96rem; }
+  .rank-score-wrap{ display:flex; align-items:center; gap:0.4rem; }
+  .rank-score{ font-weight:700; font-variant-numeric:tabular-nums; color:var(--primary); }
+
+  .solo-summary{ background:var(--surface); border:1px solid var(--border); border-radius:18px; padding:1.4rem; text-align:center; margin-bottom:1rem; }
+  .solo-summary .big-score-label{ font-size:0.82rem; color:var(--ink-soft); }
+  .solo-summary .big-score{ font-family:'Poppins',sans-serif; font-weight:700; font-size:2.4rem; color:var(--primary); }
+  .solo-stats{ display:flex; justify-content:center; gap:1.8rem; margin-top:1rem; }
+  .solo-stat .val{ font-weight:700; font-size:1.15rem; display:flex; align-items:center; gap:0.3rem; justify-content:center; }
+  .solo-stat .val .ico{ width:1rem; height:1rem; color:var(--gold); }
+  .solo-stat .lbl{ font-size:0.75rem; color:var(--ink-soft); margin-top:0.15rem; }
+
+  .end-actions{ display:flex; gap:0.7rem; margin-top:0.5rem; }
+  .end-actions button{ flex:1; border-radius:14px; padding:0.9rem; font-size:0.9rem; font-weight:700; }
+  .btn-replay{ background:var(--primary); border:none; color:#fff; }
+  .btn-newgame{ background:transparent; border:1.5px solid var(--border); color:var(--ink); }
+
+  footer.hint{ text-align:center; color:var(--ink-soft); font-size:0.75rem; margin-top:auto; padding-top:2rem; opacity:0.75; }
+
+  .confetti-layer{ position:fixed; inset:0; pointer-events:none; overflow:hidden; z-index:40; }
+  .confetti-piece{ position:absolute; top:-10px; width:8px; height:14px; opacity:0.9; animation:confettiFall linear forwards; }
+
+  @keyframes confettiFall{ to{ transform:translateY(110vh) rotate(540deg); opacity:0.2; } }
+  @keyframes fadeIn{ from{ opacity:0; transform:translateY(4px); } to{ opacity:1; transform:translateY(0); } }
+
+  @media (prefers-reduced-motion: reduce){ *{ animation-duration:0.01ms !important; animation-iteration-count:1 !important; transition-duration:0.01ms !important; } }
+</style>
+</head>
+<body>
+<div id="app"></div>
+
+<script>
+/* ===================== ICONS (hand-built, no emoji) ===================== */
+const ICONS = {
+  book: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M3 5.2C3 5.2 5.3 4.3 8.3 4.3C10.3 4.3 12 5 12 5V18C12 18 10.3 17.3 8.3 17.3C5.3 17.3 3 18.2 3 18.2V5.2Z"/><path d="M21 5.2C21 5.2 18.7 4.3 15.7 4.3C13.7 4.3 12 5 12 5V18C12 18 13.7 17.3 15.7 17.3C18.7 17.3 21 18.2 21 18.2V5.2Z"/></svg>`,
+  speakerOn: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M4 9.3V14.7H7.3L12.3 18.7V5.3L7.3 9.3H4Z"/><path d="M15.8 8.7C16.9 9.7 17.5 11 17.5 12.5C17.5 14 16.9 15.3 15.8 16.3"/><path d="M18.3 6C19.9 7.7 20.8 10 20.8 12.5C20.8 15 19.9 17.3 18.3 19"/></svg>`,
+  speakerOff: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M4 9.3V14.7H7.3L12.3 18.7V5.3L7.3 9.3H4Z"/><line x1="16.5" y1="9" x2="21.5" y2="16"/><line x1="21.5" y1="9" x2="16.5" y2="16"/></svg>`,
+  close: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><line x1="6" y1="6" x2="18" y2="18"/><line x1="18" y1="6" x2="6" y2="18"/></svg>`,
+  chevronLeft: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 6 9 12 15 18"/></svg>`,
+  users: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><circle cx="9" cy="8.3" r="3"/><path d="M3.3 19C3.3 15.5 5.9 13.5 9 13.5C12.1 13.5 14.7 15.5 14.7 19"/><circle cx="17.2" cy="9.3" r="2.2"/><path d="M15.9 13.8C18.3 14.1 20.5 15.8 20.5 18.6"/></svg>`,
+  user: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="4"/><path d="M4.5 20C4.5 15.8 7.8 13.5 12 13.5C16.2 13.5 19.5 15.8 19.5 20"/></svg>`,
+  trophy: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M7 4H17V9C17 12 14.8 14 12 14C9.2 14 7 12 7 9V4Z"/><path d="M7 5.5H4.5C4.5 8 5.5 9.5 7.5 9.8"/><path d="M17 5.5H19.5C19.5 8 18.5 9.5 16.5 9.8"/><line x1="12" y1="14" x2="12" y2="17.5"/><line x1="8.5" y1="20" x2="15.5" y2="20"/><line x1="12" y1="17.5" x2="12" y2="20"/></svg>`,
+  checkCircle: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><polyline points="8 12.3 10.7 15 16 9.3"/></svg>`,
+  xCircle: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><line x1="9.2" y1="9.2" x2="14.8" y2="14.8"/><line x1="14.8" y1="9.2" x2="9.2" y2="14.8"/></svg>`,
+  bolt: `<svg viewBox="0 0 24 24" fill="currentColor" stroke="none"><path d="M13 2L4.5 13.5H10.5L9.5 22L18.5 10H12.5L13 2Z"/></svg>`,
+  plusCircle: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><line x1="12" y1="8" x2="12" y2="16"/><line x1="8" y1="12" x2="16" y2="12"/></svg>`
+};
+
+/* ===================== DATA ===================== */
+const BANK = {
+  facile: [
+    { q:"Qui a construit une grande arche pour survivre au déluge ?", options:["Abraham","Noé","Moïse","David"], correct:"Noé", fact:"Dieu a demandé à Noé de faire entrer un couple de chaque espèce animale dans l'arche (Genèse 6-7)." },
+    { q:"Qui a vaincu le géant Goliath avec une simple fronde ?", options:["Samson","Josué","David","Salomon"], correct:"David", fact:"David n'était encore qu'un jeune berger quand il a affronté Goliath (1 Samuel 17)." },
+    { q:"Quel est le premier livre de la Bible ?", options:["L'Exode","La Genèse","Les Psaumes","Matthieu"], correct:"La Genèse", fact:"« Genèse » signifie « origine » ou « commencement »." },
+    { q:"Dans quelle ville Jésus est-il né ?", options:["Nazareth","Jérusalem","Bethléem","Capernaüm"], correct:"Bethléem", fact:"Cette naissance accomplissait une prophétie écrite des siècles plus tôt." },
+    { q:"Combien de disciples proches (apôtres) Jésus a-t-il choisis ?", options:["7","10","12","40"], correct:"12", fact:"Leurs noms sont listés par exemple en Matthieu 10:2-4." },
+    { q:"Qui a trahi Jésus pour 30 pièces d'argent ?", options:["Pierre","Thomas","Judas","Barabbas"], correct:"Judas", fact:"Judas Iscariot était l'un des douze apôtres (Matthieu 26:14-16)." },
+    { q:"Quel est le dernier livre de la Bible ?", options:["Malachie","L'Apocalypse","Les Actes","Jude"], correct:"L'Apocalypse", fact:"Il a été écrit par l'apôtre Jean, exilé sur l'île de Patmos." },
+    { q:"Combien de plaies Dieu a-t-il envoyées sur l'Égypte avant la libération des Hébreux ?", options:["5","7","10","12"], correct:"10", fact:"La dernière plaie fut la mort des premiers-nés (Exode 7-12)." },
+    { q:"Qui a été avalé par un grand poisson ?", options:["Élie","Jonas","Daniel","Pierre"], correct:"Jonas", fact:"Jonas y est resté trois jours et trois nuits avant d'être recraché sur le rivage." },
+    { q:"Quel est le premier miracle de Jésus, selon l'évangile de Jean ?", options:["Marcher sur l'eau","Guérir un aveugle","Changer l'eau en vin","Multiplier les pains"], correct:"Changer l'eau en vin", fact:"Ce miracle a eu lieu lors des noces de Cana (Jean 2:1-11)." },
+    { q:"Combien de jours Jésus a-t-il jeûné dans le désert avant d'être tenté par Satan ?", options:["7","12","40","100"], correct:"40", fact:"Ce récit se trouve en Matthieu 4:1-11." },
+    { q:"Quel est le nom du jardin où Adam et Ève ont vécu au commencement ?", options:["Gethsémané","Éden","Canaan","Sinaï"], correct:"Éden", fact:"Deux fleuves célèbres, le Tigre et l'Euphrate, sont mentionnés en lien avec ce jardin (Genèse 2)." },
+    { q:"Qui a reçu les Dix Commandements sur une montagne ?", options:["Abraham","Moïse","Élie","Josué"], correct:"Moïse", fact:"C'était sur le mont Sinaï (Exode 20)." },
+    { q:"Quelle mer les Hébreux ont-ils traversée à pied sec en fuyant l'Égypte ?", options:["La mer Morte","La mer Rouge","La mer de Galilée","La Méditerranée"], correct:"La mer Rouge", fact:"L'armée égyptienne qui les poursuivait fut engloutie par les eaux (Exode 14)." },
+    { q:"Qui était le père terrestre (adoptif) de Jésus ?", options:["Zacharie","Joseph","Jean","Nicodème"], correct:"Joseph", fact:"Joseph était charpentier, originaire de Nazareth." }
+  ],
+  moyen: [
+    { q:"Combien de livres compte le Nouveau Testament ?", options:["24","27","39","66"], correct:"27", fact:"L'Ancien Testament, lui, en compte 39 dans le canon protestant." },
+    { q:"Quel roi d'Israël a fait construire le premier Temple de Jérusalem ?", options:["David","Saül","Salomon","Ézéchias"], correct:"Salomon", fact:"David avait préparé les matériaux, mais c'est son fils Salomon qui a bâti le Temple (1 Rois 6)." },
+    { q:"Quel apôtre a marché sur l'eau avant de commencer à couler par manque de foi ?", options:["Jean","André","Pierre","Jacques"], correct:"Pierre", fact:"Jésus lui tend la main en disant : « Homme de peu de foi, pourquoi as-tu douté ? » (Matthieu 14:22-33)." },
+    { q:"Quel est le nom de la femme moabite qui a épousé Booz ?", options:["Rébecca","Ruth","Rachel","Léa"], correct:"Ruth", fact:"Leur histoire est racontée dans le livre de Ruth ; ils sont des ancêtres du roi David." },
+    { q:"Qui a été jeté dans une fosse aux lions et en est sorti indemne ?", options:["Daniel","Ézéchiel","Job","Néhémie"], correct:"Daniel", fact:"Dieu a fermé la gueule des lions toute la nuit (Daniel 6)." },
+    { q:"Quel est le nom du frère jumeau d'Ésaü ?", options:["Ruben","Jacob","Joseph","Benjamin"], correct:"Jacob", fact:"Jacob deviendra plus tard « Israël », père des douze tribus." },
+    { q:"Quel prophète a affronté seul les prophètes de Baal sur le mont Carmel ?", options:["Élisée","Ésaïe","Élie","Jérémie"], correct:"Élie", fact:"Dieu a fait descendre le feu du ciel pour prouver sa puissance (1 Rois 18)." },
+    { q:"Qui a révélé le secret de la force de Samson à ses ennemis ?", options:["Dalila","Ruth","Esther","Miriam"], correct:"Dalila", fact:"Le secret résidait dans ses cheveux, jamais coupés (Juges 16)." },
+    { q:"Sur le chemin de quelle ville l'apôtre Paul (alors Saul) a-t-il été aveuglé par une lumière céleste ?", options:["Jérusalem","Damas","Antioche","Rome"], correct:"Damas", fact:"Cet épisode marque sa conversion spectaculaire (Actes 9)." },
+    { q:"Quel roi d'Israël a commis l'adultère avec Bath-Shéba ?", options:["Salomon","Saül","David","Roboam"], correct:"David", fact:"Le prophète Nathan est venu le confronter avec une parabole (2 Samuel 12)." },
+    { q:"Comment s'appelle la colline où Jésus a été crucifié ?", options:["Le mont des Oliviers","Golgotha","Le mont Sinaï","Le mont Carmel"], correct:"Golgotha", fact:"Ce nom signifie « lieu du crâne »." },
+    { q:"Quel apôtre a écrit la majorité des épîtres du Nouveau Testament ?", options:["Pierre","Jean","Paul","Jacques"], correct:"Paul", fact:"On lui attribue treize épîtres, de Romains à Philémon." },
+    { q:"Quel est le nom du jardin où Jésus a prié avant son arrestation ?", options:["Éden","Gethsémané","Le jardin du roi","Le jardin d'Achkelon"], correct:"Gethsémané", fact:"Il se trouve au pied du mont des Oliviers." },
+    { q:"Quel livre biblique raconte l'histoire d'une reine juive qui sauve son peuple en Perse ?", options:["Ruth","Esther","Judith","Débora"], correct:"Esther", fact:"Le nom de Dieu n'apparaît jamais explicitement dans ce livre." },
+    { q:"Combien de temps Jésus est-il resté sur terre après sa résurrection, avant son ascension ?", options:["3 jours","40 jours","40 ans","7 semaines"], correct:"40 jours", fact:"Voir Actes 1:3." }
+  ],
+  difficile: [
+    { q:"Combien de livres compte la Bible protestante au total (Ancien + Nouveau Testament) ?", options:["39","46","66","73"], correct:"66", fact:"39 livres dans l'Ancien Testament et 27 dans le Nouveau." },
+    { q:"Quel livre compte le plus grand nombre de chapitres de toute la Bible ?", options:["Genèse","Ésaïe","Psaumes","Jérémie"], correct:"Psaumes", fact:"Le livre des Psaumes compte 150 chapitres (psaumes)." },
+    { q:"Quel est le plus long chapitre de toute la Bible ?", options:["Psaume 23","Psaume 119","Ésaïe 53","Genèse 1"], correct:"Psaume 119", fact:"Il compte 176 versets, presque tous consacrés à la Parole de Dieu." },
+    { q:"Quel est le plus court chapitre de la Bible ?", options:["Psaume 117","Psaume 1","Jude 1","2 Jean 1"], correct:"Psaume 117", fact:"Il ne compte que 2 versets." },
+    { q:"Combien d'années les Hébreux ont-ils erré dans le désert avant d'entrer en Terre promise ?", options:["10 ans","25 ans","40 ans","70 ans"], correct:"40 ans", fact:"Cette période suit l'épisode du manque de foi du peuple à Kadès-Barnéa (Nombres 14)." },
+    { q:"Qui a succédé à Moïse pour conduire le peuple en Terre promise ?", options:["Caleb","Josué","Aaron","Samuel"], correct:"Josué", fact:"C'est sous sa conduite que les murailles de Jéricho sont tombées." },
+    { q:"Quel prophète a été enlevé au ciel dans un char de feu, sans connaître la mort ?", options:["Ésaïe","Élie","Élisée","Ézéchiel"], correct:"Élie", fact:"Son manteau est tombé sur Élisée, son successeur (2 Rois 2)." },
+    { q:"Selon la tradition biblique, quel autre personnage de l'Ancien Testament n'a pas connu la mort, comme Élie ?", options:["Hénoc","Noé","Abraham","Job"], correct:"Hénoc", fact:"« Hénoc marcha avec Dieu, puis il ne fut plus, car Dieu le prit » (Genèse 5:24)." },
+    { q:"Combien de temps Jonas est-il resté dans le ventre du grand poisson ?", options:["1 jour","3 jours et 3 nuits","7 jours","40 jours"], correct:"3 jours et 3 nuits", fact:"Jésus a comparé cet épisode à sa propre mort et résurrection (Matthieu 12:40)." },
+    { q:"Quel roi a vu une main mystérieuse écrire sur le mur pendant un festin ?", options:["Nebucadnetsar","Belschatsar","Cyrus","Darius"], correct:"Belschatsar", fact:"Daniel a interprété ce message annonçant la chute de son royaume (Daniel 5)." },
+    { q:"Quel est le nom de la montagne où l'arche de Noé se serait posée après le déluge ?", options:["Le mont Sinaï","Le mont Ararat","Le mont Nébo","Le mont Horeb"], correct:"Le mont Ararat", fact:"Voir Genèse 8:4." },
+    { q:"Combien de fruits de l'Esprit l'apôtre Paul énumère-t-il en Galates 5 ?", options:["5","7","9","12"], correct:"9", fact:"Amour, joie, paix, patience, bonté, bénignité, fidélité, douceur et maîtrise de soi." },
+    { q:"Quel nom donné à Jésus dans les prophéties signifie « Dieu avec nous » ?", options:["Messie","Emmanuel","Sauveur","Fils de l'Homme"], correct:"Emmanuel", fact:"Ce nom est annoncé en Ésaïe 7:14, puis repris en Matthieu 1:23." },
+    { q:"Quel est le nom du serviteur d'Abraham envoyé pour trouver une femme à Isaac ?", options:["Éliézer","Lot","Laban","Ismaël"], correct:"Éliézer", fact:"Il a trouvé Rébecca près d'un puits (Genèse 24)." },
+    { q:"Sur quelle montagne Abraham a-t-il été prêt à offrir son fils Isaac en sacrifice ?", options:["Le mont Sinaï","Le mont Moriya","Le mont Carmel","Le mont Nébo"], correct:"Le mont Moriya", fact:"Dieu a finalement pourvu un bélier pour remplacer Isaac (Genèse 22)." }
+  ]
+};
+
+const TIER_INFO = {
+  facile:    { label:"Facile",    level:1, pts:10, cls:"tier-facile" },
+  moyen:     { label:"Moyen",     level:2, pts:20, cls:"tier-moyen" },
+  difficile: { label:"Difficile", level:3, pts:30, cls:"tier-difficile" }
+};
+const LENGTHS = { courte:3, normale:5, longue:7 };
+const LENGTH_LABELS = { courte:"Courte", normale:"Normale", longue:"Longue" };
+const TEAM_COLORS = ["#4A7CA8","#B0525F","#4F9B70","#8B6BA8","#C9884A","#3F8F8F"];
+
+/* ===================== STATE ===================== */
+let state = {
+  screen:"mode",
+  mode:null,
+  teams:[ {name:"Équipe 1"}, {name:"Équipe 2"} ],
+  lengthKey:"normale",
+  scores:[],
+  soloScore:0,
+  soloStreak:0,
+  soloBestStreak:0,
+  soloSelected:null,
+  questions:[],
+  currentIndex:0,
+  revealed:false,
+  awarded:[],
+  muted:false
+};
+
+/* ===================== UTILS ===================== */
+function shuffle(arr){
+  const a = arr.slice();
+  for(let i=a.length-1;i>0;i--){
+    const j = Math.floor(Math.random()*(i+1));
+    [a[i],a[j]]=[a[j],a[i]];
+  }
+  return a;
+}
+function escapeHtml(s){
+  return s.replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;");
+}
+function muteLabel(){ return state.muted ? "Activer le son" : "Couper le son"; }
+
+/* ===================== SOUND (doux, ondes sinusoïdales) ===================== */
+let actx = null;
+function getCtx(){ if(!actx){ actx = new (window.AudioContext||window.webkitAudioContext)(); } return actx; }
+function tone(freq, start, dur, vol){
+  const ctx = getCtx();
+  if(ctx.state==="suspended"){ ctx.resume(); }
+  const osc = ctx.createOscillator();
+  const gain = ctx.createGain();
+  osc.type = "sine";
+  osc.frequency.value = freq;
+  gain.gain.value = 0;
+  osc.connect(gain); gain.connect(ctx.destination);
+  const t0 = ctx.currentTime + start;
+  gain.gain.setValueAtTime(0, t0);
+  gain.gain.linearRampToValueAtTime(vol, t0+0.05);
+  gain.gain.exponentialRampToValueAtTime(0.001, t0+dur);
+  osc.start(t0); osc.stop(t0+dur+0.05);
+}
+function playCorrect(){ if(state.muted) return; tone(587,0,0.4,0.08); tone(784,0.1,0.5,0.07); }
+function playIncorrect(){ if(state.muted) return; tone(392,0,0.3,0.06); tone(311,0.09,0.4,0.05); }
+function playTap(){ if(state.muted) return; tone(523,0,0.12,0.04); }
+function playWin(){ if(state.muted) return; [523,659,784].forEach((f,i)=>tone(f,i*0.17,0.6,0.065)); }
+function playStreak(){ if(state.muted) return; tone(880,0,0.22,0.05); tone(1047,0.09,0.32,0.045); }
+function toggleMute(){ state.muted = !state.muted; render(); }
+
+/* ===================== NAVIGATION ===================== */
+function selectMode(m){ state.mode = m; state.screen = "setup"; render(); }
+function goToModeSelect(){ state.screen = "mode"; render(); }
+
+/* ===================== SETUP (group) ===================== */
+function addTeam(){ if(state.teams.length>=6) return; state.teams.push({name:"Équipe "+(state.teams.length+1)}); render(); }
+function removeTeam(i){ if(state.teams.length<=2) return; state.teams.splice(i,1); render(); }
+function renameTeam(i, val){ state.teams[i].name = val; }
+function setLength(key){ state.lengthKey = key; render(); }
+function validTeams(){ return state.teams.filter(t=>t.name.trim().length>0).map(t=>({name:t.name.trim()})); }
+
+/* ===================== GAME LIFECYCLE ===================== */
+function buildQuestions(){
+  const n = LENGTHS[state.lengthKey];
+  let list = [];
+  ["facile","moyen","difficile"].forEach(tier=>{
+    const pool = shuffle(BANK[tier]);
+    pool.slice(0,n).forEach(q=>{ list.push({ ...q, tier, shuffledOptions: shuffle(q.options) }); });
+  });
+  state.questions = list;
+}
+function startGame(){
+  if(state.mode==="group"){
+    const valid = validTeams();
+    if(valid.length<2){
+      document.getElementById("setupError").textContent = "Ajoutez au moins deux équipes avec un nom pour commencer.";
+      return;
+    }
+    state.teams = valid;
+    state.scores = valid.map(()=>0);
+  } else {
+    state.soloScore = 0; state.soloStreak = 0; state.soloBestStreak = 0;
+  }
+  buildQuestions();
+  state.currentIndex = 0; state.revealed = false; state.awarded = []; state.soloSelected = null;
+  state.screen = "play";
+  render();
+}
+function replayGame(){
+  buildQuestions();
+  if(state.mode==="group"){ state.scores = state.teams.map(()=>0); }
+  else { state.soloScore = 0; state.soloStreak = 0; state.soloBestStreak = 0; }
+  state.currentIndex = 0; state.revealed = false; state.awarded = []; state.soloSelected = null;
+  state.screen = "play";
+  render();
+}
+function newGame(){
+  state = { screen:"mode", mode:null, teams:[{name:"Équipe 1"},{name:"Équipe 2"}], lengthKey: state.lengthKey, scores:[], soloScore:0, soloStreak:0, soloBestStreak:0, soloSelected:null, questions:[], currentIndex:0, revealed:false, awarded:[], muted: state.muted };
+  render();
+}
+
+/* ===================== PLAY ===================== */
+function currentQ(){ return state.questions[state.currentIndex]; }
+
+function revealAnswer(){ state.revealed = true; playCorrect(); render(); }
+
+function soloAnswer(idx){
+  if(state.revealed) return;
+  const q = currentQ();
+  const opt = q.shuffledOptions[idx];
+  state.soloSelected = opt;
+  state.revealed = true;
+  if(opt===q.correct){
+    state.soloScore += TIER_INFO[q.tier].pts;
+    state.soloStreak += 1;
+    if(state.soloStreak > state.soloBestStreak) state.soloBestStreak = state.soloStreak;
+    if(state.soloStreak>=3 && state.soloStreak%3===0){ playStreak(); } else { playCorrect(); }
+  } else {
+    state.soloStreak = 0;
+    playIncorrect();
+  }
+  render();
+}
+
+function toggleAward(teamIdx){
+  const q = currentQ();
+  const pos = state.awarded.indexOf(teamIdx);
+  if(pos>=0){ state.awarded.splice(pos,1); state.scores[teamIdx] -= TIER_INFO[q.tier].pts; }
+  else { state.awarded.push(teamIdx); state.scores[teamIdx] += TIER_INFO[q.tier].pts; playTap(); }
+  render();
+}
+function adjustScore(teamIdx, delta){ state.scores[teamIdx] = Math.max(0, state.scores[teamIdx]+delta); render(); }
+
+function nextQuestion(){
+  if(!state.revealed) return;
+  if(state.currentIndex >= state.questions.length-1){
+    state.screen = "end";
+    render();
+    launchConfetti();
+    playWin();
+    return;
+  }
+  state.currentIndex++;
+  state.revealed = false; state.awarded = []; state.soloSelected = null;
+  render();
+}
+
+function rankedTeamIndices(){ return state.teams.map((t,i)=>i).sort((a,b)=>state.scores[b]-state.scores[a]); }
+function computeRanks(){
+  const ranked = rankedTeamIndices();
+  const ranks = []; let prevScore=null, prevRank=0;
+  ranked.forEach((teamIdx,pos)=>{
+    const sc = state.scores[teamIdx];
+    if(sc===prevScore){ ranks.push(prevRank); } else { ranks.push(pos+1); prevRank=pos+1; prevScore=sc; }
+  });
+  return ranked.map((teamIdx,pos)=>({teamIdx, rank:ranks[pos]}));
+}
+function maxPossibleScore(){ return state.questions.reduce((sum,q)=>sum+TIER_INFO[q.tier].pts,0); }
+function soloPerformanceMessage(pct){
+  if(pct>=85) return "Excellent ! Tu connais vraiment bien ta Bible.";
+  if(pct>=65) return "Très bien ! Continue comme ça.";
+  if(pct>=40) return "Bien joué, il y a de bonnes bases.";
+  return "Beau début ! Chaque partie t'apprend un peu plus.";
+}
+
+function launchConfetti(){
+  const layer = document.createElement("div");
+  layer.className = "confetti-layer";
+  document.body.appendChild(layer);
+  const colors = TEAM_COLORS.concat(["#E0573B","#D6A23C"]);
+  for(let i=0;i<70;i++){
+    const p = document.createElement("div");
+    p.className = "confetti-piece";
+    p.style.left = Math.random()*100+"vw";
+    p.style.background = colors[Math.floor(Math.random()*colors.length)];
+    p.style.animationDuration = (2.2+Math.random()*1.6)+"s";
+    p.style.animationDelay = (Math.random()*0.6)+"s";
+    p.style.borderRadius = Math.random()>0.5 ? "50%" : "2px";
+    layer.appendChild(p);
+  }
+  setTimeout(()=>layer.remove(), 4200);
+}
+
+/* ===================== RENDER HELPERS ===================== */
+function renderHeader(title, showBack){
+  return `
+    <div class="app-header">
+      ${showBack ? `<button class="icon-btn" onclick="goToModeSelect()" aria-label="Retour"><span class="ico" style="width:1.1rem;height:1.1rem;">${ICONS.chevronLeft}</span></button>` : `<span class="icon-btn spacer"></span>`}
+      <span class="header-title">${escapeHtml(title)}</span>
+      <button class="icon-btn" onclick="toggleMute()" aria-label="${muteLabel()}"><span class="ico" style="width:1.15rem;height:1.15rem;">${state.muted?ICONS.speakerOff:ICONS.speakerOn}</span></button>
+    </div>
+  `;
+}
+function renderLengthCard(){
+  return `
+    <div class="card">
+      <h2>Durée de la partie</h2>
+      <div class="chip-row">
+        ${Object.keys(LENGTHS).map(k=>`
+          <button class="chip ${state.lengthKey===k?'active':''}" onclick="setLength('${k}')">
+            ${LENGTH_LABELS[k]}
+            <span class="sub">${LENGTHS[k]*3} questions</span>
+          </button>
+        `).join("")}
+      </div>
+    </div>
+  `;
+}
+function tierDotsHtml(level){
+  return `<span class="tier-dots">${[1,2,3].map(n=>`<span class="tdot ${n<=level?'filled':''}"></span>`).join("")}</span>`;
+}
+
+/* ===================== RENDER: MODE SELECT ===================== */
+function renderModeSelect(){
+  const el = document.createElement("div");
+  el.className = "screen";
+  el.innerHTML = `
+    <div class="hero">
+      <button class="icon-btn hero-mute" onclick="toggleMute()" aria-label="${muteLabel()}"><span class="ico" style="width:1.15rem;height:1.15rem;">${state.muted?ICONS.speakerOff:ICONS.speakerOn}</span></button>
+      <div class="hero-icon">${ICONS.book}</div>
+      <h1 class="hero-title">BibleTrivia</h1>
+      <p class="hero-tag">Quiz biblique progressif, du plus facile au plus difficile</p>
+    </div>
+    <button class="mode-card" onclick="selectMode('group')">
+      <span class="mode-icon group">${ICONS.users}</span>
+      <span class="mode-text">
+        <span class="mode-title">Mode Groupe</span>
+        <span class="mode-desc">Église, jeunesse, en équipes face à face</span>
+      </span>
+    </button>
+    <button class="mode-card" onclick="selectMode('solo')">
+      <span class="mode-icon solo">${ICONS.user}</span>
+      <span class="mode-text">
+        <span class="mode-title">Mode Solo</span>
+        <span class="mode-desc">Teste tes connaissances à ton rythme</span>
+      </span>
+    </button>
+    <footer class="hint">45 questions · 3 niveaux de difficulté</footer>
+  `;
+  return el;
+}
+
+/* ===================== RENDER: SETUP ===================== */
+function renderSetup(){
+  const el = document.createElement("div");
+  el.className = "screen";
+  if(state.mode==="group"){
+    el.innerHTML = `
+      ${renderHeader("Mode Groupe", true)}
+      <div class="card">
+        <h2>Équipes</h2>
+        ${state.teams.map((t,i)=>`
+          <div class="team-row">
+            <span class="team-dot" style="background:${TEAM_COLORS[i%6]}"></span>
+            <input type="text" value="${escapeHtml(t.name)}" maxlength="20" oninput="renameTeam(${i}, this.value)" placeholder="Nom de l'équipe">
+            <button class="team-remove" onclick="removeTeam(${i})" ${state.teams.length<=2?"disabled":""} aria-label="Retirer cette équipe"><span class="ico" style="width:0.9rem;height:0.9rem;">${ICONS.close}</span></button>
+          </div>
+        `).join("")}
+        <button class="add-team" onclick="addTeam()" ${state.teams.length>=6?"disabled":""}><span class="ico">${ICONS.plusCircle}</span>Ajouter une équipe</button>
+      </div>
+      ${renderLengthCard()}
+      <div class="rules"><b>Déroulé :</b> lisez la question à voix haute → révélez la réponse → attribuez les points à la bonne équipe. Une erreur ? Les boutons −/+ sur chaque score corrigent à tout moment.</div>
+      <button class="btn-primary" onclick="startGame()">Commencer la partie</button>
+      <div class="error-msg" id="setupError"></div>
+      <footer class="hint">45 questions au total · un tirage différent à chaque partie</footer>
+    `;
+  } else {
+    el.innerHTML = `
+      ${renderHeader("Mode Solo", true)}
+      ${renderLengthCard()}
+      <div class="rules"><b>Déroulé :</b> réponds aux questions à ton rythme, du plus facile au plus difficile. Enchaîne les bonnes réponses pour faire grimper ta série.</div>
+      <button class="btn-primary" onclick="startGame()">Commencer</button>
+      <footer class="hint">45 questions au total · un tirage différent à chaque partie</footer>
+    `;
+  }
+  return el;
+}
+
+/* ===================== RENDER: PLAY ===================== */
+function renderPlay(){
+  const el = document.createElement("div");
+  el.className = "screen";
+  const q = currentQ();
+  const info = TIER_INFO[q.tier];
+  const total = state.questions.length;
+
+  const optionsHtml = q.shuffledOptions.map((opt,idx)=>{
+    const letter = ["A","B","C","D"][idx];
+    let cls = "option-btn";
+    let trailingIcon = "";
+    if(state.revealed){
+      if(opt===q.correct){ cls+=" correct"; trailingIcon = `<span class="opt-icon">${ICONS.checkCircle}</span>`; }
+      else if(state.mode==="solo" && opt===state.soloSelected){ cls+=" incorrect"; trailingIcon = `<span class="opt-icon">${ICONS.xCircle}</span>`; }
+      else { cls+=" dim"; }
+    }
+    const interactive = state.mode==="solo" && !state.revealed;
+    if(interactive){
+      return `<button class="${cls}" onclick="soloAnswer(${idx})"><span class="letter">${letter}</span><span class="opt-text">${escapeHtml(opt)}</span></button>`;
+    }
+    return `<div class="${cls}"><span class="letter">${letter}</span><span class="opt-text">${escapeHtml(opt)}</span>${trailingIcon}</div>`;
+  }).join("");
+
+  let bottomHtml;
+  if(state.mode==="group"){
+    const ranked = rankedTeamIndices();
+    bottomHtml = `
+      ${state.revealed ? `<div class="fact-card"><span class="ficon">${ICONS.book}</span><span class="ftext">${escapeHtml(q.fact)}</span></div>` : `<button class="btn-reveal" onclick="revealAnswer()">Révéler la réponse</button>`}
+      ${state.revealed ? `
+        <div class="award-label">Qui a trouvé la bonne réponse ?</div>
+        <div class="award-grid">
+          ${state.teams.map((t,i)=>`
+            <button class="award-btn ${state.awarded.includes(i)?'awarded':''}" onclick="toggleAward(${i})">
+              <span style="display:flex;align-items:center;gap:0.5rem;overflow:hidden;">
+                <span class="dot" style="background:${TEAM_COLORS[i%6]}"></span>
+                <span style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${escapeHtml(t.name)}</span>
+              </span>
+              <span class="pts">+${info.pts}</span>
+            </button>
+          `).join("")}
+        </div>
+      ` : ""}
+      <button class="btn-next" onclick="nextQuestion()" ${!state.revealed?"disabled":""}>${state.currentIndex>=total-1 ? "Voir les résultats" : "Question suivante"}</button>
+      <div class="score-strip">
+        ${ranked.map(i=>`
+          <div class="score-pane">
+            <span class="nm"><span class="dot-sm" style="background:${TEAM_COLORS[i%6]}"></span>${escapeHtml(state.teams[i].name)}</span>
+            <span class="score-row">
+              <button class="adj-btn" onclick="adjustScore(${i},-10)" aria-label="Retirer 10 points">−</button>
+              <span class="sc">${state.scores[i]}</span>
+              <button class="adj-btn" onclick="adjustScore(${i},10)" aria-label="Ajouter 10 points">+</button>
+            </span>
+          </div>
+        `).join("")}
+      </div>
+    `;
+  } else {
+    bottomHtml = `
+      ${state.revealed ? `<div class="fact-card"><span class="ficon">${ICONS.book}</span><span class="ftext">${escapeHtml(q.fact)}</span></div>` : ""}
+      <button class="btn-next" onclick="nextQuestion()" ${!state.revealed?"disabled":""}>${state.currentIndex>=total-1 ? "Voir les résultats" : "Continuer"}</button>
+      <div class="solo-score-bar"><span class="label">Score</span><span class="value">${state.soloScore} pts</span></div>
+    `;
+  }
+
+  el.innerHTML = `
+    ${renderHeader("BibleTrivia", true)}
+    <div class="play-meta">
+      <span class="tier-chip ${info.cls}">${tierDotsHtml(info.level)}${info.label} · ${info.pts} pts</span>
+      <span class="q-counter">${state.currentIndex+1}/${total}</span>
+      ${state.mode==="solo" ? `<span class="streak-chip"><span class="ico">${ICONS.bolt}</span>${state.soloStreak}</span>` : ""}
+    </div>
+    <div class="progress-track">
+      ${state.questions.map((_,i)=>`<div class="progress-seg ${i<state.currentIndex?'done':(i===state.currentIndex?'current':'')}"></div>`).join("")}
+    </div>
+    <div class="question-card"><div class="qtext">${escapeHtml(q.q)}</div></div>
+    <div class="options-grid">${optionsHtml}</div>
+    ${bottomHtml}
+  `;
+  return el;
+}
+
+/* ===================== RENDER: END ===================== */
+function renderEndGroup(){
+  const withRanks = computeRanks();
+  const winners = withRanks.filter(r=>r.rank===1).map(r=>state.teams[r.teamIdx].name);
+  return `
+    <div class="end-hero">
+      <div class="end-icon">${ICONS.trophy}</div>
+      <h1 class="end-title">${winners.length>1 ? "Égalité en tête !" : escapeHtml(winners[0])}</h1>
+      <p class="end-sub">Bravo à toutes les équipes — continuez à explorer la Parole.</p>
+    </div>
+    ${withRanks.map(r=>`
+      <div class="rank-row ${r.rank===1?'first':''}">
+        <span class="rank-medal">${r.rank}</span>
+        <span class="rank-dot" style="background:${TEAM_COLORS[r.teamIdx%6]}"></span>
+        <span class="rank-name">${escapeHtml(state.teams[r.teamIdx].name)}</span>
+        <span class="rank-score-wrap">
+          <button class="adj-btn" onclick="adjustScore(${r.teamIdx},-10)" aria-label="Retirer 10 points">−</button>
+          <span class="rank-score">${state.scores[r.teamIdx]} pts</span>
+          <button class="adj-btn" onclick="adjustScore(${r.teamIdx},10)" aria-label="Ajouter 10 points">+</button>
+        </span>
+      </div>
+    `).join("")}
+    <div class="end-actions">
+      <button class="btn-replay" onclick="replayGame()">Rejouer</button>
+      <button class="btn-newgame" onclick="newGame()">Nouvelle partie</button>
+    </div>
+  `;
+}
+function renderEndSolo(){
+  const max = maxPossibleScore();
+  const pct = max>0 ? Math.round((state.soloScore/max)*100) : 0;
+  return `
+    <div class="end-hero">
+      <div class="end-icon">${ICONS.trophy}</div>
+      <h1 class="end-title">Partie terminée</h1>
+      <p class="end-sub">${soloPerformanceMessage(pct)}</p>
+    </div>
+    <div class="solo-summary">
+      <div class="big-score-label">Score final</div>
+      <div class="big-score">${state.soloScore}</div>
+      <div class="solo-stats">
+        <div class="solo-stat"><div class="val"><span class="ico">${ICONS.bolt}</span>${state.soloBestStreak}</div><div class="lbl">Meilleure série</div></div>
+        <div class="solo-stat"><div class="val">${pct}%</div><div class="lbl">Score maximal</div></div>
+      </div>
+    </div>
+    <div class="end-actions">
+      <button class="btn-replay" onclick="replayGame()">Rejouer</button>
+      <button class="btn-newgame" onclick="newGame()">Nouvelle partie</button>
+    </div>
+  `;
+}
+function renderEnd(){
+  const el = document.createElement("div");
+  el.className = "screen";
+  el.innerHTML = renderHeader("Résultats", false) + (state.mode==="group" ? renderEndGroup() : renderEndSolo());
+  return el;
+}
+
+/* ===================== RENDER ROOT ===================== */
+function render(){
+  const app = document.getElementById("app");
+  app.innerHTML = "";
+  let node;
+  if(state.screen==="mode") node = renderModeSelect();
+  else if(state.screen==="setup") node = renderSetup();
+  else if(state.screen==="play") node = renderPlay();
+  else node = renderEnd();
+  app.appendChild(node);
+}
+
+render();
+</script>
+</body>
+</html>
