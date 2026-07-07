@@ -816,8 +816,11 @@ function bindRoom(ch){
   ch.on("presence", { event:"leave" }, ()=>{
     const st = ch.presenceState();
     const stillThere = Object.keys(st).some(k=>k!==myId);
-    if(!stillThere && state.screen==="online-play"){ net.oppLeft = true; reRenderIfOnline(); }
-    else if(!stillThere){ net.oppPresent=false; reRenderIfOnline(); }
+    if(!stillThere){
+      net.oppPresent = false;
+      if(state.screen==="online-play"){ net.oppLeft = true; startOppLeftCountdown(); }
+      reRenderIfOnline();
+    }
   });
   ch.on("broadcast", { event:"start" }, ({ payload })=>{
     if(!payload) return;
@@ -855,10 +858,12 @@ function hostStart(){
   beginDuel(seed, net.lengthKey);
 }
 function beginDuel(seed, lengthKey){
+  clearLeaveTimer();
   net.seed = seed; net.lengthKey = lengthKey;
   net.deck = seededDeck(seed, lengthKey);
   net.idx = 0; net.score = 0; net.correct = 0; net.selected=null; net.revealed=false; net.myDone=false;
   net.oppScore = 0; net.oppIndex = 0; net.oppDone=false; net.oppLeft=false; net.status="";
+  net.animIdx = -1; net.justRevealed = false; net.leaveCountdown = 0;
   state.screen = "online-play";
   render();
 }
@@ -866,7 +871,7 @@ function onlineAnswer(i){
   if(net.revealed || net.myDone) return;
   const q = net.deck[net.idx];
   const opt = q.shuffledOptions[i];
-  net.selected = opt; net.revealed = true;
+  net.selected = opt; net.revealed = true; net.justRevealed = true;
   if(opt === q.correct){ net.score += TIER_INFO[q.tier].pts; net.correct += 1; playCorrect(); }
   else { playIncorrect(); }
   broadcastProgress(false);
@@ -890,7 +895,23 @@ function onlineRematch(){
   if(net.isHost){ hostStart(); }
   else { net.status = "En attente que l'hôte relance…"; render(); }
 }
+function clearLeaveTimer(){ if(net.leaveTimer){ clearInterval(net.leaveTimer); net.leaveTimer=null; } net.leaveCountdown=0; }
+function startOppLeftCountdown(){
+  if(net.leaveTimer) return;
+  net.leaveCountdown = 5;
+  net.leaveTimer = setInterval(()=>{
+    net.leaveCountdown -= 1;
+    if(net.leaveCountdown <= 0){ leaveOnline(); }
+    else { reRenderIfOnline(); }
+  }, 1000);
+}
+function quitDuel(){
+  const inProgress = !net.myDone && net.deck.length && net.idx < net.deck.length && !net.oppLeft;
+  if(inProgress && !confirm("Quitter le duel en cours ?")) return;
+  leaveOnline();
+}
 function leaveOnline(){
+  clearLeaveTimer();
   if(net.room){ try { net.room.untrack(); net.supa.removeChannel(net.room); } catch(e){} net.room=null; }
   net.code=null; net.isHost=false; net.opp=null; net.oppPresent=false; net.oppLeft=false;
   net.deck=[]; net.idx=0; net.myDone=false; net.status=""; net.error="";
@@ -1643,7 +1664,7 @@ function renderOnlinePlay(){
     el.innerHTML = `${renderHeader("Duel", true, "leaveOnline()")}
       <div class="online-hero"><div class="online-hero-icon">${ICONS.user}</div>
       <h2 class="online-hero-title">Adversaire parti</h2>
-      <p class="online-hero-sub">Ton adversaire a quitté la partie.</p></div>
+      <p class="online-hero-sub">Ton adversaire a quitté la partie.${net.leaveCountdown?` Retour au menu dans ${net.leaveCountdown}s…`:""}</p></div>
       <button class="btn-primary" onclick="leaveOnline()">Retour au menu</button>`;
     return el;
   }
@@ -1655,24 +1676,29 @@ function renderOnlinePlay(){
       <div class="ds-side"><span class="ds-name">${escapeHtml(net.opp?net.opp.name:"Adversaire")}</span><span class="ds-score">${net.oppScore}</span></div>
     </div>`;
   if(net.myDone){
-    el.innerHTML = `${renderHeader("Duel", false)}
+    el.innerHTML = `${renderHeader("Duel", true, "quitDuel()")}
       ${scorebar}
       <div class="searching-card">
         <div class="spinner"></div>
         <div class="searching-txt">Tu as terminé, bien joué !</div>
         <div class="opp-progress">Ton adversaire en est à ${net.oppIndex}/${total}</div>
+        <button class="btn-ghost" style="margin-top:1.1rem" onclick="leaveOnline()">Quitter la partie</button>
       </div>`;
     return el;
   }
   const q = net.deck[net.idx];
   const info = TIER_INFO[q.tier];
   const oppPct = Math.round((net.oppIndex/total)*100);
+  const fresh = (net.idx !== net.animIdx);
+  net.animIdx = net.idx;
+  const pop = net.justRevealed;
+  net.justRevealed = false;
   const optionsHtml = q.shuffledOptions.map((opt,idx)=>{
     const letter=["A","B","C","D"][idx];
     let cls="option-btn";
     if(net.revealed){
-      if(opt===q.correct) cls+=" correct";
-      else if(opt===net.selected) cls+=" incorrect";
+      if(opt===q.correct) cls+=" correct"+(pop?" reveal-pop":"");
+      else if(opt===net.selected) cls+=" incorrect"+(pop?" reveal-shake":"");
       else cls+=" dim";
     }
     if(!net.revealed){
@@ -1681,17 +1707,18 @@ function renderOnlinePlay(){
     let ic=""; if(opt===q.correct) ic=`<span class="opt-icon">${ICONS.checkCircle}</span>`; else if(opt===net.selected) ic=`<span class="opt-icon">${ICONS.xCircle}</span>`;
     return `<div class="${cls}"><span class="letter">${letter}</span><span class="opt-text">${escapeHtml(opt)}</span>${ic}</div>`;
   }).join("");
-  el.innerHTML = `${renderHeader("Duel", false)}
+  el.innerHTML = `${renderHeader("Duel", true, "quitDuel()")}
     ${scorebar}
     <div class="opp-track"><div class="opp-fill" style="width:${oppPct}%"></div></div>
     <div class="play-meta"><span class="tier-chip ${info.cls}">${tierDotsHtml(info.level)}${info.label} · ${info.pts} pts</span><span class="q-counter">${net.idx+1}/${total}</span></div>
-    <div class="question-card"><div class="qtext">${escapeHtml(q.q)}</div></div>
-    <div class="options-grid">${optionsHtml}</div>
+    <div class="question-card${fresh?' animate':''}"><div class="qtext">${escapeHtml(q.q)}</div></div>
+    <div class="options-grid${fresh?' animate':''}">${optionsHtml}</div>
     ${net.revealed?`<div class="fact-card"><span class="fact-ico">${ICONS.book}</span><span>${escapeHtml(q.fact)}</span></div><button class="btn-next" onclick="onlineNext()">${net.idx+1>=total?"Terminer":"Question suivante"}</button>`:""}`;
   return el;
 }
 
 function renderOnlineEnd(){
+  clearLeaveTimer();
   const el=document.createElement("div"); el.className="screen";
   const win = net.score>net.oppScore, tie = net.score===net.oppScore;
   const title = tie?"Égalité !":(win?"Victoire !":"Défaite");
@@ -1701,15 +1728,19 @@ function renderOnlineEnd(){
       <div class="end-eyebrow">Duel terminé</div>
       <h1 class="end-title">${title}</h1></div>
     <div class="duel-result">
-      <div class="dr-side ${win?'winner':''}">${avatarHtml(profile.name,profile.color,3.4,profile.isCreator)}<div class="dr-name">${escapeHtml(profile.name)}</div><div class="dr-score">${net.score}</div></div>
+      <div class="dr-side ${win?'winner':''}">${avatarHtml(profile.name,profile.color,3.4,profile.isCreator)}<div class="dr-name">${escapeHtml(profile.name)}</div><div class="dr-score" data-count-me>0</div></div>
       <div class="dr-vs">VS</div>
-      <div class="dr-side ${(!win&&!tie)?'winner':''}">${net.opp?avatarHtml(net.opp.name,net.opp.color,3.4,net.opp.isCreator):`<span class="avatar waiting" style="width:3.4rem;height:3.4rem;font-size:1.4rem;">?</span>`}<div class="dr-name">${escapeHtml(net.opp?net.opp.name:"Adversaire")}</div><div class="dr-score">${net.oppScore}</div></div>
+      <div class="dr-side ${(!win&&!tie)?'winner':''}">${net.opp?avatarHtml(net.opp.name,net.opp.color,3.4,net.opp.isCreator):`<span class="avatar waiting" style="width:3.4rem;height:3.4rem;font-size:1.4rem;">?</span>`}<div class="dr-name">${escapeHtml(net.opp?net.opp.name:"Adversaire")}</div><div class="dr-score" data-count-opp>0</div></div>
     </div>
     ${net.status?`<div class="info-card">${escapeHtml(net.status)}</div>`:""}
     <div class="end-actions">
       <button class="btn-replay" onclick="onlineRematch()">Rejouer</button>
       <button class="btn-newgame" onclick="leaveOnline()">Quitter</button>
     </div>`;
+  requestAnimationFrame(()=>{
+    animateCount(el.querySelector("[data-count-me]"), 0, net.score, 900, "");
+    animateCount(el.querySelector("[data-count-opp]"), 0, net.oppScore, 900, "");
+  });
   return el;
 }
 
