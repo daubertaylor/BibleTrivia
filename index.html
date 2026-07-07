@@ -732,52 +732,75 @@ function joinLobby(){
   const supa = initSupa();
   if(!supa) return;
   if(net.lobby) return;
-  const ch = supa.channel("bt-lobby-v1", { config:{ presence:{ key: myId } } });
+  net.lookers = {};
+  const ch = supa.channel("bt-lobby-v1", { config:{ presence:{ key: myId }, broadcast:{ self:false } } });
   net.lobby = ch;
   ch.on("presence", { event:"sync" }, ()=>{
     const st = ch.presenceState();
     net.connected = Object.keys(st).length;
-    tryMatchmake(st);
+    reRenderIfOnline();
+  });
+  ch.on("broadcast", { event:"looking" }, ({ payload })=>{
+    if(!payload || payload.id===myId) return;
+    net.lookers[payload.id] = Date.now();
+    matchFromLookers();
     reRenderIfOnline();
   });
   ch.on("broadcast", { event:"matched" }, ({ payload })=>{
-    if(!payload) return;
-    if(payload.guest === myId && !net.room){
-      net.searching = false; net.matching = false;
+    if(!payload || net.room) return;
+    if(payload.guest === myId){
+      net.searching = false; net.matching = false; stopSearchHeartbeat();
       joinRoom(payload.code, false);
     }
   });
   ch.subscribe(async (status)=>{
-    if(status === "SUBSCRIBED"){ await ch.track(meMeta({ searching:false })); reRenderIfOnline(); }
+    if(status === "SUBSCRIBED"){ await ch.track(meMeta()); reRenderIfOnline(); }
   });
 }
 function setSearching(on){
   net.searching = on; net.matching = false;
-  if(net.lobby){ net.lobby.track(meMeta({ searching:on })); }
+  if(on){ startSearchHeartbeat(); } else { stopSearchHeartbeat(); }
   reRenderIfOnline();
 }
-function tryMatchmake(st){
+function startSearchHeartbeat(){
+  stopSearchHeartbeat();
+  net.lookers = {};
+  const beat = ()=>{
+    if(!net.searching || net.room){ stopSearchHeartbeat(); return; }
+    if(net.lobby){ net.lobby.send({ type:"broadcast", event:"looking", payload:{ id: myId, ts: Date.now() } }); }
+    matchFromLookers();
+  };
+  beat();
+  net.hbTimer = setInterval(beat, 1500);
+}
+function stopSearchHeartbeat(){ if(net.hbTimer){ clearInterval(net.hbTimer); net.hbTimer = null; } }
+function freshLookers(){
+  const now = Date.now(); let c = 0;
+  Object.keys(net.lookers||{}).forEach(id=>{ if(id!==myId && (now - net.lookers[id]) < 4500) c++; });
+  return c;
+}
+function matchFromLookers(){
   if(!net.searching || net.matching || net.room) return;
-  const searchers = [];
-  Object.keys(st).forEach(k=>{ const m = st[k] && st[k][0]; if(m && m.searching) searchers.push(m.id); });
-  searchers.sort();
-  const pos = searchers.indexOf(myId);
-  if(pos < 0) return;
+  const now = Date.now();
+  const ids = [myId];
+  Object.keys(net.lookers).forEach(id=>{ if(id!==myId && (now - net.lookers[id]) < 4500) ids.push(id); });
+  ids.sort();
+  const pos = ids.indexOf(myId);
   const partnerPos = pos % 2 === 0 ? pos+1 : pos-1;
-  if(partnerPos < 0 || partnerPos >= searchers.length) return;
+  if(partnerPos < 0 || partnerPos >= ids.length) return;
   if(pos % 2 === 0){
     net.matching = true;
+    net.searching = false; stopSearchHeartbeat();
     const code = genCode();
-    const guest = searchers[partnerPos];
-    net.searching = false;
-    if(net.lobby){ net.lobby.track(meMeta({ searching:false })); }
+    const guest = ids[partnerPos];
     net.lobby.send({ type:"broadcast", event:"matched", payload:{ code, host:myId, guest } });
     createRoom(code, true);
   }
 }
 function leaveLobby(){
+  stopSearchHeartbeat();
   if(net.lobby){ try { net.lobby.untrack(); net.supa.removeChannel(net.lobby); } catch(e){} net.lobby = null; }
-  net.searching = false; net.matching = false; net.connected = 0;
+  net.searching = false; net.matching = false; net.connected = 0; net.lookers = {};
 }
 
 /* ===================== SALON / DUEL ===================== */
@@ -1545,7 +1568,8 @@ function renderOnline(){
       <div class="searching-card">
         <div class="spinner"></div>
         <div class="searching-txt">Recherche d'un adversaire…</div>
-        <button class="btn-ghost" onclick="setSearching(false)">Annuler</button>
+        <div class="opp-progress">${freshLookers()>0?(freshLookers()+" autre"+(freshLookers()>1?"s":"")+" en recherche…"):"Ton ami doit aussi lancer une « Partie aléatoire »."}</div>
+        <button class="btn-ghost" style="margin-top:1rem" onclick="setSearching(false)">Annuler</button>
       </div>
     ` : `
       <button class="online-action primary" onclick="setSearching(true)">
