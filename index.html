@@ -509,26 +509,14 @@
   .vs-tag.is-host{ color:var(--gold-deep); font-weight:800; text-transform:uppercase; letter-spacing:0.06em; font-size:0.66rem; }
   .host-note{ text-align:center; font-size:0.78rem; color:rgba(255,255,255,0.92); margin:0.6rem auto 0.15rem; max-width:20rem; text-shadow:0 1px 8px rgba(0,0,0,0.4); }
 
-  /* ---------- Paysage : l'interface s'adapte à l'orientation ---------- */
-  @media (orientation:landscape) and (pointer:coarse) and (max-height:520px){
-    html{ font-size:14.4px; }
-    .hero{ padding:0.7rem 1rem 0.5rem; }
-    .hero-zone{ height:4.5rem; margin-bottom:0.5rem; }
-    .hero-icon{ width:4.5rem; }
-    .hero-title{ font-size:1.3rem; }
-    .hero-tag{ font-size:0.86rem; }
-    .home-stats{ padding-top:0.75rem; }
-    .hs-item{ flex-direction:row; gap:0.45rem; padding:0.5rem 0.4rem; }
-    .splash-dove{ width:6.2rem; }
-    .splash-dots{ bottom:1rem; }
-    .end-trophy{ width:5.4rem; }
-    .app-header{ margin-bottom:0.7rem; }
-    .progress-track{ margin-bottom:0.8rem; }
-    .question-card{ padding:0.85rem 1rem; margin-bottom:0.7rem; }
-    .question-card .qtext{ font-size:1rem; }
-    .options-grid{ margin-bottom:0.8rem; }
-    footer.hint{ padding-top:0.6rem; }
-  }
+  /* ---------- Verrou portrait : le téléphone tourne dans le bon sens ---------- */
+  #rotate-lock{ position:fixed; top:0; left:0; right:0; bottom:0; z-index:80; display:none; align-items:center; justify-content:center; flex-direction:column; gap:1.05rem; text-align:center; padding:2rem; background:rgba(18,13,9,0.95); color:#fff; }
+  #rotate-lock .rl-ico{ width:3.4rem; height:3.4rem; opacity:0.96; transform-origin:50% 50%; animation:rotBackL 2.2s cubic-bezier(0.22,1,0.36,1) infinite; }
+  #rotate-lock.from-right .rl-ico{ animation-name:rotBackR; }
+  #rotate-lock p{ font-family:'Poppins',sans-serif; font-weight:600; font-size:1rem; line-height:1.5; max-width:16rem; margin:0; text-shadow:0 1px 10px rgba(0,0,0,0.5); }
+  @keyframes rotBackL{ 0%,14%{ transform:rotate(-90deg); } 54%{ transform:rotate(5deg); } 68%,90%{ transform:rotate(0deg); } 100%{ transform:rotate(0deg); } }
+  @keyframes rotBackR{ 0%,14%{ transform:rotate(90deg); } 54%{ transform:rotate(-5deg); } 68%,90%{ transform:rotate(0deg); } 100%{ transform:rotate(0deg); } }
+  @media (orientation:landscape) and (pointer:coarse){ #rotate-lock{ display:flex; } }
 
   /* ---------- VERRE GARANTI (photo pré-floutée, alignée au viewport) ----------
      Safari iOS n'entretient pas le backdrop-filter de façon fiable. On affiche
@@ -591,8 +579,11 @@
     .hs-item{ padding:0.85rem 0.4rem 0.75rem; }
     .online-action{ padding-top:1.05rem; padding-bottom:1.05rem; }
   }
-  /* Les grands boutons d'action descendent en zone du pouce */
-  .screen > .btn-primary{ margin-top:auto; }
+  /* Espaceur flexible : répartit le vide pour que chaque écran soit habité */
+  .flex-sp{ flex:1 1 0; min-height:0.35rem; }
+  /* Sur les grands écrans, la question et les réponses grandissent pour occuper la place */
+  .question-card{ display:flex; align-items:center; justify-content:center; min-height:clamp(5.5rem, 14.5vh, 9.6rem); }
+  .option-btn{ min-height:clamp(3.1rem, 7vh, 4.6rem); }
 
   /* ---------- Trophée premium (bas de coupe élancé, socle à étages) ---------- */
   .end-trophy{ position:relative; width:clamp(6.6rem, 32vw, 8.4rem); height:auto; margin:0 auto 0.85rem; filter:drop-shadow(0 14px 26px rgba(150,90,8,0.45)); animation:trophyIn 0.75s cubic-bezier(0.18,1.25,0.32,1) backwards; }
@@ -668,6 +659,7 @@
 <div id="bg-layer"></div>
 <div id="bg-overlay"></div>
 <div id="bg-grain"></div>
+<div id="rotate-lock"><span class="rl-ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><rect x="7" y="2.5" width="10" height="19" rx="2.5"/><line x1="10.3" y1="18.4" x2="13.7" y2="18.4"/></svg></span><p>Redresse ton téléphone —<br>BibleTrivia se joue en portrait</p></div>
 <div id="app"></div>
 
 <script>
@@ -2147,6 +2139,7 @@ function renderSetup(){
       </div>
       ${renderLengthCard()}
       <div class="rules"><b>Déroulé :</b> lisez la question à voix haute → révélez la réponse → attribuez les points au bon joueur (ou à la bonne équipe). Avec le chrono, la réponse se révèle toute seule à la fin du temps. Une erreur ? Les boutons −/+ corrigent à tout moment.</div>
+      <div class="flex-sp"></div>
       <button class="btn-primary" onclick="startGame()">Commencer la partie</button>
       <div class="error-msg" id="setupError"></div>
       <footer class="hint">${BANK_TOTAL} questions au total · un tirage différent à chaque partie</footer>
@@ -2154,8 +2147,10 @@ function renderSetup(){
   } else {
     el.innerHTML = `
       ${renderHeader("Mode Solo", true)}
+      <div class="flex-sp"></div>
       ${renderLengthCard()}
       <div class="rules"><b>Déroulé :</b> réponds à chaque question avant la fin du chrono — tous niveaux mélangés. Enchaîne les bonnes réponses pour faire grimper ta série.</div>
+      <div class="flex-sp"></div>
       <button class="btn-primary" onclick="startGame()">Commencer la partie</button>
       <footer class="hint">${BANK_TOTAL} questions au total · un tirage différent à chaque partie</footer>
     `;
@@ -2229,6 +2224,7 @@ function renderPlay(){
         </div>
       ` : ""}
       ${state.revealed ? `<button class="btn-next${pop?' reveal-in':''}" onclick="nextQuestion()">${state.currentIndex>=total-1 ? "Voir les résultats" : "Question suivante"}</button>` : ""}
+      <div class="flex-sp"></div>
       <div class="score-strip">
         ${ranked.map(i=>`
           <div class="score-pane">
@@ -2247,6 +2243,7 @@ function renderPlay(){
       ${state.timedOut && state.revealed ? `<div class="timeout-note${pop?' reveal-in':''}"><span class="ico">${ICONS.clock}</span>Temps écoulé !</div>` : ""}
       ${state.revealed ? `<div class="fact-card${pop?' reveal-in':''}"><span class="ficon">${ICONS.bookOpen}</span><span class="ftext"><span class="fact-label">Le savais-tu ?</span>${escapeHtml(q.fact)}</span></div>` : ""}
       ${state.revealed ? `<button class="btn-next${pop?' reveal-in':''}" onclick="nextQuestion()">${state.currentIndex>=total-1 ? "Voir les résultats" : "Question suivante"}</button>` : ""}
+      <div class="flex-sp"></div>
       <div class="solo-score-bar"><span class="label">Score</span><span class="value" data-count-value>${state.soloScore} pts</span></div>
     `;
   }
@@ -2263,6 +2260,7 @@ function renderPlay(){
     <div class="progress-track">
       <div class="progress-fill" style="width:${Math.round(((state.currentIndex + (state.revealed?1:0)) / total) * 100)}%"></div>
     </div>
+    <div class="flex-sp"></div>
     <div class="question-card${fresh?' animate':''}"><div class="qtext">${escapeHtml(q.q)}</div></div>
     <div class="options-grid${fresh?' animate':''}">${optionsHtml}</div>
     ${bottomHtml}
@@ -2354,6 +2352,7 @@ function renderEndSolo(){
       <h1 class="end-title">${state.soloScore} points</h1>
       <p class="end-sub">${soloPerformanceMessage(pct)}</p>
     </div>
+    <div class="flex-sp"></div>
     <div class="solo-summary">
       <div class="ring-wrap">
         <svg viewBox="0 0 120 120">
@@ -2373,6 +2372,7 @@ function renderEndSolo(){
         <div class="solo-stat"><div class="val"><span class="ico">${ICONS.flame}</span>${state.soloBestStreak}</div><div class="lbl">Meilleure série</div></div>
       </div>
     </div>
+    <div class="flex-sp"></div>
     <div class="end-actions">
       <button class="btn-replay" onclick="replayGame()">Rejouer</button>
       <button class="btn-newgame" onclick="newGame()">Nouvelle partie</button>
@@ -2468,6 +2468,7 @@ function renderProfile(){
   const el=document.createElement("div"); el.className="screen";
   el.innerHTML = `
     ${renderHeader("Profil", true, "saveProfileAndBack()")}
+    <div class="flex-sp"></div>
     <div class="profile-card">
       <div onclick="promptCreator()" style="cursor:pointer" title="Code créateur" data-avatar-preview>${avatarHtml(profile.name||"Invité", profile.color, 4.2, profile.isCreator)}</div>
       <div class="profile-name" id="profileNameLabel">${escapeHtml(profile.name||"Invité")}</div>
@@ -2479,6 +2480,7 @@ function renderProfile(){
     <div class="color-row">
       ${TEAM_COLORS.map(c=>`<button class="color-dot${c===profile.color?' sel':''}" style="background:${c}" data-c="${c}" onclick="setProfileColor('${c}')" aria-label="couleur"></button>`).join("")}
     </div>
+    <div class="flex-sp"></div>
     <button class="btn-primary" onclick="saveProfileAndBack()">Enregistrer</button>
   `;
   return el;
@@ -2488,6 +2490,7 @@ function renderOnlineName(){
   const el=document.createElement("div"); el.className="screen";
   el.innerHTML = `
     ${renderHeader("En ligne", true)}
+    <div class="flex-sp"></div>
     <div class="online-hero">
       <div class="online-hero-icon">${ICONS.users}</div>
       <h2 class="online-hero-title">Choisis ton nom</h2>
@@ -2498,6 +2501,7 @@ function renderOnlineName(){
     <div class="color-row">
       ${TEAM_COLORS.map(c=>`<button class="color-dot${c===profile.color?' sel':''}" style="background:${c}" data-c="${c}" onclick="setProfileColor('${c}')" aria-label="couleur"></button>`).join("")}
     </div>
+    <div class="flex-sp"></div>
     <button class="btn-primary" onclick="saveName(document.getElementById('nameInput').value)">Continuer</button>
   `;
   return el;
@@ -2531,6 +2535,7 @@ function renderOnline(){
       <span class="me-name">${escapeHtml(profile.name)}</span>
       ${profile.isCreator?creatorBadge():`<span class="me-edit">Modifier</span>`}
     </button>
+    <div class="flex-sp"></div>
     ${net.searching ? `
       <div class="searching-card">
         <div class="spinner"></div>
@@ -2538,6 +2543,7 @@ function renderOnline(){
         <div class="opp-progress">${freshLookers()>0?(freshLookers()+" autre"+(freshLookers()>1?"s":"")+" en recherche…"):"Dès qu'un autre joueur lancera une partie aléatoire, vous serez appariés automatiquement."}</div>
         <button class="btn-ghost" style="margin-top:1rem" onclick="setSearching(false)">Annuler</button>
       </div>
+      <div class="flex-sp"></div>
     ` : `
       <button class="online-action primary" style="--i:0" onclick="setSearching(true)">
         <span class="oa-ico">${ICONS.bolt}</span>
@@ -2554,6 +2560,7 @@ function renderOnline(){
         <span class="oa-txt"><b>Rejoindre</b><small>Entre le code d'un ami</small></span>
         <span class="chev">${ICONS.chevronRight}</span>
       </button>
+      <div class="flex-sp"></div>
     `}
   `;
   return el;
@@ -2564,6 +2571,7 @@ function renderOnlineJoin(){
   const el=document.createElement("div"); el.className="screen";
   el.innerHTML = `
     ${renderHeader("Rejoindre", true, "state.screen='online';render()")}
+    <div class="flex-sp"></div>
     <div class="online-hero">
       <div class="online-hero-icon">${ICONS.users}</div>
       <h2 class="online-hero-title">Entre le code</h2>
@@ -2571,6 +2579,7 @@ function renderOnlineJoin(){
     </div>
     <input class="code-input" id="joinCode" maxlength="4" placeholder="ABCD" autocapitalize="characters" autocomplete="off" oninput="this.value=this.value.toUpperCase().replace(/[^A-Z0-9]/g,'')">
     ${net.error?`<div class="err-msg">${escapeHtml(net.error)}</div>`:""}
+    <div class="flex-sp"></div>
     <button class="btn-primary" onclick="joinRoom(document.getElementById('joinCode').value,false)">Rejoindre</button>
   `;
   return el;
@@ -2592,6 +2601,7 @@ function renderOnlineRoom(){
       <div class="vs-player">${net.oppPresent?avatarHtml(net.opp.name, net.opp.color, 3, net.opp.isCreator):`<span class="avatar waiting" style="width:3rem;height:3rem;font-size:1.25rem;">?</span>`}<div class="vs-name">${net.oppPresent?escapeHtml(net.opp.name):"En attente…"}</div><div class="vs-tag${net.isHost?'':' is-host'}">${net.isHost?"Adversaire":"Hôte"}</div></div>
     </div>
     <div class="host-note">${net.isHost?"Tu es l'hôte : choisis la longueur du duel et lance la partie.":"L'hôte choisit la longueur du duel et lance la partie."}</div>
+    <div class="flex-sp"></div>
     ${net.isHost ? `
       <div class="len-label">Longueur du duel</div>
       <div class="len-row">
@@ -2604,6 +2614,7 @@ function renderOnlineRoom(){
       <button class="btn-primary" ${canStart?"":"disabled"} onclick="hostStart()">${canStart?"Commencer le duel":"En attente de l'adversaire…"}</button>
     ` : `
       <div class="waiting-note">${net.oppPresent?"Prêt ! En attente du lancement par l'hôte…":"Connexion au salon…"}</div>
+      <div class="flex-sp"></div>
     `}
   `;
   return el;
@@ -2624,12 +2635,14 @@ function renderOnlinePlay(){
     el.innerHTML = `${renderHeader("Duel", true, "quitDuel()")}
       ${goneBanner}
       ${scorebar}
+      <div class="flex-sp"></div>
       <div class="searching-card">
         <div class="spinner"></div>
         <div class="searching-txt">Tu as terminé, bien joué !</div>
         <div class="opp-progress">${net.oppGone?"Ton adversaire a quitté la partie.":`Ton adversaire en est à ${net.oppIndex}/${total}`}</div>
         <button class="btn-ghost" style="margin-top:1.1rem" onclick="${net.oppGone?"state.screen='online-end';render()":"leaveOnline()"}">${net.oppGone?"Voir le résultat":"Quitter la partie"}</button>
-      </div>`;
+      </div>
+      <div class="flex-sp"></div>`;
     return el;
   }
   const q = net.deck[net.idx];
@@ -2658,10 +2671,12 @@ function renderOnlinePlay(){
     ${scorebar}
     <div class="opp-track"><div class="opp-fill" style="width:${oppPct}%"></div></div>
     <div class="play-meta"><span class="tier-chip ${info.cls}">${tierDotsHtml(info.level)}${info.label} · ${info.pts} pts</span><span class="q-counter">${net.idx+1}/${total}</span>${!net.revealed ? timerChipHtml(timerSecondsFor(net.timerKey)) : ""}</div>
+    <div class="flex-sp"></div>
     <div class="question-card${fresh?' animate':''}"><div class="qtext">${escapeHtml(q.q)}</div></div>
     <div class="options-grid${fresh?' animate':''}">${optionsHtml}</div>
     ${net.timedOut && net.revealed ? `<div class="timeout-note${pop?' reveal-in':''}"><span class="ico">${ICONS.clock}</span>Temps écoulé !</div>` : ""}
-    ${net.revealed?`<div class="fact-card${pop?' reveal-in':''}"><span class="ficon">${ICONS.bookOpen}</span><span class="ftext"><span class="fact-label">Le savais-tu ?</span>${escapeHtml(q.fact)}</span></div><button class="btn-next${pop?' reveal-in':''}" onclick="onlineNext()">${net.idx+1>=total?"Terminer":"Question suivante"}</button>`:""}`;
+    ${net.revealed?`<div class="fact-card${pop?' reveal-in':''}"><span class="ficon">${ICONS.bookOpen}</span><span class="ftext"><span class="fact-label">Le savais-tu ?</span>${escapeHtml(q.fact)}</span></div><button class="btn-next${pop?' reveal-in':''}" onclick="onlineNext()">${net.idx+1>=total?"Terminer":"Question suivante"}</button>`:""}
+    <div class="flex-sp"></div>`;
   if(fresh && !net.revealed){
     startQTimer(timerSecondsFor(net.timerKey), onlineTimeUp);
   }
@@ -2678,6 +2693,7 @@ function renderOnlineEnd(){
     <div class="end-hero"><div class="end-trophy">${TROPHY_GOLD}</div>
       <div class="end-eyebrow">Duel terminé</div>
       <h1 class="end-title">${title}</h1></div>
+    <div class="flex-sp"></div>
     <div class="duel-result">
       <div class="dr-side ${(win||net.oppGone)?'winner':''}">${avatarHtml(profile.name,profile.color,3,profile.isCreator)}<div class="dr-name">${escapeHtml(profile.name)}</div><div class="dr-score" data-count-me>0</div></div>
       <div class="dr-vs">VS</div>
@@ -2808,6 +2824,7 @@ function toggleFullscreen(){
   const el = document.documentElement;
   const req = el.requestFullscreen || el.webkitRequestFullscreen;
   if(req){ try { const p = req.call(el, { navigationUI:"hide" }); if(p && p.catch){ p.catch(()=>{}); } } catch(e){} }
+  try { if(screen.orientation && screen.orientation.lock){ screen.orientation.lock("portrait").catch(()=>{}); } } catch(e){}
 }
 function onFsChange(){
   document.documentElement.classList.toggle("is-fs", fsActive());
@@ -2823,6 +2840,20 @@ window.addEventListener("offline", ()=>{
 });
 /* Plein écran permanent : activé dès le premier toucher, et rétabli au
    toucher suivant si le système en sort (geste, appel, etc.). */
+function updateRotateHint(){
+  const rl = document.getElementById("rotate-lock");
+  if(!rl) return;
+  let angle = 0;
+  if(screen.orientation && typeof screen.orientation.angle === "number"){ angle = screen.orientation.angle; }
+  else if(typeof window.orientation === "number"){ angle = window.orientation; }
+  /* 90 = téléphone penché vers la gauche -> l'icône revient en tournant à droite ; 270/-90 = l'inverse */
+  rl.classList.toggle("from-right", angle === 270 || angle === -90);
+}
+window.addEventListener("orientationchange", updateRotateHint);
+if(screen.orientation && screen.orientation.addEventListener){ try { screen.orientation.addEventListener("change", updateRotateHint); } catch(e){} }
+window.addEventListener("resize", updateRotateHint);
+updateRotateHint();
+
 let fsPending = false;
 function tryAutoFullscreen(){
   if(fsPending || !fsAvailable() || fsActive()) return;
