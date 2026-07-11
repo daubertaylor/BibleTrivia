@@ -88,6 +88,7 @@
   #app::-webkit-scrollbar{ display:none; }
   #app{ scrollbar-width:none; position:relative; }
   html.is-fs #app{ padding-top:max(calc(env(safe-area-inset-top) + 0.35rem), 3.4rem); padding-bottom:max(calc(env(safe-area-inset-bottom) + 0.2rem), 0.7rem); }
+  html.is-standalone #app{ padding-top:max(calc(env(safe-area-inset-top) + 0.4rem), 0.7rem); padding-bottom:max(calc(env(safe-area-inset-bottom) + 0.35rem), 0.8rem); }
   .question-card .qtext, .hero-tag, .end-title, .online-hero-title, .online-hero-sub, .modal-title, .modal-msg{ text-wrap:balance; }
   .btn-primary:disabled, .btn-next:disabled{ opacity:1; background-image:linear-gradient(180deg, #6E6254, #55483A); box-shadow:inset 0 0 0 1px rgba(255,255,255,0.16), inset 0 1px 0 rgba(255,255,255,0.22); color:rgba(255,255,255,0.95); }
 
@@ -153,6 +154,8 @@
 
   .btn-primary{ width:100%; background:var(--primary); color:#fff; border:none; border-radius:14px; padding:clamp(0.9rem, 1.75vh, 1.06rem); font-size:0.95rem; font-weight:700; letter-spacing:0.01em; box-shadow:inset 0 1px 0 rgba(255,255,255,0.28), 0 6px 18px rgba(241,80,47,0.32), 0 1px 3px rgba(241,80,47,0.2); }
   .btn-primary:disabled{ opacity:0.4; box-shadow:none; }
+  .btn-primary.is-waiting, .btn-primary.is-waiting:disabled{ opacity:1; background-image:none; background:rgba(255,255,255,0.44); color:var(--ink-soft); box-shadow:inset 0 1px 0 rgba(255,255,255,0.7), inset 0 0 0 1px rgba(255,255,255,0.5), 0 4px 14px rgba(15,12,10,0.12); }
+  #roomStartBtn{ margin-top:0.9rem; }
   .error-msg{ color:#ff8a76; font-size:0.82rem; text-align:center; margin-top:0.6rem; min-height:1.2em; text-shadow:0 1px 6px rgba(0,0,0,0.35); }
 
   /* ---------- Play ---------- */
@@ -1185,7 +1188,7 @@ function updateRoomOpponent(){
   slot.dataset.filled = net.oppPresent ? "1" : "0";
   if(arrived){ slot.style.animation = "none"; void slot.offsetWidth; slot.style.animation = "oppIn 0.5s cubic-bezier(0.2,1.3,0.35,1)"; }
   const btn = document.getElementById("roomStartBtn");
-  if(btn){ const can = net.isHost && net.oppPresent; btn.disabled = !can; btn.textContent = can ? "Commencer le duel" : "En attente de l'adversaire…"; }
+  if(btn){ const can = net.isHost && net.oppPresent; btn.disabled = !can; btn.classList.toggle("is-waiting", !can); btn.textContent = can ? "Commencer le duel" : "En attente de l'adversaire…"; }
   const wait = document.getElementById("waitNote");
   if(wait) wait.textContent = net.oppPresent ? "Prêt ! En attente du lancement par l'hôte…" : "Connexion au salon…";
   queueGlassSync();
@@ -1622,7 +1625,7 @@ function tock(freq, start, vol){
 }
 /* Palette sonore discrète, à la Apple : jamais plus de deux notes, décroissances courtes */
 // bonne réponse : « ding » doux à deux temps, bref et lumineux
-function playCorrect(){ if(!settings.sfx) return; chime(783.99,0,0.26,0.022); chime(1046.5,0.06,0.42,0.018); }
+function playCorrect(){ if(!settings.sfx) return; chime(523.25,0,0.6,0.015); chime(659.25,0.11,0.85,0.011); }
 // erreur : une seule note basse feutrée, à peine appuyée
 function playIncorrect(){ if(!settings.sfx) return; chime(196,0,0.42,0.022); chime(98,0,0.3,0.008); }
 // tap : toc feutré quasi tactile
@@ -2733,7 +2736,7 @@ function renderOnlineRoom(){
       <div class="len-row">
         ${Object.keys(TIMER_OPTS).map(k=>`<button class="len-chip${net.timerKey===k?' sel':''}" data-rgroup="tmr" data-k="${k}" onclick="selectRoomOpt('tmr','${k}')">${TIMER_LABELS[k]}</button>`).join("")}
       </div>
-      <button class="btn-primary" id="roomStartBtn" ${canStart?"":"disabled"} onclick="hostStart()">${canStart?"Commencer le duel":"En attente de l'adversaire…"}</button>
+      <button class="btn-primary${canStart?'':' is-waiting'}" id="roomStartBtn" ${canStart?"":"disabled"} onclick="hostStart()">${canStart?"Commencer le duel":"En attente de l'adversaire…"}</button>
     ` : `
       <div class="waiting-note" id="waitNote">${net.oppPresent?"Prêt ! En attente du lancement par l'hôte…":"Connexion au salon…"}</div>
       <div class="flex-sp"></div>
@@ -2936,6 +2939,7 @@ document.getElementById("app").addEventListener("scroll", queueGlassSync, { pass
 const isStandalone = (window.matchMedia && (window.matchMedia("(display-mode: standalone)").matches || window.matchMedia("(display-mode: fullscreen)").matches || window.matchMedia("(display-mode: minimal-ui)").matches)) || window.navigator.standalone === true;
 const IS_IOS = /iP(hone|od|ad)/.test(navigator.userAgent) || (navigator.platform === "MacIntel" && navigator.maxTouchPoints > 1);
 const IS_ANDROID = /Android/i.test(navigator.userAgent);
+if(isStandalone){ document.documentElement.classList.add("is-standalone"); }
 function fsAvailable(){ const el = document.documentElement; return !isStandalone && !!(el.requestFullscreen || el.webkitRequestFullscreen); }
 function fsActive(){ return !!(document.fullscreenElement || document.webkitFullscreenElement); }
 function toggleFullscreen(){
