@@ -1809,10 +1809,15 @@ function heroIconTap(){
     if(w){ w.style.transition = ""; w.style.transform = ""; }
     showHeroVerse();
   } else if(w){
-    /* pression courte puis retour à ressort via la transition CSS : aucun à-coup */
+    /* pression courte puis rebond à ressort marqué : vivant mais jamais saccadé */
+    clearTimeout(w._pressT); clearTimeout(w._springT);
     w.style.transition = "transform 0.09s ease-out";
-    w.style.transform = "scale(0.93)";
-    setTimeout(()=>{ w.style.transition = ""; w.style.transform = ""; }, 95);
+    w.style.transform = "scale(0.9) rotate(-3deg)";
+    w._pressT = setTimeout(()=>{
+      w.style.transition = "transform 0.6s cubic-bezier(0.2,1.9,0.3,1)";
+      w.style.transform = "";
+      w._springT = setTimeout(()=>{ w.style.transition = ""; }, 620);
+    }, 95);
   }
 }
 function showHeroVerse(){
@@ -2971,7 +2976,21 @@ document.addEventListener("animationend", (e)=>{
 /* Hors connexion : si le fichier sw.js (fourni) est déployé à côté de cette page,
    l'app se met en cache et reste jouable sans Internet. Sans lui, rien ne change. */
 if("serviceWorker" in navigator){
-  window.addEventListener("load", ()=>{ navigator.serviceWorker.register("sw.js").catch(()=>{}); });
+  /* Quand une nouvelle version prend le contrôle, on recharge une seule fois :
+     Safari et l'app installée restent ainsi toujours identiques. */
+  let hadController = !!navigator.serviceWorker.controller;
+  let reloadedOnce = false;
+  navigator.serviceWorker.addEventListener("controllerchange", ()=>{
+    if(!hadController){ hadController = true; return; }
+    if(reloadedOnce) return;
+    reloadedOnce = true;
+    location.reload();
+  });
+  window.addEventListener("load", ()=>{
+    navigator.serviceWorker.register("sw.js")
+      .then((reg)=>{ try { reg.update(); } catch(e){} })
+      .catch(()=>{});
+  });
 }
 
 const _savedGame = loadSavedGame();
