@@ -82,7 +82,7 @@
 
   #app{ position:relative; z-index:1; width:100%; max-width:640px; margin:0 auto; height:100%; overflow-y:auto; overflow-x:hidden; overscroll-behavior-y:contain; display:flex; flex-direction:column; padding:calc(env(safe-area-inset-top) + 0.35rem) calc(env(safe-area-inset-right) + 0.7rem) calc(env(safe-area-inset-bottom) + 0.35rem) calc(env(safe-area-inset-left) + 0.7rem); }
   .screen{ display:flex; flex-direction:column; flex:1; }
-  .screen-enter{ animation:screenIn 0.45s cubic-bezier(0.22,1,0.36,1); }
+  .screen-enter{ animation:screenIn 0.5s cubic-bezier(0.2,1.05,0.3,1); }
 
   svg{ width:100%; height:100%; display:block; }
   ::selection{ background:rgba(241,80,47,0.22); }
@@ -331,9 +331,9 @@
 
   /* ---------- Native-feel polish ---------- */
   /* Tactile press feedback on every interactive surface */
-  button, .mode-card{ -webkit-user-select:none; user-select:none; touch-action:manipulation; transition:transform 0.24s cubic-bezier(0.33,1,0.68,1), box-shadow 0.3s ease, background 0.22s ease, border-color 0.22s ease, color 0.2s ease, opacity 0.22s ease; }
+  button, .mode-card{ -webkit-user-select:none; user-select:none; touch-action:manipulation; transition:transform 0.34s cubic-bezier(0.22,1,0.36,1), box-shadow 0.32s ease, background 0.22s ease, border-color 0.22s ease, color 0.2s ease, opacity 0.22s ease; }
   button:active:not(:disabled),
-  .mode-card:active{ transform:translateZ(0) scale(0.966); box-shadow:inset 0 0 0 100vmax rgba(31,24,16,0.1) !important; transition-duration:0.06s; }
+  .mode-card:active{ transform:translateZ(0) scale(0.968); box-shadow:inset 0 0 0 100vmax rgba(31,24,16,0.07) !important; transition-duration:0.11s; transition-timing-function:cubic-bezier(0.4,0,0.5,1); }
   /* smoother color transitions on option reveal */
   .option-btn{ transition:transform 0.24s cubic-bezier(0.33,1,0.68,1), background 0.28s ease, border-color 0.28s ease, box-shadow 0.28s ease; }
   /* subtle gradient depth on primary actions */
@@ -553,8 +553,8 @@
 
   /* ---------- Animations d'interaction ---------- */
   @keyframes fadeSlide{ from{ opacity:0; transform:translateY(10px); } to{ opacity:1; transform:translateY(0); } }
-  .screen-exit{ animation:screenOut 0.34s cubic-bezier(0.4,0,0.7,1) forwards; }
-  @keyframes screenOut{ to{ opacity:0; transform:translateY(-6px) scale(0.992); } }
+  .screen-exit{ animation:screenOut 0.42s cubic-bezier(0.33,0,0.4,1) forwards; }
+  @keyframes screenOut{ to{ opacity:0; transform:translateY(-4px); } }
   .reveal-in{ animation:fadeSlide 0.5s cubic-bezier(0.2,1.05,0.3,1); }
   /* Cascade générale : chaque bloc de l'écran entre l'un après l'autre, en douceur */
   .screen-enter > *{ opacity:0; animation:childIn 0.58s cubic-bezier(0.2,1.05,0.3,1) both; animation-delay:calc(30ms + var(--i,0)*42ms); }
@@ -1220,7 +1220,7 @@ const CROSS_ICON = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" s
 let state = {
   screen:"splash",
   mode:null,
-  teams:[ {name:"Joueur 1"}, {name:"Joueur 2"} ],
+  teams: loadTeams(),
   lengthKey:"normale",
   timerKey:"30",
   timedOut:false,
@@ -1311,6 +1311,17 @@ const CREATOR_KEY = "TAYLOR";   // code secret pour débloquer le badge Créateu
 
 /* ===================== PROFIL ===================== */
 const myId = Math.random().toString(36).slice(2, 11);
+function loadTeams(){
+  try {
+    const a = JSON.parse(localStorage.getItem("bt_teams") || "null");
+    if(Array.isArray(a)){
+      const t = a.filter(x=>x && typeof x.name==="string").slice(0,6).map(x=>({name:x.name}));
+      if(t.length>=2) return t;
+    }
+  } catch(e){}
+  return [{name:"Joueur 1"},{name:"Joueur 2"}];
+}
+function saveTeams(){ try { localStorage.setItem("bt_teams", JSON.stringify(state.teams.map(t=>({name:t.name})))); } catch(e){} }
 function loadProfile(){
   let p = null;
   try { p = JSON.parse(localStorage.getItem("bt_profile") || "null"); } catch(e){}
@@ -2178,9 +2189,9 @@ function selectMode(m){ state.mode = m; state.screen = "setup"; render(); }
 function goToModeSelect(){ state.screen = "mode"; render(); }
 
 /* ===================== SETUP (group) ===================== */
-function addTeam(){ if(state.teams.length>=6) return; state.teams.push({name:"Joueur "+(state.teams.length+1)}); render(); }
-function removeTeam(i){ if(state.teams.length<=2) return; state.teams.splice(i,1); render(); }
-function renameTeam(i, val){ state.teams[i].name = val; }
+function addTeam(){ if(state.teams.length>=6) return; state.teams.push({name:"Joueur "+(state.teams.length+1)}); saveTeams(); render(); }
+function removeTeam(i){ if(state.teams.length<=2) return; state.teams.splice(i,1); saveTeams(); render(); }
+function renameTeam(i, val){ state.teams[i].name = val; saveTeams(); }
 function setLength(key){
   state.lengthKey = key;
   document.querySelectorAll('[data-group="len"]').forEach(c=>c.classList.toggle("active", c.dataset.k===key));
@@ -2206,6 +2217,7 @@ function startGame(){
       return;
     }
     state.teams = valid;
+    saveTeams();
     state.scores = valid.map(()=>0);
   } else {
     state.soloScore = 0; state.soloStreak = 0; state.soloBestStreak = 0; state.soloCorrect = 0; displayedSoloScore = 0;
@@ -2225,7 +2237,7 @@ function replayGame(){
 }
 function newGame(){
   clearSavedGame();
-  state = { screen:"mode", mode:null, teams:[{name:"Joueur 1"},{name:"Joueur 2"}], lengthKey: state.lengthKey, timerKey: state.timerKey, timedOut:false, scores:[], soloScore:0, soloStreak:0, soloBestStreak:0, soloCorrect:0, soloSelected:null, questions:[], currentIndex:0, revealed:false, awarded:[] };
+  state = { screen:"mode", mode:null, teams: loadTeams(), lengthKey: state.lengthKey, timerKey: state.timerKey, timedOut:false, scores:[], soloScore:0, soloStreak:0, soloBestStreak:0, soloCorrect:0, soloSelected:null, questions:[], currentIndex:0, revealed:false, awarded:[] };
   render();
 }
 
@@ -3113,7 +3125,7 @@ function render(){
     prevNode.style.pointerEvents = "none";
     app.appendChild(node);
     app.scrollTop = 0;
-    setTimeout(()=>{ if(prevNode.parentNode) prevNode.remove(); }, 420);
+    setTimeout(()=>{ if(prevNode.parentNode) prevNode.remove(); }, 460);
   } else {
     app.replaceChildren(node);
     if(sameScreen) app.scrollTop = prevScroll;
