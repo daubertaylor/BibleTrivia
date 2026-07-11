@@ -461,7 +461,7 @@
   /* Safari : jamais de backdrop-filter imbriqué dans un parent qui en a déjà un */
   .searching-card .btn-ghost, .modal-card .text-input, .modal-card .code-input{ backdrop-filter:none; -webkit-backdrop-filter:none; }
   .searching-card .btn-ghost{ color:var(--ink); }
-  .modal-card .text-input{ background:rgba(255,255,255,0.9); }
+  .modal-card .text-input{ --glass-tint: rgba(255,255,255,0.55); }
 
   /* ---------- Chrono par question ---------- */
   .timer-chip{ display:inline-flex; align-items:center; gap:0.3rem; font-size:0.8rem; font-weight:700; font-variant-numeric:tabular-nums; color:var(--ink); background:rgba(255,255,255,0.5); backdrop-filter:blur(18px) saturate(180%); -webkit-backdrop-filter:blur(18px) saturate(180%); border:1px solid rgba(255,255,255,0.6); padding:0.34rem 0.6rem; border-radius:100px; box-shadow:inset 0 1px 0 rgba(255,255,255,0.8), inset 0 0 0 1px rgba(255,255,255,0.22), 0 2px 8px rgba(15,12,10,0.1); min-width:3.9rem; justify-content:center; }
@@ -1531,39 +1531,56 @@ function blip(freq, start, dur, vol, type){
 /* Carillon : exactement la même voix que les cloches de la musique de fond
    (sinus + halo d'octave, filtré chaud) et la même tonalité (do majeur).
    Chaque effet est donc une petite phrase musicale cohérente avec la nappe. */
+/* Carillon organique : deux voix légèrement désaccordées (chaleur de chœur),
+   attaque arrondie, halo d'octave discret, et une pointe d'aléatoire pour que
+   deux sons identiques ne soient jamais exactement les mêmes. */
 function chime(freq, start, dur, vol){
   const ctx = getCtx();
   if(ctx.state==="suspended"){ ctx.resume(); }
-  const t0 = ctx.currentTime + start;
-  const o = ctx.createOscillator(), g = ctx.createGain();
-  o.type = "sine"; o.frequency.value = freq;
-  g.gain.setValueAtTime(0.0001, t0);
-  g.gain.exponentialRampToValueAtTime(vol, t0 + 0.03);
-  g.gain.exponentialRampToValueAtTime(0.0001, t0 + dur);
-  o.connect(g); g.connect(masterFilter);
-  o.start(t0); o.stop(t0 + dur + 0.05);
+  const t0 = ctx.currentTime + start + Math.random()*0.012;
+  const v = vol * (0.9 + Math.random()*0.2);
+  const jit = 1 + (Math.random()-0.5)*0.004;
+  [-2.8, 2.8].forEach((det)=>{
+    const o = ctx.createOscillator(), g = ctx.createGain();
+    o.type = "sine"; o.frequency.value = freq * jit; o.detune.value = det;
+    g.gain.setValueAtTime(0.0001, t0);
+    g.gain.linearRampToValueAtTime(v * 0.42, t0 + 0.022);
+    g.gain.exponentialRampToValueAtTime(v * 0.62, t0 + 0.06);
+    g.gain.exponentialRampToValueAtTime(0.0001, t0 + dur);
+    o.connect(g); g.connect(masterFilter);
+    o.start(t0); o.stop(t0 + dur + 0.05);
+  });
   const h = ctx.createOscillator(), hg = ctx.createGain();
-  h.type = "sine"; h.frequency.value = freq * 2;
+  h.type = "sine"; h.frequency.value = freq * 2 * jit;
   hg.gain.setValueAtTime(0.0001, t0);
-  hg.gain.exponentialRampToValueAtTime(vol * 0.14, t0 + 0.025);
-  hg.gain.exponentialRampToValueAtTime(0.0001, t0 + Math.max(dur * 0.5, 0.1));
+  hg.gain.linearRampToValueAtTime(v * 0.09, t0 + 0.03);
+  hg.gain.exponentialRampToValueAtTime(0.0001, t0 + Math.max(dur * 0.55, 0.12));
   h.connect(hg); hg.connect(masterFilter);
   h.start(t0); h.stop(t0 + dur);
 }
-/* Toc feutré, façon clavier iOS : une impulsion très courte, presque tactile */
+/* Toc feutré et boisé : un corps grave très bref + un souffle d'air discret,
+   comme une touche qui se pose — plus rien d'électronique. */
 function tock(freq, start, vol){
   const ctx = getCtx();
   if(ctx.state==="suspended"){ ctx.resume(); }
   const t0 = ctx.currentTime + start;
-  const o = ctx.createOscillator(), g = ctx.createGain();
-  o.type = "sine";
-  o.frequency.setValueAtTime(freq, t0);
-  o.frequency.exponentialRampToValueAtTime(freq * 0.6, t0 + 0.07);
-  g.gain.setValueAtTime(0.0001, t0);
-  g.gain.exponentialRampToValueAtTime(vol, t0 + 0.008);
-  g.gain.exponentialRampToValueAtTime(0.0001, t0 + 0.09);
-  o.connect(g); g.connect(masterFilter);
-  o.start(t0); o.stop(t0 + 0.12);
+  const v = vol * (0.85 + Math.random()*0.3);
+  const b = ctx.createOscillator(), bg = ctx.createGain();
+  b.type = "sine";
+  b.frequency.setValueAtTime(freq * 0.34 * (1 + (Math.random()-0.5)*0.06), t0);
+  b.frequency.exponentialRampToValueAtTime(freq * 0.22, t0 + 0.06);
+  bg.gain.setValueAtTime(0.0001, t0);
+  bg.gain.linearRampToValueAtTime(v * 1.6, t0 + 0.006);
+  bg.gain.exponentialRampToValueAtTime(0.0001, t0 + 0.075);
+  b.connect(bg); bg.connect(masterFilter);
+  b.start(t0); b.stop(t0 + 0.1);
+  const a = ctx.createOscillator(), ag = ctx.createGain();
+  a.type = "sine"; a.frequency.value = freq * 1.7;
+  ag.gain.setValueAtTime(0.0001, t0);
+  ag.gain.linearRampToValueAtTime(v * 0.18, t0 + 0.005);
+  ag.gain.exponentialRampToValueAtTime(0.0001, t0 + 0.03);
+  a.connect(ag); ag.connect(masterFilter);
+  a.start(t0); a.stop(t0 + 0.05);
 }
 /* Palette sonore discrète, à la Apple : jamais plus de deux notes, décroissances courtes */
 // bonne réponse : « ding » doux à deux temps, bref et lumineux
