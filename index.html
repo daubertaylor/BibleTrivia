@@ -82,7 +82,7 @@
 
   #app{ position:relative; z-index:1; width:100%; max-width:640px; margin:0 auto; height:100%; overflow-y:auto; overflow-x:hidden; overscroll-behavior-y:contain; display:flex; flex-direction:column; padding:calc(env(safe-area-inset-top) + 0.35rem) calc(env(safe-area-inset-right) + 0.7rem) calc(env(safe-area-inset-bottom) + 0.35rem) calc(env(safe-area-inset-left) + 0.7rem); }
   .screen{ display:flex; flex-direction:column; flex:1; }
-  .screen-enter{ animation:screenIn 0.46s cubic-bezier(0.22,1,0.36,1); }
+  .screen-enter{ animation:screenIn 0.52s cubic-bezier(0.22,1,0.36,1) both; }
 
   svg{ width:100%; height:100%; display:block; }
   ::selection{ background:rgba(241,80,47,0.22); }
@@ -351,8 +351,8 @@
   /* progress fill fades in */
 
   /* per-question staggered entrance (only when the question changes) */
-  .question-card.animate{ animation:cardSlideIn 0.5s cubic-bezier(0.2,1.05,0.3,1); }
-  .options-grid.animate .option-btn{ opacity:0; animation:optionIn 0.5s cubic-bezier(0.2,1.05,0.3,1) forwards; }
+  .question-card.animate{ animation:cardSlideIn 0.52s cubic-bezier(0.22,1,0.36,1) both; }
+  .options-grid.animate .option-btn{ opacity:0; animation:optionIn 0.5s cubic-bezier(0.22,1,0.36,1) both; }
   .options-grid.animate .option-btn:nth-child(1){ animation-delay:0.06s; }
   .options-grid.animate .option-btn:nth-child(2){ animation-delay:0.12s; }
   .options-grid.animate .option-btn:nth-child(3){ animation-delay:0.18s; }
@@ -364,8 +364,8 @@
   .option-btn.reveal-shake{ animation:wrongFlash 0.45s ease; }
   .option-btn{ position:relative; }
 
-  @keyframes cardSlideIn{ from{ opacity:0; } to{ opacity:1; } }
-  @keyframes optionIn{ from{ opacity:0; } to{ opacity:1; } }
+  @keyframes cardSlideIn{ from{ opacity:0; transform:translate3d(0,14px,0); } to{ opacity:1; transform:translate3d(0,0,0); } }
+  @keyframes optionIn{ from{ opacity:0; transform:translate3d(0,14px,0); } to{ opacity:1; transform:translate3d(0,0,0); } }
   @keyframes wrongFlash{ 0%{ box-shadow:0 0 0 0 rgba(226,75,55,0.55); } 100%{ box-shadow:0 0 0 12px rgba(226,75,55,0); } }
   @keyframes glowBurst{ 0%{ opacity:0; transform:scale(0.85); } 40%{ opacity:1; } 100%{ opacity:0; transform:scale(1.15); } }
 
@@ -509,7 +509,7 @@
   .modal-card.shake{ animation:wrongFlash 0.45s ease; }
   @keyframes veilIn{ from{ opacity:0; } to{ opacity:1; } }
   @keyframes fadeSoft{ from{ opacity:0; } to{ opacity:1; } }
-  @keyframes screenIn{ from{ opacity:0; } to{ opacity:1; } }
+  @keyframes screenIn{ from{ opacity:0; transform:translate3d(0,18px,0); } to{ opacity:1; transform:translate3d(0,0,0); } }
   @keyframes modalIn{ from{ opacity:0; transform:scale(0.9) translateY(16px); } to{ opacity:1; transform:scale(1) translateY(0); } }
   .modal-veil.closing{ animation:veilOut 0.22s ease forwards; }
   .modal-veil.closing .modal-card{ animation:modalOut 0.22s cubic-bezier(0.4,0,1,1) forwards; }
@@ -567,10 +567,10 @@
      resterait figé pendant le déplacement et « sauterait ». Le simple
      fondu d'opacité ne bouge jamais la surface → zéro clignotement,
      rendu parfaitement homogène d'un écran à l'autre. */
-  @keyframes fadeSlide{ from{ opacity:0; } to{ opacity:1; } }
-  .screen-exit{ animation:screenOut 0.34s ease forwards; }
-  @keyframes screenOut{ to{ opacity:0; } }
-  .reveal-in{ animation:fadeSlide 0.5s cubic-bezier(0.22,1,0.36,1); }
+  @keyframes fadeSlide{ from{ opacity:0; transform:translate3d(0,12px,0); } to{ opacity:1; transform:translate3d(0,0,0); } }
+  .screen-exit{ animation:screenOut 0.36s cubic-bezier(0.4,0,0.6,1) forwards; }
+  @keyframes screenOut{ from{ opacity:1; transform:translate3d(0,0,0); } to{ opacity:0; transform:translate3d(0,-12px,0); } }
+  .reveal-in{ animation:fadeSlide 0.5s cubic-bezier(0.22,1,0.36,1) both; }
   .screen-enter .podium-bar{ transform-origin:bottom; animation:barUp 0.55s 0.12s cubic-bezier(0.32,0.72,0,1) backwards; }
   @keyframes barUp{ from{ transform:scaleY(0.15); opacity:0; } to{ transform:scaleY(1); opacity:1; } }
 
@@ -2305,7 +2305,7 @@ function showModal(opts){
       </div>
     </div>`;
   document.body.appendChild(veil);
-  queueGlassSync();
+  glassTrack(680);
   const input = veil.querySelector("#modalInput");
   if(input){ setTimeout(()=>{ try{ input.focus(); }catch(e){} }, 80); }
   const cancelBtn = veil.querySelector("#modalCancel");
@@ -2601,7 +2601,7 @@ function openSettings(){
       <button class="sheet-done" onclick="closeSettings()">Fermer</button>
     </div>`;
   document.body.appendChild(veil);
-  queueGlassSync();
+  glassTrack(680);
   veil.addEventListener("click", (e)=>{ if(e.target===veil){ closeSettings(); } });
 }
 function setSfx(on){
@@ -2790,7 +2790,7 @@ function showHeroVerse(){
   if(t) t.textContent = "« " + v.t + " »";
   if(r) r.textContent = v.r;
   zone.classList.add("show-verse");
-  queueGlassSync();
+  glassTrack(720);
   playVerse();
   clearTimeout(zone._verseTimer);
   zone._verseTimer = setTimeout(hideHeroVerse, 12000);
@@ -3778,12 +3778,14 @@ function render(){
   // iOS Safari : libérer les états d'animation résiduels, sinon le backdrop-filter
   // (effet verre) se coupe une fois l'animation figée. On retire les classes après coup.
   setTimeout(()=>{
+    node.classList.remove("screen-enter");
     node.querySelectorAll(".question-card.animate, .options-grid.animate").forEach(n=>n.classList.remove("animate"));
     node.querySelectorAll(".reveal-pop").forEach(n=>n.classList.remove("reveal-pop"));
     node.querySelectorAll(".reveal-shake").forEach(n=>n.classList.remove("reveal-shake"));
   }, 820);
 
-  queueGlassSync();
+  // Transition animée : le verre est ré-aligné image par image le temps du mouvement.
+  glassTrack(880);
 
   if(state.screen!=="play" && state.screen!=="online-play"){ stopQTimer(); }
   if(state.screen==="play") saveState();
@@ -3799,30 +3801,41 @@ document.addEventListener("click", (e)=>{
   playTap();
 }, true);
 
-/* ===================== VERRE VIVANT : alignement viewport synchrone =====
+/* ===================== VERRE VIVANT : alignement viewport =====
    Chaque surface montre la portion de photo floutée située derrière elle
-   (l'effet "fenêtre"). Calcul par offsets de mise en page (jamais les
-   transforms), écrit de façon SYNCHRONE : valeurs stables, aucun saut. */
+   (effet « fenêtre »). On lit la position RÉELLE à l'écran (getBoundingClientRect,
+   transforms compris) : la photo peinte reste donc collée au décor même pendant
+   qu'une carte glisse — ce qui autorise de vraies transitions animées « à la
+   Apple » sans le moindre décalage du verre. */
 const GLASS_SEL = ".app-header,.card,.mode-card,.question-card,.solo-summary,.solo-score-bar,.score-pane,.option-btn,.btn-primary,.btn-next,.btn-replay,.fact-card,.tier-chip,.q-counter,.chip,.icon-btn,.btn-reveal,.btn-newgame,.award-btn,.team-row,.presence-card,.me-row,.online-action,.searching-card,.waiting-card,.info-card,.vs-row,.len-chip,.duel-scorebar,.timer-chip,.dr-side,.rank-row,.text-input,.code-input,.fs-hint,.modal-card,.add-team,.btn-ghost,.fsh-close,.hs-item,.settings-sheet,.hero-verse-card,.modal-btn.ok,.modal-btn.cancel,.sheet-done,.set-go,.leave-banner,.end-medal,.adj-btn,.waiting-note,.rules";
 const GLASS_SKIP = ".timer-chip.low,.btn-primary:disabled,.btn-next:disabled";
-function glassPos(el){
-  let x = 0, y = 0, n = el;
-  while(n && n !== document.body){ x += n.offsetLeft; y += n.offsetTop; n = n.offsetParent; }
-  const app = document.getElementById("app");
-  if(app && el !== app && app.contains(el)){ x -= app.scrollLeft; y -= app.scrollTop; }
-  return { left: x, top: y };
-}
 function queueGlassSync(){
   const w = window.innerWidth, h = window.innerHeight;
   const iw = Math.round(w * 1.04), ih = Math.round(h * 1.04);
   const ox = Math.round((iw - w) / 2), oy = Math.round((ih - h) / 2);
   const size = "auto, " + iw + "px " + ih + "px";
-  document.querySelectorAll(GLASS_SEL).forEach(el=>{
-    if(el.matches(GLASS_SKIP)){ el.style.backgroundSize = ""; el.style.backgroundPosition = ""; return; }
-    const r = glassPos(el);
+  const els = document.querySelectorAll(GLASS_SEL);
+  for(let i = 0; i < els.length; i++){
+    const el = els[i];
+    if(el.matches(GLASS_SKIP)){ el.style.backgroundSize = ""; el.style.backgroundPosition = ""; continue; }
+    const r = el.getBoundingClientRect();
     el.style.backgroundSize = size;
-    el.style.backgroundPosition = "0 0, " + (-(r.left + ox)) + "px " + (-(r.top + oy)) + "px";
-  });
+    el.style.backgroundPosition = "0 0, " + Math.round(-(r.left + ox)) + "px " + Math.round(-(r.top + oy)) + "px";
+  }
+}
+/* Pendant une transition, on ré-aligne le verre à chaque image : les cartes
+   peuvent glisser/monter, la photo à l'intérieur reste fixe sur le décor. */
+let glassRAF = null, glassEnd = 0;
+function glassTrack(ms){
+  queueGlassSync();                       // synchrone : 1re image déjà alignée
+  glassEnd = performance.now() + (ms || 640);
+  if(glassRAF) return;
+  const step = ()=>{
+    queueGlassSync();
+    if(performance.now() < glassEnd){ glassRAF = requestAnimationFrame(step); }
+    else { glassRAF = null; }
+  };
+  glassRAF = requestAnimationFrame(step);
 }
 window.addEventListener("resize", queueGlassSync);
 window.addEventListener("orientationchange", queueGlassSync);
