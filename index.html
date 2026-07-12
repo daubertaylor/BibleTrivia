@@ -2965,6 +2965,7 @@ function saveState(){
         v:1, screen:"play", mode:state.mode, lengthKey:state.lengthKey, timerKey:state.timerKey,
         teams:state.teams, scores:state.scores,
         soloScore:state.soloScore, soloStreak:state.soloStreak, soloBestStreak:state.soloBestStreak, soloCorrect:state.soloCorrect, soloSelected:state.soloSelected,
+        soloMissed:state.soloMissed, themeKey:state.themeKey,
         questions:state.questions, currentIndex:state.currentIndex, revealed:state.revealed, awarded:state.awarded
       };
       localStorage.setItem("bt_game", JSON.stringify(snap));
@@ -3891,8 +3892,8 @@ function render(){
     node.querySelectorAll(".reveal-shake").forEach(n=>n.classList.remove("reveal-shake"));
   }, 820);
 
-  // Transition animée : le verre est ré-aligné image par image le temps du mouvement.
-  glassTrack(880);
+  // Verre calé une seule fois, sur la position de repos (voir queueGlassSync).
+  glassTrack();
 
   if(state.screen!=="play" && state.screen!=="online-play"){ stopQTimer(); }
   if(state.screen==="play") saveState();
