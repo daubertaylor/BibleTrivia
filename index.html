@@ -584,7 +584,7 @@
   .option-btn, .btn-primary, .btn-next, .btn-replay, .fact-card, .tier-chip, .q-counter, .chip, .icon-btn, .btn-reveal,
   .btn-newgame, .award-btn, .team-row, .presence-card, .me-row, .online-action, .searching-card,
   .waiting-card, .info-card, .vs-row, .len-chip, .duel-scorebar, .timer-chip, .dr-side, .rank-row,
-  .text-input, .code-input, .fs-hint, .modal-card, .add-team, .btn-ghost, .fsh-close, .hs-item, .settings-sheet, .hero-verse-card, .end-medal, .modal-btn.ok, .modal-btn.cancel, .leave-banner, .adj-btn, .waiting-note, .rules, .btn-review{
+  .text-input, .code-input, .fs-hint, .modal-card, .add-team, .btn-ghost, .fsh-close, .hs-item, .settings-sheet, .hero-verse-card, .end-medal, .modal-btn.ok, .modal-btn.cancel, .leave-banner, .adj-btn, .waiting-note, .rules, .btn-review, .daily-card, .btn-invite{
     background-color:transparent;
     background-image:linear-gradient(var(--glass-tint, rgba(255,253,247,0.46)), var(--glass-tint, rgba(255,253,247,0.46))), var(--blur-url);
     background-size:auto, cover;
@@ -627,6 +627,22 @@
   }
 
   /* ---------- Statistiques de l'accueil (bas d'écran habité) ---------- */
+  /* ---------- Défi du jour ---------- */
+  .daily-card{ width:100%; display:flex; align-items:center; gap:0.8rem; --glass-tint: rgba(255,240,206,0.58); border:1px solid rgba(239,173,38,0.55); border-radius:18px; padding:0.82rem 1rem; margin-bottom:clamp(0.65rem, 1.4vh, 1rem); text-align:left; box-shadow:inset 0 1px 0 rgba(255,255,255,0.7), inset 0 0 0 1px rgba(255,255,255,0.24), 0 4px 16px rgba(196,144,32,0.22); }
+  .daily-card .dc-ico{ width:2.55rem; height:2.55rem; border-radius:13px; background:linear-gradient(150deg,#FFC64F,#F09A18); color:#fff; display:flex; align-items:center; justify-content:center; padding:0.5rem; flex-shrink:0; box-shadow:inset 0 1px 0 rgba(255,255,255,0.5), 0 4px 10px rgba(206,138,42,0.4); }
+  .daily-card .dc-ico svg{ width:100%; height:100%; }
+  .daily-card .dc-txt{ flex:1; display:flex; flex-direction:column; gap:0.12rem; min-width:0; }
+  .daily-card .dc-txt b{ font-family:'Poppins',sans-serif; font-weight:600; font-size:0.98rem; color:var(--ink); }
+  .daily-card .dc-txt small{ font-size:0.8rem; color:var(--ink-soft); }
+  .daily-card .dc-streak{ display:inline-flex; align-items:center; gap:0.22rem; font-weight:800; font-size:0.9rem; font-variant-numeric:tabular-nums; color:#8a5e14; background:linear-gradient(180deg, rgba(255,242,214,0.95), rgba(255,217,104,0.8)); border:1px solid rgba(239,173,38,0.55); border-radius:99px; padding:0.24rem 0.6rem; flex-shrink:0; box-shadow:inset 0 1px 0 rgba(255,255,255,0.7); }
+  .daily-card .dc-streak svg{ width:0.92rem; height:0.92rem; }
+  .daily-card .dc-check{ width:1.5rem; height:1.5rem; color:#1f7a4d; flex-shrink:0; display:inline-flex; }
+  .daily-card .dc-check svg{ width:100%; height:100%; }
+  .daily-card:disabled{ cursor:default; opacity:1; }
+  /* ---------- Inviter un ami (salon) ---------- */
+  .btn-invite{ display:flex; align-items:center; justify-content:center; gap:0.45rem; margin:0.15rem auto 0.9rem; width:auto; padding:0.55rem 1.05rem; border-radius:99px; --glass-tint: rgba(255,253,247,0.5); border:1px solid rgba(255,255,255,0.6); color:var(--ink); font-weight:700; font-size:0.85rem; box-shadow:inset 0 1px 0 rgba(255,255,255,0.75), inset 0 0 0 1px rgba(255,255,255,0.3), 0 3px 10px rgba(15,12,10,0.14); }
+  .btn-invite .ico{ width:1.05rem; height:1.05rem; display:inline-flex; color:var(--primary); }
+
   .home-stats{ display:flex; gap:0.55rem; margin-top:auto; padding-top:clamp(1.1rem, 2.6vh, 2rem); }
   .hs-item{ flex:1; display:flex; flex-direction:column; align-items:center; gap:0.12rem; border:1px solid rgba(255,255,255,0.5); border-radius:15px; padding:0.66rem 0.4rem 0.58rem; box-shadow:inset 0 1px 0 rgba(255,255,255,0.6), 0 4px 14px rgba(15,12,10,0.14); text-align:center; transform:translateZ(0); -webkit-transform:translateZ(0); }
   .hs-ico{ width:1.4rem; height:1.4rem; color:var(--primary); margin-bottom:0.12rem; display:inline-flex; }
@@ -1825,6 +1841,8 @@ let state = {
   soloMissed:[],
   soloIsRecord:false,
   themeKey:"tout",
+  daily:false,
+  revision:false,
   questions:[],
   currentIndex:0,
   revealed:false,
@@ -2197,8 +2215,8 @@ function onlineAnswer(i){
   const q = net.deck[net.idx];
   const opt = q.shuffledOptions[i];
   net.selected = opt; net.revealed = true; net.justRevealed = true;
-  if(opt === q.correct){ net.score += TIER_INFO[q.tier].pts; net.correct += 1; playCorrect(); }
-  else { playIncorrect(); }
+  if(opt === q.correct){ net.score += TIER_INFO[q.tier].pts; net.correct += 1; errbookRemove(q); playCorrect(); }
+  else { errbookAdd(q); playIncorrect(); }
   broadcastProgress(false);
   render();
 }
@@ -2906,6 +2924,7 @@ function qTestament(q){
   return NT_BOOKS.test(ref) ? "nt" : "at";
 }
 function recordSoloResult(){
+  if(state.revision) return; // la révision n'entre pas dans les statistiques
   const max = maxPossibleScore();
   const pct = max>0 ? Math.round((state.soloScore/max)*100) : 0;
   const st = loadStats();
@@ -2914,6 +2933,72 @@ function recordSoloResult(){
   if(state.soloScore > st.bestScore) st.bestScore = state.soloScore;
   if(pct > st.bestPct) st.bestPct = pct;
   saveStats(st);
+}
+
+/* ===================== DÉFI DU JOUR =====================
+   Les MÊMES 9 questions pour tout le monde chaque jour : le deck est semé
+   avec la date (même moteur déterministe que le duel en ligne). Une série
+   de jours d'affilée récompense la régularité. */
+function dailySeedToday(){ const d = new Date(); return (d.getFullYear()*10000 + (d.getMonth()+1)*100 + d.getDate()) >>> 0; }
+function dayKey(off){ const d = new Date(Date.now() + (off||0)*86400000); const p = n=>String(n).padStart(2,"0"); return d.getFullYear()+"-"+p(d.getMonth()+1)+"-"+p(d.getDate()); }
+function loadDaily(){ try { const s = JSON.parse(localStorage.getItem("bt_daily")||"{}"); return { last:s.last||"", streak:+s.streak||0, score:+s.score||0, total:+s.total||0 }; } catch(e){ return { last:"", streak:0, score:0, total:0 }; } }
+function saveDaily(x){ try { localStorage.setItem("bt_daily", JSON.stringify(x)); } catch(e){} }
+function dailyDoneToday(){ return loadDaily().last === dayKey(0); }
+function dailyStreakShown(){ const d = loadDaily(); return (d.last===dayKey(0) || d.last===dayKey(-1)) ? d.streak : 0; }
+function recordDailyResult(){
+  const d = loadDaily();
+  if(d.last === dayKey(0)) return; // déjà compté aujourd'hui
+  const streak = (d.last === dayKey(-1)) ? d.streak + 1 : 1;
+  saveDaily({ last:dayKey(0), streak, score:state.soloCorrect, total:state.questions.length });
+}
+function startDailyChallenge(){
+  state.mode = "solo"; state.daily = true; state.revision = false;
+  state.soloScore = 0; state.soloStreak = 0; state.soloBestStreak = 0; state.soloCorrect = 0; displayedSoloScore = 0; state.soloMissed = []; state.soloIsRecord = false;
+  state.questions = seededDeck(dailySeedToday(), "courte", "tout");
+  state.currentIndex = 0; state.revealed = false; state.awarded = []; state.soloSelected = null; state.timedOut = false;
+  state.screen = "play";
+  render();
+}
+
+/* ===================== CARNET DE RÉVISION =====================
+   Chaque erreur (solo, défi, duel) rejoint un carnet persistant ; une bonne
+   réponse à la même question l'en retire (maîtrisée). Le mode Révision fait
+   rejouer uniquement ces questions, sans chrono ni statistiques. */
+function loadErrbook(){ try { const a = JSON.parse(localStorage.getItem("bt_errbook")||"[]"); return Array.isArray(a) ? a : []; } catch(e){ return []; } }
+function saveErrbook(a){ try { localStorage.setItem("bt_errbook", JSON.stringify(a.slice(-200))); } catch(e){} }
+function errbookAdd(q){
+  const k = qKey(q); const a = loadErrbook();
+  const i = a.findIndex(x=>x.k===k);
+  if(i>=0){ a[i].n = (a[i].n||1)+1; }
+  else { a.push({ k, n:1, q:q.q, options:q.options, correct:q.correct, fact:q.fact, tier:q.tier||"moyen" }); }
+  saveErrbook(a);
+}
+function errbookRemove(q){
+  const k = qKey(q); const a = loadErrbook();
+  const i = a.findIndex(x=>x.k===k);
+  if(i>=0){ a.splice(i,1); saveErrbook(a); }
+}
+function errbookCount(){ return loadErrbook().length; }
+function startRevision(){
+  const b = shuffle(loadErrbook()).slice(0, 9);
+  if(!b.length) return;
+  state.mode = "solo"; state.daily = false; state.revision = true;
+  state.soloScore = 0; state.soloStreak = 0; state.soloBestStreak = 0; state.soloCorrect = 0; displayedSoloScore = 0; state.soloMissed = []; state.soloIsRecord = false;
+  state.timerKey = "sans"; // on révise à son rythme
+  state.questions = b.map(x=>({ q:x.q, options:x.options, correct:x.correct, fact:x.fact, tier:x.tier, shuffledOptions:shuffle(x.options.slice()) }));
+  state.currentIndex = 0; state.revealed = false; state.awarded = []; state.soloSelected = null; state.timedOut = false;
+  state.screen = "play";
+  render();
+}
+function shareRoomCode(){
+  const msg = "Rejoins-moi sur BibleTrivia ! Code du salon : " + (net.code||"");
+  if(navigator.share){ try { navigator.share({ text: msg }).catch(()=>{}); } catch(e){} return; }
+  if(navigator.clipboard && navigator.clipboard.writeText){
+    navigator.clipboard.writeText(msg).then(()=>{
+      const b = document.querySelector(".btn-invite span:last-child");
+      if(b){ b.textContent = "Code copié !"; }
+    }).catch(()=>{});
+  }
 }
 function buildQuestions(){
   const n = LENGTHS[state.lengthKey];
@@ -2953,7 +3038,13 @@ function startGame(){
   render();
 }
 function replayGame(){
-  buildQuestions();
+  if(state.daily){ state.questions = seededDeck(dailySeedToday(), "courte", "tout"); }
+  else if(state.revision){
+    const b = shuffle(loadErrbook()).slice(0, 9);
+    if(!b.length){ newGame(); return; }
+    state.questions = b.map(x=>({ q:x.q, options:x.options, correct:x.correct, fact:x.fact, tier:x.tier, shuffledOptions:shuffle(x.options.slice()) }));
+  }
+  else buildQuestions();
   if(state.mode==="group"){ state.scores = state.teams.map(()=>0); }
   else { state.soloScore = 0; state.soloStreak = 0; state.soloBestStreak = 0; state.soloCorrect = 0; displayedSoloScore = 0; state.soloMissed = []; state.soloIsRecord = false; }
   state.currentIndex = 0; state.revealed = false; state.awarded = []; state.soloSelected = null;
@@ -2962,7 +3053,7 @@ function replayGame(){
 }
 function newGame(){
   clearSavedGame();
-  state = { screen:"mode", mode:null, teams: loadTeams(), lengthKey: state.lengthKey, timerKey: state.timerKey, themeKey: state.themeKey||"tout", timedOut:false, scores:[], soloScore:0, soloStreak:0, soloBestStreak:0, soloCorrect:0, soloSelected:null, soloMissed:[], soloIsRecord:false, questions:[], currentIndex:0, revealed:false, awarded:[] };
+  state = { screen:"mode", mode:null, teams: loadTeams(), lengthKey: state.lengthKey, timerKey: state.timerKey, themeKey: state.themeKey||"tout", daily:false, revision:false, timedOut:false, scores:[], soloScore:0, soloStreak:0, soloBestStreak:0, soloCorrect:0, soloSelected:null, soloMissed:[], soloIsRecord:false, questions:[], currentIndex:0, revealed:false, awarded:[] };
   render();
 }
 
@@ -2974,7 +3065,7 @@ function saveState(){
         v:1, screen:"play", mode:state.mode, lengthKey:state.lengthKey, timerKey:state.timerKey,
         teams:state.teams, scores:state.scores,
         soloScore:state.soloScore, soloStreak:state.soloStreak, soloBestStreak:state.soloBestStreak, soloCorrect:state.soloCorrect, soloSelected:state.soloSelected,
-        soloMissed:state.soloMissed, themeKey:state.themeKey,
+        soloMissed:state.soloMissed, themeKey:state.themeKey, daily:state.daily, revision:state.revision,
         questions:state.questions, currentIndex:state.currentIndex, revealed:state.revealed, awarded:state.awarded
       };
       localStorage.setItem("bt_game", JSON.stringify(snap));
@@ -3019,11 +3110,13 @@ function soloAnswer(idx){
     state.soloScore += TIER_INFO[q.tier].pts;
     state.soloCorrect += 1;
     state.soloStreak += 1;
+    errbookRemove(q); // maîtrisée : elle quitte le carnet de révision
     if(state.soloStreak > state.soloBestStreak) state.soloBestStreak = state.soloStreak;
     if(state.soloStreak>=3 && state.soloStreak%3===0){ playStreak(); } else { playCorrect(); }
   } else {
     state.soloStreak = 0;
     state.soloMissed.push({ q:q.q, correct:q.correct, chosen:opt, fact:q.fact });
+    errbookAdd(q);
     playIncorrect();
   }
   render();
@@ -3041,7 +3134,7 @@ function adjustScore(teamIdx, delta){ const cap = maxPossibleScore(); state.scor
 function nextQuestion(){
   if(!state.revealed) return;
   if(state.currentIndex >= state.questions.length-1){
-    if(state.mode==="solo") recordSoloResult();
+    if(state.mode==="solo"){ recordSoloResult(); if(state.daily) recordDailyResult(); }
     state.screen = "end";
     render();
     playWin();
@@ -3220,6 +3313,16 @@ function renderModeSelect(){
       </span>
       <span class="chev">${ICONS.chevronRight}</span>
     </button>
+    ${(()=>{ const d = loadDaily(); const done = dailyDoneToday(); const sk = dailyStreakShown(); return `
+    <button class="daily-card${done?' done':''}" onclick="${done?'':'startDailyChallenge()'}" ${done?'disabled':''}>
+      <span class="dc-ico">${ICONS.flame}</span>
+      <span class="dc-txt">
+        <b>Défi du jour</b>
+        <small>${done ? `Réussi : ${d.score}/${d.total} · Reviens demain !` : "9 questions, les mêmes pour tous"}</small>
+      </span>
+      ${sk>0 ? `<span class="dc-streak">${ICONS.flame}${sk}</span>` : ""}
+      ${done ? `<span class="dc-check">${ICONS.checkCircle}</span>` : `<span class="chev">${ICONS.chevronRight}</span>`}
+    </button>`; })()}
     <div class="home-stats">
       <div class="hs-item"><span class="hs-ico">${ICONS.book}</span><b>1000+</b><small>questions</small></div>
       <div class="hs-item"><span class="hs-ico">${ICONS.target}</span><b>3</b><small>niveaux</small></div>
@@ -3274,6 +3377,7 @@ function renderSetup(){
           <button class="chip ${state.themeKey==='nt'?'active':''}" data-group="theme" data-k="nt" onclick="setTheme('nt')">Nouveau<span class="sub">Testament</span></button>
         </div>
       </div>
+      ${errbookCount()>0 ? `<button class="btn-review" onclick="startRevision()"><span class="ico">${ICONS.bookOpen}</span>Réviser mes ${errbookCount()} erreur${errbookCount()>1?"s":""}</button>` : ""}
       <div class="rules"><b>Déroulé :</b> réponds à chaque question avant la fin du chrono — tous niveaux mélangés. Enchaîne les bonnes réponses pour faire grimper ta série.</div>
       <div class="flex-sp"></div>
       <button class="btn-primary" onclick="startGame()">Commencer la partie</button>
@@ -3473,10 +3577,12 @@ function renderEndSolo(){
   return `
     <div class="end-hero">
       <div class="end-medal"><span class="em-cup">${TROPHY_GOLD}</span></div>
-      <div class="end-eyebrow${state.soloIsRecord?' record':''}">${state.soloIsRecord?"★ Nouveau record personnel !":"Partie terminée"}</div>
+      <div class="end-eyebrow${state.soloIsRecord?' record':''}">${state.soloIsRecord?"★ Nouveau record personnel !":(state.daily?"Défi du jour terminé":(state.revision?"Révision terminée":"Partie terminée"))}</div>
       <h1 class="end-title">${state.soloScore} points</h1>
       <p class="end-sub">${soloPerformanceMessage(pct)}</p>
-      ${st.games>0?`<div class="end-best">Record : ${st.bestPct}% du maximum · ${st.games} partie${st.games>1?"s":""} jouée${st.games>1?"s":""}</div>`:""}
+      ${state.daily?`<div class="end-best">Série du défi : ${loadDaily().streak} jour${loadDaily().streak>1?"s":""} d'affilée · Reviens demain !</div>`:""}
+      ${state.revision?`<div class="end-best">${state.questions.length-state.soloMissed.length} maîtrisée${state.questions.length-state.soloMissed.length>1?"s":""} sur ${state.questions.length} · ${errbookCount()>0?errbookCount()+" encore à revoir":"carnet vidé, bravo !"}</div>`:""}
+      ${!state.daily && !state.revision && st.games>0?`<div class="end-best">Record : ${st.bestPct}% du maximum · ${st.games} partie${st.games>1?"s":""} jouée${st.games>1?"s":""}</div>`:""}
     </div>
     <div class="flex-sp"></div>
     <div class="solo-summary">
@@ -3726,6 +3832,7 @@ function renderOnlineRoom(){
       <div class="code-label">Code de la partie</div>
       <div class="code-big">${escapeHtml(net.code||"")}</div>
       <div class="code-hint">${net.isHost?"Partage ce code avec ton ami":"Tu as rejoint la partie"}</div>
+      ${net.isHost && (navigator.share || (navigator.clipboard&&navigator.clipboard.writeText)) ? `<button class="btn-invite" onclick="shareRoomCode()"><span class="ico">${ICONS.share}</span><span>Inviter un ami</span></button>` : ""}
     </div>
     <div class="vs-row">
       <div class="vs-player">${avatarHtml(profile.name, profile.color, 3, profile.isCreator)}<div class="vs-name">${escapeHtml(profile.name)}</div><div class="vs-tag${net.isHost?' is-host':''}">${net.isHost?"Toi · Hôte":"Toi"}</div></div>
@@ -3924,7 +4031,7 @@ document.addEventListener("click", (e)=>{
    transforms compris) : la photo peinte reste donc collée au décor même pendant
    qu'une carte glisse — ce qui autorise de vraies transitions animées « à la
    Apple » sans le moindre décalage du verre. */
-const GLASS_SEL = ".app-header,.card,.mode-card,.question-card,.solo-summary,.solo-score-bar,.score-pane,.option-btn,.btn-primary,.btn-next,.btn-replay,.fact-card,.tier-chip,.q-counter,.chip,.icon-btn,.btn-reveal,.btn-newgame,.award-btn,.team-row,.presence-card,.me-row,.online-action,.searching-card,.waiting-card,.info-card,.vs-row,.len-chip,.duel-scorebar,.timer-chip,.dr-side,.rank-row,.text-input,.code-input,.fs-hint,.modal-card,.add-team,.btn-ghost,.fsh-close,.hs-item,.settings-sheet,.hero-verse-card,.modal-btn.ok,.modal-btn.cancel,.leave-banner,.end-medal,.adj-btn,.waiting-note,.rules,.btn-review";
+const GLASS_SEL = ".app-header,.card,.mode-card,.question-card,.solo-summary,.solo-score-bar,.score-pane,.option-btn,.btn-primary,.btn-next,.btn-replay,.fact-card,.tier-chip,.q-counter,.chip,.icon-btn,.btn-reveal,.btn-newgame,.award-btn,.team-row,.presence-card,.me-row,.online-action,.searching-card,.waiting-card,.info-card,.vs-row,.len-chip,.duel-scorebar,.timer-chip,.dr-side,.rank-row,.text-input,.code-input,.fs-hint,.modal-card,.add-team,.btn-ghost,.fsh-close,.hs-item,.settings-sheet,.hero-verse-card,.modal-btn.ok,.modal-btn.cancel,.leave-banner,.end-medal,.adj-btn,.waiting-note,.rules,.btn-review,.daily-card,.btn-invite";
 const GLASS_SKIP = ".timer-chip.low,.btn-primary:disabled,.btn-next:disabled";
 /* Position de MISE EN PAGE (offsets, transforms ignorés) : le verre est calé
    UNE fois sur la position de repos. Pendant les brèves transitions, la photo
