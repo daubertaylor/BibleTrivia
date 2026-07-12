@@ -370,13 +370,15 @@
      L'ombre change donc INSTANTANÉMENT ; le ressenti vient du ressort du
      transform, qui garde toute sa fluidité. */
   button, .mode-card{ position:relative; -webkit-user-select:none; user-select:none; touch-action:manipulation; transition:transform 0.44s cubic-bezier(0.2,1,0.3,1), background-color 0.22s ease, border-color 0.22s ease, color 0.2s ease, opacity 0.22s ease; }
-  /* Toucher « qui se remplit » (l'effet d'origine, refait proprement) :
-     un voile LUMINEUX emplit le bouton à l'appui puis s'estompe en douceur
-     au relâchement. Calque dédié, seule l'opacité varie : rendu uniforme et
-     volontaire, impossible à voir sur un autre bouton ou à rester bloqué. */
-  button::before, .mode-card::before{ content:""; position:absolute; inset:0; border-radius:inherit; background:rgba(255,251,243,0.36); opacity:0; transition:opacity 0.4s ease; pointer-events:none; }
+  /* Toucher « qui se remplit » (l'effet d'origine, à l'identique) : à
+     l'appui, une lumière chaude INONDE le bouton depuis les bords vers le
+     centre (épaisseur d'ombre interne qui grandit) ; au relâchement elle se
+     retire en douceur vers les bords. Portée par un calque dédié dont les
+     deux états sont la MÊME lumière -> le mouvement de remplissage est
+     exactement celui d'avant, sans aucun artefact possible. */
+  button::before, .mode-card::before{ content:""; position:absolute; inset:0; border-radius:inherit; box-shadow:inset 0 0 0 0 rgba(255,251,243,0); transition:box-shadow 0.4s ease; pointer-events:none; }
   button:active:not(:disabled)::before,
-  .mode-card:active::before{ opacity:1; transition-duration:0.09s; }
+  .mode-card:active::before{ box-shadow:inset 0 0 0 100vmax rgba(255,251,243,0.42); transition-duration:0.12s; }
   .hero-icon-btn::before{ content:none; }
   button:active:not(:disabled),
   .mode-card:active{ transform:translateZ(0) scale(0.968); transition-duration:0.09s; transition-timing-function:cubic-bezier(0.3,0,0.45,1); }
