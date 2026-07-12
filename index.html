@@ -338,7 +338,8 @@
   .splash-cross{ position:absolute; top:-0.5rem; right:-0.7rem; width:1.7rem; height:1.7rem; color:#fff; filter:drop-shadow(0 2px 6px rgba(0,0,0,0.55)); opacity:0; animation: splashFade 0.8s ease 0.7s forwards; }
   .splash-title{ font-family:'Poppins',sans-serif; font-weight:700; font-size:2.5rem; color:#fff; margin:0; letter-spacing:-0.01em; text-shadow:0 2px 18px rgba(0,0,0,0.45); opacity:0; animation: splashRise 0.8s ease 0.5s forwards; }
   .splash-title{ font-family:'Poppins',sans-serif; font-weight:700; font-size:1.8rem; letter-spacing:-0.02em; color:#fff; margin:0 0 0.35rem; text-shadow:0 2px 16px rgba(0,0,0,0.6); opacity:0; animation:splashRise 0.8s ease 0.4s forwards; }
-  .splash-verse{ font-family:'Fraunces',serif; font-size:1.15rem; color:rgba(255,255,255,0.96); margin-top:0; letter-spacing:0.01em; font-style:italic; font-weight:400; text-shadow:0 1px 14px rgba(0,0,0,0.55); opacity:0; animation: splashRise 0.9s ease 0.55s forwards; }
+  .splash-verse{ font-family:'Fraunces',serif; font-size:1.08rem; line-height:1.5; color:rgba(255,255,255,0.96); margin:0 auto; max-width:19rem; letter-spacing:0.01em; font-style:italic; font-weight:400; text-shadow:0 1px 14px rgba(0,0,0,0.55); text-wrap:balance; opacity:0; animation: splashRise 0.9s ease 0.55s forwards; }
+  .splash-ref{ font-family:'Poppins',sans-serif; font-weight:600; font-size:0.76rem; letter-spacing:0.09em; text-transform:uppercase; color:#FFD968; margin:0.55rem 0 0; text-shadow:0 1px 10px rgba(0,0,0,0.5); opacity:0; animation: splashRise 0.9s ease 0.72s forwards; }
   .splash-dots{ position:absolute; bottom:3rem; left:50%; transform:translateX(-50%); display:flex; gap:0.5rem; }
   .splash-dot{ width:8px; height:8px; border-radius:50%; background:rgba(255,255,255,0.9); animation:dotPulse 1.4s ease-in-out infinite; }
   .splash-dot:nth-child(2){ animation-delay:0.2s; }
@@ -649,7 +650,7 @@
   .set-ico.mus{ background:linear-gradient(150deg, #B77BE8, #8E5BD8); }
   .set-ico.vol{ background:linear-gradient(150deg, #FF7A52, #EE4523); }
   .set-ico.fsx{ background:linear-gradient(150deg, #4DA8FF, #2E7FE8); }
-  .set-go{ border:none; border-radius:99px; padding:0.48rem 0.95rem; font-weight:700; font-size:0.8rem; color:#fff; background:linear-gradient(150deg, #FF7A52, #EE4523); box-shadow:inset 0 1px 0 rgba(255,255,255,0.3), 0 3px 10px rgba(241,80,47,0.3); flex-shrink:0; }
+  .set-go{ border:1px solid rgba(255,255,255,0.5); border-radius:99px; padding:0.48rem 0.95rem; font-weight:700; font-size:0.8rem; color:#fff; background:linear-gradient(150deg, #FF7A52, #EE4523); box-shadow:inset 0 1px 0 rgba(255,255,255,0.4), inset 0 0 0 1px rgba(255,255,255,0.18), 0 3px 10px rgba(241,80,47,0.3); flex-shrink:0; }
   .set-txt{ flex:1; display:flex; flex-direction:column; gap:0.12rem; min-width:0; }
   .set-txt b{ font-size:0.93rem; color:var(--ink); }
   .set-txt small{ font-size:0.82rem; color:var(--ink-soft); }
@@ -665,7 +666,7 @@
   .vol-val{ min-width:3rem; text-align:right; font-weight:700; font-variant-numeric:tabular-nums; font-size:0.9rem; color:var(--ink); }
   /* Bouton opaque à 100 % (dégradé plein) : rien à peindre, donc aucun « filtre »
      de verre à recaler pendant que la feuille glisse. */
-  .sheet-done{ width:100%; margin-top:1.05rem; background:linear-gradient(180deg, #FB6A45, #EA4A28); color:#fff; border:1px solid rgba(255,255,255,0.4); border-radius:14px; padding:0.95rem; font-weight:700; font-size:0.95rem; box-shadow:inset 0 1px 0 rgba(255,255,255,0.3), 0 6px 18px rgba(241,80,47,0.32); }
+  .sheet-done{ width:100%; margin-top:1.05rem; background:linear-gradient(180deg, #FB6A45, #EA4A28); color:#fff; border:1px solid rgba(255,255,255,0.55); border-radius:14px; padding:0.95rem; font-weight:700; font-size:0.95rem; box-shadow:inset 0 1px 0 rgba(255,255,255,0.42), inset 0 0 0 1px rgba(255,255,255,0.2), 0 6px 18px rgba(241,80,47,0.32), 0 1px 3px rgba(241,80,47,0.2); }
   .sheet-veil.closing{ animation:veilOut 0.24s ease forwards; }
   .sheet-veil.closing .settings-sheet{ animation:sheetOut 0.24s cubic-bezier(0.4,0,1,1) forwards; }
   @keyframes sheetIn{ from{ transform:translateY(100%); } to{ transform:translateY(0); } }
@@ -3484,14 +3485,18 @@ function renderEnd(){
 function renderSplash(){
   const el = document.createElement("div");
   el.className = "screen splash-screen";
-  const sv = (HERO_VERSES && HERO_VERSES.length) ? HERO_VERSES[(Math.random()*HERO_VERSES.length)|0].r : "2 Timothée 2:15";
+  // Verset d'accueil complet mais court (lisible en un instant), tiré au hasard.
+  const shorts = (HERO_VERSES||[]).filter(v=>v && v.t && v.t.length<=64);
+  const pool = shorts.length ? shorts : (HERO_VERSES||[]);
+  const v = pool.length ? pool[(Math.random()*pool.length)|0] : { t:"Ta parole est une lampe à mes pieds.", r:"Psaume 119:105" };
   el.innerHTML = `
     <div class="splash-center">
       <div class="splash-dove-wrap">
         <img class="splash-dove" src="${DOVE_ICON}" alt="BibleTrivia" draggable="false">
       </div>
       <h1 class="splash-title">BibleTrivia</h1>
-      <p class="splash-verse">${sv}</p>
+      <p class="splash-verse">« ${escapeHtml(v.t)} »</p>
+      <p class="splash-ref">${escapeHtml(v.r)}</p>
     </div>
     <div class="splash-dots"><span class="splash-dot"></span><span class="splash-dot"></span><span class="splash-dot"></span></div>
   `;
