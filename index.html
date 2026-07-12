@@ -551,8 +551,11 @@
   #rotate-lock .rl-ico{ width:3.4rem; height:3.4rem; transform-origin:50% 50%; animation:rotBackL 3s cubic-bezier(0.4,0,0.2,1) infinite; }
   #rotate-lock.from-right .rl-ico{ animation-name:rotBackR; }
   #rotate-lock p{ font-family:'Poppins',sans-serif; font-weight:600; font-size:1rem; line-height:1.5; max-width:16rem; margin:0; text-shadow:0 1px 10px rgba(0,0,0,0.5); }
-  @keyframes rotBackL{ 0%,10%{ transform:rotate(-90deg); } 44%{ transform:rotate(3.5deg); } 54%,76%{ transform:rotate(0deg); } 96%,100%{ transform:rotate(-90deg); } }
-  @keyframes rotBackR{ 0%,10%{ transform:rotate(90deg); } 44%{ transform:rotate(-3.5deg); } 54%,76%{ transform:rotate(0deg); } 96%,100%{ transform:rotate(90deg); } }
+  /* Boucle à sens unique : le téléphone apparaît COUCHÉ, se redresse (petit
+     rebond), reste droit, puis s'efface en douceur — et réapparaît couché.
+     Il ne se « recouche » jamais en tournant à l'envers. */
+  @keyframes rotBackL{ 0%{ transform:rotate(-90deg); opacity:0; } 12%{ transform:rotate(-90deg); opacity:1; } 46%{ transform:rotate(3.5deg); } 56%{ transform:rotate(0deg); } 82%{ transform:rotate(0deg); opacity:1; } 96%,100%{ transform:rotate(0deg); opacity:0; } }
+  @keyframes rotBackR{ 0%{ transform:rotate(90deg); opacity:0; } 12%{ transform:rotate(90deg); opacity:1; } 46%{ transform:rotate(-3.5deg); } 56%{ transform:rotate(0deg); } 82%{ transform:rotate(0deg); opacity:1; } 96%,100%{ transform:rotate(0deg); opacity:0; } }
   @media (orientation:landscape) and (pointer:coarse){ #rotate-lock{ display:flex; } }
 
   /* ---------- VERRE GARANTI (photo pré-floutée, alignée au viewport) ----------
