@@ -4077,17 +4077,33 @@ const GLASS_SKIP = ".timer-chip.low,.btn-primary:disabled,.btn-next:disabled";
    du scale d'appui — ce petit décalage est précisément l'effet recherché.
    (Sans danger : les voiles blancs venaient des transitions de fond et
    d'ombre, toutes deux définitivement supprimées.) */
+/* AMPLIFICATION « verre épais » : quand une surface BOUGE (enfoncement d'un
+   bouton, ressort, transition d'écran, panneau qui monte), son reflet glisse
+   PLUS VITE qu'elle — décalage borné, proportionnel au déplacement réel
+   (position à l'écran vs position de repos en mise en page). Au repos le
+   décalage est nul : tout est parfaitement calé. Le défilement ne compte
+   pas comme un mouvement (la carte ne bouge pas par rapport au contenu). */
+const GLASS_GAIN = 2.2, GLASS_MAXD = 28;
+const glassAppEl = document.getElementById("app");
 function queueGlassSync(){
   const w = window.innerWidth, h = window.innerHeight;
-  const iw = Math.round(w * 1.04), ih = Math.round(h * 1.04);
+  const iw = Math.round(w * 1.16), ih = Math.round(h * 1.16);
   const ox = Math.round((iw - w) / 2), oy = Math.round((ih - h) / 2);
   const size = "auto, " + iw + "px " + ih + "px";
+  const sl = glassAppEl.scrollLeft, st = glassAppEl.scrollTop;
   const els = document.querySelectorAll(GLASS_SEL);
   for(let i = 0; i < els.length; i++){
     const el = els[i];
     if(el.matches(GLASS_SKIP)){ if(el._glassKey){ el._glassKey = ""; el.style.backgroundSize = ""; el.style.backgroundPosition = ""; } continue; }
     const r = el.getBoundingClientRect();
-    const pos = "0 0, " + Math.round(-(r.left + ox)) + "px " + Math.round(-(r.top + oy)) + "px";
+    let lx = 0, ly = 0, n = el;
+    while(n && n !== document.body){ lx += n.offsetLeft; ly += n.offsetTop; n = n.offsetParent; }
+    if(glassAppEl.contains(el)){ lx -= sl; ly -= st; }
+    let dx = (r.left - lx) * (GLASS_GAIN - 1);
+    let dy = (r.top - ly) * (GLASS_GAIN - 1);
+    if(dx > GLASS_MAXD) dx = GLASS_MAXD; else if(dx < -GLASS_MAXD) dx = -GLASS_MAXD;
+    if(dy > GLASS_MAXD) dy = GLASS_MAXD; else if(dy < -GLASS_MAXD) dy = -GLASS_MAXD;
+    const pos = "0 0, " + Math.round(-(r.left + dx + ox)) + "px " + Math.round(-(r.top + dy + oy)) + "px";
     const key = size + "|" + pos;
     if(el._glassKey !== key){
       el._glassKey = key;
@@ -4097,13 +4113,12 @@ function queueGlassSync(){
   }
 }
 /* Boucle PERMANENTE — l'effet d'origine. Le verre est recalé à CHAQUE image,
-   quoi qu'il arrive : enfoncement d'un bouton, ressort du relâchement,
-   transition d'écran, défilement, barre de Safari qui glisse… Le reflet vit
-   en continu, aucun cas oublié. Coût maîtrisé : une lecture de position par
-   surface et par image, écriture seulement si elle a bougé (repos ≈ gratuit) ;
+   quoi qu'il arrive. Blindée : la frame suivante est TOUJOURS programmée
+   avant le travail, une erreur passagère ne peut pas tuer la boucle.
+   Écriture seulement si la position a bougé (repos ≈ gratuit) ;
    requestAnimationFrame se met en pause tout seul en arrière-plan. */
-function glassTrack(){ queueGlassSync(); }
-(function glassLive(){ queueGlassSync(); requestAnimationFrame(glassLive); })();
+function glassTrack(){ try{ queueGlassSync(); }catch(e){} }
+(function glassLive(){ requestAnimationFrame(glassLive); try{ queueGlassSync(); }catch(e){} })();
 
 /* Plein écran réel : demandé au premier toucher là où l'API existe (Android,
    iPad, desktop). Sur iPhone, Safari interdit cette API : le vrai plein écran
