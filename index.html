@@ -586,39 +586,33 @@
 
   /* ---------- Verrou portrait : le téléphone tourne dans le bon sens ---------- */
   #rotate-lock{ position:fixed; top:0; left:0; right:0; bottom:0; z-index:80; display:none; align-items:center; justify-content:center; flex-direction:column; gap:1.05rem; text-align:center; padding:2rem; background:radial-gradient(120% 95% at 50% 30%, #241A11, #0E0A06); color:#fff; }
-  /* Le téléphone-guide tourne EN BOUCLE, sans jamais s'arrêter : chaque
-     cycle part COUCHÉ (du côté où le vrai téléphone est penché — pose de
-     base identique), se redresse avec un léger rebond, tient droit, puis
-     s'efface en fondu pour réapparaître couché et recommencer. Jamais de
-     rotation inverse visible. Le JS re-pose .run à chaque apparition ou
-     changement de côté pour garantir le départ à l'horizontale. */
-  #rotate-lock .rl-ico{ width:3.4rem; height:3.4rem; transform-origin:50% 50%; transform:rotate(-90deg); }
-  #rotate-lock.from-right .rl-ico{ transform:rotate(90deg); }
-  #rotate-lock.run .rl-ico{ animation:rotCycleL 3.4s ease-in-out 0.35s infinite; }
-  #rotate-lock.run.from-right .rl-ico{ animation-name:rotCycleR; }
+  /* Le téléphone-guide : balancier PERPÉTUEL, sans fondu ni coupure.
+     Chaque cycle part DEBOUT, se couche du côté où le vrai téléphone est
+     penché, marque la pose, puis se redresse — et recommence, la fin d'un
+     cycle étant exactement le début du suivant (boucle continue). Le JS
+     re-pose .run à chaque apparition ou changement de côté. */
+  #rotate-lock .rl-ico{ width:3.4rem; height:3.4rem; transform-origin:50% 50%; }
+  #rotate-lock.run .rl-ico{ animation:rotSwingL 3.6s ease-in-out 0.3s infinite; }
+  #rotate-lock.run.from-right .rl-ico{ animation-name:rotSwingR; }
   #rotate-lock p{ font-family:'Poppins',sans-serif; font-weight:600; font-size:1rem; line-height:1.5; max-width:16rem; margin:0; text-shadow:0 1px 10px rgba(0,0,0,0.5); }
   /* Toujours visible (aucun clignotement) : couché -> se redresse (petit
      rebond) -> reste droit un long moment -> se recouche en douceur, et
      recommence. Un cycle continu, l'icône ne disparaît jamais. */
-  @keyframes rotCycleL{
-    0%{ transform:rotate(-90deg); opacity:1; }
-    12%{ transform:rotate(-90deg); }
-    46%{ transform:rotate(3deg); }
-    54%{ transform:rotate(0deg); }
-    80%{ transform:rotate(0deg); opacity:1; }
-    88%{ transform:rotate(0deg); opacity:0; }
-    89%{ transform:rotate(-90deg); opacity:0; }
-    100%{ transform:rotate(-90deg); opacity:1; }
+  @keyframes rotSwingL{
+    0%{ transform:rotate(0deg); }
+    10%{ transform:rotate(0deg); }
+    42%{ transform:rotate(-90deg); }
+    56%{ transform:rotate(-90deg); }
+    90%{ transform:rotate(2.5deg); }
+    100%{ transform:rotate(0deg); }
   }
-  @keyframes rotCycleR{
-    0%{ transform:rotate(90deg); opacity:1; }
-    12%{ transform:rotate(90deg); }
-    46%{ transform:rotate(-3deg); }
-    54%{ transform:rotate(0deg); }
-    80%{ transform:rotate(0deg); opacity:1; }
-    88%{ transform:rotate(0deg); opacity:0; }
-    89%{ transform:rotate(90deg); opacity:0; }
-    100%{ transform:rotate(90deg); opacity:1; }
+  @keyframes rotSwingR{
+    0%{ transform:rotate(0deg); }
+    10%{ transform:rotate(0deg); }
+    42%{ transform:rotate(90deg); }
+    56%{ transform:rotate(90deg); }
+    90%{ transform:rotate(-2.5deg); }
+    100%{ transform:rotate(0deg); }
   }
   @media (orientation:landscape) and (pointer:coarse){ #rotate-lock{ display:flex; } }
 
