@@ -90,7 +90,7 @@
 
   #app{ position:relative; z-index:1; width:100%; max-width:640px; margin:0 auto; height:100%; overflow-y:auto; overflow-x:hidden; overscroll-behavior:none; display:flex; flex-direction:column; padding:calc(env(safe-area-inset-top) + 0.35rem) calc(env(safe-area-inset-right) + 0.7rem) calc(env(safe-area-inset-bottom) + 0.35rem) calc(env(safe-area-inset-left) + 0.7rem); }
   .screen{ display:flex; flex-direction:column; flex:1; }
-  .screen-enter{ animation:screenIn 0.52s cubic-bezier(0.22,1,0.36,1) both; }
+  .screen-enter{ animation:screenIn 0.5s cubic-bezier(0.22,1,0.36,1) both; }
 
   svg{ width:100%; height:100%; display:block; }
   ::selection{ background:rgba(241,80,47,0.22); }
@@ -375,7 +375,11 @@
      s'estompe sur place au relâchement. Sur les chips (chrono, durée…),
      elle recouvre l'instant où le bouton devient orange -> la couleur
      semble se verser dans le bouton, comme l'effet d'origine. */
-  button::before, .mode-card::before{ content:""; position:absolute; inset:0; border-radius:inherit; background:radial-gradient(140% 140% at 50% 50%, rgba(238,74,40,0.55), rgba(241,80,47,0.3) 72%); transform:scale(0.001); opacity:0; transition:opacity 0.38s ease, transform 0.01s linear 0.38s; pointer-events:none; }
+  /* L'onde porte la COULEUR DU BOUTON (sa teinte de verre) : orange sur les
+     boutons orange, doré sur le défi, blanc chaud sur les neutres, rouge
+     profond sur Quitter… Les chips reçoivent leur couleur de sélection. */
+  button::before, .mode-card::before{ content:""; position:absolute; inset:0; border-radius:inherit; background:radial-gradient(140% 140% at 50% 50%, var(--press-tint, var(--glass-tint, rgba(255,251,243,0.5))), transparent 88%); transform:scale(0.001); opacity:0; transition:opacity 0.38s ease, transform 0.01s linear 0.38s; pointer-events:none; }
+  .chip, .len-chip{ --press-tint: rgba(238,74,40,0.55); }
   button:active:not(:disabled)::before,
   .mode-card:active::before{ transform:scale(1); opacity:1; transition:transform 0.22s cubic-bezier(0.2,0.8,0.32,1), opacity 0.06s ease; }
   .hero-icon-btn::before{ content:none; }
@@ -385,17 +389,17 @@
   .option-btn{ transition:transform 0.24s cubic-bezier(0.33,1,0.68,1), background-color 0.28s ease, border-color 0.28s ease; }
   /* subtle gradient depth on primary actions */
   .btn-primary, .btn-next, .btn-replay{ background-image:linear-gradient(180deg, #FB6A45, #EA4A28); }
-  .btn-reveal:active{ --glass-tint: rgba(206,130,26,0.76); }
+  .btn-reveal{ --press-tint: rgba(206,130,26,0.8); }
 
   /* progress fill fades in */
 
   /* per-question staggered entrance (only when the question changes) */
-  .question-card.animate{ animation:cardSlideIn 0.52s cubic-bezier(0.22,1,0.36,1) both; }
+  .question-card.animate{ animation:cardSlideIn 0.5s cubic-bezier(0.22,1,0.36,1) both; }
   .options-grid.animate .option-btn{ opacity:0; animation:optionIn 0.5s cubic-bezier(0.22,1,0.36,1) both; }
-  .options-grid.animate .option-btn:nth-child(1){ animation-delay:0.06s; }
-  .options-grid.animate .option-btn:nth-child(2){ animation-delay:0.12s; }
-  .options-grid.animate .option-btn:nth-child(3){ animation-delay:0.18s; }
-  .options-grid.animate .option-btn:nth-child(4){ animation-delay:0.24s; }
+  .options-grid.animate .option-btn:nth-child(1){ animation-delay:0.04s; }
+  .options-grid.animate .option-btn:nth-child(2){ animation-delay:0.08s; }
+  .options-grid.animate .option-btn:nth-child(3){ animation-delay:0.12s; }
+  .options-grid.animate .option-btn:nth-child(4){ animation-delay:0.16s; }
 
   /* one-shot feedback on the revealed answer */
   .option-btn.reveal-pop{ z-index:2; }
@@ -526,7 +530,7 @@
   .timer-chip.low{ background:linear-gradient(180deg, rgba(251,106,69,0.95), rgba(234,74,40,0.95)); color:#fff; border-color:rgba(255,255,255,0.4); animation:timerPulse 1s ease-in-out infinite; box-shadow:inset 0 1px 0 rgba(255,255,255,0.3), 0 3px 12px rgba(241,80,47,0.45); }
   .timer-chip.low .ico{ color:rgba(255,255,255,0.9); }
   @keyframes timerPulse{ 0%,100%{ box-shadow:inset 0 1px 0 rgba(255,255,255,0.3), 0 3px 12px rgba(241,80,47,0.45); } 50%{ box-shadow:inset 0 1px 0 rgba(255,255,255,0.3), 0 3px 20px rgba(241,80,47,0.85); } }
-  .timeout-note{ display:flex; align-items:center; justify-content:center; gap:0.4rem; background:linear-gradient(180deg, rgba(251,106,69,0.92), rgba(234,74,40,0.92)); color:#fff; font-weight:700; font-size:0.85rem; border:1px solid rgba(255,255,255,0.35); border-radius:12px; padding:0.55rem 0.8rem; margin-bottom:0.7rem; box-shadow:inset 0 1px 0 rgba(255,255,255,0.3), 0 4px 14px rgba(241,80,47,0.35); animation:fadeSoft 0.35s ease; }
+  .timeout-note{ display:flex; align-items:center; justify-content:center; gap:0.4rem; background:linear-gradient(180deg, rgba(251,106,69,0.92), rgba(234,74,40,0.92)); color:#fff; font-weight:700; font-size:0.85rem; border:1px solid rgba(255,255,255,0.35); border-radius:12px; padding:0.55rem 0.8rem; margin-bottom:0.7rem; box-shadow:inset 0 1px 0 rgba(255,255,255,0.3), 0 4px 14px rgba(241,80,47,0.35); }
   .timeout-note .ico{ width:1.1rem; height:1.1rem; display:inline-flex; }
 
   /* ---------- Astuce plein écran ---------- */
@@ -536,7 +540,7 @@
 
   /* ---------- Modal maison ---------- */
   .modal-veil{ position:fixed; top:0; left:0; right:0; bottom:0; z-index:60; background:rgba(19,14,9,0.46); display:flex; align-items:center; justify-content:center; padding:1.6rem; animation:veilIn 0.22s ease; }
-  .modal-card{ width:100%; max-width:21rem; border:1px solid rgba(255,255,255,0.62); border-radius:22px; padding:1.45rem 1.25rem 1.15rem; text-align:center; box-shadow:inset 0 1px 0 rgba(255,255,255,0.8), 0 26px 64px rgba(10,7,4,0.5); animation:modalIn 0.52s cubic-bezier(0.2,1.1,0.3,1); transform:translateZ(0); -webkit-transform:translateZ(0); }
+  .modal-card{ width:100%; max-width:21rem; border:1px solid rgba(255,255,255,0.62); border-radius:22px; padding:1.45rem 1.25rem 1.15rem; text-align:center; box-shadow:inset 0 1px 0 rgba(255,255,255,0.8), 0 26px 64px rgba(10,7,4,0.5); animation:modalIn 0.5s cubic-bezier(0.2,1.1,0.3,1); transform:translateZ(0); -webkit-transform:translateZ(0); }
   .modal-title{ font-family:'Poppins',sans-serif; font-weight:700; font-size:1.15rem; color:var(--ink); }
   .modal-msg{ font-size:0.9rem; color:var(--ink-soft); line-height:1.5; margin-top:0.45rem; }
   .modal-input{ margin-top:0.95rem; text-align:center; }
@@ -550,15 +554,14 @@
   .modal-btn.ok.danger{ background:linear-gradient(180deg, #E74C39, #C6392B); border-color:rgba(255,255,255,0.8); box-shadow:inset 0 1px 0 rgba(255,255,255,0.62), inset 0 0 0 1.5px rgba(255,255,255,0.34), inset 0 -5px 12px rgba(120,22,16,0.28), 0 6px 18px rgba(194,62,49,0.36), 0 1px 3px rgba(194,62,49,0.22); }
   .modal-card.shake{ animation:wrongFlash 0.45s ease; }
   @keyframes veilIn{ from{ opacity:0; } to{ opacity:1; } }
-  @keyframes fadeSoft{ from{ opacity:0; } to{ opacity:1; } }
-  @keyframes screenIn{ from{ opacity:0; transform:translate3d(0,18px,0); } to{ opacity:1; transform:translate3d(0,0,0); } }
+  @keyframes screenIn{ from{ opacity:0; transform:translate3d(0,14px,0); } to{ opacity:1; transform:translate3d(0,0,0); } }
   @keyframes modalIn{ from{ opacity:0; transform:scale(0.9) translateY(16px); } to{ opacity:1; transform:scale(1) translateY(0); } }
   .modal-veil.closing{ animation:veilOut 0.22s ease forwards; }
   .modal-veil.closing .modal-card{ animation:modalOut 0.22s cubic-bezier(0.4,0,1,1) forwards; }
   @keyframes modalOut{ to{ opacity:0; transform:scale(0.93) translateY(10px); } }
 
   /* ---------- Bannière adversaire parti + hôte ---------- */
-  .leave-banner{ display:flex; align-items:flex-start; gap:0.6rem; --glass-tint: rgba(255,244,222,0.72); border:1px solid rgba(239,173,38,0.55); border-left:3px solid var(--gold); border-radius:14px; padding:0.75rem 0.95rem; margin-bottom:0.7rem; font-size:0.85rem; line-height:1.45; color:#5f4310; box-shadow:inset 0 1px 0 rgba(255,255,255,0.6), 0 4px 14px rgba(196,144,32,0.2); animation:fadeSoft 0.35s ease; }
+  .leave-banner{ display:flex; align-items:flex-start; gap:0.6rem; --glass-tint: rgba(255,244,222,0.72); border:1px solid rgba(239,173,38,0.55); border-left:3px solid var(--gold); border-radius:14px; padding:0.75rem 0.95rem; margin-bottom:0.7rem; font-size:0.85rem; line-height:1.45; color:#5f4310; box-shadow:inset 0 1px 0 rgba(255,255,255,0.6), 0 4px 14px rgba(196,144,32,0.2); }
   .leave-banner .lb-ico{ width:1.2rem; height:1.2rem; flex-shrink:0; color:var(--gold); margin-top:0.1rem; }
   .vs-tag.is-host{ color:var(--gold-deep); font-weight:800; text-transform:uppercase; letter-spacing:0.06em; font-size:0.78rem; }
   .host-note{ text-align:center; font-size:0.84rem; color:rgba(255,255,255,0.92); margin:0.6rem auto 0.15rem; max-width:20rem; text-shadow:0 1px 8px rgba(0,0,0,0.4); }
@@ -584,7 +587,7 @@
   .option-btn, .btn-primary, .btn-next, .btn-replay, .fact-card, .tier-chip, .q-counter, .chip, .icon-btn, .btn-reveal,
   .btn-newgame, .award-btn, .team-row, .presence-card, .me-row, .online-action, .searching-card,
   .waiting-card, .info-card, .vs-row, .len-chip, .duel-scorebar, .timer-chip, .dr-side, .rank-row,
-  .text-input, .code-input, .fs-hint, .modal-card, .add-team, .btn-ghost, .fsh-close, .hs-item, .settings-sheet, .hero-verse-card, .end-medal, .modal-btn.ok, .modal-btn.cancel, .leave-banner, .adj-btn, .waiting-note, .rules, .btn-review, .daily-card, .btn-invite{
+  .text-input, .code-input, .fs-hint, .modal-card, .add-team, .btn-ghost, .fsh-close, .hs-item, .settings-sheet, .hero-verse-card, .end-medal, .modal-btn.ok, .modal-btn.cancel, .leave-banner, .adj-btn, .waiting-note, .rules, .btn-review, .daily-card, .dc-streak, .btn-invite{
     background-color:transparent;
     background-image:linear-gradient(var(--glass-tint, rgba(255,253,247,0.46)), var(--glass-tint, rgba(255,253,247,0.46))), var(--blur-url);
     background-size:auto, cover;
@@ -612,9 +615,9 @@
      resterait figé pendant le déplacement et « sauterait ». Le simple
      fondu d'opacité ne bouge jamais la surface → zéro clignotement,
      rendu parfaitement homogène d'un écran à l'autre. */
-  @keyframes fadeSlide{ from{ opacity:0; transform:translate3d(0,12px,0); } to{ opacity:1; transform:translate3d(0,0,0); } }
-  .screen-exit{ animation:screenOut 0.36s cubic-bezier(0.4,0,0.6,1) forwards; }
-  @keyframes screenOut{ from{ opacity:1; transform:translate3d(0,0,0); } to{ opacity:0; transform:translate3d(0,-12px,0); } }
+  @keyframes fadeSlide{ from{ opacity:0; transform:translate3d(0,14px,0); } to{ opacity:1; transform:translate3d(0,0,0); } }
+  .screen-exit{ animation:screenOut 0.32s cubic-bezier(0.4,0,0.6,1) forwards; }
+  @keyframes screenOut{ from{ opacity:1; transform:translate3d(0,0,0); } to{ opacity:0; transform:translate3d(0,-8px,0); } }
   .reveal-in{ animation:fadeSlide 0.5s cubic-bezier(0.22,1,0.36,1) both; }
   .screen-enter .podium-bar{ transform-origin:bottom; animation:barUp 0.55s 0.12s cubic-bezier(0.32,0.72,0,1) backwards; }
   @keyframes barUp{ from{ transform:scaleY(0.15); opacity:0; } to{ transform:scaleY(1); opacity:1; } }
@@ -629,12 +632,12 @@
   /* ---------- Statistiques de l'accueil (bas d'écran habité) ---------- */
   /* ---------- Défi du jour ---------- */
   .daily-card{ width:100%; display:flex; align-items:center; gap:0.8rem; --glass-tint: rgba(255,240,206,0.58); border:1px solid rgba(239,173,38,0.55); border-radius:18px; padding:0.82rem 1rem; margin-bottom:clamp(0.65rem, 1.4vh, 1rem); text-align:left; box-shadow:inset 0 1px 0 rgba(255,255,255,0.7), inset 0 0 0 1px rgba(255,255,255,0.24), 0 4px 16px rgba(196,144,32,0.22); }
-  .daily-card .dc-ico{ width:2.55rem; height:2.55rem; border-radius:13px; background:linear-gradient(150deg,#FFC64F,#F09A18); color:#fff; display:flex; align-items:center; justify-content:center; padding:0.5rem; flex-shrink:0; box-shadow:inset 0 1px 0 rgba(255,255,255,0.5), 0 4px 10px rgba(206,138,42,0.4); }
+  .daily-card .dc-ico{ width:3.05rem; height:3.05rem; border-radius:15px; background:linear-gradient(150deg,#FFC64F,#F09A18); color:#fff; display:flex; align-items:center; justify-content:center; padding:0.68rem; flex-shrink:0; box-shadow:inset 0 1px 0 rgba(255,255,255,0.5), inset 0 0 0 1px rgba(255,255,255,0.22), 0 5px 14px rgba(206,138,42,0.42); }
   .daily-card .dc-ico svg{ width:100%; height:100%; }
   .daily-card .dc-txt{ flex:1; display:flex; flex-direction:column; gap:0.12rem; min-width:0; }
   .daily-card .dc-txt b{ font-family:'Poppins',sans-serif; font-weight:600; font-size:0.98rem; color:var(--ink); }
   .daily-card .dc-txt small{ font-size:0.8rem; color:var(--ink-soft); }
-  .daily-card .dc-streak{ display:inline-flex; align-items:center; gap:0.22rem; font-weight:800; font-size:0.9rem; font-variant-numeric:tabular-nums; color:#8a5e14; background:linear-gradient(180deg, rgba(255,242,214,0.95), rgba(255,217,104,0.8)); border:1px solid rgba(239,173,38,0.55); border-radius:99px; padding:0.24rem 0.6rem; flex-shrink:0; box-shadow:inset 0 1px 0 rgba(255,255,255,0.7); }
+  .daily-card .dc-streak{ display:inline-flex; align-items:center; gap:0.22rem; font-weight:800; font-size:0.9rem; font-variant-numeric:tabular-nums; color:#8a5e14; --glass-tint: rgba(255,228,150,0.66); border:1px solid rgba(255,255,255,0.65); border-radius:99px; padding:0.24rem 0.6rem; flex-shrink:0; box-shadow:inset 0 1px 0 rgba(255,255,255,0.8), inset 0 0 0 1px rgba(255,255,255,0.28), 0 2px 8px rgba(196,144,32,0.24); }
   .daily-card .dc-streak svg{ width:0.92rem; height:0.92rem; }
   .daily-card .dc-check{ width:1.5rem; height:1.5rem; color:#1f7a4d; flex-shrink:0; display:inline-flex; }
   .daily-card .dc-check svg{ width:100%; height:100%; }
@@ -686,7 +689,7 @@
 
   /* ---------- Panneau Réglages (feuille coulissante) ---------- */
   .sheet-veil{ position:fixed; top:0; left:0; right:0; bottom:0; z-index:70; background:rgba(21,16,11,0.5); display:flex; align-items:flex-end; justify-content:center; animation:veilIn 0.28s ease; }
-  .settings-sheet{ width:100%; max-width:640px; border:1px solid rgba(255,255,255,0.62); border-bottom:none; border-radius:24px 24px 0 0; padding:0.8rem 1.25rem calc(env(safe-area-inset-bottom) + 1.15rem); box-shadow:inset 0 1px 0 rgba(255,255,255,0.8), 0 -14px 46px rgba(10,7,4,0.45); animation:sheetIn 0.52s cubic-bezier(0.2,1.05,0.3,1); transform:translateZ(0); -webkit-transform:translateZ(0); }
+  .settings-sheet{ width:100%; max-width:640px; border:1px solid rgba(255,255,255,0.62); border-bottom:none; border-radius:24px 24px 0 0; padding:0.8rem 1.25rem calc(env(safe-area-inset-bottom) + 1.15rem); box-shadow:inset 0 1px 0 rgba(255,255,255,0.8), 0 -14px 46px rgba(10,7,4,0.45); animation:sheetIn 0.5s cubic-bezier(0.2,1.05,0.3,1); transform:translateZ(0); -webkit-transform:translateZ(0); }
   .sheet-grab{ width:2.7rem; height:0.32rem; border-radius:99px; background:rgba(42,36,30,0.18); margin:0 auto 0.85rem; }
   .sheet-title{ font-family:'Poppins',sans-serif; font-weight:700; font-size:1.12rem; color:var(--ink); display:flex; align-items:center; gap:0.55rem; margin-bottom:0.35rem; }
   .sheet-title .st-ico{ width:1.5rem; height:1.5rem; display:inline-flex; color:var(--primary); flex-shrink:0; }
@@ -732,6 +735,9 @@
   @keyframes heroShadow{ 0%,100%{ transform:translateX(-50%) scale(1); opacity:0.5; } 50%{ transform:translateX(-50%) scale(0.78); opacity:0.26; } }
   .hero-icon-btn{ display:block; position:relative; z-index:1; background:none; border:none; padding:0; border-radius:26%; box-shadow:none; }
   .hero-icon-btn:active:not(:disabled){ transform:none; box-shadow:none !important; filter:none; }
+  /* Enfoncement instantané sous le doigt, retour en ressort : même fluidité
+     sur iOS que sur Android. */
+  .hero-icon-btn:active:not(:disabled) .hero-icon-wrap{ transform:scale(0.93); transition-duration:0.08s; }
   .hero-icon-wrap{ display:block; transition:transform 0.62s cubic-bezier(0.3,1.1,0.32,1), opacity 0.45s ease; will-change:transform, opacity; }
   .hero-icon-wrap.bump{ animation:heroBump 0.32s cubic-bezier(0.17,1.32,0.32,1); }
   @keyframes heroBump{ 0%{ transform:scale(1); } 45%{ transform:scale(1.09) rotate(2.5deg); } 100%{ transform:scale(1); } }
@@ -790,6 +796,11 @@ const ICONS = {
 /* ===================== DATA ===================== */
 const BANK = {
   facile: [
+    { q:"Quel est le verset le plus court de la Bible ?", options:["« Jésus pleura »","« Priez sans cesse »","« Dieu est amour »","« Réjouissez-vous »"], correct:"« Jésus pleura »", fact:"Devant le tombeau de Lazare (Jean 11:35)." },
+    { q:"Quel homme fut enlevé au ciel, laissant tomber son manteau ?", options:["Élie","Hénoc","Élisée","Moïse"], correct:"Élie", fact:"Élisée le ramassa et partagea le Jourdain (2 Rois 2)." },
+    { q:"Combien de fils, ancêtres des tribus, Jacob eut-il en tout ?", options:["Douze","Dix","Treize","Sept"], correct:"Douze", fact:"De quatre femmes différentes (Genèse 35)." },
+    { q:"Quel songe Jacob eut-il à Béthel ?", options:["Une échelle vers le ciel","Une statue","Des ossements","Quatre bêtes"], correct:"Une échelle vers le ciel", fact:"Des anges y montaient et descendaient (Genèse 28)." },
+    { q:"Quel apôtre est traditionnellement l'auteur du quatrième évangile ?", options:["Jean","Marc","Luc","Matthieu"], correct:"Jean", fact:"On l'appelle « le disciple que Jésus aimait » (Jean 21)." },
     { q:"Quel jour de la semaine était réservé au repos chez les Juifs ?", options:["Le sabbat","Le dimanche","Le vendredi","Le premier du mois"], correct:"Le sabbat", fact:"« Souviens-toi du jour du repos pour le sanctifier » (Exode 20)." },
     { q:"Comment Jésus appelait-il familièrement Dieu dans la prière ?", options:["Père","Roi","Maître","Seigneur des armées"], correct:"Père", fact:"« Abba, Père », priait-il à Gethsémané (Marc 14:36)." },
     { q:"Quel titre, signifiant « Oint », est donné à Jésus ?", options:["Christ","Rabbi","Prophète","Nazaréen"], correct:"Christ", fact:"« Christ » traduit l'hébreu « Messie » (Jean 1:41)." },
@@ -870,7 +881,6 @@ const BANK = {
     { q:"Quel jardin fut le lieu de l'arrestation de Jésus ?", options:["Gethsémané","Éden","Le jardin des Oliviers seul","Le Cédron"], correct:"Gethsémané", fact:"Il y avait prié « que ta volonté soit faite » (Matthieu 26)." },
     { q:"Dans quel fleuve Naaman fut-il guéri de la lèpre ?", options:["Le Jourdain","Le Nil","L'Euphrate","Le Tigre"], correct:"Le Jourdain", fact:"Il dut s'y plonger sept fois (2 Rois 5)." },
     { q:"Quel prophète annonça la naissance d'un enfant nommé Emmanuel ?", options:["Ésaïe","Jérémie","Ézéchiel","Daniel"], correct:"Ésaïe", fact:"« Emmanuel » signifie « Dieu avec nous » (Ésaïe 7:14)." },
-    { q:"Quel jeune homme aida à reconstruire les murailles de Jérusalem ?", options:["Néhémie","Esdras","Zorobabel","Aggée"], correct:"Néhémie", fact:"Les travaux furent achevés en 52 jours (Néhémie 6)." },
     { q:"Que fit Jésus lors des noces de Cana ?", options:["Il changea l'eau en vin","Il guérit un aveugle","Il calma la tempête","Il ressuscita un enfant"], correct:"Il changea l'eau en vin", fact:"Ce fut le premier de ses miracles (Jean 2)." },
     { q:"Comment s'appelle le premier livre du Nouveau Testament ?", options:["L'Évangile de Matthieu","La Genèse","Les Actes","Romains"], correct:"L'Évangile de Matthieu", fact:"Il ouvre le Nouveau Testament par la généalogie de Jésus (Matthieu 1)." },
     { q:"Quel sentiment résume la plus grande des vertus selon Paul ?", options:["L'amour","La foi","L'espérance","La justice"], correct:"L'amour", fact:"« La plus grande de ces choses, c'est l'amour » (1 Corinthiens 13)." },
@@ -883,7 +893,6 @@ const BANK = {
     { q:"Quel roi écrivit, dit-on, l'Ecclésiaste sur la vanité des choses ?", options:["Salomon","David","Ézéchias","Josias"], correct:"Salomon", fact:"« Vanité des vanités, tout est vanité » (Ecclésiaste 1)." },
     { q:"Quelle femme chanta un cantique après la traversée de la mer Rouge ?", options:["Miriam","Débora","Anne","Esther"], correct:"Miriam", fact:"Elle prit un tambourin et mena les danses (Exode 15)." },
     { q:"Quel disciple trahit Jésus pour trente pièces d'argent ?", options:["Judas","Pierre","Thomas","Simon"], correct:"Judas", fact:"Il le livra d'un baiser à Gethsémané (Matthieu 26)." },
-    { q:"Sur quelle île l'apôtre Jean reçut-il l'Apocalypse ?", options:["Patmos","Chypre","Malte","Crète"], correct:"Patmos", fact:"Exilé sur l'île de Patmos, Jean y reçut ses visions." },
     { q:"Quel signe Dieu donna-t-il à Noé après le déluge ?", options:["L'arc-en-ciel","Une colombe","Une étoile","Le sabbat"], correct:"L'arc-en-ciel", fact:"L'arc-en-ciel scelle la promesse : plus jamais de déluge universel." },
     { q:"Quel arbre était interdit dans le jardin d'Éden ?", options:["L'arbre de la connaissance du bien et du mal","L'arbre de vie","Le figuier","L'olivier"], correct:"L'arbre de la connaissance du bien et du mal", fact:"En manger introduisit le péché dans le monde." },
     { q:"Quelle nourriture Dieu envoyait-il chaque matin dans le désert ?", options:["La manne","Du pain d'orge","Des cailles seules","Du miel"], correct:"La manne", fact:"La manne tombait six jours sur sept, jamais le jour du sabbat." },
@@ -1156,6 +1165,27 @@ const BANK = {
     { q:"Quel apôtre a marché sur l'eau vers Jésus avant de douter ?", options:["Jean","Pierre","Jacques","André"], correct:"Pierre", fact:"« Homme de peu de foi, pourquoi as-tu douté ? » (Matthieu 14)." }
   ],
   moyen: [
+    { q:"Que signifie le nom « Emmanuel » ?", options:["Dieu avec nous","Dieu sauve","Père de paix","Fils de l'homme"], correct:"Dieu avec nous", fact:"« Emmanuel » signifie « Dieu avec nous » (Matthieu 1:23)." },
+    { q:"Que signifie le nom « Jésus » ?", options:["L'Éternel sauve","Dieu avec nous","Le Messie","Fils de David"], correct:"L'Éternel sauve", fact:"« Jésus » signifie « l'Éternel sauve » (Matthieu 1:21)." },
+    { q:"Sur quelles montagnes l'arche de Noé se posa-t-elle ?", options:["Les montagnes d'Ararat","Le mont Sinaï","Le mont Carmel","Les monts de Moab"], correct:"Les montagnes d'Ararat", fact:"Au septième mois, le dix-septième jour (Genèse 8:4)." },
+    { q:"Quel âge avait Moïse à sa mort ?", options:["120 ans","110 ans","80 ans","100 ans"], correct:"120 ans", fact:"« Sa vue n'était pas affaiblie » (Deutéronome 34:7)." },
+    { q:"Quel homme fut le premier roi oint par Samuel ?", options:["Saül","David","Salomon","Absalom"], correct:"Saül", fact:"Samuel oignit Saül en secret, le premier roi d'Israël (1 Samuel 10)." },
+    { q:"Quelle inscription trilingue fut placée au-dessus de la croix ?", options:["« Jésus de Nazareth, roi des Juifs »","« Le Fils de Dieu »","« Roi d'Israël »","« Le Messie »"], correct:"« Jésus de Nazareth, roi des Juifs »", fact:"Écrite en hébreu, latin et grec (Jean 19:19-20)." },
+    { q:"Combien d'années dura le règne du roi David ?", options:["Quarante ans","Trente ans","Vingt ans","Cinquante ans"], correct:"Quarante ans", fact:"Sept à Hébron, trente-trois à Jérusalem (2 Samuel 5:4)." },
+    { q:"De quoi sont faites les douze portes de la nouvelle Jérusalem ?", options:["De perles","D'or pur","de saphir","de bronze"], correct:"De perles", fact:"Chaque porte est une seule perle (Apocalypse 21:21)." },
+    { q:"Quel prophète fut envoyé à la cour, interprète des songes, sous plusieurs rois ?", options:["Daniel","Ézéchiel","Jérémie","Aggée"], correct:"Daniel", fact:"De Nebucadnetsar jusqu'à Cyrus (Daniel)." },
+    { q:"Quel homme, riche en troupeaux, offrit l'hospitalité à trois visiteurs célestes ?", options:["Abraham","Loth","Isaac","Jacob"], correct:"Abraham", fact:"Ils annoncèrent la naissance d'Isaac (Genèse 18)." },
+    { q:"Quel patriarche vécut 950 ans, le plus longtemps après le déluge annoncé ?", options:["Noé","Sem","Abraham","Héber"], correct:"Noé", fact:"Il mourut 350 ans après le déluge (Genèse 9:29)." },
+    { q:"Combien de personnes furent baptisées le jour de la Pentecôte ?", options:["Environ trois mille","Environ cent","Douze","Cinq mille"], correct:"Environ trois mille", fact:"L'Église naissante grandit d'un coup (Actes 2:41)." },
+    { q:"Quel âge avait Noé au début du déluge ?", options:["600 ans","500 ans","700 ans","480 ans"], correct:"600 ans", fact:"Il vécut encore 350 ans après (Genèse 7:6)." },
+    { q:"Quel homme marcha avec Dieu puis « ne fut plus, car Dieu le prit » ?", options:["Hénoc","Élie","Mathusalem","Noé"], correct:"Hénoc", fact:"Il ne connut pas la mort (Genèse 5:24)." },
+    { q:"Quel roi ordonna un recensement suivi d'une peste sur Israël ?", options:["David","Salomon","Saül","Ézéchias"], correct:"David", fact:"Il choisit de tomber « entre les mains de l'Éternel » (2 Samuel 24)." },
+    { q:"Quel psaume est le plus long chapitre de la Bible ?", options:["Le Psaume 119","Le Psaume 23","Le Psaume 51","Le Psaume 150"], correct:"Le Psaume 119", fact:"Cent soixante-seize versets sur la Parole de Dieu (Psaume 119)." },
+    { q:"Quel disciple, percepteur, offrit un grand festin à Jésus chez lui ?", options:["Matthieu (Lévi)","Zachée","Simon le lépreux","Nicodème"], correct:"Matthieu (Lévi)", fact:"« Je ne suis pas venu appeler des justes » (Luc 5:29)." },
+    { q:"Combien de temps l'Esprit conduisit-il Jésus au désert avant la tentation ?", options:["Quarante jours","Sept jours","Trois jours","Dix jours"], correct:"Quarante jours", fact:"Il jeûna tout ce temps (Luc 4:2)." },
+    { q:"Quel roi égyptien accueillit Abram lors d'une famine ?", options:["Pharaon","Abimélec","Neco","Chichak"], correct:"Pharaon", fact:"Fuyant la famine, Abram descendit un temps auprès du Pharaon (Genèse 12)." },
+    { q:"Sur quelle île l'apôtre Jean reçut-il l'Apocalypse ?", options:["Patmos","Chypre","Malte","Crète"], correct:"Patmos", fact:"Exilé sur l'île de Patmos, Jean y reçut ses visions." },
+    { q:"Quel jeune homme aida à reconstruire les murailles de Jérusalem ?", options:["Néhémie","Esdras","Zorobabel","Aggée"], correct:"Néhémie", fact:"Les travaux furent achevés en 52 jours (Néhémie 6)." },
     { q:"Quelle fête juive commémore le séjour au désert sous des huttes ?", options:["Les Tabernacles","La Pâque","La Pentecôte","Le sabbat"], correct:"Les Tabernacles", fact:"On y habitait sept jours sous des branchages (Lévitique 23)." },
     { q:"Quel jour solennel le grand prêtre entrait-il seul dans le lieu très saint ?", options:["Le jour des Expiations","La Pâque","Les Prémices","Le nouvel an"], correct:"Le jour des Expiations", fact:"Une seule fois l'an, avec le sang (Lévitique 16)." },
     { q:"Tous les combien d'années la terre devait-elle se reposer ?", options:["Sept ans","Trois ans","Dix ans","Cinquante ans"], correct:"Sept ans", fact:"L'année sabbatique laissait la terre en jachère (Lévitique 25)." },
@@ -1218,7 +1248,6 @@ const BANK = {
     { q:"Quel prophète pressa le peuple d'achever la reconstruction du Temple ?", options:["Aggée","Joël","Amos","Abdias"], correct:"Aggée", fact:"« Est-ce le temps d'habiter vos maisons lambrissées ? » (Aggée 1)." },
     { q:"Quel prophète, appelé enfant, servit sous le prêtre Éli ?", options:["Samuel","David","Élie","Nathan"], correct:"Samuel", fact:"Il oignit plus tard Saül, puis David (1 Samuel 3)." },
     { q:"Quel prophète courut se cacher sous un genêt, épuisé ?", options:["Élie","Élisée","Jonas","Jérémie"], correct:"Élie", fact:"Un ange le nourrit pour le voyage jusqu'à l'Horeb (1 Rois 19)." },
-    { q:"Quel songe Jacob eut-il à Béthel ?", options:["Une échelle vers le ciel","Une statue","Des ossements","Quatre bêtes"], correct:"Une échelle vers le ciel", fact:"Des anges y montaient et descendaient (Genèse 28)." },
     { q:"Quel apôtre fut lapidé, premier martyr de l'Église ?", options:["Étienne","Jacques","Pierre","Barnabas"], correct:"Étienne", fact:"Il vit « le ciel ouvert » avant de mourir (Actes 7)." },
     { q:"Quel diacre baptisa un haut fonctionnaire éthiopien ?", options:["Philippe","Étienne","Corneille","Barnabas"], correct:"Philippe", fact:"L'Éthiopien lisait le prophète Ésaïe sur son char (Actes 8)." },
     { q:"Quel compagnon de Paul était surnommé « fils d'encouragement » ?", options:["Barnabas","Silas","Tite","Timothée"], correct:"Barnabas", fact:"Il introduisit Saul auprès des apôtres méfiants (Actes 9)." },
@@ -1251,7 +1280,6 @@ const BANK = {
     { q:"Qui se révolta contre Moïse et fut englouti par la terre ?", options:["Coré","Achan","Balaam","Nadab"], correct:"Coré", fact:"La terre s'ouvrit sous lui et ses complices (Nombres 16)." },
     { q:"Quel roi assyrien assiégea Jérusalem sous Ézéchias ?", options:["Sanchérib","Nebucadnetsar","Tiglath-Piléser","Salmanasar"], correct:"Sanchérib", fact:"Son armée fut décimée en une nuit (2 Rois 19)." },
     { q:"Quel prophète annonça le jour de l'Éternel après une invasion de sauterelles ?", options:["Joël","Amos","Nahum","Abdias"], correct:"Joël", fact:"« Je répandrai mon Esprit sur toute chair » (Joël 2)." },
-    { q:"Quel apôtre est traditionnellement l'auteur du quatrième évangile ?", options:["Jean","Marc","Luc","Matthieu"], correct:"Jean", fact:"On l'appelle « le disciple que Jésus aimait » (Jean 21)." },
     { q:"Sur quel chemin Saul fut-il aveuglé puis converti ?", options:["Le chemin de Damas","La route de Jéricho","La route d'Emmaüs","Le chemin de Gaza"], correct:"Le chemin de Damas", fact:"Une lumière du ciel terrassa Saul, futur apôtre Paul." },
     { q:"Qui, proche parent, racheta et épousa Ruth ?", options:["Boaz","Obed","Élimélec","Salmon"], correct:"Boaz", fact:"De leur union naquit Obed, grand-père du roi David." },
     { q:"Quelle femme planta un pieu dans la tempe du général Sisera ?", options:["Jaël","Déborah","Abigaïl","Mical"], correct:"Jaël", fact:"Son geste scella la victoire chantée par Déborah (Juges 4-5)." },
@@ -1498,15 +1526,11 @@ const BANK = {
     { q:"Quelles pierres de décision le grand prêtre portait-il sur son pectoral ?", options:["L'urim et le thummim","Le saphir et l'onyx","Le jaspe et l'agate","Le rubis et l'émeraude"], correct:"L'urim et le thummim", fact:"Pour connaître la volonté de Dieu (Exode 28:30)." },
     { q:"Combien de pains de proposition étaient dressés dans le sanctuaire ?", options:["Douze","Sept","Cinq","Dix"], correct:"Douze", fact:"Un par tribu d'Israël (Lévitique 24:5)." },
     { q:"Quel immense bassin de bronze reposait sur douze bœufs au Temple ?", options:["La mer d'airain","La cuve du parvis","L'autel des holocaustes","Le bassin des prêtres"], correct:"La mer d'airain", fact:"Elle servait aux ablutions des prêtres (1 Rois 7)." },
-    { q:"Combien d'années dura le règne du roi David ?", options:["Quarante ans","Trente ans","Vingt ans","Cinquante ans"], correct:"Quarante ans", fact:"Sept à Hébron, trente-trois à Jérusalem (2 Samuel 5:4)." },
     { q:"Quel roi mède régna sur Babylone au temps de Daniel dans la fosse ?", options:["Darius le Mède","Cyrus","Nabonide","Assuérus"], correct:"Darius le Mède", fact:"Il signa malgré lui le décret piégé (Daniel 6)." },
     { q:"Quel cri araméen Jésus poussa-t-il sur la croix ?", options:["« Éli, Éli, lama sabachthani »","« Maranatha »","« Talitha koumi »","« Éphphatha »"], correct:"« Éli, Éli, lama sabachthani »", fact:"« Mon Dieu, pourquoi m'as-tu abandonné ? » (Matthieu 27:46)." },
-    { q:"Quelle inscription trilingue fut placée au-dessus de la croix ?", options:["« Jésus de Nazareth, roi des Juifs »","« Le Fils de Dieu »","« Roi d'Israël »","« Le Messie »"], correct:"« Jésus de Nazareth, roi des Juifs »", fact:"Écrite en hébreu, latin et grec (Jean 19:19-20)." },
     { q:"Combien de personnes furent scellées, douze mille par tribu, dans l'Apocalypse ?", options:["Cent quarante-quatre mille","Douze mille","Sept mille","Un million"], correct:"Cent quarante-quatre mille", fact:"Douze mille de chacune des douze tribus (Apocalypse 7)." },
     { q:"De quel matériau est faite la rue principale de la nouvelle Jérusalem ?", options:["D'or pur","De marbre","D'argent","De cristal"], correct:"D'or pur", fact:"« Comme du verre transparent » (Apocalypse 21:21)." },
     { q:"Quel arbre, aux feuilles guérissant les nations, est dans la cité céleste ?", options:["L'arbre de vie","L'olivier","Le figuier","Le cèdre"], correct:"L'arbre de vie", fact:"Il borde le fleuve de la vie (Apocalypse 22)." },
-    { q:"Quel patriarche vécut 950 ans, le plus longtemps après le déluge annoncé ?", options:["Noé","Sem","Abraham","Héber"], correct:"Noé", fact:"Il mourut 350 ans après le déluge (Genèse 9:29)." },
-    { q:"Combien de fils, ancêtres des tribus, Jacob eut-il en tout ?", options:["Douze","Dix","Treize","Sept"], correct:"Douze", fact:"De quatre femmes différentes (Genèse 35)." },
     { q:"Quel roi assyrien déporta les dix tribus du royaume du Nord ?", options:["Salmanasar","Nebucadnetsar","Sanchérib","Neco"], correct:"Salmanasar", fact:"Samarie tomba après trois ans de siège (2 Rois 17)." },
     { q:"Quel gouverneur romain, à Corinthe, refusa de juger Paul ?", options:["Gallion","Félix","Festus","Pilate"], correct:"Gallion", fact:"« Je ne veux pas être juge de ces choses » (Actes 18)." },
     { q:"Quel apôtre baptisa Saul de Tarse à Damas ?", options:["Ananias","Barnabas","Pierre","Étienne"], correct:"Ananias", fact:"Des écailles tombèrent des yeux de Saul (Actes 9:17)." },
@@ -1515,16 +1539,12 @@ const BANK = {
     { q:"Quel homme, à Lystre, fut d'abord pris pour le dieu Hermès avec Paul ?", options:["Barnabas","Silas","Timothée","Tite"], correct:"Barnabas", fact:"On prit Barnabas pour Zeus et Paul pour Hermès (Actes 14)." },
     { q:"Quelle mesure d'huile et de farine ne s'épuisa pas chez la veuve de Sarepta ?", options:["Un pot et une cruche","Un panier et une jarre","Un sac et une outre","Un vase et un tonneau"], correct:"Un pot et une cruche", fact:"« La farine ne manqua pas, l'huile ne diminua pas » (1 Rois 17)." },
     { q:"Quel juge conduisit Israël avant Samuel, aveugle à la fin de sa vie ?", options:["Éli","Othniel","Samson","Ehud"], correct:"Éli", fact:"Il tomba de son siège en apprenant la prise de l'arche (1 Samuel 4)." },
-    { q:"Quel homme, riche en troupeaux, offrit l'hospitalité à trois visiteurs célestes ?", options:["Abraham","Loth","Isaac","Jacob"], correct:"Abraham", fact:"Ils annoncèrent la naissance d'Isaac (Genèse 18)." },
     { q:"Quel roi vit son armée assyrienne décimée par l'ange de l'Éternel ?", options:["Ézéchias","Josias","Achaz","Manassé"], correct:"Ézéchias", fact:"185 000 hommes périrent en une nuit (2 Rois 19:35)." },
-    { q:"Quel prophète fut envoyé à la cour, interprète des songes, sous plusieurs rois ?", options:["Daniel","Ézéchiel","Jérémie","Aggée"], correct:"Daniel", fact:"De Nebucadnetsar jusqu'à Cyrus (Daniel)." },
     { q:"Quel roi d'Israël se fit passer pour un simple soldat et fut tué à Ramoth ?", options:["Achab","Josaphat","Jéhu","Omri"], correct:"Achab", fact:"Une flèche « tirée au hasard » l'atteignit (1 Rois 22)." },
     { q:"Quel gendre de Saül fut privé du trône au profit de David ?", options:["Isch-Boscheth","Jonathan","Abner","Mephiboscheth"], correct:"Isch-Boscheth", fact:"Un fils de Saül, roi rival un temps (2 Samuel 2)." },
     { q:"Quel fils boiteux de Jonathan David traita-t-il avec bonté ?", options:["Mephiboscheth","Isch-Boscheth","Kileab","Absalom"], correct:"Mephiboscheth", fact:"Il mangea à la table du roi (2 Samuel 9)." },
-    { q:"Combien de temps l'Esprit conduisit-il Jésus au désert avant la tentation ?", options:["Quarante jours","Sept jours","Trois jours","Dix jours"], correct:"Quarante jours", fact:"Il jeûna tout ce temps (Luc 4:2)." },
     { q:"Quel roi de Juda fut emmené à Babylone après avoir vu tuer ses fils ?", options:["Sédécias","Jojakin","Manassé","Achaz"], correct:"Sédécias", fact:"On lui creva ensuite les yeux (2 Rois 25:7)." },
     { q:"Quel prophète compara la restauration d'Israël à deux bâtons réunis ?", options:["Ézéchiel","Jérémie","Osée","Zacharie"], correct:"Ézéchiel", fact:"Juda et Israël ne feraient plus qu'un (Ézéchiel 37)." },
-    { q:"Quel disciple, percepteur, offrit un grand festin à Jésus chez lui ?", options:["Matthieu (Lévi)","Zachée","Simon le lépreux","Nicodème"], correct:"Matthieu (Lévi)", fact:"« Je ne suis pas venu appeler des justes » (Luc 5:29)." },
     { q:"Quelle ville, « tiède », reçoit le reproche du Christ dans l'Apocalypse ?", options:["Laodicée","Éphèse","Smyrne","Pergame"], correct:"Laodicée", fact:"« Je vais te vomir de ma bouche » (Apocalypse 3:16)." },
     { q:"Quel prophète eut la vision de quatre cornes et de quatre forgerons ?", options:["Zacharie","Amos","Aggée","Malachie"], correct:"Zacharie", fact:"Les cornes figuraient les puissances qui dispersent (Zacharie 1)." },
     { q:"Quel homme, dans les Actes, tomba mort d'un troisième étage puis fut relevé ?", options:["Eutyque","Publius","Trophime","Sopater"], correct:"Eutyque", fact:"Il s'était endormi durant le long discours de Paul (Actes 20)." },
@@ -1536,7 +1556,6 @@ const BANK = {
     { q:"Au gué de quel cours d'eau Jacob lutta-t-il toute la nuit ?", options:["Le Jabbok","Le Jourdain","L'Arnon","Le Kison"], correct:"Le Jabbok", fact:"Il y reçut le nom d'Israël (Genèse 32:22)." },
     { q:"Combien d'années Joseph vécut-il ?", options:["110 ans","120 ans","70 ans","147 ans"], correct:"110 ans", fact:"Ses os furent plus tard rapportés en Canaan (Genèse 50:26)." },
     { q:"Quels deux fils d'Aaron moururent en offrant un feu étranger ?", options:["Nadab et Abihu","Éléazar et Ithamar","Hophni et Phinées","Guerschom et Éliézer"], correct:"Nadab et Abihu", fact:"Un feu sortit de devant l'Éternel (Lévitique 10)." },
-    { q:"Quel âge avait Moïse à sa mort ?", options:["120 ans","110 ans","80 ans","100 ans"], correct:"120 ans", fact:"« Sa vue n'était pas affaiblie » (Deutéronome 34:7)." },
     { q:"De quelle tribu était Samson ?", options:["Dan","Juda","Benjamin","Éphraïm"], correct:"Dan", fact:"Il était nazaréen dès le sein de sa mère (Juges 13)." },
     { q:"Avec quelle arme improbable Samson tua-t-il mille hommes ?", options:["Une mâchoire d'âne","Une fronde","Un pieu","Une épée de bronze"], correct:"Une mâchoire d'âne", fact:"Il nomma le lieu Ramath-Léchi (Juges 15:16)." },
     { q:"Qui, dans le livre de Ruth, fut le père d'Obed ?", options:["Boaz","Élimélec","Salmon","Mahlon"], correct:"Boaz", fact:"Obed fut le grand-père du roi David (Ruth 4)." },
@@ -1559,25 +1578,16 @@ const BANK = {
     { q:"Quel orfèvre d'Éphèse déclencha une émeute contre Paul ?", options:["Démétrius","Alexandre","Diotrèphe","Tyrannus"], correct:"Démétrius", fact:"Il vendait des temples d'argent de Diane (Actes 19)." },
     { q:"Quelle diaconesse Paul recommande-t-il à la fin de l'épître aux Romains ?", options:["Phœbé","Priscille","Junias","Tryphène"], correct:"Phœbé", fact:"Elle était de l'Église de Cenchrées (Romains 16:1)." },
     { q:"Combien de fils Gédéon eut-il, selon le livre des Juges ?", options:["Soixante-dix","Douze","Trente","Sept"], correct:"Soixante-dix", fact:"Abimélec, l'un d'eux, les fit presque tous périr (Juges 8:30)." },
-    { q:"Quel âge avait Noé au début du déluge ?", options:["600 ans","500 ans","700 ans","480 ans"], correct:"600 ans", fact:"Il vécut encore 350 ans après (Genèse 7:6)." },
-    { q:"Sur quelles montagnes l'arche de Noé se posa-t-elle ?", options:["Les montagnes d'Ararat","Le mont Sinaï","Le mont Carmel","Les monts de Moab"], correct:"Les montagnes d'Ararat", fact:"Au septième mois, le dix-septième jour (Genèse 8:4)." },
-    { q:"Quel homme marcha avec Dieu puis « ne fut plus, car Dieu le prit » ?", options:["Hénoc","Élie","Mathusalem","Noé"], correct:"Hénoc", fact:"Il ne connut pas la mort (Genèse 5:24)." },
     { q:"Quelle est la plus courte des sept Églises louée sans reproche avec Smyrne ?", options:["Philadelphie","Laodicée","Sardes","Éphèse"], correct:"Philadelphie", fact:"« Je t'ai ouvert une porte que nul ne peut fermer » (Apocalypse 3)." },
     { q:"Combien d'anciens entourent le trône dans l'Apocalypse ?", options:["Vingt-quatre","Douze","Sept","Soixante-dix"], correct:"Vingt-quatre", fact:"Vêtus de blanc, des couronnes d'or sur la tête (Apocalypse 4:4)." },
-    { q:"De quoi sont faites les douze portes de la nouvelle Jérusalem ?", options:["De perles","D'or pur","de saphir","de bronze"], correct:"De perles", fact:"Chaque porte est une seule perle (Apocalypse 21:21)." },
-    { q:"Quel est le verset le plus court de la Bible ?", options:["« Jésus pleura »","« Priez sans cesse »","« Dieu est amour »","« Réjouissez-vous »"], correct:"« Jésus pleura »", fact:"Devant le tombeau de Lazare (Jean 11:35)." },
-    { q:"Quel psaume est le plus long chapitre de la Bible ?", options:["Le Psaume 119","Le Psaume 23","Le Psaume 51","Le Psaume 150"], correct:"Le Psaume 119", fact:"Cent soixante-seize versets sur la Parole de Dieu (Psaume 119)." },
     { q:"Quel signe Dieu ajouta-t-il pour Ézéchias, sur le cadran ?", options:["L'ombre recula de dix degrés","Le soleil s'arrêta","La lune rougit","Une étoile parut"], correct:"L'ombre recula de dix degrés", fact:"En gage des quinze années ajoutées (2 Rois 20:11)." },
     { q:"Quel homme, dans les Actes, gardait les vêtements des bourreaux d'Étienne ?", options:["Saul de Tarse","Gamaliel","Ananias","Barnabas"], correct:"Saul de Tarse", fact:"Il consentait à cette mise à mort (Actes 7:58)." },
     { q:"Quel fils d'Ésaïe reçut un nom-signe, Maher-Schalal-Chash-Baz ?", options:["Un fils du prophète","Un fils de Josias","Le fils d'Achaz","Le fils d'Ézéchias"], correct:"Un fils du prophète", fact:"Le nom annonçait la ruine prochaine de Damas (Ésaïe 8:3)." },
     { q:"Dans quelle plaine Nebucadnetsar dressa-t-il sa statue d'or ?", options:["La plaine de Dura","La plaine de Sinéar","La vallée de Josaphat","La plaine de Jizréel"], correct:"La plaine de Dura", fact:"Tous devaient l'adorer au son des instruments (Daniel 3)." },
     { q:"Quel roi de Juda fit passer ses fils par le feu ?", options:["Achaz","Ézéchias","Josias","Asa"], correct:"Achaz", fact:"Il imita les pratiques des nations païennes (2 Rois 16:3)." },
     { q:"Quel prophète vit la gloire de Dieu quitter le Temple ?", options:["Ézéchiel","Ésaïe","Jérémie","Daniel"], correct:"Ézéchiel", fact:"Vision du jugement sur Jérusalem (Ézéchiel 10)." },
-    { q:"Combien de personnes furent baptisées le jour de la Pentecôte ?", options:["Environ trois mille","Environ cent","Douze","Cinq mille"], correct:"Environ trois mille", fact:"L'Église naissante grandit d'un coup (Actes 2:41)." },
     { q:"Combien de disciples étaient réunis avant la Pentecôte ?", options:["Environ cent vingt","Douze","Soixante-dix","Cinq cents"], correct:"Environ cent vingt", fact:"C'est là que Matthias fut choisi (Actes 1:15)." },
     { q:"Quel géant, frère de Goliath, fut tué par un homme de David ?", options:["Lachmi","Ischbi-Benob","Saph","Og"], correct:"Lachmi", fact:"D'autres géants de Gath tombèrent aussi (1 Chroniques 20:5)." },
-    { q:"Quel roi ordonna un recensement suivi d'une peste sur Israël ?", options:["David","Salomon","Saül","Ézéchias"], correct:"David", fact:"Il choisit de tomber « entre les mains de l'Éternel » (2 Samuel 24)." },
-    { q:"Quel homme fut enlevé au ciel, laissant tomber son manteau ?", options:["Élie","Hénoc","Élisée","Moïse"], correct:"Élie", fact:"Élisée le ramassa et partagea le Jourdain (2 Rois 2)." },
     { q:"Quel prophète acheta un champ à Anathoth en gage d'espérance ?", options:["Jérémie","Ézéchiel","Ésaïe","Osée"], correct:"Jérémie", fact:"Signe qu'on rachèterait encore des terres au pays (Jérémie 32)." },
     { q:"Qui gardait les vêtements de ceux qui lapidèrent Étienne ?", options:["Saul de Tarse","Gamaliel","Barnabas","Ananias"], correct:"Saul de Tarse", fact:"Ce futur apôtre Paul approuvait alors cette mise à mort." },
     { q:"De quelle ville Abraham partit-il pour suivre l'appel de Dieu ?", options:["Ur en Chaldée","Harân","Sichem","Hébron"], correct:"Ur en Chaldée", fact:"Il partit « sans savoir où il allait » (Hébreux 11)." },
@@ -1626,8 +1636,6 @@ const BANK = {
     { q:"Quel prophète dit « le juste vivra par sa foi » ?", options:["Habacuc","Aggée","Sophonie","Malachie"], correct:"Habacuc", fact:"« Le juste vivra par sa foi » est une parole d'Habacuc (Habacuc 2:4)." },
     { q:"Combien de livres compte toute la Bible protestante ?", options:["66","73","39","27"], correct:"66", fact:"La Bible protestante réunit 66 livres : 39 anciens et 27 nouveaux (39 + 27)." },
     { q:"Quel est le nom hébreu de Dieu révélé à Moïse, « Je suis » ?", options:["YHWH","Adonaï","Élohim","El-Schaddaï"], correct:"YHWH", fact:"Au buisson, Dieu se nomme « Je suis » : d'où le nom YHWH (Exode 3:14)." },
-    { q:"Que signifie le nom « Emmanuel » ?", options:["Dieu avec nous","Dieu sauve","Père de paix","Fils de l'homme"], correct:"Dieu avec nous", fact:"« Emmanuel » signifie « Dieu avec nous » (Matthieu 1:23)." },
-    { q:"Que signifie le nom « Jésus » ?", options:["L'Éternel sauve","Dieu avec nous","Le Messie","Fils de David"], correct:"L'Éternel sauve", fact:"« Jésus » signifie « l'Éternel sauve » (Matthieu 1:21)." },
     { q:"Combien de personnes entrèrent dans l'arche de Noé ?", options:["Huit","Six","Quatre","Dix"], correct:"Huit", fact:"Huit personnes seulement traversèrent le déluge dans l'arche (1 Pierre 3:20)." },
     { q:"Combien de temps Noé vécut-il au total ?", options:["950 ans","969 ans","777 ans","600 ans"], correct:"950 ans", fact:"Noé vécut en tout 950 ans (Genèse 9:29)." },
     { q:"Sur quelle montagne l'arche se posa-t-elle ?", options:["Ararat","Sinaï","Nébo","Carmel"], correct:"Ararat", fact:"L'arche s'arrêta sur les montagnes d'Ararat (Genèse 8:4)." },
@@ -1677,7 +1685,6 @@ const BANK = {
     { q:"Quelle femme sauva David de la colère par sa sagesse ?", options:["Abigaïl","Michal","Bath-Shéba","Ahinoam"], correct:"Abigaïl", fact:"Abigaïl désarma la colère de David par sa sagesse et ses présents (1 Samuel 25)." },
     { q:"Quel roi a eu un songe de sept vaches grasses ?", options:["Pharaon","Nebucadnetsar","Belschatsar","Abimélec"], correct:"Pharaon", fact:"Le songe des sept vaches grasses annonça sept années d'abondance (Genèse 41)." },
     { q:"Quel prophète a acheté Gomer pour quinze pièces d'argent ?", options:["Osée","Amos","Joël","Michée"], correct:"Osée", fact:"Osée racheta Gomer pour quinze pièces d'argent (Osée 3:2)." },
-    { q:"Quel homme fut le premier roi oint par Samuel ?", options:["Saül","David","Salomon","Absalom"], correct:"Saül", fact:"Samuel oignit Saül en secret, le premier roi d'Israël (1 Samuel 10)." },
     { q:"Combien de mesures de farine la veuve mit-elle avec le levain (parabole) ?", options:["Une","Deux","Trois","Cinq"], correct:"Trois", fact:"Le levain agit dans trois mesures de farine : image du Royaume (Matthieu 13:33)." },
     { q:"Quel prophète fut envoyé à Amatsia et Béthel ?", options:["Amos","Osée","Joël","Nahum"], correct:"Amos", fact:"Amos affronta le prêtre Amatsia au sanctuaire de Béthel (Amos 7)." },
     { q:"Quel homme fut lapidé, priant pour ses bourreaux ?", options:["Étienne","Jacques","Antipas","Zacharie"], correct:"Étienne", fact:"Étienne mourut lapidé en priant : « Ne leur impute pas ce péché » (Actes 7)." },
@@ -1694,7 +1701,6 @@ const BANK = {
     { q:"Quel prophète vit quatre bêtes sortir de la mer ?", options:["Daniel","Ézéchiel","Zacharie","Jean"], correct:"Daniel", fact:"Daniel vit quatre bêtes monter de la mer, figures d'empires (Daniel 7)." },
     { q:"Quel roi fut frappé de mutisme jusqu'à la naissance de son fils ?", options:["Zacharie","Siméon","Éli","Nathan"], correct:"Zacharie", fact:"Père de Jean-Baptiste (Luc 1)." },
     { q:"Quel homme fut roi et poète, auteur de nombreux Psaumes ?", options:["David","Salomon","Asaph","Moïse"], correct:"David", fact:"David, « le doux chantre d'Israël », composa de nombreux Psaumes (2 Samuel 23:1)." },
-    { q:"Quel roi égyptien accueillit Abram lors d'une famine ?", options:["Pharaon","Abimélec","Neco","Chichak"], correct:"Pharaon", fact:"Fuyant la famine, Abram descendit un temps auprès du Pharaon (Genèse 12)." },
     { q:"Quel homme baptisa Paul à Damas ?", options:["Ananias","Barnabas","Corneille","Gamaliel"], correct:"Ananias", fact:"Ananias rendit la vue à Saul puis le baptisa à Damas (Actes 9:17)." },
     { q:"Quel roi vit un festin interrompu par une main sur le mur ?", options:["Belschatsar","Nebucadnetsar","Darius","Cyrus"], correct:"Belschatsar", fact:"Le festin de Belschatsar fut interrompu par une main écrivant sur le mur (Daniel 5)." },
     { q:"Quel homme construisit un autel appelé « L'Éternel est ma bannière » ?", options:["Moïse","Josué","Gédéon","Aaron"], correct:"Moïse", fact:"Après la victoire sur Amalek, Moïse bâtit l'autel « L'Éternel est ma bannière » (Exode 17:15)." },
@@ -2024,7 +2030,7 @@ function updateRoomOpponent(){
   const btn = document.getElementById("roomStartBtn");
   if(btn){ const can = net.isHost && net.oppPresent; btn.classList.toggle("is-waiting", !can); btn.textContent = can ? "Commencer le duel" : "En attente de l'adversaire…"; }
   const wait = document.getElementById("waitNote");
-  if(wait) wait.textContent = net.oppPresent ? "Prêt ! En attente du lancement par l'hôte…" : "Connexion au salon…";
+  if(wait) wait.textContent = net.oppPresent ? "Prêt ! En attente du lancement par l'hôte…" : "Connexion au salon…";
   queueGlassSync();
 }
 function joinLobby(){
@@ -2254,6 +2260,7 @@ function markOppGone(){
   net.oppGone = true;
   net.oppPresent = false;
   net.hideGoneBanner = false;
+  net.goneFresh = true;
   clearTimeout(net.goneBannerTimer);
   net.goneBannerTimer = setTimeout(()=>{ net.hideGoneBanner = true; reRenderIfOnline(); }, 6000);
   if(net.myDone && state.screen==="online-play"){ state.screen="online-end"; }
@@ -2979,12 +2986,21 @@ function errbookRemove(q){
   if(i>=0){ a.splice(i,1); saveErrbook(a); }
 }
 function errbookCount(){ return loadErrbook().length; }
+/* Révision ciblée : uniquement les erreurs de la DERNIÈRE partie jouée
+   (celles déjà maîtrisées entre-temps ont quitté le carnet). */
+function lastMissEntries(){
+  let keys = [];
+  try { keys = JSON.parse(localStorage.getItem("bt_lastmiss")||"[]"); } catch(e){}
+  if(!Array.isArray(keys) || !keys.length) return [];
+  const set = new Set(keys);
+  return loadErrbook().filter(x=>set.has(x.k));
+}
 function startRevision(){
-  const b = shuffle(loadErrbook()).slice(0, 9);
+  const b = shuffle(lastMissEntries()).slice(0, 9);
   if(!b.length) return;
   state.mode = "solo"; state.daily = false; state.revision = true;
   state.soloScore = 0; state.soloStreak = 0; state.soloBestStreak = 0; state.soloCorrect = 0; displayedSoloScore = 0; state.soloMissed = []; state.soloIsRecord = false;
-  state.timerKey = "sans"; // on révise à son rythme
+  // Pas de chrono en révision — sans toucher au réglage choisi par le joueur.
   state.questions = b.map(x=>({ q:x.q, options:x.options, correct:x.correct, fact:x.fact, tier:x.tier, shuffledOptions:shuffle(x.options.slice()) }));
   state.currentIndex = 0; state.revealed = false; state.awarded = []; state.soloSelected = null; state.timedOut = false;
   state.screen = "play";
@@ -2996,7 +3012,7 @@ function shareRoomCode(){
   if(navigator.clipboard && navigator.clipboard.writeText){
     navigator.clipboard.writeText(msg).then(()=>{
       const b = document.querySelector(".btn-invite span:last-child");
-      if(b){ b.textContent = "Code copié !"; }
+      if(b){ b.textContent = "Code copié !"; }
     }).catch(()=>{});
   }
 }
@@ -3023,7 +3039,7 @@ function startGame(){
   if(state.mode==="group"){
     const valid = validTeams();
     if(valid.length<2){
-      document.getElementById("setupError").textContent = "Ajoutez au moins deux joueurs avec un nom pour commencer.";
+      document.getElementById("setupError").textContent = "Ajoutez au moins deux joueurs ou équipes avec un nom pour commencer.";
       return;
     }
     state.teams = valid;
@@ -3040,7 +3056,7 @@ function startGame(){
 function replayGame(){
   if(state.daily){ state.questions = seededDeck(dailySeedToday(), "courte", "tout"); }
   else if(state.revision){
-    const b = shuffle(loadErrbook()).slice(0, 9);
+    const b = shuffle(lastMissEntries()).slice(0, 9);
     if(!b.length){ newGame(); return; }
     state.questions = b.map(x=>({ q:x.q, options:x.options, correct:x.correct, fact:x.fact, tier:x.tier, shuffledOptions:shuffle(x.options.slice()) }));
   }
@@ -3112,7 +3128,7 @@ function soloAnswer(idx){
     state.soloStreak += 1;
     errbookRemove(q); // maîtrisée : elle quitte le carnet de révision
     if(state.soloStreak > state.soloBestStreak) state.soloBestStreak = state.soloStreak;
-    if(state.soloStreak>=3 && state.soloStreak%3===0){ playStreak(); } else { playCorrect(); }
+    playCorrect(); // toujours le même son, quelle que soit la série
   } else {
     state.soloStreak = 0;
     state.soloMissed.push({ q:q.q, correct:q.correct, chosen:opt, fact:q.fact });
@@ -3134,7 +3150,12 @@ function adjustScore(teamIdx, delta){ const cap = maxPossibleScore(); state.scor
 function nextQuestion(){
   if(!state.revealed) return;
   if(state.currentIndex >= state.questions.length-1){
-    if(state.mode==="solo"){ recordSoloResult(); if(state.daily) recordDailyResult(); }
+    if(state.mode==="solo"){
+      recordSoloResult();
+      if(state.daily) recordDailyResult();
+      // Mémorise les erreurs de CETTE partie pour « Réviser la dernière partie »
+      if(!state.revision){ try { localStorage.setItem("bt_lastmiss", JSON.stringify(state.soloMissed.map(m=>qKey(m)))); } catch(e){} }
+    }
     state.screen = "end";
     render();
     playWin();
@@ -3158,10 +3179,10 @@ function computeRanks(){
 }
 function maxPossibleScore(){ return state.questions.reduce((sum,q)=>sum+TIER_INFO[q.tier].pts,0); }
 function soloPerformanceMessage(pct){
-  if(pct>=85) return "Excellent ! Tu connais vraiment bien ta Bible.";
-  if(pct>=65) return "Très bien ! Continue comme ça.";
+  if(pct>=85) return "Excellent ! Tu connais vraiment bien ta Bible.";
+  if(pct>=65) return "Très bien ! Continue comme ça.";
   if(pct>=40) return "Bien joué, il y a de bonnes bases.";
-  return "Beau début ! Chaque partie t'apprend un peu plus.";
+  return "Beau début ! Chaque partie t'apprend un peu plus.";
 }
 
 /* Célébration de fin : plus de confettis. Un halo doré éclot depuis le
@@ -3318,7 +3339,7 @@ function renderModeSelect(){
       <span class="dc-ico">${ICONS.flame}</span>
       <span class="dc-txt">
         <b>Défi du jour</b>
-        <small>${done ? `Réussi : ${d.score}/${d.total} · Reviens demain !` : "9 questions, les mêmes pour tous"}</small>
+        <small>${done ? `Réussi : ${d.score}/${d.total} · Reviens demain !` : "9 questions, les mêmes pour tous"}</small>
       </span>
       ${sk>0 ? `<span class="dc-streak">${ICONS.flame}${sk}</span>` : ""}
       ${done ? `<span class="dc-check">${ICONS.checkCircle}</span>` : `<span class="chev">${ICONS.chevronRight}</span>`}
@@ -3340,15 +3361,15 @@ function renderSetup(){
     el.innerHTML = `
       ${renderHeader("Mode Groupe", true)}
       <div class="card">
-        <h2>Joueurs</h2>
+        <h2>Joueurs ou équipes</h2>
         ${state.teams.map((t,i)=>`
           <div class="team-row">
             <span class="team-token" style="background:linear-gradient(150deg, color-mix(in srgb, ${TEAM_COLORS[i%6]} 68%, #ffffff), ${TEAM_COLORS[i%6]})">${((t.name||"").trim().charAt(0).toUpperCase())||(i+1)}</span>
-            <input type="text" value="${escapeHtml(t.name)}" maxlength="20" oninput="renameTeam(${i}, this.value)" onchange="render()" placeholder="Nom du joueur">
-            <button class="team-remove" onclick="removeTeam(${i})" ${state.teams.length<=2?"disabled":""} aria-label="Retirer ce joueur"><span class="ico" style="width:0.9rem;height:0.9rem;">${ICONS.close}</span></button>
+            <input type="text" value="${escapeHtml(t.name)}" maxlength="20" oninput="renameTeam(${i}, this.value)" onchange="render()" placeholder="Nom du joueur ou de l'équipe">
+            <button class="team-remove" onclick="removeTeam(${i})" ${state.teams.length<=2?"disabled":""} aria-label="Retirer"><span class="ico" style="width:0.9rem;height:0.9rem;">${ICONS.close}</span></button>
           </div>
         `).join("")}
-        <button class="add-team" onclick="addTeam()" ${state.teams.length>=6?"disabled":""}><span class="ico">${ICONS.plusCircle}</span>Ajouter un joueur</button>
+        <button class="add-team" onclick="addTeam()" ${state.teams.length>=6?"disabled":""}><span class="ico">${ICONS.plusCircle}</span>Ajouter un joueur ou une équipe</button>
       </div>
       ${renderLengthCard()}
       <div class="card">
@@ -3377,7 +3398,7 @@ function renderSetup(){
           <button class="chip ${state.themeKey==='nt'?'active':''}" data-group="theme" data-k="nt" onclick="setTheme('nt')">Nouveau<span class="sub">Testament</span></button>
         </div>
       </div>
-      ${errbookCount()>0 ? `<button class="btn-review" onclick="startRevision()"><span class="ico">${ICONS.bookOpen}</span>Réviser mes ${errbookCount()} erreur${errbookCount()>1?"s":""}</button>` : ""}
+      ${(()=>{ const n = lastMissEntries().length; return n>0 ? `<button class="btn-review" onclick="startRevision()"><span class="ico">${ICONS.bookOpen}</span>Réviser la dernière partie (${n} erreur${n>1?"s":""})</button>` : ""; })()}
       <div class="rules"><b>Déroulé :</b> réponds à chaque question avant la fin du chrono — tous niveaux mélangés. Enchaîne les bonnes réponses pour faire grimper ta série.</div>
       <div class="flex-sp"></div>
       <button class="btn-primary" onclick="startGame()">Commencer la partie</button>
@@ -3437,10 +3458,10 @@ function renderPlay(){
   if(state.mode==="group"){
     const ranked = rankedTeamIndices();
     bottomHtml = `
-      ${state.revealed ? `<div class="fact-card${pop?' reveal-in':''}"><span class="ficon">${ICONS.bookOpen}</span><span class="ftext"><span class="fact-label">Le savais-tu ?</span>${escapeHtml(q.fact)}</span></div>` : `<button class="btn-reveal" onclick="revealAnswer()">Révéler la réponse</button>`}
+      ${state.revealed ? `<div class="fact-card${pop?' reveal-in':''}"><span class="ficon">${ICONS.bookOpen}</span><span class="ftext"><span class="fact-label">Le savais-tu ?</span>${escapeHtml(q.fact)}</span></div>` : `<button class="btn-reveal${fresh?' reveal-in':''}" onclick="revealAnswer()">Révéler la réponse</button>`}
       ${state.revealed ? `
-        <div class="award-label">Qui a trouvé la bonne réponse ?</div>
-        <div class="award-grid">
+        <div class="award-label${pop?' reveal-in':''}">Qui a trouvé la bonne réponse ?</div>
+        <div class="award-grid${pop?' reveal-in':''}">
           ${state.teams.map((t,i)=>`
             <button class="award-btn ${state.awarded.includes(i)?'awarded':''}" onclick="toggleAward(${i})">
               <span class="team-token aw-token" style="background:linear-gradient(150deg, color-mix(in srgb, ${TEAM_COLORS[i%6]} 68%, #ffffff), ${TEAM_COLORS[i%6]})">${((t.name||"").trim().charAt(0).toUpperCase())||(i+1)}</span>
@@ -3468,7 +3489,7 @@ function renderPlay(){
     `;
   } else {
     bottomHtml = `
-      ${state.timedOut && state.revealed ? `<div class="timeout-note${pop?' reveal-in':''}"><span class="ico">${ICONS.clock}</span>Temps écoulé !</div>` : ""}
+      ${state.timedOut && state.revealed ? `<div class="timeout-note${pop?' reveal-in':''}"><span class="ico">${ICONS.clock}</span>Temps écoulé !</div>` : ""}
       ${state.revealed ? `<div class="fact-card${pop?' reveal-in':''}"><span class="ficon">${ICONS.bookOpen}</span><span class="ftext"><span class="fact-label">Le savais-tu ?</span>${escapeHtml(q.fact)}</span></div>` : ""}
       ${state.revealed ? `<button class="btn-next${pop?' reveal-in':''}" onclick="nextQuestion()">${state.currentIndex>=total-1 ? "Voir les résultats" : "Question suivante"}</button>` : ""}
       <div class="flex-sp"></div>
@@ -3482,7 +3503,7 @@ function renderPlay(){
     <div class="play-meta">
       <span class="tier-chip ${info.cls}">${tierDotsHtml(info.level)}${info.label} · ${info.pts} pts</span>
       <span class="q-counter">${state.currentIndex+1}/${total}</span>
-      ${!state.revealed ? timerChipHtml(timerSecondsFor(state.timerKey)) : ""}
+      ${!state.revealed && !state.revision ? timerChipHtml(timerSecondsFor(state.timerKey)) : ""}
       ${state.mode==="solo" ? `<span class="streak-chip${streakHot?' hot':''}"><span class="ico">${ICONS.flame}</span>${state.soloStreak}</span>` : ""}
     </div>
     <div class="progress-track">
@@ -3496,7 +3517,7 @@ function renderPlay(){
 
   // Chrono : démarre sur chaque nouvelle question non révélée
   if(fresh && !state.revealed){
-    const secs = timerSecondsFor(state.timerKey);
+    const secs = state.revision ? null : timerSecondsFor(state.timerKey);
     startQTimer(secs, state.mode==="solo" ? soloTimeUp : groupTimeUp);
   }
 
@@ -3540,7 +3561,7 @@ function renderEndGroup(){
     <div class="end-hero">
       <div class="end-medal"><span class="em-cup">${TROPHY_GOLD}</span></div>
       <div class="end-eyebrow">${winners.length>1 ? "Égalité" : "Vainqueur"}</div>
-      <h1 class="end-title">${winners.length>1 ? "Ex æquo en tête !" : escapeHtml(winners[0])}</h1>
+      <h1 class="end-title">${winners.length>1 ? "Ex æquo en tête !" : escapeHtml(winners[0])}</h1>
       <p class="end-sub">Bravo à tous — continuez à explorer la Parole.</p>
     </div>
     ${podiumHtml}
@@ -3577,11 +3598,11 @@ function renderEndSolo(){
   return `
     <div class="end-hero">
       <div class="end-medal"><span class="em-cup">${TROPHY_GOLD}</span></div>
-      <div class="end-eyebrow${state.soloIsRecord?' record':''}">${state.soloIsRecord?"★ Nouveau record personnel !":(state.daily?"Défi du jour terminé":(state.revision?"Révision terminée":"Partie terminée"))}</div>
+      <div class="end-eyebrow${state.soloIsRecord?' record':''}">${state.soloIsRecord?"★ Nouveau record personnel !":(state.daily?"Défi du jour terminé":(state.revision?"Révision terminée":"Partie terminée"))}</div>
       <h1 class="end-title">${state.soloScore} points</h1>
       <p class="end-sub">${soloPerformanceMessage(pct)}</p>
-      ${state.daily?`<div class="end-best">Série du défi : ${loadDaily().streak} jour${loadDaily().streak>1?"s":""} d'affilée · Reviens demain !</div>`:""}
-      ${state.revision?`<div class="end-best">${state.questions.length-state.soloMissed.length} maîtrisée${state.questions.length-state.soloMissed.length>1?"s":""} sur ${state.questions.length} · ${errbookCount()>0?errbookCount()+" encore à revoir":"carnet vidé, bravo !"}</div>`:""}
+      ${state.daily?`<div class="end-best">Série du défi : ${loadDaily().streak} jour${loadDaily().streak>1?"s":""} d'affilée · Reviens demain !</div>`:""}
+      ${state.revision?`<div class="end-best">${state.questions.length-state.soloMissed.length} maîtrisée${state.questions.length-state.soloMissed.length>1?"s":""} sur ${state.questions.length} · ${lastMissEntries().length>0?lastMissEntries().length+" encore à revoir":"tout est maîtrisé, bravo !"}</div>`:""}
       ${!state.daily && !state.revision && st.games>0?`<div class="end-best">Record : ${st.bestPct}% du maximum · ${st.games} partie${st.games>1?"s":""} jouée${st.games>1?"s":""}</div>`:""}
     </div>
     <div class="flex-sp"></div>
@@ -3760,6 +3781,9 @@ function renderOnline(){
     return el;
   }
   const n = net.connected || 1;
+  const searchNew = net.searching && !net._searchWas;
+  const actionsNew = !net.searching && net._searchWas === true;
+  net._searchWas = net.searching;
   el.innerHTML = `
     ${renderHeader("En ligne", true, "leaveOnline()")}
     <div class="presence-card">
@@ -3775,7 +3799,7 @@ function renderOnline(){
     </button>
     <div class="flex-sp"></div>
     ${net.searching ? `
-      <div class="searching-card">
+      <div class="searching-card${searchNew?' reveal-in':''}">
         <div class="spinner"></div>
         <div class="searching-txt">Recherche d'un adversaire…</div>
         <div class="opp-progress">${freshLookers()>0?(freshLookers()+" autre"+(freshLookers()>1?"s":"")+" en recherche…"):"Dès qu'un autre joueur lancera une partie aléatoire, vous serez appariés automatiquement."}</div>
@@ -3783,17 +3807,17 @@ function renderOnline(){
       </div>
       <div class="flex-sp"></div>
     ` : `
-      <button class="online-action primary" style="--i:0" onclick="setSearching(true)">
+      <button class="online-action primary${actionsNew?' reveal-in':''}" style="--i:0" onclick="setSearching(true)">
         <span class="oa-ico">${ICONS.bolt}</span>
         <span class="oa-txt"><b>Partie aléatoire</b><small>Tombe avec un joueur connecté</small></span>
         <span class="chev">${ICONS.chevronRight}</span>
       </button>
-      <button class="online-action" style="--i:1" onclick="createRoomFlow()">
+      <button class="online-action${actionsNew?' reveal-in':''}" style="--i:1" onclick="createRoomFlow()">
         <span class="oa-ico">${ICONS.plusCircle}</span>
         <span class="oa-txt"><b>Créer une partie</b><small>Invite un ami avec un code</small></span>
         <span class="chev">${ICONS.chevronRight}</span>
       </button>
-      <button class="online-action" style="--i:2" onclick="state.screen='online-join';net.error='';render()">
+      <button class="online-action${actionsNew?' reveal-in':''}" style="--i:2" onclick="state.screen='online-join';net.error='';render()">
         <span class="oa-ico">${ICONS.users}</span>
         <span class="oa-txt"><b>Rejoindre</b><small>Entre le code d'un ami</small></span>
         <span class="chev">${ICONS.chevronRight}</span>
@@ -3826,6 +3850,8 @@ function renderOnlineJoin(){
 function renderOnlineRoom(){
   const el=document.createElement("div"); el.className="screen";
   const canStart = net.isHost && net.oppPresent;
+  const oppNew = net.oppPresent && !net._oppShown;
+  net._oppShown = net.oppPresent;
   el.innerHTML = `
     ${renderHeader("Salon", true, "leaveRoomToOnline()")}
     <div class="code-hero">
@@ -3837,7 +3863,7 @@ function renderOnlineRoom(){
     <div class="vs-row">
       <div class="vs-player">${avatarHtml(profile.name, profile.color, 3, profile.isCreator)}<div class="vs-name">${escapeHtml(profile.name)}</div><div class="vs-tag${net.isHost?' is-host':''}">${net.isHost?"Toi · Hôte":"Toi"}</div></div>
       <div class="vs-mid">VS</div>
-      <div class="vs-player" id="oppSlot">${net.oppPresent?avatarHtml(net.opp.name, net.opp.color, 3, net.opp.isCreator):`<span class="avatar waiting" style="width:3rem;height:3rem;font-size:1.25rem;">?</span>`}<div class="vs-name">${net.oppPresent?escapeHtml(net.opp.name):"En attente…"}</div><div class="vs-tag${net.isHost?'':' is-host'}">${net.isHost?"Adversaire":"Hôte"}</div></div>
+      <div class="vs-player${oppNew?' reveal-in':''}" id="oppSlot">${net.oppPresent?avatarHtml(net.opp.name, net.opp.color, 3, net.opp.isCreator):`<span class="avatar waiting" style="width:3rem;height:3rem;font-size:1.25rem;">?</span>`}<div class="vs-name">${net.oppPresent?escapeHtml(net.opp.name):"En attente…"}</div><div class="vs-tag${net.isHost?'':' is-host'}">${net.isHost?"Adversaire":"Hôte"}</div></div>
     </div>
     <div class="host-note">${net.isHost?"Tu es l'hôte : choisis la longueur du duel et lance la partie.":"L'hôte choisit la longueur du duel et lance la partie."}</div>
     <div class="flex-sp"></div>
@@ -3858,7 +3884,7 @@ function renderOnlineRoom(){
       </div>
       <button class="btn-primary${canStart?'':' is-waiting'}" id="roomStartBtn" onclick="hostStart()">${canStart?"Commencer le duel":"En attente de l'adversaire…"}</button>
     ` : `
-      <div class="waiting-note" id="waitNote">${net.oppPresent?"Prêt ! En attente du lancement par l'hôte…":"Connexion au salon…"}</div>
+      <div class="waiting-note" id="waitNote">${net.oppPresent?"Prêt ! En attente du lancement par l'hôte…":"Connexion au salon…"}</div>
       <div class="flex-sp"></div>
     `}
   `;
@@ -3869,7 +3895,8 @@ function renderOnlinePlay(){
   const el=document.createElement("div"); el.className="screen";
   const total = net.deck.length;
   const oppName = net.opp ? net.opp.name : "Adversaire";
-  const goneBanner = (net.oppGone && !net.hideGoneBanner) ? `<div class="leave-banner"><span class="lb-ico">${ICONS.user}</span><span><b>${escapeHtml(oppName)} a quitté la partie.</b> Termine tranquillement ou quitte le duel.</span></div>` : "";
+  const goneBanner = (net.oppGone && !net.hideGoneBanner) ? `<div class="leave-banner${net.goneFresh?' reveal-in':''}"><span class="lb-ico">${ICONS.user}</span><span><b>${escapeHtml(oppName)} a quitté la partie.</b> Termine tranquillement ou quitte le duel.</span></div>` : "";
+  net.goneFresh = false;
   const scorebar = `
     <div class="duel-scorebar">
       <div class="ds-side me"><span class="ds-name">${escapeHtml(profile.name)}</span><span class="ds-score">${net.score}</span></div>
@@ -3883,7 +3910,7 @@ function renderOnlinePlay(){
       <div class="flex-sp"></div>
       <div class="searching-card">
         <div class="spinner"></div>
-        <div class="searching-txt">Tu as terminé, bien joué !</div>
+        <div class="searching-txt">Tu as terminé, bien joué !</div>
         <div class="opp-progress">${net.oppGone?"Ton adversaire a quitté la partie.":`Ton adversaire en est à ${net.oppIndex}/${total}`}</div>
         <button class="btn-ghost" style="margin-top:1.1rem" onclick="${net.oppGone?"state.screen='online-end';render()":"leaveOnline()"}">${net.oppGone?"Voir le résultat":"Quitter la partie"}</button>
       </div>
@@ -3919,7 +3946,7 @@ function renderOnlinePlay(){
     <div class="flex-sp"></div>
     <div class="question-card${fresh?' animate':''}"><div class="qtext">${escapeHtml(q.q)}</div></div>
     <div class="options-grid${fresh?' animate':''}">${optionsHtml}</div>
-    ${net.timedOut && net.revealed ? `<div class="timeout-note${pop?' reveal-in':''}"><span class="ico">${ICONS.clock}</span>Temps écoulé !</div>` : ""}
+    ${net.timedOut && net.revealed ? `<div class="timeout-note${pop?' reveal-in':''}"><span class="ico">${ICONS.clock}</span>Temps écoulé !</div>` : ""}
     ${net.revealed?`<div class="fact-card${pop?' reveal-in':''}"><span class="ficon">${ICONS.bookOpen}</span><span class="ftext"><span class="fact-label">Le savais-tu ?</span>${escapeHtml(q.fact)}</span></div><button class="btn-next${pop?' reveal-in':''}" onclick="onlineNext()">${net.idx+1>=total?"Terminer":"Question suivante"}</button>`:""}
     <div class="flex-sp"></div>`;
   if(fresh && !net.revealed){
@@ -3933,7 +3960,7 @@ function renderOnlineEnd(){
   const el=document.createElement("div"); el.className="screen";
   const win = net.score>net.oppScore, tie = net.score===net.oppScore;
   if((win || net.oppGone) && !net.confettiShown){ net.confettiShown = true; setTimeout(launchConfetti, 300); }
-  const title = net.oppGone ? "Victoire par forfait" : (tie?"Égalité !":(win?"Victoire !":"Défaite"));
+  const title = net.oppGone ? "Victoire par forfait" : (tie?"Égalité !":(win?"Victoire !":"Défaite"));
   el.innerHTML = `${renderHeader("Résultat", false)}
     <div class="end-hero"><div class="end-medal"><span class="em-cup">${TROPHY_GOLD}</span></div>
       <div class="end-eyebrow">Duel terminé</div>
@@ -4008,8 +4035,8 @@ function render(){
     node.querySelectorAll(".reveal-shake").forEach(n=>n.classList.remove("reveal-shake"));
   }, 820);
 
-  // Verre calé une seule fois, sur la position de repos (voir queueGlassSync).
-  glassTrack();
+  // Réfraction : le verre suit le mouvement le temps de la transition.
+  glassTrack(720);
 
   if(state.screen!=="play" && state.screen!=="online-play"){ stopQTimer(); }
   if(state.screen==="play") saveState();
@@ -4031,21 +4058,14 @@ document.addEventListener("click", (e)=>{
    transforms compris) : la photo peinte reste donc collée au décor même pendant
    qu'une carte glisse — ce qui autorise de vraies transitions animées « à la
    Apple » sans le moindre décalage du verre. */
-const GLASS_SEL = ".app-header,.card,.mode-card,.question-card,.solo-summary,.solo-score-bar,.score-pane,.option-btn,.btn-primary,.btn-next,.btn-replay,.fact-card,.tier-chip,.q-counter,.chip,.icon-btn,.btn-reveal,.btn-newgame,.award-btn,.team-row,.presence-card,.me-row,.online-action,.searching-card,.waiting-card,.info-card,.vs-row,.len-chip,.duel-scorebar,.timer-chip,.dr-side,.rank-row,.text-input,.code-input,.fs-hint,.modal-card,.add-team,.btn-ghost,.fsh-close,.hs-item,.settings-sheet,.hero-verse-card,.modal-btn.ok,.modal-btn.cancel,.leave-banner,.end-medal,.adj-btn,.waiting-note,.rules,.btn-review,.daily-card,.btn-invite";
+const GLASS_SEL = ".app-header,.card,.mode-card,.question-card,.solo-summary,.solo-score-bar,.score-pane,.option-btn,.btn-primary,.btn-next,.btn-replay,.fact-card,.tier-chip,.q-counter,.chip,.icon-btn,.btn-reveal,.btn-newgame,.award-btn,.team-row,.presence-card,.me-row,.online-action,.searching-card,.waiting-card,.info-card,.vs-row,.len-chip,.duel-scorebar,.timer-chip,.dr-side,.rank-row,.text-input,.code-input,.fs-hint,.modal-card,.add-team,.btn-ghost,.fsh-close,.hs-item,.settings-sheet,.hero-verse-card,.modal-btn.ok,.modal-btn.cancel,.leave-banner,.end-medal,.adj-btn,.waiting-note,.rules,.btn-review,.daily-card,.dc-streak,.btn-invite";
 const GLASS_SKIP = ".timer-chip.low,.btn-primary:disabled,.btn-next:disabled";
-/* Position de MISE EN PAGE (offsets, transforms ignorés) : le verre est calé
-   UNE fois sur la position de repos. Pendant les brèves transitions, la photo
-   floutée voyage avec sa carte (imperceptible) et atterrit parfaitement calée.
-   Surtout : AUCUNE repeinture par image -> plus aucun flash blanc iOS/Android
-   (l'artefact venait du recalage continu, que Safari peignait en blanc quand
-   il n'avait pas fini de rasteriser). */
-function glassPos(el){
-  let x = 0, y = 0, n = el;
-  while(n && n !== document.body){ x += n.offsetLeft; y += n.offsetTop; n = n.offsetParent; }
-  const app = document.getElementById("app");
-  if(app && el !== app && app.contains(el)){ x -= app.scrollLeft; y -= app.scrollTop; }
-  return { left: x, top: y };
-}
+/* RÉFRACTION VIVANTE : le verre est calé sur la position RÉELLE à l'écran et
+   ré-aligné image par image pendant les mouvements -> quand une carte glisse,
+   la photo à l'intérieur reste fixée au décor, comme du vrai verre qui bouge
+   avec ses reflets. (Sans danger désormais : les voiles blancs venaient des
+   transitions de fond et d'ombre, toutes deux supprimées.) On compense le
+   scale PROPRE de l'élément pour que la pression d'un bouton ne décale rien. */
 function queueGlassSync(){
   const w = window.innerWidth, h = window.innerHeight;
   const iw = Math.round(w * 1.04), ih = Math.round(h * 1.04);
@@ -4055,13 +4075,25 @@ function queueGlassSync(){
   for(let i = 0; i < els.length; i++){
     const el = els[i];
     if(el.matches(GLASS_SKIP)){ el.style.backgroundSize = ""; el.style.backgroundPosition = ""; continue; }
-    const r = glassPos(el);
+    const r = el.getBoundingClientRect();
+    const left = r.left + (r.width - el.offsetWidth) / 2;
+    const top = r.top + (r.height - el.offsetHeight) / 2;
     el.style.backgroundSize = size;
-    el.style.backgroundPosition = "0 0, " + Math.round(-(r.left + ox)) + "px " + Math.round(-(r.top + oy)) + "px";
+    el.style.backgroundPosition = "0 0, " + Math.round(-(left + ox)) + "px " + Math.round(-(top + oy)) + "px";
   }
 }
-/* Compatibilité : les appels existants restent valides — un seul calage. */
-function glassTrack(){ queueGlassSync(); }
+let glassRAF = null, glassEnd = 0;
+function glassTrack(ms){
+  queueGlassSync();                        // 1re image déjà alignée
+  glassEnd = performance.now() + (ms || 640);
+  if(glassRAF) return;
+  const step = ()=>{
+    queueGlassSync();
+    if(performance.now() < glassEnd){ glassRAF = requestAnimationFrame(step); }
+    else { glassRAF = null; }
+  };
+  glassRAF = requestAnimationFrame(step);
+}
 window.addEventListener("resize", queueGlassSync);
 window.addEventListener("orientationchange", queueGlassSync);
 document.getElementById("app").addEventListener("scroll", queueGlassSync, { passive:true });
@@ -4103,11 +4135,14 @@ window.addEventListener("offline", ()=>{
 function updateRotateHint(){
   const rl = document.getElementById("rotate-lock");
   if(!rl) return;
-  /* Sur iPhone comme sur Android : 90 = penché à gauche, -90/270 = penché à droite. */
+  /* Spécification : téléphone penché sur son côté GAUCHE -> l'icône part
+     couchée à gauche et pivote de 90° vers la DROITE pour se redresser ;
+     et inversement pour le côté droit. Calé sur le comportement observé
+     sur iPhone (iOS 26/27) : a === 90 correspond au penché à droite. */
   let a = null;
   if(typeof window.orientation === "number"){ a = window.orientation; }
   else if(screen.orientation && typeof screen.orientation.angle === "number"){ a = screen.orientation.angle; }
-  rl.classList.toggle("from-right", a === -90 || a === 270);
+  rl.classList.toggle("from-right", a === 90);
 }
 /* iOS met à jour les angles juste APRÈS l'événement : on relit une seconde fois */
 function updateRotateHintSoon(){
@@ -4191,7 +4226,7 @@ const _savedGame = loadSavedGame();
 render();
 if(_savedGame){
   // Reprise automatique : le jeu ne repart plus à zéro après une mise en arrière-plan
-  setTimeout(()=>{ Object.assign(state, _savedGame); render(); }, 900);
+  setTimeout(()=>{ Object.assign(state, _savedGame); if(!(state.timerKey in TIMER_OPTS)) state.timerKey = "30"; render(); }, 900);
 } else if(state.screen==="splash"){
   setTimeout(()=>{ state.screen="mode"; render(); }, 4000);
 }
