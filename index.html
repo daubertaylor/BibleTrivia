@@ -586,20 +586,40 @@
 
   /* ---------- Verrou portrait : le téléphone tourne dans le bon sens ---------- */
   #rotate-lock{ position:fixed; top:0; left:0; right:0; bottom:0; z-index:80; display:none; align-items:center; justify-content:center; flex-direction:column; gap:1.05rem; text-align:center; padding:2rem; background:radial-gradient(120% 95% at 50% 30%, #241A11, #0E0A06); color:#fff; }
-  /* Le téléphone-guide : pose de BASE couchée, DU CÔTÉ où le vrai téléphone
-     est penché. Sous .run (re-posée par le JS à chaque apparition ou
-     changement de côté), il marque une pause puis se redresse UNE fois,
-     petit rebond, et RESTE droit (forwards) — pas de boucle. */
+  /* Le téléphone-guide tourne EN BOUCLE, sans jamais s'arrêter : chaque
+     cycle part COUCHÉ (du côté où le vrai téléphone est penché — pose de
+     base identique), se redresse avec un léger rebond, tient droit, puis
+     s'efface en fondu pour réapparaître couché et recommencer. Jamais de
+     rotation inverse visible. Le JS re-pose .run à chaque apparition ou
+     changement de côté pour garantir le départ à l'horizontale. */
   #rotate-lock .rl-ico{ width:3.4rem; height:3.4rem; transform-origin:50% 50%; transform:rotate(-90deg); }
   #rotate-lock.from-right .rl-ico{ transform:rotate(90deg); }
-  #rotate-lock.run .rl-ico{ animation:rotUpL 1.5s cubic-bezier(0.34,1.35,0.4,1) 0.45s forwards; }
-  #rotate-lock.run.from-right .rl-ico{ animation-name:rotUpR; }
+  #rotate-lock.run .rl-ico{ animation:rotCycleL 3.4s ease-in-out 0.35s infinite; }
+  #rotate-lock.run.from-right .rl-ico{ animation-name:rotCycleR; }
   #rotate-lock p{ font-family:'Poppins',sans-serif; font-weight:600; font-size:1rem; line-height:1.5; max-width:16rem; margin:0; text-shadow:0 1px 10px rgba(0,0,0,0.5); }
   /* Toujours visible (aucun clignotement) : couché -> se redresse (petit
      rebond) -> reste droit un long moment -> se recouche en douceur, et
      recommence. Un cycle continu, l'icône ne disparaît jamais. */
-  @keyframes rotUpL{ from{ transform:rotate(-90deg); } to{ transform:rotate(0deg); } }
-  @keyframes rotUpR{ from{ transform:rotate(90deg); } to{ transform:rotate(0deg); } }
+  @keyframes rotCycleL{
+    0%{ transform:rotate(-90deg); opacity:1; }
+    12%{ transform:rotate(-90deg); }
+    46%{ transform:rotate(3deg); }
+    54%{ transform:rotate(0deg); }
+    80%{ transform:rotate(0deg); opacity:1; }
+    88%{ transform:rotate(0deg); opacity:0; }
+    89%{ transform:rotate(-90deg); opacity:0; }
+    100%{ transform:rotate(-90deg); opacity:1; }
+  }
+  @keyframes rotCycleR{
+    0%{ transform:rotate(90deg); opacity:1; }
+    12%{ transform:rotate(90deg); }
+    46%{ transform:rotate(-3deg); }
+    54%{ transform:rotate(0deg); }
+    80%{ transform:rotate(0deg); opacity:1; }
+    88%{ transform:rotate(0deg); opacity:0; }
+    89%{ transform:rotate(90deg); opacity:0; }
+    100%{ transform:rotate(90deg); opacity:1; }
+  }
   @media (orientation:landscape) and (pointer:coarse){ #rotate-lock{ display:flex; } }
 
   /* ---------- VERRE GARANTI (photo pré-floutée, alignée au viewport) ----------
