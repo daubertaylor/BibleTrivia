@@ -605,7 +605,16 @@
     background-repeat:no-repeat;
     backdrop-filter:none;
     -webkit-backdrop-filter:none;
+    position:relative;
+    overflow:hidden;
   }
+  /* REFLET MOBILE (compositor) : pendant un mouvement, Safari iOS repousse la
+     re-rasterisation des surfaces animées — déplacer background-position ne
+     s'AFFICHE qu'à la fin du geste. On glisse donc une couche enfant portant
+     la même photo teintée, déplacée en TRANSFORM (le compositeur l'anime
+     nativement, image par image). Invisible au repos : les liserés et le
+     calage pixel-perfect du fond peint restent intacts. */
+  .glass-refl{ position:absolute; z-index:-1; pointer-events:none; opacity:0; transition:opacity 0.16s ease; background-repeat:no-repeat; will-change:transform, opacity; transform:translate3d(0,0,0); }
   .fact-card{ --glass-tint: rgba(255,242,214,0.55); }
   .text-input, .code-input{ --glass-tint: rgba(255,255,255,0.62); }
   .modal-card{ --glass-tint: rgba(255,252,244,0.66); }
@@ -4094,7 +4103,7 @@ const GLASS_SKIP = ".timer-chip.low,.btn-primary:disabled,.btn-next:disabled";
    (position à l'écran vs position de repos en mise en page). Au repos le
    décalage est nul : tout est parfaitement calé. Le défilement ne compte
    pas comme un mouvement (la carte ne bouge pas par rapport au contenu). */
-const GLASS_GAIN = 2.2, GLASS_MAXD = 28;
+const GLASS_GAIN = 2.2, GLASS_MAXD = 28, GLASS_PAD = 96, GLASS_TCLAMP = 72;
 const glassAppEl = document.getElementById("app");
 function queueGlassSync(){
   const w = window.innerWidth, h = window.innerHeight;
@@ -4105,22 +4114,58 @@ function queueGlassSync(){
   const els = document.querySelectorAll(GLASS_SEL);
   for(let i = 0; i < els.length; i++){
     const el = els[i];
-    if(el.matches(GLASS_SKIP)){ if(el._glassKey){ el._glassKey = ""; el.style.backgroundSize = ""; el.style.backgroundPosition = ""; } continue; }
+    const isInput = el.tagName === "INPUT";
+    if(el.matches(GLASS_SKIP)){
+      if(el._glassKey){ el._glassKey = ""; el.style.backgroundSize = ""; el.style.backgroundPosition = ""; }
+      if(el._refl){ el._refl.style.opacity = "0"; }
+      continue;
+    }
     const r = el.getBoundingClientRect();
+    // Position de REPOS (mise en page pure, transforms ignorés).
     let lx = 0, ly = 0, n = el;
     while(n && n !== document.body){ lx += n.offsetLeft; ly += n.offsetTop; n = n.offsetParent; }
     if(glassAppEl.contains(el)){ lx -= sl; ly -= st; }
-    let dx = (r.left - lx) * (GLASS_GAIN - 1);
-    let dy = (r.top - ly) * (GLASS_GAIN - 1);
-    if(dx > GLASS_MAXD) dx = GLASS_MAXD; else if(dx < -GLASS_MAXD) dx = -GLASS_MAXD;
-    if(dy > GLASS_MAXD) dy = GLASS_MAXD; else if(dy < -GLASS_MAXD) dy = -GLASS_MAXD;
-    const pos = "0 0, " + Math.round(-(r.left + dx + ox)) + "px " + Math.round(-(r.top + dy + oy)) + "px";
+    // Fond peint de l'élément : calé sur le repos (net et stable).
+    const pos = "0 0, " + Math.round(-(lx + ox)) + "px " + Math.round(-(ly + oy)) + "px";
     const key = size + "|" + pos;
     if(el._glassKey !== key){
       el._glassKey = key;
       el.style.backgroundSize = size;
       el.style.backgroundPosition = pos;
     }
+    if(isInput) continue; // un <input> ne peut pas porter d'enfant reflet
+    // Couche reflet (compositor) : créée une fois, texture calée sur le repos.
+    let refl = el._refl;
+    if(!refl || refl.parentNode !== el){
+      refl = document.createElement("i");
+      refl.className = "glass-refl";
+      el.insertBefore(refl, el.firstChild);
+      el._refl = refl; el._reflKey = ""; el._reflT = "";
+    }
+    const rk = key + "|" + el.offsetWidth + "x" + el.offsetHeight;
+    if(el._reflKey !== rk){
+      el._reflKey = rk;
+      refl.style.left = (-GLASS_PAD) + "px";
+      refl.style.top = (-GLASS_PAD) + "px";
+      refl.style.width = (el.offsetWidth + GLASS_PAD * 2) + "px";
+      refl.style.height = (el.offsetHeight + GLASS_PAD * 2) + "px";
+      refl.style.backgroundImage = "linear-gradient(var(--glass-tint, rgba(255,253,247,0.46)), var(--glass-tint, rgba(255,253,247,0.46))), var(--blur-url)";
+      refl.style.backgroundSize = "auto, " + iw + "px " + ih + "px";
+      refl.style.backgroundPosition = "0 0, " + Math.round(-(lx - GLASS_PAD + ox)) + "px " + Math.round(-(ly - GLASS_PAD + oy)) + "px";
+    }
+    // Décalage amplifié « verre épais », déplacé en transform (compositor).
+    const dx = r.left - lx, dy = r.top - ly;
+    let ex = dx * (GLASS_GAIN - 1), ey = dy * (GLASS_GAIN - 1);
+    if(ex > GLASS_MAXD) ex = GLASS_MAXD; else if(ex < -GLASS_MAXD) ex = -GLASS_MAXD;
+    if(ey > GLASS_MAXD) ey = GLASS_MAXD; else if(ey < -GLASS_MAXD) ey = -GLASS_MAXD;
+    let tx = -(dx + ex), ty = -(dy + ey);
+    if(tx > GLASS_TCLAMP) tx = GLASS_TCLAMP; else if(tx < -GLASS_TCLAMP) tx = -GLASS_TCLAMP;
+    if(ty > GLASS_TCLAMP) ty = GLASS_TCLAMP; else if(ty < -GLASS_TCLAMP) ty = -GLASS_TCLAMP;
+    const moving = (dx > 1.25 || dx < -1.25 || dy > 1.25 || dy < -1.25);
+    const t = moving ? ("translate3d(" + tx.toFixed(1) + "px," + ty.toFixed(1) + "px,0)") : "translate3d(0,0,0)";
+    if(el._reflT !== t){ el._reflT = t; refl.style.transform = t; }
+    const op = moving ? "1" : "0";
+    if(refl._op !== op){ refl._op = op; refl.style.opacity = op; }
   }
 }
 /* Boucle PERMANENTE — l'effet d'origine. Le verre est recalé à CHAQUE image,
