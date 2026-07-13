@@ -119,8 +119,12 @@
 
   /* ---------- Hero / mode select ---------- */
   .hero{ position:relative; text-align:center; padding:clamp(1.5rem, 3.8vh, 3rem) 1rem clamp(1.2rem, 2.6vh, 2.2rem); }
-  .hero-settings{ position:absolute; top:0.15rem; right:0.5rem; color:var(--ink); }
-  .hero-profile{ position:absolute; top:0.15rem; left:0.5rem; padding:0; overflow:visible; background:transparent; border:none; box-shadow:none; }
+  /* Spécificité .icon-btn.xxx OBLIGATOIRE : le multi-sélecteur verre (plus
+     bas) pose position:relative sur tous les .icon-btn — à égalité il
+     gagnerait, et les deux boutons tomberaient en pile à gauche en poussant
+     tout l'écran vers le bas. */
+  .icon-btn.hero-settings{ position:absolute; top:0.15rem; right:0.5rem; color:var(--ink); }
+  .icon-btn.hero-profile{ position:absolute; top:0.15rem; left:0.5rem; padding:0; overflow:visible; background:transparent; border:none; box-shadow:none; }
   .hero-icon{ width:clamp(5.8rem, 15vh, 7.8rem); height:auto; aspect-ratio:1; margin:0 auto 0.85rem; border-radius:23%; box-shadow:0 12px 30px rgba(10,8,6,0.44), 0 0 60px rgba(239,173,38,0.2); display:block; object-fit:cover; animation:heroFloat 5s ease-in-out infinite; -webkit-user-drag:none; user-drag:none; -webkit-touch-callout:none; -webkit-user-select:none; user-select:none; pointer-events:none; }
   @keyframes heroFloat{ 0%,100%{ transform:translateY(0); } 50%{ transform:translateY(-6px); } }
   .hero-title{ font-family:'Poppins',sans-serif; font-weight:700; font-size:2rem; margin:0; letter-spacing:-0.01em; color:#fff; text-shadow:0 1px 12px rgba(0,0,0,0.35); }
@@ -624,6 +628,9 @@
      nativement, image par image). Invisible au repos : les liserés et le
      calage pixel-perfect du fond peint restent intacts. */
   .glass-refl{ position:absolute; z-index:-1; pointer-events:none; opacity:0; transition:opacity 0.16s ease; background-repeat:no-repeat; will-change:transform, opacity; transform:translate3d(0,0,0); }
+  /* Le bouton avatar est transparent et déborde (badge C) : sans découpe, sa
+     couche reflet montrerait un rectangle de photo pendant les transitions. */
+  .hero-profile .glass-refl{ display:none; }
   .fact-card{ --glass-tint: rgba(255,242,214,0.55); }
   .text-input, .code-input{ --glass-tint: rgba(255,255,255,0.62); }
   .modal-card{ --glass-tint: rgba(255,252,244,0.66); }
