@@ -424,7 +424,7 @@
   .mode-icon.online{ background:linear-gradient(150deg, #4DA8FF, #2E7FE8); box-shadow:inset 0 1px 0 rgba(255,255,255,0.5), inset 0 0 0 1px rgba(255,255,255,0.26), 0 5px 14px rgba(46,127,232,0.42); }
   .avatar{ position:relative; border-radius:50%; color:#fff; display:inline-flex; align-items:center; justify-content:center; font-family:'Poppins',sans-serif; font-weight:700; border:2px solid rgba(255,255,255,0.7); box-shadow:0 3px 10px rgba(15,12,10,0.22); flex-shrink:0; }
   .avatar.waiting{ background:rgba(255,255,255,0.5); color:var(--ink-soft); border-style:dashed; }
-  .crown-badge{ position:absolute; bottom:-4px; right:-4px; width:1.2rem; height:1.2rem; background:linear-gradient(150deg,#FFE9A8,#F0A81E); border-radius:50%; display:flex; align-items:center; justify-content:center; padding:0.2rem; color:#7a4e04; border:1.5px solid #fff; box-shadow:inset 0 1px 0 rgba(255,255,255,0.7), 0 2px 6px rgba(168,122,31,0.55); }
+  .crown-badge{ position:absolute; bottom:-4px; right:-4px; width:1.2rem; height:1.2rem; background:linear-gradient(150deg,#FFE9A8,#F0A81E); border-radius:50%; display:flex; align-items:center; justify-content:center; padding:0.16rem; color:#7a4e04; border:1.5px solid #fff; box-shadow:inset 0 1px 0 rgba(255,255,255,0.7), 0 2px 6px rgba(168,122,31,0.55); }
   /* Verre peint doré — même recette que la pastille flamme du défi. */
   .creator-badge{ display:inline-flex; align-items:center; gap:0.3rem; --glass-tint: rgba(255,228,150,0.66); color:#8a5e14; font-size:0.78rem; font-weight:800; letter-spacing:0.02em; padding:0.24rem 0.62rem 0.24rem 0.46rem; border-radius:100px; border:1px solid rgba(255,255,255,0.65); box-shadow:inset 0 1px 0 rgba(255,255,255,0.8), inset 0 0 0 1px rgba(255,255,255,0.28), 0 2px 8px rgba(196,144,32,0.24); }
   .creator-badge svg{ width:0.85rem; height:0.85rem; }
@@ -3730,9 +3730,11 @@ function avatarHtml(name, color, size, creator){
   const s = size || 2.6;
   return `<span class="avatar" style="width:${s}rem;height:${s}rem;background:${color};font-size:${(s*0.42).toFixed(2)}rem;">${initial}${creator?`<span class="crown-badge">${C_MONO_SVG}</span>`:""}</span>`;
 }
-/* Capitale C classique tracée à la main : DOS GAUCHE DROIT (segment vertical
-   entre deux coins arrondis, comme un C de linéale), bol refermé à droite. */
-const C_MONO_SVG = `<svg class="c-mono" viewBox="0 0 24 24" aria-hidden="true"><path d="M20.9 7.3C19.4 4 16.4 2 12.2 2C7.4 2 2.7 4.4 2.7 7.8L2.7 16.2C2.7 19.6 7.4 22 12.2 22C16.4 22 19.4 20 20.9 16.7L17 14.9C15.9 16.9 14.4 17.9 12.2 17.9C8.9 17.9 6.9 16.6 6.9 14.4L6.9 9.6C6.9 7.4 8.9 6.1 12.2 6.1C14.4 6.1 15.9 7.1 17 9.1Z" fill="currentColor"/></svg>`;
+/* Capitale C de linéale classique, tracée à la main : dos gauche droit entre
+   deux coins arrondis, et COUPES QUASI VERTICALES aux extrémités — les
+   pointes intérieures s'avancent loin à droite, l'ouverture est une fente
+   horizontale (anatomie d'un C de labeur gras, pas un anneau entaillé). */
+const C_MONO_SVG = `<svg class="c-mono" viewBox="0 0 24 24" aria-hidden="true"><path d="M20.8 6.7C19.2 3.8 16.2 2 12.4 2C6.9 2 2.6 4.5 2.6 8.1L2.6 15.9C2.6 19.5 6.9 22 12.4 22C16.2 22 19.2 20.2 20.8 17.3L20 14.6C18.6 16.6 16.1 17.9 12.9 17.9C9.2 17.9 6.9 16.4 6.9 14.1L6.9 9.9C6.9 7.6 9.2 6.1 12.9 6.1C16.1 6.1 18.6 7.4 20 9.4Z" fill="currentColor"/></svg>`;
 function creatorBadge(){ return `<span class="creator-badge">${C_MONO_SVG} Créateur</span>`; }
 let profileReturn = "mode";
 function openProfile(){ if(state.screen !== "profile"){ profileReturn = state.screen; } state.screen="profile"; render(); }
@@ -4134,7 +4136,13 @@ const GLASS_GAIN = 2.2, GLASS_MAXD = 28, GLASS_PAD = 96, GLASS_TCLAMP = 72;
 const glassAppEl = document.getElementById("app");
 let glassScrollSX = 0, glassScrollSY = 0; // défilement lissé (retard du verre)
 function queueGlassSync(){
-  const w = window.innerWidth, h = window.innerHeight;
+  /* Dimensions du viewport de MISE EN PAGE (documentElement), pas
+     innerWidth/innerHeight : sur iOS, le clavier rétrécit le viewport
+     VISUEL — baser la texture dessus faisait échantillonner le bas de la
+     photo (sable) et teintait les champs d'un jaune uniforme. Le viewport
+     de mise en page, lui, ne bouge pas quand le clavier s'ouvre. */
+  const de = document.documentElement;
+  const w = de.clientWidth || window.innerWidth, h = de.clientHeight || window.innerHeight;
   const iw = Math.round(w * 1.16), ih = Math.round(h * 1.16);
   const ox = Math.round((iw - w) / 2), oy = Math.round((ih - h) / 2);
   const size = "auto, " + iw + "px " + ih + "px";
