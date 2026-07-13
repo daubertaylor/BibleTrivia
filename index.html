@@ -4137,12 +4137,15 @@ function updateRotateHint(){
   if(!rl) return;
   /* Spécification : téléphone penché sur son côté GAUCHE -> l'icône part
      couchée à gauche et pivote de 90° vers la DROITE pour se redresser ;
-     et inversement pour le côté droit. Calé sur le comportement observé
-     sur iPhone (iOS 26/27) : a === 90 correspond au penché à droite. */
+     et inversement pour le côté droit.
+     Conventions d'angle : 90 (iOS et Android) = bouton home à droite =
+     haut du téléphone vers la GAUCHE = penché côté gauche -> pose par
+     défaut (rotBackL). -90 (window.orientation) ou 270
+     (screen.orientation.angle) = penché côté DROIT -> from-right. */
   let a = null;
   if(typeof window.orientation === "number"){ a = window.orientation; }
   else if(screen.orientation && typeof screen.orientation.angle === "number"){ a = screen.orientation.angle; }
-  rl.classList.toggle("from-right", a === 90);
+  rl.classList.toggle("from-right", a === -90 || a === 270);
 }
 /* iOS met à jour les angles juste APRÈS l'événement : on relit une seconde fois */
 function updateRotateHintSoon(){
