@@ -4061,11 +4061,13 @@ document.addEventListener("click", (e)=>{
 const GLASS_SEL = ".app-header,.card,.mode-card,.question-card,.solo-summary,.solo-score-bar,.score-pane,.option-btn,.btn-primary,.btn-next,.btn-replay,.fact-card,.tier-chip,.q-counter,.chip,.icon-btn,.btn-reveal,.btn-newgame,.award-btn,.team-row,.presence-card,.me-row,.online-action,.searching-card,.waiting-card,.info-card,.vs-row,.len-chip,.duel-scorebar,.timer-chip,.dr-side,.rank-row,.text-input,.code-input,.fs-hint,.modal-card,.add-team,.btn-ghost,.fsh-close,.hs-item,.settings-sheet,.hero-verse-card,.modal-btn.ok,.modal-btn.cancel,.leave-banner,.end-medal,.adj-btn,.waiting-note,.rules,.btn-review,.daily-card,.dc-streak,.btn-invite";
 const GLASS_SKIP = ".timer-chip.low,.btn-primary:disabled,.btn-next:disabled";
 /* RÉFRACTION VIVANTE : le verre est calé sur la position RÉELLE à l'écran et
-   ré-aligné image par image pendant les mouvements -> quand une carte glisse,
-   la photo à l'intérieur reste fixée au décor, comme du vrai verre qui bouge
-   avec ses reflets. (Sans danger désormais : les voiles blancs venaient des
-   transitions de fond et d'ombre, toutes deux supprimées.) On compense le
-   scale PROPRE de l'élément pour que la pression d'un bouton ne décale rien. */
+   ré-aligné image par image pendant les mouvements -> quand une carte glisse
+   OU se comprime sous le doigt, la photo à l'intérieur reste accrochée au
+   décor : le reflet glisse légèrement « en décalé », comme du vrai verre
+   qu'on déplace. Position brute du rect, volontairement SANS compensation
+   du scale d'appui — ce petit décalage est précisément l'effet recherché.
+   (Sans danger : les voiles blancs venaient des transitions de fond et
+   d'ombre, toutes deux définitivement supprimées.) */
 function queueGlassSync(){
   const w = window.innerWidth, h = window.innerHeight;
   const iw = Math.round(w * 1.04), ih = Math.round(h * 1.04);
@@ -4076,10 +4078,8 @@ function queueGlassSync(){
     const el = els[i];
     if(el.matches(GLASS_SKIP)){ el.style.backgroundSize = ""; el.style.backgroundPosition = ""; continue; }
     const r = el.getBoundingClientRect();
-    const left = r.left + (r.width - el.offsetWidth) / 2;
-    const top = r.top + (r.height - el.offsetHeight) / 2;
     el.style.backgroundSize = size;
-    el.style.backgroundPosition = "0 0, " + Math.round(-(left + ox)) + "px " + Math.round(-(top + oy)) + "px";
+    el.style.backgroundPosition = "0 0, " + Math.round(-(r.left + ox)) + "px " + Math.round(-(r.top + oy)) + "px";
   }
 }
 let glassRAF = null, glassEnd = 0;
@@ -4097,6 +4097,11 @@ function glassTrack(ms){
 window.addEventListener("resize", queueGlassSync);
 window.addEventListener("orientationchange", queueGlassSync);
 document.getElementById("app").addEventListener("scroll", queueGlassSync, { passive:true });
+/* Le toucher aussi fait vivre le verre : pendant l'enfoncement (scale 0.968)
+   et le ressort du relâchement, le reflet reste accroché au décor. */
+window.addEventListener("pointerdown", ()=>glassTrack(520), { capture:true, passive:true });
+window.addEventListener("pointerup", ()=>glassTrack(640), { capture:true, passive:true });
+window.addEventListener("pointercancel", ()=>glassTrack(640), { capture:true, passive:true });
 
 /* Plein écran réel : demandé au premier toucher là où l'API existe (Android,
    iPad, desktop). Sur iPhone, Safari interdit cette API : le vrai plein écran
