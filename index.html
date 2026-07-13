@@ -41,8 +41,10 @@
   }
   *{ box-sizing:border-box; scrollbar-width:none; }
   *::-webkit-scrollbar{ display:none; width:0; height:0; }
-  *{ -webkit-touch-callout:none; }
-  body{ -webkit-user-select:none; user-select:none; }
+  /* iOS : jamais de loupe de sélection ni de menu contextuel — la sélection
+     est coupée sur CHAQUE élément (pas seulement héritée du body, ce qui ne
+     suffit pas à Safari), sauf dans les champs de saisie. */
+  *{ -webkit-touch-callout:none; -webkit-user-select:none; user-select:none; }
   input, textarea{ -webkit-user-select:text; user-select:text; }
   html{ -webkit-tap-highlight-color:transparent; height:100%; overscroll-behavior:none; background-color:#15100B; background-image:linear-gradient(180deg, rgba(18,14,10,0.6) 0%, rgba(18,14,10,0.28) 22%, rgba(18,14,10,0.26) 62%, rgba(18,14,10,0.5) 100%), var(--scene); background-size:cover; background-position:center; background-repeat:no-repeat; }
   /* iOS 27 / plein écran : on étire le fond jusqu'au plus GRAND viewport (lvh),
@@ -350,6 +352,14 @@
   .splash-title{ font-family:'Poppins',sans-serif; font-weight:700; font-size:1.8rem; letter-spacing:-0.02em; color:#fff; margin:0 0 0.35rem; text-shadow:0 2px 16px rgba(0,0,0,0.6); opacity:0; animation:splashRise 0.8s ease 0.4s forwards; }
   .splash-verse{ font-family:'Fraunces',serif; font-size:1.08rem; line-height:1.5; color:rgba(255,255,255,0.96); margin:0 auto; max-width:19rem; letter-spacing:0.01em; font-style:italic; font-weight:400; text-shadow:0 1px 14px rgba(0,0,0,0.55); text-wrap:balance; opacity:0; animation: splashRise 0.9s ease 0.55s forwards; }
   .splash-ref{ font-family:'Poppins',sans-serif; font-weight:600; font-size:0.76rem; letter-spacing:0.09em; text-transform:uppercase; color:#FFD968; margin:0.55rem 0 0; text-shadow:0 1px 10px rgba(0,0,0,0.5); opacity:0; animation: splashRise 0.9s ease 0.72s forwards; }
+  /* Bible cartoon « à main levée » : signe le verset de l'écran de chargement,
+     flotte doucement comme l'icône, petites étoiles qui scintillent. */
+  .splash-bible{ display:block; width:5rem; height:auto; margin:1.5rem auto 0; opacity:0; filter:drop-shadow(0 10px 16px rgba(0,0,0,0.28)); animation:splashFade 0.9s ease 0.95s forwards, bibleFloat 4.4s ease-in-out 1.9s infinite; }
+  @keyframes bibleFloat{ 0%,100%{ transform:translateY(0) rotate(0deg); } 50%{ transform:translateY(-7px) rotate(1.6deg); } }
+  .splash-bible .tw{ opacity:0.35; transform-box:fill-box; transform-origin:center; animation:bibleTw 2.8s ease-in-out 1.2s infinite; }
+  .splash-bible .t2{ animation-delay:2.1s; }
+  .splash-bible .t3{ animation-delay:0.5s; }
+  @keyframes bibleTw{ 0%,100%{ opacity:0.3; transform:scale(0.75); } 50%{ opacity:1; transform:scale(1.08); } }
   .splash-dots{ position:absolute; bottom:3rem; left:50%; transform:translateX(-50%); display:flex; gap:0.5rem; }
   .splash-dot{ width:8px; height:8px; border-radius:50%; background:rgba(255,255,255,0.9); animation:dotPulse 1.4s ease-in-out infinite; }
   .splash-dot:nth-child(2){ animation-delay:0.2s; }
@@ -423,9 +433,11 @@
   .creator-badge{ display:inline-flex; align-items:center; gap:0.3rem; --glass-tint: rgba(255,228,150,0.66); color:#8a5e14; font-size:0.78rem; font-weight:800; letter-spacing:0.02em; padding:0.24rem 0.62rem 0.24rem 0.46rem; border-radius:100px; border:1px solid rgba(255,255,255,0.65); box-shadow:inset 0 1px 0 rgba(255,255,255,0.8), inset 0 0 0 1px rgba(255,255,255,0.28), 0 2px 8px rgba(196,144,32,0.24); }
   .creator-badge svg{ width:0.85rem; height:0.85rem; }
   /* Vrai « C » majuscule (Poppins), pas un anneau ouvert. */
-  .c-mono{ font-family:'Poppins',sans-serif; font-weight:700; line-height:1; }
-  .crown-badge .c-mono{ font-size:0.74rem; }
-  .creator-badge .c-mono{ font-size:0.92rem; }
+  /* Le « C » créateur : une VRAIE capitale dessinée en vectoriel (silhouette
+     de C géométrique gras, ouverture à droite) — même forme sur tous les
+     appareils, aucune dépendance au chargement des polices. */
+  .c-mono{ display:block; }
+  .crown-badge .c-mono{ width:100%; height:100%; }
 
   .profile-card{ text-align:center; padding:1.1rem 1rem 0.35rem; }
   .profile-card .avatar{ margin:0 auto; }
@@ -578,8 +590,13 @@
 
   /* ---------- Verrou portrait : le téléphone tourne dans le bon sens ---------- */
   #rotate-lock{ position:fixed; top:0; left:0; right:0; bottom:0; z-index:80; display:none; align-items:center; justify-content:center; flex-direction:column; gap:1.05rem; text-align:center; padding:2rem; background:radial-gradient(120% 95% at 50% 30%, #241A11, #0E0A06); color:#fff; }
-  #rotate-lock .rl-ico{ width:3.4rem; height:3.4rem; transform-origin:50% 50%; animation:rotBackL 3s cubic-bezier(0.4,0,0.2,1) infinite; }
-  #rotate-lock.from-right .rl-ico{ animation-name:rotBackR; }
+  /* Pose de BASE : téléphone COUCHÉ (comme celui du joueur). L'animation ne
+     tourne que sous .run, (ré)ajoutée par le JS à CHAQUE apparition : la
+     première image visible est donc toujours horizontale, puis il se redresse. */
+  #rotate-lock .rl-ico{ width:3.4rem; height:3.4rem; transform-origin:50% 50%; transform:rotate(-90deg); }
+  #rotate-lock.from-right .rl-ico{ transform:rotate(90deg); }
+  #rotate-lock.run .rl-ico{ animation:rotBackL 3s cubic-bezier(0.4,0,0.2,1) infinite; }
+  #rotate-lock.run.from-right .rl-ico{ animation-name:rotBackR; }
   #rotate-lock p{ font-family:'Poppins',sans-serif; font-weight:600; font-size:1rem; line-height:1.5; max-width:16rem; margin:0; text-shadow:0 1px 10px rgba(0,0,0,0.5); }
   /* Toujours visible (aucun clignotement) : couché -> se redresse (petit
      rebond) -> reste droit un long moment -> se recouche en douceur, et
@@ -2033,7 +2050,8 @@ function updateOnlineLobby(){
     num.textContent = n;
     num.style.animation = "none"; void num.offsetWidth; num.style.animation = "countPop 0.4s cubic-bezier(0.2,1.4,0.35,1)";
   }
-  if(lbl && lbl.textContent !== "en ligne") lbl.textContent = "en ligne";
+  const plbl = n > 1 ? "connectés" : "connecté"; // « En ligne » est déjà le titre au-dessus
+  if(lbl && lbl.textContent !== plbl) lbl.textContent = plbl;
   const op = document.querySelector(".searching-card .opp-progress");
   if(op){ const f = freshLookers(); op.textContent = f>0 ? (f+" autre"+(f>1?"s":"")+" en recherche…") : "Dès qu'un autre joueur lancera une partie aléatoire, vous serez appariés automatiquement."; }
 }
@@ -2418,7 +2436,10 @@ let masterGain = null, masterFilter = null;
 /* Courbe perceptuelle : l'oreille entend le volume en log — un gain
    quadratique donne un curseur qui baisse VRAIMENT quand on le baisse. */
 function volCurve(v){ return v * v; }
-const MUSIC_MIX = 0.8; // niveau de la musique PAR RAPPORT aux effets (fixe)
+const MUSIC_MIX = 0.8; // plafond de la musique par rapport aux effets
+/* Niveau réel de la nappe musicale : le curseur de volume ne pilote QUE la
+   musique — les effets sonores gardent toujours leur niveau. */
+function musicLevel(){ return Math.max(MUSIC_MIX * volCurve(settings.volume), 0.0001); }
 function getCtx(){
   if(!actx){
     actx = new (window.AudioContext||window.webkitAudioContext)();
@@ -2427,8 +2448,8 @@ function getCtx(){
     masterFilter.frequency.value = 2400;   // arrondit les aigus -> chaud et doux
     masterFilter.Q.value = 0.4;
     masterGain = actx.createGain();
-    // Le curseur de volume pilote TOUT (effets + musique) via le master.
-    masterGain.gain.value = 0.92 * volCurve(settings.volume);
+    // Master FIXE : les effets restent au même niveau quel que soit le curseur.
+    masterGain.gain.value = 0.92;
     masterFilter.connect(masterGain);
     masterGain.connect(actx.destination);
   }
@@ -2521,8 +2542,7 @@ function playReveal(){ if(!settings.sfx) return; chime(392,0,0.95,0.009); chime(
 function playVerse(){ if(!settings.sfx) return; chime(523.25,0,1.2,0.009); chime(659.25,0.18,1.5,0.007); }
 function ensureAudioAwake(){ if(actx && actx.state==="suspended"){ actx.resume().catch(()=>{}); } }
 function applyVolume(){
-  if(masterGain && actx){ masterGain.gain.setTargetAtTime(0.92 * volCurve(settings.volume), actx.currentTime, 0.05); }
-  if(musicBusNode && actx){ musicBusNode.gain.setTargetAtTime(musicPlaying ? MUSIC_MIX : 0.0001, actx.currentTime, 0.06); }
+  if(musicBusNode && actx){ musicBusNode.gain.setTargetAtTime(musicPlaying ? musicLevel() : 0.0001, actx.currentTime, 0.06); }
 }
 
 /* ===================== MUSIQUE DE FOND — nappe générative apaisante =====================
@@ -2608,7 +2628,7 @@ function startMusic(){
   const g = musicBus().gain;
   g.cancelScheduledValues(ctx.currentTime);
   g.setValueAtTime(Math.max(g.value, 0.0001), ctx.currentTime);
-  g.linearRampToValueAtTime(MUSIC_MIX, ctx.currentTime + 2.4);
+  g.linearRampToValueAtTime(musicLevel(), ctx.currentTime + 2.4);
   musicTick();
   musicTimer = setInterval(musicTick, 500);
 }
@@ -3065,6 +3085,9 @@ function buildQuestions(){
   state.questions = shuffle(list);
 }
 function startGame(){
+  /* Partie ordinaire : on sort TOUJOURS du contexte défi/révision, sinon une
+     simple partie solo de 9 questions validerait la série du Défi du jour. */
+  state.daily = false; state.revision = false;
   if(state.mode==="group"){
     const valid = validTeams();
     if(valid.length<2){
@@ -3695,20 +3718,46 @@ function renderSplash(){
       <h1 class="splash-title">BibleTrivia</h1>
       <p class="splash-verse">« ${escapeHtml(v.t)} »</p>
       <p class="splash-ref">${escapeHtml(v.r)}</p>
+      ${BIBLE_ART_SVG}
     </div>
     <div class="splash-dots"><span class="splash-dot"></span><span class="splash-dot"></span><span class="splash-dot"></span></div>
   `;
   return el;
 }
+/* Bible façon dessin animé, tracée à la main : couverture de cuir rouge aux
+   bords irréguliers (traits d'encre épais), croix dorée cerclée d'encre,
+   filet doré « gaufré », tranche de pages crème, signet, éclats d'étoiles. */
+const BIBLE_ART_SVG = `
+<svg class="splash-bible" viewBox="0 0 140 120" aria-hidden="true">
+  <ellipse cx="70" cy="111" rx="33" ry="5" fill="rgba(0,0,0,0.34)"/>
+  <g transform="rotate(-7 70 60)">
+    <path d="M46 24 Q74 20.5 102 23 Q108 23.6 108 30 L108 92 Q108 99 101 99.4 Q74 101.5 48 99.6 Q41 99 40.8 92 L40.5 30 Q40.5 24.5 46 24 Z" fill="#F7EAC9" stroke="#57301B" stroke-width="3" stroke-linejoin="round"/>
+    <path d="M103 32 Q104.3 60 103.2 90 M99 34 Q100 60 99.2 92" stroke="#D9BE8C" stroke-width="1.7" fill="none" stroke-linecap="round"/>
+    <path d="M50 96.8 Q72 98.6 94 96.9" stroke="#D9BE8C" stroke-width="1.7" fill="none" stroke-linecap="round"/>
+    <path d="M82 98 L82 114 L87.5 108 L93 114 L93 98 Z" fill="#E4552F" stroke="#57301B" stroke-width="2.8" stroke-linejoin="round"/>
+    <path d="M43 16 Q70 13.5 91 15.5 Q100 16.2 100 25 Q101.6 55 100 85 Q100 93.6 91 94 Q70 96.4 43 94.4 Q34 94 34 85 Q32.4 55 34 25 Q34 16.6 43 16 Z" fill="#A63A20" stroke="#57301B" stroke-width="3.4" stroke-linejoin="round"/>
+    <path d="M48 25 Q67 23.6 87 25 Q91.6 25.4 91.8 30 Q93 55 91.8 80 Q91.6 84.8 87 85.2 Q67 86.8 47.5 85 Q43 84.8 42.8 80 Q41.6 55 42.9 30 Q43 25.4 48 25 Z" fill="none" stroke="#EBB640" stroke-width="2" opacity="0.9"/>
+    <path d="M67.4 37 L67.4 68 M55.4 47.5 L79.4 47.5" stroke="#57301B" stroke-width="10.6" stroke-linecap="round"/>
+    <path d="M67.4 37 L67.4 68 M55.4 47.5 L79.4 47.5" stroke="#F3C24A" stroke-width="6.4" stroke-linecap="round"/>
+    <path d="M45 30.5 Q47.5 24.5 54 22.6" stroke="rgba(255,255,255,0.6)" stroke-width="3" stroke-linecap="round" fill="none"/>
+    <path d="M42.6 39 Q43.4 34.6 45.8 31.8" stroke="rgba(255,255,255,0.42)" stroke-width="3" stroke-linecap="round" fill="none"/>
+  </g>
+  <path class="tw" d="M18 27 Q19.6 32.4 25 34 Q19.6 35.6 18 41 Q16.4 35.6 11 34 Q16.4 32.4 18 27 Z" fill="#FFD968"/>
+  <path class="tw t2" d="M124 16 Q125.2 19.8 129 21 Q125.2 22.2 124 26 Q122.8 22.2 119 21 Q122.8 19.8 124 16 Z" fill="#FFE9A8"/>
+  <path class="tw t3" d="M127 78 Q128 81 131 82 Q128 83 127 86 Q126 83 123 82 Q126 81 127 78 Z" fill="#FFD968"/>
+</svg>`;
 
 let lastScreen = null;
 /* ===================== ÉCRANS PROFIL & EN LIGNE ===================== */
 function avatarHtml(name, color, size, creator){
   const initial = escapeHtml((name||"?").charAt(0).toUpperCase());
   const s = size || 2.6;
-  return `<span class="avatar" style="width:${s}rem;height:${s}rem;background:${color};font-size:${(s*0.42).toFixed(2)}rem;">${initial}${creator?`<span class="crown-badge"><b class="c-mono">C</b></span>`:""}</span>`;
+  return `<span class="avatar" style="width:${s}rem;height:${s}rem;background:${color};font-size:${(s*0.42).toFixed(2)}rem;">${initial}${creator?`<span class="crown-badge">${C_MONO_SVG}</span>`:""}</span>`;
 }
-function creatorBadge(){ return `<span class="creator-badge"><b class="c-mono">C</b> Créateur</span>`; }
+/* Capitale C tracée à la main : arcs extérieur (r 10) et intérieur (r 5,8)
+   ouverts à ±34° côté droit — les proportions d'un C de titrage gras. */
+const C_MONO_SVG = `<svg class="c-mono" viewBox="0 0 24 24" aria-hidden="true"><path d="M20.29 6.41A10 10 0 1 0 20.29 17.59L16.81 15.24A5.8 5.8 0 1 1 16.81 8.76Z" fill="currentColor"/></svg>`;
+function creatorBadge(){ return `<span class="creator-badge">${C_MONO_SVG} Créateur</span>`; }
 let profileReturn = "mode";
 function openProfile(){ if(state.screen !== "profile"){ profileReturn = state.screen; } state.screen="profile"; render(); }
 /* Le pseudo tapé n'est jamais perdu : on le relit avant toute mise à jour. */
@@ -3818,7 +3867,7 @@ function renderOnline(){
     <div class="presence-card">
       <span class="live-dot"></span>
       <span class="presence-num">${n}</span>
-      <span class="presence-lbl">en ligne</span>
+      <span class="presence-lbl">${n>1?"connectés":"connecté"}</span>
     </div>
     ${net.error?`<div class="err-msg" style="margin:0 0 0.9rem">${escapeHtml(net.error)}</div>`:""}
     <button class="me-row" onclick="openProfile()">
@@ -4101,16 +4150,24 @@ const GLASS_SKIP = ".timer-chip.low,.btn-primary:disabled,.btn-next:disabled";
    bouton, ressort, transition d'écran, panneau qui monte), son reflet glisse
    PLUS VITE qu'elle — décalage borné, proportionnel au déplacement réel
    (position à l'écran vs position de repos en mise en page). Au repos le
-   décalage est nul : tout est parfaitement calé. Le défilement ne compte
-   pas comme un mouvement (la carte ne bouge pas par rapport au contenu). */
+   décalage est nul : tout est parfaitement calé.
+   Le DÉFILEMENT compte aussi comme un mouvement : le repos « vu » par le
+   reflet suit le défilement avec un léger retard (valeur lissée) — pendant
+   qu'on fait défiler, le verre traîne derrière la scène puis se recale. */
 const GLASS_GAIN = 2.2, GLASS_MAXD = 28, GLASS_PAD = 96, GLASS_TCLAMP = 72;
 const glassAppEl = document.getElementById("app");
+let glassScrollSX = 0, glassScrollSY = 0; // défilement lissé (retard du verre)
 function queueGlassSync(){
   const w = window.innerWidth, h = window.innerHeight;
   const iw = Math.round(w * 1.16), ih = Math.round(h * 1.16);
   const ox = Math.round((iw - w) / 2), oy = Math.round((ih - h) / 2);
   const size = "auto, " + iw + "px " + ih + "px";
   const sl = glassAppEl.scrollLeft, st = glassAppEl.scrollTop;
+  glassScrollSX += (sl - glassScrollSX) * 0.14;
+  glassScrollSY += (st - glassScrollSY) * 0.14;
+  if(glassScrollSX > sl - 0.35 && glassScrollSX < sl + 0.35) glassScrollSX = sl;
+  if(glassScrollSY > st - 0.35 && glassScrollSY < st + 0.35) glassScrollSY = st;
+  const lagX = glassScrollSX - sl, lagY = glassScrollSY - st;
   const els = document.querySelectorAll(GLASS_SEL);
   for(let i = 0; i < els.length; i++){
     const el = els[i];
@@ -4139,22 +4196,30 @@ function queueGlassSync(){
     if(!refl || refl.parentNode !== el){
       refl = document.createElement("i");
       refl.className = "glass-refl";
-      el.insertBefore(refl, el.firstChild);
-      el._refl = refl; el._reflKey = ""; el._reflT = "";
-    }
-    const rk = key + "|" + el.offsetWidth + "x" + el.offsetHeight;
-    if(el._reflKey !== rk){
-      el._reflKey = rk;
       refl.style.left = (-GLASS_PAD) + "px";
       refl.style.top = (-GLASS_PAD) + "px";
+      refl.style.backgroundImage = "linear-gradient(var(--glass-tint, rgba(255,253,247,0.46)), var(--glass-tint, rgba(255,253,247,0.46))), var(--blur-url)";
+      el.insertBefore(refl, el.firstChild);
+      el._refl = refl; el._reflSK = ""; el._reflPK = ""; el._reflT = "";
+    }
+    // Taille (rare) et calage texture (à chaque défilement) écrits séparément :
+    // pendant un scroll seul le background-position bouge, jamais l'image.
+    const sk = iw + "x" + ih + "|" + el.offsetWidth + "x" + el.offsetHeight;
+    if(el._reflSK !== sk){
+      el._reflSK = sk;
       refl.style.width = (el.offsetWidth + GLASS_PAD * 2) + "px";
       refl.style.height = (el.offsetHeight + GLASS_PAD * 2) + "px";
-      refl.style.backgroundImage = "linear-gradient(var(--glass-tint, rgba(255,253,247,0.46)), var(--glass-tint, rgba(255,253,247,0.46))), var(--blur-url)";
       refl.style.backgroundSize = "auto, " + iw + "px " + ih + "px";
-      refl.style.backgroundPosition = "0 0, " + Math.round(-(lx - GLASS_PAD + ox)) + "px " + Math.round(-(ly - GLASS_PAD + oy)) + "px";
+    }
+    const pk = "0 0, " + Math.round(-(lx - GLASS_PAD + ox)) + "px " + Math.round(-(ly - GLASS_PAD + oy)) + "px";
+    if(el._reflPK !== pk){
+      el._reflPK = pk;
+      refl.style.backgroundPosition = pk;
     }
     // Décalage amplifié « verre épais », déplacé en transform (compositor).
-    const dx = r.left - lx, dy = r.top - ly;
+    // Dans #app, le retard de défilement s'ajoute au déplacement propre.
+    let dx = r.left - lx, dy = r.top - ly;
+    if(glassAppEl.contains(el)){ dx += lagX; dy += lagY; }
     let ex = dx * (GLASS_GAIN - 1), ey = dy * (GLASS_GAIN - 1);
     if(ex > GLASS_MAXD) ex = GLASS_MAXD; else if(ex < -GLASS_MAXD) ex = -GLASS_MAXD;
     if(ey > GLASS_MAXD) ey = GLASS_MAXD; else if(ey < -GLASS_MAXD) ey = -GLASS_MAXD;
@@ -4224,14 +4289,16 @@ function updateRotateHint(){
   if(typeof window.orientation === "number"){ a = window.orientation; }
   else if(screen.orientation && typeof screen.orientation.angle === "number"){ a = screen.orientation.angle; }
   rl.classList.toggle("from-right", a === -90 || a === 270);
-  /* L'animation tourne en continu même quand le verrou est caché : au moment
-     où il APPARAÎT, l'icône serait donc à une phase quelconque du cycle
-     (souvent déjà droite). On remet l'animation à zéro à chaque apparition
-     pour qu'elle démarre TOUJOURS couchée, comme le téléphone du joueur. */
+  /* L'animation n'existe que sous .run : on retire la classe quand le verrou
+     est caché et on la RE-pose (après un reflow) à chaque apparition. La
+     boucle repart donc de zéro — icône couchée — puis se redresse ; et même
+     sans animation, la pose de base CSS est déjà couchée. */
   const vis = getComputedStyle(rl).display !== "none";
-  if(vis && !rotLockWasVisible){
-    const ico = rl.querySelector(".rl-ico");
-    if(ico){ ico.style.animation = "none"; void ico.offsetWidth; ico.style.animation = ""; }
+  if(!vis){ rl.classList.remove("run"); }
+  else if(!rotLockWasVisible || !rl.classList.contains("run")){
+    rl.classList.remove("run");
+    void rl.offsetWidth;
+    rl.classList.add("run");
   }
   rotLockWasVisible = vis;
 }
@@ -4248,6 +4315,17 @@ window.addEventListener("resize", updateRotateHintSoon);
 const rotMq = window.matchMedia ? window.matchMedia("(orientation: landscape)") : null;
 if(rotMq){ try { rotMq.addEventListener("change", updateRotateHintSoon); } catch(e){ if(rotMq.addListener) rotMq.addListener(updateRotateHintSoon); } }
 updateRotateHint();
+
+/* Ceinture + bretelles contre la LOUPE de sélection iOS : en plus du
+   user-select:none posé sur chaque élément, on coupe à la racine tout début
+   de sélection et le menu contextuel d'appui long — sauf dans les champs de
+   saisie, où la loupe reste utile pour éditer son pseudo ou un code. */
+function inTextField(t){
+  if(t && t.nodeType !== 1) t = t.parentElement;
+  return !!(t && t.closest && t.closest("input, textarea"));
+}
+document.addEventListener("selectstart", (e)=>{ if(!inTextField(e.target)) e.preventDefault(); });
+document.addEventListener("contextmenu", (e)=>{ if(!inTextField(e.target)) e.preventDefault(); });
 
 let fsPending = false;
 function tryAutoFullscreen(){
