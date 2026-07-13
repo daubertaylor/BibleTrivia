@@ -352,14 +352,6 @@
   .splash-title{ font-family:'Poppins',sans-serif; font-weight:700; font-size:1.8rem; letter-spacing:-0.02em; color:#fff; margin:0 0 0.35rem; text-shadow:0 2px 16px rgba(0,0,0,0.6); opacity:0; animation:splashRise 0.8s ease 0.4s forwards; }
   .splash-verse{ font-family:'Fraunces',serif; font-size:1.08rem; line-height:1.5; color:rgba(255,255,255,0.96); margin:0 auto; max-width:19rem; letter-spacing:0.01em; font-style:italic; font-weight:400; text-shadow:0 1px 14px rgba(0,0,0,0.55); text-wrap:balance; opacity:0; animation: splashRise 0.9s ease 0.55s forwards; }
   .splash-ref{ font-family:'Poppins',sans-serif; font-weight:600; font-size:0.76rem; letter-spacing:0.09em; text-transform:uppercase; color:#FFD968; margin:0.55rem 0 0; text-shadow:0 1px 10px rgba(0,0,0,0.5); opacity:0; animation: splashRise 0.9s ease 0.72s forwards; }
-  /* Bible cartoon « à main levée » : signe le verset de l'écran de chargement,
-     flotte doucement comme l'icône, petites étoiles qui scintillent. */
-  .splash-bible{ display:block; width:5rem; height:auto; margin:1.5rem auto 0; opacity:0; filter:drop-shadow(0 10px 16px rgba(0,0,0,0.28)); animation:splashFade 0.9s ease 0.95s forwards, bibleFloat 4.4s ease-in-out 1.9s infinite; }
-  @keyframes bibleFloat{ 0%,100%{ transform:translateY(0) rotate(0deg); } 50%{ transform:translateY(-7px) rotate(1.6deg); } }
-  .splash-bible .tw{ opacity:0.35; transform-box:fill-box; transform-origin:center; animation:bibleTw 2.8s ease-in-out 1.2s infinite; }
-  .splash-bible .t2{ animation-delay:2.1s; }
-  .splash-bible .t3{ animation-delay:0.5s; }
-  @keyframes bibleTw{ 0%,100%{ opacity:0.3; transform:scale(0.75); } 50%{ opacity:1; transform:scale(1.08); } }
   .splash-dots{ position:absolute; bottom:3rem; left:50%; transform:translateX(-50%); display:flex; gap:0.5rem; }
   .splash-dot{ width:8px; height:8px; border-radius:50%; background:rgba(255,255,255,0.9); animation:dotPulse 1.4s ease-in-out infinite; }
   .splash-dot:nth-child(2){ animation-delay:0.2s; }
@@ -3718,34 +3710,11 @@ function renderSplash(){
       <h1 class="splash-title">BibleTrivia</h1>
       <p class="splash-verse">« ${escapeHtml(v.t)} »</p>
       <p class="splash-ref">${escapeHtml(v.r)}</p>
-      ${BIBLE_ART_SVG}
     </div>
     <div class="splash-dots"><span class="splash-dot"></span><span class="splash-dot"></span><span class="splash-dot"></span></div>
   `;
   return el;
 }
-/* Bible façon dessin animé, tracée à la main : couverture de cuir rouge aux
-   bords irréguliers (traits d'encre épais), croix dorée cerclée d'encre,
-   filet doré « gaufré », tranche de pages crème, signet, éclats d'étoiles. */
-const BIBLE_ART_SVG = `
-<svg class="splash-bible" viewBox="0 0 140 120" aria-hidden="true">
-  <ellipse cx="70" cy="111" rx="33" ry="5" fill="rgba(0,0,0,0.34)"/>
-  <g transform="rotate(-7 70 60)">
-    <path d="M46 24 Q74 20.5 102 23 Q108 23.6 108 30 L108 92 Q108 99 101 99.4 Q74 101.5 48 99.6 Q41 99 40.8 92 L40.5 30 Q40.5 24.5 46 24 Z" fill="#F7EAC9" stroke="#57301B" stroke-width="3" stroke-linejoin="round"/>
-    <path d="M103 32 Q104.3 60 103.2 90 M99 34 Q100 60 99.2 92" stroke="#D9BE8C" stroke-width="1.7" fill="none" stroke-linecap="round"/>
-    <path d="M50 96.8 Q72 98.6 94 96.9" stroke="#D9BE8C" stroke-width="1.7" fill="none" stroke-linecap="round"/>
-    <path d="M82 98 L82 114 L87.5 108 L93 114 L93 98 Z" fill="#E4552F" stroke="#57301B" stroke-width="2.8" stroke-linejoin="round"/>
-    <path d="M43 16 Q70 13.5 91 15.5 Q100 16.2 100 25 Q101.6 55 100 85 Q100 93.6 91 94 Q70 96.4 43 94.4 Q34 94 34 85 Q32.4 55 34 25 Q34 16.6 43 16 Z" fill="#A63A20" stroke="#57301B" stroke-width="3.4" stroke-linejoin="round"/>
-    <path d="M48 25 Q67 23.6 87 25 Q91.6 25.4 91.8 30 Q93 55 91.8 80 Q91.6 84.8 87 85.2 Q67 86.8 47.5 85 Q43 84.8 42.8 80 Q41.6 55 42.9 30 Q43 25.4 48 25 Z" fill="none" stroke="#EBB640" stroke-width="2" opacity="0.9"/>
-    <path d="M67.4 37 L67.4 68 M55.4 47.5 L79.4 47.5" stroke="#57301B" stroke-width="10.6" stroke-linecap="round"/>
-    <path d="M67.4 37 L67.4 68 M55.4 47.5 L79.4 47.5" stroke="#F3C24A" stroke-width="6.4" stroke-linecap="round"/>
-    <path d="M45 30.5 Q47.5 24.5 54 22.6" stroke="rgba(255,255,255,0.6)" stroke-width="3" stroke-linecap="round" fill="none"/>
-    <path d="M42.6 39 Q43.4 34.6 45.8 31.8" stroke="rgba(255,255,255,0.42)" stroke-width="3" stroke-linecap="round" fill="none"/>
-  </g>
-  <path class="tw" d="M18 27 Q19.6 32.4 25 34 Q19.6 35.6 18 41 Q16.4 35.6 11 34 Q16.4 32.4 18 27 Z" fill="#FFD968"/>
-  <path class="tw t2" d="M124 16 Q125.2 19.8 129 21 Q125.2 22.2 124 26 Q122.8 22.2 119 21 Q122.8 19.8 124 16 Z" fill="#FFE9A8"/>
-  <path class="tw t3" d="M127 78 Q128 81 131 82 Q128 83 127 86 Q126 83 123 82 Q126 81 127 78 Z" fill="#FFD968"/>
-</svg>`;
 
 let lastScreen = null;
 /* ===================== ÉCRANS PROFIL & EN LIGNE ===================== */
