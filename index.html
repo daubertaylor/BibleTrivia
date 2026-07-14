@@ -4295,14 +4295,8 @@ const GLASS_GAIN = 2.2, GLASS_MAXD = 28, GLASS_PAD = 96, GLASS_TCLAMP = 72;
 const GLASS_SCRMAX = 9; // décalage MAX dû au défilement (doux, jamais de détachement)
 const glassAppEl = document.getElementById("app");
 let glassScrollSX = 0, glassScrollSY = 0; // défilement lissé (retard du verre)
-/* La couche reflet (translate3d au compositeur) n'est utile QUE sur iOS/WebKit,
-   où Safari repousse la re-rasterisation du fond peint pendant les animations.
-   Sur Android/Chrome (Blink), background-position se repeint bien à chaque
-   image : la couche reflet y faisait double, d'où des transitions « buguées »
-   (verre fantôme dédoublé). On la réserve donc à WebKit. */
-const GLASS_REFL = /iP(hone|od|ad)/.test(navigator.userAgent)
-  || (navigator.platform === "MacIntel" && navigator.maxTouchPoints > 1)
-  || (/AppleWebKit/.test(navigator.userAgent) && !/Chrome|Chromium|CriOS|Android/.test(navigator.userAgent));
+/* Couche reflet « verre épais » active PARTOUT (même effet iOS et Android). */
+const GLASS_REFL = true;
 /* Hauteur de texture STABLE (monotone) : quand la barre de navigation Android
    apparaît/disparaît, le viewport se réduit — recalculer la texture à chaque
    image faisait « clignoter » du blanc. On garde la plus GRANDE hauteur vue,
