@@ -4354,10 +4354,18 @@ function queueGlassSync(freeze){
                 lx: lx, ly: ly, inApp: glassAppEl.contains(el),
                 ow: el.offsetWidth, oh: el.offsetHeight });
   }
+  const vh = de.clientHeight || window.innerHeight; // vraie hauteur visible (culling)
   for(let i = 0; i < jobs.length; i++){
     const j = jobs[i], el = j.el;
     if(j.skip){
       if(el._glassKey){ el._glassKey = ""; el.style.backgroundSize = ""; el.style.backgroundPosition = ""; }
+      if(el._refl && el._refl._op !== "0"){ el._refl._op = "0"; el._refl.style.opacity = "0"; }
+      continue;
+    }
+    // CULLING : élément entièrement hors de l'écran (défilé au-delà du bord) ->
+    // on ne le repeint pas, on éteint juste son reflet. Divise le travail de
+    // peinture pendant le défilement (seules les cartes visibles comptent).
+    if(j.rt > vh + 40 || j.rt + j.oh < -40){
       if(el._refl && el._refl._op !== "0"){ el._refl._op = "0"; el._refl.style.opacity = "0"; }
       continue;
     }
@@ -4403,21 +4411,18 @@ function queueGlassSync(freeze){
     let ex = dx * (GLASS_GAIN - 1), ey = dy * (GLASS_GAIN - 1);
     if(ex > GLASS_MAXD) ex = GLASS_MAXD; else if(ex < -GLASS_MAXD) ex = -GLASS_MAXD;
     if(ey > GLASS_MAXD) ey = GLASS_MAXD; else if(ey < -GLASS_MAXD) ey = -GLASS_MAXD;
-    // Défilement : contribution DOUCE et fortement bornée (jamais amplifiée).
-    let sx = 0, sy = 0;
-    if(j.inApp){
-      sx = lagX; sy = lagY;
-      if(sx > GLASS_SCRMAX) sx = GLASS_SCRMAX; else if(sx < -GLASS_SCRMAX) sx = -GLASS_SCRMAX;
-      if(sy > GLASS_SCRMAX) sy = GLASS_SCRMAX; else if(sy < -GLASS_SCRMAX) sy = -GLASS_SCRMAX;
-    }
-    let tx = -(dx + ex) - sx, ty = -(dy + ey) - sy;
+    /* Le DÉFILEMENT ne rallume PLUS le reflet : le fond peint suit déjà la
+       scène (effet fenêtre), et rallumer 15 reflets d'un coup au défilement
+       créait 15 couches GPU en rafale (à-coups sur Android). Le reflet décalé
+       reste plein et intact pour l'APPUI (déplacement propre de l'élément). */
+    let tx = -(dx + ex), ty = -(dy + ey);
     if(tx > GLASS_TCLAMP) tx = GLASS_TCLAMP; else if(tx < -GLASS_TCLAMP) tx = -GLASS_TCLAMP;
     if(ty > GLASS_TCLAMP) ty = GLASS_TCLAMP; else if(ty < -GLASS_TCLAMP) ty = -GLASS_TCLAMP;
     const md = 1.25;
     // « freeze » (pendant une transition d'écran) : reflet éteint, aucune
     // couche GPU — la transition tourne en pur transform, sans travail par
     // image. Le fond peint (ci-dessus) assure l'effet fenêtre, c'est fluide.
-    const moving = !freeze && (dx > md || dx < -md || dy > md || dy < -md || sx > md || sx < -md || sy > md || sy < -md);
+    const moving = !freeze && (dx > md || dx < -md || dy > md || dy < -md);
     // Au repos : transform "none" -> PAS de couche GPU permanente (Android).
     // En mouvement : translate3d -> couche créée à la volée le temps du geste.
     const t = moving ? ("translate3d(" + tx.toFixed(1) + "px," + ty.toFixed(1) + "px,0)") : "none";
