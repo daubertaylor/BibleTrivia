@@ -667,7 +667,11 @@
      la même photo teintée, déplacée en TRANSFORM (le compositeur l'anime
      nativement, image par image). Invisible au repos : les liserés et le
      calage pixel-perfect du fond peint restent intacts. */
-  .glass-refl{ position:absolute; z-index:-1; pointer-events:none; opacity:0; transition:opacity 0.16s ease; background-repeat:repeat; will-change:transform, opacity; transform:translate3d(0,0,0); }
+  /* Pas de will-change permanent : il forçait UNE couche GPU par reflet (~30
+     couches permanentes -> Android saturait). Le reflet n'est promu en couche
+     que lorsqu'il bouge réellement (translate3d non nul appliqué par le JS),
+     puis rendu à la couche au repos. Rendu strictement identique. */
+  .glass-refl{ position:absolute; z-index:-1; pointer-events:none; opacity:0; transition:opacity 0.16s ease; background-repeat:repeat; transform:translate3d(0,0,0); }
   /* Le bouton avatar est transparent et déborde (badge C) : sans découpe, sa
      couche reflet montrerait un rectangle de photo pendant les transitions. */
   .hero-profile .glass-refl{ display:none; }
@@ -4250,8 +4254,10 @@ function render(){
     node.querySelectorAll(".reveal-shake").forEach(n=>n.classList.remove("reveal-shake"));
   }, 820);
 
-  // Réfraction : le verre suit le mouvement le temps de la transition.
-  glassTrack(720);
+  // Verre : sur une VRAIE transition d'écran, on gèle le verre pour que
+  // l'animation tourne en pur GPU (fluide sur Android) ; sinon (re-rendu sur
+  // place) on recale normalement.
+  if(prevNode){ glassFreezeForTransition(); } else { glassTrack(); }
 
   if(state.screen!=="play" && state.screen!=="online-play"){ stopQTimer(); }
   if(state.screen==="play") saveState();
@@ -4302,7 +4308,7 @@ const GLASS_REFL = true;
    image faisait « clignoter » du blanc. On garde la plus GRANDE hauteur vue,
    la barre nav ne déclenche donc plus aucun recalcul. */
 let glassMaxH = 0;
-function queueGlassSync(){
+function queueGlassSync(freeze){
   /* Dimensions du viewport de MISE EN PAGE (documentElement), pas
      innerWidth/innerHeight : sur iOS, le clavier rétrécit le viewport
      VISUEL — baser la texture dessus faisait échantillonner le bas de la
@@ -4408,8 +4414,13 @@ function queueGlassSync(){
     if(tx > GLASS_TCLAMP) tx = GLASS_TCLAMP; else if(tx < -GLASS_TCLAMP) tx = -GLASS_TCLAMP;
     if(ty > GLASS_TCLAMP) ty = GLASS_TCLAMP; else if(ty < -GLASS_TCLAMP) ty = -GLASS_TCLAMP;
     const md = 1.25;
-    const moving = (dx > md || dx < -md || dy > md || dy < -md || sx > md || sx < -md || sy > md || sy < -md);
-    const t = moving ? ("translate3d(" + tx.toFixed(1) + "px," + ty.toFixed(1) + "px,0)") : "translate3d(0,0,0)";
+    // « freeze » (pendant une transition d'écran) : reflet éteint, aucune
+    // couche GPU — la transition tourne en pur transform, sans travail par
+    // image. Le fond peint (ci-dessus) assure l'effet fenêtre, c'est fluide.
+    const moving = !freeze && (dx > md || dx < -md || dy > md || dy < -md || sx > md || sx < -md || sy > md || sy < -md);
+    // Au repos : transform "none" -> PAS de couche GPU permanente (Android).
+    // En mouvement : translate3d -> couche créée à la volée le temps du geste.
+    const t = moving ? ("translate3d(" + tx.toFixed(1) + "px," + ty.toFixed(1) + "px,0)") : "none";
     if(el._reflT !== t){ el._reflT = t; refl.style.transform = t; }
     const op = moving ? "1" : "0";
     if(refl._op !== op){ refl._op = op; refl.style.opacity = op; }
@@ -4426,13 +4437,24 @@ function queueGlassSync(){
    rotation) + une petite traîne pour laisser les reflets se reposer. Au repos,
    un simple battement toutes les ~0,5 s rattrape tout changement inattendu.
    L'effet est intact : dès qu'on touche/défile/change d'écran, c'est armé. */
-let glassActiveUntil = 0, glassFrame = 0;
+let glassActiveUntil = 0, glassFrame = 0, glassFreezeUntil = 0;
 function armGlass(ms){ const u = performance.now() + (ms || 850); if(u > glassActiveUntil) glassActiveUntil = u; }
 function glassTrack(){ armGlass(950); try{ queueGlassSync(); }catch(e){} }
+/* GEL PENDANT LA TRANSITION D'ÉCRAN : on cale le verre UNE fois (fond peint
+   correct + reflets éteints) puis on ne fait plus rien pendant l'animation.
+   La transition tourne alors en pur GPU (transform/opacité), sans le moindre
+   recalcul par image -> fluide même sur Android. À la fin, on reprend. */
+function glassFreezeForTransition(){
+  try{ queueGlassSync(true); }catch(e){}
+  glassFreezeUntil = performance.now() + 620;
+  setTimeout(()=>{ glassFreezeUntil = 0; armGlass(500); try{ queueGlassSync(); }catch(e){} }, 640);
+}
 (function glassLive(){
   requestAnimationFrame(glassLive);
   glassFrame++;
-  if(performance.now() < glassActiveUntil || (glassFrame % 30) === 0){
+  const now = performance.now();
+  if(now < glassFreezeUntil) return; // transition en cours : rien à faire (pur GPU)
+  if(now < glassActiveUntil || (glassFrame % 30) === 0){
     try{ queueGlassSync(); }catch(e){}
   }
 })();
