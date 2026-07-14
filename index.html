@@ -2621,10 +2621,14 @@ function playReveal(){ if(!settings.sfx) return; chime(392,0,0.95,0.009); chime(
 // verset : deux notes tendres do->mi, très bas volume, qui s'évanouissent lentement
 function playVerse(){ if(!settings.sfx) return; chime(523.25,0,1.2,0.009); chime(659.25,0.18,1.5,0.007); }
 function ensureAudioAwake(){ if(actx && actx.state==="suspended"){ actx.resume().catch(()=>{}); } }
+/* Verrou : on ne ranime JAMAIS l'audio si l'app n'est pas au premier plan.
+   Sinon, en fermant l'app (blur/statechange déclenchés pendant la mise en
+   veille), on relançait le son au pire moment -> « bruit bizarre ». */
+function audioActive(){ return document.visibilityState === "visible" && !document.hidden; }
 /* Ré-amorce la nappe musicale après un réveil : le planificateur (setInterval)
    peut avoir perdu le fil pendant une interruption (appel, veille). */
 function rekickMusic(){
-  if(!settings.music || !actx) return;
+  if(!settings.music || !actx || !audioActive()) return;
   if(!musicPlaying){ startMusic(); return; }
   if(!musicTimer){ musicTimer = setInterval(musicTick, 500); }
   musicNextBar = actx.currentTime + 0.1;
@@ -2635,7 +2639,7 @@ function rekickMusic(){
    contexte « interrompu » après un appel, resume() n'y suffit plus. */
 let audioReviving = false;
 function reviveAudioHard(){
-  if(audioReviving) return;
+  if(audioReviving || !audioActive()) return; // jamais pendant la fermeture
   audioReviving = true;
   try { if(actx){ actx.close().catch(()=>{}); } } catch(e){}
   actx = null; masterGain = null; masterFilter = null;
@@ -2648,7 +2652,7 @@ function reviveAudioHard(){
    d'appel, de veille, d'arrière-plan). Tente resume(), puis, si le contexte
    ne repart pas, le recrée de zéro. */
 function wakeAudio(){
-  if(!actx){ return; }
+  if(!actx || !audioActive()){ return; } // uniquement au premier plan
   if(actx.state === "running"){ rekickMusic(); return; }
   let ok = false;
   try {
@@ -2875,11 +2879,10 @@ document.addEventListener("visibilitychange", ()=>{
   else { stopMusic(); }
 });
 window.addEventListener("pageshow", ()=>{ wakeAudio(); maybeStartMusic(); });
+/* focus/pointer : uniquement quand l'app est réellement au premier plan
+   (wakeAudio se protège lui-même). PAS de « blur » : il se déclenche aussi à
+   la fermeture et rallumait le son au mauvais moment. */
 window.addEventListener("focus", wakeAudio);
-/* Un appel entrant N'ENVOIE PAS toujours l'app en arrière-plan (elle reste
-   « visible » derrière l'appel) : ces événements-là rattrapent le réveil. */
-window.addEventListener("blur", ()=>{ setTimeout(wakeAudio, 400); });
-if(navigator.mediaSession){ try { navigator.mediaSession.setActionHandler("play", wakeAudio); } catch(e){} }
 /* La musique ne peut démarrer qu'après un premier geste : on s'accroche au tout
    premier — et ce même geste ranime l'audio si un appel l'avait interrompu. */
 document.addEventListener("pointerdown", ()=>{ wakeAudio(); maybeStartMusic(); }, { capture:true, passive:true });
