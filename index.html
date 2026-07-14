@@ -4335,22 +4335,24 @@ let glassScrollSX = 0, glassScrollSY = 0; // défilement lissé (retard du verre
    n'est pas sur iOS Safari (qui le maltraite), on l'utilise -> le flou est
    composé par le GPU, le défilement est parfaitement fluide et le JS du verre
    ne tourne plus du tout. Sur iOS, on garde la photo peinte recalée par JS. */
-const GLASS_NATIVE = (function(){
-  const isiOS = /iP(hone|od|ad)/.test(navigator.userAgent) || (navigator.platform === "MacIntel" && navigator.maxTouchPoints > 1);
-  if(isiOS) return false;
-  try { return CSS.supports("backdrop-filter", "blur(2px)") || CSS.supports("-webkit-backdrop-filter", "blur(2px)"); }
-  catch(e){ return false; }
-})();
-if(GLASS_NATIVE){ document.documentElement.classList.add("gl-native"); }
-/* Reflet « verre épais » (couche transform) : utile seulement en voie peinte. */
-const GLASS_REFL = !GLASS_NATIVE;
+/* MÊME VERRE PARTOUT (iOS = Android, rendu RIGOUREUSEMENT identique) : on peint
+   la photo pré-floutée et on la recale par JS sur TOUTES les plateformes. Le
+   backdrop-filter natif (Android) donnait un rendu seulement APPROCHANT — il
+   floute le contenu réel au lieu de la scène, sans effet fenêtre ni reflet
+   d'appui. On revient donc au verre peint pour un rendu exactement identique à
+   iOS. La fluidité sur Android est obtenue autrement : pendant un défilement,
+   on GÈLE le recalage de background-position (voir glassLive) -> plus aucune
+   re-peinture par image, le fond glisse avec l'élément (comme iOS diffère ses
+   repaints) puis se recale en douceur à l'arrêt. */
+const GLASS_NATIVE = false;
+/* Reflet « verre épais » (couche transform) : toujours actif en voie peinte. */
+const GLASS_REFL = true;
 /* Hauteur de texture STABLE (monotone) : quand la barre de navigation Android
    apparaît/disparaît, le viewport se réduit — recalculer la texture à chaque
    image faisait « clignoter » du blanc. On garde la plus GRANDE hauteur vue,
    la barre nav ne déclenche donc plus aucun recalcul. */
 let glassMaxH = 0;
 function queueGlassSync(freeze){
-  if(GLASS_NATIVE) return; // Android/Chrome : le blur natif fait tout, rien à recaler
   return queueGlassSyncPainted(freeze);
 }
 function queueGlassSyncPainted(freeze){
@@ -4424,8 +4426,14 @@ function queueGlassSyncPainted(freeze){
     }
     let lx = j.lx, ly = j.ly;
     if(j.inApp){ lx -= sl; ly -= st; }
-    // Fond peint de l'élément : calé sur le repos (net et stable).
-    const pos = "0 0, " + Math.round(-(lx + ox)) + "px " + Math.round(-(ly + oy)) + "px";
+    /* Fond peint : calé sur le défilement LISSÉ (glassScrollSX/SY) et non brut.
+       Pendant le geste on est gelé (aucune écriture) ; ce lissage ne joue donc
+       qu'au moment où l'on reprend à l'arrêt -> la photo rattrape la position
+       « fenêtre » en douceur au lieu de sauter d'un coup. Au repos, lissé =
+       brut (rattrapé/snappé plus haut), le rendu est identique. */
+    let px = j.lx, py = j.ly;
+    if(j.inApp){ px -= glassScrollSX; py -= glassScrollSY; }
+    const pos = "0 0, " + Math.round(-(px + ox)) + "px " + Math.round(-(py + oy)) + "px";
     const key = size + "|" + pos;
     if(el._glassKey !== key){
       el._glassKey = key;
@@ -4495,7 +4503,7 @@ function queueGlassSyncPainted(freeze){
    rotation) + une petite traîne pour laisser les reflets se reposer. Au repos,
    un simple battement toutes les ~0,5 s rattrape tout changement inattendu.
    L'effet est intact : dès qu'on touche/défile/change d'écran, c'est armé. */
-let glassActiveUntil = 0, glassFrame = 0, glassFreezeUntil = 0, glassGen = 1, glassPressUntil = 0;
+let glassActiveUntil = 0, glassFrame = 0, glassFreezeUntil = 0, glassGen = 1, glassPressUntil = 0, glassScrollUntil = 0;
 function armGlass(ms){ const u = performance.now() + (ms || 850); if(u > glassActiveUntil) glassActiveUntil = u; }
 /* Mise en page changée (nouvel écran, redimensionnement) : on invalide le
    cache des décalages pour qu'ils soient recalculés à la prochaine image. */
@@ -4516,6 +4524,13 @@ function glassFreezeForTransition(){
   glassFrame++;
   const now = performance.now();
   if(now < glassFreezeUntil) return; // transition en cours : rien à faire (pur GPU)
+  /* DÉFILEMENT = pur compositeur (exactement comme iOS) : pendant un défilement
+     actif on NE réécrit PAS background-position. Chaque réécriture repeindrait
+     ~10 photos floutées, et c'est CE repaint par image qui saccadait Android
+     (WebKit/iOS, lui, diffère ces repaints -> déjà fluide). Le fond peint
+     glisse donc avec l'élément le temps du geste, puis se recale en douceur dès
+     l'arrêt. Un appui en cours garde la priorité (reflet d'appui). */
+  if(now < glassScrollUntil && now >= glassPressUntil) return;
   if(now < glassActiveUntil || (glassFrame % 30) === 0){
     try{ queueGlassSync(); }catch(e){}
   }
@@ -4526,7 +4541,11 @@ function glassFreezeForTransition(){
    de mise en page (défilement quasi gratuit). */
 function armPress(){ const u = performance.now() + 650; if(u > glassPressUntil) glassPressUntil = u; armGlass(950); }
 try {
-  glassAppEl.addEventListener("scroll", ()=>armGlass(1300), { passive:true });
+  /* Un événement « scroll » = l'utilisateur défile (pas un appui bouton) : on
+     ouvre la fenêtre de GEL (pur compositeur) et on annule tout appui en cours
+     -> le gel s'applique dès la 1re image du geste, y compris pendant l'inertie
+     (les événements scroll continuent d'arriver et repoussent la fenêtre). */
+  glassAppEl.addEventListener("scroll", ()=>{ glassScrollUntil = performance.now() + 130; glassPressUntil = 0; armGlass(1300); }, { passive:true });
   document.addEventListener("pointerdown", armPress, { capture:true, passive:true });
   document.addEventListener("pointerup", armPress, { capture:true, passive:true });
   window.addEventListener("resize", ()=>{ glassRelayout(); armGlass(700); });
