@@ -52,6 +52,12 @@
   @supports (height: 100lvh){
     html{ height:100lvh; }
     #bg-layer, #bg-overlay, #bg-grain{ height:100lvh; bottom:auto; }
+    /* L'app garde la HAUTEUR MAXIMALE (lvh) : quand la barre de navigation
+       Android glisse pour apparaître, elle se superpose simplement en bas —
+       l'app ne se réajuste plus (fini les zones blanches / le contenu qui
+       saute). Le défilement interne rattrape la petite zone masquée. */
+    body{ height:100lvh; bottom:auto; }
+    #app{ height:100lvh; }
   }
   body{
     margin:0;
@@ -724,7 +730,9 @@
   .btn-invite{ display:flex; align-items:center; justify-content:center; gap:0.45rem; margin:0.15rem auto 0.9rem; width:auto; padding:0.55rem 1.05rem; border-radius:99px; --glass-tint: rgba(255,253,247,0.5); border:1px solid rgba(255,255,255,0.6); color:var(--ink); font-weight:700; font-size:0.85rem; }
   .btn-invite .ico{ width:1.05rem; height:1.05rem; display:inline-flex; color:var(--primary); }
 
-  .home-stats{ display:flex; gap:0.55rem; margin-top:auto; padding-top:clamp(1.1rem, 2.6vh, 2rem); }
+  /* Léger retrait latéral : les cartes stats (1000+ / niveaux / Duel) ne
+     collent plus aux bords de l'écran — on les voit proprement en entier. */
+  .home-stats{ display:flex; gap:0.55rem; margin-top:auto; padding:clamp(1.1rem, 2.6vh, 2rem) clamp(0.35rem, 2.2vw, 0.7rem) 0; }
   .hs-item{ flex:1; display:flex; flex-direction:column; align-items:center; gap:0.12rem; border:1px solid rgba(255,255,255,0.5); border-radius:15px; padding:0.66rem 0.4rem 0.58rem; text-align:center; transform:translateZ(0); -webkit-transform:translateZ(0); }
   .hs-ico{ width:1.4rem; height:1.4rem; color:var(--primary); margin-bottom:0.12rem; display:inline-flex; }
   .hs-item:nth-child(2) .hs-ico{ color:var(--gold-deep); }
@@ -4287,6 +4295,19 @@ const GLASS_GAIN = 2.2, GLASS_MAXD = 28, GLASS_PAD = 96, GLASS_TCLAMP = 72;
 const GLASS_SCRMAX = 9; // décalage MAX dû au défilement (doux, jamais de détachement)
 const glassAppEl = document.getElementById("app");
 let glassScrollSX = 0, glassScrollSY = 0; // défilement lissé (retard du verre)
+/* La couche reflet (translate3d au compositeur) n'est utile QUE sur iOS/WebKit,
+   où Safari repousse la re-rasterisation du fond peint pendant les animations.
+   Sur Android/Chrome (Blink), background-position se repeint bien à chaque
+   image : la couche reflet y faisait double, d'où des transitions « buguées »
+   (verre fantôme dédoublé). On la réserve donc à WebKit. */
+const GLASS_REFL = /iP(hone|od|ad)/.test(navigator.userAgent)
+  || (navigator.platform === "MacIntel" && navigator.maxTouchPoints > 1)
+  || (/AppleWebKit/.test(navigator.userAgent) && !/Chrome|Chromium|CriOS|Android/.test(navigator.userAgent));
+/* Hauteur de texture STABLE (monotone) : quand la barre de navigation Android
+   apparaît/disparaît, le viewport se réduit — recalculer la texture à chaque
+   image faisait « clignoter » du blanc. On garde la plus GRANDE hauteur vue,
+   la barre nav ne déclenche donc plus aucun recalcul. */
+let glassMaxH = 0;
 function queueGlassSync(){
   /* Dimensions du viewport de MISE EN PAGE (documentElement), pas
      innerWidth/innerHeight : sur iOS, le clavier rétrécit le viewport
@@ -4294,7 +4315,9 @@ function queueGlassSync(){
      photo (sable) et teintait les champs d'un jaune uniforme. Le viewport
      de mise en page, lui, ne bouge pas quand le clavier s'ouvre. */
   const de = document.documentElement;
-  const w = de.clientWidth || window.innerWidth, h = de.clientHeight || window.innerHeight;
+  const w = de.clientWidth || window.innerWidth;
+  let h = de.clientHeight || window.innerHeight;
+  if(h > glassMaxH) glassMaxH = h; else h = glassMaxH; // hauteur monotone : pas de clignotement à l'apparition de la barre nav
   /* Réserve VERTICALE doublée : pendant un défilement rapide, iOS applique
      les textures avec retard — la fenêtre visible glisse dans l'image au
      lieu d'en sortir (plus jamais de couture au bord de la photo). La
@@ -4333,6 +4356,7 @@ function queueGlassSync(){
       el.style.backgroundPosition = pos;
     }
     if(isInput) continue; // un <input> ne peut pas porter d'enfant reflet
+    if(!GLASS_REFL) continue; // Android/Chrome : le fond peint suffit, pas de reflet
     // Couche reflet (compositor) : créée une fois, texture calée sur le repos.
     let refl = el._refl;
     if(!refl || refl.parentNode !== el){
