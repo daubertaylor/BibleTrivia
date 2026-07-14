@@ -657,15 +657,18 @@
       inset 0 0 0 1.5px rgba(255,255,255,0.42),
       var(--rim-edge, 0 0 0 1px rgba(58,42,26,0.12)),
       var(--rim-cast, 0 5px 14px rgba(34,26,16,0.12));
-    background-image:linear-gradient(var(--glass-tint, rgba(255,253,247,0.46)), var(--glass-tint, rgba(255,253,247,0.46))), var(--blur-url);
+    /* Deux voies pour le verre :
+       - par DÉFAUT (iOS) : photo pré-floutée peinte (var(--blur-url)),
+         recalée par JS -> fiable là où Safari maltraite backdrop-filter ;
+       - html.gl-native (Android/Chrome) : --glass-photo devient « none » et
+         --glass-bf active le VRAI backdrop-filter, composé par le GPU ->
+         défilement parfaitement fluide, aucune peinture par image. */
+    background-image:linear-gradient(var(--glass-tint, rgba(255,253,247,0.46)), var(--glass-tint, rgba(255,253,247,0.46))), var(--glass-photo, var(--blur-url));
     background-size:auto, cover;
     background-position:0 0, center;
-    /* la photo se RÉPÈTE : pendant un long défilement (textures gelées), la
-       fenêtre peut dépasser le bord de l'image — mieux vaut un raccord flou
-       qu'une coupure nette vers la teinte plate */
-    background-repeat:repeat;
-    backdrop-filter:none;
-    -webkit-backdrop-filter:none;
+    background-repeat:no-repeat;
+    backdrop-filter:var(--glass-bf, none);
+    -webkit-backdrop-filter:var(--glass-bf, none);
     position:relative;
     overflow:hidden;
   }
@@ -679,7 +682,18 @@
      couches permanentes -> Android saturait). Le reflet n'est promu en couche
      que lorsqu'il bouge réellement (translate3d non nul appliqué par le JS),
      puis rendu à la couche au repos. Rendu strictement identique. */
-  .glass-refl{ position:absolute; z-index:-1; pointer-events:none; opacity:0; transition:opacity 0.16s ease; background-repeat:repeat; transform:translate3d(0,0,0); }
+  /* Android/Chrome : blur natif GPU au lieu de la photo peinte -> défilement
+     parfaitement fluide (le compositeur gère le flou, aucune peinture/JS). */
+  html.gl-native :is(.app-header, .card, .mode-card, .question-card, .solo-summary, .solo-score-bar, .score-pane,
+    .option-btn, .btn-primary, .btn-next, .btn-replay, .fact-card, .tier-chip, .q-counter, .streak-chip, .chip, .icon-btn, .btn-reveal,
+    .btn-newgame, .award-btn, .team-row, .presence-card, .me-row, .online-action, .searching-card,
+    .waiting-card, .info-card, .vs-row, .len-chip, .duel-scorebar, .timer-chip, .dr-side, .rank-row,
+    .text-input, .code-input, .fs-hint, .modal-card, .add-team, .btn-ghost, .fsh-close, .hs-item, .settings-sheet, .hero-verse-card, .end-medal, .modal-btn.ok, .modal-btn.cancel, .leave-banner, .adj-btn, .waiting-note, .rules, .btn-review, .daily-card, .dc-streak, .btn-invite, .creator-badge, .sheet-done, .set-go, .rev-item){
+    --glass-photo: none;
+    --glass-bf: blur(22px) saturate(1.6);
+  }
+  html.gl-native .glass-refl{ display:none; }
+  .glass-refl{ position:absolute; z-index:-1; pointer-events:none; opacity:0; transition:opacity 0.16s ease; background-repeat:no-repeat; transform:translate3d(0,0,0); }
   /* Le bouton avatar est transparent et déborde (badge C) : sans découpe, sa
      couche reflet montrerait un rectangle de photo pendant les transitions. */
   .hero-profile .glass-refl{ display:none; }
@@ -4042,8 +4056,8 @@ function renderOnline(){
       </div>
       <div class="flex-sp"></div>
     ` : `
-      <button class="online-action primary${actionsNew?' reveal-in':''}" style="--i:0" onclick="setSearching(true)">
-        <span class="oa-ico">${ICONS.bolt}</span>
+      <button class="online-action${actionsNew?' reveal-in':''}" style="--i:0" onclick="setSearching(true)">
+        <span class="oa-ico r">${ICONS.bolt}</span>
         <span class="oa-txt"><b>Partie aléatoire</b><small>Tombe avec un joueur connecté</small></span>
         <span class="chev">${ICONS.chevronRight}</span>
       </button>
@@ -4317,14 +4331,29 @@ const GLASS_GAIN = 2.2, GLASS_MAXD = 28, GLASS_PAD = 96, GLASS_TCLAMP = 72;
 const GLASS_SCRMAX = 9; // décalage MAX dû au défilement (doux, jamais de détachement)
 const glassAppEl = document.getElementById("app");
 let glassScrollSX = 0, glassScrollSY = 0; // défilement lissé (retard du verre)
-/* Couche reflet « verre épais » active PARTOUT (même effet iOS et Android). */
-const GLASS_REFL = true;
+/* VOIE NATIVE (Android/Chrome) : quand backdrop-filter est fiable ET qu'on
+   n'est pas sur iOS Safari (qui le maltraite), on l'utilise -> le flou est
+   composé par le GPU, le défilement est parfaitement fluide et le JS du verre
+   ne tourne plus du tout. Sur iOS, on garde la photo peinte recalée par JS. */
+const GLASS_NATIVE = (function(){
+  const isiOS = /iP(hone|od|ad)/.test(navigator.userAgent) || (navigator.platform === "MacIntel" && navigator.maxTouchPoints > 1);
+  if(isiOS) return false;
+  try { return CSS.supports("backdrop-filter", "blur(2px)") || CSS.supports("-webkit-backdrop-filter", "blur(2px)"); }
+  catch(e){ return false; }
+})();
+if(GLASS_NATIVE){ document.documentElement.classList.add("gl-native"); }
+/* Reflet « verre épais » (couche transform) : utile seulement en voie peinte. */
+const GLASS_REFL = !GLASS_NATIVE;
 /* Hauteur de texture STABLE (monotone) : quand la barre de navigation Android
    apparaît/disparaît, le viewport se réduit — recalculer la texture à chaque
    image faisait « clignoter » du blanc. On garde la plus GRANDE hauteur vue,
    la barre nav ne déclenche donc plus aucun recalcul. */
 let glassMaxH = 0;
 function queueGlassSync(freeze){
+  if(GLASS_NATIVE) return; // Android/Chrome : le blur natif fait tout, rien à recaler
+  return queueGlassSyncPainted(freeze);
+}
+function queueGlassSyncPainted(freeze){
   /* Dimensions du viewport de MISE EN PAGE (documentElement), pas
      innerWidth/innerHeight : sur iOS, le clavier rétrécit le viewport
      VISUEL — baser la texture dessus faisait échantillonner le bas de la
