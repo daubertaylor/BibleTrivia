@@ -4327,6 +4327,10 @@ function queueGlassSync(){
   if(glassScrollSY > st - 0.35 && glassScrollSY < st + 0.35) glassScrollSY = st;
   const lagX = glassScrollSX - sl, lagY = glassScrollSY - st;
   const els = document.querySelectorAll(GLASS_SEL);
+  /* Écran qui SORT pendant une transition : il s'efface et va disparaître —
+     inutile de recalculer son verre (moitié moins de travail à l'instant le
+     plus chargé). Le test .closest n'est fait que si une sortie est en cours. */
+  const exiting = glassAppEl.querySelector(".screen-exit");
   /* ANTI-À-COUPS (surtout Android) : on regroupe TOUTES les lectures de mise
      en page (getBoundingClientRect, offsetLeft/Top/Width/Height) dans une
      première passe, PUIS toutes les écritures de style dans une seconde.
@@ -4336,7 +4340,7 @@ function queueGlassSync(){
   const jobs = [];
   for(let i = 0; i < els.length; i++){
     const el = els[i];
-    if(el.matches(GLASS_SKIP)){ jobs.push({ el: el, skip: true }); continue; }
+    if(el.matches(GLASS_SKIP) || (exiting && el.closest(".screen-exit"))){ jobs.push({ el: el, skip: true }); continue; }
     const r = el.getBoundingClientRect();
     let lx = 0, ly = 0, n = el;
     while(n && n !== document.body){ lx += n.offsetLeft; ly += n.offsetTop; n = n.offsetParent; }
@@ -4416,8 +4420,30 @@ function queueGlassSync(){
    avant le travail, une erreur passagère ne peut pas tuer la boucle.
    Écriture seulement si la position a bougé (repos ≈ gratuit) ;
    requestAnimationFrame se met en pause tout seul en arrière-plan. */
-function glassTrack(){ try{ queueGlassSync(); }catch(e){} }
-(function glassLive(){ requestAnimationFrame(glassLive); try{ queueGlassSync(); }catch(e){} })();
+/* FENÊTRE D'ACTIVITÉ : recalculer le verre à CHAQUE image même immobile
+   coûtait cher (60 getBoundingClientRect/image pour rien). On ne synchronise
+   plus que pendant une VRAIE activité (appui, défilement, transition,
+   rotation) + une petite traîne pour laisser les reflets se reposer. Au repos,
+   un simple battement toutes les ~0,5 s rattrape tout changement inattendu.
+   L'effet est intact : dès qu'on touche/défile/change d'écran, c'est armé. */
+let glassActiveUntil = 0, glassFrame = 0;
+function armGlass(ms){ const u = performance.now() + (ms || 850); if(u > glassActiveUntil) glassActiveUntil = u; }
+function glassTrack(){ armGlass(950); try{ queueGlassSync(); }catch(e){} }
+(function glassLive(){
+  requestAnimationFrame(glassLive);
+  glassFrame++;
+  if(performance.now() < glassActiveUntil || (glassFrame % 30) === 0){
+    try{ queueGlassSync(); }catch(e){}
+  }
+})();
+try {
+  glassAppEl.addEventListener("scroll", ()=>armGlass(1300), { passive:true });
+  document.addEventListener("pointerdown", ()=>armGlass(950), { capture:true, passive:true });
+  document.addEventListener("pointerup", ()=>armGlass(950), { capture:true, passive:true });
+  window.addEventListener("resize", ()=>armGlass(700));
+  window.addEventListener("orientationchange", ()=>armGlass(1200));
+} catch(e){}
+armGlass(2500); // couvre le tout premier affichage
 
 /* Plein écran réel : demandé au premier toucher là où l'API existe (Android,
    iPad, desktop). Sur iPhone, Safari interdit cette API : le vrai plein écran
