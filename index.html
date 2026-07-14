@@ -3079,7 +3079,11 @@ function showHeroVerse(){
   if(t) t.textContent = "« " + v.t + " »";
   if(r) r.textContent = v.r;
   zone.classList.add("show-verse");
-  glassTrack(720);
+  /* On GÈLE le verre le temps de l'animation (comme les transitions d'écran) :
+     la carte-verset se morphe alors en pur GPU, sans que Safari iOS ne
+     re-rasterise son fond flouté image par image -> fluide, identique à
+     Android. */
+  glassFreezeForTransition();
   playVerse();
   clearTimeout(zone._verseTimer);
   zone._verseTimer = setTimeout(hideHeroVerse, 12000);
@@ -3089,6 +3093,7 @@ function hideHeroVerse(){
   if(!zone) return;
   clearTimeout(zone._verseTimer);
   zone.classList.remove("show-verse");
+  glassFreezeForTransition(); // même gel au retour de l'icône : fluide sur iOS
 }
 
 /* ===================== PARTAGE DU RÉSULTAT (Web Share, natif iOS) ===================== */
