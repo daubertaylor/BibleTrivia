@@ -693,6 +693,17 @@
     -webkit-backdrop-filter:var(--glass-bf, none);
     position:relative;
     overflow:hidden;
+    /* Couche GPU dédiée : le rebord (box-shadow inset ci-dessus) vit sur ce
+       MÊME élément que le fond peint recalé par JS à chaque image pendant le
+       défilement. Sans promotion, Safari iOS classe cet élément comme
+       « surface animée » et diffère TOUTE sa re-rasterisation le temps du
+       geste (voir commentaire ci-dessous sur le reflet mobile) — pas
+       seulement la photo, mais le rebord AVEC, qui disparaissait donc
+       pendant qu'on défile pour ne réapparaître qu'à l'arrêt. En isolant
+       l'élément sur sa propre couche compositée, son rebord reste peint en
+       continu, indépendamment des écritures de background-position. */
+    transform:translateZ(0);
+    -webkit-transform:translateZ(0);
   }
   /* REFLET MOBILE (compositor) : pendant un mouvement, Safari iOS repousse la
      re-rasterisation des surfaces animées — déplacer background-position ne
