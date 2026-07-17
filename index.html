@@ -2157,7 +2157,7 @@ const net = {
   code:null, isHost:false,
   opp:null, oppScore:0, oppIndex:0, oppDone:false, oppGone:false, oppPresent:false, oppLastSeen:0,
   seed:null, lengthKey:"normale", timerKey:"30", themeKey:"tout", timedOut:false,
-  deck:[], idx:0, score:0, correct:0, selected:null, revealed:false, myDone:false,
+  deck:[], idx:0, score:0, correct:0, selected:null, revealed:false, myDone:false, missed:[],
   duelHb:null, joinTimer:null,
   status:"", error:""
 };
@@ -2403,7 +2403,7 @@ function beginDuel(seed, lengthKey, timerKey, theme){
   net.themeKey = theme || "tout";
   net.timedOut = false;
   net.deck = seededDeck(seed, lengthKey, net.themeKey);
-  net.idx = 0; net.score = 0; net.correct = 0; net.selected=null; net.revealed=false; net.myDone=false;
+  net.idx = 0; net.score = 0; net.correct = 0; net.selected=null; net.revealed=false; net.myDone=false; net.missed=[];
   net.oppScore = 0; net.oppIndex = 0; net.oppDone=false; net.oppGone=false; net.status=""; net.confettiShown = false;
   net.animIdx = -1; net.justRevealed = false;
   net.oppLastSeen = Date.now();
@@ -2418,7 +2418,7 @@ function onlineAnswer(i){
   const opt = q.shuffledOptions[i];
   net.selected = opt; net.revealed = true; net.justRevealed = true;
   if(opt === q.correct){ net.score += TIER_INFO[q.tier].pts; net.correct += 1; errbookRemove(q); playCorrect(); }
-  else { errbookAdd(q); playIncorrect(); }
+  else { net.missed.push({ q:q.q, correct:q.correct, chosen:opt, fact:q.fact }); errbookAdd(q); playIncorrect(); }
   broadcastProgress(false);
   render();
 }
@@ -2901,14 +2901,17 @@ function closeSettings(){
   v.classList.add("closing");
   setTimeout(()=>{ if(v.parentNode) v.remove(); }, 250);
 }
-/* Revoir les questions ratées (mode solo) : feuille glissante avec la liste. */
-function openMissedReview(){
-  if(!state.soloMissed || !state.soloMissed.length) return;
+/* Revoir les questions ratées (mode solo ET duel en ligne, mêmes données :
+   chosen/correct/fact par question ratée) : feuille glissante avec la liste.
+   Sans argument -> solo (comportement d'origine inchangé). */
+function openMissedReview(list){
+  const missed = list || state.soloMissed;
+  if(!missed || !missed.length) return;
   if(document.getElementById("reviewVeil")) return;
   const veil = document.createElement("div");
   veil.className = "sheet-veil"; veil.id = "reviewVeil";
   veil.onclick = (e)=>{ if(e.target===veil) closeMissedReview(); };
-  const items = state.soloMissed.map(m=>`
+  const items = missed.map(m=>`
     <div class="rev-item">
       <div class="rev-q">${escapeHtml(m.q)}</div>
       <div class="rev-a rev-wrong"><span class="ico">${ICONS.xCircle}</span>${escapeHtml(m.chosen)}</div>
@@ -4295,6 +4298,7 @@ function renderOnlineEnd(){
       <div class="dr-side ${(!win&&!tie&&!net.oppGone)?'winner':''}">${net.opp?avatarHtml(net.opp.name,net.opp.color,3,net.opp.isCreator):`<span class="avatar waiting" style="width:3rem;height:3rem;font-size:1.25rem;">?</span>`}<div class="dr-name">${escapeHtml(net.opp?net.opp.name:"Adversaire")}</div><div class="dr-score" data-count-opp>0</div></div>
     </div>
     ${net.oppGone?`<div class="info-card">Ton adversaire a quitté la partie.</div>`:(net.status?`<div class="info-card">${escapeHtml(net.status)}</div>`:"")}
+    ${net.missed && net.missed.length ? `<button class="btn-review" onclick="openMissedReview(net.missed)"><span class="ico">${ICONS.bookOpen}</span>Revoir mes ${net.missed.length} erreur${net.missed.length>1?"s":""}</button>` : ""}
     <div class="end-actions">
       ${net.oppGone?"":`<button class="btn-replay" onclick="onlineRematch()">Rejouer</button>`}
       <button class="btn-newgame" onclick="leaveOnline()">Quitter</button>
@@ -4424,6 +4428,15 @@ const glassAppEl = document.getElementById("app");
    (lagX/lagY, ci-dessous dans queueGlassSyncPainted) est ce qui donne au
    reflet cette sensation de verre PHYSIQUE qu'on déplace. */
 let glassScrollSX = 0, glassScrollSY = 0;
+/* Défilement IMBRIQUÉ (ex. .rev-list dans la feuille « Revoir mes erreurs ») :
+   cette liste a son PROPRE overflow-y:auto, indépendant de #app (la feuille
+   est ajoutée à <body>, pas à #app) -> ses éléments ont besoin de LEUR
+   PROPRE retard lissé, sur LEUR PROPRE scrollTop, exactement comme #app.
+   Sans ça, leur fond peint restait figé à sa position initiale pendant
+   qu'on fait défiler la liste (seul #app était pris en compte), et le
+   reflet ne réagissait pas non plus -> aucun effet de verre décalé à
+   l'intérieur d'une feuille, contrairement au reste de l'appli. */
+let glassRevEl = null, glassRevScrollSX = 0, glassRevScrollSY = 0, glassRevLastSL = 0, glassRevLastST = 0;
 /* MÊME VERRE PARTOUT (iOS = Android, rendu RIGOUREUSEMENT identique) : on peint
    la photo pré-floutée et on la recale par JS sur TOUTES les plateformes. Le
    backdrop-filter natif (Android) donnait un rendu seulement APPROCHANT — il
@@ -4487,6 +4500,25 @@ function queueGlassSyncPainted(freeze){
   if(glassScrollSX > sl - 0.35 && glassScrollSX < sl + 0.35) glassScrollSX = sl;
   if(glassScrollSY > st - 0.35 && glassScrollSY < st + 0.35) glassScrollSY = st;
   const lagX = glassScrollSX - sl, lagY = glassScrollSY - st;
+  /* Même retard lissé, mais pour .rev-list (voir déclaration de glassRevEl).
+     Si la feuille vient d'apparaître/disparaître ou de changer, on resynchronise
+     SANS transition (pas de faux « retard » qui daterait d'avant l'ouverture). */
+  const revEl = document.querySelector(".rev-list");
+  if(revEl !== glassRevEl){
+    glassRevEl = revEl;
+    glassRevScrollSX = revEl ? revEl.scrollLeft : 0;
+    glassRevScrollSY = revEl ? revEl.scrollTop : 0;
+    glassRevLastSL = glassRevScrollSX; glassRevLastST = glassRevScrollSY;
+  }
+  let revSl = 0, revSt = 0, revLagX = 0, revLagY = 0;
+  if(glassRevEl){
+    revSl = glassRevEl.scrollLeft; revSt = glassRevEl.scrollTop;
+    glassRevScrollSX += (revSl - glassRevScrollSX) * 0.14;
+    glassRevScrollSY += (revSt - glassRevScrollSY) * 0.14;
+    if(glassRevScrollSX > revSl - 0.35 && glassRevScrollSX < revSl + 0.35) glassRevScrollSX = revSl;
+    if(glassRevScrollSY > revSt - 0.35 && glassRevScrollSY < revSt + 0.35) glassRevScrollSY = revSt;
+    revLagX = glassRevScrollSX - revSl; revLagY = glassRevScrollSY - revSt;
+  }
   if(glassElsGen !== glassGen){ glassEls = document.querySelectorAll(GLASS_SEL); glassElsGen = glassGen; }
   const els = glassEls;
   /* Écran qui SORT pendant une transition : il s'efface et va disparaître —
@@ -4529,14 +4561,20 @@ function queueGlassSyncPainted(freeze){
       el._lx0 = lx; el._ly0 = ly; el._ow0 = el.offsetWidth; el._oh0 = el.offsetHeight; el._ggen = glassGen;
     }
     const inApp = glassAppEl.contains(el);
-    const restTop = el._ly0 - (inApp ? st : 0); // position écran approx (sans transform)
+    // Pas dans #app (une feuille est ajoutée à <body>, pas à #app) : peut
+    // quand même être dans .rev-list, un conteneur imbriqué à défilement
+    // propre (voir glassRevEl ci-dessus).
+    const inRev = !inApp && glassRevEl && glassRevEl.contains(el);
+    const elSl = inApp ? sl : (inRev ? revSl : 0);
+    const elSt = inApp ? st : (inRev ? revSt : 0);
+    const restTop = el._ly0 - elSt; // position écran approx (sans transform)
     // Pré-culling depuis le cache : hors écran -> ni rect, ni peinture.
     if(restTop > vh + 60 || restTop + el._oh0 < -60){ jobs.push({ el: el, culled: true }); continue; }
     let rl, rt;
     if(pressActive && el._pressUntil && el._pressUntil > now1){ const r = el.getBoundingClientRect(); rl = r.left; rt = r.top; }
-    else { rl = el._lx0 - (inApp ? sl : 0); rt = restTop; }
+    else { rl = el._lx0 - elSl; rt = restTop; }
     jobs.push({ el: el, isInput: el.tagName === "INPUT", rl: rl, rt: rt,
-                lx: el._lx0, ly: el._ly0, inApp: inApp, ow: el._ow0, oh: el._oh0 });
+                lx: el._lx0, ly: el._ly0, inApp: inApp, inRev: inRev, elSl: elSl, elSt: elSt, ow: el._ow0, oh: el._oh0 });
   }
   for(let i = 0; i < jobs.length; i++){
     const j = jobs[i], el = j.el;
@@ -4565,7 +4603,7 @@ function queueGlassSyncPainted(freeze){
       continue;
     }
     let lx = j.lx, ly = j.ly;
-    if(j.inApp){ lx -= sl; ly -= st; }
+    lx -= j.elSl; ly -= j.elSt; // #app OU .rev-list selon où vit l'élément (0 si aucun des deux)
     /* Fond peint : recalé à CHAQUE image, y compris pendant le défilement ->
        la photo bouge VRAIMENT avec le doigt, en même temps que l'écran (pas
        seulement le reflet par-dessus). L'écriture ne se fait que si la
@@ -4632,8 +4670,8 @@ function queueGlassSyncPainted(freeze){
     if(ex > GLASS_MAXD) ex = GLASS_MAXD; else if(ex < -GLASS_MAXD) ex = -GLASS_MAXD;
     if(ey > GLASS_MAXD) ey = GLASS_MAXD; else if(ey < -GLASS_MAXD) ey = -GLASS_MAXD;
     let sx = 0, sy = 0;
-    if(j.inApp){
-      sx = lagX; sy = lagY;
+    if(j.inApp || j.inRev){
+      sx = j.inApp ? lagX : revLagX; sy = j.inApp ? lagY : revLagY;
       if(sx > GLASS_SCRMAX) sx = GLASS_SCRMAX; else if(sx < -GLASS_SCRMAX) sx = -GLASS_SCRMAX;
       if(sy > GLASS_SCRMAX) sy = GLASS_SCRMAX; else if(sy < -GLASS_SCRMAX) sy = -GLASS_SCRMAX;
     }
@@ -4701,8 +4739,18 @@ function glassFreezeForTransition(){
   const now = performance.now();
   if(now < glassFreezeUntil) return; // transition en cours : rien à faire (pur GPU)
   const sl0 = glassAppEl.scrollLeft, st0 = glassAppEl.scrollTop;
-  const justMoved = (sl0 !== glassLastSL || st0 !== glassLastST);
+  let justMoved = (sl0 !== glassLastSL || st0 !== glassLastST);
   glassLastSL = sl0; glassLastST = st0;
+  // Même détection par image pour .rev-list (voir glassRevEl) : sinon
+  // défiler DANS une feuille n'armait jamais la fenêtre d'activité (#app,
+  // lui, ne bouge pas) -> le fond peint de la feuille ne se recalait qu'au
+  // battement de repli (~0,5s), saccadé au lieu de suivre le doigt.
+  const revEl0 = document.querySelector(".rev-list");
+  if(revEl0){
+    const rsl0 = revEl0.scrollLeft, rst0 = revEl0.scrollTop;
+    if(rsl0 !== glassRevLastSL || rst0 !== glassRevLastST) justMoved = true;
+    glassRevLastSL = rsl0; glassRevLastST = rst0;
+  }
   if(justMoved){ glassScrollIdle = 0; armGlass(1300); }
   else if(glassScrollIdle < 99) glassScrollIdle++;
   /* Appui ET retard de défilement se combinent dans LA MÊME formule (voir
@@ -4740,6 +4788,10 @@ try {
      plus qu'un rôle de garde-fou (armer la fenêtre d'activité au cas où,
      par ex. un défilement déclenché par le clavier/la mise au point). */
   glassAppEl.addEventListener("scroll", ()=>armGlass(1300), { passive:true });
+  // Garde-fou pour tout conteneur à défilement imbriqué (ex. .rev-list) :
+  // "scroll" ne bubble pas, mais la phase de capture, elle, atteint bien
+  // tout ancêtre quel que soit l'élément qui défile.
+  document.addEventListener("scroll", (e)=>{ if(e.target !== glassAppEl) armGlass(1300); }, { capture:true, passive:true });
   document.addEventListener("pointerdown", armPress, { capture:true, passive:true });
   document.addEventListener("pointerup", armPress, { capture:true, passive:true });
   window.addEventListener("resize", ()=>{ glassRelayout(); armGlass(700); });
