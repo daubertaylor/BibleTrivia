@@ -680,15 +680,6 @@
     background-image:linear-gradient(var(--glass-tint, rgba(255,253,247,0.46)), var(--glass-tint, rgba(255,253,247,0.46))), var(--glass-photo, var(--blur-url));
     background-size:auto, cover;
     background-position:0 0, center;
-    /* PHOTO FIXÉE À LA FENÊTRE : chaque carte devient un hublot sur une image
-       qui ne bouge jamais — pendant le défilement, c'est le COMPOSITEUR du
-       navigateur qui recompose ce hublot à CHAQUE image, nativement, donc
-       l'image suit le doigt de façon parfaitement fluide (zéro JS, zéro
-       repaint, zéro décrochage possible). Le REFLET (.glass-refl, ci-dessous)
-       garde intact son effet « verre décalé » à l'appui/au défilement — les
-       deux se superposent : la photo suit le doigt, le reflet ajoute le léger
-       retard physique par-dessus. */
-    background-attachment:scroll, fixed;
     background-repeat:no-repeat;
     backdrop-filter:var(--glass-bf, none);
     -webkit-backdrop-filter:var(--glass-bf, none);
@@ -4415,6 +4406,7 @@ function queueGlassSyncPainted(freeze){
      écran, prolongée en miroir). */
   const iw = Math.round(w * 1.16), ih = Math.round(h * 2);
   const ox = Math.round((iw - w) / 2), oy = Math.round((ih - h) / 2);
+  const size = "auto, " + iw + "px " + ih + "px";
   const sl = glassAppEl.scrollLeft, st = glassAppEl.scrollTop;
   /* Retard lissé (voir déclaration de glassScrollSX/SY) : recalculé à CHAQUE
      appel, sans condition -> la poursuite/décroissance est continue, jamais
@@ -4426,12 +4418,12 @@ function queueGlassSyncPainted(freeze){
   if(glassScrollSX > sl - 0.35 && glassScrollSX < sl + 0.35) glassScrollSX = sl;
   if(glassScrollSY > st - 0.35 && glassScrollSY < st + 0.35) glassScrollSY = st;
   const lagX = glassScrollSX - sl, lagY = glassScrollSY - st;
-  /* Texture du REFLET (pas le fond de la carte, fixé en CSS et toujours à
-     jour) : son propre calage ne repeint QUE si on n'est pas en plein
-     défilement actif (glassScrollIdle < 2) -> aucun repaint par image du
-     reflet pendant le geste, sa translation (transform, ci-dessous) porte
-     seule le mouvement. Une transition forcée (freeze=true) prime toujours. */
-  const freezeReflTex = !freeze && glassScrollIdle < 2;
+  /* Le fond peint (base) ne repeint QUE si on n'est pas en plein défilement
+     actif (glassScrollIdle < 2, mis à jour dans glassLive) -> aucun repaint
+     par image pendant le geste (c'était la source du ralentissement Android).
+     Une transition forcée (freeze=true) prime toujours : elle DOIT pouvoir
+     peindre les éléments du nouvel écran, jamais gelés. */
+  const freezeBase = !freeze && glassScrollIdle < 2;
   const els = document.querySelectorAll(GLASS_SEL);
   /* Écran qui SORT pendant une transition : il s'efface et va disparaître —
      inutile de recalculer son verre (moitié moins de travail à l'instant le
@@ -4474,12 +4466,17 @@ function queueGlassSyncPainted(freeze){
   for(let i = 0; i < jobs.length; i++){
     const j = jobs[i], el = j.el;
     if(j.skip || j.skipExit || j.culled){
-      /* GLASS_SKIP (chrono rouge, bouton désactivé) : ces états posent leur
-         PROPRE fond (règle CSS dédiée, shorthand `background:` -> reprend la
-         main sur le calque photo sans aide du JS) ; écran SORTANT (skipExit) :
-         le fond fixé à la fenêtre reste automatiquement correct pendant tout
-         le fondu, rien à préserver ni à effacer. Dans les deux cas, seul le
-         reflet a besoin d'être explicitement éteint ici. */
+      // GLASS_SKIP (chrono rouge, bouton désactivé) : ces états posent leur
+      // PROPRE fond (couleur pleine) — on efface le calage verre hérité, sinon
+      // il resterait sous-jacent (spécificité inline) et faussrait sa taille.
+      if(j.skip && el._glassKey){ el._glassKey = ""; el.style.backgroundSize = ""; el.style.backgroundPosition = ""; }
+      /* Écran qui SORT (skipExit) : on ne touche SURTOUT PAS au fond peint —
+         il est déjà correctement calé depuis avant la transition, et rien ne
+         bouge pendant le fondu (juste l'opacité + un léger translateY CSS). Le
+         réinitialiser (comme avant) faisait retomber l'élément sur le calage
+         PAR DÉFAUT de la feuille de style (cover/center, pas la fenêtre sur la
+         scène) -> un flash de verre bien plus dense/opaque pendant tout le
+         fondu. Laisser intact = invisible, fondu propre, zéro flash. */
       if(el._refl){
         if(el._refl._op !== "0"){ el._refl._op = "0"; el._refl.style.opacity = "0"; }
         if(el._reflT !== "none"){ el._reflT = "none"; el._refl.style.transform = "none"; } // hors écran / sortant : dé-promu (mémoire libérée)
@@ -4488,11 +4485,20 @@ function queueGlassSyncPainted(freeze){
     }
     let lx = j.lx, ly = j.ly;
     if(j.inApp){ lx -= sl; ly -= st; }
-    /* Le fond peint (base) n'a PLUS RIEN à recalculer ici : il est fixé à la
-       fenêtre en CSS (background-attachment:fixed, voir la règle plus haut)
-       -> l'image suit le doigt de façon parfaitement fluide, en continu,
-       recomposée par le COMPOSITEUR à chaque image de défilement (zéro JS,
-       zéro repaint, zéro décrochage possible, quelle que soit la vitesse). */
+    /* Fond peint (net, rebord visible) : GELÉ pendant le défilement actif ->
+       AUCUNE réécriture de background-position, donc aucun repaint (c'était
+       la source du ralentissement Android). Il glisse alors avec la carte ;
+       c'est le reflet, en transform, qui porte l'effet de retard. À l'arrêt
+       le fond reprend la main. */
+    if(!freezeBase){
+      const pos = "0 0, " + Math.round(-(lx + ox)) + "px " + Math.round(-(ly + oy)) + "px";
+      const key = size + "|" + pos;
+      if(el._glassKey !== key){
+        el._glassKey = key;
+        el.style.backgroundSize = size;
+        el.style.backgroundPosition = pos;
+      }
+    }
     if(j.isInput) continue; // un <input> ne peut pas porter d'enfant reflet
     if(!GLASS_REFL) continue;
     // Couche reflet (compositor) : créée une fois, texture calée sur le repos.
@@ -4514,8 +4520,8 @@ function queueGlassSyncPainted(freeze){
       refl.style.height = (j.oh + GLASS_PAD * 2) + "px";
       refl.style.backgroundSize = "auto, " + iw + "px " + ih + "px";
     }
-    // Calage texture du reflet : GELÉ pendant le défilement actif.
-    if(!freezeReflTex){
+    // Calage texture du reflet : GELÉ pendant le défilement actif (comme le fond peint).
+    if(!freezeBase){
       const pk = "0 0, " + Math.round(-(lx - GLASS_PAD + ox)) + "px " + Math.round(-(ly - GLASS_PAD + oy)) + "px";
       if(el._reflPK !== pk){
         el._reflPK = pk;
