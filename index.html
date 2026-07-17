@@ -4421,12 +4421,6 @@ function queueGlassSyncPainted(freeze){
   if(glassScrollSX > sl - 0.35 && glassScrollSX < sl + 0.35) glassScrollSX = sl;
   if(glassScrollSY > st - 0.35 && glassScrollSY < st + 0.35) glassScrollSY = st;
   const lagX = glassScrollSX - sl, lagY = glassScrollSY - st;
-  /* Le fond peint (base) ne repeint QUE si on n'est pas en plein défilement
-     actif (glassScrollIdle < 2, mis à jour dans glassLive) -> aucun repaint
-     par image pendant le geste (c'était la source du ralentissement Android).
-     Une transition forcée (freeze=true) prime toujours : elle DOIT pouvoir
-     peindre les éléments du nouvel écran, jamais gelés. */
-  const freezeBase = !freeze && glassScrollIdle < 2;
   const els = document.querySelectorAll(GLASS_SEL);
   /* Écran qui SORT pendant une transition : il s'efface et va disparaître —
      inutile de recalculer son verre (moitié moins de travail à l'instant le
@@ -4488,19 +4482,16 @@ function queueGlassSyncPainted(freeze){
     }
     let lx = j.lx, ly = j.ly;
     if(j.inApp){ lx -= sl; ly -= st; }
-    /* Fond peint (net, rebord visible) : GELÉ pendant le défilement actif ->
-       AUCUNE réécriture de background-position, donc aucun repaint (c'était
-       la source du ralentissement Android). Il glisse alors avec la carte ;
-       c'est le reflet, en transform, qui porte l'effet de retard. À l'arrêt
-       le fond reprend la main. */
-    if(!freezeBase){
-      const pos = "0 0, " + Math.round(-(lx + ox)) + "px " + Math.round(-(ly + oy)) + "px";
-      const key = size + "|" + pos;
-      if(el._glassKey !== key){
-        el._glassKey = key;
-        el.style.backgroundSize = size;
-        el.style.backgroundPosition = pos;
-      }
+    /* Fond peint : recalé à CHAQUE image, y compris pendant le défilement ->
+       la photo bouge VRAIMENT avec le doigt, en même temps que l'écran (pas
+       seulement le reflet par-dessus). L'écriture ne se fait que si la
+       position a réellement changé (clé mémorisée), donc gratuite au repos. */
+    const pos = "0 0, " + Math.round(-(lx + ox)) + "px " + Math.round(-(ly + oy)) + "px";
+    const key = size + "|" + pos;
+    if(el._glassKey !== key){
+      el._glassKey = key;
+      el.style.backgroundSize = size;
+      el.style.backgroundPosition = pos;
     }
     if(j.isInput) continue; // un <input> ne peut pas porter d'enfant reflet
     if(!GLASS_REFL) continue;
@@ -4523,13 +4514,11 @@ function queueGlassSyncPainted(freeze){
       refl.style.height = (j.oh + GLASS_PAD * 2) + "px";
       refl.style.backgroundSize = "auto, " + iw + "px " + ih + "px";
     }
-    // Calage texture du reflet : GELÉ pendant le défilement actif (comme le fond peint).
-    if(!freezeBase){
-      const pk = "0 0, " + Math.round(-(lx - GLASS_PAD + ox)) + "px " + Math.round(-(ly - GLASS_PAD + oy)) + "px";
-      if(el._reflPK !== pk){
-        el._reflPK = pk;
-        refl.style.backgroundPosition = pk;
-      }
+    // Calage texture du reflet : recalé à chaque image, comme le fond peint.
+    const pk = "0 0, " + Math.round(-(lx - GLASS_PAD + ox)) + "px " + Math.round(-(ly - GLASS_PAD + oy)) + "px";
+    if(el._reflPK !== pk){
+      el._reflPK = pk;
+      refl.style.backgroundPosition = pk;
     }
     /* FORMULE UNIFIÉE (mécanisme d'origine) : le reflet combine DEUX
        contributions indépendantes, qui s'additionnent naturellement si les
