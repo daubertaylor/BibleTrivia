@@ -4400,6 +4400,20 @@ const GLASS_REFL = true;
    image faisait « clignoter » du blanc. On garde la plus GRANDE hauteur vue,
    la barre nav ne déclenche donc plus aucun recalcul. */
 let glassMaxH = 0;
+/* Éteint un reflet SANS passer par son fondu CSS (0,07s) : utilisé quand une
+   transition d'écran coupe un reflet qui venait tout juste d'apparaître au
+   tap -> sans ça, ce fondu (même bref) le laissait visible un instant de
+   trop pendant que l'écran change, lu comme un rebord qui clignote. Le
+   reflow forcé (offsetWidth) garantit que « transition:none » est bien
+   appliqué avant que la transition ne soit restaurée, sinon le navigateur
+   peut fusionner les deux écritures et animer quand même. */
+function reflHideInstant(refl){
+  refl.style.transition = "none";
+  refl.style.opacity = "0";
+  refl.style.transform = "none";
+  void refl.offsetWidth;
+  refl.style.transition = "";
+}
 function queueGlassSync(freeze){
   return queueGlassSyncPainted(freeze);
 }
@@ -4485,9 +4499,15 @@ function queueGlassSyncPainted(freeze){
          PAR DÉFAUT de la feuille de style (cover/center, pas la fenêtre sur la
          scène) -> un flash de verre bien plus dense/opaque pendant tout le
          fondu. Laisser intact = invisible, fondu propre, zéro flash. */
-      if(el._refl){
-        if(el._refl._op !== "0"){ el._refl._op = "0"; el._refl.style.opacity = "0"; }
-        if(el._reflT !== "none"){ el._reflT = "none"; el._refl.style.transform = "none"; } // hors écran / sortant : dé-promu (mémoire libérée)
+      /* Coupure INSTANTANÉE (pas de fondu CSS) : si l'appui venait tout juste
+         de faire apparaître le reflet quand le tap a déclenché une
+         navigation, un fondu de sortie (même bref) le laissait visible un
+         instant de trop -> lu comme un rebord qui « clignote » pendant que
+         l'écran change. Coupé net, il disparaît AVEC l'écran qui s'efface,
+         pas après (et hors écran : couche dé-promue, mémoire libérée). */
+      if(el._refl && (el._refl._op !== "0" || el._reflT !== "none")){
+        el._refl._op = "0"; el._reflT = "none";
+        reflHideInstant(el._refl);
       }
       continue;
     }
@@ -4567,7 +4587,12 @@ function queueGlassSyncPainted(freeze){
     const t = moving ? ("translate3d(" + tx.toFixed(1) + "px," + ty.toFixed(1) + "px,0)") : "translate3d(0,0,0)";
     const op = moving ? "1" : "0";
     if(el._reflT !== t){ el._reflT = t; refl.style.transform = t; }
-    if(refl._op !== op){ refl._op = op; refl.style.opacity = op; }
+    if(refl._op !== op){
+      refl._op = op;
+      // Coupure par gel (freeze, transition sur place type showHeroVerse) :
+      // instantanée, même raison que pour l'écran sortant ci-dessus.
+      if(freeze && op === "0") reflHideInstant(refl); else refl.style.opacity = op;
+    }
   }
 }
 /* Boucle PERMANENTE — l'effet d'origine. Le verre est recalé à CHAQUE image,
