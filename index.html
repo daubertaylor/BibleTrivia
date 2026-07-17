@@ -329,7 +329,14 @@
   .btn-review{ width:100%; margin-bottom:0.6rem; display:flex; align-items:center; justify-content:center; gap:0.5rem; color:var(--ink); border:1px solid rgba(255,255,255,0.6); border-radius:14px; padding:0.85rem; font-weight:700; font-size:0.92rem; }
   .btn-review .ico{ width:1.5rem; height:1.5rem; color:var(--primary); flex-shrink:0; }
   .review-sheet .rev-list{ max-height:54vh; overflow-y:auto; margin:0.3rem 0 0.2rem; display:flex; flex-direction:column; gap:0.65rem; -webkit-overflow-scrolling:touch; }
-  .rev-item{ text-align:left; border-radius:14px; border:1px solid rgba(255,255,255,0.45); --glass-tint: rgba(255,255,255,0.44); padding:0.8rem 0.9rem; }
+  /* flex-shrink:0 indispensable : .rev-list est une colonne flex avec
+     max-height+overflow-y:auto (défilement voulu au-delà de 54vh), mais un
+     enfant flex se rétrécit par défaut (flex-shrink:1) pour tenir dans le
+     conteneur au lieu de laisser l'overflow faire son travail -> avec
+     plusieurs questions ratées, chaque carte était écrasée en dessous de la
+     hauteur de son propre contenu, coupant net la bonne réponse et
+     l'anecdote (masquées par l'overflow:hidden du verre). */
+  .rev-item{ text-align:left; border-radius:14px; border:1px solid rgba(255,255,255,0.45); --glass-tint: rgba(255,255,255,0.44); padding:0.8rem 0.9rem; flex-shrink:0; }
   .rev-q{ font-weight:700; color:var(--ink); font-size:0.92rem; margin-bottom:0.5rem; line-height:1.35; }
   .rev-a{ display:flex; align-items:center; gap:0.45rem; font-size:0.88rem; font-weight:600; margin-top:0.18rem; }
   .rev-a .ico{ width:1rem; height:1rem; flex-shrink:0; }
@@ -4396,6 +4403,17 @@ const GLASS_SKIP = ".timer-chip.low,.btn-primary:disabled,.btn-next:disabled";
    qu'on fait défiler, le verre traîne derrière la scène puis se recale. */
 const GLASS_GAIN = 2.2, GLASS_MAXD = 28, GLASS_PAD = 96, GLASS_TCLAMP = 72;
 const GLASS_SCRMAX = 9; // décalage MAX dû au défilement (doux, jamais de détachement)
+/* Liste des éléments : mise en cache par génération (voir glassGen) au lieu
+   d'un querySelectorAll(GLASS_SEL) (sélecteur à 50+ classes) À CHAQUE image
+   pendant le défilement. Un querySelectorAll est une lecture de mise en page
+   qui coûte cher sur du matériel Android modeste — répété 60x/s pendant tout
+   un défilement, ça grignote le budget d'image et se voit comme un
+   défilement saccadé, même si chaque écriture de style individuelle reste
+   bon marché. querySelectorAll renvoie un instantané STATIQUE (pas une
+   NodeList vivante) : le mettre en cache est sûr tant qu'on le rafraîchit à
+   chaque changement de mise en page réel (render/resize/rotation), ce que
+   glassGen capture déjà. */
+let glassEls = null, glassElsGen = -1;
 const glassAppEl = document.getElementById("app");
 /* Retard du verre au défilement (mécanisme D'ORIGINE, restauré) : glassScrollSX/SY
    POURSUIT scrollLeft/Top avec un facteur de lissage (0,14) -> elles restent
@@ -4469,7 +4487,8 @@ function queueGlassSyncPainted(freeze){
   if(glassScrollSX > sl - 0.35 && glassScrollSX < sl + 0.35) glassScrollSX = sl;
   if(glassScrollSY > st - 0.35 && glassScrollSY < st + 0.35) glassScrollSY = st;
   const lagX = glassScrollSX - sl, lagY = glassScrollSY - st;
-  const els = document.querySelectorAll(GLASS_SEL);
+  if(glassElsGen !== glassGen){ glassEls = document.querySelectorAll(GLASS_SEL); glassElsGen = glassGen; }
+  const els = glassEls;
   /* Écran qui SORT pendant une transition : il s'efface et va disparaître —
      inutile de recalculer son verre (moitié moins de travail à l'instant le
      plus chargé). Le test .closest n'est fait que si une sortie est en cours. */
