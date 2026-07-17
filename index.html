@@ -4459,12 +4459,23 @@ function queueGlassSyncPainted(freeze){
      reflow par image. L'effet visuel est rigoureusement identique. */
   const vh = de.clientHeight || window.innerHeight; // vraie hauteur visible (culling)
   /* getBoundingClientRect force une mise en page. On ne le fait QUE pendant un
-     appui (quand un élément a un transform vivant). Le reste du temps —
-     défilement, repos — la position se DÉDUIT des décalages en cache (aucune
-     lecture de mise en page) : le défilement devient quasi gratuit. Les
-     décalages ne sont re-walkés qu'après un changement de mise en page
-     (glassGen, incrémenté par render/resize). Effet identique. */
-  const pressActive = !freeze && performance.now() < glassPressUntil;
+     appui (quand un élément a un transform vivant), et UNIQUEMENT pour
+     l'élément réellement touché (el._pressUntil, posé par armPress sur
+     e.target.closest) — pas pour tous les éléments visibles. Sinon, chaque
+     appui exposait l'écart de mesure entre getBoundingClientRect (sous-
+     pixel) et le cache offsetLeft/Top (arrondi à l'entier) sur des éléments
+     JAMAIS touchés : un décalage figé de 1 à 5px (aucune décroissance,
+     puisque ce n'est pas un ressort mais un simple écart d'arrondi),
+     visible tout le temps de la fenêtre d'appui globale puis qui saute net
+     au repos à son expiration -> lu comme « un décalage qui apparaît puis
+     revient à la normale » un instant après avoir touché tout autre chose
+     à l'écran. Le reste du temps — défilement, repos — la position se
+     DÉDUIT des décalages en cache (aucune lecture de mise en page) : le
+     défilement devient quasi gratuit. Les décalages ne sont re-walkés
+     qu'après un changement de mise en page (glassGen, incrémenté par
+     render/resize). Effet identique pour l'élément pressé. */
+  const now1 = performance.now();
+  const pressActive = !freeze && now1 < glassPressUntil;
   const jobs = [];
   for(let i = 0; i < els.length; i++){
     const el = els[i];
@@ -4480,7 +4491,7 @@ function queueGlassSyncPainted(freeze){
     // Pré-culling depuis le cache : hors écran -> ni rect, ni peinture.
     if(restTop > vh + 60 || restTop + el._oh0 < -60){ jobs.push({ el: el, culled: true }); continue; }
     let rl, rt;
-    if(pressActive){ const r = el.getBoundingClientRect(); rl = r.left; rt = r.top; }
+    if(pressActive && el._pressUntil && el._pressUntil > now1){ const r = el.getBoundingClientRect(); rl = r.left; rt = r.top; }
     else { rl = el._lx0 - (inApp ? sl : 0); rt = restTop; }
     jobs.push({ el: el, isInput: el.tagName === "INPUT", rl: rl, rt: rt,
                 lx: el._lx0, ly: el._ly0, inApp: inApp, ow: el._ow0, oh: el._oh0 });
@@ -4657,15 +4668,19 @@ function glassFreezeForTransition(){
    élément a alors un transform vivant). Couvre l'appui + le ressort au
    relâchement (~0,6 s). En dehors, position déduite du cache = pas de lecture
    de mise en page (défilement quasi gratuit). */
-function armPress(){
+function armPress(e){
   const u = performance.now() + 650; if(u > glassPressUntil) glassPressUntil = u; armGlass(950);
+  // Seul l'élément réellement sous le doigt reçoit le suivi en direct (voir
+  // le commentaire sur pressActive dans queueGlassSyncPainted).
+  const pel = e && e.target && e.target.closest && e.target.closest(GLASS_SEL);
+  if(pel) pel._pressUntil = u;
   /* Recalage IMMÉDIAT (sans attendre la prochaine image) : sinon, entre le
      toucher et le premier passage de glassLive (jusqu'à 16 ms), le reflet
      restait sur son état précédent (souvent éteint) avant de « sauter » à
      l'état pressé -> lu comme un rebord qui disparaît un instant puis
      réapparaît d'un coup. En calant tout de suite, le rebord de verre reste
      visible en continu, sans ce creux d'une image. */
-  try{ queueGlassSync(); }catch(e){}
+  try{ queueGlassSync(); }catch(e2){}
 }
 try {
   /* Le suivi du défilement se fait désormais par lecture directe de la
