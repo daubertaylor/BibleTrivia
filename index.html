@@ -678,16 +678,6 @@
     background-image:linear-gradient(var(--glass-tint, rgba(255,253,247,0.46)), var(--glass-tint, rgba(255,253,247,0.46))), var(--glass-photo, var(--blur-url));
     background-size:auto, cover;
     background-position:0 0, center;
-    /* PORTHOLE NATIF : le calque photo est FIXÉ à la fenêtre (pas à l'élément).
-       Chaque carte devient un simple « hublot » sur une image qui, elle, ne
-       bouge jamais — exactement l'effet recherché (la scène glisse derrière le
-       verre pendant le défilement), et c'est le COMPOSITEUR du navigateur qui
-       s'en charge nativement : aucun JS par image, donc aucune possibilité de
-       décrochage/à-coup, quelle que soit la vitesse de défilement ou la charge
-       du thread principal. Remplace l'ancien recalage par JS (fragile, lié au
-       timing de requestAnimationFrame face au défilement natif du compositeur,
-       qui pouvait décrocher visuellement). */
-    background-attachment:scroll, fixed;
     background-repeat:no-repeat;
     backdrop-filter:var(--glass-bf, none);
     -webkit-backdrop-filter:var(--glass-bf, none);
@@ -4349,59 +4339,74 @@ const GLASS_SKIP = ".timer-chip.low,.btn-primary:disabled,.btn-next:disabled";
    du scale d'appui — ce petit décalage est précisément l'effet recherché.
    (Sans danger : les voiles blancs venaient des transitions de fond et
    d'ombre, toutes deux définitivement supprimées.) */
-/* AMPLIFICATION « verre épais » : quand une surface BOUGE SOUS LE DOIGT
-   (enfoncement d'un bouton, ressort, transition d'écran, panneau qui monte),
-   son reflet glisse PLUS VITE qu'elle — décalage borné, proportionnel au
-   déplacement réel (position à l'écran vs position de repos en mise en
-   page). Au repos le décalage est nul : tout est parfaitement calé.
-   Le DÉFILEMENT, lui, n'active plus ce reflet : le fond peint (fixé à la
-   fenêtre en CSS) porte seul l'effet fenêtre pendant qu'on défile — natif,
-   donc jamais de décrochage. Le reflet reste dédié au tap. */
+/* AMPLIFICATION « verre épais » : quand une surface BOUGE (enfoncement d'un
+   bouton, ressort, transition d'écran, panneau qui monte), son reflet glisse
+   PLUS VITE qu'elle — décalage borné, proportionnel au déplacement réel
+   (position à l'écran vs position de repos en mise en page). Au repos le
+   décalage est nul : tout est parfaitement calé.
+   Le DÉFILEMENT compte aussi comme un mouvement : le repos « vu » par le
+   reflet suit le défilement avec un léger retard (valeur lissée) — pendant
+   qu'on fait défiler, le verre traîne derrière la scène puis se recale. */
 const GLASS_GAIN = 2.2, GLASS_MAXD = 28, GLASS_PAD = 96, GLASS_TCLAMP = 72;
+const GLASS_SCRMAX = 9; // décalage MAX dû au défilement (doux, jamais de détachement)
 const glassAppEl = document.getElementById("app");
-/* MÊME VERRE PARTOUT (iOS = Android, rendu RIGOUREUSEMENT identique) : le
-   calque photo de chaque carte est ancré à la FENÊTRE via CSS
-   (background-attachment:fixed, voir la règle .app-header/.card/… plus haut)
-   — chaque carte est un simple hublot sur une image qui ne bouge jamais ;
-   c'est le COMPOSITEUR du navigateur qui recompose ce hublot à chaque image
-   de défilement, nativement. Deux approches plus fragiles ont été essayées et
-   abandonnées : le backdrop-filter natif (Android) donnait un rendu
-   seulement APPROCHANT (floute le contenu réel, pas la scène, sans reflet
-   d'appui) ; un recalage par JS/rAF restait tributaire du thread principal
-   face au défilement natif du compositeur et pouvait décrocher visuellement
-   à grande vitesse. background-attachment:fixed élimine le problème à la
-   racine : aucun JS n'est impliqué dans le suivi du défilement -> aucun
-   décrochage possible, quelle que soit la charge ou la vitesse. */
+let glassScrollSX = 0, glassScrollSY = 0; // défilement lissé (retard du verre)
+/* Ancre du fond peint : position de défilement à laquelle background-position a
+   été peint pour la dernière fois. Pendant un défilement on gèle background-
+   position et on reporte l'écart (défilement courant - ancre) sur le transform
+   du reflet -> effet fenêtre « verre décalé » en pur compositeur, zéro repaint. */
+let glassAnchorSX = 0, glassAnchorSY = 0;
+/* MÊME VERRE PARTOUT (iOS = Android, rendu RIGOUREUSEMENT identique) : on peint
+   la photo pré-floutée et on la recale par JS sur TOUTES les plateformes. Le
+   backdrop-filter natif (Android) donnait un rendu seulement APPROCHANT — il
+   floute le contenu réel au lieu de la scène, sans effet fenêtre ni reflet
+   d'appui. On revient donc au verre peint pour un rendu exactement identique à
+   iOS. La fluidité sur Android est obtenue autrement : pendant un défilement,
+   on GÈLE le recalage de background-position (voir glassLive) -> plus aucune
+   re-peinture par image, le fond glisse avec l'élément (comme iOS diffère ses
+   repaints) puis se recale en douceur à l'arrêt. */
 const GLASS_NATIVE = false;
-/* Reflet « verre épais » (couche transform) : réservé à l'AMPLIFICATION lors
-   de l'appui (tap) — le fond peint (fixed) porte seul l'effet fenêtre pendant
-   le défilement, le reflet n'a plus à s'en occuper. */
+/* Reflet « verre épais » (couche transform) : toujours actif en voie peinte. */
 const GLASS_REFL = true;
 /* Hauteur de texture STABLE (monotone) : quand la barre de navigation Android
    apparaît/disparaît, le viewport se réduit — recalculer la texture à chaque
-   image faisait « clignoter » du blanc. On garde la plus GRANDE hauteur vue.
-   Ne sert plus qu'au reflet d'appui (le fond peint n'a plus besoin d'aucune
-   réserve : background-attachment:fixed se recadre tout seul sur la vraie
-   fenêtre, géré par le moteur de rendu). */
+   image faisait « clignoter » du blanc. On garde la plus GRANDE hauteur vue,
+   la barre nav ne déclenche donc plus aucun recalcul. */
 let glassMaxH = 0;
-function queueGlassSync(freeze){
-  return queueGlassSyncPainted(freeze);
+function queueGlassSync(freeze, scroll){
+  return queueGlassSyncPainted(freeze, scroll);
 }
-function queueGlassSyncPainted(freeze){
+function queueGlassSyncPainted(freeze, scroll){
   /* Dimensions du viewport de MISE EN PAGE (documentElement), pas
      innerWidth/innerHeight : sur iOS, le clavier rétrécit le viewport
-     VISUEL — en tenir compte ferait échantillonner le bas de la photo
-     (sable) pour la réserve du reflet. Le viewport de mise en page, lui, ne
-     bouge pas quand le clavier s'ouvre. */
+     VISUEL — baser la texture dessus faisait échantillonner le bas de la
+     photo (sable) et teintait les champs d'un jaune uniforme. Le viewport
+     de mise en page, lui, ne bouge pas quand le clavier s'ouvre. */
   const de = document.documentElement;
   const w = de.clientWidth || window.innerWidth;
   let h = de.clientHeight || window.innerHeight;
   if(h > glassMaxH) glassMaxH = h; else h = glassMaxH; // hauteur monotone : pas de clignotement à l'apparition de la barre nav
-  /* Réserve du reflet d'appui : marge assez large pour que l'amplification
-     (jusqu'à GLASS_TCLAMP) ne fasse jamais sortir la texture de son cadre. */
+  /* Réserve VERTICALE doublée : pendant un défilement rapide, iOS applique
+     les textures avec retard — la fenêtre visible glisse dans l'image au
+     lieu d'en sortir (plus jamais de couture au bord de la photo). La
+     texture floue est fabriquée à ce format exact (bande centrale = vue
+     écran, prolongée en miroir). */
   const iw = Math.round(w * 1.16), ih = Math.round(h * 2);
   const ox = Math.round((iw - w) / 2), oy = Math.round((ih - h) / 2);
+  const size = "auto, " + iw + "px " + ih + "px";
   const sl = glassAppEl.scrollLeft, st = glassAppEl.scrollTop;
+  glassScrollSX += (sl - glassScrollSX) * 0.14;
+  glassScrollSY += (st - glassScrollSY) * 0.14;
+  if(glassScrollSX > sl - 0.35 && glassScrollSX < sl + 0.35) glassScrollSX = sl;
+  if(glassScrollSY > st - 0.35 && glassScrollSY < st + 0.35) glassScrollSY = st;
+  /* Hors défilement, on peint le fond -> on mémorise l'ancre (défilement courant).
+     Pendant le défilement (scroll), l'ancre reste figée : c'est la référence à
+     partir de laquelle le reflet compense en transform (écart = courant - ancre).
+     Fond peint, texture du reflet et ancre partagent le MÊME défilement brut
+     (sl/st) -> verrouillage parfait sur la scène, aucune dérive. */
+  if(!scroll){ glassAnchorSX = sl; glassAnchorSY = st; }
+  const wdx = scroll ? Math.round(sl - glassAnchorSX) : 0;
+  const wdy = scroll ? Math.round(st - glassAnchorSY) : 0;
   const els = document.querySelectorAll(GLASS_SEL);
   /* Écran qui SORT pendant une transition : il s'efface et va disparaître —
      inutile de recalculer son verre (moitié moins de travail à l'instant le
@@ -4443,24 +4448,42 @@ function queueGlassSyncPainted(freeze){
   }
   for(let i = 0; i < jobs.length; i++){
     const j = jobs[i], el = j.el;
-    /* Le fond peint (base) n'a plus AUCUNE écriture JS à faire ici : il est
-       fixé à la fenêtre en CSS (background-attachment:fixed) et se recadre
-       tout seul, y compris pour les états GLASS_SKIP (chrono rouge, bouton
-       désactivé) qui posent simplement leur propre fond via leur propre règle
-       CSS (spécificité supérieure), et pour un écran SORTANT (fondu de
-       transition) qui n'a jamais rien eu à effacer. Cette boucle ne gère plus
-       QUE le reflet d'appui (l'amplification « verre épais » sur tap). */
     if(j.skip || j.skipExit || j.culled){
+      // GLASS_SKIP (chrono rouge, bouton désactivé) : ces états posent leur
+      // PROPRE fond (couleur pleine) — on efface le calage verre hérité, sinon
+      // il resterait sous-jacent (spécificité inline) et faussrait sa taille.
+      if(j.skip && el._glassKey){ el._glassKey = ""; el.style.backgroundSize = ""; el.style.backgroundPosition = ""; }
+      /* Écran qui SORT (skipExit) : on ne touche SURTOUT PAS au fond peint —
+         il est déjà correctement calé depuis avant la transition, et rien ne
+         bouge pendant le fondu (juste l'opacité + un léger translateY CSS). Le
+         réinitialiser (comme avant) faisait retomber l'élément sur le calage
+         PAR DÉFAUT de la feuille de style (cover/center, pas la fenêtre sur la
+         scène) -> un flash de verre bien plus dense/opaque pendant tout le
+         fondu. Laisser intact = invisible, fondu propre, zéro flash. */
       if(el._refl){
         if(el._refl._op !== "0"){ el._refl._op = "0"; el._refl.style.opacity = "0"; }
-        if(el._reflT !== "translate3d(0,0,0)"){ el._reflT = "translate3d(0,0,0)"; el._refl.style.transform = "translate3d(0,0,0)"; } // hors écran / sortant : dé-promu (mémoire libérée)
+        if(el._reflT !== "none"){ el._reflT = "none"; el._refl.style.transform = "none"; } // hors écran / sortant : dé-promu (mémoire libérée)
       }
       continue;
     }
-    if(j.isInput) continue; // un <input> ne peut pas porter d'enfant reflet ; son fond fixe reste purement CSS
-    if(!GLASS_REFL) continue;
     let lx = j.lx, ly = j.ly;
     if(j.inApp){ lx -= sl; ly -= st; }
+    /* Fond peint (net, rebord visible) : GELÉ pendant le défilement (scroll) ->
+       AUCUNE réécriture de background-position, donc aucun repaint (c'est CE
+       repaint par image qui saccadait Android). Il glisse alors avec la carte ;
+       c'est le reflet, en transform, qui porte l'effet fenêtre. À l'arrêt le
+       fond reprend la main. */
+    if(!scroll){
+      const pos = "0 0, " + Math.round(-(lx + ox)) + "px " + Math.round(-(ly + oy)) + "px";
+      const key = size + "|" + pos;
+      if(el._glassKey !== key){
+        el._glassKey = key;
+        el.style.backgroundSize = size;
+        el.style.backgroundPosition = pos;
+      }
+    }
+    if(j.isInput) continue; // un <input> ne peut pas porter d'enfant reflet
+    if(!GLASS_REFL) continue;
     // Couche reflet (compositor) : créée une fois, texture calée sur le repos.
     let refl = el._refl;
     if(!refl || refl.parentNode !== el){
@@ -4480,28 +4503,44 @@ function queueGlassSyncPainted(freeze){
       refl.style.height = (j.oh + GLASS_PAD * 2) + "px";
       refl.style.backgroundSize = "auto, " + iw + "px " + ih + "px";
     }
-    const pk = "0 0, " + Math.round(-(lx - GLASS_PAD + ox)) + "px " + Math.round(-(ly - GLASS_PAD + oy)) + "px";
-    if(el._reflPK !== pk){
-      el._reflPK = pk;
-      refl.style.backgroundPosition = pk;
+    // Calage texture du reflet : GELÉ pendant le défilement (comme le fond peint).
+    if(!scroll){
+      const pk = "0 0, " + Math.round(-(lx - GLASS_PAD + ox)) + "px " + Math.round(-(ly - GLASS_PAD + oy)) + "px";
+      if(el._reflPK !== pk){
+        el._reflPK = pk;
+        refl.style.backgroundPosition = pk;
+      }
     }
-    // Déplacement PROPRE de l'élément (appui, ressort, transition) : plein
-    // effet « verre épais » amplifié.
-    const dx = j.rl - lx, dy = j.rt - ly;
-    let ex = dx * (GLASS_GAIN - 1), ey = dy * (GLASS_GAIN - 1);
-    if(ex > GLASS_MAXD) ex = GLASS_MAXD; else if(ex < -GLASS_MAXD) ex = -GLASS_MAXD;
-    if(ey > GLASS_MAXD) ey = GLASS_MAXD; else if(ey < -GLASS_MAXD) ey = -GLASS_MAXD;
-    let tx = -(dx + ex), ty = -(dy + ey);
-    if(tx > GLASS_TCLAMP) tx = GLASS_TCLAMP; else if(tx < -GLASS_TCLAMP) tx = -GLASS_TCLAMP;
-    if(ty > GLASS_TCLAMP) ty = GLASS_TCLAMP; else if(ty < -GLASS_TCLAMP) ty = -GLASS_TCLAMP;
-    const md = 1.25;
-    // « freeze » (transition d'écran) : reflet éteint, transition en pur GPU.
-    const moving = !freeze && (dx > md || dx < -md || dy > md || dy < -md);
-    /* Reflet VISIBLE -> promu en permanence (translate3d 0 au repos) : plus de
-       promotion « en rafale » de ~10 couches au démarrage du défilement (fini
-       les à-coups). Au repos il est invisible (opacité 0), le rebord reste net. */
-    const t = moving ? ("translate3d(" + tx.toFixed(1) + "px," + ty.toFixed(1) + "px,0)") : "translate3d(0,0,0)";
-    const op = moving ? "1" : "0";
+    let t, op;
+    if(scroll){
+      /* DÉFILEMENT — l'EFFET « VERRE DÉCALÉ » : le reflet (texture gelée) est
+         translaté pour VERROUILLER la photo sur la scène pendant que la carte
+         glisse. Même décalage pour toutes les cartes (elles défilent ensemble),
+         reporté en pur transform -> GPU, fluide, aucune re-peinture. C'est ce
+         qui redonne la profondeur « fenêtre sur la scène » en plein défilement.
+         Un élément HORS zone de défilement (fixe) ne bouge pas -> aucune
+         compensation, reflet éteint (son fond peint gelé reste déjà correct). */
+      if(j.inApp){ t = "translate3d(" + wdx + "px," + wdy + "px,0)"; op = "1"; }
+      else { t = "translate3d(0,0,0)"; op = "0"; }
+    } else {
+      // Déplacement PROPRE de l'élément (appui, ressort, transition) : plein
+      // effet « verre épais » amplifié.
+      const dx = j.rl - lx, dy = j.rt - ly;
+      let ex = dx * (GLASS_GAIN - 1), ey = dy * (GLASS_GAIN - 1);
+      if(ex > GLASS_MAXD) ex = GLASS_MAXD; else if(ex < -GLASS_MAXD) ex = -GLASS_MAXD;
+      if(ey > GLASS_MAXD) ey = GLASS_MAXD; else if(ey < -GLASS_MAXD) ey = -GLASS_MAXD;
+      let tx = -(dx + ex), ty = -(dy + ey);
+      if(tx > GLASS_TCLAMP) tx = GLASS_TCLAMP; else if(tx < -GLASS_TCLAMP) tx = -GLASS_TCLAMP;
+      if(ty > GLASS_TCLAMP) ty = GLASS_TCLAMP; else if(ty < -GLASS_TCLAMP) ty = -GLASS_TCLAMP;
+      const md = 1.25;
+      // « freeze » (transition d'écran) : reflet éteint, transition en pur GPU.
+      const moving = !freeze && (dx > md || dx < -md || dy > md || dy < -md);
+      /* Reflet VISIBLE -> promu en permanence (translate3d 0 au repos) : plus de
+         promotion « en rafale » de ~10 couches au démarrage du défilement (fini
+         les à-coups). Au repos il est invisible (opacité 0), le rebord reste net. */
+      t = moving ? ("translate3d(" + tx.toFixed(1) + "px," + ty.toFixed(1) + "px,0)") : "translate3d(0,0,0)";
+      op = moving ? "1" : "0";
+    }
     if(el._reflT !== t){ el._reflT = t; refl.style.transform = t; }
     if(refl._op !== op){ refl._op = op; refl.style.opacity = op; }
   }
@@ -4517,7 +4556,7 @@ function queueGlassSyncPainted(freeze){
    rotation) + une petite traîne pour laisser les reflets se reposer. Au repos,
    un simple battement toutes les ~0,5 s rattrape tout changement inattendu.
    L'effet est intact : dès qu'on touche/défile/change d'écran, c'est armé. */
-let glassActiveUntil = 0, glassFrame = 0, glassFreezeUntil = 0, glassGen = 1, glassPressUntil = 0;
+let glassActiveUntil = 0, glassFrame = 0, glassFreezeUntil = 0, glassGen = 1, glassPressUntil = 0, glassScrollUntil = 0;
 function armGlass(ms){ const u = performance.now() + (ms || 850); if(u > glassActiveUntil) glassActiveUntil = u; }
 /* Mise en page changée (nouvel écran, redimensionnement) : on invalide le
    cache des décalages pour qu'ils soient recalculés à la prochaine image. */
@@ -4538,11 +4577,16 @@ function glassFreezeForTransition(){
   glassFrame++;
   const now = performance.now();
   if(now < glassFreezeUntil) return; // transition en cours : rien à faire (pur GPU)
-  /* Le défilement ne passe plus PAR ICI DU TOUT pour le fond (CSS fixed s'en
-     charge nativement). Cette boucle ne fait plus que rafraîchir le reflet
-     d'appui (culling + repositionnement après un changement de mise en page) :
-     fenêtre d'activité (appui/transition/rotation) + un battement de repli
-     toutes les ~0,5s pour rattraper tout changement inattendu. */
+  /* DÉFILEMENT = mode « pur compositeur ». On NE réécrit PAS background-position
+     (chaque réécriture repeindrait ~10 photos floutées -> c'est CE repaint par
+     image qui saccadait Android). À la place, le reflet est translaté en GPU
+     pour verrouiller la photo sur la scène : l'effet « verre décalé » (fenêtre)
+     tourne à plein pendant le geste, sans aucune peinture. Un appui garde la
+     priorité (reflet d'appui amplifié). */
+  if(now < glassScrollUntil && now >= glassPressUntil){
+    try{ queueGlassSync(false, true); }catch(e){}
+    return;
+  }
   if(now < glassActiveUntil || (glassFrame % 30) === 0){
     try{ queueGlassSync(); }catch(e){}
   }
@@ -4553,10 +4597,11 @@ function glassFreezeForTransition(){
    de mise en page (défilement quasi gratuit). */
 function armPress(){ const u = performance.now() + 650; if(u > glassPressUntil) glassPressUntil = u; armGlass(950); }
 try {
-  /* Le défilement n'a plus besoin de geler quoi que ce soit (le fond est fixé
-     à la fenêtre en CSS, zéro JS) : on garde juste une petite fenêtre active
-     pour que le reflet (culling, etc.) reste à jour peu après le geste. */
-  glassAppEl.addEventListener("scroll", ()=>armGlass(1300), { passive:true });
+  /* Un événement « scroll » = l'utilisateur défile (pas un appui bouton) : on
+     ouvre la fenêtre de GEL (pur compositeur) et on annule tout appui en cours
+     -> le gel s'applique dès la 1re image du geste, y compris pendant l'inertie
+     (les événements scroll continuent d'arriver et repoussent la fenêtre). */
+  glassAppEl.addEventListener("scroll", ()=>{ glassScrollUntil = performance.now() + 130; glassPressUntil = 0; armGlass(1300); }, { passive:true });
   document.addEventListener("pointerdown", armPress, { capture:true, passive:true });
   document.addEventListener("pointerup", armPress, { capture:true, passive:true });
   window.addEventListener("resize", ()=>{ glassRelayout(); armGlass(700); });
