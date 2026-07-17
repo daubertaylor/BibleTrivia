@@ -173,7 +173,12 @@
      Même recette de liseré rouge que les autres accents primaires
      (btn-primary, sheet-done…) + verre teinté très léger : reste identifiable
      comme action d'ajout (icône + texte rouges) sans rompre la cohérence. */
-  .add-team{ width:100%; display:flex; align-items:center; justify-content:center; gap:0.5rem; margin-top:0.4rem; --glass-tint: rgba(241,80,47,0.14); color:var(--primary); border:1px solid rgba(255,255,255,0.55); border-radius:11px; padding:0.6rem; font-size:0.85rem; font-weight:600; --rim-edge:0 0 0 1px rgba(150,30,14,0.3); --rim-cast:0 4px 12px rgba(214,60,34,0.28); }
+  /* Teinte relevée (0,14 -> 0,68) : le fond de la carte défile maintenant en
+     direct avec la scène derrière — un voile trop léger laissait parfois
+     passer une zone claire/foncée de la photo qui mangeait le contraste avec
+     le texte rouge. Un voile clair plus couvrant garde le bouton lisible
+     quel que soit ce qu'il y a derrière, à n'importe quel moment du scroll. */
+  .add-team{ width:100%; display:flex; align-items:center; justify-content:center; gap:0.5rem; margin-top:0.4rem; --glass-tint: rgba(255,250,245,0.68); color:var(--primary); border:1px solid rgba(255,255,255,0.55); border-radius:11px; padding:0.6rem; font-size:0.85rem; font-weight:600; --rim-edge:0 0 0 1px rgba(150,30,14,0.3); --rim-cast:0 4px 12px rgba(214,60,34,0.28); }
   .add-team .ico{ width:1.12rem; height:1.12rem; }
   .add-team:disabled{ opacity:0.35; }
 
@@ -710,7 +715,13 @@
     --glass-bf: blur(22px) saturate(1.6);
   }
   html.gl-native .glass-refl{ display:none; }
-  .glass-refl{ position:absolute; z-index:-1; pointer-events:none; opacity:0; transition:opacity 0.16s ease; background-repeat:no-repeat; transform:translate3d(0,0,0); }
+  /* Fondu resserré (0,16s -> 0,07s) : la transformation CSS de l'appui
+     (scale) s'anime elle-même sur 0,09s — le temps qu'elle dépasse le seuil
+     de déclenchement du reflet, le fondu à 0,16s ajoutait un second retard
+     perceptible par-dessus (rebord qui semble « manquant » un instant avant
+     de rattraper). Un fondu plus court fait disparaître ce creux sans perdre
+     la douceur (toujours progressif, juste plus vif). */
+  .glass-refl{ position:absolute; z-index:-1; pointer-events:none; opacity:0; transition:opacity 0.07s ease; background-repeat:no-repeat; transform:translate3d(0,0,0); }
   /* Le bouton avatar est transparent et déborde (badge C) : sans découpe, sa
      couche reflet montrerait un rectangle de photo pendant les transitions. */
   .hero-profile .glass-refl{ display:none; }
@@ -4546,7 +4557,11 @@ function queueGlassSyncPainted(freeze){
     let tx = -(dx + ex) - sx, ty = -(dy + ey) - sy;
     if(tx > GLASS_TCLAMP) tx = GLASS_TCLAMP; else if(tx < -GLASS_TCLAMP) tx = -GLASS_TCLAMP;
     if(ty > GLASS_TCLAMP) ty = GLASS_TCLAMP; else if(ty < -GLASS_TCLAMP) ty = -GLASS_TCLAMP;
-    const md = 1.25;
+    // Seuil abaissé (1,25 -> 0,6px) : la transformation CSS de l'appui
+    // s'anime elle-même sur 0,09s (easing progressif) — un seuil trop haut
+    // retardait l'activation du reflet jusqu'à ce que l'animation ait assez
+    // avancé, perceptible comme un rebord manquant au tout début de l'appui.
+    const md = 0.6;
     // « freeze » (transition d'écran) : reflet éteint, transition en pur GPU.
     const moving = !freeze && (dx > md || dx < -md || dy > md || dy < -md || sx > md || sx < -md || sy > md || sy < -md);
     const t = moving ? ("translate3d(" + tx.toFixed(1) + "px," + ty.toFixed(1) + "px,0)") : "translate3d(0,0,0)";
@@ -4617,7 +4632,16 @@ function glassFreezeForTransition(){
    élément a alors un transform vivant). Couvre l'appui + le ressort au
    relâchement (~0,6 s). En dehors, position déduite du cache = pas de lecture
    de mise en page (défilement quasi gratuit). */
-function armPress(){ const u = performance.now() + 650; if(u > glassPressUntil) glassPressUntil = u; armGlass(950); }
+function armPress(){
+  const u = performance.now() + 650; if(u > glassPressUntil) glassPressUntil = u; armGlass(950);
+  /* Recalage IMMÉDIAT (sans attendre la prochaine image) : sinon, entre le
+     toucher et le premier passage de glassLive (jusqu'à 16 ms), le reflet
+     restait sur son état précédent (souvent éteint) avant de « sauter » à
+     l'état pressé -> lu comme un rebord qui disparaît un instant puis
+     réapparaît d'un coup. En calant tout de suite, le rebord de verre reste
+     visible en continu, sans ce creux d'une image. */
+  try{ queueGlassSync(); }catch(e){}
+}
 try {
   /* Le suivi du défilement se fait désormais par lecture directe de la
      position à chaque image (voir glassLive) — l'événement « scroll » n'a
