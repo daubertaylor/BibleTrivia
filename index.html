@@ -671,14 +671,6 @@
   .waiting-card, .info-card, .vs-row, .len-chip, .duel-scorebar, .timer-chip, .dr-side, .rank-row,
   .text-input, .code-input, .fs-hint, .modal-card, .add-team, .btn-ghost, .fsh-close, .hs-item, .settings-sheet, .hero-verse-card, .end-medal, .modal-btn.ok, .modal-btn.cancel, .leave-banner, .adj-btn, .waiting-note, .rules, .btn-review, .daily-card, .dc-streak, .btn-invite, .creator-badge, .sheet-done, .set-go, .rev-item{
     background-color:transparent;
-    /* REBORD DE VERRE COHÉRENT (identique aux icônes du menu) : reflet haut
-       lumineux + anneau blanc interne 1,5px, toujours les mêmes ; seuls le
-       liseré teinté (--rim-edge) et l'ombre portée (--rim-cast) varient. */
-    box-shadow:
-      inset 0 1.5px 0 rgba(255,255,255,0.72),
-      inset 0 0 0 1.5px rgba(255,255,255,0.42),
-      var(--rim-edge, 0 0 0 1px rgba(58,42,26,0.12)),
-      var(--rim-cast, 0 5px 14px rgba(34,26,16,0.12));
     /* Deux voies pour le verre :
        - par DÉFAUT (iOS) : photo pré-floutée peinte (var(--blur-url)),
          recalée par JS -> fiable là où Safari maltraite backdrop-filter ;
@@ -693,18 +685,38 @@
     -webkit-backdrop-filter:var(--glass-bf, none);
     position:relative;
     overflow:hidden;
-    /* Couche GPU dédiée : le rebord (box-shadow inset ci-dessus) vit sur ce
-       MÊME élément que le fond peint recalé par JS à chaque image pendant le
-       défilement. Sans promotion, Safari iOS classe cet élément comme
-       « surface animée » et diffère TOUTE sa re-rasterisation le temps du
-       geste (voir commentaire ci-dessous sur le reflet mobile) — pas
-       seulement la photo, mais le rebord AVEC, qui disparaissait donc
-       pendant qu'on défile pour ne réapparaître qu'à l'arrêt. En isolant
-       l'élément sur sa propre couche compositée, son rebord reste peint en
-       continu, indépendamment des écritures de background-position. */
+    /* Couche GPU dédiée : cet élément voit son fond recalé par JS à chaque
+       image pendant le défilement (iOS ET Android). Le rebord (box-shadow)
+       ne vit plus dessus (voir .glass-rim ci-dessous) mais la vraie
+       propriété border:1px des boutons/cartes, elle, y est toujours -> on
+       garde la promotion en couche à part pour qu'elle aussi reste peinte
+       en continu, quoi qu'il arrive au fond. */
     transform:translateZ(0);
     -webkit-transform:translateZ(0);
   }
+  /* REBORD DE VERRE COHÉRENT, sur une couche À PART (.glass-rim, créée une
+     fois en JS, jamais retouchée ensuite) : reflet haut lumineux + anneau
+     blanc interne 1,5px, toujours les mêmes ; seuls le liseré teinté
+     (--rim-edge) et l'ombre portée (--rim-cast) varient. Posé directement
+     sur l'élément ci-dessus (dont le fond est réécrit à chaque image
+     pendant le défilement), le rebord disparaissait par intermittence
+     pendant qu'on défile, sur iOS ET sur Android : les deux moteurs
+     diffèrent/réorganisent à leur façon le rendu d'un élément dont le fond
+     change en continu, et le rebord vivait sur ce même élément -> il
+     partait avec, pour ne réapparaître qu'à l'arrêt. Posé sur un enfant
+     JAMAIS retouché après sa création, aucun des deux moteurs n'a de raison
+     de le traiter comme une « surface animée » : il reste peint en continu,
+     sur les deux plateformes. Exception : <input> (.text-input/.code-input)
+     ne peut pas porter d'enfant -> le rebord reste sur l'élément lui-même
+     pour ces deux-là (regroupés dans le même sélecteur ci-dessous). */
+  .glass-rim, .text-input, .code-input{
+    box-shadow:
+      inset 0 1.5px 0 rgba(255,255,255,0.72),
+      inset 0 0 0 1.5px rgba(255,255,255,0.42),
+      var(--rim-edge, 0 0 0 1px rgba(58,42,26,0.12)),
+      var(--rim-cast, 0 5px 14px rgba(34,26,16,0.12));
+  }
+  .glass-rim{ position:absolute; inset:0; border-radius:inherit; pointer-events:none; }
   /* REFLET MOBILE (compositor) : pendant un mouvement, Safari iOS repousse la
      re-rasterisation des surfaces animées — déplacer background-position ne
      s'AFFICHE qu'à la fin du geste. On glisse donc une couche enfant portant
@@ -4546,7 +4558,17 @@ function queueGlassSyncPainted(freeze){
       el.style.backgroundSize = size;
       el.style.backgroundPosition = pos;
     }
-    if(j.isInput) continue; // un <input> ne peut pas porter d'enfant reflet
+    if(j.isInput) continue; // un <input> ne peut pas porter d'enfant (rebord/reflet posés directement dessus en CSS)
+    // Rebord (voir .glass-rim en CSS) : créé une fois, JAMAIS retouché
+    // ensuite (aucune écriture de style ici ni ailleurs) -> reste peint en
+    // continu par le navigateur quoi qu'il arrive au fond qui, lui, change
+    // à chaque image pendant le défilement.
+    if(!el._rim || el._rim.parentNode !== el){
+      const rim = document.createElement("b");
+      rim.className = "glass-rim";
+      el.insertBefore(rim, el.firstChild);
+      el._rim = rim;
+    }
     if(!GLASS_REFL) continue;
     // Couche reflet (compositor) : créée une fois, texture calée sur le repos.
     let refl = el._refl;
