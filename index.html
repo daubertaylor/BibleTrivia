@@ -4350,7 +4350,6 @@ const GLASS_SKIP = ".timer-chip.low,.btn-primary:disabled,.btn-next:disabled";
 const GLASS_GAIN = 2.2, GLASS_MAXD = 28, GLASS_PAD = 96, GLASS_TCLAMP = 72;
 const GLASS_SCRMAX = 9; // décalage MAX dû au défilement (doux, jamais de détachement)
 const glassAppEl = document.getElementById("app");
-let glassScrollSX = 0, glassScrollSY = 0; // défilement lissé (retard du verre)
 /* Ancre du fond peint : position de défilement à laquelle background-position a
    été peint pour la dernière fois. Pendant un défilement on gèle background-
    position et on reporte l'écart (défilement courant - ancre) sur le transform
@@ -4395,10 +4394,6 @@ function queueGlassSyncPainted(freeze, scroll){
   const ox = Math.round((iw - w) / 2), oy = Math.round((ih - h) / 2);
   const size = "auto, " + iw + "px " + ih + "px";
   const sl = glassAppEl.scrollLeft, st = glassAppEl.scrollTop;
-  glassScrollSX += (sl - glassScrollSX) * 0.14;
-  glassScrollSY += (st - glassScrollSY) * 0.14;
-  if(glassScrollSX > sl - 0.35 && glassScrollSX < sl + 0.35) glassScrollSX = sl;
-  if(glassScrollSY > st - 0.35 && glassScrollSY < st + 0.35) glassScrollSY = st;
   /* Hors défilement, on peint le fond -> on mémorise l'ancre (défilement courant).
      Pendant le défilement (scroll), l'ancre reste figée : c'est la référence à
      partir de laquelle le reflet compense en transform (écart = courant - ancre).
@@ -4556,7 +4551,17 @@ function queueGlassSyncPainted(freeze, scroll){
    rotation) + une petite traîne pour laisser les reflets se reposer. Au repos,
    un simple battement toutes les ~0,5 s rattrape tout changement inattendu.
    L'effet est intact : dès qu'on touche/défile/change d'écran, c'est armé. */
-let glassActiveUntil = 0, glassFrame = 0, glassFreezeUntil = 0, glassGen = 1, glassPressUntil = 0, glassScrollUntil = 0;
+let glassActiveUntil = 0, glassFrame = 0, glassFreezeUntil = 0, glassGen = 1, glassPressUntil = 0;
+/* Détection de défilement RELUE À CHAQUE IMAGE (et non plus via les événements
+   « scroll ») : leur espacement devient irrégulier en fin d'inertie (le
+   navigateur les groupe/retarde à mesure que la vitesse baisse), ce qui
+   coupait la fenêtre de suivi puis la relançait — un saut visible à chaque
+   coupure, exactement le décrochage remonté. En comparant la position réelle
+   d'une image à l'autre, le suivi ne dépend plus QUE du rythme d'affichage
+   (le maximum possible en JS) : il colle au doigt/à l'inertie sans jamais
+   pouvoir décrocher. glassScrollIdle compte les images consécutives sans le
+   moindre changement (0 tant que ça bouge encore, ne serait-ce que d'1 px). */
+let glassLastSL = 0, glassLastST = 0, glassScrollIdle = 99;
 function armGlass(ms){ const u = performance.now() + (ms || 850); if(u > glassActiveUntil) glassActiveUntil = u; }
 /* Mise en page changée (nouvel écran, redimensionnement) : on invalide le
    cache des décalages pour qu'ils soient recalculés à la prochaine image. */
@@ -4577,13 +4582,23 @@ function glassFreezeForTransition(){
   glassFrame++;
   const now = performance.now();
   if(now < glassFreezeUntil) return; // transition en cours : rien à faire (pur GPU)
+  const sl0 = glassAppEl.scrollLeft, st0 = glassAppEl.scrollTop;
+  const justMoved = (sl0 !== glassLastSL || st0 !== glassLastST);
+  glassLastSL = sl0; glassLastST = st0;
+  if(justMoved){
+    if(glassScrollIdle > 0) glassPressUntil = 0; // un défilement qui reprend a priorité sur un appui qui traînait
+    glassScrollIdle = 0;
+    armGlass(1300);
+  } else if(glassScrollIdle < 99) glassScrollIdle++;
   /* DÉFILEMENT = mode « pur compositeur ». On NE réécrit PAS background-position
      (chaque réécriture repeindrait ~10 photos floutées -> c'est CE repaint par
      image qui saccadait Android). À la place, le reflet est translaté en GPU
      pour verrouiller la photo sur la scène : l'effet « verre décalé » (fenêtre)
-     tourne à plein pendant le geste, sans aucune peinture. Un appui garde la
-     priorité (reflet d'appui amplifié). */
-  if(now < glassScrollUntil && now >= glassPressUntil){
+     tourne à plein pendant le geste, sans aucune peinture. On y reste tant que
+     la position a RÉELLEMENT bougé il y a moins de 2 images (une image de
+     grâce absorbe un palier d'arrondi sub-pixel sans redémarrer le suivi).
+     Un appui garde la priorité (reflet d'appui amplifié). */
+  if(glassScrollIdle < 2 && now >= glassPressUntil){
     try{ queueGlassSync(false, true); }catch(e){}
     return;
   }
@@ -4597,11 +4612,11 @@ function glassFreezeForTransition(){
    de mise en page (défilement quasi gratuit). */
 function armPress(){ const u = performance.now() + 650; if(u > glassPressUntil) glassPressUntil = u; armGlass(950); }
 try {
-  /* Un événement « scroll » = l'utilisateur défile (pas un appui bouton) : on
-     ouvre la fenêtre de GEL (pur compositeur) et on annule tout appui en cours
-     -> le gel s'applique dès la 1re image du geste, y compris pendant l'inertie
-     (les événements scroll continuent d'arriver et repoussent la fenêtre). */
-  glassAppEl.addEventListener("scroll", ()=>{ glassScrollUntil = performance.now() + 130; glassPressUntil = 0; armGlass(1300); }, { passive:true });
+  /* Le suivi du défilement se fait désormais par lecture directe de la
+     position à chaque image (voir glassLive) — l'événement « scroll » n'a
+     plus qu'un rôle de garde-fou (armer la fenêtre d'activité au cas où,
+     par ex. un défilement déclenché par le clavier/la mise au point). */
+  glassAppEl.addEventListener("scroll", ()=>armGlass(1300), { passive:true });
   document.addEventListener("pointerdown", armPress, { capture:true, passive:true });
   document.addEventListener("pointerup", armPress, { capture:true, passive:true });
   window.addEventListener("resize", ()=>{ glassRelayout(); armGlass(700); });
