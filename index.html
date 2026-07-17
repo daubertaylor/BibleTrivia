@@ -4,6 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1, viewport-fit=cover">
 <meta name="theme-color" content="#15100B">
+<meta name="color-scheme" content="dark">
 <meta name="mobile-web-app-capable" content="yes">
 <link rel="manifest" href="manifest.json">
 <title>BibleTrivia — Quiz Biblique</title>
@@ -167,7 +168,12 @@
   .team-remove{ background:none; border:none; color:var(--ink-soft); width:1.8rem; height:1.8rem; padding:0.4rem; display:flex; align-items:center; justify-content:center; flex-shrink:0; }
   .team-remove:disabled{ opacity:0.25; }
 
-  .add-team{ width:100%; display:flex; align-items:center; justify-content:center; gap:0.5rem; margin-top:0.4rem; background:transparent; border:1.5px dashed var(--primary); color:var(--primary); border-radius:11px; padding:0.6rem; font-size:0.85rem; font-weight:600; }
+  /* Bordure pointillée retirée : détonnait avec le rebord de verre cohérent
+     utilisé partout ailleurs (rendu « brouillon » à côté des autres cartes).
+     Même recette de liseré rouge que les autres accents primaires
+     (btn-primary, sheet-done…) + verre teinté très léger : reste identifiable
+     comme action d'ajout (icône + texte rouges) sans rompre la cohérence. */
+  .add-team{ width:100%; display:flex; align-items:center; justify-content:center; gap:0.5rem; margin-top:0.4rem; --glass-tint: rgba(241,80,47,0.14); color:var(--primary); border:1px solid rgba(255,255,255,0.55); border-radius:11px; padding:0.6rem; font-size:0.85rem; font-weight:600; --rim-edge:0 0 0 1px rgba(150,30,14,0.3); --rim-cast:0 4px 12px rgba(214,60,34,0.28); }
   .add-team .ico{ width:1.12rem; height:1.12rem; }
   .add-team:disabled{ opacity:0.35; }
 
@@ -436,8 +442,10 @@
   .avatar{ position:relative; border-radius:50%; color:#fff; display:inline-flex; align-items:center; justify-content:center; font-family:'Poppins',sans-serif; font-weight:700; border:2px solid rgba(255,255,255,0.7); box-shadow:inset 0 2px 0 rgba(255,255,255,0.5), 0 5px 14px rgba(15,12,10,0.3); flex-shrink:0; }
   .avatar.waiting{ background:rgba(255,255,255,0.5); color:var(--ink-soft); border-style:dashed; }
   .crown-badge{ position:absolute; bottom:-4px; right:-4px; width:1.2rem; height:1.2rem; background:linear-gradient(150deg,#FFE9A8,#F0A81E); border-radius:50%; display:flex; align-items:center; justify-content:center; padding:0.16rem; color:#7a4e04; border:1.5px solid #fff; box-shadow:inset 0 1px 0 rgba(255,255,255,0.7), 0 2px 6px rgba(168,122,31,0.55); }
-  /* Verre peint doré — même recette que la pastille flamme du défi. */
-  .creator-badge{ display:inline-flex; align-items:center; gap:0.3rem; --glass-tint: rgba(255,228,150,0.66); color:#8a5e14; font-size:0.78rem; font-weight:800; letter-spacing:0.02em; padding:0.24rem 0.62rem 0.24rem 0.46rem; border-radius:100px; border:1px solid rgba(255,255,255,0.65); }
+  /* Verre peint doré — même recette que la pastille flamme du défi. Couleur du
+     C strictement identique au badge rond du profil (#7a4e04) : un seul brun
+     doré « Créateur » dans toute l'appli, plus de C délavé/différent. */
+  .creator-badge{ display:inline-flex; align-items:center; gap:0.3rem; --glass-tint: rgba(255,228,150,0.66); color:#7a4e04; font-size:0.78rem; font-weight:800; letter-spacing:0.02em; padding:0.24rem 0.62rem 0.24rem 0.46rem; border-radius:100px; border:1px solid rgba(255,255,255,0.65); }
   .creator-badge svg{ width:0.85rem; height:0.85rem; }
   /* Vrai « C » majuscule (Poppins), pas un anneau ouvert. */
   /* Le « C » créateur : une VRAIE capitale dessinée en vectoriel (silhouette
@@ -475,7 +483,11 @@
   }
   /* Largeur fixe (chiffres tabulaires) : le nombre change sans décaler le point ni le texte. */
   .presence-num{ font-family:'Poppins',sans-serif; font-weight:700; font-size:0.95rem; color:var(--ink); font-variant-numeric:tabular-nums; display:inline-block; min-width:1.6ch; text-align:center; }
-  .presence-lbl{ font-size:0.8rem; color:var(--ink-soft); }
+  /* Largeur réservée à « connectés » (le plus long des deux) et alignée à
+     gauche : le passage singulier <-> pluriel ne fait plus varier la largeur
+     du texte, donc plus varier celle de la pastille centrée -> rien ne se
+     déplace quand le nombre change de tranche (1 <-> 2+). */
+  .presence-lbl{ font-size:0.8rem; color:var(--ink-soft); display:inline-block; min-width:4.7em; text-align:left; }
   .me-row{ display:flex; align-items:center; gap:0.6rem; width:100%; background:rgba(255,255,255,0.5); backdrop-filter:blur(16px) saturate(180%); -webkit-backdrop-filter:blur(16px) saturate(180%); border:1px solid rgba(255,255,255,0.5); border-radius:14px; padding:0.5rem 0.75rem; margin-bottom:0.85rem; }
   .me-name{ font-weight:600; font-size:0.9rem; color:var(--ink); }
   .me-edit{ margin-left:auto; font-size:0.82rem; color:var(--primary); font-weight:600; }
@@ -886,6 +898,14 @@
 <div id="app"></div>
 
 <script>
+/* iOS Safari n'applique PAS :active de façon fiable au toucher tant qu'aucun
+   listener touchstart n'existe nulle part dans la page (comportement WebKit
+   documenté) — sans ça, tous les boutons (scale 0.968 au press, icône hero
+   0.93...) répondent avec un retard/mollesse perceptible au doigt, alors
+   qu'Android (Blink) déclenche :active instantanément. Un seul listener
+   vide, posé au tout début du script, débloque :active pour TOUTE l'appli :
+   chaque bouton devient aussi instantané au toucher que sur Android. */
+document.addEventListener("touchstart", function(){}, { passive:true });
 /* ===================== ICONS (hand-built, no emoji) ===================== */
 const ICONS = {
   book: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M3 5.2C3 5.2 5.3 4.3 8.3 4.3C10.3 4.3 12 5 12 5V18C12 18 10.3 17.3 8.3 17.3C5.3 17.3 3 18.2 3 18.2V5.2Z"/><path d="M21 5.2C21 5.2 18.7 4.3 15.7 4.3C13.7 4.3 12 5 12 5V18C12 18 13.7 17.3 15.7 17.3C18.7 17.3 21 18.2 21 18.2V5.2Z"/></svg>`,
@@ -4331,10 +4351,11 @@ const GLASS_GAIN = 2.2, GLASS_MAXD = 28, GLASS_PAD = 96, GLASS_TCLAMP = 72;
 const GLASS_SCRMAX = 9; // décalage MAX dû au défilement (doux, jamais de détachement)
 const glassAppEl = document.getElementById("app");
 let glassScrollSX = 0, glassScrollSY = 0; // défilement lissé (retard du verre)
-/* VOIE NATIVE (Android/Chrome) : quand backdrop-filter est fiable ET qu'on
-   n'est pas sur iOS Safari (qui le maltraite), on l'utilise -> le flou est
-   composé par le GPU, le défilement est parfaitement fluide et le JS du verre
-   ne tourne plus du tout. Sur iOS, on garde la photo peinte recalée par JS. */
+/* Ancre du fond peint : position de défilement à laquelle background-position a
+   été peint pour la dernière fois. Pendant un défilement on gèle background-
+   position et on reporte l'écart (défilement courant - ancre) sur le transform
+   du reflet -> effet fenêtre « verre décalé » en pur compositeur, zéro repaint. */
+let glassAnchorSX = 0, glassAnchorSY = 0;
 /* MÊME VERRE PARTOUT (iOS = Android, rendu RIGOUREUSEMENT identique) : on peint
    la photo pré-floutée et on la recale par JS sur TOUTES les plateformes. Le
    backdrop-filter natif (Android) donnait un rendu seulement APPROCHANT — il
@@ -4352,10 +4373,10 @@ const GLASS_REFL = true;
    image faisait « clignoter » du blanc. On garde la plus GRANDE hauteur vue,
    la barre nav ne déclenche donc plus aucun recalcul. */
 let glassMaxH = 0;
-function queueGlassSync(freeze){
-  return queueGlassSyncPainted(freeze);
+function queueGlassSync(freeze, scroll){
+  return queueGlassSyncPainted(freeze, scroll);
 }
-function queueGlassSyncPainted(freeze){
+function queueGlassSyncPainted(freeze, scroll){
   /* Dimensions du viewport de MISE EN PAGE (documentElement), pas
      innerWidth/innerHeight : sur iOS, le clavier rétrécit le viewport
      VISUEL — baser la texture dessus faisait échantillonner le bas de la
@@ -4378,7 +4399,14 @@ function queueGlassSyncPainted(freeze){
   glassScrollSY += (st - glassScrollSY) * 0.14;
   if(glassScrollSX > sl - 0.35 && glassScrollSX < sl + 0.35) glassScrollSX = sl;
   if(glassScrollSY > st - 0.35 && glassScrollSY < st + 0.35) glassScrollSY = st;
-  const lagX = glassScrollSX - sl, lagY = glassScrollSY - st;
+  /* Hors défilement, on peint le fond -> on mémorise l'ancre (défilement courant).
+     Pendant le défilement (scroll), l'ancre reste figée : c'est la référence à
+     partir de laquelle le reflet compense en transform (écart = courant - ancre).
+     Fond peint, texture du reflet et ancre partagent le MÊME défilement brut
+     (sl/st) -> verrouillage parfait sur la scène, aucune dérive. */
+  if(!scroll){ glassAnchorSX = sl; glassAnchorSY = st; }
+  const wdx = scroll ? Math.round(sl - glassAnchorSX) : 0;
+  const wdy = scroll ? Math.round(st - glassAnchorSY) : 0;
   const els = document.querySelectorAll(GLASS_SEL);
   /* Écran qui SORT pendant une transition : il s'efface et va disparaître —
      inutile de recalculer son verre (moitié moins de travail à l'instant le
@@ -4401,7 +4429,8 @@ function queueGlassSyncPainted(freeze){
   const jobs = [];
   for(let i = 0; i < els.length; i++){
     const el = els[i];
-    if(el.matches(GLASS_SKIP) || (exiting && el.closest(".screen-exit"))){ jobs.push({ el: el, skip: true }); continue; }
+    if(el.matches(GLASS_SKIP)){ jobs.push({ el: el, skip: true }); continue; }
+    if(exiting && el.closest(".screen-exit")){ jobs.push({ el: el, skipExit: true }); continue; }
     if(el._ggen !== glassGen){ // décalages (mise en page) : mis en cache par génération
       let lx = 0, ly = 0, n = el;
       while(n && n !== document.body){ lx += n.offsetLeft; ly += n.offsetTop; n = n.offsetParent; }
@@ -4419,26 +4448,39 @@ function queueGlassSyncPainted(freeze){
   }
   for(let i = 0; i < jobs.length; i++){
     const j = jobs[i], el = j.el;
-    if(j.skip || j.culled){
+    if(j.skip || j.skipExit || j.culled){
+      // GLASS_SKIP (chrono rouge, bouton désactivé) : ces états posent leur
+      // PROPRE fond (couleur pleine) — on efface le calage verre hérité, sinon
+      // il resterait sous-jacent (spécificité inline) et faussrait sa taille.
       if(j.skip && el._glassKey){ el._glassKey = ""; el.style.backgroundSize = ""; el.style.backgroundPosition = ""; }
-      if(el._refl && el._refl._op !== "0"){ el._refl._op = "0"; el._refl.style.opacity = "0"; }
+      /* Écran qui SORT (skipExit) : on ne touche SURTOUT PAS au fond peint —
+         il est déjà correctement calé depuis avant la transition, et rien ne
+         bouge pendant le fondu (juste l'opacité + un léger translateY CSS). Le
+         réinitialiser (comme avant) faisait retomber l'élément sur le calage
+         PAR DÉFAUT de la feuille de style (cover/center, pas la fenêtre sur la
+         scène) -> un flash de verre bien plus dense/opaque pendant tout le
+         fondu. Laisser intact = invisible, fondu propre, zéro flash. */
+      if(el._refl){
+        if(el._refl._op !== "0"){ el._refl._op = "0"; el._refl.style.opacity = "0"; }
+        if(el._reflT !== "none"){ el._reflT = "none"; el._refl.style.transform = "none"; } // hors écran / sortant : dé-promu (mémoire libérée)
+      }
       continue;
     }
     let lx = j.lx, ly = j.ly;
     if(j.inApp){ lx -= sl; ly -= st; }
-    /* Fond peint : calé sur le défilement LISSÉ (glassScrollSX/SY) et non brut.
-       Pendant le geste on est gelé (aucune écriture) ; ce lissage ne joue donc
-       qu'au moment où l'on reprend à l'arrêt -> la photo rattrape la position
-       « fenêtre » en douceur au lieu de sauter d'un coup. Au repos, lissé =
-       brut (rattrapé/snappé plus haut), le rendu est identique. */
-    let px = j.lx, py = j.ly;
-    if(j.inApp){ px -= glassScrollSX; py -= glassScrollSY; }
-    const pos = "0 0, " + Math.round(-(px + ox)) + "px " + Math.round(-(py + oy)) + "px";
-    const key = size + "|" + pos;
-    if(el._glassKey !== key){
-      el._glassKey = key;
-      el.style.backgroundSize = size;
-      el.style.backgroundPosition = pos;
+    /* Fond peint (net, rebord visible) : GELÉ pendant le défilement (scroll) ->
+       AUCUNE réécriture de background-position, donc aucun repaint (c'est CE
+       repaint par image qui saccadait Android). Il glisse alors avec la carte ;
+       c'est le reflet, en transform, qui porte l'effet fenêtre. À l'arrêt le
+       fond reprend la main. */
+    if(!scroll){
+      const pos = "0 0, " + Math.round(-(lx + ox)) + "px " + Math.round(-(ly + oy)) + "px";
+      const key = size + "|" + pos;
+      if(el._glassKey !== key){
+        el._glassKey = key;
+        el.style.backgroundSize = size;
+        el.style.backgroundPosition = pos;
+      }
     }
     if(j.isInput) continue; // un <input> ne peut pas porter d'enfant reflet
     if(!GLASS_REFL) continue;
@@ -4453,7 +4495,7 @@ function queueGlassSyncPainted(freeze){
       el.insertBefore(refl, el.firstChild);
       el._refl = refl; el._reflSK = ""; el._reflPK = ""; el._reflT = "";
     }
-    // Taille (rare) et calage texture (à chaque défilement) écrits séparément.
+    // Taille (rare) écrite séparément.
     const sk = iw + "x" + ih + "|" + j.ow + "x" + j.oh;
     if(el._reflSK !== sk){
       el._reflSK = sk;
@@ -4461,34 +4503,45 @@ function queueGlassSyncPainted(freeze){
       refl.style.height = (j.oh + GLASS_PAD * 2) + "px";
       refl.style.backgroundSize = "auto, " + iw + "px " + ih + "px";
     }
-    const pk = "0 0, " + Math.round(-(lx - GLASS_PAD + ox)) + "px " + Math.round(-(ly - GLASS_PAD + oy)) + "px";
-    if(el._reflPK !== pk){
-      el._reflPK = pk;
-      refl.style.backgroundPosition = pk;
+    // Calage texture du reflet : GELÉ pendant le défilement (comme le fond peint).
+    if(!scroll){
+      const pk = "0 0, " + Math.round(-(lx - GLASS_PAD + ox)) + "px " + Math.round(-(ly - GLASS_PAD + oy)) + "px";
+      if(el._reflPK !== pk){
+        el._reflPK = pk;
+        refl.style.backgroundPosition = pk;
+      }
     }
-    // Déplacement PROPRE de l'élément (appui, ressort, transition) : plein
-    // effet « verre épais » amplifié.
-    const dx = j.rl - lx, dy = j.rt - ly;
-    let ex = dx * (GLASS_GAIN - 1), ey = dy * (GLASS_GAIN - 1);
-    if(ex > GLASS_MAXD) ex = GLASS_MAXD; else if(ex < -GLASS_MAXD) ex = -GLASS_MAXD;
-    if(ey > GLASS_MAXD) ey = GLASS_MAXD; else if(ey < -GLASS_MAXD) ey = -GLASS_MAXD;
-    /* Le DÉFILEMENT ne rallume PLUS le reflet : le fond peint suit déjà la
-       scène (effet fenêtre), et rallumer 15 reflets d'un coup au défilement
-       créait 15 couches GPU en rafale (à-coups sur Android). Le reflet décalé
-       reste plein et intact pour l'APPUI (déplacement propre de l'élément). */
-    let tx = -(dx + ex), ty = -(dy + ey);
-    if(tx > GLASS_TCLAMP) tx = GLASS_TCLAMP; else if(tx < -GLASS_TCLAMP) tx = -GLASS_TCLAMP;
-    if(ty > GLASS_TCLAMP) ty = GLASS_TCLAMP; else if(ty < -GLASS_TCLAMP) ty = -GLASS_TCLAMP;
-    const md = 1.25;
-    // « freeze » (pendant une transition d'écran) : reflet éteint, aucune
-    // couche GPU — la transition tourne en pur transform, sans travail par
-    // image. Le fond peint (ci-dessus) assure l'effet fenêtre, c'est fluide.
-    const moving = !freeze && (dx > md || dx < -md || dy > md || dy < -md);
-    // Au repos : transform "none" -> PAS de couche GPU permanente (Android).
-    // En mouvement : translate3d -> couche créée à la volée le temps du geste.
-    const t = moving ? ("translate3d(" + tx.toFixed(1) + "px," + ty.toFixed(1) + "px,0)") : "none";
+    let t, op;
+    if(scroll){
+      /* DÉFILEMENT — l'EFFET « VERRE DÉCALÉ » : le reflet (texture gelée) est
+         translaté pour VERROUILLER la photo sur la scène pendant que la carte
+         glisse. Même décalage pour toutes les cartes (elles défilent ensemble),
+         reporté en pur transform -> GPU, fluide, aucune re-peinture. C'est ce
+         qui redonne la profondeur « fenêtre sur la scène » en plein défilement.
+         Un élément HORS zone de défilement (fixe) ne bouge pas -> aucune
+         compensation, reflet éteint (son fond peint gelé reste déjà correct). */
+      if(j.inApp){ t = "translate3d(" + wdx + "px," + wdy + "px,0)"; op = "1"; }
+      else { t = "translate3d(0,0,0)"; op = "0"; }
+    } else {
+      // Déplacement PROPRE de l'élément (appui, ressort, transition) : plein
+      // effet « verre épais » amplifié.
+      const dx = j.rl - lx, dy = j.rt - ly;
+      let ex = dx * (GLASS_GAIN - 1), ey = dy * (GLASS_GAIN - 1);
+      if(ex > GLASS_MAXD) ex = GLASS_MAXD; else if(ex < -GLASS_MAXD) ex = -GLASS_MAXD;
+      if(ey > GLASS_MAXD) ey = GLASS_MAXD; else if(ey < -GLASS_MAXD) ey = -GLASS_MAXD;
+      let tx = -(dx + ex), ty = -(dy + ey);
+      if(tx > GLASS_TCLAMP) tx = GLASS_TCLAMP; else if(tx < -GLASS_TCLAMP) tx = -GLASS_TCLAMP;
+      if(ty > GLASS_TCLAMP) ty = GLASS_TCLAMP; else if(ty < -GLASS_TCLAMP) ty = -GLASS_TCLAMP;
+      const md = 1.25;
+      // « freeze » (transition d'écran) : reflet éteint, transition en pur GPU.
+      const moving = !freeze && (dx > md || dx < -md || dy > md || dy < -md);
+      /* Reflet VISIBLE -> promu en permanence (translate3d 0 au repos) : plus de
+         promotion « en rafale » de ~10 couches au démarrage du défilement (fini
+         les à-coups). Au repos il est invisible (opacité 0), le rebord reste net. */
+      t = moving ? ("translate3d(" + tx.toFixed(1) + "px," + ty.toFixed(1) + "px,0)") : "translate3d(0,0,0)";
+      op = moving ? "1" : "0";
+    }
     if(el._reflT !== t){ el._reflT = t; refl.style.transform = t; }
-    const op = moving ? "1" : "0";
     if(refl._op !== op){ refl._op = op; refl.style.opacity = op; }
   }
 }
@@ -4524,13 +4577,16 @@ function glassFreezeForTransition(){
   glassFrame++;
   const now = performance.now();
   if(now < glassFreezeUntil) return; // transition en cours : rien à faire (pur GPU)
-  /* DÉFILEMENT = pur compositeur (exactement comme iOS) : pendant un défilement
-     actif on NE réécrit PAS background-position. Chaque réécriture repeindrait
-     ~10 photos floutées, et c'est CE repaint par image qui saccadait Android
-     (WebKit/iOS, lui, diffère ces repaints -> déjà fluide). Le fond peint
-     glisse donc avec l'élément le temps du geste, puis se recale en douceur dès
-     l'arrêt. Un appui en cours garde la priorité (reflet d'appui). */
-  if(now < glassScrollUntil && now >= glassPressUntil) return;
+  /* DÉFILEMENT = mode « pur compositeur ». On NE réécrit PAS background-position
+     (chaque réécriture repeindrait ~10 photos floutées -> c'est CE repaint par
+     image qui saccadait Android). À la place, le reflet est translaté en GPU
+     pour verrouiller la photo sur la scène : l'effet « verre décalé » (fenêtre)
+     tourne à plein pendant le geste, sans aucune peinture. Un appui garde la
+     priorité (reflet d'appui amplifié). */
+  if(now < glassScrollUntil && now >= glassPressUntil){
+    try{ queueGlassSync(false, true); }catch(e){}
+    return;
+  }
   if(now < glassActiveUntil || (glassFrame % 30) === 0){
     try{ queueGlassSync(); }catch(e){}
   }
