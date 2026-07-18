@@ -107,11 +107,6 @@
   :root{ accent-color:var(--primary); }
   #app::-webkit-scrollbar{ display:none; }
   #app{ scrollbar-width:none; position:relative; }
-  /* Défilement piloté par JS (Android, voir module "customScroll") : on coupe le
-     défilement tactile natif pour écrire scrollTop nous-mêmes, synchrone avec le
-     verre. Le défilement PROGRAMMATIQUE (scrollTop, mise au point d'un champ)
-     reste possible. Absent sur iOS/desktop -> défilement natif conservé. */
-  html.js-scroll #app{ touch-action:none; }
   html.is-fs #app{ padding-top:max(calc(env(safe-area-inset-top) + 0.35rem), 3.4rem); padding-bottom:max(calc(env(safe-area-inset-bottom) + 0.2rem), 0.7rem); }
   html.is-standalone #app{ padding-top:max(calc(env(safe-area-inset-top) + 0.4rem), 0.7rem); padding-bottom:max(calc(env(safe-area-inset-bottom) + 0.35rem), 0.8rem); }
   .question-card .qtext, .hero-tag, .end-title, .online-hero-title, .online-hero-sub, .modal-title, .modal-msg{ text-wrap:balance; }
@@ -4776,14 +4771,7 @@ const glassAppEl = document.getElementById("app");
    repos. iOS/desktop : valeur brute (inchangé, déjà parfait). Forçable en test
    via window.__forceGlassAndroid. */
 const glassIsAndroid = /Android/i.test(navigator.userAgent);
-/* DÉFILEMENT PILOTÉ PAR JS (voir plus bas, module "customScroll") — actif sur
-   Android. Quand il est actif, c'est NOUS qui écrivons scrollTop, de façon
-   synchrone (même image que le verre) : le verre lit alors une valeur EXACTE et
-   colle parfaitement au contenu. Le lissage de secours ci-dessous n'a plus lieu
-   d'être (il ne ferait qu'ajouter une traîne) -> on le coupe quand le défilement
-   piloté est actif. Reste forçable en test via window.__forceGlassAndroid. */
-const CUSTOM_SCROLL = glassIsAndroid;
-function glassAndroidSmooth(){ return (glassIsAndroid && !CUSTOM_SCROLL) || (typeof window !== "undefined" && window.__forceGlassAndroid === true); }
+function glassAndroidSmooth(){ return glassIsAndroid || (typeof window !== "undefined" && window.__forceGlassAndroid === true); }
 /* État du lissage du FOND PEINT (séparé du reflet glassScrollSX/SY) : #app et
    .rev-list ont chacun le leur. */
 let glassBgSX = 0, glassBgSY = 0, glassRevBgSX = 0, glassRevBgSY = 0;
@@ -5203,70 +5191,6 @@ try {
   window.addEventListener("orientationchange", ()=>{ glassRelayout(); armGlass(1200); });
 } catch(e){}
 armGlass(2500); // couvre le tout premier affichage
-
-/* ===================== DÉFILEMENT PILOTÉ (Android) =====================
-   POURQUOI. Sur Android, le défilement natif est composité HORS du thread
-   principal : le scrollTop lu par JS reste en retard, irrégulièrement, sur ce
-   qui est affiché. Comme le verre est peint en JS d'après ce scrollTop, il ne
-   peut PAS coller au contenu -> il « nage » pendant qu'on défile au doigt.
-   Aucun lissage n'y change rien : la donnée source est en retard.
-
-   COMMENT. On prend la main : touch-action:none coupe le défilement tactile
-   NATIF, et on écrit nous-mêmes app.scrollTop — de façon SYNCHRONE, sur le
-   thread principal, dans la même image où le verre est recalculé. Contenu et
-   verre bougent alors ENSEMBLE, verrouillés : le verre suit toujours, à
-   l'identique d'iOS. Glissement au doigt en 1:1, inertie à décroissance
-   exponentielle au relâchement.
-
-   iOS / desktop : NON concernés (CUSTOM_SCROLL=false) -> défilement natif
-   inchangé, déjà parfait. */
-if(CUSTOM_SCROLL){
-  try {
-    document.documentElement.classList.add("js-scroll"); // active touch-action:none sur #app (CSS)
-    const app = glassAppEl;
-    let dragging = false, startY = 0, startScroll = 0, lastY = 0, lastT = 0, vel = 0, inertiaRAF = 0;
-    const maxScroll = ()=> Math.max(0, app.scrollHeight - app.clientHeight);
-    function setScroll(y){
-      const m = maxScroll();
-      if(y < 0) y = 0; else if(y > m) y = m;
-      app.scrollTop = y; // écriture SYNCHRONE : même image que le verre
-      return y;
-    }
-    app.addEventListener("touchstart", (e)=>{
-      if(!e.touches || e.touches.length !== 1) return;
-      cancelAnimationFrame(inertiaRAF);
-      dragging = true;
-      startY = lastY = e.touches[0].clientY;
-      startScroll = app.scrollTop;
-      lastT = performance.now(); vel = 0;
-    }, { passive:true });
-    app.addEventListener("touchmove", (e)=>{
-      if(!dragging || !e.touches || e.touches.length !== 1) return;
-      const y = e.touches[0].clientY, now = performance.now();
-      setScroll(startScroll - (y - startY));      // doigt qui monte -> on défile vers le bas
-      const dt = now - lastT;
-      if(dt > 0) vel = (y - lastY) / dt;          // px/ms (négatif quand le doigt monte)
-      lastY = y; lastT = now;
-      // touch-action:none empêche déjà le défilement natif -> écouteur passif possible
-    }, { passive:true });
-    function endDrag(){
-      if(!dragging) return;
-      dragging = false;
-      let v = -vel * 16;                          // px/image (~16ms), inertie dans le sens du défilement
-      if(!(Math.abs(v) > 0.5)) return;
-      const friction = 0.94;
-      (function step(){
-        v *= friction;
-        if(Math.abs(v) < 0.4) return;
-        const before = app.scrollTop, after = setScroll(before + v);
-        if(after === before) return;              // butée haute/basse atteinte
-        inertiaRAF = requestAnimationFrame(step);
-      })();
-    }
-    app.addEventListener("touchend", endDrag, { passive:true });
-    app.addEventListener("touchcancel", endDrag, { passive:true });
-  } catch(e){}
-}
 
 /* Plein écran réel : demandé au premier toucher là où l'API existe (Android,
    iPad, desktop). Sur iPhone, Safari interdit cette API : le vrai plein écran
