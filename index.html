@@ -918,9 +918,11 @@
   @keyframes heroShadow{ 0%,100%{ transform:translateX(-50%) scale(1); opacity:0.5; } 50%{ transform:translateX(-50%) scale(0.78); opacity:0.26; } }
   .hero-icon-btn{ display:block; position:relative; z-index:1; background:none; border:none; padding:0; border-radius:26%; box-shadow:none; }
   .hero-icon-btn:active:not(:disabled){ transform:none; box-shadow:none !important; filter:none; }
-  /* Enfoncement instantané sous le doigt, retour en ressort : même fluidité
-     sur iOS que sur Android. */
-  .hero-icon-btn:active:not(:disabled) .hero-icon-wrap{ transform:scale(0.93); transition-duration:0.08s; }
+  /* Enfoncement : piloté par les événements pointer (voir heroIconPress/Release),
+     PAS par :active — sur iOS, :active se relâche à un timing différent du clic,
+     ce qui entrait en conflit avec l'animation JS et provoquait un double-rebond
+     saccadé. Un seul pilote (pointer) = réaction instantanée et fluide, identique
+     iOS/Android. */
   .hero-icon-wrap{ display:block; transition:transform 0.62s cubic-bezier(0.3,1.1,0.32,1), opacity 0.45s ease; will-change:transform, opacity; }
   .hero-icon-wrap.bump{ animation:heroBump 0.32s cubic-bezier(0.17,1.32,0.32,1); }
   @keyframes heroBump{ 0%{ transform:scale(1); } 45%{ transform:scale(1.09) rotate(2.5deg); } 100%{ transform:scale(1); } }
@@ -3457,6 +3459,31 @@ const HERO_VERSES = [
   { t:"La crainte de l'Éternel est le commencement de la connaissance.", r:"Proverbes 1:7" }
 ];
 let heroTaps = 0, heroTapReset = null, lastVerseIdx = -1;
+/* ENFONCEMENT DE L'ICÔNE — piloté par pointerdown/up (voir le commentaire CSS
+   sur :active). pointerdown enfonce INSTANTANÉMENT (pas de délai de clic iOS),
+   pointerup/leave/cancel relâche en ressort. Un seul pilote, zéro conflit avec
+   :active -> réaction fluide et identique iOS/Android. Le comptage des 5 touches
+   reste sur le clic (heroIconTap), qui ne touche plus au visuel. */
+function heroIconPress(){
+  const zone = document.getElementById("heroZone");
+  if(!zone || zone.classList.contains("show-verse")) return;
+  const w = zone.querySelector(".hero-icon-wrap");
+  if(!w) return;
+  clearTimeout(w._pressT); clearTimeout(w._springT);
+  w.style.transition = "transform 0.08s ease-out";
+  w.style.transform = "scale(0.9) rotate(-2.5deg)";
+}
+function heroIconRelease(){
+  const zone = document.getElementById("heroZone");
+  if(!zone || zone.classList.contains("show-verse")) return;
+  const w = zone.querySelector(".hero-icon-wrap");
+  if(!w) return;
+  clearTimeout(w._pressT); clearTimeout(w._springT);
+  /* rebond à ressort marqué : vivant mais jamais saccadé */
+  w.style.transition = "transform 0.6s cubic-bezier(0.2,1.9,0.3,1)";
+  w.style.transform = "";
+  w._springT = setTimeout(()=>{ w.style.transition = ""; }, 620);
+}
 function heroIconTap(){
   const zone = document.getElementById("heroZone");
   if(!zone) return;
@@ -3464,21 +3491,11 @@ function heroIconTap(){
   heroTaps += 1;
   clearTimeout(heroTapReset);
   heroTapReset = setTimeout(()=>{ heroTaps = 0; }, 1500);
-  const w = zone.querySelector(".hero-icon-wrap");
   if(heroTaps >= 5){
     heroTaps = 0;
-    if(w){ w.style.transition = ""; w.style.transform = ""; }
+    const w = zone.querySelector(".hero-icon-wrap");
+    if(w){ clearTimeout(w._pressT); clearTimeout(w._springT); w.style.transition = ""; w.style.transform = ""; }
     showHeroVerse();
-  } else if(w){
-    /* pression courte puis rebond à ressort marqué : vivant mais jamais saccadé */
-    clearTimeout(w._pressT); clearTimeout(w._springT);
-    w.style.transition = "transform 0.09s ease-out";
-    w.style.transform = "scale(0.9) rotate(-3deg)";
-    w._pressT = setTimeout(()=>{
-      w.style.transition = "transform 0.6s cubic-bezier(0.2,1.9,0.3,1)";
-      w.style.transform = "";
-      w._springT = setTimeout(()=>{ w.style.transition = ""; }, 620);
-    }, 95);
   }
 }
 function showHeroVerse(){
@@ -3941,7 +3958,7 @@ function renderModeSelect(){
       <button class="icon-btn hero-profile" onclick="openProfile()" aria-label="Profil">${avatarHtml(profile.name||"?", profile.color, 2.4, profile.isCreator)}</button>
       <button class="icon-btn hero-settings" onclick="openSettings()" aria-label="Réglages"><span class="ico" style="width:1.22rem;height:1.22rem;">${ICONS.gear}</span></button>
       <div class="hero-zone" id="heroZone">
-        <button class="hero-icon-btn" onclick="heroIconTap()" aria-label="BibleTrivia">
+        <button class="hero-icon-btn" onclick="heroIconTap()" onpointerdown="heroIconPress()" onpointerup="heroIconRelease()" onpointerleave="heroIconRelease()" onpointercancel="heroIconRelease()" aria-label="BibleTrivia">
           <span class="hero-icon-wrap"><img class="hero-icon" src="${DOVE_ICON}" alt="BibleTrivia" draggable="false"></span>
         </button>
         <button class="hero-verse-card" onclick="hideHeroVerse()" aria-label="Fermer le verset">
