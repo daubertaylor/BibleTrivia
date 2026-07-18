@@ -111,7 +111,7 @@
      défilement tactile natif pour qu'on écrive scrollTop nous-mêmes, synchrone
      avec le verre. Le défilement PROGRAMMATIQUE (scrollTop, mise au point d'un
      champ) reste possible. Absent sur iOS/desktop. */
-  html.js-scroll #app{ touch-action:none; }
+  html.js-scroll #app{ touch-action:none; overflow-anchor:none; }
   html.is-fs #app{ padding-top:max(calc(env(safe-area-inset-top) + 0.35rem), 3.4rem); padding-bottom:max(calc(env(safe-area-inset-bottom) + 0.2rem), 0.7rem); }
   html.is-standalone #app{ padding-top:max(calc(env(safe-area-inset-top) + 0.4rem), 0.7rem); padding-bottom:max(calc(env(safe-area-inset-bottom) + 0.35rem), 0.8rem); }
   .question-card .qtext, .hero-tag, .end-title, .online-hero-title, .online-hero-sub, .modal-title, .modal-msg{ text-wrap:balance; }
@@ -5473,7 +5473,7 @@ if(CUSTOM_SCROLL){
   try {
     document.documentElement.classList.add("js-scroll");
     const app = glassAppEl;
-    let dragging = false, lastY = 0, lastT = 0, vel = 0, inertiaRAF = 0, activeId = null;
+    let dragging = false, lastY = 0, inertiaRAF = 0, activeId = null, samples = [];
     const maxScroll = ()=> Math.max(0, app.scrollHeight - app.clientHeight);
     function clampSet(y){
       const m = maxScroll();
@@ -5489,8 +5489,7 @@ if(CUSTOM_SCROLL){
       dragging = true;
       activeId = e.touches[0].identifier;
       lastY = e.touches[0].clientY;
-      lastT = performance.now();
-      vel = 0;
+      samples = [{ y: lastY, t: performance.now() }]; // historique du doigt (vitesse de lancer)
     }, { passive:true });
     app.addEventListener("touchmove", (e)=>{
       if(!dragging || !e.touches || e.touches.length !== 1) return;
@@ -5499,28 +5498,35 @@ if(CUSTOM_SCROLL){
       if(e.cancelable) e.preventDefault();                       // secours anti double-défilement
       const y = t.clientY, now = performance.now();
       let dy = lastY - y;                                        // >0 : doigt monte -> défile vers le bas
-      if(dy > 220) dy = 220; else if(dy < -220) dy = -220;       // saut par événement borné
+      if(dy > 260) dy = 260; else if(dy < -260) dy = -260;       // saut par événement borné
       clampSet(app.scrollTop + dy);                             // INCRÉMENTAL depuis la position réelle
-      const dt = now - lastT;
-      if(dt >= 8){                                               // vitesse : seulement sur un intervalle sain
-        let v = dy / dt;                                         // px/ms
-        if(v > 2.5) v = 2.5; else if(v < -2.5) v = -2.5;         // plafond dur -> plus d'emballement
-        vel = 0.7 * vel + 0.3 * v;                               // lissée
-        lastT = now;
-      }
       lastY = y;
+      samples.push({ y: y, t: now });
+      while(samples.length > 2 && now - samples[0].t > 90) samples.shift(); // ~90ms d'historique
     }, { passive:false });
     function endDrag(){
       if(!dragging) return;
       dragging = false; activeId = null;
       stopInertia();
-      let v = vel * 16;                                          // px/image
-      if(v > 42) v = 42; else if(v < -42) v = -42;               // inertie plafonnée par image
-      if(Math.abs(v) < 0.6) return;
-      const friction = 0.94;
+      /* Vitesse de LANCER : déplacement RÉEL du doigt sur la fenêtre récente
+         (~90ms), pas la dérivée d'une seule image. L'ancienne méthode pouvait
+         donner une inertie à contresens ou emballée au relâchement = les sauts
+         « dans tous les sens ». Ici l'inertie colle toujours au geste. */
+      let v = 0;
+      if(samples.length >= 2){
+        const a = samples[0], b = samples[samples.length - 1], dt = b.t - a.t;
+        if(dt > 0){
+          let fv = (b.y - a.y) / dt;                             // px/ms du doigt (monte = négatif)
+          if(fv > 2.6) fv = 2.6; else if(fv < -2.6) fv = -2.6;
+          v = -fv * 16;                                          // doigt monte -> défile vers le bas
+        }
+      }
+      if(v > 46) v = 46; else if(v < -46) v = -46;               // cap dur par image
+      if(Math.abs(v) < 0.5) return;
+      const friction = 0.95;
       (function step(){
         v *= friction;
-        if(Math.abs(v) < 0.4){ inertiaRAF = 0; return; }
+        if(Math.abs(v) < 0.35){ inertiaRAF = 0; return; }
         const before = app.scrollTop, after = clampSet(before + v);
         if(after === before){ inertiaRAF = 0; return; }          // butée atteinte
         inertiaRAF = requestAnimationFrame(step);
