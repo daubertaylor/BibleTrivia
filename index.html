@@ -3475,8 +3475,10 @@ function heroIconPress(){
   const w = zone.querySelector(".hero-icon-wrap");
   if(!w) return;
   clearTimeout(w._pressT); clearTimeout(w._springT);
-  w.style.transition = "transform 0.08s ease-out";
-  w.style.transform = "scale(0.9) rotate(-2.5deg)";
+  /* Enfoncement DOUX : décélération progressive (au lieu d'un ease-out sec) ->
+     le doigt « pose » l'icône au lieu de la claquer. Léger tilt pour la vie. */
+  w.style.transition = "transform 0.13s cubic-bezier(0.33, 0, 0.25, 1)";
+  w.style.transform = "scale(0.9) rotate(-2deg)";
 }
 function heroIconRelease(){
   const zone = document.getElementById("heroZone");
@@ -3484,8 +3486,9 @@ function heroIconRelease(){
   const w = zone.querySelector(".hero-icon-wrap");
   if(!w) return;
   clearTimeout(w._pressT); clearTimeout(w._springT);
-  /* rebond à ressort marqué : vivant mais jamais saccadé */
-  w.style.transition = "transform 0.6s cubic-bezier(0.2,1.9,0.3,1)";
+  /* Retour en ressort NATUREL (easeOutBack) : léger dépassement organique, plus
+     soyeux que l'ancien rebond très fort (1.9) qui « claquait » au sommet. */
+  w.style.transition = "transform 0.6s cubic-bezier(0.34, 1.56, 0.64, 1)";
   w.style.transform = "";
   w._springT = setTimeout(()=>{ w.style.transition = ""; }, 620);
 }
