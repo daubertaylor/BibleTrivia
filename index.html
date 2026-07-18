@@ -750,10 +750,6 @@
     --glass-bf: blur(22px) saturate(1.6);
   }
   html.gl-native .glass-refl{ display:none; }
-  /* Tuiles livres (66) : 66 flous GPU seraient trop lourds -> pas de backdrop-filter,
-     on garde juste la teinte translucide (imperceptible à cette taille, protège la
-     fluidité du parcours). Les grandes cartes/objectifs gardent le vrai flou. */
-  html.gl-native .bk{ --glass-bf: none; }
   /* Fondu resserré (0,16s -> 0,07s) : la transformation CSS de l'appui
      (scale) s'anime elle-même sur 0,09s — le temps qu'elle dépasse le seuil
      de déclenchement du reflet, le fondu à 0,16s ajoutait un second retard
@@ -5027,11 +5023,7 @@ function nativeScrollForced(){
   } catch(e){}
   return false;
 }
-/* Défilement piloté RETIRÉ : le verre PEINT en JS qui suit le défilement est trop
-   lourd sur le thread principal d'Android (défilement au ralenti + sauts). On
-   bascule Android sur le verre NATIF GPU (backdrop-filter, voir GLASS_NATIVE) avec
-   défilement NATIF -> fluide, et le flou suit tout seul. */
-const CUSTOM_SCROLL = glassIsAndroid && !nativeScrollForced() && false;
+const CUSTOM_SCROLL = glassIsAndroid && !nativeScrollForced();
 function glassAndroidSmooth(){ return (glassIsAndroid && !CUSTOM_SCROLL) || (typeof window !== "undefined" && window.__forceGlassAndroid === true); }
 /* État du lissage du FOND PEINT (séparé du reflet glassScrollSX/SY) : #app et
    .rev-list ont chacun le leur. */
@@ -5065,13 +5057,7 @@ let glassRevEl = null, glassRevScrollSX = 0, glassRevScrollSY = 0, glassRevLastS
    on GÈLE le recalage de background-position (voir glassLive) -> plus aucune
    re-peinture par image, le fond glisse avec l'élément (comme iOS diffère ses
    repaints) puis se recale en douceur à l'arrêt. */
-/* VERRE NATIF GPU sur Android : le verre peint en JS suivait bien le défilement,
-   mais trop lourd (ralenti + sauts). On passe Android au backdrop-filter, composé
-   par le GPU -> défilement natif fluide et le flou suit tout seul. iOS garde le
-   verre peint (Safari maltraite backdrop-filter). Rendu un peu différent d'iOS
-   (flou net sans « décalé » ni reflet d'appui), mais fluide et fiable. */
-const GLASS_NATIVE = glassIsAndroid;
-if(GLASS_NATIVE){ try { document.documentElement.classList.add("gl-native"); } catch(e){} }
+const GLASS_NATIVE = false;
 /* Reflet « verre épais » (couche transform) : toujours actif en voie peinte. */
 const GLASS_REFL = true;
 /* Hauteur de texture STABLE (monotone) : quand la barre de navigation Android
@@ -5097,7 +5083,6 @@ function queueGlassSync(freeze){
   return queueGlassSyncPainted(freeze);
 }
 function queueGlassSyncPainted(freeze){
-  if(GLASS_NATIVE) return; // Android : verre composé par le GPU (backdrop-filter), aucune peinture JS
   /* Dimensions du viewport de MISE EN PAGE (documentElement), pas
      innerWidth/innerHeight : sur iOS, le clavier rétrécit le viewport
      VISUEL — baser la texture dessus faisait échantillonner le bas de la
