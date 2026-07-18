@@ -4740,6 +4740,26 @@ const GLASS_SCRMAX = 9; // décalage MAX dû au défilement (doux, jamais de dé
    glassGen capture déjà. */
 let glassEls = null, glassElsGen = -1;
 const glassAppEl = document.getElementById("app");
+/* ANDROID — SUIVI DU FOND PENDANT LE DÉFILEMENT. Le même JS peint le verre sur
+   iOS et Android, mais les deux moteurs traitent le défilement autrement : Safari
+   DIFFÈRE ses repaints pendant qu'on défile (le fond accompagne la carte avec ~1
+   image de retard, invisible -> suivi net) ; Chrome Android, lui, compose le
+   défilement HORS du thread principal et le scrollTop lu par JS reste EN RETARD,
+   IRRÉGULIÈREMENT, sur ce qui est réellement affiché (figé quelques images puis
+   saut). Recaler background-position sur ce scrollTop irrégulier faisait « nager »
+   le fond en saccades -> le fameux « ça ne suit pas » sur Android. Correctif :
+   sur Android, on ne recale plus le fond peint sur le scrollTop BRUT mais sur une
+   valeur LISSÉE (ressort) et BORNÉE — elle absorbe le tremblement de lecture et
+   reproduit le retard ~1 image d'iOS SANS la saccade, tout en restant exacte au
+   repos. iOS/desktop : valeur brute (inchangé, déjà parfait). Forçable en test
+   via window.__forceGlassAndroid. */
+const glassIsAndroid = /Android/i.test(navigator.userAgent);
+function glassAndroidSmooth(){ return glassIsAndroid || (typeof window !== "undefined" && window.__forceGlassAndroid === true); }
+/* État du lissage du FOND PEINT (séparé du reflet glassScrollSX/SY) : #app et
+   .rev-list ont chacun le leur. */
+let glassBgSX = 0, glassBgSY = 0, glassRevBgSX = 0, glassRevBgSY = 0;
+const GLASS_BG_K = 0.5;   // ressort : ~1 image de retard en régime, filtre la saccade
+const GLASS_BG_MAX = 40;  // le fond ne peut jamais s'écarter de plus de 40px du réel
 /* Retard du verre au défilement (mécanisme D'ORIGINE, restauré) : glassScrollSX/SY
    POURSUIT scrollLeft/Top avec un facteur de lissage (0,14) -> elles restent
    TOUJOURRS légèrement EN RETARD sur la position réelle pendant qu'on défile,
@@ -4821,6 +4841,22 @@ function queueGlassSyncPainted(freeze){
   if(glassScrollSX > sl - 0.35 && glassScrollSX < sl + 0.35) glassScrollSX = sl;
   if(glassScrollSY > st - 0.35 && glassScrollSY < st + 0.35) glassScrollSY = st;
   const lagX = glassScrollSX - sl, lagY = glassScrollSY - st;
+  /* SOURCE DU FOND PEINT (voir glassIsAndroid) : sur Android, position de
+     défilement LISSÉE+BORNÉE au lieu du scrollTop brut irrégulier -> le fond ne
+     nage plus, il suit en douceur. Ressort rapide (GLASS_BG_K) : ~1 image de
+     retard en régime (comme iOS), exact au repos (accrochage à ±0,4px), écart
+     plafonné (GLASS_BG_MAX) pour ne jamais se détacher sur un lancer rapide.
+     Hors Android : pSl/pSt = brut, strictement identique à avant. */
+  let pSl = sl, pSt = st;
+  if(glassAndroidSmooth()){
+    glassBgSX += (sl - glassBgSX) * GLASS_BG_K;
+    glassBgSY += (st - glassBgSY) * GLASS_BG_K;
+    if(glassBgSX < sl - GLASS_BG_MAX) glassBgSX = sl - GLASS_BG_MAX; else if(glassBgSX > sl + GLASS_BG_MAX) glassBgSX = sl + GLASS_BG_MAX;
+    if(glassBgSY < st - GLASS_BG_MAX) glassBgSY = st - GLASS_BG_MAX; else if(glassBgSY > st + GLASS_BG_MAX) glassBgSY = st + GLASS_BG_MAX;
+    if(glassBgSX > sl - 0.4 && glassBgSX < sl + 0.4) glassBgSX = sl;
+    if(glassBgSY > st - 0.4 && glassBgSY < st + 0.4) glassBgSY = st;
+    pSl = glassBgSX; pSt = glassBgSY;
+  }
   /* Même retard lissé, mais pour .rev-list (voir déclaration de glassRevEl).
      Si la feuille vient d'apparaître/disparaître ou de changer, on resynchronise
      SANS transition (pas de faux « retard » qui daterait d'avant l'ouverture). */
@@ -4831,7 +4867,7 @@ function queueGlassSyncPainted(freeze){
     glassRevScrollSY = revEl ? revEl.scrollTop : 0;
     glassRevLastSL = glassRevScrollSX; glassRevLastST = glassRevScrollSY;
   }
-  let revSl = 0, revSt = 0, revLagX = 0, revLagY = 0;
+  let revSl = 0, revSt = 0, revLagX = 0, revLagY = 0, pRevSl = 0, pRevSt = 0;
   if(glassRevEl){
     revSl = glassRevEl.scrollLeft; revSt = glassRevEl.scrollTop;
     glassRevScrollSX += (revSl - glassRevScrollSX) * 0.14;
@@ -4839,6 +4875,17 @@ function queueGlassSyncPainted(freeze){
     if(glassRevScrollSX > revSl - 0.35 && glassRevScrollSX < revSl + 0.35) glassRevScrollSX = revSl;
     if(glassRevScrollSY > revSt - 0.35 && glassRevScrollSY < revSt + 0.35) glassRevScrollSY = revSt;
     revLagX = glassRevScrollSX - revSl; revLagY = glassRevScrollSY - revSt;
+    pRevSl = revSl; pRevSt = revSt;
+    // Fond peint de la feuille : même lissage Android que #app (voir pSl/pSt).
+    if(glassAndroidSmooth()){
+      glassRevBgSX += (revSl - glassRevBgSX) * GLASS_BG_K;
+      glassRevBgSY += (revSt - glassRevBgSY) * GLASS_BG_K;
+      if(glassRevBgSX < revSl - GLASS_BG_MAX) glassRevBgSX = revSl - GLASS_BG_MAX; else if(glassRevBgSX > revSl + GLASS_BG_MAX) glassRevBgSX = revSl + GLASS_BG_MAX;
+      if(glassRevBgSY < revSt - GLASS_BG_MAX) glassRevBgSY = revSt - GLASS_BG_MAX; else if(glassRevBgSY > revSt + GLASS_BG_MAX) glassRevBgSY = revSt + GLASS_BG_MAX;
+      if(glassRevBgSX > revSl - 0.4 && glassRevBgSX < revSl + 0.4) glassRevBgSX = revSl;
+      if(glassRevBgSY > revSt - 0.4 && glassRevBgSY < revSt + 0.4) glassRevBgSY = revSt;
+      pRevSl = glassRevBgSX; pRevSt = glassRevBgSY;
+    }
   }
   if(glassElsGen !== glassGen){ glassEls = document.querySelectorAll(GLASS_SEL); glassElsGen = glassGen; }
   const els = glassEls;
@@ -4888,14 +4935,17 @@ function queueGlassSyncPainted(freeze){
     const inRev = !inApp && glassRevEl && glassRevEl.contains(el);
     const elSl = inApp ? sl : (inRev ? revSl : 0);
     const elSt = inApp ? st : (inRev ? revSt : 0);
-    const restTop = el._ly0 - elSt; // position écran approx (sans transform)
+    // Défilement pour le FOND PEINT : lissé sur Android (voir pSl/pSt), brut ailleurs.
+    const elSlP = inApp ? pSl : (inRev ? pRevSl : 0);
+    const elStP = inApp ? pSt : (inRev ? pRevSt : 0);
+    const restTop = el._ly0 - elSt; // position écran approx (sans transform) — brut (culling/reflet)
     // Pré-culling depuis le cache : hors écran -> ni rect, ni peinture.
     if(restTop > vh + 60 || restTop + el._oh0 < -60){ jobs.push({ el: el, culled: true }); continue; }
     let rl, rt;
     if(pressActive && el._pressUntil && el._pressUntil > now1){ const r = el.getBoundingClientRect(); rl = r.left; rt = r.top; }
     else { rl = el._lx0 - elSl; rt = restTop; }
     jobs.push({ el: el, isInput: el.tagName === "INPUT", rl: rl, rt: rt,
-                lx: el._lx0, ly: el._ly0, inApp: inApp, inRev: inRev, elSl: elSl, elSt: elSt, ow: el._ow0, oh: el._oh0 });
+                lx: el._lx0, ly: el._ly0, inApp: inApp, inRev: inRev, elSl: elSl, elSt: elSt, elSlP: elSlP, elStP: elStP, ow: el._ow0, oh: el._oh0 });
   }
   for(let i = 0; i < jobs.length; i++){
     const j = jobs[i], el = j.el;
@@ -4924,12 +4974,16 @@ function queueGlassSyncPainted(freeze){
       continue;
     }
     let lx = j.lx, ly = j.ly;
-    lx -= j.elSl; ly -= j.elSt; // #app OU .rev-list selon où vit l'élément (0 si aucun des deux)
+    lx -= j.elSl; ly -= j.elSt; // BRUT — sert au déplacement du reflet (dx/dy, repos)
+    // Position pour le FOND PEINT et la TEXTURE du reflet : lissée sur Android
+    // (voir pSl/pSt), brute ailleurs -> les deux couches restent alignées entre
+    // elles, et suivent le défilement sans saccade sur Android.
+    const bx = j.lx - j.elSlP, by = j.ly - j.elStP;
     /* Fond peint : recalé à CHAQUE image, y compris pendant le défilement ->
        la photo bouge VRAIMENT avec le doigt, en même temps que l'écran (pas
        seulement le reflet par-dessus). L'écriture ne se fait que si la
        position a réellement changé (clé mémorisée), donc gratuite au repos. */
-    const pos = "0 0, " + Math.round(-(lx + ox)) + "px " + Math.round(-(ly + oy)) + "px";
+    const pos = "0 0, " + Math.round(-(bx + ox)) + "px " + Math.round(-(by + oy)) + "px";
     const key = size + "|" + pos;
     if(el._glassKey !== key){
       el._glassKey = key;
@@ -4967,8 +5021,9 @@ function queueGlassSyncPainted(freeze){
       refl.style.height = (j.oh + GLASS_PAD * 2) + "px";
       refl.style.backgroundSize = "auto, " + iw + "px " + ih + "px";
     }
-    // Calage texture du reflet : recalé à chaque image, comme le fond peint.
-    const pk = "0 0, " + Math.round(-(lx - GLASS_PAD + ox)) + "px " + Math.round(-(ly - GLASS_PAD + oy)) + "px";
+    // Calage texture du reflet : recalé à chaque image, comme le fond peint, et
+    // sur la MÊME position lissée (bx/by) -> reflet et fond restent alignés.
+    const pk = "0 0, " + Math.round(-(bx - GLASS_PAD + ox)) + "px " + Math.round(-(by - GLASS_PAD + oy)) + "px";
     if(el._reflPK !== pk){
       el._reflPK = pk;
       refl.style.backgroundPosition = pk;
