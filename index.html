@@ -2550,7 +2550,7 @@ const net = {
   opp:null, oppScore:0, oppIndex:0, oppDone:false, oppGone:false, oppPresent:false, oppLastSeen:0,
   seed:null, lengthKey:"normale", timerKey:"30", themeKey:"tout", timedOut:false,
   deck:[], idx:0, score:0, correct:0, selected:null, revealed:false, myDone:false, missed:[],
-  duelHb:null, joinTimer:null,
+  duelHb:null, joinTimer:null, subTimer:null,
   status:"", error:""
 };
 function initSupa(){
@@ -2706,6 +2706,37 @@ function leaveLobby(){
   net.searching = false; net.matching = false; net.connected = 0; net.lookers = {};
 }
 
+/* ===================== PRÉSENCE EN ARRIÈRE-PLAN =====================
+   Quand l'app passe en arrière-plan (onglet masqué, app « fermée » mais page
+   encore vivante en mémoire sur une de nos pages), on RETIRE notre présence des
+   canaux temps réel : les autres joueurs cessent aussitôt de nous compter comme
+   « connecté ». Au retour au premier plan, on se re-signale (tout de suite, puis
+   une courte relance, le temps que la socket se rétablisse si elle avait été
+   coupée en arrière-plan). */
+let presenceHidden = false;
+function onlineSetPresence(active){
+  const meta = meMeta();
+  if(net.lobby){ try { active ? net.lobby.track(meta) : net.lobby.untrack(); } catch(e){} }
+  if(net.room){ try { active ? net.room.track(meta) : net.room.untrack(); } catch(e){} }
+}
+function handleAppHidden(){
+  if(presenceHidden) return;
+  presenceHidden = true;
+  onlineSetPresence(false);
+}
+function handleAppVisible(){
+  if(!presenceHidden) return;
+  presenceHidden = false;
+  onlineSetPresence(true);
+  setTimeout(()=>{ if(!presenceHidden) onlineSetPresence(true); }, 1200);
+}
+document.addEventListener("visibilitychange", ()=>{
+  if(document.visibilityState === "hidden") handleAppHidden(); else handleAppVisible();
+});
+/* pagehide (surtout iOS) : la page bascule en cache/arrière-plan -> présence off. */
+window.addEventListener("pagehide", handleAppHidden);
+window.addEventListener("pageshow", handleAppVisible);
+
 /* ===================== SALON / DUEL ===================== */
 function bindRoom(ch){
   ch.on("presence", { event:"sync" }, ()=>{
@@ -2755,16 +2786,42 @@ function bindRoom(ch){
     if(state.screen==="online-end"){ net.status="Ton adversaire veut rejouer…"; reRenderIfOnline(); }
   });
 }
-function createRoom(code, host){
+function createRoom(code, host, _retry){
   const supa = initSupa(); if(!supa) return;
-  net.code = code; net.isHost = host; net.opp=null; net.oppPresent=false; net.oppGone=false;
+  /* Un salon précédent resté ouvert (canal Supabase encore souscrit) entrait en
+     conflit avec le nouveau : c'est ce qui faisait échouer « créer une partie »
+     environ une fois sur deux. On repart toujours d'un état propre. */
+  if(net.room){ try { net.room.untrack(); net.supa.removeChannel(net.room); } catch(e){} net.room=null; }
+  if(net.joinTimer){ clearTimeout(net.joinTimer); net.joinTimer=null; }
+  if(net.subTimer){ clearTimeout(net.subTimer); net.subTimer=null; }
+  net.code = code; net.isHost = host; net.opp=null; net.oppPresent=false; net.oppGone=false; net.error="";
   const ch = supa.channel("bt-room-"+code, { config:{ presence:{ key: myId } } });
   net.room = ch;
   bindRoom(ch);
+  let settled = false;
+  const fail = ()=>{
+    if(settled) return; settled = true;
+    if(net.subTimer){ clearTimeout(net.subTimer); net.subTimer=null; }
+    if(net.room===ch){ try { ch.untrack(); net.supa.removeChannel(ch); } catch(e){} net.room=null; }
+    if(!_retry){
+      /* Une seule nouvelle tentative automatique, transparente pour le joueur. */
+      createRoom(code, host, true);
+    } else {
+      net.error = host ? "La connexion au salon a échoué. Réessaie." : "Impossible de rejoindre ce salon. Réessaie.";
+      state.screen = host ? "online" : "online-join"; render();
+    }
+  };
+  /* Filet de sécurité : si aucun statut terminal n'arrive (socket bloqué), on
+     considère l'échec au bout de 9 s -> le bouton ne reste jamais « mort ». */
+  net.subTimer = setTimeout(fail, 9000);
   ch.subscribe(async (status)=>{
     if(status==="SUBSCRIBED"){
-      await ch.track(meMeta());
+      if(settled) return; settled = true;
+      if(net.subTimer){ clearTimeout(net.subTimer); net.subTimer=null; }
+      /* On bascule l'écran AVANT de tracer la présence : si ch.track() traîne ou
+         échoue par intermittence, l'UI a déjà répondu -> plus de bouton « mort ». */
       state.screen="online-room"; render();
+      try { await ch.track(meMeta()); } catch(e){}
       if(!host){
         net.joinTimer = setTimeout(()=>{
           net.joinTimer = null;
@@ -2775,6 +2832,8 @@ function createRoom(code, host){
           }
         }, 5000);
       }
+    } else if(status==="CHANNEL_ERROR" || status==="TIMED_OUT" || status==="CLOSED"){
+      fail();
     }
   });
 }
@@ -2870,6 +2929,7 @@ function quitDuel(){
 function cleanupRoom(){
   stopDuelHeartbeat();
   if(net.joinTimer){ clearTimeout(net.joinTimer); net.joinTimer=null; }
+  if(net.subTimer){ clearTimeout(net.subTimer); net.subTimer=null; }
   if(net.room){ try { net.room.untrack(); net.supa.removeChannel(net.room); } catch(e){} net.room=null; }
   net.code=null; net.isHost=false; net.opp=null; net.oppPresent=false; net.oppGone=false;
   net.deck=[]; net.idx=0; net.myDone=false; net.status="";
@@ -4770,7 +4830,7 @@ function renderOnlineRoom(){
       <div class="vs-mid">VS</div>
       <div class="vs-player${oppNew?' reveal-in':''}" id="oppSlot">${net.oppPresent?avatarHtml(net.opp.name, net.opp.color, 3, net.opp.isCreator):`<span class="avatar waiting" style="width:3rem;height:3rem;font-size:1.25rem;">?</span>`}<div class="vs-name">${net.oppPresent?escapeHtml(net.opp.name):"En attente…"}</div><div class="vs-tag${net.isHost?'':' is-host'}">${net.isHost?"Adversaire":"Hôte"}</div></div>
     </div>
-    <div class="host-note">${net.isHost?"Tu es l'hôte : choisis la longueur du duel et lance la partie.":"L'hôte choisit la longueur du duel et lance la partie."}</div>
+    <div class="host-note">${net.isHost?"Tu es l'hôte : paramètre la partie (longueur, chrono, testament) puis lance le duel.":"L'hôte paramètre la partie puis lance le duel."}</div>
     <div class="flex-sp"></div>
     ${net.isHost ? `
       <div class="len-label">Longueur du duel</div>
