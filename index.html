@@ -973,7 +973,11 @@
 
 
   /* ---------- Icône d'accueil : 5 touches -> verset surprise ---------- */
-  .hero-zone{ position:relative; height:clamp(5.8rem, 15vh, 7.8rem); margin:0 auto 0.85rem; display:flex; align-items:center; justify-content:center; }
+  /* Conteneur de mise en page uniquement : il s'étend sur toute la largeur et
+     chevauche les boutons profil/réglages dans les coins. Sans pointer-events:none,
+     il interceptait leurs taps (le hero-zone étant peint au-dessus) -> profil &
+     réglages ne s'ouvraient plus. On ne laisse cliquables que ses enfants utiles. */
+  .hero-zone{ position:relative; height:clamp(5.8rem, 15vh, 7.8rem); margin:0 auto 0.85rem; display:flex; align-items:center; justify-content:center; pointer-events:none; }
   .hero-zone .hero-icon{ margin:0; }
   /* Ombre de lévitation : reste « au sol » et respire à l'inverse du
      flottement de l'icône (petite & pâle quand l'icône monte, large &
@@ -981,7 +985,7 @@
   .hero-zone::after{ content:""; position:absolute; left:50%; bottom:-0.15rem; width:46%; height:0.7rem; transform:translateX(-50%); background:radial-gradient(ellipse at center, rgba(10,8,6,0.42), rgba(10,8,6,0) 72%); filter:blur(3px); z-index:0; pointer-events:none; animation:heroShadow 5s ease-in-out infinite; }
   .hero-zone.show-verse::after{ opacity:0; transition:opacity 0.3s ease; }
   @keyframes heroShadow{ 0%,100%{ transform:translateX(-50%) scale(1); opacity:0.5; } 50%{ transform:translateX(-50%) scale(0.78); opacity:0.26; } }
-  .hero-icon-btn{ display:block; position:relative; z-index:1; background:none; border:none; padding:0; border-radius:26%; box-shadow:none; }
+  .hero-icon-btn{ display:block; position:relative; z-index:1; background:none; border:none; padding:0; border-radius:26%; box-shadow:none; pointer-events:auto; }
   .hero-icon-btn:active:not(:disabled){ transform:none; box-shadow:none !important; filter:none; }
   /* Enfoncement : piloté par les événements pointer (voir heroIconPress/Release),
      PAS par :active — sur iOS, :active se relâche à un timing différent du clic,
