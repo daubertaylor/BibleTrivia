@@ -848,8 +848,9 @@
   /* Médaillon crème-doré (chaud, cohérent avec la palette du jeu) ; l'emoji reste
      TOUJOURS en couleur (plus de grisage : à 0 progression tout paraissait fade).
      Débloqué -> médaillon or plus riche. */
-  .obj-ico{ font-size:1.5rem; width:2.7rem; height:2.7rem; border-radius:50%; display:flex; align-items:center; justify-content:center; flex-shrink:0; background:radial-gradient(circle at 50% 34%, rgba(255,250,238,0.96), rgba(255,232,196,0.92)); box-shadow:inset 0 1px 0 rgba(255,255,255,0.9), inset 0 0 0 1px rgba(255,213,138,0.55), 0 2px 8px rgba(120,80,20,0.18); }
-  .obj.on .obj-ico{ background:radial-gradient(circle at 50% 32%, #FFEBBE, #F6C462); box-shadow:inset 0 1px 0 rgba(255,255,255,0.95), inset 0 0 0 1px rgba(239,173,38,0.6), 0 2px 9px rgba(180,120,30,0.28); }
+  .obj-ico{ width:2.7rem; height:2.7rem; border-radius:50%; display:flex; align-items:center; justify-content:center; flex-shrink:0; color:#9A6620; background:radial-gradient(circle at 50% 34%, rgba(255,250,238,0.96), rgba(255,232,196,0.92)); box-shadow:inset 0 1px 0 rgba(255,255,255,0.9), inset 0 0 0 1px rgba(255,213,138,0.55), 0 2px 8px rgba(120,80,20,0.18); }
+  .obj-ico svg{ width:1.5rem; height:1.5rem; display:block; }
+  .obj.on .obj-ico{ color:#5E3D0C; background:radial-gradient(circle at 50% 32%, #FFEBBE, #F6C462); box-shadow:inset 0 1px 0 rgba(255,255,255,0.95), inset 0 0 0 1px rgba(239,173,38,0.6), 0 2px 9px rgba(180,120,30,0.28); }
   .obj-body{ flex:1; min-width:0; display:flex; flex-direction:column; gap:0.16rem; }
   .obj-top{ display:flex; align-items:center; justify-content:space-between; gap:0.5rem; }
   .obj-top b{ font-family:'Poppins',sans-serif; font-weight:600; font-size:0.9rem; color:var(--ink); }
@@ -875,7 +876,8 @@
 
   .ach-toast{ position:fixed; left:50%; top:calc(env(safe-area-inset-top) + 0.6rem); transform:translate(-50%,-150%); z-index:9000; display:flex; align-items:center; gap:0.6rem; padding:0.58rem 0.95rem; border-radius:14px; background:rgba(30,22,14,0.88); box-shadow:0 10px 30px rgba(0,0,0,0.45), inset 0 1px 0 rgba(255,255,255,0.14); opacity:0; transition:transform 0.42s cubic-bezier(0.2,1.3,0.35,1), opacity 0.35s ease; max-width:88vw; pointer-events:none; }
   .ach-toast.show{ transform:translate(-50%,0); opacity:1; }
-  .ach-toast .at-ico{ font-size:1.7rem; flex-shrink:0; }
+  .ach-toast .at-ico{ flex-shrink:0; display:flex; align-items:center; justify-content:center; color:#F5C453; }
+  .ach-toast .at-ico svg{ width:1.7rem; height:1.7rem; display:block; }
   .ach-toast .at-txt{ display:flex; flex-direction:column; gap:0.04rem; min-width:0; }
   .ach-toast .at-txt b{ font-family:'Poppins',sans-serif; font-weight:700; font-size:0.68rem; letter-spacing:0.06em; text-transform:uppercase; color:#F5C453; }
   .ach-toast .at-txt small{ font-size:0.92rem; color:#fff; font-weight:600; }
@@ -3794,23 +3796,44 @@ function nMastered(list, d){ let n=0; for(let i=0;i<list.length;i++){ if(d.set[l
 const TORAH = ["Genèse","Exode","Lévitique","Nombres","Deutéronome"];
 const GOSPELS = ["Matthieu","Marc","Luc","Jean"];
 const MINOR_PROPHETS = ["Osée","Joël","Amos","Abdias","Jonas","Michée","Nahum","Habacuc","Sophonie","Aggée","Zacharie","Malachie"];
+/* Icônes maison des objectifs : des glyphes SVG monochromes (currentColor),
+   dessinés dans le MÊME langage que le reste de l'app (viewBox 24, trait/plein,
+   or/crème) au lieu des emojis système -> médaillon cohérent, net et premium. */
+const ACH_ICONS = {
+  footprints: `<svg viewBox="0 0 24 24" fill="currentColor"><ellipse cx="7.6" cy="9.2" rx="2.5" ry="3.6"/><circle cx="5.9" cy="4.4" r="1"/><circle cx="7.8" cy="3.8" r="1.05"/><circle cx="9.6" cy="4.5" r="1"/><ellipse cx="16.4" cy="15" rx="2.5" ry="3.6"/><circle cx="14.4" cy="10.3" r="1"/><circle cx="16.2" cy="9.7" r="1.05"/><circle cx="18.1" cy="10.4" r="1"/></svg>`,
+  shield: `<svg viewBox="0 0 24 24" fill="currentColor"><path fill-rule="evenodd" clip-rule="evenodd" d="M12 2.6l7 2.4v5.6c0 4.6-3 8.1-7 9.6-4-1.5-7-5-7-9.6V5L12 2.6Zm0 4.7l1.05 2.15 2.35.34-1.7 1.66.4 2.35L12 12.75l-2.1 1.1.4-2.35-1.7-1.66 2.35-.34L12 7.3Z"/></svg>`,
+  mortarboard: `<svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 3.6L1.8 8.1 12 12.6l8.2-3.6v4.4h1.6V8.1L12 3.6Z"/><path d="M6.4 11.3v3.3c0 1.7 2.6 3 5.6 3s5.6-1.3 5.6-3v-3.3L12 13.9l-5.6-2.6Z"/><circle cx="20.8" cy="14.6" r="1.15"/></svg>`,
+  cup: `<svg viewBox="0 0 24 24" fill="currentColor"><path d="M6.6 3.8h10.8v1.6c0 3.7-2.4 6.6-5.4 6.6s-5.4-2.9-5.4-6.6V3.8Z"/><path d="M6.5 4.6H3.9c0 2.9 1.5 4.6 3.7 4.9" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/><path d="M17.5 4.6h2.6c0 2.9-1.5 4.6-3.7 4.9" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/><rect x="10.9" y="11.6" width="2.2" height="3"/><path d="M8.3 14.4h7.4l1.1 3.1H7.2l1.1-3.1Z"/><rect x="6.6" y="17.8" width="10.8" height="2.4" rx="1.1"/></svg>`,
+  bookStar: `<svg viewBox="0 0 24 24" fill="currentColor"><path d="M7.2 3.8h8c.9 0 1.6.7 1.6 1.6v13.2c0 .9-.7 1.6-1.6 1.6h-8c-.3 0-.5-.2-.5-.5V4.3c0-.28.22-.5.5-.5Z"/><rect x="5.4" y="3.8" width="1.8" height="16.4" rx="0.4" opacity="0.5"/><path d="M19.3 2.1l.62 1.68L21.6 4.4l-1.68.62-.62 1.68-.62-1.68L17 4.4l1.68-.62.62-1.68Z"/></svg>`,
+  compass: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><circle cx="12" cy="12" r="8.6"/><path d="M15.8 8.2l-2.1 5.5-5.5 2.1 2.1-5.5 5.5-2.1Z" fill="currentColor" stroke="none"/><circle cx="12" cy="12" r="1.05" fill="#F6C462" stroke="none"/></svg>`,
+  books: `<svg viewBox="0 0 24 24" fill="currentColor"><rect x="3.6" y="15.8" width="16.8" height="3.4" rx="0.8"/><rect x="4.8" y="11.9" width="14.4" height="3.3" rx="0.8" opacity="0.82"/><rect x="6.6" y="4" width="3.9" height="7.4" rx="0.7"/><rect x="11" y="4" width="3.9" height="7.4" rx="0.7" opacity="0.82"/><rect x="15.2" y="5.4" width="3.4" height="6" rx="0.7" opacity="0.65"/></svg>`,
+  scroll: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M8 4.6h9.4a1.6 1.6 0 0 1 0 3.2H8"/><path d="M8 4.6A1.6 1.6 0 0 0 6.4 6.2v11.6A1.6 1.6 0 0 1 4.8 19.4a1.6 1.6 0 0 1-1.6-1.6"/><path d="M6.4 6.2v11.6a1.6 1.6 0 0 0 1.6 1.6h8.4a1.6 1.6 0 0 0 1.6-1.6V7.8"/><line x1="9.4" y1="10.4" x2="15.4" y2="10.4"/><line x1="9.4" y1="13.2" x2="15.4" y2="13.2"/><line x1="9.4" y1="16" x2="13.2" y2="16"/></svg>`,
+  cross: `<svg viewBox="0 0 24 24" fill="currentColor"><path d="M10.1 2.8h3.8v4.4H18v3.8h-4.1V21h-3.8V11H6V7.2h4.1V2.8Z"/></svg>`,
+  horn: `<svg viewBox="0 0 24 24" fill="currentColor"><rect x="2.1" y="10.2" width="2.5" height="3.6" rx="1.25"/><rect x="4.1" y="10.7" width="9.2" height="2.6" rx="0.6"/><path d="M13 10.2l7.3-3.1c.55-.24 1.2.17 1.2.78v8.26c0 .61-.65 1.02-1.2.78L13 13.8v-3.6Z"/><ellipse cx="20.9" cy="12" rx="1" ry="4.5"/><rect x="6.4" y="7.6" width="1.4" height="3.4" rx="0.55"/><rect x="9.1" y="7.2" width="1.4" height="3.8" rx="0.55"/><rect x="11.8" y="7.6" width="1.4" height="3.4" rx="0.55"/></svg>`,
+  crown: `<svg viewBox="0 0 24 24" fill="currentColor"><path d="M3.2 9L6.6 12.2 12 5.8l5.4 6.4L20.8 9v8.3c0 .8-.6 1.4-1.4 1.4H4.6c-.8 0-1.4-.6-1.4-1.4V9Z"/><circle cx="3.2" cy="7.4" r="1.4"/><circle cx="20.8" cy="7.4" r="1.4"/><circle cx="12" cy="4.4" r="1.5"/></svg>`,
+  flame: `<svg viewBox="0 0 24 24" fill="currentColor"><path d="M13.2 2.2c.3 2.6 1.7 4.1 3.1 5.6 1.5 1.6 2.8 3.3 2.8 5.9A7 7 0 0 1 12 20.9a7 7 0 0 1-7-6.9c0-2.4 1.1-4.1 2.6-5.6.5.9 1.2 1.6 2.1 1.9-.6-2.7.3-5.4 3.5-8.1Z"/><path d="M12 12.4c1.4 1.4 2.2 2.5 2.2 3.9A2.5 2.5 0 0 1 12 18.8a2.5 2.5 0 0 1-2.4-2.5c0-1 .4-1.8 1.1-2.5.25.45.65.75 1.1.85-.3-1.35 0-2.4.2-2.25Z" fill="#F6C462"/></svg>`,
+  bolt: `<svg viewBox="0 0 24 24" fill="currentColor"><path d="M13.2 2L4.6 13.7h5.9L9.4 22 18.6 9.9h-6L13.2 2Z"/></svg>`,
+  medal: `<svg viewBox="0 0 24 24" fill="currentColor"><path d="M8.7 13.4l-2.4 6.9 3.2-1.5 1.3 1.5.9-4.8-3-2.1Z"/><path d="M15.3 13.4l2.4 6.9-3.2-1.5-1.3 1.5-.9-4.8 3-2.1Z"/><path fill-rule="evenodd" clip-rule="evenodd" d="M12 2.2A6.6 6.6 0 1 0 12 15.4 6.6 6.6 0 0 0 12 2.2Zm0 2.7l1.2 2.4 2.6.38-1.9 1.85.45 2.6L12 11.03 9.65 12.3l.45-2.6L8.2 7.85l2.6-.38L12 4.9Z"/></svg>`,
+  calCheck: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><rect x="3.8" y="5" width="16.4" height="15" rx="2.4"/><path d="M3.8 9.4h16.4"/><path d="M8 3.2v3.4M16 3.2v3.4"/><polyline points="8.8 14.6 11 16.8 15.4 12.2"/></svg>`,
+  calStar: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><rect x="3.8" y="5" width="16.4" height="15" rx="2.4"/><path d="M3.8 9.4h16.4"/><path d="M8 3.2v3.4M16 3.2v3.4"/><path d="M12 11.4l1 2.05 2.25.32-1.63 1.6.38 2.24L12 16.98l-2.02 1.06.38-2.24-1.63-1.6 2.27-.32L12 11.4Z" fill="currentColor" stroke="none"/></svg>`
+};
 const ACHIEVEMENTS = [
-  { id:"pas",          ico:"📖", t:"Premiers pas",        d:"Réponds correctement à 10 questions",   max:10,   cur:(p)=>Math.min(p.totalCorrect,10) },
-  { id:"centurion",    ico:"🎯", t:"Centurion",           d:"100 bonnes réponses au total",          max:100,  cur:(p)=>Math.min(p.totalCorrect,100) },
-  { id:"erudit",       ico:"📚", t:"Érudit",              d:"500 bonnes réponses au total",          max:500,  cur:(p)=>Math.min(p.totalCorrect,500) },
-  { id:"millenaire",   ico:"🏆", t:"Millénaire",          d:"1000 bonnes réponses au total",         max:1000, cur:(p)=>Math.min(p.totalCorrect,1000) },
-  { id:"premier-livre",ico:"✨", t:"Premier livre",       d:"Maîtrise ton tout premier livre",       max:1,    cur:(p,d)=>Math.min(d.mastered,1) },
-  { id:"explorateur",  ico:"🧭", t:"Explorateur",         d:"Touche 20 livres différents",           max:20,   cur:(p,d)=>Math.min(d.touched,20) },
-  { id:"bibliophile",  ico:"📚", t:"Bibliophile",         d:"Maîtrise 10 livres",                    max:10,   cur:(p,d)=>Math.min(d.mastered,10) },
-  { id:"pentateuque",  ico:"📜", t:"Pentateuque",         d:"Maîtrise les 5 livres de la Torah",     max:5,    cur:(p,d)=>nMastered(TORAH,d) },
-  { id:"evangiles",    ico:"✝️", t:"Les quatre Évangiles",d:"Maîtrise Matthieu, Marc, Luc et Jean",  max:4,    cur:(p,d)=>nMastered(GOSPELS,d) },
-  { id:"prophetes",    ico:"📯", t:"Petits prophètes",    d:"Maîtrise les 12 petits prophètes",      max:12,   cur:(p,d)=>nMastered(MINOR_PROPHETS,d) },
-  { id:"toute-bible",  ico:"👑", t:"Toute la Bible",      d:"Maîtrise les 66 livres",                max:66,   cur:(p,d)=>d.mastered },
-  { id:"serie10",      ico:"🔥", t:"En feu",              d:"Une série de 10 bonnes réponses",       max:10,   cur:(p)=>Math.min(p.bestStreak,10) },
-  { id:"serie25",      ico:"⚡", t:"Incandescent",        d:"Une série de 25 bonnes réponses",       max:25,   cur:(p)=>Math.min(p.bestStreak,25) },
-  { id:"sans-faute",   ico:"⭐", t:"Sans faute",          d:"Termine une partie sans erreur",        max:1,    cur:(p)=>p.flawless?1:0 },
-  { id:"fidele7",      ico:"📅", t:"Fidèle",              d:"Défi du jour 7 jours d'affilée",        max:7,    cur:(p,d)=>Math.min(d.daily,7) },
-  { id:"assidu",       ico:"🗓️", t:"Assidu",              d:"Défi du jour 30 jours d'affilée",       max:30,   cur:(p,d)=>Math.min(d.daily,30) }
+  { id:"pas",          ico:ACH_ICONS.footprints,  t:"Premiers pas",        d:"Réponds correctement à 10 questions",   max:10,   cur:(p)=>Math.min(p.totalCorrect,10) },
+  { id:"centurion",    ico:ACH_ICONS.shield,      t:"Centurion",           d:"100 bonnes réponses au total",          max:100,  cur:(p)=>Math.min(p.totalCorrect,100) },
+  { id:"erudit",       ico:ACH_ICONS.mortarboard, t:"Érudit",              d:"500 bonnes réponses au total",          max:500,  cur:(p)=>Math.min(p.totalCorrect,500) },
+  { id:"millenaire",   ico:ACH_ICONS.cup,         t:"Millénaire",          d:"1000 bonnes réponses au total",         max:1000, cur:(p)=>Math.min(p.totalCorrect,1000) },
+  { id:"premier-livre",ico:ACH_ICONS.bookStar,    t:"Premier livre",       d:"Maîtrise ton tout premier livre",       max:1,    cur:(p,d)=>Math.min(d.mastered,1) },
+  { id:"explorateur",  ico:ACH_ICONS.compass,     t:"Explorateur",         d:"Touche 20 livres différents",           max:20,   cur:(p,d)=>Math.min(d.touched,20) },
+  { id:"bibliophile",  ico:ACH_ICONS.books,       t:"Bibliophile",         d:"Maîtrise 10 livres",                    max:10,   cur:(p,d)=>Math.min(d.mastered,10) },
+  { id:"pentateuque",  ico:ACH_ICONS.scroll,      t:"Pentateuque",         d:"Maîtrise les 5 livres de la Torah",     max:5,    cur:(p,d)=>nMastered(TORAH,d) },
+  { id:"evangiles",    ico:ACH_ICONS.cross,       t:"Les quatre Évangiles",d:"Maîtrise Matthieu, Marc, Luc et Jean",  max:4,    cur:(p,d)=>nMastered(GOSPELS,d) },
+  { id:"prophetes",    ico:ACH_ICONS.horn,        t:"Petits prophètes",    d:"Maîtrise les 12 petits prophètes",      max:12,   cur:(p,d)=>nMastered(MINOR_PROPHETS,d) },
+  { id:"toute-bible",  ico:ACH_ICONS.crown,       t:"Toute la Bible",      d:"Maîtrise les 66 livres",                max:66,   cur:(p,d)=>d.mastered },
+  { id:"serie10",      ico:ACH_ICONS.flame,       t:"En feu",              d:"Une série de 10 bonnes réponses",       max:10,   cur:(p)=>Math.min(p.bestStreak,10) },
+  { id:"serie25",      ico:ACH_ICONS.bolt,        t:"Incandescent",        d:"Une série de 25 bonnes réponses",       max:25,   cur:(p)=>Math.min(p.bestStreak,25) },
+  { id:"sans-faute",   ico:ACH_ICONS.medal,       t:"Sans faute",          d:"Termine une partie sans erreur",        max:1,    cur:(p)=>p.flawless?1:0 },
+  { id:"fidele7",      ico:ACH_ICONS.calCheck,    t:"Fidèle",              d:"Défi du jour 7 jours d'affilée",        max:7,    cur:(p,d)=>Math.min(d.daily,7) },
+  { id:"assidu",       ico:ACH_ICONS.calStar,     t:"Assidu",              d:"Défi du jour 30 jours d'affilée",       max:30,   cur:(p,d)=>Math.min(d.daily,30) }
 ];
 function achDerived(p){ const d = progressDerived(p); try { d.daily = loadDaily().streak||0; } catch(e){ d.daily=0; } return d; }
 let achToastQueue = [], achToastBusy = false;
