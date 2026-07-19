@@ -161,6 +161,17 @@
   .mode-text{ display:flex; flex-direction:column; gap:0.2rem; }
   .mode-title{ font-family:'Poppins',sans-serif; font-weight:600; font-size:1rem; color:var(--ink); }
   .mode-desc{ font-size:0.81rem; color:var(--ink-soft); line-height:1.4; }
+  /* Tailles selon l'usage (accueil réordonné) : VEDETTE (.lg) pour le mode le plus
+     joué, COMPACT (.sm) pour les moins joués, taille normale pour le 2ᵉ -> une
+     hiérarchie claire qui libère de l'espace et fait un écran plus net. */
+  .mode-card.lg, .daily-card.lg{ padding:clamp(1.05rem, 2.1vh, 1.42rem) 1.05rem; }
+  .mode-card.lg .mode-icon, .daily-card.lg .dc-ico{ width:3.55rem; height:3.55rem; padding:0.8rem; }
+  .mode-card.lg .mode-title, .daily-card.lg .dc-txt b{ font-size:1.14rem; }
+  .mode-card.lg .mode-desc, .daily-card.lg .dc-txt small{ font-size:0.86rem; }
+  .mode-card.sm, .daily-card.sm{ padding:0.6rem 0.85rem; gap:0.62rem; margin-bottom:clamp(0.38rem, 0.85vh, 0.6rem); }
+  .mode-card.sm .mode-icon, .daily-card.sm .dc-ico{ width:2.5rem; height:2.5rem; padding:0.5rem; border-radius:12px; }
+  .mode-card.sm .mode-title, .daily-card.sm .dc-txt b{ font-size:0.92rem; }
+  .mode-card.sm .mode-desc, .daily-card.sm .dc-txt small{ font-size:0.75rem; }
 
   /* ---------- Cards / setup ---------- */
   .card{ background:var(--surface); border:1px solid var(--border); border-radius:16px; padding:1.1rem 1rem; margin-bottom:0.95rem; }
@@ -840,40 +851,46 @@
   .parcours-h{ display:flex; align-items:baseline; justify-content:space-between; font-family:'Poppins',sans-serif; font-size:0.98rem; font-weight:700; color:#fff; text-shadow:0 1px 6px rgba(0,0,0,0.45); margin:1.2rem 0.2rem 0.55rem; }
   .parcours-h small{ font-weight:600; font-size:0.82rem; opacity:0.92; }
 
-  /* Objectifs : VITRINE DE MÉDAILLONS (grille compacte dans UNE carte de verre)
-     au lieu d'une longue liste de 16 cartes -> « Mon parcours » respire, comme
-     une collection de trophées. Chaque médaillon a un anneau de progression ;
-     débloqué = anneau vert + coche. */
-  .ach-card{ padding:0.95rem 0.75rem 0.8rem; }
-  .ach-grid{ display:grid; grid-template-columns:repeat(4, 1fr); gap:0.9rem 0.35rem; }
-  .ach{ display:flex; flex-direction:column; align-items:center; text-align:center; gap:0.34rem; }
-  .ach-ring{ position:relative; width:3.4rem; height:3.4rem; border-radius:50%; padding:2.5px; box-sizing:border-box; display:flex; align-items:center; justify-content:center; background:conic-gradient(#EFAD26 calc(var(--p,0)*1%), rgba(120,90,50,0.16) 0); }
-  .ach.on .ach-ring{ background:#37B06B; }
-  .ach-ico{ width:100%; height:100%; border-radius:50%; display:flex; align-items:center; justify-content:center; color:#9A6620; background:radial-gradient(circle at 50% 34%, rgba(255,250,238,0.98), rgba(255,232,196,0.94)); box-shadow:inset 0 1px 0 rgba(255,255,255,0.9), inset 0 0 0 1px rgba(255,213,138,0.5); }
-  .ach.on .ach-ico{ color:#5E3D0C; background:radial-gradient(circle at 50% 32%, #FFEBBE, #F6C462); box-shadow:inset 0 1px 0 rgba(255,255,255,0.95), inset 0 0 0 1px rgba(239,173,38,0.6); }
-  .ach-ico svg{ width:1.48rem; height:1.48rem; display:block; }
-  .ach-check{ position:absolute; right:-2px; bottom:-2px; width:1.15rem; height:1.15rem; border-radius:50%; background:#1f7a4d; color:#fff; display:flex; align-items:center; justify-content:center; box-shadow:0 0 0 2px rgba(255,252,245,0.92), 0 1px 3px rgba(0,0,0,0.32); }
-  .ach-check svg{ width:0.76rem; height:0.76rem; }
+  /* Objectifs : VITRINE (grille compacte dans UNE carte de verre) au lieu d'une
+     longue liste de 16 cartes -> « Mon parcours » respire. Chaque objectif est
+     une TUILE COLORÉE à glyphe blanc, exactement comme les icônes de modes du
+     jeu (coral/or/bleu/vert selon le thème) -> cohérent avec le reste, fini
+     l'or partout. Débloqué = coche verte. */
+  .ach-card{ padding:0.95rem 0.75rem 0.85rem; }
+  .ach-grid{ display:grid; grid-template-columns:repeat(4, 1fr); gap:0.95rem 0.35rem; }
+  .ach{ display:flex; flex-direction:column; align-items:center; text-align:center; gap:0.36rem; }
+  .ach-tile{ position:relative; width:2.9rem; height:2.9rem; border-radius:14px; display:flex; align-items:center; justify-content:center; color:#fff; box-shadow:inset 0 1.5px 0 rgba(255,255,255,0.6), inset 0 0 0 1.5px rgba(255,255,255,0.34), 0 4px 11px rgba(15,12,10,0.24); }
+  .ach-tile svg{ width:1.6rem; height:1.6rem; display:block; }
+  .ach.off .ach-tile{ opacity:0.9; }
+  .ach-tile.c-coral{ background:linear-gradient(150deg, #FF7A52, #EE4523); }
+  .ach-tile.c-gold{ background:linear-gradient(150deg, #FFC64F, #F09A18); }
+  .ach-tile.c-blue{ background:linear-gradient(150deg, #4DA8FF, #2E7FE8); }
+  .ach-tile.c-green{ background:linear-gradient(150deg, #58C08A, #2E9968); }
+  .ach-check{ position:absolute; right:-4px; bottom:-4px; width:1.18rem; height:1.18rem; border-radius:50%; background:var(--green); color:#fff; display:flex; align-items:center; justify-content:center; box-shadow:0 0 0 2px rgba(255,255,255,0.92), 0 1px 3px rgba(0,0,0,0.32); }
+  .ach-check svg{ width:0.74rem; height:0.74rem; }
   .ach-nm{ font-family:'Poppins',sans-serif; font-weight:600; font-size:0.66rem; color:var(--ink); line-height:1.16; display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical; overflow:hidden; min-height:1.55rem; }
   .ach-prog{ font-size:0.6rem; font-weight:700; color:var(--ink-soft); font-variant-numeric:tabular-nums; letter-spacing:0.01em; }
   .ach.on .ach-prog{ color:#1f7a4d; }
 
-  .bk-grid{ display:grid; grid-template-columns:repeat(auto-fill, minmax(6.3rem, 1fr)); gap:0.42rem; }
-  /* Tuiles livres : verre NET dès le départ (plus de grisage des non-touchés qui
-     rendait toute la grille terne). L'or ne sert qu'à distinguer commencé/maîtrisé. */
-  .bk{ display:flex; flex-direction:column; gap:0.32rem; padding:0.44rem 0.54rem 0.42rem; border-radius:11px; --glass-tint: rgba(255,255,255,0.42); border:1px solid rgba(255,255,255,0.5); }
-  .bk.started{ --glass-tint: rgba(255,249,234,0.56); border-color:rgba(239,173,38,0.42); }
-  .bk.mastered{ --glass-tint: rgba(255,240,214,0.72); border-color:rgba(239,173,38,0.66); }
-  .bk-nm{ font-size:0.74rem; font-weight:600; color:var(--ink); white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
-  .bk.mastered .bk-nm{ color:#7a4e04; font-weight:700; }
-  .bk-bar{ height:4px; border-radius:99px; background:rgba(120,90,50,0.18); overflow:hidden; }
-  .bk-bar i{ display:block; height:100%; border-radius:99px; background:linear-gradient(90deg,#FFC64F,#EF9E1A); }
-  .bk.mastered .bk-bar i{ background:linear-gradient(90deg,#37B06B,#1f7a4d); }
+  /* Livres : CHIPS compacts (nom seul, sans barre) -> testaments beaucoup plus
+     courts et nets. L'état se lit à la couleur : neutre (non touché), or (commencé),
+     vert (maîtrisé) — cohérent avec le reste du jeu. */
+  .bk-grid{ display:grid; grid-template-columns:repeat(auto-fill, minmax(4.7rem, 1fr)); gap:0.36rem; }
+  .bk{ padding:0.4rem 0.45rem; border-radius:9px; text-align:center; --glass-tint: rgba(255,255,255,0.4); border:1px solid rgba(255,255,255,0.48); }
+  .bk.started{ --glass-tint: rgba(255,247,225,0.56); border-color:rgba(239,173,38,0.5); }
+  .bk.mastered{ --glass-tint: rgba(216,244,228,0.66); border-color:rgba(47,169,110,0.55); }
+  .bk-nm{ font-size:0.7rem; font-weight:600; color:var(--ink); white-space:nowrap; overflow:hidden; text-overflow:ellipsis; display:block; }
+  .bk.started .bk-nm{ color:#8a5a10; font-weight:700; }
+  .bk.mastered .bk-nm{ color:#1f7a4d; font-weight:700; }
 
   .ach-toast{ position:fixed; left:50%; top:calc(env(safe-area-inset-top) + 0.6rem); transform:translate(-50%,-150%); z-index:9000; display:flex; align-items:center; gap:0.6rem; padding:0.58rem 0.95rem; border-radius:14px; background:rgba(30,22,14,0.88); box-shadow:0 10px 30px rgba(0,0,0,0.45), inset 0 1px 0 rgba(255,255,255,0.14); opacity:0; transition:transform 0.42s cubic-bezier(0.2,1.3,0.35,1), opacity 0.35s ease; max-width:88vw; pointer-events:none; }
   .ach-toast.show{ transform:translate(-50%,0); opacity:1; }
-  .ach-toast .at-ico{ flex-shrink:0; display:flex; align-items:center; justify-content:center; color:#F5C453; }
-  .ach-toast .at-ico svg{ width:1.7rem; height:1.7rem; display:block; }
+  .ach-toast .at-tile{ flex-shrink:0; width:2.2rem; height:2.2rem; border-radius:11px; display:flex; align-items:center; justify-content:center; color:#fff; box-shadow:inset 0 1px 0 rgba(255,255,255,0.5), 0 2px 6px rgba(0,0,0,0.3); }
+  .ach-toast .at-tile svg{ width:1.28rem; height:1.28rem; display:block; }
+  .at-tile.c-coral{ background:linear-gradient(150deg,#FF7A52,#EE4523); }
+  .at-tile.c-gold{ background:linear-gradient(150deg,#FFC64F,#F09A18); }
+  .at-tile.c-blue{ background:linear-gradient(150deg,#4DA8FF,#2E7FE8); }
+  .at-tile.c-green{ background:linear-gradient(150deg,#58C08A,#2E9968); }
   .ach-toast .at-txt{ display:flex; flex-direction:column; gap:0.04rem; min-width:0; }
   .ach-toast .at-txt b{ font-family:'Poppins',sans-serif; font-weight:700; font-size:0.68rem; letter-spacing:0.06em; text-transform:uppercase; color:#F5C453; }
   .ach-toast .at-txt small{ font-size:0.92rem; color:#fff; font-weight:600; }
@@ -2950,6 +2967,7 @@ function openOnline(){
     showModal({ title:"Hors connexion", message:"Le mode en ligne nécessite Internet. Les modes Solo et Groupe restent jouables sans connexion.", okLabel:"Compris", cancelLabel:"Fermer" });
     return;
   }
+  bumpModeUse("online");
   if(!profile.name){ state.screen="online-name"; render(); return; }
   if(!onlineConfigured()){ state.screen="online"; render(); return; }
   initSupa(); joinLobby();
@@ -3690,7 +3708,7 @@ function shareScore(kind){
 }
 
 /* ===================== NAVIGATION ===================== */
-function selectMode(m){ state.mode = m; state.screen = "setup"; render(); }
+function selectMode(m){ bumpModeUse(m); state.mode = m; state.screen = "setup"; render(); }
 function goToModeSelect(){ state.screen = "mode"; render(); }
 
 /* ===================== SETUP (group) ===================== */
@@ -3713,6 +3731,9 @@ function validTeams(){ return state.teams.filter(t=>t.name.trim().length>0).map(
 /* ===================== STATISTIQUES & MÉMOIRE DES QUESTIONS ===================== */
 function loadStats(){ try { const s = JSON.parse(localStorage.getItem("bt_stats")||"{}"); return { bestScore:+s.bestScore||0, bestPct:+s.bestPct||0, games:+s.games||0 }; } catch(e){ return { bestScore:0, bestPct:0, games:0 }; } }
 function saveStats(st){ try { localStorage.setItem("bt_stats", JSON.stringify(st)); } catch(e){} }
+/* Usage par mode (accueil réordonné : le plus joué en premier, plus grand). */
+function loadModeUse(){ try { return JSON.parse(localStorage.getItem("bt_modeuse")||"{}") || {}; } catch(e){ return {}; } }
+function bumpModeUse(m){ try { const u = loadModeUse(); u[m] = (u[m]||0) + 1; localStorage.setItem("bt_modeuse", JSON.stringify(u)); } catch(e){} }
 function qKey(q){ return (q.q||"").toLowerCase().replace(/\s+/g," ").trim(); }
 function loadSeen(){ try { return new Set(JSON.parse(localStorage.getItem("bt_seen")||"[]")); } catch(e){ return new Set(); } }
 function saveSeen(set){ try { localStorage.setItem("bt_seen", JSON.stringify([...set].slice(-500))); } catch(e){} }
@@ -3801,35 +3822,35 @@ const ACH_ICONS = {
   mortarboard: `<svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 3.6L1.8 8.1 12 12.6l8.2-3.6v4.4h1.6V8.1L12 3.6Z"/><path d="M6.4 11.3v3.3c0 1.7 2.6 3 5.6 3s5.6-1.3 5.6-3v-3.3L12 13.9l-5.6-2.6Z"/><circle cx="20.8" cy="14.6" r="1.15"/></svg>`,
   cup: `<svg viewBox="0 0 24 24" fill="currentColor"><path d="M6.6 3.8h10.8v1.6c0 3.7-2.4 6.6-5.4 6.6s-5.4-2.9-5.4-6.6V3.8Z"/><path d="M6.5 4.6H3.9c0 2.9 1.5 4.6 3.7 4.9" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/><path d="M17.5 4.6h2.6c0 2.9-1.5 4.6-3.7 4.9" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/><rect x="10.9" y="11.6" width="2.2" height="3"/><path d="M8.3 14.4h7.4l1.1 3.1H7.2l1.1-3.1Z"/><rect x="6.6" y="17.8" width="10.8" height="2.4" rx="1.1"/></svg>`,
   bookStar: `<svg viewBox="0 0 24 24" fill="currentColor"><path d="M7.2 3.8h8c.9 0 1.6.7 1.6 1.6v13.2c0 .9-.7 1.6-1.6 1.6h-8c-.3 0-.5-.2-.5-.5V4.3c0-.28.22-.5.5-.5Z"/><rect x="5.4" y="3.8" width="1.8" height="16.4" rx="0.4" opacity="0.5"/><path d="M19.3 2.1l.62 1.68L21.6 4.4l-1.68.62-.62 1.68-.62-1.68L17 4.4l1.68-.62.62-1.68Z"/></svg>`,
-  compass: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><circle cx="12" cy="12" r="8.6"/><path d="M15.8 8.2l-2.1 5.5-5.5 2.1 2.1-5.5 5.5-2.1Z" fill="currentColor" stroke="none"/><circle cx="12" cy="12" r="1.05" fill="#F6C462" stroke="none"/></svg>`,
+  compass: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><circle cx="12" cy="12" r="8.6"/><path d="M15.8 8.2l-2.1 5.5-5.5 2.1 2.1-5.5 5.5-2.1Z" fill="currentColor" stroke="none"/><circle cx="12" cy="12" r="1.05" fill="rgba(255,255,255,0.92)" stroke="none"/></svg>`,
   books: `<svg viewBox="0 0 24 24" fill="currentColor"><rect x="3.6" y="15.8" width="16.8" height="3.4" rx="0.8"/><rect x="4.8" y="11.9" width="14.4" height="3.3" rx="0.8" opacity="0.82"/><rect x="6.6" y="4" width="3.9" height="7.4" rx="0.7"/><rect x="11" y="4" width="3.9" height="7.4" rx="0.7" opacity="0.82"/><rect x="15.2" y="5.4" width="3.4" height="6" rx="0.7" opacity="0.65"/></svg>`,
   scroll: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M8 4.6h9.4a1.6 1.6 0 0 1 0 3.2H8"/><path d="M8 4.6A1.6 1.6 0 0 0 6.4 6.2v11.6A1.6 1.6 0 0 1 4.8 19.4a1.6 1.6 0 0 1-1.6-1.6"/><path d="M6.4 6.2v11.6a1.6 1.6 0 0 0 1.6 1.6h8.4a1.6 1.6 0 0 0 1.6-1.6V7.8"/><line x1="9.4" y1="10.4" x2="15.4" y2="10.4"/><line x1="9.4" y1="13.2" x2="15.4" y2="13.2"/><line x1="9.4" y1="16" x2="13.2" y2="16"/></svg>`,
   cross: `<svg viewBox="0 0 24 24" fill="currentColor"><path d="M10.1 2.8h3.8v4.4H18v3.8h-4.1V21h-3.8V11H6V7.2h4.1V2.8Z"/></svg>`,
   horn: `<svg viewBox="0 0 24 24" fill="currentColor"><rect x="2.1" y="10.2" width="2.5" height="3.6" rx="1.25"/><rect x="4.1" y="10.7" width="9.2" height="2.6" rx="0.6"/><path d="M13 10.2l7.3-3.1c.55-.24 1.2.17 1.2.78v8.26c0 .61-.65 1.02-1.2.78L13 13.8v-3.6Z"/><ellipse cx="20.9" cy="12" rx="1" ry="4.5"/><rect x="6.4" y="7.6" width="1.4" height="3.4" rx="0.55"/><rect x="9.1" y="7.2" width="1.4" height="3.8" rx="0.55"/><rect x="11.8" y="7.6" width="1.4" height="3.4" rx="0.55"/></svg>`,
   crown: `<svg viewBox="0 0 24 24" fill="currentColor"><path d="M3.2 9L6.6 12.2 12 5.8l5.4 6.4L20.8 9v8.3c0 .8-.6 1.4-1.4 1.4H4.6c-.8 0-1.4-.6-1.4-1.4V9Z"/><circle cx="3.2" cy="7.4" r="1.4"/><circle cx="20.8" cy="7.4" r="1.4"/><circle cx="12" cy="4.4" r="1.5"/></svg>`,
-  flame: `<svg viewBox="0 0 24 24" fill="currentColor"><path d="M13.2 2.2c.3 2.6 1.7 4.1 3.1 5.6 1.5 1.6 2.8 3.3 2.8 5.9A7 7 0 0 1 12 20.9a7 7 0 0 1-7-6.9c0-2.4 1.1-4.1 2.6-5.6.5.9 1.2 1.6 2.1 1.9-.6-2.7.3-5.4 3.5-8.1Z"/><path d="M12 12.4c1.4 1.4 2.2 2.5 2.2 3.9A2.5 2.5 0 0 1 12 18.8a2.5 2.5 0 0 1-2.4-2.5c0-1 .4-1.8 1.1-2.5.25.45.65.75 1.1.85-.3-1.35 0-2.4.2-2.25Z" fill="#F6C462"/></svg>`,
+  flame: `<svg viewBox="0 0 24 24" fill="currentColor"><path d="M13.2 2.2c.3 2.6 1.7 4.1 3.1 5.6 1.5 1.6 2.8 3.3 2.8 5.9A7 7 0 0 1 12 20.9a7 7 0 0 1-7-6.9c0-2.4 1.1-4.1 2.6-5.6.5.9 1.2 1.6 2.1 1.9-.6-2.7.3-5.4 3.5-8.1Z"/><path d="M12 12.4c1.4 1.4 2.2 2.5 2.2 3.9A2.5 2.5 0 0 1 12 18.8a2.5 2.5 0 0 1-2.4-2.5c0-1 .4-1.8 1.1-2.5.25.45.65.75 1.1.85-.3-1.35 0-2.4.2-2.25Z" fill="rgba(255,255,255,0.45)"/></svg>`,
   bolt: `<svg viewBox="0 0 24 24" fill="currentColor"><path d="M13.2 2L4.6 13.7h5.9L9.4 22 18.6 9.9h-6L13.2 2Z"/></svg>`,
   medal: `<svg viewBox="0 0 24 24" fill="currentColor"><path d="M8.7 13.4l-2.4 6.9 3.2-1.5 1.3 1.5.9-4.8-3-2.1Z"/><path d="M15.3 13.4l2.4 6.9-3.2-1.5-1.3 1.5-.9-4.8 3-2.1Z"/><path fill-rule="evenodd" clip-rule="evenodd" d="M12 2.2A6.6 6.6 0 1 0 12 15.4 6.6 6.6 0 0 0 12 2.2Zm0 2.7l1.2 2.4 2.6.38-1.9 1.85.45 2.6L12 11.03 9.65 12.3l.45-2.6L8.2 7.85l2.6-.38L12 4.9Z"/></svg>`,
   calCheck: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><rect x="3.8" y="5" width="16.4" height="15" rx="2.4"/><path d="M3.8 9.4h16.4"/><path d="M8 3.2v3.4M16 3.2v3.4"/><polyline points="8.8 14.6 11 16.8 15.4 12.2"/></svg>`,
   calStar: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><rect x="3.8" y="5" width="16.4" height="15" rx="2.4"/><path d="M3.8 9.4h16.4"/><path d="M8 3.2v3.4M16 3.2v3.4"/><path d="M12 11.4l1 2.05 2.25.32-1.63 1.6.38 2.24L12 16.98l-2.02 1.06.38-2.24-1.63-1.6 2.27-.32L12 11.4Z" fill="currentColor" stroke="none"/></svg>`
 };
 const ACHIEVEMENTS = [
-  { id:"pas",          ico:ACH_ICONS.footprints,  t:"Premiers pas",        d:"Réponds correctement à 10 questions",   max:10,   cur:(p)=>Math.min(p.totalCorrect,10) },
-  { id:"centurion",    ico:ACH_ICONS.shield,      t:"Centurion",           d:"100 bonnes réponses au total",          max:100,  cur:(p)=>Math.min(p.totalCorrect,100) },
-  { id:"erudit",       ico:ACH_ICONS.mortarboard, t:"Érudit",              d:"500 bonnes réponses au total",          max:500,  cur:(p)=>Math.min(p.totalCorrect,500) },
-  { id:"millenaire",   ico:ACH_ICONS.cup,         t:"Millénaire",          d:"1000 bonnes réponses au total",         max:1000, cur:(p)=>Math.min(p.totalCorrect,1000) },
-  { id:"premier-livre",ico:ACH_ICONS.bookStar,    t:"Premier livre",       d:"Maîtrise ton tout premier livre",       max:1,    cur:(p,d)=>Math.min(d.mastered,1) },
-  { id:"explorateur",  ico:ACH_ICONS.compass,     t:"Explorateur",         d:"Touche 20 livres différents",           max:20,   cur:(p,d)=>Math.min(d.touched,20) },
-  { id:"bibliophile",  ico:ACH_ICONS.books,       t:"Bibliophile",         d:"Maîtrise 10 livres",                    max:10,   cur:(p,d)=>Math.min(d.mastered,10) },
-  { id:"pentateuque",  ico:ACH_ICONS.scroll,      t:"Pentateuque",         d:"Maîtrise les 5 livres de la Torah",     max:5,    cur:(p,d)=>nMastered(TORAH,d) },
-  { id:"evangiles",    ico:ACH_ICONS.cross,       t:"Les quatre Évangiles",d:"Maîtrise Matthieu, Marc, Luc et Jean",  max:4,    cur:(p,d)=>nMastered(GOSPELS,d) },
-  { id:"prophetes",    ico:ACH_ICONS.horn,        t:"Petits prophètes",    d:"Maîtrise les 12 petits prophètes",      max:12,   cur:(p,d)=>nMastered(MINOR_PROPHETS,d) },
-  { id:"toute-bible",  ico:ACH_ICONS.crown,       t:"Toute la Bible",      d:"Maîtrise les 66 livres",                max:66,   cur:(p,d)=>d.mastered },
-  { id:"serie10",      ico:ACH_ICONS.flame,       t:"En feu",              d:"Une série de 10 bonnes réponses",       max:10,   cur:(p)=>Math.min(p.bestStreak,10) },
-  { id:"serie25",      ico:ACH_ICONS.bolt,        t:"Incandescent",        d:"Une série de 25 bonnes réponses",       max:25,   cur:(p)=>Math.min(p.bestStreak,25) },
-  { id:"sans-faute",   ico:ACH_ICONS.medal,       t:"Sans faute",          d:"Termine une partie sans erreur",        max:1,    cur:(p)=>p.flawless?1:0 },
-  { id:"fidele7",      ico:ACH_ICONS.calCheck,    t:"Fidèle",              d:"Défi du jour 7 jours d'affilée",        max:7,    cur:(p,d)=>Math.min(d.daily,7) },
-  { id:"assidu",       ico:ACH_ICONS.calStar,     t:"Assidu",              d:"Défi du jour 30 jours d'affilée",       max:30,   cur:(p,d)=>Math.min(d.daily,30) }
+  { id:"pas",          ico:ACH_ICONS.footprints,  clr:"coral", t:"Premiers pas",        d:"Réponds correctement à 10 questions",   max:10,   cur:(p)=>Math.min(p.totalCorrect,10) },
+  { id:"centurion",    ico:ACH_ICONS.shield,      clr:"coral", t:"Centurion",           d:"100 bonnes réponses au total",          max:100,  cur:(p)=>Math.min(p.totalCorrect,100) },
+  { id:"erudit",       ico:ACH_ICONS.mortarboard, clr:"coral", t:"Érudit",              d:"500 bonnes réponses au total",          max:500,  cur:(p)=>Math.min(p.totalCorrect,500) },
+  { id:"millenaire",   ico:ACH_ICONS.cup,         clr:"coral", t:"Millénaire",          d:"1000 bonnes réponses au total",         max:1000, cur:(p)=>Math.min(p.totalCorrect,1000) },
+  { id:"premier-livre",ico:ACH_ICONS.bookStar,    clr:"gold",  t:"Premier livre",       d:"Maîtrise ton tout premier livre",       max:1,    cur:(p,d)=>Math.min(d.mastered,1) },
+  { id:"explorateur",  ico:ACH_ICONS.compass,     clr:"blue",  t:"Explorateur",         d:"Touche 20 livres différents",           max:20,   cur:(p,d)=>Math.min(d.touched,20) },
+  { id:"bibliophile",  ico:ACH_ICONS.books,       clr:"gold",  t:"Bibliophile",         d:"Maîtrise 10 livres",                    max:10,   cur:(p,d)=>Math.min(d.mastered,10) },
+  { id:"pentateuque",  ico:ACH_ICONS.scroll,      clr:"gold",  t:"Pentateuque",         d:"Maîtrise les 5 livres de la Torah",     max:5,    cur:(p,d)=>nMastered(TORAH,d) },
+  { id:"evangiles",    ico:ACH_ICONS.cross,       clr:"gold",  t:"Les quatre Évangiles",d:"Maîtrise Matthieu, Marc, Luc et Jean",  max:4,    cur:(p,d)=>nMastered(GOSPELS,d) },
+  { id:"prophetes",    ico:ACH_ICONS.horn,        clr:"gold",  t:"Petits prophètes",    d:"Maîtrise les 12 petits prophètes",      max:12,   cur:(p,d)=>nMastered(MINOR_PROPHETS,d) },
+  { id:"toute-bible",  ico:ACH_ICONS.crown,       clr:"gold",  t:"Toute la Bible",      d:"Maîtrise les 66 livres",                max:66,   cur:(p,d)=>d.mastered },
+  { id:"serie10",      ico:ACH_ICONS.flame,       clr:"coral", t:"En feu",              d:"Une série de 10 bonnes réponses",       max:10,   cur:(p)=>Math.min(p.bestStreak,10) },
+  { id:"serie25",      ico:ACH_ICONS.bolt,        clr:"coral", t:"Incandescent",        d:"Une série de 25 bonnes réponses",       max:25,   cur:(p)=>Math.min(p.bestStreak,25) },
+  { id:"sans-faute",   ico:ACH_ICONS.medal,       clr:"green", t:"Sans faute",          d:"Termine une partie sans erreur",        max:1,    cur:(p)=>p.flawless?1:0 },
+  { id:"fidele7",      ico:ACH_ICONS.calCheck,    clr:"green", t:"Fidèle",              d:"Défi du jour 7 jours d'affilée",        max:7,    cur:(p,d)=>Math.min(d.daily,7) },
+  { id:"assidu",       ico:ACH_ICONS.calStar,     clr:"green", t:"Assidu",              d:"Défi du jour 30 jours d'affilée",       max:30,   cur:(p,d)=>Math.min(d.daily,30) }
 ];
 function achDerived(p){ const d = progressDerived(p); try { d.daily = loadDaily().streak||0; } catch(e){ d.daily=0; } return d; }
 let achToastQueue = [], achToastBusy = false;
@@ -3859,7 +3880,7 @@ function pumpAchToast(){
   const a = achToastQueue.shift();
   const el = document.createElement("div");
   el.className = "ach-toast";
-  el.innerHTML = `<span class="at-ico">${a.ico}</span><span class="at-txt"><b>Objectif débloqué</b><small>${escapeHtml(a.t)}</small></span>`;
+  el.innerHTML = `<span class="at-tile c-${a.clr}">${a.ico}</span><span class="at-txt"><b>Objectif débloqué</b><small>${escapeHtml(a.t)}</small></span>`;
   document.body.appendChild(el);
   requestAnimationFrame(()=>{ el.classList.add("show"); });
   setTimeout(()=>{ el.classList.remove("show"); setTimeout(()=>{ if(el.parentNode) el.remove(); achToastBusy=false; pumpAchToast(); }, 380); }, 2500);
@@ -3870,18 +3891,19 @@ function renderParcours(){
   const el = document.createElement("div"); el.className = "screen";
   const p = loadProgress(), d = achDerived(p);
   const unlocked = ACHIEVEMENTS.filter(a=>p.ach[a.id]).length;
+  const BK_SHORT = { "Deutéronome":"Deutér.", "Cantique des cantiques":"Cantiques", "1 Thessaloniciens":"1 Thess.", "2 Thessaloniciens":"2 Thess.", "1 Corinthiens":"1 Cor.", "2 Corinthiens":"2 Cor.", "1 Chroniques":"1 Chron.", "2 Chroniques":"2 Chron.", "Lamentations":"Lament." };
   const bookTile = (name)=>{
-    const c = p.books[name]||0, tgt = bookTarget(name), pct = Math.max(0, Math.min(100, Math.round((c/tgt)*100)));
+    const c = p.books[name]||0, tgt = bookTarget(name);
     const cls = c>=tgt ? "mastered" : (c>0 ? "started" : "");
-    return `<div class="bk ${cls}"><span class="bk-nm">${escapeHtml(name)}</span><span class="bk-bar"><i style="width:${pct}%"></i></span></div>`;
+    return `<div class="bk ${cls}"><span class="bk-nm">${escapeHtml(BK_SHORT[name]||name)}</span></div>`;
   };
   const at = BIBLE_BOOKS.slice(0, BIBLE_AT_COUNT), nt = BIBLE_BOOKS.slice(BIBLE_AT_COUNT);
   const CHECK_SVG = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3.2" stroke-linecap="round" stroke-linejoin="round"><polyline points="5 12.5 10 17.5 19 7"/></svg>`;
   const achBadge = (a)=>{
-    const on = !!p.ach[a.id], cur = a.cur(p,d), pct = Math.max(0, Math.min(100, Math.round((cur/a.max)*100)));
-    return `<div class="ach ${on?'on':''}" style="--p:${pct}">
-      <span class="ach-ring">
-        <span class="ach-ico">${a.ico}</span>
+    const on = !!p.ach[a.id], cur = a.cur(p,d);
+    return `<div class="ach ${on?'on':'off'}">
+      <span class="ach-tile c-${a.clr}">
+        ${a.ico}
         ${on?`<span class="ach-check">${CHECK_SVG}</span>`:``}
       </span>
       <span class="ach-nm">${escapeHtml(a.t)}</span>
@@ -3927,6 +3949,7 @@ function recordDailyResult(){
   checkAchievements({ toast:true }); // objectifs de régularité (Fidèle, Assidu)
 }
 function startDailyChallenge(){
+  bumpModeUse("daily");
   state.mode = "solo"; state.daily = true; state.revision = false;
   state.soloScore = 0; state.soloStreak = 0; state.soloBestStreak = 0; state.soloCorrect = 0; displayedSoloScore = 0; state.soloMissed = []; state.soloIsRecord = false;
   state.questions = seededDeck(dailySeedToday(), "courte", "tout");
@@ -4281,40 +4304,24 @@ function renderModeSelect(){
       </div>
       <h1 class="hero-title">BibleTrivia</h1>
     </div>
-    <button class="mode-card" style="--i:0" onclick="selectMode('group')">
-      <span class="mode-icon group">${ICONS.users}</span>
-      <span class="mode-text">
-        <span class="mode-title">Mode Groupe</span>
-        <span class="mode-desc">Église, jeunesse, en équipes face à face</span>
-      </span>
-      <span class="chev">${ICONS.chevronRight}</span>
-    </button>
-    <button class="mode-card" style="--i:1" onclick="selectMode('solo')">
-      <span class="mode-icon solo">${ICONS.user}</span>
-      <span class="mode-text">
-        <span class="mode-title">Mode Solo</span>
-        <span class="mode-desc">Teste tes connaissances à ton rythme</span>
-      </span>
-      <span class="chev">${ICONS.chevronRight}</span>
-    </button>
-    <button class="mode-card" style="--i:2" onclick="openOnline()">
-      <span class="mode-icon online">${ICONS.bolt}</span>
-      <span class="mode-text">
-        <span class="mode-title">Jouer en ligne</span>
-        <span class="mode-desc">Défie tes amis en duel, en direct</span>
-      </span>
-      <span class="chev">${ICONS.chevronRight}</span>
-    </button>
-    ${(()=>{ const d = loadDaily(); const done = dailyDoneToday(); const sk = dailyStreakShown(); return `
-    <button class="daily-card${done?' done':''}" onclick="${done?'':'startDailyChallenge()'}" ${done?'disabled':''}>
-      <span class="dc-ico">${ICONS.flame}</span>
-      <span class="dc-txt">
-        <b>Défi du jour</b>
-        <small>${done ? `Réussi : ${d.score}/${d.total} · Reviens demain !` : "Le même défi pour tous, chaque jour"}</small>
-      </span>
-      ${sk>0 ? `<span class="dc-streak">${ICONS.flame}${sk}</span>` : ""}
-      ${done ? `<span class="dc-check">${ICONS.checkCircle}</span>` : `<span class="chev">${ICONS.chevronRight}</span>`}
-    </button>`; })()}
+    ${(()=>{
+      /* Accueil réordonné : le mode le PLUS JOUÉ passe en premier ET en grand
+         (vedette), les suivants rétrécissent -> hiérarchie claire, plus d'espace,
+         plus clean. Ordre par défaut (aucun usage) : Groupe / Solo / Ligne / Défi. */
+      const use = loadModeUse();
+      const dd = loadDaily(), dDone = dailyDoneToday(), dSk = dailyStreakShown();
+      const doneTxt = dDone ? ('R\u00e9ussi\u00a0: ' + dd.score + '/' + dd.total + '\u00a0\u00b7 Reviens demain\u00a0!') : 'Le m\u00eame d\u00e9fi pour tous, chaque jour';
+      const card = (key, sz)=>{
+        const c = sz ? (' '+sz) : '';
+        if(key==="group") return `<button class="mode-card${c}" onclick="selectMode('group')"><span class="mode-icon group">${ICONS.users}</span><span class="mode-text"><span class="mode-title">Mode Groupe</span><span class="mode-desc">\u00c9glise, jeunesse, en \u00e9quipes face \u00e0 face</span></span><span class="chev">${ICONS.chevronRight}</span></button>`;
+        if(key==="solo") return `<button class="mode-card${c}" onclick="selectMode('solo')"><span class="mode-icon solo">${ICONS.user}</span><span class="mode-text"><span class="mode-title">Mode Solo</span><span class="mode-desc">Teste tes connaissances \u00e0 ton rythme</span></span><span class="chev">${ICONS.chevronRight}</span></button>`;
+        if(key==="online") return `<button class="mode-card${c}" onclick="openOnline()"><span class="mode-icon online">${ICONS.bolt}</span><span class="mode-text"><span class="mode-title">Jouer en ligne</span><span class="mode-desc">D\u00e9fie tes amis en duel, en direct</span></span><span class="chev">${ICONS.chevronRight}</span></button>`;
+        return `<button class="daily-card${c}${dDone?' done':''}" onclick="${dDone?'':'startDailyChallenge()'}" ${dDone?'disabled':''}><span class="dc-ico">${ICONS.flame}</span><span class="dc-txt"><b>D\u00e9fi du jour</b><small>${doneTxt}</small></span>${dSk>0 ? `<span class="dc-streak">${ICONS.flame}${dSk}</span>` : ''}${dDone ? `<span class="dc-check">${ICONS.checkCircle}</span>` : `<span class="chev">${ICONS.chevronRight}</span>`}</button>`;
+      };
+      const order = ["group","solo","online","daily"].sort((a,b)=>(use[b]||0)-(use[a]||0));
+      const sizes = ["lg","","sm","sm"];
+      return order.map((k,i)=>card(k, sizes[i])).join('');
+    })()}
     ${(()=>{ const s = parcoursSummary(); return `
     <button class="parcours-card" onclick="openParcours()">
       <span class="pc-ico">${ICONS.trophy}</span>
