@@ -745,7 +745,7 @@
     .option-btn, .btn-primary, .btn-next, .btn-replay, .fact-card, .tier-chip, .q-counter, .streak-chip, .chip, .icon-btn, .btn-reveal,
     .btn-newgame, .award-btn, .team-row, .presence-card, .me-row, .online-action, .searching-card,
     .waiting-card, .info-card, .vs-row, .len-chip, .duel-scorebar, .timer-chip, .dr-side, .rank-row,
-    .text-input, .code-input, .fs-hint, .modal-card, .add-team, .btn-ghost, .fsh-close, .hs-item, .settings-sheet, .hero-verse-card, .end-medal, .modal-btn.ok, .modal-btn.cancel, .leave-banner, .adj-btn, .waiting-note, .rules, .btn-review, .daily-card, .dc-streak, .btn-invite, .creator-badge, .sheet-done, .set-go, .rev-item, .parcours-card, .obj, .bk, .tst-head){
+    .text-input, .code-input, .fs-hint, .modal-card, .add-team, .btn-ghost, .fsh-close, .hs-item, .settings-sheet, .hero-verse-card, .end-medal, .modal-btn.ok, .modal-btn.cancel, .leave-banner, .adj-btn, .waiting-note, .rules, .btn-review, .daily-card, .dc-streak, .btn-invite, .creator-badge, .sheet-done, .set-go, .rev-item, .parcours-card, .parcours-sum, .obj, .bk, .tst-head){
     --glass-photo: none;
     --glass-bf: blur(22px) saturate(1.6);
   }
@@ -5179,22 +5179,29 @@ const glassAppEl = document.getElementById("app");
    repos. iOS/desktop : valeur brute (inchangé, déjà parfait). Forçable en test
    via window.__forceGlassAndroid. */
 const glassIsAndroid = /Android/i.test(navigator.userAgent);
-/* DÉFILEMENT PILOTÉ PAR JS (module "customScroll", plus bas) — actif sur Android,
-   SAUF si on l'a explicitement désactivé (garde-fou : #nativescroll dans l'URL, ou
-   localStorage bt_nativescroll="1" -> interrupteur d'urgence pour revenir au
-   défilement natif sans redéploiement). Quand il est actif, c'est nous qui écrivons
-   scrollTop de façon synchrone -> le verre lit une valeur EXACTE et colle au
-   contenu ; le lissage de secours devient inutile (il ajouterait une traîne) et
-   est donc coupé. */
-function nativeScrollForced(){
+/* ANDROID = VERRE GPU + DÉFILEMENT NATIF (« comme iOS », fluide).
+   Avant : verre peint recalé par JS à CHAQUE image + défilement piloté par
+   transform. Trop lourd sur Android (le rendu « sautait de partout » et
+   partait « au ralenti »). On bascule Android sur le VRAI backdrop-filter :
+   c'est le compositeur (GPU) qui floute et qui suit le défilement NATIF tout
+   seul -> zéro peinture par image, zéro saccade. iOS/desktop : verre peint,
+   strictement inchangés (backdrop-filter y est peu fiable sur Safari).
+   Échappatoire : #paintedglass dans l'URL (ou localStorage
+   bt_paintedglass="1") pour forcer le verre peint sur Android si besoin. */
+function paintedGlassForced(){
   try {
-    if(String(location.hash||"").indexOf("nativescroll") >= 0) return true;
-    if(localStorage.getItem("bt_nativescroll") === "1") return true;
+    if(String(location.hash||"").indexOf("paintedglass") >= 0) return true;
+    if(localStorage.getItem("bt_paintedglass") === "1") return true;
   } catch(e){}
   return false;
 }
-const CUSTOM_SCROLL = glassIsAndroid && !nativeScrollForced();
-function glassAndroidSmooth(){ return (glassIsAndroid && !CUSTOM_SCROLL) || (typeof window !== "undefined" && window.__forceGlassAndroid === true); }
+const GLASS_GPU = glassIsAndroid && !paintedGlassForced();
+if(GLASS_GPU){ try{ document.documentElement.classList.add("gl-native"); }catch(e){} }
+/* Défilement piloté par JS : ABANDONNÉ (c'était la source des sauts/ralenti sur
+   Android). Défilement natif partout désormais — iOS l'était déjà, le verre GPU
+   suit le contenu tout seul sur Android. */
+const CUSTOM_SCROLL = false;
+function glassAndroidSmooth(){ return false; }
 /* ===================== DÉFILEMENT PAR TRANSFORM (Android) =====================
    Le contenu (.screen) est déplacé par translate3d GPU au lieu d'écrire
    app.scrollTop. Écrire scrollTop re-peignait TOUT le contenu à chaque image
@@ -5275,7 +5282,29 @@ function reflHideInstant(refl){
   refl.style.transition = "";
 }
 function queueGlassSync(freeze){
+  if(GLASS_GPU){ ensureGlassRims(); return; }
   return queueGlassSyncPainted(freeze);
+}
+/* VOIE GPU (Android) : le backdrop-filter fait tout le rendu du verre et suit
+   le défilement natif sur le compositeur -> AUCUNE peinture par image, aucune
+   lecture de mise en page. On se contente de créer UNE fois le rebord de verre
+   (.glass-rim) sur chaque surface (les <input> le portent déjà en CSS direct ;
+   les fonds pleins de GLASS_SKIP — chrono rouge, bouton désactivé — sont
+   ignorés). Appelé après chaque rendu via queueGlassSync. */
+function ensureGlassRims(){
+  if(glassElsGen !== glassGen){ glassEls = document.querySelectorAll(GLASS_SEL); glassElsGen = glassGen; }
+  const els = glassEls;
+  for(let i = 0; i < els.length; i++){
+    const el = els[i];
+    if(el.tagName === "INPUT") continue;
+    if(el.matches(GLASS_SKIP)) continue;
+    if(!el._rim || el._rim.parentNode !== el){
+      const rim = document.createElement("b");
+      rim.className = "glass-rim";
+      el.insertBefore(rim, el.firstChild);
+      el._rim = rim;
+    }
+  }
 }
 function queueGlassSyncPainted(freeze){
   /* Dimensions du viewport de MISE EN PAGE (documentElement), pas
