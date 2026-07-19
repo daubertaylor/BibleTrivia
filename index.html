@@ -2609,6 +2609,7 @@ const net = {
   seed:null, lengthKey:"normale", timerKey:"30", themeKey:"tout", timedOut:false,
   deck:[], idx:0, score:0, correct:0, selected:null, revealed:false, myDone:false, missed:[],
   duelHb:null, joinTimer:null, subTimer:null,
+  lastOppId:null, autoMatch:false, matchGuard:null,
   status:"", error:""
 };
 function initSupa(){
@@ -2699,14 +2700,16 @@ function joinLobby(){
   });
   ch.on("broadcast", { event:"matched" }, ({ payload })=>{
     if(!payload || net.room) return;
-    if(payload.guest === myId){
-      net.searching = false; net.matching = false; stopSearchHeartbeat();
-      joinRoom(payload.code, false);
-    } else if(payload.host === myId){
-      // L'initiateur du match a tiré au sort : c'est NOUS l'hôte.
-      net.searching = false; net.matching = false; stopSearchHeartbeat();
-      createRoom(payload.code, true);
-    }
+    if(payload.guest !== myId && payload.host !== myId) return;
+    // On vient d'annuler ? On n'accepte plus aucun match : l'initiateur
+    // resté seul relancera sa recherche via sa garde (armMatchGuard).
+    if(!net.searching) return;
+    net.searching = false; net.matching = false; stopSearchHeartbeat();
+    net.lastOppId = (payload.host === myId) ? payload.guest : payload.host;
+    net.autoMatch = true;
+    if(payload.guest === myId){ joinRoom(payload.code, false); }
+    else { createRoom(payload.code, true); } // l'initiateur a tiré au sort : c'est NOUS l'hôte
+    armMatchGuard();
   });
   ch.subscribe(async (status)=>{
     if(status === "SUBSCRIBED"){ await ch.track(meMeta()); reRenderIfOnline(); }
@@ -2714,7 +2717,7 @@ function joinLobby(){
 }
 function setSearching(on){
   net.searching = on; net.matching = false;
-  if(on){ startSearchHeartbeat(); } else { stopSearchHeartbeat(); }
+  if(on){ startSearchHeartbeat(); } else { stopSearchHeartbeat(); clearTimeout(net.matchGuard); }
   if(String(state.screen).indexOf('online')===0) render(); else reRenderIfOnline();
 }
 function startSearchHeartbeat(){
@@ -2734,29 +2737,55 @@ function freshLookers(){
   Object.keys(net.lookers||{}).forEach(id=>{ if(id!==myId && (now - net.lookers[id]) < 4500) c++; });
   return c;
 }
+/* VRAI MATCHMAKING ALÉATOIRE.
+   - Le vivier = tous les joueurs en recherche (leur « looking » bat toutes les
+     1,5 s tant qu'ils cherchent — on peut donc attendre 5 minutes et être
+     apparié avec quelqu'un qui arrive APRÈS nous, pas seulement avec ceux
+     connectés au même instant).
+   - UN SEUL initiateur (le plus petit id du vivier) -> jamais deux salons
+     concurrents. Mais le PARTENAIRE, lui, est TIRÉ AU SORT dans tout le
+     vivier — plus d'appariement « voisins d'ordre alphabétique ».
+   - Si d'autres joueurs attendent, on évite de retomber sur son DERNIER
+     adversaire -> les rencontres tournent vraiment.
+   - Le rôle d'hôte est tiré à pile ou face à chaque match. */
 function matchFromLookers(){
   if(!net.searching || net.matching || net.room) return;
   const now = Date.now();
-  const ids = [myId];
-  Object.keys(net.lookers).forEach(id=>{ if(id!==myId && (now - net.lookers[id]) < 4500) ids.push(id); });
-  ids.sort();
-  const pos = ids.indexOf(myId);
-  const partnerPos = pos % 2 === 0 ? pos+1 : pos-1;
-  if(partnerPos < 0 || partnerPos >= ids.length) return;
-  if(pos % 2 === 0){
-    net.matching = true;
-    net.searching = false; stopSearchHeartbeat();
-    const code = genCode();
-    const partner = ids[partnerPos];
-    // Hôte tiré à pile ou face à CHAQUE match : vrai aléatoire, jamais
-    // toujours le même joueur (l'initiateur reste déterministe pour éviter
-    // les doubles salons, mais le rôle d'hôte, lui, est aléatoire).
-    const meHost = Math.random() < 0.5;
-    const hostId = meHost ? myId : partner;
-    const guestId = meHost ? partner : myId;
-    net.lobby.send({ type:"broadcast", event:"matched", payload:{ code, host:hostId, guest:guestId } });
-    if(meHost){ createRoom(code, true); } else { joinRoom(code, false); }
+  const others = Object.keys(net.lookers).filter(id=>id!==myId && (now - net.lookers[id]) < 4500);
+  if(!others.length) return;
+  const all = others.concat([myId]).sort();
+  if(all[0] !== myId) return;               // pas initiateur : l'autre nous appariera
+  let pool = others;
+  if(others.length > 1 && net.lastOppId){
+    const fresh = others.filter(id=>id!==net.lastOppId);
+    if(fresh.length) pool = fresh;          // quelqu'un de nouveau attend : priorité
   }
+  const partner = pool[(Math.random()*pool.length)|0];
+  net.matching = true;
+  net.searching = false; stopSearchHeartbeat();
+  const code = genCode();
+  const meHost = Math.random() < 0.5;
+  const hostId = meHost ? myId : partner;
+  const guestId = meHost ? partner : myId;
+  net.lastOppId = partner; net.autoMatch = true;
+  net.lobby.send({ type:"broadcast", event:"matched", payload:{ code, host:hostId, guest:guestId } });
+  if(meHost){ createRoom(code, true); } else { joinRoom(code, false); }
+  armMatchGuard();
+}
+/* Garde anti-limbo : après un match automatique, si l'adversaire n'est pas
+   arrivé dans le salon en 8 s (il a annulé au dernier moment, réseau coupé…),
+   on ne reste pas planté à attendre : on quitte le salon et on RELANCE la
+   recherche tout seul — comme un vrai matchmaking. */
+function armMatchGuard(){
+  clearTimeout(net.matchGuard);
+  net.matchGuard = setTimeout(()=>{
+    if(net.autoMatch && net.room && !net.oppPresent){
+      cleanupRoom();
+      net.autoMatch = false;
+      state.screen = "online"; render();
+      setSearching(true);
+    }
+  }, 8000);
 }
 function leaveLobby(){
   stopSearchHeartbeat();
@@ -2806,6 +2835,9 @@ function bindRoom(ch){
       net.opp = others[0];
       net.oppLastSeen = Date.now();
       if(net.joinTimer){ clearTimeout(net.joinTimer); net.joinTimer = null; }
+      // L'adversaire du match automatique est bien là : la garde anti-limbo
+      // n'a plus lieu d'être.
+      clearTimeout(net.matchGuard); net.autoMatch = false;
     }
     reRenderIfOnline();
   });
@@ -2986,6 +3018,7 @@ function quitDuel(){
 }
 function cleanupRoom(){
   stopDuelHeartbeat();
+  clearTimeout(net.matchGuard); net.autoMatch = false;
   if(net.joinTimer){ clearTimeout(net.joinTimer); net.joinTimer=null; }
   if(net.subTimer){ clearTimeout(net.subTimer); net.subTimer=null; }
   if(net.room){ try { net.room.untrack(); net.supa.removeChannel(net.room); } catch(e){} net.room=null; }
@@ -5073,7 +5106,7 @@ function renderOnline(){
   `;
   return el;
 }
-function createRoomFlow(){ createRoom(genCode(), true); }
+function createRoomFlow(){ net.autoMatch = false; clearTimeout(net.matchGuard); createRoom(genCode(), true); }
 
 function renderOnlineJoin(){
   const el=document.createElement("div"); el.className="screen";
