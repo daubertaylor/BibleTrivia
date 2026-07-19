@@ -111,7 +111,7 @@
      défilement tactile natif pour qu'on écrive scrollTop nous-mêmes, synchrone
      avec le verre. Le défilement PROGRAMMATIQUE (scrollTop, mise au point d'un
      champ) reste possible. Absent sur iOS/desktop. */
-  html.js-scroll #app{ touch-action:none; overflow-anchor:none; }
+  html.js-scroll #app{ touch-action:none; overflow:hidden; overflow-anchor:none; }
   html.is-fs #app{ padding-top:max(calc(env(safe-area-inset-top) + 0.35rem), 3.4rem); padding-bottom:max(calc(env(safe-area-inset-bottom) + 0.2rem), 0.7rem); }
   html.is-standalone #app{ padding-top:max(calc(env(safe-area-inset-top) + 0.4rem), 0.7rem); padding-bottom:max(calc(env(safe-area-inset-bottom) + 0.35rem), 0.8rem); }
   .question-card .qtext, .hero-tag, .end-title, .online-hero-title, .online-hero-sub, .modal-title, .modal-msg{ text-wrap:balance; }
@@ -4976,7 +4976,7 @@ function renderOnlineEnd(){
 function render(){
   const app = document.getElementById("app");
   const sameScreen = (state.screen === lastScreen);
-  const prevScroll = sameScreen ? app.scrollTop : 0;
+  const prevScroll = sameScreen ? (CUSTOM_SCROLL ? customScrollY : app.scrollTop) : 0;
 
   let node;
   if(state.screen==="splash") node = renderSplash();
@@ -5007,12 +5007,14 @@ function render(){
     prevNode.style.left = cs.paddingLeft;
     prevNode.style.right = cs.paddingRight;
     prevNode.style.pointerEvents = "none";
+    if(CUSTOM_SCROLL) prevNode.style.transform = ""; // laisse l'anim de sortie repartir proprement
     app.appendChild(node);
-    app.scrollTop = 0;
+    if(CUSTOM_SCROLL){ customScrollY = 0; applyScrollTransform(); } else { app.scrollTop = 0; }
     setTimeout(()=>{ if(prevNode.parentNode) prevNode.remove(); }, 460);
   } else {
     app.replaceChildren(node);
-    if(sameScreen) app.scrollTop = prevScroll;
+    if(CUSTOM_SCROLL){ customScrollY = sameScreen ? prevScroll : 0; applyScrollTransform(); }
+    else if(sameScreen) app.scrollTop = prevScroll;
   }
   lastScreen = state.screen;
 
@@ -5112,6 +5114,31 @@ function nativeScrollForced(){
 }
 const CUSTOM_SCROLL = glassIsAndroid && !nativeScrollForced();
 function glassAndroidSmooth(){ return (glassIsAndroid && !CUSTOM_SCROLL) || (typeof window !== "undefined" && window.__forceGlassAndroid === true); }
+/* ===================== DÉFILEMENT PAR TRANSFORM (Android) =====================
+   Le contenu (.screen) est déplacé par translate3d GPU au lieu d'écrire
+   app.scrollTop. Écrire scrollTop re-peignait TOUT le contenu à chaque image
+   (ralenti + sauts sur mobile modeste) ; translate3d est une simple composition
+   (aucun repaint du contenu). Le verre peint lit customScrollY — notre valeur
+   JS autoritaire, pas un scrollTop relu en retard du compositeur — donc contenu
+   et verre bougent VERROUILLÉS dans la même image : plus de « nage », plus de
+   ralenti. customScrollY est la position de défilement pilotée (0 = haut). */
+let customScrollY = 0;
+function csScreenNode(){ return glassAppEl.querySelector(".screen:not(.screen-exit)"); }
+function applyScrollTransform(){
+  if(!CUSTOM_SCROLL) return;
+  const sc = csScreenNode();
+  if(sc) sc.style.transform = customScrollY ? ("translate3d(0,"+(-customScrollY)+"px,0)") : "";
+}
+function csMaxScroll(){ return Math.max(0, glassAppEl.scrollHeight - glassAppEl.clientHeight); }
+function csSetScroll(y){
+  const m = csMaxScroll();
+  if(y < 0) y = 0; else if(y > m) y = m;
+  if(y === customScrollY) return y;
+  customScrollY = y;
+  applyScrollTransform();
+  try{ queueGlassSync(); }catch(e){} // verre recalé dans la MÊME image que le contenu
+  return y;
+}
 /* État du lissage du FOND PEINT (séparé du reflet glassScrollSX/SY) : #app et
    .rev-list ont chacun le leur. */
 let glassBgSX = 0, glassBgSY = 0, glassRevBgSX = 0, glassRevBgSY = 0;
@@ -5187,7 +5214,7 @@ function queueGlassSyncPainted(freeze){
   const iw = Math.round(w * 1.16), ih = Math.round(h * 2);
   const ox = Math.round((iw - w) / 2), oy = Math.round((ih - h) / 2);
   const size = "auto, " + iw + "px " + ih + "px";
-  const sl = glassAppEl.scrollLeft, st = glassAppEl.scrollTop;
+  const sl = glassAppEl.scrollLeft, st = CUSTOM_SCROLL ? customScrollY : glassAppEl.scrollTop;
   /* Retard lissé (voir déclaration de glassScrollSX/SY) : recalculé à CHAQUE
      appel, sans condition -> la poursuite/décroissance est continue, jamais
      interrompue ni réarmée. lagX/lagY = écart courant entre le lissé et le
@@ -5471,7 +5498,7 @@ function glassFreezeForTransition(){
   glassFrame++;
   const now = performance.now();
   if(now < glassFreezeUntil) return; // transition en cours : rien à faire (pur GPU)
-  const sl0 = glassAppEl.scrollLeft, st0 = glassAppEl.scrollTop;
+  const sl0 = glassAppEl.scrollLeft, st0 = CUSTOM_SCROLL ? customScrollY : glassAppEl.scrollTop;
   let justMoved = (sl0 !== glassLastSL || st0 !== glassLastST);
   glassLastSL = sl0; glassLastST = st0;
   // Même détection par image pour .rev-list (voir glassRevEl) : sinon
@@ -5536,13 +5563,17 @@ armGlass(2500); // couvre le tout premier affichage
    POURQUOI. Sur Android, le défilement natif est composité HORS du thread
    principal : le scrollTop lu par JS reste en retard sur l'affichage, donc le
    verre (peint en JS) ne peut pas coller au contenu -> il « nage ». On prend
-   la main : touch-action:none coupe le défilement tactile natif et on écrit
-   app.scrollTop nous-mêmes, SYNCHRONE, dans la même image que le verre ->
-   contenu et verre bougent ensemble, verrouillés.
+   la main : touch-action:none coupe le défilement tactile natif, puis on
+   déplace le contenu par translate3d GPU (voir csSetScroll/customScrollY) au
+   lieu d'écrire app.scrollTop. Écrire scrollTop re-peignait TOUT le contenu à
+   chaque image (ralenti + sauts) ; translate3d est une simple composition, sans
+   repaint. Le verre lit customScrollY (notre valeur JS, pas un scrollTop en
+   retard) et se recale dans la MÊME image -> contenu et verre verrouillés,
+   fluides, sans nage.
 
    DURCISSEMENT (après un 1er essai qui faisait « sauter » l'écran). Toutes les
    sources d'emballement sont bornées :
-   - défilement INCRÉMENTAL depuis la position RÉELLE (app.scrollTop + dy), donc
+   - défilement INCRÉMENTAL depuis la position pilotée (customScrollY + dy), donc
      aucun « point de départ » qui périme et provoque un saut ;
    - vitesse plafonnée FORT (±2,5 px/ms) et calculée seulement sur un intervalle
      sain (dt ≥ 8 ms) puis lissée -> l'inertie ne peut plus s'emballer ;
@@ -5561,13 +5592,9 @@ if(CUSTOM_SCROLL){
     document.documentElement.classList.add("js-scroll");
     const app = glassAppEl;
     let dragging = false, lastY = 0, inertiaRAF = 0, activeId = null, samples = [];
-    const maxScroll = ()=> Math.max(0, app.scrollHeight - app.clientHeight);
-    function clampSet(y){
-      const m = maxScroll();
-      if(y < 0) y = 0; else if(y > m) y = m;
-      app.scrollTop = y; // écriture SYNCHRONE : même image que le verre
-      return y;
-    }
+    /* Déplacement du contenu par transform GPU + verre recalé dans la même
+       image (voir csSetScroll) — au lieu d'écrire app.scrollTop (repaint total). */
+    const clampSet = (y)=> csSetScroll(y);
     function stopInertia(){ if(inertiaRAF){ cancelAnimationFrame(inertiaRAF); inertiaRAF = 0; } }
     function inField(el){ return el && el.closest && el.closest("input,textarea,select,[contenteditable]"); }
     app.addEventListener("touchstart", (e)=>{
@@ -5586,7 +5613,7 @@ if(CUSTOM_SCROLL){
       const y = t.clientY, now = performance.now();
       let dy = lastY - y;                                        // >0 : doigt monte -> défile vers le bas
       if(dy > 260) dy = 260; else if(dy < -260) dy = -260;       // saut par événement borné
-      clampSet(app.scrollTop + dy);                             // INCRÉMENTAL depuis la position réelle
+      clampSet(customScrollY + dy);                             // INCRÉMENTAL depuis la position réelle
       lastY = y;
       samples.push({ y: y, t: now });
       while(samples.length > 2 && now - samples[0].t > 90) samples.shift(); // ~90ms d'historique
@@ -5614,7 +5641,7 @@ if(CUSTOM_SCROLL){
       (function step(){
         v *= friction;
         if(Math.abs(v) < 0.35){ inertiaRAF = 0; return; }
-        const before = app.scrollTop, after = clampSet(before + v);
+        const before = customScrollY, after = clampSet(before + v);
         if(after === before){ inertiaRAF = 0; return; }          // butée atteinte
         inertiaRAF = requestAnimationFrame(step);
       })();
