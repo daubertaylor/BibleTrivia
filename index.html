@@ -3272,7 +3272,7 @@ function reviveAudioHard(){
   try { if(actx){ actx.close().catch(()=>{}); } } catch(e){}
   actx = null; masterGain = null; masterFilter = null;
   if(musicTimer){ clearInterval(musicTimer); musicTimer = null; }
-  musicBusNode = null; musicPlaying = false;
+  musicBusNode = null; musicDelayIn = null; qNoiseBuf = null; musicPlaying = false;
   try { getCtx(); applyVolume(); if(settings.music) startMusic(); } catch(e){}
   audioReviving = false;
 }
@@ -3296,36 +3296,82 @@ function applyVolume(){
   if(musicBusNode && actx){ musicBusNode.gain.setTargetAtTime(musicPlaying ? musicLevel() : 0.0001, actx.currentTime, 0.06); }
 }
 
-/* ===================== MUSIQUE DE FOND — boucle de quizz hypnotique =====================
-   Aucun fichier audio : un vrai groove de plateau de quizz, synthétisé en direct.
-   Boucle de 8 mesures à 120 BPM sur Am–Fmaj7–C–G (LA boucle accrocheuse) :
-   pulsation ronde (kick sinus), basse en croches qui marche, arpège en
-   doubles-croches qui hypnotise, shaker feutré, fine nappe liante et « ping »
-   de plateau au changement d'accord. En fin de boucle, la basse remonte
-   (sol→la→si) et rappelle le début : l'oreille en redemande. Tout passe par le
-   filtre master (2,4 kHz) -> chaud, feutré, jamais agressif, taillé pour
-   tourner en boucle sans lasser. */
-let musicBusNode = null, musicTimer = null, musicStep = 0, musicNextBar = 0, musicPlaying = false;
-const MUSIC_BAR = 2.0;            // une mesure 4/4 à 120 BPM
+/* ===================== MUSIQUE DE FOND — « La Transe du Désert » =====================
+   Aucun fichier audio : tout est composé et synthétisé en direct. L'hypnose
+   repose sur des CYCLES EMBOÎTÉS de longueurs différentes qui tournent les
+   uns dans les autres (la recette des musiques minimalistes) :
+   - une cellule d'arpège de 6 notes lue en doubles-croches sur des mesures
+     de 16 pas -> le motif se DÉCALE d'un tiers à chaque mesure et ne repasse
+     par le même dessin que toutes les 3 mesures (rotation polymétrique) ;
+   - une harmonie de 8 mesures (Am F C G · Am F Dm E) dont la dernière, en MI
+     MAJEUR, tient la sensible sol# : la résolution n'arrive QUE lorsque la
+     boucle recommence -> l'oreille réclame le retour du début ;
+   - un macro-arc de 4 cycles (32 mesures ≈ 77 s) : base seule, puis mélodie,
+     puis échos scintillants, puis une « respiration » de 2 mesures avant le
+     final complet — on n'entend jamais deux fois la même mesure en 77 s ;
+   - un écho en croche pointée (0,45 s) sur l'arpège et la mélodie, la
+     signature des transes, et une stéréo légère qui ondule.
+   À 100 BPM (proche du rythme cardiaque), filtré à 2,4 kHz : chaud, feutré,
+   fait pour tourner en boucle sans jamais lasser. */
+let musicBusNode = null, musicDelayIn = null, musicTimer = null, musicStep = 0, musicNextBar = 0, musicPlaying = false;
+const MUSIC_BAR = 2.4;            // une mesure 4/4 à 100 BPM
 const Q_STEP = MUSIC_BAR / 16;    // la double-croche, unité du groove
-const QUIZ_PROG = [               // 4 accords × 2 mesures = boucle de 8 mesures
-  { bass:110.00, arp:[220.00, 261.63, 329.63, 440.00], pad:[220.00, 261.63, 329.63], ping:880.00 },  // Am
-  { bass: 87.31, arp:[174.61, 220.00, 261.63, 329.63], pad:[174.61, 220.00, 261.63], ping:698.46 },  // Fmaj7
-  { bass:130.81, arp:[196.00, 261.63, 329.63, 392.00], pad:[196.00, 261.63, 329.63], ping:783.99 },  // C
-  { bass: 98.00, arp:[196.00, 246.94, 293.66, 392.00], pad:[196.00, 246.94, 293.66], ping:783.99 }   // G
+/* La boucle harmonique : UNE mesure par accord, 8 mesures.
+   bass = fondamentale ; arp = cellule de 6 notes (couleurs add9/maj7) ;
+   pad = triade fine tenue. La 8e (E majeur) porte la tension sol#. */
+const QUIZ_PROG = [
+  { bass:110.00, arp:[220.00, 329.63, 440.00, 493.88, 523.25, 659.25], pad:[220.00, 329.63, 440.00] },   // Am(add9)
+  { bass: 87.31, arp:[174.61, 261.63, 349.23, 440.00, 523.25, 659.25], pad:[174.61, 261.63, 349.23] },   // Fmaj7
+  { bass:130.81, arp:[196.00, 261.63, 392.00, 493.88, 587.33, 659.25], pad:[196.00, 261.63, 392.00] },   // Cmaj7(add9)
+  { bass: 98.00, arp:[196.00, 293.66, 392.00, 493.88, 587.33, 659.25], pad:[196.00, 293.66, 392.00] },   // G6(add9)
+  { bass:110.00, arp:[220.00, 329.63, 440.00, 493.88, 523.25, 659.25], pad:[220.00, 329.63, 440.00] },   // Am(add9)
+  { bass: 87.31, arp:[174.61, 261.63, 349.23, 440.00, 523.25, 659.25], pad:[174.61, 261.63, 349.23] },   // Fmaj7
+  { bass: 73.42, arp:[146.83, 293.66, 349.23, 440.00, 523.25, 587.33], pad:[293.66, 349.23, 440.00] },   // Dm7
+  { bass: 82.41, arp:[164.81, 329.63, 415.30, 493.88, 659.25, 415.30], pad:[329.63, 415.30, 493.88] }    // E (sol# = sensible)
 ];
-/* Motifs d'arpège (indices dans arp[], -1 = respiration) : une vague qui
-   tourne — c'est elle qui hypnotise. B ajoute un petit escalier de relance. */
-const Q_ARP_A = [0,2,3,2, 1,2,3,2, 0,2,3,2, 1,2,3,-1];
-const Q_ARP_B = [0,2,3,2, 1,2,3,2, 0,1,2,3, 2,3,1,2];
+/* La mélodie : 4 phrases pentatoniques, une par paire de mesures ([pas sur
+   32, durée en pas, Hz]). La 4e reste SUSPENDUE sur sol# (415,30 Hz) : elle
+   ne se résout qu'au retour du Am — c'est l'hameçon de la boucle. */
+const Q_LEAD = [
+  [ [4,2,329.63],[6,2,392.00],[8,8,440.00],   [20,2,523.25],[22,2,493.88],[24,6,440.00] ],
+  [ [2,2,392.00],[4,2,329.63],[6,2,293.66],[8,8,329.63],   [20,2,587.33],[22,2,493.88],[24,6,392.00] ],
+  [ [4,2,440.00],[6,2,392.00],[8,8,329.63],   [20,2,329.63],[22,2,392.00],[24,8,523.25] ],
+  [ [2,2,349.23],[4,2,440.00],[6,6,587.33],   [18,4,493.88],[24,6,415.30] ]
+];
 function musicBus(){
   const ctx = getCtx();
   if(!musicBusNode){
     musicBusNode = ctx.createGain();
     musicBusNode.gain.value = 0.0001;
     musicBusNode.connect(masterFilter);
+    /* Écho « croche pointée » (0,45 s à 100 BPM) : LA signature des musiques
+       hypnotiques. Réinjection filtrée (1,6 kHz) qui s'assombrit à chaque
+       répétition. Branché AVANT le gain du bus -> le volume et l'arrêt de la
+       musique gouvernent aussi les échos. */
+    musicDelayIn = ctx.createGain(); musicDelayIn.gain.value = 1;
+    const dly = ctx.createDelay(1.0); dly.delayTime.value = 0.45;
+    const lp = ctx.createBiquadFilter(); lp.type = "lowpass"; lp.frequency.value = 1600; lp.Q.value = 0.5;
+    const fb = ctx.createGain(); fb.gain.value = 0.32;
+    const wet = ctx.createGain(); wet.gain.value = 0.85;
+    musicDelayIn.connect(dly); dly.connect(lp); lp.connect(fb); fb.connect(dly);
+    lp.connect(wet); wet.connect(musicBusNode);
   }
   return musicBusNode;
+}
+/* Sortie d'une voix : panoramique léger (si dispo) vers le bus + envoi
+   éventuel vers l'écho. La stéréo ondule, l'écho lie tout. */
+function qOut(node, pan, send){
+  const ctx = getCtx();
+  let tail = node;
+  if(pan && ctx.createStereoPanner){
+    const pn = ctx.createStereoPanner(); pn.pan.value = pan;
+    node.connect(pn); tail = pn;
+  }
+  tail.connect(musicBus());
+  if(send > 0 && musicDelayIn){
+    const sg = ctx.createGain(); sg.gain.value = send;
+    tail.connect(sg); sg.connect(musicDelayIn);
+  }
 }
 function qT(t0){ const ctx = getCtx(); return t0 < ctx.currentTime + 0.004 ? ctx.currentTime + 0.004 : t0; } // filet : jamais dans le passé (anti-glitch)
 /* Pulsation « ronde » : un kick sinus dont la hauteur plonge (120→43 Hz).
@@ -3353,24 +3399,39 @@ function qBass(freq, t0, dur, vol){
   o.connect(g); g.connect(musicBus());
   o.start(t0); o.stop(t0 + dur + 0.05);
 }
-/* Le pluck d'arpège : triangle à extinction rapide + octave sinus fantôme --
-   le « brillant » d'un plateau télé, adouci par le filtre master. */
-function qPluck(freq, t0, vol){
+/* Le pluck d'arpège : triangle à extinction rapide + octave sinus fantôme.
+   Panoramisé (il ondule dans l'espace) et envoyé à l'écho -> la vague. */
+function qPluck(freq, t0, vol, pan, send){
   const ctx = getCtx(); t0 = qT(t0);
   const o = ctx.createOscillator(), g = ctx.createGain();
   o.type = "triangle"; o.frequency.value = freq;
   g.gain.setValueAtTime(0.0001, t0);
   g.gain.exponentialRampToValueAtTime(vol, t0 + 0.006);
   g.gain.exponentialRampToValueAtTime(0.0001, t0 + 0.30);
-  o.connect(g); g.connect(musicBus());
+  o.connect(g); qOut(g, pan, send);
   o.start(t0); o.stop(t0 + 0.34);
   const h = ctx.createOscillator(), hg = ctx.createGain();
   h.type = "sine"; h.frequency.value = freq*2;
   hg.gain.setValueAtTime(0.0001, t0);
-  hg.gain.exponentialRampToValueAtTime(vol*0.35, t0 + 0.006);
+  hg.gain.exponentialRampToValueAtTime(vol*0.32, t0 + 0.006);
   hg.gain.exponentialRampToValueAtTime(0.0001, t0 + 0.16);
-  h.connect(hg); hg.connect(musicBus());
+  h.connect(hg); qOut(hg, pan, 0);
   h.start(t0); h.stop(t0 + 0.2);
+}
+/* La mélodie : deux oscillateurs légèrement désaccordés (chorus naturel),
+   attaque douce, tenue chantée, retombée longue. Envoyée à l'écho. */
+function qLead(freq, t0, dur, vol, pan){
+  const ctx = getCtx(); t0 = qT(t0);
+  [["triangle", 0, vol], ["sine", 6, vol*0.55]].forEach(([type, det, v])=>{
+    const o = ctx.createOscillator(), g = ctx.createGain();
+    o.type = type; o.frequency.value = freq; o.detune.value = det;
+    g.gain.setValueAtTime(0.0001, t0);
+    g.gain.linearRampToValueAtTime(v, t0 + 0.035);
+    g.gain.setValueAtTime(v, t0 + Math.max(0.05, dur*0.62));
+    g.gain.exponentialRampToValueAtTime(0.0001, t0 + dur + 0.35);
+    o.connect(g); qOut(g, pan, 0.30);
+    o.start(t0); o.stop(t0 + dur + 0.4);
+  });
 }
 let qNoiseBuf = null; // bruit blanc précalculé une fois (shaker)
 function qShaker(t0, vol){
@@ -3386,11 +3447,11 @@ function qShaker(t0, vol){
   g.gain.setValueAtTime(0.0001, t0);
   g.gain.exponentialRampToValueAtTime(vol, t0 + 0.008);
   g.gain.exponentialRampToValueAtTime(0.0001, t0 + 0.07);
-  s.connect(f); f.connect(g); g.connect(musicBus());
+  s.connect(f); f.connect(g); qOut(g, 0.35, 0);
   s.start(t0); s.stop(t0 + 0.1);
 }
-/* Fine nappe liante (tenue sur les 2 mesures de l'accord) : le ciment
-   harmonique sous le groove, à peine audible. */
+/* Fine nappe liante (une par accord) : le ciment harmonique sous le groove,
+   à peine audible mais indispensable. */
 function qPad(freqs, t0, dur){
   const ctx = getCtx(); t0 = qT(t0);
   freqs.forEach((freq, k)=>{
@@ -3399,60 +3460,83 @@ function qPad(freqs, t0, dur){
       o.type = "sine"; o.frequency.value = freq; o.detune.value = det;
       const v = k===0 ? 0.010 : 0.007;
       g.gain.setValueAtTime(0.0001, t0);
-      g.gain.linearRampToValueAtTime(v, t0 + 0.6);
-      g.gain.setValueAtTime(v, t0 + dur - 0.5);
+      g.gain.linearRampToValueAtTime(v, t0 + 0.5);
+      g.gain.setValueAtTime(v, t0 + dur - 0.4);
       g.gain.linearRampToValueAtTime(0.0001, t0 + dur + 0.25);
       o.connect(g); g.connect(musicBus());
       o.start(t0); o.stop(t0 + dur + 0.3);
     });
   });
 }
-/* Le « ping » de plateau : deux sinus (tonique puis quinte) au changement
-   d'accord — la petite signature de quizz qui reste en tête. */
-function qPing(freq, t0){
+/* Scintillement : l'octave de la dernière note d'une phrase, en écho
+   lointain, alterné gauche/droite — la poussière d'étoiles du désert. */
+function qSpark(freq, t0, pan){
   const ctx = getCtx(); t0 = qT(t0);
-  [freq, freq*1.5].forEach((f, k)=>{
-    const o = ctx.createOscillator(), g = ctx.createGain();
-    o.type = "sine"; o.frequency.value = f;
-    const v = k===0 ? 0.016 : 0.009;
-    const tt = t0 + k*0.09;
-    g.gain.setValueAtTime(0.0001, tt);
-    g.gain.exponentialRampToValueAtTime(v, tt + 0.03);
-    g.gain.exponentialRampToValueAtTime(0.0001, tt + 1.3);
-    o.connect(g); g.connect(musicBus());
-    o.start(tt); o.stop(tt + 1.4);
-  });
+  const o = ctx.createOscillator(), g = ctx.createGain();
+  o.type = "sine"; o.frequency.value = freq;
+  g.gain.setValueAtTime(0.0001, t0);
+  g.gain.exponentialRampToValueAtTime(0.009, t0 + 0.03);
+  g.gain.exponentialRampToValueAtTime(0.0001, t0 + 1.1);
+  o.connect(g); qOut(g, pan, 0.5);
+  o.start(t0); o.stop(t0 + 1.2);
 }
 function scheduleMusicBar(){
-  const bar = musicStep % 8;          // position dans la boucle de 8 mesures
-  const ch = QUIZ_PROG[bar >> 1];     // 2 mesures par accord
+  const bar = musicStep % 8;                 // position dans la boucle harmonique
+  const cycle = (musicStep >> 3) % 4;        // macro-arc : 4 cycles de 8 mesures
+  const breath = (cycle === 3 && bar < 2);   // la « respiration » : 2 mesures allégées
+  const ch = QUIZ_PROG[bar];
   const t0 = musicNextBar;
-  // Pulsation : temps 1 et 3, + une anticipation légère au « et » du 4 (mesures paires de l'accord)
-  qKick(t0, 0.072);
-  qKick(t0 + 8*Q_STEP, 0.062);
-  if(bar % 2 === 1) qKick(t0 + 14*Q_STEP, 0.038);
-  // Basse en croches : fondation qui marche, octave sur le « et » du 3e temps.
-  // Toute fin de boucle (mesure 8) : sol→la→si, la marche qui rappelle le début.
-  for(let n=0; n<8; n++){
-    let f = ch.bass, vol = (n % 4 === 0) ? 0.038 : 0.030;
-    if(n === 5){ f = ch.bass*2; vol = 0.025; }
-    if(bar === 7){ if(n === 6){ f = 110.00; } if(n === 7){ f = 123.47; vol = 0.036; } }
-    qBass(f, t0 + n*2*Q_STEP, 0.22, vol);
+  // Pulsation cardiaque : temps 1 et 3 ; en respiration, seul le temps 1 bat.
+  qKick(t0, breath ? 0.055 : 0.072);
+  if(!breath){
+    qKick(t0 + 8*Q_STEP, 0.062);
+    if(bar % 2 === 1) qKick(t0 + 14*Q_STEP, 0.036);
   }
-  // Arpège en doubles-croches : la vague hypnotique (motif B en mesure paire de l'accord)
-  const pat = (bar % 2 === 0) ? Q_ARP_A : Q_ARP_B;
+  // Basse « battement de cœur » : noire pointée + double (R..r R..), et sur la
+  // 8e mesure, la montée mi→sol#→si qui appelle le retour au début.
+  if(breath){
+    qBass(ch.bass, t0, MUSIC_BAR - 0.1, 0.026); // ronde tenue : le sol respire
+  } else if(bar === 7){
+    qBass(82.41, t0, 0.5, 0.036);
+    qBass(82.41, t0 + 4*Q_STEP, 0.5, 0.030);
+    qBass(103.83, t0 + 8*Q_STEP, 0.5, 0.032);   // sol#
+    qBass(123.47, t0 + 12*Q_STEP, 0.55, 0.036); // si -> Am au prochain tour
+  } else {
+    [[0,0.036],[3,0.022],[4,0.030],[8,0.034],[11,0.022],[12,0.030]].forEach(([s,v])=>{
+      qBass(s===11 ? ch.bass*2 : ch.bass, t0 + s*Q_STEP, 0.34, v);
+    });
+  }
+  // L'ARPÈGE QUI TOURNE : cellule de 6 notes lue en continu sur 16 pas par
+  // mesure -> le dessin se décale à chaque mesure (rotation polymétrique).
+  // Accent tous les 4 pas (rythme croisé 4×6), micro-vague déterministe.
+  const bright = cycle >= 2 ? 1.14 : 1;
   for(let s=0; s<16; s++){
-    const idx = pat[s];
-    if(idx < 0) continue;
-    qPluck(ch.arp[idx], t0 + s*Q_STEP, (s % 4 === 0) ? 0.026 : 0.017);
+    const g = musicStep*16 + s;
+    const f = ch.arp[g % 6];
+    let v = ((g % 4 === 0) ? 0.024 : 0.015) * bright * (1 + 0.12*Math.sin(g*1.7));
+    qPluck(f, t0 + s*Q_STEP, v, 0.5*Math.sin(g*0.39), 0.22);
   }
-  // Shaker feutré sur les contretemps + fantômes discrets
-  [2,6,10,14].forEach(s=>qShaker(t0 + s*Q_STEP, 0.008));
-  [7,15].forEach(s=>qShaker(t0 + s*Q_STEP, 0.0033));
-  // Nappe liante + ping de plateau au début de chaque accord
-  if(bar % 2 === 0){
-    qPad(ch.pad, t0, MUSIC_BAR*2 - 0.1);
-    if(bar % 4 === 0) qPing(ch.ping, t0);
+  // Shaker : contretemps toujours, doubles-croches fantômes dès le 2e cycle.
+  if(!breath){
+    [2,6,10,14].forEach(s=>qShaker(t0 + s*Q_STEP, 0.007));
+    if(cycle >= 1){ [4,12].forEach(s=>qShaker(t0 + s*Q_STEP, 0.003)); }
+  }
+  // Nappe fine sous chaque accord.
+  qPad(ch.pad, t0, MUSIC_BAR + 0.2);
+  // LA MÉLODIE (cycles 1-3, jamais pendant la respiration) : une phrase par
+  // paire de mesures ; la 4e reste suspendue sur sol# jusqu'au retour du Am.
+  if(cycle >= 1 && !breath){
+    const ph = Q_LEAD[bar >> 1], half = (bar % 2) * 16;
+    for(const [st, dn, f] of ph){
+      if(st >= half && st < half + 16){
+        qLead(f, t0 + (st - half)*Q_STEP, dn*Q_STEP, 0.030, -0.2);
+      }
+    }
+    // Scintillement (cycles 2-3) : écho d'octave de la fin de phrase, alterné.
+    if(cycle >= 2 && bar % 2 === 1){
+      const last = Q_LEAD[bar >> 1][Q_LEAD[bar >> 1].length - 1];
+      qSpark(last[2]*2, t0 + (last[0] - 16 + last[1])*Q_STEP + 0.25, (bar >> 1) % 2 ? 0.65 : -0.65);
+    }
   }
   musicStep += 1; musicNextBar += MUSIC_BAR;
 }
@@ -3555,7 +3639,7 @@ function openSettings(){
       </div>
       <div class="set-row">
         <span class="set-ico mus">${ICONS.music}</span>
-        <span class="set-txt"><b>Musique de fond</b><small>Ambiance de quizz, feutrée et entraînante</small></span>
+        <span class="set-txt"><b>Musique de fond</b><small>« La Transe du Désert » — boucle hypnotique</small></span>
         <button class="switch${settings.music?' on':''}" id="swMusic" role="switch" aria-checked="${settings.music}" aria-label="Musique de fond" onclick="setMusic(!settings.music)"></button>
       </div>
       ${((IS_IOS || IS_ANDROID) && !isStandalone) ? `
