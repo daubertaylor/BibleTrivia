@@ -3369,21 +3369,20 @@ function applyVolume(){
 
 /* ===================== MUSIQUE DE FOND — « Le Souffle du Désert » =====================
    Aucun fichier audio : tout est composé et synthétisé en direct, dans un
-   AMBIENT DE FILM pur (les ouvertures calmes de « Time », d'Interstellar) :
-   plus AUCUNE texture de quizz — pas de doubles-croches, pas de tic, pas de
-   pulsation appuyée. Ce qui reste, et qui suffit :
-   - le DRONE-pédale grave, l'horizon du désert, jamais interrompu ;
-   - des NAPPES qui se lèvent en plus d'une seconde sous chaque accord
-     (Am F C G · Am F Dm E — la 8e, en MI MAJEUR, tient la sensible sol# :
-     la résolution n'arrive qu'au retour de la boucle) ;
-   - un PIANO ÉPARS : 2-3 notes longues par mesure, qui tournent lentement
-     dans la cellule de l'accord et se noient dans l'écho en croche pointée ;
-   - une MÉLODIE chuchotée puis un battement très lointain, seulement aux
-     cycles 2-3 du macro-arc (base -> nappes -> thème -> respiration de
-     2 mesures -> final) — on n'entend jamais deux fois la même mesure ;
-   - une stéréo légère qui ondule.
-   À 100 BPM (proche du rythme cardiaque), filtré à 2,4 kHz : chaud, feutré,
-   fait pour APAISER en boucle sans jamais lasser. */
+   PIANO SEUL, à la manière de « Time » de Hans Zimmer : un seul instrument,
+   trois plans, et l'hypnose vient de la répétition qui respire.
+   - MAIN GAUCHE : l'octave grave posée à chaque mesure, résonance de 2,6 s,
+     la quinte qui la rejoint à partir du 2e cycle ;
+   - MAIN DROITE : une vague de croches (montée-descente dans l'accord),
+     toujours la même forme, jamais la même lumière (vague de vélocités
+     déterministe + ondulation stéréo) — le motif de « Time » ;
+   - LE CHANT (cycles 2-3) : la mélodie au piano au-dessus de la vague ; la
+     4e phrase reste SUSPENDUE sur sol# — la résolution n'arrive qu'au
+     retour de la boucle (Am F C G · Am F Dm E, mi majeur en 8e mesure) ;
+   - macro-arc de 4 cycles : main droite seule -> main gauche enrichie ->
+     chant -> RESPIRATION de 2 mesures (l'accord simplement posé) -> final ;
+   - le tout baigné d'un écho en croche pointée, discret, qui lie les notes.
+   À 100 BPM, filtré à 2,4 kHz : un piano feutré, doux, qui apaise en boucle. */
 let musicBusNode = null, musicDelayIn = null, musicTimer = null, musicStep = 0, musicNextBar = 0, musicPlaying = false;
 const MUSIC_BAR = 2.4;            // une mesure 4/4 à 100 BPM
 const Q_STEP = MUSIC_BAR / 16;    // la double-croche, unité du groove
@@ -3421,8 +3420,8 @@ function musicBus(){
        musique gouvernent aussi les échos. */
     musicDelayIn = ctx.createGain(); musicDelayIn.gain.value = 1;
     const dly = ctx.createDelay(1.0); dly.delayTime.value = 0.45;
-    const lp = ctx.createBiquadFilter(); lp.type = "lowpass"; lp.frequency.value = 1100; lp.Q.value = 0.5;
-    const fb = ctx.createGain(); fb.gain.value = 0.44;
+    const lp = ctx.createBiquadFilter(); lp.type = "lowpass"; lp.frequency.value = 1150; lp.Q.value = 0.5;
+    const fb = ctx.createGain(); fb.gain.value = 0.36;
     const wet = ctx.createGain(); wet.gain.value = 0.85;
     musicDelayIn.connect(dly); dly.connect(lp); lp.connect(fb); fb.connect(dly);
     lp.connect(wet); wet.connect(musicBusNode);
@@ -3445,119 +3444,27 @@ function qOut(node, pan, send){
   }
 }
 function qT(t0){ const ctx = getCtx(); return t0 < ctx.currentTime + 0.004 ? ctx.currentTime + 0.004 : t0; } // filet : jamais dans le passé (anti-glitch)
-/* Le TAIKO du désert : un boom sinus profond (62→34 Hz) à longue traîne +
-   une « peau » de bruit sourd — la grosse percussion de cinéma, feutrée. */
-function qTaiko(t0, vol){
-  const ctx = getCtx(); t0 = qT(t0);
-  const o = ctx.createOscillator(), g = ctx.createGain();
-  o.type = "sine";
-  o.frequency.setValueAtTime(58, t0);
-  o.frequency.exponentialRampToValueAtTime(34, t0 + 0.26);
-  g.gain.setValueAtTime(0.0001, t0);
-  g.gain.exponentialRampToValueAtTime(vol, t0 + 0.05);
-  g.gain.exponentialRampToValueAtTime(0.0001, t0 + 0.95);
-  o.connect(g); g.connect(musicBus());
-  o.start(t0); o.stop(t0 + 1.0);
-  if(!qNoiseBuf){
-    qNoiseBuf = ctx.createBuffer(1, Math.ceil(ctx.sampleRate*0.09), ctx.sampleRate);
-    const d = qNoiseBuf.getChannelData(0);
-    for(let i=0;i<d.length;i++) d[i] = Math.random()*2-1;
-  }
-  if(qNoiseBuf){ // la « peau » : souffle grave très doux sous la frappe
-    const s = ctx.createBufferSource(); s.buffer = qNoiseBuf;
-    const f = ctx.createBiquadFilter(); f.type = "lowpass"; f.frequency.value = 260;
-    const ng = ctx.createGain();
-    ng.gain.setValueAtTime(0.0001, t0);
-    ng.gain.exponentialRampToValueAtTime(vol*0.35, t0 + 0.012);
-    ng.gain.exponentialRampToValueAtTime(0.0001, t0 + 0.09);
-    s.connect(f); f.connect(ng); ng.connect(musicBus());
-    s.start(t0); s.stop(t0 + 0.12);
-  }
-}
-function qBass(freq, t0, dur, vol){
-  const ctx = getCtx(); t0 = qT(t0);
-  const o = ctx.createOscillator(), g = ctx.createGain();
-  o.type = "triangle"; o.frequency.value = freq;
-  g.gain.setValueAtTime(0.0001, t0);
-  g.gain.linearRampToValueAtTime(vol, t0 + 0.012);
-  g.gain.setValueAtTime(vol, t0 + dur*0.55);
-  g.gain.exponentialRampToValueAtTime(0.0001, t0 + dur);
-  o.connect(g); g.connect(musicBus());
-  o.start(t0); o.stop(t0 + dur + 0.05);
-}
-/* La note de « piano » : attaque veloutée, longue résonance qui se fond dans
-   l'écho — le toucher des ouvertures calmes de cinéma, jamais percussif. */
-function qPluck(freq, t0, vol, pan, send){
-  const ctx = getCtx(); t0 = qT(t0);
+/* LA note de piano — l'unique instrument de la pièce. Attaque veloutée
+   (feutre), corps chaud (triangle) + souffle d'octave (sine), résonance
+   réglable : longue pour la main gauche, chantante pour la mélodie. */
+function qPluck(freq, t0, vol, pan, send, dur){
+  const ctx = getCtx(); t0 = qT(t0); dur = dur || 1.35;
   const o = ctx.createOscillator(), g = ctx.createGain();
   o.type = "triangle"; o.frequency.value = freq;
   g.gain.setValueAtTime(0.0001, t0);
   g.gain.exponentialRampToValueAtTime(vol, t0 + 0.018);
-  g.gain.exponentialRampToValueAtTime(0.0001, t0 + 1.35);
+  g.gain.exponentialRampToValueAtTime(0.0001, t0 + dur);
   o.connect(g); qOut(g, pan, send);
-  o.start(t0); o.stop(t0 + 1.4);
+  o.start(t0); o.stop(t0 + dur + 0.05);
   const h = ctx.createOscillator(), hg = ctx.createGain();
   h.type = "sine"; h.frequency.value = freq*2;
   hg.gain.setValueAtTime(0.0001, t0);
   hg.gain.exponentialRampToValueAtTime(vol*0.15, t0 + 0.018);
-  hg.gain.exponentialRampToValueAtTime(0.0001, t0 + 0.5);
+  hg.gain.exponentialRampToValueAtTime(0.0001, t0 + Math.min(0.6, dur*0.45));
   h.connect(hg); qOut(hg, pan, 0);
-  h.start(t0); h.stop(t0 + 0.55);
-}
-/* La mélodie : deux oscillateurs légèrement désaccordés (chorus naturel),
-   attaque douce, tenue chantée, retombée longue. Envoyée à l'écho. */
-function qLead(freq, t0, dur, vol, pan){
-  const ctx = getCtx(); t0 = qT(t0);
-  [["triangle", 0, vol], ["sine", 6, vol*0.55]].forEach(([type, det, v])=>{
-    const o = ctx.createOscillator(), g = ctx.createGain();
-    o.type = type; o.frequency.value = freq; o.detune.value = det;
-    g.gain.setValueAtTime(0.0001, t0);
-    g.gain.linearRampToValueAtTime(v, t0 + 0.06);
-    g.gain.setValueAtTime(v, t0 + Math.max(0.05, dur*0.62));
-    g.gain.exponentialRampToValueAtTime(0.0001, t0 + dur + 0.35);
-    o.connect(g); qOut(g, pan, 0.30);
-    o.start(t0); o.stop(t0 + dur + 0.4);
-  });
+  h.start(t0); h.stop(t0 + Math.min(0.65, dur*0.45) + 0.05);
 }
 let qNoiseBuf = null; // bruit blanc précalculé une fois (tic, taiko, riser)
-/* Le DRONE : la pédale de LA du désert (sub sinus 55 Hz + deux dents de scie
-   graves désaccordées, adoucies au filtre). Toujours là, comme l'horizon. */
-function qDrone(t0, dur){
-  const ctx = getCtx(); t0 = qT(t0);
-  const lp = ctx.createBiquadFilter(); lp.type = "lowpass"; lp.frequency.value = 420; lp.Q.value = 0.4;
-  const out = ctx.createGain(); out.gain.value = 1;
-  lp.connect(out); out.connect(musicBus());
-  [["sine", 55.0, 0, 0.019], ["sawtooth", 110.0, -7, 0.006], ["sawtooth", 110.0, 7, 0.006]].forEach(([type, f, det, v])=>{
-    const o = ctx.createOscillator(), g = ctx.createGain();
-    o.type = type; o.frequency.value = f; o.detune.value = det;
-    g.gain.setValueAtTime(0.0001, t0);
-    g.gain.linearRampToValueAtTime(v, t0 + 0.5);
-    g.gain.setValueAtTime(v, t0 + dur - 0.4);
-    g.gain.linearRampToValueAtTime(0.0001, t0 + dur + 0.3);
-    o.connect(g); g.connect(lp);
-    o.start(t0); o.stop(t0 + dur + 0.35);
-  });
-}
-/* Les CORDES : dents de scie désaccordées sous un filtre chaud, attaque
-   lente — la houle orchestrale qui gonfle sous chaque accord. */
-function qStrings(freqs, t0, dur, mul){
-  const ctx = getCtx(); t0 = qT(t0);
-  const lp = ctx.createBiquadFilter(); lp.type = "lowpass"; lp.frequency.value = 650; lp.Q.value = 0.5;
-  lp.connect(musicBus());
-  freqs.forEach((freq, k)=>{
-    [-6, 6].forEach((det)=>{
-      const o = ctx.createOscillator(), g = ctx.createGain();
-      o.type = "sawtooth"; o.frequency.value = freq; o.detune.value = det;
-      const v = (k===0 ? 0.0046 : 0.0032) * (mul||1);
-      g.gain.setValueAtTime(0.0001, t0);
-      g.gain.linearRampToValueAtTime(v, t0 + 1.3);
-      g.gain.setValueAtTime(v, t0 + dur - 0.35);
-      g.gain.linearRampToValueAtTime(0.0001, t0 + dur + 0.3);
-      o.connect(g); g.connect(lp);
-      o.start(t0); o.stop(t0 + dur + 0.35);
-    });
-  });
-}
 /* Scintillement : l'octave de la dernière note d'une phrase, en écho
    lointain, alterné gauche/droite — la poussière d'étoiles du désert. */
 function qSpark(freq, t0, pan){
@@ -3565,7 +3472,7 @@ function qSpark(freq, t0, pan){
   const o = ctx.createOscillator(), g = ctx.createGain();
   o.type = "sine"; o.frequency.value = freq;
   g.gain.setValueAtTime(0.0001, t0);
-  g.gain.exponentialRampToValueAtTime(0.006, t0 + 0.05);
+  g.gain.exponentialRampToValueAtTime(0.011, t0 + 0.05);
   g.gain.exponentialRampToValueAtTime(0.0001, t0 + 1.3);
   o.connect(g); qOut(g, pan, 0.5);
   o.start(t0); o.stop(t0 + 1.2);
@@ -3576,38 +3483,46 @@ function scheduleMusicBar(){
   const breath = (cycle === 3 && bar < 2);   // la « respiration » : 2 mesures suspendues
   const ch = QUIZ_PROG[bar];
   const t0 = musicNextBar;
-  // LE DRONE : la pédale grave, l'horizon du désert — jamais interrompue.
-  qDrone(t0, MUSIC_BAR + 0.15);
-  // LA BASSE en rondes : une fondation par accord ; à la 8e mesure, la montée
-  // mi→sol#→si en noires qui appelle le retour au début de la boucle.
+  const E = Q_STEP * 2;                      // la croche (0,3 s à 100 BPM)
+  // MAIN GAUCHE : la basse du piano — l'octave grave posée au premier temps,
+  // longue résonance ; la quinte au 3e temps dès le 2e cycle. À la 8e mesure,
+  // la montée mi → sol# → si, main gauche seule, qui appelle le retour du début.
   if(bar === 7){
-    qBass(82.41, t0, 1.1, 0.024);
-    qBass(103.83, t0 + 8*Q_STEP, 0.55, 0.024);  // sol#
-    qBass(123.47, t0 + 12*Q_STEP, 0.6, 0.026);  // si -> Am au prochain tour
+    qPluck(82.41, t0, 0.042, -0.1, 0.2, 2.2);
+    qPluck(103.83, t0 + 4*E, 0.038, -0.1, 0.2, 1.7);   // sol# — la sensible
+    qPluck(123.47, t0 + 6*E, 0.040, -0.1, 0.2, 1.7);   // si -> Am au prochain tour
   } else {
-    qBass(ch.bass, t0, MUSIC_BAR - 0.15, breath ? 0.020 : 0.024);
+    qPluck(ch.bass, t0, breath ? 0.034 : 0.042, -0.1, 0.2, 2.6);
+    if(cycle >= 1 && !breath) qPluck(ch.bass*1.5, t0 + 4*E, 0.026, -0.1, 0.2, 1.8);
   }
-  // LES NAPPES : elles portent tout — la houle lente qui se lève sous chaque
-  // accord (un peu plus ample aux cycles 2-3) ; tues pendant la respiration.
-  if(!breath) qStrings(ch.pad, t0, MUSIC_BAR + 0.2, cycle >= 2 ? 1.15 : 1);
-  // LE PIANO ÉPARS : deux ou trois notes longues par mesure, qui tournent
-  // lentement dans la cellule de l'accord et se noient dans l'écho — le
-  // toucher de « Time », méditatif, jamais pressé.
-  const base = musicStep * 2;
-  qPluck(ch.arp[base % 6],       t0,             0.016, -0.25, 0.5);
-  qPluck(ch.arp[(base + 2) % 6], t0 + 8*Q_STEP,  0.013,  0.25, 0.5);
-  if(bar % 2 === 1) qPluck(ch.arp[(base + 4) % 6], t0 + 12*Q_STEP, 0.010, 0, 0.55);
-  // LE BATTEMENT LOINTAIN : seulement aux cycles 2-3 — un cœur au repos,
-  // très loin derrière les dunes.
-  if(!breath && cycle >= 2){
-    qTaiko(t0, (bar === 0) ? 0.044 : 0.034);
+  // MAIN DROITE : la vague de croches — le motif de « Time ». Huit notes par
+  // mesure qui montent puis redescendent dans l'accord, vélocités qui
+  // respirent (vague déterministe), légère ondulation stéréo. C'est elle qui
+  // hypnotise : toujours la même forme, jamais exactement la même lumière.
+  if(!breath){
+    const cell = [ch.arp[1], ch.arp[2], ch.arp[3], ch.arp[4]];
+    const PAT = [0,1,2,3, 2,1,0,1];
+    const vBase = cycle === 0 ? 0.025 : 0.030;
+    for(let n=0; n<8; n++){
+      const g = musicStep*8 + n;
+      const v = vBase * (n === 0 ? 1.15 : 1) * (1 + 0.14*Math.sin(g*0.9));
+      qPluck(cell[PAT[n]], t0 + n*E, v, 0.35*Math.sin(g*0.5), 0.35);
+    }
+  } else {
+    // Respiration : l'accord simplement posé, égrené lentement, puis une
+    // poussière d'octave — le piano reprend son souffle.
+    [ch.arp[1], ch.arp[2], ch.arp[3]].forEach((f, k)=>{
+      qPluck(f, t0 + k*0.09, 0.024, -0.15 + k*0.15, 0.45, 2.2);
+    });
+    qSpark(ch.arp[4]*2, t0 + 4*E, 0.4);
   }
-  // LA MÉLODIE chuchotée (cycles 2-3) ; la 4e phrase suspendue sur sol#.
+  // LE CHANT (cycles 2-3) : la mélodie au piano, claire au-dessus de la vague ;
+  // la 4e phrase reste suspendue sur sol# jusqu'au retour du début.
   if(cycle >= 2 && !breath){
     const ph = Q_LEAD[bar >> 1], half = (bar % 2) * 16;
     for(const [st, dn, f] of ph){
       if(st >= half && st < half + 16){
-        qLead(f, t0 + (st - half)*Q_STEP, dn*Q_STEP, 0.016, -0.2);
+        qPluck(f, t0 + (st - half)*Q_STEP, 0.038, -0.2, 0.5, dn*Q_STEP + 0.9);
       }
     }
     // Scintillement (cycle 3) : écho d'octave en poussière d'étoiles.
@@ -3717,7 +3632,7 @@ function openSettings(){
       </div>
       <div class="set-row">
         <span class="set-ico mus">${ICONS.music}</span>
-        <span class="set-txt"><b>Musique de fond</b><small>« Le Souffle du Désert » — façon musique de film</small></span>
+        <span class="set-txt"><b>Musique de fond</b><small>« Le Piano du Désert » — doux et hypnotique</small></span>
         <button class="switch${settings.music?' on':''}" id="swMusic" role="switch" aria-checked="${settings.music}" aria-label="Musique de fond" onclick="setMusic(!settings.music)"></button>
       </div>
       ${((IS_IOS || IS_ANDROID) && !isStandalone) ? `
