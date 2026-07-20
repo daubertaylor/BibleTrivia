@@ -3373,18 +3373,20 @@ function applyVolume(){
    trois plans, et l'hypnose vient de la répétition qui respire.
    - MAIN GAUCHE : l'octave grave posée à chaque mesure, résonance de 2,6 s,
      la quinte qui la rejoint à partir du 2e cycle ;
-   - MAIN DROITE : une vague de croches (montée-descente dans l'accord),
-     toujours la même forme, jamais la même lumière (vague de vélocités
-     déterministe + ondulation stéréo) — le motif de « Time » ;
+   - MAIN DROITE : une vague de croches lente (deux dessins qui alternent),
+     phrasée en arche, chaque note décalée et touchée différemment (mains
+     humaines : timing ±13 ms, toucher ±14 %, une note parfois laissée
+     filer) — le motif de « Time », jamais mécanique ;
    - LE CHANT (cycles 2-3) : la mélodie au piano au-dessus de la vague ; la
      4e phrase reste SUSPENDUE sur sol# — la résolution n'arrive qu'au
      retour de la boucle (Am F C G · Am F Dm E, mi majeur en 8e mesure) ;
    - macro-arc de 4 cycles : main droite seule -> main gauche enrichie ->
      chant -> RESPIRATION de 2 mesures (l'accord simplement posé) -> final ;
    - le tout baigné d'un écho en croche pointée, discret, qui lie les notes.
-   À 100 BPM, filtré à 2,4 kHz : un piano feutré, doux, qui apaise en boucle. */
+   À ~84 BPM, attaque feutrée de 35 ms, notes fondues comme pédale enfoncée,
+   filtré à 2,4 kHz : un piano doux, humain, qui apaise en boucle. */
 let musicBusNode = null, musicDelayIn = null, musicTimer = null, musicStep = 0, musicNextBar = 0, musicPlaying = false;
-const MUSIC_BAR = 2.4;            // une mesure 4/4 à 100 BPM
+const MUSIC_BAR = 2.85;           // une mesure 4/4 à ~84 BPM — lent, apaisé
 const Q_STEP = MUSIC_BAR / 16;    // la double-croche, unité du groove
 /* La boucle harmonique : UNE mesure par accord, 8 mesures.
    bass = fondamentale ; arp = cellule de 6 notes (couleurs add9/maj7) ;
@@ -3419,7 +3421,7 @@ function musicBus(){
        répétition. Branché AVANT le gain du bus -> le volume et l'arrêt de la
        musique gouvernent aussi les échos. */
     musicDelayIn = ctx.createGain(); musicDelayIn.gain.value = 1;
-    const dly = ctx.createDelay(1.0); dly.delayTime.value = 0.45;
+    const dly = ctx.createDelay(1.0); dly.delayTime.value = 0.54;
     const lp = ctx.createBiquadFilter(); lp.type = "lowpass"; lp.frequency.value = 1150; lp.Q.value = 0.5;
     const fb = ctx.createGain(); fb.gain.value = 0.36;
     const wet = ctx.createGain(); wet.gain.value = 0.85;
@@ -3444,25 +3446,28 @@ function qOut(node, pan, send){
   }
 }
 function qT(t0){ const ctx = getCtx(); return t0 < ctx.currentTime + 0.004 ? ctx.currentTime + 0.004 : t0; } // filet : jamais dans le passé (anti-glitch)
-/* LA note de piano — l'unique instrument de la pièce. Attaque veloutée
-   (feutre), corps chaud (triangle) + souffle d'octave (sine), résonance
-   réglable : longue pour la main gauche, chantante pour la mélodie. */
+/* LA note de piano FEUTRÉ — l'unique instrument. Attaque veloutée de 35 ms
+   (aucun « pincement »), deux triangles à peine désaccordés (le battement
+   lent d'une vraie corde double), souffle d'octave discret. La résonance
+   longue fait se FONDRE les notes entre elles, comme pédale enfoncée. */
 function qPluck(freq, t0, vol, pan, send, dur){
-  const ctx = getCtx(); t0 = qT(t0); dur = dur || 1.35;
-  const o = ctx.createOscillator(), g = ctx.createGain();
-  o.type = "triangle"; o.frequency.value = freq;
-  g.gain.setValueAtTime(0.0001, t0);
-  g.gain.exponentialRampToValueAtTime(vol, t0 + 0.018);
-  g.gain.exponentialRampToValueAtTime(0.0001, t0 + dur);
-  o.connect(g); qOut(g, pan, send);
-  o.start(t0); o.stop(t0 + dur + 0.05);
+  const ctx = getCtx(); t0 = qT(t0); dur = dur || 2.2;
+  [-2.5, 2.5].forEach((det)=>{
+    const o = ctx.createOscillator(), g = ctx.createGain();
+    o.type = "triangle"; o.frequency.value = freq; o.detune.value = det;
+    g.gain.setValueAtTime(0.0001, t0);
+    g.gain.linearRampToValueAtTime(vol*0.55, t0 + 0.035);
+    g.gain.exponentialRampToValueAtTime(0.0001, t0 + dur);
+    o.connect(g); qOut(g, pan, send);
+    o.start(t0); o.stop(t0 + dur + 0.05);
+  });
   const h = ctx.createOscillator(), hg = ctx.createGain();
   h.type = "sine"; h.frequency.value = freq*2;
   hg.gain.setValueAtTime(0.0001, t0);
-  hg.gain.exponentialRampToValueAtTime(vol*0.15, t0 + 0.018);
-  hg.gain.exponentialRampToValueAtTime(0.0001, t0 + Math.min(0.6, dur*0.45));
+  hg.gain.linearRampToValueAtTime(vol*0.07, t0 + 0.05);
+  hg.gain.exponentialRampToValueAtTime(0.0001, t0 + Math.min(0.9, dur*0.5));
   h.connect(hg); qOut(hg, pan, 0);
-  h.start(t0); h.stop(t0 + Math.min(0.65, dur*0.45) + 0.05);
+  h.start(t0); h.stop(t0 + Math.min(0.95, dur*0.5) + 0.05);
 }
 let qNoiseBuf = null; // bruit blanc précalculé une fois (tic, taiko, riser)
 /* Scintillement : l'octave de la dernière note d'une phrase, en écho
@@ -3483,52 +3488,56 @@ function scheduleMusicBar(){
   const breath = (cycle === 3 && bar < 2);   // la « respiration » : 2 mesures suspendues
   const ch = QUIZ_PROG[bar];
   const t0 = musicNextBar;
-  const E = Q_STEP * 2;                      // la croche (0,3 s à 100 BPM)
-  // MAIN GAUCHE : la basse du piano — l'octave grave posée au premier temps,
-  // longue résonance ; la quinte au 3e temps dès le 2e cycle. À la 8e mesure,
-  // la montée mi → sol# → si, main gauche seule, qui appelle le retour du début.
+  const E = Q_STEP * 2;                      // la croche (~0,36 s à 84 BPM)
+  /* MAINS HUMAINES : chaque note est décalée de quelques millisecondes et
+     jouée avec un toucher légèrement différent — jamais deux fois pareil,
+     c'est ce qui efface toute mécanique. (h = timing, w = toucher) */
+  const h = (ms)=> (Math.random() - 0.5) * ms / 1000;
+  const w = ()=> 0.86 + Math.random() * 0.28;
+  // MAIN GAUCHE : l'octave grave posée au premier temps, longue résonance ;
+  // la quinte la rejoint au 2e cycle. À la 8e mesure, la montée
+  // mi → sol# → si, main gauche seule, qui appelle le retour du début.
   if(bar === 7){
-    qPluck(82.41, t0, 0.042, -0.1, 0.2, 2.2);
-    qPluck(103.83, t0 + 4*E, 0.038, -0.1, 0.2, 1.7);   // sol# — la sensible
-    qPluck(123.47, t0 + 6*E, 0.040, -0.1, 0.2, 1.7);   // si -> Am au prochain tour
+    qPluck(82.41, t0 + h(12), 0.040*w(), -0.1, 0.2, 2.6);
+    qPluck(103.83, t0 + 4*E + h(18), 0.036*w(), -0.1, 0.2, 2.0);  // sol# — la sensible
+    qPluck(123.47, t0 + 6*E + h(18), 0.038*w(), -0.1, 0.2, 2.0);  // si -> Am au prochain tour
   } else {
-    qPluck(ch.bass, t0, breath ? 0.034 : 0.042, -0.1, 0.2, 2.6);
-    if(cycle >= 1 && !breath) qPluck(ch.bass*1.5, t0 + 4*E, 0.026, -0.1, 0.2, 1.8);
+    qPluck(ch.bass, t0 + h(12), (breath ? 0.032 : 0.040)*w(), -0.1, 0.2, 3.0);
+    if(cycle >= 1 && !breath) qPluck(ch.bass*1.5, t0 + 4*E + h(20), 0.024*w(), -0.1, 0.2, 2.2);
   }
-  // MAIN DROITE : la vague de croches — le motif de « Time ». Huit notes par
-  // mesure qui montent puis redescendent dans l'accord, vélocités qui
-  // respirent (vague déterministe), légère ondulation stéréo. C'est elle qui
-  // hypnotise : toujours la même forme, jamais exactement la même lumière.
+  // MAIN DROITE : la vague de croches, lente. Deux dessins qui alternent
+  // (montée-descente, puis montée reprise), phrasé en arche — le sommet de
+  // la mesure est à peine plus posé. Une note s'efface parfois d'elle-même.
   if(!breath){
     const cell = [ch.arp[1], ch.arp[2], ch.arp[3], ch.arp[4]];
-    const PAT = [0,1,2,3, 2,1,0,1];
-    const vBase = cycle === 0 ? 0.025 : 0.030;
+    const PAT = (bar % 2 === 0) ? [0,1,2,3, 2,1,0,1] : [0,1,2,1, 3,2,1,2];
+    const vBase = cycle === 0 ? 0.023 : 0.027;
     for(let n=0; n<8; n++){
-      const g = musicStep*8 + n;
-      const v = vBase * (n === 0 ? 1.15 : 1) * (1 + 0.14*Math.sin(g*0.9));
-      qPluck(cell[PAT[n]], t0 + n*E, v, 0.35*Math.sin(g*0.5), 0.35);
+      if(n === 6 && Math.random() < 0.18) continue;   // la note qu'on laisse filer
+      const arch = 1 + 0.16*Math.sin((n/7)*Math.PI);  // le phrasé en arche
+      qPluck(cell[PAT[n]], t0 + n*E + h(26), vBase*arch*w(), 0.3*Math.sin((musicStep*8+n)*0.5), 0.35);
     }
   } else {
-    // Respiration : l'accord simplement posé, égrené lentement, puis une
-    // poussière d'octave — le piano reprend son souffle.
+    // Respiration : l'accord simplement posé, égrené comme à main levée,
+    // puis une poussière d'octave — le piano reprend son souffle.
     [ch.arp[1], ch.arp[2], ch.arp[3]].forEach((f, k)=>{
-      qPluck(f, t0 + k*0.09, 0.024, -0.15 + k*0.15, 0.45, 2.2);
+      qPluck(f, t0 + k*(0.10 + Math.random()*0.05), 0.022*w(), -0.15 + k*0.15, 0.45, 2.6);
     });
-    qSpark(ch.arp[4]*2, t0 + 4*E, 0.4);
+    qSpark(ch.arp[4]*2, t0 + 4*E + h(30), 0.4);
   }
-  // LE CHANT (cycles 2-3) : la mélodie au piano, claire au-dessus de la vague ;
+  // LE CHANT (cycles 2-3) : la mélodie au piano, posée avec du rubato ;
   // la 4e phrase reste suspendue sur sol# jusqu'au retour du début.
   if(cycle >= 2 && !breath){
     const ph = Q_LEAD[bar >> 1], half = (bar % 2) * 16;
     for(const [st, dn, f] of ph){
       if(st >= half && st < half + 16){
-        qPluck(f, t0 + (st - half)*Q_STEP, 0.038, -0.2, 0.5, dn*Q_STEP + 0.9);
+        qPluck(f, t0 + (st - half)*Q_STEP + h(34), 0.034*w(), -0.2, 0.5, dn*Q_STEP + 1.2);
       }
     }
     // Scintillement (cycle 3) : écho d'octave en poussière d'étoiles.
     if(cycle === 3 && bar % 2 === 1){
       const last = Q_LEAD[bar >> 1][Q_LEAD[bar >> 1].length - 1];
-      qSpark(last[2]*2, t0 + (last[0] - 16 + last[1])*Q_STEP + 0.25, (bar >> 1) % 2 ? 0.65 : -0.65);
+      qSpark(last[2]*2, t0 + (last[0] - 16 + last[1])*Q_STEP + 0.3, (bar >> 1) % 2 ? 0.65 : -0.65);
     }
   }
   musicStep += 1; musicNextBar += MUSIC_BAR;
