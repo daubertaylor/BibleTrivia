@@ -3369,25 +3369,21 @@ function applyVolume(){
 
 /* ===================== MUSIQUE DE FOND — « Le Souffle du Désert » =====================
    Aucun fichier audio : tout est composé et synthétisé en direct, dans un
-   esprit MUSIQUE DE FILM au repos (les moments calmes de Dune/Interstellar) :
-   drone-pédale grave comme un horizon, un seul battement lointain par mesure,
-   tic d'horloge à la limite de l'audible, nappes qui se lèvent lentement —
-   tout berce, rien ne frappe.
-   L'hypnose repose sur des CYCLES EMBOÎTÉS de longueurs différentes qui
-   tournent les uns dans les autres (la recette des musiques minimalistes) :
-   - une cellule d'arpège de 6 notes lue en doubles-croches sur des mesures
-     de 16 pas -> le motif se DÉCALE d'un tiers à chaque mesure et ne repasse
-     par le même dessin que toutes les 3 mesures (rotation polymétrique) ;
-   - une harmonie de 8 mesures (Am F C G · Am F Dm E) dont la dernière, en MI
-     MAJEUR, tient la sensible sol# : la résolution n'arrive QUE lorsque la
-     boucle recommence -> l'oreille réclame le retour du début ;
-   - un macro-arc de 4 cycles (32 mesures ≈ 77 s) : base seule, puis mélodie,
-     puis échos scintillants, puis une « respiration » de 2 mesures avant le
-     final complet — on n'entend jamais deux fois la même mesure en 77 s ;
-   - un écho en croche pointée (0,45 s) sur l'arpège et la mélodie, la
-     signature des transes, et une stéréo légère qui ondule.
+   AMBIENT DE FILM pur (les ouvertures calmes de « Time », d'Interstellar) :
+   plus AUCUNE texture de quizz — pas de doubles-croches, pas de tic, pas de
+   pulsation appuyée. Ce qui reste, et qui suffit :
+   - le DRONE-pédale grave, l'horizon du désert, jamais interrompu ;
+   - des NAPPES qui se lèvent en plus d'une seconde sous chaque accord
+     (Am F C G · Am F Dm E — la 8e, en MI MAJEUR, tient la sensible sol# :
+     la résolution n'arrive qu'au retour de la boucle) ;
+   - un PIANO ÉPARS : 2-3 notes longues par mesure, qui tournent lentement
+     dans la cellule de l'accord et se noient dans l'écho en croche pointée ;
+   - une MÉLODIE chuchotée puis un battement très lointain, seulement aux
+     cycles 2-3 du macro-arc (base -> nappes -> thème -> respiration de
+     2 mesures -> final) — on n'entend jamais deux fois la même mesure ;
+   - une stéréo légère qui ondule.
    À 100 BPM (proche du rythme cardiaque), filtré à 2,4 kHz : chaud, feutré,
-   fait pour tourner en boucle sans jamais lasser. */
+   fait pour APAISER en boucle sans jamais lasser. */
 let musicBusNode = null, musicDelayIn = null, musicTimer = null, musicStep = 0, musicNextBar = 0, musicPlaying = false;
 const MUSIC_BAR = 2.4;            // une mesure 4/4 à 100 BPM
 const Q_STEP = MUSIC_BAR / 16;    // la double-croche, unité du groove
@@ -3462,6 +3458,11 @@ function qTaiko(t0, vol){
   g.gain.exponentialRampToValueAtTime(0.0001, t0 + 0.95);
   o.connect(g); g.connect(musicBus());
   o.start(t0); o.stop(t0 + 1.0);
+  if(!qNoiseBuf){
+    qNoiseBuf = ctx.createBuffer(1, Math.ceil(ctx.sampleRate*0.09), ctx.sampleRate);
+    const d = qNoiseBuf.getChannelData(0);
+    for(let i=0;i<d.length;i++) d[i] = Math.random()*2-1;
+  }
   if(qNoiseBuf){ // la « peau » : souffle grave très doux sous la frappe
     const s = ctx.createBufferSource(); s.buffer = qNoiseBuf;
     const f = ctx.createBiquadFilter(); f.type = "lowpass"; f.frequency.value = 260;
@@ -3472,24 +3473,6 @@ function qTaiko(t0, vol){
     s.connect(f); f.connect(ng); ng.connect(musicBus());
     s.start(t0); s.stop(t0 + 0.12);
   }
-}
-/* Le TIC d'horloge (clin d'œil à Interstellar) : le temps qui s'écoule,
-   même pendant la respiration — parfait pour un jeu de quizz. */
-function qTick(t0, vol){
-  const ctx = getCtx(); t0 = qT(t0);
-  if(!qNoiseBuf){
-    qNoiseBuf = ctx.createBuffer(1, Math.ceil(ctx.sampleRate*0.09), ctx.sampleRate);
-    const d = qNoiseBuf.getChannelData(0);
-    for(let i=0;i<d.length;i++) d[i] = Math.random()*2-1;
-  }
-  const s = ctx.createBufferSource(); s.buffer = qNoiseBuf;
-  const f = ctx.createBiquadFilter(); f.type = "bandpass"; f.frequency.value = 2100; f.Q.value = 4.5;
-  const g = ctx.createGain();
-  g.gain.setValueAtTime(0.0001, t0);
-  g.gain.exponentialRampToValueAtTime(vol, t0 + 0.004);
-  g.gain.exponentialRampToValueAtTime(0.0001, t0 + 0.03);
-  s.connect(f); f.connect(g); qOut(g, 0.22, 0);
-  s.start(t0); s.stop(t0 + 0.05);
 }
 function qBass(freq, t0, dur, vol){
   const ctx = getCtx(); t0 = qT(t0);
@@ -3502,24 +3485,24 @@ function qBass(freq, t0, dur, vol){
   o.connect(g); g.connect(musicBus());
   o.start(t0); o.stop(t0 + dur + 0.05);
 }
-/* Le pluck d'arpège : triangle à extinction rapide + octave sinus fantôme.
-   Panoramisé (il ondule dans l'espace) et envoyé à l'écho -> la vague. */
+/* La note de « piano » : attaque veloutée, longue résonance qui se fond dans
+   l'écho — le toucher des ouvertures calmes de cinéma, jamais percussif. */
 function qPluck(freq, t0, vol, pan, send){
   const ctx = getCtx(); t0 = qT(t0);
   const o = ctx.createOscillator(), g = ctx.createGain();
   o.type = "triangle"; o.frequency.value = freq;
   g.gain.setValueAtTime(0.0001, t0);
-  g.gain.exponentialRampToValueAtTime(vol, t0 + 0.010);
-  g.gain.exponentialRampToValueAtTime(0.0001, t0 + 0.38);
+  g.gain.exponentialRampToValueAtTime(vol, t0 + 0.018);
+  g.gain.exponentialRampToValueAtTime(0.0001, t0 + 1.35);
   o.connect(g); qOut(g, pan, send);
-  o.start(t0); o.stop(t0 + 0.42);
+  o.start(t0); o.stop(t0 + 1.4);
   const h = ctx.createOscillator(), hg = ctx.createGain();
   h.type = "sine"; h.frequency.value = freq*2;
   hg.gain.setValueAtTime(0.0001, t0);
-  hg.gain.exponentialRampToValueAtTime(vol*0.25, t0 + 0.010);
-  hg.gain.exponentialRampToValueAtTime(0.0001, t0 + 0.16);
+  hg.gain.exponentialRampToValueAtTime(vol*0.15, t0 + 0.018);
+  hg.gain.exponentialRampToValueAtTime(0.0001, t0 + 0.5);
   h.connect(hg); qOut(hg, pan, 0);
-  h.start(t0); h.stop(t0 + 0.2);
+  h.start(t0); h.stop(t0 + 0.55);
 }
 /* La mélodie : deux oscillateurs légèrement désaccordés (chorus naturel),
    attaque douce, tenue chantée, retombée longue. Envoyée à l'écho. */
@@ -3593,14 +3576,6 @@ function scheduleMusicBar(){
   const breath = (cycle === 3 && bar < 2);   // la « respiration » : 2 mesures suspendues
   const ch = QUIZ_PROG[bar];
   const t0 = musicNextBar;
-  // LE TIC D'HORLOGE : chaque temps, à la limite de l'audible — on le sent
-  // plus qu'on ne l'entend (le temps coule, clin d'œil à Interstellar).
-  for(let n=0; n<4; n++) qTick(t0 + n*4*Q_STEP, n===0 ? 0.0019 : 0.0014);
-  // LE TAIKO : un seul battement lointain par mesure, comme un cœur au
-  // repos — il berce, il ne frappe jamais.
-  if(!breath){
-    qTaiko(t0, (bar === 0) ? 0.050 : 0.040);
-  }
   // LE DRONE : la pédale grave, l'horizon du désert — jamais interrompue.
   qDrone(t0, MUSIC_BAR + 0.15);
   // LA BASSE en rondes : une fondation par accord ; à la 8e mesure, la montée
@@ -3612,25 +3587,27 @@ function scheduleMusicBar(){
   } else {
     qBass(ch.bass, t0, MUSIC_BAR - 0.15, breath ? 0.020 : 0.024);
   }
-  // LES CORDES : la houle qui gonfle sous chaque accord (plus amples aux
-  // cycles 2-3) ; silencieuses pendant la respiration.
-  if(!breath) qStrings(ch.pad, t0, MUSIC_BAR + 0.2, cycle >= 2 ? 1.18 : 1);
-  // L'ARPÈGE QUI TOURNE : cellule de 6 notes lue sur 16 pas -> le dessin se
-  // décale à chaque mesure (rotation polymétrique), l'hypnose continue.
-  const bright = cycle >= 2 ? 1.08 : 1;
-  for(let s=0; s<16; s++){
-    const g = musicStep*16 + s;
-    const f = ch.arp[g % 6];
-    let v = ((g % 4 === 0) ? 0.013 : 0.008) * bright * (1 + 0.12*Math.sin(g*1.7));
-    qPluck(f, t0 + s*Q_STEP, v, 0.5*Math.sin(g*0.39), 0.46);
+  // LES NAPPES : elles portent tout — la houle lente qui se lève sous chaque
+  // accord (un peu plus ample aux cycles 2-3) ; tues pendant la respiration.
+  if(!breath) qStrings(ch.pad, t0, MUSIC_BAR + 0.2, cycle >= 2 ? 1.15 : 1);
+  // LE PIANO ÉPARS : deux ou trois notes longues par mesure, qui tournent
+  // lentement dans la cellule de l'accord et se noient dans l'écho — le
+  // toucher de « Time », méditatif, jamais pressé.
+  const base = musicStep * 2;
+  qPluck(ch.arp[base % 6],       t0,             0.016, -0.25, 0.5);
+  qPluck(ch.arp[(base + 2) % 6], t0 + 8*Q_STEP,  0.013,  0.25, 0.5);
+  if(bar % 2 === 1) qPluck(ch.arp[(base + 4) % 6], t0 + 12*Q_STEP, 0.010, 0, 0.55);
+  // LE BATTEMENT LOINTAIN : seulement aux cycles 2-3 — un cœur au repos,
+  // très loin derrière les dunes.
+  if(!breath && cycle >= 2){
+    qTaiko(t0, (bar === 0) ? 0.044 : 0.034);
   }
-  // LA MÉLODIE (cycles 2-3 : le thème n'arrive qu'après l'installation de la
-  // transe — payoff de cinéma) ; la 4e phrase reste suspendue sur sol#.
+  // LA MÉLODIE chuchotée (cycles 2-3) ; la 4e phrase suspendue sur sol#.
   if(cycle >= 2 && !breath){
     const ph = Q_LEAD[bar >> 1], half = (bar % 2) * 16;
     for(const [st, dn, f] of ph){
       if(st >= half && st < half + 16){
-        qLead(f, t0 + (st - half)*Q_STEP, dn*Q_STEP, 0.018, -0.2);
+        qLead(f, t0 + (st - half)*Q_STEP, dn*Q_STEP, 0.016, -0.2);
       }
     }
     // Scintillement (cycle 3) : écho d'octave en poussière d'étoiles.
