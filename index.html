@@ -3290,7 +3290,7 @@ function chime(freq, start, dur, vol){
     const o = ctx.createOscillator(), g = ctx.createGain();
     o.type = "triangle"; o.frequency.value = freq * jit; o.detune.value = det;
     g.gain.setValueAtTime(0.0001, t0);
-    g.gain.linearRampToValueAtTime(v * 0.5, t0 + 0.03);       // attaque feutrée (feutre du marteau)
+    g.gain.linearRampToValueAtTime(v * 0.5, t0 + 0.05);       // attaque très feutrée (feutre du marteau) — moins de « plink »
     g.gain.exponentialRampToValueAtTime(0.0001, t0 + dur);    // résonance qui se fond
     o.connect(g); g.connect(masterFilter);
     o.start(t0); o.stop(t0 + dur + 0.05);
@@ -3298,7 +3298,7 @@ function chime(freq, start, dur, vol){
   const h = ctx.createOscillator(), hg = ctx.createGain();
   h.type = "sine"; h.frequency.value = freq * 2 * jit;
   hg.gain.setValueAtTime(0.0001, t0);
-  hg.gain.linearRampToValueAtTime(v * 0.12, t0 + 0.032);
+  hg.gain.linearRampToValueAtTime(v * 0.07, t0 + 0.052); // halo d'octave discret et adouci (timbre plus chaud)
   hg.gain.exponentialRampToValueAtTime(0.0001, t0 + Math.min(dur * 0.5, 0.5));
   h.connect(hg); hg.connect(masterFilter);
   h.start(t0); h.stop(t0 + Math.min(dur * 0.5, 0.5) + 0.05);
@@ -3335,8 +3335,8 @@ function playCorrect(){ if(!settings.sfx) return; chime(440,0,0.7,0.016); chime(
 function playIncorrect(){ if(!settings.sfx) return; chime(164.81,0,0.7,0.02); chime(110,0.06,0.9,0.012); }
 // tap : toc feutré quasi tactile, franc et bien présent sous le doigt (INCHANGÉ)
 function playTap(){ if(!settings.sfx) return; tock(640,0,0.03); }
-// série : deux notes hautes de piano, une petite étincelle Mi→La
-function playStreak(){ if(!settings.sfx) return; chime(880,0,0.5,0.014); chime(1318.51,0.06,0.6,0.011); }
+// série : deux notes de piano, étincelle douce Mi→La (plus jamais l'aigu perçant)
+function playStreak(){ if(!settings.sfx) return; chime(659.25,0,0.55,0.013); chime(880,0.08,0.75,0.011); }
 // victoire : trois notes retenues La–Mi–La, montée douce à longue traîne
 function playWin(){ if(!settings.sfx) return; chime(440,0,0.75,0.02); chime(659.25,0.11,0.85,0.019); chime(880,0.22,1.4,0.017); }
 // révélation : une quinte de piano La+Mi tenue, très bas, comme un souffle
