@@ -3283,25 +3283,30 @@ function blip(freq, start, dur, vol, type){
 function chime(freq, start, dur, vol){
   const ctx = getCtx();
   if(ctx.state==="suspended"){ ctx.resume(); }
-  const t0 = ctx.currentTime + start + Math.random()*0.01;
-  const v = vol * SFX_GAIN * (0.9 + Math.random()*0.2);
-  const jit = 1 + (Math.random()-0.5)*0.004;
-  [-3, 3].forEach((det)=>{
-    const o = ctx.createOscillator(), g = ctx.createGain();
-    o.type = "triangle"; o.frequency.value = freq * jit; o.detune.value = det;
-    g.gain.setValueAtTime(0.0001, t0);
-    g.gain.linearRampToValueAtTime(v * 0.5, t0 + 0.05);       // attaque très feutrée (feutre du marteau) — moins de « plink »
-    g.gain.exponentialRampToValueAtTime(0.0001, t0 + dur);    // résonance qui se fond
-    o.connect(g); g.connect(masterFilter);
-    o.start(t0); o.stop(t0 + dur + 0.05);
-  });
-  const h = ctx.createOscillator(), hg = ctx.createGain();
-  h.type = "sine"; h.frequency.value = freq * 2 * jit;
-  hg.gain.setValueAtTime(0.0001, t0);
-  hg.gain.linearRampToValueAtTime(v * 0.07, t0 + 0.052); // halo d'octave discret et adouci (timbre plus chaud)
-  hg.gain.exponentialRampToValueAtTime(0.0001, t0 + Math.min(dur * 0.5, 0.5));
-  h.connect(hg); hg.connect(masterFilter);
-  h.start(t0); h.stop(t0 + Math.min(dur * 0.5, 0.5) + 0.05);
+  const t0 = ctx.currentTime + start + Math.random()*0.008;
+  const v = vol * SFX_GAIN * (0.92 + Math.random()*0.16);
+  // VOIX PURE FACON iOS : une sinusoide ronde et lisse. Aucune onde triangle,
+  // aucune harmonique aigue, aucun desaccord -> plus de "ferraille" metallique.
+  // Attaque veloutee (ne surprend pas) et extinction douce. Un halo grave tres
+  // discret donne juste ce qu'il faut de corps, comme les sons systeme Apple.
+  const o = ctx.createOscillator(), g = ctx.createGain();
+  o.type = "sine"; o.frequency.value = freq;
+  g.gain.setValueAtTime(0.0001, t0);
+  g.gain.linearRampToValueAtTime(v * 0.5, t0 + 0.022);
+  g.gain.exponentialRampToValueAtTime(0.0001, t0 + dur);
+  o.connect(g); g.connect(masterFilter);
+  o.start(t0); o.stop(t0 + dur + 0.05);
+  // corps grave (octave en dessous), seulement quand il reste audible sur un
+  // haut-parleur de telephone -> chaleur sans jamais boueux ni sub inutile.
+  if(freq * 0.5 >= 90){
+    const b = ctx.createOscillator(), bg = ctx.createGain();
+    b.type = "sine"; b.frequency.value = freq * 0.5;
+    bg.gain.setValueAtTime(0.0001, t0);
+    bg.gain.linearRampToValueAtTime(v * 0.12, t0 + 0.03);
+    bg.gain.exponentialRampToValueAtTime(0.0001, t0 + dur * 0.5);
+    b.connect(bg); bg.connect(masterFilter);
+    b.start(t0); b.stop(t0 + dur * 0.5 + 0.05);
+  }
 }
 /* Toc feutré et boisé : un corps grave très bref + un souffle d'air discret,
    comme une touche qui se pose — plus rien d'électronique. */
@@ -3332,7 +3337,7 @@ function tock(freq, start, vol){
 // bonne réponse : petit arpège montant La–Do–Mi (l'accord de la pièce), lumineux
 function playCorrect(){ if(!settings.sfx) return; chime(440,0,0.7,0.016); chime(523.25,0.09,0.85,0.019); chime(659.25,0.19,1.15,0.015); }
 // erreur : deux notes graves feutrées Mi→La, douces, sans jamais gronder
-function playIncorrect(){ if(!settings.sfx) return; chime(164.81,0,0.7,0.02); chime(110,0.06,0.9,0.012); }
+function playIncorrect(){ if(!settings.sfx) return; chime(261.63,0,0.7,0.017); chime(220,0.07,0.9,0.014); }
 // tap : toc feutré quasi tactile, franc et bien présent sous le doigt (INCHANGÉ)
 function playTap(){ if(!settings.sfx) return; tock(640,0,0.03); }
 // série : deux notes de piano, étincelle douce Mi→La (plus jamais l'aigu perçant)
