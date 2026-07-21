@@ -3826,6 +3826,7 @@ document.addEventListener("pointerdown", ()=>{ audioUnlocked = true; wakeAudio()
     } else {
       de.classList.remove("kb");
     }
+    fitScroll(); // le clavier change la hauteur utile -> re-décider défilement
   }
   vv.addEventListener("resize", apply);
   vv.addEventListener("scroll", apply);
@@ -4257,8 +4258,9 @@ function toggleTst(btn){
   if(!t) return;
   t.classList.toggle("open");
   /* La grille masquée n'avait pas de position pour le verre : on force un
-     recalcul de mise en page + un recalage à l'ouverture. */
-  try{ glassRelayout(); armGlass(800); queueGlassSync(); }catch(e){}
+     recalcul de mise en page + un recalage à l'ouverture. Et on re-décide le
+     défilement : ouvrir un testament peut faire déborder la page. */
+  try{ glassRelayout(); armGlass(800); queueGlassSync(); fitScroll(); }catch(e){}
 }
 let achToastQueue = [], achToastBusy = false;
 function checkAchievements(opts){
@@ -5452,16 +5454,32 @@ function render(){
     node.querySelectorAll(".question-card.animate, .options-grid.animate").forEach(n=>n.classList.remove("animate"));
     node.querySelectorAll(".reveal-pop").forEach(n=>n.classList.remove("reveal-pop"));
     node.querySelectorAll(".reveal-shake").forEach(n=>n.classList.remove("reveal-shake"));
+    fitScroll();
   }, 820);
 
   // Verre : sur une VRAIE transition d'écran, on gèle le verre pour que
   // l'animation tourne en pur GPU (fluide sur Android) ; sinon (re-rendu sur
   // place) on recale normalement.
   if(prevNode){ glassFreezeForTransition(); } else { glassTrack(); }
+  requestAnimationFrame(fitScroll);
 
   if(state.screen!=="play" && state.screen!=="online-play"){ stopQTimer(); }
   if(state.screen==="play") saveState();
   else if(state.screen==="end" || state.screen==="mode") clearSavedGame();
+}
+
+/* STABILITÉ DE L'ÉCRAN : quand le contenu tient entièrement (accueil, setup…),
+   #app reste un conteneur « défilable » et iOS autorise alors un petit rebond
+   élastique au moindre glissement du doigt -> l'écran « bouge » légèrement. On
+   coupe purement le défilement dans ce cas (overflow:hidden = plus de rebond,
+   écran parfaitement stable) ; dès qu'un écran déborde vraiment (Progression,
+   ou un champ sous le clavier), le défilement natif revient. Tolérance de 2px
+   pour absorber les arrondis sous-pixel. */
+function fitScroll(){
+  const a = document.getElementById("app");
+  if(!a) return;
+  const overflows = a.scrollHeight > a.clientHeight + 2;
+  a.style.overflowY = overflows ? "auto" : "hidden";
 }
 
 /* Son universel : léger tap sur chaque élément interactif.
@@ -6089,7 +6107,7 @@ try {
   document.addEventListener("scroll", (e)=>{ if(e.target !== glassAppEl) armGlass(1300); }, { capture:true, passive:true });
   document.addEventListener("pointerdown", armPress, { capture:true, passive:true });
   document.addEventListener("pointerup", armPress, { capture:true, passive:true });
-  window.addEventListener("resize", ()=>{ glassRelayout(); armGlass(700); });
+  window.addEventListener("resize", ()=>{ glassRelayout(); armGlass(700); fitScroll(); });
   window.addEventListener("orientationchange", ()=>{ glassRelayout(); armGlass(1200); });
 } catch(e){}
 armGlass(2500); // couvre le tout premier affichage
