@@ -114,6 +114,12 @@
   html.js-scroll #app{ touch-action:none; overflow:hidden; overflow-anchor:none; }
   html.is-fs #app{ padding-top:max(calc(env(safe-area-inset-top) + 0.35rem), 3.4rem); padding-bottom:max(calc(env(safe-area-inset-bottom) + 0.2rem), 0.7rem); }
   html.is-standalone #app{ padding-top:max(calc(env(safe-area-inset-top) + 0.4rem), 0.7rem); padding-bottom:max(calc(env(safe-area-inset-bottom) + 0.35rem), 0.8rem); }
+  /* CLAVIER : quand il s'ouvre, on réduit #app à la zone RÉELLEMENT visible
+     (hauteur du visualViewport, posée en JS) -> la colonne flex se recompose
+     proprement dans l'espace restant, le bouton du bas se place juste au-dessus
+     du clavier au lieu d'être écrasé/chevauché. */
+  html.kb #app{ height:var(--vvh, 100%); padding-bottom:0.4rem; }
+  html.kb, html.kb body{ overflow:hidden; }
   .question-card .qtext, .hero-tag, .end-title, .online-hero-title, .online-hero-sub, .modal-title, .modal-msg{ text-wrap:balance; }
   .btn-primary:disabled, .btn-next:disabled{ opacity:1; background-image:linear-gradient(180deg, #6E6254, #55483A); box-shadow:inset 0 0 0 1px rgba(255,255,255,0.16), inset 0 1px 0 rgba(255,255,255,0.22); color:rgba(255,255,255,0.95); }
 
@@ -3268,29 +3274,34 @@ function blip(freq, start, dur, vol, type){
 /* Carillon organique : deux voix légèrement désaccordées (chaleur de chœur),
    attaque arrondie, halo d'octave discret, et une pointe d'aléatoire pour que
    deux sons identiques ne soient jamais exactement les mêmes. */
+/* NOTE DE PIANO FEUTRÉ — la MÊME voix que la musique de fond (deux triangles
+   à peine désaccordés = corde double, attaque veloutée, longue résonance
+   chaude, souffle d'octave discret). Tous les retours du jeu (bonne réponse,
+   erreur, victoire, révélation, verset, série) sont désormais de simples
+   gestes de piano dans le monde de La mineur -> une seule famille sonore avec
+   la musique. Seul le « toc » du toucher (tock) reste à part, intact. */
 function chime(freq, start, dur, vol){
   const ctx = getCtx();
   if(ctx.state==="suspended"){ ctx.resume(); }
-  const t0 = ctx.currentTime + start + Math.random()*0.012;
+  const t0 = ctx.currentTime + start + Math.random()*0.01;
   const v = vol * SFX_GAIN * (0.9 + Math.random()*0.2);
   const jit = 1 + (Math.random()-0.5)*0.004;
-  [-2.8, 2.8].forEach((det)=>{
+  [-3, 3].forEach((det)=>{
     const o = ctx.createOscillator(), g = ctx.createGain();
-    o.type = "sine"; o.frequency.value = freq * jit; o.detune.value = det;
+    o.type = "triangle"; o.frequency.value = freq * jit; o.detune.value = det;
     g.gain.setValueAtTime(0.0001, t0);
-    g.gain.linearRampToValueAtTime(v * 0.42, t0 + 0.022);
-    g.gain.exponentialRampToValueAtTime(v * 0.62, t0 + 0.06);
-    g.gain.exponentialRampToValueAtTime(0.0001, t0 + dur);
+    g.gain.linearRampToValueAtTime(v * 0.5, t0 + 0.03);       // attaque feutrée (feutre du marteau)
+    g.gain.exponentialRampToValueAtTime(0.0001, t0 + dur);    // résonance qui se fond
     o.connect(g); g.connect(masterFilter);
     o.start(t0); o.stop(t0 + dur + 0.05);
   });
   const h = ctx.createOscillator(), hg = ctx.createGain();
   h.type = "sine"; h.frequency.value = freq * 2 * jit;
   hg.gain.setValueAtTime(0.0001, t0);
-  hg.gain.linearRampToValueAtTime(v * 0.09, t0 + 0.03);
-  hg.gain.exponentialRampToValueAtTime(0.0001, t0 + Math.max(dur * 0.55, 0.12));
+  hg.gain.linearRampToValueAtTime(v * 0.12, t0 + 0.032);
+  hg.gain.exponentialRampToValueAtTime(0.0001, t0 + Math.min(dur * 0.5, 0.5));
   h.connect(hg); hg.connect(masterFilter);
-  h.start(t0); h.stop(t0 + dur);
+  h.start(t0); h.stop(t0 + Math.min(dur * 0.5, 0.5) + 0.05);
 }
 /* Toc feutré et boisé : un corps grave très bref + un souffle d'air discret,
    comme une touche qui se pose — plus rien d'électronique. */
@@ -3316,21 +3327,22 @@ function tock(freq, start, vol){
   a.connect(ag); ag.connect(masterFilter);
   a.start(t0); a.stop(t0 + 0.05);
 }
-/* Palette sonore discrète, à la Apple : jamais plus de deux notes, décroissances courtes */
-// bonne réponse : petit arpège chaleureux sol-do-mi, doux et rond
-function playCorrect(){ if(!settings.sfx) return; chime(440,0,0.5,0.017); chime(523.25,0.08,0.62,0.02); chime(659.25,0.16,0.95,0.016); }
-// erreur : une seule note basse feutrée, à peine appuyée
-function playIncorrect(){ if(!settings.sfx) return; chime(220,0,0.42,0.026); chime(110,0,0.3,0.009); }
-// tap : toc feutré quasi tactile, franc et bien présent sous le doigt
+/* Palette de PIANO, cohérente avec la musique (monde de La mineur) : des
+   gestes courts, jamais plus de trois notes, à la résonance chaude. */
+// bonne réponse : petit arpège montant La–Do–Mi (l'accord de la pièce), lumineux
+function playCorrect(){ if(!settings.sfx) return; chime(440,0,0.7,0.016); chime(523.25,0.09,0.85,0.019); chime(659.25,0.19,1.15,0.015); }
+// erreur : deux notes graves feutrées Mi→La, douces, sans jamais gronder
+function playIncorrect(){ if(!settings.sfx) return; chime(164.81,0,0.7,0.02); chime(110,0.06,0.9,0.012); }
+// tap : toc feutré quasi tactile, franc et bien présent sous le doigt (INCHANGÉ)
 function playTap(){ if(!settings.sfx) return; tock(640,0,0.03); }
-// série : minuscule étincelle à deux notes hautes
-function playStreak(){ if(!settings.sfx) return; chime(1046.5,0,0.28,0.017); chime(1318.5,0.055,0.34,0.013); }
-// victoire : trois notes retenues, montée douce
-function playWin(){ if(!settings.sfx) return; chime(440,0,0.4,0.024); chime(659.25,0.09,0.45,0.02); chime(880,0.18,0.7,0.017); }
-// révélation : accord feutré sol+do joué ensemble, bas volume, longue traîne — un souffle
-function playReveal(){ if(!settings.sfx) return; chime(440,0,0.95,0.009); chime(523.25,0.02,1.05,0.011); }
-// verset : deux notes tendres do->mi, très bas volume, qui s'évanouissent lentement
-function playVerse(){ if(!settings.sfx) return; chime(523.25,0,1.2,0.009); chime(659.25,0.18,1.5,0.007); }
+// série : deux notes hautes de piano, une petite étincelle Mi→La
+function playStreak(){ if(!settings.sfx) return; chime(880,0,0.5,0.014); chime(1318.51,0.06,0.6,0.011); }
+// victoire : trois notes retenues La–Mi–La, montée douce à longue traîne
+function playWin(){ if(!settings.sfx) return; chime(440,0,0.75,0.02); chime(659.25,0.11,0.85,0.019); chime(880,0.22,1.4,0.017); }
+// révélation : une quinte de piano La+Mi tenue, très bas, comme un souffle
+function playReveal(){ if(!settings.sfx) return; chime(440,0,1.5,0.01); chime(659.25,0.03,1.6,0.011); }
+// verset : deux notes tendres Do→Mi, très bas volume, qui s'évanouissent
+function playVerse(){ if(!settings.sfx) return; chime(523.25,0,1.5,0.009); chime(659.25,0.18,1.8,0.007); }
 function ensureAudioAwake(){ if(actx && actx.state==="suspended"){ actx.resume().catch(()=>{}); } }
 /* Verrou : on ne ranime JAMAIS l'audio si l'app n'est pas au premier plan.
    Sinon, en fermant l'app (blur/statechange déclenchés pendant la mise en
@@ -3601,7 +3613,10 @@ function stopMusic(){
     g.linearRampToValueAtTime(0.0001, actx.currentTime + 0.7);
   }
 }
-function maybeStartMusic(){ if(settings.music && !musicPlaying && document.visibilityState==="visible"){ startMusic(); } }
+/* La musique ne démarre JAMAIS d'elle-même : uniquement après le tout premier
+   toucher réel en jeu (audioUnlocked, posé par le pointerdown). Retour d'appel,
+   de veille ou d'arrière-plan ne font que la REPRENDRE — jamais la lancer. */
+function maybeStartMusic(){ if(settings.music && audioUnlocked && !musicPlaying && document.visibilityState==="visible"){ startMusic(); } }
 
 /* ===================== PANNEAU RÉGLAGES (feuille coulissante) ===================== */
 function closeSettings(){
@@ -3715,7 +3730,7 @@ function setVolume(v, el){
   const t = document.getElementById("volPct"); if(t) t.textContent = pct + "%";
   if(el) el.style.setProperty("--vol", pct + "%");
 }
-function volPreview(){ if(settings.sfx){ chime(783.99, 0, 0.26, 0.02); } }
+function volPreview(){ if(settings.sfx){ chime(659.25, 0, 0.55, 0.018); } }
 
 document.addEventListener("visibilitychange", ()=>{
   if(document.visibilityState==="visible"){ wakeAudio(); maybeStartMusic(); }
@@ -3729,6 +3744,35 @@ window.addEventListener("focus", wakeAudio);
 /* La musique ne peut démarrer qu'après un premier geste : on s'accroche au tout
    premier — et ce même geste ranime l'audio si un appel l'avait interrompu. */
 document.addEventListener("pointerdown", ()=>{ audioUnlocked = true; wakeAudio(); maybeStartMusic(); }, { capture:true, passive:true });
+
+/* ===================== CLAVIER : #app suit la zone visible =====================
+   Sans ça, à l'ouverture du clavier (iOS surtout), la hauteur de mise en page ne
+   change pas : la colonne flex garde sa taille pleine et le bouton du bas se
+   retrouve écrasé/chevauché par le clavier. On mesure la zone VRAIMENT visible
+   (visualViewport) et on y ajuste #app -> le clavier arrive proprement, tout
+   reste lisible et cliquable au-dessus. */
+(function keyboardFit(){
+  const vv = window.visualViewport;
+  if(!vv) return;
+  const de = document.documentElement;
+  const isField = ()=>{ const el = document.activeElement; return !!el && (el.tagName === "INPUT" || el.tagName === "TEXTAREA"); };
+  function apply(){
+    const covered = window.innerHeight - vv.height - vv.offsetTop; // hauteur cachée par le clavier
+    if(isField() && covered > 90){
+      de.style.setProperty("--vvh", Math.round(vv.height) + "px");
+      de.classList.add("kb");
+      // garde le champ actif bien en vue dans la zone réduite
+      const el = document.activeElement;
+      if(el && el.scrollIntoView) setTimeout(()=>{ try{ el.scrollIntoView({ block:"center", behavior:"smooth" }); }catch(e){} }, 60);
+    } else {
+      de.classList.remove("kb");
+    }
+  }
+  vv.addEventListener("resize", apply);
+  vv.addEventListener("scroll", apply);
+  document.addEventListener("focusin", ()=>setTimeout(apply, 60));
+  document.addEventListener("focusout", ()=>{ setTimeout(()=>{ if(!isField()) de.classList.remove("kb"); }, 60); });
+})();
 
 /* ===================== VERSET SURPRISE (5 touches sur l'icône) ===================== */
 const HERO_VERSES = [
