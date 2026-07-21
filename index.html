@@ -383,7 +383,7 @@
   }
 
   .splash-screen{ flex:1; display:flex; flex-direction:column; align-items:center; justify-content:center; position:relative; text-align:center; min-height:100%; }
-  .splash-center{ display:flex; flex-direction:column; align-items:center; }
+  .splash-center{ display:flex; flex-direction:column; align-items:center; transform:translateY(-6vh); }
   .splash-dove-wrap{ position:relative; margin-bottom:1.9rem; opacity:0; animation:splashRiseBig 1.05s cubic-bezier(0.2,0.9,0.3,1) 0.1s forwards; }
   /* Même ombre de lévitation que l'écran d'accueil, calée sur le flottement 3D. */
   .splash-dove-wrap::after{ content:""; position:absolute; left:50%; bottom:-1rem; width:56%; height:0.85rem; transform:translateX(-50%); background:radial-gradient(ellipse at center, rgba(0,0,0,0.5), rgba(0,0,0,0) 72%); filter:blur(4px); z-index:0; pointer-events:none; opacity:0; animation:doveShadow 3.6s ease-in-out 1s infinite; }
@@ -634,11 +634,13 @@
   .modal-btn.ok.danger{ background:linear-gradient(180deg, #E74C39, #C6392B); border-color:rgba(255,255,255,0.8); box-shadow:inset 0 1px 0 rgba(255,255,255,0.62), inset 0 0 0 1.5px rgba(255,255,255,0.34), inset 0 -5px 12px rgba(120,22,16,0.28), 0 6px 18px rgba(194,62,49,0.36), 0 1px 3px rgba(194,62,49,0.22); }
   .modal-card.shake{ animation:wrongFlash 0.45s ease; }
   @keyframes veilIn{ from{ opacity:0; } to{ opacity:1; } }
-  /* Opacité montée TRÈS vite (pleine à 22%) : sur iOS le frosté est le fond de
-     l'élément, donc un long fondu d'opacité laissait voir la photo nette au
-     travers du verre (« ultra transparent ») avant de redevenir net. En
-     rendant le verre opaque quasi tout de suite, seul le glissement demeure. */
-  @keyframes screenIn{ from{ opacity:0; transform:translate3d(0,14px,0); } 22%{ opacity:1; } to{ opacity:1; transform:translate3d(0,0,0); } }
+  @keyframes screenIn{ from{ opacity:0; transform:translate3d(0,14px,0); } to{ opacity:1; transform:translate3d(0,0,0); } }
+  /* ANDROID (verre GPU backdrop-filter) UNIQUEMENT : le verre paraissait
+     « ultra transparent » pendant le fondu d'opacité au changement d'écran.
+     On y monte l'opacité très vite (pleine à 22%), seul le glissement reste.
+     iOS conserve son fondu d'origine — on n'y touche pas. */
+  @keyframes screenInGl{ from{ opacity:0; transform:translate3d(0,14px,0); } 22%{ opacity:1; } to{ opacity:1; transform:translate3d(0,0,0); } }
+  html.gl-native .screen-enter{ animation-name:screenInGl; }
   @keyframes modalIn{ from{ opacity:0; transform:scale(0.9) translateY(16px); } to{ opacity:1; transform:scale(1) translateY(0); } }
   .modal-veil.closing{ animation:veilOut 0.22s ease forwards; }
   .modal-veil.closing .modal-card{ animation:modalOut 0.22s cubic-bezier(0.4,0,1,1) forwards; }
@@ -5541,8 +5543,8 @@ const GLASS_BG_MAX = 40;  // le fond ne peut jamais s'écarter de plus de 40px d
    EXACT à l'arrêt), plafonné pour ne jamais dépasser sur un lancer rapide.
    Uniquement iOS (Android = GPU natif ; desktop = molette sans inertie). */
 const GLASS_IOS_PRED = /iP(hone|od|ad)/.test(navigator.userAgent) || (navigator.platform === "MacIntel" && navigator.maxTouchPoints > 1);
-const GLASS_PRED_K = 0.25;   // ~1,8 image d'avance (proxy lissé -> montée/descente douces)
-const GLASS_PRED_MAX = 36;   // avance plafonnée : jamais de dépassement visible
+const GLASS_PRED_K = 0.15;   // ~1 image d'avance (colle au retard iOS typique sans dépasser)
+const GLASS_PRED_MAX = 26;   // avance plafonnée : jamais de dépassement visible
 /* Retard du verre au défilement (mécanisme D'ORIGINE, restauré) : glassScrollSX/SY
    POURSUIT scrollLeft/Top avec un facteur de lissage (0,14) -> elles restent
    TOUJOURRS légèrement EN RETARD sur la position réelle pendant qu'on défile,
