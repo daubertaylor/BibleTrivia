@@ -782,9 +782,23 @@
      un peu allégé — c'est leur NOMBRE qui saturait le GPU, pas leur taille.
      Toutes les autres surfaces (chips de réglage de partie, boutons,
      compteurs…) gardent le flou calibré 26px : rendu identique à iOS. */
-  html.gl-native :is(.bk, .obj){
+  /* (.bk.bk : double classe pour égaler la spécificité (0,3,1) de la grande
+     règle :is() ci-dessus — qui contient .modal-btn.ok — l'ordre source
+     donne alors la main à ces réglages fins.) */
+  html.gl-native :is(.bk.bk, .obj.obj){
     --glass-bf: blur(18px) saturate(1.35);
   }
+  /* FEUILLES & FENÊTRES (Réglages, modales) : leur voile parent assombrit tout
+     l'écran (rgba ~0,5) et le backdrop-filter échantillonne CE fond assombri
+     -> le décor ne « passait » plus au travers du verre comme sur iOS (où le
+     verre peint ignore le voile). On compense l'assombrissement par
+     brightness() dans le filtre : le décor retraverse, lumineux comme iOS. */
+  html.gl-native .sheet-veil .settings-sheet{ --glass-bf: blur(26px) saturate(1.35) brightness(1.9); }
+  html.gl-native .modal-veil .modal-card{ --glass-bf: blur(26px) saturate(1.35) brightness(1.8); }
+  /* Et AUCUN fondu du voile à l'ouverture : l'opacité animée du parent aurait
+     coupé le backdrop-filter de la feuille pendant toute l'animation (verre
+     mort à l'ouverture). Voile posé net ; la feuille glisse, la fenêtre zoome. */
+  html.gl-native .sheet-veil:not(.closing), html.gl-native .modal-veil:not(.closing){ animation:none; }
   html.gl-native .glass-refl{ display:none; }
   /* Android : pré-promotion des couches -> plus de flash noir au premier
      affichage (la couche du screen et de l'icône existent avant l'anim). */
