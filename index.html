@@ -3342,7 +3342,15 @@ function playWin(){ if(!settings.sfx) return; chime(440,0,0.75,0.02); chime(659.
 // révélation : une quinte de piano La+Mi tenue, très bas, comme un souffle
 function playReveal(){ if(!settings.sfx) return; chime(440,0,1.5,0.01); chime(659.25,0.03,1.6,0.011); }
 // verset : deux notes tendres Do→Mi, très bas volume, qui s'évanouissent
-function playVerse(){ if(!settings.sfx) return; chime(523.25,0,1.5,0.009); chime(659.25,0.18,1.8,0.007); }
+function playVerse(){
+  if(!settings.sfx) return;
+  // Dévoilement d'un verset : douce montée lumineuse en Do majeur (relatif du
+  // la mineur de la musique) — comme un voile qui se lève, paisible et sacré.
+  chime(261.63, 0.00, 2.1, 0.007);  // Do4 — fondation feutrée
+  chime(523.25, 0.09, 1.8, 0.010);  // Do5
+  chime(659.25, 0.26, 1.9, 0.009);  // Mi5
+  chime(1046.50, 0.46, 2.4, 0.006); // Do6 — scintillement paisible
+}
 function ensureAudioAwake(){ if(actx && actx.state==="suspended"){ actx.resume().catch(()=>{}); } }
 /* Verrou : on ne ranime JAMAIS l'audio si l'app n'est pas au premier plan.
    Sinon, en fermant l'app (blur/statechange déclenchés pendant la mise en
