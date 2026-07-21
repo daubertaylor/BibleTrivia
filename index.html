@@ -216,7 +216,7 @@
   .btn-primary:disabled{ opacity:0.4; box-shadow:none; }
   /* Bouton d'attente : simple pastille de statut, non pressable → aucun
      repaint au toucher (c'est ce repaint qui le faisait « blanchir »). */
-  .btn-primary.is-waiting{ --glass-tint: rgba(255,253,247,0.56); color:var(--ink-soft); cursor:default; pointer-events:none; box-shadow:inset 0 1px 0 rgba(255,255,255,0.7), inset 0 0 0 1px rgba(255,255,255,0.5), 0 4px 14px rgba(15,12,10,0.12); }
+  .btn-primary.is-waiting, .btn-replay.is-waiting{ --glass-tint: rgba(255,253,247,0.56); color:var(--ink-soft); cursor:default; pointer-events:none; background-image:none; box-shadow:inset 0 1px 0 rgba(255,255,255,0.7), inset 0 0 0 1px rgba(255,255,255,0.5), 0 4px 14px rgba(15,12,10,0.12); }
   #roomStartBtn{ margin-top:0.9rem; }
   .error-msg{ color:#ff8a76; font-size:0.82rem; text-align:center; margin-top:0.6rem; min-height:1.2em; text-shadow:0 1px 6px rgba(0,0,0,0.35); }
 
@@ -2724,7 +2724,8 @@ const net = {
   deck:[], idx:0, score:0, correct:0, selected:null, revealed:false, myDone:false, missed:[],
   duelHb:null, joinTimer:null, subTimer:null,
   lastOppId:null, autoMatch:false, matchGuard:null,
-  status:"", error:""
+  status:"", error:"",
+  iWantReplay:false, oppWantReplay:false, replayDeclined:false
 };
 function initSupa(){
   if(net.supa) return net.supa;
@@ -2986,8 +2987,20 @@ function bindRoom(ch){
     if(net.myDone && net.oppDone && state.screen!=="online-end"){ state.screen="online-end"; playWin(); }
     reRenderIfOnline();
   });
-  ch.on("broadcast", { event:"rematch" }, ()=>{
-    if(state.screen==="online-end"){ net.status="Ton adversaire veut rejouer…"; reRenderIfOnline(); }
+  ch.on("broadcast", { event:"rematch" }, ({ payload })=>{
+    if(!payload || payload.id===myId) return;
+    if(state.screen!=="online-end") return;
+    net.oppWantReplay = true; net.replayDeclined = false;
+    /* Si je voulais DÉJÀ rejouer, la poignée de main est complète -> l'hôte
+       relance (l'invité démarrera à la réception de « start »). Sinon, l'écran
+       de fin propose Accepter / Refuser. */
+    maybeStartRematch();
+    reRenderIfOnline();
+  });
+  ch.on("broadcast", { event:"rematch-decline" }, ({ payload })=>{
+    if(!payload || payload.id===myId) return;
+    net.oppWantReplay = false; net.iWantReplay = false; net.replayDeclined = true;
+    reRenderIfOnline();
   });
 }
 function createRoom(code, host, _retry){
@@ -3060,6 +3073,7 @@ function beginDuel(seed, lengthKey, timerKey, theme){
   net.deck = seededDeck(seed, lengthKey, net.themeKey);
   net.idx = 0; net.score = 0; net.correct = 0; net.selected=null; net.revealed=false; net.myDone=false; net.missed=[];
   net.oppScore = 0; net.oppIndex = 0; net.oppDone=false; net.oppGone=false; net.status=""; net.confettiShown = false;
+  net.iWantReplay=false; net.oppWantReplay=false; net.replayDeclined=false;
   net.animIdx = -1; net.justRevealed = false;
   net.oppLastSeen = Date.now();
   startDuelHeartbeat();
@@ -3090,11 +3104,40 @@ function onlineNext(){
 function broadcastProgress(done){
   if(net.room){ net.room.send({ type:"broadcast", event:"progress", payload:{ id:myId, idx:net.idx, score:net.score, done } }); }
 }
+/* REJOUER EN LIGNE — poignée de main à DEUX. « Rejouer » (ou « Accepter »)
+   déclare que JE veux rejouer et le signale à l'adversaire ; la nouvelle partie
+   ne démarre QUE lorsque les deux ont accepté (l'hôte fait alors autorité pour
+   la graine). Fini le lancement forcé de l'adversaire. */
 function onlineRematch(){
   if(net.oppGone){ leaveOnline(); return; }
-  if(net.room){ net.room.send({ type:"broadcast", event:"rematch", payload:{ id:myId } }); }
-  if(net.isHost){ hostStart(); }
-  else { net.status = "En attente que l'hôte relance…"; render(); }
+  net.iWantReplay = true; net.replayDeclined = false;
+  sendReplayMsg("rematch");
+  maybeStartRematch();
+  render();
+}
+function declineRematch(){   // je refuse l'invitation de l'adversaire
+  net.iWantReplay = false; net.oppWantReplay = false;
+  sendReplayMsg("rematch-decline");
+  render();
+}
+function cancelRematch(){    // j'annule ma propre demande
+  net.iWantReplay = false;
+  sendReplayMsg("rematch-decline");
+  render();
+}
+function sendReplayMsg(event){
+  if(net.room){ net.room.send({ type:"broadcast", event, payload:{ id:myId } }); }
+}
+function maybeStartRematch(){
+  if(!(net.iWantReplay && net.oppWantReplay) || net.oppGone) return;
+  /* Les deux veulent rejouer. L'hôte tire la graine et lance ; l'invité
+     démarrera à la réception de « start ». Présence déjà prouvée par la poignée
+     de main -> on ne dépend pas de net.oppPresent (qui peut clignoter). */
+  if(net.isHost && net.room){
+    const seed = (Math.random()*1e9)|0;
+    net.room.send({ type:"broadcast", event:"start", payload:{ seed, lengthKey: net.lengthKey, timerKey: net.timerKey, theme: net.themeKey } });
+    beginDuel(seed, net.lengthKey, net.timerKey, net.themeKey);
+  }
 }
 /* Battement de duel : détecte un adversaire parti même sans événement de présence */
 function startDuelHeartbeat(){
@@ -3138,6 +3181,7 @@ function cleanupRoom(){
   if(net.room){ try { net.room.untrack(); net.supa.removeChannel(net.room); } catch(e){} net.room=null; }
   net.code=null; net.isHost=false; net.opp=null; net.oppPresent=false; net.oppGone=false;
   net.deck=[]; net.idx=0; net.myDone=false; net.status="";
+  net.iWantReplay=false; net.oppWantReplay=false; net.replayDeclined=false;
 }
 function leaveRoomToOnline(){
   cleanupRoom();
@@ -5385,6 +5429,29 @@ function renderOnlineEnd(){
   const el=document.createElement("div"); el.className="screen";
   const win = net.score>net.oppScore, tie = net.score===net.oppScore;
   if((win || net.oppGone) && !net.confettiShown){ net.confettiShown = true; setTimeout(launchConfetti, 300); }
+  /* REJOUER À DEUX : l'écran de fin reflète l'état de la poignée de main —
+     j'invite / on m'invite / les deux acceptent / refus. La nouvelle partie ne
+     part jamais sans l'accord de l'adversaire. */
+  const oppName = net.opp ? escapeHtml(net.opp.name) : "L'adversaire";
+  let replayMsg = "", replayActions = "";
+  if(net.oppGone){
+    replayActions = `<button class="btn-newgame" onclick="leaveOnline()">Quitter</button>`;
+  } else if(net.iWantReplay && net.oppWantReplay){
+    replayMsg = "Nouvelle partie en préparation…";
+    replayActions = `<button class="btn-replay is-waiting" disabled>C'est parti…</button>`;
+  } else if(net.oppWantReplay){
+    replayMsg = oppName + " aimerait rejouer. Tu acceptes ?";
+    replayActions = `<button class="btn-replay" onclick="onlineRematch()">Accepter</button>`
+      + `<button class="btn-newgame" onclick="declineRematch()">Refuser</button>`;
+  } else if(net.iWantReplay){
+    replayMsg = "En attente de la réponse de " + oppName + "…";
+    replayActions = `<button class="btn-replay is-waiting" disabled>En attente…</button>`
+      + `<button class="btn-newgame" onclick="cancelRematch()">Annuler</button>`;
+  } else {
+    if(net.replayDeclined){ replayMsg = oppName + " ne souhaite pas rejouer pour l'instant."; }
+    replayActions = `<button class="btn-replay" onclick="onlineRematch()">Rejouer</button>`
+      + `<button class="btn-newgame" onclick="leaveOnline()">Quitter</button>`;
+  }
   const title = net.oppGone ? "Victoire par forfait" : (tie?"Égalité !":(win?"Victoire !":"Défaite"));
   el.innerHTML = `${renderHeader("Résultat", false)}
     <div class="end-hero"><div class="end-medal"><span class="em-cup">${TROPHY_GOLD}</span></div>
@@ -5396,13 +5463,10 @@ function renderOnlineEnd(){
       <div class="dr-vs">VS</div>
       <div class="dr-side ${(!win&&!tie&&!net.oppGone)?'winner':''}">${net.opp?avatarHtml(net.opp.name,net.opp.color,3,net.opp.isCreator):`<span class="avatar waiting" style="width:3rem;height:3rem;font-size:1.25rem;">?</span>`}<div class="dr-name">${escapeHtml(net.opp?net.opp.name:"Adversaire")}</div><div class="dr-score" data-count-opp>0</div></div>
     </div>
-    ${net.oppGone?`<div class="info-card">Ton adversaire a quitté la partie.</div>`:(net.status?`<div class="info-card">${escapeHtml(net.status)}</div>`:"")}
+    ${net.oppGone?`<div class="info-card">Ton adversaire a quitté la partie.</div>`:(replayMsg?`<div class="info-card">${replayMsg}</div>`:"")}
     ${net.missed && net.missed.length ? `<button class="btn-review" onclick="openMissedReview(net.missed)"><span class="ico">${ICONS.bookOpen}</span>Revoir mes ${net.missed.length} erreur${net.missed.length>1?"s":""}</button>` : ""}
     <div class="end-bottom">
-    <div class="end-actions">
-      ${net.oppGone?"":`<button class="btn-replay" onclick="onlineRematch()">Rejouer</button>`}
-      <button class="btn-newgame" onclick="leaveOnline()">Quitter</button>
-    </div>
+    <div class="end-actions">${replayActions}</div>
     ${shareLineHtml("duel")}
     </div>`;
   requestAnimationFrame(()=>{
