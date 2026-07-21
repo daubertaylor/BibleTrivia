@@ -774,6 +774,10 @@
      affichage (la couche du screen et de l'icône existent avant l'anim). */
   html.gl-native .screen{ transform:translateZ(0); }
   html.gl-native .hero-icon{ will-change:transform; }
+  /* ANDROID = COPIE d'iOS : verre PEINT, et on COUPE tout backdrop-filter (flou
+     GPU très coûteux = ralenti sur Android, et invisible sur iOS de toute
+     façon). La texture peinte fait le verre, exactement comme sur iOS. */
+  html.gl-paint *{ backdrop-filter:none !important; -webkit-backdrop-filter:none !important; }
   /* Fondu resserré (0,16s -> 0,07s) : la transformation CSS de l'appui
      (scale) s'anime elle-même sur 0,09s — le temps qu'elle dépasse le seuil
      de déclenchement du reflet, le fondu à 0,16s ajoutait un second retard
@@ -5504,8 +5508,16 @@ function paintedGlassForced(){
   } catch(e){}
   return false;
 }
-const GLASS_GPU = glassIsAndroid && !paintedGlassForced();
+/* COPIE iOS -> ANDROID : on abandonne gl-native (backdrop-filter GPU : coûteux
+   = « ralenti », et il casse en « transparent » pendant les animations de
+   changement d'écran). Android utilise désormais EXACTEMENT le chemin iOS :
+   verre PEINT + défilement natif (le défilement custom-transform qui plombait
+   l'ancienne tentative peinte est mort — CUSTOM_SCROLL=false). Le
+   backdrop-filter (de toute façon invisible sur iOS) est coupé sur Android via
+   la classe gl-paint -> GPU libéré, rendu strictement identique à iOS. */
+const GLASS_GPU = false;
 if(GLASS_GPU){ try{ document.documentElement.classList.add("gl-native"); }catch(e){} }
+if(glassIsAndroid){ try{ document.documentElement.classList.add("gl-paint"); }catch(e){} }
 /* Défilement piloté par JS : ABANDONNÉ (c'était la source des sauts/ralenti sur
    Android). Défilement natif partout désormais — iOS l'était déjà, le verre GPU
    suit le contenu tout seul sur Android. */
@@ -5547,7 +5559,7 @@ const GLASS_BG_MAX = 40;  // le fond ne peut jamais s'écarter de plus de 40px d
    proxy de vitesse déjà lissé (st - glassScrollSY, nul au repos donc calage
    EXACT à l'arrêt), plafonné pour ne jamais dépasser sur un lancer rapide.
    Uniquement iOS (Android = GPU natif ; desktop = molette sans inertie). */
-const GLASS_IOS_PRED = /iP(hone|od|ad)/.test(navigator.userAgent) || (navigator.platform === "MacIntel" && navigator.maxTouchPoints > 1);
+const GLASS_IOS_PRED = glassIsAndroid || /iP(hone|od|ad)/.test(navigator.userAgent) || (navigator.platform === "MacIntel" && navigator.maxTouchPoints > 1);
 const GLASS_PRED_K = 0.15;   // ~1 image d'avance (colle au retard iOS typique sans dépasser)
 const GLASS_PRED_MAX = 26;   // avance plafonnée : jamais de dépassement visible
 /* Retard du verre au défilement (mécanisme D'ORIGINE, restauré) : glassScrollSX/SY
