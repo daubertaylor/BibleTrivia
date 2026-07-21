@@ -644,8 +644,17 @@
      « ultra transparent » pendant le fondu d'opacité au changement d'écran.
      On y monte l'opacité très vite (pleine à 22%), seul le glissement reste.
      iOS conserve son fondu d'origine — on n'y touche pas. */
-  @keyframes screenInGl{ from{ opacity:0; transform:translate3d(0,14px,0); } 22%{ opacity:1; } to{ opacity:1; transform:translate3d(0,0,0); } }
+  /* ANDROID (verre GPU) : AUCUN fondu d'opacité pendant les transitions — dès
+     qu'un groupe anime son opacité, Chrome coupe le backdrop-filter pendant
+     TOUTE l'animation (c'était le « verre ultra transparent puis normal »).
+     L'écran qui entre GLISSE sans fondu (verre intact du 1er au dernier
+     instant) ; l'écran qui sort disparaît net (pas de fantôme au verre
+     cassé) ; la fenêtre modale s'ouvre par un pur zoom, sans fondu. */
+  @keyframes screenInGl{ from{ transform:translate3d(0,20px,0); } to{ transform:translate3d(0,0,0); } }
   html.gl-native .screen-enter{ animation-name:screenInGl; }
+  html.gl-native .screen-exit{ animation:none; display:none; }
+  @keyframes modalInGl{ from{ transform:scale(0.9) translateY(16px); } to{ transform:scale(1) translateY(0); } }
+  html.gl-native .modal-card{ animation-name:modalInGl; }
   @keyframes modalIn{ from{ opacity:0; transform:scale(0.9) translateY(16px); } to{ opacity:1; transform:scale(1) translateY(0); } }
   .modal-veil.closing{ animation:veilOut 0.22s ease forwards; }
   .modal-veil.closing .modal-card{ animation:modalOut 0.22s cubic-bezier(0.4,0,1,1) forwards; }
@@ -769,15 +778,17 @@
     --glass-photo: none;
     --glass-bf: blur(26px) saturate(1.35);
   }
+  /* Petites puces (jusqu'à ~80 à l'écran en Progression, testaments ouverts) :
+     flou GPU allégé — à cette taille le rendu est identique, mais le coût GPU
+     s'effondre -> fini la sensation de ralenti, le verre suit sans peiner. */
+  html.gl-native :is(.chip, .len-chip, .tier-chip, .q-counter, .streak-chip, .timer-chip, .icon-btn, .adj-btn, .creator-badge, .dc-streak, .bk, .obj, .tst-head, .set-go, .fsh-close){
+    --glass-bf: blur(14px) saturate(1.35);
+  }
   html.gl-native .glass-refl{ display:none; }
   /* Android : pré-promotion des couches -> plus de flash noir au premier
      affichage (la couche du screen et de l'icône existent avant l'anim). */
   html.gl-native .screen{ transform:translateZ(0); }
   html.gl-native .hero-icon{ will-change:transform; }
-  /* ANDROID = COPIE d'iOS : verre PEINT, et on COUPE tout backdrop-filter (flou
-     GPU très coûteux = ralenti sur Android, et invisible sur iOS de toute
-     façon). La texture peinte fait le verre, exactement comme sur iOS. */
-  html.gl-paint *{ backdrop-filter:none !important; -webkit-backdrop-filter:none !important; }
   /* Fondu resserré (0,16s -> 0,07s) : la transformation CSS de l'appui
      (scale) s'anime elle-même sur 0,09s — le temps qu'elle dépasse le seuil
      de déclenchement du reflet, le fondu à 0,16s ajoutait un second retard
@@ -5508,16 +5519,16 @@ function paintedGlassForced(){
   } catch(e){}
   return false;
 }
-/* COPIE iOS -> ANDROID : on abandonne gl-native (backdrop-filter GPU : coûteux
-   = « ralenti », et il casse en « transparent » pendant les animations de
-   changement d'écran). Android utilise désormais EXACTEMENT le chemin iOS :
-   verre PEINT + défilement natif (le défilement custom-transform qui plombait
-   l'ancienne tentative peinte est mort — CUSTOM_SCROLL=false). Le
-   backdrop-filter (de toute façon invisible sur iOS) est coupé sur Android via
-   la classe gl-paint -> GPU libéré, rendu strictement identique à iOS. */
-const GLASS_GPU = false;
+/* Android : verre GPU (gl-native). La « copie » du chemin peint d'iOS a été
+   ESSAYÉE sur appareil réel : repeindre le fond de chaque surface à chaque
+   image dépasse les forces du téléphone (verre qui ne suit plus, affichages
+   qui sautent dans tous les sens). Le compositeur GPU, lui, floute et suit le
+   défilement nativement, sans une ligne de JS par image. Les écarts restants
+   d'Android se corrigent DANS ce chemin : transitions sans fondu d'opacité
+   (l'opacité de groupe coupe le backdrop-filter sur Chrome -> flash
+   transparent) et flou allégé sur les petites puces (Progression fluide). */
+const GLASS_GPU = glassIsAndroid && !paintedGlassForced();
 if(GLASS_GPU){ try{ document.documentElement.classList.add("gl-native"); }catch(e){} }
-if(glassIsAndroid){ try{ document.documentElement.classList.add("gl-paint"); }catch(e){} }
 /* Défilement piloté par JS : ABANDONNÉ (c'était la source des sauts/ralenti sur
    Android). Défilement natif partout désormais — iOS l'était déjà, le verre GPU
    suit le contenu tout seul sur Android. */
@@ -5559,7 +5570,7 @@ const GLASS_BG_MAX = 40;  // le fond ne peut jamais s'écarter de plus de 40px d
    proxy de vitesse déjà lissé (st - glassScrollSY, nul au repos donc calage
    EXACT à l'arrêt), plafonné pour ne jamais dépasser sur un lancer rapide.
    Uniquement iOS (Android = GPU natif ; desktop = molette sans inertie). */
-const GLASS_IOS_PRED = glassIsAndroid || /iP(hone|od|ad)/.test(navigator.userAgent) || (navigator.platform === "MacIntel" && navigator.maxTouchPoints > 1);
+const GLASS_IOS_PRED = /iP(hone|od|ad)/.test(navigator.userAgent) || (navigator.platform === "MacIntel" && navigator.maxTouchPoints > 1);
 const GLASS_PRED_K = 0.15;   // ~1 image d'avance (colle au retard iOS typique sans dépasser)
 const GLASS_PRED_MAX = 26;   // avance plafonnée : jamais de dépassement visible
 /* Retard du verre au défilement (mécanisme D'ORIGINE, restauré) : glassScrollSX/SY
