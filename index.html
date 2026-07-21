@@ -710,7 +710,7 @@
   .option-btn, .btn-primary, .btn-next, .btn-replay, .fact-card, .tier-chip, .q-counter, .streak-chip, .chip, .icon-btn, .btn-reveal,
   .btn-newgame, .award-btn, .team-row, .presence-card, .me-row, .online-action, .searching-card,
   .waiting-card, .info-card, .vs-row, .len-chip, .duel-scorebar, .timer-chip, .dr-side, .rank-row,
-  .text-input, .code-input, .fs-hint, .modal-card, .add-team, .btn-ghost, .fsh-close, .hs-item, .settings-sheet, .hero-verse-card, .end-medal, .modal-btn.ok, .modal-btn.cancel, .leave-banner, .adj-btn, .waiting-note, .rules, .btn-review, .daily-card, .dc-streak, .btn-invite, .creator-badge, .sheet-done, .set-go, .rev-item, .parcours-card, .obj, .bk, .tst-head{
+  .text-input, .code-input, .fs-hint, .modal-card, .add-team, .btn-ghost, .fsh-close, .hs-item, .settings-sheet, .hero-verse-card, .end-medal, .modal-btn.ok, .modal-btn.cancel, .leave-banner, .adj-btn, .waiting-note, .rules, .btn-review, .daily-card, .dc-streak, .btn-invite, .creator-badge, .sheet-done, .set-go, .rev-item, .parcours-card, .tst-head{
     background-color:transparent;
     /* Deux voies pour le verre :
        - par DÉFAUT (iOS) : photo pré-floutée peinte (var(--blur-url)),
@@ -774,7 +774,7 @@
     .option-btn, .btn-primary, .btn-next, .btn-replay, .fact-card, .tier-chip, .q-counter, .streak-chip, .chip, .icon-btn, .btn-reveal,
     .btn-newgame, .award-btn, .team-row, .presence-card, .me-row, .online-action, .searching-card,
     .waiting-card, .info-card, .vs-row, .len-chip, .duel-scorebar, .timer-chip, .dr-side, .rank-row,
-    .text-input, .code-input, .fs-hint, .modal-card, .add-team, .btn-ghost, .fsh-close, .hs-item, .settings-sheet, .hero-verse-card, .end-medal, .modal-btn.ok, .modal-btn.cancel, .leave-banner, .adj-btn, .waiting-note, .rules, .btn-review, .daily-card, .dc-streak, .btn-invite, .creator-badge, .sheet-done, .set-go, .rev-item, .parcours-card, .parcours-sum, .obj, .bk, .tst-head){
+    .text-input, .code-input, .fs-hint, .modal-card, .add-team, .btn-ghost, .fsh-close, .hs-item, .settings-sheet, .hero-verse-card, .end-medal, .modal-btn.ok, .modal-btn.cancel, .leave-banner, .adj-btn, .waiting-note, .rules, .btn-review, .daily-card, .dc-streak, .btn-invite, .creator-badge, .sheet-done, .set-go, .rev-item, .parcours-card, .parcours-sum, .tst-head){
     --glass-photo: none;
     --glass-bf: blur(26px) saturate(1.35);
     /* La couleur de fond de base des surfaces (souvent blanc ~0,5) est
@@ -785,16 +785,8 @@
        d'iOS, le décor retraverse chaque surface. */
     background-color:transparent;
   }
-  /* SEULES les puces de MASSE (les 66 livres de la Progression) ont un flou
-     un peu allégé — c'est leur NOMBRE qui saturait le GPU, pas leur taille.
-     Toutes les autres surfaces (chips de réglage de partie, boutons,
-     compteurs…) gardent le flou calibré 26px : rendu identique à iOS. */
-  /* (.bk.bk : double classe pour égaler la spécificité (0,3,1) de la grande
-     règle :is() ci-dessus — qui contient .modal-btn.ok — l'ordre source
-     donne alors la main à ces réglages fins.) */
-  html.gl-native :is(.bk.bk, .obj.obj){
-    --glass-bf: blur(18px) saturate(1.35);
-  }
+  /* (Les 66 puces de livres ne sont PLUS des surfaces de verre vivant : voir
+     .bk — fond statique translucide, zéro coût par image, sur iOS comme ici.) */
   /* FEUILLES & FENÊTRES (Réglages, modales) : leur voile parent assombrit tout
      l'écran (rgba ~0,5) et le backdrop-filter échantillonne CE fond assombri
      -> le décor ne « passait » plus au travers du verre comme sur iOS (où le
@@ -979,9 +971,14 @@
      courts et nets. L'état se lit à la couleur : neutre (non touché), or (commencé),
      vert (maîtrisé) — cohérent avec le reste du jeu. */
   .bk-grid{ display:grid; grid-template-columns:repeat(auto-fill, minmax(4.7rem, 1fr)); gap:0.36rem; }
-  .bk{ padding:0.4rem 0.45rem; border-radius:9px; text-align:center; --glass-tint: rgba(255,255,255,0.4); border:1px solid rgba(255,255,255,0.48); }
-  .bk.started{ --glass-tint: rgba(255,247,225,0.56); border-color:rgba(239,173,38,0.5); }
-  .bk.mastered{ --glass-tint: rgba(216,244,228,0.66); border-color:rgba(47,169,110,0.55); }
+  /* Livres : SORTIS du verre vivant — 66 puces en faisaient l'écran le plus
+     lourd du jeu (repeintes à chaque image sur iOS, floutées une à une sur
+     Android). Fond statique translucide + liseré haut : rendu quasi identique
+     à cette taille, et la Progression défile aussi légère que le reste,
+     sur tous les appareils. */
+  .bk{ padding:0.4rem 0.45rem; border-radius:9px; text-align:center; background:rgba(255,252,245,0.56); box-shadow:inset 0 1px 0 rgba(255,255,255,0.5); border:1px solid rgba(255,255,255,0.48); }
+  .bk.started{ background:rgba(255,247,225,0.64); border-color:rgba(239,173,38,0.5); }
+  .bk.mastered{ background:rgba(216,244,228,0.7); border-color:rgba(47,169,110,0.55); }
   .bk-nm{ font-size:0.7rem; font-weight:600; color:var(--ink); white-space:nowrap; overflow:hidden; text-overflow:ellipsis; display:block; }
   .bk.started .bk-nm{ color:#8a5a10; font-weight:700; }
   .bk.mastered .bk-nm{ color:#1f7a4d; font-weight:700; }
@@ -4058,7 +4055,9 @@ function showMiniToast(msg){
   el._t = setTimeout(()=>{ el.classList.remove("show"); }, 2100);
 }
 function shareGame(){
-  const data = { title:"BibleTrivia", text:"Viens jouer à BibleTrivia — le grand quizz biblique ! 📖", url:GAME_URL };
+  // URL seule : « Copier » depuis la feuille de partage ne colle QUE le lien,
+  // prêt à être collé dans un navigateur (plus de texte accroché autour).
+  const data = { url: GAME_URL };
   if(navigator.share){ navigator.share(data).catch(()=>{}); }
   else if(navigator.clipboard && navigator.clipboard.writeText){
     navigator.clipboard.writeText(GAME_URL).then(()=>showMiniToast("Lien copié !")).catch(()=>showMiniToast(GAME_URL));
@@ -5479,7 +5478,7 @@ document.addEventListener("click", (e)=>{
    transforms compris) : la photo peinte reste donc collée au décor même pendant
    qu'une carte glisse — ce qui autorise de vraies transitions animées « à la
    Apple » sans le moindre décalage du verre. */
-const GLASS_SEL = ".app-header,.card,.mode-card,.question-card,.solo-summary,.solo-score-bar,.score-pane,.option-btn,.btn-primary,.btn-next,.btn-replay,.fact-card,.tier-chip,.q-counter,.streak-chip,.chip,.icon-btn,.btn-reveal,.btn-newgame,.award-btn,.team-row,.presence-card,.me-row,.online-action,.searching-card,.waiting-card,.info-card,.vs-row,.len-chip,.duel-scorebar,.timer-chip,.dr-side,.rank-row,.text-input,.code-input,.fs-hint,.modal-card,.add-team,.btn-ghost,.fsh-close,.hs-item,.settings-sheet,.hero-verse-card,.modal-btn.ok,.modal-btn.cancel,.leave-banner,.end-medal,.adj-btn,.waiting-note,.rules,.btn-review,.daily-card,.dc-streak,.btn-invite,.creator-badge,.sheet-done,.set-go,.rev-item,.parcours-card,.parcours-sum,.obj,.bk,.tst-head";
+const GLASS_SEL = ".app-header,.card,.mode-card,.question-card,.solo-summary,.solo-score-bar,.score-pane,.option-btn,.btn-primary,.btn-next,.btn-replay,.fact-card,.tier-chip,.q-counter,.streak-chip,.chip,.icon-btn,.btn-reveal,.btn-newgame,.award-btn,.team-row,.presence-card,.me-row,.online-action,.searching-card,.waiting-card,.info-card,.vs-row,.len-chip,.duel-scorebar,.timer-chip,.dr-side,.rank-row,.text-input,.code-input,.fs-hint,.modal-card,.add-team,.btn-ghost,.fsh-close,.hs-item,.settings-sheet,.hero-verse-card,.modal-btn.ok,.modal-btn.cancel,.leave-banner,.end-medal,.adj-btn,.waiting-note,.rules,.btn-review,.daily-card,.dc-streak,.btn-invite,.creator-badge,.sheet-done,.set-go,.rev-item,.parcours-card,.parcours-sum,.tst-head";
 const GLASS_SKIP = ".timer-chip.low,.btn-primary:disabled,.btn-next:disabled";
 /* RÉFRACTION VIVANTE : le verre est calé sur la position RÉELLE à l'écran et
    ré-aligné image par image pendant les mouvements -> quand une carte glisse
