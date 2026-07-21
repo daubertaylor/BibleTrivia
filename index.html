@@ -404,7 +404,7 @@
   .splash-dot:nth-child(3){ animation-delay:0.4s; }
   @keyframes splashFade{ from{ opacity:0; } to{ opacity:1; } }
   @keyframes splashRise{ from{ opacity:0; transform:translateY(10px); } to{ opacity:1; transform:translateY(0); } }
-  @keyframes splashRiseBig{ from{ opacity:0; transform:translateY(34px) scale(0.94); } to{ opacity:1; transform:translateY(0) scale(1); } }
+  @keyframes splashRiseBig{ from{ opacity:0; transform:translateY(54px) scale(0.94); } to{ opacity:1; transform:translateY(0) scale(1); } }
   @keyframes doveFloat3D{ 0%,100%{ transform:perspective(700px) rotateY(-6deg) rotateX(3deg) translateY(0); } 50%{ transform:perspective(700px) rotateY(6deg) rotateX(-3deg) translateY(-10px); } }
   @keyframes dotPulse{ 0%,80%,100%{ opacity:0.3; transform:scale(0.8); } 40%{ opacity:1; transform:scale(1.15); } }
 
@@ -5530,6 +5530,15 @@ function csSetScroll(y){
 let glassBgSX = 0, glassBgSY = 0, glassRevBgSX = 0, glassRevBgSY = 0;
 const GLASS_BG_K = 0.5;   // ressort : ~1 image de retard en régime, filtre la saccade
 const GLASS_BG_MAX = 40;  // le fond ne peut jamais s'écarter de plus de 40px du réel
+/* iOS : le scrollTop lu en JS RETARDE le compositeur pendant l'inertie -> le
+   fond peint accuse un léger décalage DERRIÈRE le contenu (qui, lui, glisse sur
+   le compositeur). On projette le fond peint ~1 image en AVANT à partir d'un
+   proxy de vitesse déjà lissé (st - glassScrollSY, nul au repos donc calage
+   EXACT à l'arrêt), plafonné pour ne jamais dépasser sur un lancer rapide.
+   Uniquement iOS (Android = GPU natif ; desktop = molette sans inertie). */
+const GLASS_IOS_PRED = /iP(hone|od|ad)/.test(navigator.userAgent) || (navigator.platform === "MacIntel" && navigator.maxTouchPoints > 1);
+const GLASS_PRED_K = 0.16;   // ~1,1 image d'avance (proxy lissé -> montée/descente douces)
+const GLASS_PRED_MAX = 30;   // avance plafonnée : jamais de dépassement visible
 /* Retard du verre au défilement (mécanisme D'ORIGINE, restauré) : glassScrollSX/SY
    POURSUIT scrollLeft/Top avec un facteur de lissage (0,14) -> elles restent
    TOUJOURRS légèrement EN RETARD sur la position réelle pendant qu'on défile,
@@ -5648,6 +5657,14 @@ function queueGlassSyncPainted(freeze){
     if(glassBgSX > sl - 0.4 && glassBgSX < sl + 0.4) glassBgSX = sl;
     if(glassBgSY > st - 0.4 && glassBgSY < st + 0.4) glassBgSY = st;
     pSl = glassBgSX; pSt = glassBgSY;
+  } else if(GLASS_IOS_PRED){
+    // Compensation d'inertie iOS (voir GLASS_IOS_PRED) : fond peint projeté en
+    // avant, plafonné. Au repos (st==glassScrollSY -> py=0) : calage exact.
+    let py = (st - glassScrollSY) * GLASS_PRED_K;
+    let px = (sl - glassScrollSX) * GLASS_PRED_K;
+    if(py > GLASS_PRED_MAX) py = GLASS_PRED_MAX; else if(py < -GLASS_PRED_MAX) py = -GLASS_PRED_MAX;
+    if(px > GLASS_PRED_MAX) px = GLASS_PRED_MAX; else if(px < -GLASS_PRED_MAX) px = -GLASS_PRED_MAX;
+    pSt = st + py; pSl = sl + px;
   }
   /* Même retard lissé, mais pour .rev-list (voir déclaration de glassRevEl).
      Si la feuille vient d'apparaître/disparaître ou de changer, on resynchronise
