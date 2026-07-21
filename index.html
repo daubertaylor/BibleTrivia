@@ -97,7 +97,7 @@
   button{ cursor:pointer; color:var(--ink); }
   button:focus-visible, input:focus-visible{ outline:2px solid var(--primary); outline-offset:2px; }
 
-  #app{ position:relative; z-index:1; width:100%; max-width:640px; margin:0 auto; height:100%; overflow-y:auto; overflow-x:hidden; overscroll-behavior:none; display:flex; flex-direction:column; padding:calc(env(safe-area-inset-top) + 0.35rem) calc(env(safe-area-inset-right) + 0.7rem) calc(env(safe-area-inset-bottom) + 0.35rem) calc(env(safe-area-inset-left) + 0.7rem); }
+  #app{ position:relative; z-index:1; width:100%; max-width:430px; margin:0 auto; height:100%; overflow-y:auto; overflow-x:hidden; overscroll-behavior:none; display:flex; flex-direction:column; padding:calc(env(safe-area-inset-top) + 0.35rem) calc(env(safe-area-inset-right) + 0.7rem) calc(env(safe-area-inset-bottom) + 0.35rem) calc(env(safe-area-inset-left) + 0.7rem); }
   .screen{ display:flex; flex-direction:column; flex:1; }
   .screen-enter{ animation:screenIn 0.5s cubic-bezier(0.22,1,0.36,1) both; }
 
@@ -3696,7 +3696,7 @@ function openSettings(){
         <span class="set-txt"><b>Musique de fond</b><small>Le Piano du Désert</small></span>
         <button class="switch${settings.music?' on':''}" id="swMusic" role="switch" aria-checked="${settings.music}" aria-label="Musique de fond" onclick="setMusic(!settings.music)"></button>
       </div>
-      ${((IS_IOS || IS_ANDROID) && !isStandalone) ? `
+      ${(IS_PHONE && !isStandalone) ? `
       <div class="set-row">
         <span class="set-ico fsx">${ICONS.expand}</span>
         <span class="set-txt"><b>Plein écran total</b><small>Sans aucune barre, via l'écran d'accueil</small></span>
@@ -6088,6 +6088,11 @@ if(CUSTOM_SCROLL){
 const isStandalone = (window.matchMedia && (window.matchMedia("(display-mode: standalone)").matches || window.matchMedia("(display-mode: fullscreen)").matches || window.matchMedia("(display-mode: minimal-ui)").matches)) || window.navigator.standalone === true;
 const IS_IOS = /iP(hone|od|ad)/.test(navigator.userAgent) || (navigator.platform === "MacIntel" && navigator.maxTouchPoints > 1);
 const IS_ANDROID = /Android/i.test(navigator.userAgent);
+/* VRAI TÉLÉPHONE (pas iPad, pas Mac tactile, pas desktop) : OS mobile ET
+   plus petite dimension d'écran <= 500px. Sert à ne montrer l'astuce
+   « plein écran » (Ajouter à l'écran d'accueil) QUE là où elle a un sens —
+   sur iPad/desktop web, elle n'a rien à faire. */
+const IS_PHONE = (IS_IOS || IS_ANDROID) && Math.min(screen.width || 9999, screen.height || 9999) <= 500;
 if(isStandalone){ document.documentElement.classList.add("is-standalone"); }
 function fsAvailable(){ const el = document.documentElement; return !isStandalone && !!(el.requestFullscreen || el.webkitRequestFullscreen); }
 function fsActive(){ return !!(document.fullscreenElement || document.webkitFullscreenElement); }
@@ -6190,7 +6195,7 @@ if(IS_ANDROID && !isStandalone){
 }
 /* Pas de plein écran forcé sur le web : l'utilisateur passe par « écran d'accueil ». */
 function fsHintHtml(){
-  if(isStandalone || !IS_IOS) return "";
+  if(isStandalone || !IS_PHONE) return "";
   let hidden = false;
   try { hidden = localStorage.getItem("bt_fs_hint") === "1"; } catch(e){}
   if(hidden) return "";
