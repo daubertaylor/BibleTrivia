@@ -965,20 +965,21 @@
   }
   .tst.open .tst-body{ display:grid; }
   .tst.open .tst-body.tst-body-block{ display:block; } /* section Objectifs : contenu en bloc (carte), pas en grille */
-  .tst-body-block .ach-card{ margin-bottom:0; }
+  .tst-body-block .ach-card, .tst-body-block .bk-card{ margin-bottom:0; }
 
   /* Livres : CHIPS compacts (nom seul, sans barre) -> testaments beaucoup plus
      courts et nets. L'état se lit à la couleur : neutre (non touché), or (commencé),
      vert (maîtrisé) — cohérent avec le reste du jeu. */
   .bk-grid{ display:grid; grid-template-columns:repeat(auto-fill, minmax(4.7rem, 1fr)); gap:0.36rem; }
-  /* Livres : SORTIS du verre vivant — 66 puces en faisaient l'écran le plus
-     lourd du jeu (repeintes à chaque image sur iOS, floutées une à une sur
-     Android). Fond statique translucide + liseré haut : rendu quasi identique
-     à cette taille, et la Progression défile aussi légère que le reste,
-     sur tous les appareils. */
-  .bk{ padding:0.4rem 0.45rem; border-radius:9px; text-align:center; background:rgba(255,252,245,0.56); box-shadow:inset 0 1px 0 rgba(255,255,255,0.5); border:1px solid rgba(255,255,255,0.48); }
-  .bk.started{ background:rgba(255,247,225,0.64); border-color:rgba(239,173,38,0.5); }
-  .bk.mastered{ background:rgba(216,244,228,0.7); border-color:rgba(47,169,110,0.55); }
+  /* Livres : l'EFFET DE VERRE est porté par la GRANDE carte (.bk-card, une
+     par testament) — 1 surface de verre au lieu de 66, la Progression reste
+     légère sur tous les appareils. Posées sur ce verre flouté, les puces
+     translucides en héritent visuellement : rendu verre intégral, coût
+     minimal (même architecture que la vitrine des Objectifs). */
+  .bk-card{ padding:0.55rem 0.55rem 0.5rem; }
+  .bk{ padding:0.4rem 0.45rem; border-radius:9px; text-align:center; background:rgba(255,253,247,0.42); box-shadow:inset 0 1px 0 rgba(255,255,255,0.55); border:1px solid rgba(255,255,255,0.5); }
+  .bk.started{ background:rgba(255,247,225,0.58); border-color:rgba(239,173,38,0.5); }
+  .bk.mastered{ background:rgba(216,244,228,0.66); border-color:rgba(47,169,110,0.55); }
   .bk-nm{ font-size:0.7rem; font-weight:600; color:var(--ink); white-space:nowrap; overflow:hidden; text-overflow:ellipsis; display:block; }
   .bk.started .bk-nm{ color:#8a5a10; font-weight:700; }
   .bk.mastered .bk-nm{ color:#1f7a4d; font-weight:700; }
@@ -4345,7 +4346,7 @@ function renderParcours(){
             <span class="tst-count">${nm}/${tot}</span>
             <span class="tst-chev">${ICONS.chevronRight}</span>
           </button>
-          <div class="bk-grid tst-body">${list.map(bookTile).join("")}</div>
+          <div class="tst-body tst-body-block"><div class="card bk-card"><div class="bk-grid">${list.map(bookTile).join("")}</div></div></div>
         </div>`;
       };
       return tstBlock("Ancien Testament", at) + tstBlock("Nouveau Testament", nt) + objHead + objGrid;
