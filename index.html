@@ -5541,16 +5541,26 @@ function paintedGlassForced(){
   } catch(e){}
   return false;
 }
-/* Android : verre GPU (gl-native). La « copie » du chemin peint d'iOS a été
-   ESSAYÉE sur appareil réel : repeindre le fond de chaque surface à chaque
-   image dépasse les forces du téléphone (verre qui ne suit plus, affichages
-   qui sautent dans tous les sens). Le compositeur GPU, lui, floute et suit le
-   défilement nativement, sans une ligne de JS par image. Les écarts restants
-   d'Android se corrigent DANS ce chemin : transitions sans fondu d'opacité
-   (l'opacité de groupe coupe le backdrop-filter sur Chrome -> flash
-   transparent) et flou allégé sur les petites puces (Progression fluide). */
-const GLASS_GPU = glassIsAndroid && !paintedGlassForced();
+/* ANDROID = COPIER-COLLER du chemin peint d'iOS (même CSS maître, mêmes
+   textures, mêmes liserés/reflets, mêmes transitions -> identité visuelle
+   par construction), avec UNE seule différence : le SUIVI DU VERRE AU
+   DÉFILEMENT. Recaler chaque surface à chaque image (méthode iOS) dépasse
+   Chrome — jank prouvé sur appareil. Ici (GLASS_STILL) : pendant le geste on
+   n'écrit RIEN (zéro travail par image, le verre voyage avec le contenu,
+   défilement 100% natif), puis il se RECALE en une passe au premier instant
+   de repos. Même résultat, autre procédé.
+   Échappatoire de diagnostic : #gpuglass (ou bt_gpuglass="1") réactive le
+   verre GPU backdrop-filter (gl-native) pour comparer sur appareil. */
+function gpuGlassForced(){
+  try {
+    if(String(location.hash||"").indexOf("gpuglass") >= 0) return true;
+    if(localStorage.getItem("bt_gpuglass") === "1") return true;
+  } catch(e){}
+  return false;
+}
+const GLASS_GPU = glassIsAndroid && gpuGlassForced();
 if(GLASS_GPU){ try{ document.documentElement.classList.add("gl-native"); }catch(e){} }
+const GLASS_STILL = glassIsAndroid && !GLASS_GPU;
 /* Défilement piloté par JS : ABANDONNÉ (c'était la source des sauts/ralenti sur
    Android). Défilement natif partout désormais — iOS l'était déjà, le verre GPU
    suit le contenu tout seul sur Android. */
@@ -5688,6 +5698,7 @@ function queueGlassSyncPainted(freeze){
   const ox = Math.round((iw - w) / 2), oy = Math.round((ih - h) / 2);
   const size = "auto, " + iw + "px " + ih + "px";
   const sl = glassAppEl.scrollLeft, st = CUSTOM_SCROLL ? customScrollY : glassAppEl.scrollTop;
+  if(glassStillSnap){ glassStillSnap = false; glassScrollSX = sl; glassScrollSY = st; }
   /* Retard lissé (voir déclaration de glassScrollSX/SY) : recalculé à CHAQUE
      appel, sans condition -> la poursuite/décroissance est continue, jamais
      interrompue ni réarmée. lagX/lagY = écart courant entre le lissé et le
@@ -5713,6 +5724,19 @@ function queueGlassSyncPainted(freeze){
     if(glassBgSX > sl - 0.4 && glassBgSX < sl + 0.4) glassBgSX = sl;
     if(glassBgSY > st - 0.4 && glassBgSY < st + 0.4) glassBgSY = st;
     pSl = glassBgSX; pSt = glassBgSY;
+  } else if(GLASS_STILL){
+    /* ANDROID (verre au repos) : au changement d'écran (freeze) on cale net ;
+       sinon le fond peint utilise la position de CETTE image PUIS avance vers
+       le réel -> au repos il rejoint la bonne place en un FONDU doux (aucun
+       saut), et la 1re image du fondu = l'état figé (continuité parfaite).
+       Pendant le geste, ce code n'est pas atteint (on ne peint pas) :
+       glassBgSX/SY gardent la position d'avant le défilement. */
+    if(freeze){ glassBgSX = sl; glassBgSY = st; }
+    pSl = glassBgSX; pSt = glassBgSY;
+    glassBgSX += (sl - glassBgSX) * 0.28;
+    glassBgSY += (st - glassBgSY) * 0.28;
+    if(glassBgSX > sl - 0.4 && glassBgSX < sl + 0.4) glassBgSX = sl;
+    if(glassBgSY > st - 0.4 && glassBgSY < st + 0.4) glassBgSY = st;
   } else if(GLASS_IOS_PRED){
     // Compensation d'inertie iOS (voir GLASS_IOS_PRED) : fond peint projeté en
     // avant, plafonné. Au repos (st==glassScrollSY -> py=0) : calage exact.
@@ -5735,14 +5759,22 @@ function queueGlassSyncPainted(freeze){
   let revSl = 0, revSt = 0, revLagX = 0, revLagY = 0, pRevSl = 0, pRevSt = 0;
   if(glassRevEl){
     revSl = glassRevEl.scrollLeft; revSt = glassRevEl.scrollTop;
+    if(glassStillSnapRev){ glassStillSnapRev = false; glassRevScrollSX = revSl; glassRevScrollSY = revSt; }
     glassRevScrollSX += (revSl - glassRevScrollSX) * 0.14;
     glassRevScrollSY += (revSt - glassRevScrollSY) * 0.14;
     if(glassRevScrollSX > revSl - 0.35 && glassRevScrollSX < revSl + 0.35) glassRevScrollSX = revSl;
     if(glassRevScrollSY > revSt - 0.35 && glassRevScrollSY < revSt + 0.35) glassRevScrollSY = revSt;
     revLagX = glassRevScrollSX - revSl; revLagY = glassRevScrollSY - revSt;
     pRevSl = revSl; pRevSt = revSt;
-    // Fond peint de la feuille : même lissage Android que #app (voir pSl/pSt).
-    if(glassAndroidSmooth()){
+    // Fond peint de la feuille : même fondu doux Android au repos que #app.
+    if(GLASS_STILL){
+      if(freeze){ glassRevBgSX = revSl; glassRevBgSY = revSt; }
+      pRevSl = glassRevBgSX; pRevSt = glassRevBgSY;
+      glassRevBgSX += (revSl - glassRevBgSX) * 0.28;
+      glassRevBgSY += (revSt - glassRevBgSY) * 0.28;
+      if(glassRevBgSX > revSl - 0.4 && glassRevBgSX < revSl + 0.4) glassRevBgSX = revSl;
+      if(glassRevBgSY > revSt - 0.4 && glassRevBgSY < revSt + 0.4) glassRevBgSY = revSt;
+    } else if(glassAndroidSmooth()){
       glassRevBgSX += (revSl - glassRevBgSX) * GLASS_BG_K;
       glassRevBgSY += (revSt - glassRevBgSY) * GLASS_BG_K;
       if(glassRevBgSX < revSl - GLASS_BG_MAX) glassRevBgSX = revSl - GLASS_BG_MAX; else if(glassRevBgSX > revSl + GLASS_BG_MAX) glassRevBgSX = revSl + GLASS_BG_MAX;
@@ -5959,6 +5991,10 @@ let glassActiveUntil = 0, glassFrame = 0, glassFreezeUntil = 0, glassGen = 1, gl
    pouvoir décrocher. glassScrollIdle compte les images consécutives sans le
    moindre changement (0 tant que ça bouge encore, ne serait-ce que d'1 px). */
 let glassLastSL = 0, glassLastST = 0, glassScrollIdle = 99;
+/* GLASS_STILL : recalage différé au repos. dirty = un recalage est dû ;
+   snap/snapRev = à la prochaine passe, aligner d'abord les lissages sur la
+   position réelle (lag nul -> aucun reflet parasite, positions exactes). */
+let glassStillDirty = false, glassStillSnap = false, glassStillSnapRev = false;
 function armGlass(ms){ const u = performance.now() + (ms || 850); if(u > glassActiveUntil) glassActiveUntil = u; }
 /* Mise en page changée (nouvel écran, redimensionnement) : on invalide le
    cache des décalages pour qu'ils soient recalculés à la prochaine image. */
@@ -5992,8 +6028,21 @@ function glassFreezeForTransition(){
     if(rsl0 !== glassRevLastSL || rst0 !== glassRevLastST) justMoved = true;
     glassRevLastSL = rsl0; glassRevLastST = rst0;
   }
-  if(justMoved){ glassScrollIdle = 0; armGlass(1300); }
-  else if(glassScrollIdle < 99) glassScrollIdle++;
+  if(justMoved){
+    glassScrollIdle = 0;
+    /* ANDROID peint (GLASS_STILL) : rien n'est écrit pendant le défilement —
+       le verre voyage avec le contenu (natif). Ailleurs : suivi d'origine. */
+    if(GLASS_STILL) glassStillDirty = true; else armGlass(1300);
+  }
+  else if(glassScrollIdle < 99){
+    glassScrollIdle++;
+    if(GLASS_STILL && glassStillDirty && glassScrollIdle >= 2){
+      glassStillDirty = false;
+      glassStillSnap = true; glassStillSnapRev = true;
+      armGlass(500);
+      try{ queueGlassSync(); }catch(e){}
+    }
+  }
   /* Appui ET retard de défilement se combinent dans LA MÊME formule (voir
      queueGlassSyncPainted) -> plus besoin d'arbitrer entre les deux ici, un
      seul appel couvre tous les cas. On reste actif tant que la position a
@@ -6001,7 +6050,12 @@ function glassFreezeForTransition(){
      palier d'arrondi sub-pixel sans couper le suivi pour rien), ou pendant la
      fenêtre d'activité habituelle (appui/transition/rotation), ou au
      battement de repli toutes les ~0,5s. */
-  if(glassScrollIdle < 2 || now < glassActiveUntil || (glassFrame % 30) === 0){
+  if(GLASS_STILL && glassScrollIdle < 2){
+    /* ANDROID peint : défilement en cours -> silence TOTAL, même si une
+       fenêtre d'activité (toucher récent) est ouverte. Le recalage viendra
+       de la passe de repos ci-dessus. */
+  }
+  else if(glassScrollIdle < 2 || now < glassActiveUntil || (glassFrame % 30) === 0){
     try{ queueGlassSync(); }catch(e){}
   }
 })();
