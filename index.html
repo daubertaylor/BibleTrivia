@@ -165,7 +165,7 @@
   .mode-card{
     width:100%; display:flex; align-items:center; gap:0.8rem;
     background:var(--surface); border:1px solid var(--border); border-radius:16px;
-    padding:0.82rem 0.95rem; margin-bottom:16px; text-align:left;
+    padding:0.82rem 0.95rem; margin-bottom:13px; text-align:left;
     box-shadow:inset 0 1px 0 rgba(255,255,255,0.7), 0 4px 16px rgba(15,12,10,0.1);
   }
   .chev{ width:1.22rem; height:1.22rem; color:var(--mist-dim,#c3bcae); flex-shrink:0; margin-left:auto; opacity:0.55; display:inline-flex; }
@@ -851,7 +851,7 @@
   /* Même verre que les autres cartes (teinte quasi neutre, à peine chaude) ;
      seule la bordure dorée signale le Défi. Avant : teinte trop opaque/dorée
      qui donnait un verre différent des autres. */
-  .daily-card{ width:100%; display:flex; align-items:center; gap:0.8rem; --glass-tint: rgba(255,250,242,0.46); border:1px solid rgba(239,173,38,0.55); border-radius:16px; padding:0.82rem 0.95rem; margin-bottom:16px; text-align:left; }
+  .daily-card{ width:100%; display:flex; align-items:center; gap:0.8rem; --glass-tint: rgba(255,250,242,0.46); border:1px solid rgba(239,173,38,0.55); border-radius:16px; padding:0.82rem 0.95rem; margin-bottom:13px; text-align:left; }
   /* Exactement le même traitement que les icônes du menu (taille, rayon,
      padding, liseré de verre) — seule la flamme change. */
   /* Rebord de verre renforcé : l'icône dorée est posée sur une carte AUSSI
@@ -962,6 +962,10 @@
     .hero-icon{ width:clamp(4.2rem, 11vh, 5.5rem); }
     html .hero-zone{ height:clamp(4.8rem, 12vh, 6.2rem); margin-bottom:0.45rem; }
     .hero-title{ font-size:1.3rem; margin-bottom:0.15rem; }
+    /* SE & co (≤700px de haut) : on resserre un poil les cartes pour que
+       l'accueil tienne AUSSI ici, marges de sécurité comprises -> zéro débord,
+       zéro défilement. */
+    .mode-card, .daily-card{ margin-bottom:10px; }
   }
   .tst.open .tst-body{ display:grid; }
   .tst.open .tst-body.tst-body-block{ display:block; } /* section Objectifs : contenu en bloc (carte), pas en grille */
@@ -1004,8 +1008,12 @@
   /* Équilibre vertical de l'accueil : le bloc de cartes est CENTRÉ dans l'espace
      libre (spacer souple au-dessus + un peu plus en-dessous) au lieu d'être collé
      en haut avec un grand vide -> écran équilibré, propre, sans trou. */
-  .home-sp-top{ flex:0.55 1 0; }
-  .home-sp-bot{ flex:1.3 1 0; }
+  /* min-height:0 : sous contrainte (iPhone avec marges de sécurité), ces deux
+     entretoises s'effacent complètement au lieu de garder 0,35rem chacune —
+     ~11px récupérés pile là où l'accueil débordait. Sur grand écran elles
+     grandissent (flex) : aucun changement visible. */
+  .home-sp-top{ flex:0.55 1 0; min-height:0; }
+  .home-sp-bot{ flex:1.3 1 0; min-height:0; }
   /* Pastilles alignées sur le LANGAGE des cartes de l'accueil : mêmes bords
      (bord à bord avec les cartes au-dessus), même rayon 16 px, même bordure,
      et le même écart de 16 px entre elles qu'entre les cartes. */
@@ -5480,6 +5488,14 @@ function render(){
 function fitScroll(){
   const a = document.getElementById("app");
   if(!a) return;
+  /* L'ACCUEIL est un écran FIXE (un seul écran, aucun défilement voulu). On le
+     verrouille en overflow:hidden quoi qu'il arrive : même s'il restait 1-2px de
+     débord résiduel sur un petit iPhone (marges de sécurité), aucun rebond
+     élastique n'est possible -> écran parfaitement stable dans la main. Les
+     autres écrans décident selon leur contenu (défilement natif si ça déborde). */
+  let fixedScreen = false;
+  try{ fixedScreen = (state.screen === "mode"); }catch(e){}
+  if(fixedScreen){ a.style.overflowY = "hidden"; return; }
   const overflows = a.scrollHeight > a.clientHeight + 2;
   a.style.overflowY = overflows ? "auto" : "hidden";
 }
