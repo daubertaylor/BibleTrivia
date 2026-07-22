@@ -5669,24 +5669,25 @@ function paintedGlassForced(){
   } catch(e){}
   return false;
 }
-/* ANDROID = COPIER-COLLER du chemin peint d'iOS (même CSS maître, mêmes
-   textures, mêmes liserés/reflets, mêmes transitions -> identité visuelle
-   par construction), avec UNE seule différence : le SUIVI DU VERRE AU
-   DÉFILEMENT. Recaler chaque surface à chaque image (méthode iOS) dépasse
-   Chrome — jank prouvé sur appareil. Ici (GLASS_STILL) : pendant le geste on
-   n'écrit RIEN (zéro travail par image, le verre voyage avec le contenu,
-   défilement 100% natif), puis il se RECALE en une passe au premier instant
-   de repos. Même résultat, autre procédé.
-   CHOIX ANDROID (demande explicite) : le verre doit RÉAGIR EN TEMPS RÉEL au
-   défilement, pas se recaler seulement à l'arrêt. La voie peinte ne peut pas
-   suivre image par image sans saccader (jank prouvé). La voie GPU
-   backdrop-filter, elle, est composée par le GPU : elle suit le défilement
-   NATIVEMENT, en direct et fluide. On la met donc PAR DÉFAUT sur Android.
-   Contrepartie : elle floute le contenu réel en direct au lieu de peindre la
-   scène décalée (l'effet « traîne » disparaît au profit d'un flou vivant).
-   Échappatoire de retour instantané : #paintedglass (ou bt_paintedglass="1")
-   restaure le verre peint qui se recale à l'arrêt (rendu identique à iOS). */
-const GLASS_GPU = glassIsAndroid && !paintedGlassForced();
+/* ANDROID = COPIER-COLLER EXACT du verre PEINT d'iOS : même CSS maître, mêmes
+   textures, teintes, liserés et reflets -> rendu RIGOUREUSEMENT IDENTIQUE à iOS
+   (par construction : c'est le même chemin de rendu). Pendant un défilement, le
+   fond est gelé puis recalé en douceur au premier instant de repos (GLASS_STILL) :
+   c'est la SEULE manière d'éviter le jank Android — repeindre le verre à chaque
+   image dépasse Chrome (jank PROUVÉ sur appareil). On privilégie donc l'IDENTITÉ
+   VISUELLE + ZÉRO BUG, exactement ce qui est demandé.
+   Le verre GPU backdrop-filter réagissait en direct au défilement MAIS avec un
+   rendu DIFFÉRENT (il floute le contenu réel, pas la scène peinte) -> pas
+   identique à iOS. Il reste dispo en diagnostic via #gpuglass, mais n'est PLUS
+   le défaut. */
+function gpuGlassForced(){
+  try {
+    if(String(location.hash||"").indexOf("gpuglass") >= 0) return true;
+    if(localStorage.getItem("bt_gpuglass") === "1") return true;
+  } catch(e){}
+  return false;
+}
+const GLASS_GPU = glassIsAndroid && gpuGlassForced();
 if(GLASS_GPU){ try{ document.documentElement.classList.add("gl-native"); }catch(e){} }
 const GLASS_STILL = glassIsAndroid && !GLASS_GPU;
 /* Défilement piloté par JS : ABANDONNÉ (c'était la source des sauts/ralenti sur
