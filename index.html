@@ -5669,23 +5669,17 @@ function paintedGlassForced(){
   } catch(e){}
   return false;
 }
-/* ============================ VERRE UNIFIÉ (TOUS APPAREILS) ============================
-   UNE SEULE technique pour TOUT appareil : le VRAI backdrop-filter GPU.
-   C'est la MÊME primitive CSS native sur iOS Safari ET Android Chrome — le
-   compositeur (GPU) floute le décor et SUIT le défilement natif tout seul.
-   Conséquence, exactement ce qui est demandé :
-     • RÉSULTAT IDENTIQUE partout — même primitive, même rendu, par construction ;
-     • VIVANT pendant le défilement — le verre bouge en même temps que l'écran,
-       sur chaque appareil (aucun gel) ;
-     • ZÉRO BUG — aucune peinture par image, aucune lecture de mise en page :
-       le verre ne peut plus « sauter », « nager » ni « ralentir » ;
-     • une SEULE voie de rendu, donc plus d'écart iOS/Android à arbitrer.
-   Avant, deux voies coexistaient (photo peinte recalée par JS sur iOS ; verre
-   gelé au repos sur Android) : impossible d'être à la fois identique, vivant et
-   sans jank. Le backdrop-filter GPU réunit les trois d'un coup, « d'une autre
-   manière qui englobe tous les appareils ».
-   Échappatoire diagnostic : #paintedglass (ou bt_paintedglass="1") pour revenir
-   à l'ancien verre peint si jamais besoin. */
+/* ===== VERRE PEINT VIVANT — LA MÊME VERSION QUE iOS, SUR TOUS LES APPAREILS =====
+   Une SEULE voie de rendu partout : le verre PEINT d'iOS — la photo pré-floutée
+   « fenêtre sur la scène », recalée en direct à chaque image pendant le
+   défilement (le fond bouge avec le doigt). Android reçoit EXACTEMENT ce même
+   chemin de rendu qu'iOS -> rendu rigoureusement identique, par construction,
+   et vivant pendant le défilement.
+   Ce qu'on N'utilise PLUS par défaut, ni sur Android ni sur iOS :
+     • le backdrop-filter GPU (« le vieux truc Android ») : rendu DIFFÉRENT du
+       verre peint -> banni du défaut. Ne reste qu'en pur diagnostic (#gpuglass) ;
+     • le verre « gelé au repos » (ancien compromis Android, figé pendant le
+       défilement) : abandonné -> le verre est VIVANT partout, comme iOS. */
 function gpuGlassForced(){
   try {
     if(String(location.hash||"").indexOf("gpuglass") >= 0) return true;
@@ -5693,11 +5687,11 @@ function gpuGlassForced(){
   } catch(e){}
   return false;
 }
-const GLASS_GPU = !paintedGlassForced();
+const GLASS_GPU = gpuGlassForced(); // backdrop-filter : DIAGNOSTIC seulement, JAMAIS par défaut
 if(GLASS_GPU){ try{ document.documentElement.classList.add("gl-native"); }catch(e){} }
-/* Verre peint « gelé au repos » : ne subsiste que si l'on FORCE le mode peint
-   (échappatoire) et seulement sur Android, où repeindre par image jank. */
-const GLASS_STILL = !GLASS_GPU && glassIsAndroid;
+/* Verre « gelé au repos » : ABANDONNÉ. Le verre peint est recalé en direct au
+   défilement sur tous les appareils (comme iOS), plus jamais figé. */
+const GLASS_STILL = false;
 /* Défilement piloté par JS : ABANDONNÉ (c'était la source des sauts/ralenti sur
    Android). Défilement natif partout désormais — iOS l'était déjà, le verre GPU
    suit le contenu tout seul sur Android. */
@@ -5874,9 +5868,12 @@ function queueGlassSyncPainted(freeze){
     glassBgSY += (st - glassBgSY) * 0.28;
     if(glassBgSX > sl - 0.4 && glassBgSX < sl + 0.4) glassBgSX = sl;
     if(glassBgSY > st - 0.4 && glassBgSY < st + 0.4) glassBgSY = st;
-  } else if(GLASS_IOS_PRED){
-    // Compensation d'inertie iOS (voir GLASS_IOS_PRED) : fond peint projeté en
-    // avant, plafonné. Au repos (st==glassScrollSY -> py=0) : calage exact.
+  } else {
+    // Compensation d'inertie — MÊME formule sur TOUS les appareils (iOS, Android,
+    // desktop) : le fond peint est projeté en avant pendant le lancer (le
+    // navigateur applique les textures avec ~1 image de retard), plafonné. Au
+    // repos (st==glassScrollSY -> py=0) : calage exact. Une seule voie -> rendu
+    // et ressenti rigoureusement identiques partout.
     let py = (st - glassScrollSY) * GLASS_PRED_K;
     let px = (sl - glassScrollSX) * GLASS_PRED_K;
     if(py > GLASS_PRED_MAX) py = GLASS_PRED_MAX; else if(py < -GLASS_PRED_MAX) py = -GLASS_PRED_MAX;
