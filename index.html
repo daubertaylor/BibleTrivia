@@ -5669,17 +5669,23 @@ function paintedGlassForced(){
   } catch(e){}
   return false;
 }
-/* ANDROID = COPIER-COLLER EXACT du verre PEINT d'iOS : même CSS maître, mêmes
-   textures, teintes, liserés et reflets -> rendu RIGOUREUSEMENT IDENTIQUE à iOS
-   (par construction : c'est le même chemin de rendu). Pendant un défilement, le
-   fond est gelé puis recalé en douceur au premier instant de repos (GLASS_STILL) :
-   c'est la SEULE manière d'éviter le jank Android — repeindre le verre à chaque
-   image dépasse Chrome (jank PROUVÉ sur appareil). On privilégie donc l'IDENTITÉ
-   VISUELLE + ZÉRO BUG, exactement ce qui est demandé.
-   Le verre GPU backdrop-filter réagissait en direct au défilement MAIS avec un
-   rendu DIFFÉRENT (il floute le contenu réel, pas la scène peinte) -> pas
-   identique à iOS. Il reste dispo en diagnostic via #gpuglass, mais n'est PLUS
-   le défaut. */
+/* ============================ VERRE UNIFIÉ (TOUS APPAREILS) ============================
+   UNE SEULE technique pour TOUT appareil : le VRAI backdrop-filter GPU.
+   C'est la MÊME primitive CSS native sur iOS Safari ET Android Chrome — le
+   compositeur (GPU) floute le décor et SUIT le défilement natif tout seul.
+   Conséquence, exactement ce qui est demandé :
+     • RÉSULTAT IDENTIQUE partout — même primitive, même rendu, par construction ;
+     • VIVANT pendant le défilement — le verre bouge en même temps que l'écran,
+       sur chaque appareil (aucun gel) ;
+     • ZÉRO BUG — aucune peinture par image, aucune lecture de mise en page :
+       le verre ne peut plus « sauter », « nager » ni « ralentir » ;
+     • une SEULE voie de rendu, donc plus d'écart iOS/Android à arbitrer.
+   Avant, deux voies coexistaient (photo peinte recalée par JS sur iOS ; verre
+   gelé au repos sur Android) : impossible d'être à la fois identique, vivant et
+   sans jank. Le backdrop-filter GPU réunit les trois d'un coup, « d'une autre
+   manière qui englobe tous les appareils ».
+   Échappatoire diagnostic : #paintedglass (ou bt_paintedglass="1") pour revenir
+   à l'ancien verre peint si jamais besoin. */
 function gpuGlassForced(){
   try {
     if(String(location.hash||"").indexOf("gpuglass") >= 0) return true;
@@ -5687,9 +5693,11 @@ function gpuGlassForced(){
   } catch(e){}
   return false;
 }
-const GLASS_GPU = glassIsAndroid && gpuGlassForced();
+const GLASS_GPU = !paintedGlassForced();
 if(GLASS_GPU){ try{ document.documentElement.classList.add("gl-native"); }catch(e){} }
-const GLASS_STILL = glassIsAndroid && !GLASS_GPU;
+/* Verre peint « gelé au repos » : ne subsiste que si l'on FORCE le mode peint
+   (échappatoire) et seulement sur Android, où repeindre par image jank. */
+const GLASS_STILL = !GLASS_GPU && glassIsAndroid;
 /* Défilement piloté par JS : ABANDONNÉ (c'était la source des sauts/ralenti sur
    Android). Défilement natif partout désormais — iOS l'était déjà, le verre GPU
    suit le contenu tout seul sur Android. */
