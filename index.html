@@ -216,7 +216,7 @@
   .btn-primary:disabled{ opacity:0.4; box-shadow:none; }
   /* Bouton d'attente : simple pastille de statut, non pressable → aucun
      repaint au toucher (c'est ce repaint qui le faisait « blanchir »). */
-  .btn-primary.is-waiting, .btn-replay.is-waiting{ --glass-tint: rgba(255,253,247,0.56); color:var(--ink-soft); cursor:default; pointer-events:none; background-image:none; box-shadow:inset 0 1px 0 rgba(255,255,255,0.7), inset 0 0 0 1px rgba(255,255,255,0.5), 0 4px 14px rgba(15,12,10,0.12); }
+  .btn-primary.is-waiting, .btn-replay.is-waiting{ --glass-tint: rgba(255,253,247,0.56); color:var(--ink-soft); cursor:default; pointer-events:none; box-shadow:inset 0 1px 0 rgba(255,255,255,0.7), inset 0 0 0 1px rgba(255,255,255,0.5), 0 4px 14px rgba(15,12,10,0.12); }
   #roomStartBtn{ margin-top:0.9rem; }
   .error-msg{ color:#ff8a76; font-size:0.82rem; text-align:center; margin-top:0.6rem; min-height:1.2em; text-shadow:0 1px 6px rgba(0,0,0,0.35); }
 
@@ -368,6 +368,11 @@
 
   .end-actions{ display:flex; gap:0.7rem; margin-top:auto; padding-top:1.15rem; }
   .end-actions button{ flex:1; border-radius:13px; padding:0.88rem; font-size:0.9rem; font-weight:700; }
+  /* Note de fin (ex. « <nom> aimerait rejouer. Tu acceptes ? ») : placée JUSTE
+     au-dessus des boutons d'action auxquels elle se rapporte, plus près d'eux
+     que des scores -> lecture immédiate, plus de message perdu en haut. */
+  .end-note{ margin-bottom:0.6rem; text-align:center; }
+  .end-note + .end-actions{ padding-top:0; }
   .btn-replay{ background:var(--primary); border:1px solid rgba(255,255,255,0.4); color:#fff; --rim-edge:0 0 0 1px rgba(150,30,14,0.3);--rim-cast:0 6px 16px rgba(214,60,34,0.42); }
   .btn-newgame{ background:rgba(255,255,255,0.72); backdrop-filter:blur(10px) saturate(180%); -webkit-backdrop-filter:blur(10px) saturate(180%); border:1px solid rgba(255,255,255,0.6); color:var(--ink); }
 
@@ -5463,9 +5468,9 @@ function renderOnlineEnd(){
       <div class="dr-vs">VS</div>
       <div class="dr-side ${(!win&&!tie&&!net.oppGone)?'winner':''}">${net.opp?avatarHtml(net.opp.name,net.opp.color,3,net.opp.isCreator):`<span class="avatar waiting" style="width:3rem;height:3rem;font-size:1.25rem;">?</span>`}<div class="dr-name">${escapeHtml(net.opp?net.opp.name:"Adversaire")}</div><div class="dr-score" data-count-opp>0</div></div>
     </div>
-    ${net.oppGone?`<div class="info-card">Ton adversaire a quitté la partie.</div>`:(replayMsg?`<div class="info-card">${replayMsg}</div>`:"")}
     ${net.missed && net.missed.length ? `<button class="btn-review" onclick="openMissedReview(net.missed)"><span class="ico">${ICONS.bookOpen}</span>Revoir mes ${net.missed.length} erreur${net.missed.length>1?"s":""}</button>` : ""}
     <div class="end-bottom">
+    ${net.oppGone?`<div class="info-card end-note">Ton adversaire a quitté la partie.</div>`:(replayMsg?`<div class="info-card end-note">${replayMsg}</div>`:"")}
     <div class="end-actions">${replayActions}</div>
     ${shareLineHtml("duel")}
     </div>`;
@@ -5536,6 +5541,7 @@ function render(){
   // place) on recale normalement.
   if(prevNode){ glassFreezeForTransition(); } else { glassTrack(); }
   requestAnimationFrame(fitScroll);
+  syncSpinners();
 
   if(state.screen!=="play" && state.screen!=="online-play"){ stopQTimer(); }
   if(state.screen==="play") saveState();
@@ -5562,6 +5568,19 @@ function fitScroll(){
   if(fixedScreen){ a.style.overflowY = "hidden"; return; }
   const overflows = a.scrollHeight > a.clientHeight + 2;
   a.style.overflowY = overflows ? "auto" : "hidden";
+}
+
+/* ROND DE CHARGEMENT CONTINU : le spinner tourne via une animation CSS. Quand
+   un écran se re-rend (ex. progression de l'adversaire pendant qu'on attend en
+   duel), son nœud est recréé et l'animation repartait de zéro -> saut visible à
+   chaque rafraîchissement. On cale la PHASE sur l'horloge : un délai d'animation
+   NÉGATIF = « comme si elle tournait depuis toujours ». Un spinner recréé reprend
+   donc pile où il en était -> rotation parfaitement continue, à l'infini. */
+function syncSpinners(){
+  const PERIOD = 800; // = durée de l'animation « spin » (0.8s)
+  const delay = -(performance.now() % PERIOD) + "ms";
+  const els = document.getElementsByClassName("spinner");
+  for(let i = 0; i < els.length; i++){ els[i].style.animationDelay = delay; }
 }
 
 /* Son universel : léger tap sur chaque élément interactif.
