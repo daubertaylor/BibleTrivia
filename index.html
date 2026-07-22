@@ -5680,16 +5680,16 @@ function paintedGlassForced(){
    n'écrit RIEN (zéro travail par image, le verre voyage avec le contenu,
    défilement 100% natif), puis il se RECALE en une passe au premier instant
    de repos. Même résultat, autre procédé.
-   Échappatoire de diagnostic : #gpuglass (ou bt_gpuglass="1") réactive le
-   verre GPU backdrop-filter (gl-native) pour comparer sur appareil. */
-function gpuGlassForced(){
-  try {
-    if(String(location.hash||"").indexOf("gpuglass") >= 0) return true;
-    if(localStorage.getItem("bt_gpuglass") === "1") return true;
-  } catch(e){}
-  return false;
-}
-const GLASS_GPU = glassIsAndroid && gpuGlassForced();
+   CHOIX ANDROID (demande explicite) : le verre doit RÉAGIR EN TEMPS RÉEL au
+   défilement, pas se recaler seulement à l'arrêt. La voie peinte ne peut pas
+   suivre image par image sans saccader (jank prouvé). La voie GPU
+   backdrop-filter, elle, est composée par le GPU : elle suit le défilement
+   NATIVEMENT, en direct et fluide. On la met donc PAR DÉFAUT sur Android.
+   Contrepartie : elle floute le contenu réel en direct au lieu de peindre la
+   scène décalée (l'effet « traîne » disparaît au profit d'un flou vivant).
+   Échappatoire de retour instantané : #paintedglass (ou bt_paintedglass="1")
+   restaure le verre peint qui se recale à l'arrêt (rendu identique à iOS). */
+const GLASS_GPU = glassIsAndroid && !paintedGlassForced();
 if(GLASS_GPU){ try{ document.documentElement.classList.add("gl-native"); }catch(e){} }
 const GLASS_STILL = glassIsAndroid && !GLASS_GPU;
 /* Défilement piloté par JS : ABANDONNÉ (c'était la source des sauts/ralenti sur
