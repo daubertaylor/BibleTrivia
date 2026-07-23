@@ -5669,17 +5669,19 @@ function paintedGlassForced(){
   } catch(e){}
   return false;
 }
-/* ===== VERRE PEINT VIVANT — LA MÊME VERSION QUE iOS, SUR TOUS LES APPAREILS =====
-   Une SEULE voie de rendu partout : le verre PEINT d'iOS — la photo pré-floutée
-   « fenêtre sur la scène », recalée en direct à chaque image pendant le
-   défilement (le fond bouge avec le doigt). Android reçoit EXACTEMENT ce même
-   chemin de rendu qu'iOS -> rendu rigoureusement identique, par construction,
-   et vivant pendant le défilement.
-   Ce qu'on N'utilise PLUS par défaut, ni sur Android ni sur iOS :
-     • le backdrop-filter GPU (« le vieux truc Android ») : rendu DIFFÉRENT du
-       verre peint -> banni du défaut. Ne reste qu'en pur diagnostic (#gpuglass) ;
-     • le verre « gelé au repos » (ancien compromis Android, figé pendant le
-       défilement) : abandonné -> le verre est VIVANT partout, comme iOS. */
+/* ===== VERRE PEINT — MÊME LOOK QUE iOS PARTOUT, FLUIDE SUR ANDROID =====
+   Le verre est le MÊME que sur iOS partout : la photo pré-floutée « fenêtre sur
+   la scène », mêmes teintes, liserés et reflets -> rendu identique par
+   construction. La seule différence est la façon de SUIVRE le défilement :
+     • iOS : le fond peint est recalé à CHAQUE image -> il glisse avec le doigt
+       (Safari rastérise assez vite pour rester fluide) ;
+     • Android (GLASS_STILL) : repeindre le flou à chaque image dépasse Chrome et
+       fait « sauter » l'écran dans tous les sens (jank prouvé sur appareil). On
+       GÈLE donc le fond pendant le geste (défilement 100 % natif, parfaitement
+       fluide) puis on le recale EN DOUCEUR à l'arrêt. Même look qu'iOS, ZÉRO
+       saccade — le fond se pose au lieu de glisser pendant le swipe.
+   Backdrop-filter GPU : banni du défaut (rendu différent du verre peint), ne
+   reste qu'en diagnostic via #gpuglass. */
 function gpuGlassForced(){
   try {
     if(String(location.hash||"").indexOf("gpuglass") >= 0) return true;
@@ -5689,9 +5691,9 @@ function gpuGlassForced(){
 }
 const GLASS_GPU = gpuGlassForced(); // backdrop-filter : DIAGNOSTIC seulement, JAMAIS par défaut
 if(GLASS_GPU){ try{ document.documentElement.classList.add("gl-native"); }catch(e){} }
-/* Verre « gelé au repos » : ABANDONNÉ. Le verre peint est recalé en direct au
-   défilement sur tous les appareils (comme iOS), plus jamais figé. */
-const GLASS_STILL = false;
+/* Android : fond peint gelé pendant le geste (fluide), recalé en douceur à
+   l'arrêt. iOS/desktop : recalage en direct (voir la branche de prédiction). */
+const GLASS_STILL = glassIsAndroid && !GLASS_GPU;
 /* Défilement piloté par JS : ABANDONNÉ (c'était la source des sauts/ralenti sur
    Android). Défilement natif partout désormais — iOS l'était déjà, le verre GPU
    suit le contenu tout seul sur Android. */
@@ -5868,12 +5870,11 @@ function queueGlassSyncPainted(freeze){
     glassBgSY += (st - glassBgSY) * 0.28;
     if(glassBgSX > sl - 0.4 && glassBgSX < sl + 0.4) glassBgSX = sl;
     if(glassBgSY > st - 0.4 && glassBgSY < st + 0.4) glassBgSY = st;
-  } else {
-    // Compensation d'inertie — MÊME formule sur TOUS les appareils (iOS, Android,
-    // desktop) : le fond peint est projeté en avant pendant le lancer (le
-    // navigateur applique les textures avec ~1 image de retard), plafonné. Au
-    // repos (st==glassScrollSY -> py=0) : calage exact. Une seule voie -> rendu
-    // et ressenti rigoureusement identiques partout.
+  } else if(GLASS_IOS_PRED){
+    // Compensation d'inertie iOS : le fond peint est projeté en avant pendant le
+    // lancer (Safari applique les textures avec ~1 image de retard), plafonné.
+    // Au repos (st==glassScrollSY -> py=0) : calage exact. (Android n'entre
+    // jamais ici : il passe par GLASS_STILL, fond gelé pendant le geste.)
     let py = (st - glassScrollSY) * GLASS_PRED_K;
     let px = (sl - glassScrollSX) * GLASS_PRED_K;
     if(py > GLASS_PRED_MAX) py = GLASS_PRED_MAX; else if(py < -GLASS_PRED_MAX) py = -GLASS_PRED_MAX;
