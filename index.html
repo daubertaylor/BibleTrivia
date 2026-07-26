@@ -5893,12 +5893,26 @@ function queueGlassXF(){
     if(!el.classList.contains("has-gs")) el.classList.add("has-gs");
     if(el._gsSize !== bgSize){ el._gsSize = bgSize; gs.style.width = iw + "px"; gs.style.height = ih + "px"; gs.style.backgroundSize = bgSize; }
     const inApp = glassAppEl.contains(el);
-    const inRev = !inApp && revEl && revEl.contains(el);
-    const elSl = inApp ? sl : (inRev ? revSl : 0);
-    const elSt = inApp ? st : (inRev ? revSt : 0);
-    const restTop = el._ly0 - elSt; // culling : bien hors écran -> pas de mise à jour
-    if(restTop > vh + 200 || restTop + el._oh0 < -200) continue;
-    const t = "translate3d(" + Math.round(elSl - el._lx0 - ox) + "px," + Math.round(elSt - el._ly0 - oy) + "px,0)";
+    let tx, ty;
+    if(inApp){
+      // #app : position depuis le cache d'offsets -> défilement continu gratuit
+      // (aucune lecture de mise en page).
+      const restTop = el._ly0 - st;
+      if(restTop > vh + 200 || restTop + el._oh0 < -200) continue; // hors écran
+      tx = sl - el._lx0 - ox; ty = st - el._ly0 - oy;
+    } else {
+      // Feuille / modale (hors #app, animées à l'ouverture/fermeture) : on lit la
+      // position VISUELLE réelle (getBoundingClientRect) -> le flou reste FIXE À
+      // L'ÉCRAN pendant que la vitre glisse par-dessus, au lieu d'un flou « collé »
+      // qui accompagnait le bouton et paraissait bizarre à l'ouverture (surtout
+      // « Fermer », tout en bas, qui se déplace le plus). Peu de surfaces, et on
+      // n'écrit qu'un transform (qui n'invalide pas la mise en page) -> pas de
+      // reflow forcé coûteux.
+      const r = el.getBoundingClientRect();
+      if(r.bottom < -200 || r.top > vh + 200) continue;
+      tx = -r.left - ox; ty = -r.top - oy;
+    }
+    const t = "translate3d(" + Math.round(tx) + "px," + Math.round(ty) + "px,0)";
     if(el._gsT !== t){ el._gsT = t; gs.style.transform = t; }
   }
 }
