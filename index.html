@@ -675,10 +675,19 @@
      instant) ; l'écran qui sort disparaît net (pas de fantôme au verre
      cassé) ; la fenêtre modale s'ouvre par un pur zoom, sans fondu. */
   @keyframes screenInGl{ from{ transform:translate3d(0,20px,0); } to{ transform:translate3d(0,0,0); } }
-  html.gl-native .screen-enter{ animation-name:screenInGl; }
-  html.gl-native .screen-exit{ animation:none; display:none; }
+  /* Les DEUX moteurs de verre (gl-native backdrop ET gl-xf transform) partagent
+     ces transitions SANS fondu d'opacité : animer l'opacité d'un groupe qui
+     porte le verre coûte cher sur Android. En backdrop, Chrome coupe le
+     backdrop-filter ; en transform, le compositeur doit rassembler TOUTES les
+     couches de flou .gs (écran sortant + entrant) dans un tampon d'opacité par
+     image -> ça saccade au changement d'écran, puis se stabilise à la fin
+     (exactement le « bug » remonté). Sans opacité : l'entrant GLISSE (verre
+     intact), le sortant disparaît net (pas de double composition), la modale
+     zoome. iOS et Android jouent alors EXACTEMENT la même transition, fluide. */
+  html.gl-native .screen-enter, html.gl-xf .screen-enter{ animation-name:screenInGl; }
+  html.gl-native .screen-exit, html.gl-xf .screen-exit{ animation:none; display:none; }
   @keyframes modalInGl{ from{ transform:scale(0.9) translateY(16px); } to{ transform:scale(1) translateY(0); } }
-  html.gl-native .modal-card{ animation-name:modalInGl; }
+  html.gl-native .modal-card, html.gl-xf .modal-card{ animation-name:modalInGl; }
   @keyframes modalIn{ from{ opacity:0; transform:scale(0.9) translateY(16px); } to{ opacity:1; transform:scale(1) translateY(0); } }
   .modal-veil.closing{ animation:veilOut 0.22s ease forwards; }
   .modal-veil.closing .modal-card{ animation:modalOut 0.22s cubic-bezier(0.4,0,1,1) forwards; }
@@ -821,7 +830,8 @@
   /* Et AUCUN fondu du voile à l'ouverture : l'opacité animée du parent aurait
      coupé le backdrop-filter de la feuille pendant toute l'animation (verre
      mort à l'ouverture). Voile posé net ; la feuille glisse, la fenêtre zoome. */
-  html.gl-native .sheet-veil:not(.closing), html.gl-native .modal-veil:not(.closing){ animation:none; }
+  html.gl-native .sheet-veil:not(.closing), html.gl-native .modal-veil:not(.closing),
+  html.gl-xf .sheet-veil:not(.closing), html.gl-xf .modal-veil:not(.closing){ animation:none; }
   html.gl-native .glass-refl{ display:none; }
   /* Android : pré-promotion des couches -> plus de flash noir au premier
      affichage (la couche du screen et de l'icône existent avant l'anim). */
@@ -4140,7 +4150,9 @@ function showHeroVerse(){
   const t = zone.querySelector(".hero-verse-text");
   const r = zone.querySelector(".hero-verse-ref");
   const card = zone.querySelector(".hero-verse-card");
-  if(t) t.textContent = "« " + v.t + " »";
+  // Espaces insécables ( ) contre les guillemets : le « et le » collent au
+  // texte -> le chevron fermant ne peut JAMAIS se retrouver seul sur une ligne.
+  if(t) t.textContent = "« " + v.t + " »";
   if(r) r.textContent = v.r;
   // Les versets longs passent en corps réduit -> ils tiennent TOUS dans la
   // carte, parfaitement lisibles (vérifié sur les 128 du recueil).
@@ -4888,7 +4900,7 @@ function renderModeSelect(){
         </button>
       </div>
       <h1 class="hero-title">BibleTrivia</h1>
-      <p class="home-verse">« Approchons-nous avec assurance du trône de la grâce. »&nbsp;<span class="hv-ref">Hébreux&nbsp;4:16</span></p>
+      <p class="home-verse">« Approchons-nous avec assurance du trône de la grâce.&nbsp;» <span class="hv-ref">Hébreux&nbsp;4:16</span></p>
     </div>
     <div class="flex-sp home-sp-top"></div>
     ${(()=>{
