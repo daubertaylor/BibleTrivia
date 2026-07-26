@@ -3296,7 +3296,7 @@ function showModal(opts){
       </div>
     </div>`;
   document.body.appendChild(veil);
-  glassTrack(680);
+  glassSheetOpenUntil = performance.now() + 560; glassTrack(680);
   const input = veil.querySelector("#modalInput");
   if(input){ setTimeout(()=>{ try{ input.focus(); }catch(e){} }, 80); }
   const cancelBtn = veil.querySelector("#modalCancel");
@@ -3817,7 +3817,7 @@ function openMissedReview(list){
       <button class="sheet-done" onclick="closeMissedReview()">Fermer</button>
     </div>`;
   document.body.appendChild(veil);
-  glassTrack(680);
+  glassSheetOpenUntil = performance.now() + 560; glassTrack(680);
 }
 function closeMissedReview(){
   const v = document.getElementById("reviewVeil");
@@ -3875,7 +3875,7 @@ function openSettings(){
       <button class="sheet-done" onclick="closeSettings()">Fermer</button>
     </div>`;
   document.body.appendChild(veil);
-  glassTrack(680);
+  glassSheetOpenUntil = performance.now() + 560; glassTrack(680);
   veil.addEventListener("click", (e)=>{ if(e.target===veil){ closeSettings(); } });
 }
 function setSfx(on){
@@ -4370,7 +4370,7 @@ function openAchInfo(id){
       <button class="modal-btn ok" onclick="closeModal()">Fermer</button>
     </div>`;
   document.body.appendChild(veil);
-  try{ glassTrack(680); }catch(e){}
+  try{ glassSheetOpenUntil = performance.now() + 560; glassTrack(680); }catch(e){}
   veil.addEventListener("click", (e)=>{ if(e.target===veil) closeModal(); });
 }
 /* Testaments repliables : pliés par défaut (fini le pavé), on déplie au tap. */
@@ -5899,6 +5899,7 @@ function queueGlassSync(freeze){
    à SA position écran. tx/ty = scroll - positionDoc - décalageBande : calage
    exact au repos, scène « fixe à l'écran » derrière le verre pendant qu'on défile. */
 function queueGlassXF(){
+  const now = performance.now();
   const de = document.documentElement;
   const w = de.clientWidth || window.innerWidth;
   let h = de.clientHeight || window.innerHeight;
@@ -5945,17 +5946,19 @@ function queueGlassXF(){
       const restTop = el._ly0 - st;
       if(restTop > vh + 200 || restTop + el._oh0 < -200) continue; // hors écran
       tx = sl - el._lx0 - ox; ty = st - el._ly0 - oy;
+    } else if(now < glassSheetOpenUntil){
+      // Feuille / modale PENDANT son animation d'ouverture/fermeture : on cale le
+      // flou sur la position de MISE EN PAGE (fixe, position finale) -> le .gs
+      // reste SOLIDAIRE de la vitre qui glisse, sans AUCUN recalage par image,
+      // donc « Fermer » (tout en bas) entre sans le moindre saut. Au repos, la
+      // position finale == la position visuelle : la bascule vers le suivi réel
+      // (ci-dessous) est parfaitement continue, sans à-coup.
+      tx = -el._lx0 - ox; ty = -el._ly0 - oy;
     } else {
-      // Feuille / modale (hors #app, animées à l'ouverture/fermeture) : position
-      // VISUELLE réelle (getBoundingClientRect) -> le flou reste FIXE À L'ÉCRAN
-      // pendant que la vitre glisse par-dessus. IMPORTANT : on NE CULL PAS ces
-      // surfaces (elles sont peu nombreuses). La feuille monte depuis le bas
-      // (sheetIn : translateY 100% -> 0) ; en cullant, « Fermer » (tout en bas)
-      // restait sous l'écran, donc ignoré, avec son .gs figé à la position FINALE,
-      // puis SAUTAIT à la bonne place au moment d'entrer. En le recalant à CHAQUE
-      // image (même hors écran), il entre déjà parfaitement aligné -> plus aucun
-      // saut. On n'écrit qu'un transform (qui n'invalide pas la mise en page) ->
-      // aucun reflow forcé coûteux.
+      // Feuille / modale POSÉE : on suit la position VISUELLE réelle
+      // (getBoundingClientRect) -> vrai verre fixe à l'écran pendant qu'on défile
+      // à l'intérieur. Peu de surfaces, et on n'écrit qu'un transform (n'invalide
+      // pas la mise en page) -> aucun reflow forcé coûteux. Pas de culling ici.
       const r = el.getBoundingClientRect();
       tx = -r.left - ox; ty = -r.top - oy;
     }
@@ -6287,7 +6290,7 @@ function queueGlassSyncPainted(freeze){
    rotation) + une petite traîne pour laisser les reflets se reposer. Au repos,
    un simple battement toutes les ~0,5 s rattrape tout changement inattendu.
    L'effet est intact : dès qu'on touche/défile/change d'écran, c'est armé. */
-let glassActiveUntil = 0, glassFrame = 0, glassFreezeUntil = 0, glassGen = 1, glassPressUntil = 0;
+let glassActiveUntil = 0, glassFrame = 0, glassFreezeUntil = 0, glassGen = 1, glassPressUntil = 0, glassSheetOpenUntil = 0;
 /* Détection de défilement RELUE À CHAQUE IMAGE (et non plus via les événements
    « scroll ») : leur espacement devient irrégulier en fin d'inertie (le
    navigateur les groupe/retarde à mesure que la vitesse baisse), ce qui
