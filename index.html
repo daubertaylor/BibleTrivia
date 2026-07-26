@@ -233,7 +233,14 @@
   .error-msg{ color:#ff8a76; font-size:0.82rem; text-align:center; margin-top:0.6rem; min-height:1.2em; text-shadow:0 1px 6px rgba(0,0,0,0.35); }
 
   /* ---------- Play ---------- */
-  .play-meta{ display:flex; flex-wrap:wrap; justify-content:space-between; align-items:center; gap:0.5rem 0.75rem; margin-bottom:0.9rem; }
+  /* Rangée d'infos de jeu : UNE seule ligne (nowrap) -> la flamme de série reste
+     TOUJOURS en haut avec les autres puces, elle ne passe jamais sur une 2e ligne
+     en dessous. Puces compactées pour tenir sur les téléphones étroits. */
+  .play-meta{ display:flex; flex-wrap:nowrap; justify-content:space-between; align-items:center; gap:0.38rem; margin-bottom:0.9rem; }
+  .play-meta > span{ flex-shrink:0; }
+  .play-meta .tier-chip{ font-size:0.76rem; padding:0.3rem 0.58rem; gap:0.3rem; }
+  .play-meta .q-counter, .play-meta .timer-chip, .play-meta .streak-chip{ font-size:0.76rem; padding:0.3rem 0.55rem; }
+  .play-meta .timer-chip{ min-width:0; }
   .tier-chip{ display:inline-flex; align-items:center; gap:0.4rem; font-size:0.82rem; font-weight:600; background:rgba(255,255,255,0.5); backdrop-filter:blur(18px) saturate(180%); -webkit-backdrop-filter:blur(18px) saturate(180%); border:1px solid rgba(255,255,255,0.6); padding:0.34rem 0.7rem; border-radius:100px; }
   .tier-dots{ display:inline-flex; gap:3px; }
   .tdot{ width:6px; height:6px; border-radius:50%; background:rgba(0,0,0,0.14); }
@@ -2697,6 +2704,7 @@ function soloTimeUp(){
   state.soloSelected = null;
   state.soloStreak = 0;
   playIncorrect();
+  saveDailyProg();
   render();
 }
 function groupTimeUp(){
@@ -4488,13 +4496,47 @@ function recordDailyResult(){
   saveDaily({ last:dayKey(0), streak, score:state.soloCorrect, total:state.questions.length });
   checkAchievements({ toast:true }); // objectifs de régularité (Fidèle, Assidu)
 }
+/* ANTI-TRICHE DÉFI DU JOUR : le défi ne se joue qu'UNE fois par jour. On
+   sauvegarde la progression (jour + avancement) dans un emplacement DÉDIÉ, jamais
+   effacé en quittant -> relancer le défi le REPREND là où on s'était arrêté, au
+   lieu de le recommencer au début. Avant, quitter puis relancer redonnait les
+   MÊMES questions depuis le début : on pouvait les mémoriser et rejouer en
+   trichant. Terminé -> la carte se verrouille jusqu'au lendemain (dailyDoneToday). */
+function loadDailyProg(){ try { const s = JSON.parse(localStorage.getItem("bt_daily_prog")||"null"); return (s && s.day === dayKey(0) && Array.isArray(s.soloMissed)) ? s : null; } catch(e){ return null; } }
+function saveDailyProg(){
+  try {
+    if(state.daily && state.screen==="play"){
+      localStorage.setItem("bt_daily_prog", JSON.stringify({
+        day:dayKey(0), currentIndex:state.currentIndex, revealed:state.revealed, soloSelected:state.soloSelected, timedOut:state.timedOut,
+        soloScore:state.soloScore, soloStreak:state.soloStreak, soloBestStreak:state.soloBestStreak, soloCorrect:state.soloCorrect,
+        soloMissed:state.soloMissed, awarded:state.awarded
+      }));
+    }
+  } catch(e){}
+}
+function clearDailyProg(){ try { localStorage.removeItem("bt_daily_prog"); } catch(e){} }
+function dailyInProgress(){ return !dailyDoneToday() && !!loadDailyProg(); }
 function startDailyChallenge(){
+  if(dailyDoneToday()) return; // déjà terminé aujourd'hui : la carte est verrouillée
   bumpModeUse("daily");
   state.mode = "solo"; state.daily = true; state.revision = false;
-  state.soloScore = 0; state.soloStreak = 0; state.soloBestStreak = 0; state.soloCorrect = 0; displayedSoloScore = 0; state.soloMissed = []; state.soloIsRecord = false;
+  // Le paquet est déterministe (graine du jour) -> le reconstruire donne
+  // EXACTEMENT les mêmes questions/options : on ne sauvegarde que l'avancement.
   state.questions = seededDeck(dailySeedToday(), "courte", "tout");
-  state.currentIndex = 0; state.revealed = false; state.awarded = []; state.soloSelected = null; state.timedOut = false;
+  const prog = loadDailyProg();
+  if(prog){
+    // REPRISE : on ne recommence JAMAIS au début (anti-triche).
+    state.soloScore = prog.soloScore||0; state.soloStreak = prog.soloStreak||0; state.soloBestStreak = prog.soloBestStreak||0; state.soloCorrect = prog.soloCorrect||0;
+    displayedSoloScore = state.soloScore; state.soloMissed = Array.isArray(prog.soloMissed)?prog.soloMissed:[]; state.awarded = Array.isArray(prog.awarded)?prog.awarded:[];
+    state.currentIndex = Math.min(Math.max(0, prog.currentIndex||0), state.questions.length-1);
+    state.revealed = !!prog.revealed; state.soloSelected = (prog.soloSelected!=null ? prog.soloSelected : null); state.timedOut = !!prog.timedOut;
+    state.soloIsRecord = false;
+  } else {
+    state.soloScore = 0; state.soloStreak = 0; state.soloBestStreak = 0; state.soloCorrect = 0; displayedSoloScore = 0; state.soloMissed = []; state.soloIsRecord = false;
+    state.currentIndex = 0; state.revealed = false; state.awarded = []; state.soloSelected = null; state.timedOut = false;
+  }
   state.screen = "play";
+  saveDailyProg(); // marque le défi comme entamé aujourd'hui (dès le 1er affichage)
   render();
 }
 
@@ -4619,6 +4661,7 @@ function saveState(){
         questions:state.questions, currentIndex:state.currentIndex, revealed:state.revealed, awarded:state.awarded
       };
       localStorage.setItem("bt_game", JSON.stringify(snap));
+      saveDailyProg(); // défi du jour : progression persistée à part (anti-triche)
     }
   } catch(e){}
 }
@@ -4670,6 +4713,7 @@ function soloAnswer(idx){
     errbookAdd(q);
     playIncorrect();
   }
+  saveDailyProg();
   render();
 }
 
@@ -4687,7 +4731,7 @@ function nextQuestion(){
   if(state.currentIndex >= state.questions.length-1){
     if(state.mode==="solo"){
       recordSoloResult();
-      if(state.daily) recordDailyResult();
+      if(state.daily){ recordDailyResult(); clearDailyProg(); }
       // Mémorise les erreurs de CETTE partie pour « Réviser la dernière partie »
       if(!state.revision){ try { localStorage.setItem("bt_lastmiss", JSON.stringify(state.soloMissed.map(m=>qKey(m)))); } catch(e){} }
     }
@@ -4699,6 +4743,7 @@ function nextQuestion(){
   }
   state.currentIndex++;
   state.revealed = false; state.awarded = []; state.soloSelected = null; state.timedOut = false;
+  saveDailyProg();
   render();
 }
 
@@ -4849,8 +4894,8 @@ function renderModeSelect(){
     ${(()=>{
       /* Ordre FIXE (Groupe / Solo / Ligne / Défi) : plus de tri par usage, les
          cartes ne bougent plus -> accueil prévisible. Toutes de taille identique. */
-      const dd = loadDaily(), dDone = dailyDoneToday(), dSk = dailyStreakShown();
-      const doneTxt = dDone ? ('Réussi\u00a0: ' + dd.score + '/' + dd.total + '\u00a0\u00b7 Reviens demain\u00a0!') : 'Le même défi pour tous, chaque jour';
+      const dd = loadDaily(), dDone = dailyDoneToday(), dSk = dailyStreakShown(), dProg = dailyInProgress();
+      const doneTxt = dDone ? ('Réussi\u00a0: ' + dd.score + '/' + dd.total + '\u00a0\u00b7 \u00e0 demain\u00a0!') : (dProg ? 'Reprends ta partie' : 'Le même défi pour tous');
       const group = `<button class="mode-card" onclick="selectMode('group')"><span class="mode-icon group">${ICONS.users}</span><span class="mode-text"><span class="mode-title">Mode Groupe</span><span class="mode-desc">Église, jeunesse, en équipes</span></span><span class="chev">${ICONS.chevronRight}</span></button>`;
       const solo = `<button class="mode-card" onclick="selectMode('solo')"><span class="mode-icon solo">${ICONS.user}</span><span class="mode-text"><span class="mode-title">Mode Solo</span><span class="mode-desc">Teste tes connaissances à ton rythme</span></span><span class="chev">${ICONS.chevronRight}</span></button>`;
       const online = `<button class="mode-card" onclick="openOnline()"><span class="mode-icon online">${ICONS.bolt}</span><span class="mode-text"><span class="mode-title">Jouer en ligne</span><span class="mode-desc">Défie tes amis en duel, en direct</span></span><span class="chev">${ICONS.chevronRight}</span></button>`;
