@@ -827,6 +827,19 @@
      de rattraper). Un fondu plus court fait disparaître ce creux sans perdre
      la douceur (toujours progressif, juste plus vif). */
   .glass-refl{ position:absolute; z-index:-1; pointer-events:none; opacity:0; transition:opacity 0.07s ease; background-repeat:no-repeat; transform:translate3d(0,0,0); }
+  /* ===== MOTEUR GPU-TRANSFORM (html.gl-xf) =====
+     Couche de flou « scène » dédiée (.gs), posée UNE fois par surface et
+     déplacée UNIQUEMENT par translate3d (composition GPU, zéro repaint par
+     image) -> le verre « fenêtre sur la scène » suit le défilement EN DIRECT et
+     FLUIDE, à l'identique sur iOS et Android. Le flou + la teinte vivent ici ;
+     la surface elle-même devient transparente (classe .has-gs). Découpée par le
+     overflow:hidden + border-radius de la surface -> mêmes coins arrondis. */
+  .gs{ position:absolute; top:0; left:0; z-index:-1; pointer-events:none; background-repeat:no-repeat; background-position:0 0;
+       background-image:linear-gradient(var(--glass-tint, rgba(255,253,247,0.46)), var(--glass-tint, rgba(255,253,247,0.46))), var(--blur-url);
+       will-change:transform; transform:translate3d(0,0,0); backface-visibility:hidden; -webkit-backface-visibility:hidden; }
+  html.gl-xf .has-gs{ background-image:none; }
+  html.gl-xf .glass-refl{ display:none; }
+  .hero-profile .gs{ display:none; }
   /* Le bouton avatar est transparent et déborde (badge C) : sans découpe, sa
      couche reflet montrerait un rectangle de photo pendant les transitions. */
   .hero-profile .glass-refl{ display:none; }
@@ -5723,9 +5736,17 @@ function gpuGlassForced(){
 }
 const GLASS_GPU = gpuGlassForced(); // backdrop-filter : DIAGNOSTIC seulement, JAMAIS par défaut
 if(GLASS_GPU){ try{ document.documentElement.classList.add("gl-native"); }catch(e){} }
-/* Android : fond peint gelé pendant le geste (fluide), recalé en douceur à
-   l'arrêt. iOS/desktop : recalage en direct (voir la branche de prédiction). */
-const GLASS_STILL = glassIsAndroid && !GLASS_GPU;
+/* MOTEUR DE VERRE GPU-TRANSFORM (défaut, TOUS appareils) : le flou « fenêtre sur
+   la scène » est déplacé par translate3d sur une couche GPU dédiée (.gs) au lieu
+   d'être REPEINT (background-position) à chaque image. Même look peint, mais
+   VIVANT au défilement et FLUIDE partout (composition GPU, zéro repaint par
+   image), un SEUL chemin de rendu -> iOS = Android, rigoureusement à l'identique.
+   Échappatoire : #paintedglass revient à l'ancien verre peint. */
+const GLASS_XF = !GLASS_GPU && !paintedGlassForced();
+if(GLASS_XF){ try{ document.documentElement.classList.add("gl-xf"); }catch(e){} }
+/* Ancien « gel au repos » Android : seulement si l'on FORCE le verre peint
+   (#paintedglass) et sur Android. */
+const GLASS_STILL = !GLASS_XF && !GLASS_GPU && glassIsAndroid;
 /* Défilement piloté par JS : ABANDONNÉ (c'était la source des sauts/ralenti sur
    Android). Défilement natif partout désormais — iOS l'était déjà, le verre GPU
    suit le contenu tout seul sur Android. */
@@ -5821,7 +5842,65 @@ function reflHideInstant(refl){
 }
 function queueGlassSync(freeze){
   if(GLASS_GPU){ ensureGlassRims(); return; }
+  if(GLASS_XF){ return queueGlassXF(); }
   return queueGlassSyncPainted(freeze);
+}
+/* ===== MOTEUR GPU-TRANSFORM (défaut, TOUS appareils) =====
+   Une couche de flou « scène » (.gs) par surface, déplacée par translate3d pour
+   suivre le défilement — ZÉRO background-position, ZÉRO repaint par image, donc
+   fluide et vivant partout, à l'identique iOS/Android. La texture (--blur-url)
+   est une bande iw×ih dont la région centrale (décalée de ox/oy) = la vue écran ;
+   on translate .gs pour que la fenêtre de découpe de la surface montre la scène
+   à SA position écran. tx/ty = scroll - positionDoc - décalageBande : calage
+   exact au repos, scène « fixe à l'écran » derrière le verre pendant qu'on défile. */
+function queueGlassXF(){
+  const de = document.documentElement;
+  const w = de.clientWidth || window.innerWidth;
+  let h = de.clientHeight || window.innerHeight;
+  if(h > glassMaxH) glassMaxH = h; else h = glassMaxH;
+  const iw = Math.round(w * 1.4), ih = Math.round(h * 2);
+  const ox = Math.round((iw - w) / 2), oy = Math.round((ih - h) / 2);
+  const bgSize = "auto, " + iw + "px " + ih + "px";
+  const sl = glassAppEl.scrollLeft, st = glassAppEl.scrollTop;
+  const revEl = document.querySelector(".rev-list");
+  const revSl = revEl ? revEl.scrollLeft : 0, revSt = revEl ? revEl.scrollTop : 0;
+  if(glassElsGen !== glassGen){ glassEls = document.querySelectorAll(GLASS_SEL); glassElsGen = glassGen; }
+  const els = glassEls, vh = h;
+  for(let i = 0; i < els.length; i++){
+    const el = els[i];
+    if(el.tagName === "INPUT") continue; // <input> : fond statique (impossible d'y poser un enfant)
+    if(el.matches(GLASS_SKIP)){ // chrono rouge, bouton désactivé : fond plein, pas de verre
+      if(el._gs) el._gs.style.display = "none";
+      if(el.classList.contains("has-gs")) el.classList.remove("has-gs");
+      continue;
+    }
+    if(el._ggen !== glassGen){ // décalages de mise en page, en cache par génération
+      let lx = 0, ly = 0, n = el;
+      while(n && n !== document.body){ lx += n.offsetLeft; ly += n.offsetTop; n = n.offsetParent; }
+      el._lx0 = lx; el._ly0 = ly; el._oh0 = el.offsetHeight; el._ggen = glassGen;
+    }
+    if(!el._rim || el._rim.parentNode !== el){ // rebord (créé une fois)
+      const rim = document.createElement("b"); rim.className = "glass-rim";
+      el.insertBefore(rim, el.firstChild); el._rim = rim;
+    }
+    let gs = el._gs; // couche scène (.gs), créée une fois
+    if(!gs || gs.parentNode !== el){
+      gs = document.createElement("i"); gs.className = "gs";
+      el.insertBefore(gs, el.firstChild);
+      el._gs = gs; el._gsSize = ""; el._gsT = "";
+    }
+    if(gs.style.display === "none") gs.style.display = "";
+    if(!el.classList.contains("has-gs")) el.classList.add("has-gs");
+    if(el._gsSize !== bgSize){ el._gsSize = bgSize; gs.style.width = iw + "px"; gs.style.height = ih + "px"; gs.style.backgroundSize = bgSize; }
+    const inApp = glassAppEl.contains(el);
+    const inRev = !inApp && revEl && revEl.contains(el);
+    const elSl = inApp ? sl : (inRev ? revSl : 0);
+    const elSt = inApp ? st : (inRev ? revSt : 0);
+    const restTop = el._ly0 - elSt; // culling : bien hors écran -> pas de mise à jour
+    if(restTop > vh + 200 || restTop + el._oh0 < -200) continue;
+    const t = "translate3d(" + Math.round(elSl - el._lx0 - ox) + "px," + Math.round(elSt - el._ly0 - oy) + "px,0)";
+    if(el._gsT !== t){ el._gsT = t; gs.style.transform = t; }
+  }
 }
 /* VOIE GPU (Android) : le backdrop-filter fait tout le rendu du verre et suit
    le défilement natif sur le compositeur -> AUCUNE peinture par image, aucune
