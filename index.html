@@ -103,11 +103,18 @@
   button:focus-visible, input:focus-visible{ outline:2px solid var(--primary); outline-offset:2px; }
 
   #app{ position:relative; z-index:1; width:100%; max-width:430px; margin:0 auto; height:100%; overflow-y:auto; overflow-x:hidden; overscroll-behavior:none; display:flex; flex-direction:column; padding:calc(env(safe-area-inset-top) + 0.35rem) calc(env(safe-area-inset-right) + 0.7rem) calc(env(safe-area-inset-bottom) + 0.35rem) calc(env(safe-area-inset-left) + 0.7rem); }
-  /* WEB (desktop / tablette) : l'app est une colonne format téléphone (430px).
-     On assombrit tout ce qui déborde de la colonne -> vrai « cadre téléphone »,
-     le web ressemble exactement au mobile. Aucun effet sur un vrai téléphone
-     (< 460px de large : la colonne remplit déjà l'écran). */
-  @media (min-width:460px){ #app{ box-shadow:0 0 0 100vw #100B08; } }
+  /* GRANDS ÉCRANS (tablette, iPad, PC) : l'app GRANDIT pour exploiter l'espace
+     au lieu d'une colonne téléphone perdue dans un vide noir. Le décor Canyon
+     remplit désormais TOUT l'écran autour (plus de bande noire / « bandes
+     inutiles »). L'interface est mise à l'échelle (police racine -> tout le rem
+     grandit) et la colonne s'élargit, proportionnellement à l'appareil, sans
+     étirement. Les téléphones (< 620px) restent RIGOUREUSEMENT inchangés. */
+  /* La colonne s'élargit (max-width en rem -> suit la mise à l'échelle de la
+     police racine). La police racine, elle, est relevée sur grands écrans via
+     le clamp dédié (voir plus bas « GRANDS ÉCRANS : police racine »). */
+  @media (min-width:620px){ #app{ max-width:31rem; } }
+  @media (min-width:900px){ #app{ max-width:34rem; } }
+  @media (min-width:1300px){ #app{ max-width:37rem; } }
   .screen{ display:flex; flex-direction:column; flex:1; }
   .screen-enter{ animation:screenIn 0.5s cubic-bezier(0.22,1,0.36,1) both; }
 
@@ -854,6 +861,13 @@
   html{ font-size:16px; }
   @supports (height: 1svh){
     html{ font-size:clamp(14.6px, 8.4px + 0.85svh + 0.2vw, 17.8px); }
+    /* GRANDS ÉCRANS : police racine relevée -> toute l'UI (en rem) grandit pour
+       habiter tablette/iPad/PC. Restée pilotée par la hauteur (svh) ET bornée
+       aux écrans assez HAUTS (min-height:740px) -> jamais de débordement sur
+       écran court. Téléphones : formule d'origine intacte. */
+    @media (min-width:820px) and (min-height:740px){
+      html{ font-size:clamp(16px, 8.4px + 0.8svh + 0.5vw, 19px); }
+    }
   }
 
   /* ---------- Statistiques de l'accueil (bas d'écran habité) ---------- */
@@ -3887,9 +3901,23 @@ document.addEventListener("pointerdown", ()=>{ audioUnlocked = true; wakeAudio()
   if(!vv) return;
   const de = document.documentElement;
   const isField = ()=>{ const el = document.activeElement; return !!el && (el.tagName === "INPUT" || el.tagName === "TEXTAREA"); };
+  /* Hauteur de REPOS (sans clavier), mémorisée quand aucun champ n'est actif.
+     On détecte le clavier en comparant la zone visible ACTUELLE à cette hauteur
+     de repos — et NON à window.innerHeight. Raison : sur Android, innerHeight
+     RÉTRÉCIT lui aussi à l'ouverture du clavier -> l'ancien calcul
+     (innerHeight - vv.height) donnait ~0, le clavier n'était jamais détecté et
+     les champs restaient cachés dessous. La hauteur de repos, elle, est stable
+     -> détection fiable sur iOS ET Android. */
+  let restH = vv.height;
   function apply(){
-    const covered = window.innerHeight - vv.height - vv.offsetTop; // hauteur cachée par le clavier
-    if(isField() && covered > 90){
+    if(!isField()){
+      restH = Math.max(restH, vv.height); // pas de clavier -> c'est la hauteur de repos
+      de.classList.remove("kb");
+      fitScroll();
+      return;
+    }
+    const hidden = restH - vv.height; // hauteur réellement masquée par le clavier
+    if(hidden > 90){
       de.style.setProperty("--vvh", Math.round(vv.height) + "px");
       de.classList.add("kb");
       // garde le champ actif bien en vue dans la zone réduite
@@ -3903,7 +3931,7 @@ document.addEventListener("pointerdown", ()=>{ audioUnlocked = true; wakeAudio()
   vv.addEventListener("resize", apply);
   vv.addEventListener("scroll", apply);
   document.addEventListener("focusin", ()=>setTimeout(apply, 60));
-  document.addEventListener("focusout", ()=>{ setTimeout(()=>{ if(!isField()) de.classList.remove("kb"); }, 60); });
+  document.addEventListener("focusout", ()=>{ setTimeout(()=>{ if(!isField()){ de.classList.remove("kb"); fitScroll(); } }, 60); });
 })();
 
 /* ===================== VERSET SURPRISE (5 touches sur l'icône) ===================== */
