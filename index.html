@@ -4403,9 +4403,38 @@ function selectMode(m){ bumpModeUse(m); state.mode = m; state.screen = "setup"; 
 function goToModeSelect(){ state.screen = "mode"; render(); }
 
 /* ===================== SETUP (group) ===================== */
-function addTeam(){ if(state.teams.length>=6) return; state.teams.push({name:"Joueur "+(state.teams.length+1)}); saveTeams(); render(); }
-function removeTeam(i){ if(state.teams.length<=2) return; state.teams.splice(i,1); saveTeams(); render(); }
-function renameTeam(i, val){ state.teams[i].name = val; saveTeams(); }
+/* Contenu de la carte « Joueurs ou équipes » (jetons + lignes + bouton Ajouter).
+   Isolé pour pouvoir le rafraîchir SEUL — sans reconstruire tout l'écran (voir
+   refreshTeamCard). */
+function teamCardInner(){
+  return `<h2>Joueurs ou équipes</h2>
+    ${state.teams.map((t,i)=>`
+      <div class="team-row">
+        <span class="team-token" style="background:linear-gradient(150deg, color-mix(in srgb, ${TEAM_COLORS[i%6]} 68%, #ffffff), ${TEAM_COLORS[i%6]})">${((t.name||"").trim().charAt(0).toUpperCase())||(i+1)}</span>
+        <input type="text" value="${escapeHtml(t.name)}" maxlength="20" oninput="renameTeam(${i}, this.value, this)" placeholder="Nom du joueur ou de l'équipe">
+        <button class="team-remove" onclick="removeTeam(${i})" ${state.teams.length<=2?"disabled":""} aria-label="Retirer"><span class="ico" style="width:0.9rem;height:0.9rem;">${ICONS.close}</span></button>
+      </div>
+    `).join("")}
+    <button class="add-team" onclick="addTeam()" ${state.teams.length>=6?"disabled":""}><span class="ico">${ICONS.plusCircle}</span>Ajouter un joueur ou une équipe</button>`;
+}
+/* Ajout/retrait de joueur : on ne rafraîchit QUE la carte des joueurs (pas tout
+   l'écran). Rebâtir l'écran entier réinitialisait le verre de TOUTES les
+   surfaces à chaque tap +/- -> saccade nette sur Android. Ici seules 2 à 6
+   petites lignes se recalent, le reste de l'écran ne bouge pas. */
+function refreshTeamCard(){
+  const c = document.getElementById("teamCard");
+  if(!c){ render(); return; }
+  c.innerHTML = teamCardInner();
+  try{ glassRelayout(); queueGlassSync(); }catch(e){}
+}
+function addTeam(){ if(state.teams.length>=6) return; state.teams.push({name:"Joueur "+(state.teams.length+1)}); saveTeams(); refreshTeamCard(); }
+function removeTeam(i){ if(state.teams.length<=2) return; state.teams.splice(i,1); saveTeams(); refreshTeamCard(); }
+/* Renommage : mise à jour du jeton (1re lettre) EN DIRECT, sans aucun rendu —
+   plus de render() au blur (qui reconstruisait tout l'écran = saccade). */
+function renameTeam(i, val, inp){
+  state.teams[i].name = val; saveTeams();
+  if(inp && inp.parentNode){ const tok = inp.parentNode.querySelector(".team-token"); if(tok) tok.textContent = (val||"").trim().charAt(0).toUpperCase() || (i+1); }
+}
 function setLength(key){
   state.lengthKey = key;
   document.querySelectorAll('[data-group="len"]').forEach(c=>c.classList.toggle("active", c.dataset.k===key));
@@ -5128,17 +5157,7 @@ function renderSetup(){
   if(state.mode==="group"){
     el.innerHTML = `
       ${renderHeader("Mode Groupe", true)}
-      <div class="card">
-        <h2>Joueurs ou équipes</h2>
-        ${state.teams.map((t,i)=>`
-          <div class="team-row">
-            <span class="team-token" style="background:linear-gradient(150deg, color-mix(in srgb, ${TEAM_COLORS[i%6]} 68%, #ffffff), ${TEAM_COLORS[i%6]})">${((t.name||"").trim().charAt(0).toUpperCase())||(i+1)}</span>
-            <input type="text" value="${escapeHtml(t.name)}" maxlength="20" oninput="renameTeam(${i}, this.value)" onchange="render()" placeholder="Nom du joueur ou de l'équipe">
-            <button class="team-remove" onclick="removeTeam(${i})" ${state.teams.length<=2?"disabled":""} aria-label="Retirer"><span class="ico" style="width:0.9rem;height:0.9rem;">${ICONS.close}</span></button>
-          </div>
-        `).join("")}
-        <button class="add-team" onclick="addTeam()" ${state.teams.length>=6?"disabled":""}><span class="ico">${ICONS.plusCircle}</span>Ajouter un joueur ou une équipe</button>
-      </div>
+      <div class="card" id="teamCard">${teamCardInner()}</div>
       ${renderLengthCard()}
       <div class="card">
         <h2>Testament</h2>
