@@ -4429,20 +4429,19 @@ function refreshTeamCard(){
   const c = document.getElementById("teamCard");
   if(!c){ render(); return; }
   c.innerHTML = teamCardInner();
-  /* RECALAGE DU VERRE en DEUX temps. Un seul recalage synchrone se calait sur
-     l'ANCIENNE hauteur de carte (la nouvelle n'est composée qu'à l'image
-     suivante) -> sur Android la couche « scène » (.gs) des lignes se figeait à
-     la mauvaise position = blocs de verre décalés/« sautés » (le bug remonté).
-     1) glassTrack() : verre tout de suite (aucun clignotement) + boucle de
-        recalage maintenue active ~950 ms ;
-     2) à l'image suivante, la mise en page est stabilisée -> on RE-mesure
-        (glassRelayout ré-invalide le cache des positions) et on recale : le
-        verre se fige alors aux bonnes positions, proprement. */
-  try{
-    glassTrack();
-    requestAnimationFrame(()=>{ try{ glassRelayout(); queueGlassSync(); }catch(e){} });
-    setTimeout(()=>{ try{ glassRelayout(); queueGlassSync(); }catch(e){} }, 110); // filet de sécurité (appareils lents)
-  }catch(e){}
+  /* Le verre n'est (re)calé QU'UNE FOIS la nouvelle hauteur de carte réellement
+     COMPOSÉE par le navigateur (rAF) — JAMAIS en synchrone. En synchrone, la
+     couche « scène » (.gs) se figeait sur l'ANCIENNE mise en page puis « sautait »
+     à la bonne position : c'est ce saut qu'on voyait sur Android. Ici, les
+     lignes montrent d'abord juste leur bord (~1 image), puis le verre apparaît
+     DÉJÀ bien calé, sans aucun saut. Re-mesures de sûreté ensuite (compositing +
+     appareils lents). */
+  const resettle = ()=>{ try{ glassRelayout(); queueGlassSync(); }catch(e){} };
+  requestAnimationFrame(()=>{
+    try{ glassTrack(); }catch(e){}   // 1er calage APRÈS mise en page stabilisée
+    requestAnimationFrame(resettle);
+    setTimeout(resettle, 160);       // filet de sécurité (appareils lents)
+  });
 }
 function addTeam(){ if(state.teams.length>=6) return; state.teams.push({name:"Joueur "+(state.teams.length+1)}); saveTeams(); refreshTeamCard(); }
 function removeTeam(i){ if(state.teams.length<=2) return; state.teams.splice(i,1); saveTeams(); refreshTeamCard(); }
