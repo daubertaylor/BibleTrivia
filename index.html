@@ -675,6 +675,10 @@
   /* Safari : jamais de backdrop-filter imbriqué dans un parent qui en a déjà un */
   .searching-card .btn-ghost, .modal-card .text-input, .modal-card .code-input{ backdrop-filter:none; -webkit-backdrop-filter:none; }
   .searching-card .btn-ghost{ color:var(--ink); }
+  /* Bouton « Annuler » / « Quitter » (en ligne) : verre corail plein + texte
+     blanc -> l'action « arrêter » ressort nettement du verre neutre, lisible et
+     dans la couleur signature de l'app. Le bord reste blanc 0,55 (uniforme). */
+  .btn-ghost.btn-cancel, .searching-card .btn-ghost.btn-cancel, .waiting-card .btn-ghost.btn-cancel{ --glass-tint: rgba(236,68,34,0.82); color:#fff; --rim-edge:0 0 0 1px rgba(150,30,14,0.3); --rim-cast:0 6px 16px rgba(214,60,34,0.42); }
   .modal-card .text-input{ --glass-tint: rgba(255,255,255,0.55); }
 
   /* ---------- Chrono par question ---------- */
@@ -5595,7 +5599,7 @@ function renderOnline(){
         <div class="spinner"></div>
         <div class="searching-txt">Recherche d'un adversaire…</div>
         <div class="opp-progress">${freshLookers()>0?(freshLookers()+" autre"+(freshLookers()>1?"s":"")+" en recherche…"):"Tu es dans la file du tirage au sort — dès qu'un joueur cherche aussi, un adversaire t'est attribué au hasard."}</div>
-        <button class="btn-ghost" style="margin-top:1rem" onclick="setSearching(false)">Annuler</button>
+        <button class="btn-ghost btn-cancel" style="margin-top:1rem" onclick="setSearching(false)">Annuler</button>
       </div>
       <div class="flex-sp"></div>
     ` : `
@@ -5704,7 +5708,7 @@ function renderOnlinePlay(){
         <div class="spinner"></div>
         <div class="searching-txt">Tu as terminé, bien joué !</div>
         <div class="opp-progress">${net.oppGone?"Ton adversaire a quitté la partie.":`Ton adversaire en est à ${net.oppIndex}/${total}`}</div>
-        <button class="btn-ghost" style="margin-top:1.1rem" onclick="${net.oppGone?"state.screen='online-end';render()":"leaveOnline()"}">${net.oppGone?"Voir le résultat":"Quitter la partie"}</button>
+        <button class="btn-ghost${net.oppGone?'':' btn-cancel'}" style="margin-top:1.1rem" onclick="${net.oppGone?"state.screen='online-end';render()":"leaveOnline()"}">${net.oppGone?"Voir le résultat":"Quitter la partie"}</button>
       </div>
       <div class="flex-sp"></div>`;
     return el;
