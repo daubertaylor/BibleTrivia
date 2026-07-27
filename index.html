@@ -4429,7 +4429,20 @@ function refreshTeamCard(){
   const c = document.getElementById("teamCard");
   if(!c){ render(); return; }
   c.innerHTML = teamCardInner();
-  try{ glassRelayout(); queueGlassSync(); }catch(e){}
+  /* RECALAGE DU VERRE en DEUX temps. Un seul recalage synchrone se calait sur
+     l'ANCIENNE hauteur de carte (la nouvelle n'est composée qu'à l'image
+     suivante) -> sur Android la couche « scène » (.gs) des lignes se figeait à
+     la mauvaise position = blocs de verre décalés/« sautés » (le bug remonté).
+     1) glassTrack() : verre tout de suite (aucun clignotement) + boucle de
+        recalage maintenue active ~950 ms ;
+     2) à l'image suivante, la mise en page est stabilisée -> on RE-mesure
+        (glassRelayout ré-invalide le cache des positions) et on recale : le
+        verre se fige alors aux bonnes positions, proprement. */
+  try{
+    glassTrack();
+    requestAnimationFrame(()=>{ try{ glassRelayout(); queueGlassSync(); }catch(e){} });
+    setTimeout(()=>{ try{ glassRelayout(); queueGlassSync(); }catch(e){} }, 110); // filet de sécurité (appareils lents)
+  }catch(e){}
 }
 function addTeam(){ if(state.teams.length>=6) return; state.teams.push({name:"Joueur "+(state.teams.length+1)}); saveTeams(); refreshTeamCard(); }
 function removeTeam(i){ if(state.teams.length<=2) return; state.teams.splice(i,1); saveTeams(); refreshTeamCard(); }
