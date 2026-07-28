@@ -1257,8 +1257,19 @@
      ce qui entrait en conflit avec l'animation JS et provoquait un double-rebond
      saccadé. Un seul pilote (pointer) = réaction instantanée et fluide, identique
      iOS/Android. */
-  .hero-icon-wrap{ display:block; transition:transform 0.62s cubic-bezier(0.3,1.1,0.32,1), opacity 0.45s ease; will-change:transform, opacity; }
+  .hero-icon-wrap{ display:block; position:relative; transition:transform 0.62s cubic-bezier(0.3,1.1,0.32,1), opacity 0.45s ease; will-change:transform, opacity; }
   .hero-icon-wrap.bump{ animation:heroBump 0.32s cubic-bezier(0.17,1.32,0.32,1); }
+  /* HALO VIVANT derrière l'icône : une lumière chaude/dorée qui « respire »
+     (opacité + échelle qui ondulent lentement) -> l'icône RAYONNE au lieu d'un
+     halo figé. Posé DERRIÈRE (z-index -1), il se fond avec le liseré de lumière
+     du box-shadow. Se replie proprement quand l'icône se transforme (easter egg
+     verset), et respecte prefers-reduced-motion. */
+  .hero-icon-wrap::before, .splash-dove-wrap::before{
+    content:""; position:absolute; inset:-16%; z-index:-1; border-radius:40%; pointer-events:none;
+    background:radial-gradient(circle at 50% 44%, rgba(255,247,227,0.55), rgba(239,173,38,0.3) 44%, rgba(239,173,38,0) 72%);
+    filter:blur(7px); animation:heroHalo 5.6s ease-in-out infinite;
+  }
+  @keyframes heroHalo{ 0%,100%{ opacity:0.55; transform:scale(0.97); } 50%{ opacity:0.92; transform:scale(1.07); } }
   @keyframes heroBump{ 0%{ transform:scale(1); } 45%{ transform:scale(1.09) rotate(2.5deg); } 100%{ transform:scale(1); } }
   .hero-zone.show-verse .hero-icon-btn{ pointer-events:none; }
   .hero-zone.show-verse .hero-icon-wrap{ transform:scale(0.5) rotate(-9deg); opacity:0; }
