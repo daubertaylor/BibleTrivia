@@ -720,6 +720,11 @@
      ombre froide) au lieu du rouge. L'avertissement est porté par le message
      (« La partie en cours sera perdue ») et le choix « Rester » à côté. */
   .modal-btn.ok.danger{ --glass-tint: rgba(247,250,255,0.82); background:none; color:#39404a; border-color:rgba(255,255,255,0.9); box-shadow:inset 0 1px 0 rgba(255,255,255,0.95), inset 0 0 0 1.5px rgba(255,255,255,0.5), inset 0 -5px 12px rgba(150,170,200,0.16), 0 6px 18px rgba(70,92,124,0.2), 0 1px 3px rgba(70,92,124,0.13); }
+  /* Dans une confirmation de SORTIE, « Quitter » est en blanc miroir (calme) ->
+     le choix sûr « Rester » devient le PRIMAIRE corail (contraste net + même
+     langage que « Rejouer »/« Commencer »). Fini les deux boutons pâles jumeaux :
+     corail = continuer/rester, blanc miroir = sortir, partout pareil. */
+  .modal-btn.cancel.keep{ --glass-tint: rgba(236,68,34,0.8); color:#fff; border-color:rgba(255,255,255,0.8); box-shadow:inset 0 1px 0 rgba(255,255,255,0.62), inset 0 0 0 1.5px rgba(255,255,255,0.34), inset 0 -5px 12px rgba(150,30,14,0.22), 0 6px 18px rgba(241,80,47,0.32), 0 1px 3px rgba(241,80,47,0.2); }
   .modal-card.shake{ animation:wrongFlash 0.45s ease; }
   @keyframes veilIn{ from{ opacity:0; } to{ opacity:1; } }
   @keyframes screenIn{ from{ opacity:0; transform:translate3d(0,34px,0); } to{ opacity:1; transform:translate3d(0,0,0); } }
@@ -3412,7 +3417,7 @@ function showModal(opts){
       ${opts.input?`<input class="text-input modal-input" id="modalInput" placeholder="${escapeHtml(opts.placeholder||"")}" maxlength="30" autocomplete="off">`:""}
       <div class="modal-err" id="modalErr"></div>
       <div class="modal-actions">
-        ${opts.hideCancel?"":`<button class="modal-btn cancel" id="modalCancel">${escapeHtml(opts.cancelLabel||"Annuler")}</button>`}
+        ${opts.hideCancel?"":`<button class="modal-btn cancel${opts.danger?' keep':''}" id="modalCancel">${escapeHtml(opts.cancelLabel||"Annuler")}</button>`}
         <button class="modal-btn ok${opts.danger?' danger':''}" id="modalOk">${escapeHtml(opts.okLabel||"OK")}</button>
       </div>
     </div>`;
