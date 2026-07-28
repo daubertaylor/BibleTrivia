@@ -186,7 +186,7 @@
      tout l'écran vers le bas. */
   .icon-btn.hero-settings{ position:absolute; top:0.15rem; right:0.5rem; color:var(--ink); }
   .icon-btn.hero-profile{ position:absolute; top:0.15rem; left:0.5rem; padding:0; overflow:visible; background:transparent; border:none; box-shadow:none; }
-  .hero-icon{ width:clamp(5.35rem, 13.3vh, 7rem); height:auto; aspect-ratio:1; margin:0 auto 0.5rem; border-radius:23%; box-shadow:0 12px 30px rgba(10,8,6,0.44), 0 0 8px rgba(255,250,238,0.48), 0 0 24px rgba(255,247,228,0.34), 0 0 54px rgba(239,173,38,0.2), inset 0 0 9px rgba(255,252,245,0.4), inset 0 1.5px 4px rgba(255,255,255,0.28); display:block; object-fit:cover; animation:heroFloat 5s ease-in-out infinite; -webkit-user-drag:none; user-drag:none; -webkit-touch-callout:none; -webkit-user-select:none; user-select:none; pointer-events:none; }
+  .hero-icon{ width:clamp(5.35rem, 13.3vh, 7rem); height:auto; aspect-ratio:1; margin:0 auto 0.5rem; border-radius:23%; box-shadow:0 12px 30px rgba(10,8,6,0.44), 0 0 8px rgba(255,250,238,0.48), 0 0 24px rgba(255,247,228,0.34), 0 0 52px rgba(255,247,231,0.18), inset 0 0 9px rgba(255,252,245,0.4), inset 0 1.5px 4px rgba(255,255,255,0.28); display:block; object-fit:cover; animation:heroFloat 5s ease-in-out infinite; -webkit-user-drag:none; user-drag:none; -webkit-touch-callout:none; -webkit-user-select:none; user-select:none; pointer-events:none; }
   @keyframes heroFloat{ 0%,100%{ transform:translateY(0); } 50%{ transform:translateY(-6px); } }
   .hero-title{ font-family:'Poppins',sans-serif; font-weight:700; font-size:2rem; margin:0; letter-spacing:-0.01em; color:#fff; text-shadow:0 1px 12px rgba(0,0,0,0.35); }
   .hero-title{ font-family:'Poppins',sans-serif; font-weight:700; font-size:1.55rem; letter-spacing:-0.02em; color:#fff; margin:0 0 0.3rem; text-shadow:0 2px 14px rgba(0,0,0,0.55); }
@@ -457,7 +457,7 @@
     /* Aura douce et transparente : léger halo blanc chaud tout contre l'icône
        + halo doré plus large (sacré, feutré) -> l'icône « rayonne » sans jamais
        d'anneau dur ni d'effet clinquant. Même esprit sur l'accueil. */
-    box-shadow:0 20px 46px rgba(0,0,0,0.5), 0 0 11px rgba(255,250,238,0.48), 0 0 32px rgba(255,247,228,0.36), 0 0 76px rgba(239,173,38,0.22), inset 0 0 12px rgba(255,252,245,0.4), inset 0 2px 5px rgba(255,255,255,0.28);
+    box-shadow:0 20px 46px rgba(0,0,0,0.5), 0 0 11px rgba(255,250,238,0.48), 0 0 32px rgba(255,247,228,0.36), 0 0 72px rgba(255,247,231,0.2), inset 0 0 12px rgba(255,252,245,0.4), inset 0 2px 5px rgba(255,255,255,0.28);
     opacity:0;
     animation: splashFade 1s ease forwards, doveFloat3D 3.6s ease-in-out 1s infinite;
     -webkit-user-drag:none; user-drag:none; -webkit-touch-callout:none; -webkit-user-select:none; user-select:none; pointer-events:none;
@@ -1259,20 +1259,26 @@
      iOS/Android. */
   .hero-icon-wrap{ display:block; position:relative; transition:transform 0.62s cubic-bezier(0.3,1.1,0.32,1), opacity 0.45s ease; will-change:transform, opacity; }
   .hero-icon-wrap.bump{ animation:heroBump 0.32s cubic-bezier(0.17,1.32,0.32,1); }
-  /* HALO VIVANT derrière l'icône : une lumière chaude/dorée qui « respire »
-     (opacité + échelle qui ondulent lentement) -> l'icône RAYONNE au lieu d'un
-     halo figé. Posé DERRIÈRE (z-index -1), il se fond avec le liseré de lumière
-     du box-shadow. Se replie proprement quand l'icône se transforme (easter egg
-     verset), et respecte prefers-reduced-motion. */
+  /* LUMIÈRE QUI TOURNE derrière l'icône : un balayage lumineux blanc chaud
+     (deux arcs doux opposés, dégradé conique) qui ORBITE lentement autour de
+     l'icône au lieu de pulser. Disque circulaire (border-radius 50%) pour que
+     la ROTATION ne fasse bouger que la lumière, jamais la silhouette. Couleur
+     crème/blanc chaud (très peu de doré) -> raffiné, pas « jaune ». Posé
+     DERRIÈRE (z-index -1) ; se replie pendant l'easter egg verset (hérite de
+     l'opacité du wrap). */
   .hero-icon-wrap::before, .splash-dove-wrap::before{
-    content:""; position:absolute; inset:-20%; z-index:-1; border-radius:42%; pointer-events:none;
-    background:radial-gradient(circle at 50% 44%, rgba(255,247,227,0.6), rgba(239,173,38,0.34) 46%, rgba(239,173,38,0) 74%);
-    filter:blur(8px); animation:heroHalo 3.6s ease-in-out infinite;
+    content:""; position:absolute; inset:-22%; z-index:-1; border-radius:50%; pointer-events:none; will-change:transform;
+    background:conic-gradient(from 0deg,
+      rgba(255,251,244,0) 0deg,
+      rgba(255,252,246,0.5) 58deg,
+      rgba(255,251,244,0) 124deg,
+      rgba(255,251,244,0) 180deg,
+      rgba(251,243,227,0.32) 238deg,
+      rgba(255,251,244,0) 306deg,
+      rgba(255,251,244,0) 360deg);
+    filter:blur(11px); animation:heroSpin 9s linear infinite;
   }
-  /* Souffle AMPLE et net : la lueur s'efface presque (expiration) puis
-     rejaillit franchement (inspiration) -> l'œil lit clairement la
-     « respiration », pas juste un halo plus gros. */
-  @keyframes heroHalo{ 0%,100%{ opacity:0.16; transform:scale(0.88); } 50%{ opacity:1; transform:scale(1.15); } }
+  @keyframes heroSpin{ from{ transform:rotate(0deg); } to{ transform:rotate(360deg); } }
   @keyframes heroBump{ 0%{ transform:scale(1); } 45%{ transform:scale(1.09) rotate(2.5deg); } 100%{ transform:scale(1); } }
   .hero-zone.show-verse .hero-icon-btn{ pointer-events:none; }
   .hero-zone.show-verse .hero-icon-wrap{ transform:scale(0.5) rotate(-9deg); opacity:0; }
