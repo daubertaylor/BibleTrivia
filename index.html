@@ -4457,28 +4457,33 @@ function refreshTeamCard(){
   const c = document.getElementById("teamCard");
   if(!c){ render(); return; }
   c.innerHTML = teamCardInner();
-  /* ANDROID — VRAIE CAUSE : la couche « scène » (.gs) est promue au compositeur
-     (will-change:transform). Quand la HAUTEUR de la carte joueurs change, les
-     surfaces situées EN DESSOUS glissent par mise en page — mais leur couche,
-     déjà composée, peut rester « collée » à son ancienne position à l'écran,
-     même quand on recalcule (correctement) son transform. D'où le verre décalé.
-     (Le transform calculé est bon — vérifié — mais le compositeur ne le rejoue
-     pas.) PARADE, exactement ce que fait le 1er rendu (toujours net) : on JETTE
-     les couches .gs et on les laisse se recréer NEUVES -> couches fraîches,
-     posées à la bonne position. Léger (de simples <i>), sans reconstruire
-     l'écran, et la QUALITÉ du verre est rigoureusement identique. */
-  const rebuildGlass = ()=>{
+  /* ANDROID — VRAIE CAUSE : la couche « scène » (.gs) est promue au compositeur.
+     Quand la HAUTEUR de la carte joueurs change, SEULES les surfaces situées EN
+     DESSOUS glissent par mise en page ; leur couche, déjà composée, peut rester
+     « collée » à son ancienne position (le transform recalculé est bon mais le
+     compositeur ne le rejoue pas) -> verre décalé. PARADE : on jette et laisse
+     recréer les couches .gs NEUVES, mais UNIQUEMENT pour la carte joueurs et ses
+     voisines du DESSOUS (les seules qui bougent) — plus JAMAIS tout l'écran ni
+     deux fois de suite. C'était ça la saccade : repeindre les ~10 verres du
+     document, deux fois par tap. En-tête et tout le haut ne bougent pas : on n'y
+     touche pas. UNE seule passe, après 2 images (mise en page vraiment posée). */
+  const relayoutBelow = ()=>{
     try{
-      document.querySelectorAll(".gs").forEach((g)=>{
-        const host = g.parentNode;
-        if(host){ host._gs = null; host._gsT = ""; host._gsSize = ""; }
-        g.remove();
-      });
+      let el = c;
+      while(el){
+        if(el.querySelectorAll){
+          el.querySelectorAll(".gs").forEach((g)=>{
+            const host = g.parentNode;
+            if(host){ host._gs = null; host._gsT = ""; host._gsSize = ""; }
+            g.remove();
+          });
+        }
+        el = el.nextElementSibling;
+      }
       glassRelayout(); queueGlassSync();
     }catch(e){}
   };
-  requestAnimationFrame(rebuildGlass);   // après composition de la nouvelle hauteur
-  setTimeout(rebuildGlass, 190);         // filet de sécurité (appareils lents)
+  requestAnimationFrame(()=>requestAnimationFrame(relayoutBelow));
 }
 function addTeam(){ if(state.teams.length>=6) return; state.teams.push({name:"Joueur "+(state.teams.length+1)}); saveTeams(); refreshTeamCard(); }
 function removeTeam(i){ if(state.teams.length<=2) return; state.teams.splice(i,1); saveTeams(); refreshTeamCard(); }
