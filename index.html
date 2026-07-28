@@ -4429,19 +4429,28 @@ function refreshTeamCard(){
   const c = document.getElementById("teamCard");
   if(!c){ render(); return; }
   c.innerHTML = teamCardInner();
-  /* Le verre n'est (re)calé QU'UNE FOIS la nouvelle hauteur de carte réellement
-     COMPOSÉE par le navigateur (rAF) — JAMAIS en synchrone. En synchrone, la
-     couche « scène » (.gs) se figeait sur l'ANCIENNE mise en page puis « sautait »
-     à la bonne position : c'est ce saut qu'on voyait sur Android. Ici, les
-     lignes montrent d'abord juste leur bord (~1 image), puis le verre apparaît
-     DÉJÀ bien calé, sans aucun saut. Re-mesures de sûreté ensuite (compositing +
-     appareils lents). */
-  const resettle = ()=>{ try{ glassRelayout(); queueGlassSync(); }catch(e){} };
-  requestAnimationFrame(()=>{
-    try{ glassTrack(); }catch(e){}   // 1er calage APRÈS mise en page stabilisée
-    requestAnimationFrame(resettle);
-    setTimeout(resettle, 160);       // filet de sécurité (appareils lents)
-  });
+  /* ANDROID — VRAIE CAUSE : la couche « scène » (.gs) est promue au compositeur
+     (will-change:transform). Quand la HAUTEUR de la carte joueurs change, les
+     surfaces situées EN DESSOUS glissent par mise en page — mais leur couche,
+     déjà composée, peut rester « collée » à son ancienne position à l'écran,
+     même quand on recalcule (correctement) son transform. D'où le verre décalé.
+     (Le transform calculé est bon — vérifié — mais le compositeur ne le rejoue
+     pas.) PARADE, exactement ce que fait le 1er rendu (toujours net) : on JETTE
+     les couches .gs et on les laisse se recréer NEUVES -> couches fraîches,
+     posées à la bonne position. Léger (de simples <i>), sans reconstruire
+     l'écran, et la QUALITÉ du verre est rigoureusement identique. */
+  const rebuildGlass = ()=>{
+    try{
+      document.querySelectorAll(".gs").forEach((g)=>{
+        const host = g.parentNode;
+        if(host){ host._gs = null; host._gsT = ""; host._gsSize = ""; }
+        g.remove();
+      });
+      glassRelayout(); queueGlassSync();
+    }catch(e){}
+  };
+  requestAnimationFrame(rebuildGlass);   // après composition de la nouvelle hauteur
+  setTimeout(rebuildGlass, 190);         // filet de sécurité (appareils lents)
 }
 function addTeam(){ if(state.teams.length>=6) return; state.teams.push({name:"Joueur "+(state.teams.length+1)}); saveTeams(); refreshTeamCard(); }
 function removeTeam(i){ if(state.teams.length<=2) return; state.teams.splice(i,1); saveTeams(); refreshTeamCard(); }
