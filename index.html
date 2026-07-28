@@ -679,6 +679,12 @@
      blanc -> l'action « arrêter » ressort nettement du verre neutre, lisible et
      dans la couleur signature de l'app. Le bord reste blanc 0,55 (uniforme). */
   .btn-ghost.btn-cancel, .searching-card .btn-ghost.btn-cancel, .waiting-card .btn-ghost.btn-cancel{ --glass-tint: rgba(236,68,34,0.82); color:#fff; --rim-edge:0 0 0 1px rgba(150,30,14,0.3); --rim-cast:0 6px 16px rgba(214,60,34,0.42); }
+  /* Bouton « Quitter » (sortie) : verre NACRÉ / MIROIR froid — le verre reflète
+     déjà le décor flouté, un voile blanc froid + un bord vif et un léger reflet
+     haut en font une surface « polie », argentée. Identité propre à la SORTIE,
+     distincte des actions dorées (jouer/rejouer) et du corail (annuler). Ombre
+     froide (bleutée) pour la démarquer des boutons chauds. */
+  .btn-quit, .btn-newgame.btn-quit, .btn-ghost.btn-quit{ --glass-tint: rgba(247,250,255,0.78); color:#39404a; --rim-edge:inset 0 0 0 1px rgba(255,255,255,0.85), inset 0 7px 12px -7px rgba(255,255,255,0.8); --rim-cast:0 6px 16px rgba(70,92,124,0.22); }
   .modal-card .text-input{ --glass-tint: rgba(255,255,255,0.55); }
 
   /* ---------- Chrono par question ---------- */
@@ -5416,7 +5422,7 @@ function renderEndGroup(){
     <div class="end-bottom">
     <div class="end-actions">
       <button class="btn-replay" onclick="replayGame()">Rejouer</button>
-      <button class="btn-newgame" onclick="newGame()">Quitter</button>
+      <button class="btn-newgame btn-quit" onclick="newGame()">Quitter</button>
     </div>
     ${shareLineHtml(state.mode)}
     </div>
@@ -5464,7 +5470,7 @@ function renderEndSolo(){
     <div class="end-bottom">
     <div class="end-actions">
       <button class="btn-replay" onclick="replayGame()">Rejouer</button>
-      <button class="btn-newgame" onclick="newGame()">Quitter</button>
+      <button class="btn-newgame btn-quit" onclick="newGame()">Quitter</button>
     </div>
     ${shareLineHtml(state.mode)}
     </div>
@@ -5749,7 +5755,7 @@ function renderOnlinePlay(){
         <div class="spinner"></div>
         <div class="searching-txt">Tu as terminé, bien joué !</div>
         <div class="opp-progress">${net.oppGone?"Ton adversaire a quitté la partie.":`Ton adversaire en est à ${net.oppIndex}/${total}`}</div>
-        <button class="btn-ghost${net.oppGone?'':' btn-cancel'}" style="margin-top:1.1rem" onclick="${net.oppGone?"state.screen='online-end';render()":"leaveOnline()"}">${net.oppGone?"Voir le résultat":"Quitter la partie"}</button>
+        <button class="btn-ghost${net.oppGone?'':' btn-quit'}" style="margin-top:1.1rem" onclick="${net.oppGone?"state.screen='online-end';render()":"leaveOnline()"}">${net.oppGone?"Voir le résultat":"Quitter la partie"}</button>
       </div>
       <div class="flex-sp"></div>`;
     return el;
@@ -5803,7 +5809,7 @@ function renderOnlineEnd(){
   const oppName = net.opp ? escapeHtml(net.opp.name) : "L'adversaire";
   let replayMsg = "", replayActions = "";
   if(net.oppGone){
-    replayActions = `<button class="btn-newgame" onclick="leaveOnline()">Quitter</button>`;
+    replayActions = `<button class="btn-newgame btn-quit" onclick="leaveOnline()">Quitter</button>`;
   } else if(net.iWantReplay && net.oppWantReplay){
     replayMsg = "Nouvelle partie en préparation…";
     replayActions = `<button class="btn-replay is-waiting" disabled>C'est parti…</button>`;
@@ -5818,7 +5824,7 @@ function renderOnlineEnd(){
   } else {
     if(net.replayDeclined){ replayMsg = oppName + " ne souhaite pas rejouer pour l'instant."; }
     replayActions = `<button class="btn-replay" onclick="onlineRematch()">Rejouer</button>`
-      + `<button class="btn-newgame" onclick="leaveOnline()">Quitter</button>`;
+      + `<button class="btn-newgame btn-quit" onclick="leaveOnline()">Quitter</button>`;
   }
   const title = net.oppGone ? "Victoire par forfait" : (tie?"Égalité !":(win?"Victoire !":"Défaite"));
   el.innerHTML = `${renderHeader("Résultat", false)}
