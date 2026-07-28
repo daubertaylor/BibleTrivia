@@ -4457,33 +4457,32 @@ function refreshTeamCard(){
   const c = document.getElementById("teamCard");
   if(!c){ render(); return; }
   c.innerHTML = teamCardInner();
-  /* ANDROID — VRAIE CAUSE : la couche « scène » (.gs) est promue au compositeur.
-     Quand la HAUTEUR de la carte joueurs change, SEULES les surfaces situées EN
-     DESSOUS glissent par mise en page ; leur couche, déjà composée, peut rester
-     « collée » à son ancienne position (le transform recalculé est bon mais le
-     compositeur ne le rejoue pas) -> verre décalé. PARADE : on jette et laisse
-     recréer les couches .gs NEUVES, mais UNIQUEMENT pour la carte joueurs et ses
-     voisines du DESSOUS (les seules qui bougent) — plus JAMAIS tout l'écran ni
-     deux fois de suite. C'était ça la saccade : repeindre les ~10 verres du
-     document, deux fois par tap. En-tête et tout le haut ne bougent pas : on n'y
-     touche pas. UNE seule passe, après 2 images (mise en page vraiment posée). */
-  const relayoutBelow = ()=>{
-    try{
-      let el = c;
-      while(el){
-        if(el.querySelectorAll){
-          el.querySelectorAll(".gs").forEach((g)=>{
-            const host = g.parentNode;
-            if(host){ host._gs = null; host._gsT = ""; host._gsSize = ""; }
-            g.remove();
-          });
-        }
-        el = el.nextElementSibling;
+  /* ANDROID — la couche « scène » (.gs) est promue au compositeur. Quand la
+     HAUTEUR de la carte joueurs change, SEULES les surfaces situées EN DESSOUS
+     glissent par mise en page ; leur couche, déjà composée, peut rester « collée »
+     à son ancienne position -> verre décalé. PARADE : jeter et recréer les .gs
+     NEUVES, mais UNIQUEMENT pour la carte joueurs et ses voisines du DESSOUS (les
+     seules qui bougent), jamais l'en-tête ni le haut.
+     ANTI-SACCADE : tout se fait dans la MÊME IMAGE que l'ajout/retrait de la
+     ligne — on force la mise en page (offsetHeight) puis on recrée le verre
+     SYNCHRONE (queueGlassXF peint dans la foulée). L'ancienne version différait
+     de 2 images -> le verre « sautait » après coup, ce qui se voyait comme une
+     saccade. Ici : une seule mise à jour propre, rien qui saute après. */
+  try{
+    void c.offsetHeight; // fige tout de suite les positions finales
+    let el = c;
+    while(el){
+      if(el.querySelectorAll){
+        el.querySelectorAll(".gs").forEach((g)=>{
+          const host = g.parentNode;
+          if(host){ host._gs = null; host._gsT = ""; host._gsSize = ""; }
+          g.remove();
+        });
       }
-      glassRelayout(); queueGlassSync();
-    }catch(e){}
-  };
-  requestAnimationFrame(()=>requestAnimationFrame(relayoutBelow));
+      el = el.nextElementSibling;
+    }
+    glassRelayout(); queueGlassSync();
+  }catch(e){}
 }
 function addTeam(){ if(state.teams.length>=6) return; state.teams.push({name:"Joueur "+(state.teams.length+1)}); saveTeams(); refreshTeamCard(); }
 function removeTeam(i){ if(state.teams.length<=2) return; state.teams.splice(i,1); saveTeams(); refreshTeamCard(); }
