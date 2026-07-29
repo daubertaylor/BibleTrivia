@@ -4506,6 +4506,21 @@ function syncTeamRows(){
    Désormais on n'ajoute/retire QU'UNE ligne, sans toucher aux autres, puis on
    laisse le moteur recaler les transforms (un simple translate3d, gratuit).
    Rendu strictement identique, coût divisé par ~8. */
+/* La carte est la SEULE surface dont la HAUTEUR change. Android peut garder sa
+   couche compositée « collée » à l'ancienne géométrie -> le verre du fond de
+   carte ne suit plus (visible surtout avec beaucoup de joueurs, quand la carte
+   devient haute). On force la reprise de CETTE SEULE couche (bascule brève de
+   will-change) : une couche au lieu de huit, coût négligeable, rendu identique.
+   Puis un dernier recalage au frame suivant, quand la mise en page est posée. */
+function settleTeamCard(c){
+  const gs = c.querySelector(":scope > .gs");
+  if(gs){
+    gs.style.willChange = "auto";
+    void gs.offsetHeight;              // applique la bascule immédiatement
+    gs.style.willChange = "transform"; // la couche est reprise à la bonne taille
+  }
+  requestAnimationFrame(()=>{ try{ glassRelayout(); queueGlassSync(); }catch(e){} });
+}
 function addTeam(){
   if(state.teams.length >= 6) return;
   state.teams.push({ name: "Joueur " + (state.teams.length + 1) });
@@ -4519,16 +4534,19 @@ function addTeam(){
   c.insertBefore(row, add);            // UNE seule couche de verre en plus
   syncTeamRows();
   glassRelayout(); queueGlassSync();   // recalage des transforms uniquement
+  settleTeamCard(c);
 }
 function removeTeam(btn){
   if(state.teams.length <= 2) return;
   const i = teamIndexOf(btn);
   const row = btn && btn.closest ? btn.closest(".team-row") : null;
   if(i < 0 || !row) return;
+  const c = document.getElementById("teamCard");
   state.teams.splice(i, 1); saveTeams();
   row.remove();                        // UNE seule ligne retirée
   syncTeamRows();
   glassRelayout(); queueGlassSync();
+  if(c) settleTeamCard(c);
 }
 /* Renommage : mise à jour du jeton (1re lettre) EN DIRECT, sans aucun rendu —
    plus de render() au blur (qui reconstruisait tout l'écran = saccade). */
