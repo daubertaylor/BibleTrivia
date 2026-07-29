@@ -4458,59 +4458,86 @@ function goToModeSelect(){ state.screen = "mode"; render(); }
 /* Contenu de la carte « Joueurs ou équipes » (jetons + lignes + bouton Ajouter).
    Isolé pour pouvoir le rafraîchir SEUL — sans reconstruire tout l'écran (voir
    refreshTeamCard). */
+/* Contenu d'UNE ligne joueur. Les gestionnaires ne reçoivent PAS d'index figé :
+   ils le déduisent de la position réelle de la ligne -> ajouter/retirer un
+   joueur n'oblige à réécrire AUCUNE autre ligne. */
+function teamRowInner(i, t){
+  return `<span class="team-token" style="background:linear-gradient(150deg, color-mix(in srgb, ${TEAM_COLORS[i%6]} 68%, #ffffff), ${TEAM_COLORS[i%6]})">${((t.name||"").trim().charAt(0).toUpperCase())||(i+1)}</span>
+        <input type="text" value="${escapeHtml(t.name)}" maxlength="20" oninput="renameTeam(this)" placeholder="Nom du joueur ou de l'équipe">
+        <button class="team-remove" onclick="removeTeam(this)" ${state.teams.length<=2?"disabled":""} aria-label="Retirer"><span class="ico" style="width:0.9rem;height:0.9rem;">${ICONS.close}</span></button>`;
+}
 function teamCardInner(){
   return `<h2>Joueurs ou équipes</h2>
-    ${state.teams.map((t,i)=>`
-      <div class="team-row">
-        <span class="team-token" style="background:linear-gradient(150deg, color-mix(in srgb, ${TEAM_COLORS[i%6]} 68%, #ffffff), ${TEAM_COLORS[i%6]})">${((t.name||"").trim().charAt(0).toUpperCase())||(i+1)}</span>
-        <input type="text" value="${escapeHtml(t.name)}" maxlength="20" oninput="renameTeam(${i}, this.value, this)" placeholder="Nom du joueur ou de l'équipe">
-        <button class="team-remove" onclick="removeTeam(${i})" ${state.teams.length<=2?"disabled":""} aria-label="Retirer"><span class="ico" style="width:0.9rem;height:0.9rem;">${ICONS.close}</span></button>
-      </div>
-    `).join("")}
+    ${state.teams.map((t,i)=>`<div class="team-row">${teamRowInner(i,t)}</div>`).join("")}
     <button class="add-team" onclick="addTeam()" ${state.teams.length>=6?"disabled":""}><span class="ico">${ICONS.plusCircle}</span>Ajouter un joueur ou une équipe</button>`;
 }
-/* Ajout/retrait de joueur : on ne rafraîchit QUE la carte des joueurs (pas tout
-   l'écran). Rebâtir l'écran entier réinitialisait le verre de TOUTES les
-   surfaces à chaque tap +/- -> saccade nette sur Android. Ici seules 2 à 6
-   petites lignes se recalent, le reste de l'écran ne bouge pas. */
-function refreshTeamCard(){
-  const c = document.getElementById("teamCard");
-  if(!c){ render(); return; }
-  c.innerHTML = teamCardInner();
-  /* ANDROID — la couche « scène » (.gs) est promue au compositeur. Quand la
-     HAUTEUR de la carte joueurs change, SEULES les surfaces situées EN DESSOUS
-     glissent par mise en page ; leur couche, déjà composée, peut rester « collée »
-     à son ancienne position -> verre décalé. PARADE : jeter et recréer les .gs
-     NEUVES, mais UNIQUEMENT pour la carte joueurs et ses voisines du DESSOUS (les
-     seules qui bougent), jamais l'en-tête ni le haut.
-     ANTI-SACCADE : tout se fait dans la MÊME IMAGE que l'ajout/retrait de la
-     ligne — on force la mise en page (offsetHeight) puis on recrée le verre
-     SYNCHRONE (queueGlassXF peint dans la foulée). L'ancienne version différait
-     de 2 images -> le verre « sautait » après coup, ce qui se voyait comme une
-     saccade. Ici : une seule mise à jour propre, rien qui saute après. */
-  try{
-    void c.offsetHeight; // fige tout de suite les positions finales
-    let el = c;
-    while(el){
-      if(el.querySelectorAll){
-        el.querySelectorAll(".gs").forEach((g)=>{
-          const host = g.parentNode;
-          if(host){ host._gs = null; host._gsT = ""; host._gsSize = ""; }
-          g.remove();
-        });
-      }
-      el = el.nextElementSibling;
-    }
-    glassRelayout(); queueGlassSync();
-  }catch(e){}
+function teamRowEls(){ const c = document.getElementById("teamCard"); return c ? c.querySelectorAll(".team-row") : []; }
+function teamIndexOf(el){
+  const row = el && el.closest ? el.closest(".team-row") : null;
+  if(!row) return -1;
+  return Array.prototype.indexOf.call(teamRowEls(), row);
 }
-function addTeam(){ if(state.teams.length>=6) return; state.teams.push({name:"Joueur "+(state.teams.length+1)}); saveTeams(); refreshTeamCard(); }
-function removeTeam(i){ if(state.teams.length<=2) return; state.teams.splice(i,1); saveTeams(); refreshTeamCard(); }
+/* Remet à jour ce qui dépend du RANG (couleur du jeton, initiale) et les états
+   désactivés — en ne modifiant que des attributs. Aucun nœud n'est détruit,
+   donc aucune couche de verre n'est recréée. */
+function syncTeamRows(){
+  const c = document.getElementById("teamCard");
+  if(!c) return;
+  const rows = teamRowEls();
+  for(let i = 0; i < rows.length; i++){
+    const t = state.teams[i]; if(!t) continue;
+    const tok = rows[i].querySelector(".team-token");
+    if(tok){
+      tok.style.background = `linear-gradient(150deg, color-mix(in srgb, ${TEAM_COLORS[i%6]} 68%, #ffffff), ${TEAM_COLORS[i%6]})`;
+      tok.textContent = (t.name||"").trim().charAt(0).toUpperCase() || (i+1);
+    }
+    const rm = rows[i].querySelector(".team-remove");
+    if(rm) rm.disabled = state.teams.length <= 2;
+  }
+  const add = c.querySelector(".add-team");
+  if(add) add.disabled = state.teams.length >= 6;
+}
+/* ANDROID — POURQUOI ÇA SACCADAIT (vraie cause) : à chaque tap +/- on
+   reconstruisait le contenu de la carte (innerHTML), ce qui DÉTRUISAIT les
+   couches de verre (.gs) de la carte, de CHAQUE ligne et du bouton Ajouter —
+   soit 6 à 8 couches GPU à re-rastériser d'un coup. Or une couche .gs a une
+   taille FIXE (1,4 × largeur écran sur 2 × hauteur écran) : elle n'a JAMAIS
+   besoin d'être recréée quand une carte grandit — seul son transform change.
+   Désormais on n'ajoute/retire QU'UNE ligne, sans toucher aux autres, puis on
+   laisse le moteur recaler les transforms (un simple translate3d, gratuit).
+   Rendu strictement identique, coût divisé par ~8. */
+function addTeam(){
+  if(state.teams.length >= 6) return;
+  state.teams.push({ name: "Joueur " + (state.teams.length + 1) });
+  saveTeams();
+  const c = document.getElementById("teamCard");
+  const add = c ? c.querySelector(".add-team") : null;
+  if(!c || !add){ render(); return; }
+  const row = document.createElement("div");
+  row.className = "team-row";
+  row.innerHTML = teamRowInner(state.teams.length - 1, state.teams[state.teams.length - 1]);
+  c.insertBefore(row, add);            // UNE seule couche de verre en plus
+  syncTeamRows();
+  glassRelayout(); queueGlassSync();   // recalage des transforms uniquement
+}
+function removeTeam(btn){
+  if(state.teams.length <= 2) return;
+  const i = teamIndexOf(btn);
+  const row = btn && btn.closest ? btn.closest(".team-row") : null;
+  if(i < 0 || !row) return;
+  state.teams.splice(i, 1); saveTeams();
+  row.remove();                        // UNE seule ligne retirée
+  syncTeamRows();
+  glassRelayout(); queueGlassSync();
+}
 /* Renommage : mise à jour du jeton (1re lettre) EN DIRECT, sans aucun rendu —
    plus de render() au blur (qui reconstruisait tout l'écran = saccade). */
-function renameTeam(i, val, inp){
-  state.teams[i].name = val; saveTeams();
-  if(inp && inp.parentNode){ const tok = inp.parentNode.querySelector(".team-token"); if(tok) tok.textContent = (val||"").trim().charAt(0).toUpperCase() || (i+1); }
+function renameTeam(inp){
+  const i = teamIndexOf(inp);
+  if(i < 0 || !state.teams[i]) return;
+  state.teams[i].name = inp.value; saveTeams();
+  const tok = inp.parentNode ? inp.parentNode.querySelector(".team-token") : null;
+  if(tok) tok.textContent = (inp.value||"").trim().charAt(0).toUpperCase() || (i+1);
 }
 function setLength(key){
   state.lengthKey = key;
@@ -5234,6 +5261,7 @@ function renderSetup(){
   if(state.mode==="group"){
     el.innerHTML = `
       ${renderHeader("Mode Groupe", true)}
+      <div class="card" id="teamCard">${teamCardInner()}</div>
       ${renderLengthCard()}
       <div class="card">
         <h2>Testament</h2>
@@ -5244,11 +5272,6 @@ function renderSetup(){
         </div>
       </div>
       <div class="rules"><b>Déroulé :</b> lisez la question à voix haute → révélez la réponse → attribuez les points au bon joueur (ou à la bonne équipe). Avec le chrono, la réponse se révèle toute seule à la fin du temps. Une erreur ? Les boutons −/+ corrigent à tout moment.</div>
-      <!-- Carte Joueurs placée en DERNIER (juste avant le ressort + « Commencer ») :
-           l'ajout/retrait d'une ligne n'a plus AUCUNE carte en verre en dessous à
-           pousser -> le ressort flexible absorbe la variation de hauteur, rien ne
-           glisse -> fin de la saccade Android. Identique iOS (même code). -->
-      <div class="card" id="teamCard">${teamCardInner()}</div>
       <div class="flex-sp"></div>
       <button class="btn-primary" onclick="startGame()">Commencer la partie</button>
       <div class="error-msg" id="setupError"></div>
