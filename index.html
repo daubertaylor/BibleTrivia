@@ -1288,7 +1288,15 @@
   .sheet-veil{ position:fixed; top:0; left:0; right:0; bottom:0; z-index:70;
     background:none;
     display:flex; align-items:flex-end; justify-content:center; animation:veilIn 0.28s ease; }
-  .settings-sheet{ width:100%; max-width:430px; border:1px solid rgba(255,255,255,0.72); border-bottom:none; border-radius:24px 24px 0 0; padding:0.8rem 1.25rem calc(env(safe-area-inset-bottom) * 0.55 + 0.4rem); animation:sheetIn 0.5s cubic-bezier(0.2,1.05,0.3,1); transform:translateZ(0); -webkit-transform:translateZ(0); --rim-cast:0 -6px 34px rgba(18,12,6,0.3); }
+  /* touch-action:none — SANS ÇA, IMPOSSIBLE DE FERMER AU DOIGT SUR ANDROID.
+     Chrome considérait le glissement vertical comme un défilement : dès le
+     PREMIER pointermove il coupait le geste (pointercancel mesuré à chaque
+     essai) et la feuille ne bougeait plus. WebKit, lui, laissait faire — d'où
+     un panneau qui se fermait à la main sur iPhone et pas sur Android. On dit
+     donc explicitement que le geste vertical appartient à la feuille. La liste
+     des erreurs, elle, garde son défilement (règle juste en dessous). */
+  .settings-sheet{ width:100%; max-width:430px; border:1px solid rgba(255,255,255,0.72); border-bottom:none; border-radius:24px 24px 0 0; padding:0.8rem 1.25rem calc(env(safe-area-inset-bottom) * 0.55 + 0.4rem); animation:sheetIn 0.5s cubic-bezier(0.2,1.05,0.3,1); transform:translateZ(0); -webkit-transform:translateZ(0); touch-action:none; --rim-cast:0 -6px 34px rgba(18,12,6,0.3); }
+  .settings-sheet .rev-list{ touch-action:pan-y; }
   /* LA POIGNÉE FERME LA FEUILLE. Elle n'était qu'un trait décoratif ; c'est
      désormais la vraie sortie : on tire la feuille vers le bas, ou on tape la
      barre. Le bouton « Fermer » a donc disparu — il occupait une pleine largeur
@@ -1487,6 +1495,12 @@
      flamme) gardent le verre, et l'en-tête aussi puisque c'est la barre de
      l'app, présente sur tous les écrans. */
   .question-card, .solo-score-bar, .duel-scorebar, .award-btn, .score-pane{ --glass-tint: rgb(252,248,241); }
+  /* CARTES « Revoir mes erreurs » : même raison exactement que la carte
+     question — ce sont des blocs qu'on LIT (question, mauvaise réponse, bonne
+     réponse, anecdote). En verre, empilées dans une feuille elle-même en verre,
+     elles prenaient la couleur du décor derrière et le texte perdait en netteté.
+     Pleines, la lecture est franche et la feuille garde son verre autour. */
+  .rev-item{ --glass-tint: rgb(252,248,241); }
   /* AUCUN REFLET SUR LES SURFACES PLEINES — y compris à travers leur liseré.
      La couche de verre est découpée au bord INTÉRIEUR de la surface ; le liseré
      de 1px, lui, est blanc SEMI-TRANSPARENT (0,72). Sur une surface pleine, ce
@@ -1500,7 +1514,8 @@
   .fsh-close, .share-btn, .tst-head, .option-btn, .modal-btn, .btn-quit, .btn-newgame,
   .question-card, .solo-score-bar, .duel-scorebar, .btn-primary, .btn-next, .btn-replay,
   .sheet-done, .set-go, .streak-chip, .creator-badge, .dc-streak, .btn-reveal,
-  .leave-banner, .fact-card, .text-input, .code-input, .award-btn, .score-pane{
+  .leave-banner, .fact-card, .text-input, .code-input, .award-btn, .score-pane,
+  .rev-item{
     background-color: var(--glass-tint);
   }
   /* Zones de saisie : blanc franc, un cheveu plus clair que les boutons pour
@@ -4649,6 +4664,47 @@ document.addEventListener("pointerdown", ()=>{ audioUnlocked = true; wakeAudio()
       n = n.parentElement;
     }
   }
+  /* PLI PROPRE. Le bord bas de l'écran quand le clavier est ouvert — le « pli »
+     — ne doit JAMAIS trancher une ligne ou un bouton en deux : c'est ça qui
+     donnait l'impression que l'écran était cassé (« Ajouter un joueur » coupé
+     par le milieu, une ligne de joueur sciée en deux). On liste les éléments
+     insécables, et si le pli en traverse un, on cherche le plus petit décalage
+     qui fait retomber la coupure DANS un intervalle. On ne sort jamais de la
+     fourchette où le champ actif reste lisible, et on ne bouge jamais de plus
+     d'une hauteur de ligne : rien ne « saute ». */
+  const INSECABLES = ".team-row, .add-team, .len-chip, .bk, .rev-item, .scn-thumb, .opt-row, .tst-head, button, .text-input";
+  function pliPropre(app, ar, cible, mini, maxi){
+    const st = app.scrollTop, H = ar.height;
+    const bords = [];
+    app.querySelectorAll(INSECABLES).forEach(el=>{
+      const r = el.getBoundingClientRect();
+      if(r.height < 6 || r.height > H - 24) return;   // trop grand pour tenir : rien à sauver
+      bords.push({ h: r.top - ar.top + st, b: r.bottom - ar.top + st });
+    });
+    if(!bords.length) return cible;
+    const coupe = (c)=>{                              // le pli traverse-t-il quelque chose ?
+      const pli = c + H;
+      for(let i = 0; i < bords.length; i++) if(bords[i].h < pli - 2 && bords[i].b > pli + 2) return true;
+      return false;
+    };
+    if(!coupe(cible)) return cible;
+    let best = null;
+    for(let i = 0; i < bords.length; i++){
+      const essais = [bords[i].b + 6 - H, bords[i].h - 6 - H];  // pli juste sous / juste au-dessus
+      for(let j = 0; j < 2; j++){
+        const c = essais[j];
+        if(c < mini || c > maxi || Math.abs(c - cible) > 46 || coupe(c)) continue;
+        if(best === null || Math.abs(c - cible) < Math.abs(best - cible)) best = c;
+      }
+    }
+    return best === null ? cible : best;
+  }
+  /* Placement du champ actif : CALCUL ABSOLU, donc IDEMPOTENT. L'ancienne
+     version raisonnait « en plus / en moins » à partir du défilement courant :
+     les deux passages (pendant puis après la montée du clavier) ne tombaient
+     pas au même endroit, d'où un placement qui paraissait aléatoire — mesuré
+     sur 5 joueurs : 0 -> 102 -> 77. Ici tout se calcule dans les coordonnées du
+     contenu : on repasse autant de fois qu'on veut, on retombe au même pixel. */
   function bringFieldIntoView(){
     const el = document.activeElement;
     if(!el || !el.getBoundingClientRect) return;
@@ -4656,39 +4712,27 @@ document.addEventListener("pointerdown", ()=>{ audioUnlocked = true; wakeAudio()
     if(!app) return;
     razDefilementsParasites(el, app);
     const ar = app.getBoundingClientRect();
-    const er = el.getBoundingClientRect();
-    /* Ligne HAUTE sûre = juste sous l'encoche / la barre d'état (le rembourrage
-       haut de #app). Rien d'utile ne doit finir au-dessus si on peut l'éviter. */
-    let hautSur = ar.top;
-    try{ hautSur += parseFloat(getComputedStyle(app).paddingTop) || 0; }catch(e){}
-    const margeBas = Math.max(14, Math.min(52, ar.height * 0.10)); // respiration au-dessus du clavier
-    const manque = er.bottom + margeBas - ar.bottom;               // >0 : le champ est sous le clavier
-    let cible = app.scrollTop;
-    if(manque > 0) cible += manque;                                // on descend le strict nécessaire
-    else if(er.top < hautSur) cible -= (hautSur - er.top);         // champ passé sous la barre d'état
-    else {
-      /* SUR-DÉFILEMENT : WebKit « centre » le champ tout seul à l'ouverture du
-         clavier -> la carte partait très haut sous la barre d'état en laissant
-         un grand vide sous le champ. On récupère ce vide pour redescendre le
-         contenu, sans jamais renvoyer le champ sous le clavier. */
-      const bloc = (el.closest && el.closest(".card, .modal-card, .settings-sheet, .rules")) || el;
-      const cache = hautSur - bloc.getBoundingClientRect().top;    // px du bloc mangés en haut
-      if(cache > 0) cible -= Math.min(cache, -manque);
-    }
+    const st = app.scrollTop;
     const max = Math.max(0, app.scrollHeight - app.clientHeight);
-    cible = Math.min(max, Math.max(0, cible));
-    /* RIEN DE COUPÉ EN BAS. Le champ bien placé, il restait parfois quelques
-       dizaines de pixels de contenu sous le bord — le bouton d'action se
-       retrouvait tranché en deux, à moitié sous le clavier (mesuré : 23px de
-       « Enregistrer » cachés sur l'écran Profil). Si descendre jusqu'en bas
-       laisse le champ visible avec sa respiration, on descend : tout est
-       montré, plus aucun élément à moitié. Sinon on garde le placement minimal
-       (cas d'une longue liste de joueurs, où descendre chasserait le champ). */
-    if(cible < max){
-      const reste = max - cible;
-      if(er.bottom - reste > ar.top + 8 && er.top - reste > ar.top - 1) cible = max;
-    }
-    if(Math.abs(cible - app.scrollTop) > 1) app.scrollTop = cible;
+    const enDoc = (n)=>{ const r = n.getBoundingClientRect(); return { haut: r.top - ar.top + st, bas: r.bottom - ar.top + st }; };
+    /* Ligne HAUTE sûre = juste sous l'encoche / la barre d'état. */
+    let pad = 0;
+    try{ pad = parseFloat(getComputedStyle(app).paddingTop) || 0; }catch(e){}
+    const marge = Math.max(14, Math.min(52, ar.height * 0.10));   // respiration au-dessus du clavier
+    const champ = enDoc(el);
+    /* Fourchette des défilements qui gardent le champ ENTIÈREMENT lisible :
+       au-dessus du clavier (mini) et sous la barre d'état (maxi). */
+    const mini = Math.max(0, Math.min(max, champ.bas + marge - ar.height));
+    const maxi = Math.max(mini, Math.min(max, champ.haut - pad));
+    /* Où viser ? Si descendre tout en bas laisse le champ lisible, on descend :
+       plus RIEN n'est coupé (écrans courts, Profil, code de salon). Sinon on
+       pose le BAS DE LA CARTE du champ sur le pli — la carte se termine juste
+       au-dessus du clavier, proprement, au lieu d'être tranchée. */
+    const bloc = (el.closest && el.closest(".card, .modal-card, .settings-sheet, .rules")) || el;
+    let cible = (max <= maxi) ? max : Math.min(max, enDoc(bloc).bas + 10 - ar.height);
+    cible = Math.max(mini, Math.min(maxi, cible));
+    cible = pliPropre(app, ar, cible, mini, maxi);
+    if(Math.abs(cible - st) > 1) app.scrollTop = cible;
     if(window.scrollY){ try{ window.scrollTo(0, 0); }catch(e){} } // le document ne bouge jamais
     try{ glassRelayout(); queueGlassSync(); }catch(e){}           // verre recalé sur la nouvelle position
   }
@@ -5157,12 +5201,37 @@ function teamIndexOf(el){
 /* Remet à jour ce qui dépend du RANG (couleur du jeton, initiale) et les états
    désactivés — en ne modifiant que des attributs. Aucun nœud n'est détruit,
    donc aucune couche de verre n'est recréée. */
+/* LES NOMS PAR DÉFAUT SUIVENT LA PLACE — c'est ce qui empêche à la fois la
+   liste de paraître mélangée et le fameux « Joueur 7 » d'exister. Avant, chaque
+   joueur gardait à vie le numéro reçu à sa création : on retirait le 2e, on en
+   rajoutait un, et le nouveau héritait d'un numéro libre au hasard (« Joueur 1 »
+   collé en dernier). Désormais, tout joueur qui n'a PAS de vrai nom est
+   renuméroté sur son rang à chaque changement : la carte se lit toujours
+   Joueur 1, 2, 3… dans l'ordre, et comme le rang ne dépasse jamais 6, aucun
+   numéro plus grand ne peut apparaître. Un nom écrit à la main n'est jamais
+   touché. */
+function renumberDefaultTeams(){
+  const parDefaut = /^Joueur\s+\d+$/;
+  for(let i = 0; i < state.teams.length; i++){
+    const t = state.teams[i]; if(!t) continue;
+    const nom = (t.name || "").trim();
+    if(nom && !parDefaut.test(nom)) continue;      // vrai nom : intouchable
+    const voulu = "Joueur " + (i + 1);
+    if(nom !== voulu) t.name = voulu;
+  }
+}
 function syncTeamRows(){
   const c = document.getElementById("teamCard");
   if(!c) return;
+  if(state.teams.length > 6) state.teams.length = 6;  // filet : jamais plus de six
+  renumberDefaultTeams(); saveTeams();
   const rows = teamRowEls();
   for(let i = 0; i < rows.length; i++){
     const t = state.teams[i]; if(!t) continue;
+    /* Le champ suit la renumérotation — sauf celui qu'on est en train de
+       remplir, qu'on ne va évidemment pas réécrire sous les doigts. */
+    const inp = rows[i].querySelector("input");
+    if(inp && inp !== document.activeElement && inp.value !== t.name) inp.value = t.name;
     const tok = rows[i].querySelector(".team-token");
     if(tok){
       tok.style.background = `linear-gradient(150deg, color-mix(in srgb, ${TEAM_COLORS[i%6]} 68%, #ffffff), ${TEAM_COLORS[i%6]})`;
@@ -5200,31 +5269,12 @@ function settleTeamCard(c){
 }
 function addTeam(){
   if(state.teams.length >= 6) return;
-  /* Nom par défaut = le NUMÉRO DE LA PLACE qu'occupe le nouveau joueur (4e joueur
-     -> « Joueur 4 »), jamais un numéro plus petit récupéré au passage. Avant, on
-     prenait le premier numéro libre : dès qu'on renommait le joueur 1 (« Taylor »),
-     « Joueur 1 » redevenait libre et le joueur AJOUTÉ EN DERNIER s'appelait
-     « Joueur 1 » -> la liste semblait mélangée. On repart donc de la place, puis
-     on avance tant que le nom est déjà pris (cas d'un retrait au milieu) : la
-     numérotation ne recule jamais et reste unique. */
-  const pris = new Set(state.teams.map(t => (t.name || "").trim()));
-  const libre = (k)=> !pris.has("Joueur " + k);
-  let n = state.teams.length + 1;
-  if(!libre(n)){
-    /* La place est déjà prise (un joueur du MILIEU a été retiré). On monte
-       d'abord au premier numéro libre AU-DESSUS du plus grand déjà utilisé :
-       la numérotation ne recule donc jamais quand on renomme quelqu'un (c'était
-       le bug d'origine, « Joueur 1 » collé au dernier arrivé). Si tout est pris
-       jusqu'à 6, alors seulement on comble le trou laissé par le retrait —
-       jamais au-delà de 6, puisqu'une partie ne compte pas plus de 6 joueurs. */
-    let max = 0;
-    for(let k = 1; k <= 6; k++){ if(!libre(k)) max = k; }
-    n = 0;
-    for(let k = max + 1; k <= 6; k++){ if(libre(k)){ n = k; break; } }
-    if(!n){ for(let k = 1; k <= 6; k++){ if(libre(k)){ n = k; break; } } }
-    if(!n) n = state.teams.length + 1;
-  }
-  state.teams.push({ name: "Joueur " + n });
+  /* Nom par défaut = le NUMÉRO DE LA PLACE, tout simplement : le 4e joueur
+     s'appelle « Joueur 4 ». Plus aucune recherche de numéro libre — c'est
+     syncTeamRows() qui garde toute la liste numérotée dans l'ordre, y compris
+     après un retrait au milieu. Le rang étant plafonné à 6 juste au-dessus,
+     « Joueur 7 » ne peut pas exister. */
+  state.teams.push({ name: "Joueur " + (state.teams.length + 1) });
   saveTeams();
   const c = document.getElementById("teamCard");
   const add = c ? c.querySelector(".add-team") : null;
@@ -5256,25 +5306,69 @@ function removeTeam(btn){
      champ. On le referme, comme le faisait l'ancien retrait qui reconstruisait
      toute la carte. */
   try{ const a = document.activeElement; if(a && a.tagName === "INPUT" && a.closest("#teamCard")) a.blur(); }catch(e){}
-  const h = row.offsetHeight;
+  /* REPLI SANS LA MOINDRE MARCHE. Replier la hauteur ne suffit pas : une ligne
+     à zéro occupe encore quelques pixels (marges intérieures, bordures, ligne de
+     texte), et ces pixels-là disparaissaient d'un bloc AU RETRAIT — d'où le
+     petit saut en fin d'animation, mesuré à 9px de défilement rattrapé sur une
+     seule image. On mesure donc ce résidu pour de vrai, en deux essais muets
+     (ligne masquée, puis ligne repliée), et on l'annule avec une marge négative
+     exactement égale. À l'arrivée, retirer la ligne ne change plus RIEN à la
+     mise en page : il n'y a plus rien à rattraper. */
   const cs = getComputedStyle(row);
+  const dep = { h: row.offsetHeight + "px", mb: cs.marginBottom, pt: cs.paddingTop, pb: cs.paddingBottom,
+                bt: cs.borderTopWidth, bb: cs.borderBottomWidth };
+  const poser = (h, mb, p, bord)=>{
+    row.style.height = h; row.style.marginBottom = mb;
+    row.style.paddingTop = p; row.style.paddingBottom = p;
+    row.style.borderTopWidth = bord; row.style.borderBottomWidth = bord;
+  };
+  /* Ces essais muets font, l'espace d'un instant, une mise en page où la ligne
+     n'existe plus. Le navigateur en profite pour ROGNER le défilement à la
+     nouvelle hauteur — mesuré : 66px avalés D'UN COUP au moment du toucher,
+     avant même que l'animation commence. C'était ÇA, le saut. On note donc où
+     en est chaque conteneur qui défile, et on le remet en place aussitôt. */
+  const defil = [];
+  for(let n = row.parentNode; n && n.nodeType === 1; n = n.parentNode) defil.push([n, n.scrollTop]);
+  try{ const se = document.scrollingElement; if(se) defil.push([se, se.scrollTop]); }catch(e){}
   row.style.overflow = "hidden";
-  row.style.height = h + "px";
-  row.style.marginBottom = cs.marginBottom;
   row.style.pointerEvents = "none";
-  void row.offsetHeight;               // fige l'état de départ
-  row.style.transition = "height 0.17s cubic-bezier(0.4,0,0.2,1), margin-bottom 0.17s cubic-bezier(0.4,0,0.2,1), opacity 0.13s ease";
-  row.style.height = "0px";
-  row.style.marginBottom = "0px";
+  row.style.transition = "none";
+  /* on mesure au sous-pixel près (getBoundingClientRect, pas offsetHeight qui
+     arrondit) : sinon il reste un demi-pixel de rattrapage au tout dernier
+     instant, juste assez pour se voir sur un écran dense. */
+  const hCarte = ()=> c ? c.getBoundingClientRect().height : 0;
+  const hAvecLigne = hCarte();
+  row.style.display = "none";
+  const hSansLigne = hCarte();                      // ce que ça donnera une fois retirée
+  row.style.display = "";
+  poser("0px", "0px", "0px", "0px");
+  const residu = Math.max(0, hCarte() - hSansLigne);   // ce qui resterait à tort
+  poser(dep.h, dep.mb, dep.pt, dep.bt);            // on revient à l'état de départ
+  void row.offsetHeight; void hAvecLigne;
+  for(let k = 0; k < defil.length; k++){ const [n, v] = defil[k]; if(n.scrollTop !== v) n.scrollTop = v; }
+  const RESSORT = "0.19s cubic-bezier(0.33,0,0.2,1)";
+  row.style.transition = "height " + RESSORT + ", margin-bottom " + RESSORT +
+    ", padding-top " + RESSORT + ", padding-bottom " + RESSORT +
+    ", border-top-width " + RESSORT + ", border-bottom-width " + RESSORT + ", opacity 0.13s ease";
+  poser("0px", (-residu) + "px", "0px", "0px");
   row.style.opacity = "0";
   syncTeamRows();                      // jetons et boutons à jour tout de suite
-  try{ glassTrack(320); }catch(e){}    // le verre suit le réajustement du défilement
-  setTimeout(()=>{
+  try{ glassTrack(); }catch(e){}       // le verre suit le réajustement du défilement
+  /* On retire la ligne À LA FIN RÉELLE de l'animation (et non à un délai fixe,
+     qui tombait 100ms trop tard), puis on laisse passer une image avant le
+     travail lourd sur le verre : l'image du retrait reste légère. */
+  let fini = false;
+  const finir = ()=>{
+    if(fini) return; fini = true;
     row.remove();
     syncTeamRows();                    // jetons et couleurs recalés sur la liste réelle
-    glassRelayout(); queueGlassSync();
-    if(c) settleTeamCard(c);
-  }, 180);
+    requestAnimationFrame(()=>{
+      glassRelayout(); queueGlassSync();
+      if(c) settleTeamCard(c);
+    });
+  };
+  row.addEventListener("transitionend", (e)=>{ if(e.propertyName === "height") finir(); });
+  setTimeout(finir, 300);              // filet si l'événement ne vient pas
 }
 /* Renommage : mise à jour du jeton (1re lettre) EN DIRECT, sans aucun rendu —
    plus de render() au blur (qui reconstruisait tout l'écran = saccade). */
