@@ -5031,12 +5031,70 @@ const BOOK_TOTALS = (function(){
   return t;
 })();
 function bookTarget(name){ return Math.max(1, Math.min(9, Math.round((BOOK_TOTALS[name]||1)*0.45))); }
-function loadProgress(){
-  try { const p = JSON.parse(localStorage.getItem("bt_progress")||"{}") || {};
-    return { books:p.books||{}, totalCorrect:+p.totalCorrect||0, bestStreak:+p.bestStreak||0, flawless:+p.flawless||0, ach:p.ach||{} };
-  } catch(e){ return { books:{}, totalCorrect:0, bestStreak:0, flawless:0, ach:{} }; }
+/* ===== PROGRESSION : ÉCRITURE PROTÉGÉE — JAMAIS DE RETOUR À ZÉRO =====
+   La progression ne fait que MONTER : elle ne doit jamais être perdue, quoi
+   qu'il arrive. Le danger n'était pas un effacement volontaire (il n'y en a
+   aucun) mais un enchaînement silencieux : si les données stockées sont
+   illisibles une seule fois (écriture coupée par une fermeture d'app, quota
+   plein, stockage momentanément indisponible), l'ancienne lecture renvoyait des
+   ZÉROS — et la sauvegarde suivante écrasait définitivement la vraie
+   progression. Trois garde-fous :
+     1. COPIE DE SECOURS : tout est écrit dans deux clés indépendantes ; si
+        l'une est corrompue, l'autre reprend la main (et répare la première).
+     2. FUSION AU MAXIMUM : on ne réécrit jamais moins que ce qui est déjà
+        enregistré — on garde le meilleur de chaque compteur et l'union des
+        objectifs débloqués.
+     3. REFUS DU VIDE : une progression vide n'écrase jamais une progression
+        existante. */
+const PROG_KEY = "bt_progress", PROG_BAK = "bt_progress_bak";
+function progNormalize(p){
+  return { books:(p && p.books) || {}, totalCorrect:+(p && p.totalCorrect)||0, bestStreak:+(p && p.bestStreak)||0, flawless:+(p && p.flawless)||0, ach:(p && p.ach) || {} };
 }
-function saveProgress(p){ try { localStorage.setItem("bt_progress", JSON.stringify(p)); } catch(e){} }
+function progIsEmpty(p){
+  return !p || (!p.totalCorrect && !p.bestStreak && !p.flawless && !Object.keys(p.books||{}).length && !Object.keys(p.ach||{}).length);
+}
+function progRead(key){
+  try{
+    const raw = localStorage.getItem(key);
+    if(!raw) return null;
+    const p = JSON.parse(raw);
+    if(!p || typeof p !== "object") return null;
+    return progNormalize(p);
+  }catch(e){ return null; }
+}
+/* Garde le MEILLEUR des deux versions, compteur par compteur. */
+function progMergeMax(a, b){
+  const out = progNormalize({
+    totalCorrect: Math.max(a.totalCorrect, b.totalCorrect),
+    bestStreak:   Math.max(a.bestStreak,   b.bestStreak),
+    flawless:     Math.max(a.flawless,     b.flawless)
+  });
+  const noms = Object.assign({}, a.books, b.books);
+  for(const k in noms) out.books[k] = Math.max(+a.books[k]||0, +b.books[k]||0);
+  for(const k in a.ach) if(a.ach[k]) out.ach[k] = a.ach[k];   // union : un objectif
+  for(const k in b.ach) if(b.ach[k]) out.ach[k] = out.ach[k] || b.ach[k]; // débloqué le reste
+  return out;
+}
+function loadProgress(){
+  const principal = progRead(PROG_KEY);
+  const secours   = progRead(PROG_BAK);
+  if(principal && secours) return progMergeMax(principal, secours);
+  if(principal) return principal;
+  if(secours){ // principal illisible -> on répare depuis la copie de secours
+    try{ localStorage.setItem(PROG_KEY, JSON.stringify(secours)); }catch(e){}
+    return secours;
+  }
+  return progNormalize(null);
+}
+function saveProgress(p){
+  if(!p || typeof p !== "object") return;
+  const existant = loadProgress();
+  const sur = progMergeMax(progNormalize(p), existant); // jamais moins qu'avant
+  if(progIsEmpty(sur) && !progIsEmpty(existant)) return; // ne jamais écraser par du vide
+  const json = JSON.stringify(sur);
+  try{ localStorage.setItem(PROG_KEY, json); }catch(e){}
+  try{ localStorage.setItem(PROG_BAK, json); }catch(e){}
+}
 function progressDerived(p){
   let mastered=0, touched=0; const set={};
   for(let i=0;i<BIBLE_BOOKS.length;i++){ const b=BIBLE_BOOKS[i], c=p.books[b]||0; if(c>0) touched++; if(c>=bookTarget(b)){ mastered++; set[b]=1; } }
