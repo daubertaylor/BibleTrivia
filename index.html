@@ -254,11 +254,16 @@
      verre à part -> jusqu'à 6 couches GPU de plus rien que pour cette carte, ce
      qui alourdissait le défilement sur Android quand on ajoutait des joueurs.
      Une seule grille au lieu de N : même aspect, beaucoup moins de couches. */
+  /* UNE SURFACE BLANCHE POSÉE SUR UNE AUTRE SURFACE BLANCHE a besoin d'un
+     liseré plus ferme pour se lire : c'est le cas des lignes joueurs et de leur
+     champ, crème sur crème, où le fil à 0,12 disparaissait. Le rebord reste
+     exactement le même partout — seule l'intensité du fil de 1px s'ajuste au
+     contraste réel, pour que la bordure se VOIE autant qu'ailleurs. */
   .team-row{ display:flex; align-items:center; gap:0.55rem; margin-bottom:0.6rem; padding:0.4rem 0.5rem; border-radius:13px; border:1px solid rgba(255,255,255,0.72); background:rgb(252,248,241);
-    box-shadow: inset 0 1.5px 0 rgba(255,255,255,0.72), inset 0 0 0 1.5px rgba(255,255,255,0.42), 0 0 0 1px rgba(58,42,26,0.12), 0 5px 14px rgba(34,26,16,0.12); }
+    --rim-edge:0 0 0 1px rgba(58,42,26,0.26); --rim-cast:0 5px 14px rgba(34,26,16,0.12); }
   .team-token{ width:1.9rem; height:1.9rem; border-radius:50%; color:#fff; font-family:'Poppins',sans-serif; font-weight:600; font-size:0.85rem; display:flex; align-items:center; justify-content:center; flex-shrink:0; --rim-edge:0 0 0 1px rgba(30,22,14,0.16); --rim-cast:0 3px 9px rgba(15,12,10,0.24); }
   .dot-sm{ display:inline-block; width:0.5rem; height:0.5rem; border-radius:50%; margin-right:0.4rem; vertical-align:middle; flex-shrink:0; }
-  .team-row input{ flex:1; min-width:0; background:rgba(255,255,255,0.5); border:1px solid rgba(255,255,255,0.72); color:var(--ink); padding:0.58rem 0.75rem; border-radius:10px; font-size:0.95rem; font-weight:600; }
+  .team-row input{ flex:1; min-width:0; background:rgba(255,255,255,0.5); border:1px solid rgba(255,255,255,0.72); color:var(--ink); padding:0.58rem 0.75rem; border-radius:10px; font-size:0.95rem; font-weight:600; --rim-edge:0 0 0 1px rgba(58,42,26,0.22); --rim-cast:0 2px 6px rgba(34,26,16,0.1); }
   .team-remove{ background:none; border:none; color:var(--ink-soft); width:1.8rem; height:1.8rem; padding:0.4rem; display:flex; align-items:center; justify-content:center; flex-shrink:0; }
   .team-remove:disabled{ opacity:0.25; }
 
@@ -272,7 +277,7 @@
      passer une zone claire/foncée de la photo qui mangeait le contraste avec
      le texte rouge. Un voile clair plus couvrant garde le bouton lisible
      quel que soit ce qu'il y a derrière, à n'importe quel moment du scroll. */
-  .add-team{ width:100%; display:flex; align-items:center; justify-content:center; gap:0.5rem; margin-top:0.4rem; color:var(--primary); border:1px solid rgba(255,255,255,0.72); border-radius:14px; padding:0.6rem; font-size:0.85rem; font-weight:600; }
+  .add-team{ --rim-edge:0 0 0 1px rgba(58,42,26,0.24); width:100%; display:flex; align-items:center; justify-content:center; gap:0.5rem; margin-top:0.4rem; color:var(--primary); border:1px solid rgba(255,255,255,0.72); border-radius:14px; padding:0.6rem; font-size:0.85rem; font-weight:600; }
   .add-team .ico{ width:1.12rem; height:1.12rem; }
   .add-team:disabled{ opacity:0.35; }
 
@@ -910,7 +915,7 @@
      sur les deux plateformes. Exception : <input> (.text-input/.code-input)
      ne peut pas porter d'enfant -> le rebord reste sur l'élément lui-même
      pour ces deux-là (regroupés dans le même sélecteur ci-dessous). */
-  .glass-rim, .text-input, .code-input, .switch, .team-token, .avatar, .scn-thumb{
+  .glass-rim, .text-input, .code-input, .switch, .team-token, .avatar, .scn-thumb, .team-row, .bk, .team-row input{
     box-shadow:
       inset 0 1.5px 0 rgba(255,255,255,0.72),
       inset 0 0 0 1.5px rgba(255,255,255,0.42),
@@ -1196,7 +1201,7 @@
      translucides en héritent visuellement : rendu verre intégral, coût
      minimal (même architecture que la vitrine des Objectifs). */
   .bk-card{ padding:0.55rem 0.55rem 0.5rem; }
-  .bk{ padding:0.4rem 0.45rem; border-radius:9px; text-align:center; background:rgba(255,253,247,0.42); box-shadow:inset 0 1px 0 rgba(255,255,255,0.55); border:1px solid rgba(255,255,255,0.72); }
+  .bk{ padding:0.4rem 0.45rem; border-radius:9px; text-align:center; background:rgba(255,253,247,0.42); --rim-edge:0 0 0 1px rgba(58,42,26,0.2); --rim-cast:0 2px 6px rgba(34,26,16,0.1); border:1px solid rgba(255,255,255,0.72); }
   .bk.started{ background:rgb(255,244,222); border-color:rgba(239,173,38,0.55); }
   .bk.mastered{ background:rgb(198,242,216); border-color:rgba(47,169,110,0.55); }
   .bk-nm{ font-size:0.7rem; font-weight:600; color:var(--ink); white-space:nowrap; overflow:hidden; text-overflow:ellipsis; display:block; }
@@ -1516,13 +1521,6 @@
      portée douce. Seules la feuille Réglages et la médaille de fin gardent une
      ombre PORTÉE différente (l'une remonte vers le contenu, l'autre creuse le
      relief du médaillon) : leur rebord, lui, est exactement le même. */
-  .bk, .team-row input{
-    box-shadow:
-      inset 0 1.5px 0 rgba(255,255,255,0.72),
-      inset 0 0 0 1.5px rgba(255,255,255,0.42),
-      0 0 0 1px rgba(58,42,26,0.12),
-      0 5px 14px rgba(34,26,16,0.12);
-  }
 </style>
 </head>
 <body>
@@ -4679,6 +4677,17 @@ document.addEventListener("pointerdown", ()=>{ audioUnlocked = true; wakeAudio()
     }
     const max = Math.max(0, app.scrollHeight - app.clientHeight);
     cible = Math.min(max, Math.max(0, cible));
+    /* RIEN DE COUPÉ EN BAS. Le champ bien placé, il restait parfois quelques
+       dizaines de pixels de contenu sous le bord — le bouton d'action se
+       retrouvait tranché en deux, à moitié sous le clavier (mesuré : 23px de
+       « Enregistrer » cachés sur l'écran Profil). Si descendre jusqu'en bas
+       laisse le champ visible avec sa respiration, on descend : tout est
+       montré, plus aucun élément à moitié. Sinon on garde le placement minimal
+       (cas d'une longue liste de joueurs, où descendre chasserait le champ). */
+    if(cible < max){
+      const reste = max - cible;
+      if(er.bottom - reste > ar.top + 8 && er.top - reste > ar.top - 1) cible = max;
+    }
     if(Math.abs(cible - app.scrollTop) > 1) app.scrollTop = cible;
     if(window.scrollY){ try{ window.scrollTo(0, 0); }catch(e){} } // le document ne bouge jamais
     try{ glassRelayout(); queueGlassSync(); }catch(e){}           // verre recalé sur la nouvelle position
