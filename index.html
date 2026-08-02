@@ -162,6 +162,12 @@
      proprement dans l'espace restant, le bouton du bas se place juste au-dessus
      du clavier au lieu d'être écrasé/chevauché. */
   html.kb #app{ height:var(--vvh, 100%); padding-bottom:0.4rem; }
+  /* Une modale à champ (le code Créateur) est CENTRÉE dans la fenêtre — donc
+     centrée derrière le clavier dès qu'il monte : le champ frôlait le bord
+     (9px d'air mesurés) et le bouton « Valider » finissait 100px SOUS le
+     clavier, hors d'atteinte. On ramène le voile à la hauteur réellement
+     visible : la modale se recentre au-dessus du clavier, entière. */
+  html.kb .modal-veil{ bottom:auto; height:var(--vvh, 100%); }
   html.kb, html.kb body{ overflow:hidden; }
   /* ÉLÉVATION PAR DÉFAUT DE TOUTE SURFACE DE VERRE. --rim-cast est une propriété
      personnalisée, donc HÉRITÉE : sans cette déclaration, une puce posée dans une
@@ -4710,6 +4716,11 @@ document.addEventListener("pointerdown", ()=>{ audioUnlocked = true; wakeAudio()
     if(!el || !el.getBoundingClientRect) return;
     const app = glassAppEl;
     if(!app) return;
+    /* Champ d'une modale flottante (code Créateur) : elle est posée sur la
+       fenêtre, pas dans #app. Faire défiler #app ne la déplacerait pas d'un
+       pixel — ça ne ferait que glisser le décor derrière, pour rien (18px
+       mesurés). C'est la règle CSS html.kb .modal-veil qui s'en occupe. */
+    if(!app.contains(el)){ if(window.scrollY){ try{ window.scrollTo(0, 0); }catch(e){} } return; }
     razDefilementsParasites(el, app);
     const ar = app.getBoundingClientRect();
     const st = app.scrollTop;
