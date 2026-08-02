@@ -230,7 +230,14 @@
   .card{ background:var(--surface); border:1px solid var(--border); border-radius:16px; padding:1.1rem 1rem; margin-bottom:0.95rem; }
   .card h2{ font-family:'Poppins',sans-serif; font-size:0.78rem; font-weight:700; letter-spacing:0.09em; text-transform:uppercase; color:var(--ink-soft); margin:0 0 0.65rem 0.1rem; }
 
-  .team-row{ display:flex; align-items:center; gap:0.55rem; margin-bottom:0.6rem; padding:0.4rem 0.5rem; border-radius:13px; border:1px solid rgba(255,255,255,0.72); }
+  /* LIGNES JOUEURS : la carte est la SEULE surface de verre ; les lignes sont un
+     fond crème PLEIN (même matière que les chips et les boutons blancs) avec le
+     rebord de verre reproduit en CSS. Avant, chaque ligne était une surface de
+     verre à part -> jusqu'à 6 couches GPU de plus rien que pour cette carte, ce
+     qui alourdissait le défilement sur Android quand on ajoutait des joueurs.
+     Une seule grille au lieu de N : même aspect, beaucoup moins de couches. */
+  .team-row{ display:flex; align-items:center; gap:0.55rem; margin-bottom:0.6rem; padding:0.4rem 0.5rem; border-radius:13px; border:1px solid rgba(255,255,255,0.72); background:rgb(252,248,241);
+    box-shadow: inset 0 1.5px 0 rgba(255,255,255,0.72), inset 0 0 0 1.5px rgba(255,255,255,0.42), 0 0 0 1px rgba(58,42,26,0.12), 0 5px 14px rgba(34,26,16,0.12); }
   .team-token{ width:1.9rem; height:1.9rem; border-radius:50%; color:#fff; font-family:'Poppins',sans-serif; font-weight:600; font-size:0.85rem; display:flex; align-items:center; justify-content:center; flex-shrink:0; box-shadow:inset 0 1.5px 0 rgba(255,255,255,0.6), inset 0 0 0 1px rgba(255,255,255,0.24), 0 3px 9px rgba(15,12,10,0.24); }
   .dot-sm{ display:inline-block; width:0.5rem; height:0.5rem; border-radius:50%; margin-right:0.4rem; vertical-align:middle; flex-shrink:0; }
   .team-row input{ flex:1; min-width:0; background:rgba(255,255,255,0.5); border:1px solid rgba(255,255,255,0.72); color:var(--ink); padding:0.58rem 0.75rem; border-radius:10px; font-size:0.95rem; font-weight:600; }
@@ -4393,9 +4400,33 @@ document.addEventListener("pointerdown", ()=>{ audioUnlocked = true; wakeAudio()
      -> détection fiable sur iOS ET Android. */
   let restH = vv.height;
   let kbScrollTimer = null;
+  /* Placement du champ actif : CONTRÔLÉ, jamais scrollIntoView.
+     scrollIntoView({block:"center"}) avait deux défauts visibles à l'écran :
+       1. il fait défiler TOUS les ancêtres, y compris le document -> le contenu
+          remontait sous la barre d'état ;
+       2. « center » force un défilement maximal quand le champ est en bas de
+          liste (dernier joueur ajouté) -> grand vide sous la carte.
+     Ici on ne bouge QUE #app, seulement si le champ est réellement masqué, et
+     on borne le défilement à ce qui existe -> pas de vide, pas de chevauchement,
+     et rien ne bouge si le champ est déjà bien visible. */
   function bringFieldIntoView(){
     const el = document.activeElement;
-    if(el && el.scrollIntoView){ try{ el.scrollIntoView({ block:"center", behavior:"smooth" }); }catch(e){} }
+    if(!el || !el.getBoundingClientRect) return;
+    const app = glassAppEl;
+    if(!app) return;
+    const ar = app.getBoundingClientRect();
+    const er = el.getBoundingClientRect();
+    const marge = Math.max(14, Math.min(90, ar.height * 0.16));
+    let delta = 0;
+    if(er.bottom > ar.bottom - marge) delta = er.bottom - (ar.bottom - marge);
+    else if(er.top < ar.top + marge) delta = er.top - (ar.top + marge);
+    if(delta){
+      const max = Math.max(0, app.scrollHeight - app.clientHeight);
+      const cible = Math.min(max, Math.max(0, app.scrollTop + delta));
+      if(Math.abs(cible - app.scrollTop) > 1) app.scrollTop = cible;
+    }
+    if(window.scrollY){ try{ window.scrollTo(0, 0); }catch(e){} } // le document ne bouge jamais
+    try{ glassRelayout(); queueGlassSync(); }catch(e){}           // verre recalé sur la nouvelle position
   }
   function apply(){
     if(!isField()){
@@ -4879,7 +4910,11 @@ function settleTeamCard(c){
 }
 function addTeam(){
   if(state.teams.length >= 6) return;
-  state.teams.push({ name: "Joueur " + (state.teams.length + 1) });
+  /* Nom par défaut = premier numéro LIBRE (et non le nombre de joueurs) : après
+     un retrait, on ne recrée plus deux « Joueur 6 » identiques. */
+  const pris = new Set(state.teams.map(t => (t.name || "").trim()));
+  let n = 1; while(pris.has("Joueur " + n)) n++;
+  state.teams.push({ name: "Joueur " + n });
   saveTeams();
   const c = document.getElementById("teamCard");
   const add = c ? c.querySelector(".add-team") : null;
@@ -6394,7 +6429,7 @@ document.addEventListener("click", (e)=>{
    transforms compris) : la photo peinte reste donc collée au décor même pendant
    qu'une carte glisse — ce qui autorise de vraies transitions animées « à la
    Apple » sans le moindre décalage du verre. */
-const GLASS_SEL = ".app-header,.card,.mode-card,.question-card,.solo-summary,.solo-score-bar,.score-pane,.option-btn,.btn-primary,.btn-next,.btn-replay,.fact-card,.tier-chip,.q-counter,.streak-chip,.chip,.icon-btn,.btn-reveal,.btn-newgame,.award-btn,.team-row,.presence-card,.me-row,.online-action,.searching-card,.waiting-card,.info-card,.vs-row,.len-chip,.duel-scorebar,.timer-chip,.dr-side,.rank-row,.text-input,.code-input,.fs-hint,.modal-card,.add-team,.btn-ghost,.fsh-close,.hs-item,.settings-sheet,.hero-verse-card,.modal-btn.ok,.modal-btn.cancel,.leave-banner,.end-medal,.adj-btn,.waiting-note,.rules,.btn-review,.daily-card,.dc-streak,.btn-invite,.creator-badge,.sheet-done,.set-go,.share-btn,.rev-item,.parcours-card,.parcours-sum,.tst-head";
+const GLASS_SEL = ".app-header,.card,.mode-card,.question-card,.solo-summary,.solo-score-bar,.score-pane,.option-btn,.btn-primary,.btn-next,.btn-replay,.fact-card,.tier-chip,.q-counter,.streak-chip,.chip,.icon-btn,.btn-reveal,.btn-newgame,.award-btn,.presence-card,.me-row,.online-action,.searching-card,.waiting-card,.info-card,.vs-row,.len-chip,.duel-scorebar,.timer-chip,.dr-side,.rank-row,.text-input,.code-input,.fs-hint,.modal-card,.add-team,.btn-ghost,.fsh-close,.hs-item,.settings-sheet,.hero-verse-card,.modal-btn.ok,.modal-btn.cancel,.leave-banner,.end-medal,.adj-btn,.waiting-note,.rules,.btn-review,.daily-card,.dc-streak,.btn-invite,.creator-badge,.sheet-done,.set-go,.share-btn,.rev-item,.parcours-card,.parcours-sum,.tst-head";
 const GLASS_SKIP = ".timer-chip.low,.btn-primary:disabled,.btn-next:disabled";
 /* RÉFRACTION VIVANTE : le verre est calé sur la position RÉELLE à l'écran et
    ré-aligné image par image pendant les mouvements -> quand une carte glisse
