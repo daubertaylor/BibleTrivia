@@ -1346,7 +1346,12 @@
      de verre à recaler pendant que la feuille glisse. */
   .sheet-done{ width:100%; margin-top:0.7rem; --glass-tint: rgb(236,60,26); --rim-edge:0 0 0 1px rgba(150,30,14,0.3); --rim-cast:0 6px 16px rgba(214,60,34,0.42); color:#fff; border:1px solid rgba(255,255,255,0.72); border-radius:14px; padding:0.95rem; font-weight:700; font-size:0.95rem; }
   .sheet-veil.closing{ animation:veilOut 0.24s ease forwards; }
-  .sheet-veil.closing .settings-sheet{ animation:sheetOut 0.24s cubic-bezier(0.4,0,1,1) forwards !important; }
+  /* Fermeture ordinaire : la feuille redescend depuis sa place. Fermeture À LA
+     MAIN (classe « glisse ») : surtout pas — l'animation repartirait de la
+     position de repos, donc la feuille remonterait d'un coup sous le doigt
+     avant de redescendre. Là, c'est notre propre transition qui continue le
+     geste depuis l'endroit exact où on l'a lâchée. */
+  .sheet-veil.closing .settings-sheet:not(.glisse){ animation:sheetOut 0.24s cubic-bezier(0.4,0,1,1) forwards !important; }
   @keyframes sheetIn{ from{ transform:translateY(100%); } to{ transform:translateY(0); } }
   @keyframes sheetOut{ to{ transform:translateY(105%); } }
   @keyframes veilOut{ to{ opacity:0; } }
@@ -4405,12 +4410,14 @@ function attachSheetDrag(feuille, fermer){
   if(!feuille) return;
   let y0 = 0, t0 = 0, dy = 0, actif = false, poignee = false;
   const neutre = (t)=> !(t && t.closest && t.closest("input, button:not(.sheet-grab), .scn-thumb, .rev-list, .vol-row, .switch"));
-  /* Le verre reste SOLIDAIRE de la feuille tant qu'on la manipule, et un bon
-     moment APRÈS qu'elle se soit remise en place : la bascule vers le suivi
-     normal se fait alors sur une feuille au repos, donc sans le moindre écart.
-     On ne rappelle pas glassTrack() ici (il relit toute la mise en page) —
-     armGlass() suffit à garder la boucle éveillée, pour presque rien. */
-  const suivre = (ms)=>{ try{ glassSheetOpenUntil = performance.now() + (ms || 600); armGlass((ms || 600) + 260); }catch(e){} };
+  /* PENDANT LE GESTE, LE VERRE RESTE ACCROCHÉ À L'ÉCRAN, pas à la feuille :
+     c'est tout l'effet de décalage — on tire le panneau et le décor glisse
+     derrière, comme une vitre qu'on déplace devant un paysage. Il faut donc
+     SORTIR du mode « solidaire » utilisé pendant l'animation d'ouverture (on
+     remet glassSheetOpenUntil à zéro) et garder la boucle éveillée : le moteur
+     relit alors la position réelle de la feuille à chaque image. On n'appelle
+     pas glassTrack() (il relirait toute la mise en page) — armGlass() suffit. */
+  const suivre = (ms)=>{ try{ glassSheetOpenUntil = 0; armGlass(ms || 700); }catch(e){} };
   feuille.addEventListener("pointerdown", (e)=>{
     if(actif || e.button) return;
     if(!neutre(e.target)) return;
@@ -4420,7 +4427,8 @@ function attachSheetDrag(feuille, fermer){
        cette feuille, sinon elle se relancerait au relâchement. */
     feuille.style.animation = "none";
     feuille.classList.add("dragging");
-    suivre(1200); try{ glassTrack(); }catch(err){}
+    try{ glassRelayout(); }catch(err){}   // positions à jour avant de suivre le doigt
+    suivre(1400);
     try{ feuille.setPointerCapture(e.pointerId); }catch(err){}
   }, { passive:true });
   feuille.addEventListener("pointermove", (e)=>{
@@ -4436,7 +4444,19 @@ function attachSheetDrag(feuille, fermer){
     feuille.classList.remove("dragging");
     const vitesse = dy / Math.max(1, performance.now() - t0);   // px/ms
     const partir = dy > 96 || (dy > 24 && vitesse > 0.55) || (poignee && Math.abs(dy) < 6);
-    if(partir){ feuille.style.transform = ""; fermer(); return; }
+    if(partir){
+      /* On CONTINUE le geste au lieu de le rembobiner : la feuille s'en va
+         depuis l'endroit exact où le doigt l'a lâchée. */
+      const reste = Math.max(60, (window.innerHeight || 800) - feuille.getBoundingClientRect().top) + 30;
+      feuille.classList.add("glisse");
+      feuille.style.transform = "translateY(" + dy + "px)";
+      void feuille.offsetHeight;
+      feuille.style.transition = "transform 0.22s cubic-bezier(0.4,0,1,1)";
+      feuille.style.transform = "translateY(" + (dy + reste) + "px)";
+      suivre(420);
+      fermer();
+      return;
+    }
     /* RETOUR EN PLACE : on repart de la position TENUE (pas de saut au premier
        cadre), on vise translateY(0) explicitement — pas « aucune transformation »,
        qu'un navigateur peut refuser d'interpoler — et on garde le verre solidaire
