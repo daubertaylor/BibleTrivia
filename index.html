@@ -1290,8 +1290,14 @@
   .sheet-grab::after{ content:""; position:absolute; left:0; right:0; top:50%; height:0.32rem; margin-top:-0.16rem; border-radius:99px; background:rgba(42,36,30,0.22); transition:background 0.18s ease, transform 0.18s ease; }
   .sheet-grab:active::after{ background:rgba(42,36,30,0.34); transform:scaleX(0.88); }
   .sheet-grab::before{ content:none; }
-  /* Pendant qu'on tire la feuille, elle suit le doigt sans transition. */
-  .settings-sheet.dragging{ animation:none !important; transition:none !important; }
+  /* Pendant qu'on tire la feuille, elle suit le doigt sans transition.
+     ATTENTION : on ne touche PAS à « animation » ici. Couper puis rétablir une
+     animation la RELANCE depuis le début — au relâchement, la feuille repartait
+     donc du bas et remontait, au lieu de simplement se remettre en place. Elle
+     est éteinte une fois pour toutes en JS au premier contact (elle a de toute
+     façon fini de jouer), et l'animation de FERMETURE reprend la main grâce au
+     !important ci-dessous. */
+  .settings-sheet.dragging{ transition:none !important; }
   .sheet-title{ font-family:'Poppins',sans-serif; font-weight:700; font-size:1.12rem; color:var(--ink); display:flex; align-items:center; gap:0.55rem; margin-bottom:0.35rem; }
   .sheet-title .st-ico{ width:1.5rem; height:1.5rem; display:inline-flex; color:var(--primary); flex-shrink:0; }
   .set-row{ display:flex; align-items:center; gap:0.8rem; padding:0.88rem 0.1rem; }
@@ -1340,7 +1346,7 @@
      de verre à recaler pendant que la feuille glisse. */
   .sheet-done{ width:100%; margin-top:0.7rem; --glass-tint: rgb(236,60,26); --rim-edge:0 0 0 1px rgba(150,30,14,0.3); --rim-cast:0 6px 16px rgba(214,60,34,0.42); color:#fff; border:1px solid rgba(255,255,255,0.72); border-radius:14px; padding:0.95rem; font-weight:700; font-size:0.95rem; }
   .sheet-veil.closing{ animation:veilOut 0.24s ease forwards; }
-  .sheet-veil.closing .settings-sheet{ animation:sheetOut 0.24s cubic-bezier(0.4,0,1,1) forwards; }
+  .sheet-veil.closing .settings-sheet{ animation:sheetOut 0.24s cubic-bezier(0.4,0,1,1) forwards !important; }
   @keyframes sheetIn{ from{ transform:translateY(100%); } to{ transform:translateY(0); } }
   @keyframes sheetOut{ to{ transform:translateY(105%); } }
   @keyframes veilOut{ to{ opacity:0; } }
@@ -4399,14 +4405,22 @@ function attachSheetDrag(feuille, fermer){
   if(!feuille) return;
   let y0 = 0, t0 = 0, dy = 0, actif = false, poignee = false;
   const neutre = (t)=> !(t && t.closest && t.closest("input, button:not(.sheet-grab), .scn-thumb, .rev-list, .vol-row, .switch"));
-  const suivre = ()=>{ try{ glassSheetOpenUntil = performance.now() + 500; }catch(e){} };
+  /* Le verre reste SOLIDAIRE de la feuille tant qu'on la manipule, et un bon
+     moment APRÈS qu'elle se soit remise en place : la bascule vers le suivi
+     normal se fait alors sur une feuille au repos, donc sans le moindre écart.
+     On ne rappelle pas glassTrack() ici (il relit toute la mise en page) —
+     armGlass() suffit à garder la boucle éveillée, pour presque rien. */
+  const suivre = (ms)=>{ try{ glassSheetOpenUntil = performance.now() + (ms || 600); armGlass((ms || 600) + 260); }catch(e){} };
   feuille.addEventListener("pointerdown", (e)=>{
     if(actif || e.button) return;
     if(!neutre(e.target)) return;
     actif = true; poignee = !!(e.target.closest && e.target.closest(".sheet-grab"));
     y0 = e.clientY; t0 = performance.now(); dy = 0;
+    /* L'animation d'entrée a fini de jouer : on l'éteint DÉFINITIVEMENT pour
+       cette feuille, sinon elle se relancerait au relâchement. */
+    feuille.style.animation = "none";
     feuille.classList.add("dragging");
-    suivre(); try{ glassTrack(900); }catch(err){}
+    suivre(1200); try{ glassTrack(); }catch(err){}
     try{ feuille.setPointerCapture(e.pointerId); }catch(err){}
   }, { passive:true });
   feuille.addEventListener("pointermove", (e)=>{
@@ -4414,7 +4428,7 @@ function attachSheetDrag(feuille, fermer){
     dy = e.clientY - y0;
     if(dy < 0) dy = dy * 0.22;                 // vers le haut : ça résiste
     feuille.style.transform = "translateY(" + dy + "px)";
-    suivre();
+    suivre(1200);
   }, { passive:true });
   const relacher = ()=>{
     if(!actif) return;
@@ -4423,10 +4437,20 @@ function attachSheetDrag(feuille, fermer){
     const vitesse = dy / Math.max(1, performance.now() - t0);   // px/ms
     const partir = dy > 96 || (dy > 24 && vitesse > 0.55) || (poignee && Math.abs(dy) < 6);
     if(partir){ feuille.style.transform = ""; fermer(); return; }
-    feuille.style.transition = "transform 0.26s cubic-bezier(0.2,1,0.3,1)";
-    feuille.style.transform = "";
-    suivre(); try{ glassTrack(400); }catch(e){}
-    setTimeout(()=>{ feuille.style.transition = ""; }, 280);
+    /* RETOUR EN PLACE : on repart de la position TENUE (pas de saut au premier
+       cadre), on vise translateY(0) explicitement — pas « aucune transformation »,
+       qu'un navigateur peut refuser d'interpoler — et on garde le verre solidaire
+       largement au-delà de la fin du mouvement. */
+    feuille.style.transform = "translateY(" + dy + "px)";
+    void feuille.offsetHeight;
+    feuille.style.transition = "transform 0.3s cubic-bezier(0.22,1,0.3,1)";
+    feuille.style.transform = "translateY(0px)";
+    suivre(900);
+    setTimeout(()=>{
+      feuille.style.transition = "";
+      feuille.style.transform = "";
+      try{ glassRelayout(); queueGlassSync(); }catch(e){}   // recalage propre, feuille au repos
+    }, 320);
   };
   feuille.addEventListener("pointerup", relacher, { passive:true });
   feuille.addEventListener("pointercancel", relacher, { passive:true });
