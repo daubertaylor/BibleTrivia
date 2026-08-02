@@ -841,7 +841,18 @@
     backdrop-filter:var(--glass-bf, none);
     -webkit-backdrop-filter:var(--glass-bf, none);
     position:relative;
+    /* DÉFILEMENT FANTÔME — à ne jamais remettre en « hidden » seul.
+       Chaque surface de verre héberge une couche .gs BEAUCOUP plus grande
+       qu'elle (la texture floutée). Avec overflow:hidden, la surface reste un
+       conteneur DÉFILABLE aux yeux du navigateur (scrollHeight >> hauteur) :
+       quand un champ prend le focus, WebKit remonte toute la chaîne des parents
+       et fait défiler ces boîtes-là aussi -> la carte des joueurs glissait à
+       l'intérieur d'elle-même, lignes décalées et coupées, à l'ouverture du
+       clavier. « clip » coupe exactement pareil MAIS n'est pas un conteneur de
+       défilement : plus rien ne peut glisser là-dedans. Le « hidden » reste en
+       secours pour les navigateurs anciens (ils ignorent la ligne suivante). */
     overflow:hidden;
+    overflow:clip;
     /* Couche GPU dédiée : cet élément voit son fond recalé par JS à chaque
        image pendant le défilement (iOS ET Android). Le rebord (box-shadow)
        ne vit plus dessus (voir .glass-rim ci-dessous) mais la vraie
@@ -1364,6 +1375,15 @@
   .fsh-close, .share-btn, .tst-head, .option-btn, .modal-btn.cancel,
   .btn-replay.is-waiting{ --glass-tint: rgb(252,248,241); }
   .bk{ background:rgb(252,248,241); }
+  /* CARTE QUESTION (solo ET duel) : crème PLEIN, comme les réponses juste en
+     dessous. C'est la seule carte du jeu qu'on doit LIRE vite, sous chrono, et
+     elle est empilée dans la même colonne que les quatre options opaques : en
+     verre, elle attrapait la teinte du décor (gris en haut, brun en bas) et
+     paraissait sale à côté d'elles. Pleine, la zone de jeu forme un bloc net et
+     lisible, tandis que l'en-tête, les badges (difficulté, compteur, chrono) et
+     la barre de score gardent le verre — le décor reste bien présent autour.
+     Le filet doré du haut (.question-card::before) est conservé. */
+  .question-card{ --glass-tint: rgb(252,248,241); }
   /* Zones de saisie : blanc franc, un cheveu plus clair que les boutons pour
      rester lisibles à l'intérieur d'une ligne blanche. */
   .text-input, .code-input, .team-row input{ --glass-tint: rgb(255,253,250); background:rgb(255,253,250); }
@@ -4380,22 +4400,46 @@ document.addEventListener("pointerdown", ()=>{ audioUnlocked = true; wakeAudio()
      Ici on ne bouge QUE #app, seulement si le champ est réellement masqué, et
      on borne le défilement à ce qui existe -> pas de vide, pas de chevauchement,
      et rien ne bouge si le champ est déjà bien visible. */
+  /* Remet à zéro tout défilement PARASITE entre le champ et #app (cartes de verre
+     que le navigateur a fait glisser toutes seules en cherchant à montrer le
+     champ). Le seul conteneur qui a le droit de défiler, c'est #app. */
+  function razDefilementsParasites(el, app){
+    let n = el && el.parentElement;
+    while(n && n !== app && n !== document.body){
+      if(n.scrollTop) n.scrollTop = 0;
+      if(n.scrollLeft) n.scrollLeft = 0;
+      n = n.parentElement;
+    }
+  }
   function bringFieldIntoView(){
     const el = document.activeElement;
     if(!el || !el.getBoundingClientRect) return;
     const app = glassAppEl;
     if(!app) return;
+    razDefilementsParasites(el, app);
     const ar = app.getBoundingClientRect();
     const er = el.getBoundingClientRect();
-    const marge = Math.max(14, Math.min(90, ar.height * 0.16));
-    let delta = 0;
-    if(er.bottom > ar.bottom - marge) delta = er.bottom - (ar.bottom - marge);
-    else if(er.top < ar.top + marge) delta = er.top - (ar.top + marge);
-    if(delta){
-      const max = Math.max(0, app.scrollHeight - app.clientHeight);
-      const cible = Math.min(max, Math.max(0, app.scrollTop + delta));
-      if(Math.abs(cible - app.scrollTop) > 1) app.scrollTop = cible;
+    /* Ligne HAUTE sûre = juste sous l'encoche / la barre d'état (le rembourrage
+       haut de #app). Rien d'utile ne doit finir au-dessus si on peut l'éviter. */
+    let hautSur = ar.top;
+    try{ hautSur += parseFloat(getComputedStyle(app).paddingTop) || 0; }catch(e){}
+    const margeBas = Math.max(14, Math.min(52, ar.height * 0.10)); // respiration au-dessus du clavier
+    const manque = er.bottom + margeBas - ar.bottom;               // >0 : le champ est sous le clavier
+    let cible = app.scrollTop;
+    if(manque > 0) cible += manque;                                // on descend le strict nécessaire
+    else if(er.top < hautSur) cible -= (hautSur - er.top);         // champ passé sous la barre d'état
+    else {
+      /* SUR-DÉFILEMENT : WebKit « centre » le champ tout seul à l'ouverture du
+         clavier -> la carte partait très haut sous la barre d'état en laissant
+         un grand vide sous le champ. On récupère ce vide pour redescendre le
+         contenu, sans jamais renvoyer le champ sous le clavier. */
+      const bloc = (el.closest && el.closest(".card, .modal-card, .settings-sheet, .rules")) || el;
+      const cache = hautSur - bloc.getBoundingClientRect().top;    // px du bloc mangés en haut
+      if(cache > 0) cible -= Math.min(cache, -manque);
     }
+    const max = Math.max(0, app.scrollHeight - app.clientHeight);
+    cible = Math.min(max, Math.max(0, cible));
+    if(Math.abs(cible - app.scrollTop) > 1) app.scrollTop = cible;
     if(window.scrollY){ try{ window.scrollTo(0, 0); }catch(e){} } // le document ne bouge jamais
     try{ glassRelayout(); queueGlassSync(); }catch(e){}           // verre recalé sur la nouvelle position
   }
@@ -4426,6 +4470,19 @@ document.addEventListener("pointerdown", ()=>{ audioUnlocked = true; wakeAudio()
     }
     fitScroll(); // le clavier change la hauteur utile -> re-décider défilement
   }
+  /* FILET DE SÉCURITÉ (navigateurs sans « overflow:clip ») : si une carte se met
+     malgré tout à défiler dans son coin, on l'annule immédiatement — avant même
+     que l'image suivante soit peinte, donc invisible. On ne touche PAS aux
+     conteneurs volontairement défilables (liste des erreurs, #app). */
+  document.addEventListener("scroll", (e)=>{
+    const el = e.target;
+    if(!el || el === document || el === document.documentElement || el === document.body || el === glassAppEl) return;
+    if(!el.getBoundingClientRect || (!el.scrollTop && !el.scrollLeft)) return;
+    let ov = "";
+    try{ ov = getComputedStyle(el).overflowY; }catch(e2){ return; }
+    if(ov !== "hidden" && ov !== "clip") return; // défilement voulu : on laisse
+    el.scrollTop = 0; el.scrollLeft = 0;
+  }, true);
   vv.addEventListener("resize", apply);
   vv.addEventListener("scroll", apply);
   document.addEventListener("focusin", ()=>setTimeout(apply, 60));
@@ -4881,10 +4938,16 @@ function settleTeamCard(c){
 }
 function addTeam(){
   if(state.teams.length >= 6) return;
-  /* Nom par défaut = premier numéro LIBRE (et non le nombre de joueurs) : après
-     un retrait, on ne recrée plus deux « Joueur 6 » identiques. */
+  /* Nom par défaut = le NUMÉRO DE LA PLACE qu'occupe le nouveau joueur (4e joueur
+     -> « Joueur 4 »), jamais un numéro plus petit récupéré au passage. Avant, on
+     prenait le premier numéro libre : dès qu'on renommait le joueur 1 (« Taylor »),
+     « Joueur 1 » redevenait libre et le joueur AJOUTÉ EN DERNIER s'appelait
+     « Joueur 1 » -> la liste semblait mélangée. On repart donc de la place, puis
+     on avance tant que le nom est déjà pris (cas d'un retrait au milieu) : la
+     numérotation ne recule jamais et reste unique. */
+  let n = state.teams.length + 1;
   const pris = new Set(state.teams.map(t => (t.name || "").trim()));
-  let n = 1; while(pris.has("Joueur " + n)) n++;
+  while(pris.has("Joueur " + n)) n++;
   state.teams.push({ name: "Joueur " + n });
   saveTeams();
   const c = document.getElementById("teamCard");
