@@ -5133,7 +5133,13 @@ function teamCardInner(){
     ${state.teams.map((t,i)=>`<div class="team-row">${teamRowInner(i,t)}</div>`).join("")}
     <button class="add-team" onclick="addTeam()" ${state.teams.length>=6?"disabled":""}><span class="ico">${ICONS.plusCircle}</span>Ajouter un joueur ou une équipe</button>`;
 }
-function teamRowEls(){ const c = document.getElementById("teamCard"); return c ? c.querySelectorAll(".team-row") : []; }
+/* La ligne en cours de retrait est encore dans la page pendant qu'elle se replie :
+   on l'EXCLUT partout, sinon les jetons, les couleurs et surtout l'index visé
+   par un renommage seraient décalés d'un cran pendant ces deux dixièmes. */
+function teamRowEls(){
+  const c = document.getElementById("teamCard");
+  return c ? c.querySelectorAll(".team-row:not([data-partie])") : [];
+}
 function teamIndexOf(el){
   const row = el && el.closest ? el.closest(".team-row") : null;
   if(!row) return -1;
@@ -5236,7 +5242,11 @@ function removeTeam(btn){
   if(i < 0 || !row || row.dataset.partie) return;
   const c = document.getElementById("teamCard");
   state.teams.splice(i, 1); saveTeams();
-  row.dataset.partie = "1";            // ligne déjà en cours de retrait
+  row.dataset.partie = "1";            // exclue des calculs dès maintenant
+  /* Le clavier n'a plus lieu d'être : on venait de toucher une croix, pas un
+     champ. On le referme, comme le faisait l'ancien retrait qui reconstruisait
+     toute la carte. */
+  try{ const a = document.activeElement; if(a && a.tagName === "INPUT" && a.closest("#teamCard")) a.blur(); }catch(e){}
   const h = row.offsetHeight;
   const cs = getComputedStyle(row);
   row.style.overflow = "hidden";
@@ -5252,6 +5262,7 @@ function removeTeam(btn){
   try{ glassTrack(320); }catch(e){}    // le verre suit le réajustement du défilement
   setTimeout(()=>{
     row.remove();
+    syncTeamRows();                    // jetons et couleurs recalés sur la liste réelle
     glassRelayout(); queueGlassSync();
     if(c) settleTeamCard(c);
   }, 180);
@@ -7699,7 +7710,22 @@ document.addEventListener("selectstart", (e)=>{ if(!inTextField(e.target)) e.pre
 document.addEventListener("contextmenu", (e)=>{ if(!inTextField(e.target)) e.preventDefault(); });
 
 let fsPending = false;
-function tryAutoFullscreen(){
+/* JAMAIS de bascule plein écran quand on touche un CHAMP DE SAISIE, ni quand un
+   champ est déjà en cours d'édition. Passer en immersif redimensionne la fenêtre
+   au moment précis où le clavier essaie de monter : Android annule alors sa
+   présentation — le clavier ne s'ouvre pas, ou s'ouvre puis disparaît. Le plein
+   écran se prend sur n'importe quel autre toucher. */
+function toucheUnChamp(e){
+  const t = e && e.target;
+  if(!t || !t.closest) return false;
+  return !!t.closest("input, textarea, select, [contenteditable], label");
+}
+function champEnCours(){
+  const a = document.activeElement;
+  return !!(a && (a.tagName === "INPUT" || a.tagName === "TEXTAREA"));
+}
+function tryAutoFullscreen(e){
+  if(toucheUnChamp(e) || champEnCours()) return;
   if(fsPending || !fsAvailable() || fsActive()) return;
   fsPending = true;
   setTimeout(()=>{ fsPending = false; }, 600);
