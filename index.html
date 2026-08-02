@@ -57,6 +57,18 @@
     --error:#E24B37;
     --error-soft:#FFE9E3;
     --shadow:rgba(42,36,30,0.08);
+    /* UN SEUL LANGAGE DE MOUVEMENT — celui de la feuille Réglages, qui sert de
+       référence pour TOUT le jeu : ouverture d'un écran, d'une modale, d'une
+       feuille, entrée d'une carte de question. Les durées et les courbes ne
+       sont plus écrites à la main au fil du fichier (elles avaient dérivé :
+       0,22s ici, 0,32s là, et trois courbes différentes) — tout part d'ici, donc
+       tout bouge exactement pareil. La FORME du mouvement reste propre à chaque
+       chose (une feuille monte, une modale se pose, un écran glisse) ; c'est le
+       tempo et l'élan qui sont communs. */
+    --tr-ouvre: 0.5s cubic-bezier(0.2,1.05,0.3,1);
+    --tr-ferme: 0.24s cubic-bezier(0.4,0,1,1);
+    --tr-voile-in: 0.28s ease;
+    --tr-voile-out: 0.24s ease;
   }
   *{ box-sizing:border-box; scrollbar-width:none; }
   *::-webkit-scrollbar{ display:none; width:0; height:0; }
@@ -142,7 +154,7 @@
   /* MÊME style d'animation PARTOUT, calqué sur l'ouverture des Réglages :
      glissement vers le haut + ressort léger (même courbe que la feuille et les
      modales). Un seul « langage » de transition dans toute l'appli. */
-  .screen-enter{ animation:screenIn 0.5s cubic-bezier(0.2,1.05,0.3,1) both; }
+  .screen-enter{ animation:screenIn var(--tr-ouvre) both; }
 
   svg{ width:100%; height:100%; display:block; }
   ::selection{ background:rgba(241,80,47,0.22); }
@@ -186,6 +198,21 @@
   .rules, .btn-review, .daily-card, .dc-streak, .btn-invite, .creator-badge, .sheet-done, .set-go,
   .share-btn, .rev-item, .parcours-card, .parcours-sum, .tst-head, .team-row, .bk{
     --rim-cast:0 5px 14px rgba(34,26,16,0.12);
+  }
+  /* L'ÉLÉVATION SUIT LA PROFONDEUR. Une surface posée DANS une carte est déjà
+     portée par elle : ombre légère. Une surface large posée directement SUR LE
+     DÉCOR flotte au même niveau qu'une carte et doit donc porter la MÊME ombre,
+     sinon elle paraît plate et collée au fond. C'est ce qui arrivait à
+     « Réviser la dernière partie » : sur l'écran Solo, la carte juste au-dessus
+     avait 0 10px 34px, et lui l'ombre des petites pastilles posées sur une
+     carte (0 5px 14px) — le bord de verre était pourtant strictement le même,
+     c'est l'ombre qui manquait. Même cas pour « Déroulé », « Le savais-tu ? »,
+     le verset de l'accueil et les bandeaux de testament, chacun voisin direct
+     d'une carte qui, elle, flottait.
+     Les CHAMPS de saisie gardent volontairement l'ombre légère : un champ est
+     creusé dans la page, il ne flotte pas au-dessus d'elle. */
+  .btn-review, .rules, .fact-card, .hero-verse-card, .tst-head{
+    --rim-cast:0 10px 34px rgba(15,12,10,0.2), 0 2px 8px rgba(15,12,10,0.08);
   }
   .question-card .qtext, .hero-tag, .end-title, .online-hero-title, .online-hero-sub, .modal-title, .modal-msg{ text-wrap:balance; }
   .btn-primary:disabled, .btn-next:disabled{ opacity:1; background-image:linear-gradient(180deg, #6E6254, #55483A); box-shadow:inset 0 0 0 1px rgba(255,255,255,0.16), inset 0 1px 0 rgba(255,255,255,0.22); color:rgba(255,255,255,0.95); }
@@ -570,8 +597,8 @@
   /* progress fill fades in */
 
   /* per-question staggered entrance (only when the question changes) */
-  .question-card.animate{ animation:cardSlideIn 0.5s cubic-bezier(0.22,1,0.36,1) both; }
-  .options-grid.animate .option-btn{ opacity:0; animation:optionIn 0.5s cubic-bezier(0.22,1,0.36,1) both; }
+  .question-card.animate{ animation:cardSlideIn var(--tr-ouvre) both; }
+  .options-grid.animate .option-btn{ opacity:0; animation:optionIn var(--tr-ouvre) both; }
   .options-grid.animate .option-btn:nth-child(1){ animation-delay:0.04s; }
   .options-grid.animate .option-btn:nth-child(2){ animation-delay:0.08s; }
   .options-grid.animate .option-btn:nth-child(3){ animation-delay:0.12s; }
@@ -765,8 +792,8 @@
   .fsh-close{ width:1.6rem; height:1.6rem; border-radius:50%; border:1px solid rgba(255,255,255,0.72); color:var(--ink-soft); display:flex; align-items:center; justify-content:center; flex-shrink:0; }
 
   /* ---------- Modal maison ---------- */
-  .modal-veil{ position:fixed; top:0; left:0; right:0; bottom:0; z-index:75; background:rgba(19,14,9,0.3); display:flex; align-items:center; justify-content:center; padding:1.6rem; animation:veilIn 0.22s ease; }
-  .modal-card{ width:100%; max-width:21rem; border:1px solid rgba(255,255,255,0.72); border-radius:22px; padding:1.45rem 1.25rem 1.15rem; text-align:center; animation:modalIn 0.5s cubic-bezier(0.2,1.05,0.3,1); transform:translateZ(0); -webkit-transform:translateZ(0); --rim-cast:0 24px 60px rgba(18,12,6,0.42), 0 4px 12px rgba(18,12,6,0.22); }
+  .modal-veil{ position:fixed; top:0; left:0; right:0; bottom:0; z-index:75; background:rgba(19,14,9,0.3); display:flex; align-items:center; justify-content:center; padding:1.6rem; animation:veilIn var(--tr-voile-in); }
+  .modal-card{ width:100%; max-width:21rem; border:1px solid rgba(255,255,255,0.72); border-radius:22px; padding:1.45rem 1.25rem 1.15rem; text-align:center; animation:modalIn var(--tr-ouvre); transform:translateZ(0); -webkit-transform:translateZ(0); --rim-cast:0 24px 60px rgba(18,12,6,0.42), 0 4px 12px rgba(18,12,6,0.22); }
   .modal-title{ font-family:'Poppins',sans-serif; font-weight:700; font-size:1.15rem; color:var(--ink); }
   .modal-msg{ font-size:0.9rem; color:var(--ink-soft); line-height:1.5; margin-top:0.45rem; }
   .modal-input{ margin-top:0.95rem; text-align:center; }
@@ -816,8 +843,8 @@
   @keyframes modalInGl{ from{ transform:scale(0.9) translateY(16px); } to{ transform:scale(1) translateY(0); } }
   html.gl-native .modal-card, html.gl-xf .modal-card{ animation-name:modalInGl; }
   @keyframes modalIn{ from{ opacity:0; transform:scale(0.9) translateY(16px); } to{ opacity:1; transform:scale(1) translateY(0); } }
-  .modal-veil.closing{ animation:veilOut 0.22s ease forwards; }
-  .modal-veil.closing .modal-card{ animation:modalOut 0.22s cubic-bezier(0.4,0,1,1) forwards; }
+  .modal-veil.closing{ animation:veilOut var(--tr-voile-out) forwards; }
+  .modal-veil.closing .modal-card{ animation:modalOut var(--tr-ferme) forwards; }
   @keyframes modalOut{ to{ opacity:0; transform:scale(0.93) translateY(10px); } }
 
   /* ---------- Bannière adversaire parti + hôte ---------- */
@@ -1040,9 +1067,9 @@
      fondu d'opacité ne bouge jamais la surface → zéro clignotement,
      rendu parfaitement homogène d'un écran à l'autre. */
   @keyframes fadeSlide{ from{ opacity:0; transform:translate3d(0,14px,0); } to{ opacity:1; transform:translate3d(0,0,0); } }
-  .screen-exit{ animation:screenOut 0.32s cubic-bezier(0.4,0,0.6,1) forwards; }
+  .screen-exit{ animation:screenOut var(--tr-ferme) forwards; }
   @keyframes screenOut{ from{ opacity:1; transform:translate3d(0,0,0); } to{ opacity:0; transform:translate3d(0,-8px,0); } }
-  .reveal-in{ animation:fadeSlide 0.5s cubic-bezier(0.22,1,0.36,1) both; }
+  .reveal-in{ animation:fadeSlide var(--tr-ouvre) both; }
   .screen-enter .podium-bar{ transform-origin:bottom; animation:barUp 0.55s 0.12s cubic-bezier(0.32,0.72,0,1) backwards; }
   @keyframes barUp{ from{ transform:scaleY(0.15); opacity:0; } to{ transform:scaleY(1); opacity:1; } }
 
@@ -1293,7 +1320,7 @@
      recevoir le tap de fermeture en dehors du panneau. */
   .sheet-veil{ position:fixed; top:0; left:0; right:0; bottom:0; z-index:70;
     background:none;
-    display:flex; align-items:flex-end; justify-content:center; animation:veilIn 0.28s ease; }
+    display:flex; align-items:flex-end; justify-content:center; animation:veilIn var(--tr-voile-in); }
   /* touch-action:none — SANS ÇA, IMPOSSIBLE DE FERMER AU DOIGT SUR ANDROID.
      Chrome considérait le glissement vertical comme un défilement : dès le
      PREMIER pointermove il coupait le geste (pointercancel mesuré à chaque
@@ -1301,7 +1328,7 @@
      un panneau qui se fermait à la main sur iPhone et pas sur Android. On dit
      donc explicitement que le geste vertical appartient à la feuille. La liste
      des erreurs, elle, garde son défilement (règle juste en dessous). */
-  .settings-sheet{ width:100%; max-width:430px; border:1px solid rgba(255,255,255,0.72); border-bottom:none; border-radius:24px 24px 0 0; padding:0.8rem 1.25rem calc(env(safe-area-inset-bottom) * 0.55 + 0.4rem); animation:sheetIn 0.5s cubic-bezier(0.2,1.05,0.3,1); transform:translateZ(0); -webkit-transform:translateZ(0); touch-action:none; --rim-cast:0 -6px 34px rgba(18,12,6,0.3); }
+  .settings-sheet{ width:100%; max-width:430px; border:1px solid rgba(255,255,255,0.72); border-bottom:none; border-radius:24px 24px 0 0; padding:0.8rem 1.25rem calc(env(safe-area-inset-bottom) * 0.55 + 0.4rem); animation:sheetIn var(--tr-ouvre); transform:translateZ(0); -webkit-transform:translateZ(0); touch-action:none; --rim-cast:0 -6px 34px rgba(18,12,6,0.3); }
   .settings-sheet .rev-list{ touch-action:pan-y; }
   /* LA POIGNÉE FERME LA FEUILLE. Elle n'était qu'un trait décoratif ; c'est
      désormais la vraie sortie : on tire la feuille vers le bas, ou on tape la
@@ -1372,13 +1399,13 @@
   /* Bouton opaque à 100 % (dégradé plein) : rien à peindre, donc aucun « filtre »
      de verre à recaler pendant que la feuille glisse. */
   .sheet-done{ width:100%; margin-top:0.7rem; --glass-tint: rgb(236,60,26); --rim-edge:0 0 0 1px rgba(150,30,14,0.3); --rim-cast:0 6px 16px rgba(214,60,34,0.42); color:#fff; border:1px solid rgba(255,255,255,0.72); border-radius:14px; padding:0.95rem; font-weight:700; font-size:0.95rem; }
-  .sheet-veil.closing{ animation:veilOut 0.24s ease forwards; }
+  .sheet-veil.closing{ animation:veilOut var(--tr-voile-out) forwards; }
   /* Fermeture ordinaire : la feuille redescend depuis sa place. Fermeture À LA
      MAIN (classe « glisse ») : surtout pas — l'animation repartirait de la
      position de repos, donc la feuille remonterait d'un coup sous le doigt
      avant de redescendre. Là, c'est notre propre transition qui continue le
      geste depuis l'endroit exact où on l'a lâchée. */
-  .sheet-veil.closing .settings-sheet:not(.glisse){ animation:sheetOut 0.24s cubic-bezier(0.4,0,1,1) forwards !important; }
+  .sheet-veil.closing .settings-sheet:not(.glisse){ animation:sheetOut var(--tr-ferme) forwards !important; }
   @keyframes sheetIn{ from{ transform:translateY(100%); } to{ transform:translateY(0); } }
   @keyframes sheetOut{ to{ transform:translateY(105%); } }
   @keyframes veilOut{ to{ opacity:0; } }
@@ -3805,7 +3832,7 @@ function closeModal(){
   if(!v) return;
   v.id = "";
   v.classList.add("closing");
-  setTimeout(()=>{ if(v.parentNode) v.remove(); }, 230);
+  setTimeout(()=>{ if(v.parentNode) v.remove(); }, 250);
 }
 function showModal(opts){
   closeModal();
@@ -6115,7 +6142,6 @@ function renderModeSelect(){
   const el = document.createElement("div");
   el.className = "screen";
   el.innerHTML = `
-    ${fsHintHtml()}
     <div class="hero">
       <button class="icon-btn hero-profile" onclick="openProfile()" aria-label="Profil">${avatarHtml(profile.name||"?", profile.color, 2.4, profile.isCreator)}</button>
       <button class="icon-btn hero-settings" onclick="openSettings()" aria-label="Réglages"><span class="ico" style="width:1.22rem;height:1.22rem;">${ICONS.gear}</span></button>
@@ -7853,15 +7879,12 @@ function tryAutoFullscreen(e){
 if(IS_ANDROID && !isStandalone){
   document.addEventListener("pointerdown", tryAutoFullscreen, { capture:true, passive:true });
 }
-/* Pas de plein écran forcé sur le web : l'utilisateur passe par « écran d'accueil ». */
-function fsHintHtml(){
-  if(isStandalone || !IS_PHONE) return "";
-  let hidden = false;
-  try { hidden = localStorage.getItem("bt_fs_hint") === "1"; } catch(e){}
-  if(hidden) return "";
-  return `<div class="fs-hint" onclick="openFsGuide()" role="button"><span class="fsh-txt"><b>Jouer en vrai plein écran ?</b> Touche ici pour voir comment.</span><button class="fsh-close" onclick="event.stopPropagation();dismissFsHint()" aria-label="Fermer"><span class="ico" style="width:0.8rem;height:0.8rem;">${ICONS.close}</span></button></div>`;
-}
-function dismissFsHint(){ try { localStorage.setItem("bt_fs_hint","1"); } catch(e){} render(); }
+/* Pas de plein écran forcé sur le web : l'utilisateur passe par « écran d'accueil ».
+   Le bandeau qui expliquait ça EN HAUT DE L'ACCUEIL a été retiré : la même chose
+   est déjà dans les Réglages (« Plein écran total », bouton Guide), rangée avec
+   les autres options. Un bandeau posé au-dessus du titre pour redire ce qui est
+   déjà dans le menu, c'est du bruit — et il repoussait toute la page vers le
+   bas. Seul openFsGuide() reste, appelé depuis les Réglages. */
 function openFsGuide(){
   const msg = IS_IOS
     ? "Sur iPhone, Safari n'autorise pas le plein écran d'une page web. Pour jouer sans aucune barre : ouvre le menu Partager (le carré avec une flèche), choisis « Sur l'écran d'accueil », puis lance BibleTrivia depuis sa nouvelle icône — l'app s'ouvrira en plein écran complet."
