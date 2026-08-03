@@ -5394,23 +5394,26 @@ function teamIndexOf(el){
 /* Remet à jour ce qui dépend du RANG (couleur du jeton, initiale) et les états
    désactivés — en ne modifiant que des attributs. Aucun nœud n'est détruit,
    donc aucune couche de verre n'est recréée. */
-/* LES NOMS PAR DÉFAUT SUIVENT LA PLACE — c'est ce qui empêche à la fois la
-   liste de paraître mélangée et le fameux « Joueur 7 » d'exister. Avant, chaque
-   joueur gardait à vie le numéro reçu à sa création : on retirait le 2e, on en
-   rajoutait un, et le nouveau héritait d'un numéro libre au hasard (« Joueur 1 »
-   collé en dernier). Désormais, tout joueur qui n'a PAS de vrai nom est
-   renuméroté sur son rang à chaque changement : la carte se lit toujours
-   Joueur 1, 2, 3… dans l'ordre, et comme le rang ne dépasse jamais 6, aucun
-   numéro plus grand ne peut apparaître. Un nom écrit à la main n'est jamais
-   touché. */
+/* LE NUMÉRO, C'EST LA PLACE DANS LA LISTE. Rien d'autre.
+   Deux erreurs corrigées d'un coup. La première : chaque joueur gardait à vie le
+   numéro reçu à sa création — on retirait le 2e, on en rajoutait un, et le
+   nouveau héritait d'un numéro libre au hasard (« Joueur 1 » collé en dernier),
+   jusqu'à faire apparaître un « Joueur 7 » dans une carte qui n'a que six
+   places. La seconde : on numérotait ensuite les sans-nom ENTRE EUX, en sautant
+   ceux qui ont un vrai nom — donc quand on s'appelait Taylor et qu'on était le
+   premier de la liste, le suivant devenait « Joueur 1 »… alors que la première
+   place était déjà prise. Deux joueurs n°1 dans la même partie.
+   Ici le numéro est simplement le rang : 1er, 2e, 3e. Taylor en tête, le suivant
+   est le 2. Le rang ne dépasse jamais six, donc aucun numéro plus grand ne peut
+   exister, et deux joueurs ne peuvent pas porter le même. Un nom écrit à la main
+   garde sa place et n'est jamais touché. */
 function renumberDefaultTeams(){
   const parDefaut = /^Joueur\s+\d+$/;
-  let n = 0;
   for(let i = 0; i < state.teams.length; i++){
     const t = state.teams[i]; if(!t) continue;
     const nom = (t.name || "").trim();
-    if(nom && !parDefaut.test(nom)) continue;      // vrai nom : intouchable, et il ne prend PAS de numéro
-    const voulu = "Joueur " + (++n);
+    if(nom && !parDefaut.test(nom)) continue;      // vrai nom : intouchable
+    const voulu = "Joueur " + (i + 1);
     if(nom !== voulu) t.name = voulu;
   }
 }
@@ -5464,7 +5467,7 @@ function settleTeamCard(c){
 function addTeam(){
   if(state.teams.length >= 6) return;
   /* On pose un nom par défaut quelconque : renumberDefaultTeams lui donne
-     aussitôt son vrai numéro, celui qui suit les autres joueurs SANS NOM. */
+     aussitôt son vrai numéro, celui de sa place dans la liste. */
   state.teams.push({ name: "Joueur 1" });
   renumberDefaultTeams();
   saveTeams();
