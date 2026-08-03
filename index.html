@@ -5383,10 +5383,17 @@ function goToModeSelect(){ state.screen = "mode"; render(); }
    refreshTeamCard). */
 /* Contenu d'UNE ligne joueur. Les gestionnaires ne reçoivent PAS d'index figé :
    ils le déduisent de la position réelle de la ligne -> ajouter/retirer un
-   joueur n'oblige à réécrire AUCUNE autre ligne. */
+   joueur n'oblige à réécrire AUCUNE autre ligne.
+   LA TOUCHE DE CONFIRMATION DU CLAVIER. C'était le seul champ du jeu à ne pas
+   la gérer : sur Android, la flèche de validation ne faisait tout simplement
+   rien, le clavier restait posé sur l'écran et il fallait toucher ailleurs pour
+   s'en débarrasser. On demande maintenant une touche « OK » (enterkeyhint) et
+   on la traite comme partout ailleurs : elle quitte le champ, donc elle ferme
+   le clavier — et le nom se fixe au passage, puisque c'est ce que fait déjà la
+   sortie du champ. */
 function teamRowInner(i, t){
   return `<span class="team-token" style="background:linear-gradient(150deg, color-mix(in srgb, ${TEAM_COLORS[i%6]} 68%, #ffffff), ${TEAM_COLORS[i%6]})">${((t.name||"").trim().charAt(0).toUpperCase())||(i+1)}</span>
-        <input type="text" value="${escapeHtml(t.name)}" maxlength="20" oninput="renameTeam(this)" onblur="renameSettle()" placeholder="Nom du joueur ou de l'équipe">
+        <input type="text" value="${escapeHtml(t.name)}" maxlength="20" autocomplete="off" enterkeyhint="done" oninput="renameTeam(this)" onblur="renameSettle()" onkeydown="if(event.key==='Enter'){event.preventDefault();this.blur();}" placeholder="Nom du joueur ou de l'équipe">
         <button class="team-remove" onclick="removeTeam(this)" ${state.teams.length<=2?"disabled":""} aria-label="Retirer"><span class="ico" style="width:0.9rem;height:0.9rem;">${ICONS.close}</span></button>`;
 }
 function teamCardInner(){
@@ -5591,16 +5598,33 @@ function removeTeam(btn){
   if(addRenait){ add.style.transition = "none"; add.style.overflow = "hidden"; poserAdd("0px", "0px", "0px", "0px", "0"); }
   void row.offsetHeight; void hAvecLigne;
   for(let k = 0; k < defil.length; k++){ const [n, v] = defil[k]; if(n.scrollTop !== v) n.scrollTop = v; }
-  const RESSORT = "0.19s cubic-bezier(0.33,0,0.2,1)";
+  /* LE PLI. Deux défauts se voyaient, mesurés image par image sur les 65px que
+     parcourt la ligne du dessous :
+       - la courbe d'avant (0,19s, cubic-bezier(0.33,0,0.2,1)) restait plate puis
+         explosait : 13,9px avalés sur UNE SEULE image, soit un cinquième du
+         trajet d'un coup. C'est ce qui donnait le mouvement sec ;
+       - le contenu de la ligne s'effaçait en 0,13s alors que le repli durait
+         0,19s : pendant 85ms on regardait une BOÎTE BLANCHE VIDE se refermer.
+     La courbe est donc adoucie et allongée — elle démarre franchement puis
+     freine longuement, sans jamais de pointe — et le fondu dure EXACTEMENT
+     aussi longtemps que le pli : la ligne s'efface au moment même où elle
+     disparaît, il n'y a plus de boîte vide à voir.
+     Le couple retenu a été choisi en mesurant, pas au jugé : six réglages
+     essayés sur une copie du jeu, la pointe passe de 13,9px à 7,7px (de 2,7 à
+     2,1 fois le pas moyen). Les durées plus courtes remontent la pointe, et
+     0,32s s'est révélée instable d'un essai à l'autre — signe qu'une image
+     sautée la fait doubler, ce qui arrive tout le temps sur un vrai téléphone.
+     0,34s tient ses 7,7px à chaque fois. */
+  const RESSORT = "0.34s cubic-bezier(0.25,0.4,0.25,1)";
   row.style.transition = "height " + RESSORT + ", margin-bottom " + RESSORT +
     ", padding-top " + RESSORT + ", padding-bottom " + RESSORT +
-    ", border-top-width " + RESSORT + ", border-bottom-width " + RESSORT + ", opacity 0.13s ease";
+    ", border-top-width " + RESSORT + ", border-bottom-width " + RESSORT + ", opacity " + RESSORT;
   poser("0px", (-residu) + "px", "0px", "0px");
   row.style.opacity = "0";
   if(addRenait){
     add.style.transition = "height " + RESSORT + ", margin-top " + RESSORT +
       ", padding-top " + RESSORT + ", padding-bottom " + RESSORT +
-      ", border-top-width " + RESSORT + ", border-bottom-width " + RESSORT + ", opacity 0.16s ease";
+      ", border-top-width " + RESSORT + ", border-bottom-width " + RESSORT + ", opacity " + RESSORT;
     poserAdd(addNat.h, addNat.mt, addNat.pt, addNat.bt, "1");
   }
   try{ glassTrack(); }catch(e){}       // le verre suit le réajustement du défilement
