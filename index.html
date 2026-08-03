@@ -218,7 +218,13 @@
      d'une carte qui, elle, flottait.
      Les CHAMPS de saisie gardent volontairement l'ombre légère : un champ est
      creusé dans la page, il ne flotte pas au-dessus d'elle. */
-  .btn-review, .rules, .fact-card, .hero-verse-card, .tst-head{
+  .btn-review, .rules, .fact-card, .hero-verse-card, .tst-head,
+  /* Un champ posé SEUL sur le décor (nom du profil, pseudo, code de salon) est
+     lui aussi une surface qui flotte : sans l'ombre des cartes, il restait une
+     dalle blanche collée à la photo. Ceux qui vivent DANS quelque chose — la
+     ligne d'un joueur, une modale — gardent l'ombre légère : là, ils sont bien
+     creusés dans leur support. */
+  .text-input:not(.modal-input), .code-input{
     --rim-cast:0 10px 34px rgba(15,12,10,0.2), 0 2px 8px rgba(15,12,10,0.08);
   }
   .question-card .qtext, .hero-tag, .end-title, .online-hero-title, .online-hero-sub, .modal-title, .modal-msg{ text-wrap:balance; }
@@ -1604,9 +1610,17 @@
   .rev-item{
     background-color: var(--glass-tint);
   }
-  /* Zones de saisie : blanc franc, un cheveu plus clair que les boutons pour
-     rester lisibles à l'intérieur d'une ligne blanche. */
-  .text-input, .code-input, .team-row input{ --glass-tint: rgb(255,253,250); background:rgb(255,253,250); }
+  /* ZONES DE SAISIE — deux situations, deux blancs.
+     Dans une LIGNE BLANCHE (les joueurs), le champ doit rester un cheveu plus
+     clair que sa ligne, sinon on ne le distingue plus d'elle.
+     Posé SEUL SUR LE DÉCOR (nom du profil, pseudo en ligne, code de salon),
+     c'est l'inverse qui se produisait : à 255,253,250 le champ était si blanc
+     que la lèvre de lumière de son rebord — blanche elle aussi — devenait
+     invisible. Il PORTAIT bien le rebord complet, mais on n'en voyait rien : un
+     bloc blanc posé sur la photo. Il prend donc le crème commun à toutes les
+     surfaces blanches du jeu, sur lequel la lèvre se lit. */
+  .team-row input{ --glass-tint: rgb(255,253,250); background:rgb(255,253,250); }
+  .text-input, .code-input{ --glass-tint: rgb(252,248,241); background:rgb(252,248,241); }
   /* PAS de bloc « prefers-reduced-motion » ici, volontairement : le jeu doit
      être STRICTEMENT le même pour tout le monde, quels que soient les réglages
      du téléphone. Les animations (halo qui tourne, feuille qui glisse, montée
