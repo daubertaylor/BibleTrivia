@@ -155,13 +155,9 @@
      glissement vers le haut + ressort léger (même courbe que la feuille et les
      modales). Un seul « langage » de transition dans toute l'appli. */
   .screen-enter{ animation:screenIn var(--tr-ouvre) both; }
-  /* Pendant que le menu monte, il déborde forcément sous le bord bas — et un
-     conteneur qui défile compte ce débordement : mesuré, la page devenait
-     défilable de 869px de VIDE pendant 11 images sur 36. Un doigt posé à cet
-     instant tirait l'écran dans le néant avant qu'il ne revienne. On coupe donc
-     le défilement le temps de l'arrivée, ni plus ni moins : la classe disparaît
-     dès l'atterrissage, il n'y a aucun état à nettoyer à la main. */
-  #app:has(> .arrivee){ overflow:hidden; }
+  /* (Le verrouillage du défilement pendant l'arrivée d'un écran est fait en JS,
+     dans fitScroll() : cette fonction écrit un style EN LIGNE sur #app, qui
+     l'emporterait de toute façon sur une règle CSS.) */
 
   svg{ width:100%; height:100%; display:block; }
   ::selection{ background:rgba(241,80,47,0.22); }
@@ -5336,10 +5332,11 @@ function goToModeSelect(){ state.screen = "mode"; render(); }
    joueur n'oblige à réécrire AUCUNE autre ligne. */
 function teamRowInner(i, t){
   return `<span class="team-token" style="background:linear-gradient(150deg, color-mix(in srgb, ${TEAM_COLORS[i%6]} 68%, #ffffff), ${TEAM_COLORS[i%6]})">${((t.name||"").trim().charAt(0).toUpperCase())||(i+1)}</span>
-        <input type="text" value="${escapeHtml(t.name)}" maxlength="20" oninput="renameTeam(this)" placeholder="Nom du joueur ou de l'équipe">
+        <input type="text" value="${escapeHtml(t.name)}" maxlength="20" oninput="renameTeam(this)" onblur="renameSettle()" placeholder="Nom du joueur ou de l'équipe">
         <button class="team-remove" onclick="removeTeam(this)" ${state.teams.length<=2?"disabled":""} aria-label="Retirer"><span class="ico" style="width:0.9rem;height:0.9rem;">${ICONS.close}</span></button>`;
 }
 function teamCardInner(){
+  renumberDefaultTeams(); saveTeams();   // la liste s'affiche toujours numérotée dans l'ordre
   return `<h2>Joueurs ou équipes</h2>
     ${state.teams.map((t,i)=>`<div class="team-row">${teamRowInner(i,t)}</div>`).join("")}
     <button class="add-team" onclick="addTeam()" ${state.teams.length>=6?"disabled":""}><span class="ico">${ICONS.plusCircle}</span>Ajouter un joueur ou une équipe</button>`;
@@ -5370,11 +5367,12 @@ function teamIndexOf(el){
    touché. */
 function renumberDefaultTeams(){
   const parDefaut = /^Joueur\s+\d+$/;
+  let n = 0;
   for(let i = 0; i < state.teams.length; i++){
     const t = state.teams[i]; if(!t) continue;
     const nom = (t.name || "").trim();
-    if(nom && !parDefaut.test(nom)) continue;      // vrai nom : intouchable
-    const voulu = "Joueur " + (i + 1);
+    if(nom && !parDefaut.test(nom)) continue;      // vrai nom : intouchable, et il ne prend PAS de numéro
+    const voulu = "Joueur " + (++n);
     if(nom !== voulu) t.name = voulu;
   }
 }
@@ -5427,12 +5425,10 @@ function settleTeamCard(c){
 }
 function addTeam(){
   if(state.teams.length >= 6) return;
-  /* Nom par défaut = le NUMÉRO DE LA PLACE, tout simplement : le 4e joueur
-     s'appelle « Joueur 4 ». Plus aucune recherche de numéro libre — c'est
-     syncTeamRows() qui garde toute la liste numérotée dans l'ordre, y compris
-     après un retrait au milieu. Le rang étant plafonné à 6 juste au-dessus,
-     « Joueur 7 » ne peut pas exister. */
-  state.teams.push({ name: "Joueur " + (state.teams.length + 1) });
+  /* On pose un nom par défaut quelconque : renumberDefaultTeams lui donne
+     aussitôt son vrai numéro, celui qui suit les autres joueurs SANS NOM. */
+  state.teams.push({ name: "Joueur 1" });
+  renumberDefaultTeams();
   saveTeams();
   const c = document.getElementById("teamCard");
   const add = c ? c.querySelector(".add-team") : null;
@@ -5576,6 +5572,11 @@ function renameTeam(inp){
   const tok = inp.parentNode ? inp.parentNode.querySelector(".team-token") : null;
   if(tok) tok.textContent = (inp.value||"").trim().charAt(0).toUpperCase() || (i+1);
 }
+/* Dès qu'un joueur reçoit un VRAI nom, il ne prend plus de numéro : les autres
+   se resserrent derrière lui (Taylor, puis Joueur 1 à 5 — six joueurs, et la
+   numérotation s'arrête à 5). On le fait à la FIN de la saisie, pas pendant :
+   voir les champs voisins se renuméroter lettre après lettre serait pénible. */
+function renameSettle(){ syncTeamRows(); }
 function setLength(key){
   state.lengthKey = key;
   document.querySelectorAll('[data-group="len"]').forEach(c=>c.classList.toggle("active", c.dataset.k===key));
@@ -7021,7 +7022,7 @@ function render(){
        retire aussi de tout écran resté en place, pour qu'elle ne traîne jamais. */
     Array.prototype.forEach.call(app.children, (c)=>{ if(c && c.classList) c.classList.remove("arrivee"); });
     node.classList.add("screen-enter"); node.classList.add("arrivee");
-    setTimeout(()=>{ node.classList.remove("arrivee"); }, 540);
+    setTimeout(()=>{ node.classList.remove("arrivee"); fitScroll(); }, 540);
     Array.prototype.forEach.call(node.children, (c,i)=>{ if(c && c.style) c.style.setProperty("--i", i); });
   }
   const prevNode = !sameScreen ? Array.prototype.find.call(app.children, c=>c.classList && !c.classList.contains("screen-exit")) : null;
@@ -7085,6 +7086,15 @@ function fitScroll(){
   let fixedScreen = false;
   try{ fixedScreen = (state.screen === "mode"); }catch(e){}
   if(fixedScreen){ a.style.overflowY = "hidden"; return; }
+  /* PENDANT QU'UN ÉCRAN ARRIVE, ON NE DÉCIDE RIEN. Il monte depuis le bas :
+     tant qu'il n'est pas posé, il déborde sous le bord et la zone défilable est
+     gonflée de toute une hauteur d'écran (868px mesurés). Trancher à cet
+     instant, c'est répondre « oui, ça déborde, donc défilement » — et ouvrir un
+     vide sous le doigt, que l'écran ait besoin de défiler ou non. C'était le
+     mode Solo qui se laissait tirer vers le bas juste après son ouverture, puis
+     se remettait en place. On verrouille, et on redécide une fois posé (voir
+     l'appel à fitScroll dans render, à la fin de l'arrivée). */
+  if(a.querySelector(":scope > .arrivee")){ a.style.overflowY = "hidden"; return; }
   const overflows = a.scrollHeight > a.clientHeight + 2;
   a.style.overflowY = overflows ? "auto" : "hidden";
 }
