@@ -809,6 +809,16 @@
   .modal-card{ width:100%; max-width:21rem; border:1px solid rgba(255,255,255,0.72); border-radius:22px; padding:1.45rem 1.25rem 1.15rem; text-align:center; animation:modalIn var(--tr-ouvre); transform:translateZ(0); -webkit-transform:translateZ(0); --rim-cast:0 24px 60px rgba(18,12,6,0.42), 0 4px 12px rgba(18,12,6,0.22); }
   .modal-title{ font-family:'Poppins',sans-serif; font-weight:700; font-size:1.15rem; color:var(--ink); }
   .modal-msg{ font-size:0.9rem; color:var(--ink-soft); line-height:1.5; margin-top:0.45rem; }
+  /* GUIDE PLEIN ÉCRAN : les trois gestes reprennent, au pixel près, les lignes
+     des Réglages (.set-row / .set-ico / .set-txt) — même pastille colorée, même
+     titre, même sous-titre. On arrive de là, on retrouve la même matière ; il
+     n'y a rien de nouveau à apprendre à l'œil. Aligné à gauche : une consigne
+     se lit en colonne, pas centrée. */
+  .modal-card.guide{ max-width:23rem; text-align:left; }
+  .modal-card.guide .modal-title, .modal-card.guide .modal-msg{ text-align:center; }
+  .modal-card.guide .guide-steps{ margin:0.9rem 0 0.2rem; }
+  .modal-card.guide .set-row{ padding:0.72rem 0.1rem; }
+  .modal-card.guide .set-ico{ width:2.15rem; height:2.15rem; padding:0.46rem; }
   .modal-input{ margin-top:0.95rem; text-align:center; }
   .modal-err{ color:var(--error); font-size:0.82rem; font-weight:600; min-height:1.1rem; margin-top:0.4rem; }
   .modal-actions{ display:flex; gap:0.6rem; margin-top:0.7rem; }
@@ -3870,9 +3880,10 @@ function showModal(opts){
   veil.className = "modal-veil";
   veil.id = "modalVeil";
   veil.innerHTML = `
-    <div class="modal-card">
+    <div class="modal-card${opts.cardClass?" "+opts.cardClass:""}">
       <div class="modal-title">${escapeHtml(opts.title||"")}</div>
       ${opts.message?`<div class="modal-msg">${escapeHtml(opts.message)}</div>`:""}
+      ${opts.bodyHtml||""}
       ${opts.input?`<input class="text-input modal-input" id="modalInput" placeholder="${escapeHtml(opts.placeholder||"")}" maxlength="30" autocomplete="off">`:""}
       <div class="modal-err" id="modalErr"></div>
       <div class="modal-actions">
@@ -4750,17 +4761,60 @@ document.addEventListener("pointerdown", ()=>{ audioUnlocked = true; wakeAudio()
       for(let i = 0; i < bords.length; i++) if(bords[i].h < pli - 2 && bords[i].b > pli + 2) return true;
       return false;
     };
-    if(!coupe(cible)) return cible;
-    let best = null;
-    for(let i = 0; i < bords.length; i++){
-      const essais = [bords[i].b + 6 - H, bords[i].h - 6 - H];  // pli juste sous / juste au-dessus
-      for(let j = 0; j < 2; j++){
-        const c = essais[j];
-        if(c < mini || c > maxi || Math.abs(c - cible) > 46 || coupe(c)) continue;
-        if(best === null || Math.abs(c - cible) < Math.abs(best - cible)) best = c;
+    if(coupe(cible)){
+      let best = null;
+      for(let i = 0; i < bords.length; i++){
+        const essais = [bords[i].b + 6 - H, bords[i].h - 6 - H];  // pli juste sous / juste au-dessus
+        for(let j = 0; j < 2; j++){
+          const c = essais[j];
+          if(c < mini || c > maxi || Math.abs(c - cible) > 46 || coupe(c)) continue;
+          if(best === null || Math.abs(c - cible) < Math.abs(best - cible)) best = c;
+        }
       }
+      if(best !== null) cible = best;
     }
-    return best === null ? cible : best;
+    return sansLiseré(app, ar, cible, mini, maxi, coupe, bords);
+  }
+  /* PAS DE LISERÉ DE CARTE AU BORD BAS. Une grande carte ne tient pas toujours
+     en entier au-dessus du clavier — ce n'est pas grave, on comprend qu'elle
+     continue plus bas. Mais quand il n'en dépasse que quelques pixels — juste
+     le haut arrondi qui pointe — ça ne se lit pas comme « la suite », ça se lit
+     comme un défaut d'affichage (mesuré : 23px de la carte des options sur
+     l'écran Groupe à trois joueurs). Dans ce cas on en montre franchement, ou
+     rien du tout : jamais entre les deux. */
+  const LISERE_MINI = 72;
+  function sansLiseré(app, ar, cible, mini, maxi, coupe, bords){
+    const st = app.scrollTop, H = ar.height;
+    const cartes = [];
+    app.querySelectorAll(".card, .rules, .parcours-card, .daily-card, .solo-summary, .info-card").forEach(el=>{
+      const r = el.getBoundingClientRect();
+      if(r.height >= LISERE_MINI + 20) cartes.push(r.top - ar.top + st);
+    });
+    if(!cartes.length) return cible;
+    /* un liseré, c'est une carte dont on voit un cheveu au bord bas */
+    const liseré = (c)=>{
+      for(let i = 0; i < cartes.length; i++){
+        const vu = (c + H) - cartes[i];
+        if(vu > 0 && vu < LISERE_MINI) return true;
+      }
+      return false;
+    };
+    if(!liseré(cible)) return cible;
+    /* On cherche la position la PLUS PROCHE qui ne laisse ni liseré de carte ni
+       élément tranché. Les candidats : faire disparaître la carte, en montrer
+       franchement, et toutes les frontières nettes déjà repérées — car il faut
+       souvent tomber juste entre deux pastilles pour satisfaire les deux règles
+       à la fois. */
+    const essais = [];
+    for(let i = 0; i < cartes.length; i++){ essais.push(cartes[i] - H); essais.push(cartes[i] + LISERE_MINI - H); }
+    for(let i = 0; i < bords.length; i++){ essais.push(bords[i].b + 6 - H); essais.push(bords[i].h - 6 - H); }
+    let corr = null;
+    for(let i = 0; i < essais.length; i++){
+      const c = essais[i];
+      if(c < mini || c > maxi || liseré(c) || coupe(c)) continue;
+      if(corr === null || Math.abs(c - cible) < Math.abs(corr - cible)) corr = c;
+    }
+    return corr === null ? cible : corr;
   }
   /* Placement du champ actif : CALCUL ABSOLU, donc IDEMPOTENT. L'ancienne
      version raisonnait « en plus / en moins » à partir du défilement courant :
@@ -7958,11 +8012,32 @@ if(IS_ANDROID && !isStandalone){
    les autres options. Un bandeau posé au-dessus du titre pour redire ce qui est
    déjà dans le menu, c'est du bruit — et il repoussait toute la page vers le
    bas. Seul openFsGuide() reste, appelé depuis les Réglages. */
+/* LE GUIDE EN TROIS GESTES. C'était un pavé de texte : la seule page du jeu
+   qui ne ressemblait à rien d'autre. On reprend EXACTEMENT la langue des
+   Réglages — pastille colorée, titre, sous-titre — puisque c'est de là qu'on
+   arrive : trois lignes, trois gestes, dans l'ordre où on les fait. */
+const ICO_MENU_NAV = `<svg viewBox="0 0 24 24" fill="currentColor"><circle cx="12" cy="5" r="1.9"/><circle cx="12" cy="12" r="1.9"/><circle cx="12" cy="19" r="1.9"/></svg>`;
 function openFsGuide(){
-  const msg = IS_IOS
-    ? "Sur iPhone, Safari n'autorise pas le plein écran d'une page web. Pour jouer sans aucune barre : ouvre le menu Partager (le carré avec une flèche), choisis « Sur l'écran d'accueil », puis lance BibleTrivia depuis sa nouvelle icône — l'app s'ouvrira en plein écran complet."
-    : "Pour jouer sans aucune barre : ouvre le menu ⋮ du navigateur, choisis « Ajouter à l'écran d'accueil » (ou « Installer l'application »), puis lance BibleTrivia depuis sa nouvelle icône.";
-  showModal({ title:"Plein écran total", message:msg, okLabel:"Compris", hideCancel:true });
+  const etapes = IS_IOS ? [
+    { c:"fsx", i:ICONS.share,      t:"Ouvre le menu Partager",          s:"Le carré avec une flèche, en bas de Safari" },
+    { c:"scn", i:ICONS.plusCircle, t:"« Sur l'écran d'accueil »",       s:"Fais défiler la liste jusqu'à cette ligne" },
+    { c:"vol", i:ICONS.expand,     t:"Lance BibleTrivia depuis l'icône", s:"Elle s'ouvre en plein écran, sans aucune barre" },
+  ] : [
+    { c:"fsx", i:ICO_MENU_NAV,     t:"Ouvre le menu du navigateur",     s:"Les trois points, en haut à droite" },
+    { c:"scn", i:ICONS.plusCircle, t:"« Installer l'application »",     s:"Ou « Ajouter à l'écran d'accueil »" },
+    { c:"vol", i:ICONS.expand,     t:"Lance BibleTrivia depuis l'icône", s:"Elle s'ouvre en plein écran, sans aucune barre" },
+  ];
+  const corps = `<div class="guide-steps">${etapes.map(e=>`
+      <div class="set-row">
+        <span class="set-ico ${e.c}">${e.i}</span>
+        <span class="set-txt"><b>${escapeHtml(e.t)}</b><small>${escapeHtml(e.s)}</small></span>
+      </div>`).join("")}</div>`;
+  showModal({
+    title:"Plein écran total",
+    message: IS_IOS ? "Safari ne peut pas passer une page web en plein écran. En trois gestes, une seule fois, le jeu s'ouvre comme une vraie app."
+                    : "En trois gestes, une seule fois, le jeu s'ouvre comme une vraie app.",
+    bodyHtml: corps, cardClass:"guide", okLabel:"Compris", hideCancel:true
+  });
 }
 
 /* Correctif Safari iOS : quand une animation d'entrée se termine, on retire la
