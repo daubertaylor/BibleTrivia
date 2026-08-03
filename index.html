@@ -4842,12 +4842,22 @@ document.addEventListener("pointerdown", ()=>{ audioUnlocked = true; wakeAudio()
       return false;
     };
     if(coupe(cible)){
+      /* LA FENÊTRE DE RECHERCHE DOIT POUVOIR ENJAMBER CE QU'ELLE CORRIGE.
+         Elle était figée à 46px : pour dégager une ligne joueur, haute de 66px,
+         il faut déplacer le pli de bien plus que ça — les deux issues (passer
+         au-dessus, passer au-dessous) étaient donc toutes deux hors d'atteinte
+         et on laissait la ligne tranchée en deux. On calibre maintenant la
+         fenêtre sur l'élément le plus haut réellement présent : jamais moins
+         qu'avant, et juste assez pour franchir le plus grand obstacle. */
+      let plusHaut = 0;
+      for(let i = 0; i < bords.length; i++) plusHaut = Math.max(plusHaut, bords[i].b - bords[i].h);
+      const fenetre = Math.max(46, plusHaut + 12);
       let best = null;
       for(let i = 0; i < bords.length; i++){
         const essais = [bords[i].b + 6 - H, bords[i].h - 6 - H];  // pli juste sous / juste au-dessus
         for(let j = 0; j < 2; j++){
           const c = essais[j];
-          if(c < mini || c > maxi || Math.abs(c - cible) > 46 || coupe(c)) continue;
+          if(c < mini || c > maxi || Math.abs(c - cible) > fenetre || coupe(c)) continue;
           if(best === null || Math.abs(c - cible) < Math.abs(best - cible)) best = c;
         }
       }
@@ -4927,7 +4937,20 @@ document.addEventListener("pointerdown", ()=>{ audioUnlocked = true; wakeAudio()
     /* Ligne HAUTE sûre = juste sous l'encoche / la barre d'état. */
     let pad = 0;
     try{ pad = parseFloat(getComputedStyle(app).paddingTop) || 0; }catch(e){}
-    const marge = Math.max(14, Math.min(52, H * 0.10));           // respiration au-dessus du clavier
+    /* RESPIRATION AU-DESSUS DU CLAVIER. Elle valait 10% de la hauteur visible,
+       plafonnée à 52px — soit 48px sur un iPhone, alors qu'iOS lui-même en
+       laisse une dizaine. Et elle avait un effet de bord qu'on ne soupçonnait
+       pas : plus elle est grande, plus le bord du clavier tombe BAS dans le
+       contenu, donc plus il a de chances de trancher quelque chose — et c'est
+       alors la correction anti-tranchage qui fait remonter le champ. Sur le
+       Profil, les 48px posaient le bord pile au milieu de la rangée de
+       pastilles de couleur, ce qui obligeait à remonter de 33px de plus.
+       Ramenée à 28px, le bord tombe JUSTE AU-DESSUS des pastilles : il n'y a
+       plus rien à sauver, donc plus rien à corriger. Mesuré : le champ du
+       Profil ne monte plus que de 16px au lieu de 69, et rien n'est coupé
+       nulle part. En descendant encore, le champ commence à coller au
+       clavier pour un gain devenu marginal. */
+    const marge = Math.max(12, Math.min(28, H * 0.06));
     const champ = enDoc(el);
     /* Fourchette des défilements qui gardent le champ ENTIÈREMENT lisible :
        au-dessus du clavier (mini) et sous la barre d'état (maxi). */
