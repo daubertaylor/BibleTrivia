@@ -1348,7 +1348,15 @@
      un panneau qui se fermait à la main sur iPhone et pas sur Android. On dit
      donc explicitement que le geste vertical appartient à la feuille. La liste
      des erreurs, elle, garde son défilement (règle juste en dessous). */
-  .settings-sheet{ width:100%; max-width:430px; border:1px solid rgba(255,255,255,0.72); border-bottom:none; border-radius:24px 24px 0 0; padding:0.8rem 1.25rem calc(env(safe-area-inset-bottom) * 0.55 + 0.4rem); animation:sheetIn var(--tr-ouvre); transform:translateZ(0); -webkit-transform:translateZ(0); touch-action:none; --rim-cast:0 -6px 34px rgba(18,12,6,0.3); }
+  /* JUPE DE 220px SOUS LE BORD DE L'ÉCRAN. En tirant le panneau vers le HAUT,
+     il se décollait du bas et laissait voir ce qu'il y a dessous : le bas de
+     l'accueil, puis une bande noire. La feuille se prolonge donc de 220px sous
+     le bord — même matière, même verre, simplement hors champ. On peut tirer
+     autant qu'on veut : on ne découvre que la feuille elle-même.
+     Le prolongement est absorbé par une marge négative de la même valeur : le
+     contenu ne bouge pas d'un pixel, et l'animation d'entrée le déduit (voir
+     sheetIn) pour partir EXACTEMENT d'où elle partait avant. */
+  .settings-sheet{ width:100%; max-width:430px; border:1px solid rgba(255,255,255,0.72); border-bottom:none; border-radius:24px 24px 0 0; padding:0.8rem 1.25rem calc(env(safe-area-inset-bottom) * 0.55 + 0.4rem + 220px); margin-bottom:-220px; animation:sheetIn var(--tr-ouvre); transform:translateZ(0); -webkit-transform:translateZ(0); touch-action:none; --rim-cast:0 -6px 34px rgba(18,12,6,0.3); }
   .settings-sheet .rev-list{ touch-action:pan-y; }
   /* LA POIGNÉE FERME LA FEUILLE. Elle n'était qu'un trait décoratif ; c'est
      désormais la vraie sortie : on tire la feuille vers le bas, ou on tape la
@@ -1426,8 +1434,10 @@
      avant de redescendre. Là, c'est notre propre transition qui continue le
      geste depuis l'endroit exact où on l'a lâchée. */
   .sheet-veil.closing .settings-sheet:not(.glisse){ animation:sheetOut var(--tr-ferme) forwards !important; }
-  @keyframes sheetIn{ from{ transform:translateY(100%); } to{ transform:translateY(0); } }
-  @keyframes sheetOut{ to{ transform:translateY(105%); } }
+  /* « 100% » compte désormais la jupe : on la retranche pour que la feuille
+     parte du bord bas de l'écran, comme avant (650px de course mesurés). */
+  @keyframes sheetIn{ from{ transform:translateY(calc(100% - 220px)); } to{ transform:translateY(0); } }
+  @keyframes sheetOut{ to{ transform:translateY(calc(100% - 190px)); } }
   @keyframes veilOut{ to{ opacity:0; } }
 
 
@@ -4508,7 +4518,7 @@ function attachSheetDrag(feuille, fermer){
   feuille.addEventListener("pointermove", (e)=>{
     if(!actif) return;
     dy = e.clientY - y0;
-    if(dy < 0) dy = dy * 0.22;                 // vers le haut : ça résiste
+    if(dy < 0) dy = Math.max(-140, dy * 0.22); // vers le haut : ça résiste, et jamais au-delà de la jupe
     feuille.style.transform = "translateY(" + dy + "px)";
     suivre(1200);
   }, { passive:true });
