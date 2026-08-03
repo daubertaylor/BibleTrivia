@@ -180,15 +180,21 @@
      Désormais la page ne bouge PAS d'un pixel : le clavier la recouvre, comme
      une feuille qui monte.
      COMMENT. #app est une colonne flex de hauteur fixe et l'écran la remplit
-     (flex:1) : toucher à sa hauteur utile, ne serait-ce que par une marge
-     intérieure, redistribue TOUT — mesuré, 32 éléments déplacés rien que sur
-     le Profil. On fige donc l'écran à la hauteur qu'il avait AVANT (--scrh,
-     relevée en JS juste avant l'ouverture) et il cesse d'être élastique : sa
-     mise en page intérieure est gelée, au pixel près. La place nécessaire pour
-     remonter le champ au-dessus du clavier est ajoutée SOUS lui, en marge
-     basse — une marge ne déplace rien de ce qui la précède, elle ne fait
-     qu'allonger la course de défilement. */
-  html.kb #app > .screen{ flex:0 0 auto; height:var(--scrh, auto); margin-bottom:var(--kbh, 0px); }
+     (flex:1) : toucher à la hauteur ou à la marge de QUOI QUE CE SOIT dans
+     cette colonne redistribue TOUT — mesuré, 32 éléments déplacés rien que sur
+     le Profil. On ne touche donc à AUCUNE boîte réelle. On pose une simple cale
+     HORS FLUX (position absolue) sous le contenu : elle n'est ni un élément
+     flex, ni un voisin de personne, elle ne fait qu'allonger la course de
+     défilement, juste ce qu'il faut pour remonter le champ au-dessus du
+     clavier. Rien au-dessus d'elle ne bouge, et surtout : aucune boîte
+     ancêtre du champ actif ne change pendant que le clavier monte.
+     OÙ EXACTEMENT. Un pourcentage vertical en absolu se compte sur la hauteur
+     VISIBLE, pas sur celle du contenu : sur un écran qui défile déjà (6
+     joueurs), « top:100% » retombait DANS le contenu et n'allongeait rien du
+     tout — mesuré, +0px au lieu de +398. On décale donc la cale du défilement
+     déjà disponible (--dep, relevé en JS avant qu'elle existe) : la course
+     gagne toujours exactement la hauteur du clavier, écran court ou long. */
+  html.kb #app::after{ content:""; position:absolute; top:calc(100% + var(--dep, 0px)); left:0; width:1px; height:var(--kbh, 0px); pointer-events:none; }
   /* Une modale à champ (le code Créateur) est CENTRÉE dans la fenêtre — donc
      centrée derrière le clavier dès qu'il monte : le champ frôlait le bord
      (9px d'air mesurés) et le bouton « Valider » finissait 100px SOUS le
@@ -4742,12 +4748,12 @@ window.addEventListener("focus", wakeAudio);
    premier — et ce même geste ranime l'audio si un appel l'avait interrompu. */
 document.addEventListener("pointerdown", ()=>{ audioUnlocked = true; wakeAudio(); maybeStartMusic(); }, { capture:true, passive:true });
 
-/* ===================== CLAVIER : #app suit la zone visible =====================
-   Sans ça, à l'ouverture du clavier (iOS surtout), la hauteur de mise en page ne
-   change pas : la colonne flex garde sa taille pleine et le bouton du bas se
-   retrouve écrasé/chevauché par le clavier. On mesure la zone VRAIMENT visible
-   (visualViewport) et on y ajuste #app -> le clavier arrive proprement, tout
-   reste lisible et cliquable au-dessus. */
+/* ===================== CLAVIER : il se pose PAR-DESSUS la page =====================
+   La page garde sa mise en page, au pixel près : on ne redimensionne rien, on ne
+   déplace rien. Le clavier la recouvre, et on se contente de FAIRE DÉFILER pour
+   amener le champ actif juste au-dessus de lui — comme on ferait avec le doigt.
+   On mesure la zone vraiment visible (visualViewport) pour savoir où s'arrête
+   l'œil ; tout le reste n'est que du défilement. */
 (function keyboardFit(){
   const vv = window.visualViewport;
   if(!vv) return;
@@ -4918,14 +4924,16 @@ document.addEventListener("pointerdown", ()=>{ audioUnlocked = true; wakeAudio()
     }
     const hidden = restH - vv.height; // hauteur réellement masquée par le clavier
     if(hidden > 90){
-      /* On relève la hauteur de l'écran AVANT de le figer : c'est cette
-         hauteur-là, celle d'avant le clavier, qu'il gardera tout du long. */
+      /* Défilement DÉJÀ possible, relevé avant que la cale du clavier existe :
+         c'est là qu'elle doit commencer, sinon elle retombe dans le contenu et
+         n'allonge rien (voir le commentaire de html.kb #app::after). Une seule
+         mesure, à l'entrée : la relire ensuite compterait la cale elle-même et
+         la course s'allongerait sans fin. On ne LIT que — aucune boîte n'est
+         modifiée pendant que le clavier monte. */
       if(!de.classList.contains("kb")){
         try{
-          const scr = document.querySelector("#app > .screen:not(.screen-exit)");
-          /* au sous-pixel près : arrondir la hauteur figée décalait la colonne
-             d'un pixel (les ressorts flex absorbaient la demi-unité perdue). */
-          if(scr) de.style.setProperty("--scrh", scr.getBoundingClientRect().height.toFixed(3) + "px");
+          const a = glassAppEl;
+          if(a) de.style.setProperty("--dep", Math.max(0, a.scrollHeight - a.clientHeight) + "px");
         }catch(e){}
       }
       de.style.setProperty("--vvh", Math.round(vv.height) + "px");
