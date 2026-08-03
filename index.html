@@ -172,11 +172,23 @@
   html.js-scroll #app{ touch-action:none; overflow:hidden; overflow-anchor:none; }
   html.is-fs #app{ padding-top:max(calc(env(safe-area-inset-top) + 0.35rem), 3.4rem); padding-bottom:max(calc(env(safe-area-inset-bottom) + 0.2rem), 0.7rem); }
   html.is-standalone #app{ padding-top:max(calc(env(safe-area-inset-top) + 0.4rem), 0.7rem); padding-bottom:max(calc(env(safe-area-inset-bottom) + 0.35rem), 0.8rem); }
-  /* CLAVIER : quand il s'ouvre, on réduit #app à la zone RÉELLEMENT visible
-     (hauteur du visualViewport, posée en JS) -> la colonne flex se recompose
-     proprement dans l'espace restant, le bouton du bas se place juste au-dessus
-     du clavier au lieu d'être écrasé/chevauché. */
-  html.kb #app{ height:var(--vvh, 100%); padding-bottom:0.4rem; }
+  /* LE CLAVIER SE POSE PAR-DESSUS. IL NE REFAIT PAS LA PAGE.
+     Avant, on rétrécissait #app à la hauteur restante : toute la colonne se
+     recomposait dans un espace deux fois plus petit — les cartes se
+     resserraient, les boutons changeaient de place, le contenu se réorganisait
+     sous les yeux. C'est ça qui « cassait l'affichage » à chaque ouverture.
+     Désormais la page ne bouge PAS d'un pixel : le clavier la recouvre, comme
+     une feuille qui monte.
+     COMMENT. #app est une colonne flex de hauteur fixe et l'écran la remplit
+     (flex:1) : toucher à sa hauteur utile, ne serait-ce que par une marge
+     intérieure, redistribue TOUT — mesuré, 32 éléments déplacés rien que sur
+     le Profil. On fige donc l'écran à la hauteur qu'il avait AVANT (--scrh,
+     relevée en JS juste avant l'ouverture) et il cesse d'être élastique : sa
+     mise en page intérieure est gelée, au pixel près. La place nécessaire pour
+     remonter le champ au-dessus du clavier est ajoutée SOUS lui, en marge
+     basse — une marge ne déplace rien de ce qui la précède, elle ne fait
+     qu'allonger la course de défilement. */
+  html.kb #app > .screen{ flex:0 0 auto; height:var(--scrh, auto); margin-bottom:var(--kbh, 0px); }
   /* Une modale à champ (le code Créateur) est CENTRÉE dans la fenêtre — donc
      centrée derrière le clavier dès qu'il monte : le champ frôlait le bord
      (9px d'air mesurés) et le bouton « Valider » finissait 100px SOUS le
@@ -4779,8 +4791,8 @@ document.addEventListener("pointerdown", ()=>{ audioUnlocked = true; wakeAudio()
      fourchette où le champ actif reste lisible, et on ne bouge jamais de plus
      d'une hauteur de ligne : rien ne « saute ». */
   const INSECABLES = ".team-row, .add-team, .len-chip, .bk, .rev-item, .scn-thumb, .opt-row, .tst-head, button, .text-input";
-  function pliPropre(app, ar, cible, mini, maxi){
-    const st = app.scrollTop, H = ar.height;
+  function pliPropre(app, ar, H, cible, mini, maxi){
+    const st = app.scrollTop;
     const bords = [];
     app.querySelectorAll(INSECABLES).forEach(el=>{
       const r = el.getBoundingClientRect();
@@ -4805,7 +4817,7 @@ document.addEventListener("pointerdown", ()=>{ audioUnlocked = true; wakeAudio()
       }
       if(best !== null) cible = best;
     }
-    return sansLiseré(app, ar, cible, mini, maxi, coupe, bords);
+    return sansLiseré(app, ar, H, cible, mini, maxi, coupe, bords);
   }
   /* PAS DE LISERÉ DE CARTE AU BORD BAS. Une grande carte ne tient pas toujours
      en entier au-dessus du clavier — ce n'est pas grave, on comprend qu'elle
@@ -4815,8 +4827,8 @@ document.addEventListener("pointerdown", ()=>{ audioUnlocked = true; wakeAudio()
      l'écran Groupe à trois joueurs). Dans ce cas on en montre franchement, ou
      rien du tout : jamais entre les deux. */
   const LISERE_MINI = 72;
-  function sansLiseré(app, ar, cible, mini, maxi, coupe, bords){
-    const st = app.scrollTop, H = ar.height;
+  function sansLiseré(app, ar, H, cible, mini, maxi, coupe, bords){
+    const st = app.scrollTop;
     const cartes = [];
     app.querySelectorAll(".card, .rules, .parcours-card, .daily-card, .solo-summary, .info-card").forEach(el=>{
       const r = el.getBoundingClientRect();
@@ -4869,23 +4881,30 @@ document.addEventListener("pointerdown", ()=>{ audioUnlocked = true; wakeAudio()
     const st = app.scrollTop;
     const max = Math.max(0, app.scrollHeight - app.clientHeight);
     const enDoc = (n)=>{ const r = n.getBoundingClientRect(); return { haut: r.top - ar.top + st, bas: r.bottom - ar.top + st }; };
+    /* LE PLI, C'EST LE HAUT DU CLAVIER — pas le bas de #app. Depuis que le
+       clavier se pose PAR-DESSUS sans redimensionner la page, #app garde toute
+       sa hauteur : son bord bas est caché derrière le clavier. La zone où l'œil
+       voit quelque chose s'arrête donc à la hauteur du viewport visible. */
+    let pli = ar.bottom;
+    try{ if(de.classList.contains("kb")) pli = Math.min(pli, (vv.offsetTop || 0) + vv.height); }catch(e){}
+    const H = Math.max(80, pli - ar.top);                         // hauteur RÉELLEMENT visible
     /* Ligne HAUTE sûre = juste sous l'encoche / la barre d'état. */
     let pad = 0;
     try{ pad = parseFloat(getComputedStyle(app).paddingTop) || 0; }catch(e){}
-    const marge = Math.max(14, Math.min(52, ar.height * 0.10));   // respiration au-dessus du clavier
+    const marge = Math.max(14, Math.min(52, H * 0.10));           // respiration au-dessus du clavier
     const champ = enDoc(el);
     /* Fourchette des défilements qui gardent le champ ENTIÈREMENT lisible :
        au-dessus du clavier (mini) et sous la barre d'état (maxi). */
-    const mini = Math.max(0, Math.min(max, champ.bas + marge - ar.height));
+    const mini = Math.max(0, Math.min(max, champ.bas + marge - H));
     const maxi = Math.max(mini, Math.min(max, champ.haut - pad));
     /* Où viser ? Si descendre tout en bas laisse le champ lisible, on descend :
        plus RIEN n'est coupé (écrans courts, Profil, code de salon). Sinon on
        pose le BAS DE LA CARTE du champ sur le pli — la carte se termine juste
        au-dessus du clavier, proprement, au lieu d'être tranchée. */
     const bloc = (el.closest && el.closest(".card, .modal-card, .settings-sheet, .rules")) || el;
-    let cible = (max <= maxi) ? max : Math.min(max, enDoc(bloc).bas + 10 - ar.height);
+    let cible = (max <= maxi) ? max : Math.min(max, enDoc(bloc).bas + 10 - H);
     cible = Math.max(mini, Math.min(maxi, cible));
-    cible = pliPropre(app, ar, cible, mini, maxi);
+    cible = pliPropre(app, ar, H, cible, mini, maxi);
     if(Math.abs(cible - st) > 1) app.scrollTop = cible;
     if(window.scrollY){ try{ window.scrollTo(0, 0); }catch(e){} } // le document ne bouge jamais
     try{ glassRelayout(); queueGlassSync(); }catch(e){}           // verre recalé sur la nouvelle position
@@ -4899,7 +4918,18 @@ document.addEventListener("pointerdown", ()=>{ audioUnlocked = true; wakeAudio()
     }
     const hidden = restH - vv.height; // hauteur réellement masquée par le clavier
     if(hidden > 90){
+      /* On relève la hauteur de l'écran AVANT de le figer : c'est cette
+         hauteur-là, celle d'avant le clavier, qu'il gardera tout du long. */
+      if(!de.classList.contains("kb")){
+        try{
+          const scr = document.querySelector("#app > .screen:not(.screen-exit)");
+          /* au sous-pixel près : arrondir la hauteur figée décalait la colonne
+             d'un pixel (les ressorts flex absorbaient la demi-unité perdue). */
+          if(scr) de.style.setProperty("--scrh", scr.getBoundingClientRect().height.toFixed(3) + "px");
+        }catch(e){}
+      }
       de.style.setProperty("--vvh", Math.round(vv.height) + "px");
+      de.style.setProperty("--kbh", Math.round(hidden) + "px");  // de quoi remonter le champ
       de.classList.add("kb");
       /* iOS fait parfois défiler le DOCUMENT lui-même sous le clavier -> #app
          (borné à --vvh) se retrouvait décalé vers le haut, coupé n'importe
