@@ -1071,6 +1071,12 @@
        background-image:linear-gradient(var(--glass-tint, rgba(255,253,247,0.58)), var(--glass-tint, rgba(255,253,247,0.58))), var(--blur-url);
        will-change:transform; transform:translate3d(0,0,0); backface-visibility:hidden; -webkit-backface-visibility:hidden; }
   html.gl-xf .has-gs{ background-image:none; }
+  /* Exception : « Guide ». La règle ci-dessus efface le fond des surfaces de
+     verre, puisque c'est la couche .gs qui peint. Mais ce galet-là est OPAQUE —
+     son dégradé N'EST PAS du verre, c'est sa matière, la même que les pastilles
+     d'icône juste en face. On le lui rend donc explicitement, sur les deux
+     moteurs. */
+  html.gl-xf .set-go.has-gs, html.gl-native .set-go.has-gs{ background-image:linear-gradient(150deg, #F44E2C, #DE3616); }
   html.gl-xf .glass-refl{ display:none; }
   .hero-profile .gs{ display:none; }
   /* Le bouton avatar est transparent et déborde (badge C) : sans découpe, sa
@@ -1415,7 +1421,14 @@
   .mini-toast{ position:fixed; left:50%; bottom:calc(env(safe-area-inset-bottom) + 2.2rem); transform:translateX(-50%) translateY(8px); background:rgba(30,22,14,0.92); color:#fff; font-family:'Poppins',sans-serif; font-weight:600; font-size:0.82rem; padding:0.55rem 1.05rem; border-radius:99px; z-index:600; opacity:0; transition:opacity 0.25s ease, transform 0.25s ease; pointer-events:none; }
   .mini-toast.show{ opacity:1; transform:translateX(-50%) translateY(0); }
   .scn-thumb.sel::after{ content:""; position:absolute; top:0.28rem; right:0.28rem; width:0.95rem; height:0.95rem; border-radius:50%; background-color:#F2C94C; background-image:url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='white' stroke-width='4.5' stroke-linecap='round' stroke-linejoin='round'><path d='M5 13l4 4 10-10'/></svg>"); background-size:68%; background-position:center; background-repeat:no-repeat; box-shadow:0 1px 4px rgba(0,0,0,0.4); }
-  .set-go{ border:1px solid rgba(255,255,255,0.72); border-radius:99px; padding:0.48rem 0.95rem; font-weight:700; font-size:0.8rem; color:#fff; --glass-tint: rgb(236,60,26); --rim-edge:0 0 0 1px rgba(150,30,14,0.3); --rim-cast:0 6px 16px rgba(214,60,34,0.42); flex-shrink:0; }
+  /* « Guide » était la SEULE commande de la feuille peinte à plat : les
+     pastilles d'icône ont leur dégradé (linear-gradient 150deg) et les
+     interrupteurs aussi, lui seul restait un aplat de corail. Posé juste en
+     face de la pastille bleue de sa propre ligne, il paraissait donc terne et
+     collé. Il prend exactement la matière de la pastille corail des Réglages —
+     même dégradé, même lèvre de lumière en haut, même halo coloré — et devient
+     un galet du même métal que le reste de la feuille. */
+  .set-go{ border:1px solid rgba(255,255,255,0.72); border-radius:99px; padding:0.48rem 0.95rem; font-weight:700; font-size:0.8rem; color:#fff; --glass-tint: rgb(236,60,26); background-image:linear-gradient(150deg, #F44E2C, #DE3616); --rim-edge:0 0 0 1px rgba(150,40,20,0.3); --rim-cast:0 5px 14px rgba(214,71,44,0.44); text-shadow:0 1px 2px rgba(120,26,10,0.32); flex-shrink:0; }
   .set-txt{ flex:1; display:flex; flex-direction:column; gap:0.12rem; min-width:0; }
   .set-txt b{ font-size:0.93rem; color:var(--ink); }
   .set-txt small{ font-size:0.82rem; color:var(--ink-soft); }
