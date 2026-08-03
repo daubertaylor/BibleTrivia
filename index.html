@@ -426,7 +426,15 @@
   .option-btn.incorrect{ --glass-tint: rgb(255,220,214); border-color:var(--error); --rim-cast:0 3px 14px rgba(226,75,55,0.26); }
   .option-btn.incorrect .letter{ background:var(--error); color:#fff; }
   .option-btn.incorrect .opt-icon{ color:var(--error); filter:drop-shadow(0 1px 3px rgba(226,75,55,0.5)); }
-  .option-btn.dim{ --glass-tint: rgb(252,248,241); }
+  /* UNE FOIS RÉPONDU, LE RESTE RECULE. Avant, seul le TEXTE des réponses non
+     retenues pâlissait : leur carte gardait le même blanc crème que la question,
+     donc elles pesaient toujours autant à l'œil que la bonne et la mauvaise
+     réponse. On teinte maintenant la carte elle-même d'un gris chaud, et on lui
+     retire son élévation : elle se pose à plat, en retrait, pendant que le vert
+     et le rouge gardent leur relief. Elle reste parfaitement lisible — on peut
+     toujours relire les propositions — elle ne réclame simplement plus le
+     regard. */
+  .option-btn.dim{ --glass-tint: rgb(233,227,217); --rim-cast:0 1px 4px rgba(15,12,10,0.07); }
   .option-btn.dim .opt-text, .option-btn.dim .letter{ opacity:0.45; }
 
   .fact-card{ display:flex; gap:0.7rem; align-items:flex-start; background:rgba(255,242,214,0.62); backdrop-filter:blur(14px) saturate(180%); -webkit-backdrop-filter:blur(14px) saturate(180%); border:1px solid rgba(239,173,38,0.55); border-left:3px solid var(--gold); border-radius:13px; padding:0.75rem 0.9rem 0.75rem 0.85rem; margin-bottom:1rem; }
@@ -1557,8 +1565,14 @@
      erreurs » (le bas de l'écran garde son rythme), mais la pastille corail du
      bouton Partager des réglages. La pastille fait 2rem là où l'icône faisait
      1,5rem : on rend les 8px à la marge intérieure, la hauteur du bouton ne
-     bouge donc pas d'un pixel. */
-  .share-result{ margin:0.65rem 0 0; padding:0.6rem; gap:0.6rem; }
+     bouge donc pas d'un pixel.
+     ET IL FAIT LA MÊME TAILLE QUE LUI. En pleine largeur, il pesait plus lourd
+     que « Rejouer » — carte la plus large de l'écran, plus une pastille corail
+     — alors que Rejouer est l'action principale. La hiérarchie était à
+     l'envers. Réduit à sa largeur utile et centré, il ferme le bloc sans lui
+     disputer la vedette, et il devient le jumeau exact du bouton des réglages. */
+  .share-result{ width:fit-content; max-width:100%; margin:0.65rem auto 0; padding:0.6rem 0.7rem 0.6rem 0.6rem; gap:0.6rem; }
+  .share-result .share-lbl{ padding-right:0.35rem; }
 
   /* ------------------------------------------------------------------
      LES DEUX SEULS ENDROITS QUI DÉCIDENT DU REMPLISSAGE D'UNE SURFACE :
@@ -4919,12 +4933,20 @@ document.addEventListener("pointerdown", ()=>{ audioUnlocked = true; wakeAudio()
        au-dessus du clavier (mini) et sous la barre d'état (maxi). */
     const mini = Math.max(0, Math.min(max, champ.bas + marge - H));
     const maxi = Math.max(mini, Math.min(max, champ.haut - pad));
-    /* Où viser ? Si descendre tout en bas laisse le champ lisible, on descend :
-       plus RIEN n'est coupé (écrans courts, Profil, code de salon). Sinon on
-       pose le BAS DE LA CARTE du champ sur le pli — la carte se termine juste
-       au-dessus du clavier, proprement, au lieu d'être tranchée. */
-    const bloc = (el.closest && el.closest(".card, .modal-card, .settings-sheet, .rules")) || el;
-    let cible = (max <= maxi) ? max : Math.min(max, enDoc(bloc).bas + 10 - H);
+    /* ON NE BOUGE QUE DU STRICT NÉCESSAIRE. La règle d'avant disait : « si
+       descendre tout en bas laisse le champ lisible, on descend ». Sur un écran
+       court c'était catastrophique — le défilement disponible vaut désormais
+       toute la hauteur du clavier, alors « tout en bas » propulsait le champ
+       sous la barre d'état : mesuré, 393px de montée sur l'écran du pseudo pour
+       finir avec 350px de vide sous le champ, et 69px sur le Profil là où 36
+       suffisaient. Une barre d'écriture qui bondit d'un demi-écran, ça se voit.
+       On vise donc « mini » : le champ posé juste au-dessus du clavier, avec sa
+       respiration, et rien de plus. Si le champ est DÉJÀ bien placé, mini vaut
+       zéro et la page ne bouge pas du tout — le clavier se contente de couvrir
+       le bas, ce qu'on lui demande depuis le début. C'est ensuite pliPropre qui
+       remonte un peu, et seulement s'il le faut, pour qu'aucune carte ne soit
+       tranchée en filet sur le bord du clavier. */
+    let cible = mini;
     cible = Math.max(mini, Math.min(maxi, cible));
     cible = pliPropre(app, ar, H, cible, mini, maxi);
     if(Math.abs(cible - st) > 1) app.scrollTop = cible;
