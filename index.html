@@ -319,7 +319,13 @@
      quel que soit ce qu'il y a derrière, à n'importe quel moment du scroll. */
   .add-team{ --rim-edge:0 0 0 1px rgba(58,42,26,0.24); width:100%; display:flex; align-items:center; justify-content:center; gap:0.5rem; margin-top:0.4rem; color:var(--primary); border:1px solid rgba(255,255,255,0.72); border-radius:14px; padding:0.6rem; font-size:0.85rem; font-weight:600; }
   .add-team .ico{ width:1.12rem; height:1.12rem; }
-  .add-team:disabled{ opacity:0.35; }
+  /* CARTE PLEINE = SIX CASES, PAS SEPT. « Ajouter un joueur » restait affiché,
+     simplement grisé, une fois les six joueurs inscrits : la carte comptait
+     donc SEPT cases et se lisait comme sept places. Une place qu'on ne peut
+     plus prendre n'a rien à faire dans la liste — le bouton s'efface, et on
+     compte exactement autant de cases que de joueurs. Il revient dès qu'on
+     retire quelqu'un. */
+  .add-team:disabled{ display:none; }
 
   .chip-row{ display:flex; gap:0.5rem; flex-wrap:wrap; }
   .chip{ flex:1; min-width:30%; text-align:center; --glass-tint: rgb(252,248,241); background:rgb(252,248,241); backdrop-filter:none; -webkit-backdrop-filter:none; border:1px solid rgba(255,255,255,0.72); color:var(--ink); padding:0.62rem 0.5rem; border-radius:14px; font-size:0.82rem; font-weight:600; }
@@ -5358,6 +5364,31 @@ function removeTeam(btn){
      champ. On le referme, comme le faisait l'ancien retrait qui reconstruisait
      toute la carte. */
   try{ const a = document.activeElement; if(a && a.tagName === "INPUT" && a.closest("#teamCard")) a.blur(); }catch(e){}
+  /* AVANT de mesurer quoi que ce soit : on remet la carte dans son état final.
+     C'est ici que « Ajouter un joueur » réapparaît quand on repasse sous six —
+     s'il réapparaissait APRÈS les mesures, la carte grandirait d'un coup en
+     plein repli et le saut qu'on vient d'éliminer reviendrait par la fenêtre. */
+  const add = c ? c.querySelector(".add-team") : null;
+  const addEtaitCache = !!add && add.disabled;
+  syncTeamRows();
+  /* Le bouton renaît : s'il surgissait tel quel, la carte grandirait de 40px À
+     L'INSTANT DU TOUCHER et tout ce qui est en dessous sauterait vers le bas
+     avant de remonter. Il s'ouvre donc DU MÊME GESTE que la ligne se replie.
+     On note sa taille naturelle maintenant (les mesures qui suivent portent
+     ainsi sur la carte telle qu'elle sera à l'arrivée), et on le remettra à
+     zéro juste avant de lancer le mouvement. */
+  const addRenait = !!add && addEtaitCache && !add.disabled;
+  let addNat = null;
+  if(addRenait){
+    const acs = getComputedStyle(add);
+    addNat = { h: add.offsetHeight + "px", mt: acs.marginTop, pt: acs.paddingTop, bt: acs.borderTopWidth };
+  }
+  const poserAdd = (h, mt, p, bord, op)=>{
+    add.style.height = h; add.style.marginTop = mt;
+    add.style.paddingTop = p; add.style.paddingBottom = p;
+    add.style.borderTopWidth = bord; add.style.borderBottomWidth = bord;
+    add.style.opacity = op;
+  };
   /* REPLI SANS LA MOINDRE MARCHE. Replier la hauteur ne suffit pas : une ligne
      à zéro occupe encore quelques pixels (marges intérieures, bordures, ligne de
      texte), et ces pixels-là disparaissaient d'un bloc AU RETRAIT — d'où le
@@ -5396,6 +5427,9 @@ function removeTeam(btn){
   poser("0px", "0px", "0px", "0px");
   const residu = Math.max(0, hCarte() - hSansLigne);   // ce qui resterait à tort
   poser(dep.h, dep.mb, dep.pt, dep.bt);            // on revient à l'état de départ
+  /* Le bouton repart de zéro : la carte retrouve EXACTEMENT la hauteur qu'elle
+     avait avant le toucher, donc rien ne bouge au moment du doigt. */
+  if(addRenait){ add.style.transition = "none"; add.style.overflow = "hidden"; poserAdd("0px", "0px", "0px", "0px", "0"); }
   void row.offsetHeight; void hAvecLigne;
   for(let k = 0; k < defil.length; k++){ const [n, v] = defil[k]; if(n.scrollTop !== v) n.scrollTop = v; }
   const RESSORT = "0.19s cubic-bezier(0.33,0,0.2,1)";
@@ -5404,7 +5438,12 @@ function removeTeam(btn){
     ", border-top-width " + RESSORT + ", border-bottom-width " + RESSORT + ", opacity 0.13s ease";
   poser("0px", (-residu) + "px", "0px", "0px");
   row.style.opacity = "0";
-  syncTeamRows();                      // jetons et boutons à jour tout de suite
+  if(addRenait){
+    add.style.transition = "height " + RESSORT + ", margin-top " + RESSORT +
+      ", padding-top " + RESSORT + ", padding-bottom " + RESSORT +
+      ", border-top-width " + RESSORT + ", border-bottom-width " + RESSORT + ", opacity 0.16s ease";
+    poserAdd(addNat.h, addNat.mt, addNat.pt, addNat.bt, "1");
+  }
   try{ glassTrack(); }catch(e){}       // le verre suit le réajustement du défilement
   /* On retire la ligne À LA FIN RÉELLE de l'animation (et non à un délai fixe,
      qui tombait 100ms trop tard), puis on laisse passer une image avant le
@@ -5413,6 +5452,12 @@ function removeTeam(btn){
   const finir = ()=>{
     if(fini) return; fini = true;
     row.remove();
+    if(addRenait){                     // le bouton reprend sa taille naturelle, sans style figé
+      add.style.transition = ""; add.style.overflow = "";
+      add.style.height = ""; add.style.marginTop = ""; add.style.paddingTop = "";
+      add.style.paddingBottom = ""; add.style.borderTopWidth = ""; add.style.borderBottomWidth = "";
+      add.style.opacity = "";
+    }
     syncTeamRows();                    // jetons et couleurs recalés sur la liste réelle
     requestAnimationFrame(()=>{
       glassRelayout(); queueGlassSync();
