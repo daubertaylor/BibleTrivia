@@ -5673,7 +5673,10 @@ function removeTeam(btn){
       ", border-top-width " + RESSORT + ", border-bottom-width " + RESSORT + ", opacity " + RESSORT;
     poserAdd(addNat.h, addNat.mt, addNat.pt, addNat.bt, "1");
   }
-  try{ glassTrack(); }catch(e){}       // le verre suit le réajustement du défilement
+  /* le verre suit le réajustement du défilement — ET la mise en page qui bouge :
+     sans glassSuivre, la texture de décor des cartes situées SOUS la liste reste
+     figée pendant tout le repli et le flou glisse à l'intérieur d'elles. */
+  try{ glassTrack(); glassSuivre(460); }catch(e){}
   /* On retire la ligne À LA FIN RÉELLE de l'animation (et non à un délai fixe,
      qui tombait 100ms trop tard), puis on laisse passer une image avant le
      travail lourd sur le verre : l'image du retrait reste légère. */
@@ -7478,6 +7481,7 @@ function queueGlassXF(){
   const revSl = revEl ? revEl.scrollLeft : 0, revSt = revEl ? revEl.scrollTop : 0;
   if(glassElsGen !== glassGen){ glassEls = document.querySelectorAll(GLASS_SEL); glassElsGen = glassGen; }
   const els = glassEls, vh = h;
+  const suivre = now < glassSuivreJusqu;   // une mise en page bouge : on relit tout
   for(let i = 0; i < els.length; i++){
     const el = els[i];
     if(el.tagName === "INPUT") continue; // <input> : fond statique (impossible d'y poser un enfant)
@@ -7486,7 +7490,7 @@ function queueGlassXF(){
       if(el.classList.contains("has-gs")) el.classList.remove("has-gs");
       continue;
     }
-    if(el._ggen !== glassGen){ // décalages de mise en page, en cache par génération
+    if(el._ggen !== glassGen || suivre){ // décalages, en cache — sauf en suivi
       let lx = 0, ly = 0, n = el;
       while(n && n !== document.body){ lx += n.offsetLeft; ly += n.offsetTop; n = n.offsetParent; }
       el._lx0 = lx; el._ly0 = ly; el._oh0 = el.offsetHeight; el._ggen = glassGen;
@@ -7857,6 +7861,9 @@ function queueGlassSyncPainted(freeze){
    un simple battement toutes les ~0,5 s rattrape tout changement inattendu.
    L'effet est intact : dès qu'on touche/défile/change d'écran, c'est armé. */
 let glassActiveUntil = 0, glassFrame = 0, glassFreezeUntil = 0, glassGen = 1, glassPressUntil = 0, glassSheetOpenUntil = 0;
+/* Fenêtre de SUIVI : pendant ce laps, on relit la position de chaque surface à
+   CHAQUE image au lieu de se fier au cache. Voir glassSuivre(). */
+let glassSuivreJusqu = 0;
 /* Détection de défilement RELUE À CHAQUE IMAGE (et non plus via les événements
    « scroll ») : leur espacement devient irrégulier en fin d'inertie (le
    navigateur les groupe/retarde à mesure que la vitesse baisse), ce qui
@@ -7875,6 +7882,24 @@ function armGlass(ms){ const u = performance.now() + (ms || 850); if(u > glassAc
 /* Mise en page changée (nouvel écran, redimensionnement) : on invalide le
    cache des décalages pour qu'ils soient recalculés à la prochaine image. */
 function glassRelayout(){ glassGen++; }
+/* SUIVI PENDANT UNE ANIMATION DE MISE EN PAGE (retrait d'un joueur, ajout).
+   Le moteur garde en cache la position de chaque surface dans la page, et ne la
+   relit que lorsqu'on invalide le cache. C'est ce qui le rend gratuit au
+   défilement — mais pendant qu'une carte se replie, les surfaces situées
+   dessous REMONTENT sans que personne ne le lui dise : la texture de décor
+   reste où elle était, et on voit le flou glisser à l'intérieur de la carte
+   pendant toute l'animation, puis se remettre d'un coup à la fin. Mesuré :
+   26px de décalage sur 18 images.
+   Ici on demande une relecture par image, le temps de l'animation seulement.
+   On ne touche PAS à la liste des surfaces (glassElsGen) : la recalculer à
+   chaque image coûterait un querySelectorAll complet pour rien, alors que la
+   liste, elle, ne change pas pendant un repli. */
+function glassSuivre(ms){
+  const d = ms || 420;
+  const t = performance.now() + d;
+  if(t > glassSuivreJusqu) glassSuivreJusqu = t;
+  armGlass(d + 260);
+}
 function glassTrack(){ glassRelayout(); armGlass(950); try{ queueGlassSync(); }catch(e){} }
 /* GEL PENDANT LA TRANSITION D'ÉCRAN : on cale le verre UNE fois (fond peint
    correct + reflets éteints) puis on ne fait plus rien pendant l'animation.
