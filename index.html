@@ -353,6 +353,13 @@
      compte exactement autant de cases que de joueurs. Il revient dès qu'on
      retire quelqu'un. */
   .add-team:disabled{ display:none; }
+  /* SAUF LE TEMPS DE SE REPLIER. En atteignant six joueurs, le bouton passait
+     de 40,6px à zéro EN UNE IMAGE — la carte s'effondrait d'un bloc au moment
+     même où la sixième ligne s'ouvrait. Le retrait, lui, faisait déjà repousser
+     ce bouton au rythme de la ligne : il manquait juste le sens inverse.
+     display:none ne s'anime pas ; on le garde donc affiché pendant le repli,
+     tout en le laissant désactivé — il n'est plus cliquable une seule image. */
+  .add-team.se-plie:disabled{ display:flex; }
 
   .chip-row{ display:flex; gap:0.5rem; flex-wrap:wrap; }
   .chip{ flex:1; min-width:30%; text-align:center; --glass-tint: rgb(252,248,241); background:rgb(252,248,241); backdrop-filter:none; -webkit-backdrop-filter:none; border:1px solid rgba(255,255,255,0.72); color:var(--ink); padding:0.62rem 0.5rem; border-radius:14px; font-size:0.82rem; font-weight:600; }
@@ -540,7 +547,7 @@
      qu'une action secondaire. Réduit à sa largeur utile et centré, il retrouve
      son rang — et il parle la même langue que le bouton Partager, qui a reçu le
      même traitement. */
-  .btn-review{ width:fit-content; max-width:100%; margin:0 auto 0.6rem; display:flex; align-items:center; justify-content:center; gap:0.5rem; color:var(--ink); border:1px solid rgba(255,255,255,0.72); border-radius:14px; padding:0.85rem 1.1rem; font-weight:700; font-size:0.92rem; }
+  .btn-review{ width:fit-content; max-width:100%; margin:0 auto 0.6rem; display:flex; align-items:center; justify-content:center; gap:0.5rem; color:var(--ink); border:1px solid rgba(255,255,255,0.72); border-radius:14px; padding:0.85rem 1.1rem; font-weight:700; font-size:0.95rem; }
   .btn-review .ico{ width:1.5rem; height:1.5rem; color:var(--primary); flex-shrink:0; }
   .review-sheet .rev-list{ max-height:54vh; overflow-y:auto; margin:0.3rem 0 0.2rem; display:flex; flex-direction:column; gap:0.65rem; -webkit-overflow-scrolling:touch; }
   /* flex-shrink:0 indispensable : .rev-list est une colonne flex avec
@@ -562,7 +569,12 @@
   .rev-fact .ficon-sm{ width:0.95rem; height:0.95rem; flex-shrink:0; color:var(--gold); margin-top:0.1rem; }
 
   .end-actions{ display:flex; gap:0.7rem; margin-top:auto; padding-top:1.15rem; }
-  .end-actions button{ flex:1; border-radius:13px; padding:0.88rem; font-size:0.9rem; font-weight:700; }
+  /* Mêmes réglages que « Commencer la partie » : ces deux-là sont des actions
+     de même poids, sur un autre écran. Mesuré, ils étaient les seuls du jeu à
+     porter un arrondi de 13px et un texte de 0,9rem quand tout le reste tient
+     14px / 0,95rem. La largeur, elle, reste partagée en deux — c'est voulu :
+     « Rejouer » et « Quitter » sont deux choix à égalité. */
+  .end-actions button{ flex:1; border-radius:14px; padding:0.88rem; font-size:0.95rem; font-weight:700; }
   /* Note de fin (ex. « <nom> aimerait rejouer. Tu acceptes ? ») : placée JUSTE
      au-dessus des boutons d'action auxquels elle se rapporte, plus près d'eux
      que des scores -> lecture immédiate, plus de message perdu en haut. */
@@ -1476,7 +1488,7 @@
      et OMBRE PORTÉE qui le décolle de la feuille (vrai relief tactile). Compact,
      centré, au-dessus du « Fermer ». Icône dans une pastille orange (langage des
      réglages) -> fini l'effet « pastille cheap ». */
-  .share-btn{ width:fit-content; max-width:100%; margin:0.6rem auto 0.8rem; display:flex; align-items:center; justify-content:center; gap:0.6rem; --rim-cast:0 5px 14px rgba(34,26,16,0.12); color:var(--ink); border:1px solid rgba(255,255,255,0.72); border-radius:16px; padding:0.6rem 0.7rem 0.6rem 0.6rem; font-family:'Poppins',sans-serif; font-weight:700; font-size:0.95rem; letter-spacing:0.01em; }
+  .share-btn{ width:fit-content; max-width:100%; margin:0.6rem auto 0.8rem; display:flex; align-items:center; justify-content:center; gap:0.6rem; --rim-cast:0 5px 14px rgba(34,26,16,0.12); color:var(--ink); border:1px solid rgba(255,255,255,0.72); border-radius:14px; padding:0.6rem 0.7rem 0.6rem 0.6rem; font-family:'Poppins',sans-serif; font-weight:700; font-size:0.95rem; letter-spacing:0.01em; }
   /* LA PASTILLE CORAIL, DÉFINIE UNE SEULE FOIS pour les deux boutons
      « Partager » : celui des réglages et celui de la fin de partie. C'est elle
      qui donne son allure au bouton — la carte blanche seule était plate. */
@@ -5579,14 +5591,71 @@ function addTeam(){
   const c = document.getElementById("teamCard");
   const add = c ? c.querySelector(".add-team") : null;
   if(!c || !add){ render(); return; }
+  /* On note la taille du bouton AVANT que syncTeamRows ne le masque : au
+     sixième joueur il disparaît, et il doit se replier du même geste que la
+     ligne s'ouvre — exactement comme il repousse quand on redescend à cinq. */
+  const addEtaitVisible = !add.disabled;
+  const acs = getComputedStyle(add);
+  const addNat = { h: add.offsetHeight + "px", mt: acs.marginTop, pt: acs.paddingTop, bt: acs.borderTopWidth };
   const row = document.createElement("div");
   row.className = "team-row";
   row.innerHTML = teamRowInner(state.teams.length - 1, state.teams[state.teams.length - 1]);
   c.insertBefore(row, add);            // UNE seule couche de verre en plus
   syncTeamRows();
+  if(addEtaitVisible && add.disabled) plieAjout(add, addNat);
   glassRelayout(); queueGlassSync();   // recalage des transforms uniquement
   ouvreLigne(row);
   settleTeamCard(c);
+}
+/* LE BOUTON « AJOUTER » SE REPLIE, IL NE S'ÉVANOUIT PLUS.
+   Mesuré image par image en ajoutant le sixième joueur : la carte perdait
+   40,6px d'un coup — tout le bouton — sur la même image où la nouvelle ligne
+   commençait à s'ouvrir. Deux mouvements contraires dans la même image, c'est
+   précisément ce que l'œil lit comme un bug.
+   Il se replie donc avec la durée et la courbe de tout le reste. Il reste
+   DÉSACTIVÉ pendant ce temps (la classe ne fait que rendre le repli visible),
+   donc impossible d'ajouter un septième joueur à la faveur de l'animation. */
+function plieAjout(add, nat){
+  if(!add || !add.style) return;
+  const poser = (h, mt, p, bord, op)=>{
+    add.style.height = h; add.style.marginTop = mt;
+    add.style.paddingTop = p; add.style.paddingBottom = p;
+    add.style.borderTopWidth = bord; add.style.borderBottomWidth = bord;
+    add.style.opacity = op;
+  };
+  if(add._plieAnnule){ try{ add._plieAnnule(); }catch(e){} add._plieAnnule = null; }
+  add.classList.add("se-plie");
+  add.style.transition = "none";
+  add.style.overflow = "hidden";
+  poser(nat.h, nat.mt, nat.pt, nat.bt, "1");
+  void add.offsetHeight;                               // l'état de départ est posé
+  add.style.transition = "height " + RESSORT_LIGNE + ", margin-top " + RESSORT_LIGNE +
+    ", padding-top " + RESSORT_LIGNE + ", padding-bottom " + RESSORT_LIGNE +
+    ", border-top-width " + RESSORT_LIGNE + ", border-bottom-width " + RESSORT_LIGNE +
+    ", opacity 0.15s cubic-bezier(0.4,0,0.6,1)";
+  poser("0px", "0px", "0px", "0px", "0");
+  let fini = false, filet = 0;
+  const surFin = (e)=>{ if(e.propertyName === "height") finir(); };
+  const ranger = ()=>{
+    clearTimeout(filet); add.removeEventListener("transitionend", surFin);
+    if(add._plieAnnule === annule) add._plieAnnule = null;
+  };
+  const finir = ()=>{
+    if(fini) return; fini = true; ranger();
+    add.classList.remove("se-plie");                   // il repasse en display:none
+    add.style.transition = ""; add.style.overflow = "";
+    add.style.height = ""; add.style.marginTop = ""; add.style.paddingTop = "";
+    add.style.paddingBottom = ""; add.style.borderTopWidth = ""; add.style.borderBottomWidth = "";
+    add.style.opacity = "";
+    try{ glassRelayout(); queueGlassSync(); }catch(e){}
+  };
+  /* Si un retrait le fait renaître pendant qu'il se replie, il reprend la main
+     sans que ce repli-ci ne vienne effacer ses styles derrière lui. */
+  const annule = ()=>{ if(fini) return; fini = true; ranger(); add.classList.remove("se-plie"); };
+  annule._estRepli = true;             // pour que le retrait sache à quoi il a affaire
+  add._plieAnnule = annule;
+  add.addEventListener("transitionend", surFin);
+  filet = setTimeout(finir, 620);
 }
 /* L'OUVERTURE EST LE MIROIR EXACT DE LA FERMETURE.
    Elle n'existait tout simplement pas : la ligne apparaissait d'un bloc, 65,5px
@@ -5632,9 +5701,22 @@ function ouvreLigne(row){
   try{ glassSuivre(460); }catch(e){}
   /* à l'arrivée on rend la ligne à elle-même : plus aucun style figé, sinon
      elle ne suivrait plus les changements de taille de police ou d'écran. */
-  let fini = false;
+  let fini = false, filet = 0;
+  /* PAS DE { once:true } ICI — c'était un piège. L'opacité se termine à 0,16s,
+     bien AVANT la hauteur à 0,34s : la première fin de transition consommait
+     donc l'écouteur unique sans rien déclencher (mauvaise propriété), et le
+     rangement ne se faisait plus qu'au filet de 620ms. La ligne gardait ses
+     styles figés 280ms de trop — et si on la retirait dans cet intervalle, le
+     filet tombait en plein repli et effaçait les styles du retrait : la ligne
+     rebondissait à sa taille pleine, mesuré à 37,8px. */
+  const surFin = (e)=>{ if(e.propertyName === "height") finir(); };
+  const ranger = ()=>{
+    clearTimeout(filet);
+    row.removeEventListener("transitionend", surFin);
+    if(row._animLigne === annule) row._animLigne = null;
+  };
   const finir = ()=>{
-    if(fini) return; fini = true;
+    if(fini) return; fini = true; ranger();
     row.style.transition = ""; row.style.overflow = "";
     row.style.height = ""; row.style.marginBottom = ""; row.style.paddingTop = "";
     row.style.paddingBottom = ""; row.style.borderTopWidth = ""; row.style.borderBottomWidth = "";
@@ -5642,8 +5724,14 @@ function ouvreLigne(row){
     enfants.forEach(e => { e.style.transition = ""; e.style.opacity = ""; });
     try{ glassRelayout(); queueGlassSync(); }catch(e){}
   };
-  row.addEventListener("transitionend", (e)=>{ if(e.propertyName === "height") finir(); }, { once:true });
-  setTimeout(finir, 620);                              // filet si l'événement manque
+  /* UN SEUL MAÎTRE PAR LIGNE. Le retrait appelle ceci pour congédier
+     l'ouverture avant de mesurer quoi que ce soit. On se retire SANS toucher
+     aux styles : la ligne reste exactement là où elle en est, et le repli part
+     de cette position — donc aucune marche, même en plein milieu du geste. */
+  const annule = ()=>{ if(fini) return; fini = true; ranger(); };
+  row._animLigne = annule;
+  row.addEventListener("transitionend", surFin);
+  filet = setTimeout(finir, 620);                      // filet si l'événement manque
 }
 /* RETRAIT SANS SAUT. Retirer une ligne d'un coup raccourcit la carte d'un coup :
    si la page était défilée en bas (le cas dès qu'on a six joueurs), le
@@ -5658,6 +5746,14 @@ function removeTeam(btn){
   const row = btn && btn.closest ? btn.closest(".team-row") : null;
   if(i < 0 || !row || row.dataset.partie) return;
   const c = document.getElementById("teamCard");
+  /* ON CONGÉDIE L'OUVERTURE AVANT TOUT. Si cette ligne vient d'être ajoutée,
+     son animation d'ouverture — ou seulement son rangement de fin, encore en
+     attente — est toujours armée sur elle. Elle finirait par effacer les styles
+     que le retrait s'apprête à poser, en plein repli : mesuré, la ligne
+     rebondissait de 37,8px quand on la retirait 500ms après l'avoir ajoutée.
+     L'ouverture se retire sans rien toucher, donc la ligne reste où elle en
+     est et le repli démarre de là, sans la moindre marche. */
+  if(row._animLigne){ try{ row._animLigne(); }catch(e){} row._animLigne = null; }
   state.teams.splice(i, 1); saveTeams();
   row.dataset.partie = "1";            // exclue des calculs dès maintenant
   /* Le clavier n'a plus lieu d'être : on venait de toucher une croix, pas un
@@ -5671,6 +5767,26 @@ function removeTeam(btn){
   const add = c ? c.querySelector(".add-team") : null;
   const addEtaitCache = !!add && add.disabled;
   syncTeamRows();
+  /* LE CAS CROISÉ : on vient d'atteindre six, le bouton est en train de se
+     replier, et on retire déjà quelqu'un. On congédie ce repli et on rend au
+     bouton sa taille naturelle AVANT de la mesurer — sinon il renaîtrait à la
+     hauteur où le repli l'avait laissé, c'est-à-dire tronqué. */
+  let addDepart = null;
+  if(add && add._plieAnnule && add._plieAnnule._estRepli){
+    /* On note D'ABORD où en est le bouton : sa renaissance repartira
+       exactement de cette taille-là. Le forcer à zéro, comme on le fait quand
+       il était complètement absent, créait une marche — mesuré 28,6px d'un
+       coup en martelant les deux commandes autour du sixième joueur. */
+    const pcs = getComputedStyle(add);
+    addDepart = { h: add.getBoundingClientRect().height + "px", mt: pcs.marginTop,
+                  pt: pcs.paddingTop, bt: pcs.borderTopWidth, op: pcs.opacity };
+    try{ add._plieAnnule(); }catch(e){}
+    add._plieAnnule = null;
+    add.style.transition = ""; add.style.overflow = "";
+    add.style.height = ""; add.style.marginTop = ""; add.style.paddingTop = "";
+    add.style.paddingBottom = ""; add.style.borderTopWidth = ""; add.style.borderBottomWidth = "";
+    add.style.opacity = "";
+  }
   /* Le bouton renaît : s'il surgissait tel quel, la carte grandirait de 40px À
      L'INSTANT DU TOUCHER et tout ce qui est en dessous sauterait vers le bas
      avant de remonter. Il s'ouvre donc DU MÊME GESTE que la ligne se replie.
@@ -5679,9 +5795,17 @@ function removeTeam(btn){
      zéro juste avant de lancer le mouvement. */
   const addRenait = !!add && addEtaitCache && !add.disabled;
   let addNat = null;
+  /* CETTE RENAISSANCE AUSSI DOIT POUVOIR ÊTRE CONGÉDIÉE. Sans ça, son rangement
+     de fin effaçait les styles d'un repli démarré entre-temps, et le bouton
+     ressuscitait à sa taille pleine alors qu'il devait être plié — mesuré à
+     45,8px d'un coup en martelant les deux commandes. Le drapeau est lu au
+     moment du rangement, pas avant : c'est ce qui rend l'annulation possible
+     jusqu'au dernier instant. */
+  let renaitEncore = addRenait;
   if(addRenait){
     const acs = getComputedStyle(add);
     addNat = { h: add.offsetHeight + "px", mt: acs.marginTop, pt: acs.paddingTop, bt: acs.borderTopWidth };
+    add._plieAnnule = ()=>{ renaitEncore = false; };
   }
   const poserAdd = (h, mt, p, bord, op)=>{
     add.style.height = h; add.style.marginTop = mt;
@@ -5729,7 +5853,14 @@ function removeTeam(btn){
   poser(dep.h, dep.mb, dep.pt, dep.bt);            // on revient à l'état de départ
   /* Le bouton repart de zéro : la carte retrouve EXACTEMENT la hauteur qu'elle
      avait avant le toucher, donc rien ne bouge au moment du doigt. */
-  if(addRenait){ add.style.transition = "none"; add.style.overflow = "hidden"; poserAdd("0px", "0px", "0px", "0px", "0"); }
+  if(addRenait){
+    add.style.transition = "none"; add.style.overflow = "hidden";
+    /* Il repart de zéro s'il était absent, ou de sa taille du moment s'il
+       était encore en train de se replier : dans les deux cas, la carte garde
+       EXACTEMENT la hauteur qu'elle avait à l'image précédente. */
+    if(addDepart) poserAdd(addDepart.h, addDepart.mt, addDepart.pt, addDepart.bt, addDepart.op);
+    else poserAdd("0px", "0px", "0px", "0px", "0");
+  }
   void row.offsetHeight; void hAvecLigne;
   for(let k = 0; k < defil.length; k++){ const [n, v] = defil[k]; if(n.scrollTop !== v) n.scrollTop = v; }
   /* LE PLI. Deux défauts se voyaient, mesurés image par image sur les 65px que
@@ -5810,7 +5941,11 @@ function removeTeam(btn){
   const finir = ()=>{
     if(fini) return; fini = true;
     row.remove();                      // léger : la ligne est déjà à hauteur nulle
-    if(addRenait){                     // le bouton reprend sa taille naturelle, sans style figé
+    /* On ne range QUE si cette renaissance est toujours la dernière en date :
+       un repli déclenché depuis a pris la main sur le bouton, et effacer ses
+       styles le ferait bondir à sa taille pleine en une image. */
+    if(renaitEncore){                  // le bouton reprend sa taille naturelle, sans style figé
+      if(add._plieAnnule) add._plieAnnule = null;
       add.style.transition = ""; add.style.overflow = "";
       add.style.height = ""; add.style.marginTop = ""; add.style.paddingTop = "";
       add.style.paddingBottom = ""; add.style.borderTopWidth = ""; add.style.borderBottomWidth = "";
