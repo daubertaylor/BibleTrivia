@@ -5530,6 +5530,10 @@ function syncTeamRows(){
    devient haute). On force la reprise de CETTE SEULE couche (bascule brève de
    will-change) : une couche au lieu de huit, coût négligeable, rendu identique.
    Puis un dernier recalage au frame suivant, quand la mise en page est posée. */
+/* LA MÊME COURBE POUR OUVRIR ET POUR FERMER. Une seule déclaration : les deux
+   sens ne peuvent pas diverger. Le couple a été choisi en mesurant six réglages
+   sur une copie du jeu (voir le commentaire du retrait). */
+const RESSORT_LIGNE = "0.34s cubic-bezier(0.25,0.4,0.25,1)";
 function settleTeamCard(c){
   const gs = c.querySelector(":scope > .gs");
   if(gs){
@@ -5555,7 +5559,65 @@ function addTeam(){
   c.insertBefore(row, add);            // UNE seule couche de verre en plus
   syncTeamRows();
   glassRelayout(); queueGlassSync();   // recalage des transforms uniquement
+  ouvreLigne(row);
   settleTeamCard(c);
+}
+/* L'OUVERTURE EST LE MIROIR EXACT DE LA FERMETURE.
+   Elle n'existait tout simplement pas : la ligne apparaissait d'un bloc, 65,5px
+   avalés en UNE image — 100% de la course d'un coup, à pleine opacité. À côté
+   d'un retrait qui glisse en 0,34s, c'était le jour et la nuit.
+   La place s'ouvre donc maintenant avec la même durée et la même courbe que
+   celle avec laquelle elle se referme. Et le contenu suit le principe inverse
+   du retrait : là-bas il s'efface d'abord et l'espace se referme après ; ici
+   l'espace s'ouvre d'abord et le contenu se pose dedans, une fois qu'il a de la
+   place — il ne se superpose jamais à ce qui bouge encore.
+   On mesure la hauteur naturelle de la ligne AVANT de l'animer : la partir de
+   zéro sans la connaître obligerait à animer vers « auto », ce qu'aucun
+   navigateur ne sait faire. */
+function ouvreLigne(row){
+  if(!row || !row.style) return;
+  const cs = getComputedStyle(row);
+  const nat = { h: row.getBoundingClientRect().height, mb: cs.marginBottom,
+                pt: cs.paddingTop, pb: cs.paddingBottom,
+                bt: cs.borderTopWidth, bb: cs.borderBottomWidth };
+  const poser = (h, mb, p, bord)=>{
+    row.style.height = h; row.style.marginBottom = mb;
+    row.style.paddingTop = p; row.style.paddingBottom = p;
+    row.style.borderTopWidth = bord; row.style.borderBottomWidth = bord;
+  };
+  const enfants = [];
+  for(let k = 0; k < row.children.length; k++) if(row.children[k].style) enfants.push(row.children[k]);
+  /* départ : refermée, invisible, et sans transition pour que rien ne s'anime
+     vers l'état de départ lui-même. */
+  row.style.transition = "none";
+  row.style.overflow = "hidden";
+  poser("0px", "0px", "0px", "0px");
+  row.style.opacity = "0";
+  enfants.forEach(e => { e.style.transition = "none"; e.style.opacity = "0"; });
+  void row.offsetHeight;                               // le départ est appliqué
+  row.style.transition = "height " + RESSORT_LIGNE + ", margin-bottom " + RESSORT_LIGNE +
+    ", padding-top " + RESSORT_LIGNE + ", padding-bottom " + RESSORT_LIGNE +
+    ", border-top-width " + RESSORT_LIGNE + ", border-bottom-width " + RESSORT_LIGNE +
+    ", opacity 0.16s ease-out";
+  poser(nat.h + "px", nat.mb, nat.pt, nat.bt);
+  row.style.opacity = "1";
+  /* le contenu entre APRÈS, quand la place est faite aux deux tiers */
+  enfants.forEach(e => { e.style.transition = "opacity 0.18s ease-out 0.14s"; e.style.opacity = "1"; });
+  try{ glassSuivre(460); }catch(e){}
+  /* à l'arrivée on rend la ligne à elle-même : plus aucun style figé, sinon
+     elle ne suivrait plus les changements de taille de police ou d'écran. */
+  let fini = false;
+  const finir = ()=>{
+    if(fini) return; fini = true;
+    row.style.transition = ""; row.style.overflow = "";
+    row.style.height = ""; row.style.marginBottom = ""; row.style.paddingTop = "";
+    row.style.paddingBottom = ""; row.style.borderTopWidth = ""; row.style.borderBottomWidth = "";
+    row.style.opacity = "";
+    enfants.forEach(e => { e.style.transition = ""; e.style.opacity = ""; });
+    try{ glassRelayout(); queueGlassSync(); }catch(e){}
+  };
+  row.addEventListener("transitionend", (e)=>{ if(e.propertyName === "height") finir(); }, { once:true });
+  setTimeout(finir, 620);                              // filet si l'événement manque
 }
 /* RETRAIT SANS SAUT. Retirer une ligne d'un coup raccourcit la carte d'un coup :
    si la page était défilée en bas (le cas dès qu'on a six joueurs), le
@@ -5671,7 +5733,7 @@ function removeTeam(btn){
      successeur. Le fondu est donc redevenu bref : la ligne a disparu avant
      qu'on ait le temps de lire le doublon, et l'espace, lui, se referme
      tranquillement. */
-  const RESSORT = "0.34s cubic-bezier(0.25,0.4,0.25,1)";
+  const RESSORT = RESSORT_LIGNE;
   const EFFACE = "0.15s cubic-bezier(0.4,0,0.6,1)";
   row.style.transition = "height " + RESSORT + ", margin-bottom " + RESSORT +
     ", padding-top " + RESSORT + ", padding-bottom " + RESSORT +
