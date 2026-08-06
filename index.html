@@ -55,6 +55,13 @@
     --green-soft:#DFF5E9;
     --plum:#C2426B;
     --error:#E24B37;
+    /* LA COULEUR DES SORTIES. Tout le jeu est chaud — crème, sable, corail. Une
+       pierre froide s'y détache donc immédiatement, sans avoir besoin de crier :
+       on reconnaît une sortie d'un coup d'œil, et on n'a pas envie d'appuyer
+       dessus par réflexe. Le rouge était exclu (c'est déjà une mauvaise
+       réponse), le corail aussi (c'est « continuer »). */
+    --sortie:#54606D;
+    --sortie-fond:rgb(232,234,238);
     --error-soft:#FFE9E3;
     --shadow:rgba(42,36,30,0.08);
     /* UN SEUL LANGAGE DE MOUVEMENT — celui de la feuille Réglages, qui sert de
@@ -515,7 +522,13 @@
   .solo-stat .lbl{ font-size:0.8rem; color:var(--ink-soft); margin-top:0.2rem; }
   .end-eyebrow.record{ color:#FFD968; font-weight:700; text-shadow:0 1px 12px rgba(239,173,38,0.6), 0 1px 10px rgba(0,0,0,0.5); }
   .end-best{ text-align:center; font-size:0.82rem; color:rgba(255,255,255,0.9); margin-top:0.55rem; text-shadow:0 1px 8px rgba(0,0,0,0.45); }
-  .btn-review{ width:100%; margin-bottom:0.6rem; display:flex; align-items:center; justify-content:center; gap:0.5rem; color:var(--ink); border:1px solid rgba(255,255,255,0.72); border-radius:14px; padding:0.85rem; font-weight:700; font-size:0.92rem; }
+  /* « Revoir mes erreurs » ne prend plus toute la largeur. Mesuré, c'était le
+     plus gros bouton clair du jeu : 3,4 fois la surface médiane, un pavé blanc
+     qui pesait plus lourd que « Rejouer » juste en dessous alors qu'il n'est
+     qu'une action secondaire. Réduit à sa largeur utile et centré, il retrouve
+     son rang — et il parle la même langue que le bouton Partager, qui a reçu le
+     même traitement. */
+  .btn-review{ width:fit-content; max-width:100%; margin:0 auto 0.6rem; display:flex; align-items:center; justify-content:center; gap:0.5rem; color:var(--ink); border:1px solid rgba(255,255,255,0.72); border-radius:14px; padding:0.85rem 1.1rem; font-weight:700; font-size:0.92rem; }
   .btn-review .ico{ width:1.5rem; height:1.5rem; color:var(--primary); flex-shrink:0; }
   .review-sheet .rev-list{ max-height:54vh; overflow-y:auto; margin:0.3rem 0 0.2rem; display:flex; flex-direction:column; gap:0.65rem; -webkit-overflow-scrolling:touch; }
   /* flex-shrink:0 indispensable : .rev-list est une colonne flex avec
@@ -822,7 +835,8 @@
      bouton Partager (rgba(255,253,248,0.82)) -> un seul et unique blanc dans tout
      le jeu. La distinction reste le contraste corail (agir/rester) vs blanc
      (sortir). On ne garde plus de blanc froid/nacré à part. */
-  .btn-quit, .btn-newgame.btn-quit, .btn-ghost.btn-quit{ --glass-tint: rgb(252,248,241); color:var(--ink); }
+  .btn-quit, .btn-newgame.btn-quit, .btn-ghost.btn-quit,
+  .modal-btn.ok.danger{ --glass-tint: var(--sortie-fond); color:var(--sortie); }
   /* (Ces boutons portaient ici un rebord « adouci » qui leur était propre. Il a
      été retiré : toutes les surfaces blanches partagent maintenant le rebord de
      verre unique défini plus bas, sans exception.) */
@@ -869,7 +883,7 @@
      Partager / les autres « Quitter » (un seul blanc partout), au lieu du rouge.
      L'avertissement est porté par le message (« La partie en cours sera perdue »)
      et le bouton « Rester » corail à côté. */
-  .modal-btn.ok.danger{ --glass-tint: rgb(252,248,241); background:none; color:var(--ink); border-color:rgba(255,255,255,0.72); box-shadow:inset 0 1px 0 rgba(255,255,255,0.6), 0 5px 14px rgba(60,45,25,0.16); }
+  .modal-btn.ok.danger{ background:none; border-color:rgba(255,255,255,0.72); box-shadow:inset 0 1px 0 rgba(255,255,255,0.6), 0 5px 14px rgba(60,45,25,0.16); }
   /* Dans une confirmation de SORTIE, « Quitter » est en blanc miroir (calme) ->
      le choix sûr « Rester » devient le PRIMAIRE corail (contraste net + même
      langage que « Rejouer »/« Commencer »). Fini les deux boutons pâles jumeaux :
