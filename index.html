@@ -6587,7 +6587,22 @@ function renderModeSelect(){
       /* Ordre FIXE (Groupe / Solo / Ligne / Défi) : plus de tri par usage, les
          cartes ne bougent plus -> accueil prévisible. Toutes de taille identique. */
       const dd = loadDaily(), dDone = dailyDoneToday(), dSk = dailyStreakShown(), dProg = dailyInProgress();
-      const doneTxt = dDone ? ('Réussi\u00a0: ' + dd.score + '/' + dd.total + '\u00a0\u00b7 \u00e0 demain\u00a0!') : (dProg ? 'Reprends ta partie' : 'Le même défi pour tous');
+      /* UNE SÉRIE QUI VA S'ÉTEINDRE SE DIT AVANT, PAS APRÈS. Mesuré : une série
+         de 5 jours passe de 5 à 0 à l'affichage dès qu'on saute une journée, et
+         elle disparaît sans un mot — alors qu'elle reste rattrapable pendant
+         TOUT le jour en cours. On le dit donc tant qu'il est temps.
+         Le ton compte autant que l'information : « Garde ta série » invite, là
+         où un compte à rebours ferait peur. Le jeu propose, il ne culpabilise
+         pas — et il ne réclame aucune permission de notification pour ça, donc
+         il se comporte exactement pareil sur iOS et sur Android.
+         La condition dit précisément « série d'hier, pas encore jouée
+         aujourd'hui » : dailyStreakShown() ne renvoie un nombre que si le
+         dernier défi date d'aujourd'hui ou d'hier, et dDone écarte le premier
+         cas. À partir de 2 jours seulement : une « série d'un jour » n'en est
+         pas une, et l'annoncer sonnerait faux. */
+      const doneTxt = dDone ? ('Réussi\u00a0: ' + dd.score + '/' + dd.total + '\u00a0\u00b7 \u00e0 demain\u00a0!')
+        : (dProg ? 'Reprends ta partie'
+        : (dSk >= 2 ? ('Garde ta s\u00e9rie de ' + dSk + '\u00a0jours\u00a0!') : 'Le m\u00eame d\u00e9fi pour tous'));
       const group = `<button class="mode-card" onclick="selectMode('group')"><span class="mode-icon group">${ICONS.users}</span><span class="mode-text"><span class="mode-title">Mode Groupe</span><span class="mode-desc">Église, jeunesse, en équipes</span></span><span class="chev">${ICONS.chevronRight}</span></button>`;
       const solo = `<button class="mode-card" onclick="selectMode('solo')"><span class="mode-icon solo">${ICONS.user}</span><span class="mode-text"><span class="mode-title">Mode Solo</span><span class="mode-desc">Teste tes connaissances à ton rythme</span></span><span class="chev">${ICONS.chevronRight}</span></button>`;
       const online = `<button class="mode-card" onclick="openOnline()"><span class="mode-icon online">${ICONS.bolt}</span><span class="mode-text"><span class="mode-title">Jouer en ligne</span><span class="mode-desc">Défie tes amis en duel, en direct</span></span><span class="chev">${ICONS.chevronRight}</span></button>`;
