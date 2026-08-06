@@ -5763,27 +5763,41 @@ function removeTeam(btn){
      sans glassSuivre, la texture de décor des cartes situées SOUS la liste reste
      figée pendant tout le repli et le flou glisse à l'intérieur d'elles. */
   try{ glassTrack(); glassSuivre(460); }catch(e){}
-  /* On retire la ligne À LA FIN RÉELLE de l'animation (et non à un délai fixe,
-     qui tombait 100ms trop tard), puis on laisse passer une image avant le
-     travail lourd sur le verre : l'image du retrait reste légère. */
+  /* LE MÉNAGE ATTEND QUE PLUS RIEN NE BOUGE.
+     Deux défauts se cachaient ici, et c'est ce qui rendait la fermeture moins
+     nette que l'ouverture.
+     1. Le filet de sécurité était à 300ms — hérité de l'époque où le repli
+        durait 0,19s. Depuis qu'il dure 0,34s, ce filet se déclenchait 40ms
+        AVANT la fin : le mouvement était donc tranché net à chaque fois, à
+        deux images de son terme. Il est reporté bien après, comme celui de
+        l'ouverture.
+     2. Le rangement (renumérotation des lignes, recalage du verre, reprise de
+        la couche de la carte) tombait sur les dernières images du mouvement —
+        mesuré à 308ms sur une animation qui finit à 345. Ce sont les
+        opérations les plus lourdes du lot, et elles se disputaient les
+        dernières images avec les pixels encore en train de glisser. On les
+        repousse de deux images après la fin : rien ne bouge plus, elles ne
+        gênent donc plus personne.
+     L'ouverture, elle, faisait déjà tout son travail AVANT de démarrer — c'est
+     pour ça qu'elle paraissait plus propre. */
   let fini = false;
   const finir = ()=>{
     if(fini) return; fini = true;
-    row.remove();
+    row.remove();                      // léger : la ligne est déjà à hauteur nulle
     if(addRenait){                     // le bouton reprend sa taille naturelle, sans style figé
       add.style.transition = ""; add.style.overflow = "";
       add.style.height = ""; add.style.marginTop = ""; add.style.paddingTop = "";
       add.style.paddingBottom = ""; add.style.borderTopWidth = ""; add.style.borderBottomWidth = "";
       add.style.opacity = "";
     }
-    syncTeamRows();                    // jetons et couleurs recalés sur la liste réelle
-    requestAnimationFrame(()=>{
-      glassRelayout(); queueGlassSync();
+    requestAnimationFrame(()=>requestAnimationFrame(()=>{
+      syncTeamRows();                  // jetons et couleurs recalés sur la liste réelle
+      try{ glassRelayout(); queueGlassSync(); }catch(e){}
       if(c) settleTeamCard(c);
-    });
+    }));
   };
   row.addEventListener("transitionend", (e)=>{ if(e.propertyName === "height") finir(); });
-  setTimeout(finir, 300);              // filet si l'événement ne vient pas
+  setTimeout(finir, 620);              // filet, largement APRÈS la fin du mouvement
 }
 /* Renommage : mise à jour du jeton (1re lettre) EN DIRECT, sans aucun rendu —
    plus de render() au blur (qui reconstruisait tout l'écran = saccade). */
