@@ -5660,13 +5660,37 @@ function removeTeam(btn){
      2,1 fois le pas moyen). Les durées plus courtes remontent la pointe, et
      0,32s s'est révélée instable d'un essai à l'autre — signe qu'une image
      sautée la fait doubler, ce qui arrive tout le temps sur un vrai téléphone.
-     0,34s tient ses 7,7px à chaque fois. */
+     0,34s tient ses 7,7px à chaque fois.
+     LA LIGNE S'EFFACE VITE, LE VIDE SE REFERME LENTEMENT. C'était l'erreur
+     précédente : j'avais calé le fondu sur le pli, croyant éviter une « boîte
+     blanche vide ». Il n'y en avait jamais — l'opacité emporte aussi le fond de
+     la ligne, donc on voit la carte à travers, pas du blanc. Mais garder la
+     ligne lisible pendant 0,34s avait une vraie conséquence : la renumérotation
+     des joueurs s'applique dès le premier instant, si bien qu'on lisait DEUX
+     « Joueur 3 » côte à côte pendant tout le repli — celui qui part et son
+     successeur. Le fondu est donc redevenu bref : la ligne a disparu avant
+     qu'on ait le temps de lire le doublon, et l'espace, lui, se referme
+     tranquillement. */
   const RESSORT = "0.34s cubic-bezier(0.25,0.4,0.25,1)";
+  const EFFACE = "0.15s cubic-bezier(0.4,0,0.6,1)";
   row.style.transition = "height " + RESSORT + ", margin-bottom " + RESSORT +
     ", padding-top " + RESSORT + ", padding-bottom " + RESSORT +
-    ", border-top-width " + RESSORT + ", border-bottom-width " + RESSORT + ", opacity " + RESSORT;
+    ", border-top-width " + RESSORT + ", border-bottom-width " + RESSORT + ", opacity " + EFFACE;
   poser("0px", (-residu) + "px", "0px", "0px");
   row.style.opacity = "0";
+  /* LE CONTENU PART ENCORE PLUS VITE QUE LA LIGNE. Les joueurs sont renumérotés
+     dès l'instant du toucher (c'est ce qui garde la liste juste), mais la ligne
+     qui s'en va porte encore l'ancien nom : pendant un court instant, deux
+     lignes affichent le même. À 0,15s de fondu on avait encore 140ms pour le
+     lire ; en effaçant d'abord le jeton, le champ et la croix, il n'en reste
+     plus assez pour qu'un mot se lise. La ligne, elle, garde son fond le temps
+     de s'effacer proprement. */
+  for(let k = 0; k < row.children.length; k++){
+    const enf = row.children[k];
+    if(!enf.style) continue;
+    enf.style.transition = "opacity 0.085s linear";
+    enf.style.opacity = "0";
+  }
   if(addRenait){
     add.style.transition = "height " + RESSORT + ", margin-top " + RESSORT +
       ", padding-top " + RESSORT + ", padding-bottom " + RESSORT +
