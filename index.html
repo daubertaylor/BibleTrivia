@@ -1478,6 +1478,14 @@
   .set-ico.vol{ background:linear-gradient(150deg, #F44E2C, #DE3616); box-shadow:inset 0 1.5px 0 rgba(255,255,255,0.72), inset 0 0 0 1.5px rgba(255,255,255,0.42), 0 0 0 1px rgba(150,40,20,0.3), 0 5px 14px rgba(214,71,44,0.44); }
   .set-ico.fsx{ background:linear-gradient(150deg, #4DA8FF, #2E7FE8); box-shadow:inset 0 1.5px 0 rgba(255,255,255,0.72), inset 0 0 0 1.5px rgba(255,255,255,0.42), 0 0 0 1px rgba(20,72,150,0.3), 0 5px 14px rgba(46,127,232,0.44); }
   .set-ico.scn{ background:linear-gradient(150deg, #58C08A, #2E9968); box-shadow:inset 0 1.5px 0 rgba(255,255,255,0.72), inset 0 0 0 1.5px rgba(255,255,255,0.42), 0 0 0 1px rgba(20,110,70,0.3), 0 5px 14px rgba(46,153,104,0.44); }
+  .set-ico.bib{ background:linear-gradient(150deg, #D8A85E, #A9762C); box-shadow:inset 0 1.5px 0 rgba(255,255,255,0.72), inset 0 0 0 1.5px rgba(255,255,255,0.42), 0 0 0 1px rgba(120,80,20,0.3), 0 5px 14px rgba(169,118,44,0.44); }
+  /* Le choix de version réutilise le chip du jeu — même arrondi, même texte,
+     même corail à la sélection. Une version dont le texte n'est pas livré reste
+     VISIBLE mais éteinte : le joueur voit ce qui existe et ce qui arrive, au
+     lieu de découvrir un catalogue amputé sans explication. */
+  .bible-row{ display:flex; gap:0.5rem; padding:0.1rem 0.25rem 0.6rem; }
+  .chip.indispo{ opacity:0.55; cursor:default; }
+  .chip.indispo .sub{ font-style:italic; }
   /* Catalogue de fonds d'écran : vignettes photo, la retenue porte un liseré or */
   .scene-row{ display:flex; gap:0.7rem; padding:0.1rem 0.25rem 0.6rem; flex-wrap:wrap; }
   .scn-thumb{ position:relative; width:3.55rem; height:5.4rem; border-radius:14px; background-size:cover; background-position:center; border:2px solid rgba(255,255,255,0.72); --rim-edge:0 0 0 1px rgba(30,22,14,0.16); --rim-cast:0 4px 10px rgba(42,30,18,0.28); overflow:hidden; padding:0; display:flex; align-items:flex-end; justify-content:center; }
@@ -4053,6 +4061,7 @@ function loadSettings(){
   if(typeof s.music !== "boolean") s.music = true;
   if(typeof s.volume !== "number" || !(s.volume >= 0 && s.volume <= 1)) s.volume = 0.4;
   if(typeof s.scene !== "string") s.scene = "canyon";
+  if(typeof s.bible !== "string") s.bible = "lsg1910";
   return s;
 }
 const settings = loadSettings();
@@ -4111,6 +4120,20 @@ applyScene();
 applySceneFormat();
 window.addEventListener("resize", applySceneFormat);
 window.addEventListener("orientationchange", ()=>setTimeout(applySceneFormat, 120));
+/* Changer de version ne recharge PAS l'écran : on retouche les deux seules
+   choses qui bougent — la puce retenue et la mention légale. Le verset suivant
+   sortira dans la nouvelle version, sans que rien n'ait clignoté.
+   On refuse silencieusement une version sans texte : le bouton est déjà
+   désactivé, ceci est la seconde barrière (un appel direct depuis la console,
+   un vieux réglage enregistré avant qu'une version soit retirée). */
+function setBible(cle){
+  const b = BIBLES.find(x => x.cle === cle);
+  if(!b || !b.dispo || settings.bible === cle) return;
+  settings.bible = cle; saveSettings();
+  document.querySelectorAll(".bible-chip").forEach(x => x.classList.toggle("active", x.dataset.bible === cle));
+  const m = document.getElementById("bibleMention");
+  if(m) m.textContent = b.mention;
+}
 function setScene(key){
   if(settings.scene === key) return;
   settings.scene = key; saveSettings(); applyScene();
@@ -4771,6 +4794,13 @@ function openSettings(){
         ${SCENES.map(s=>`<button class="scn-thumb${settings.scene===s.key?' sel':''}" data-scene="${s.key}" style="background-image:url('${s.thumb}')" onclick="setScene('${s.key}')" aria-label="${s.name}"><span class="scn-name">${s.name}</span></button>`).join("")}
         <span class="scn-soon">Bientôt…</span>
       </div>
+      <div class="set-row">
+        <span class="set-ico bib">${ICONS.bookOpen}</span>
+        <span class="set-txt"><b>Version de la Bible</b><small id="bibleMention">${bibleActive().mention}</small></span>
+      </div>
+      <div class="bible-row">
+        ${BIBLES.map(b=>`<button class="chip bible-chip${settings.bible===b.cle&&b.dispo?' active':''}${b.dispo?'':' indispo'}" data-bible="${b.cle}" ${b.dispo?`onclick="setBible('${b.cle}')"`:'disabled'} aria-label="${b.nom} ${b.annee}${b.dispo?'':' — indisponible'}">${b.court}<span class="sub">${b.dispo?b.nom:'Licence requise'}</span></button>`).join("")}
+      </div>
       <button class="share-btn" onclick="shareGame()">
         <span class="share-ico">${ICONS.shareUp}</span>
         <span class="share-lbl">Partager le jeu</span>
@@ -5082,6 +5112,43 @@ document.addEventListener("pointerdown", ()=>{ audioUnlocked = true; wakeAudio()
 })();
 
 /* ===================== VERSET SURPRISE (5 touches sur l'icône) ===================== */
+/* ===================== LES VERSIONS DE LA BIBLE =====================
+   Une version, ce n'est pas seulement un nom : c'est un TEXTE et des DROITS. Le
+   jeu déclare donc les deux, et n'affiche plus un verset sans dire d'où il vient.
+
+   POURQUOI CE REGISTRE. Jusqu'ici le texte était là, sans mention : impossible
+   de savoir quelle traduction on lisait, impossible d'en changer. Désormais une
+   version s'ajoute en déposant son texte dans VERSETS_ALT — rien d'autre à
+   toucher dans le jeu, ni ici ni dans les 1545 questions.
+
+   SUR LES DROITS, ET POURQUOI LA 1979 N'EST PAS LIVRÉE. Le texte fourni est la
+   traduction Louis Segond de 1910, dans le DOMAINE PUBLIC — vérifié sur le
+   recueil : « l'Éternel » dans 49 versets, là où d'autres traductions écrivent
+   « le SEIGNEUR ». La Nouvelle Édition de Genève 1979 appartient, elle, à la
+   Société Biblique de Genève. Elle a sa place dans ce registre, mais son texte
+   ne peut pas être livré sans licence : elle reste donc marquée indisponible et
+   le jeu ne la propose pas. Afficher du Segond approximatif sous l'étiquette
+   « Genève 1979 » serait pire que de ne rien proposer — on tromperait le
+   lecteur sur la Parole elle-même. */
+const BIBLES = [
+  { cle:"lsg1910", nom:"Louis Segond", annee:"1910", court:"Segond 1910", sigle:"LSG",
+    mention:"Traduction Louis Segond (1910) \u2014 domaine public.", dispo:true },
+  { cle:"neg1979", nom:"Nouvelle \u00c9dition de Gen\u00e8ve", annee:"1979", court:"Gen\u00e8ve 1979", sigle:"NEG",
+    mention:"\u00c9dition de Gen\u00e8ve (1979) \u00a9 Soci\u00e9t\u00e9 Biblique de Gen\u00e8ve.",
+    dispo:false, note:"En attente de licence aupr\u00e8s de la Soci\u00e9t\u00e9 Biblique de Gen\u00e8ve." },
+];
+/* Le texte d'une autre version se dépose ici, référence par référence. Ce qui
+   n'y figure pas retombe sur la traduction par défaut : une version incomplète
+   fonctionne donc dès le premier verset déposé, sans jamais laisser de trou. */
+const VERSETS_ALT = { /* neg1979: { "Psaume 23:1": "L\u2019\u00c9ternel est mon berger\u2026" } */ };
+function bibleActive(){
+  const v = BIBLES.find(b => b.cle === settings.bible && b.dispo);
+  return v || BIBLES[0];                 // version retirée ou sans texte -> défaut
+}
+function texteVerset(ref, defaut){
+  const lot = VERSETS_ALT[bibleActive().cle];
+  return (lot && lot[ref]) || defaut;
+}
 const HERO_VERSES = [
   { t:"Ta parole est une lampe à mes pieds, une lumière sur mon sentier.", r:"Psaume 119:105" },
   { t:"L'Éternel est mon berger : je ne manquerai de rien.", r:"Psaume 23:1" },
@@ -5393,11 +5460,18 @@ function showHeroVerse(){
   const card = zone.querySelector(".hero-verse-card");
   // Espaces insécables ( ) contre les guillemets : le « et le » collent au
   // texte -> le chevron fermant ne peut JAMAIS se retrouver seul sur une ligne.
-  if(t) t.textContent = frSpace("« " + v.t + " »");
-  if(r) r.textContent = v.r;
+  const texte = texteVerset(v.r, v.t);   // la version choisie, ou le défaut
+  if(t) t.textContent = frSpace("« " + texte + " »");
+  /* La référence porte la traduction : un lecteur doit toujours savoir DANS
+     QUELLE version il lit, c'est la règle de toute édition biblique. */
+  /* SIGLE et non nom complet : « 1 Thessaloniciens 5:16-18 · Segond 1910 »
+     passait à deux lignes et déformait la carte (mesuré sur les 248). Le sigle
+     est la convention de toute édition biblique, et le nom entier reste lisible
+     dans les Réglages, à l'endroit où on choisit. */
+  if(r) r.textContent = v.r + " · " + bibleActive().sigle;
   // Les versets longs passent en corps réduit -> ils tiennent TOUS dans la
   // carte, parfaitement lisibles (vérifié sur les 128 du recueil).
-  if(card) card.classList.toggle("long", v.t.length > 68);
+  if(card) card.classList.toggle("long", texte.length > 68);
   zone.classList.add("show-verse");
   /* On GÈLE le verre le temps de l'animation (comme les transitions d'écran) :
      la carte-verset se morphe alors en pur GPU, sans que Safari iOS ne
@@ -6715,7 +6789,7 @@ function renderModeSelect(){
         </button>
       </div>
       <h1 class="hero-title">BibleTrivia</h1>
-      <p class="home-verse">« Approchons-nous avec assurance du trône de la grâce.&nbsp;» <span class="hv-ref">Hébreux&nbsp;4:16</span></p>
+      <p class="home-verse">« ${texteVerset("Hébreux 4:16", "Approchons-nous avec assurance du trône de la grâce.")}&nbsp;» <span class="hv-ref">Hébreux&nbsp;4:16</span></p>
     </div>
     <div class="flex-sp home-sp-top"></div>
     ${(()=>{
