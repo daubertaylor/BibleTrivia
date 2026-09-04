@@ -1478,6 +1478,7 @@
   .set-ico.vol{ background:linear-gradient(150deg, #F44E2C, #DE3616); box-shadow:inset 0 1.5px 0 rgba(255,255,255,0.72), inset 0 0 0 1.5px rgba(255,255,255,0.42), 0 0 0 1px rgba(150,40,20,0.3), 0 5px 14px rgba(214,71,44,0.44); }
   .set-ico.fsx{ background:linear-gradient(150deg, #4DA8FF, #2E7FE8); box-shadow:inset 0 1.5px 0 rgba(255,255,255,0.72), inset 0 0 0 1.5px rgba(255,255,255,0.42), 0 0 0 1px rgba(20,72,150,0.3), 0 5px 14px rgba(46,127,232,0.44); }
   .set-ico.scn{ background:linear-gradient(150deg, #58C08A, #2E9968); box-shadow:inset 0 1.5px 0 rgba(255,255,255,0.72), inset 0 0 0 1.5px rgba(255,255,255,0.42), 0 0 0 1px rgba(20,110,70,0.3), 0 5px 14px rgba(46,153,104,0.44); }
+  .set-ico.ntf{ background:linear-gradient(150deg, #6FD3B4, #2FA184); box-shadow:inset 0 1.5px 0 rgba(255,255,255,0.72), inset 0 0 0 1.5px rgba(255,255,255,0.42), 0 0 0 1px rgba(20,110,90,0.3), 0 5px 14px rgba(47,161,132,0.44); }
   .set-ico.bib{ background:linear-gradient(150deg, #D8A85E, #A9762C); box-shadow:inset 0 1.5px 0 rgba(255,255,255,0.72), inset 0 0 0 1.5px rgba(255,255,255,0.42), 0 0 0 1px rgba(120,80,20,0.3), 0 5px 14px rgba(169,118,44,0.44); }
   /* Le choix de version réutilise le chip du jeu — même arrondi, même texte,
      même corail à la sélection. Une version dont le texte n'est pas livré reste
@@ -4062,6 +4063,7 @@ function loadSettings(){
   if(typeof s.volume !== "number" || !(s.volume >= 0 && s.volume <= 1)) s.volume = 0.4;
   if(typeof s.scene !== "string") s.scene = "canyon";
   if(typeof s.bible !== "string") s.bible = "lsg1910";
+  if(typeof s.notif !== "boolean") s.notif = false;   // jamais sans accord explicite
   return s;
 }
 const settings = loadSettings();
@@ -4794,6 +4796,12 @@ function openSettings(){
         ${SCENES.map(s=>`<button class="scn-thumb${settings.scene===s.key?' sel':''}" data-scene="${s.key}" style="background-image:url('${s.thumb}')" onclick="setScene('${s.key}')" aria-label="${s.name}"><span class="scn-name">${s.name}</span></button>`).join("")}
         <span class="scn-soon">Bientôt…</span>
       </div>
+      ${notifPossible() ? `
+      <div class="set-row">
+        <span class="set-ico ntf">${ICONS.bell}</span>
+        <span class="set-txt"><b>Rappel de série</b><small id="notifTxt">${notifEtat()==="denied" ? "Bloquées dans les réglages du téléphone" : (settings.notif && notifEtat()==="granted" ? "Le soir, seulement si ta série est en jeu" : "Ne rien envoyer")}</small></span>
+        <button class="switch${settings.notif && notifEtat()==="granted" ? " on" : ""}" id="swNotif" role="switch" aria-checked="${!!(settings.notif && notifEtat()==="granted")}" aria-label="Rappel de série" ${notifEtat()==="denied" ? "disabled" : ""} onclick="setNotif(!(settings.notif && notifEtat()==='granted'))"></button>
+      </div>` : ""}
       <div class="set-row">
         <span class="set-ico bib">${ICONS.bookOpen}</span>
         <span class="set-txt"><b>Version de la Bible</b><small id="bibleMention">${bibleActive().mention}</small></span>
@@ -6389,7 +6397,8 @@ function renderParcours(){
 function dailySeedToday(){ const d = new Date(); return (d.getFullYear()*10000 + (d.getMonth()+1)*100 + d.getDate()) >>> 0; }
 function dayKey(off){ const d = new Date(Date.now() + (off||0)*86400000); const p = n=>String(n).padStart(2,"0"); return d.getFullYear()+"-"+p(d.getMonth()+1)+"-"+p(d.getDate()); }
 function loadDaily(){ try { const s = JSON.parse(localStorage.getItem("bt_daily")||"{}"); return { last:s.last||"", streak:+s.streak||0, score:+s.score||0, total:+s.total||0 }; } catch(e){ return { last:"", streak:0, score:0, total:0 }; } }
-function saveDaily(x){ try { localStorage.setItem("bt_daily", JSON.stringify(x)); } catch(e){} }
+function saveDaily(x){ try { localStorage.setItem("bt_daily", JSON.stringify(x)); } catch(e){}
+  try { notifMiroir(); } catch(e){}   /* le service worker lit ce miroir, pas le localStorage */ }
 function dailyDoneToday(){ return loadDaily().last === dayKey(0); }
 function dailyStreakShown(){ const d = loadDaily(); return (d.last===dayKey(0) || d.last===dayKey(-1)) ? d.streak : 0; }
 function recordDailyResult(){
@@ -6398,7 +6407,173 @@ function recordDailyResult(){
   const streak = (d.last === dayKey(-1)) ? d.streak + 1 : 1;
   saveDaily({ last:dayKey(0), streak, score:state.soloCorrect, total:state.questions.length });
   checkAchievements({ toast:true }); // objectifs de régularité (Fidèle, Assidu)
+  try { notifProposer(); } catch(e){}   /* il a maintenant une série à protéger */
 }
+/* ===================== LES NOTIFICATIONS =====================
+   RÈGLE DU JEU : une notification n'est envoyée QUE si elle rend service. Ici,
+   il n'y a qu'un seul cas qui le mérite — une série de flammes sur le point de
+   s'éteindre alors qu'elle est encore rattrapable. Tout le reste (nouveautés,
+   « reviens jouer », scores d'amis) serait du bruit, et le bruit fait désinstaller.
+
+   OÙ SE DÉCIDE L'ENVOI, ET POURQUOI C'EST IMPORTANT. Le serveur ne sait RIEN du
+   joueur : ni sa série, ni s'il a joué, ni son fuseau. Il envoie un simple
+   battement quotidien, sans contenu. C'est l'APPAREIL qui décide s'il affiche
+   quoi que ce soit, en relisant l'état local. Deux bénéfices : aucune donnée de
+   jeu ne quitte le téléphone, et les garde-fous ne peuvent pas être contournés
+   par une erreur côté serveur.
+
+   POURQUOI PAS localStorage. Un service worker n'y a PAS accès. L'état utile
+   (dernier défi joué, longueur de série) est donc recopié dans IndexedDB, que
+   lui sait lire. Le localStorage reste la source de vérité du jeu ; ceci n'en
+   est qu'un miroir, réécrit à chaque changement. */
+const VAPID_PUBLIC = "";   /* clé publique du serveur d'envoi. Tant qu'elle est
+   vide, aucune notification n'est proposée au joueur : mieux vaut ne rien
+   offrir qu'un interrupteur qui ne fait rien. Voir notifications/LISEZMOI.md. */
+
+function notifSupporte(){
+  return typeof Notification !== "undefined" && "serviceWorker" in navigator && "PushManager" in window;
+}
+/* iOS n'autorise les notifications QUE depuis une app posée sur l'écran
+   d'accueil (16.4+). Proposer le réglage dans Safari donnerait un refus
+   systématique et brûlerait la seule demande qu'on a le droit de faire. */
+function notifPossible(){
+  if(!notifSupporte() || !VAPID_PUBLIC) return false;
+  if(IS_IOS && !isStandalone) return false;
+  return true;
+}
+function notifEtat(){
+  try { return Notification.permission; } catch(e){ return "denied"; }
+}
+
+/* --- le miroir lisible par le service worker ------------------------------ */
+function notifBase(){
+  return new Promise((res, rej) => {
+    const r = indexedDB.open("bibletrivia", 1);
+    r.onupgradeneeded = () => { const db = r.result;
+      if(!db.objectStoreNames.contains("etat")) db.createObjectStore("etat"); };
+    r.onsuccess = () => res(r.result);
+    r.onerror   = () => rej(r.error);
+  });
+}
+function notifMiroir(){
+  if(!("indexedDB" in window)) return;
+  try {
+    const d = loadDaily();
+    notifBase().then(db => {
+      const tx = db.transaction("etat", "readwrite");
+      tx.objectStore("etat").put({
+        dernier: d.last,            // date du dernier défi joué
+        serie:   d.streak,          // longueur de la série
+        actif:   !!settings.notif,  // le joueur a-t-il accepté ?
+        maj:     Date.now(),
+      }, "serie");
+    }).catch(()=>{});
+  } catch(e){}
+  notifSync();
+}
+/* POURQUOI LE SERVEUR DOIT SAVOIR LE STRICT MINIMUM.
+   J'avais d'abord voulu qu'il n'envoie qu'un battement quotidien à tout le
+   monde, l'appareil décidant seul d'afficher ou non. C'est impossible : un
+   abonnement push est déclaré « userVisibleOnly », et un navigateur qui reçoit
+   plusieurs envois SANS notification affichée finit par en afficher une de
+   lui-même — « ce site a été mis à jour en arrière-plan ». On aurait fabriqué
+   très exactement le spam qu'on cherche à éviter.
+   Le serveur reçoit donc trois informations, et rien d'autre : la date du
+   dernier défi, la longueur de la série, le décalage horaire. Ni pseudo, ni
+   score, ni réponses, ni progression. De quoi décider s'il faut frapper, et
+   à quelle heure il est le soir chez ce joueur. La vérification sur l'appareil
+   reste en place : c'est la deuxième barrière, pas la seule. */
+function notifSync(){
+  try {
+    if(!net.supa || !settings.notif || notifEtat() !== "granted") return;
+    navigator.serviceWorker.ready.then(reg => reg.pushManager.getSubscription()).then(sub => {
+      if(!sub) return;
+      const d = loadDaily();
+      net.supa.from("push_subs").update({
+        dernier: d.last || null,
+        serie: d.streak | 0,
+        decalage: -(new Date().getTimezoneOffset()) | 0,   // minutes par rapport à UTC
+        maj: new Date().toISOString(),
+      }).eq("endpoint", sub.endpoint);
+    }).catch(()=>{});
+  } catch(e){}
+}
+
+/* --- LE BON MOMENT POUR DEMANDER -----------------------------------------
+   Jamais au premier lancement : à ce stade le joueur n'a rien à protéger, il
+   refuse, et le refus est DÉFINITIF (le navigateur ne redemande plus jamais).
+   On attend qu'il ait quelque chose à perdre — une série de deux jours, donc
+   un joueur revenu de lui-même — et on lui explique AVANT d'ouvrir la demande
+   du système. S'il dit non à notre explication, la vraie demande n'est jamais
+   posée : elle reste disponible pour plus tard. */
+function notifProposer(){
+  if(!notifPossible()) return;
+  if(settings.notif) return;                       // déjà accepté
+  if(notifEtat() !== "default") return;            // déjà répondu au système
+  if(localStorage.getItem("bt_notif_ask") === "1") return;   // déjà proposé une fois
+  if(dailyStreakShown() < 2) return;               // rien à protéger encore
+  try { localStorage.setItem("bt_notif_ask", "1"); } catch(e){}
+  setTimeout(() => {
+    showModal({
+      title: "Garder ta série ?",
+      message: "Le jeu peut te prévenir le soir, uniquement les jours où ta série est sur le point de s'éteindre. Jamais plus d'une fois par jour, et jamais si tu as déjà joué.",
+      okLabel: "D'accord",
+      cancelLabel: "Non merci",
+      onOk: () => { notifActiver(); },
+    });
+  }, 900);   // on laisse la fin de partie se poser avant de parler d'autre chose
+}
+
+/* --- activation ----------------------------------------------------------- */
+function b64ToU8(base64){
+  const p = "=".repeat((4 - base64.length % 4) % 4);
+  const s = (base64 + p).replace(/-/g, "+").replace(/_/g, "/");
+  const raw = atob(s); const out = new Uint8Array(raw.length);
+  for(let i = 0; i < raw.length; i++) out[i] = raw.charCodeAt(i);
+  return out;
+}
+async function notifActiver(){
+  if(!notifPossible()) return false;
+  let perm = notifEtat();
+  if(perm === "default"){ try { perm = await Notification.requestPermission(); } catch(e){ return false; } }
+  if(perm !== "granted"){ settings.notif = false; saveSettings(); notifRafraichir(); return false; }
+  try {
+    const reg = await navigator.serviceWorker.ready;
+    let sub = await reg.pushManager.getSubscription();
+    if(!sub) sub = await reg.pushManager.subscribe({ userVisibleOnly:true, applicationServerKey: b64ToU8(VAPID_PUBLIC) });
+    /* On envoie l'abonnement et RIEN d'autre : pas de pseudo, pas de score, pas
+       de série. Le serveur n'a besoin que de savoir où frapper. */
+    if(net.supa) await net.supa.from("push_subs").upsert(
+      { endpoint: sub.endpoint, abonnement: sub.toJSON(), maj: new Date().toISOString() },
+      { onConflict: "endpoint" });
+    settings.notif = true; saveSettings(); notifMiroir(); notifRafraichir();
+    return true;
+  } catch(e){ settings.notif = false; saveSettings(); notifRafraichir(); return false; }
+}
+async function notifCouper(){
+  settings.notif = false; saveSettings(); notifMiroir(); notifRafraichir();
+  try {
+    const reg = await navigator.serviceWorker.ready;
+    const sub = await reg.pushManager.getSubscription();
+    if(sub){
+      if(net.supa) await net.supa.from("push_subs").delete().eq("endpoint", sub.endpoint);
+      await sub.unsubscribe();
+    }
+  } catch(e){}
+}
+function setNotif(on){ if(on) notifActiver(); else notifCouper(); }
+function notifRafraichir(){
+  const sw = document.getElementById("swNotif");
+  if(!sw) return;
+  const on = !!settings.notif && notifEtat() === "granted";
+  sw.classList.toggle("on", on);
+  sw.setAttribute("aria-checked", on ? "true" : "false");
+  const t = document.getElementById("notifTxt");
+  if(t) t.textContent = notifEtat() === "denied"
+    ? "Bloquées dans les réglages du téléphone"
+    : (on ? "Le soir, seulement si ta série est en jeu" : "Ne rien envoyer");
+}
+
 /* ANTI-TRICHE DÉFI DU JOUR : le défi ne se joue qu'UNE fois par jour. On
    sauvegarde la progression (jour + avancement) dans un emplacement DÉDIÉ, jamais
    effacé en quittant -> relancer le défi le REPREND là où on s'était arrêté, au
