@@ -7,17 +7,43 @@ jeu y ont été extraites par script.
 | sigle | version | année | licence | source |
 |---|---|---|---|---|
 | LSG | Louis Segond | 1910 | domaine public | `fraLSG` |
+| SBL | Sainte Bible libre pour le monde | 2026 | domaine public | `frasbl` |
 | JND | Bible J. N. Darby | 1885 | domaine public | `frajnd` |
 | OST | La Sainte Bible, Ostervald | 1744 | domaine public | `fra_fob` |
 
-Trois traductions protestantes, toutes dans le **domaine public** : aucune
-attribution imposée, aucune licence à renouveler, rien qui puisse être retiré.
+Quatre traductions, toutes dans le **domaine public** : aucune attribution
+imposée, aucune licence à renouveler, rien qui puisse être retiré.
+
+## Pourquoi une version en français d'aujourd'hui
+
+Les trois premières datent de 1744, 1885 et 1910. Or les versions que lisent
+réellement les évangéliques francophones aujourd'hui — Segond 21, Semeur,
+Nouvelle Édition de Genève — sont **toutes sous droits**, et aucune n'est
+livrable. La Sainte Bible libre comble ce trou : c'est la seule traduction
+française en langue contemporaine qui soit vraiment libre.
+
+    SBL   Je peux tout par Christ qui me fortifie.
+    LSG   Je puis tout par celui qui me fortifie.
+
+    SBL   Confie-toi au SEIGNEUR de tout ton cœur, et ne t'appuie pas
+          sur ta propre intelligence.
+    LSG   Confie-toi en l'Éternel de tout ton cœur, Et ne t'appuie pas
+          sur ta sagesse ;
+
+eBible la présente comme un travail encore en cours. Vérifiée sur un échantillon
+des 248 versets du jeu : la langue est propre et naturelle de bout en bout.
 
 ## Ce qui a été écarté, et pourquoi
 
 **La néo-Crampon (catholique, 2022).** Techniquement disponible sous licence
 Creative Commons, mais hors du public du jeu — et sa licence aurait obligé à
 afficher une attribution à perpétuité. Retirée à la demande de Taylor.
+
+**La « Bible de l'Épée ».** Écartée après lecture du texte, pas de l'étiquette :
+elle rend Jean 3:16 par « Car Dieu a tant aimé CEUX QU'IL A DISPOSÉS » au lieu
+de « le monde ». C'est une révision fortement marquée doctrinalement, pas une
+traduction courante. La livrer aurait déformé l'Écriture pour la plupart des
+joueurs. **Toujours lire le texte avant d'ajouter une version.**
 
 **La Nouvelle Édition de Genève 1979.** Sous droits de la Société Biblique de
 Genève. Une entrée « en attente de licence » a été essayée puis retirée : une
