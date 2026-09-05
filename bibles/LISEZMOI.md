@@ -143,6 +143,24 @@ emploie et que le Darby remplace par « bonté ». Basculer la version y rendrai
 la bonne réponse fausse. Elles restent donc sur le texte de référence — c'est
 la seule place du jeu où la version ne suit pas, et c'est délibéré.
 
+## Le verset de l'accueil
+
+Il porte **Hébreux 4:16** depuis toujours, et Taylor y tient. Mais son verset
+complet fait 163 signes en Darby — quatre lignes qui poussaient les cartes de
+mode vers le bas.
+
+Il porte donc sa **première proposition**, exacte, déposée dans `VERSETS_ALT`
+sous la clé `Hébreux 4:16a` : « a » est la notation biblique courante pour la
+première moitié d'un verset. La référence affichée reste « Hébreux 4:16 », et la
+proposition suit la version choisie comme tout le reste.
+
+    LSG / BA   Approchons-nous donc avec assurance du trône de la grâce
+    JND        Approchons-nous donc avec confiance du trône de la grâce
+    OST        Allons donc avec confiance au trône de la grâce
+
+Sa hauteur est **réservée** : quel que soit le verset, quelle que soit la
+version, il occupe la même place et ne déplace jamais rien.
+
 ## Ce qui n'est pas le verset, et qui s'y était glissé
 
 **Les lettres des psaumes acrostiches.** Les psaumes 25, 34, 37, 111, 112, 119
