@@ -1539,7 +1539,10 @@
      servait ; elle a été retirée à la demande de Taylor. Quatre versions que
      les évangéliques connaissent déjà n'ont pas besoin d'être présentées —
      leur sigle et leur année suffisent. */
-  .bible-list{ display:flex; flex-direction:column; gap:0.45rem; margin:0.9rem 0 0; }
+  .bible-list{ display:flex; flex-direction:column; gap:0.45rem; margin:0.9rem 0 0.2rem; }
+  /* La feuille des versions n'a AUCUN bouton : la poignée ferme, une ligne
+     choisit. C'est tout ce qu'on vient y faire. */
+  .bibles-sheet .bible-list{ margin-top:0.75rem; }
   .modal-card.bibles{ max-width:23rem; text-align:left; }
   .modal-card.bibles .modal-title{ text-align:center; }
   /* LA MEME RECETTE QUE LES AUTRES LIGNES DU JEU. Elle peignait son fond
@@ -1559,7 +1562,22 @@
      n'existe pas, et cassé la palette chaude du jeu. Ce qui les distingue,
      c'est leur sigle et leur nom ; ce qui montre le choix, c'est l'anneau
      corail et la coche verte — comme partout ailleurs. */
-  .bible-sig{ width:2.3rem; height:2.3rem; border-radius:12px; display:flex; align-items:center; justify-content:center; font-family:'Poppins',sans-serif; font-weight:700; font-size:0.7rem; letter-spacing:0.02em; color:#fff; flex-shrink:0; background:linear-gradient(150deg, #D8A85E, #A9762C); box-shadow:inset 0 1.5px 0 rgba(255,255,255,0.72), inset 0 0 0 1.5px rgba(255,255,255,0.42), 0 0 0 1px rgba(120,80,20,0.3), 0 5px 14px rgba(169,118,44,0.44); }
+  /* CHAQUE VERSION A SA COULEUR, exactement comme chaque ligne des Réglages a
+     la sienne — même taille, même rayon, même lèvre blanche, même ombre
+     colorée. Quatre plaques d'or identiques ne se distinguaient que par trois
+     lettres ; on reconnaît maintenant la sienne du coin de l'œil, et le
+     panneau prend les couleurs du jeu au lieu d'être un camaïeu. */
+  .bible-sig{ width:2.3rem; height:2.3rem; border-radius:12px; display:flex; align-items:center; justify-content:center; font-family:'Poppins',sans-serif; font-weight:700; font-size:0.7rem; letter-spacing:0.02em; color:#fff; flex-shrink:0;
+    background:linear-gradient(150deg, var(--bs-clair), var(--bs-fonce));
+    box-shadow:inset 0 1.5px 0 rgba(255,255,255,0.72), inset 0 0 0 1.5px rgba(255,255,255,0.42), 0 0 0 1px var(--bs-bord), 0 5px 14px var(--bs-ombre); }
+  /* Or : la référence, celle que presque tout le monde lit. */
+  .bible-sig.lsg1910{ --bs-clair:#D8A85E; --bs-fonce:#A9762C; --bs-bord:rgba(120,80,20,0.3); --bs-ombre:rgba(169,118,44,0.44); }
+  /* Bleu : le Darby, la littérale des assemblées de frères. */
+  .bible-sig.darby{ --bs-clair:#4DA8FF; --bs-fonce:#2E7FE8; --bs-bord:rgba(20,72,150,0.3); --bs-ombre:rgba(46,127,232,0.44); }
+  /* Corail : l'Ostervald, la plus ancienne — la couleur maîtresse du jeu. */
+  .bible-sig.ostervald{ --bs-clair:#F4703F; --bs-fonce:#DE4A1C; --bs-bord:rgba(150,50,20,0.3); --bs-ombre:rgba(214,86,44,0.44); }
+  /* Vert : la Bible Annotée, celle de l'étude. */
+  .bible-sig.ba{ --bs-clair:#6FD3B4; --bs-fonce:#2FA184; --bs-bord:rgba(20,110,90,0.3); --bs-ombre:rgba(47,161,132,0.44); }
   .bible-txt{ flex:1; min-width:0; }
   .bible-txt b{ font-family:'Poppins',sans-serif; font-weight:600; font-size:0.95rem; }
   .bible-txt b i{ font-style:normal; font-weight:500; color:var(--ink-soft); font-size:0.78rem; }
@@ -1895,7 +1913,7 @@ const ICONS = {
      corail, où un trait fin se perdrait. Un seul dessin -> les deux boutons ne
      peuvent pas diverger. */
   shareUp: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.1" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v12"/><path d="M8 7l4-4 4 4"/><path d="M5 12v6a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2v-6"/></svg>`,
-  bookOpen: `<svg viewBox="0 0 48 48" fill="none"><defs><linearGradient id="bkC" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#A05E28"/><stop offset="1" stop-color="#6B3A15"/></linearGradient><linearGradient id="bkL" x1="0" y1="0" x2="1" y2="0"><stop offset="0" stop-color="#F0E0B8"/><stop offset="1" stop-color="#FFFBEE"/></linearGradient><linearGradient id="bkR" x1="0" y1="0" x2="1" y2="0"><stop offset="0" stop-color="#FFFBEE"/><stop offset="1" stop-color="#F0E0B8"/></linearGradient></defs><path fill="#EFAD26" d="M23.1 2.9h1.8v2.9h2.9v1.8h-2.9v4h-1.8v-4h-2.9V5.8h2.9V2.9Z"/><path fill="url(#bkC)" d="M5.6 13.7c0-1.5 1.2-2.6 2.6-2.3 4.6.9 10.9 2.8 15.8 6.3 4.9-3.5 11.2-5.4 15.8-6.3 1.4-.3 2.6.8 2.6 2.3v19.8c0 1.2-.9 2.2-2 2.5-5.3 1.2-11.6 3.1-16.4 6.4-4.8-3.3-11.1-5.2-16.4-6.4-1.1-.3-2-1.3-2-2.5V13.7Z"/><path fill="#E9BC57" d="M24 19.2c4.6-3.2 10.8-5 15.7-5.9v19.6c-5.2 1.1-10.9 2.9-15.7 5.8-4.8-2.9-10.5-4.7-15.7-5.8V13.3c4.9.9 11.1 2.7 15.7 5.9Z"/><path fill="url(#bkL)" d="M23.1 20.5c-3.9-2.9-9.4-4.6-13.3-5.4v18c4.6 1 9.6 2.5 13.3 4.9V20.5Z"/><path fill="url(#bkR)" d="M24.9 20.5c3.9-2.9 9.4-4.6 13.3-5.4v18c-4.6 1-9.6 2.5-13.3 4.9V20.5Z"/><g stroke="#C6A768" stroke-width="1.5" stroke-linecap="round" opacity="0.9"><path d="M12.4 20.6c2.7.7 5.2 1.7 7.4 3"/><path d="M12.4 24.8c2.7.7 5.2 1.7 7.4 3"/><path d="M12.4 29c2.7.7 5.2 1.7 7.4 3"/><path d="M35.6 20.6c-2.7.7-5.2 1.7-7.4 3"/><path d="M35.6 24.8c-2.7.7-5.2 1.7-7.4 3"/><path d="M35.6 29c-2.7.7-5.2 1.7-7.4 3"/></g><path fill="rgba(94,56,15,0.4)" d="M24 19.1c-.7.8-.9 1.9-.9 3.1v15.9l.9.7.9-.7V22.2c0-1.2-.2-2.3-.9-3.1Z"/><path fill="#C2426B" d="M29.3 37.6v7.6l2.4-2 2.4 2.2v-9.3c-1.6.4-3.2.9-4.8 1.5Z"/></svg>`,
+  bookOpen: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M12 6.6C10.4 5.4 8.4 4.8 6 4.8H3.6v13.2H6c2.4 0 4.4 0.6 6 1.8"/><path d="M12 6.6c1.6-1.2 3.6-1.8 6-1.8h2.4v13.2H18c-2.4 0-4.4 0.6-6 1.8"/><path d="M12 6.6v13.2"/></svg>`,
 };
 
 /* ===================== DATA ===================== */
@@ -4380,19 +4398,37 @@ function ligneBible(b){
   return `<button class="bible-item${retenue?' sel':''}${b.dispo?'':' indispo'}" data-bible="${b.cle}"`
     + ` ${b.dispo?`onclick="setBible('${b.cle}')"`:'disabled'}`
     + ` aria-label="${b.nom}, ${b.annee}${b.dispo?'':' — indisponible'}">`
-    + `<span class="bible-sig">${b.sigle}</span>`
+    + `<span class="bible-sig ${b.cle}">${b.sigle}</span>`
     + `<span class="bible-txt"><b>${b.court} <i>${b.annee}</i></b></span>`
     + `<span class="bible-ck">${ICONS.checkCircle}</span></button>`;
 }
+/* UNE FEUILLE, PAS UNE MODALE. Le choix de version s'ouvrait dans une modale
+   fermée par un bouton « Fermer ». Il s'ouvre maintenant comme les Réglages :
+   une feuille qu'on tire par sa poignée, ou qu'on referme d'un tap dessus —
+   le geste que Taylor préfère, et le même partout dans le jeu.
+   PLUS AUCUN BOUTON dans le panneau : la poignée ferme, une ligne choisit.
+   Rien sous les noms non plus : quatre versions que les évangéliques
+   connaissent n'ont pas besoin d'être présentées. */
 function openBibles(){
-  showModal({
-    title: "Version de la Bible",
-    /* Rien sous la liste. Les quatre versions sont libres : aucune attribution
-       n'est imposée, donc aucune ligne à afficher. Le panneau ne montre que ce
-       qu'on vient y faire — choisir. */
-    bodyHtml: `<div class="bible-list">${BIBLES.map(ligneBible).join("")}</div>`,
-    cardClass: "guide bibles", okLabel: "Fermer", hideCancel: true,
-  });
+  if(document.getElementById("biblesVeil")) return;
+  const veil = document.createElement("div");
+  veil.className = "sheet-veil"; veil.id = "biblesVeil";
+  veil.innerHTML = `
+    <div class="settings-sheet bibles-sheet" role="dialog" aria-label="Version de la Bible">
+      <button class="sheet-grab" aria-label="Fermer" onclick="closeBibles()"></button>
+      <div class="sheet-title"><span class="st-ico">${ICONS.bookOpen}</span>Version de la Bible</div>
+      <div class="bible-list">${BIBLES.map(ligneBible).join("")}</div>
+    </div>`;
+  document.body.appendChild(veil);
+  attachSheetDrag(veil.querySelector(".settings-sheet"), closeBibles);
+  veil.addEventListener("click", (e)=>{ if(e.target===veil){ closeBibles(); } });
+  queueGlassSync();
+}
+function closeBibles(){
+  const v = document.getElementById("biblesVeil");
+  if(!v || v.classList.contains("closing")) return;
+  v.classList.add("closing");
+  setTimeout(()=>{ if(v.parentNode) v.remove(); }, 250);
 }
 /* Changer de version ne recharge PAS l'écran : on retouche les deux seules
    choses qui bougent — la puce retenue et la mention légale. Le verset suivant
