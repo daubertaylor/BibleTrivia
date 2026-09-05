@@ -1489,7 +1489,12 @@
      même à cinq versions — là où deux puces côte à côte cassaient déjà.
      Sous le nom, une ligne dit À QUI elle sert : un serviteur qui prépare une
      étude ne choisit pas au hasard, il choisit une littérale. */
-  .bible-list{ display:flex; flex-direction:column; gap:0.45rem; padding:0.1rem 0.25rem 0.6rem; }
+  .bible-list{ display:flex; flex-direction:column; gap:0.45rem; margin:0.9rem 0 0; }
+  .modal-card.bibles{ max-width:23rem; text-align:left; }
+  .modal-card.bibles .modal-title{ text-align:center; }
+  /* La mention légale reste sous la liste : le néo-Crampon est sous licence
+     Creative Commons, son attribution doit être visible là où on le choisit. */
+  .bible-loi{ margin:0.75rem 0.15rem 0; font-size:0.72rem; line-height:1.4; color:var(--ink-soft); text-align:center; }
   .bible-item{ display:flex; align-items:center; gap:0.7rem; width:100%; text-align:left; --glass-tint: rgb(252,248,241); background:rgb(252,248,241); backdrop-filter:none; -webkit-backdrop-filter:none; border:1px solid rgba(255,255,255,0.72); border-radius:14px; padding:0.55rem 0.65rem; color:var(--ink); }
   .bible-item.sel{ --rim-edge:0 0 0 1px rgba(150,30,14,0.3); --rim-cast:0 4px 12px rgba(241,80,47,0.3); }
   /* Une version dont le texte n'est pas livré reste VISIBLE mais éteinte : le
@@ -4146,6 +4151,29 @@ applyScene();
 applySceneFormat();
 window.addEventListener("resize", applySceneFormat);
 window.addEventListener("orientationchange", ()=>setTimeout(applySceneFormat, 120));
+/* LE CHOIX SE FAIT À PART, PAS DANS LES RÉGLAGES.
+   Cinq versions étalées dans le panneau le noyaient : les Réglages sont une
+   liste de lignes courtes, chacune une chose. La Bible n'y tient donc qu'une
+   ligne, avec le sigle courant sur une pastille — exactement comme « Plein
+   écran total » porte son bouton « Guide ». Le catalogue, lui, s'ouvre par
+   dessus, avec la place qu'il lui faut pour dire à qui chaque version sert. */
+function ligneBible(b){
+  const retenue = settings.bible === b.cle && b.dispo;
+  return `<button class="bible-item${retenue?' sel':''}${b.dispo?'':' indispo'}" data-bible="${b.cle}"`
+    + ` ${b.dispo?`onclick="setBible('${b.cle}')"`:'disabled'}`
+    + ` aria-label="${b.nom}, ${b.annee}${b.dispo?'':' — indisponible'}">`
+    + `<span class="bible-sig" style="background:${b.teinte}">${b.sigle}</span>`
+    + `<span class="bible-txt"><b>${b.court} <i>${b.annee}</i></b><small>${b.pour}</small></span>`
+    + `<span class="bible-ck">${retenue?ICONS.checkCircle:""}</span></button>`;
+}
+function openBibles(){
+  showModal({
+    title: "Version de la Bible",
+    bodyHtml: `<div class="bible-list">${BIBLES.map(ligneBible).join("")}</div>`
+            + `<div class="bible-loi" id="bibleMention">${bibleActive().mention}</div>`,
+    cardClass: "guide bibles", okLabel: "Fermer", hideCancel: true,
+  });
+}
 /* Changer de version ne recharge PAS l'écran : on retouche les deux seules
    choses qui bougent — la puce retenue et la mention légale. Le verset suivant
    sortira dans la nouvelle version, sans que rien n'ait clignoté.
@@ -4162,6 +4190,10 @@ function setBible(cle){
     const ck = x.querySelector(".bible-ck");
     if(ck) ck.innerHTML = retenue ? ICONS.checkCircle : "";
   });
+  const nom = document.getElementById("bibleNom");
+  if(nom) nom.textContent = b.court + " " + b.annee;
+  const go = document.getElementById("bibleGo");
+  if(go) go.textContent = b.sigle;
   const m = document.getElementById("bibleMention");
   if(m) m.textContent = b.mention;
 }
@@ -4833,10 +4865,8 @@ function openSettings(){
       </div>` : ""}
       <div class="set-row">
         <span class="set-ico bib">${ICONS.bookOpen}</span>
-        <span class="set-txt"><b>Version de la Bible</b><small id="bibleMention">${bibleActive().mention}</small></span>
-      </div>
-      <div class="bible-list">
-        ${BIBLES.map(b=>`<button class="bible-item${settings.bible===b.cle&&b.dispo?' sel':''}${b.dispo?'':' indispo'}" data-bible="${b.cle}" ${b.dispo?`onclick="setBible('${b.cle}')"`:'disabled'} aria-label="${b.nom}, ${b.annee}${b.dispo?'':' — indisponible'}"><span class="bible-sig" style="background:${b.teinte}">${b.sigle}</span><span class="bible-txt"><b>${b.court} <i>${b.annee}</i></b><small>${b.pour}</small></span><span class="bible-ck">${settings.bible===b.cle&&b.dispo?ICONS.checkCircle:""}</span></button>`).join("")}
+        <span class="set-txt"><b>Version de la Bible</b><small id="bibleNom">${bibleActive().court} ${bibleActive().annee}</small></span>
+        <button class="set-go" id="bibleGo" onclick="openBibles()">${bibleActive().sigle}</button>
       </div>
       <button class="share-btn" onclick="shareGame()">
         <span class="share-ico">${ICONS.shareUp}</span>
