@@ -4513,6 +4513,15 @@ function setBible(cle){
   if(nom) nom.textContent = b.court + " " + b.annee;
   const go = document.getElementById("bibleGo");
   if(go) go.textContent = b.sigle;
+  /* LE VERSET DE L'ACCUEIL SUIT LA VERSION, ET TOUT DE SUITE. Il la suivait
+     déjà — mais seulement au rendu de l'accueil, donc en pratique au prochain
+     lancement : on choisissait Darby et on lisait encore le Segond derrière la
+     feuille. Il se réécrit maintenant à la seconde, sous les yeux, sans
+     re-rendre l'écran (rien ne bouge, rien ne clignote : un seul texte
+     change). Le verset est le même — Hébreux 4:16 — c'est sa TRADUCTION qui
+     suit celle qu'on lit. */
+  const hv = document.getElementById("homeVerse");
+  if(hv) hv.innerHTML = ligneAccueil();
 }
 function setScene(key){
   if(settings.scene === key) return;
@@ -6423,6 +6432,22 @@ function texteVerset(ref, defaut){
   const lot = VERSETS_ALT[bibleActive().cle];
   return (lot && lot[ref]) || defaut;
 }
+/* LE VERSET DE L'ACCUEIL — déclaré UNE fois. Il est écrit à deux endroits :
+   au rendu de l'accueil, et à la seconde où l'on change de version (voir
+   setBible). Deux copies de la référence auraient fini par diverger. */
+const ACCUEIL_REF = "H\u00e9breux 4:16a";
+const ACCUEIL_DEF = "Approchons-nous donc avec assurance du tr\u00f4ne de la gr\u00e2ce";
+function texteAccueil(){ return frSpace(texteVerset(ACCUEIL_REF, ACCUEIL_DEF)); }
+/* La LIGNE ENTIÈRE, guillemets et référence compris — pas seulement le texte.
+   Un premier essai n'enveloppait que la citation dans un <span> pour pouvoir la
+   réécrire : la ligne restait à la même place au pixel près, mais couper le
+   texte en deux boîtes en ligne sépare aussi le crénage (« et le premier mot ne
+   se règlent plus ensemble) -> les lettres de la première ligne bougeaient d'un
+   demi-pixel. En réécrivant la ligne complète, le paragraphe retrouve
+   exactement la structure qu'il a au chargement : zéro différence. */
+function ligneAccueil(){
+  return "\u00ab " + texteAccueil() + "&nbsp;\u00bb <span class=\"hv-ref\">H\u00e9breux&nbsp;4:16</span>";
+}
 const HERO_VERSES = [
   { t:"Ta parole est une lampe à mes pieds, Et une lumière sur mon sentier.", r:"Psaume 119:105" },
   { t:"L'Éternel est mon berger : je ne manquerai de rien.", r:"Psaume 23:1" },
@@ -6758,8 +6783,18 @@ function showHeroVerse(){
      Android. */
   glassFreezeForTransition();
   playVerse();
+  /* LE TEMPS DE LECTURE SUIT LA LONGUEUR DU VERSET. C'était 12 s pour tous,
+     du plus court au plus long : « Je puis tout par celui qui me fortifie »
+     (39 signes) restait affiché trois fois trop longtemps, et Josué 1:9 ou
+     Jean 3:16 dans leur version la plus longue (jusqu'à 377 signes) se
+     refermaient au milieu d'une phrase — Taylor n'avait pas le temps de les
+     lire. On compte donc ~11 signes par seconde (une lecture posée, pas une
+     lecture en diagonale), plus 6 s pour l'ouverture de la carte et le temps
+     de poser les yeux. Jamais moins que les 12 s d'avant, jamais plus de 40 s.
+     Un tap sur la carte la referme à tout moment. */
+  const duree = Math.max(12000, Math.min(40000, 6000 + texte.length * 90));
   clearTimeout(zone._verseTimer);
-  zone._verseTimer = setTimeout(hideHeroVerse, 12000);
+  zone._verseTimer = setTimeout(hideHeroVerse, duree);
 }
 function hideHeroVerse(){
   const zone = document.getElementById("heroZone");
@@ -8235,7 +8270,7 @@ function renderModeSelect(){
         </button>
       </div>
       <h1 class="hero-title">BibleTrivia</h1>
-      <p class="home-verse">« ${frSpace(texteVerset("Hébreux 4:16a", "Approchons-nous donc avec assurance du trône de la grâce"))}&nbsp;» <span class="hv-ref">Hébreux&nbsp;4:16</span></p>
+      <p class="home-verse" id="homeVerse">${ligneAccueil()}</p>
     </div>
     <div class="flex-sp home-sp-top"></div>
     ${(()=>{
