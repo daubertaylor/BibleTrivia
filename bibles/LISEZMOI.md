@@ -102,6 +102,37 @@ convertit d'abord au format « un verset par ligne ».
 Une version **incomplète fonctionne** : ce qui manque retombe sur le Segond,
 donc jamais de trou à l'écran.
 
+## Les citations des explications
+
+Une explication qui ouvre des guillemets promet le texte biblique. Beaucoup
+résumaient de mémoire : « la plus grande, c'est l'amour » là où Segond écrit
+« la charité ». `citations.py` ne réécrit rien à la main — il cherche **dans le
+verset réel** le plus court passage continu qui porte tous les mots pleins de
+la citation, puis l'étend aux bornes de la proposition.
+
+| | |
+|---|---|
+| déjà exactes | 49 |
+| passées à un extrait exact | 71 |
+| écartées, l'extrait triplait de longueur | 23 |
+| aucun passage ne les contient | 57 |
+
+Le même calcul tourne sur les cinq versions : l'extrait suit donc la version
+choisie (`CITATIONS_ALT`, 104 variantes), et ce qui manque retombe sur le
+Segond. **Aucune des 1545 questions n'a changé de forme.**
+
+Les 57 « hors verset » ne sont pas toutes des fautes : beaucoup sont des gloses
+de mots — « Christ » traduit l'hébreu « Messie », « Emmanuel » signifie « Dieu
+avec nous » — où les guillemets marquent un mot, pas une citation.
+
+## Ce que la version ne peut PAS changer
+
+**Les 119 questions « Complète … ».** Leur bonne réponse EST le mot du verset :
+« Je veux la … , et non des sacrifices » attend « miséricorde », que le Segond
+emploie et que le Darby remplace par « bonté ». Basculer la version y rendrait
+la bonne réponse fausse. Elles restent donc sur le texte de référence — c'est
+la seule place du jeu où la version ne suit pas, et c'est délibéré.
+
 ## Les pièges rencontrés
 
 **Les codes de livres.** Les fichiers eBible utilisent les anciens codes à trois
