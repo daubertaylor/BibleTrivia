@@ -224,7 +224,7 @@
   .rank-row, .text-input, .code-input, .fs-hint, .modal-card, .add-team, .btn-ghost, .fsh-close, .hs-item,
   .settings-sheet, .hero-verse-card, .end-medal, .modal-btn, .leave-banner, .adj-btn, .waiting-note,
   .rules, .btn-review, .daily-card, .dc-streak, .btn-invite, .creator-badge, .sheet-done, .set-go,
-  .share-btn, .rev-item, .parcours-card, .parcours-sum, .tst-head, .team-row, .bk{
+  .share-btn, .rev-item, .bible-item, .parcours-card, .parcours-sum, .tst-head, .team-row, .bk{
     --rim-cast:0 5px 14px rgba(34,26,16,0.12);
   }
   /* L'ÉLÉVATION SUIT LA PROFONDEUR. Une surface posée DANS une carte est déjà
@@ -1050,7 +1050,7 @@
   .option-btn, .btn-primary, .btn-next, .btn-replay, .fact-card, .tier-chip, .q-counter, .streak-chip, .chip, .icon-btn, .btn-reveal,
   .btn-newgame, .award-btn, .presence-card, .me-row, .online-action, .searching-card,
   .waiting-card, .info-card, .vs-row, .len-chip, .duel-scorebar, .timer-chip, .dr-side, .rank-row,
-  .text-input, .code-input, .fs-hint, .modal-card, .add-team, .btn-ghost, .fsh-close, .hs-item, .settings-sheet, .hero-verse-card, .end-medal, .modal-btn.ok, .modal-btn.cancel, .leave-banner, .adj-btn, .waiting-note, .rules, .btn-review, .daily-card, .dc-streak, .btn-invite, .creator-badge, .sheet-done, .set-go, .share-btn, .rev-item, .parcours-card, .tst-head{
+  .text-input, .code-input, .fs-hint, .modal-card, .add-team, .btn-ghost, .fsh-close, .hs-item, .settings-sheet, .hero-verse-card, .end-medal, .modal-btn.ok, .modal-btn.cancel, .leave-banner, .adj-btn, .waiting-note, .rules, .btn-review, .daily-card, .dc-streak, .btn-invite, .creator-badge, .sheet-done, .set-go, .share-btn, .rev-item, .bible-item, .parcours-card, .tst-head{
     background-color:transparent;
     /* Deux voies pour le verre :
        - par DÉFAUT (iOS) : photo pré-floutée peinte (var(--blur-url)),
@@ -1123,7 +1123,7 @@
     .rank-row, .fs-hint, .modal-card, .add-team, .btn-ghost, .fsh-close, .hs-item, .settings-sheet,
     .hero-verse-card, .end-medal, .modal-btn.ok, .modal-btn.cancel, .leave-banner, .adj-btn, .waiting-note,
     .rules, .btn-review, .daily-card, .dc-streak, .btn-invite, .creator-badge, .sheet-done, .set-go,
-    .share-btn, .rev-item, .parcours-card, .parcours-sum, .tst-head):not(.has-gs){
+    .share-btn, .rev-item, .bible-item, .parcours-card, .parcours-sum, .tst-head):not(.has-gs){
     box-shadow:
       inset 0 1.5px 0 rgba(255,255,255,0.72),
       inset 0 0 0 1.5px rgba(255,255,255,0.42),
@@ -1146,7 +1146,7 @@
     .option-btn, .btn-primary, .btn-next, .btn-replay, .fact-card, .tier-chip, .q-counter, .streak-chip, .chip, .icon-btn, .btn-reveal,
     .btn-newgame, .award-btn, .presence-card, .me-row, .online-action, .searching-card,
     .waiting-card, .info-card, .vs-row, .len-chip, .duel-scorebar, .timer-chip, .dr-side, .rank-row,
-    .text-input, .code-input, .fs-hint, .modal-card, .add-team, .btn-ghost, .fsh-close, .hs-item, .settings-sheet, .hero-verse-card, .end-medal, .modal-btn.ok, .modal-btn.cancel, .leave-banner, .adj-btn, .waiting-note, .rules, .btn-review, .daily-card, .dc-streak, .btn-invite, .creator-badge, .sheet-done, .set-go, .share-btn, .rev-item, .parcours-card, .parcours-sum, .tst-head){
+    .text-input, .code-input, .fs-hint, .modal-card, .add-team, .btn-ghost, .fsh-close, .hs-item, .settings-sheet, .hero-verse-card, .end-medal, .modal-btn.ok, .modal-btn.cancel, .leave-banner, .adj-btn, .waiting-note, .rules, .btn-review, .daily-card, .dc-streak, .btn-invite, .creator-badge, .sheet-done, .set-go, .share-btn, .rev-item, .bible-item, .parcours-card, .parcours-sum, .tst-head){
     --glass-photo: none;
     --glass-bf: blur(26px) saturate(1.35);
     /* La couleur de fond de base des surfaces (souvent blanc ~0,5) est
@@ -1776,7 +1776,7 @@
   .presence-card, .me-row, .online-action, .vs-row, .searching-card, .waiting-card, .info-card,
   .len-chip, .duel-scorebar, .rank-row, .team-row, .add-team, .btn-ghost, .fsh-close,
   .settings-sheet, .modal-card, .hero-verse-card, .end-medal, .adj-btn, .waiting-note, .rules,
-  .btn-review, .btn-invite, .rev-item, .tst-head, .icon-btn, .modal-btn.cancel,
+  .btn-review, .btn-invite, .rev-item, .bible-item, .tst-head, .icon-btn, .modal-btn.cancel,
   .text-input, .code-input, .fs-hint, .dr-side{
     --glass-tint: rgba(255,253,247,0.58);
   }
@@ -4422,7 +4422,15 @@ function openBibles(){
   document.body.appendChild(veil);
   attachSheetDrag(veil.querySelector(".settings-sheet"), closeBibles);
   veil.addEventListener("click", (e)=>{ if(e.target===veil){ closeBibles(); } });
-  queueGlassSync();
+  /* LE VERRE SE CONSTRUIT À L'OUVERTURE, comme pour toute autre feuille. Un
+     simple queueGlassSync() ne suffit pas : le moteur garde en cache la liste
+     des surfaces, et une feuille qui vient d'apparaître n'y est pas encore.
+     Elle restait donc SANS couche de verre — un aplat crème — jusqu'à ce qu'un
+     geste force le moteur à relire la page ; le décor apparaissait alors d'un
+     coup, et mal calé. Ces deux lignes sont celles des Réglages, du guide et
+     du carnet : le verre est là dès la première image, et reste solidaire de
+     la feuille pendant qu'elle monte. */
+  glassSheetOpenUntil = performance.now() + 560; glassTrack(680);
 }
 function closeBibles(){
   const v = document.getElementById("biblesVeil");
