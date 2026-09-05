@@ -3,7 +3,7 @@
 
 Les sources ne se ressemblent pas : le Segond et l'Ostervald d'eBible collent la
 ponctuation haute (« crainte? »), le Segond oublie parfois l'espace apres une
-virgule (« unique,afin que »), la Sainte Bible libre melange les deux
+virgule (« unique,afin que »), une version essayee melangeait les deux
 apostrophes dans un meme verset. Tout passe donc par ici, et TOUTES les
 versions en sortent avec la meme allure — celle des 1545 questions du jeu :
 apostrophe droite, espace avant la ponctuation haute, guillemets francais.

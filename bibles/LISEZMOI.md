@@ -61,24 +61,22 @@ du jeu.
 L'espace devant `? ! ; :` est **insécable** : la ponctuation ne part jamais
 seule à la ligne.
 
-## Pourquoi une version en français d'aujourd'hui
+## Le trou qui reste : aucune version moderne
 
-Les trois premières datent de 1744, 1885 et 1910. Or les versions que lisent
-réellement les évangéliques francophones aujourd'hui — Segond 21, Semeur,
-Nouvelle Édition de Genève — sont **toutes sous droits**, et aucune n'est
-livrable. La Sainte Bible libre comble ce trou : c'est la seule traduction
-française en langue contemporaine qui soit vraiment libre.
+Les quatre versions livrées datent de 1744, 1885, 1900 et 1910. Or celles que
+lisent réellement les évangéliques francophones aujourd'hui — Segond 21,
+Semeur, Nouvelle Édition de Genève — sont **toutes sous droits**, et aucune
+n'est livrable.
 
-    SBL   Je peux tout par Christ qui me fortifie.
-    LSG   Je puis tout par celui qui me fortifie.
+Une tentative a été faite et **annulée** : la « Sainte Bible libre pour le
+monde » (2026), seule traduction française en langue contemporaine réellement
+libre. Sa langue est propre, mais personne ne la lit — ce n'est la Bible
+d'aucune église. Une version que le joueur ne reconnaît pas n'est pas un choix
+de plus, c'est une ligne de plus à écarter du regard.
 
-    SBL   Confie-toi au SEIGNEUR de tout ton cœur, et ne t'appuie pas
-          sur ta propre intelligence.
-    LSG   Confie-toi en l'Éternel de tout ton cœur, Et ne t'appuie pas
-          sur ta sagesse ;
-
-eBible la présente comme un travail encore en cours. Vérifiée sur un échantillon
-des 248 versets du jeu : la langue est propre et naturelle de bout en bout.
+Le trou reste donc ouvert. Il ne se comblera que par une licence, pas par une
+trouvaille : **la mécanique est prête** — il suffit d'ajouter l'entrée au
+registre `BIBLES` et le texte à `VERSETS_ALT`.
 
 ## Ce qui a été écarté, et pourquoi
 
