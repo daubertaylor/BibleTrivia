@@ -9,23 +9,21 @@ jeu y ont été extraites par script.
 | LSG | Louis Segond | 1910 | domaine public | `fraLSG` |
 | JND | Bible J. N. Darby | 1885 | domaine public | `frajnd` |
 | OST | La Sainte Bible, Ostervald | 1744 | domaine public | `fra_fob` |
-| NCL | Sainte Bible néo-Crampon Libre | 2022 | **CC BY-SA 4.0** — © Fraternité de Tibériade | `francl` |
-| NEG | Nouvelle Édition de Genève | 1979 | © Société Biblique de Genève — **non livrée** | — |
 
-## Le néo-Crampon demande une attribution
+Trois traductions protestantes, toutes dans le **domaine public** : aucune
+attribution imposée, aucune licence à renouveler, rien qui puisse être retiré.
 
-Sa licence Creative Commons Attribution — Partage dans les mêmes conditions 4.0
-**oblige** à citer la Fraternité de Tibériade partout où son texte est montré.
-C'est fait : sa mention s'affiche dans les Réglages dès qu'elle est retenue.
-Ne pas la retirer.
+## Ce qui a été écarté, et pourquoi
 
-## Pourquoi la Genève 1979 n'est pas là
+**La néo-Crampon (catholique, 2022).** Techniquement disponible sous licence
+Creative Commons, mais hors du public du jeu — et sa licence aurait obligé à
+afficher une attribution à perpétuité. Retirée à la demande de Taylor.
 
-Elle appartient à la Société Biblique de Genève. La livrer sans licence
-exposerait le jeu ; la reconstituer approximativement tromperait le lecteur sur
-la Parole, sous une étiquette exacte. Elle figure donc au catalogue, éteinte,
-avec sa raison affichée. Ils accordent souvent des autorisations gratuites pour
-un usage non commercial : il suffit de demander.
+**La Nouvelle Édition de Genève 1979.** Sous droits de la Société Biblique de
+Genève. Une entrée « en attente de licence » a été essayée puis retirée : une
+version qu'on ne peut pas choisir n'a rien à faire dans une liste de choix, elle
+ne fait qu'encombrer. Si la licence est obtenue un jour, il suffira d'ajouter
+l'entrée au registre — la mécanique est prête.
 
 ## Ajouter une version
 
