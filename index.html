@@ -1757,11 +1757,22 @@
      plus grande, et la limite ci-dessous s'arrete avant les cartes de mode. */
   .hero-verse-card{ position:absolute; top:0; bottom:auto; height:auto; min-height:100%; max-height:min(9.5rem, 22vh); left:max(0px, calc(50% - 11.5rem)); right:max(0px, calc(50% - 11.5rem)); display:flex; flex-direction:column; align-items:center; justify-content:center; gap:0.42rem; padding:0.8rem 1.1rem; border-radius:20px; border:1px solid rgba(239,173,38,0.55); opacity:0; transform:scale(0.82) translateY(10px); transition:transform 0.55s cubic-bezier(0.2,1.15,0.3,1), opacity 0.4s ease; will-change:transform, opacity; pointer-events:none; text-align:center; }
   .hero-zone.show-verse .hero-verse-card{ opacity:1; transform:scale(1) translateY(0); pointer-events:auto; transition-delay:0.08s; }
-  /* Le titre s'efface avec le reste du heros : la carte lui emprunte sa place
-     le temps de la lecture, et la retrouve intacte des qu'on la referme. */
+  /* Profil et Réglages s'effacent TOUJOURS : ils sont dans les coins hauts, et
+     la carte, large de presque tout l'écran, passe par-dessus. */
   .hero:has(.hero-zone.show-verse) .hero-profile,
-  .hero:has(.hero-zone.show-verse) .hero-settings,
-  .hero:has(.hero-zone.show-verse) .hero-title{ opacity:0; pointer-events:none; }
+  .hero:has(.hero-zone.show-verse) .hero-settings{ opacity:0; pointer-events:none; }
+  /* LE NOM DU JEU RESTE. Il s'effaçait avec eux, systématiquement — alors que
+     la carte ne descend jusqu'à lui que si le verset est assez long pour la
+     faire grandir au-delà de la zone du héros. Mesuré sur les 992 affichages
+     (4 versions x 248 versets) : sur iPhone 15 et Pro Max, AUCUN verset ne
+     dépasse la zone (le plus gourmand demande 116 px pour 124,7 disponibles) —
+     le titre disparaissait donc 992 fois pour rien. Sur iPhone SE, où la zone
+     ne fait que 80 px, 61% des versets tiennent au-dessus du titre et 39% ont
+     réellement besoin de sa place.
+     .verse-haute est posée en JS au moment de l'affichage, uniquement quand le
+     bas de la carte descend jusqu'au titre (voir showHeroVerse). Le reste du
+     temps, « BibleTrivia » ne bouge pas. */
+  .hero:has(.hero-zone.show-verse.verse-haute) .hero-title{ opacity:0; pointer-events:none; }
   .hero-title{ transition:opacity var(--tr-voile-in); }
   .hero-verse-text{ font-family:'Fraunces',serif; font-style:italic; color:var(--ink); font-size:clamp(1rem, 3.3vw, 1.18rem); line-height:1.5; }
   .hero-verse-card.long .hero-verse-text{ font-size:clamp(0.84rem, 2.8vw, 1rem); line-height:1.42; }
@@ -6799,6 +6810,33 @@ function showHeroVerse(){
     card.classList.toggle("enorme", texte.length > 245);
   }
   zone.classList.add("show-verse");
+  /* LE TITRE NE S'EFFACE QUE S'IL EST DANS LE CHEMIN (voir .verse-haute en CSS).
+     On mesure APRÈS avoir posé les classes de taille : la hauteur de la carte
+     est alors définitive. offsetHeight et NON getBoundingClientRect : la carte
+     porte encore le scale(0.82) de son état fermé au moment où l'on mesure, et
+     le rect le prendrait en compte (18% de moins) -> le titre serait resté en
+     place sur des versets qui, une fois la carte ouverte, lui passent dessus.
+     4 px de marge : le titre garde de l'air, la carte ne vient pas le frôler. */
+  if(card){
+    const titre = document.querySelector(".hero-title");
+    if(titre){
+      const rz = zone.getBoundingClientRect(), rt = titre.getBoundingClientRect();
+      /* On vise le haut des LETTRES, pas le haut de la boîte du titre : un <h1>
+         porte son interligne au-dessus de ses capitales. Mesurer contre la
+         boîte faisait s'effacer le nom pour du vide où il n'y a rien d'écrit.
+         La limite retenue est le haut du CADRATIN (boîte + interligne) : les
+         capitales commencent encore ~6 px plus bas (une capitale fait environ
+         0,7 cadratin), donc même une carte qui touche cette limite laisse de
+         l'air au-dessus du B de BibleTrivia. Sans cette précision, les versets
+         les plus hauts manquaient le seuil de 0,5 à 2 px et perdaient le titre
+         pour rien : 50 sur 992 sur un iPhone 15, 5 sur un Pro Max. */
+      const cs = getComputedStyle(titre);
+      const fs = parseFloat(cs.fontSize) || 0;
+      const lh = parseFloat(cs.lineHeight) || fs * 1.2;
+      const limite = rt.top + Math.max(0, (lh - fs) / 2);
+      zone.classList.toggle("verse-haute", (rz.top + card.offsetHeight) > limite);
+    }
+  }
   /* On GÈLE le verre le temps de l'animation (comme les transitions d'écran) :
      la carte-verset se morphe alors en pur GPU, sans que Safari iOS ne
      re-rasterise son fond flouté image par image -> fluide, identique à
@@ -6823,6 +6861,7 @@ function hideHeroVerse(){
   if(!zone) return;
   clearTimeout(zone._verseTimer);
   zone.classList.remove("show-verse");
+  zone.classList.remove("verse-haute");
   glassFreezeForTransition(); // même gel au retour de l'icône : fluide sur iOS
 }
 
