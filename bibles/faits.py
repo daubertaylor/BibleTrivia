@@ -19,7 +19,7 @@ from typo import normalise
 JEU = os.path.join(ICI, "..", "index.html")
 ALIAS = { ("JOE",2,32):("JOE",3,5), ("MAL",4,2):("MAL",3,20) }
 CITE = re.compile(r'«\s*(.+?)\s*»\s*\(([^)]+)\)')
-ORDRE = ["sbl", "darby", "ostervald", "ba"]
+ORDRE = ["darby", "ostervald", "ba"]
 
 def charge(chemin):
     d = extrait.charge_vpl(chemin)

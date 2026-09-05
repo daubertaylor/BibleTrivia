@@ -49,6 +49,11 @@ def normalise(t):
     if not apparies(t):
         t = t.replace("«" + INSEC, "").replace(INSEC + "»", "").replace("«", "").replace("»", "")
 
+    # LES CROCHETS DU DARBY. Sa traduction signale entre crochets les mots
+    # ajoutes pour la clarte : « pour [avoir du] secours ». C'est l'appareil du
+    # savant, pas le verset : sur une carte de jeu, ces crochets ressemblent a
+    # une coquille. On garde les mots, on retire les crochets.
+    t = re.sub(r"\[\s*([^\]]*?)\s*\]", r"\1", t)
     t = re.sub(r"\s*\.\.\.", "…", t)                    # points de suspension
     t = re.sub(r"[ ]{2,}", " ", t)
     return t.strip()

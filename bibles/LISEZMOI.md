@@ -4,16 +4,28 @@ Aucun texte n'a été écrit ni reconstitué de mémoire. Les versets sont extra
 par script de leur source publiée — **eBible.org** au format « un verset par
 ligne », **CrossWire** pour les modules SWORD.
 
-| sigle | version | année | licence | source |
+| sigle | version | année | qui la lit | source |
 |---|---|---|---|---|
-| LSG | Louis Segond | 1910 | domaine public | eBible `fraLSG` |
-| SBL | Sainte Bible libre pour le monde | 2026 | domaine public | eBible `frasbl` |
-| JND | Bible J. N. Darby | 1885 | domaine public | eBible `frajnd` |
-| OST | La Sainte Bible, Ostervald | 1744 | domaine public | eBible `fra_fob` |
-| BA | La Bible Annotée, Bonnet et Bovet | 1900 | domaine public | SWORD `FreBA` |
+| LSG | Louis Segond | 1910 | la référence de l'évangélisme francophone | eBible `fraLSG` |
+| JND | Bible J. N. Darby | 1885 | les assemblées de frères | eBible `frajnd` |
+| OST | La Sainte Bible, Ostervald | 1744 | les milieux attachés au Texte Reçu | eBible `fra_fob` |
+| BA | La Bible Annotée, Bonnet et Bovet | 1900 | la Bible d'étude protestante classique | SWORD `FreBA` |
 
-Cinq traductions, toutes dans le **domaine public** : aucune attribution
-imposée, aucune licence à renouveler, rien qui puisse être retiré.
+Quatre traductions, toutes libres de droits, et **toutes réellement lues** dans
+les églises évangéliques francophones. C'est le critère : pas le nombre.
+
+**La « Sainte Bible libre pour le monde » a été retirée.** Elle avait été
+ajoutée pour combler un trou — la seule traduction en français d'aujourd'hui qui
+soit libre. Mais personne ne la lit : ce n'est la Bible d'aucune église. Une
+version que le joueur ne reconnaît pas n'est pas un choix, c'est du bruit dans
+une liste. Le trou reste : Segond 21, Semeur et NEG 1979 sont sous droits, et
+aucune traduction moderne libre n'a d'usage réel.
+
+**Les crochets du Darby.** Sa traduction signale entre crochets les mots ajoutés
+pour la clarté : « pour [avoir du] secours ». C'est l'appareil du savant, pas le
+verset — sur une carte de jeu, ces crochets ressemblent à une coquille. On garde
+les mots, on retire les crochets (28 versets concernés, plus 1 dans la Bible
+Annotée).
 
 ## Le texte par défaut était abrégé
 

@@ -4,7 +4,7 @@
 import io, os, re, json, sys
 ICI = os.path.dirname(os.path.abspath(__file__))
 JEU = os.path.join(ICI, "..", "index.html")
-ORDRE = ["sbl", "darby", "ostervald", "ba"]      # l'ordre du registre, sans le defaut
+ORDRE = ["darby", "ostervald", "ba"]      # l'ordre du registre, sans le defaut
 
 def js(s):
     return '"' + s.replace("\\", "\\\\").replace('"', '\\"') + '"'
