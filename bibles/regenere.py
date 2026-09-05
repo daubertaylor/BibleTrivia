@@ -17,6 +17,7 @@ JEU = os.path.join(ICI, "..", "index.html")
 # Les numerotations qui divergent : le texte existe, sous un autre numero.
 # (numerotation hebraique de l'Ancien Testament)
 ALIAS = { ("JOE", 2, 32): ("JOE", 3, 5), ("MAL", 4, 2): ("MAL", 3, 20) }
+ACCUEIL = "Hébreux 4:16"      # le verset de la ligne d'accueil
 
 def extrait_source(chemin, jeu):
     d = extrait.charge_vpl(chemin)
@@ -41,6 +42,14 @@ if __name__ == "__main__":
     tout = {}
     for cle, chemin in srcs.items():
         out, absents = extrait_source(chemin, jeu)
+        # LA LIGNE DE L'ACCUEIL. Elle porte Hebreux 4:16, mais le verset entier
+        # y ferait quatre lignes et pousserait les cartes de mode. Elle porte
+        # donc sa PREMIERE PROPOSITION, sous la cle « 4:16a » — « a » est la
+        # notation biblique de la premiere moitie d'un verset.
+        # Elle est calculee ICI, et non deposee a la main dans index.html :
+        # sinon la regeneration suivante l'effacerait sans bruit.
+        if ACCUEIL in out:
+            out[ACCUEIL + "a"] = out[ACCUEIL].split(",")[0].strip()
         tout[cle] = out
         print("%-10s %3d versets  (%d sans correspondance%s)"
               % (cle, len(out), len(absents), (" : " + ", ".join(absents)) if absents else ""))
