@@ -24,6 +24,23 @@ def apparies(t):
             if prof < 0: return False
     return prof == 0
 
+# LES LETTRES DES PSAUMES ACROSTICHES. Les psaumes 25, 34, 37, 111, 112, 119,
+# 145 sont batis sur l'alphabet hebreu : chaque strophe s'ouvre par une lettre,
+# imprimee en tete comme un titre. La Bible Annotee la fait entrer DANS le
+# verset — « Nun. Ta parole est une lampe a mes pieds ». Sur une carte de jeu,
+# ce « Nun. » ressemble a une coquille. C'est un intertitre, pas l'Ecriture.
+LETTRES_HEBREUX = ("Aleph|Beth|Guimel|Ghimel|Daleth|Hé|He|Vav|Vau|Zaïn|Zain|Heth|Teth|"
+                   "Yod|Jod|Caph|Kaph|Lamed|Mem|Nun|Samech|Aïn|Ain|Phé|Pe|Tsadé|Tsade|"
+                   "Koph|Resch|Rech|Schin|Shin|Thav|Tav")
+
+# LES COQUILLES DE NUMERISATION, une par une. On ne devine pas : chaque entree
+# a ete verifiee dans le fichier source, et n'est corrigee que parce qu'aucune
+# edition francaise n'ecrit cela. Pas de regle generale — une regle attraperait
+# des tournures legitimes (« pardonne-leur, car », « l'un, et aimera l'autre »).
+ERRATA = {
+    "Et une, lumière sur mon sentier": "Et une lumière sur mon sentier",
+}
+
 def normalise(t):
     if not t: return t
     t = t.replace("’", "'").replace("ʼ", "'")      # une seule apostrophe
@@ -55,5 +72,9 @@ def normalise(t):
     # une coquille. On garde les mots, on retire les crochets.
     t = re.sub(r"\[\s*([^\]]*?)\s*\]", r"\1", t)
     t = re.sub(r"\s*\.\.\.", "…", t)                    # points de suspension
+    # l'intertitre de strophe part avec son point
+    t = re.sub(r"^(?:" + LETTRES_HEBREUX + r")\s*\.\s+", "", t)
+    for faux, vrai in ERRATA.items():
+        if faux in t: t = t.replace(faux, vrai)
     t = re.sub(r"[ ]{2,}", " ", t)
     return t.strip()

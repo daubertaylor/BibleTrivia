@@ -143,6 +143,25 @@ emploie et que le Darby remplace par « bonté ». Basculer la version y rendrai
 la bonne réponse fausse. Elles restent donc sur le texte de référence — c'est
 la seule place du jeu où la version ne suit pas, et c'est délibéré.
 
+## Ce qui n'est pas le verset, et qui s'y était glissé
+
+**Les lettres des psaumes acrostiches.** Les psaumes 25, 34, 37, 111, 112, 119
+et 145 sont bâtis sur l'alphabet hébreu : chaque strophe s'ouvre par une lettre,
+imprimée en tête comme un titre. La Bible Annotée la fait entrer DANS le verset —
+« **Nun.** Ta parole est une lampe à mes pieds ». Sur la carte d'accueil, ce
+« Nun. » ressemblait à une coquille. C'est un intertitre, pas l'Écriture :
+8 versets concernés.
+
+**Les crochets du Darby.** Il signale entre crochets les mots ajoutés pour la
+clarté : « pour [avoir du] secours ». On garde les mots, on retire les crochets
+— 28 versets, plus 1 dans la Bible Annotée.
+
+**Les coquilles de numérisation**, une par une, dans `ERRATA`. La Bible Annotée
+imprime « Et une**,** lumière sur mon sentier » : vérifié dans le fichier source,
+et corrigé parce qu'aucune édition française n'écrit cela. **Pas de règle
+générale** — une règle attraperait des tournures légitimes (« pardonne-leur,
+car », « il haïra l'un, et aimera l'autre »). Une entrée, une vérification.
+
 ## Les pièges rencontrés
 
 **Les codes de livres.** Les fichiers eBible utilisent les anciens codes à trois
