@@ -18,6 +18,10 @@ notre code, et il est éprouvé. Tout le reste l'est.
     cd banc-essai
     node duel.js        # salon privé : création, code, duel complet, départ brutal
     node duel2.js       # appariement aléatoire, fin des deux, revanche, départ avant lancement
+    node salle.js       # CINQ joueurs : salon, mêmes questions, scores, classement, départ
+    node pleine.js      # NEUF candidats pour huit places : le dernier arrivé ressort
+    node exaequo.js     # trois à égalité : partagent-ils le rang ?
+    node photos.js      # les trois écrans à plusieurs, en image
     node match-trace.js # la séquence d'appariement, horodatée des deux côtés
 
 ## Un avertissement, payé cher
@@ -29,3 +33,22 @@ banc accusait le jeu d'un bug d'appariement qui n'existait pas.
 
 **Une imitation approximative fabrique de faux coupables.** Avant de conclure
 qu'un défaut vient du jeu, vérifier qu'il ne vient pas d'ici.
+
+
+## Le départ doit nommer celui qui part
+
+Supabase joint à l'événement `leave` les métadonnées de ceux qui s'en vont
+(`leftPresences`). À deux, on pouvait s'en passer : « quelqu'un est parti »
+suffisait, il n'y avait qu'un candidat. À huit, non — il faut savoir **lequel**.
+Le hub les envoie donc désormais, comme le vrai service.
+
+## Ce que le banc a attrapé
+
+Le salon restait en **face-à-face VS** même à cinq joueurs. La cause n'était pas
+dans le rendu mais dans le raccourci de rafraîchissement : `reRenderIfOnline()`
+voyait la case de l'adversaire (`#oppSlot`) et se contentait de la retoucher,
+sans jamais redessiner l'écran. Le salon ne pouvait donc pas BASCULER en liste.
+Le raccourci est maintenant réservé aux salons à deux.
+
+**Une capture vaut une assertion.** C'est en regardant l'image du salon à cinq
+que le défaut a sauté aux yeux ; les compteurs, eux, disaient tous « 5 joueurs ».

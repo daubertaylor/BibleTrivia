@@ -519,6 +519,35 @@
   .rank-badge.g2{ background:linear-gradient(150deg,#DFE3E8,#A9B0BA); color:#fff; }
   .rank-badge.g3{ background:linear-gradient(150deg,#F5B77E,#D08243); color:#fff; }
   .rank-token{ width:1.55rem; height:1.55rem; font-size:0.78rem; }
+  /* ---------- LE SALON ET LE RÉSULTAT À PLUSIEURS ----------
+     Aucune matière nouvelle : la rangée est celle du classement du mode
+     Groupe (.rank-row), la pastille de score reprend la puce du bandeau de
+     duel. Ce qui s'ajoute ici, c'est seulement ce qui distingue MA ligne des
+     autres, et celle d'un joueur parti. */
+  .salle-liste{ margin:0.2rem 0 0.1rem; }
+  .salle-ligne{ margin-bottom:0.45rem; }
+  .salle-ligne.moi{ --rim-edge:0 0 0 1px rgba(150,30,14,0.28); --rim-cast:0 4px 12px rgba(241,80,47,0.24); }
+  .salle-ligne.vide{ opacity:0.55; }
+  .salle-tag{ font-family:'Poppins',sans-serif; font-weight:600; font-size:0.66rem; letter-spacing:0.05em; text-transform:uppercase; color:var(--ink-soft); flex-shrink:0; }
+  .salle-ligne.moi .salle-tag{ color:var(--primary); }
+  .rank-row.moi{ --rim-edge:0 0 0 1px rgba(150,30,14,0.28); --rim-cast:0 4px 12px rgba(241,80,47,0.24); }
+  .rank-row.gone{ opacity:0.55; }
+  .rank-online .rank-score{ min-width:3.4rem; }
+  /* Le bandeau de score, version à plusieurs : les pastilles défilent
+     horizontalement plutôt que de rétrécir jusqu'à l'illisible. */
+  /* Le dernier joueur coupé net au bord donnait l'impression d'un bandeau
+     cassé. Le dégradé le fait fondre : on lit « ça continue », pas « ça
+     rate ». Il n'apparaît que lorsqu'il y a de quoi défiler. */
+  .duel-scorebar.multi{ justify-content:flex-start; gap:0.4rem; overflow-x:auto; scrollbar-width:none; padding:0.4rem 0.7rem;
+    -webkit-mask-image:linear-gradient(to right, #000 0, #000 calc(100% - 2.2rem), transparent 100%);
+    mask-image:linear-gradient(to right, #000 0, #000 calc(100% - 2.2rem), transparent 100%); }
+  .duel-scorebar.multi::-webkit-scrollbar{ display:none; }
+  .ds-puce{ display:inline-flex; align-items:baseline; gap:0.32rem; flex-shrink:0; padding:0.16rem 0.55rem; border-radius:100px; background:rgba(255,255,255,0.55); border:1px solid rgba(255,255,255,0.66); }
+  .ds-puce.moi{ background:rgba(241,80,47,0.13); border-color:rgba(241,80,47,0.3); }
+  .ds-puce.gone{ opacity:0.5; }
+  .dsp-nom{ font-size:0.72rem; font-weight:600; color:var(--ink-soft); max-width:5.2rem; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+  .ds-puce.moi .dsp-nom{ color:var(--primary); }
+  .dsp-pts{ font-family:'Poppins',sans-serif; font-weight:700; font-size:0.86rem; font-variant-numeric:tabular-nums; color:var(--ink); }
   .rank-name{ flex:1; font-weight:600; font-size:0.9rem; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
   .rank-score-wrap{ display:flex; align-items:center; gap:0.35rem; }
   .rank-score{ font-family:'Poppins',sans-serif; font-weight:700; font-variant-numeric:tabular-nums; color:var(--primary); min-width:2.6rem; text-align:right; }
@@ -3547,7 +3576,58 @@ function loadProfile(){
 }
 let profile = loadProfile();
 function saveProfile(){ try { localStorage.setItem("bt_profile", JSON.stringify(profile)); } catch(e){} }
-function meMeta(extra){ return Object.assign({ id:myId, name: profile.name || "Invité", color: profile.color, isCreator: profile.isCreator }, extra||{}); }
+/* « arrive » : l'heure d'entrée dans le salon. Elle sert à départager quand la
+   salle déborde — c'est le DERNIER arrivé qui ressort, pas un joueur tiré au
+   sort par son identifiant. */
+let monArrivee = 0;
+function meMeta(extra){ return Object.assign({ id:myId, name: profile.name || "Invité", color: profile.color, isCreator: profile.isCreator, arrive: monArrivee || (monArrivee = Date.now()) }, extra||{}); }
+
+/* ===================== LES JOUEURS DU SALON =====================
+   Le mode en ligne ne savait compter que jusqu'à deux : un seul adversaire,
+   logé dans des variables uniques (net.opp, net.oppScore, net.oppIndex…). Le
+   plafond était donc écrit dans le code lui-même.
+   Une TABLE les remplace : chaque joueur y a sa ligne, et le duel n'est plus
+   qu'un salon à deux. Les anciennes variables ne disparaissent pas pour
+   autant — elles sont RECALCULÉES depuis la table par majAdversaire(). Tout
+   ce qui marchait à deux continue donc de marcher exactement pareil, au
+   pixel et à l'événement près ; ce qui est neuf, c'est ce qui se passe
+   au-dessus de deux. */
+const MAX_JOUEURS = 8;
+function autresJoueurs(){
+  return Object.keys(net.joueurs).map(k=>net.joueurs[k]).filter(j=>j && j.id!==myId);
+}
+function joueursPresents(){ return autresJoueurs().filter(j=>!j.gone); }
+function moiJoueur(){
+  return { id:myId, name:profile.name||"Invité", color:profile.color, isCreator:profile.isCreator,
+           score:net.score|0, idx:net.idx|0, done:!!net.myDone, gone:false, moi:true };
+}
+/* Tout le monde, moi compris, classé : score décroissant, puis avancement,
+   puis le nom — un classement stable, qui ne sautille pas d'une image à
+   l'autre quand deux joueurs sont à égalité. */
+function classement(){
+  const t = [moiJoueur()].concat(autresJoueurs());
+  return t.sort((a,b)=> (b.score|0)-(a.score|0) || (b.idx|0)-(a.idx|0)
+                     || String(a.name||"").localeCompare(String(b.name||"")));
+}
+function nbJoueurs(){ return 1 + joueursPresents().length; }
+/* LES ANCIENNES VUES, RECALCULÉES. À deux joueurs elles valent exactement ce
+   qu'elles valaient avant ; au-delà, « l'adversaire » devient le premier de la
+   table et les écrans à plusieurs prennent le relais. */
+function majAdversaire(){
+  const pres = joueursPresents(), tous = autresJoueurs();
+  net.oppPresent = pres.length > 0;
+  net.opp = pres[0] || tous[0] || null;
+  const partis = tous.length > 0 && pres.length === 0;
+  if(partis && !net.oppGone && (state.screen==="online-play" || state.screen==="online-end")) markOppGone();
+  else if(!partis && net.oppGone && pres.length){ net.oppGone = false; }
+  if(net.opp){
+    net.oppScore = net.opp.score|0; net.oppIndex = net.opp.idx|0;
+    net.oppLastSeen = Math.max.apply(null, tous.map(j=>j.vu||0).concat([0])) || net.oppLastSeen;
+  }
+  // « tout le monde a fini » : la condition de fin, à deux comme à huit
+  net.oppDone = pres.length > 0 && pres.every(j=>j.done);
+}
+function videJoueurs(){ net.joueurs = {}; }
 
 /* ===================== ÉTAT RÉSEAU ===================== */
 const net = {
@@ -3558,6 +3638,7 @@ const net = {
   opp:null, oppScore:0, oppIndex:0, oppDone:false, oppGone:false, oppPresent:false, oppLastSeen:0,
   seed:null, lengthKey:"normale", timerKey:"30", themeKey:"tout", timedOut:false,
   deck:[], idx:0, score:0, correct:0, selected:null, revealed:false, myDone:false, missed:[],
+  joueurs:{},                     // id -> { id, name, color, isCreator, score, idx, done, gone, vu }
   duelHb:null, joinTimer:null, subTimer:null,
   lastOppId:null, autoMatch:false, matchGuard:null,
   status:"", error:"",
@@ -3599,7 +3680,11 @@ function reRenderIfOnline(){
   if(sc.indexOf("online") !== 0) return;
   if(document.getElementById("modalVeil")){ return; }
   if(sc === "online" && document.querySelector(".presence-card")){ updateOnlineLobby(); return; }
-  if(sc === "online-room" && document.getElementById("oppSlot")){ updateRoomOpponent(); return; }
+  /* LE RACCOURCI NE VAUT QU'À DEUX. Il retouche la seule case de l'adversaire
+     sans redessiner l'écran — parfait pour un face-à-face, mais il empêchait
+     le salon de BASCULER en liste quand un troisième joueur arrivait : la
+     case existait, donc on ne repassait jamais par un rendu complet. */
+  if(sc === "online-room" && document.getElementById("oppSlot") && nbJoueurs() <= 2){ updateRoomOpponent(); return; }
   render();
 }
 function updateOnlineLobby(){
@@ -3778,26 +3863,64 @@ window.addEventListener("pageshow", handleAppVisible);
 
 /* ===================== SALON / DUEL ===================== */
 function bindRoom(ch){
+  /* LA PRÉSENCE TIENT LA TABLE À JOUR. Elle a toujours renvoyé TOUT le monde ;
+     on n'en gardait que le premier. On les garde tous, en conservant le score
+     et l'avancement déjà connus de ceux qui étaient déjà là — la présence dit
+     qui est présent, pas où il en est. */
   ch.on("presence", { event:"sync" }, ()=>{
     const st = ch.presenceState();
-    const others = [];
-    Object.keys(st).forEach(k=>{ if(k!==myId && st[k] && st[k][0]) others.push(st[k][0]); });
-    net.oppPresent = others.length > 0;
-    if(others.length){
-      net.opp = others[0];
-      net.oppLastSeen = Date.now();
+    const vus = {};
+    Object.keys(st).forEach(k=>{
+      if(k===myId || !st[k] || !st[k][0]) return;
+      const m = st[k][0], id = m.id || k;
+      const avant = net.joueurs[id] || {};
+      vus[id] = { id, name:m.name, color:m.color, isCreator:m.isCreator,
+                  arrive: m.arrive || avant.arrive || 0,
+                  score:avant.score|0, idx:avant.idx|0, done:!!avant.done,
+                  gone:false, vu:Date.now() };
+    });
+    /* Un joueur qui a quitté EN COURS DE PARTIE reste dans la table, marqué
+       parti : son score doit rester au tableau jusqu'au résultat. */
+    autresJoueurs().forEach(j=>{ if(!vus[j.id] && net.deck.length){ vus[j.id] = Object.assign({}, j, { gone:true }); } });
+    net.joueurs = vus;
+    /* SALLE PLEINE. Personne n'arbitre les arrivées : chacun trie les
+       identifiants et regarde sa propre place. Au-delà de la huitième, on
+       ressort — même règle pour tous, donc tout le monde tombe d'accord sans
+       échanger un mot. L'hôte, lui, ne se met jamais dehors de son salon. */
+    if(!net.isHost && !net.deck.length){
+      const file = Object.keys(vus).map(k=>({ id:k, t:vus[k].arrive||0 }))
+        .concat([{ id:myId, t:monArrivee||Date.now() }])
+        .sort((a,b)=> (a.t-b.t) || String(a.id).localeCompare(String(b.id)));
+      if(file.findIndex(x=>x.id===myId) >= MAX_JOUEURS){
+        cleanupRoom();
+        net.error = "Ce salon est complet (" + MAX_JOUEURS + " joueurs).";
+        state.screen = "online-join"; render();
+        return;
+      }
+    }
+    if(joueursPresents().length){
       if(net.joinTimer){ clearTimeout(net.joinTimer); net.joinTimer = null; }
       // L'adversaire du match automatique est bien là : la garde anti-limbo
       // n'a plus lieu d'être.
       clearTimeout(net.matchGuard); net.autoMatch = false;
     }
+    majAdversaire();
     reRenderIfOnline();
   });
-  ch.on("presence", { event:"leave" }, ()=>{
+  ch.on("presence", { event:"leave" }, ({ leftPresences })=>{
+    (leftPresences||[]).forEach(m=>{
+      const id = (m && m.id) || null;
+      if(id && net.joueurs[id]) net.joueurs[id].gone = true;
+    });
     const st = ch.presenceState();
-    const stillThere = Object.keys(st).some(k=>k!==myId);
-    if(!stillThere){
-      net.oppPresent = false;
+    const restants = Object.keys(st).filter(k=>k!==myId);
+    /* On ne garde dans la table que ceux que la présence voit encore — sauf en
+       pleine partie, où les partis restent visibles avec leur score. */
+    if(!net.deck.length){
+      Object.keys(net.joueurs).forEach(id=>{ if(!restants.some(k=>k===id || (st[k]&&st[k][0]&&st[k][0].id===id))) delete net.joueurs[id]; });
+    }
+    majAdversaire();
+    if(!restants.length){
       if(state.screen==="online-play" || state.screen==="online-end"){ markOppGone(); }
       else if(state.screen==="online-room" && !net.isHost){
         cleanupRoom();
@@ -3805,7 +3928,7 @@ function bindRoom(ch){
         state.screen = "online"; render();
       }
       else { reRenderIfOnline(); }
-    }
+    } else { reRenderIfOnline(); }
   });
   ch.on("broadcast", { event:"start" }, ({ payload })=>{
     if(!payload) return;
@@ -3814,13 +3937,19 @@ function bindRoom(ch){
   });
   ch.on("broadcast", { event:"hb" }, ({ payload })=>{
     if(!payload || payload.id===myId) return;
-    net.oppLastSeen = Date.now();
-    if(net.oppGone){ net.oppGone = false; reRenderIfOnline(); }
+    const j = net.joueurs[payload.id];
+    if(j){ j.vu = Date.now(); j.gone = false; }
+    else { net.joueurs[payload.id] = { id:payload.id, name:payload.name||"Joueur", color:payload.color,
+                                       score:0, idx:0, done:false, gone:false, vu:Date.now() }; }
+    const etaitParti = net.oppGone;
+    majAdversaire();
+    if(etaitParti && !net.oppGone) reRenderIfOnline();
   });
   ch.on("broadcast", { event:"progress" }, ({ payload })=>{
     if(!payload || payload.id===myId) return;
-    net.oppIndex = payload.idx; net.oppScore = payload.score; net.oppDone = !!payload.done;
-    net.oppLastSeen = Date.now();
+    const j = net.joueurs[payload.id] || (net.joueurs[payload.id] = { id:payload.id, name:payload.name||"Joueur", color:payload.color, gone:false });
+    j.idx = payload.idx|0; j.score = payload.score|0; j.done = !!payload.done; j.vu = Date.now(); j.gone = false;
+    majAdversaire();
     if(net.myDone && net.oppDone && state.screen!=="online-end"){ state.screen="online-end"; playWin(); }
     reRenderIfOnline();
   });
@@ -3849,6 +3978,7 @@ function createRoom(code, host, _retry){
   if(net.joinTimer){ clearTimeout(net.joinTimer); net.joinTimer=null; }
   if(net.subTimer){ clearTimeout(net.subTimer); net.subTimer=null; }
   net.code = code; net.isHost = host; net.opp=null; net.oppPresent=false; net.oppGone=false; net.error="";
+  videJoueurs(); monArrivee = Date.now();
   const ch = supa.channel("bt-room-"+code, { config:{ presence:{ key: myId } } });
   net.room = ch;
   bindRoom(ch);
@@ -3898,6 +4028,7 @@ function joinRoom(code, host){
 }
 function hostStart(){
   if(!net.isHost || !net.room || !net.oppPresent) return;
+  if(nbJoueurs() > MAX_JOUEURS) return;
   const seed = (Math.random()*1e9)|0;
   net.room.send({ type:"broadcast", event:"start", payload:{ seed, lengthKey: net.lengthKey, timerKey: net.timerKey, theme: net.themeKey } });
   beginDuel(seed, net.lengthKey, net.timerKey, net.themeKey);
@@ -3910,6 +4041,11 @@ function beginDuel(seed, lengthKey, timerKey, theme){
   net.deck = seededDeck(seed, lengthKey, net.themeKey);
   net.idx = 0; net.score = 0; net.correct = 0; net.selected=null; net.revealed=false; net.myDone=false; net.missed=[];
   net.oppScore = 0; net.oppIndex = 0; net.oppDone=false; net.oppGone=false; net.status=""; net.confettiShown = false;
+  /* Tout le monde repart de zéro, y compris ceux qui étaient partis : une
+     nouvelle manche efface les scores, pas la table. */
+  autresJoueurs().forEach(j=>{ j.score=0; j.idx=0; j.done=false; j.vu=Date.now(); });
+  Object.keys(net.joueurs).forEach(id=>{ if(net.joueurs[id].gone) delete net.joueurs[id]; });
+  majAdversaire();
   net.iWantReplay=false; net.oppWantReplay=false; net.replayDeclined=false;
   net.animIdx = -1; net.justRevealed = false;
   net.oppLastSeen = Date.now();
@@ -3934,12 +4070,15 @@ function onlineNext(){
   if(net.idx >= net.deck.length){
     net.myDone = true;
     broadcastProgress(true);
+    /* On attend que TOUT LE MONDE ait fini — un joueur comme sept. Ceux qui
+       sont partis ne retiennent personne. */
+    majAdversaire();
     if(net.oppDone || net.oppGone){ state.screen="online-end"; playWin(); }
   }
   render();
 }
 function broadcastProgress(done){
-  if(net.room){ net.room.send({ type:"broadcast", event:"progress", payload:{ id:myId, idx:net.idx, score:net.score, done } }); }
+  if(net.room){ net.room.send({ type:"broadcast", event:"progress", payload:{ id:myId, name:profile.name, color:profile.color, idx:net.idx, score:net.score, done } }); }
 }
 /* REJOUER EN LIGNE — poignée de main à DEUX. « Rejouer » (ou « Accepter »)
    déclare que JE veux rejouer et le signale à l'adversaire ; la nouvelle partie
@@ -3965,6 +4104,13 @@ function cancelRematch(){    // j'annule ma propre demande
 function sendReplayMsg(event){
   if(net.room){ net.room.send({ type:"broadcast", event, payload:{ id:myId } }); }
 }
+/* L'hôte relance pour toute la table : même chemin que le premier lancement. */
+function relancerPartie(){
+  if(!net.isHost || !net.room) return;
+  const seed = (Math.random()*1e9)|0;
+  net.room.send({ type:"broadcast", event:"start", payload:{ seed, lengthKey: net.lengthKey, timerKey: net.timerKey, theme: net.themeKey } });
+  beginDuel(seed, net.lengthKey, net.timerKey, net.themeKey);
+}
 function maybeStartRematch(){
   if(!(net.iWantReplay && net.oppWantReplay) || net.oppGone) return;
   /* Les deux veulent rejouer. L'hôte tire la graine et lance ; l'invité
@@ -3981,7 +4127,14 @@ function startDuelHeartbeat(){
   stopDuelHeartbeat();
   net.duelHb = setInterval(()=>{
     if(!net.room){ stopDuelHeartbeat(); return; }
-    net.room.send({ type:"broadcast", event:"hb", payload:{ id: myId } });
+    net.room.send({ type:"broadcast", event:"hb", payload:{ id: myId, name: profile.name, color: profile.color } });
+    /* Chacun a son propre silence : à huit, le départ de l'un ne doit pas
+       faire passer les sept autres pour partis. */
+    let change = false;
+    autresJoueurs().forEach(j=>{
+      if(!j.gone && j.vu && (Date.now() - j.vu) > 9000){ j.gone = true; change = true; }
+    });
+    if(change){ majAdversaire(); reRenderIfOnline(); }
     if(!net.oppGone && net.oppLastSeen && (Date.now() - net.oppLastSeen) > 9000){ markOppGone(); }
   }, 2500);
 }
@@ -4016,7 +4169,7 @@ function cleanupRoom(){
   if(net.joinTimer){ clearTimeout(net.joinTimer); net.joinTimer=null; }
   if(net.subTimer){ clearTimeout(net.subTimer); net.subTimer=null; }
   if(net.room){ try { net.room.untrack(); net.supa.removeChannel(net.room); } catch(e){} net.room=null; }
-  net.code=null; net.isHost=false; net.opp=null; net.oppPresent=false; net.oppGone=false;
+  net.code=null; net.isHost=false; net.opp=null; net.oppPresent=false; net.oppGone=false; videJoueurs();
   net.deck=[]; net.idx=0; net.myDone=false; net.status="";
   net.iWantReplay=false; net.oppWantReplay=false; net.replayDeclined=false;
 }
@@ -8192,7 +8345,7 @@ function renderModeSelect(){
         : (dSk >= 2 ? ('Garde ta s\u00e9rie de ' + dSk + '\u00a0jours\u00a0!') : 'Le m\u00eame d\u00e9fi pour tous'));
       const group = `<button class="mode-card" onclick="selectMode('group')"><span class="mode-icon group">${ICONS.users}</span><span class="mode-text"><span class="mode-title">Mode Groupe</span><span class="mode-desc">Église, jeunesse, en équipes</span></span><span class="chev">${ICONS.chevronRight}</span></button>`;
       const solo = `<button class="mode-card" onclick="selectMode('solo')"><span class="mode-icon solo">${ICONS.user}</span><span class="mode-text"><span class="mode-title">Mode Solo</span><span class="mode-desc">Teste tes connaissances à ton rythme</span></span><span class="chev">${ICONS.chevronRight}</span></button>`;
-      const online = `<button class="mode-card" onclick="openOnline()"><span class="mode-icon online">${ICONS.bolt}</span><span class="mode-text"><span class="mode-title">Jouer en ligne</span><span class="mode-desc">Défie tes amis en duel, en direct</span></span><span class="chev">${ICONS.chevronRight}</span></button>`;
+      const online = `<button class="mode-card" onclick="openOnline()"><span class="mode-icon online">${ICONS.bolt}</span><span class="mode-text"><span class="mode-title">Jouer en ligne</span><span class="mode-desc">Jusqu'à 8 joueurs, en direct</span></span><span class="chev">${ICONS.chevronRight}</span></button>`;
       const daily = `<button class="daily-card${dDone?' done':''}" onclick="${dDone?'':'startDailyChallenge()'}" ${dDone?'disabled':''}><span class="dc-ico">${ICONS.flame}</span><span class="dc-txt"><b>Défi du jour</b><small>${doneTxt}</small></span>${dSk>0 ? `<span class="dc-streak">${ICONS.flame}${dSk}</span>` : ''}${dDone ? `<span class="dc-check">${ICONS.checkCircle}</span>` : `<span class="chev">${ICONS.chevronRight}</span>`}</button>`;
       return group + solo + online + daily;
     })()}
@@ -8480,7 +8633,7 @@ function renderEndSolo(){
       </div>
     </div>
     <div class="flex-sp"></div>
-    ${state.soloMissed && state.soloMissed.length ? `<button class="btn-review" onclick="openMissedReview()"><span class="ico">${ICONS.bookOpen}</span>Revoir mes ${state.soloMissed.length} erreur${state.soloMissed.length>1?"s":""}</button>` : ""}
+    ${state.soloMissed && state.soloMissed.length ? `<button class="btn-review" onclick="openMissedReview()"><span class="ico">${ICONS.bookOpen}</span>Revoir ${state.soloMissed.length>1?`mes ${state.soloMissed.length} erreurs`:"mon erreur"}</button>` : ""}
     <div class="end-bottom">
     <div class="end-actions">
       <button class="btn-replay" onclick="replayGame()">Rejouer</button>
@@ -8704,28 +8857,47 @@ function renderOnlineJoin(){
   return el;
 }
 
+/* « Le duel » ne veut plus rien dire à cinq. Un seul endroit décide du mot,
+   pour que l'écran entier parle d'une seule voix. */
+function motPartie(){ return nbJoueurs() > 2 ? "la partie" : "le duel"; }
+function titrePartie(){ return nbJoueurs() > 2 ? "Partie" : "Duel"; }
 function renderOnlineRoom(){
   const el=document.createElement("div"); el.className="screen";
   const canStart = net.isHost && net.oppPresent;
   const oppNew = net.oppPresent && !net._oppShown;
   net._oppShown = net.oppPresent;
+  /* À DEUX, RIEN NE CHANGE : le face-à-face VS reste ce qu'il était, au pixel
+     près. C'est au-dessus de deux que la liste des joueurs prend le relais —
+     avec la même rangée de classement que le mode Groupe, donc la même
+     matière et le même rebord que partout ailleurs. */
+  const aPlusieurs = nbJoueurs() > 2;
   el.innerHTML = `
     ${renderHeader("Salon", true, "leaveRoomToOnline()")}
     <div class="code-hero">
       <div class="code-label">Code de la partie</div>
       <div class="code-big">${escapeHtml(net.code||"")}</div>
-      <div class="code-hint">${net.isHost?"Partage ce code avec ton ami":"Tu as rejoint la partie"}</div>
+      <div class="code-hint">${net.isHost?(aPlusieurs?"Partage ce code avec tes amis":"Partage ce code avec ton ami"):"Tu as rejoint la partie"}</div>
       ${net.isHost && (navigator.share || (navigator.clipboard&&navigator.clipboard.writeText)) ? `<button class="btn-invite" onclick="shareRoomCode()"><span class="ico">${ICONS.share}</span><span>Inviter un ami</span></button>` : ""}
     </div>
+    ${aPlusieurs ? `
+    <div class="salle-liste">
+      ${classement().sort((a,b)=> (a.moi?0:1)-(b.moi?0:1)).map(j=>`
+        <div class="rank-row salle-ligne${j.moi?' moi':''}">
+          ${avatarHtml(j.name, j.color, 2.1, j.isCreator)}
+          <span class="rank-name">${escapeHtml(j.name||"Joueur")}</span>
+          <span class="salle-tag">${j.moi ? (net.isHost?"Toi · Hôte":"Toi") : "Prêt"}</span>
+        </div>`).join("")}
+      ${nbJoueurs() < MAX_JOUEURS ? `<div class="rank-row salle-ligne vide"><span class="avatar waiting" style="width:2.1rem;height:2.1rem;font-size:0.95rem;">?</span><span class="rank-name">En attente…</span><span class="salle-tag">${MAX_JOUEURS - nbJoueurs()} place${MAX_JOUEURS-nbJoueurs()>1?"s":""}</span></div>` : ""}
+    </div>` : `
     <div class="vs-row">
       <div class="vs-player">${avatarHtml(profile.name, profile.color, 3, profile.isCreator)}<div class="vs-name">${escapeHtml(profile.name)}</div><div class="vs-tag${net.isHost?' is-host':''}">${net.isHost?"Toi · Hôte":"Toi"}</div></div>
       <div class="vs-mid">VS</div>
       <div class="vs-player${oppNew?' reveal-in':''}" id="oppSlot">${net.oppPresent?avatarHtml(net.opp.name, net.opp.color, 3, net.opp.isCreator):`<span class="avatar waiting" style="width:3rem;height:3rem;font-size:1.25rem;">?</span>`}<div class="vs-name">${net.oppPresent?escapeHtml(net.opp.name):"En attente…"}</div><div class="vs-tag${net.isHost?'':' is-host'}">${net.isHost?"Adversaire":"Hôte"}</div></div>
-    </div>
-    <div class="host-note">${net.isHost?"Tu es l'hôte : paramètre la partie (longueur, chrono, testament) puis lance le duel.":"L'hôte paramètre la partie puis lance le duel."}</div>
+    </div>`}
+    <div class="host-note">${net.isHost?`Tu es l'hôte : paramètre la partie (longueur, chrono, testament) puis lance ${motPartie()}.`:`L'hôte paramètre la partie puis lance ${motPartie()}.`}</div>
     <div class="flex-sp"></div>
     ${net.isHost ? `
-      <div class="len-label">Longueur du duel</div>
+      <div class="len-label">Longueur ${aPlusieurs?"de la partie":"du duel"}</div>
       <div class="len-row">
         ${Object.keys(LENGTHS).map(k=>`<button class="len-chip${net.lengthKey===k?' sel':''}" data-rgroup="len" data-k="${k}" onclick="selectRoomOpt('len','${k}')">${LENGTHS[k]*3} questions</button>`).join("")}
       </div>
@@ -8739,7 +8911,7 @@ function renderOnlineRoom(){
         <button class="len-chip${net.themeKey==='at'?' sel':''}" data-rgroup="theme" data-k="at" onclick="selectRoomOpt('theme','at')">Ancien</button>
         <button class="len-chip${net.themeKey==='nt'?' sel':''}" data-rgroup="theme" data-k="nt" onclick="selectRoomOpt('theme','nt')">Nouveau</button>
       </div>
-      <button class="btn-primary${canStart?'':' is-waiting'}" id="roomStartBtn" onclick="hostStart()">${canStart?"Commencer le duel":"En attente de l'adversaire…"}</button>
+      <button class="btn-primary${canStart?'':' is-waiting'}" id="roomStartBtn" onclick="hostStart()">${canStart?("Commencer "+motPartie()):"En attente des joueurs…"}</button>
     ` : `
       <div class="waiting-note" id="waitNote">${net.oppPresent?"Prêt ! En attente du lancement par l'hôte…":"Connexion au salon…"}</div>
       <div class="flex-sp"></div>
@@ -8752,23 +8924,37 @@ function renderOnlinePlay(){
   const el=document.createElement("div"); el.className="screen";
   const total = net.deck.length;
   const oppName = net.opp ? net.opp.name : "Adversaire";
+  const aPlusieurs = nbJoueurs() > 2 || autresJoueurs().length > 1;
   const goneBanner = (net.oppGone && !net.hideGoneBanner) ? `<div class="leave-banner${net.goneFresh?' reveal-in':''}"><span class="lb-ico">${ICONS.user}</span><span><b>${escapeHtml(oppName)} a quitté la partie.</b> Termine tranquillement ou quitte le duel.</span></div>` : "";
   net.goneFresh = false;
-  const scorebar = `
+  /* À DEUX, le bandeau reste le face-à-face d'avant. Au-dessus, il devient une
+     ligne de pastilles — une par joueur, classées, la mienne mise en avant :
+     à huit, un « VS » n'a plus de sens, et sept colonnes ne tiendraient pas. */
+  const scorebar = aPlusieurs ? `
+    <div class="duel-scorebar multi">
+      ${classement().map(j=>`
+        <span class="ds-puce${j.moi?' moi':''}${j.gone?' gone':''}">
+          <span class="dsp-nom">${escapeHtml((j.name||"?").slice(0,9))}</span>
+          <span class="dsp-pts">${j.score|0}</span>
+        </span>`).join("")}
+    </div>` : `
     <div class="duel-scorebar">
       <div class="ds-side me"><span class="ds-name">${escapeHtml(profile.name)}</span><span class="ds-score">${net.score}</span></div>
       <div class="ds-vs">VS</div>
       <div class="ds-side${net.oppGone?' gone':''}"><span class="ds-name">${escapeHtml(oppName)}${net.oppGone?" · parti":""}</span><span class="ds-score">${net.oppScore}</span></div>
     </div>`;
   if(net.myDone){
-    el.innerHTML = `${renderHeader("Duel", true, "quitDuel()")}
+    el.innerHTML = `${renderHeader(titrePartie(), true, "quitDuel()")}
       ${goneBanner}
       ${scorebar}
       <div class="flex-sp"></div>
       <div class="searching-card">
         <div class="spinner"></div>
         <div class="searching-txt">Tu as terminé, bien joué !</div>
-        <div class="opp-progress">${net.oppGone?"Ton adversaire a quitté la partie.":`Ton adversaire en est à ${net.oppIndex}/${total}`}</div>
+        <div class="opp-progress">${net.oppGone ? (aPlusieurs?"Les autres joueurs ont quitté la partie.":"Ton adversaire a quitté la partie.")
+          : (aPlusieurs
+             ? joueursPresents().map(j=>escapeHtml(j.name||"Joueur")+" : "+(j.done?"terminé":(j.idx|0)+"/"+total)).join(" · ")
+             : `Ton adversaire en est à ${net.oppIndex}/${total}`)}</div>
         <button class="btn-ghost${net.oppGone?'':' btn-quit'}" style="margin-top:1.1rem" onclick="${net.oppGone?"state.screen='online-end';render()":"leaveOnline()"}">${net.oppGone?"Voir le résultat":"Quitter la partie"}</button>
       </div>
       <div class="flex-sp"></div>`;
@@ -8795,7 +8981,7 @@ function renderOnlinePlay(){
     let ic=""; if(opt===q.correct) ic=`<span class="opt-icon">${ICONS.checkCircle}</span>`; else if(opt===net.selected) ic=`<span class="opt-icon">${ICONS.xCircle}</span>`;
     return `<div class="${cls}"><span class="letter">${letter}</span><span class="opt-text">${escapeHtml(opt)}</span>${ic}</div>`;
   }).join("");
-  el.innerHTML = `${renderHeader("Duel", true, "quitDuel()")}
+  el.innerHTML = `${renderHeader(titrePartie(), true, "quitDuel()")}
     ${goneBanner}
     ${scorebar}
     <div class="opp-track"><div class="opp-fill" style="width:${oppPct}%"></div></div>
@@ -8815,14 +9001,29 @@ function renderOnlinePlay(){
 function renderOnlineEnd(){
   stopDuelHeartbeat();
   const el=document.createElement("div"); el.className="screen";
+  const aPlusieurs = autresJoueurs().length > 1;
   const win = net.score>net.oppScore, tie = net.score===net.oppScore;
-  if((win || net.oppGone) && !net.confettiShown){ net.confettiShown = true; setTimeout(launchConfetti, 300); }
+  const enTete = aPlusieurs && classement()[0] && classement()[0].moi;
+  if(((aPlusieurs ? enTete : win) || net.oppGone) && !net.confettiShown){ net.confettiShown = true; setTimeout(launchConfetti, 300); }
   /* REJOUER À DEUX : l'écran de fin reflète l'état de la poignée de main —
      j'invite / on m'invite / les deux acceptent / refus. La nouvelle partie ne
      part jamais sans l'accord de l'adversaire. */
   const oppName = net.opp ? escapeHtml(net.opp.name) : "L'adversaire";
   let replayMsg = "", replayActions = "";
-  if(net.oppGone){
+  /* REJOUER À PLUSIEURS : la poignée de main à deux ne se généralise pas — à
+     six, attendre l'accord de tous bloquerait la table sur le premier joueur
+     distrait. L'hôte relance, les autres suivent, exactement comme au premier
+     lancement. Chacun garde le droit de partir. */
+  if(aPlusieurs && !net.oppGone){
+    if(net.isHost){
+      replayMsg = "Tout le monde repart avec toi.";
+      replayActions = `<button class="btn-replay" onclick="relancerPartie()">Rejouer</button>`
+        + `<button class="btn-newgame btn-quit" onclick="leaveOnline()">Quitter</button>`;
+    } else {
+      replayMsg = "L'hôte peut relancer une partie.";
+      replayActions = `<button class="btn-newgame btn-quit" onclick="leaveOnline()">Quitter</button>`;
+    }
+  } else if(net.oppGone){
     replayActions = `<button class="btn-newgame btn-quit" onclick="leaveOnline()">Quitter</button>`;
   } else if(net.iWantReplay && net.oppWantReplay){
     replayMsg = "Nouvelle partie en préparation…";
@@ -8840,26 +9041,55 @@ function renderOnlineEnd(){
     replayActions = `<button class="btn-replay" onclick="onlineRematch()">Rejouer</button>`
       + `<button class="btn-newgame btn-quit" onclick="leaveOnline()">Quitter</button>`;
   }
-  const title = net.oppGone ? "Victoire par forfait" : (tie?"Égalité !":(win?"Victoire !":"Défaite"));
+  /* LE RÉSULTAT À PLUSIEURS reprend le classement du mode Groupe — mêmes
+     rangées, mêmes médailles or/argent/bronze. Rien de neuf à dessiner : le
+     jeu savait déjà classer des joueurs, il ne le faisait simplement pas en
+     ligne. À deux, le face-à-face d'avant est conservé tel quel. */
+  /* EX ÆQUO : deux joueurs à 280 points ne peuvent pas être l'un deuxième et
+     l'autre troisième. Même règle que le classement du mode Groupe — score
+     égal, rang égal, et le rang suivant saute d'autant. */
+  const rang = classement();
+  let prevSc = null, prevRg = 0;
+  rang.forEach((j,i)=>{ const sc=j.score|0;
+    j.rg = (sc===prevSc) ? prevRg : (prevRg = i+1, prevSc = sc, i+1); });
+  const maPlace = (rang.find(j=>j.moi)||{}).rg || rang.length;
+  const exaequo = rang.filter(j=>j.rg===1).length > 1;
+  const title = aPlusieurs
+    ? (maPlace===1 ? (exaequo ? "Ex \u00e6quo en t\u00eate\u00a0!" : "Victoire\u00a0!") : (maPlace + "\u1d49 sur " + rang.length))
+    : (net.oppGone ? "Victoire par forfait" : (tie?"Égalité !":(win?"Victoire !":"Défaite")));
   el.innerHTML = `${renderHeader("Résultat", false)}
     <div class="end-hero"><div class="end-medal"><span class="em-cup">${TROPHY_GOLD}</span></div>
-      <div class="end-eyebrow">Duel terminé</div>
+      <div class="end-eyebrow">${aPlusieurs?"Partie terminée":"Duel terminé"}</div>
       <h1 class="end-title">${title}</h1></div>
     <div class="flex-sp"></div>
+    ${aPlusieurs ? `
+    <div class="rank-list rank-online">
+      ${rang.map((j)=>{
+        const g = j.rg<=3 ? `g${j.rg}` : "";
+        return `
+        <div class="rank-row${j.moi?' moi':''}${j.gone?' gone':''}">
+          <span class="rank-badge ${g}">${j.rg}</span>
+          ${avatarHtml(j.name, j.color, 1.55, j.isCreator)}
+          <span class="rank-name">${escapeHtml(j.name||"Joueur")}${j.gone?" \u00b7 parti":""}</span>
+          <span class="rank-score">${j.score|0} pts</span>
+        </div>`;
+      }).join("")}
+    </div>` : `
     <div class="duel-result">
       <div class="dr-side ${(win||net.oppGone)?'winner':''}">${avatarHtml(profile.name,profile.color,3,profile.isCreator)}<div class="dr-name">${escapeHtml(profile.name)}</div><div class="dr-score" data-count-me>0</div></div>
       <div class="dr-vs">VS</div>
       <div class="dr-side ${(!win&&!tie&&!net.oppGone)?'winner':''}">${net.opp?avatarHtml(net.opp.name,net.opp.color,3,net.opp.isCreator):`<span class="avatar waiting" style="width:3rem;height:3rem;font-size:1.25rem;">?</span>`}<div class="dr-name">${escapeHtml(net.opp?net.opp.name:"Adversaire")}</div><div class="dr-score" data-count-opp>0</div></div>
-    </div>
-    ${net.missed && net.missed.length ? `<button class="btn-review" onclick="openMissedReview(net.missed)"><span class="ico">${ICONS.bookOpen}</span>Revoir mes ${net.missed.length} erreur${net.missed.length>1?"s":""}</button>` : ""}
+    </div>`}
+    ${net.missed && net.missed.length ? `<button class="btn-review" onclick="openMissedReview(net.missed)"><span class="ico">${ICONS.bookOpen}</span>Revoir ${net.missed.length>1?`mes ${net.missed.length} erreurs`:"mon erreur"}</button>` : ""}
     <div class="end-bottom">
     ${net.oppGone?`<div class="info-card end-note">Ton adversaire a quitté la partie.</div>`:(replayMsg?`<div class="info-card end-note">${replayMsg}</div>`:"")}
     <div class="end-actions">${replayActions}</div>
     ${shareLineHtml("duel")}
     </div>`;
   requestAnimationFrame(()=>{
-    animateCount(el.querySelector("[data-count-me]"), 0, net.score, 900, "");
-    animateCount(el.querySelector("[data-count-opp]"), 0, net.oppScore, 900, "");
+    const me = el.querySelector("[data-count-me]"), opp = el.querySelector("[data-count-opp]");
+    if(me) animateCount(me, 0, net.score, 900, "");
+    if(opp) animateCount(opp, 0, net.oppScore, 900, "");
   });
   return el;
 }

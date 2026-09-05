@@ -22,9 +22,15 @@ function pousse(c, id, obj, saufMoi){
    fait croire a un depart a chaque arrivee. */
 function syncPresence(c, partis, arrives){
   const etat={}; for(const [k,m] of c.presence) etat[k]=[m];
+  c.derniersMeta = c.derniersMeta || {};
+  for(const [k,m] of c.presence) c.derniersMeta[k] = m;
   pousse(c, null, { kind:"presence", event:"sync", etat }, false);
   for(const k of (arrives||[])) pousse(c, null, { kind:"presence", event:"join", cle:k, etat }, false);
-  for(const k of (partis||[]))  pousse(c, null, { kind:"presence", event:"leave", cle:k, etat }, false);
+  /* Supabase joint au « leave » les METADONNEES de ceux qui partent
+     (leftPresences) : sans elles, a plus de deux joueurs, impossible de savoir
+     LEQUEL est parti — on ne saurait que « quelqu'un ». */
+  for(const k of (partis||[])) pousse(c, null, { kind:"presence", event:"leave", cle:k, etat,
+                                                 partis:[(c.derniersMeta&&c.derniersMeta[k])||{id:k}] }, false);
 }
 function corps(rq){ return new Promise(r=>{ let b=""; rq.on("data",d=>b+=d); rq.on("end",()=>{ try{ r(JSON.parse(b||"{}")); }catch(e){ r({}); } }); }); }
 

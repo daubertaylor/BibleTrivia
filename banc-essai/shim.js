@@ -21,7 +21,8 @@
         source.onmessage = (e)=>{
           const m = JSON.parse(e.data);
           if(m.kind === "presence"){ etatPresence = m.etat;
-            (ecouteurs.presence[m.event || "sync"] || []).forEach(f=>{ try{ f({ key:m.cle }); }catch(x){} }); }
+            (ecouteurs.presence[m.event || "sync"] || []).forEach(f=>{
+              try{ f({ key:m.cle, leftPresences:m.partis||[], currentPresences:m.etat }); }catch(x){} }); }
           else if(m.kind === "broadcast"){ (ecouteurs.broadcast[m.event]||[]).forEach(f=>{ try{ f({ payload:m.payload }); }catch(x){} }); }
         };
         source.onopen = ()=>{ if(!abonne){ abonne = true; if(cb) cb("SUBSCRIBED"); } };
