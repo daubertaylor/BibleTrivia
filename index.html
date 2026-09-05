@@ -4362,7 +4362,12 @@ window.addEventListener("orientationchange", ()=>setTimeout(applySceneFormat, 12
    écran total » porte son bouton « Guide ». Le catalogue, lui, s'ouvre par
    dessus, avec la place qu'il lui faut pour dire à qui chaque version sert. */
 function ligneBible(b){
-  const retenue = settings.bible === b.cle && b.dispo;
+  /* On compare à la version RÉELLEMENT ACTIVE, pas au réglage brut. Un joueur
+     qui avait choisi une version depuis retirée gardait « sbl » enregistré :
+     le texte retombait bien sur le Segond, mais AUCUNE ligne n'était cochée —
+     le panneau avait l'air cassé. Il voit maintenant cochée la version qu'il
+     lit vraiment. */
+  const retenue = bibleActive().cle === b.cle && b.dispo;
   return `<button class="bible-item${retenue?' sel':''}${b.dispo?'':' indispo'}" data-bible="${b.cle}"`
     + ` ${b.dispo?`onclick="setBible('${b.cle}')"`:'disabled'}`
     + ` aria-label="${b.nom}, ${b.annee}${b.dispo?'':' — indisponible'}">`
@@ -6293,7 +6298,13 @@ function faitVersion(t){
 }
 function bibleActive(){
   const v = BIBLES.find(b => b.cle === settings.bible && b.dispo);
-  return v || BIBLES[0];                 // version retirée ou sans texte -> défaut
+  if(v) return v;
+  /* Version retirée, ou réglage enregistré avant qu'elle disparaisse : on
+     RÉPARE le réglage au lieu de le contourner à chaque appel. Sans cela il
+     continuait de désigner un fantôme, et tout ce qui le lisait directement
+     (la coche du panneau) se retrouvait sans réponse. */
+  if(settings.bible !== BIBLES[0].cle){ settings.bible = BIBLES[0].cle; try{ saveSettings(); }catch(e){} }
+  return BIBLES[0];
 }
 function texteVerset(ref, defaut){
   const lot = VERSETS_ALT[bibleActive().cle];
