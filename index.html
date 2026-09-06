@@ -1534,6 +1534,28 @@
      contenu ne bouge pas d'un pixel, et l'animation d'entrée le déduit (voir
      sheetIn) pour partir EXACTEMENT d'où elle partait avant. */
   .settings-sheet{ width:100%; max-width:430px; border:1px solid rgba(255,255,255,0.72); border-bottom:none; border-radius:24px 24px 0 0; padding:0.8rem 1.25rem calc(env(safe-area-inset-bottom) * 0.55 + 0.4rem + 220px); margin-bottom:-220px; animation:sheetIn var(--tr-ouvre); transform:translateZ(0); -webkit-transform:translateZ(0); touch-action:none; --rim-cast:0 -6px 34px rgba(18,12,6,0.3); }
+  /* DEUX FEUILLES L'UNE SUR L'AUTRE — LA FAÇON DONT ELLES SE SUPERPOSENT.
+     Avant : le choix de version arrivait avec EXACTEMENT la même matière, la
+     même largeur et le même coin arrondi que les Réglages, simplement décalé
+     plus bas. Rien ne disait laquelle est devant ; son bord supérieur coupait
+     une ligne des Réglages en deux ; et deux verres à 0,58 empilés donnaient
+     une zone plus dense, presque sale, là où ils se recouvrent.
+     Maintenant, c'est le geste des feuilles empilées d'iOS : celle du dessous
+     RECULE — elle rétrécit un peu depuis son bord haut, s'écarte des bords de
+     l'écran, se coiffe d'un arrondi plus doux — pendant que celle du dessus
+     monte devant elle, à pleine matière. On lit tout de suite laquelle est
+     active, et le bord qui coupait une ligne devient un empilement franc.
+     Le transform-origin est en HAUT : le bord supérieur des Réglages reste où
+     il est, seule la largeur se resserre. Sans ça la feuille aurait glissé
+     vers le bas en rétrécissant, et le mouvement aurait eu l'air d'un
+     décrochage plutôt que d'un recul. */
+  .settings-sheet{ transition:transform 0.34s cubic-bezier(0.32,0.72,0,1), border-radius 0.34s ease; }
+  .settings-sheet.feuille-recule{ transform:translateZ(0) scale(0.935) translateY(10px); transform-origin:50% 0; border-radius:30px 30px 0 0; }
+  /* Le voile de la feuille de DEVANT porte un fond sombre — le seul du jeu.
+     Les voiles de premier niveau restent transparents (le décor doit passer au
+     travers, c'est la signature du jeu) ; ici il sépare deux panneaux de même
+     matière, et sans lui rien ne les distingue. */
+  .sheet-veil.voile-second{ background:rgba(22,16,10,0.34); }
   .settings-sheet .rev-list{ touch-action:pan-y; }
   /* LA POIGNÉE FERME LA FEUILLE. Elle n'était qu'un trait décoratif ; c'est
      désormais la vraie sortie : on tire la feuille vers le bas, ou on tape la
@@ -1779,6 +1801,13 @@
     filter:blur(11px); animation:heroSpin 9s linear infinite;
   }
   @keyframes heroSpin{ from{ transform:rotate(0deg); } to{ transform:rotate(360deg); } }
+  /* APPAREIL LENT (mesuré, voir perfReleve) : les deux seules animations qui
+     tournent SANS ARRÊT s'arrêtent. Le halo reste, l'ombre reste — elles ne
+     bougent simplement plus. C'est ce qui coûte le plus cher sur l'écran
+     d'accueil : deux couches floutées re-rastérisées à chaque image. */
+  html.perf-bas .hero-icon-wrap::before,
+  html.perf-bas .splash-dove-wrap::before,
+  html.perf-bas .hero-zone::after{ animation:none; }
   @keyframes heroBump{ 0%{ transform:scale(1); } 45%{ transform:scale(1.09) rotate(2.5deg); } 100%{ transform:scale(1); } }
   .hero-zone.show-verse .hero-icon-btn{ pointer-events:none; }
   .hero-zone.show-verse .hero-icon-wrap{ transform:scale(0.5) rotate(-9deg); opacity:0; }
@@ -4539,6 +4568,10 @@ function openBibles(){
       <div class="bible-list">${BIBLES.map(ligneBible).join("")}</div>
     </div>`;
   document.body.appendChild(veil);
+  /* La feuille des Réglages passe en SECOND PLAN (voir .feuille-recule). */
+  const dessous = document.querySelector("#settingsVeil .settings-sheet");
+  if(dessous) dessous.classList.add("feuille-recule");
+  veil.classList.add("voile-second");
   attachSheetDrag(veil.querySelector(".settings-sheet"), closeBibles);
   veil.addEventListener("click", (e)=>{ if(e.target===veil){ closeBibles(); } });
   /* LE VERRE SE CONSTRUIT À L'OUVERTURE, comme pour toute autre feuille. Un
@@ -4555,6 +4588,11 @@ function closeBibles(){
   const v = document.getElementById("biblesVeil");
   if(!v || v.classList.contains("closing")) return;
   v.classList.add("closing");
+  /* Les Réglages reviennent au premier plan EN MÊME TEMPS que la feuille
+     redescend : les deux mouvements se croisent, comme à l'aller. Attendre la
+     fin de la fermeture aurait donné deux temps au lieu d'un. */
+  const dessous = document.querySelector("#settingsVeil .settings-sheet");
+  if(dessous) dessous.classList.remove("feuille-recule");
   setTimeout(()=>{ if(v.parentNode) v.remove(); }, 250);
 }
 /* Changer de version ne recharge PAS l'écran : on retouche les deux seules
@@ -9579,7 +9617,18 @@ function queueGlassXF(){
       const restTop = el._ly0 - st;
       if(restTop > vh + 200 || restTop + el._oh0 < -200) continue; // hors écran
       tx = sl - el._lx0 - ox; ty = st - el._ly0 - oy;
-    } else if(now < glassSheetOpenUntil){
+    } else if(now < glassSheetOpenUntil && !(el.closest && el.closest(".feuille-recule"))){
+      /* Exception : la feuille qui RECULE derrière celle qui s'ouvre. La
+         branche ci-dessous cale le flou sur la position de MISE EN PAGE, pour
+         qu'il reste solidaire d'une vitre qui GLISSE — c'est ce qu'il faut
+         pour la feuille de devant. Mais celle du dessous ne glisse pas : elle
+         se met à l'échelle sur place. Son flou restait donc à la position
+         d'avant le recul, puis sautait d'un coup à la bonne à l'expiration de
+         la fenêtre d'ouverture. Mesuré : 13 px d'un seul bond, 630 ms après
+         l'ouverture. En la renvoyant vers le suivi de la position RÉELLE, son
+         flou accompagne le recul image par image. Le test .closest ne coûte
+         rien : il ne tourne que sur les rares surfaces hors #app, et
+         seulement pendant la demi-seconde d'ouverture. */
       // Feuille / modale PENDANT son animation d'ouverture/fermeture : on cale le
       // flou sur la position de MISE EN PAGE (fixe, position finale) -> le .gs
       // reste SOLIDAIRE de la vitre qui glisse, sans AUCUN recalage par image,
@@ -9975,10 +10024,64 @@ function glassFreezeForTransition(){
   glassFreezeUntil = performance.now() + 620;
   setTimeout(()=>{ glassFreezeUntil = 0; glassRelayout(); armGlass(500); try{ queueGlassSync(); }catch(e){} }, 640);
 }
+/* ===================== APPAREILS LENTS : ON S'ADAPTE, ON NE DEMANDE RIEN =====
+   Le jeu reste STRICTEMENT le même pour tout le monde — mêmes questions,
+   même mise en page, mêmes couleurs, mêmes durées. Ce n'est pas une
+   préférence système (voir la note « PAS de prefers-reduced-motion » : elle
+   tient toujours, on ne lit aucun réglage du téléphone). C'est une MESURE :
+   si l'appareil n'arrive pas à suivre, on lui rend son souffle en allégeant
+   ce qui ne sert qu'à décorer.
+   COMMENT ON MESURE. On relève la durée de chaque image dans la boucle du
+   verre — la seule qui tourne en permanence. Toutes les ~90 images on prend
+   la MÉDIANE (et non la moyenne : une seule image longue, un chargement
+   d'image ou un ramasse-miettes, ne doit pas condamner l'appareil). Au-delà
+   de 22 ms par image (moins de 45 images/s), c'est lent.
+   HYSTÉRÉSIS. Il faut DEUX relevés consécutifs d'accord — environ 3 s — pour
+   basculer, dans un sens comme dans l'autre. Un appareil normal qui rame le
+   temps d'une transition ne se retrouve pas dégradé, et un appareil lent qui
+   respire une seconde ne se remet pas à tout peindre.
+   CE QU'ON ALLÈGE : le halo qui tourne derrière le logo et l'ombre de
+   lévitation. Ce sont les deux SEULES choses qui tournent sans arrêt, et ce
+   sont deux couches FLOUTÉES : un dégradé conique sous blur(11px) qui pivote
+   à l'infini, et une ombre radiale floutée qui respire. Une couche floutée
+   qui bouge doit être re-rastérisée à chaque image — c'est exactement ce qui
+   met un GPU faible à genoux. Elles ne disparaissent pas : elles s'arrêtent.
+   Le halo reste, l'ombre reste, elles ne bougent plus. Rien de ce qu'on lit
+   ni de la mise en page ne change.
+   CE QU'ON N'ALLÈGE PAS, ET POURQUOI. J'avais d'abord fait sauter au moteur
+   de verre une image sur deux. Mesuré : ce recalage coûte 0,009 ms par image
+   (1,1 ms pour 120 images de défilement). Sauter 24 appels faisait donc
+   gagner 0,2 ms — rien — au prix d'un verre qui suit le doigt deux fois
+   moins finement. Retiré. Le coût d'un appareil lent n'est pas dans le JS de
+   cette boucle, il est dans la rastérisation ; c'est là qu'on agit.
+   CE QUE JE N'AI PAS PU MESURER EN MACHINE : le gain réel des deux
+   animations arrêtées. Le bridage CPU de Chromium ralentit le JavaScript,
+   pas la rastérisation — les images restaient à 16,7 ms avec ou sans
+   bridage. Le levier est choisi sur ce que SONT ces couches, pas sur un
+   chiffre mesuré ici. */
+let perfBas = false, perfEchant = [], perfAccord = 0;
+function perfReleve(dt){
+  if(!(dt > 0 && dt < 400)) return;          // image aberrante (onglet caché, pause) : ignorée
+  perfEchant.push(dt);
+  if(perfEchant.length < 90) return;
+  perfEchant.sort((a, b) => a - b);
+  const mediane = perfEchant[perfEchant.length >> 1];
+  perfEchant.length = 0;
+  const lent = mediane > 22;                 // < 45 images/s
+  if(lent === perfBas){ perfAccord = 0; return; }
+  perfAccord += lent ? 1 : -1;
+  if(perfAccord >= 2 || perfAccord <= -2){
+    perfBas = lent; perfAccord = 0;
+    try{ document.documentElement.classList.toggle("perf-bas", perfBas); }catch(e){}
+  }
+}
+let perfDerniere = 0;
 (function glassLive(){
   requestAnimationFrame(glassLive);
   glassFrame++;
   const now = performance.now();
+  if(perfDerniere) perfReleve(now - perfDerniere);
+  perfDerniere = now;
   if(now < glassFreezeUntil) return; // transition en cours : rien à faire (pur GPU)
   const sl0 = glassAppEl.scrollLeft, st0 = CUSTOM_SCROLL ? customScrollY : glassAppEl.scrollTop;
   let justMoved = (sl0 !== glassLastSL || st0 !== glassLastST);
