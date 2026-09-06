@@ -2141,7 +2141,7 @@
 <div id="bg-layer"></div>
 <div id="bg-overlay"></div>
 <div id="bg-grain"></div>
-<div id="rotate-lock"><span class="rl-ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><rect x="7" y="2.5" width="10" height="19" rx="2.5"/><line x1="10.3" y1="18.4" x2="13.7" y2="18.4"/></svg></span><p>Redresse ton téléphone —<br>BibleTrivia se joue en portrait</p></div>
+<div id="rotate-lock"><span class="rl-ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><rect x="7" y="2.5" width="10" height="19" rx="2.5"/><line x1="10.3" y1="18.4" x2="13.7" y2="18.4"/></svg></span><p>Tourne l’écran —<br>BibleTrivia se joue en portrait</p></div>
 <div id="app"></div>
 
 <script>
@@ -5463,7 +5463,7 @@ function openSettings(){
       ${notifPossible() ? `
       <div class="set-row">
         <span class="set-ico ntf">${ICONS.bell}</span>
-        <span class="set-txt"><b>Rappel de série</b><small id="notifTxt">${notifEtat()==="denied" ? "Bloquées dans les réglages du téléphone" : (settings.notif && notifEtat()==="granted" ? "Le soir, seulement si ta série est en jeu" : "Ne rien envoyer")}</small></span>
+        <span class="set-txt"><b>Rappel de série</b><small id="notifTxt">${notifEtat()==="denied" ? "Bloquées dans les réglages" : (settings.notif && notifEtat()==="granted" ? "Le soir, seulement si ta série est en jeu" : "Ne rien envoyer")}</small></span>
         <button class="switch${settings.notif && notifEtat()==="granted" ? " on" : ""}" id="swNotif" role="switch" aria-checked="${!!(settings.notif && notifEtat()==="granted")}" aria-label="Rappel de série" ${notifEtat()==="denied" ? "disabled" : ""} onclick="setNotif(!(settings.notif && notifEtat()==='granted'))"></button>
       </div>` : ""}
       <div class="set-row">
@@ -8181,7 +8181,7 @@ function notifRafraichir(){
   sw.setAttribute("aria-checked", on ? "true" : "false");
   const t = document.getElementById("notifTxt");
   if(t) t.textContent = notifEtat() === "denied"
-    ? "Bloquées dans les réglages du téléphone"
+    ? "Bloquées dans les réglages"
     : (on ? "Le soir, seulement si ta série est en jeu" : "Ne rien envoyer");
 }
 
@@ -8602,13 +8602,19 @@ function renderModeSelect(){
          nominaux courts, sans verbe conjugué et sans point d'exclamation :
          c'est ce qui fait qu'une liste se lit d'un coup d'œil au lieu de se
          lire ligne par ligne.
+         AUCUN TEXTE VISIBLE NE NOMME UN APPAREIL. Le jeu tourne sur téléphone,
+         sur tablette et dans un navigateur : « sur ce téléphone », « redresse
+         ton téléphone », « les réglages du téléphone » étaient faux partout
+         ailleurs que sur un téléphone — et le voile de rotation s'affiche
+         justement AUSSI sur tablette. On parle donc d'écran et de réglages,
+         jamais de l'appareil.
          Deux fautes corrigées au passage : « à demain » prenait une minuscule
          en tête de proposition, et « 0 bonnes réponses » s'accordait au
          pluriel alors qu'en français zéro et un commandent le singulier. */
       const doneTxt = dDone ? ('R\u00e9ussi ' + dd.score + '/' + dd.total + '\u00a0\u00b7 \u00c0 demain')
         : (dProg ? 'Partie en cours'
         : (dSk >= 2 ? ('S\u00e9rie de ' + dSk + '\u00a0jours \u00e0 garder') : 'Le m\u00eame pour tous, chaque jour'));
-      const group = `<button class="mode-card" onclick="selectMode('group')"><span class="mode-icon group">${ICONS.users}</span><span class="mode-text"><span class="mode-title">Mode Groupe</span><span class="mode-desc">En équipes, sur ce téléphone</span></span><span class="chev">${ICONS.chevronRight}</span></button>`;
+      const group = `<button class="mode-card" onclick="selectMode('group')"><span class="mode-icon group">${ICONS.users}</span><span class="mode-text"><span class="mode-title">Mode Groupe</span><span class="mode-desc">En équipes, sur un seul écran</span></span><span class="chev">${ICONS.chevronRight}</span></button>`;
       const solo = `<button class="mode-card" onclick="selectMode('solo')"><span class="mode-icon solo">${ICONS.user}</span><span class="mode-text"><span class="mode-title">Mode Solo</span><span class="mode-desc">Une partie, à ton rythme</span></span><span class="chev">${ICONS.chevronRight}</span></button>`;
       const online = `<button class="mode-card" onclick="openOnline()"><span class="mode-icon online">${ICONS.bolt}</span><span class="mode-text"><span class="mode-title">Jouer en ligne</span><span class="mode-desc">Jusqu'à 8 joueurs, en direct</span></span><span class="chev">${ICONS.chevronRight}</span></button>`;
       const daily = `<button class="daily-card${dDone?' done':''}" onclick="${dDone?'':'startDailyChallenge()'}" ${dDone?'disabled':''}><span class="dc-ico">${ICONS.flame}</span><span class="dc-txt"><b>Défi du jour</b><small>${doneTxt}</small></span>${dSk>0 ? `<span class="dc-streak">${ICONS.flame}${dSk}</span>` : ''}${dDone ? `<span class="dc-check">${ICONS.checkCircle}</span>` : `<span class="chev">${ICONS.chevronRight}</span>`}</button>`;
