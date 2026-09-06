@@ -45,6 +45,36 @@
     --ink:#2A241E;
     --ink-soft:#6E665B;
     --border:rgba(255,255,255,0.4);
+    /* ===================== LES BORDS — UN SEUL SYSTÈME =====================
+       AVANT : chaque surface portait TROIS traitements de bord blancs empilés —
+       un contour plein 1px à 0,72, une lèvre haute interne 1,5px à 0,72, et un
+       anneau interne complet 1,5px à 0,42. Compté dans la feuille de style :
+       60 fois le même contour blanc. C'est ce qui donnait l'impression de
+       rectangles enfermés dans des rectangles : chaque carte, chaque bouton,
+       chaque ligne, chaque champ était SOULIGNÉ au trait blanc.
+       APRÈS : un seul liseré, presque effacé (--bord), et une lèvre de lumière
+       en HAUT seulement (--levre) — celle qui fait lire le verre comme du
+       verre. L'anneau interne complet disparaît : c'est lui qui « encadrait ».
+       Le contour reste déclaré en 1px pour que RIEN ne bouge (box-sizing est
+       en border-box : changer l'épaisseur décalerait tout le contenu) ; seule
+       son opacité tombe. La séparation entre deux surfaces passe désormais par
+       la différence de matière, l'espacement et la typographie — pas par un
+       trait. */
+    --bord:rgba(255,255,255,0.20);
+    --levre:rgba(255,255,255,0.30);
+    /* ===================== LES RAYONS — UNE SEULE ÉCHELLE =====================
+       AVANT : douze valeurs sans système (9, 10, 11, 12, 13, 14, 15, 16, 18,
+       20, 22, 24) plus deux pilules concurrentes (99 et 100). Une carte à 16,
+       ses boutons à 14, ses puces à 12, sa pastille à 13 : rien ne s'accordait.
+       APRÈS : quatre marches, choisies pour le RÔLE et non pour la taille
+       actuelle. Les pastilles d'icône gardent leur propre marche : à 45 px de
+       côté, un rayon de bouton les arrondirait en galets. */
+    --r-ico:14px;   /* pastilles d'icône, vignettes photo — squircle */
+    --r-s:14px;     /* petites plaques, badges */
+    --r-m:18px;     /* boutons, lignes de liste, chips */
+    --r-l:22px;     /* cartes */
+    --r-xl:28px;    /* feuilles, fenêtres */
+    --r-full:999px; /* pilules */
     --primary:#EC3C1A;
     --primary-dark:#D63A1E;
     --primary-soft:#FFE7DE;
@@ -266,11 +296,11 @@
   .btn-primary:disabled, .btn-next:disabled{ opacity:1; background-image:linear-gradient(180deg, #6E6254, #55483A); box-shadow:inset 0 0 0 1px rgba(255,255,255,0.16), inset 0 1px 0 rgba(255,255,255,0.22); color:rgba(255,255,255,0.95); }
 
   /* ---------- Header ---------- */
-  .app-header{ display:flex; align-items:center; justify-content:space-between; gap:0.75rem; margin-bottom:1.1rem; border-radius:16px; padding:0.5rem 0.55rem; }
+  .app-header{ display:flex; align-items:center; justify-content:space-between; gap:0.75rem; margin-bottom:1.1rem; border-radius:var(--r-l); padding:0.5rem 0.55rem; }
   .header-title{ font-family:'Poppins',sans-serif; font-weight:600; font-size:1.05rem; letter-spacing:-0.01em; }
   .icon-btn{
     width:2.4rem; height:2.4rem; border-radius:50%;
-    border:1px solid rgba(255,255,255,0.72); background:rgba(255,255,255,0.5);
+    border:1px solid var(--bord); background:rgba(255,255,255,0.5);
     backdrop-filter:blur(18px) saturate(180%); -webkit-backdrop-filter:blur(18px) saturate(180%); color:var(--ink);
     display:flex; align-items:center; justify-content:center; flex-shrink:0; padding:0.5rem;
     --rim-cast:0 2px 8px rgba(15,12,10,0.16); box-shadow:none;
@@ -315,7 +345,7 @@
      usage) -> écran prévisible, propre et net. */
   .mode-card{
     width:100%; display:flex; align-items:center; gap:0.8rem;
-    background:var(--surface); border:1px solid var(--border); border-radius:16px;
+    background:var(--surface); border:1px solid var(--border); border-radius:var(--r-l);
     padding:0.82rem 0.95rem; margin-bottom:13px; text-align:left;
     box-shadow:inset 0 1px 0 rgba(255,255,255,0.7), 0 4px 16px rgba(15,12,10,0.1);
   }
@@ -332,15 +362,15 @@
        + anneau teinté 1px (0,3) + halo/ombre teintée (0,44).
      Chaque icône reçoit le liseré+halo de SA couleur (voir --gc-* ci-dessous) —
      structure identique = cohérence totale, relief riche = « verre » premium. */
-  .mode-icon, .daily-card .dc-ico, .parcours-card .pc-ico{ width:2.7rem; height:2.7rem; border-radius:14px; display:flex; align-items:center; justify-content:center; flex-shrink:0; padding:0.6rem; color:#fff; box-shadow:inset 0 1.5px 0 rgba(255,255,255,0.72), inset 0 0 0 1.5px rgba(255,255,255,0.42), 0 4px 11px rgba(15,12,10,0.22); }
-  .mode-icon.group{ background:linear-gradient(150deg, #F44E2C, #DE3616); box-shadow:inset 0 1.5px 0 rgba(255,255,255,0.72), inset 0 0 0 1.5px rgba(255,255,255,0.42), 0 0 0 1px rgba(150,40,20,0.3), 0 5px 14px rgba(214,71,44,0.44); }
-  .mode-icon.solo{ background:linear-gradient(150deg, #FFC64F, #F09A18); box-shadow:inset 0 1.5px 0 rgba(255,255,255,0.72), inset 0 0 0 1.5px rgba(255,255,255,0.42), 0 0 0 1px rgba(150,95,15,0.3), 0 5px 14px rgba(206,138,42,0.44); }
+  .mode-icon, .daily-card .dc-ico, .parcours-card .pc-ico{ width:2.7rem; height:2.7rem; border-radius:var(--r-ico); display:flex; align-items:center; justify-content:center; flex-shrink:0; padding:0.6rem; color:#fff; box-shadow:inset 0 1px 0 rgba(255,255,255,0.26), 0 2px 7px rgba(15,12,10,0.24); }
+  .mode-icon.group{ background:linear-gradient(150deg, #F44E2C, #DE3616); box-shadow:inset 0 1px 0 rgba(255,255,255,0.26), 0 2px 7px rgba(214,71,44,0.24); }
+  .mode-icon.solo{ background:linear-gradient(150deg, #FFC64F, #F09A18); box-shadow:inset 0 1px 0 rgba(255,255,255,0.26), 0 2px 7px rgba(206,138,42,0.24); }
   .mode-text{ display:flex; flex-direction:column; gap:0.16rem; min-width:0; }
   .mode-title{ font-family:'Poppins',sans-serif; font-weight:600; font-size:0.98rem; color:var(--ink); }
   .mode-desc{ font-size:0.8rem; color:var(--ink-soft); line-height:1.35; }
 
   /* ---------- Cards / setup ---------- */
-  .card{ background:var(--surface); border:1px solid var(--border); border-radius:16px; padding:1.1rem 1rem; margin-bottom:0.95rem; }
+  .card{ background:var(--surface); border:1px solid var(--border); border-radius:var(--r-l); padding:1.1rem 1rem; margin-bottom:0.95rem; }
   .card h2{ font-family:'Poppins',sans-serif; font-size:0.78rem; font-weight:700; letter-spacing:0.09em; text-transform:uppercase; color:var(--ink-soft); margin:0 0 0.65rem 0.1rem; }
 
   /* LIGNES JOUEURS : la carte est la SEULE surface de verre ; les lignes sont un
@@ -354,11 +384,11 @@
      champ, crème sur crème, où le fil à 0,12 disparaissait. Le rebord reste
      exactement le même partout — seule l'intensité du fil de 1px s'ajuste au
      contraste réel, pour que la bordure se VOIE autant qu'ailleurs. */
-  .team-row{ display:flex; align-items:center; gap:0.55rem; margin-bottom:0.6rem; padding:0.4rem 0.5rem; border-radius:13px; border:1px solid rgba(255,255,255,0.72); background:rgb(252,248,241);
+  .team-row{ display:flex; align-items:center; gap:0.55rem; margin-bottom:0.6rem; padding:0.4rem 0.5rem; border-radius:var(--r-s); border:1px solid var(--bord); background:rgb(252,248,241);
     --rim-edge:0 0 0 1px rgba(58,42,26,0.26); --rim-cast:0 5px 14px rgba(34,26,16,0.12); }
   .team-token{ width:1.9rem; height:1.9rem; border-radius:50%; color:#fff; font-family:'Poppins',sans-serif; font-weight:600; font-size:0.85rem; display:flex; align-items:center; justify-content:center; flex-shrink:0; --rim-edge:0 0 0 1px rgba(30,22,14,0.16); --rim-cast:0 3px 9px rgba(15,12,10,0.24); }
   .dot-sm{ display:inline-block; width:0.5rem; height:0.5rem; border-radius:50%; margin-right:0.4rem; vertical-align:middle; flex-shrink:0; }
-  .team-row input{ flex:1; min-width:0; background:rgba(255,255,255,0.5); border:1px solid rgba(255,255,255,0.72); color:var(--ink); padding:0.58rem 0.75rem; border-radius:10px; font-size:0.95rem; font-weight:600; --rim-edge:0 0 0 1px rgba(58,42,26,0.22); --rim-cast:0 2px 6px rgba(34,26,16,0.1); }
+  .team-row input{ flex:1; min-width:0; background:rgba(255,255,255,0.5); border:1px solid var(--bord); color:var(--ink); padding:0.58rem 0.75rem; border-radius:10px; font-size:0.95rem; font-weight:600; --rim-edge:0 0 0 1px rgba(58,42,26,0.22); --rim-cast:0 2px 6px rgba(34,26,16,0.1); }
   .team-remove{ background:none; border:none; color:var(--ink-soft); width:1.8rem; height:1.8rem; padding:0.4rem; display:flex; align-items:center; justify-content:center; flex-shrink:0; }
   .team-remove:disabled{ opacity:0.25; }
 
@@ -372,7 +402,7 @@
      passer une zone claire/foncée de la photo qui mangeait le contraste avec
      le texte rouge. Un voile clair plus couvrant garde le bouton lisible
      quel que soit ce qu'il y a derrière, à n'importe quel moment du scroll. */
-  .add-team{ --rim-edge:0 0 0 1px rgba(58,42,26,0.24); width:100%; display:flex; align-items:center; justify-content:center; gap:0.5rem; margin-top:0.4rem; color:var(--primary); border:1px solid rgba(255,255,255,0.72); border-radius:14px; padding:0.6rem; font-size:0.85rem; font-weight:600; }
+  .add-team{ --rim-edge:0 0 0 1px rgba(58,42,26,0.24); width:100%; display:flex; align-items:center; justify-content:center; gap:0.5rem; margin-top:0.4rem; color:var(--primary); border:1px solid var(--bord); border-radius:var(--r-m); padding:0.6rem; font-size:0.85rem; font-weight:600; }
   .add-team .ico{ width:1.12rem; height:1.12rem; }
   /* CARTE PLEINE = SIX CASES, PAS SEPT. « Ajouter un joueur » restait affiché,
      simplement grisé, une fois les six joueurs inscrits : la carte comptait
@@ -390,15 +420,15 @@
   .add-team.se-plie:disabled{ display:flex; }
 
   .chip-row{ display:flex; gap:0.5rem; flex-wrap:wrap; }
-  .chip{ flex:1; min-width:30%; text-align:center; --glass-tint: rgb(252,248,241); background:rgb(252,248,241); backdrop-filter:none; -webkit-backdrop-filter:none; border:1px solid rgba(255,255,255,0.72); color:var(--ink); padding:0.62rem 0.5rem; border-radius:14px; font-size:0.82rem; font-weight:600; }
-  .chip.active{ --glass-tint: rgb(236,60,26); border-color:rgba(255,255,255,0.72); color:#fff; --rim-edge:0 0 0 1px rgba(150,30,14,0.3); --rim-cast:0 4px 12px rgba(241,80,47,0.35); box-shadow:none; }
+  .chip{ flex:1; min-width:30%; text-align:center; --glass-tint: rgb(252,248,241); background:rgb(252,248,241); backdrop-filter:none; -webkit-backdrop-filter:none; border:1px solid var(--bord); color:var(--ink); padding:0.62rem 0.5rem; border-radius:var(--r-m); font-size:0.82rem; font-weight:600; }
+  .chip.active{ --glass-tint: rgb(236,60,26); border-color:var(--bord); color:#fff; --rim-edge:0 0 0 1px rgba(150,30,14,0.3); --rim-cast:0 4px 12px rgba(241,80,47,0.35); box-shadow:none; }
   .chip.active .sub{ opacity:0.92; }
   .chip .sub{ display:block; font-weight:400; font-size:0.78rem; margin-top:0.15rem; opacity:0.85; }
 
-  .rules{ font-size:0.85rem; color:var(--ink-soft); line-height:1.6; background:rgba(244,239,231,0.78); backdrop-filter:blur(14px) saturate(180%); -webkit-backdrop-filter:blur(14px) saturate(180%); border:1px solid rgba(255,255,255,0.72); border-radius:14px; padding:0.9rem 1rem; margin-bottom:1.1rem; }
+  .rules{ font-size:0.85rem; color:var(--ink-soft); line-height:1.6; background:rgba(244,239,231,0.78); backdrop-filter:blur(14px) saturate(180%); -webkit-backdrop-filter:blur(14px) saturate(180%); border:1px solid var(--bord); border-radius:var(--r-m); padding:0.9rem 1rem; margin-bottom:1.1rem; }
   .rules b{ color:var(--ink); }
 
-  .btn-primary{ width:100%; background:var(--primary); color:#fff; border:1px solid rgba(255,255,255,0.72); border-radius:14px; padding:clamp(0.9rem, 1.75vh, 1.06rem); font-size:0.95rem; font-weight:700; letter-spacing:0.01em; --rim-edge:0 0 0 1px rgba(150,30,14,0.3);--rim-cast:0 6px 16px rgba(214,60,34,0.42); }
+  .btn-primary{ width:100%; background:var(--primary); color:#fff; border:1px solid var(--bord); border-radius:var(--r-m); padding:clamp(0.9rem, 1.75vh, 1.06rem); font-size:0.95rem; font-weight:700; letter-spacing:0.01em; --rim-edge:0 0 0 1px rgba(150,30,14,0.3);--rim-cast:0 6px 16px rgba(214,60,34,0.42); }
   .btn-primary:disabled{ opacity:0.4; box-shadow:none; }
   /* Bouton d'attente : simple pastille de statut, non pressable → aucun
      repaint au toucher (c'est ce repaint qui le faisait « blanchir »). */
@@ -415,7 +445,7 @@
   .play-meta .tier-chip{ font-size:0.76rem; padding:0.3rem 0.58rem; gap:0.3rem; }
   .play-meta .q-counter, .play-meta .timer-chip, .play-meta .streak-chip{ font-size:0.76rem; padding:0.3rem 0.55rem; }
   .play-meta .timer-chip{ min-width:0; }
-  .tier-chip{ display:inline-flex; align-items:center; gap:0.4rem; font-size:0.82rem; font-weight:600; background:rgba(255,255,255,0.5); backdrop-filter:blur(18px) saturate(180%); -webkit-backdrop-filter:blur(18px) saturate(180%); border:1px solid rgba(255,255,255,0.72); padding:0.34rem 0.7rem; border-radius:100px; }
+  .tier-chip{ display:inline-flex; align-items:center; gap:0.4rem; font-size:0.82rem; font-weight:600; background:rgba(255,255,255,0.5); backdrop-filter:blur(18px) saturate(180%); -webkit-backdrop-filter:blur(18px) saturate(180%); border:1px solid var(--bord); padding:0.34rem 0.7rem; border-radius:var(--r-full); }
   .tier-dots{ display:inline-flex; gap:3px; }
   .tdot{ width:6px; height:6px; border-radius:50%; background:rgba(0,0,0,0.14); }
   .tdot.filled{ background:currentColor; box-shadow:0 0 5px currentColor; }
@@ -431,21 +461,21 @@
   .tier-facile{ color:#1F6E48; }
   .tier-moyen{ color:#7C5A14; }
   .tier-difficile{ color:#A7395C; }
-  .q-counter{ font-size:0.8rem; color:var(--ink); font-weight:700; font-variant-numeric:tabular-nums; letter-spacing:0.01em; background:rgba(255,255,255,0.5); backdrop-filter:blur(18px) saturate(180%); -webkit-backdrop-filter:blur(18px) saturate(180%); border:1px solid rgba(255,255,255,0.72); padding:0.34rem 0.7rem; border-radius:100px; }
+  .q-counter{ font-size:0.8rem; color:var(--ink); font-weight:700; font-variant-numeric:tabular-nums; letter-spacing:0.01em; background:rgba(255,255,255,0.5); backdrop-filter:blur(18px) saturate(180%); -webkit-backdrop-filter:blur(18px) saturate(180%); border:1px solid var(--bord); padding:0.34rem 0.7rem; border-radius:var(--r-full); }
   /* Verre peint comme les autres puces (plus de backdrop-filter, invisible
      sur iOS) : la teinte passe par --glass-tint, le fond photo transparaît. */
-  .streak-chip{ display:flex; align-items:center; gap:0.32rem; --glass-tint: rgb(255,226,150); border:1px solid rgba(239,173,38,0.55); color:#8a5e14; padding:0.34rem 0.7rem; border-radius:100px; font-size:0.8rem; font-weight:700; }
-  .streak-chip.hot{ --glass-tint: rgb(242,96,44); border-color:rgba(255,255,255,0.72); color:#fff; --rim-cast:0 3px 12px rgba(242,100,48,0.5); }
+  .streak-chip{ display:flex; align-items:center; gap:0.32rem; --glass-tint: rgb(255,226,150); border:1px solid rgba(239,173,38,0.55); color:#8a5e14; padding:0.34rem 0.7rem; border-radius:var(--r-full); font-size:0.8rem; font-weight:700; }
+  .streak-chip.hot{ --glass-tint: rgb(242,96,44); border-color:var(--bord); color:#fff; --rim-cast:0 3px 12px rgba(242,100,48,0.5); }
   .streak-chip.hot .ico{ animation:flameFlicker 0.9s ease-in-out infinite; }
   @keyframes flameFlicker{ 0%,100%{ transform:scale(1) rotate(-2deg); } 50%{ transform:scale(1.12) rotate(2deg); } }
   .streak-chip .ico{ width:1.08rem; height:1.08rem; }
   .streak-chip.hot .ico{ width:1.18rem; height:1.18rem; }
 
-  .progress-track{ position:relative; height:8px; margin-bottom:1.4rem; background:rgba(255,255,255,0.32); backdrop-filter:blur(14px) saturate(180%); -webkit-backdrop-filter:blur(14px) saturate(180%); border-radius:100px; border:1px solid rgba(255,255,255,0.72); box-shadow:inset 0 1px 2px rgba(15,12,10,0.12); overflow:hidden; }
-  .progress-fill{ position:absolute; left:0; top:0; bottom:0; border-radius:100px; background:linear-gradient(90deg, #FB6A45, #EFAD26); box-shadow:0 0 10px rgba(241,80,47,0.5); transition:width 0.55s cubic-bezier(0.16,1,0.3,1); }
-  .progress-fill::after{ content:""; position:absolute; inset:0; border-radius:100px; box-shadow:inset 0 1px 0 rgba(255,255,255,0.45); }
+  .progress-track{ position:relative; height:8px; margin-bottom:1.4rem; background:rgba(255,255,255,0.32); backdrop-filter:blur(14px) saturate(180%); -webkit-backdrop-filter:blur(14px) saturate(180%); border-radius:var(--r-full); border:1px solid var(--bord); box-shadow:inset 0 1px 2px rgba(15,12,10,0.12); overflow:hidden; }
+  .progress-fill{ position:absolute; left:0; top:0; bottom:0; border-radius:var(--r-full); background:linear-gradient(90deg, #FB6A45, #EFAD26); box-shadow:0 0 10px rgba(241,80,47,0.5); transition:width 0.55s cubic-bezier(0.16,1,0.3,1); }
+  .progress-fill::after{ content:""; position:absolute; inset:0; border-radius:var(--r-full); box-shadow:inset 0 1px 0 rgba(255,255,255,0.45); }
 
-  .question-card{ position:relative; background:var(--surface); border:1px solid var(--border); border-radius:20px; padding:1.4rem 1.2rem; margin-bottom:1rem; text-align:center; }
+  .question-card{ position:relative; background:var(--surface); border:1px solid var(--border); border-radius:var(--r-l); padding:1.4rem 1.2rem; margin-bottom:1rem; text-align:center; }
   .question-card::before{ content:""; position:absolute; top:0; left:18%; right:18%; height:2px; background:linear-gradient(90deg, transparent, rgba(239,173,38,0.75), transparent); }
   .question-card .qtext{ font-family:'Poppins',sans-serif; font-weight:600; font-size:clamp(1.05rem, 4vw, 1.32rem); line-height:1.45; }
 
@@ -455,7 +485,7 @@
     display:flex; align-items:center; gap:0.6rem;
     background:rgba(255,255,255,0.52); backdrop-filter:blur(20px) saturate(180%); -webkit-backdrop-filter:blur(20px) saturate(180%);
     -webkit-transform:translateZ(0); transform:translateZ(0);
-    border:1px solid rgba(255,255,255,0.72); border-radius:15px;
+    border:1px solid var(--bord); border-radius:var(--r-l);
     padding:clamp(0.74rem, 1.5vh, 0.96rem) 0.85rem; font-size:clamp(0.88rem, 2.35vw, 0.96rem); color:var(--ink); text-align:left; width:100%;
     --rim-cast:0 2px 8px rgba(15,12,10,0.1); box-shadow:none;
   }
@@ -491,18 +521,18 @@
      profond) au lieu du brun neutre des autres surfaces : c'est sa signature,
      mais elle ne casse plus l'unité du bord. La barre de gauche disparaît — elle
      n'avait plus de sens une fois le contour uniforme. */
-  .fact-card{ display:flex; gap:0.7rem; align-items:flex-start; background:rgba(255,242,214,0.62); backdrop-filter:blur(14px) saturate(180%); -webkit-backdrop-filter:blur(14px) saturate(180%); border:1px solid rgba(255,255,255,0.72); border-radius:13px; padding:0.75rem 0.9rem; margin-bottom:1rem; --rim-edge:0 0 0 1px rgba(150,95,15,0.28); }
-  .fact-card .ficon{ width:1.95rem; height:1.95rem; padding:0.42rem; border-radius:9px; background:linear-gradient(160deg, #FBE9BE, #F3C75E); color:#8a5e14; flex-shrink:0; margin-top:0.05rem; box-shadow:inset 0 1.5px 0 rgba(255,255,255,0.72), inset 0 0 0 1.5px rgba(255,255,255,0.42), 0 0 0 1px rgba(150,95,15,0.3), 0 5px 14px rgba(206,138,42,0.44); }
+  .fact-card{ display:flex; gap:0.7rem; align-items:flex-start; background:rgba(255,242,214,0.62); backdrop-filter:blur(14px) saturate(180%); -webkit-backdrop-filter:blur(14px) saturate(180%); border:1px solid var(--bord); border-radius:var(--r-s); padding:0.75rem 0.9rem; margin-bottom:1rem; --rim-edge:0 0 0 1px rgba(150,95,15,0.28); }
+  .fact-card .ficon{ width:1.95rem; height:1.95rem; padding:0.42rem; border-radius:10px; background:linear-gradient(160deg, #FBE9BE, #F3C75E); color:#8a5e14; flex-shrink:0; margin-top:0.05rem; box-shadow:inset 0 1px 0 rgba(255,255,255,0.26), 0 2px 7px rgba(206,138,42,0.24); }
   .fact-label{ display:block; font-family:'Fraunces',serif; font-style:italic; font-weight:500; color:var(--gold-deep); font-size:0.82rem; letter-spacing:0.01em; margin-bottom:0.12rem; }
   .fact-card .ftext{ font-size:0.87rem; color:#6b5219; line-height:1.55; }
 
-  .btn-reveal{ width:100%; border:1px solid rgba(255,255,255,0.72); color:#fff; border-radius:14px; padding:0.9rem; font-size:0.92rem; font-weight:700; margin-bottom:0.95rem; text-shadow:0 1px 4px rgba(120,78,10,0.45); --rim-edge:0 0 0 1px rgba(150,95,15,0.32);--rim-cast:0 5px 16px rgba(196,132,26,0.44); }
-  .btn-next{ width:100%; background:var(--primary); color:#fff; border:1px solid rgba(255,255,255,0.72); border-radius:14px; padding:clamp(0.9rem, 1.75vh, 1.06rem); font-size:0.95rem; font-weight:700; letter-spacing:0.01em; margin-bottom:1.05rem; --rim-edge:0 0 0 1px rgba(150,30,14,0.3);--rim-cast:0 6px 16px rgba(214,60,34,0.42); }
+  .btn-reveal{ width:100%; border:1px solid var(--bord); color:#fff; border-radius:var(--r-m); padding:0.9rem; font-size:0.92rem; font-weight:700; margin-bottom:0.95rem; text-shadow:0 1px 4px rgba(120,78,10,0.45); --rim-edge:0 0 0 1px rgba(150,95,15,0.32);--rim-cast:0 5px 16px rgba(196,132,26,0.44); }
+  .btn-next{ width:100%; background:var(--primary); color:#fff; border:1px solid var(--bord); border-radius:var(--r-m); padding:clamp(0.9rem, 1.75vh, 1.06rem); font-size:0.95rem; font-weight:700; letter-spacing:0.01em; margin-bottom:1.05rem; --rim-edge:0 0 0 1px rgba(150,30,14,0.3);--rim-cast:0 6px 16px rgba(214,60,34,0.42); }
   .btn-next:disabled{ opacity:0.4; box-shadow:none; }
 
   .award-label{ font-size:0.86rem; text-transform:uppercase; letter-spacing:0.06em; color:#fff; font-weight:800; margin-bottom:0.6rem; text-shadow:0 1px 3px rgba(0,0,0,0.55), 0 2px 12px rgba(0,0,0,0.4); }
   .award-grid{ display:flex; flex-wrap:wrap; gap:0.6rem; margin-bottom:1.1rem; }
-  .award-btn{ flex:1; min-width:45%; display:flex; align-items:center; gap:0.5rem; padding:0.45rem 0.7rem 0.45rem 0.45rem; border-radius:14px; border:1px solid rgba(255,255,255,0.72); color:var(--ink); font-size:0.85rem; font-weight:600; }
+  .award-btn{ flex:1; min-width:45%; display:flex; align-items:center; gap:0.5rem; padding:0.45rem 0.7rem 0.45rem 0.45rem; border-radius:var(--r-m); border:1px solid var(--bord); color:var(--ink); font-size:0.85rem; font-weight:600; }
   .aw-token{ width:1.7rem; height:1.7rem; font-size:0.84rem; }
   .aw-check{ width:1.16rem; height:1.16rem; flex-shrink:0; }
   .aw-name{ flex:1; min-width:0; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; text-align:left; color:var(--ink); font-weight:700; }
@@ -510,13 +540,13 @@
   .award-btn .pts{ font-variant-numeric:tabular-nums; color:var(--ink-soft); }
 
   .score-strip{ display:flex; flex-wrap:wrap; gap:0.5rem; margin-top:auto; padding-top:1.35rem; }
-  .score-pane{ flex:1; min-width:28%; border-radius:12px; padding:0.55rem 0.7rem; border:1px solid rgba(255,255,255,0.72); font-size:0.84rem; }
+  .score-pane{ flex:1; min-width:28%; border-radius:var(--r-s); padding:0.55rem 0.7rem; border:1px solid var(--bord); font-size:0.84rem; }
   .score-pane .nm{ display:flex; align-items:center; font-weight:600; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; margin-bottom:0.2rem; }
   .score-row{ display:flex; align-items:center; gap:0.3rem; }
   .score-pane .sc{ font-weight:700; font-variant-numeric:tabular-nums; flex:1; }
-  .adj-btn{ width:1.65rem; height:1.65rem; border-radius:50%; border:1px solid rgba(255,255,255,0.72); color:var(--ink); font-size:1rem; font-weight:500; line-height:1; display:flex; align-items:center; justify-content:center; flex-shrink:0; }
+  .adj-btn{ width:1.65rem; height:1.65rem; border-radius:50%; border:1px solid var(--bord); color:var(--ink); font-size:1rem; font-weight:500; line-height:1; display:flex; align-items:center; justify-content:center; flex-shrink:0; }
 
-  .solo-score-bar{ display:flex; justify-content:space-between; align-items:center; background:var(--surface); border:1px solid var(--border); border-radius:13px; padding:0.65rem 0.95rem; margin-top:auto; }
+  .solo-score-bar{ display:flex; justify-content:space-between; align-items:center; background:var(--surface); border:1px solid var(--border); border-radius:var(--r-s); padding:0.65rem 0.95rem; margin-top:auto; }
   .solo-score-bar .label{ font-size:0.81rem; color:var(--ink-soft); }
   .solo-score-bar .value{ font-family:'Poppins',sans-serif; font-weight:700; font-size:1.1rem; color:var(--primary); }
 
@@ -535,13 +565,13 @@
   .podium-avatar.win{ border-color:#fff; box-shadow:0 0 0 2px rgba(255,255,255,0.85), 0 6px 20px rgba(239,173,38,0.6); }
   .podium-name{ font-weight:600; font-size:0.82rem; text-align:center; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; max-width:100%; margin-bottom:0.15rem; }
   .podium-score{ font-family:'Poppins',sans-serif; font-weight:700; font-size:0.9rem; color:var(--primary); margin-bottom:0.4rem; }
-  .podium-bar{ width:100%; border-radius:14px 14px 0 0; display:flex; align-items:flex-start; justify-content:center; padding-top:0.5rem; font-family:'Poppins',sans-serif; font-weight:700; color:rgba(255,255,255,0.95); font-size:1.05rem; box-shadow:inset 0 2px 6px rgba(255,255,255,0.25); }
+  .podium-bar{ width:100%; border-radius:var(--r-ico) 14px 0 0; display:flex; align-items:flex-start; justify-content:center; padding-top:0.5rem; font-family:'Poppins',sans-serif; font-weight:700; color:rgba(255,255,255,0.95); font-size:1.05rem; box-shadow:inset 0 2px 6px rgba(255,255,255,0.25); }
   .podium-bar.p1{ height:4.9rem; background:linear-gradient(180deg, rgba(255,217,104,0.92), rgba(239,173,38,0.92)); }
   .podium-bar.p2{ height:3.5rem; background:linear-gradient(180deg, rgba(216,220,226,0.92), rgba(169,176,186,0.92)); }
   .podium-bar.p3{ height:2.6rem; background:linear-gradient(180deg, rgba(228,181,136,0.92), rgba(193,133,79,0.92)); }
 
   .rank-list{ margin-bottom:1.2rem; }
-  .rank-row{ display:flex; align-items:center; gap:0.75rem; background:rgba(255,255,255,0.55); backdrop-filter:blur(14px) saturate(180%); -webkit-backdrop-filter:blur(14px) saturate(180%); border:1px solid rgba(255,255,255,0.72); border-radius:13px; padding:0.6rem 0.8rem; margin-bottom:0.5rem; }
+  .rank-row{ display:flex; align-items:center; gap:0.75rem; background:rgba(255,255,255,0.55); backdrop-filter:blur(14px) saturate(180%); -webkit-backdrop-filter:blur(14px) saturate(180%); border:1px solid var(--bord); border-radius:var(--r-s); padding:0.6rem 0.8rem; margin-bottom:0.5rem; }
   .rank-badge{ width:1.7rem; height:1.7rem; border-radius:50%; display:flex; align-items:center; justify-content:center; font-weight:700; font-size:0.82rem; flex-shrink:0; background:var(--surface-alt); color:var(--ink-soft); }
   .rank-badge.g1{ background:linear-gradient(150deg,#FFD968,#EFAD26); color:#fff; }
   .rank-badge.g2{ background:linear-gradient(150deg,#DFE3E8,#A9B0BA); color:#fff; }
@@ -570,7 +600,7 @@
     -webkit-mask-image:linear-gradient(to right, #000 0, #000 calc(100% - 2.2rem), transparent 100%);
     mask-image:linear-gradient(to right, #000 0, #000 calc(100% - 2.2rem), transparent 100%); }
   .duel-scorebar.multi::-webkit-scrollbar{ display:none; }
-  .ds-puce{ display:inline-flex; align-items:baseline; gap:0.32rem; flex-shrink:0; padding:0.16rem 0.55rem; border-radius:100px; background:rgba(255,255,255,0.55); border:1px solid rgba(255,255,255,0.66); }
+  .ds-puce{ display:inline-flex; align-items:baseline; gap:0.32rem; flex-shrink:0; padding:0.16rem 0.55rem; border-radius:var(--r-full); background:rgba(255,255,255,0.55); border:1px solid rgba(255,255,255,0.66); }
   .ds-puce.moi{ background:rgba(241,80,47,0.13); border-color:rgba(241,80,47,0.3); }
   .ds-puce.gone{ opacity:0.5; }
   .dsp-nom{ font-size:0.72rem; font-weight:600; color:var(--ink-soft); max-width:5.2rem; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
@@ -581,7 +611,7 @@
   .rank-score{ font-family:'Poppins',sans-serif; font-weight:700; font-variant-numeric:tabular-nums; color:var(--primary); min-width:2.6rem; text-align:right; }
 
   /* Solo ring */
-  .solo-summary{ background:rgba(255,255,255,0.55); backdrop-filter:blur(16px) saturate(180%); -webkit-backdrop-filter:blur(16px) saturate(180%); border:1px solid rgba(255,255,255,0.72); border-radius:18px; padding:0.95rem 1rem; text-align:center; margin-bottom:1rem; }
+  .solo-summary{ background:rgba(255,255,255,0.55); backdrop-filter:blur(16px) saturate(180%); -webkit-backdrop-filter:blur(16px) saturate(180%); border:1px solid var(--bord); border-radius:var(--r-l); padding:0.95rem 1rem; text-align:center; margin-bottom:1rem; }
   .ring-wrap{ position:relative; width:7.3rem; height:7.3rem; margin:0 auto 0.7rem; }
   .ring-wrap svg{ width:100%; height:100%; transform:rotate(-90deg); }
   .ring-bg{ fill:none; stroke:var(--surface-alt); stroke-width:7.5; }
@@ -609,7 +639,7 @@
      large, quand la carte au-dessus, le bloc « Déroulé » et le bouton
      « Commencer la partie » font tous x=12 et 379 px. Un seul bloc en retrait
      au milieu d'une colonne alignée, et l'œil le voit tout de suite. */
-  .btn-review{ width:100%; margin:0 0 0.6rem; display:flex; align-items:center; justify-content:center; gap:0.5rem; color:var(--ink); border:1px solid rgba(255,255,255,0.72); border-radius:14px; padding:0.85rem 1.1rem; font-weight:700; font-size:0.95rem; }
+  .btn-review{ width:100%; margin:0 0 0.6rem; display:flex; align-items:center; justify-content:center; gap:0.5rem; color:var(--ink); border:1px solid var(--bord); border-radius:var(--r-m); padding:0.85rem 1.1rem; font-weight:700; font-size:0.95rem; }
   .btn-review .ico{ width:1.5rem; height:1.5rem; color:var(--primary); flex-shrink:0; }
   .review-sheet .rev-list{ max-height:54vh; overflow-y:auto; margin:0.3rem 0 0.2rem; display:flex; flex-direction:column; gap:0.65rem; -webkit-overflow-scrolling:touch; }
   /* flex-shrink:0 indispensable : .rev-list est une colonne flex avec
@@ -619,7 +649,7 @@
      plusieurs questions ratées, chaque carte était écrasée en dessous de la
      hauteur de son propre contenu, coupant net la bonne réponse et
      l'anecdote (masquées par l'overflow:hidden du verre). */
-  .rev-item{ text-align:left; border-radius:14px; border:1px solid rgba(255,255,255,0.72); --rim-cast:0 5px 14px rgba(34,26,16,0.12); padding:0.8rem 0.9rem; flex-shrink:0; }
+  .rev-item{ text-align:left; border-radius:var(--r-m); border:1px solid var(--bord); --rim-cast:0 5px 14px rgba(34,26,16,0.12); padding:0.8rem 0.9rem; flex-shrink:0; }
   .rev-q{ font-weight:700; color:var(--ink); font-size:0.92rem; margin-bottom:0.5rem; line-height:1.35; }
   .rev-a{ display:flex; align-items:center; gap:0.45rem; font-size:0.88rem; font-weight:600; margin-top:0.18rem; }
   .rev-a .ico{ width:1rem; height:1rem; flex-shrink:0; }
@@ -636,14 +666,14 @@
      porter un arrondi de 13px et un texte de 0,9rem quand tout le reste tient
      14px / 0,95rem. La largeur, elle, reste partagée en deux — c'est voulu :
      « Rejouer » et « Quitter » sont deux choix à égalité. */
-  .end-actions button{ flex:1; border-radius:14px; padding:0.88rem; font-size:0.95rem; font-weight:700; }
+  .end-actions button{ flex:1; border-radius:var(--r-m); padding:0.88rem; font-size:0.95rem; font-weight:700; }
   /* Note de fin (ex. « <nom> aimerait rejouer. Tu acceptes ? ») : placée JUSTE
      au-dessus des boutons d'action auxquels elle se rapporte, plus près d'eux
      que des scores -> lecture immédiate, plus de message perdu en haut. */
   .end-note{ margin-bottom:0.6rem; text-align:center; }
   .end-note + .end-actions{ padding-top:0; }
-  .btn-replay{ background:var(--primary); border:1px solid rgba(255,255,255,0.72); color:#fff; --rim-edge:0 0 0 1px rgba(150,30,14,0.3);--rim-cast:0 6px 16px rgba(214,60,34,0.42); }
-  .btn-newgame{ --glass-tint: rgb(252,248,241); background:rgb(252,248,241); backdrop-filter:none; -webkit-backdrop-filter:none; border:1px solid rgba(255,255,255,0.72); color:var(--ink); }
+  .btn-replay{ background:var(--primary); border:1px solid var(--bord); color:#fff; --rim-edge:0 0 0 1px rgba(150,30,14,0.3);--rim-cast:0 6px 16px rgba(214,60,34,0.42); }
+  .btn-newgame{ --glass-tint: rgb(252,248,241); background:rgb(252,248,241); backdrop-filter:none; -webkit-backdrop-filter:none; border:1px solid var(--bord); color:var(--ink); }
 
   @keyframes crownPop{ from{ opacity:0; transform:translateY(6px) scale(0.7); } to{ opacity:1; transform:translateY(0) scale(1); } }
   @keyframes countPop{ 0%{ transform:scale(1.35); } 100%{ transform:scale(1); } }
@@ -657,7 +687,7 @@
     backdrop-filter:blur(28px) saturate(185%);
     -webkit-backdrop-filter:blur(28px) saturate(185%);
     -webkit-transform:translateZ(0); transform:translateZ(0);
-    border:1px solid rgba(255,255,255,0.72);
+    border:1px solid var(--bord);
     --rim-cast:0 10px 34px rgba(15,12,10,0.2), 0 2px 8px rgba(15,12,10,0.08); box-shadow:none;
   }
 
@@ -755,7 +785,7 @@
 
   /* one-shot feedback on the revealed answer */
   .option-btn.reveal-pop{ z-index:2; }
-  .option-btn.reveal-pop::before{ content:""; position:absolute; inset:-2px; border-radius:16px; background:radial-gradient(circle at center, rgba(47,169,110,0.4), transparent 70%); z-index:-1; animation:glowBurst 0.7s ease forwards; }
+  .option-btn.reveal-pop::before{ content:""; position:absolute; inset:-2px; border-radius:var(--r-l); background:radial-gradient(circle at center, rgba(47,169,110,0.4), transparent 70%); z-index:-1; animation:glowBurst 0.7s ease forwards; }
   .option-btn.reveal-shake{ animation:wrongFlash 0.45s ease; }
   .option-btn{ position:relative; }
 
@@ -765,7 +795,7 @@
   @keyframes glowBurst{ 0%{ opacity:0; transform:scale(0.85); } 40%{ opacity:1; } 100%{ opacity:0; transform:scale(1.15); } }
 
   /* ---------- Profil & En ligne ---------- */
-  .mode-icon.online{ background:linear-gradient(150deg, #4DA8FF, #2E7FE8); box-shadow:inset 0 1.5px 0 rgba(255,255,255,0.72), inset 0 0 0 1.5px rgba(255,255,255,0.42), 0 0 0 1px rgba(20,72,150,0.3), 0 5px 14px rgba(46,127,232,0.44); }
+  .mode-icon.online{ background:linear-gradient(150deg, #4DA8FF, #2E7FE8); box-shadow:inset 0 1px 0 rgba(255,255,255,0.26), 0 2px 7px rgba(46,127,232,0.24); }
   .avatar{ position:relative; border-radius:50%; color:#fff; display:inline-flex; align-items:center; justify-content:center; font-family:'Poppins',sans-serif; font-weight:700; border:2px solid rgba(255,255,255,0.7); --rim-edge:0 0 0 1px rgba(30,22,14,0.16); --rim-cast:0 5px 14px rgba(15,12,10,0.3); flex-shrink:0; }
   .avatar.waiting{ background:rgba(255,255,255,0.5); color:var(--ink-soft); border-style:dashed; }
   /* Même teinte dorée saturée que le badge « Créateur » (au lieu du dégradé
@@ -787,7 +817,7 @@
      sur la couche d'animation pendant le glissement d'entrée du profil -> le
      « bord » changeait une fraction de seconde avant de se figer net. Là il est
      identique du 1er au dernier instant de la transition. */
-  .creator-badge{ display:inline-flex; align-items:center; gap:0.3rem; --glass-tint: rgb(240,163,26); color:#fff; text-shadow:0 1px 2px rgba(122,78,4,0.35); font-size:0.78rem; font-weight:800; letter-spacing:0.02em; padding:0.24rem 0.62rem 0.24rem 0.46rem; border-radius:100px; border:1px solid rgba(255,255,255,0.72); --rim-cast:0 3px 12px rgba(214,148,20,0.45); transform:translateZ(0); backface-visibility:hidden; }
+  .creator-badge{ display:inline-flex; align-items:center; gap:0.3rem; --glass-tint: rgb(240,163,26); color:#fff; text-shadow:0 1px 2px rgba(122,78,4,0.35); font-size:0.78rem; font-weight:800; letter-spacing:0.02em; padding:0.24rem 0.62rem 0.24rem 0.46rem; border-radius:var(--r-full); border:1px solid var(--bord); --rim-cast:0 3px 12px rgba(214,148,20,0.45); transform:translateZ(0); backface-visibility:hidden; }
   .creator-badge svg{ width:0.85rem; height:0.85rem; }
   /* Vrai « C » majuscule (Poppins), pas un anneau ouvert. */
   /* Le « C » créateur : une VRAIE capitale dessinée en vectoriel (silhouette
@@ -801,22 +831,22 @@
   .profile-name{ font-family:'Poppins',sans-serif; font-weight:700; font-size:1.15rem; margin-top:0.65rem; color:#fff; text-shadow:0 1px 12px rgba(0,0,0,0.5); }
   .profile-sub{ color:var(--ink-soft); font-size:0.8rem; margin-top:0.3rem; }
   .field-label{ display:block; font-size:0.81rem; font-weight:600; color:rgba(255,255,255,0.9); margin:0 0 0.4rem 0.2rem; text-shadow:0 1px 6px rgba(0,0,0,0.4); }
-  .text-input,.code-input{ width:100%; background:rgba(255,255,255,0.68); backdrop-filter:blur(14px) saturate(180%); -webkit-backdrop-filter:blur(14px) saturate(180%); border:1px solid rgba(255,255,255,0.72); border-radius:13px; padding:0.78rem 0.9rem; font-size:0.95rem; color:var(--ink); font-family:'Inter',sans-serif; }
+  .text-input,.code-input{ width:100%; background:rgba(255,255,255,0.68); backdrop-filter:blur(14px) saturate(180%); -webkit-backdrop-filter:blur(14px) saturate(180%); border:1px solid var(--bord); border-radius:var(--r-s); padding:0.78rem 0.9rem; font-size:0.95rem; color:var(--ink); font-family:'Inter',sans-serif; }
   .text-input:focus,.code-input:focus{ outline:none; border-color:var(--primary); }
   .code-input{ text-align:center; font-family:'Poppins',sans-serif; font-weight:700; font-size:1.7rem; letter-spacing:0.42rem; text-transform:uppercase; }
   .color-row{ display:flex; gap:0.6rem; justify-content:center; flex-wrap:wrap; }
   .color-dot{ width:2.15rem; height:2.15rem; border-radius:50%; border:2px solid rgba(255,255,255,0.6); box-shadow:inset 0 2px 1px rgba(255,255,255,0.5), 0 3px 9px rgba(15,12,10,0.22); transition:transform 0.3s cubic-bezier(0.17,1.32,0.32,1), box-shadow 0.3s ease, border-color 0.3s ease; }
   .color-dot.sel{ border-color:#fff; transform:scale(1.12); box-shadow:0 0 0 3px rgba(255,255,255,0.5), 0 3px 10px rgba(15,12,10,0.25); }
-  .btn-ghost{ width:100%; border:1px solid rgba(255,255,255,0.72); color:var(--ink); border-radius:14px; padding:0.8rem; font-weight:700; font-size:0.9rem; }
+  .btn-ghost{ width:100%; border:1px solid var(--bord); color:var(--ink); border-radius:var(--r-m); padding:0.8rem; font-weight:700; font-size:0.9rem; }
 
   .online-hero{ text-align:center; padding:0.7rem 1rem 1.1rem; }
-  .online-hero-icon{ width:2.9rem; height:2.9rem; margin:0 auto 0.65rem; border-radius:50%; background:linear-gradient(150deg, #4DA8FF, #2E7FE8); color:#fff; display:flex; align-items:center; justify-content:center; padding:0.68rem; box-shadow:inset 0 1.5px 0 rgba(255,255,255,0.72), inset 0 0 0 1.5px rgba(255,255,255,0.42), 0 0 0 1px rgba(20,72,150,0.3), 0 5px 14px rgba(46,127,232,0.44); }
+  .online-hero-icon{ width:2.9rem; height:2.9rem; margin:0 auto 0.65rem; border-radius:50%; background:linear-gradient(150deg, #4DA8FF, #2E7FE8); color:#fff; display:flex; align-items:center; justify-content:center; padding:0.68rem; box-shadow:inset 0 1px 0 rgba(255,255,255,0.26), 0 2px 7px rgba(46,127,232,0.24); }
   .online-hero-title{ font-family:'Poppins',sans-serif; font-weight:700; font-size:1.15rem; color:#fff; margin:0 0 0.3rem; text-shadow:0 1px 12px rgba(0,0,0,0.4); }
   .online-hero-sub{ color:rgba(255,255,255,0.9); font-size:0.85rem; line-height:1.5; max-width:18rem; margin:0 auto; text-shadow:0 1px 8px rgba(0,0,0,0.35); }
-  .info-card{ background:rgba(255,255,255,0.6); backdrop-filter:blur(18px) saturate(180%); -webkit-backdrop-filter:blur(18px) saturate(180%); border:1px solid rgba(255,255,255,0.72); border-radius:14px; padding:0.85rem 0.95rem; font-size:0.84rem; line-height:1.55; color:var(--ink); }
-  .err-msg{ color:#fff; background:rgba(226,75,55,0.85); border-radius:12px; padding:0.6rem 0.9rem; font-size:0.85rem; font-weight:600; margin-top:0.9rem; text-align:center; }
+  .info-card{ background:rgba(255,255,255,0.6); backdrop-filter:blur(18px) saturate(180%); -webkit-backdrop-filter:blur(18px) saturate(180%); border:1px solid var(--bord); border-radius:var(--r-m); padding:0.85rem 0.95rem; font-size:0.84rem; line-height:1.55; color:var(--ink); }
+  .err-msg{ color:#fff; background:rgba(226,75,55,0.85); border-radius:var(--r-s); padding:0.6rem 0.9rem; font-size:0.85rem; font-weight:600; margin-top:0.9rem; text-align:center; }
 
-  .presence-card{ display:flex; align-items:center; gap:0.62rem; justify-content:center; background:rgba(255,255,255,0.55); backdrop-filter:blur(18px) saturate(180%); -webkit-backdrop-filter:blur(18px) saturate(180%); border:1px solid rgba(255,255,255,0.72); border-radius:100px; padding:0.45rem 0.95rem; margin-bottom:0.8rem; }
+  .presence-card{ display:flex; align-items:center; gap:0.62rem; justify-content:center; background:rgba(255,255,255,0.55); backdrop-filter:blur(18px) saturate(180%); -webkit-backdrop-filter:blur(18px) saturate(180%); border:1px solid var(--bord); border-radius:var(--r-full); padding:0.45rem 0.95rem; margin-bottom:0.8rem; }
   .live-dot{ width:0.55rem; height:0.55rem; border-radius:50%; flex-shrink:0; background:#2FBF74; animation:liveHalo 2.4s ease-out infinite; }
   @keyframes liveHalo{
     0%{ box-shadow:0 0 0 0 rgba(47,191,116,0.5), 0 0 5px rgba(47,191,116,0.5); }
@@ -830,30 +860,30 @@
      du texte, donc plus varier celle de la pastille centrée -> rien ne se
      déplace quand le nombre change de tranche (1 <-> 2+). */
   .presence-lbl{ font-size:0.8rem; color:var(--ink-soft); display:inline-block; min-width:4.7em; text-align:left; }
-  .me-row{ display:flex; align-items:center; gap:0.6rem; width:100%; background:rgba(255,255,255,0.5); backdrop-filter:blur(16px) saturate(180%); -webkit-backdrop-filter:blur(16px) saturate(180%); border:1px solid rgba(255,255,255,0.72); border-radius:14px; padding:0.5rem 0.75rem; margin-bottom:0.85rem; }
+  .me-row{ display:flex; align-items:center; gap:0.6rem; width:100%; background:rgba(255,255,255,0.5); backdrop-filter:blur(16px) saturate(180%); -webkit-backdrop-filter:blur(16px) saturate(180%); border:1px solid var(--bord); border-radius:var(--r-m); padding:0.5rem 0.75rem; margin-bottom:0.85rem; }
   .me-name{ font-weight:600; font-size:0.9rem; color:var(--ink); }
   .me-edit{ margin-left:auto; font-size:0.82rem; color:var(--primary); font-weight:600; }
   .me-row .creator-badge{ margin-left:auto; }
 
-  .online-action{ display:flex; align-items:center; gap:0.7rem; width:100%; background:rgba(255,255,255,0.55); backdrop-filter:blur(18px) saturate(180%); -webkit-backdrop-filter:blur(18px) saturate(180%); border:1px solid rgba(255,255,255,0.72); border-radius:15px; padding:0.72rem 0.85rem; margin-bottom:0.55rem; text-align:left; }
+  .online-action{ display:flex; align-items:center; gap:0.7rem; width:100%; background:rgba(255,255,255,0.55); backdrop-filter:blur(18px) saturate(180%); -webkit-backdrop-filter:blur(18px) saturate(180%); border:1px solid var(--bord); border-radius:var(--r-l); padding:0.72rem 0.85rem; margin-bottom:0.55rem; text-align:left; }
   .online-action.primary{ --glass-tint: rgb(236,60,26); border-color:rgba(255,255,255,0.35); }
   .online-action.primary .oa-txt b, .online-action.primary .oa-txt small{ color:#fff; }
   /* Icônes d'action « en ligne » : même relief de verre que les icônes du menu
      (reflet haut lumineux + anneau blanc interne + séparation + ombre), une
      couleur par action. */
-  .oa-ico{ width:2.35rem; height:2.35rem; border-radius:11px; background:linear-gradient(150deg, #F44E2C, #DE3616); color:#fff; display:flex; align-items:center; justify-content:center; padding:0.48rem; flex-shrink:0; box-shadow:inset 0 1.5px 0 rgba(255,255,255,0.72), inset 0 0 0 1.5px rgba(255,255,255,0.42), 0 0 0 1px rgba(150,40,20,0.3), 0 5px 14px rgba(214,71,44,0.44); }
-  .oa-ico.g{ background:linear-gradient(150deg, #58C08A, #2E9968); box-shadow:inset 0 1.5px 0 rgba(255,255,255,0.72), inset 0 0 0 1.5px rgba(255,255,255,0.42), 0 0 0 1px rgba(20,110,70,0.3), 0 5px 14px rgba(46,153,104,0.44); }
-  .oa-ico.b{ background:linear-gradient(150deg, #4DA8FF, #2E7FE8); box-shadow:inset 0 1.5px 0 rgba(255,255,255,0.72), inset 0 0 0 1.5px rgba(255,255,255,0.42), 0 0 0 1px rgba(20,72,150,0.3), 0 5px 14px rgba(46,127,232,0.44); }
+  .oa-ico{ width:2.35rem; height:2.35rem; border-radius:var(--r-s); background:linear-gradient(150deg, #F44E2C, #DE3616); color:#fff; display:flex; align-items:center; justify-content:center; padding:0.48rem; flex-shrink:0; box-shadow:inset 0 1px 0 rgba(255,255,255,0.26), 0 2px 7px rgba(214,71,44,0.24); }
+  .oa-ico.g{ background:linear-gradient(150deg, #58C08A, #2E9968); box-shadow:inset 0 1px 0 rgba(255,255,255,0.26), 0 2px 7px rgba(46,153,104,0.24); }
+  .oa-ico.b{ background:linear-gradient(150deg, #4DA8FF, #2E7FE8); box-shadow:inset 0 1px 0 rgba(255,255,255,0.26), 0 2px 7px rgba(46,127,232,0.24); }
   /* Icône « aléatoire » (bouton rouge) : carré VIF plein comme les deux autres
      (ambre, contraste sur le rouge) avec le même rebord — plus de carré blanc
      translucide, tout reste cohérent. */
-  .online-action.primary .oa-ico{ background:linear-gradient(150deg, #FFD36A, #F5A623); color:#fff; box-shadow:inset 0 1.5px 0 rgba(255,255,255,0.72), inset 0 0 0 1.5px rgba(255,255,255,0.42), 0 0 0 1px rgba(150,95,15,0.3), 0 5px 14px rgba(206,138,42,0.44); }
+  .online-action.primary .oa-ico{ background:linear-gradient(150deg, #FFD36A, #F5A623); color:#fff; box-shadow:inset 0 1px 0 rgba(255,255,255,0.26), 0 2px 7px rgba(206,138,42,0.24); }
   .online-action.primary .chev{ color:rgba(255,255,255,0.8); }
   .oa-txt{ display:flex; flex-direction:column; gap:0.15rem; flex:1; }
   .oa-txt b{ font-family:'Poppins',sans-serif; font-weight:600; font-size:0.9rem; color:var(--ink); }
   .oa-txt small{ font-size:0.83rem; color:var(--ink-soft); }
 
-  .searching-card, .waiting-card{ text-align:center; background:rgba(255,255,255,0.55); backdrop-filter:blur(18px) saturate(180%); -webkit-backdrop-filter:blur(18px) saturate(180%); border:1px solid rgba(255,255,255,0.72); border-radius:18px; padding:1.35rem 1.1rem; }
+  .searching-card, .waiting-card{ text-align:center; background:rgba(255,255,255,0.55); backdrop-filter:blur(18px) saturate(180%); -webkit-backdrop-filter:blur(18px) saturate(180%); border:1px solid var(--bord); border-radius:var(--r-l); padding:1.35rem 1.1rem; }
   .spinner{ width:2rem; height:2rem; margin:0 auto 0.8rem; border-radius:50%; border:3px solid var(--surface-alt); border-top-color:var(--primary); animation:spin 0.8s linear infinite; }
   @keyframes spin{ to{ transform:rotate(360deg);} }
   .searching-txt{ font-weight:600; font-size:0.95rem; color:var(--ink); }
@@ -864,7 +894,7 @@
   .code-big{ font-family:'Poppins',sans-serif; font-weight:700; font-size:2.55rem; letter-spacing:0.38rem; color:#fff; margin:0.25rem 0 0.25rem 0.38rem; text-shadow:0 2px 18px rgba(0,0,0,0.45); }
   .code-hint{ font-size:0.83rem; color:rgba(255,255,255,0.88); text-shadow:0 1px 6px rgba(0,0,0,0.35); }
 
-  .vs-row{ display:flex; align-items:center; justify-content:center; gap:0.7rem; background:rgba(255,255,255,0.52); backdrop-filter:blur(16px) saturate(180%); -webkit-backdrop-filter:blur(16px) saturate(180%); border:1px solid rgba(255,255,255,0.72); border-radius:18px; padding:1rem 0.85rem; margin-bottom:0.25rem; }
+  .vs-row{ display:flex; align-items:center; justify-content:center; gap:0.7rem; background:rgba(255,255,255,0.52); backdrop-filter:blur(16px) saturate(180%); -webkit-backdrop-filter:blur(16px) saturate(180%); border:1px solid var(--bord); border-radius:var(--r-l); padding:1rem 0.85rem; margin-bottom:0.25rem; }
   .vs-player{ display:flex; flex-direction:column; align-items:center; gap:0.4rem; flex:1; }
   .vs-name{ font-weight:600; font-size:0.87rem; color:var(--ink); text-align:center; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; max-width:100%; }
   .vs-tag{ font-size:0.82rem; color:var(--ink-soft); }
@@ -872,23 +902,23 @@
 
   .len-label{ font-size:0.82rem; font-weight:600; color:rgba(255,255,255,0.9); margin:0.95rem 0 0.45rem 0.2rem; text-shadow:0 1px 6px rgba(0,0,0,0.4); }
   .len-row{ display:flex; gap:0.5rem; }
-  .len-chip{ flex:1; --glass-tint: rgb(252,248,241); background:rgb(252,248,241); backdrop-filter:none; -webkit-backdrop-filter:none; border:1px solid rgba(255,255,255,0.72); border-radius:14px; padding:0.58rem 0.4rem; font-weight:600; font-size:0.84rem; color:var(--ink); }
-  .len-chip.sel{ --glass-tint: rgb(236,60,26); color:#fff; border-color:rgba(255,255,255,0.72); --rim-edge:0 0 0 1px rgba(150,30,14,0.3); --rim-cast:0 4px 12px rgba(241,80,47,0.35); box-shadow:none; }
-  .waiting-note{ text-align:center; color:var(--ink-soft); font-weight:700; font-size:0.92rem; padding:1.05rem 1rem; margin-top:0.4rem; border-radius:16px; border:1px solid rgba(255,255,255,0.72); }
+  .len-chip{ flex:1; --glass-tint: rgb(252,248,241); background:rgb(252,248,241); backdrop-filter:none; -webkit-backdrop-filter:none; border:1px solid var(--bord); border-radius:var(--r-m); padding:0.58rem 0.4rem; font-weight:600; font-size:0.84rem; color:var(--ink); }
+  .len-chip.sel{ --glass-tint: rgb(236,60,26); color:#fff; border-color:var(--bord); --rim-edge:0 0 0 1px rgba(150,30,14,0.3); --rim-cast:0 4px 12px rgba(241,80,47,0.35); box-shadow:none; }
+  .waiting-note{ text-align:center; color:var(--ink-soft); font-weight:700; font-size:0.92rem; padding:1.05rem 1rem; margin-top:0.4rem; border-radius:var(--r-l); border:1px solid var(--bord); }
 
-  .duel-scorebar{ display:flex; align-items:center; gap:0.5rem; background:rgba(255,255,255,0.5); backdrop-filter:blur(18px) saturate(180%); -webkit-backdrop-filter:blur(18px) saturate(180%); border:1px solid rgba(255,255,255,0.72); border-radius:100px; padding:0.45rem 1rem; margin-bottom:0.7rem; }
+  .duel-scorebar{ display:flex; align-items:center; gap:0.5rem; background:rgba(255,255,255,0.5); backdrop-filter:blur(18px) saturate(180%); -webkit-backdrop-filter:blur(18px) saturate(180%); border:1px solid var(--bord); border-radius:var(--r-full); padding:0.45rem 1rem; margin-bottom:0.7rem; }
   .ds-side.gone{ opacity:0.55; }
   .ds-side{ flex:1; display:flex; flex-direction:column; align-items:center; gap:0.1rem; }
   .ds-side.me .ds-name{ color:var(--primary); }
   .ds-name{ font-size:0.78rem; font-weight:600; color:var(--ink-soft); white-space:nowrap; overflow:hidden; text-overflow:ellipsis; max-width:100%; }
   .ds-score{ font-family:'Poppins',sans-serif; font-weight:700; font-size:1.15rem; line-height:1.15; color:var(--ink); font-variant-numeric:tabular-nums; }
   .ds-vs{ font-family:'Poppins',sans-serif; font-weight:700; font-size:0.84rem; color:var(--ink-soft); }
-  .opp-track{ position:relative; height:8px; background:rgba(255,255,255,0.32); backdrop-filter:blur(14px) saturate(180%); -webkit-backdrop-filter:blur(14px) saturate(180%); border-radius:100px; overflow:hidden; margin-bottom:1.4rem; border:1px solid rgba(255,255,255,0.72); box-shadow:inset 0 1px 2px rgba(15,12,10,0.12); }
-  .opp-fill{ position:absolute; left:0; top:0; bottom:0; background:linear-gradient(90deg,#4DA8FF,#2E7FE8); border-radius:100px; box-shadow:0 0 10px rgba(77,168,255,0.5); transition:width 0.55s cubic-bezier(0.16,1,0.3,1); }
-  .opp-fill::after{ content:""; position:absolute; inset:0; border-radius:100px; box-shadow:inset 0 1px 0 rgba(255,255,255,0.45); }
+  .opp-track{ position:relative; height:8px; background:rgba(255,255,255,0.32); backdrop-filter:blur(14px) saturate(180%); -webkit-backdrop-filter:blur(14px) saturate(180%); border-radius:var(--r-full); overflow:hidden; margin-bottom:1.4rem; border:1px solid var(--bord); box-shadow:inset 0 1px 2px rgba(15,12,10,0.12); }
+  .opp-fill{ position:absolute; left:0; top:0; bottom:0; background:linear-gradient(90deg,#4DA8FF,#2E7FE8); border-radius:var(--r-full); box-shadow:0 0 10px rgba(77,168,255,0.5); transition:width 0.55s cubic-bezier(0.16,1,0.3,1); }
+  .opp-fill::after{ content:""; position:absolute; inset:0; border-radius:var(--r-full); box-shadow:inset 0 1px 0 rgba(255,255,255,0.45); }
 
   .duel-result{ display:flex; align-items:stretch; justify-content:center; gap:0.7rem; margin-bottom:1.2rem; }
-  .dr-side{ flex:1; display:flex; flex-direction:column; align-items:center; gap:0.4rem; background:rgba(255,255,255,0.55); backdrop-filter:blur(16px) saturate(180%); -webkit-backdrop-filter:blur(16px) saturate(180%); border:1px solid rgba(255,255,255,0.72); border-radius:16px; padding:0.95rem 0.55rem; }
+  .dr-side{ flex:1; display:flex; flex-direction:column; align-items:center; gap:0.4rem; background:rgba(255,255,255,0.55); backdrop-filter:blur(16px) saturate(180%); -webkit-backdrop-filter:blur(16px) saturate(180%); border:1px solid var(--bord); border-radius:var(--r-l); padding:0.95rem 0.55rem; }
   .dr-side.winner{ border-color:var(--gold); box-shadow:inset 0 1px 0 rgba(255,255,255,0.6), 0 8px 24px rgba(239,173,38,0.35); }
   .dr-name{ font-weight:600; font-size:0.85rem; color:var(--ink); white-space:nowrap; overflow:hidden; text-overflow:ellipsis; max-width:100%; }
   .dr-score{ font-family:'Poppins',sans-serif; font-weight:700; font-size:1.65rem; color:var(--primary); }
@@ -928,22 +958,22 @@
      verre unique défini plus bas, sans exception.) */
 
   /* ---------- Chrono par question ---------- */
-  .timer-chip{ display:inline-flex; align-items:center; gap:0.3rem; font-size:0.8rem; font-weight:700; font-variant-numeric:tabular-nums; color:var(--ink); background:rgba(255,255,255,0.5); backdrop-filter:blur(18px) saturate(180%); -webkit-backdrop-filter:blur(18px) saturate(180%); border:1px solid rgba(255,255,255,0.72); padding:0.34rem 0.6rem; border-radius:100px; min-width:3.9rem; justify-content:center; }
+  .timer-chip{ display:inline-flex; align-items:center; gap:0.3rem; font-size:0.8rem; font-weight:700; font-variant-numeric:tabular-nums; color:var(--ink); background:rgba(255,255,255,0.5); backdrop-filter:blur(18px) saturate(180%); -webkit-backdrop-filter:blur(18px) saturate(180%); border:1px solid var(--bord); padding:0.34rem 0.6rem; border-radius:var(--r-full); min-width:3.9rem; justify-content:center; }
   .timer-chip .ico{ width:1rem; height:1rem; color:var(--ink-soft); display:inline-flex; }
   .timer-chip.low{ background:linear-gradient(180deg, rgba(251,106,69,0.95), rgba(234,74,40,0.95)); color:#fff; border-color:rgba(255,255,255,0.4); animation:timerPulse 1s ease-in-out infinite; box-shadow:inset 0 1px 0 rgba(255,255,255,0.3), 0 3px 12px rgba(241,80,47,0.45); }
   .timer-chip.low .ico{ color:rgba(255,255,255,0.9); }
   @keyframes timerPulse{ 0%,100%{ box-shadow:inset 0 1px 0 rgba(255,255,255,0.3), 0 3px 12px rgba(241,80,47,0.45); } 50%{ box-shadow:inset 0 1px 0 rgba(255,255,255,0.3), 0 3px 20px rgba(241,80,47,0.85); } }
-  .timeout-note{ display:flex; align-items:center; justify-content:center; gap:0.4rem; background:linear-gradient(180deg, rgba(251,106,69,0.92), rgba(234,74,40,0.92)); color:#fff; font-weight:700; font-size:0.85rem; border:1px solid rgba(255,255,255,0.72); border-radius:12px; padding:0.55rem 0.8rem; margin-bottom:0.7rem; box-shadow:inset 0 1px 0 rgba(255,255,255,0.3), 0 4px 14px rgba(241,80,47,0.35); }
+  .timeout-note{ display:flex; align-items:center; justify-content:center; gap:0.4rem; background:linear-gradient(180deg, rgba(251,106,69,0.92), rgba(234,74,40,0.92)); color:#fff; font-weight:700; font-size:0.85rem; border:1px solid var(--bord); border-radius:var(--r-s); padding:0.55rem 0.8rem; margin-bottom:0.7rem; box-shadow:inset 0 1px 0 rgba(255,255,255,0.3), 0 4px 14px rgba(241,80,47,0.35); }
   .timeout-note .ico{ width:1.1rem; height:1.1rem; display:inline-flex; }
 
   /* ---------- Astuce plein écran ---------- */
-  .fs-hint{ display:flex; align-items:center; gap:0.6rem; background:rgba(255,255,255,0.55); backdrop-filter:blur(20px) saturate(180%); -webkit-backdrop-filter:blur(20px) saturate(180%); border:1px solid rgba(255,255,255,0.72); border-radius:14px; padding:0.65rem 0.75rem; margin-bottom:0.4rem; font-size:0.8rem; line-height:1.45; color:var(--ink); }
+  .fs-hint{ display:flex; align-items:center; gap:0.6rem; background:rgba(255,255,255,0.55); backdrop-filter:blur(20px) saturate(180%); -webkit-backdrop-filter:blur(20px) saturate(180%); border:1px solid var(--bord); border-radius:var(--r-m); padding:0.65rem 0.75rem; margin-bottom:0.4rem; font-size:0.8rem; line-height:1.45; color:var(--ink); }
   .fsh-txt{ flex:1; }
-  .fsh-close{ width:1.6rem; height:1.6rem; border-radius:50%; border:1px solid rgba(255,255,255,0.72); color:var(--ink-soft); display:flex; align-items:center; justify-content:center; flex-shrink:0; }
+  .fsh-close{ width:1.6rem; height:1.6rem; border-radius:50%; border:1px solid var(--bord); color:var(--ink-soft); display:flex; align-items:center; justify-content:center; flex-shrink:0; }
 
   /* ---------- Modal maison ---------- */
   .modal-veil{ position:fixed; top:0; left:0; right:0; bottom:0; z-index:75; background:rgba(19,14,9,0.3); display:flex; align-items:center; justify-content:center; padding:1.6rem; animation:veilIn var(--tr-voile-in); }
-  .modal-card{ width:100%; max-width:21rem; border:1px solid rgba(255,255,255,0.72); border-radius:22px; padding:1.45rem 1.25rem 1.15rem; text-align:center; animation:modalIn var(--tr-ouvre); transform:translateZ(0); -webkit-transform:translateZ(0); --rim-cast:0 24px 60px rgba(18,12,6,0.42), 0 4px 12px rgba(18,12,6,0.22); }
+  .modal-card{ width:100%; max-width:21rem; border:1px solid var(--bord); border-radius:var(--r-l); padding:1.45rem 1.25rem 1.15rem; text-align:center; animation:modalIn var(--tr-ouvre); transform:translateZ(0); -webkit-transform:translateZ(0); --rim-cast:0 24px 60px rgba(18,12,6,0.42), 0 4px 12px rgba(18,12,6,0.22); }
   .modal-title{ font-family:'Poppins',sans-serif; font-weight:700; font-size:1.15rem; color:var(--ink); }
   .modal-msg{ font-size:0.9rem; color:var(--ink-soft); line-height:1.5; margin-top:0.45rem; }
   /* GUIDE PLEIN ÉCRAN : les trois gestes reprennent, au pixel près, les lignes
@@ -959,8 +989,8 @@
   .modal-input{ margin-top:0.95rem; text-align:center; }
   .modal-err{ color:var(--error); font-size:0.82rem; font-weight:600; min-height:1.1rem; margin-top:0.4rem; }
   .modal-actions{ display:flex; gap:0.6rem; margin-top:0.7rem; }
-  .modal-btn{ flex:1; border:1px solid rgba(255,255,255,0.72); border-radius:14px; padding:0.92rem; font-weight:700; font-size:0.95rem; letter-spacing:0.01em; box-shadow:inset 0 1px 0 rgba(255,255,255,0.45), inset 0 0 0 1px rgba(255,255,255,0.14); }
-  .modal-btn.cancel{ border:1px solid rgba(255,255,255,0.72); color:var(--ink); --rim-cast:0 4px 12px rgba(15,12,10,0.14); box-shadow:none; }
+  .modal-btn{ flex:1; border:1px solid var(--bord); border-radius:var(--r-m); padding:0.92rem; font-weight:700; font-size:0.95rem; letter-spacing:0.01em; box-shadow:inset 0 1px 0 rgba(255,255,255,0.45), inset 0 0 0 1px rgba(255,255,255,0.14); }
+  .modal-btn.cancel{ border:1px solid var(--bord); color:var(--ink); --rim-cast:0 4px 12px rgba(15,12,10,0.14); box-shadow:none; }
   /* Même rouge d'action que « Commencer la partie », mais avec les VRAIS
      rebords de verre (liseré clair vif + anneau intérieur + ombre basse),
      au niveau du bouton Annuler d'à côté. */
@@ -969,7 +999,7 @@
      Partager / les autres « Quitter » (un seul blanc partout), au lieu du rouge.
      L'avertissement est porté par le message (« La partie en cours sera perdue »)
      et le bouton « Rester » corail à côté. */
-  .modal-btn.ok.danger{ background:none; border-color:rgba(255,255,255,0.72); box-shadow:inset 0 1px 0 rgba(255,255,255,0.6), 0 5px 14px rgba(60,45,25,0.16); }
+  .modal-btn.ok.danger{ background:none; border-color:var(--bord); box-shadow:inset 0 1px 0 rgba(255,255,255,0.6), 0 5px 14px rgba(60,45,25,0.16); }
   /* Dans une confirmation de SORTIE, « Quitter » est en blanc miroir (calme) ->
      le choix sûr « Rester » devient le PRIMAIRE corail (contraste net + même
      langage que « Rejouer »/« Commencer »). Fini les deux boutons pâles jumeaux :
@@ -1015,7 +1045,7 @@
   @keyframes modalOut{ to{ opacity:0; transform:scale(0.93) translateY(10px); } }
 
   /* ---------- Bannière adversaire parti + hôte ---------- */
-  .leave-banner{ display:flex; align-items:flex-start; gap:0.6rem; --glass-tint: rgb(255,244,222); border:1px solid rgba(239,173,38,0.55); border-left:3px solid var(--gold); border-radius:14px; padding:0.75rem 0.95rem; margin-bottom:0.7rem; font-size:0.85rem; line-height:1.45; color:#5f4310; }
+  .leave-banner{ display:flex; align-items:flex-start; gap:0.6rem; --glass-tint: rgb(255,244,222); border:1px solid rgba(239,173,38,0.55); border-left:3px solid var(--gold); border-radius:var(--r-m); padding:0.75rem 0.95rem; margin-bottom:0.7rem; font-size:0.85rem; line-height:1.45; color:#5f4310; }
   .leave-banner .lb-ico{ width:1.2rem; height:1.2rem; flex-shrink:0; color:var(--gold); margin-top:0.1rem; }
   .vs-tag.is-host{ color:var(--gold-deep); font-weight:800; text-transform:uppercase; letter-spacing:0.06em; font-size:0.78rem; }
   .host-note{ text-align:center; font-size:0.84rem; color:rgba(255,255,255,0.92); margin:0.6rem auto 0.15rem; max-width:20rem; text-shadow:0 1px 8px rgba(0,0,0,0.4); }
@@ -1133,9 +1163,8 @@
      pour ces deux-là (regroupés dans le même sélecteur ci-dessous). */
   .glass-rim, .text-input, .code-input, .switch, .team-token, .avatar, .scn-thumb, .team-row, .bk, .team-row input{
     box-shadow:
-      inset 0 1.5px 0 rgba(255,255,255,0.72),
-      inset 0 0 0 1.5px rgba(255,255,255,0.42),
-      var(--rim-edge, 0 0 0 1px rgba(58,42,26,0.12)),
+      inset 0 1px 0 var(--levre),
+      var(--rim-edge, 0 0 0 1px transparent),
       var(--rim-cast, 0 5px 14px rgba(34,26,16,0.12));
   }
   .glass-rim{ position:absolute; inset:0; border-radius:inherit; pointer-events:none; }
@@ -1155,9 +1184,8 @@
     .rules, .btn-review, .daily-card, .dc-streak, .btn-invite, .creator-badge, .sheet-done, .set-go,
     .share-btn, .rev-item, .parcours-card, .parcours-sum, .tst-head):not(.has-gs){
     box-shadow:
-      inset 0 1.5px 0 rgba(255,255,255,0.72),
-      inset 0 0 0 1.5px rgba(255,255,255,0.42),
-      var(--rim-edge, 0 0 0 1px rgba(58,42,26,0.12)),
+      inset 0 1px 0 var(--levre),
+      var(--rim-edge, 0 0 0 1px transparent),
       var(--rim-cast, 0 5px 14px rgba(34,26,16,0.12));
   }
   /* REFLET MOBILE (compositor) : pendant un mouvement, Safari iOS repousse la
@@ -1243,7 +1271,7 @@
      plats (flou 16-18, aucune ombre de profondeur) -> le mode en ligne
      « détonnait ». On aligne le contour ; chaque panneau garde sa teinte. */
   .online-action, .presence-card, .me-row, .vs-row, .searching-card, .waiting-card, .info-card{
-    border:1px solid rgba(255,255,255,0.72);
+    border:1px solid var(--bord);
     backdrop-filter:blur(28px) saturate(185%); -webkit-backdrop-filter:blur(28px) saturate(185%);
     --rim-cast:0 10px 34px rgba(15,12,10,0.2), 0 2px 8px rgba(15,12,10,0.08); box-shadow:none;
   }
@@ -1296,14 +1324,14 @@
      qui donnait un verre différent des autres. */
   /* MÊME contour de verre que les cartes de mode (Jouer en ligne & co.) :
      fond, bord et reflet/ombre identiques -> aucune différence perceptible. */
-  .daily-card{ width:100%; display:flex; align-items:center; gap:0.8rem; background:transparent; backdrop-filter:blur(28px) saturate(185%); -webkit-backdrop-filter:blur(28px) saturate(185%); border:1px solid rgba(255,255,255,0.72); border-radius:16px; padding:0.82rem 0.95rem; margin-bottom:13px; text-align:left; --rim-cast:0 10px 34px rgba(15,12,10,0.2), 0 2px 8px rgba(15,12,10,0.08); box-shadow:none; }
+  .daily-card{ width:100%; display:flex; align-items:center; gap:0.8rem; background:transparent; backdrop-filter:blur(28px) saturate(185%); -webkit-backdrop-filter:blur(28px) saturate(185%); border:1px solid var(--bord); border-radius:var(--r-l); padding:0.82rem 0.95rem; margin-bottom:13px; text-align:left; --rim-cast:0 10px 34px rgba(15,12,10,0.2), 0 2px 8px rgba(15,12,10,0.08); box-shadow:none; }
   /* Exactement le même traitement que les icônes du menu (taille, rayon,
      padding, liseré de verre) — seule la flamme change. */
   /* Rebord de verre renforcé : l'icône dorée est posée sur une carte AUSSI
      dorée (contrairement aux autres, sur carte neutre) — on booste donc le
      liseré blanc (haut plus lumineux, anneau interne plus marqué) et on
      ajoute une fine séparation ambrée qui détache l'icône de la carte. */
-  .daily-card .dc-ico{ background:linear-gradient(150deg,#FFC64F,#F09A18); box-shadow:inset 0 1.5px 0 rgba(255,255,255,0.72), inset 0 0 0 1.5px rgba(255,255,255,0.42), 0 0 0 1px rgba(150,95,15,0.3), 0 5px 14px rgba(206,138,42,0.44); }
+  .daily-card .dc-ico{ background:linear-gradient(150deg,#FFC64F,#F09A18); box-shadow:inset 0 1px 0 rgba(255,255,255,0.26), 0 2px 7px rgba(206,138,42,0.24); }
   .daily-card .dc-ico svg{ width:100%; height:100%; }
   .daily-card .dc-txt{ flex:1; display:flex; flex-direction:column; gap:0.12rem; min-width:0; }
   .daily-card .dc-txt b{ font-family:'Poppins',sans-serif; font-weight:600; font-size:0.98rem; color:var(--ink); }
@@ -1312,7 +1340,7 @@
      beige clair) restait fade à côté du .dc-ico (dégradé or plein, à côté).
      Teinte dorée saturée + texte blanc -> même impact visuel, cohérent avec
      l'icône flamme repalettée juste au-dessus. */
-  .daily-card .dc-streak{ display:inline-flex; align-items:center; gap:0.22rem; font-weight:800; font-size:0.9rem; font-variant-numeric:tabular-nums; color:#fff; text-shadow:0 1px 2px rgba(122,78,4,0.35); --glass-tint: rgb(240,163,26); border:1px solid rgba(255,255,255,0.72); border-radius:99px; padding:0.24rem 0.6rem; flex-shrink:0; box-shadow:inset 0 1px 0 rgba(255,255,255,0.8), inset 0 0 0 1px rgba(255,255,255,0.28), 0 2px 8px rgba(196,144,32,0.24); }
+  .daily-card .dc-streak{ display:inline-flex; align-items:center; gap:0.22rem; font-weight:800; font-size:0.9rem; font-variant-numeric:tabular-nums; color:#fff; text-shadow:0 1px 2px rgba(122,78,4,0.35); --glass-tint: rgb(240,163,26); border:1px solid var(--bord); border-radius:var(--r-full); padding:0.24rem 0.6rem; flex-shrink:0; box-shadow:inset 0 1px 0 rgba(255,255,255,0.8), inset 0 0 0 1px rgba(255,255,255,0.28), 0 2px 8px rgba(196,144,32,0.24); }
   .daily-card .dc-streak svg{ width:0.92rem; height:0.92rem; }
   .daily-card .dc-check{ width:1.5rem; height:1.5rem; color:#1f7a4d; flex-shrink:0; display:inline-flex; }
   .daily-card .dc-check svg{ width:100%; height:100%; }
@@ -1321,8 +1349,8 @@
   /* ---------- Parcours : progression & objectifs ---------- */
   /* « Mon parcours » : carte COMPACTE (comme les modes du bas) pour laisser
      de l'air sur l'accueil — ce n'est qu'un raccourci vers la progression. */
-  .parcours-card{ width:100%; display:flex; align-items:center; gap:0.8rem; background:transparent; backdrop-filter:blur(28px) saturate(185%); -webkit-backdrop-filter:blur(28px) saturate(185%); border:1px solid rgba(255,255,255,0.72); border-radius:16px; padding:0.82rem 0.95rem; margin-bottom:16px; text-align:left; --rim-cast:0 10px 34px rgba(15,12,10,0.2), 0 2px 8px rgba(15,12,10,0.08); box-shadow:none; }
-  .parcours-card .pc-ico{ background:linear-gradient(150deg,#7BC96F,#3E9E4E); box-shadow:inset 0 1.5px 0 rgba(255,255,255,0.72), inset 0 0 0 1.5px rgba(255,255,255,0.42), 0 0 0 1px rgba(20,110,70,0.3), 0 5px 14px rgba(46,153,104,0.44); }
+  .parcours-card{ width:100%; display:flex; align-items:center; gap:0.8rem; background:transparent; backdrop-filter:blur(28px) saturate(185%); -webkit-backdrop-filter:blur(28px) saturate(185%); border:1px solid var(--bord); border-radius:var(--r-l); padding:0.82rem 0.95rem; margin-bottom:16px; text-align:left; --rim-cast:0 10px 34px rgba(15,12,10,0.2), 0 2px 8px rgba(15,12,10,0.08); box-shadow:none; }
+  .parcours-card .pc-ico{ background:linear-gradient(150deg,#7BC96F,#3E9E4E); box-shadow:inset 0 1px 0 rgba(255,255,255,0.26), 0 2px 7px rgba(46,153,104,0.24); }
   .parcours-card .pc-ico svg{ width:100%; height:100%; }
   .parcours-card .pc-txt{ flex:1; display:flex; flex-direction:column; gap:0.16rem; min-width:0; }
   .parcours-card .pc-txt b{ font-family:'Poppins',sans-serif; font-weight:600; font-size:0.98rem; color:var(--ink); }
@@ -1330,7 +1358,7 @@
 
   /* Barre de stats : MÊME contour de verre premium que les cartes (bord .55 +
      ombre 4 couches) -> cohérent avec l'accueil et le reste du jeu. */
-  .parcours-sum{ display:flex; align-items:center; gap:0.9rem; padding:0.75rem 1rem; background:transparent; backdrop-filter:blur(28px) saturate(185%); -webkit-backdrop-filter:blur(28px) saturate(185%); border:1px solid rgba(255,255,255,0.72); --rim-cast:0 10px 34px rgba(15,12,10,0.2), 0 2px 8px rgba(15,12,10,0.08); box-shadow:none; }
+  .parcours-sum{ display:flex; align-items:center; gap:0.9rem; padding:0.75rem 1rem; background:transparent; backdrop-filter:blur(28px) saturate(185%); -webkit-backdrop-filter:blur(28px) saturate(185%); border:1px solid var(--bord); --rim-cast:0 10px 34px rgba(15,12,10,0.2), 0 2px 8px rgba(15,12,10,0.08); box-shadow:none; }
   .ps-ring{ width:4.1rem; height:4.1rem; border-radius:50%; flex-shrink:0; display:flex; flex-direction:column; align-items:center; justify-content:center; background:radial-gradient(circle at 50% 36%, rgba(255,255,255,0.52), rgba(255,255,255,0.12)); border:2px solid var(--gold-deep); box-shadow:inset 0 1px 0 rgba(255,255,255,0.7); }
   .ps-ring b{ font-family:'Poppins',sans-serif; font-weight:800; font-size:1.35rem; line-height:1; color:var(--ink); }
   .ps-ring small{ font-size:0.58rem; color:var(--ink-soft); font-weight:600; margin-top:0.12rem; }
@@ -1352,13 +1380,13 @@
   .ach{ display:flex; flex-direction:column; align-items:center; text-align:center; gap:0.3rem; background:none; border:none; padding:0; font:inherit; color:inherit; cursor:pointer; -webkit-tap-highlight-color:transparent; }
   .ach-tile{ transition:transform 0.14s cubic-bezier(0.34,1.4,0.6,1); }
   .ach:active .ach-tile{ transform:scale(0.9); }
-  .ach-tile{ position:relative; width:2.6rem; height:2.6rem; border-radius:13px; display:flex; align-items:center; justify-content:center; color:#fff; box-shadow:inset 0 1.5px 0 rgba(255,255,255,0.72), inset 0 0 0 1.5px rgba(255,255,255,0.42), 0 4px 11px rgba(15,12,10,0.24); }
+  .ach-tile{ position:relative; width:2.6rem; height:2.6rem; border-radius:var(--r-s); display:flex; align-items:center; justify-content:center; color:#fff; box-shadow:inset 0 1px 0 rgba(255,255,255,0.26), 0 2px 7px rgba(15,12,10,0.24); }
   .ach-tile svg{ width:1.45rem; height:1.45rem; display:block; }
   .ach.off .ach-tile{ opacity:0.9; }
-  .ach-tile.c-coral{ background:linear-gradient(150deg, #F44E2C, #DE3616); box-shadow:inset 0 1.5px 0 rgba(255,255,255,0.72), inset 0 0 0 1.5px rgba(255,255,255,0.42), 0 0 0 1px rgba(150,40,20,0.3), 0 5px 14px rgba(214,71,44,0.44); }
-  .ach-tile.c-gold{ background:linear-gradient(150deg, #FFC64F, #F09A18); box-shadow:inset 0 1.5px 0 rgba(255,255,255,0.72), inset 0 0 0 1.5px rgba(255,255,255,0.42), 0 0 0 1px rgba(150,95,15,0.3), 0 5px 14px rgba(206,138,42,0.44); }
-  .ach-tile.c-blue{ background:linear-gradient(150deg, #4DA8FF, #2E7FE8); box-shadow:inset 0 1.5px 0 rgba(255,255,255,0.72), inset 0 0 0 1.5px rgba(255,255,255,0.42), 0 0 0 1px rgba(20,72,150,0.3), 0 5px 14px rgba(46,127,232,0.44); }
-  .ach-tile.c-green{ background:linear-gradient(150deg, #58C08A, #2E9968); box-shadow:inset 0 1.5px 0 rgba(255,255,255,0.72), inset 0 0 0 1.5px rgba(255,255,255,0.42), 0 0 0 1px rgba(20,110,70,0.3), 0 5px 14px rgba(46,153,104,0.44); }
+  .ach-tile.c-coral{ background:linear-gradient(150deg, #F44E2C, #DE3616); box-shadow:inset 0 1px 0 rgba(255,255,255,0.26), 0 2px 7px rgba(214,71,44,0.24); }
+  .ach-tile.c-gold{ background:linear-gradient(150deg, #FFC64F, #F09A18); box-shadow:inset 0 1px 0 rgba(255,255,255,0.26), 0 2px 7px rgba(206,138,42,0.24); }
+  .ach-tile.c-blue{ background:linear-gradient(150deg, #4DA8FF, #2E7FE8); box-shadow:inset 0 1px 0 rgba(255,255,255,0.26), 0 2px 7px rgba(46,127,232,0.24); }
+  .ach-tile.c-green{ background:linear-gradient(150deg, #58C08A, #2E9968); box-shadow:inset 0 1px 0 rgba(255,255,255,0.26), 0 2px 7px rgba(46,153,104,0.24); }
   .ach-check{ position:absolute; right:-4px; bottom:-4px; width:1.18rem; height:1.18rem; border-radius:50%; background:var(--green); color:#fff; display:flex; align-items:center; justify-content:center; box-shadow:0 0 0 2px rgba(255,255,255,0.92), 0 1px 3px rgba(0,0,0,0.32); }
   .ach-check svg{ width:0.74rem; height:0.74rem; }
   .ach-nm{ font-family:'Poppins',sans-serif; font-weight:600; font-size:0.66rem; color:var(--ink); line-height:1.16; display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical; overflow:hidden; min-height:1.55rem; }
@@ -1366,12 +1394,12 @@
   .ach.on .ach-prog{ color:#1f7a4d; }
   /* Popup d'un objectif (au tap) : tuile + titre + description + progression. */
   .modal-card.ach-info{ text-align:center; display:flex; flex-direction:column; align-items:center; gap:0.5rem; }
-  .modal-card.ach-info .ach-tile{ width:3.4rem; height:3.4rem; border-radius:16px; box-shadow:inset 0 1.5px 0 rgba(255,255,255,0.72), inset 0 0 0 1.5px rgba(255,255,255,0.42), 0 5px 14px rgba(15,12,10,0.28); }
+  .modal-card.ach-info .ach-tile{ width:3.4rem; height:3.4rem; border-radius:var(--r-l); box-shadow:inset 0 1px 0 rgba(255,255,255,0.26), 0 2px 7px rgba(15,12,10,0.24); }
   .modal-card.ach-info .ach-tile svg{ width:1.9rem; height:1.9rem; }
   .ach-info-t{ font-family:'Poppins',sans-serif; font-weight:700; font-size:1.12rem; color:var(--ink); margin-top:0.15rem; }
   .ach-info-d{ font-size:0.9rem; color:var(--ink-soft); line-height:1.45; }
-  .ach-info-bar{ width:100%; height:7px; border-radius:99px; background:rgba(120,90,50,0.18); overflow:hidden; margin-top:0.2rem; }
-  .ach-info-bar i{ display:block; height:100%; border-radius:99px; background:linear-gradient(90deg,#FFC64F,#EF9E1A); }
+  .ach-info-bar{ width:100%; height:7px; border-radius:var(--r-full); background:rgba(120,90,50,0.18); overflow:hidden; margin-top:0.2rem; }
+  .ach-info-bar i{ display:block; height:100%; border-radius:var(--r-full); background:linear-gradient(90deg,#FFC64F,#EF9E1A); }
   .ach-info-bar i.done{ background:linear-gradient(90deg,#37B06B,#1f7a4d); }
   .ach-info-c{ font-family:'Poppins',sans-serif; font-weight:700; font-size:0.84rem; color:var(--ink-soft); font-variant-numeric:tabular-nums; }
   .ach-info-c.on{ color:#1f7a4d; }
@@ -1381,7 +1409,7 @@
      l'app), au lieu de texte posé sur le fond -> plus fini, on voit que ça se
      tape/déplie. Teinte un peu plus chaude à l'ouverture. */
   .tst{ margin-top:0.5rem; }
-  .tst-head{ width:100%; display:flex; align-items:center; gap:0.7rem; border:1px solid rgba(255,255,255,0.72); border-radius:14px; padding:0.58rem 0.85rem; cursor:pointer; text-align:left; -webkit-tap-highlight-color:transparent; transition:transform 0.13s ease; }
+  .tst-head{ width:100%; display:flex; align-items:center; gap:0.7rem; border:1px solid var(--bord); border-radius:var(--r-m); padding:0.58rem 0.85rem; cursor:pointer; text-align:left; -webkit-tap-highlight-color:transparent; transition:transform 0.13s ease; }
   .tst-head:active{ transform:scale(0.985); }
   .tst.open .tst-head{ border-color:rgba(239,173,38,0.55); }
   /* TESTAMENT TERMINÉ : l'en-tête passe au vert — le MÊME vert que la bonne
@@ -1393,8 +1421,8 @@
   .tst-head.done .tst-name, .tst-head.done .tst-count{ color:#1f7a4d; }
   .tst-head.done .tst-chev{ color:rgba(31,122,77,0.75); }
   .tst-name{ font-family:'Poppins',sans-serif; font-size:0.94rem; font-weight:700; color:var(--ink); white-space:nowrap; flex-shrink:0; }
-  .tst-bar{ flex:1; height:6px; border-radius:99px; background:rgba(120,90,50,0.18); overflow:hidden; }
-  .tst-bar i{ display:block; height:100%; border-radius:99px; background:linear-gradient(90deg,#FFC64F,#37B06B); }
+  .tst-bar{ flex:1; height:6px; border-radius:var(--r-full); background:rgba(120,90,50,0.18); overflow:hidden; }
+  .tst-bar i{ display:block; height:100%; border-radius:var(--r-full); background:linear-gradient(90deg,#FFC64F,#37B06B); }
   .tst-count{ font-family:'Poppins',sans-serif; font-size:0.8rem; font-weight:700; color:var(--ink); font-variant-numeric:tabular-nums; white-space:nowrap; flex-shrink:0; }
   .tst-chev{ width:1.1rem; height:1.1rem; color:var(--ink-soft); flex-shrink:0; display:inline-flex; transition:transform 0.26s cubic-bezier(0.3,1,0.4,1); }
   .tst.open .tst-chev{ transform:rotate(90deg); }
@@ -1402,7 +1430,7 @@
   /* Petits écrans (SE & co) : la Progression doit tenir SANS défiler tant que
      les testaments sont repliés -> on resserre juste ce qu'il faut. */
   @media (max-height:700px){
-    .ach-tile{ width:2.35rem; height:2.35rem; border-radius:12px; }
+    .ach-tile{ width:2.35rem; height:2.35rem; border-radius:var(--r-s); }
     .ach-tile svg{ width:1.3rem; height:1.3rem; }
     .ach-grid{ gap:0.45rem 0.3rem; }
     .ach{ gap:0.26rem; }
@@ -1436,16 +1464,16 @@
      translucides en héritent visuellement : rendu verre intégral, coût
      minimal (même architecture que la vitrine des Objectifs). */
   .bk-card{ padding:0.55rem 0.55rem 0.5rem; }
-  .bk{ padding:0.4rem 0.45rem; border-radius:9px; text-align:center; background:rgba(255,253,247,0.42); --rim-edge:0 0 0 1px rgba(58,42,26,0.2); --rim-cast:0 2px 6px rgba(34,26,16,0.1); border:1px solid rgba(255,255,255,0.72); }
+  .bk{ padding:0.4rem 0.45rem; border-radius:10px; text-align:center; background:rgba(255,253,247,0.42); --rim-edge:0 0 0 1px rgba(58,42,26,0.2); --rim-cast:0 2px 6px rgba(34,26,16,0.1); border:1px solid var(--bord); }
   .bk.started{ background:rgb(255,244,222); border-color:rgba(239,173,38,0.55); }
   .bk.mastered{ background:rgb(198,242,216); border-color:rgba(47,169,110,0.55); }
   .bk-nm{ font-size:0.7rem; font-weight:600; color:var(--ink); white-space:nowrap; overflow:hidden; text-overflow:ellipsis; display:block; }
   .bk.started .bk-nm{ color:#8a5a10; font-weight:700; }
   .bk.mastered .bk-nm{ color:#1f7a4d; font-weight:700; }
 
-  .ach-toast{ position:fixed; left:50%; top:calc(env(safe-area-inset-top) + 0.6rem); transform:translate(-50%,-150%); z-index:9000; display:flex; align-items:center; gap:0.6rem; padding:0.58rem 0.95rem; border-radius:14px; background:rgba(30,22,14,0.88); box-shadow:0 10px 30px rgba(0,0,0,0.45), inset 0 1px 0 rgba(255,255,255,0.14); opacity:0; transition:transform 0.42s cubic-bezier(0.2,1.3,0.35,1), opacity 0.35s ease; max-width:88vw; pointer-events:none; }
+  .ach-toast{ position:fixed; left:50%; top:calc(env(safe-area-inset-top) + 0.6rem); transform:translate(-50%,-150%); z-index:9000; display:flex; align-items:center; gap:0.6rem; padding:0.58rem 0.95rem; border-radius:var(--r-m); background:rgba(30,22,14,0.88); box-shadow:0 10px 30px rgba(0,0,0,0.45), inset 0 1px 0 rgba(255,255,255,0.14); opacity:0; transition:transform 0.42s cubic-bezier(0.2,1.3,0.35,1), opacity 0.35s ease; max-width:88vw; pointer-events:none; }
   .ach-toast.show{ transform:translate(-50%,0); opacity:1; }
-  .ach-toast .at-tile{ flex-shrink:0; width:2.2rem; height:2.2rem; border-radius:11px; display:flex; align-items:center; justify-content:center; color:#fff; box-shadow:inset 0 1px 0 rgba(255,255,255,0.5), 0 2px 6px rgba(0,0,0,0.3); }
+  .ach-toast .at-tile{ flex-shrink:0; width:2.2rem; height:2.2rem; border-radius:var(--r-s); display:flex; align-items:center; justify-content:center; color:#fff; box-shadow:inset 0 1px 0 rgba(255,255,255,0.5), 0 2px 6px rgba(0,0,0,0.3); }
   .ach-toast .at-tile svg{ width:1.28rem; height:1.28rem; display:block; }
   .at-tile.c-coral{ background:linear-gradient(150deg,#F44E2C,#DE3616); }
   .at-tile.c-gold{ background:linear-gradient(150deg,#FFC64F,#F09A18); }
@@ -1455,7 +1483,7 @@
   .ach-toast .at-txt b{ font-family:'Poppins',sans-serif; font-weight:700; font-size:0.68rem; letter-spacing:0.06em; text-transform:uppercase; color:#F5C453; }
   .ach-toast .at-txt small{ font-size:0.92rem; color:#fff; font-weight:600; }
   /* ---------- Inviter un ami (salon) ---------- */
-  .btn-invite{ display:flex; align-items:center; justify-content:center; gap:0.45rem; margin:0.15rem auto 0.9rem; width:auto; padding:0.55rem 1.05rem; border-radius:99px; border:1px solid rgba(255,255,255,0.72); color:var(--ink); font-weight:700; font-size:0.85rem; }
+  .btn-invite{ display:flex; align-items:center; justify-content:center; gap:0.45rem; margin:0.15rem auto 0.9rem; width:auto; padding:0.55rem 1.05rem; border-radius:var(--r-full); border:1px solid var(--bord); color:var(--ink); font-weight:700; font-size:0.85rem; }
   .btn-invite .ico{ width:1.05rem; height:1.05rem; display:inline-flex; color:var(--primary); }
 
   /* Léger retrait latéral : les cartes stats (1000+ / niveaux / Duel) ne
@@ -1473,7 +1501,7 @@
      (bord à bord avec les cartes au-dessus), même rayon 16 px, même bordure,
      et le même écart de 16 px entre elles qu'entre les cartes. */
   .home-stats{ display:flex; gap:16px; padding:clamp(0.4rem, 1.1vh, 0.8rem) 0 0.15rem; }
-  .hs-item{ flex:1; display:flex; flex-direction:column; align-items:center; gap:0.06rem; border:1px solid rgba(255,255,255,0.72); border-radius:16px; padding:0.52rem 0.35rem 0.48rem; text-align:center; transform:translateZ(0); -webkit-transform:translateZ(0); }
+  .hs-item{ flex:1; display:flex; flex-direction:column; align-items:center; gap:0.06rem; border:1px solid var(--bord); border-radius:var(--r-l); padding:0.52rem 0.35rem 0.48rem; text-align:center; transform:translateZ(0); -webkit-transform:translateZ(0); }
   .hs-ico{ width:1.12rem; height:1.12rem; color:var(--primary); margin-bottom:0.06rem; display:inline-flex; }
   .hs-item:nth-child(2) .hs-ico{ color:var(--gold-deep); }
   .hs-item:nth-child(3) .hs-ico{ color:#2E7FE8; }
@@ -1491,7 +1519,7 @@
   .option-btn{ min-height:clamp(3.1rem, 7vh, 4.6rem); }
 
   /* ---------- Médaillon de fin : verre cerclé d'or, trophée intégré ---------- */
-  .end-medal{ position:relative; width:clamp(5.9rem, 27vw, 7.3rem); aspect-ratio:1; margin:0 auto 0.7rem; border-radius:50%; display:flex; align-items:center; justify-content:center; border:1px solid rgba(255,255,255,0.72); animation:trophyIn 0.75s cubic-bezier(0.18,1.25,0.32,1) backwards; transform:translateZ(0); -webkit-transform:translateZ(0); --rim-cast:0 10px 30px rgba(18,12,6,0.3); }
+  .end-medal{ position:relative; width:clamp(5.9rem, 27vw, 7.3rem); aspect-ratio:1; margin:0 auto 0.7rem; border-radius:50%; display:flex; align-items:center; justify-content:center; border:1px solid var(--bord); animation:trophyIn 0.75s cubic-bezier(0.18,1.25,0.32,1) backwards; transform:translateZ(0); -webkit-transform:translateZ(0); --rim-cast:0 10px 30px rgba(18,12,6,0.3); }
   .end-medal::before{ content:""; position:absolute; top:6%; left:6%; right:6%; bottom:6%; border-radius:50%; border:2px solid rgba(239,173,38,0.7); box-shadow:inset 0 0 14px rgba(239,173,38,0.3), 0 0 16px rgba(239,173,38,0.22); pointer-events:none; }
   .end-medal::after{ content:""; position:absolute; left:50%; top:50%; width:170%; aspect-ratio:1; transform:translate(-50%,-50%); background:radial-gradient(closest-side, rgba(255,205,90,0.32), rgba(255,205,90,0.08) 55%, transparent 72%); z-index:-1; pointer-events:none; }
   .em-cup{ width:56%; display:block; filter:drop-shadow(0 6px 12px rgba(150,90,8,0.4)); }
@@ -1504,10 +1532,10 @@
   @keyframes trophyIn{ from{ opacity:0; transform:translateY(14px) scale(0.8); } to{ opacity:1; transform:translateY(0) scale(1); } }
 
   /* ---------- « Le savais-tu ? » retravaillé ---------- */
-  .fact-card{ position:relative; overflow:hidden; border-radius:15px; padding:0.9rem 1rem 0.9rem 0.9rem; gap:0.8rem; align-items:center; }
+  .fact-card{ position:relative; overflow:hidden; border-radius:var(--r-l); padding:0.9rem 1rem 0.9rem 0.9rem; gap:0.8rem; align-items:center; }
   .fact-card .tst-tag{ position:absolute; top:0.42rem; right:0.55rem; font-family:'Poppins',sans-serif; font-size:0.56rem; font-weight:700; letter-spacing:0.06em; color:#8a5e14; opacity:0.72; pointer-events:none; }
   .fact-card::after{ content:""; position:absolute; top:-45%; right:-14%; width:56%; aspect-ratio:1; background:radial-gradient(closest-side, rgba(255,225,140,0.55), transparent 72%); pointer-events:none; }
-  .fact-card .ficon{ width:2.85rem; height:2.85rem; padding:0.32rem; border-radius:13px; background:linear-gradient(160deg, #FFF3D3, #F3C75E); margin-top:0; box-shadow:inset 0 1.5px 0 rgba(255,255,255,0.72), inset 0 0 0 1.5px rgba(255,255,255,0.42), 0 0 0 1px rgba(150,95,15,0.3), 0 5px 14px rgba(206,138,42,0.44); }
+  .fact-card .ficon{ width:2.85rem; height:2.85rem; padding:0.32rem; border-radius:var(--r-s); background:linear-gradient(160deg, #FFF3D3, #F3C75E); margin-top:0; box-shadow:inset 0 1px 0 rgba(255,255,255,0.26), 0 2px 7px rgba(206,138,42,0.24); }
   .fact-card .ftext{ position:relative; }
   .fact-label{ font-size:0.94rem; display:flex; align-items:center; gap:0.5rem; margin-bottom:0.18rem; }
   .fact-label::after{ content:""; flex:1; height:1px; background:linear-gradient(90deg, rgba(168,122,31,0.4), transparent); }
@@ -1538,7 +1566,7 @@
      Le prolongement est absorbé par une marge négative de la même valeur : le
      contenu ne bouge pas d'un pixel, et l'animation d'entrée le déduit (voir
      sheetIn) pour partir EXACTEMENT d'où elle partait avant. */
-  .settings-sheet{ width:100%; max-width:430px; border:1px solid rgba(255,255,255,0.72); border-bottom:none; border-radius:24px 24px 0 0; padding:0.8rem 1.25rem calc(env(safe-area-inset-bottom) * 0.55 + 0.4rem + 220px); margin-bottom:-220px; animation:sheetIn var(--tr-ouvre); transform:translateZ(0); -webkit-transform:translateZ(0); touch-action:none; --rim-cast:0 -6px 34px rgba(18,12,6,0.3); }
+  .settings-sheet{ width:100%; max-width:430px; border:1px solid var(--bord); border-bottom:none; border-radius:var(--r-xl) var(--r-xl) 0 0; padding:0.8rem 1.25rem calc(env(safe-area-inset-bottom) * 0.55 + 0.4rem + 220px); margin-bottom:-220px; animation:sheetIn var(--tr-ouvre); transform:translateZ(0); -webkit-transform:translateZ(0); touch-action:none; --rim-cast:0 -6px 34px rgba(18,12,6,0.3); }
   /* DEUX FEUILLES L'UNE SUR L'AUTRE — LA FAÇON DONT ELLES SE SUPERPOSENT.
      Avant : le choix de version arrivait avec EXACTEMENT la même matière, la
      même largeur et le même coin arrondi que les Réglages, simplement décalé
@@ -1555,7 +1583,7 @@
      vers le bas en rétrécissant, et le mouvement aurait eu l'air d'un
      décrochage plutôt que d'un recul. */
   .settings-sheet{ transition:transform 0.34s cubic-bezier(0.32,0.72,0,1), border-radius 0.34s ease; }
-  .settings-sheet.feuille-recule{ transform:translateZ(0) scale(0.935) translateY(10px); transform-origin:50% 0; border-radius:30px 30px 0 0; }
+  .settings-sheet.feuille-recule{ transform:translateZ(0) scale(0.935) translateY(10px); transform-origin:50% 0; border-radius:calc(var(--r-xl) + 4px) calc(var(--r-xl) + 4px) 0 0; }
   /* Le voile de la feuille de DEVANT porte un fond sombre — le seul du jeu.
      Les voiles de premier niveau restent transparents (le décor doit passer au
      travers, c'est la signature du jeu) ; ici il sépare deux panneaux de même
@@ -1568,7 +1596,7 @@
      en corail, la couleur d'action, pour une action qui n'en est pas une. La
      zone tactile est bien plus grande que le trait visible (règle des 44px). */
   .sheet-grab{ position:relative; display:block; width:3.4rem; height:1.5rem; margin:-0.25rem auto 0.7rem; padding:0; border:none; background:none; cursor:pointer; -webkit-tap-highlight-color:transparent; }
-  .sheet-grab::after{ content:""; position:absolute; left:0; right:0; top:50%; height:0.32rem; margin-top:-0.16rem; border-radius:99px; background:rgba(42,36,30,0.22); transition:background 0.18s ease, transform 0.18s ease; }
+  .sheet-grab::after{ content:""; position:absolute; left:0; right:0; top:50%; height:0.32rem; margin-top:-0.16rem; border-radius:var(--r-full); background:rgba(42,36,30,0.22); transition:background 0.18s ease, transform 0.18s ease; }
   .sheet-grab:active::after{ background:rgba(42,36,30,0.34); transform:scaleX(0.88); }
   .sheet-grab::before{ content:none; }
   /* Pendant qu'on tire la feuille, elle suit le doigt sans transition.
@@ -1583,16 +1611,16 @@
   .sheet-title .st-ico{ width:1.5rem; height:1.5rem; display:inline-flex; color:var(--primary); flex-shrink:0; }
   .set-row{ display:flex; align-items:center; gap:0.8rem; padding:0.88rem 0.1rem; }
   .set-row + .set-row{ border-top:1px solid rgba(42,36,30,0.08); }
-  .set-ico{ width:2.3rem; height:2.3rem; border-radius:12px; display:flex; align-items:center; justify-content:center; padding:0.5rem; color:#fff; flex-shrink:0; box-shadow:inset 0 1px 0 rgba(255,255,255,0.4), 0 3px 9px rgba(15,12,10,0.18); }
+  .set-ico{ width:2.3rem; height:2.3rem; border-radius:var(--r-s); display:flex; align-items:center; justify-content:center; padding:0.5rem; color:#fff; flex-shrink:0; box-shadow:inset 0 1px 0 rgba(255,255,255,0.4), 0 3px 9px rgba(15,12,10,0.18); }
   /* Même rebord de verre que les icônes du menu (reflet haut + anneau blanc
      interne + séparation teintée + ombre colorée), couleur par couleur. */
-  .set-ico.sfx{ background:linear-gradient(150deg, #FFC64F, #F09A18); box-shadow:inset 0 1.5px 0 rgba(255,255,255,0.72), inset 0 0 0 1.5px rgba(255,255,255,0.42), 0 0 0 1px rgba(150,95,15,0.3), 0 5px 14px rgba(206,138,42,0.44); }
-  .set-ico.mus{ background:linear-gradient(150deg, #B77BE8, #8E5BD8); box-shadow:inset 0 1.5px 0 rgba(255,255,255,0.72), inset 0 0 0 1.5px rgba(255,255,255,0.42), 0 0 0 1px rgba(70,40,130,0.3), 0 5px 14px rgba(120,80,210,0.44); }
-  .set-ico.vol{ background:linear-gradient(150deg, #F44E2C, #DE3616); box-shadow:inset 0 1.5px 0 rgba(255,255,255,0.72), inset 0 0 0 1.5px rgba(255,255,255,0.42), 0 0 0 1px rgba(150,40,20,0.3), 0 5px 14px rgba(214,71,44,0.44); }
-  .set-ico.fsx{ background:linear-gradient(150deg, #4DA8FF, #2E7FE8); box-shadow:inset 0 1.5px 0 rgba(255,255,255,0.72), inset 0 0 0 1.5px rgba(255,255,255,0.42), 0 0 0 1px rgba(20,72,150,0.3), 0 5px 14px rgba(46,127,232,0.44); }
-  .set-ico.scn{ background:linear-gradient(150deg, #58C08A, #2E9968); box-shadow:inset 0 1.5px 0 rgba(255,255,255,0.72), inset 0 0 0 1.5px rgba(255,255,255,0.42), 0 0 0 1px rgba(20,110,70,0.3), 0 5px 14px rgba(46,153,104,0.44); }
-  .set-ico.ntf{ background:linear-gradient(150deg, #6FD3B4, #2FA184); box-shadow:inset 0 1.5px 0 rgba(255,255,255,0.72), inset 0 0 0 1.5px rgba(255,255,255,0.42), 0 0 0 1px rgba(20,110,90,0.3), 0 5px 14px rgba(47,161,132,0.44); }
-  .set-ico.bib{ background:linear-gradient(150deg, #D8A85E, #A9762C); box-shadow:inset 0 1.5px 0 rgba(255,255,255,0.72), inset 0 0 0 1.5px rgba(255,255,255,0.42), 0 0 0 1px rgba(120,80,20,0.3), 0 5px 14px rgba(169,118,44,0.44); }
+  .set-ico.sfx{ background:linear-gradient(150deg, #FFC64F, #F09A18); box-shadow:inset 0 1px 0 rgba(255,255,255,0.26), 0 2px 7px rgba(206,138,42,0.24); }
+  .set-ico.mus{ background:linear-gradient(150deg, #B77BE8, #8E5BD8); box-shadow:inset 0 1px 0 rgba(255,255,255,0.26), 0 2px 7px rgba(120,80,210,0.24); }
+  .set-ico.vol{ background:linear-gradient(150deg, #F44E2C, #DE3616); box-shadow:inset 0 1px 0 rgba(255,255,255,0.26), 0 2px 7px rgba(214,71,44,0.24); }
+  .set-ico.fsx{ background:linear-gradient(150deg, #4DA8FF, #2E7FE8); box-shadow:inset 0 1px 0 rgba(255,255,255,0.26), 0 2px 7px rgba(46,127,232,0.24); }
+  .set-ico.scn{ background:linear-gradient(150deg, #58C08A, #2E9968); box-shadow:inset 0 1px 0 rgba(255,255,255,0.26), 0 2px 7px rgba(46,153,104,0.24); }
+  .set-ico.ntf{ background:linear-gradient(150deg, #6FD3B4, #2FA184); box-shadow:inset 0 1px 0 rgba(255,255,255,0.26), 0 2px 7px rgba(47,161,132,0.24); }
+  .set-ico.bib{ background:linear-gradient(150deg, #D8A85E, #A9762C); box-shadow:inset 0 1px 0 rgba(255,255,255,0.26), 0 2px 7px rgba(169,118,44,0.24); }
   /* Le choix de version réutilise le chip du jeu — même arrondi, même texte,
      même corail à la sélection. Une version dont le texte n'est pas livré reste
      VISIBLE mais éteinte : le joueur voit ce qui existe et ce qui arrive, au
@@ -1644,7 +1672,7 @@
      La feuille, elle, reste du verre : le décor passe toujours entre les
      lignes, autour d'elles, et derrière le titre. C'est exactement
      l'architecture des 66 puces de livres posées sur leur carte. */
-  .bible-item{ display:flex; align-items:center; gap:0.75rem; width:100%; text-align:left; background:rgb(252,248,241); border:1px solid rgba(255,255,255,0.72); border-radius:14px; padding:0.55rem 0.65rem; color:var(--ink);
+  .bible-item{ display:flex; align-items:center; gap:0.75rem; width:100%; text-align:left; background:rgb(252,248,241); border:1px solid var(--bord); border-radius:var(--r-m); padding:0.55rem 0.65rem; color:var(--ink);
     /* Le rebord de verre du jeu, posé directement sur la ligne (il n'y a plus
        d'enfant .glass-rim pour le porter) : même lèvre de lumière en haut, même
        anneau blanc interne — au pixel.
@@ -1658,9 +1686,7 @@
        que le reste du jeu n'a pas. La matière reste donc exactement celle
        d'avant. */
     overflow:hidden; overflow:clip;
-    box-shadow:
-      inset 0 1.5px 0 rgba(255,255,255,0.72),
-      inset 0 0 0 1.5px rgba(255,255,255,0.42);
+    box-shadow:inset 0 1px 0 var(--levre);
     }
   /* CE QUI MONTRE LA RETENUE, C'EST LA COCHE VERTE — pas un anneau.
      La ligne retenue déclarait aussi un liseré corail (--rim-edge) et une ombre
@@ -1686,9 +1712,9 @@
      colorée. Quatre plaques d'or identiques ne se distinguaient que par trois
      lettres ; on reconnaît maintenant la sienne du coin de l'œil, et le
      panneau prend les couleurs du jeu au lieu d'être un camaïeu. */
-  .bible-sig{ width:2.3rem; height:2.3rem; border-radius:12px; display:flex; align-items:center; justify-content:center; font-family:'Poppins',sans-serif; font-weight:700; font-size:0.7rem; letter-spacing:0.02em; color:#fff; flex-shrink:0;
+  .bible-sig{ width:2.3rem; height:2.3rem; border-radius:var(--r-s); display:flex; align-items:center; justify-content:center; font-family:'Poppins',sans-serif; font-weight:700; font-size:0.7rem; letter-spacing:0.02em; color:#fff; flex-shrink:0;
     background:linear-gradient(150deg, var(--bs-clair), var(--bs-fonce));
-    box-shadow:inset 0 1.5px 0 rgba(255,255,255,0.72), inset 0 0 0 1.5px rgba(255,255,255,0.42), 0 0 0 1px var(--bs-bord), 0 5px 14px var(--bs-ombre); }
+    box-shadow:inset 0 1px 0 rgba(255,255,255,0.26), 0 2px 7px var(--bs-ombre); }
   /* Or : la référence, celle que presque tout le monde lit. */
   .bible-sig.lsg1910{ --bs-clair:#D8A85E; --bs-fonce:#A9762C; --bs-bord:rgba(120,80,20,0.3); --bs-ombre:rgba(169,118,44,0.44); }
   /* Bleu : le Darby, la littérale des assemblées de frères. */
@@ -1708,22 +1734,22 @@
   .bible-ck svg{ width:100%; height:100%; }
   /* Catalogue de fonds d'écran : vignettes photo, la retenue porte un liseré or */
   .scene-row{ display:flex; gap:0.7rem; padding:0.1rem 0.25rem 0.6rem; flex-wrap:wrap; }
-  .scn-thumb{ position:relative; width:3.55rem; height:5.4rem; border-radius:14px; background-size:cover; background-position:center; border:2px solid rgba(255,255,255,0.72); --rim-edge:0 0 0 1px rgba(30,22,14,0.16); --rim-cast:0 4px 10px rgba(42,30,18,0.28); overflow:hidden; padding:0; display:flex; align-items:flex-end; justify-content:center; }
+  .scn-thumb{ position:relative; width:3.55rem; height:5.4rem; border-radius:var(--r-ico); background-size:cover; background-position:center; border:2px solid var(--bord); --rim-edge:0 0 0 1px rgba(30,22,14,0.16); --rim-cast:0 4px 10px rgba(42,30,18,0.28); overflow:hidden; padding:0; display:flex; align-items:flex-end; justify-content:center; }
   .scn-thumb .scn-name{ width:100%; padding:0.2rem 0.2rem 0.24rem; font-family:'Poppins',sans-serif; font-weight:600; font-size:0.6rem; line-height:1; color:#fff; background:linear-gradient(180deg, rgba(0,0,0,0), rgba(0,0,0,0.5)); text-shadow:0 1px 4px rgba(0,0,0,0.65); }
   .scn-thumb.sel{ border-color:#F2C94C; --rim-edge:0 0 0 1px rgba(166,120,14,0.45); --rim-cast:0 0 0 3px rgba(242,201,76,0.42), 0 5px 14px rgba(42,30,18,0.32); }
   /* Partage : bouton PREMIUM — surface givrée PLEINE (plus délavée), liseré net
      et OMBRE PORTÉE qui le décolle de la feuille (vrai relief tactile). Compact,
      centré, au-dessus du « Fermer ». Icône dans une pastille orange (langage des
      réglages) -> fini l'effet « pastille cheap ». */
-  .share-btn{ width:fit-content; max-width:100%; margin:0.6rem auto 0.8rem; display:flex; align-items:center; justify-content:center; gap:0.6rem; --rim-cast:0 5px 14px rgba(34,26,16,0.12); color:var(--ink); border:1px solid rgba(255,255,255,0.72); border-radius:14px; padding:0.6rem 0.7rem 0.6rem 0.6rem; font-family:'Poppins',sans-serif; font-weight:700; font-size:0.95rem; letter-spacing:0.01em; }
+  .share-btn{ width:fit-content; max-width:100%; margin:0.6rem auto 0.8rem; display:flex; align-items:center; justify-content:center; gap:0.6rem; --rim-cast:0 5px 14px rgba(34,26,16,0.12); color:var(--ink); border:1px solid var(--bord); border-radius:var(--r-m); padding:0.6rem 0.7rem 0.6rem 0.6rem; font-family:'Poppins',sans-serif; font-weight:700; font-size:0.95rem; letter-spacing:0.01em; }
   /* LA PASTILLE CORAIL, DÉFINIE UNE SEULE FOIS pour les deux boutons
      « Partager » : celui des réglages et celui de la fin de partie. C'est elle
      qui donne son allure au bouton — la carte blanche seule était plate. */
-  .share-btn .share-ico, .share-result .share-ico{ width:2rem; height:2rem; flex-shrink:0; display:flex; align-items:center; justify-content:center; padding:0.46rem; border-radius:11px; color:#fff; background:linear-gradient(150deg, #F44E2C, #DE3616); box-shadow:inset 0 1.5px 0 rgba(255,255,255,0.72), inset 0 0 0 1.5px rgba(255,255,255,0.42), 0 0 0 1px rgba(150,40,20,0.3), 0 4px 11px rgba(214,71,44,0.44); }
+  .share-btn .share-ico, .share-result .share-ico{ width:2rem; height:2rem; flex-shrink:0; display:flex; align-items:center; justify-content:center; padding:0.46rem; border-radius:var(--r-s); color:#fff; background:linear-gradient(150deg, #F44E2C, #DE3616); box-shadow:inset 0 1px 0 rgba(255,255,255,0.26), 0 2px 7px rgba(214,71,44,0.24); }
   .share-btn .share-ico svg, .share-result .share-ico svg{ width:100%; height:100%; }
   .share-btn .share-lbl{ padding-right:0.35rem; }
   /* (Rebord propre au bouton Partager retiré : il prend le rebord unique.) */
-  .mini-toast{ position:fixed; left:50%; bottom:calc(env(safe-area-inset-bottom) + 2.2rem); transform:translateX(-50%) translateY(8px); background:rgba(30,22,14,0.92); color:#fff; font-family:'Poppins',sans-serif; font-weight:600; font-size:0.82rem; padding:0.55rem 1.05rem; border-radius:99px; z-index:600; opacity:0; transition:opacity 0.25s ease, transform 0.25s ease; pointer-events:none; }
+  .mini-toast{ position:fixed; left:50%; bottom:calc(env(safe-area-inset-bottom) + 2.2rem); transform:translateX(-50%) translateY(8px); background:rgba(30,22,14,0.92); color:#fff; font-family:'Poppins',sans-serif; font-weight:600; font-size:0.82rem; padding:0.55rem 1.05rem; border-radius:var(--r-full); z-index:600; opacity:0; transition:opacity 0.25s ease, transform 0.25s ease; pointer-events:none; }
   .mini-toast.show{ opacity:1; transform:translateX(-50%) translateY(0); }
   .scn-thumb.sel::after{ content:""; position:absolute; top:0.28rem; right:0.28rem; width:0.95rem; height:0.95rem; border-radius:50%; background-color:#F2C94C; background-image:url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='white' stroke-width='4.5' stroke-linecap='round' stroke-linejoin='round'><path d='M5 13l4 4 10-10'/></svg>"); background-size:68%; background-position:center; background-repeat:no-repeat; box-shadow:0 1px 4px rgba(0,0,0,0.4); }
   /* « Guide » était la SEULE commande de la feuille peinte à plat : les
@@ -1733,7 +1759,7 @@
      collé. Il prend exactement la matière de la pastille corail des Réglages —
      même dégradé, même lèvre de lumière en haut, même halo coloré — et devient
      un galet du même métal que le reste de la feuille. */
-  .set-go{ border:1px solid rgba(255,255,255,0.72); border-radius:99px; padding:0.48rem 0.95rem; font-weight:700; font-size:0.8rem; color:#fff; --glass-tint: rgb(236,60,26); background-image:linear-gradient(150deg, #F44E2C, #DE3616); --rim-edge:0 0 0 1px rgba(150,40,20,0.3); --rim-cast:0 5px 14px rgba(214,71,44,0.44); text-shadow:0 1px 2px rgba(120,26,10,0.32); flex-shrink:0; }
+  .set-go{ border:1px solid var(--bord); border-radius:var(--r-full); padding:0.48rem 0.95rem; font-weight:700; font-size:0.8rem; color:#fff; --glass-tint: rgb(236,60,26); background-image:linear-gradient(150deg, #F44E2C, #DE3616); --rim-edge:0 0 0 1px rgba(150,40,20,0.3); --rim-cast:0 5px 14px rgba(214,71,44,0.44); text-shadow:0 1px 2px rgba(120,26,10,0.32); flex-shrink:0; }
   .set-txt{ flex:1; display:flex; flex-direction:column; gap:0.12rem; min-width:0; }
   .set-txt b{ font-size:0.93rem; color:var(--ink); }
   .set-txt small{ font-size:0.82rem; color:var(--ink-soft); }
@@ -1742,19 +1768,19 @@
      leur propre liseré : neutre à l'arrêt, VERT allumé, comme toute surface
      colorée du jeu. Le galet reçoit sa lèvre de lumière, pour qu'il ait l'air
      taillé dans la même matière. */
-  .switch{ position:relative; width:3.2rem; height:1.9rem; border-radius:99px; border:none; background:rgba(42,36,30,0.18); transition:background 0.28s ease, box-shadow 0.28s ease; flex-shrink:0; padding:0; --rim-edge:0 0 0 1px rgba(30,22,14,0.14); --rim-cast:0 2px 6px rgba(15,12,10,0.14); }
+  .switch{ position:relative; width:3.2rem; height:1.9rem; border-radius:var(--r-full); border:none; background:rgba(42,36,30,0.18); transition:background 0.28s ease, box-shadow 0.28s ease; flex-shrink:0; padding:0; --rim-edge:0 0 0 1px rgba(30,22,14,0.14); --rim-cast:0 2px 6px rgba(15,12,10,0.14); }
   .switch::after{ content:""; position:absolute; top:0.18rem; left:0.18rem; width:1.54rem; height:1.54rem; border-radius:50%; background:#fff; box-shadow:inset 0 1.5px 0 rgba(255,255,255,0.9), 0 0 0 1px rgba(30,22,14,0.1), 0 2px 6px rgba(0,0,0,0.25); transition:transform 0.32s cubic-bezier(0.17,1.32,0.32,1); }
   .switch.on{ background:linear-gradient(180deg, #3EC574, #2FA96E); --rim-edge:0 0 0 1px rgba(20,110,66,0.32); --rim-cast:0 3px 10px rgba(47,169,110,0.38); }
   .switch.on::after{ transform:translateX(1.3rem); }
   .vol-row{ display:flex; align-items:center; gap:0.7rem; padding:0.15rem 0.1rem 0.4rem; }
   .vol-row .vr-ico{ width:1.05rem; height:1.05rem; color:var(--ink-soft); flex-shrink:0; display:inline-flex; }
-  input[type=range].vol{ -webkit-appearance:none; appearance:none; flex:1; height:0.6rem; border-radius:99px; outline:none; background:linear-gradient(90deg, #FB6A45 var(--vol,80%), rgba(42,36,30,0.14) var(--vol,80%)); }
+  input[type=range].vol{ -webkit-appearance:none; appearance:none; flex:1; height:0.6rem; border-radius:var(--r-full); outline:none; background:linear-gradient(90deg, #FB6A45 var(--vol,80%), rgba(42,36,30,0.14) var(--vol,80%)); }
   input[type=range].vol::-webkit-slider-thumb{ -webkit-appearance:none; appearance:none; width:1.75rem; height:1.75rem; border-radius:50%; background:#fff; border:none; box-shadow:0 2px 8px rgba(0,0,0,0.3), 0 0 0 1px rgba(42,36,30,0.08); }
   input[type=range].vol::-moz-range-thumb{ width:1.75rem; height:1.75rem; border-radius:50%; background:#fff; border:none; box-shadow:0 2px 8px rgba(0,0,0,0.3), 0 0 0 1px rgba(42,36,30,0.08); }
   .vol-val{ min-width:3rem; text-align:right; font-weight:700; font-variant-numeric:tabular-nums; font-size:0.9rem; color:var(--ink); }
   /* Bouton opaque à 100 % (dégradé plein) : rien à peindre, donc aucun « filtre »
      de verre à recaler pendant que la feuille glisse. */
-  .sheet-done{ width:100%; margin-top:0.7rem; --glass-tint: rgb(236,60,26); --rim-edge:0 0 0 1px rgba(150,30,14,0.3); --rim-cast:0 6px 16px rgba(214,60,34,0.42); color:#fff; border:1px solid rgba(255,255,255,0.72); border-radius:14px; padding:0.95rem; font-weight:700; font-size:0.95rem; }
+  .sheet-done{ width:100%; margin-top:0.7rem; --glass-tint: rgb(236,60,26); --rim-edge:0 0 0 1px rgba(150,30,14,0.3); --rim-cast:0 6px 16px rgba(214,60,34,0.42); color:#fff; border:1px solid var(--bord); border-radius:var(--r-m); padding:0.95rem; font-weight:700; font-size:0.95rem; }
   .sheet-veil.closing{ animation:veilOut var(--tr-voile-out) forwards; }
   /* Fermeture ordinaire : la feuille redescend depuis sa place. Fermeture À LA
      MAIN (classe « glisse ») : surtout pas — l'animation repartirait de la
@@ -1832,7 +1858,7 @@
      detail : centree, la carte la plus haute passait 9 px AU-DESSUS du haut de
      l'ecran sur iPhone SE — sous l'encoche. En bas, la place est trois fois
      plus grande, et la limite ci-dessous s'arrete avant les cartes de mode. */
-  .hero-verse-card{ position:absolute; top:0; bottom:auto; height:auto; min-height:100%; max-height:min(9.5rem, 22vh); left:max(0px, calc(50% - 11.5rem)); right:max(0px, calc(50% - 11.5rem)); display:flex; flex-direction:column; align-items:center; justify-content:center; gap:0.42rem; padding:0.8rem 1.1rem; border-radius:20px; border:1px solid rgba(239,173,38,0.55); opacity:0; transform:scale(0.82) translateY(10px); transition:transform 0.55s cubic-bezier(0.2,1.15,0.3,1), opacity 0.4s ease; will-change:transform, opacity; pointer-events:none; text-align:center; }
+  .hero-verse-card{ position:absolute; top:0; bottom:auto; height:auto; min-height:100%; max-height:min(9.5rem, 22vh); left:max(0px, calc(50% - 11.5rem)); right:max(0px, calc(50% - 11.5rem)); display:flex; flex-direction:column; align-items:center; justify-content:center; gap:0.42rem; padding:0.8rem 1.1rem; border-radius:var(--r-l); border:1px solid rgba(239,173,38,0.55); opacity:0; transform:scale(0.82) translateY(10px); transition:transform 0.55s cubic-bezier(0.2,1.15,0.3,1), opacity 0.4s ease; will-change:transform, opacity; pointer-events:none; text-align:center; }
   .hero-zone.show-verse .hero-verse-card{ opacity:1; transform:scale(1) translateY(0); pointer-events:auto; transition-delay:0.08s; }
   /* Profil et Réglages s'effacent TOUJOURS : ils sont dans les coins hauts, et
      la carte, large de presque tout l'écran, passe par-dessus. */
