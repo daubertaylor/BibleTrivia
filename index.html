@@ -909,8 +909,24 @@
   .text-input:focus,.code-input:focus{ outline:none; border-color:var(--primary); }
   .code-input{ text-align:center; font-family:'Poppins',sans-serif; font-weight:700; font-size:1.7rem; letter-spacing:0.42rem; text-transform:uppercase; }
   .color-row{ display:flex; gap:0.6rem; justify-content:center; flex-wrap:wrap; }
-  .color-dot{ width:2.15rem; height:2.15rem; border-radius:50%; border:2px solid rgba(255,255,255,0.6); box-shadow:inset 0 2px 1px rgba(255,255,255,0.5), 0 3px 9px rgba(15,12,10,0.22); transition:transform 0.3s cubic-bezier(0.17,1.32,0.32,1), box-shadow 0.3s ease, border-color 0.3s ease; }
-  .color-dot.sel{ border-color:#fff; transform:scale(1.12); box-shadow:0 0 0 3px rgba(255,255,255,0.5), 0 3px 10px rgba(15,12,10,0.25); }
+  /* LA PASTILLE DE COULEUR EST UNE COULEUR, PAS UNE COULEUR ENCADRÉE.
+     Chaque pastille portait un anneau blanc de 2px plus une lèvre blanche
+     interne ; la retenue y ajoutait un anneau plein #fff ET un halo de 3px,
+     soit 5px de blanc autour d'un disque de 34px, le tout agrandi de 12%. Sur
+     une pastille dont TOUT le propos est sa couleur, c'est le cadre qui
+     finissait par se voir — c'est le mot de Taylor, « grossier ».
+     Au repos : la couleur, rien d'autre, avec la même ombre douce que les
+     autres plaques colorées du jeu.
+     Retenue : le geste des sélecteurs de couleur d'iOS — la couleur se RETIRE
+     de 3px (bordure transparente + background-clip:padding-box, donc le décor
+     passe dans l'intervalle) et un anneau blanc FIN se pose au bord extérieur.
+     L'anneau n'entoure plus la couleur, il la cerne à distance. Plus
+     d'agrandissement : l'anneau suffit à dire lequel est choisi, grossir
+     par-dessus revenait à le dire deux fois. La taille de la boîte ne change
+     jamais — box-sizing est en border-box — donc la rangée ne bouge pas d'un
+     pixel au changement de couleur. */
+  .color-dot{ width:2.15rem; height:2.15rem; border-radius:50%; border:0 solid transparent; background-clip:padding-box; box-shadow:0 2px 7px rgba(15,12,10,0.20); transition:border-width 0.24s cubic-bezier(0.32,0.72,0,1), box-shadow 0.24s ease; }
+  .color-dot.sel{ border-width:3px; box-shadow:0 0 0 2px rgba(255,255,255,0.94), 0 2px 8px rgba(15,12,10,0.24); }
   .btn-ghost{ width:100%; border:1px solid var(--bord); color:var(--ink); border-radius:var(--r-m); padding:0.8rem; font-weight:700; font-size:0.9rem; }
 
   .online-hero{ text-align:center; padding:0.7rem 1rem 1.1rem; }
