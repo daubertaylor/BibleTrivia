@@ -88,7 +88,12 @@
   /* iOS 27 / plein écran : on étire le fond jusqu'au plus GRAND viewport (lvh),
      au-delà de la barre d'accueil -> plus de bande noire en bas. */
   @supports (height: 100lvh){
-    html{ height:100lvh; }
+    /* Même garde-fou que pour le décor : « height » exactement égal à lvh
+       laissait la page plus courte que l'écran tant que Safari servait encore
+       la valeur de l'autre orientation. En partant de la hauteur RÉELLE
+       (height:100%, qui suit le viewport de mise en page, jamais périmé) et en
+       n'allongeant qu'avec lvh, ce cas disparaît. */
+    html{ height:100%; min-height:100lvh; }
     /* Le décor s'étire jusqu'au plus GRAND viewport (lvh) — mais il part
        toujours de top:0/bottom:0, c'est-à-dire du viewport RÉEL, et lvh ne
        fait que l'allonger (min-height). Avec « height:100lvh; bottom:auto »,
@@ -103,7 +108,7 @@
        Android glisse pour apparaître, elle se superpose simplement en bas —
        l'app ne se réajuste plus (fini les zones blanches / le contenu qui
        saute). Le défilement interne rattrape la petite zone masquée. */
-    body{ height:100lvh; bottom:auto; }
+    body{ height:100%; min-height:100lvh; bottom:auto; }
     #app{ height:100lvh; }
   }
   /* VERSION WEB (navigateur, PAS l'app installée) : la barre d'URL du navigateur
@@ -9558,7 +9563,22 @@ function queueGlassSync(freeze){
 /* Voile « Tourne ton téléphone » : fond plein, rien de l'app n'est visible. */
 const mqCouche = (typeof window.matchMedia === "function")
   ? window.matchMedia("(orientation:landscape) and (pointer:coarse)") : null;
-function ecranVerrouille(){ try{ return !!(mqCouche && mqCouche.matches); }catch(e){ return false; } }
+function ecranVerrouille(){
+  try{
+    if(!(mqCouche && mqCouche.matches)) return false;
+    /* GARDE-FOU GÉOMÉTRIQUE. La requête média peut rester « paysage » une
+       image de trop après une rotation — sur iOS, l'orientation et la taille
+       du viewport ne se mettent pas à jour dans la même passe. Sans ce test,
+       le verre restait GELÉ alors que le téléphone est déjà droit et que la
+       mise en page, elle, a bougé : chaque carte gardait le morceau de décor
+       de l'orientation précédente. C'est exactement ce qu'on voit sur la photo
+       de Taylor. On exige donc que l'écran soit RÉELLEMENT plus large que
+       haut : si la géométrie dit portrait, on reprend le travail, quoi que
+       dise la requête média. */
+    const de = document.documentElement;
+    return (de.clientWidth || 0) > (de.clientHeight || 0);
+  }catch(e){ return false; }
+}
 function queueGlassXF(){
   /* Téléphone couché : on ne touche à RIEN. Le verre se refabriquait pour un
      écran de 874x402 (30 couches redimensionnées et re-rastérisées), puis
@@ -10159,10 +10179,43 @@ function armPress(e){
    arrête enfin sa taille, une passe tombe dessus. Chaque passe est
    idempotente (elle ne fait rien si rien n'a changé), donc les répéter ne
    coûte rien et ne peut pas faire clignoter. */
-let rotReprises = [];
+let rotReprises = [], appEpinglee = false;
+/* LA HAUTEUR DE L'APP NE PEUT PAS RESTER CELLE DE L'AUTRE ORIENTATION.
+   #app est dimensionné en lvh (ou dvh hors app installée) : ce sont des unités
+   de VIEWPORT, et sur iOS elles gardent la valeur de l'orientation précédente
+   pendant quelques images après une rotation. L'app se retrouve alors haute de
+   402 px dans un écran qui en fait 874 : la colonne se comprime, les espaceurs
+   s'écrasent, et les cartes de mode remontent PAR-DESSUS le verset d'accueil.
+   C'est ce que montre la photo de Taylor.
+   On ne peut pas régler ça en CSS : contrairement au décor, #app est le
+   conteneur de DÉFILEMENT, sa hauteur doit valoir exactement la zone visible —
+   un min-height le laisserait grandir avec son contenu et casserait le
+   défilement. On répare donc en JS, avec la seule mesure qui n'est jamais
+   périmée : window.innerHeight.
+   Le test est À SENS UNIQUE (trop COURT seulement) : en app installée, #app
+   est légitimement PLUS HAUT que innerHeight (il passe sous la barre
+   d'accueil), et il ne faut surtout pas défaire ça.
+   L'épingle se retire d'elle-même : chaque passe la enlève, remesure ce que le
+   CSS donne vraiment, et ne la repose que si c'est encore faux. Tout se passe
+   dans la même tâche, donc le navigateur ne peint jamais l'état intermédiaire
+   — aucun clignotement. */
+function reparerHauteurApp(){
+  const app = glassAppEl;
+  if(!app) return;
+  const vraie = window.innerHeight || document.documentElement.clientHeight || 0;
+  if(!vraie) return;
+  if(appEpinglee){ app.style.height = ""; appEpinglee = false; }
+  if(app.getBoundingClientRect().height < vraie - 24){
+    app.style.height = vraie + "px";
+    appEpinglee = true;
+  }
+}
 function reposeApresRotation(){
   rotReprises.forEach(clearTimeout); rotReprises = [];
   const passe = ()=>{
+    /* La hauteur D'ABORD : le cadrage de la photo et le verre se calculent sur
+       la mise en page, il faut donc qu'elle soit juste avant de les recaler. */
+    try{ reparerHauteurApp(); }catch(e){}
     try{ applySceneFormat(); }catch(e){}
     try{ glassRelayout(); queueGlassSync(); }catch(e){}
     try{ fitScroll(); }catch(e){}
@@ -10184,7 +10237,7 @@ try {
   document.addEventListener("scroll", (e)=>{ if(e.target !== glassAppEl) armGlass(1300); }, { capture:true, passive:true });
   document.addEventListener("pointerdown", armPress, { capture:true, passive:true });
   document.addEventListener("pointerup", armPress, { capture:true, passive:true });
-  window.addEventListener("resize", ()=>{ glassRelayout(); armGlass(700); fitScroll(); });
+  window.addEventListener("resize", ()=>{ reparerHauteurApp(); glassRelayout(); armGlass(700); fitScroll(); });
   window.addEventListener("orientationchange", reposeApresRotation);
   // screen.orientation arrive parfois AVANT window.orientationchange : les deux
   // déclenchent la même reprise, qui est idempotente.
