@@ -10553,15 +10553,53 @@ document.addEventListener("animationend", (e)=>{
 /* Hors connexion : si le fichier sw.js (fourni) est déployé à côté de cette page,
    l'app se met en cache et reste jouable sans Internet. Sans lui, rien ne change. */
 if("serviceWorker" in navigator){
-  /* On NE force PLUS de rechargement quand une nouvelle version prend le contrôle.
-     Ce reload relançait l'app EN PLEIN LANCEMENT dès qu'une mise à jour venait
-     d'être déployée -> l'écran de chargement « se rechargeait » (exactement le
-     bug remonté). Le nouveau service worker prend la main SILENCIEUSEMENT ; les
-     nouveautés s'affichent proprement au lancement suivant, sans interruption. */
+  /* MISE À JOUR : SILENCIEUSE, MAIS PAS INDÉFINIMENT REPORTÉE.
+     Un rechargement forcé avait été retiré parce qu'il relançait l'app EN PLEIN
+     LANCEMENT — l'écran de chargement se rechargeait sous les yeux. La règle
+     posée alors était : « les nouveautés s'affichent au lancement suivant ».
+     Elle supposait qu'il y AURAIT un lancement suivant. Sur iOS, une app posée
+     sur l'écran d'accueil et rouverte depuis le sélecteur est REPRISE, pas
+     relancée : aucune navigation, donc aucune nouvelle version, pendant des
+     jours. Taylor a ainsi testé plusieurs correctifs sur du code qui n'était
+     pas celui qu'il croyait — impossible de savoir ce qui marche.
+     On recharge donc, mais SEULEMENT quand c'est invisible :
+       - après le lancement (on laisse passer les 6 premières secondes) ;
+       - sur l'écran d'accueil uniquement, jamais pendant une partie ;
+       - aucune feuille ni fenêtre ouverte ;
+       - une seule fois.
+     Si l'instant n'est pas propice, on retient le rechargement et on réessaie
+     au retour d'arrière-plan suivant — jamais au milieu de quoi que ce soit. */
+  let majEnAttente = false, majFaite = false;
+  const lancementT0 = Date.now();
+  function momentPropice(){
+    if(majFaite || !majEnAttente) return false;
+    if(Date.now() - lancementT0 < 6000) return false;
+    try{
+      if(typeof state === "undefined" || state.screen !== "mode") return false;
+      if(document.querySelector(".sheet-veil, .modal-veil")) return false;
+      if(document.getElementById("heroZone") && document.getElementById("heroZone").classList.contains("show-verse")) return false;
+    }catch(e){ return false; }
+    return true;
+  }
+  function tenterMaj(){
+    if(!momentPropice()) return;
+    majFaite = true;
+    try{ location.reload(); }catch(e){}
+  }
+  try{
+    navigator.serviceWorker.addEventListener("controllerchange", ()=>{ majEnAttente = true; setTimeout(tenterMaj, 400); });
+  }catch(e){}
   window.addEventListener("load", ()=>{
     navigator.serviceWorker.register("sw.js")
       .then((reg)=>{ try { reg.update(); } catch(e){} })
       .catch(()=>{});
+  });
+  /* Reprise depuis le sélecteur : c'est LE moment où une app iOS revient sans
+     recharger. On redemande une mise à jour, et on pose celle qui attend. */
+  document.addEventListener("visibilitychange", ()=>{
+    if(document.visibilityState !== "visible") return;
+    try{ navigator.serviceWorker.getRegistration().then(reg=>{ if(reg) reg.update(); }).catch(()=>{}); }catch(e){}
+    setTimeout(tenterMaj, 600);
   });
 }
 
