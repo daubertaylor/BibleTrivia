@@ -89,7 +89,16 @@
      au-delà de la barre d'accueil -> plus de bande noire en bas. */
   @supports (height: 100lvh){
     html{ height:100lvh; }
-    #bg-layer, #bg-overlay, #bg-grain{ height:100lvh; bottom:auto; }
+    /* Le décor s'étire jusqu'au plus GRAND viewport (lvh) — mais il part
+       toujours de top:0/bottom:0, c'est-à-dire du viewport RÉEL, et lvh ne
+       fait que l'allonger (min-height). Avec « height:100lvh; bottom:auto »,
+       il valait EXACTEMENT lvh : si Safari sert encore la valeur de l'autre
+       orientation le temps d'une image après une rotation — ce qu'il fait —
+       le décor se retrouvait plus court que l'écran, et la bande découverte
+       montrait le fond noir de la page : l'écran coupé en deux. En min-height
+       ce cas n'existe plus : le décor ne peut jamais être plus court que
+       l'écran, quelle que soit la valeur de lvh à cet instant. */
+    #bg-layer, #bg-overlay, #bg-grain{ min-height:100lvh; }
     /* L'app garde la HAUTEUR MAXIMALE (lvh) : quand la barre de navigation
        Android glisse pour apparaître, elle se superpose simplement en bas —
        l'app ne se réajuste plus (fini les zones blanches / le contenu qui
@@ -4441,7 +4450,10 @@ function applyScene(){
 applyScene();
 applySceneFormat();
 window.addEventListener("resize", applySceneFormat);
-window.addEventListener("orientationchange", ()=>setTimeout(applySceneFormat, 120));
+/* La rotation, elle, est rattrapée par reposeApresRotation() (plus bas) : le
+   format de la photo, le verre et le défilement doivent se recaler ENSEMBLE,
+   et plusieurs fois, parce qu'iOS annonce la rotation avant d'avoir arrêté la
+   taille définitive du viewport. */
 /* LE CHOIX SE FAIT À PART, PAS DANS LES RÉGLAGES.
    Cinq versions étalées dans le panneau le noyaient : les Réglages sont une
    liste de lignes courtes, chacune une chose. La Bible n'y tient donc qu'une
@@ -9419,8 +9431,18 @@ const GLASS_REFL = true;
 /* Hauteur de texture STABLE (monotone) : quand la barre de navigation Android
    apparaît/disparaît, le viewport se réduit — recalculer la texture à chaque
    image faisait « clignoter » du blanc. On garde la plus GRANDE hauteur vue,
-   la barre nav ne déclenche donc plus aucun recalcul. */
-let glassMaxH = 0;
+   la barre nav ne déclenche donc plus aucun recalcul.
+   MAIS ELLE NE SURVIT PAS À UNE ROTATION. Cette mémoire sert à absorber une
+   barre de navigation (~60 px dans la MÊME orientation). En tournant l'écran,
+   la hauteur change légitimement de 470 px : garder le maximum revenait à
+   calculer tout le verre pour un viewport qui n'existe plus. Mesuré en
+   paysage sur un 402x874 : texture de 1748 px et décalage vertical calculé
+   pour 874 px de haut alors que l'écran n'en fait que 402 -> chaque surface
+   montrait la scène 236 px à côté. Invisible tant que « Tourne ton
+   téléphone » recouvre l'écran, mais c'est exactement l'état dans lequel on
+   REVIENT en portrait. On repart donc de zéro dès que la LARGEUR change —
+   une rotation change toujours la largeur, une barre de navigation jamais. */
+let glassMaxH = 0, glassMaxW = 0;
 /* Éteint un reflet SANS passer par son fondu CSS (0,07s) : utilisé quand une
    transition d'écran coupe un reflet qui venait tout juste d'apparaître au
    tap -> sans ça, ce fondu (même bref) le laissait visible un instant de
@@ -9453,6 +9475,7 @@ function queueGlassXF(){
   const de = document.documentElement;
   const w = de.clientWidth || window.innerWidth;
   let h = de.clientHeight || window.innerHeight;
+  if(w !== glassMaxW){ glassMaxW = w; glassMaxH = 0; }   // rotation : la mémoire de hauteur repart de zéro
   if(h > glassMaxH) glassMaxH = h; else h = glassMaxH;
   const iw = Math.round(w * 1.4), ih = Math.round(h * 2);
   const ox = Math.round((iw - w) / 2), oy = Math.round((ih - h) / 2);
@@ -9547,6 +9570,7 @@ function queueGlassSyncPainted(freeze){
   const de = document.documentElement;
   const w = de.clientWidth || window.innerWidth;
   let h = de.clientHeight || window.innerHeight;
+  if(w !== glassMaxW){ glassMaxW = w; glassMaxH = 0; }   // rotation : voir glassMaxH
   if(h > glassMaxH) glassMaxH = h; else h = glassMaxH; // hauteur monotone : pas de clignotement à l'apparition de la barre nav
   /* Réserve VERTICALE doublée : pendant un défilement rapide, iOS applique
      les textures avec retard — la fenêtre visible glisse dans l'image au
@@ -9959,6 +9983,33 @@ function armPress(e){
      visible en continu, sans ce creux d'une image. */
   try{ queueGlassSync(); }catch(e2){}
 }
+/* REPRISE APRÈS ROTATION — tout se recale ENSEMBLE, et plusieurs fois.
+   Le problème : iOS annonce la rotation (orientationchange) AVANT d'avoir
+   arrêté la taille définitive du viewport, et il la corrige ensuite sur
+   plusieurs images. Chaque morceau se rattrapait de son côté et à son
+   rythme — le cadrage de la photo à +120 ms, le verre sur un autre
+   événement, le défilement sur un troisième. Entre les deux, l'écran
+   montrait un état mi-paysage mi-portrait : la photo cadrée pour l'ancien
+   format, les surfaces de verre calées sur l'ancienne hauteur, et le
+   contenu déjà à la nouvelle taille -> ça « coupe » au milieu.
+   On fait donc les trois EN MÊME TEMPS, tout de suite, à l'image suivante,
+   puis à cinq reprises jusqu'à 1,1 s : quelle que soit l'image où Safari
+   arrête enfin sa taille, une passe tombe dessus. Chaque passe est
+   idempotente (elle ne fait rien si rien n'a changé), donc les répéter ne
+   coûte rien et ne peut pas faire clignoter. */
+let rotReprises = [];
+function reposeApresRotation(){
+  rotReprises.forEach(clearTimeout); rotReprises = [];
+  const passe = ()=>{
+    try{ applySceneFormat(); }catch(e){}
+    try{ glassRelayout(); queueGlassSync(); }catch(e){}
+    try{ fitScroll(); }catch(e){}
+  };
+  passe();
+  try{ requestAnimationFrame(passe); }catch(e){}
+  armGlass(1400);
+  rotReprises = [80, 200, 400, 700, 1100].map(d => setTimeout(passe, d));
+}
 try {
   /* Le suivi du défilement se fait désormais par lecture directe de la
      position à chaque image (voir glassLive) — l'événement « scroll » n'a
@@ -9972,7 +10023,10 @@ try {
   document.addEventListener("pointerdown", armPress, { capture:true, passive:true });
   document.addEventListener("pointerup", armPress, { capture:true, passive:true });
   window.addEventListener("resize", ()=>{ glassRelayout(); armGlass(700); fitScroll(); });
-  window.addEventListener("orientationchange", ()=>{ glassRelayout(); armGlass(1200); });
+  window.addEventListener("orientationchange", reposeApresRotation);
+  // screen.orientation arrive parfois AVANT window.orientationchange : les deux
+  // déclenchent la même reprise, qui est idempotente.
+  try{ if(screen.orientation && screen.orientation.addEventListener) screen.orientation.addEventListener("change", reposeApresRotation); }catch(e){}
 } catch(e){}
 armGlass(2500); // couvre le tout premier affichage
 
