@@ -62,6 +62,35 @@
        trait. */
     --bord:rgba(255,255,255,0.20);
     --levre:rgba(255,255,255,0.30);
+    /* SURFACES PLEINES ET COLORÉES : le même liseré, mais plus discret encore.
+       Un blanc à 0,20 se voit à peine sur une crème ; sur un corail saturé ou
+       un avatar de couleur, le même blanc devient un TRAIT — c'est le contour
+       que Taylor remarquait sur les boutons rouges et autour de son profil.
+       (Ces deux jetons manquaient : les surfaces qui les utilisaient avaient
+       donc un --bord INVALIDE, ce qui supprimait leur bordure entière. Le
+       résultat semblait juste, par accident.) */
+    --bord-plein:rgba(255,255,255,0.16);
+    --levre-pleine:rgba(255,255,255,0.18);
+    /* UN FILET SOMBRE, PAS UN CONTOUR BLANC AFFAIBLI. Le blanc à 0,20 posé sur
+       une surface crème ne délimite plus rien : « quasiment invisible, mais pas
+       assez subtil ». Une délimitation propre et discrète n'est pas un trait
+       blanc atténué, c'est un filet SOMBRE très faible : il se lit toujours,
+       sans jamais s'imposer, parce qu'il travaille dans le sens de l'ombre.
+       Il est posé sur l'ÉLÉMENT (box-shadow 0 0 0 1px) et non sur l'enfant
+       .glass-rim — celui-ci est en inset:0 dans une surface en overflow:clip,
+       donc tout ce qui déborde de lui est rogné. C'est la raison pour laquelle
+       --rim-edge et --rim-cast, déclarés partout dans la feuille de style,
+       n'ont JAMAIS rien peint : « Ajouter un joueur » demande un filet sombre à
+       0,24 depuis toujours et n'en a jamais montré la moindre trace. */
+    --filet:rgba(46,34,22,0.10);
+    /* L'ÉLÉVATION DES FEUILLES. Une feuille n'est pas une carte : c'est le seul
+       élément qui flotte vraiment au-dessus de tout l'écran, donc le seul qui
+       mérite une ombre — et sans elle elle se confondait avec le décor (« un
+       seul pâté »). Ombre dirigée vers le HAUT : une feuille monte du bas, la
+       lumière vient d'en haut, son ombre se pose donc au-dessus d'elle. Deux
+       couches : un contact net, puis un halo très large et très faible. Rien
+       d'autre dans le jeu n'y a droit. */
+    --elevation-feuille:0 -1px 2px rgba(24,16,10,0.06), 0 -14px 44px rgba(24,16,10,0.22);
     /* ===================== LES RAYONS — UNE SEULE ÉCHELLE =====================
        AVANT : douze valeurs sans système (9, 10, 11, 12, 13, 14, 15, 16, 18,
        20, 22, 24) plus deux pilules concurrentes (99 et 100). Une carte à 16,
@@ -105,8 +134,18 @@
        on reconnaît une sortie d'un coup d'œil, et on n'a pas envie d'appuyer
        dessus par réflexe. Le rouge était exclu (c'est déjà une mauvaise
        réponse), le corail aussi (c'est « continuer »). */
-    --sortie:#54606D;
-    --sortie-fond:rgb(232,234,238);
+    /* SORTIR N'EST PAS UNE AUTRE FAMILLE DE COULEUR. Ce bouton portait la
+       seule paire FROIDE du jeu — un fond gris bleuté (232,234,238) et un texte
+       ardoise (#54606D) — au milieu d'une palette entièrement chaude : crème
+       252,248,241, corail, or, canyon. Posé entre « Revoir mes erreurs » (crème
+       chaud) et « Rejouer » (corail), il ne se lisait pas comme une action
+       secondaire : il se lisait comme un bouton d'une AUTRE application.
+       L'intention reste la même — il doit s'effacer devant l'action principale
+       — mais elle passe maintenant par la SATURATION et le CONTRASTE, pas par
+       la température : la crème du jeu descendue d'un cran, et un gris chaud de
+       la même famille que --ink-soft. */
+    --sortie:#6B6155;
+    --sortie-fond:rgb(243,238,230);
     --error-soft:#FFE9E3;
     --shadow:rgba(42,36,30,0.08);
     /* UN SEUL LANGAGE DE MOUVEMENT — celui de la feuille Réglages, qui sert de
@@ -782,7 +821,7 @@
      elles-mêmes, et leur règle « border:1px solid var(--bord) » suit toute
      seule. Un seul système, deux matières. */
   .btn-primary, .btn-next, .btn-replay, .modal-btn.ok, .sheet-done, .set-go,
-  .btn-reveal, .chip.active, .len-chip.sel, .online-action.primary, .btn-quit,
+  .btn-reveal, .chip.active, .len-chip.sel, .online-action.primary,
   .avatar, .podium-avatar, .team-token{ --bord:var(--bord-plein); --levre:var(--levre-pleine); }
   button:active:not(:disabled)::before,
   .mode-card:active::before{ transform:scale(1); opacity:1; transition:transform 0.22s cubic-bezier(0.2,0.8,0.32,1), opacity 0.06s ease; }
@@ -1195,6 +1234,17 @@
       var(--rim-cast, 0 5px 14px rgba(34,26,16,0.12));
   }
   .glass-rim{ position:absolute; inset:0; border-radius:inherit; pointer-events:none; }
+  /* LE FILET, POSÉ SUR LA SURFACE ELLE-MÊME (voir --filet). Les surfaces
+     PLEINES et colorées en sont exclues : sur un corail saturé, un filet
+     sombre ferait un liseré sale — elles gardent leur liseré clair. */
+  .card, .mode-card, .question-card, .option-btn, .fact-card, .solo-summary,
+  .solo-score-bar, .score-pane, .rev-item, .bible-item, .hs-item, .info-card,
+  .waiting-note, .rules, .btn-review, .daily-card, .dc-streak, .btn-invite,
+  .share-btn, .parcours-card, .parcours-sum, .tst-head, .add-team, .btn-ghost,
+  .presence-card, .me-row, .online-action, .vs-row, .rank-row, .team-row,
+  .text-input, .code-input, .modal-btn.cancel, .leave-banner, .bk{
+    box-shadow:0 0 0 1px var(--filet);
+  }
   /* REBORD DÈS LA TOUTE PREMIÈRE IMAGE. La couche .glass-rim est créée en JS,
      donc pendant une image ou deux la surface existait SANS son rebord : à
      l'ouverture d'un panneau qui glisse, on voyait le bouton arriver « nu »
@@ -1626,6 +1676,8 @@
      vers le bas en rétrécissant, et le mouvement aurait eu l'air d'un
      décrochage plutôt que d'un recul. */
   .settings-sheet{ transition:transform 0.34s cubic-bezier(0.32,0.72,0,1), border-radius 0.34s ease; }
+  /* La feuille SURVOLE le décor au lieu d'y glisser (voir --elevation-feuille). */
+  .settings-sheet, .modal-card{ box-shadow:var(--elevation-feuille); }
   .settings-sheet.feuille-recule{ transform:translateZ(0) scale(0.935) translateY(10px); transform-origin:50% 0; border-radius:calc(var(--r-xl) + 4px) calc(var(--r-xl) + 4px) 0 0; }
   /* Le voile de la feuille de DEVANT porte un fond sombre — le seul du jeu.
      Les voiles de premier niveau restent transparents (le décor doit passer au
