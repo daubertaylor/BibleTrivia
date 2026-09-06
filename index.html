@@ -75,6 +75,21 @@
     --r-l:22px;     /* cartes */
     --r-xl:28px;    /* feuilles, fenêtres */
     --r-full:999px; /* pilules */
+    /* ===================== L'UNITÉ DE HAUTEUR ===============================
+       Tout ce qui est dimensionné « à la hauteur d'écran » passe par --uh au
+       lieu de vh. Debout, --uh vaut 1vh : rien ne change, strictement.
+       Téléphone COUCHÉ, --uh vaut 1vw — le grand côté, c'est-à-dire la hauteur
+       qu'on avait debout : la mise en page rend alors les mêmes valeurs.
+       POURQUOI. Couché, l'app se remettait entièrement en page pour un écran
+       de 402 px de haut : la zone du logo passait de 125 à 81 px, les
+       espaceurs s'écrasaient, tout remontait — pour une image que le voile
+       « Tourne ton téléphone » cache entièrement — puis elle refaisait le
+       chemin inverse au redressement. C'est ce second aller-retour qu'on voit
+       quand on remet l'écran droit, et c'est le seul morceau que les trois
+       correctifs précédents (verre, photo, hauteur de #app) ne touchaient pas.
+       Le garde-fou max-width:1023px laisse les tablettes se remettre en page
+       normalement. */
+    --uh:1vh;
     --primary:#EC3C1A;
     --primary-dark:#D63A1E;
     --primary-soft:#FFE7DE;
@@ -308,14 +323,14 @@
   .icon-btn.spacer{ visibility:hidden; }
 
   /* ---------- Hero / mode select ---------- */
-  .hero{ position:relative; text-align:center; padding:clamp(0.7rem, 1.7vh, 1.35rem) 1rem clamp(0.5rem, 1.2vh, 1rem); }
+  .hero{ position:relative; text-align:center; padding:clamp(0.7rem, calc(1.7 * var(--uh)), 1.35rem) 1rem clamp(0.5rem, calc(1.2 * var(--uh)), 1rem); }
   /* Spécificité .icon-btn.xxx OBLIGATOIRE : le multi-sélecteur verre (plus
      bas) pose position:relative sur tous les .icon-btn — à égalité il
      gagnerait, et les deux boutons tomberaient en pile à gauche en poussant
      tout l'écran vers le bas. */
   .icon-btn.hero-settings{ position:absolute; top:0.15rem; right:0.5rem; color:var(--ink); }
   .icon-btn.hero-profile{ position:absolute; top:0.15rem; left:0.5rem; padding:0; overflow:visible; background:transparent; border:none; box-shadow:none; }
-  .hero-icon{ width:clamp(5.35rem, 13.3vh, 7rem); height:auto; aspect-ratio:1; margin:0 auto 0.5rem; border-radius:23%; box-shadow:0 12px 30px rgba(10,8,6,0.44), 0 0 8px rgba(255,250,238,0.48), 0 0 24px rgba(255,247,228,0.34), 0 0 52px rgba(255,247,231,0.18), inset 0 0 9px rgba(255,252,245,0.4), inset 0 1.5px 4px rgba(255,255,255,0.28); display:block; object-fit:cover; animation:heroFloat 5s ease-in-out infinite; -webkit-user-drag:none; user-drag:none; -webkit-touch-callout:none; -webkit-user-select:none; user-select:none; pointer-events:none; }
+  .hero-icon{ width:clamp(5.35rem, calc(13.3 * var(--uh)), 7rem); height:auto; aspect-ratio:1; margin:0 auto 0.5rem; border-radius:23%; box-shadow:0 12px 30px rgba(10,8,6,0.44), 0 0 8px rgba(255,250,238,0.48), 0 0 24px rgba(255,247,228,0.34), 0 0 52px rgba(255,247,231,0.18), inset 0 0 9px rgba(255,252,245,0.4), inset 0 1.5px 4px rgba(255,255,255,0.28); display:block; object-fit:cover; animation:heroFloat 5s ease-in-out infinite; -webkit-user-drag:none; user-drag:none; -webkit-touch-callout:none; -webkit-user-select:none; user-select:none; pointer-events:none; }
   @keyframes heroFloat{ 0%,100%{ transform:translateY(0); } 50%{ transform:translateY(-6px); } }
   .hero-title{ font-family:'Poppins',sans-serif; font-weight:700; font-size:2rem; margin:0; letter-spacing:-0.01em; color:#fff; text-shadow:0 1px 12px rgba(0,0,0,0.35); }
   .hero-title{ font-family:'Poppins',sans-serif; font-weight:700; font-size:1.55rem; letter-spacing:-0.02em; color:#fff; margin:0 0 0.3rem; text-shadow:0 2px 14px rgba(0,0,0,0.55); }
@@ -428,7 +443,7 @@
   .rules{ font-size:0.85rem; color:var(--ink-soft); line-height:1.6; background:rgba(244,239,231,0.78); backdrop-filter:blur(14px) saturate(180%); -webkit-backdrop-filter:blur(14px) saturate(180%); border:1px solid var(--bord); border-radius:var(--r-m); padding:0.9rem 1rem; margin-bottom:1.1rem; }
   .rules b{ color:var(--ink); }
 
-  .btn-primary{ width:100%; background:var(--primary); color:#fff; border:1px solid var(--bord); border-radius:var(--r-m); padding:clamp(0.9rem, 1.75vh, 1.06rem); font-size:0.95rem; font-weight:700; letter-spacing:0.01em; --rim-edge:0 0 0 1px rgba(150,30,14,0.3);--rim-cast:0 6px 16px rgba(214,60,34,0.42); }
+  .btn-primary{ width:100%; background:var(--primary); color:#fff; border:1px solid var(--bord); border-radius:var(--r-m); padding:clamp(0.9rem, calc(1.75 * var(--uh)), 1.06rem); font-size:0.95rem; font-weight:700; letter-spacing:0.01em; --rim-edge:0 0 0 1px rgba(150,30,14,0.3);--rim-cast:0 6px 16px rgba(214,60,34,0.42); }
   .btn-primary:disabled{ opacity:0.4; box-shadow:none; }
   /* Bouton d'attente : simple pastille de statut, non pressable → aucun
      repaint au toucher (c'est ce repaint qui le faisait « blanchir »). */
@@ -479,14 +494,14 @@
   .question-card::before{ content:""; position:absolute; top:0; left:18%; right:18%; height:2px; background:linear-gradient(90deg, transparent, rgba(239,173,38,0.75), transparent); }
   .question-card .qtext{ font-family:'Poppins',sans-serif; font-weight:600; font-size:clamp(1.05rem, 4vw, 1.32rem); line-height:1.45; }
 
-  .options-grid{ display:grid; grid-template-columns:1fr 1fr; gap:clamp(0.55rem, 1.2vh, 0.8rem); margin-bottom:clamp(0.9rem, 1.8vh, 1.3rem); }
+  .options-grid{ display:grid; grid-template-columns:1fr 1fr; gap:clamp(0.55rem, calc(1.2 * var(--uh)), 0.8rem); margin-bottom:clamp(0.9rem, calc(1.8 * var(--uh)), 1.3rem); }
   @media (max-width:420px){ .options-grid{ grid-template-columns:1fr; } }
   .option-btn{
     display:flex; align-items:center; gap:0.6rem;
     background:rgba(255,255,255,0.52); backdrop-filter:blur(20px) saturate(180%); -webkit-backdrop-filter:blur(20px) saturate(180%);
     -webkit-transform:translateZ(0); transform:translateZ(0);
     border:1px solid var(--bord); border-radius:var(--r-l);
-    padding:clamp(0.74rem, 1.5vh, 0.96rem) 0.85rem; font-size:clamp(0.88rem, 2.35vw, 0.96rem); color:var(--ink); text-align:left; width:100%;
+    padding:clamp(0.74rem, calc(1.5 * var(--uh)), 0.96rem) 0.85rem; font-size:clamp(0.88rem, 2.35vw, 0.96rem); color:var(--ink); text-align:left; width:100%;
     --rim-cast:0 2px 8px rgba(15,12,10,0.1); box-shadow:none;
   }
   .option-btn .letter{ font-weight:700; color:var(--primary); font-size:0.84rem; flex-shrink:0; width:1.5rem; height:1.5rem; border-radius:50%; background:linear-gradient(160deg, #FFEEE5, #FFD9C6); display:flex; align-items:center; justify-content:center; border:1px solid rgba(255,255,255,0.75); box-shadow:inset 0 1px 0 rgba(255,255,255,0.8), 0 1px 2px rgba(214,58,30,0.15); }
@@ -527,7 +542,7 @@
   .fact-card .ftext{ font-size:0.87rem; color:#6b5219; line-height:1.55; }
 
   .btn-reveal{ width:100%; border:1px solid var(--bord); color:#fff; border-radius:var(--r-m); padding:0.9rem; font-size:0.92rem; font-weight:700; margin-bottom:0.95rem; text-shadow:0 1px 4px rgba(120,78,10,0.45); --rim-edge:0 0 0 1px rgba(150,95,15,0.32);--rim-cast:0 5px 16px rgba(196,132,26,0.44); }
-  .btn-next{ width:100%; background:var(--primary); color:#fff; border:1px solid var(--bord); border-radius:var(--r-m); padding:clamp(0.9rem, 1.75vh, 1.06rem); font-size:0.95rem; font-weight:700; letter-spacing:0.01em; margin-bottom:1.05rem; --rim-edge:0 0 0 1px rgba(150,30,14,0.3);--rim-cast:0 6px 16px rgba(214,60,34,0.42); }
+  .btn-next{ width:100%; background:var(--primary); color:#fff; border:1px solid var(--bord); border-radius:var(--r-m); padding:clamp(0.9rem, calc(1.75 * var(--uh)), 1.06rem); font-size:0.95rem; font-weight:700; letter-spacing:0.01em; margin-bottom:1.05rem; --rim-edge:0 0 0 1px rgba(150,30,14,0.3);--rim-cast:0 6px 16px rgba(214,60,34,0.42); }
   .btn-next:disabled{ opacity:0.4; box-shadow:none; }
 
   .award-label{ font-size:0.86rem; text-transform:uppercase; letter-spacing:0.06em; color:#fff; font-weight:800; margin-bottom:0.6rem; text-shadow:0 1px 3px rgba(0,0,0,0.55), 0 2px 12px rgba(0,0,0,0.4); }
@@ -641,9 +656,9 @@
      au milieu d'une colonne alignée, et l'œil le voit tout de suite. */
   .btn-review{ width:100%; margin:0 0 0.6rem; display:flex; align-items:center; justify-content:center; gap:0.5rem; color:var(--ink); border:1px solid var(--bord); border-radius:var(--r-m); padding:0.85rem 1.1rem; font-weight:700; font-size:0.95rem; }
   .btn-review .ico{ width:1.5rem; height:1.5rem; color:var(--primary); flex-shrink:0; }
-  .review-sheet .rev-list{ max-height:54vh; overflow-y:auto; margin:0.3rem 0 0.2rem; display:flex; flex-direction:column; gap:0.65rem; -webkit-overflow-scrolling:touch; }
+  .review-sheet .rev-list{ max-height:calc(54 * var(--uh)); overflow-y:auto; margin:0.3rem 0 0.2rem; display:flex; flex-direction:column; gap:0.65rem; -webkit-overflow-scrolling:touch; }
   /* flex-shrink:0 indispensable : .rev-list est une colonne flex avec
-     max-height+overflow-y:auto (défilement voulu au-delà de 54vh), mais un
+     max-height+overflow-y:auto (défilement voulu au-delà de calc(54 * var(--uh))), mais un
      enfant flex se rétrécit par défaut (flex-shrink:1) pour tenir dans le
      conteneur au lieu de laisser l'overflow faire son travail -> avec
      plusieurs questions ratées, chaque carte était écrasée en dessous de la
@@ -679,7 +694,7 @@
   @keyframes countPop{ 0%{ transform:scale(1.35); } 100%{ transform:scale(1); } }
   @keyframes oppIn{ 0%{ opacity:0; transform:scale(0.7); } 100%{ opacity:1; transform:scale(1); } }
 
-  footer.hint{ text-align:center; color:rgba(255,255,255,0.88); font-size:0.84rem; margin-top:auto; padding:clamp(1rem, 2.4vh, 1.7rem) 0 0.25rem; text-shadow:0 1px 6px rgba(0,0,0,0.3); }
+  footer.hint{ text-align:center; color:rgba(255,255,255,0.88); font-size:0.84rem; margin-top:auto; padding:clamp(1rem, calc(2.4 * var(--uh)), 1.7rem) 0 0.25rem; text-shadow:0 1px 6px rgba(0,0,0,0.3); }
 
 
   .app-header, .card, .mode-card, .question-card, .solo-summary, .solo-score-bar{
@@ -692,7 +707,7 @@
   }
 
   .splash-screen{ flex:1; display:flex; flex-direction:column; align-items:center; justify-content:center; position:relative; text-align:center; min-height:100%; }
-  .splash-center{ display:flex; flex-direction:column; align-items:center; transform:translateY(-13vh); }
+  .splash-center{ display:flex; flex-direction:column; align-items:center; transform:translateY(-calc(13 * var(--uh))); }
   .splash-dove-wrap{ position:relative; margin-bottom:1.9rem; opacity:0; animation:splashRiseBig 1.05s cubic-bezier(0.2,0.9,0.3,1) 0.1s forwards; }
   /* Même ombre de lévitation que l'écran d'accueil, calée sur le flottement 3D. */
   .splash-dove-wrap::after{ content:""; position:absolute; left:50%; bottom:-1rem; width:56%; height:0.85rem; transform:translateX(-50%); background:radial-gradient(ellipse at center, rgba(0,0,0,0.5), rgba(0,0,0,0) 72%); filter:blur(4px); z-index:0; pointer-events:none; opacity:0; animation:doveShadow 3.6s ease-in-out 1s infinite; }
@@ -704,7 +719,7 @@
        SEULE : à la taille du menu elle paraissait perdue au milieu du décor,
        alors qu'ici elle porte encore l'écran tout en restant dans la même
        famille visuelle. */
-    width:clamp(6.6rem, 16.3vh, 9rem); height:auto; aspect-ratio:1; object-fit:cover; border-radius:23%; display:block;
+    width:clamp(6.6rem, calc(16.3 * var(--uh)), 9rem); height:auto; aspect-ratio:1; object-fit:cover; border-radius:23%; display:block;
     /* Aura douce et transparente : léger halo blanc chaud tout contre l'icône
        + halo doré plus large (sacré, feutré) -> l'icône « rayonne » sans jamais
        d'anneau dur ni d'effet clinquant. Même esprit sur l'accueil. */
@@ -1098,7 +1113,12 @@
      Les deux sélecteurs : le second doit battre « html:not(.is-standalone)
      #app » posé plus haut pour la version web. */
   @media (orientation:landscape) and (pointer:coarse) and (max-width:1023px){
-    #app, html:not(.is-standalone) #app{ height:100vw; }
+    /* La LARGEUR aussi : #app est borné à 430 px, donc debout sur un écran de
+       402 il fait 402, et couché il atteignait enfin 430. 28 px de plus, et le
+       texte ne se coupe plus aux mêmes endroits — les hauteurs changent, les
+       espaceurs se redistribuent, tout glisse. 100vh couché, c'est le PETIT
+       côté : la colonne garde sa laize. */
+    #app, html:not(.is-standalone) #app{ height:100vw; width:100vh; }
   }
 
   /* ---------- VERRE GARANTI (photo pré-floutée, alignée au viewport) ----------
@@ -1314,6 +1334,7 @@
        (Vérifié : 16,63 px debout, 16,63 px couché sur un 402x874.) */
     @media (orientation:landscape) and (pointer:coarse) and (max-width:1023px){
       html{ font-size:clamp(14.6px, 8.4px + 0.85vw + 0.2svh, 17.8px); }
+      :root{ --uh:1vw; }   /* couché, le grand côté = la hauteur d'avant */
     }
   }
 
@@ -1429,7 +1450,22 @@
   .tst .tst-body{ display:none; margin-top:0.6rem; }
   /* Petits écrans (SE & co) : la Progression doit tenir SANS défiler tant que
      les testaments sont repliés -> on resserre juste ce qu'il faut. */
-  @media (max-height:700px){
+  /* PETITS ÉCRANS — ET LA MÊME DÉFINITION QUAND LE TÉLÉPHONE EST COUCHÉ.
+     Ce bloc resserre l'accueil et masque le verset sur les écrans courts. Il
+     se déclenchait sur « max-height:700px » : couché, TOUT téléphone y tombe
+     (402 px de haut), donc l'accueil se réorganisait — verset masqué, zone du
+     logo redimensionnée, colonne entièrement redistribuée — pour une image que
+     le voile cache, et tout était refait à l'envers au redressement. C'était le
+     dernier morceau qui bougeait encore.
+     La condition dit maintenant la même chose dans les deux sens : debout on
+     regarde la hauteur ; couché sur un téléphone, la LARGEUR, qui est
+     précisément la hauteur qu'on aurait debout. Un iPhone 15 (874) reste hors
+     du bloc dans les deux sens, un SE (667) y reste dans les deux sens. La
+     clause « pointer:fine » garde le comportement d'origine là où il n'y a pas
+     d'écran tactile (fenêtre de navigateur courte). */
+  @media (max-height:700px) and (orientation:portrait),
+         (max-height:700px) and (pointer:fine),
+         (orientation:landscape) and (pointer:coarse) and (max-width:700px){
     .ach-tile{ width:2.35rem; height:2.35rem; border-radius:var(--r-s); }
     .ach-tile svg{ width:1.3rem; height:1.3rem; }
     .ach-grid{ gap:0.45rem 0.3rem; }
@@ -1442,8 +1478,8 @@
     .tst-head{ padding:0.5rem 0.8rem; }
     .parcours-h{ margin:0.5rem 0.2rem 0.4rem; }
     .home-verse{ display:none; } /* petits écrans : l'accueil garde son équilibre */
-    .hero-icon{ width:clamp(4.2rem, 11vh, 5.5rem); }
-    html .hero-zone{ height:clamp(4.8rem, 12vh, 6.2rem); margin-bottom:0.45rem; }
+    .hero-icon{ width:clamp(4.2rem, calc(11 * var(--uh)), 5.5rem); }
+    html .hero-zone{ height:clamp(4.8rem, calc(12 * var(--uh)), 6.2rem); margin-bottom:0.45rem; }
     .hero-title{ font-size:1.3rem; margin-bottom:0.15rem; }
     /* SE & co (≤700px de haut) : on resserre un poil les cartes pour que
        l'accueil tienne AUSSI ici, marges de sécurité comprises -> zéro débord,
@@ -1500,7 +1536,7 @@
   /* Pastilles alignées sur le LANGAGE des cartes de l'accueil : mêmes bords
      (bord à bord avec les cartes au-dessus), même rayon 16 px, même bordure,
      et le même écart de 16 px entre elles qu'entre les cartes. */
-  .home-stats{ display:flex; gap:16px; padding:clamp(0.4rem, 1.1vh, 0.8rem) 0 0.15rem; }
+  .home-stats{ display:flex; gap:16px; padding:clamp(0.4rem, calc(1.1 * var(--uh)), 0.8rem) 0 0.15rem; }
   .hs-item{ flex:1; display:flex; flex-direction:column; align-items:center; gap:0.06rem; border:1px solid var(--bord); border-radius:var(--r-l); padding:0.52rem 0.35rem 0.48rem; text-align:center; transform:translateZ(0); -webkit-transform:translateZ(0); }
   .hs-ico{ width:1.12rem; height:1.12rem; color:var(--primary); margin-bottom:0.06rem; display:inline-flex; }
   .hs-item:nth-child(2) .hs-ico{ color:var(--gold-deep); }
@@ -1515,8 +1551,8 @@
   /* Espaceur flexible : répartit le vide pour que chaque écran soit habité */
   .flex-sp{ flex:1 1 0; min-height:0.35rem; }
   /* Sur les grands écrans, la question et les réponses grandissent pour occuper la place */
-  .question-card{ display:flex; align-items:center; justify-content:center; min-height:clamp(5.5rem, 14.5vh, 9.6rem); }
-  .option-btn{ min-height:clamp(3.1rem, 7vh, 4.6rem); }
+  .question-card{ display:flex; align-items:center; justify-content:center; min-height:clamp(5.5rem, calc(14.5 * var(--uh)), 9.6rem); }
+  .option-btn{ min-height:clamp(3.1rem, calc(7 * var(--uh)), 4.6rem); }
 
   /* ---------- Médaillon de fin : verre cerclé d'or, trophée intégré ---------- */
   .end-medal{ position:relative; width:clamp(5.9rem, 27vw, 7.3rem); aspect-ratio:1; margin:0 auto 0.7rem; border-radius:50%; display:flex; align-items:center; justify-content:center; border:1px solid var(--bord); animation:trophyIn 0.75s cubic-bezier(0.18,1.25,0.32,1) backwards; transform:translateZ(0); -webkit-transform:translateZ(0); --rim-cast:0 10px 30px rgba(18,12,6,0.3); }
@@ -1800,7 +1836,7 @@
      chevauche les boutons profil/réglages dans les coins. Sans pointer-events:none,
      il interceptait leurs taps (le hero-zone étant peint au-dessus) -> profil &
      réglages ne s'ouvraient plus. On ne laisse cliquables que ses enfants utiles. */
-  .hero-zone{ position:relative; height:clamp(5.8rem, 14.3vh, 7.5rem); margin:0 auto 0.55rem; display:flex; align-items:center; justify-content:center; pointer-events:none; }
+  .hero-zone{ position:relative; height:clamp(5.8rem, calc(14.3 * var(--uh)), 7.5rem); margin:0 auto 0.55rem; display:flex; align-items:center; justify-content:center; pointer-events:none; }
   .hero-zone .hero-icon{ margin:0; }
   /* Ombre de lévitation : reste « au sol » et respire à l'inverse du
      flottement de l'icône (petite & pâle quand l'icône monte, large &
@@ -1858,7 +1894,7 @@
      detail : centree, la carte la plus haute passait 9 px AU-DESSUS du haut de
      l'ecran sur iPhone SE — sous l'encoche. En bas, la place est trois fois
      plus grande, et la limite ci-dessous s'arrete avant les cartes de mode. */
-  .hero-verse-card{ position:absolute; top:0; bottom:auto; height:auto; min-height:100%; max-height:min(9.5rem, 22vh); left:max(0px, calc(50% - 11.5rem)); right:max(0px, calc(50% - 11.5rem)); display:flex; flex-direction:column; align-items:center; justify-content:center; gap:0.42rem; padding:0.8rem 1.1rem; border-radius:var(--r-l); border:1px solid rgba(239,173,38,0.55); opacity:0; transform:scale(0.82) translateY(10px); transition:transform 0.55s cubic-bezier(0.2,1.15,0.3,1), opacity 0.4s ease; will-change:transform, opacity; pointer-events:none; text-align:center; }
+  .hero-verse-card{ position:absolute; top:0; bottom:auto; height:auto; min-height:100%; max-height:min(9.5rem, calc(22 * var(--uh))); left:max(0px, calc(50% - 11.5rem)); right:max(0px, calc(50% - 11.5rem)); display:flex; flex-direction:column; align-items:center; justify-content:center; gap:0.42rem; padding:0.8rem 1.1rem; border-radius:var(--r-l); border:1px solid rgba(239,173,38,0.55); opacity:0; transform:scale(0.82) translateY(10px); transition:transform 0.55s cubic-bezier(0.2,1.15,0.3,1), opacity 0.4s ease; will-change:transform, opacity; pointer-events:none; text-align:center; }
   .hero-zone.show-verse .hero-verse-card{ opacity:1; transform:scale(1) translateY(0); pointer-events:auto; transition-delay:0.08s; }
   /* Profil et Réglages s'effacent TOUJOURS : ils sont dans les coins hauts, et
      la carte, large de presque tout l'écran, passe par-dessus. */
