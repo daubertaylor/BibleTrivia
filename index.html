@@ -781,7 +781,14 @@
   }
 
   .splash-screen{ flex:1; display:flex; flex-direction:column; align-items:center; justify-content:center; position:relative; text-align:center; min-height:100%; }
-  .splash-center{ display:flex; flex-direction:column; align-items:center; transform:translateY(-calc(13 * var(--uh))); }
+  /* LE SIGNE MOINS NE PEUT PAS PRÉCÉDER calc(). La conversion des tailles
+     exprimées en hauteur d'écran (voir --uh) a transformé « translateY(-13vh) »
+     en « translateY(-calc(...)) » : c'est invalide, la déclaration était donc
+     ignorée, et le bloc de lancement ne remontait plus — il s'affichait trop
+     bas. Le signe va DANS le calcul. C'est le seul endroit du fichier où une
+     valeur convertie était précédée d'un moins ; vérifié, il n'en reste
+     aucun autre. */
+  .splash-center{ display:flex; flex-direction:column; align-items:center; transform:translateY(calc(-13 * var(--uh))); }
   .splash-dove-wrap{ position:relative; margin-bottom:1.9rem; opacity:0; animation:splashRiseBig 1.05s cubic-bezier(0.2,0.9,0.3,1) 0.1s forwards; }
   /* Même ombre de lévitation que l'écran d'accueil, calée sur le flottement 3D. */
   .splash-dove-wrap::after{ content:""; position:absolute; left:50%; bottom:-1rem; width:56%; height:0.85rem; transform:translateX(-50%); background:radial-gradient(ellipse at center, rgba(0,0,0,0.5), rgba(0,0,0,0) 72%); filter:blur(4px); z-index:0; pointer-events:none; opacity:0; animation:doveShadow 3.6s ease-in-out 1s infinite; }
