@@ -777,6 +777,13 @@
   .btn-primary, .btn-next, .btn-replay, .modal-btn.ok, .sheet-done, .set-go,
   .btn-ghost.btn-cancel, .chip.active, .len-chip.sel, .online-action.primary,
   .modal-btn.cancel.keep{ --press-tint: rgba(255,255,255,0.34); }
+  /* MÊMES SURFACES, LISERÉ DE MATIÈRE PLEINE (voir --bord-plein).
+     Aucun mécanisme nouveau : elles redéfinissent --bord et --levre pour
+     elles-mêmes, et leur règle « border:1px solid var(--bord) » suit toute
+     seule. Un seul système, deux matières. */
+  .btn-primary, .btn-next, .btn-replay, .modal-btn.ok, .sheet-done, .set-go,
+  .btn-reveal, .chip.active, .len-chip.sel, .online-action.primary, .btn-quit,
+  .avatar, .podium-avatar, .team-token{ --bord:var(--bord-plein); --levre:var(--levre-pleine); }
   button:active:not(:disabled)::before,
   .mode-card:active::before{ transform:scale(1); opacity:1; transition:transform 0.22s cubic-bezier(0.2,0.8,0.32,1), opacity 0.06s ease; }
   .hero-icon-btn::before{ content:none; }
@@ -811,7 +818,7 @@
 
   /* ---------- Profil & En ligne ---------- */
   .mode-icon.online{ background:linear-gradient(150deg, #4DA8FF, #2E7FE8); box-shadow:inset 0 1px 0 rgba(255,255,255,0.26), 0 2px 7px rgba(46,127,232,0.24); }
-  .avatar{ position:relative; border-radius:50%; color:#fff; display:inline-flex; align-items:center; justify-content:center; font-family:'Poppins',sans-serif; font-weight:700; border:2px solid rgba(255,255,255,0.7); --rim-edge:0 0 0 1px rgba(30,22,14,0.16); --rim-cast:0 5px 14px rgba(15,12,10,0.3); flex-shrink:0; }
+  .avatar{ position:relative; border-radius:50%; color:#fff; display:inline-flex; align-items:center; justify-content:center; font-family:'Poppins',sans-serif; font-weight:700; border:2px solid var(--bord); --rim-edge:0 0 0 1px transparent; --rim-cast:0 4px 12px rgba(15,12,10,0.18); flex-shrink:0; }
   .avatar.waiting{ background:rgba(255,255,255,0.5); color:var(--ink-soft); border-style:dashed; }
   /* Même teinte dorée saturée que le badge « Créateur » (au lieu du dégradé
      pâle d'origine) : le petit C du profil et le badge du profil forment
@@ -8520,11 +8527,21 @@ function renderModeSelect(){
          dernier défi date d'aujourd'hui ou d'hier, et dDone écarte le premier
          cas. À partir de 2 jours seulement : une « série d'un jour » n'en est
          pas une, et l'annoncer sonnerait faux. */
-      const doneTxt = dDone ? ('Réussi\u00a0: ' + dd.score + '/' + dd.total + '\u00a0\u00b7 \u00e0 demain\u00a0!')
-        : (dProg ? 'Reprends ta partie'
-        : (dSk >= 2 ? ('Garde ta s\u00e9rie de ' + dSk + '\u00a0jours\u00a0!') : 'Le m\u00eame d\u00e9fi pour tous'));
-      const group = `<button class="mode-card" onclick="selectMode('group')"><span class="mode-icon group">${ICONS.users}</span><span class="mode-text"><span class="mode-title">Mode Groupe</span><span class="mode-desc">Église, jeunesse, en équipes</span></span><span class="chev">${ICONS.chevronRight}</span></button>`;
-      const solo = `<button class="mode-card" onclick="selectMode('solo')"><span class="mode-icon solo">${ICONS.user}</span><span class="mode-text"><span class="mode-title">Mode Solo</span><span class="mode-desc">Teste tes connaissances à ton rythme</span></span><span class="chev">${ICONS.chevronRight}</span></button>`;
+      /* LES SOUS-TITRES DES CARTES — UNE SEULE FORME.
+         Ils mélangeaient trois registres : une liste de noms sous Groupe, une
+         phrase à l'impératif sous Solo, un groupe nominal sous En ligne — et
+         des longueurs du simple au double. Ils sont désormais tous des groupes
+         nominaux courts, sans verbe conjugué et sans point d'exclamation :
+         c'est ce qui fait qu'une liste se lit d'un coup d'œil au lieu de se
+         lire ligne par ligne.
+         Deux fautes corrigées au passage : « à demain » prenait une minuscule
+         en tête de proposition, et « 0 bonnes réponses » s'accordait au
+         pluriel alors qu'en français zéro et un commandent le singulier. */
+      const doneTxt = dDone ? ('R\u00e9ussi ' + dd.score + '/' + dd.total + '\u00a0\u00b7 \u00c0 demain')
+        : (dProg ? 'Partie en cours'
+        : (dSk >= 2 ? ('S\u00e9rie de ' + dSk + '\u00a0jours \u00e0 garder') : 'Le m\u00eame pour tous, chaque jour'));
+      const group = `<button class="mode-card" onclick="selectMode('group')"><span class="mode-icon group">${ICONS.users}</span><span class="mode-text"><span class="mode-title">Mode Groupe</span><span class="mode-desc">En équipes, sur ce téléphone</span></span><span class="chev">${ICONS.chevronRight}</span></button>`;
+      const solo = `<button class="mode-card" onclick="selectMode('solo')"><span class="mode-icon solo">${ICONS.user}</span><span class="mode-text"><span class="mode-title">Mode Solo</span><span class="mode-desc">Une partie, à ton rythme</span></span><span class="chev">${ICONS.chevronRight}</span></button>`;
       const online = `<button class="mode-card" onclick="openOnline()"><span class="mode-icon online">${ICONS.bolt}</span><span class="mode-text"><span class="mode-title">Jouer en ligne</span><span class="mode-desc">Jusqu'à 8 joueurs, en direct</span></span><span class="chev">${ICONS.chevronRight}</span></button>`;
       const daily = `<button class="daily-card${dDone?' done':''}" onclick="${dDone?'':'startDailyChallenge()'}" ${dDone?'disabled':''}><span class="dc-ico">${ICONS.flame}</span><span class="dc-txt"><b>Défi du jour</b><small>${doneTxt}</small></span>${dSk>0 ? `<span class="dc-streak">${ICONS.flame}${dSk}</span>` : ''}${dDone ? `<span class="dc-check">${ICONS.checkCircle}</span>` : `<span class="chev">${ICONS.chevronRight}</span>`}</button>`;
       return group + solo + online + daily;
@@ -8534,7 +8551,7 @@ function renderModeSelect(){
       <span class="pc-ico">${ICONS.trophy}</span>
       <span class="pc-txt">
         <b>Progression</b>
-        <small>${s.mastered}/66 livres · ${s.totalCorrect} bonnes réponses</small>
+        <small>${s.mastered}/66 livres · ${s.totalCorrect} bonne${s.totalCorrect > 1 ? 's' : ''} réponse${s.totalCorrect > 1 ? 's' : ''}</small>
       </span>
       <span class="chev">${ICONS.chevronRight}</span>
     </button>`; })()}
