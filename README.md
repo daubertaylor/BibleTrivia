@@ -163,17 +163,31 @@ texture de la photo produit de faux positifs. Le test des traits clairs
 
 ## NON RÉSOLU
 
-### Léger flou en haut de l'écran (iOS)
+### Léger flou en haut de l'écran (iOS) — DÉCIDÉ : on laisse
 
-Signalé après une mise à jour d'iOS. Vérifié : le jeu ne peint rien de
-flou là-haut — ses couches de fond ne contiennent que des dégradés et un
-grain, aucun `blur`. Il s'agit donc du traitement système de la barre
-d'état pour les apps installées en `black-translucent`, qu'aucune API web
-ne permet de désactiver.
+Signalé après une mise à jour d'iOS. **Prouvé par la mesure**, pas par
+déduction : on rend l'accueil au format exact du téléphone (402x874 @3x)
+et on compare bande par bande. Au même endroit, la capture du téléphone
+est deux fois plus sombre et a **neuf fois moins de détail local** que le
+rendu — et la frontière tombe pile sous la barre d'état. Le jeu, lui, ne
+peint rien de flou : ses couches de fond ne contiennent que des dégradés
+et un grain, aucun `blur`.
 
-Contournement possible si Taylor le souhaite : poser une bande opaque
-sous la barre d'état — mais elle couperait la photo, qui va aujourd'hui
-d'un bord à l'autre.
+C'est donc le traitement système de la barre d'état pour les apps
+installées, qu'aucune API web ne permet de désactiver. Une page ne peut
+que lui retirer sa MATIÈRE : un flou appliqué à une couleur unie redonne
+la même couleur unie.
+
+Deux contournements ont été chiffrés et présentés à Taylor :
+
+- **barre d'état opaque** (`apple-mobile-web-app-status-bar-style: black`)
+  — seul résultat garanti, mais la photo s'arrête sous la barre ;
+- **capot sombre** sur la hauteur de la barre — testé à 0,80 et 0,93
+  d'opacité : quasi aucun effet, parce que le dégradé remonte à 0,28 dès
+  22 % de la hauteur, bien avant la fin de la bande floutée.
+
+**Taylor a choisi de laisser comme c'est.** Ne pas y revenir sans qu'il
+le redemande.
 
 
 ### L'écran se déchire au retour en portrait
