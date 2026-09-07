@@ -7507,12 +7507,25 @@ function syncTeamRows(){
    sur une copie du jeu (voir le commentaire du retrait). */
 const RESSORT_LIGNE = "0.34s cubic-bezier(0.25,0.4,0.25,1)";
 function settleTeamCard(c){
-  const gs = c.querySelector(":scope > .gs");
-  if(gs){
-    gs.style.willChange = "auto";
-    void gs.offsetHeight;              // applique la bascule immédiatement
-    gs.style.willChange = "transform"; // la couche est reprise à la bonne taille
-  }
+  /* PLUS DE BASCULE DE will-change ICI.
+     On faisait passer la couche de verre de « transform » à « auto » puis
+     retour, pour la « reprendre à la bonne taille ». Or éteindre will-change
+     DÉTRUIT la couche GPU, et la rallumer en recrée une : le navigateur doit
+     re-peindre toute la carte — 370 x 320 px de décor flouté — avant de
+     pouvoir la recomposer. Sur Android, ce délai se voit : l'écran cligne à
+     chaque joueur ajouté ou retiré. Et la reprise ne servait à rien, parce que
+     la couche .gs a une taille FIXE (celle de la scène floutée, iw x ih) qui
+     ne dépend pas de la hauteur de la carte : quand la carte grandit, c'est
+     son rognage qui change, pas la couche. Ce qu'il fallait vraiment, c'est
+     que le moteur RÉÉCRIVE le transform de la couche quand la hauteur bouge —
+     il ne le faisait pas, parce qu'il n'écrit que ce qui change et que le
+     transform, lui, ne changeait pas (voir queueGlassSync).
+     Et il ne suffit pas de recaler à la fin : la carte grandit pendant un
+     tiers de seconde, donc sa hauteur doit être relue à CHAQUE image de
+     l'animation — sans quoi son verre reste rogné à l'ancienne taille jusqu'au
+     dernier instant, puis se complète d'un coup. armGlass met le moteur en
+     suivi le temps du mouvement. */
+  try{ armGlass(700); }catch(e){}
   requestAnimationFrame(()=>{ try{ glassRelayout(); queueGlassSync(); }catch(e){} });
 }
 function addTeam(){
@@ -10021,7 +10034,7 @@ function queueGlassXF(){
     if(!gs || gs.parentNode !== el){
       gs = document.createElement("i"); gs.className = "gs";
       el.insertBefore(gs, el.firstChild);
-      el._gs = gs; el._gsSize = ""; el._gsT = "";
+      el._gs = gs; el._gsSize = ""; el._gsT = ""; el._gsH = -1;
     }
     if(gs.style.display === "none") gs.style.display = "";
     if(!el.classList.contains("has-gs")) el.classList.add("has-gs");
@@ -10062,7 +10075,18 @@ function queueGlassXF(){
       tx = -r.left - ox; ty = -r.top - oy;
     }
     const t = "translate3d(" + Math.round(tx) + "px," + Math.round(ty) + "px,0)";
-    if(el._gsT !== t){ el._gsT = t; gs.style.transform = t; }
+    /* ON RÉÉCRIT AUSSI QUAND LA SURFACE A CHANGÉ DE HAUTEUR, MÊME SI LE
+       TRANSFORM EST LE MÊME. Une carte qui grandit vers le bas — la liste des
+       joueurs quand on en ajoute un, un testament qui s'ouvre — garde son coin
+       haut exactement à la même place : le transform calculé est identique,
+       donc RIEN n'était écrit. Le compositeur n'apprenait alors jamais que le
+       rognage de la couche avait grandi, et Android laissait le bas de la carte
+       sans verre. Réécrire la même valeur suffit à le lui dire : une écriture
+       de propriété, ni repeinture ni destruction de couche. C'est ce que la
+       bascule de will-change obtenait avant, mais en détruisant la couche GPU
+       et en forçant à repeindre toute la carte — d'où le clignotement sur
+       Android à chaque joueur ajouté ou retiré. */
+    if(el._gsT !== t || el._gsH !== el._oh0){ el._gsT = t; el._gsH = el._oh0; gs.style.transform = t; }
   }
 }
 /* VOIE GPU (Android) : le backdrop-filter fait tout le rendu du verre et suit
