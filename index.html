@@ -450,10 +450,24 @@
      le filet commun pour rebord, et la teinte ambrée du Défi du jour pour les
      jours relevés — on comprend sans légende de quoi il s'agit. Le titre
      reprend la petite capitale des en-têtes du jeu. */
-  .semaine{ display:flex; flex-direction:column; align-items:center; gap:0.42rem; }
+  /* PLEINE LARGEUR, COMME TOUT CE QUI EST AU-DESSUS. Sept pastilles carrées
+     centrées mesuraient 275 px sous une colonne de cartes de 370 : 48 px de
+     vide de chaque côté, et le pied de l'accueil se lisait comme une petite
+     grappe oubliée sous une page pleine — c'est le « ça fait vide » de Taylor.
+     Les cases s'étirent maintenant sur la MÊME colonne que les cartes (flex:1) :
+     la bande basse est occupée d'un bord à l'autre, sans un pixel de hauteur en
+     plus — l'accueil du 14 Pro tient à zéro près (mesuré : +1 px de haut sur les
+     cases et il déborde), donc tout le gain devait venir de la largeur.
+     La ligne de titre reprend la mise en page des en-têtes de la Progression
+     (« Objectifs 9/16 ») : intitulé à gauche, chiffre à droite. La série y est
+     dite en toutes lettres — sans elle, sept lettres et trois cases dorées ne
+     disent pas d'eux-mêmes qu'on tient une série de trois jours. */
+  .semaine{ display:flex; flex-direction:column; align-items:stretch; gap:0.42rem; }
+  .sem-h{ display:flex; align-items:baseline; justify-content:space-between; gap:0.6rem; padding:0 0.2rem; }
   .sem-t{ font-family:'Poppins',sans-serif; font-size:0.6rem; font-weight:600; letter-spacing:0.09em; text-transform:uppercase; color:rgba(255,255,255,0.72); text-shadow:0 1px 8px rgba(0,0,0,0.5); }
+  .sem-n{ font-family:'Poppins',sans-serif; font-size:0.6rem; font-weight:700; letter-spacing:0.06em; text-transform:uppercase; color:rgba(255,201,90,0.92); text-shadow:0 1px 8px rgba(0,0,0,0.55); white-space:nowrap; }
   .sem-j{ display:flex; gap:0.4rem; }
-  .sj{ width:2.05rem; height:2.05rem; border-radius:var(--r-s); display:flex; align-items:center; justify-content:center;
+  .sj{ flex:1 1 0; min-width:0; height:2.05rem; border-radius:var(--r-s); display:flex; align-items:center; justify-content:center;
     font-family:'Poppins',sans-serif; font-size:0.72rem; font-weight:700; letter-spacing:0.01em;
     color:rgba(255,255,255,0.78); background:rgba(255,255,255,0.15);
     backdrop-filter:blur(12px) saturate(160%); -webkit-backdrop-filter:blur(12px) saturate(160%); }
@@ -8432,8 +8446,10 @@ function semaineHtml(){
     cases.push(`<span class="sj${faits.has(dayKey(-k)) ? " fait" : ""}${k === 0 ? " auj" : ""}">`
       + SEM_LETTRES[jour.getDay()] + `</span>`);
   }
+  const serie = dailyStreakShown();
+  const compte = serie > 0 ? `<span class="sem-n">${serie} jour${serie>1?"s":""} d'affilée</span>` : "";
   return `<div class="semaine" aria-label="Tes sept derniers jours">`
-    + `<span class="sem-t">Les 7 derniers jours</span>`
+    + `<div class="sem-h"><span class="sem-t">Les 7 derniers jours</span>${compte}</div>`
     + `<div class="sem-j">${cases.join("")}</div></div>`;
 }
 function dailyStreakShown(){ const d = loadDaily(); return (d.last===dayKey(0) || d.last===dayKey(-1)) ? d.streak : 0; }

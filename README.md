@@ -81,6 +81,20 @@ qu'une fois : la pastille « flamme + nombre » de la carte du Défi
 s'efface là où la bande existe, et reparaît sur les petits écrans, où la
 bande n'a pas de place.
 
+**Elle occupe toute la colonne (v158).** Sept cases carrées centrées
+mesuraient 275 px sous une colonne de cartes de 370 : 48 px de vide de
+chaque côté, et le pied de l'écran se lisait comme une petite grappe
+oubliée — le « ça fait vide » de Taylor. Les cases s'étirent maintenant
+en `flex:1` sur la MÊME colonne que les cartes, **sans un pixel de
+hauteur en plus** : l'accueil du 14 Pro tient à zéro près (mesuré :
++1 px sur la hauteur des cases et il déborde, `scratchpad/n1/bande.js`),
+donc tout le gain devait venir de la largeur. La ligne de titre reprend
+la mise en page des en-têtes de la Progression — intitulé à gauche,
+chiffre à droite — et la série y est dite en toutes lettres : sans elle,
+sept lettres et trois cases dorées ne disent pas d'eux-mêmes qu'on tient
+une série de trois jours. Rien à droite quand la série est nulle ou
+perdue (`scratchpad/n1/cas.js` couvre les quatre états).
+
 **Le verset (les cinq tapes sur l'icône).** La carte grandit, le texte
 ne rétrécit jamais sous 0,94 rem. C'était l'inverse : la carte était
 plafonnée et le corps tombait à 10,5 px sur les versets longs. Deux
