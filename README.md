@@ -113,10 +113,25 @@ substituer :
    qui doit céder quand la place manque s'y accroche, avec la taille
    actuelle comme plafond.
 
-**Aucun rebord coloré, nulle part.** Règle absolue posée par Taylor.
-Un état se dit par un fond, une encre, une opacité — jamais par un
-trait de couleur. Vérifiable : `scratchpad/couleur.js` parcourt les
-douze écrans et doit rapporter 0.
+**Aucun rebord coloré, nulle part. Aucun contour blanc non plus.**
+Règles absolues posées par Taylor. Un état se dit par un fond, une
+encre, une coche — jamais par un trait, de quelque couleur qu'il soit.
+
+Trois tests, trois angles, parce qu'un rebord peut échapper à deux
+d'entre eux :
+
+- `scratchpad/couleur.js` — les rebords **saturés** (or, corail, vert).
+  Doit rapporter 0.
+- `scratchpad/arete.js` + `arete2.py` — les traits **sombres**, bords
+  gauche et droite. Repère : au-dessus de ~10, l'œil lit une ligne.
+- `scratchpad/blanc.js` + `blanc.py` — les traits **clairs**, sur les
+  QUATRE arêtes (un contour blanc, ici, c'est souvent une lèvre
+  `inset 0 1px 0` : le bord du haut, que les deux autres tests ne
+  regardent pas).
+
+Les trois prennent la médiane sur plusieurs points par arête : sinon la
+texture de la photo produit de faux positifs. Le test des traits clairs
+écarte en plus les sondes qui traversent du texte.
 
 ---
 
