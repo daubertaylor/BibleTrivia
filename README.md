@@ -306,6 +306,42 @@ confond avec un décalage.
 
 ---
 
+## L'ICÔNE DU JEU (v162)
+
+Une seule image sert **partout** : le héros de l'accueil, l'écran de
+chargement (même constante `DOVE_ICON`), la favicon, l'icône de l'écran
+d'accueil (`apple-touch-icon.png`) et celles du manifeste
+(`icon-192.png`, `icon-512.png`). Changer l'icône, c'est donc changer
+ces cinq endroits d'un coup, sinon la cohérence casse.
+
+**La règle de forme : un CARRÉ PLEIN, peint jusqu'aux quatre coins.**
+L'arrondi ne vient jamais du fichier — il vient du CSS
+(`border-radius:23%` sur `.hero-icon` / `.splash-dove`) et du système
+d'exploitation sur l'écran d'accueil. Une image dont les coins sont
+déjà arrondis produirait soit un liseré blanc, soit un croissant de
+décor visible dans l'angle, selon que le rayon cuit est plus petit ou
+plus grand que celui appliqué par-dessus.
+
+L'image fournie par Taylor était un rendu d'icône : coins arrondis
+cuits (une squircle, pas un arc de cercle — mesuré, l'insertion vaut
+259 px en haut et s'annule à 280 px, là où un cercle donnerait 176 à
+mi-hauteur), marge blanche et ombre portée autour. La procédure, dans
+`scratchpad/n1/icone.py` :
+
+1. cadrage exact sur le logo (bornes trouvées par balayage : le noir du
+   relief descend jusqu'à la dernière ligne de l'arc, ce qui donne le
+   bas réel) ;
+2. le fond est ce qui est **neutre et pas noir**, et **relié à un coin**
+   de la découpe — un remplissage par diffusion depuis les quatre coins,
+   qui n'atteint donc jamais les étoiles blanches de l'intérieur ;
+3. élargissement de 3 px pour emporter la frange anti-crénelée, qui
+   n'est ni tout à fait blanche ni tout à fait logo ;
+4. les coins sont **rebouchés par propagation en largeur** depuis la
+   frontière du logo : le ciel prolonge le ciel, le relief prolonge le
+   relief. Zéro pixel gris neutre restant (vérifié).
+
+---
+
 ## LE LOGO DE L'ACCUEIL (v156)
 
 Il valait 19,4 % de la largeur sur un iPhone 8 et 28,5 % sur un 13 —
