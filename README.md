@@ -76,7 +76,20 @@ jours GLISSANTS, pas une semaine de calendrier : la série du jeu ne se
 remet pas à zéro le lundi, l'affichage non plus.
 
 C'est de l'information, pas une commande : aucune ombre de bouton, aucun
-chevron. Le geste pour jouer reste la carte du Défi.
+chevron. Le geste pour jouer reste la carte du Défi. La série n'est dite
+qu'une fois : la pastille « flamme + nombre » de la carte du Défi
+s'efface là où la bande existe, et reparaît sur les petits écrans, où la
+bande n'a pas de place.
+
+**Le jour tourne pendant que le jeu dort.** L'accueil est calculé au
+moment où on le dessine, et sur iOS une app posée sur l'écran d'accueil
+est REPRISE, pas relancée : on peut rouvrir le jeu le lendemain sans
+qu'une ligne de code n'ait tourné entre-temps. `verifierJour()` retient
+le jour affiché et redessine quand la date a changé — au retour au
+premier plan, et à minuit si le jeu est resté ouvert. Jamais en pleine
+partie, jamais sous une feuille ouverte. Test : `scratchpad/jour.js`
+(l'horloge avance d'un jour) et `scratchpad/garde.js` (les quatre
+situations où il ne doit rien interrompre).
 
 Le verset a été essayé en bas de l'écran (v145) : Taylor n'en a pas
 voulu. Il est remonté sous le titre, sa place d'origine.

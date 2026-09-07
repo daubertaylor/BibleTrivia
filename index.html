@@ -8343,6 +8343,42 @@ function loadDaily(){ try { const s = JSON.parse(localStorage.getItem("bt_daily"
 function saveDaily(x){ try { localStorage.setItem("bt_daily", JSON.stringify(x)); } catch(e){}
   try { notifMiroir(); } catch(e){}   /* le service worker lit ce miroir, pas le localStorage */ }
 function dailyDoneToday(){ return loadDaily().last === dayKey(0); }
+/* LE JOUR PEUT TOURNER PENDANT QUE LE JEU DORT.
+   L'accueil est calculé au moment où on le dessine : la carte du Défi et la
+   bande des sept jours figent donc l'état du jour où on l'a ouvert. Or sur
+   iOS une app posée sur l'écran d'accueil est REPRISE, pas relancée — on peut
+   très bien rouvrir BibleTrivia le lendemain sans qu'une seule ligne de code
+   ne tourne entre-temps. Mesuré : le jeu annonçait encore « Réussi · À
+   demain » et la semaine de la veille, alors qu'un nouveau défi attendait.
+   On retient donc le jour affiché, et on redessine quand la date a tourné :
+   au retour au premier plan, et à minuit si le jeu est resté ouvert.
+   Jamais en pleine partie ni sous une feuille ouverte — comme la mise à jour
+   silencieuse, on ne redessine que ce qui peut l'être sans rien déranger. */
+let jourAffiche = dayKey(0), minuitT = 0;
+function verifierJour(){
+  const j = dayKey(0);
+  if(j === jourAffiche) return;
+  jourAffiche = j;
+  try{
+    if(typeof state === "undefined" || state.screen !== "mode") return;
+    if(document.querySelector(".sheet-veil, .modal-veil")) return;
+    render();
+  }catch(e){}
+}
+function armerMinuit(){
+  try{
+    clearTimeout(minuitT);
+    const d = new Date();
+    const minuit = new Date(d.getFullYear(), d.getMonth(), d.getDate() + 1, 0, 0, 3);
+    minuitT = setTimeout(()=>{ verifierJour(); armerMinuit(); }, Math.max(1000, minuit - d));
+  }catch(e){}
+}
+try{
+  document.addEventListener("visibilitychange", ()=>{ if(document.visibilityState === "visible") verifierJour(); });
+  window.addEventListener("pageshow", verifierJour);
+  window.addEventListener("focus", verifierJour);
+  armerMinuit();
+}catch(e){}
 /* LES JOURS DÉJÀ FAITS, SANS RIEN STOCKER DE NEUF.
    Une série est par définition une suite de jours CONSÉCUTIFS qui se termine
    au dernier défi joué : « last » et « streak » suffisent donc à retrouver
