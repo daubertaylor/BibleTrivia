@@ -81,12 +81,23 @@ qu'une fois : la pastille « flamme + nombre » de la carte du Défi
 s'efface là où la bande existe, et reparaît sur les petits écrans, où la
 bande n'a pas de place.
 
-**Cases carrées, rangée pleine largeur (v160).** Étirées en `flex:1`
-elles faisaient 47 px de large : « trop gros ». C'est la RANGÉE qui doit
-tenir la colonne, pas chaque case — `space-between` avec des cases de
-34 px suffit, la bande reste occupée d'un bord à l'autre.
+**RETOUR À LA FORME D'ORIGINE (v161).** Deux essais ont voulu lui faire
+occuper toute la colonne : cases étirées à 47 px (v158, « trop gros »),
+puis cases carrées mais réparties d'un bord à l'autre (v160). Taylor
+préfère nettement la forme de départ — une grappe COMPACTE et centrée.
+La leçon vaut d'être écrite : **le pied de l'accueil n'est pas une carte
+de plus.** C'est une note en bas de page, et une note se lit resserrée ;
+lui donner le poids des cartes au-dessus, c'est lui donner une
+importance qu'elle n'a pas.
 
-**Elle occupe toute la colonne (v158).** Sept cases carrées centrées
+Un seul ajout des essais est gardé : la série dite en toutes lettres,
+posée sur la MÊME ligne centrée que l'intitulé, séparée d'un point
+médian. Sans elle, sept lettres et quatre cases dorées ne disent pas
+d'eux-mêmes qu'on tient une série de quatre jours ; avec elle, rien ne
+s'élargit.
+
+*(Historique conservé pour mémoire :)* **Elle occupait toute la colonne
+(v158).** Sept cases carrées centrées
 mesuraient 275 px sous une colonne de cartes de 370 : 48 px de vide de
 chaque côté, et le pied de l'écran se lisait comme une petite grappe
 oubliée — le « ça fait vide » de Taylor. Les cases s'étirent maintenant
