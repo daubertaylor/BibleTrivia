@@ -286,6 +286,26 @@ pour la première fois.
 Règles absolues posées par Taylor. Un état se dit par un fond, une
 encre, une coche — jamais par un trait, de quelque couleur qu'il soit.
 
+**Le quatrième test, celui de l'UNIFORMITÉ** (`banc-essai/anneau.js` +
+`anneau2.py`) : il mesure, sur toutes les surfaces de douze vues, le
+PREMIER pixel CSS du bord comparé à l'intérieur de la surface 3 à 6 px
+plus loin — exactement la bande que `overflow:clip` laissait sans
+peinture. Il ne juge que des surfaces plates et bien visibles : un
+cercle n'a pas d'arête droite au milieu de ses côtés, et une carte
+repliée à opacité nulle n'est pas à l'écran.
+
+Bilan mesuré, 59 surfaces sur 12 vues :
+
+| | anneau ≥ 12 | pire écart |
+|---|---|---|
+| sans `overflow-clip-margin` | **30 sur 59** | 192 |
+| avec (v163) | **0** | 6,2 |
+
+*(Deux surfaces ressortent encore dans le listing — une carte de
+l'accueil à moitié cachée sous une feuille ouverte : ce qui est mesuré
+est le bord de la FEUILLE qui la traverse, pas un anneau. Preuve : la
+valeur est identique avec et sans le correctif.)*
+
 Trois tests, trois angles, parce qu'un rebord peut échapper à deux
 d'entre eux :
 
