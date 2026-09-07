@@ -6,7 +6,7 @@ s'éteindre alors qu'elle est encore rattrapable. Rien d'autre ne le mérite.
 Tant que la clé publique n'est pas renseignée, **aucun réglage n'apparaît** dans
 le jeu — mieux vaut ne rien proposer qu'un interrupteur qui ne fait rien.
 
-## Les trois étapes
+## Les quatre étapes
 
 **1. Créer la table** — coller `table.sql` dans l'éditeur SQL de Supabase.
 
@@ -25,9 +25,9 @@ La clé **privée** ne quitte jamais le serveur.
     supabase functions deploy rappel-serie
     supabase secrets set VAPID_PUBLIQUE="…" VAPID_PRIVEE="…" VAPID_SUJET="mailto:ton@adresse.fr"
 
-Puis la programmer **toutes les heures** (Supabase → Database → Cron) :
-
-    0 * * * *   →   appel de la fonction rappel-serie
+**4. La programmer toutes les heures** — coller `cron.sql` dans l'éditeur SQL
+(l'URL du projet y est déjà ; il ne reste que la clé `service_role` à mettre).
+Ou passer par Supabase → Database → Cron, avec `0 * * * *`.
 
 Elle tourne toutes les heures parce que les joueurs ne sont pas tous dans le
 même fuseau : à chaque passage, elle ne réveille que ceux chez qui il est 19 h.
