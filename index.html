@@ -1021,16 +1021,20 @@
   .text-input,.code-input{ width:100%; background:rgba(255,255,255,0.68); backdrop-filter:blur(14px) saturate(180%); -webkit-backdrop-filter:blur(14px) saturate(180%); border:1px solid var(--bord); border-radius:var(--r-s); padding:0.78rem 0.9rem; font-size:0.95rem; color:var(--ink); font-family:'Inter',sans-serif; }
   .text-input:focus,.code-input:focus{ outline:none; border-color:var(--primary); }
   .code-input{ text-align:center; font-family:'Poppins',sans-serif; font-weight:700; font-size:1.7rem; letter-spacing:0.42rem; text-transform:uppercase; }
-  /* NI CENTRÉES, NI TASSÉES À GAUCHE : SUR TOUTE LA LARGEUR.
-     Centrées, elles ne s'alignaient sur rien — ni sur leur étiquette, ni sur
-     le champ juste au-dessus, et la colonne se lisait en deux morceaux. Tassées
-     à gauche, elles s'arrêtaient à 68 % de la largeur et laissaient un vide à
-     droite entre un champ pleine largeur et un bouton pleine largeur.
-     Réparties, la rangée commence et finit exactement où commencent et
-     finissent le champ et le bouton : la colonne n'a plus qu'un bord gauche et
-     un bord droit, du haut en bas de l'écran. C'est aussi la façon dont iOS
-     pose ses propres nuanciers. */
-  .color-row{ display:flex; gap:0.6rem; justify-content:space-between; flex-wrap:wrap; }
+  /* LA COULEUR EST UN CHAMP, PAS SIX OBJETS POSÉS SUR LA PHOTO.
+     Réparties sur toute la largeur, les six pastilles s'alignaient bien — mais
+     six disques saturés de 44 px directement sur le décor, tous du même poids,
+     ça fait un pavage, pas un réglage. Juste au-dessus, « Nom affiché » est un
+     vrai champ : crème, plein cadre, coins arrondis. « Couleur » en est un
+     aussi, désormais — même surface, même rayon, même largeur. Les deux lignes
+     du formulaire se répondent, et les pastilles redeviennent le CONTENU d'un
+     champ au lieu d'être posées à même le paysage.
+     Sur cette crème elles n'ont plus besoin de peser : le disque visible perd
+     8 px et son ombre, mais le bouton garde ses 44 px — c'est le remplissage
+     qui rétrécit, pas la cible du doigt (voir background-clip). */
+  .color-row{ display:flex; gap:0.5rem; justify-content:space-between; align-items:center;
+    background:rgb(252,248,241); border-radius:var(--r-s); padding:0.42rem 0.6rem;
+    box-shadow:var(--rebord); }
   /* LA PASTILLE DE COULEUR EST UNE COULEUR, PAS UNE COULEUR ENCADRÉE.
      Chaque pastille portait un anneau blanc de 2px plus une lèvre blanche
      interne ; la retenue y ajoutait un anneau plein #fff ET un halo de 3px,
@@ -1052,18 +1056,20 @@
      luminance au-dessus de la pastille — de loin le contour le plus voyant du
      jeu, sur un bouton. La coche dit la même chose à l'intérieur, sans rien
      cerner, et c'est déjà le langage de la liste des versions de la Bible. */
-  .color-dot{ width:2.65rem; height:2.65rem; border-radius:50%; border:0 solid transparent; background-clip:padding-box;
+  .color-dot{ width:2.65rem; height:2.65rem; border-radius:50%; border:0 solid transparent;
+    padding:0.24rem; background-clip:content-box;
     display:flex; align-items:center; justify-content:center;
-    box-shadow:0 2px 7px rgba(15,12,10,0.20); transition:box-shadow 0.24s ease, transform 0.24s cubic-bezier(0.32,0.72,0,1); }
+    box-shadow:none; transition:box-shadow 0.24s ease, padding 0.24s cubic-bezier(0.32,0.72,0,1); }
   .cd-ck{ width:1.15rem; height:1.15rem; color:#fff; display:inline-flex; opacity:0; transform:scale(0.5);
     filter:drop-shadow(0 1px 1.5px rgba(50,28,6,0.45));
     transition:opacity 0.16s ease-out, transform var(--tr-ouvre); pointer-events:none; }
   .cd-ck svg{ width:100%; height:100%; }
   .color-dot.sel .cd-ck{ opacity:1; transform:scale(1); }
-  /* Pas d'agrandissement : la pastille sélectionnée déborderait d'un pixel
-     de son emplacement et casserait l'alignement de la rangée sur le champ.
-     La coche dit la sélection, l'ombre un peu plus dense la fait avancer. */
-  .color-dot.sel{ box-shadow:0 3px 11px rgba(15,12,10,0.3); }
+  /* La pastille choisie ne grandit pas — elle ne déborderait pas de son
+     emplacement, mais elle casserait l'alignement de la rangée. C'est son
+     REMPLISSAGE qui s'ouvre : le disque gagne les 4 px que les autres gardent
+     en marge, la coche s'allume, et la cible du doigt ne bouge pas. */
+  .color-dot.sel{ padding:0.08rem; }
   .btn-ghost{ width:100%; border:1px solid var(--bord); color:var(--ink); border-radius:var(--r-m); padding:0.8rem; font-weight:700; font-size:0.9rem; }
 
   .online-hero{ text-align:center; padding:0.7rem 1rem var(--e-3); }
