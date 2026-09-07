@@ -1532,7 +1532,27 @@
      peint SOUS la bordure (background-clip vaut border-box par défaut), donc il
      bouche exactement l'anneau que .gs ne couvre pas. Au centre, .gs est opaque
      et le recouvre : rien ne change. */
-  html.gl-xf .has-gs{ background-image:none; backdrop-filter:none; -webkit-backdrop-filter:none; }
+  /* LE CHEVEU TRANSPARENT DU BORD : BOUCHÉ POUR DE BON.
+     Chaque surface porte border:1px solid transparent (box-sizing en
+     border-box : c'est ce qui garde la géométrie exacte). Mais la couche .gs
+     est découpée par overflow:clip, et overflow découpe sur la boîte de
+     PADDING — ce cheveu d'un pixel n'était peint par PERSONNE, et on voyait
+     donc à travers, jusqu'au vrai décor. Sur une feuille de réglages posée
+     sur un fond assombri, l'écart est énorme : intérieur mesuré à L=215,
+     anneau à L=37. C'est le « bord transparent » que Taylor voit.
+     overflow-clip-margin:1px étend la découpe d'exactement l'épaisseur de la
+     bordure : le rayon suit (la boîte de padding gonflée de 1 px retrouve le
+     rayon de la boîte de bordure), et .gs, qui est bien plus grande que la
+     surface, peint enfin l'anneau avec la MÊME matière que l'intérieur.
+     Résultat mesuré : l'anneau passe de 37 à 215 — il disparaît.
+     Une seule précaution : .glass-rim porte une ombre PORTÉE (--rim-cast) qui
+     était jusqu'ici entièrement rognée par la découpe. L'élargir la ferait
+     apparaître dans l'anneau, en trait sombre (mesuré 236 au lieu de 248 sur
+     un bouton de réponse). On la retire donc en voie XF : l'ombre visible des
+     surfaces vient de --mon-rebord, portée par la surface elle-même, hors
+     découpe. */
+  html.gl-xf .has-gs{ background-image:none; overflow-clip-margin:1px; backdrop-filter:none; -webkit-backdrop-filter:none; }
+  html.gl-xf .glass-rim{ box-shadow:none; }
   /* ... ET ON REND LA TEINTE À LA SURFACE ELLE-MÊME, LÀ OÙ ELLE EST PLEINE.
      Un background-color est peint SOUS la bordure (background-clip vaut
      border-box par défaut) : il bouche donc exactement l'anneau que .gs ne

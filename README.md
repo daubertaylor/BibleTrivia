@@ -233,6 +233,36 @@ Sonde dédiée : `scratchpad/n1/pleins.js` + `pleins.py` (pic clair sur les
 quatre arêtes des boutons pleins, médiane de neuf sondes par arête).
 `modal-btn.ok` : 5,8 -> 0,0.
 
+**LE CHEVEU TRANSPARENT DU BORD (v163).** Chaque surface porte
+`border:1px solid transparent` — `box-sizing` est en `border-box`, c'est
+ce qui garde la géométrie exacte. Mais la couche `.gs` est découpée par
+`overflow:clip`, et `overflow` découpe sur la boîte de **padding** : ce
+cheveu d'un pixel n'était peint par personne, et on voyait à travers,
+jusqu'au vrai décor. Sur une feuille de réglages posée sur un fond
+assombri, l'écart est énorme — intérieur mesuré à **L=215**, anneau à
+**L=37**. C'est le « bord transparent » que Taylor voyait dans les
+Réglages.
+
+`overflow-clip-margin:1px` étend la découpe d'exactement l'épaisseur de
+la bordure. Le rayon suit (la boîte de padding gonflée d'1 px retrouve
+le rayon de la boîte de bordure), et `.gs`, bien plus grande que la
+surface, peint enfin l'anneau avec la MÊME matière que l'intérieur :
+l'anneau passe de 37 à 215, il disparaît.
+
+Une précaution : `.glass-rim` porte une ombre portée (`--rim-cast`) qui
+était jusque-là **entièrement rognée** par la découpe. L'élargir la
+ferait apparaître dans l'anneau, en trait sombre (mesuré 236 au lieu de
+248 sur un bouton de réponse). On la retire donc en voie XF — l'ombre
+visible des surfaces vient de `--mon-rebord`, portée par la surface
+elle-même, hors découpe.
+
+C'est le troisième et dernier visage du même bug : d'abord vu en clair
+sur les boutons de modale (v160, bouché au `background-color`), puis en
+sombre sur les feuilles. La cause était identique.
+*(`overflow-clip-margin` demande Safari 16+ ; plus ancien, la
+déclaration est ignorée et on retrouve le comportement d'avant — aucune
+régression possible.)*
+
 **LA LÈVRE BLANCHE EST SUPPRIMÉE (v160).** `--levre` posait un trait blanc
 d'un pixel sur l'arête haute de CHAQUE surface. Mesuré sur la capture de
 Taylor : 13 unités de luminance au-dessus de l'intérieur de la carte ;
