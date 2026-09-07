@@ -81,6 +81,11 @@ qu'une fois : la pastille « flamme + nombre » de la carte du Défi
 s'efface là où la bande existe, et reparaît sur les petits écrans, où la
 bande n'a pas de place.
 
+**Cases carrées, rangée pleine largeur (v160).** Étirées en `flex:1`
+elles faisaient 47 px de large : « trop gros ». C'est la RANGÉE qui doit
+tenir la colonne, pas chaque case — `space-between` avec des cases de
+34 px suffit, la bande reste occupée d'un bord à l'autre.
+
 **Elle occupe toute la colonne (v158).** Sept cases carrées centrées
 mesuraient 275 px sous une colonne de cartes de 370 : 48 px de vide de
 chaque côté, et le pied de l'écran se lisait comme une petite grappe
@@ -179,6 +184,62 @@ substituer :
    zones système retirées, mesuré en JS (`mesurerHauteurUtile`). Tout ce
    qui doit céder quand la place manque s'y accroche, avec la taille
    actuelle comme plafond.
+
+**Le « bord blanc » peut être un TROU, pas de la peinture (v160).** Toutes
+les surfaces portent `border:1px solid transparent` — un reste utile,
+puisque `box-sizing` est en `border-box` et que cette bordure garde la
+géométrie exacte. Mais la couche de flou `.gs` est découpée par
+`overflow:clip`, et `overflow` découpe sur la boîte de PADDING : le
+cheveu d'un pixel de la bordure n'est peint par personne. Sur une carte
+crème, un bouton corail laissait donc voir la carte tout autour de lui —
+mesuré sur la capture de Taylor : L=208 juste au-dessus du bouton contre
+201 pour la carte, et un liseré complet en bas et sur les côtés.
+
+Correctif : rendre la teinte à la surface elle-même. Un
+`background-color` est peint SOUS la bordure (`background-clip` vaut
+`border-box` par défaut), donc il bouche exactement l'anneau.
+
+Deux garde-fous appris en le faisant :
+
+- **Seulement les teintes OPAQUES.** Sur une teinte translucide, le
+  décor qui passe par l'anneau a déjà, à l'œil, la couleur du flou
+  teinté (mesuré : 208,8 dans l'anneau contre 210,8 dedans). Lui donner
+  la teinte à plat le rend au contraire VISIBLE (233,7). Le premier jet,
+  appliqué à toutes les surfaces, a créé un liseré sur `.icon-btn` — le
+  détecteur de traits clairs l'a attrapé tout de suite.
+- **La liste se mesure, elle ne se devine pas.**
+  `scratchpad/n1/fonds.js` balaie dix vues et sort les surfaces ayant À
+  LA FOIS une teinte opaque et un fond vide : il y en a exactement
+  trois, toutes des boutons de modale. Partout ailleurs la surface pose
+  déjà son fond.
+
+`overflow-clip-margin:border-box` a aussi été essayé : la découpe
+s'étend bien jusqu'à la bordure, mais elle découvre du même coup l'ombre
+portée du `.glass-rim`, jusque-là rognée — l'anneau devient un trait
+SOMBRE (236 au lieu de 248). Rejeté.
+
+Sonde dédiée : `scratchpad/n1/pleins.js` + `pleins.py` (pic clair sur les
+quatre arêtes des boutons pleins, médiane de neuf sondes par arête).
+`modal-btn.ok` : 5,8 -> 0,0.
+
+**LA LÈVRE BLANCHE EST SUPPRIMÉE (v160).** `--levre` posait un trait blanc
+d'un pixel sur l'arête haute de CHAQUE surface. Mesuré sur la capture de
+Taylor : 13 unités de luminance au-dessus de l'intérieur de la carte ;
+mesuré en interne : +6,5 sur les cartes de mode, +18,2 sur le Défi du
+jour, +21,2 sur Progression. C'est ce qu'il a montré du doigt quatre
+fois de suite. `--levre` et `--levre-pleine` valent maintenant
+`transparent` — après, le pic tombe à +0,7 / +1,1 / +0,0
+(`scratchpad/n1/levre.js` + `levre2.py`, qui cherche la marche du bord
+puis compare la lèvre à l'INTÉRIEUR de la surface, pas au décor).
+
+La pastille d'objectif VERROUILLÉE a perdu la sienne aussi : désaturée à
+14 % et posée à 62 % d'opacité, son reflet ne restait qu'un trait blanc
+sur du gris (9,9 — le plus voyant du jeu une fois les surfaces
+traitées). Les pastilles COLORÉES gardent le leur : là, c'est de la
+lumière de matière, pas un contour.
+
+Résultat : **aucun trait clair au-dessus de 4 nulle part dans le jeu**,
+pour la première fois.
 
 **Aucun rebord coloré, nulle part. Aucun contour blanc non plus.**
 Règles absolues posées par Taylor. Un état se dit par un fond, une

@@ -75,7 +75,14 @@
        ténu que la lumière accroche sur son arête haute, et son ombre.
        L'anneau reste déclaré (et transparent) pour ne rien déplacer. */
     --bord:transparent;
-    --levre:rgba(255,255,255,0.30);
+    /* LA LÈVRE BLANCHE : SUPPRIMÉE. C'était le dernier blanc DESSINÉ du jeu —
+       un trait d'un pixel sur l'arête haute de chaque surface. Mesuré sur la
+       capture de Taylor : 13 unités de luminance au-dessus de l'intérieur de
+       la carte, et jusqu'à 21 en interne sur le Défi du jour et Progression.
+       C'est exactement ce qu'il a montré du doigt, quatre fois. Le verre ne
+       perd rien : il reste le flou, la teinte, le filet sombre et l'ombre
+       portée — mesuré après, le pic tombe à moins de 1,1 partout. */
+    --levre:transparent;
     /* SURFACES PLEINES ET COLORÉES : le même liseré, mais plus discret encore.
        Un blanc à 0,20 se voit à peine sur une crème ; sur un corail saturé ou
        un avatar de couleur, le même blanc devient un TRAIT — c'est le contour
@@ -84,7 +91,7 @@
        donc un --bord INVALIDE, ce qui supprimait leur bordure entière. Le
        résultat semblait juste, par accident.) */
     --bord-plein:rgba(255,255,255,0.16);
-    --levre-pleine:rgba(255,255,255,0.18);
+    --levre-pleine:transparent;
     /* UN FILET SOMBRE, PAS UN CONTOUR BLANC AFFAIBLI. Le blanc à 0,20 posé sur
        une surface crème ne délimite plus rien : « quasiment invisible, mais pas
        assez subtil ». Une délimitation propre et discrète n'est pas un trait
@@ -454,10 +461,12 @@
      centrées mesuraient 275 px sous une colonne de cartes de 370 : 48 px de
      vide de chaque côté, et le pied de l'accueil se lisait comme une petite
      grappe oubliée sous une page pleine — c'est le « ça fait vide » de Taylor.
-     Les cases s'étirent maintenant sur la MÊME colonne que les cartes (flex:1) :
-     la bande basse est occupée d'un bord à l'autre, sans un pixel de hauteur en
-     plus — l'accueil du 14 Pro tient à zéro près (mesuré : +1 px de haut sur les
-     cases et il déborde), donc tout le gain devait venir de la largeur.
+     La rangée s'étale maintenant sur la MÊME colonne que les cartes, mais les
+     cases restent CARRÉES : étirées en flex:1 elles faisaient 47 px de large
+     et Taylor les a trouvées « trop grosses ». C'est la rangée qui doit tenir
+     la colonne, pas chaque case — space-between suffit, et la bande basse est
+     occupée d'un bord à l'autre sans un pixel de hauteur en plus (l'accueil du
+     14 Pro tient à zéro près : +1 px sur la hauteur des cases et il déborde).
      La ligne de titre reprend la mise en page des en-têtes de la Progression
      (« Objectifs 9/16 ») : intitulé à gauche, chiffre à droite. La série y est
      dite en toutes lettres — sans elle, sept lettres et trois cases dorées ne
@@ -466,8 +475,8 @@
   .sem-h{ display:flex; align-items:baseline; justify-content:space-between; gap:0.6rem; padding:0 0.2rem; }
   .sem-t{ font-family:'Poppins',sans-serif; font-size:0.6rem; font-weight:600; letter-spacing:0.09em; text-transform:uppercase; color:rgba(255,255,255,0.72); text-shadow:0 1px 8px rgba(0,0,0,0.5); }
   .sem-n{ font-family:'Poppins',sans-serif; font-size:0.6rem; font-weight:700; letter-spacing:0.06em; text-transform:uppercase; color:rgba(255,201,90,0.92); text-shadow:0 1px 8px rgba(0,0,0,0.55); white-space:nowrap; }
-  .sem-j{ display:flex; gap:0.4rem; }
-  .sj{ flex:1 1 0; min-width:0; height:2.05rem; border-radius:var(--r-s); display:flex; align-items:center; justify-content:center;
+  .sem-j{ display:flex; gap:0.4rem; justify-content:space-between; }
+  .sj{ width:2.05rem; height:2.05rem; flex:0 0 auto; border-radius:var(--r-s); display:flex; align-items:center; justify-content:center;
     font-family:'Poppins',sans-serif; font-size:0.72rem; font-weight:700; letter-spacing:0.01em;
     color:rgba(255,255,255,0.78); background:rgba(255,255,255,0.15);
     backdrop-filter:blur(12px) saturate(160%); -webkit-backdrop-filter:blur(12px) saturate(160%); }
@@ -807,7 +816,12 @@
      au milieu d'une colonne alignée, et l'œil le voit tout de suite. */
   .btn-review{ width:100%; margin:0 0 var(--e-2); display:flex; align-items:center; justify-content:center; gap:0.5rem; color:var(--ink); border:1px solid var(--bord); border-radius:var(--r-m); padding:0.85rem 1.1rem; font-weight:700; font-size:0.95rem; }
   .btn-review .ico{ width:1.5rem; height:1.5rem; color:var(--primary); flex-shrink:0; }
-  .review-sheet .rev-list{ max-height:calc(54 * var(--uh)); overflow-y:auto; margin:0.3rem 0 0.2rem; display:flex; flex-direction:column; gap:0.65rem; -webkit-overflow-scrolling:touch; }
+  /* La hauteur de la liste se mesurait en --uh (hauteur de l'ÉCRAN). Or la
+     feuille vit dans la hauteur UTILE : encoche, barre d'accueil et barre
+     d'adresse du navigateur en moins. Sur un iPhone posé sur l'écran
+     d'accueil, 54 % de l'écran, c'est 60 % de ce qui reste vraiment. On passe
+     donc à --hu, la seule mesure qui tient compte du terrain réel. */
+  .review-sheet .rev-list{ max-height:calc(54 * var(--hu)); overflow-y:auto; margin:0.3rem 0 0.2rem; display:flex; flex-direction:column; gap:0.65rem; -webkit-overflow-scrolling:touch; }
   /* flex-shrink:0 indispensable : .rev-list est une colonne flex avec
      max-height+overflow-y:auto (défilement voulu au-delà de calc(54 * var(--uh))), mais un
      enfant flex se rétrécit par défaut (flex-shrink:1) pour tenir dans le
@@ -815,6 +829,11 @@
      plusieurs questions ratées, chaque carte était écrasée en dessous de la
      hauteur de son propre contenu, coupant net la bonne réponse et
      l'anecdote (masquées par l'overflow:hidden du verre). */
+  /* Le compte des erreurs se dit comme « Objectifs 9/16 » sur la Progression :
+     à droite du titre, plus petit, plus discret. On sait d'un coup d'œil s'il
+     reste beaucoup à lire sous ce qui dépasse en bas. */
+  .review-sheet .sheet-title{ display:flex; align-items:baseline; }
+  .review-sheet .sheet-title small{ margin-left:auto; font-family:'Poppins',sans-serif; font-size:0.85rem; font-weight:700; color:var(--ink-soft); }
   .rev-item{ text-align:left; border-radius:var(--r-m); border:1px solid var(--bord); --rim-cast:0 5px 14px rgba(34,26,16,0.12); padding:0.8rem 0.9rem; flex-shrink:0; }
   .rev-q{ font-weight:700; color:var(--ink); font-size:0.92rem; margin-bottom:0.5rem; line-height:1.35; }
   .rev-a{ display:flex; align-items:center; gap:0.45rem; font-size:0.88rem; font-weight:600; margin-top:0.18rem; }
@@ -1502,7 +1521,40 @@
      contour, contre 91 dehors et 47 dedans. Taylor l'a vu tout de suite.
      La couche porte déjà le flou ET la teinte : le filtre n'a plus rien à
      faire ici. */
+  /* LE « BORD BLANC » DES BOUTONS PLEINS N'EST PAS DE LA PEINTURE, C'EST UN TROU.
+     Toutes les surfaces portent border:1px solid transparent — un reste utile :
+     box-sizing est en border-box, donc cette bordure garde la géométrie exacte
+     quoi qu'il arrive. Mais la couche .gs, elle, est découpée par overflow:hidden,
+     et overflow découpe sur la boîte de PADDING : le cheveu d'un pixel de la
+     bordure n'est peint par PERSONNE. Sur une carte crème, un bouton orange
+     laisse donc voir la carte tout autour de lui — mesuré sur la capture de
+     Taylor : L=208 juste au-dessus du bouton contre 201 pour la carte, et un
+     liseré clair complet en bas et sur les côtés. Ce n'est pas un rebord blanc
+     dessiné, c'est le décor qui passe à travers.
+     On rend donc la teinte à la surface elle-même : un background-color est
+     peint SOUS la bordure (background-clip vaut border-box par défaut), donc il
+     bouche exactement l'anneau que .gs ne couvre pas. Au centre, .gs est opaque
+     et le recouvre : rien ne change. */
   html.gl-xf .has-gs{ background-image:none; backdrop-filter:none; -webkit-backdrop-filter:none; }
+  /* ... ET ON REND LA TEINTE À LA SURFACE ELLE-MÊME, LÀ OÙ ELLE EST PLEINE.
+     Un background-color est peint SOUS la bordure (background-clip vaut
+     border-box par défaut) : il bouche donc exactement l'anneau que .gs ne
+     couvre pas.
+     Uniquement les boutons de modale, et c'est vérifié, pas supposé : un
+     balayage des dix vues (scratchpad/n1/fonds.js) cherche les surfaces qui
+     ont À LA FOIS une teinte OPAQUE et un fond vide — les seules où le trou
+     puisse se voir. Il en sort exactement trois, toutes ici : « Fermer » /
+     « Rester » (corail) et « Quitter » (crème). Partout ailleurs la surface
+     pose déjà son fond, donc l'anneau est déjà bouché.
+     Les surfaces à teinte TRANSLUCIDE sont volontairement laissées de côté :
+     là, le décor qui passe par l'anneau a déjà, à l'œil, la couleur du flou
+     teinté (mesuré : 208,8 dans l'anneau contre 210,8 dedans). Leur donner la
+     teinte à plat les rendrait au contraire visibles (233,7 — un vrai trait).
+     Testé aussi : overflow-clip-margin:border-box, qui étend la découpe
+     jusqu'à la bordure. Ça marche, mais ça découvre du même coup l'ombre
+     portée du .glass-rim, jusque-là rognée — l'anneau devient un trait SOMBRE
+     (236 au lieu de 248). Rejeté. */
+  html.gl-xf :is(.modal-btn.ok, .modal-btn.cancel.keep).has-gs{ background-color:var(--glass-tint); }
   /* Exception : « Guide ». La règle ci-dessus efface le fond des surfaces de
      verre, puisque c'est la couche .gs qui peint. Mais ce galet-là est OPAQUE —
      son dégradé N'EST PAS du verre, c'est sa matière, la même que les pastilles
@@ -1668,7 +1720,11 @@
      avec un décalage. */
   .ach-card{ padding:0.62rem 0.7rem 0.55rem; margin-bottom:0; }
   .ach-grid{ display:grid; grid-template-columns:repeat(4, 1fr); gap:0.45rem 0.35rem; }
-  .ach{ display:flex; flex-direction:column; align-items:center; text-align:center; gap:0.3rem; background:none; border:none; padding:0; font:inherit; color:inherit; cursor:pointer; -webkit-tap-highlight-color:transparent; }
+  /* L'onde d'appui (button::before) hérite du border-radius de son bouton.
+     .ach n'en avait aucun : l'onde sortait donc en CARRÉ net autour de la
+     pastille et de son nom — le seul appui à angle droit du jeu. On lui donne
+     le rayon des autres surfaces ; la géométrie ne bouge pas d'un pixel. */
+  .ach{ display:flex; flex-direction:column; align-items:center; text-align:center; gap:0.3rem; background:none; border:none; padding:0; border-radius:var(--r-m); font:inherit; color:inherit; cursor:pointer; -webkit-tap-highlight-color:transparent; }
   .ach-tile{ transition:transform 0.14s cubic-bezier(0.34,1.4,0.6,1); }
   .ach:active .ach-tile{ transform:scale(0.9); }
   .ach-tile{ position:relative; width:2.6rem; height:2.6rem; border-radius:var(--r-s); display:flex; align-items:center; justify-content:center; color:#fff; box-shadow:inset 0 1px 0 rgba(255,255,255,0.26), 0 2px 7px rgba(15,12,10,0.24); }
@@ -1679,7 +1735,12 @@
      autocollant sur une vignette, seize fois de suite. La grille se lit
      maintenant d'un seul regard : la couleur EST la récompense. Un objectif
      encore à atteindre reste lisible, simplement éteint. */
-  .ach.off .ach-tile{ filter:saturate(0.14) brightness(1.04); opacity:0.62; box-shadow:inset 0 1px 0 rgba(255,255,255,0.24), 0 1px 3px rgba(15,12,10,0.1); }
+  /* La pastille VERROUILLÉE perd aussi sa lèvre. Sur une pastille colorée, ce
+     reflet est une lumière de matière ; désaturée à 14 % et posée à 62 %
+     d'opacité, il ne reste qu'un trait blanc sur du gris — mesuré 9,9, le plus
+     voyant du jeu une fois la lèvre des surfaces retirée. Les pastilles
+     colorées, elles, gardent le leur : là, c'est bien de la lumière. */
+  .ach.off .ach-tile{ filter:saturate(0.14) brightness(1.04); opacity:0.62; box-shadow:0 1px 3px rgba(15,12,10,0.1); }
   .ach.off .ach-nm{ color:var(--ink-soft); }
   .ach-tile.c-coral{ background:linear-gradient(150deg, #F44E2C, #DE3616); box-shadow:inset 0 1px 0 rgba(255,255,255,0.26), 0 2px 7px rgba(214,71,44,0.24); }
   .ach-tile.c-gold{ background:linear-gradient(150deg, #FFC64F, #F09A18); box-shadow:inset 0 1px 0 rgba(255,255,255,0.26), 0 2px 7px rgba(206,138,42,0.24); }
@@ -4374,7 +4435,7 @@ function updateOnlineLobby(){
   const plbl = n > 1 ? "connectés" : "connecté"; // « En ligne » est déjà le titre au-dessus
   if(lbl && lbl.textContent !== plbl) lbl.textContent = plbl;
   const op = document.querySelector(".searching-card .opp-progress");
-  if(op){ const f = freshLookers(); op.textContent = f>0 ? (f+" autre"+(f>1?"s":"")+" en recherche…") : "Tu es dans la file du tirage au sort — dès qu'un joueur cherche aussi, un adversaire t'est attribué au hasard."; }
+  if(op){ const f = freshLookers(); op.textContent = f>0 ? (f+" autre"+(f>1?"s":"")+" en recherche…") : "Dès qu'un autre joueur cherche, la partie démarre."; }
 }
 function updateRoomOpponent(){
   const slot = document.getElementById("oppSlot");
@@ -5737,7 +5798,7 @@ function openMissedReview(list){
   veil.innerHTML = `
     <div class="settings-sheet review-sheet" role="dialog" aria-label="Revoir mes erreurs">
       <button class="sheet-grab" aria-label="Fermer" onclick="closeMissedReview()"></button>
-      <div class="sheet-title"><span class="st-ico">${ICONS.bookOpen}</span>Revoir mes erreurs</div>
+      <div class="sheet-title"><span class="st-ico">${ICONS.bookOpen}</span>Revoir mes erreurs<small>${missed.length}</small></div>
       <div class="rev-list">${items}</div>
     </div>`;
   document.body.appendChild(veil);
@@ -8258,7 +8319,13 @@ function openAchInfo(id){
   const a = ACHIEVEMENTS.find(x=>x.id===id); if(!a) return;
   const p = loadProgress(), d = achDerived(p);
   const on = !!p.ach[a.id], cur = a.cur(p,d);
-  const pct = Math.max(0, Math.min(100, Math.round((cur/a.max)*100)));
+  /* UN OBJECTIF DÉBLOQUÉ A UNE BARRE PLEINE, POINT.
+     a.cur() rend la valeur du MOMENT, pas celle du jour où l'objectif a été
+     gagné : « Fidèle » (7 jours d'affilée) restait débloqué à vie, mais la
+     barre retombait à 4/7 dès que la série repartait de zéro. On lisait donc
+     « Objectif débloqué » sous une barre à moitié vide. Un objectif ne se
+     reperd jamais : une fois gagné, la barre est pleine. */
+  const pct = on ? 100 : Math.max(0, Math.min(100, Math.round((cur/a.max)*100)));
   closeModal();
   const veil = document.createElement("div");
   veil.className = "modal-veil"; veil.id = "modalVeil";
@@ -9548,24 +9615,33 @@ function renderOnline(){
       <div class="searching-card${searchNew?' reveal-in':''}">
         <div class="spinner"></div>
         <div class="searching-txt">Recherche d'un adversaire…</div>
-        <div class="opp-progress">${freshLookers()>0?(freshLookers()+" autre"+(freshLookers()>1?"s":"")+" en recherche…"):"Tu es dans la file du tirage au sort — dès qu'un joueur cherche aussi, un adversaire t'est attribué au hasard."}</div>
+        <div class="opp-progress">${freshLookers()>0?(freshLookers()+" autre"+(freshLookers()>1?"s":"")+" en recherche…"):"Dès qu'un autre joueur cherche, la partie démarre."}</div>
         <button class="btn-ghost btn-cancel" style="margin-top:1rem" onclick="setSearching(false)">Annuler</button>
       </div>
       <div class="flex-sp"></div>
     ` : `
+      <!-- MÊME LANGUE QUE L'ACCUEIL. Les trois lignes mélangeaient les registres :
+           une description (« Un adversaire tiré au sort pour toi »), puis deux
+           ordres (« Invite un ami… », « Entre le code… »). Les cartes de
+           l'accueil, elles, ne commandent jamais : elles DÉCRIVENT, en deux
+           segments séparés d'une virgule (« En équipes, sur un seul écran »,
+           « Jusqu'à 8 joueurs, en direct »). On reprend exactement cette
+           forme, et « Rejoindre » devient « Rejoindre une partie » pour
+           répondre à « Créer une partie ». La ligne d'attente disait la même
+           chose en trois fois plus long. -->
       <button class="online-action${actionsNew?' reveal-in':''}" style="--i:0" onclick="setSearching(true)">
         <span class="oa-ico r">${ICONS.bolt}</span>
-        <span class="oa-txt"><b>Partie aléatoire</b><small>Un adversaire tiré au sort pour toi</small></span>
+        <span class="oa-txt"><b>Partie aléatoire</b><small>Un adversaire au hasard, tout de suite</small></span>
         <span class="chev">${ICONS.chevronRight}</span>
       </button>
       <button class="online-action${actionsNew?' reveal-in':''}" style="--i:1" onclick="createRoomFlow()">
         <span class="oa-ico g">${ICONS.plusCircle}</span>
-        <span class="oa-txt"><b>Créer une partie</b><small>Invite un ami avec un code</small></span>
+        <span class="oa-txt"><b>Créer une partie</b><small>Un code à partager, jusqu'à 8 joueurs</small></span>
         <span class="chev">${ICONS.chevronRight}</span>
       </button>
       <button class="online-action${actionsNew?' reveal-in':''}" style="--i:2" onclick="state.screen='online-join';net.error='';render()">
         <span class="oa-ico b">${ICONS.users}</span>
-        <span class="oa-txt"><b>Rejoindre</b><small>Entre le code d'un ami</small></span>
+        <span class="oa-txt"><b>Rejoindre une partie</b><small>Avec le code reçu d'un ami</small></span>
         <span class="chev">${ICONS.chevronRight}</span>
       </button>
       <div class="flex-sp"></div>
