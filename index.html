@@ -1013,28 +1013,37 @@
      enfermer ensuite dans un champ crème n'a fait qu'ajouter un pavé blanc
      par-dessus le premier.
      On écrit maintenant background-COLOR (une longhand ne touche pas au clip) :
-     le disque visible fait 28 px, la cible du doigt en garde 44, et la rangée
+     le disque visible fait 31 px, la cible du doigt en garde 44, et la rangée
      respire sur la photo sans aucune surface pour la porter.
      La couleur retenue ne s'entoure de rien — ni anneau, ni cadre : elle
-     GRANDIT (28 -> 36 px) et porte la coche. La boîte, elle, ne bouge jamais,
+     GRANDIT (31 -> 38 px) et porte la coche. La boîte, elle, ne bouge jamais,
      c'est le remplissage qui s'ouvre : la rangée reste immobile au changement.
      L'ombre douce est celle des autres objets colorés du jeu ; elle pose les
      pastilles sur le paysage sans les cerner. */
-  /* La rangée déborde de la largeur du champ EXACTEMENT du remplissage de la
-     pastille retenue (0,26rem) : le disque choisi vient donc s'aligner au
-     pixel sur le bord du champ « Nom affiché » juste au-dessus, et les six
-     autres restent 4 px en retrait. Sans ce débord, toute la rangée flottait
-     8 px à l'intérieur de la colonne du formulaire. */
-  .color-row{ display:flex; gap:0; justify-content:space-between; align-items:center; margin:0 -0.26rem; }
+  /* SERRÉES, PAS ÉTALÉES. Réparties sur toute la largeur du champ, six
+     pastilles laissent forcément 42 px de vide entre elles : l'écart vaut
+     alors une pastille et demie et la rangée se lit comme six objets isolés,
+     pas comme un réglage. Et c'est arithmétique — l'écart vaut
+     (largeur - 6 x diamètre) / 5 : pour le resserrer à largeur constante il
+     faudrait des disques de 40 px, c'est-à-dire refaire le pavage.
+     La rangée n'occupe donc plus toute la largeur : c'est un GROUPE compact,
+     calé à gauche sur le « C » de Couleur et sur le bord du champ juste
+     au-dessus. L'écart tombe à 15 px pour 31 px de disque (moitié moins que
+     la pastille au lieu d'une fois et demie) et le vide à droite se lit comme
+     celui de n'importe quel réglage plus court que sa colonne.
+     Le retrait de 0,18rem est exactement le remplissage de la pastille
+     RETENUE : elle vient donc s'aligner au pixel sur le bord du champ, et
+     aucune ne déborde jamais de la colonne. */
+  .color-row{ display:flex; gap:0.12rem; justify-content:flex-start; align-items:center; margin-left:-0.18rem; }
   .color-dot{ width:2.65rem; height:2.65rem; border-radius:50%; border:0 solid transparent;
-    padding:0.5rem; background-clip:content-box;
+    padding:0.4rem; background-clip:content-box;
     display:flex; align-items:center; justify-content:center;
     box-shadow:none; filter:drop-shadow(0 1px 2px rgba(24,16,10,0.3));
     transition:padding 0.24s cubic-bezier(0.32,0.72,0,1); }
   .cd-ck{ width:1.15rem; height:1.15rem; color:#fff; display:inline-flex; opacity:0; transform:scale(0.5);
     transition:opacity 0.16s ease-out, transform var(--tr-ouvre); pointer-events:none; }
   .cd-ck svg{ width:100%; height:100%; }
-  .color-dot.sel{ padding:0.26rem; }
+  .color-dot.sel{ padding:0.18rem; }
   .color-dot.sel .cd-ck{ opacity:1; transform:scale(1); }
   .btn-ghost{ width:100%; border:1px solid var(--bord); color:var(--ink); border-radius:var(--r-m); padding:0.8rem; font-weight:700; font-size:0.9rem; }
 

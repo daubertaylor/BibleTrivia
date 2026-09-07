@@ -111,9 +111,19 @@ remplissage ne rognait donc rien, les six pastilles faisaient 44 px
 pleins et se touchaient presque (« ça fait pavé »). Les enfermer dans
 un champ crème n'a fait qu'ajouter un pavé blanc par-dessus (« encore
 pire »). Depuis la v156 le bouton écrit `background-color` (une
-longhand ne touche pas au clip) : disque visible de 28 px, cible de
-44 px, aucune surface pour les porter, et la couleur retenue GRANDIT à
-36 px avec sa coche au lieu de s'entourer de quoi que ce soit.
+longhand ne touche pas au clip) : disque visible, cible de 44 px,
+aucune surface pour les porter, et la couleur retenue GRANDIT avec sa
+coche au lieu de s'entourer de quoi que ce soit.
+
+Réparties sur toute la largeur du champ, elles étaient **trop
+espacées** (v157) : l'écart vaut `(largeur − 6 × diamètre) / 5`, donc
+42 px pour des disques de 28 — une fois et demie la pastille. Le
+resserrer à largeur constante demanderait des disques de 40 px,
+c'est-à-dire refaire le pavage. La rangée n'occupe donc plus toute la
+largeur : c'est un GROUPE compact calé à gauche sur l'étiquette et sur
+le bord du champ. Rapport écart/disque mesuré sur cinq appareils :
+0,48 à 0,52 (contre 1,39 à 1,50), une seule ligne partout,
+`scratchpad/n1/larg.js`.
 
 ---
 
