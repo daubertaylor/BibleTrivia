@@ -90,10 +90,21 @@ substituer :
 
 1. **Le rebord** (fin de la feuille de style, dernier bloc). Trois rôles
    — `--rebord-pose` (posée sur le décor : filet + ombre douce),
-   `--rebord` (plate, dans une autre surface : filet seul),
-   `--rebord-plein` (pleine et colorée : ombre de sa propre couleur).
-   Chaque surface déclare son rôle dans `--mon-rebord`, une seule règle
-   le peint. Ajouter une famille demain = l'écrire dans le bon rôle.
+   `--rebord` (plate, dans une autre surface : filet **deux fois plus
+   léger**), `--rebord-plein` (pleine et colorée : ombre de sa propre
+   couleur). Chaque surface déclare son rôle dans `--mon-rebord`, une
+   seule règle le peint. Ajouter une famille demain = l'écrire dans le
+   bon rôle — et le rôle se choisit d'après CE QU'IL Y A DERRIÈRE, pas
+   d'après ce qu'est la surface : un bouton dans une feuille claire est
+   « plat », pas « posé ».
+
+   Pourquoi deux filets : un même brun à 10 % se devine sur le décor
+   sombre mais descend de 16 à 19 unités de luminance sous une carte
+   crème — là, ce n'est plus un contact, c'est un trait. Mesurable :
+   `scratchpad/arete.js` + `arete2.py` traversent chaque arête en pixels
+   et donnent la hauteur du trait (médiane sur dix points, sinon la
+   texture de la photo fait de faux positifs). Repère : au-dessus de
+   ~10, l'œil lit une ligne dessinée. Maximum actuel dans le jeu : 9,5.
 2. **Le rythme vertical** : `--e-1` à `--e-4` (0,4 / 0,62 / 1 / 1,5 rem,
    rapport constant d'environ 1,55). `--e-3` est le pas courant. Les
    micro-espacements internes d'un composant n'en font pas partie.
