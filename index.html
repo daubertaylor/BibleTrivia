@@ -1452,7 +1452,18 @@
   .gs{ position:absolute; top:0; left:0; z-index:-2; pointer-events:none; background-repeat:no-repeat; background-position:0 0;
        background-image:linear-gradient(var(--glass-tint, rgba(255,253,247,0.58)), var(--glass-tint, rgba(255,253,247,0.58))), var(--blur-url);
        will-change:transform; transform:translate3d(0,0,0); backface-visibility:hidden; -webkit-backface-visibility:hidden; }
-  html.gl-xf .has-gs{ background-image:none; }
+  /* EN MOTEUR « XF », LA COUCHE .gs FAIT TOUT — ET ELLE SEULE.
+     La surface gardait aussi son backdrop-filter, hérité de l'autre moteur.
+     Résultat : un flou et une saturation appliqués DEUX fois, et surtout un
+     liseré. Le backdrop-filter s'applique à la boîte entière, bordure
+     comprise, alors que la couche .gs s'arrête à la boîte intérieure : il
+     restait donc un cheveu d'un pixel où le décor passait saturé à 185 % sans
+     rien pour l'adoucir. Sur le désert, ça donnait un trait ORANGE VIF autour
+     du Défi du jour et de Progression — mesuré : saturation 128 sur le
+     contour, contre 91 dehors et 47 dedans. Taylor l'a vu tout de suite.
+     La couche porte déjà le flou ET la teinte : le filtre n'a plus rien à
+     faire ici. */
+  html.gl-xf .has-gs{ background-image:none; backdrop-filter:none; -webkit-backdrop-filter:none; }
   /* Exception : « Guide ». La règle ci-dessus efface le fond des surfaces de
      verre, puisque c'est la couche .gs qui peint. Mais ce galet-là est OPAQUE —
      son dégradé N'EST PAS du verre, c'est sa matière, la même que les pastilles
