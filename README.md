@@ -81,6 +81,15 @@ qu'une fois : la pastille « flamme + nombre » de la carte du Défi
 s'efface là où la bande existe, et reparaît sur les petits écrans, où la
 bande n'a pas de place.
 
+**Le verset (les cinq tapes sur l'icône).** La carte grandit, le texte
+ne rétrécit jamais sous 0,94 rem. C'était l'inverse : la carte était
+plafonnée et le corps tombait à 10,5 px sur les versets longs. Deux
+tailles suffisent (16,4 et 15,4 px sur un iPhone), là où il en fallait
+quatre. Le temps de l'affichage, le bloc du héros passe au-dessus des
+cartes — sinon un verset long se glissait derrière la première et sa
+référence disparaissait. Test : `scratchpad/verset.js` (les 992 versets
+des quatre versions) et `vtop.js` (les trois plus longs).
+
 **Le jour tourne pendant que le jeu dort.** L'accueil est calculé au
 moment où on le dessine, et sur iOS une app posée sur l'écran d'accueil
 est REPRISE, pas relancée : on peut rouvrir le jeu le lendemain sans
@@ -137,6 +146,10 @@ d'entre eux :
   Doit rapporter 0.
 - `scratchpad/arete.js` + `arete2.py` — les traits **sombres**, bords
   gauche et droite. Repère : au-dessus de ~10, l'œil lit une ligne.
+  Maximum actuel : 6,9 — le filet ne délimite plus rien à lui seul, il
+  ne fait que poser le contact. Ce qui délimite, c'est la MATIÈRE : une
+  surface crème se détache de sa carte de 44 à 69 unités, du décor de
+  158. Le filet est un raffinement, pas une nécessité.
 - `scratchpad/blanc.js` + `blanc.py` — les traits **clairs**, sur les
   QUATRE arêtes (un contour blanc, ici, c'est souvent une lèvre
   `inset 0 1px 0` : le bord du haut, que les deux autres tests ne

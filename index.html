@@ -96,7 +96,7 @@
        --rim-edge et --rim-cast, déclarés partout dans la feuille de style,
        n'ont JAMAIS rien peint : « Ajouter un joueur » demande un filet sombre à
        0,24 depuis toujours et n'en a jamais montré la moindre trace. */
-    --filet:rgba(46,34,22,0.10);
+    --filet:rgba(46,34,22,0.055);
     /* TROIS RÔLES, UN SEUL SYSTÈME. Une surface POSÉE sur le décor porte le
        filet et une ombre douce (c'est l'ombre qui dit « posée », pas un
        trait). Une surface PLATE, imbriquée dans une autre, porte le filet
@@ -112,7 +112,7 @@
        déjà de 44 à 69 unités de la carte qui les porte. Le filet des surfaces
        PLATES est donc deux fois plus léger — assez pour poser le contact,
        plus assez pour dessiner une ligne. */
-    --filet-plat:rgba(46,34,22,0.05);
+    --filet-plat:rgba(46,34,22,0.028);
     --ombre-pose:0 1px 2px rgba(24,16,10,0.06), 0 6px 18px rgba(24,16,10,0.10);
     --rebord:0 0 0 1px var(--filet-plat);
     --rebord-pose:0 0 0 1px var(--filet), var(--ombre-pose);
@@ -2204,8 +2204,14 @@
      detail : centree, la carte la plus haute passait 9 px AU-DESSUS du haut de
      l'ecran sur iPhone SE — sous l'encoche. En bas, la place est trois fois
      plus grande, et la limite ci-dessous s'arrete avant les cartes de mode. */
-  .hero-verse-card{ position:absolute; top:0; bottom:auto; height:auto; min-height:100%; max-height:min(9.5rem, calc(22 * var(--uh))); left:max(0px, calc(50% - 11.5rem)); right:max(0px, calc(50% - 11.5rem)); display:flex; flex-direction:column; align-items:center; justify-content:center; gap:0.42rem; padding:0.8rem 1.1rem; border-radius:var(--r-l); border:1px solid transparent; box-shadow:var(--rebord-pose); opacity:0; transform:scale(0.82) translateY(10px); transition:transform 0.55s cubic-bezier(0.2,1.15,0.3,1), opacity 0.4s ease; will-change:transform, opacity; pointer-events:none; text-align:center; }
+  .hero-verse-card{ position:absolute; top:0; bottom:auto; height:auto; min-height:100%; max-height:min(21.5rem, calc(64 * var(--hu))); left:max(0px, calc(50% - 11.5rem)); right:max(0px, calc(50% - 11.5rem)); display:flex; flex-direction:column; align-items:center; justify-content:center; gap:0.42rem; padding:0.8rem 1.1rem; border-radius:var(--r-l); border:1px solid transparent; box-shadow:var(--rebord-pose); opacity:0; transform:scale(0.82) translateY(10px); transition:transform 0.55s cubic-bezier(0.2,1.15,0.3,1), opacity 0.4s ease; will-change:transform, opacity; pointer-events:none; text-align:center; }
   .hero-zone.show-verse .hero-verse-card{ opacity:1; transform:scale(1) translateY(0); pointer-events:auto; transition-delay:0.08s; }
+  /* LE VERSET FLOTTE AU-DESSUS, IL NE SE GLISSE PAS DESSOUS.
+     Les cartes de l'accueil viennent après le héros dans la page : sans ordre
+     explicite, elles se peignaient PAR-DESSUS un verset long, qui se
+     retrouvait tranché — sa référence disparaissait avec. Le temps de
+     l'affichage, le bloc du héros passe devant. */
+  .hero:has(.hero-zone.show-verse){ position:relative; z-index:40; }
   /* Profil et Réglages s'effacent TOUJOURS : ils sont dans les coins hauts, et
      la carte, large de presque tout l'écran, passe par-dessus. */
   .hero:has(.hero-zone.show-verse) .hero-profile,
@@ -2223,17 +2229,23 @@
      temps, « BibleTrivia » ne bouge pas. */
   .hero:has(.hero-zone.show-verse.verse-haute) .hero-title{ opacity:0; pointer-events:none; }
   .hero-title{ transition:opacity var(--tr-voile-in); }
-  .hero-verse-text{ font-family:'Fraunces',serif; font-style:italic; color:var(--ink); font-size:clamp(1rem, 3.3vw, 1.18rem); line-height:1.5; }
-  .hero-verse-card.long .hero-verse-text{ font-size:clamp(0.84rem, 2.8vw, 1rem); line-height:1.42; }
+  /* UN VERSET SE LIT, DONC IL RESTE LISIBLE.
+     La carte était plafonnée à 9,5 rem et c'est le TEXTE qui rétrécissait pour
+     y entrer : mesuré sur les 992 versets des quatre versions, 80 % tombaient
+     à 13,8 px ou moins, et dix-huit descendaient à 10,5 px — plus petit que
+     n'importe quel autre texte du jeu. C'est l'inverse qu'il faut : la carte
+     grandit (elle flotte au-dessus de l'accueil, elle en a la place), et le
+     corps ne descend jamais sous 0,94 rem. Deux tailles suffisent alors, là
+     où il en fallait quatre pour rattraper un plafond trop bas. */
+  .hero-verse-text{ font-family:'Fraunces',serif; font-style:italic; color:var(--ink); font-size:clamp(1rem, 3.2vw, 1.15rem); line-height:1.5; }
+  .hero-verse-card.long .hero-verse-text{ font-size:clamp(0.94rem, 2.7vw, 1.04rem); line-height:1.45; }
   /* UN VERSET ENTIER NE SE COUPE PAS. Les traductions ajoutées donnent le texte
      COMPLET (le recueil d'origine, lui, ne portait que de courtes citations :
      mesuré, 53% des versets y faisaient moins de la moitié du verset réel).
      Un verset entier va jusqu'à 259 caractères ; la carte ne tenait au-delà de
      108 sur iPhone SE. D'où ce palier supplémentaire, puis un défilement
      interne pour les rares monuments — plutôt que d'amputer l'Écriture. */
-  .hero-verse-card.tres-long .hero-verse-text{ font-size:clamp(0.72rem, 2.3vw, 0.88rem); line-height:1.3; }
   /* Les monuments : Josue 24:15, Jean 15:4... jusqu'a 377 caracteres. */
-  .hero-verse-card.enorme .hero-verse-text{ font-size:clamp(0.64rem, 2vw, 0.78rem); line-height:1.26; }
   /* ON NE PEUT PLUS PRENDRE LE VERSET DANS LA MAIN. La carte était défilable
      (overflow-y:auto), au cas où un verset dépasserait. Or elle contient le
      calque de verre .gs — une copie de la scène, HAUTE DE TOUTE LA PAGE : sa
@@ -7366,9 +7378,9 @@ function showHeroVerse(){
      corps ne diminue que lorsqu'elle a fini de grandir. Vérifié sur les 248
      références des quatre versions, du plus court au plus long (377 signes). */
   if(card){
-    card.classList.toggle("long", texte.length > 68);
-    card.classList.toggle("tres-long", texte.length > 150);
-    card.classList.toggle("enorme", texte.length > 245);
+    /* Un seul palier : au-delà d'une centaine de signes le corps descend d'un
+       cran, et s'arrête là. C'est la carte qui prend la longueur, pas l'œil. */
+    card.classList.toggle("long", texte.length > 105);
   }
   zone.classList.add("show-verse");
   /* LE TITRE NE S'EFFACE QUE S'IL EST DANS LE CHEMIN (voir .verse-haute en CSS).
