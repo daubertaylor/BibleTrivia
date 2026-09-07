@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="fr">
+<html lang="fr" style="background:#15100B">
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1, viewport-fit=cover">
@@ -160,6 +160,14 @@
        Le garde-fou max-width:1023px laisse les tablettes se remettre en page
        normalement. */
     --uh:1vh;
+    /* --hu, c'est --uh mais honnête : 1 % de la hauteur qui RESTE une fois les
+       zones système retirées, mesurée en JS (voir mesurerHauteurUtile). Sur un
+       iPhone à Dynamic Island installé, 852 px d'écran n'en laissent que 746 :
+       1vh ne bouge pas, --hu si. Le héros s'y accroche — c'est lui qui doit
+       céder quand la place manque, pas les cartes qu'on vient toucher.
+       Il vaut 1vh tant que la mesure n'a pas eu lieu : la première image est
+       donc déjà juste. */
+    --hu:1vh;
     --primary:#EC3C1A;
     --primary-dark:#D63A1E;
     --primary-soft:#FFE7DE;
@@ -372,8 +380,7 @@
   .option-btn, .btn-primary, .btn-next, .btn-replay, .fact-card, .tier-chip, .q-counter, .streak-chip,
   .chip, .icon-btn, .btn-reveal, .btn-newgame, .award-btn, .presence-card, .me-row, .online-action,
   .searching-card, .waiting-card, .info-card, .vs-row, .len-chip, .duel-scorebar, .timer-chip, .dr-side,
-  .rank-row, .text-input, .code-input, .fs-hint, .modal-card, .add-team, .btn-ghost, .fsh-close, .hs-item,
-  .settings-sheet, .hero-verse-card, .end-medal, .modal-btn, .leave-banner, .adj-btn, .waiting-note,
+  .rank-row, .text-input, .code-input, .fs-hint, .modal-card, .add-team, .btn-ghost, .fsh-close, .settings-sheet, .hero-verse-card, .end-medal, .modal-btn, .leave-banner, .adj-btn, .waiting-note,
   .rules, .btn-review, .daily-card, .dc-streak, .btn-invite, .creator-badge, .sheet-done, .set-go,
   .share-btn, .rev-item, .parcours-card, .parcours-sum, .tst-head, .team-row, .bk{
     --rim-cast:0 5px 14px rgba(34,26,16,0.12);
@@ -415,14 +422,14 @@
   .icon-btn.spacer{ visibility:hidden; }
 
   /* ---------- Hero / mode select ---------- */
-  .hero{ position:relative; text-align:center; padding:clamp(0.7rem, calc(1.7 * var(--uh)), 1.35rem) 1rem clamp(0.5rem, calc(1.2 * var(--uh)), 1rem); }
+  .hero{ position:relative; text-align:center; padding:clamp(0.62rem, calc(1.7 * var(--hu)), 1.35rem) 1rem clamp(0.42rem, calc(1.2 * var(--hu)), 1rem); }
   /* Spécificité .icon-btn.xxx OBLIGATOIRE : le multi-sélecteur verre (plus
      bas) pose position:relative sur tous les .icon-btn — à égalité il
      gagnerait, et les deux boutons tomberaient en pile à gauche en poussant
      tout l'écran vers le bas. */
   .icon-btn.hero-settings{ position:absolute; top:0.15rem; right:0.5rem; color:var(--ink); }
   .icon-btn.hero-profile{ position:absolute; top:0.15rem; left:0.5rem; padding:0; overflow:visible; background:transparent; border:none; box-shadow:none; }
-  .hero-icon{ width:clamp(5.35rem, calc(13.3 * var(--uh)), 7rem); height:auto; aspect-ratio:1; margin:0 auto 0.5rem; border-radius:23%; box-shadow:0 12px 30px rgba(10,8,6,0.44), 0 0 8px rgba(255,250,238,0.48), 0 0 24px rgba(255,247,228,0.34), 0 0 52px rgba(255,247,231,0.18), inset 0 0 9px rgba(255,252,245,0.4), inset 0 1.5px 4px rgba(255,255,255,0.28); display:block; object-fit:cover; animation:heroFloat 5s ease-in-out infinite; -webkit-user-drag:none; user-drag:none; -webkit-touch-callout:none; -webkit-user-select:none; user-select:none; pointer-events:none; }
+  .hero-icon{ width:clamp(4.7rem, calc(13.3 * var(--hu)), 7rem); height:auto; aspect-ratio:1; margin:0 auto 0.5rem; border-radius:23%; box-shadow:0 12px 30px rgba(10,8,6,0.44), 0 0 8px rgba(255,250,238,0.48), 0 0 24px rgba(255,247,228,0.34), 0 0 52px rgba(255,247,231,0.18), inset 0 0 9px rgba(255,252,245,0.4), inset 0 1.5px 4px rgba(255,255,255,0.28); display:block; object-fit:cover; animation:heroFloat 5s ease-in-out infinite; -webkit-user-drag:none; user-drag:none; -webkit-touch-callout:none; -webkit-user-select:none; user-select:none; pointer-events:none; }
   @keyframes heroFloat{ 0%,100%{ transform:translateY(0); } 50%{ transform:translateY(-6px); } }
   .hero-title{ font-family:'Poppins',sans-serif; font-weight:700; font-size:2rem; margin:0; letter-spacing:-0.01em; color:#fff; text-shadow:0 1px 12px rgba(0,0,0,0.35); }
   .hero-title{ font-family:'Poppins',sans-serif; font-weight:700; font-size:1.55rem; letter-spacing:-0.02em; color:#fff; margin:0 0 0.3rem; text-shadow:0 2px 14px rgba(0,0,0,0.55); }
@@ -443,7 +450,7 @@
      que soit la largeur du téléphone, elle occupe exactement la même place et
      ne déplace plus rien. Le verset affiché ici est choisi court dans les cinq
      versions (74 signes au pire) pour qu'il y tienne sans jamais être coupé. */
-  .home-verse{ margin:0.15rem auto 0; max-width:21.5rem; height:calc(3 * 0.8rem * 1.42); overflow:hidden; text-align:center; font-family:'Fraunces',serif; font-size:0.8rem; font-style:italic; font-weight:400; line-height:1.42; letter-spacing:0.01em; color:rgba(255,255,255,0.88); text-shadow:0 1px 10px rgba(0,0,0,0.5); text-wrap:balance; }
+  .home-verse{ margin:0.15rem auto 0; max-width:21.5rem; height:calc(2 * 0.8rem * 1.42); overflow:hidden; text-align:center; font-family:'Fraunces',serif; font-size:0.8rem; font-style:italic; font-weight:400; line-height:1.42; letter-spacing:0.01em; color:rgba(255,255,255,0.88); text-shadow:0 1px 10px rgba(0,0,0,0.5); text-wrap:balance; }
   .home-verse .hv-ref{ font-family:'Poppins',sans-serif; font-style:normal; font-weight:600; font-size:0.62rem; letter-spacing:0.06em; text-transform:uppercase; color:rgba(255,224,150,0.85); white-space:nowrap; }
   .hero-tag{ font-family:'Fraunces',serif; font-style:italic; color:rgba(255,255,255,0.95); font-size:1rem; margin-top:0; line-height:1.5; text-shadow:0 1px 3px rgba(0,0,0,0.35), 0 2px 16px rgba(0,0,0,0.55); max-width:18rem; margin-left:auto; margin-right:auto; }
 
@@ -453,7 +460,8 @@
   .mode-card{
     width:100%; display:flex; align-items:center; gap:0.8rem;
     background:var(--surface); border:1px solid var(--border); border-radius:var(--r-l);
-    padding:0.82rem 0.95rem; margin-bottom:var(--e-3); text-align:left;
+    padding:clamp(0.6rem, calc(1.6 * var(--hu)), 0.82rem) 0.95rem;
+    margin-bottom:clamp(var(--e-2), calc(1.95 * var(--hu)), var(--e-3)); text-align:left;
     box-shadow:inset 0 1px 0 rgba(255,255,255,0.7), 0 4px 16px rgba(15,12,10,0.1);
   }
   /* Chevron « > » des cartes : il cumulait AVANT une couleur déjà très pâle
@@ -1285,7 +1293,7 @@
   .option-btn, .btn-primary, .btn-next, .btn-replay, .fact-card, .tier-chip, .q-counter, .streak-chip, .chip, .icon-btn, .btn-reveal,
   .btn-newgame, .award-btn, .presence-card, .me-row, .online-action, .searching-card,
   .waiting-card, .info-card, .vs-row, .len-chip, .duel-scorebar, .timer-chip, .dr-side, .rank-row,
-  .text-input, .code-input, .fs-hint, .modal-card, .btn-ghost, .fsh-close, .hs-item, .settings-sheet, .hero-verse-card, .end-medal, .modal-btn.ok, .modal-btn.cancel, .leave-banner, .adj-btn, .waiting-note, .rules, .btn-review, .daily-card, .dc-streak, .btn-invite, .creator-badge, .sheet-done, .set-go, .share-btn, .rev-item, .parcours-card, .tst-head{
+  .text-input, .code-input, .fs-hint, .modal-card, .btn-ghost, .fsh-close, .settings-sheet, .hero-verse-card, .end-medal, .modal-btn.ok, .modal-btn.cancel, .leave-banner, .adj-btn, .waiting-note, .rules, .btn-review, .daily-card, .dc-streak, .btn-invite, .creator-badge, .sheet-done, .set-go, .share-btn, .rev-item, .parcours-card, .tst-head{
     background-color:transparent;
     /* Deux voies pour le verre :
        - par DÉFAUT (iOS) : photo pré-floutée peinte (var(--blur-url)),
@@ -1358,7 +1366,7 @@
     .option-btn, .btn-primary, .btn-next, .btn-replay, .fact-card, .tier-chip, .q-counter, .streak-chip,
     .chip, .icon-btn, .btn-reveal, .btn-newgame, .award-btn, .presence-card, .me-row, .online-action,
     .searching-card, .waiting-card, .info-card, .vs-row, .len-chip, .duel-scorebar, .timer-chip, .dr-side,
-    .rank-row, .fs-hint, .modal-card, .btn-ghost, .fsh-close, .hs-item, .settings-sheet,
+    .rank-row, .fs-hint, .modal-card, .btn-ghost, .fsh-close, .settings-sheet,
     .hero-verse-card, .end-medal, .modal-btn.ok, .modal-btn.cancel, .leave-banner, .adj-btn, .waiting-note,
     .rules, .btn-review, .daily-card, .dc-streak, .btn-invite, .creator-badge, .sheet-done, .set-go,
     .share-btn, .rev-item, .parcours-card, .parcours-sum, .tst-head):not(.has-gs){
@@ -1382,7 +1390,7 @@
     .option-btn, .btn-primary, .btn-next, .btn-replay, .fact-card, .tier-chip, .q-counter, .streak-chip, .chip, .icon-btn, .btn-reveal,
     .btn-newgame, .award-btn, .presence-card, .me-row, .online-action, .searching-card,
     .waiting-card, .info-card, .vs-row, .len-chip, .duel-scorebar, .timer-chip, .dr-side, .rank-row,
-    .text-input, .code-input, .fs-hint, .modal-card, .btn-ghost, .fsh-close, .hs-item, .settings-sheet, .hero-verse-card, .end-medal, .modal-btn.ok, .modal-btn.cancel, .leave-banner, .adj-btn, .waiting-note, .rules, .btn-review, .daily-card, .dc-streak, .btn-invite, .creator-badge, .sheet-done, .set-go, .share-btn, .rev-item, .parcours-card, .parcours-sum, .tst-head){
+    .text-input, .code-input, .fs-hint, .modal-card, .btn-ghost, .fsh-close, .settings-sheet, .hero-verse-card, .end-medal, .modal-btn.ok, .modal-btn.cancel, .leave-banner, .adj-btn, .waiting-note, .rules, .btn-review, .daily-card, .dc-streak, .btn-invite, .creator-badge, .sheet-done, .set-go, .share-btn, .rev-item, .parcours-card, .parcours-sum, .tst-head){
     --glass-photo: none;
     --glass-bf: blur(26px) saturate(1.35);
     /* La couleur de fond de base des surfaces (souvent blanc ~0,5) est
@@ -1624,7 +1632,17 @@
   .tst-count{ font-family:'Poppins',sans-serif; font-size:0.8rem; font-weight:700; color:var(--ink); font-variant-numeric:tabular-nums; white-space:nowrap; flex-shrink:0; }
   .tst-chev{ width:1.1rem; height:1.1rem; color:var(--ink-soft); flex-shrink:0; display:inline-flex; transition:transform 0.26s cubic-bezier(0.3,1,0.4,1); }
   .tst.open .tst-chev{ transform:rotate(90deg); }
-  .tst .tst-body{ display:none; margin-top:0.6rem; }
+  /* IL S'OUVRAIT D'UN COUP. « display:none » -> « display:grid » n'est pas une
+     transition : la grille des livres apparaissait d'un bloc, la page sautait
+     de la hauteur entière, et rien ne suivait — seul geste du jeu qui ne
+     glissait pas. La ligne de grille passe maintenant de 0fr à 1fr : c'est une
+     VRAIE hauteur qui s'anime, sans avoir à la mesurer en JS, et elle emprunte
+     la courbe d'ouverture commune à tout le reste. Le contenu reste dans la
+     page (il n'est plus détruit puis recréé), donc le verre garde ses couches
+     et n'a rien à refaire. */
+  .tst .tst-body{ display:grid; grid-template-rows:0fr; margin-top:0; opacity:0;
+    transition:grid-template-rows var(--tr-ouvre), margin-top var(--tr-ouvre), opacity 0.22s ease; }
+  .tst .tst-body > *{ min-height:0; overflow:hidden; }
   /* Petits écrans (SE & co) : la Progression doit tenir SANS défiler tant que
      les testaments sont repliés -> on resserre juste ce qu'il faut. */
   /* PETITS ÉCRANS — ET LA MÊME DÉFINITION QUAND LE TÉLÉPHONE EST COUCHÉ.
@@ -1662,8 +1680,7 @@
        zéro défilement. */
     .mode-card, .daily-card{ margin-bottom:var(--e-2); }
   }
-  .tst.open .tst-body{ display:grid; }
-  .tst.open .tst-body.tst-body-block{ display:block; } /* section Objectifs : contenu en bloc (carte), pas en grille */
+  .tst.open .tst-body{ grid-template-rows:1fr; margin-top:0.6rem; opacity:1; }
   .tst-body-block .ach-card, .tst-body-block .bk-card{ margin-bottom:0; }
 
   /* Livres : CHIPS compacts (nom seul, sans barre) -> testaments beaucoup plus
@@ -1733,21 +1750,13 @@
      flotter. */
   /* Sélecteur DOUBLE (.flex-sp.home-sp-top) : .flex-sp est déclaré plus bas
      dans la feuille et, à spécificité égale, l'ordre l'emporterait. */
-  .flex-sp.home-sp-top{ flex:0 0 auto; height:1.15rem; min-height:0; }
+  .flex-sp.home-sp-top{ flex:0 0 auto; height:clamp(0.3rem, calc(1.4 * var(--hu)), 1.15rem); min-height:0; }
   .home-sp-bot{ flex:1.3 1 0; min-height:0; }
   /* Pastilles alignées sur le LANGAGE des cartes de l'accueil : mêmes bords
      (bord à bord avec les cartes au-dessus), même rayon 16 px, même bordure,
      et le même écart de 16 px entre elles qu'entre les cartes. */
-  .home-stats{ display:flex; gap:16px; padding:clamp(0.4rem, calc(1.1 * var(--uh)), 0.8rem) 0 0.15rem; }
-  .hs-item{ flex:1; display:flex; flex-direction:column; align-items:center; gap:0.06rem; border:1px solid var(--bord); border-radius:var(--r-l); padding:0.52rem 0.35rem 0.48rem; text-align:center; transform:translateZ(0); -webkit-transform:translateZ(0); }
-  .hs-ico{ width:1.12rem; height:1.12rem; color:var(--primary); margin-bottom:0.06rem; display:inline-flex; }
-  .hs-item:nth-child(2) .hs-ico{ color:var(--gold-deep); }
-  .hs-item:nth-child(3) .hs-ico{ color:#2E7FE8; }
-  .hs-item b{ font-family:'Poppins',sans-serif; font-size:0.86rem; font-weight:700; color:var(--ink); line-height:1.1; }
-  .hs-item small{ font-size:0.7rem; color:var(--ink-soft); font-weight:600; letter-spacing:0.02em; }
   @media (min-height:860px){
     .hero-tag{ font-size:1.06rem; }
-    .hs-item{ padding:0.58rem 0.4rem 0.52rem; }
     .online-action{ padding-top:1.05rem; padding-bottom:1.05rem; }
   }
   /* Espaceur flexible : répartit le vide pour que chaque écran soit habité */
@@ -1828,7 +1837,13 @@
      Les voiles de premier niveau restent transparents (le décor doit passer au
      travers, c'est la signature du jeu) ; ici il sépare deux panneaux de même
      matière, et sans lui rien ne les distingue. */
-  .sheet-veil.voile-second{ background:rgba(22,16,10,0.34); }
+  /* PAS DE FILTRE SUR LE DÉCOR. Quand le catalogue des versions s'ouvrait
+     par-dessus les Réglages, un voile assombrissait TOUT l'écran d'un tiers :
+     la photo perdait sa lumière pour dire une chose que la mise en scène dit
+     déjà — la feuille du dessous recule et se rétrécit, celle du dessus porte
+     son ombre d'élévation. On voyait le filtre avant de voir la superposition.
+     Le voile ne sert donc plus qu'à capter le tap qui referme. */
+  .sheet-veil.voile-second{ background:none; }
   .settings-sheet .rev-list{ touch-action:pan-y; }
   /* LA POIGNÉE FERME LA FEUILLE. Elle n'était qu'un trait décoratif ; c'est
      désormais la vraie sortie : on tire la feuille vers le bas, ou on tape la
@@ -2048,7 +2063,7 @@
      chevauche les boutons profil/réglages dans les coins. Sans pointer-events:none,
      il interceptait leurs taps (le hero-zone étant peint au-dessus) -> profil &
      réglages ne s'ouvraient plus. On ne laisse cliquables que ses enfants utiles. */
-  .hero-zone{ position:relative; height:clamp(5.8rem, calc(14.3 * var(--uh)), 7.5rem); margin:0 auto 0.55rem; display:flex; align-items:center; justify-content:center; pointer-events:none; }
+  .hero-zone{ position:relative; height:clamp(5.1rem, calc(14.3 * var(--hu)), 7.5rem); margin:0 auto 0.55rem; display:flex; align-items:center; justify-content:center; pointer-events:none; }
   .hero-zone .hero-icon{ margin:0; }
   /* Ombre de lévitation : reste « au sol » et respire à l'inverse du
      flottement de l'icône (petite & pâle quand l'icône monte, large &
@@ -2056,7 +2071,15 @@
   .hero-zone::after{ content:""; position:absolute; left:50%; bottom:-0.15rem; width:46%; height:0.7rem; transform:translateX(-50%); background:radial-gradient(ellipse at center, rgba(10,8,6,0.42), rgba(10,8,6,0) 72%); filter:blur(3px); z-index:0; pointer-events:none; animation:heroShadow 5s ease-in-out infinite; }
   .hero-zone.show-verse::after{ opacity:0; transition:opacity 0.3s ease; }
   @keyframes heroShadow{ 0%,100%{ transform:translateX(-50%) scale(1); opacity:0.5; } 50%{ transform:translateX(-50%) scale(0.78); opacity:0.26; } }
-  .hero-icon-btn{ display:block; position:relative; z-index:1; background:none; border:none; padding:0; border-radius:26%; box-shadow:none; pointer-events:auto; }
+  .hero-icon-btn{ display:block; position:relative; z-index:1; background:none; border:none; padding:0; border-radius:26%; box-shadow:none; pointer-events:auto;
+    -webkit-touch-callout:none; -webkit-user-select:none; user-select:none; touch-action:manipulation; }
+  /* LA LOUPE DE L'IPHONE. L'icône est une <img> : sous le doigt qui s'attarde,
+     iOS y applique ses gestes d'IMAGE (loupe, aperçu, détourage du sujet) —
+     et ni user-select:none ni touch-callout:none ne les couvrent tous. On
+     retire donc l'image du test de toucher : le doigt tombe sur le BOUTON, qui
+     n'est pas une image et n'a aucun geste système attaché. L'icône reste
+     exactement où elle est, elle n'est simplement plus une cible. */
+  .hero-icon{ pointer-events:none; -webkit-user-drag:none; user-drag:none; -webkit-touch-callout:none; }
   .hero-icon-btn:active:not(:disabled){ transform:none; box-shadow:none !important; filter:none; }
   /* Enfoncement : piloté par les événements pointer (voir heroIconPress/Release),
      PAS par :active — sur iOS, :active se relâche à un timing différent du clic,
@@ -2179,7 +2202,7 @@
      ne sont pas dans cette liste, soit elles l'emportent par spécificité
      (.chip.active, .len-chip.sel, .online-action.primary, .tst.open .tst-head…). */
   .app-header, .card, .mode-card, .question-card, .solo-summary, .solo-score-bar, .score-pane,
-  .daily-card, .parcours-card, .parcours-sum, .hs-item, .chip, .tier-chip, .q-counter,
+  .daily-card, .parcours-card, .parcours-sum, .chip, .tier-chip, .q-counter,
   .presence-card, .me-row, .online-action, .vs-row, .searching-card, .waiting-card, .info-card,
   .len-chip, .duel-scorebar, .rank-row, .team-row, .add-team, .btn-ghost, .fsh-close,
   .settings-sheet, .modal-card, .hero-verse-card, .end-medal, .adj-btn, .waiting-note, .rules,
@@ -2312,7 +2335,7 @@
   .app-header, .icon-btn, .card, .mode-card, .question-card, .fact-card,
   .solo-summary, .solo-score-bar, .score-pane, .option-btn, .info-card,
   .rules, .btn-review, .daily-card, .parcours-card, .parcours-sum, .tst-head,
-  .hs-item, .presence-card, .searching-card, .waiting-card, .waiting-note,
+  .presence-card, .searching-card, .waiting-card, .waiting-note,
   .online-action, .btn-ghost, .btn-newgame, .share-btn, .btn-invite,
   .award-btn, .leave-banner, .modal-btn.cancel{ --mon-rebord:var(--rebord-pose); }
   .chip, .len-chip, .q-counter, .timer-chip, .tier-chip, .streak-chip,
@@ -2325,7 +2348,7 @@
   .app-header, .icon-btn, .card, .mode-card, .question-card, .fact-card,
   .solo-summary, .solo-score-bar, .score-pane, .option-btn, .info-card,
   .rules, .btn-review, .daily-card, .parcours-card, .parcours-sum, .tst-head,
-  .hs-item, .presence-card, .searching-card, .waiting-card, .waiting-note,
+  .presence-card, .searching-card, .waiting-card, .waiting-note,
   .online-action, .btn-ghost, .btn-newgame, .share-btn, .btn-invite,
   .award-btn, .leave-banner, .modal-btn.cancel,
   .chip, .len-chip, .q-counter, .timer-chip, .tier-chip, .streak-chip,
@@ -2338,7 +2361,7 @@
   }
 </style>
 </head>
-<body>
+<body style="background:#15100B">
 <div id="bg-layer"></div>
 <div id="bg-overlay"></div>
 <div id="bg-grain"></div>
@@ -5717,6 +5740,23 @@ window.addEventListener("focus", wakeAudio);
 /* La musique ne peut démarrer qu'après un premier geste : on s'accroche au tout
    premier — et ce même geste ranime l'audio si un appel l'avait interrompu. */
 document.addEventListener("pointerdown", ()=>{ audioUnlocked = true; wakeAudio(); maybeStartMusic(); }, { capture:true, passive:true });
+/* REPRISE APRÈS UNE MISE À JOUR : le son ne doit pas s'apercevoir qu'on a
+   rechargé. Le geste qui avait autorisé l'audio appartenait à la page
+   précédente ; la nouvelle repartait donc muette jusqu'au toucher suivant.
+   C'est pourtant la même session et le même joueur, qui vient tout juste de
+   toucher l'écran : on rouvre l'audio immédiatement, ce que Safari accorde
+   après un rechargement lancé par la page elle-même. Si un navigateur le
+   refuse, le premier toucher reprend la main exactement comme avant — au pire
+   on retombe sur l'ancien comportement, jamais moins bien. */
+try{
+  if(sessionStorage.getItem("bt_son_vif")){
+    sessionStorage.removeItem("bt_son_vif");
+    audioUnlocked = true;
+    const reprendreSon = ()=>{ try{ getCtx(); wakeAudio(); maybeStartMusic(); }catch(e){} };
+    reprendreSon();
+    [60, 260, 700].forEach(d=>setTimeout(reprendreSon, d));
+  }
+}catch(e){}
 
 /* ===================== CLAVIER : il se pose PAR-DESSUS la page =====================
    La page garde sa mise en page, au pixel près : on ne redimensionne rien, on ne
@@ -8098,7 +8138,10 @@ function toggleTst(btn){
   /* La grille masquée n'avait pas de position pour le verre : on force un
      recalcul de mise en page + un recalage à l'ouverture. Et on re-décide le
      défilement : ouvrir un testament peut faire déborder la page. */
-  try{ glassRelayout(); armGlass(800); queueGlassSync(); fitScroll(); }catch(e){}
+  try{ glassRelayout(); armGlass(900); queueGlassSync(); fitScroll(); }catch(e){}
+  /* La hauteur bouge pendant une demi-seconde : on re-décide le défilement et
+     on recale le verre PENDANT le mouvement, pas seulement au premier pixel. */
+  [120, 300, 520, 700].forEach(d=>setTimeout(()=>{ try{ glassRelayout(); queueGlassSync(); fitScroll(); }catch(e){} }, d));
 }
 let achToastQueue = [], achToastBusy = false;
 function checkAchievements(opts){
@@ -8831,11 +8874,6 @@ function renderModeSelect(){
       <span class="chev">${ICONS.chevronRight}</span>
     </button>`; })()}
     <div class="flex-sp home-sp-bot"></div>
-    <div class="home-stats">
-      <div class="hs-item"><span class="hs-ico">${ICONS.book}</span><b>${questionsBadge()}</b><small>questions</small></div>
-      <div class="hs-item"><span class="hs-ico">${ICONS.target}</span><b>3</b><small>niveaux</small></div>
-      <div class="hs-item"><span class="hs-ico">${ICONS.bolt}</span><b>Duel</b><small>en ligne</small></div>
-    </div>
   `;
   return el;
 }
@@ -9708,7 +9746,7 @@ document.addEventListener("click", (e)=>{
    transforms compris) : la photo peinte reste donc collée au décor même pendant
    qu'une carte glisse — ce qui autorise de vraies transitions animées « à la
    Apple » sans le moindre décalage du verre. */
-const GLASS_SEL = ".app-header,.card,.mode-card,.question-card,.solo-summary,.solo-score-bar,.score-pane,.option-btn,.btn-primary,.btn-next,.btn-replay,.fact-card,.tier-chip,.q-counter,.streak-chip,.chip,.icon-btn,.btn-reveal,.btn-newgame,.award-btn,.presence-card,.me-row,.online-action,.searching-card,.waiting-card,.info-card,.vs-row,.len-chip,.duel-scorebar,.timer-chip,.dr-side,.rank-row,.text-input,.code-input,.fs-hint,.modal-card,.btn-ghost,.fsh-close,.hs-item,.settings-sheet,.hero-verse-card,.modal-btn.ok,.modal-btn.cancel,.leave-banner,.end-medal,.adj-btn,.waiting-note,.rules,.btn-review,.daily-card,.dc-streak,.btn-invite,.creator-badge,.sheet-done,.set-go,.share-btn,.rev-item,.parcours-card,.parcours-sum,.tst-head";
+const GLASS_SEL = ".app-header,.card,.mode-card,.question-card,.solo-summary,.solo-score-bar,.score-pane,.option-btn,.btn-primary,.btn-next,.btn-replay,.fact-card,.tier-chip,.q-counter,.streak-chip,.chip,.icon-btn,.btn-reveal,.btn-newgame,.award-btn,.presence-card,.me-row,.online-action,.searching-card,.waiting-card,.info-card,.vs-row,.len-chip,.duel-scorebar,.timer-chip,.dr-side,.rank-row,.text-input,.code-input,.fs-hint,.modal-card,.btn-ghost,.fsh-close,.settings-sheet,.hero-verse-card,.modal-btn.ok,.modal-btn.cancel,.leave-banner,.end-medal,.adj-btn,.waiting-note,.rules,.btn-review,.daily-card,.dc-streak,.btn-invite,.creator-badge,.sheet-done,.set-go,.share-btn,.rev-item,.parcours-card,.parcours-sum,.tst-head";
 const GLASS_SKIP = ".timer-chip.low,.btn-primary:disabled,.btn-next:disabled";
 /* RÉFRACTION VIVANTE : le verre est calé sur la position RÉELLE à l'écran et
    ré-aligné image par image pendant les mouvements -> quand une carte glisse
@@ -10939,6 +10977,11 @@ if("serviceWorker" in navigator){
   function tenterMaj(){
     if(!momentPropice()) return;
     majFaite = true;
+    /* On note que le son VIVAIT avant de recharger. Sans ça, la nouvelle page
+       repart avec audioUnlocked à faux : sur iOS, la musique ne peut alors
+       redémarrer qu'au prochain toucher, et une mise à jour silencieuse
+       laissait le jeu muet sans que rien ne l'explique. */
+    try{ if(settings.music) sessionStorage.setItem("bt_son_vif", "1"); }catch(e){}
     try{ location.reload(); }catch(e){}
   }
   try{
