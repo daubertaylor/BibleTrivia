@@ -122,6 +122,23 @@
        APRÈS : quatre marches, choisies pour le RÔLE et non pour la taille
        actuelle. Les pastilles d'icône gardent leur propre marche : à 45 px de
        côté, un rayon de bouton les arrondirait en galets. */
+    /* LE RYTHME VERTICAL. Le jeu séparait ses blocs avec QUATORZE écarts
+       différents (6,7 / 7,5 / 8,4 / 9,9 / 10,8 / 13 / 15 / 15,7 / 15,8 /
+       16,6 / 18,3 / 23,3 / 24,1 px) : autant de valeurs que d'occasions de
+       les écrire, aucune qui découle d'une autre. Quatre pas suffisent, dans
+       un rapport constant d'environ 1,55 — l'œil lit alors une hiérarchie au
+       lieu d'une suite de nombres. Ils sont en rem : le jeu change de taille
+       de base selon l'écran, le rythme suit tout seul.
+
+         e-1  une étiquette et son champ
+         e-2  deux éléments d'un même groupe
+         e-3  deux blocs voisins   <- le pas courant
+         e-4  deux sections
+
+       Les micro-espacements internes d'un composant (0,12 à 0,3 rem : une
+       icône et son texte, un chiffre et sa légende) n'en font pas partie —
+       ils relèvent de la typographie du composant, pas du rythme de l'écran. */
+    --e-1:0.4rem; --e-2:0.62rem; --e-3:1rem; --e-4:1.5rem;
     --r-ico:14px;   /* pastilles d'icône, vignettes photo — squircle */
     --r-s:14px;     /* petites plaques, badges */
     --r-m:18px;     /* boutons, lignes de liste, chips */
@@ -275,7 +292,7 @@
      navigation au CLAVIER, où il doit se voir sans hésitation possible. */
   button:focus-visible{ outline:2px solid var(--primary); outline-offset:2px; }
   input:focus-visible, textarea:focus-visible{ outline:none; }
-  .team-row input:focus{ box-shadow:0 0 0 3px rgba(238,74,40,0.18); }
+
   .text-input:focus, .code-input:focus{ box-shadow:0 0 0 1px var(--filet), 0 0 0 3px rgba(238,74,40,0.18); }
 
   #app{ position:relative; z-index:1; width:100%; max-width:430px; margin:0 auto; height:100%; overflow-y:auto; overflow-x:hidden; overscroll-behavior:none; display:flex; flex-direction:column; padding:calc(env(safe-area-inset-top) + 0.35rem) calc(env(safe-area-inset-right) + 0.7rem) calc(env(safe-area-inset-bottom) + 0.35rem) calc(env(safe-area-inset-left) + 0.7rem); }
@@ -386,7 +403,7 @@
   .btn-primary:disabled, .btn-next:disabled{ opacity:1; background-image:linear-gradient(180deg, #6E6254, #55483A); box-shadow:inset 0 0 0 1px rgba(255,255,255,0.16), inset 0 1px 0 rgba(255,255,255,0.22); color:rgba(255,255,255,0.95); }
 
   /* ---------- Header ---------- */
-  .app-header{ display:flex; align-items:center; justify-content:space-between; gap:0.75rem; margin-bottom:1.1rem; border-radius:var(--r-l); padding:0.5rem 0.55rem; }
+  .app-header{ display:flex; align-items:center; justify-content:space-between; gap:0.75rem; margin-bottom:var(--e-3); border-radius:var(--r-l); padding:0.5rem 0.55rem; }
   .header-title{ font-family:'Poppins',sans-serif; font-weight:600; font-size:1.05rem; letter-spacing:-0.01em; }
   .icon-btn{
     width:2.4rem; height:2.4rem; border-radius:50%;
@@ -436,7 +453,7 @@
   .mode-card{
     width:100%; display:flex; align-items:center; gap:0.8rem;
     background:var(--surface); border:1px solid var(--border); border-radius:var(--r-l);
-    padding:0.82rem 0.95rem; margin-bottom:13px; text-align:left;
+    padding:0.82rem 0.95rem; margin-bottom:var(--e-3); text-align:left;
     box-shadow:inset 0 1px 0 rgba(255,255,255,0.7), 0 4px 16px rgba(15,12,10,0.1);
   }
   /* Chevron « > » des cartes : il cumulait AVANT une couleur déjà très pâle
@@ -460,7 +477,7 @@
   .mode-desc{ font-size:0.8rem; color:var(--ink-soft); line-height:1.35; }
 
   /* ---------- Cards / setup ---------- */
-  .card{ background:var(--surface); border:1px solid var(--border); border-radius:var(--r-l); padding:1.1rem 1rem; margin-bottom:0.95rem; }
+  .card{ background:var(--surface); border:1px solid var(--border); border-radius:var(--r-l); padding:1.1rem 1rem; margin-bottom:var(--e-3); }
   .card h2{ font-family:'Poppins',sans-serif; font-size:0.78rem; font-weight:700; letter-spacing:0.09em; text-transform:uppercase; color:var(--ink-soft); margin:0 0 0.65rem 0.1rem; }
 
   /* LIGNES JOUEURS : la carte est la SEULE surface de verre ; les lignes sont un
@@ -491,7 +508,13 @@
      changement de couleur, sans le moindre décalage du texte. */
   .team-row input{ flex:1; min-width:0; background:transparent; border:1px solid transparent; box-shadow:none; color:var(--ink); padding:0.58rem 0.75rem; border-radius:var(--r-s); font-size:0.95rem; font-weight:600;
     transition:background-color 0.18s ease, border-color 0.18s ease; }
-  .team-row input:focus{ background:rgba(255,255,255,0.7); border-color:var(--filet); }
+  /* LA MISE AU POINT PREND LA LIGNE, PAS UN RECTANGLE INVENTÉ DEDANS.
+     Le halo entourait le champ de saisie — une surface plus petite que la
+     ligne, aux coins différents, qui n'apparaissait qu'au moment de taper :
+     on voyait naître une boîte dans une boîte. La ligne, elle, est déjà là ;
+     elle s'éclaire, elle se pose un peu plus haut, et c'est tout. */
+  .team-row:focus-within{ background:rgb(255,253,249); box-shadow:var(--rebord-pose), 0 0 0 3px rgba(238,74,40,0.16); }
+  .team-row input:focus{ background:transparent; }
   .team-remove{ background:none; border:none; color:var(--ink-soft); width:1.8rem; height:1.8rem; padding:0.4rem; display:flex; align-items:center; justify-content:center; flex-shrink:0; }
   .team-remove:disabled{ opacity:0.25; }
 
@@ -538,7 +561,7 @@
   .chip.active .sub{ opacity:0.92; }
   .chip .sub{ display:block; font-weight:400; font-size:0.78rem; margin-top:0.15rem; opacity:0.85; }
 
-  .rules{ font-size:0.85rem; color:var(--ink-soft); line-height:1.6; background:rgba(244,239,231,0.78); backdrop-filter:blur(14px) saturate(180%); -webkit-backdrop-filter:blur(14px) saturate(180%); border:1px solid var(--bord); border-radius:var(--r-m); padding:0.9rem 1rem; margin-bottom:1.1rem; }
+  .rules{ font-size:0.85rem; color:var(--ink-soft); line-height:1.6; background:rgba(244,239,231,0.78); backdrop-filter:blur(14px) saturate(180%); -webkit-backdrop-filter:blur(14px) saturate(180%); border:1px solid var(--bord); border-radius:var(--r-m); padding:0.9rem 1rem; margin-bottom:var(--e-3); }
   .rules b{ color:var(--ink); }
 
   .btn-primary{ width:100%; background:var(--primary); color:#fff; border:1px solid var(--bord); border-radius:var(--r-m); padding:clamp(0.9rem, calc(1.75 * var(--uh)), 1.06rem); font-size:0.95rem; font-weight:700; letter-spacing:0.01em; --rim-edge:0 0 0 1px rgba(150,30,14,0.3);--rim-cast:0 6px 16px rgba(214,60,34,0.42); }
@@ -547,13 +570,13 @@
      repaint au toucher (c'est ce repaint qui le faisait « blanchir »). */
   .btn-primary.is-waiting, .btn-replay.is-waiting{ --glass-tint: rgb(252,248,241); color:var(--ink-soft); cursor:default; pointer-events:none; box-shadow:inset 0 1px 0 rgba(255,255,255,0.7), inset 0 0 0 1px rgba(255,255,255,0.5), 0 4px 14px rgba(15,12,10,0.12); }
   #roomStartBtn{ margin-top:0.9rem; }
-  .error-msg{ color:#ff8a76; font-size:0.82rem; text-align:center; margin-top:0.6rem; min-height:1.2em; text-shadow:0 1px 6px rgba(0,0,0,0.35); }
+  .error-msg{ color:#ff8a76; font-size:0.82rem; text-align:center; margin-top:var(--e-2); min-height:1.2em; text-shadow:0 1px 6px rgba(0,0,0,0.35); }
 
   /* ---------- Play ---------- */
   /* Rangée d'infos de jeu : UNE seule ligne (nowrap) -> la flamme de série reste
      TOUJOURS en haut avec les autres puces, elle ne passe jamais sur une 2e ligne
      en dessous. Puces compactées pour tenir sur les téléphones étroits. */
-  .play-meta{ display:flex; flex-wrap:nowrap; justify-content:space-between; align-items:center; gap:0.38rem; margin-bottom:0.9rem; }
+  .play-meta{ display:flex; flex-wrap:nowrap; justify-content:space-between; align-items:center; gap:0.38rem; margin-bottom:var(--e-3); }
   .play-meta > span{ flex-shrink:0; }
   .play-meta .tier-chip{ font-size:0.76rem; padding:0.3rem 0.58rem; gap:0.3rem; }
   .play-meta .q-counter, .play-meta .timer-chip, .play-meta .streak-chip{ font-size:0.76rem; padding:0.3rem 0.55rem; }
@@ -577,22 +600,22 @@
   .q-counter{ font-size:0.8rem; color:var(--ink); font-weight:700; font-variant-numeric:tabular-nums; letter-spacing:0.01em; background:rgba(255,255,255,0.5); backdrop-filter:blur(18px) saturate(180%); -webkit-backdrop-filter:blur(18px) saturate(180%); border:1px solid var(--bord); padding:0.34rem 0.7rem; border-radius:var(--r-full); }
   /* Verre peint comme les autres puces (plus de backdrop-filter, invisible
      sur iOS) : la teinte passe par --glass-tint, le fond photo transparaît. */
-  .streak-chip{ display:flex; align-items:center; gap:0.32rem; --glass-tint: rgb(255,226,150); border:1px solid rgba(239,173,38,0.55); color:#8a5e14; padding:0.34rem 0.7rem; border-radius:var(--r-full); font-size:0.8rem; font-weight:700; }
+  .streak-chip{ display:flex; align-items:center; gap:0.32rem; --glass-tint: rgb(255,226,150); border:1px solid transparent; color:#8a5e14; padding:0.34rem 0.7rem; border-radius:var(--r-full); font-size:0.8rem; font-weight:700; }
   .streak-chip.hot{ --glass-tint: rgb(242,96,44); border-color:var(--bord); color:#fff; --rim-cast:0 3px 12px rgba(242,100,48,0.5); }
   .streak-chip.hot .ico{ animation:flameFlicker 0.9s ease-in-out infinite; }
   @keyframes flameFlicker{ 0%,100%{ transform:scale(1) rotate(-2deg); } 50%{ transform:scale(1.12) rotate(2deg); } }
   .streak-chip .ico{ width:1.08rem; height:1.08rem; }
   .streak-chip.hot .ico{ width:1.18rem; height:1.18rem; }
 
-  .progress-track{ position:relative; height:8px; margin-bottom:1.4rem; background:rgba(255,255,255,0.32); backdrop-filter:blur(14px) saturate(180%); -webkit-backdrop-filter:blur(14px) saturate(180%); border-radius:var(--r-full); border:1px solid var(--bord); box-shadow:inset 0 1px 2px rgba(15,12,10,0.12); overflow:hidden; }
+  .progress-track{ position:relative; height:8px; margin-bottom:var(--e-4); background:rgba(255,255,255,0.32); backdrop-filter:blur(14px) saturate(180%); -webkit-backdrop-filter:blur(14px) saturate(180%); border-radius:var(--r-full); border:1px solid var(--bord); box-shadow:inset 0 1px 2px rgba(15,12,10,0.12); overflow:hidden; }
   .progress-fill{ position:absolute; left:0; top:0; bottom:0; border-radius:var(--r-full); background:linear-gradient(90deg, #FB6A45, #EFAD26); box-shadow:0 0 10px rgba(241,80,47,0.5); transition:width 0.55s cubic-bezier(0.16,1,0.3,1); }
   .progress-fill::after{ content:""; position:absolute; inset:0; border-radius:var(--r-full); box-shadow:inset 0 1px 0 rgba(255,255,255,0.45); }
 
-  .question-card{ position:relative; background:var(--surface); border:1px solid var(--border); border-radius:var(--r-l); padding:1.4rem 1.2rem; margin-bottom:1rem; text-align:center; }
+  .question-card{ position:relative; background:var(--surface); border:1px solid var(--border); border-radius:var(--r-l); padding:1.4rem 1.2rem; margin-bottom:var(--e-3); text-align:center; }
   .question-card::before{ content:""; position:absolute; top:0; left:18%; right:18%; height:2px; background:linear-gradient(90deg, transparent, rgba(239,173,38,0.75), transparent); }
   .question-card .qtext{ font-family:'Poppins',sans-serif; font-weight:600; font-size:clamp(1.05rem, 4vw, 1.32rem); line-height:1.45; }
 
-  .options-grid{ display:grid; grid-template-columns:1fr 1fr; gap:clamp(0.55rem, calc(1.2 * var(--uh)), 0.8rem); margin-bottom:clamp(0.9rem, calc(1.8 * var(--uh)), 1.3rem); }
+  .options-grid{ display:grid; grid-template-columns:1fr 1fr; gap:clamp(0.55rem, calc(1.2 * var(--uh)), 0.8rem); margin-bottom:clamp(var(--e-2), calc(1.8 * var(--uh)), var(--e-4)); }
   @media (max-width:420px){ .options-grid{ grid-template-columns:1fr; } }
   .option-btn{
     display:flex; align-items:center; gap:0.6rem;
@@ -714,7 +737,7 @@
     mask-image:linear-gradient(to right, #000 0, #000 calc(100% - 2.2rem), transparent 100%); }
   .duel-scorebar.multi::-webkit-scrollbar{ display:none; }
   .ds-puce{ display:inline-flex; align-items:baseline; gap:0.32rem; flex-shrink:0; padding:0.16rem 0.55rem; border-radius:var(--r-full); background:rgba(255,255,255,0.55); border:1px solid rgba(255,255,255,0.66); }
-  .ds-puce.moi{ background:rgba(241,80,47,0.13); border-color:rgba(241,80,47,0.3); }
+  .ds-puce.moi{ background:rgba(241,80,47,0.13); border-color:transparent; }
   .ds-puce.gone{ opacity:0.5; }
   .dsp-nom{ font-size:0.72rem; font-weight:600; color:var(--ink-soft); max-width:5.2rem; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
   .ds-puce.moi .dsp-nom{ color:var(--primary); }
@@ -724,7 +747,7 @@
   .rank-score{ font-family:'Poppins',sans-serif; font-weight:700; font-variant-numeric:tabular-nums; color:var(--primary); min-width:2.6rem; text-align:right; }
 
   /* Solo ring */
-  .solo-summary{ background:rgba(255,255,255,0.55); backdrop-filter:blur(16px) saturate(180%); -webkit-backdrop-filter:blur(16px) saturate(180%); border:1px solid var(--bord); border-radius:var(--r-l); padding:0.95rem 1rem; text-align:center; margin-bottom:1rem; }
+  .solo-summary{ background:rgba(255,255,255,0.55); backdrop-filter:blur(16px) saturate(180%); -webkit-backdrop-filter:blur(16px) saturate(180%); border:1px solid var(--bord); border-radius:var(--r-l); padding:0.95rem 1rem; text-align:center; margin-bottom:var(--e-3); }
   .ring-wrap{ position:relative; width:7.3rem; height:7.3rem; margin:0 auto 0.7rem; }
   .ring-wrap svg{ width:100%; height:100%; transform:rotate(-90deg); }
   .ring-bg{ fill:none; stroke:var(--surface-alt); stroke-width:7.5; }
@@ -752,7 +775,7 @@
      large, quand la carte au-dessus, le bloc « Déroulé » et le bouton
      « Commencer la partie » font tous x=12 et 379 px. Un seul bloc en retrait
      au milieu d'une colonne alignée, et l'œil le voit tout de suite. */
-  .btn-review{ width:100%; margin:0 0 0.6rem; display:flex; align-items:center; justify-content:center; gap:0.5rem; color:var(--ink); border:1px solid var(--bord); border-radius:var(--r-m); padding:0.85rem 1.1rem; font-weight:700; font-size:0.95rem; }
+  .btn-review{ width:100%; margin:0 0 var(--e-2); display:flex; align-items:center; justify-content:center; gap:0.5rem; color:var(--ink); border:1px solid var(--bord); border-radius:var(--r-m); padding:0.85rem 1.1rem; font-weight:700; font-size:0.95rem; }
   .btn-review .ico{ width:1.5rem; height:1.5rem; color:var(--primary); flex-shrink:0; }
   .review-sheet .rev-list{ max-height:calc(54 * var(--uh)); overflow-y:auto; margin:0.3rem 0 0.2rem; display:flex; flex-direction:column; gap:0.65rem; -webkit-overflow-scrolling:touch; }
   /* flex-shrink:0 indispensable : .rev-list est une colonne flex avec
@@ -933,7 +956,7 @@
      était re-rastérisé sur la couche d'animation (légèrement flou) puis « sautait »
      net à la fin -> le petit C semblait changer. Là il reste identique avant,
      pendant et après la transition. */
-  .crown-badge{ position:absolute; bottom:-4px; right:-4px; width:1.2rem; height:1.2rem; background:linear-gradient(150deg,#FFC65C,#E8952A); border-radius:50%; display:flex; align-items:center; justify-content:center; padding:0.16rem; color:#fff; text-shadow:0 1px 2px rgba(122,78,4,0.35); border:1.5px solid #fff; box-shadow:inset 0 1px 0 rgba(255,255,255,0.7), 0 2px 6px rgba(196,120,20,0.55); transform:translateZ(0); backface-visibility:hidden; }
+  .crown-badge{ position:absolute; bottom:-4px; right:-4px; width:1.2rem; height:1.2rem; background:linear-gradient(150deg,#FFC65C,#E8952A); border-radius:50%; display:flex; align-items:center; justify-content:center; padding:0.16rem; color:#fff; text-shadow:0 1px 2px rgba(122,78,4,0.35); border:0;  box-shadow:inset 0 1px 0 rgba(255,255,255,0.7), 0 2px 6px rgba(196,120,20,0.55); transform:translateZ(0); backface-visibility:hidden; }
   /* Le brun sur verre clair (comme la pastille flamme du défi) restait fade à
      côté du badge rond du profil (dégradé or plein, opaque). Même recette
      que .streak-chip.hot : teinte dorée SATURÉE (au lieu du voile pâle) +
@@ -953,15 +976,19 @@
   .c-mono{ display:block; }
   .crown-badge .c-mono{ width:100%; height:100%; }
 
-  .profile-card{ text-align:center; padding:1.1rem 1rem 0.35rem; }
+  .profile-card{ text-align:center; padding:1.1rem 1rem 0.35rem; margin-bottom:var(--e-3); }
   .profile-card .avatar{ margin:0 auto; }
   .profile-name{ font-family:'Poppins',sans-serif; font-weight:700; font-size:1.15rem; margin-top:0.65rem; color:#fff; text-shadow:0 1px 12px rgba(0,0,0,0.5); }
   .profile-sub{ color:var(--ink-soft); font-size:0.8rem; margin-top:0.3rem; }
-  .field-label{ display:block; font-size:0.81rem; font-weight:600; color:rgba(255,255,255,0.9); margin:0 0 0.4rem 0.2rem; text-shadow:0 1px 6px rgba(0,0,0,0.4); }
+  .field-label{ display:block; font-size:0.81rem; font-weight:600; color:rgba(255,255,255,0.9); margin:0 0 var(--e-1) 0.2rem; text-shadow:0 1px 6px rgba(0,0,0,0.4); }
   .text-input,.code-input{ width:100%; background:rgba(255,255,255,0.68); backdrop-filter:blur(14px) saturate(180%); -webkit-backdrop-filter:blur(14px) saturate(180%); border:1px solid var(--bord); border-radius:var(--r-s); padding:0.78rem 0.9rem; font-size:0.95rem; color:var(--ink); font-family:'Inter',sans-serif; }
   .text-input:focus,.code-input:focus{ outline:none; border-color:var(--primary); }
   .code-input{ text-align:center; font-family:'Poppins',sans-serif; font-weight:700; font-size:1.7rem; letter-spacing:0.42rem; text-transform:uppercase; }
-  .color-row{ display:flex; gap:0.6rem; justify-content:center; flex-wrap:wrap; }
+  /* Les pastilles étaient centrées sous des étiquettes et un champ alignés
+     à gauche : la colonne se lisait en deux morceaux. Elles partent du
+     même bord que « Couleur », et un ajout de couleur passera à la ligne
+     sans recentrer la première rangée. */
+  .color-row{ display:flex; gap:0.6rem; justify-content:flex-start; flex-wrap:wrap; padding-left:0.2rem; }
   /* LA PASTILLE DE COULEUR EST UNE COULEUR, PAS UNE COULEUR ENCADRÉE.
      Chaque pastille portait un anneau blanc de 2px plus une lèvre blanche
      interne ; la retenue y ajoutait un anneau plein #fff ET un halo de 3px,
@@ -982,7 +1009,7 @@
   .color-dot.sel{ border-width:3px; box-shadow:0 0 0 2px rgba(255,255,255,0.94), 0 2px 8px rgba(15,12,10,0.24); }
   .btn-ghost{ width:100%; border:1px solid var(--bord); color:var(--ink); border-radius:var(--r-m); padding:0.8rem; font-weight:700; font-size:0.9rem; }
 
-  .online-hero{ text-align:center; padding:0.7rem 1rem 1.1rem; }
+  .online-hero{ text-align:center; padding:0.7rem 1rem var(--e-3); }
   .online-hero-icon{ width:2.9rem; height:2.9rem; margin:0 auto 0.65rem; border-radius:50%; background:linear-gradient(150deg, #4DA8FF, #2E7FE8); color:#fff; display:flex; align-items:center; justify-content:center; padding:0.68rem; box-shadow:inset 0 1px 0 rgba(255,255,255,0.26), 0 2px 7px rgba(46,127,232,0.24); }
   .online-hero-title{ font-family:'Poppins',sans-serif; font-weight:700; font-size:1.15rem; color:#fff; margin:0 0 0.3rem; text-shadow:0 1px 12px rgba(0,0,0,0.4); }
   .online-hero-sub{ color:rgba(255,255,255,0.9); font-size:0.85rem; line-height:1.5; max-width:18rem; margin:0 auto; text-shadow:0 1px 8px rgba(0,0,0,0.35); }
@@ -1188,7 +1215,7 @@
   @keyframes modalOut{ to{ opacity:0; transform:scale(0.93) translateY(10px); } }
 
   /* ---------- Bannière adversaire parti + hôte ---------- */
-  .leave-banner{ display:flex; align-items:flex-start; gap:0.6rem; --glass-tint: rgb(255,244,222); border:1px solid rgba(239,173,38,0.55); border-left:3px solid var(--gold); border-radius:var(--r-m); padding:0.75rem 0.95rem; margin-bottom:0.7rem; font-size:0.85rem; line-height:1.45; color:#5f4310; }
+  .leave-banner{ display:flex; align-items:flex-start; gap:0.6rem; --glass-tint: rgb(255,244,222); border:1px solid transparent; border-radius:var(--r-m); padding:0.75rem 0.95rem; margin-bottom:0.7rem; font-size:0.85rem; line-height:1.45; color:#5f4310; }
   .leave-banner .lb-ico{ width:1.2rem; height:1.2rem; flex-shrink:0; color:var(--gold); margin-top:0.1rem; }
   .vs-tag.is-host{ color:var(--gold-deep); font-weight:800; text-transform:uppercase; letter-spacing:0.06em; font-size:0.78rem; }
   .host-note{ text-align:center; font-size:0.84rem; color:rgba(255,255,255,0.92); margin:0.6rem auto 0.15rem; max-width:20rem; text-shadow:0 1px 8px rgba(0,0,0,0.4); }
@@ -1310,9 +1337,12 @@
      ne peut pas porter d'enfant -> le rebord reste sur l'élément lui-même
      pour ces deux-là (regroupés dans le même sélecteur ci-dessous). */
   .glass-rim, .text-input, .code-input, .switch, .team-token, .avatar, .scn-thumb, .team-row, .bk{
+    /* Plus aucun --rim-edge : c'était le dernier endroit d'où une couleur
+       pouvait border une surface (or sur les livres, rouge sur les boutons,
+       vert sur l'interrupteur). Le rebord ne dit plus que deux choses : la
+       lumière sur l'arête haute, et la profondeur. */
     box-shadow:
       inset 0 1px 0 var(--levre),
-      var(--rim-edge, 0 0 0 1px transparent),
       var(--rim-cast, 0 5px 14px rgba(34,26,16,0.12));
   }
   .glass-rim{ position:absolute; inset:0; border-radius:inherit; pointer-events:none; }
@@ -1473,7 +1503,7 @@
      qui donnait un verre différent des autres. */
   /* MÊME contour de verre que les cartes de mode (Jouer en ligne & co.) :
      fond, bord et reflet/ombre identiques -> aucune différence perceptible. */
-  .daily-card{ width:100%; display:flex; align-items:center; gap:0.8rem; background:transparent; backdrop-filter:blur(28px) saturate(185%); -webkit-backdrop-filter:blur(28px) saturate(185%); border:1px solid var(--bord); border-radius:var(--r-l); padding:0.82rem 0.95rem; margin-bottom:13px; text-align:left; --rim-cast:0 10px 34px rgba(15,12,10,0.2), 0 2px 8px rgba(15,12,10,0.08); box-shadow:none; }
+  .daily-card{ width:100%; display:flex; align-items:center; gap:0.8rem; background:transparent; backdrop-filter:blur(28px) saturate(185%); -webkit-backdrop-filter:blur(28px) saturate(185%); border:1px solid var(--bord); border-radius:var(--r-l); padding:0.82rem 0.95rem; margin-bottom:var(--e-3); text-align:left; --rim-cast:0 10px 34px rgba(15,12,10,0.2), 0 2px 8px rgba(15,12,10,0.08); box-shadow:none; }
   /* Exactement le même traitement que les icônes du menu (taille, rayon,
      padding, liseré de verre) — seule la flamme change. */
   /* Rebord de verre renforcé : l'icône dorée est posée sur une carte AUSSI
@@ -1491,14 +1521,17 @@
      l'icône flamme repalettée juste au-dessus. */
   .daily-card .dc-streak{ display:inline-flex; align-items:center; gap:0.22rem; font-weight:800; font-size:0.9rem; font-variant-numeric:tabular-nums; color:#fff; text-shadow:0 1px 2px rgba(122,78,4,0.35); --glass-tint: rgb(240,163,26); border:1px solid var(--bord); border-radius:var(--r-full); padding:0.24rem 0.6rem; flex-shrink:0; box-shadow:inset 0 1px 0 rgba(255,255,255,0.8), inset 0 0 0 1px rgba(255,255,255,0.28), 0 2px 8px rgba(196,144,32,0.24); }
   .daily-card .dc-streak svg{ width:0.92rem; height:0.92rem; }
-  .daily-card .dc-check{ width:1.5rem; height:1.5rem; color:#1f7a4d; flex-shrink:0; display:inline-flex; }
-  .daily-card .dc-check svg{ width:100%; height:100%; }
+  /* La carte terminée ne porte plus de disque vert : la coche occupe
+     EXACTEMENT la place du chevron, dans la même encre douce. Le défi fini se
+     lit alors comme une ligne au repos — pas comme une ligne décorée. */
+  .daily-card .dc-check{ opacity:1; }
+  .daily-card .dc-check svg{ stroke-width:2.6; }
   .daily-card:disabled{ cursor:default; opacity:1; }
 
   /* ---------- Parcours : progression & objectifs ---------- */
   /* « Mon parcours » : carte COMPACTE (comme les modes du bas) pour laisser
      de l'air sur l'accueil — ce n'est qu'un raccourci vers la progression. */
-  .parcours-card{ width:100%; display:flex; align-items:center; gap:0.8rem; background:transparent; backdrop-filter:blur(28px) saturate(185%); -webkit-backdrop-filter:blur(28px) saturate(185%); border:1px solid var(--bord); border-radius:var(--r-l); padding:0.82rem 0.95rem; margin-bottom:16px; text-align:left; --rim-cast:0 10px 34px rgba(15,12,10,0.2), 0 2px 8px rgba(15,12,10,0.08); box-shadow:none; }
+  .parcours-card{ width:100%; display:flex; align-items:center; gap:0.8rem; background:transparent; backdrop-filter:blur(28px) saturate(185%); -webkit-backdrop-filter:blur(28px) saturate(185%); border:1px solid var(--bord); border-radius:var(--r-l); padding:0.82rem 0.95rem; margin-bottom:var(--e-3); text-align:left; --rim-cast:0 10px 34px rgba(15,12,10,0.2), 0 2px 8px rgba(15,12,10,0.08); box-shadow:none; }
   .parcours-card .pc-ico{ background:linear-gradient(150deg,#7BC96F,#3E9E4E); box-shadow:inset 0 1px 0 rgba(255,255,255,0.26), 0 2px 7px rgba(46,153,104,0.24); }
   .parcours-card .pc-ico svg{ width:100%; height:100%; }
   .parcours-card .pc-txt{ flex:1; display:flex; flex-direction:column; gap:0.16rem; min-width:0; }
@@ -1508,15 +1541,26 @@
   /* Barre de stats : MÊME contour de verre premium que les cartes (bord .55 +
      ombre 4 couches) -> cohérent avec l'accueil et le reste du jeu. */
   .parcours-sum{ display:flex; align-items:center; gap:0.9rem; padding:0.75rem 1rem; background:transparent; backdrop-filter:blur(28px) saturate(185%); -webkit-backdrop-filter:blur(28px) saturate(185%); border:1px solid var(--bord); --rim-cast:0 10px 34px rgba(15,12,10,0.2), 0 2px 8px rgba(15,12,10,0.08); box-shadow:none; }
-  .ps-ring{ width:4.1rem; height:4.1rem; border-radius:50%; flex-shrink:0; display:flex; flex-direction:column; align-items:center; justify-content:center; background:radial-gradient(circle at 50% 36%, rgba(255,255,255,0.52), rgba(255,255,255,0.12)); border:2px solid var(--gold-deep); box-shadow:inset 0 1px 0 rgba(255,255,255,0.7); }
-  .ps-ring b{ font-family:'Poppins',sans-serif; font-weight:800; font-size:1.35rem; line-height:1; color:var(--ink); }
-  .ps-ring small{ font-size:0.58rem; color:var(--ink-soft); font-weight:600; margin-top:0.12rem; }
-  .ps-cells{ flex:1; display:flex; justify-content:space-around; gap:0.4rem; text-align:center; }
+  /* QUATRE CHIFFRES, UN SEUL TRAITEMENT.
+     Le nombre de livres vivait dans un médaillon rond cerné d'or, à côté de
+     trois chiffres nus : un objet d'un autre âge, et le dernier rebord coloré
+     du jeu. Il n'y avait aucune raison de distinguer celui-là — la
+     progression par testament est déjà tracée juste en dessous, barre à
+     l'appui. Les quatre chiffres se lisent donc pareil, et « /66 » se dit en
+     plus petit pour que le nombre atteint reste le seul à porter la voix. */
+  .ps-cells{ flex:1; display:flex; justify-content:space-between; gap:0.35rem; text-align:center; }
+  .ps-cells > div{ flex:1; min-width:0; }
+  .ps-cells b i{ font-style:normal; font-weight:700; font-size:0.72em; color:var(--ink-soft); letter-spacing:-0.01em; }
   .ps-cells > div{ display:flex; flex-direction:column; gap:0.1rem; }
   .ps-cells b{ font-family:'Poppins',sans-serif; font-weight:700; font-size:1.15rem; color:var(--ink); line-height:1; }
-  .ps-cells small{ font-size:0.66rem; color:var(--ink-soft); font-weight:600; }
+  /* « bonnes réponses » ne tient pas sur une ligne dans un quart d'écran de
+     320 px, et le raccourcir le rendrait ambigu (« réponses » ne dit plus
+     que ce sont les BONNES). Les quatre légendes réservent donc la même
+     hauteur de deux lignes : celle qui se replie ne décale plus les
+     autres, et la carte ne change pas de taille d'un téléphone à l'autre. */
+  .ps-cells small{ font-size:0.62rem; color:var(--ink-soft); font-weight:600; line-height:1.25; min-height:2.5em; display:block; }
 
-  .parcours-h{ display:flex; align-items:baseline; justify-content:space-between; font-family:'Poppins',sans-serif; font-size:0.98rem; font-weight:700; color:#fff; text-shadow:0 1px 6px rgba(0,0,0,0.45); margin:0.65rem 0.2rem 0.45rem; }
+  .parcours-h{ display:flex; align-items:baseline; justify-content:space-between; font-family:'Poppins',sans-serif; font-size:0.98rem; font-weight:700; color:#fff; text-shadow:0 1px 6px rgba(0,0,0,0.45); margin:var(--e-3) 0.2rem var(--e-2); }
   .parcours-h small{ font-weight:600; font-size:0.82rem; opacity:0.92; }
 
   /* Objectifs : VITRINE (grille compacte dans UNE carte de verre) au lieu d'une
@@ -1531,13 +1575,18 @@
   .ach:active .ach-tile{ transform:scale(0.9); }
   .ach-tile{ position:relative; width:2.6rem; height:2.6rem; border-radius:var(--r-s); display:flex; align-items:center; justify-content:center; color:#fff; box-shadow:inset 0 1px 0 rgba(255,255,255,0.26), 0 2px 7px rgba(15,12,10,0.24); }
   .ach-tile svg{ width:1.45rem; height:1.45rem; display:block; }
-  .ach.off .ach-tile{ opacity:0.9; }
+  /* CE QUI EST GAGNÉ EST EN COULEUR, CE QUI RESTE À FAIRE NE L'EST PAS.
+     Les seize tuiles étaient toutes vives, gagnées ou non, et c'est une
+     pastille verte collée dans le coin qui devait faire la différence — un
+     autocollant sur une vignette, seize fois de suite. La grille se lit
+     maintenant d'un seul regard : la couleur EST la récompense. Un objectif
+     encore à atteindre reste lisible, simplement éteint. */
+  .ach.off .ach-tile{ filter:saturate(0.14) brightness(1.04); opacity:0.62; box-shadow:inset 0 1px 0 rgba(255,255,255,0.24), 0 1px 3px rgba(15,12,10,0.1); }
+  .ach.off .ach-nm{ color:var(--ink-soft); }
   .ach-tile.c-coral{ background:linear-gradient(150deg, #F44E2C, #DE3616); box-shadow:inset 0 1px 0 rgba(255,255,255,0.26), 0 2px 7px rgba(214,71,44,0.24); }
   .ach-tile.c-gold{ background:linear-gradient(150deg, #FFC64F, #F09A18); box-shadow:inset 0 1px 0 rgba(255,255,255,0.26), 0 2px 7px rgba(206,138,42,0.24); }
   .ach-tile.c-blue{ background:linear-gradient(150deg, #4DA8FF, #2E7FE8); box-shadow:inset 0 1px 0 rgba(255,255,255,0.26), 0 2px 7px rgba(46,127,232,0.24); }
   .ach-tile.c-green{ background:linear-gradient(150deg, #58C08A, #2E9968); box-shadow:inset 0 1px 0 rgba(255,255,255,0.26), 0 2px 7px rgba(46,153,104,0.24); }
-  .ach-check{ position:absolute; right:-4px; bottom:-4px; width:1.18rem; height:1.18rem; border-radius:50%; background:var(--green); color:#fff; display:flex; align-items:center; justify-content:center; box-shadow:0 0 0 2px rgba(255,255,255,0.92), 0 1px 3px rgba(0,0,0,0.32); }
-  .ach-check svg{ width:0.74rem; height:0.74rem; }
   .ach-nm{ font-family:'Poppins',sans-serif; font-weight:600; font-size:0.66rem; color:var(--ink); line-height:1.16; display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical; overflow:hidden; min-height:1.55rem; }
   .ach-prog{ font-size:0.6rem; font-weight:700; color:var(--ink-soft); font-variant-numeric:tabular-nums; letter-spacing:0.01em; }
   .ach.on .ach-prog{ color:#1f7a4d; }
@@ -1557,16 +1606,16 @@
   /* Testaments : en-têtes en BOUTONS DE VERRE (cohérents avec les cartes de
      l'app), au lieu de texte posé sur le fond -> plus fini, on voit que ça se
      tape/déplie. Teinte un peu plus chaude à l'ouverture. */
-  .tst{ margin-top:0.5rem; }
+  .tst + .tst{ margin-top:var(--e-2); }
   .tst-head{ width:100%; display:flex; align-items:center; gap:0.7rem; border:1px solid var(--bord); border-radius:var(--r-m); padding:0.58rem 0.85rem; cursor:pointer; text-align:left; -webkit-tap-highlight-color:transparent; transition:transform 0.13s ease; }
   .tst-head:active{ transform:scale(0.985); }
-  .tst.open .tst-head{ border-color:rgba(239,173,38,0.55); }
+
   /* TESTAMENT TERMINÉ : l'en-tête passe au vert — le MÊME vert que la bonne
      réponse et qu'un livre maîtrisé. Le vert garde donc un seul sens dans tout
      le jeu : « c'est acquis ». Tant que le testament n'est pas fini, l'en-tête
      reste crème comme les autres boutons blancs : sinon le vert ne voudrait
      plus rien dire et se cognerait avec les livres maîtrisés à l'intérieur. */
-  .tst-head.done{ --glass-tint: rgb(198,242,216); border-color:rgba(47,169,110,0.55); --rim-edge:0 0 0 1px rgba(31,122,77,0.22); }
+  .tst-head.done{ --glass-tint: rgb(198,242,216); border-color:transparent; }
   .tst-head.done .tst-name, .tst-head.done .tst-count{ color:#1f7a4d; }
   .tst-head.done .tst-chev{ color:rgba(31,122,77,0.75); }
   .tst-name{ font-family:'Poppins',sans-serif; font-size:0.94rem; font-weight:700; color:var(--ink); white-space:nowrap; flex-shrink:0; }
@@ -1601,7 +1650,6 @@
     .ach-nm{ min-height:1.4rem; }
     .ach-card{ padding:0.6rem 0.65rem 0.5rem; }
     .parcours-sum{ padding:0.6rem 0.9rem; }
-    .ps-ring{ width:3.6rem; height:3.6rem; }
     .tst{ margin-top:0.42rem; }
     .tst-head{ padding:0.5rem 0.8rem; }
     .parcours-h{ margin:0.5rem 0.2rem 0.4rem; }
@@ -1612,7 +1660,7 @@
     /* SE & co (≤700px de haut) : on resserre un poil les cartes pour que
        l'accueil tienne AUSSI ici, marges de sécurité comprises -> zéro débord,
        zéro défilement. */
-    .mode-card, .daily-card{ margin-bottom:10px; }
+    .mode-card, .daily-card{ margin-bottom:var(--e-2); }
   }
   .tst.open .tst-body{ display:grid; }
   .tst.open .tst-body.tst-body-block{ display:block; } /* section Objectifs : contenu en bloc (carte), pas en grille */
@@ -1710,7 +1758,7 @@
 
   /* ---------- Médaillon de fin : verre cerclé d'or, trophée intégré ---------- */
   .end-medal{ position:relative; width:clamp(5.9rem, 27vw, 7.3rem); aspect-ratio:1; margin:0 auto 0.7rem; border-radius:50%; display:flex; align-items:center; justify-content:center; border:1px solid var(--bord); animation:trophyIn 0.75s cubic-bezier(0.18,1.25,0.32,1) backwards; transform:translateZ(0); -webkit-transform:translateZ(0); --rim-cast:0 10px 30px rgba(18,12,6,0.3); }
-  .end-medal::before{ content:""; position:absolute; top:6%; left:6%; right:6%; bottom:6%; border-radius:50%; border:2px solid rgba(239,173,38,0.7); box-shadow:inset 0 0 14px rgba(239,173,38,0.3), 0 0 16px rgba(239,173,38,0.22); pointer-events:none; }
+  .end-medal::before{ content:""; position:absolute; top:6%; left:6%; right:6%; bottom:6%; border-radius:50%; border:0; box-shadow:inset 0 0 14px rgba(239,173,38,0.3), 0 0 16px rgba(239,173,38,0.22); pointer-events:none; }
   .end-medal::after{ content:""; position:absolute; left:50%; top:50%; width:170%; aspect-ratio:1; transform:translate(-50%,-50%); background:radial-gradient(closest-side, rgba(255,205,90,0.32), rgba(255,205,90,0.08) 55%, transparent 72%); z-index:-1; pointer-events:none; }
   .em-cup{ width:56%; display:block; filter:drop-shadow(0 6px 12px rgba(150,90,8,0.4)); }
   .em-cup svg{ height:auto; overflow:visible; }
@@ -1921,8 +1969,16 @@
   /* La coche grandit avec la MÊME courbe que tout ce qui s'ouvre dans le jeu
      (--tr-ouvre). Elle occupe sa place même invisible : rien ne se décale au
      moment du choix, il n'y a qu'elle qui apparaît. */
-  .bible-ck{ width:1.4rem; height:1.4rem; color:#1f7a4d; flex-shrink:0; display:inline-flex; opacity:0; transform:scale(0.65); transition:opacity 0.18s ease-out, transform var(--tr-ouvre); }
+  /* LA LIGNE CHOISIE EST CHOISIE, ELLE N'EST PAS ÉTIQUETÉE.
+     Un disque vert apparaissait à droite — une couleur qui n'appartient à
+     rien d'autre dans ce panneau, sur une pastille qui ressemblait à un
+     autocollant. La ligne retenue prend maintenant la teinte d'action du jeu,
+     son nom passe en gras, et une simple coche corail confirme : le même
+     langage que partout ailleurs, et rien de collé. */
+  .bible-ck{ width:1.15rem; height:1.15rem; color:var(--primary); flex-shrink:0; display:inline-flex; opacity:0; transform:scale(0.7); transition:opacity 0.18s ease-out, transform var(--tr-ouvre); }
   .bible-item.sel .bible-ck{ opacity:1; transform:scale(1); }
+  .bible-item.sel{ background:rgb(255,244,238); }
+  .bible-item.sel .bible-txt b{ color:var(--primary); }
   .bible-ck svg{ width:100%; height:100%; }
   /* Catalogue de fonds d'écran : vignettes photo, la retenue porte un liseré or */
   .scene-row{ display:flex; gap:0.7rem; padding:0.1rem 0.25rem 0.6rem; flex-wrap:wrap; }
@@ -1962,7 +2018,7 @@
      taillé dans la même matière. */
   .switch{ position:relative; width:3.2rem; height:1.9rem; border-radius:var(--r-full); border:none; background:rgba(42,36,30,0.18); transition:background 0.28s ease, box-shadow 0.28s ease; flex-shrink:0; padding:0; --rim-edge:0 0 0 1px rgba(30,22,14,0.14); --rim-cast:0 2px 6px rgba(15,12,10,0.14); }
   .switch::after{ content:""; position:absolute; top:0.18rem; left:0.18rem; width:1.54rem; height:1.54rem; border-radius:50%; background:#fff; box-shadow:inset 0 1.5px 0 rgba(255,255,255,0.9), 0 0 0 1px rgba(30,22,14,0.1), 0 2px 6px rgba(0,0,0,0.25); transition:transform 0.32s cubic-bezier(0.17,1.32,0.32,1); }
-  .switch.on{ background:linear-gradient(180deg, #3EC574, #2FA96E); --rim-edge:0 0 0 1px rgba(20,110,66,0.32); --rim-cast:0 3px 10px rgba(47,169,110,0.38); }
+  .switch.on{ background:linear-gradient(180deg, #3EC574, #2FA96E); --rim-edge:0 0 0 1px transparent; --rim-cast:0 3px 10px rgba(47,169,110,0.38); }
   .switch.on::after{ transform:translateX(1.3rem); }
   .vol-row{ display:flex; align-items:center; gap:0.7rem; padding:0.15rem 0.1rem 0.4rem; }
   .vol-row .vr-ico{ width:1.05rem; height:1.05rem; color:var(--ink-soft); flex-shrink:0; display:inline-flex; }
@@ -2050,7 +2106,7 @@
      detail : centree, la carte la plus haute passait 9 px AU-DESSUS du haut de
      l'ecran sur iPhone SE — sous l'encoche. En bas, la place est trois fois
      plus grande, et la limite ci-dessous s'arrete avant les cartes de mode. */
-  .hero-verse-card{ position:absolute; top:0; bottom:auto; height:auto; min-height:100%; max-height:min(9.5rem, calc(22 * var(--uh))); left:max(0px, calc(50% - 11.5rem)); right:max(0px, calc(50% - 11.5rem)); display:flex; flex-direction:column; align-items:center; justify-content:center; gap:0.42rem; padding:0.8rem 1.1rem; border-radius:var(--r-l); border:1px solid rgba(239,173,38,0.55); opacity:0; transform:scale(0.82) translateY(10px); transition:transform 0.55s cubic-bezier(0.2,1.15,0.3,1), opacity 0.4s ease; will-change:transform, opacity; pointer-events:none; text-align:center; }
+  .hero-verse-card{ position:absolute; top:0; bottom:auto; height:auto; min-height:100%; max-height:min(9.5rem, calc(22 * var(--uh))); left:max(0px, calc(50% - 11.5rem)); right:max(0px, calc(50% - 11.5rem)); display:flex; flex-direction:column; align-items:center; justify-content:center; gap:0.42rem; padding:0.8rem 1.1rem; border-radius:var(--r-l); border:1px solid transparent; box-shadow:var(--rebord-pose); opacity:0; transform:scale(0.82) translateY(10px); transition:transform 0.55s cubic-bezier(0.2,1.15,0.3,1), opacity 0.4s ease; will-change:transform, opacity; pointer-events:none; text-align:center; }
   .hero-zone.show-verse .hero-verse-card{ opacity:1; transform:scale(1) translateY(0); pointer-events:auto; transition-delay:0.08s; }
   /* Profil et Réglages s'effacent TOUJOURS : ils sont dans les coins hauts, et
      la carte, large de presque tout l'écran, passe par-dessus. */
@@ -2202,7 +2258,7 @@
   /* (Le champ n'a plus de matière propre : voir « LE NOM DU JOUEUR N'EST PAS
      DANS UNE BOÎTE ». Il ne reprend un fond qu'à la mise au point.) */
   .team-row input{ --glass-tint: transparent; background:transparent; }
-  .team-row input:focus{ background:rgba(255,255,255,0.7); }
+  .team-row input:focus{ background:transparent; }
   .text-input, .code-input{ --glass-tint: rgb(252,248,241); background:rgb(252,248,241); }
   /* PAS de bloc « prefers-reduced-motion » ici, volontairement : le jeu doit
      être STRICTEMENT le même pour tout le monde, quels que soient les réglages
@@ -4840,7 +4896,7 @@ function ligneBible(b){
     + ` aria-label="${b.nom}, ${b.annee}${b.dispo?'':' — indisponible'}">`
     + `<span class="bible-sig ${b.cle}">${b.sigle}</span>`
     + `<span class="bible-txt"><b>${b.court} <i>${b.annee}</i></b></span>`
-    + `<span class="bible-ck">${ICONS.checkCircle}</span></button>`;
+    + `<span class="bible-ck">${ACH_CHECK}</span></button>`;
 }
 /* UNE FEUILLE, PAS UNE MODALE. Le choix de version s'ouvrait dans une modale
    fermée par un bouton « Fermer ». Il s'ouvre maintenant comme les Réglages :
@@ -8106,7 +8162,7 @@ function renderParcours(){
   const achBadge = (a)=>{
     const on = !!p.ach[a.id], cur = a.cur(p,d);
     return `<button class="ach ${on?'on':'off'}" onclick="openAchInfo('${a.id}')">
-      <span class="ach-tile c-${a.clr}">${a.ico}${on?`<span class="ach-check">${ACH_CHECK}</span>`:``}</span>
+      <span class="ach-tile c-${a.clr}">${a.ico}</span>
       <span class="ach-nm">${escapeHtml(a.t)}</span>
       <span class="ach-prog">${on?"Débloqué":cur+" / "+a.max}</span>
     </button>`;
@@ -8114,8 +8170,8 @@ function renderParcours(){
   el.innerHTML = `
     ${renderHeader("Progression", true)}
     <div class="card parcours-sum">
-      <div class="ps-ring"><b>${d.mastered}</b><small>/ 66 livres</small></div>
       <div class="ps-cells">
+        <div><b>${d.mastered}<i>/66</i></b><small>livres maîtrisés</small></div>
         <div><b>${p.totalCorrect}</b><small>bonnes réponses</small></div>
         <div><b>${d.touched}</b><small>livres explorés</small></div>
         <div><b>${p.bestStreak}</b><small>meilleure série</small></div>
@@ -8762,7 +8818,7 @@ function renderModeSelect(){
       const group = `<button class="mode-card" onclick="selectMode('group')"><span class="mode-icon group">${ICONS.users}</span><span class="mode-text"><span class="mode-title">Mode Groupe</span><span class="mode-desc">En équipes, sur un seul écran</span></span><span class="chev">${ICONS.chevronRight}</span></button>`;
       const solo = `<button class="mode-card" onclick="selectMode('solo')"><span class="mode-icon solo">${ICONS.user}</span><span class="mode-text"><span class="mode-title">Mode Solo</span><span class="mode-desc">Une partie, à ton rythme</span></span><span class="chev">${ICONS.chevronRight}</span></button>`;
       const online = `<button class="mode-card" onclick="openOnline()"><span class="mode-icon online">${ICONS.bolt}</span><span class="mode-text"><span class="mode-title">Jouer en ligne</span><span class="mode-desc">Jusqu'à 8 joueurs, en direct</span></span><span class="chev">${ICONS.chevronRight}</span></button>`;
-      const daily = `<button class="daily-card${dDone?' done':''}" onclick="${dDone?'':'startDailyChallenge()'}" ${dDone?'disabled':''}><span class="dc-ico">${ICONS.flame}</span><span class="dc-txt"><b>Défi du jour</b><small>${doneTxt}</small></span>${dSk>0 ? `<span class="dc-streak">${ICONS.flame}${dSk}</span>` : ''}${dDone ? `<span class="dc-check">${ICONS.checkCircle}</span>` : `<span class="chev">${ICONS.chevronRight}</span>`}</button>`;
+      const daily = `<button class="daily-card${dDone?' done':''}" onclick="${dDone?'':'startDailyChallenge()'}" ${dDone?'disabled':''}><span class="dc-ico">${ICONS.flame}</span><span class="dc-txt"><b>Défi du jour</b><small>${doneTxt}</small></span>${dSk>0 ? `<span class="dc-streak">${ICONS.flame}${dSk}</span>` : ''}${dDone ? `<span class="chev dc-check">${ACH_CHECK}</span>` : `<span class="chev">${ICONS.chevronRight}</span>`}</button>`;
       return group + solo + online + daily;
     })()}
     ${(()=>{ const s = parcoursSummary(); return `
@@ -9153,7 +9209,7 @@ function renderProfile(){
   const el=document.createElement("div"); el.className="screen";
   el.innerHTML = `
     ${renderHeader("Profil", true, "saveProfileAndBack()")}
-    <div class="flex-sp" style="flex-grow:0.4"></div>
+    <div class="flex-sp" style="flex-grow:0.8"></div>
     <div class="profile-card">
       <div onclick="promptCreator()" style="cursor:pointer" title="Code créateur" data-avatar-preview>${avatarHtml(profile.name||"Invité", profile.color, 4.2, profile.isCreator)}</div>
       <div class="profile-name" id="profileNameLabel">${escapeHtml(profile.name||"Invité")}</div>
@@ -9161,7 +9217,7 @@ function renderProfile(){
     </div>
     <label class="field-label">Nom affiché</label>
     <input class="text-input" id="profileName" maxlength="18" value="${escapeHtml(profile.name)}" placeholder="Ton prénom" autocomplete="off" enterkeyhint="done" oninput="onProfileNameInput(this)" onkeydown="if(event.key==='Enter'){event.preventDefault();this.blur();}">
-    <label class="field-label" style="margin-top:1rem">Couleur</label>
+    <label class="field-label" style="margin-top:var(--e-3)">Couleur</label>
     <div class="color-row">
       ${TEAM_COLORS.map(c=>`<button class="color-dot${c===profile.color?' sel':''}" style="background:${c}" data-c="${c}" onclick="setProfileColor('${c}')" aria-label="couleur"></button>`).join("")}
     </div>
@@ -9182,7 +9238,7 @@ function renderOnlineName(){
       <p class="online-hero-sub">Il sera visible par tes amis pendant les duels.</p>
     </div>
     <input class="text-input" id="nameInput" maxlength="18" placeholder="Ton prénom" value="${escapeHtml(profile.name)}" autocomplete="off" enterkeyhint="go" oninput="profile.name=this.value.slice(0,18)" onkeydown="if(event.key==='Enter'){event.preventDefault();this.blur();saveName(this.value);}">
-    <label class="field-label" style="margin-top:1rem">Couleur</label>
+    <label class="field-label" style="margin-top:var(--e-3)">Couleur</label>
     <div class="color-row">
       ${TEAM_COLORS.map(c=>`<button class="color-dot${c===profile.color?' sel':''}" style="background:${c}" data-c="${c}" onclick="setProfileColor('${c}')" aria-label="couleur"></button>`).join("")}
     </div>
@@ -10513,12 +10569,39 @@ function reparerHauteurApp(){
     appEpinglee = true;
   }
 }
+/* LA HAUTEUR QUI RESTE VRAIMENT.
+   --uh vaut 1vh : il mesure l'ÉCRAN. Or l'écran n'est pas la place qu'on a.
+   Sur un iPhone 15 Pro installé, la Dynamic Island et la barre d'accueil en
+   prennent 93 px : 852 px d'écran n'en laissent que 746, soit 13 % de moins,
+   pendant que 1vh, lui, ne bouge pas d'un poil. Le héros se dimensionnait donc
+   comme sur un grand téléphone alors qu'il était sur un petit — et l'accueil
+   passait sous la barre du bas.
+   Aucune requête média ne sait dire cela : vh, svh et dvh mesurent tous
+   l'écran, jamais ce qu'il en reste, et env() n'est pas interrogeable. On le
+   MESURE donc, une fois par redimensionnement, et --hu (« hauteur utile »,
+   1 % de la place réelle) devient l'unité à laquelle s'accroche tout ce qui
+   doit céder quand la place manque. Il vaut 1vh tant que la mesure n'a pas eu
+   lieu : la toute première image est donc déjà correcte, jamais vide. */
+function mesurerHauteurUtile(){
+  const app = glassAppEl || document.getElementById("app");
+  if(!app) return;
+  const cs = getComputedStyle(app);
+  const utile = app.clientHeight - (parseFloat(cs.paddingTop)||0) - (parseFloat(cs.paddingBottom)||0);
+  if(utile > 80) document.documentElement.style.setProperty("--hu", (utile / 100) + "px");
+}
+try{
+  mesurerHauteurUtile();
+  requestAnimationFrame(mesurerHauteurUtile);
+  [120, 400, 1200].forEach(d => setTimeout(mesurerHauteurUtile, d));
+  window.addEventListener("orientationchange", ()=>setTimeout(mesurerHauteurUtile, 60));
+}catch(e){}
 function reposeApresRotation(){
   rotReprises.forEach(clearTimeout); rotReprises = [];
   const passe = ()=>{
     /* La hauteur D'ABORD : le cadrage de la photo et le verre se calculent sur
        la mise en page, il faut donc qu'elle soit juste avant de les recaler. */
     try{ reparerHauteurApp(); }catch(e){}
+    try{ mesurerHauteurUtile(); }catch(e){}
     try{ applySceneFormat(); }catch(e){}
     try{ glassRelayout(); queueGlassSync(); }catch(e){}
     try{ fitScroll(); }catch(e){}
@@ -10540,7 +10623,7 @@ try {
   document.addEventListener("scroll", (e)=>{ if(e.target !== glassAppEl) armGlass(1300); }, { capture:true, passive:true });
   document.addEventListener("pointerdown", armPress, { capture:true, passive:true });
   document.addEventListener("pointerup", armPress, { capture:true, passive:true });
-  window.addEventListener("resize", ()=>{ reparerHauteurApp(); glassRelayout(); armGlass(700); fitScroll(); });
+  window.addEventListener("resize", ()=>{ reparerHauteurApp(); mesurerHauteurUtile(); glassRelayout(); armGlass(700); fitScroll(); });
   window.addEventListener("orientationchange", reposeApresRotation);
   // screen.orientation arrive parfois AVANT window.orientationchange : les deux
   // déclenchent la même reprise, qui est idempotente.
