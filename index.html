@@ -1764,12 +1764,40 @@
     .home-verse{ display:none; } /* petits écrans : l'accueil garde son équilibre */
     .semaine{ display:none; }
     .daily-card .dc-streak{ display:inline-flex; }   /* pas de bande ici : la pastille reprend son rôle */
-    html .hero-zone{ margin-bottom:0.45rem; }
+    /* ÉCRAN COURT = ÉCRAN DÉLESTÉ, DONC LE LOGO PEUT ÊTRE PLUS GRAND.
+       Le plafond de hauteur du logo (12,5 % de la hauteur utile) est calculé
+       pour la mise en page COMPLÈTE. Ici le verset et la bande des sept jours
+       sont masqués : il reste 110 à 155 px inutilisés en bas, et le logo, lui,
+       tombait quand même à 20 % de la largeur — c'est ce que Taylor voit dans
+       son navigateur, où la barre d'adresse réduit la hauteur visible à 643 px
+       alors que le téléphone en fait 852. On relève donc le plafond (17 % de la
+       hauteur utile) : la largeur redevient le facteur qui décide, le logo
+       retrouve ses 24 % partout, et le plafond ne reprend la main qu'en dessous
+       de ~555 px de hauteur utile, là où il y a vraiment urgence. */
+    .hero-icon{ width:clamp(3.9rem, min(24vw, calc(17 * var(--hu))), 6.6rem); }
+    html .hero-zone{ height:clamp(4.4rem, min(27vw, calc(19 * var(--hu))), 7.4rem); margin-bottom:0.45rem; }
     .hero-title{ font-size:1.3rem; margin-bottom:0.15rem; }
     /* SE & co (≤700px de haut) : on resserre un poil les cartes pour que
        l'accueil tienne AUSSI ici, marges de sécurité comprises -> zéro débord,
        zéro défilement. */
     .mode-card, .daily-card{ margin-bottom:var(--e-2); }
+  }
+  /* ÉCRAN MOYEN : LA BANDE DES SEPT JOURS REVIENT.
+     Le palier unique à 700 px effaçait D'UN COUP le verset ET la bande. C'est
+     juste sur un SE (568 px : la bande déborderait de 33 px), mais faux dès
+     600 px — et c'est exactement le cas du NAVIGATEUR, où la barre d'adresse
+     ramène un iPhone 14 Pro de 852 à 643 px de haut. Résultat mesuré chez
+     Taylor : 109 px de vide sous la dernière carte, et rien pour les occuper.
+     Le point de rupture est à ~588 px (mesuré case par case,
+     scratchpad/n1/seuil.js) ; on rouvre donc la bande à partir de 610 px, avec
+     22 px de marge. Le verset, lui, reste masqué : il tient au-dessus, là où le
+     logo vient justement de reprendre sa taille.
+     La série n'est toujours dite qu'une fois : la pastille flamme du Défi, que
+     le palier court avait rallumée, se retire de nouveau ici. */
+  @media (min-height:610px) and (max-height:700px) and (orientation:portrait),
+         (min-height:610px) and (max-height:700px) and (pointer:fine){
+    .semaine{ display:flex; }
+    .daily-card .dc-streak{ display:none; }
   }
   .tst.open .tst-body{ grid-template-rows:1fr; margin-top:0.6rem; opacity:1; }
   .tst-body-block .ach-card, .tst-body-block .bk-card{ margin-bottom:0; }

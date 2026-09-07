@@ -95,6 +95,15 @@ sept lettres et trois cases dorées ne disent pas d'eux-mêmes qu'on tient
 une série de trois jours. Rien à droite quand la série est nulle ou
 perdue (`scratchpad/n1/cas.js` couvre les quatre états).
 
+**Deux paliers, pas un (v159).** Le palier unique à 700 px effaçait d'un
+coup le verset ET la bande. C'est juste sur un SE (568 px : la bande
+déborderait de 33 px), faux dès 600. Point de rupture mesuré case par
+case : ~588 px (`scratchpad/n1/seuil.js`). La bande revient donc à
+partir de 610 px de hauteur visible — ce qui couvre le navigateur, où
+elle manquait alors qu'il restait 109 px de vide sous la dernière
+carte. Le verset, lui, reste masqué sous 700 px : il tient au-dessus,
+là où le logo vient de reprendre sa taille.
+
 **Le verset (les cinq tapes sur l'icône).** La carte grandit, le texte
 ne rétrécit jamais sous 0,94 rem. C'était l'inverse : la carte était
 plafonnée et le corps tombait à 10,5 px sur les versets longs. Deux
@@ -238,6 +247,19 @@ mesuré sur huit appareils : 21,9 % à 24,1 %. Le palier de la media
 query a été supprimé — le `min()` fait déjà le travail sur écran court.
 `scratchpad/n1/logo.js` mesure la taille, la proportion et l'air
 au-dessus, marges de sécurité comprises.
+
+**Le plafond dépend de la mise en page, pas seulement de l'écran
+(v159).** 12,5 % de la hauteur utile est calibré pour la page COMPLÈTE.
+Sur écran court le verset et la bande sont masqués : il reste 110 à
+155 px inutilisés en bas, et le logo rétrécissait quand même. C'est le
+cas du NAVIGATEUR — la barre d'adresse ramène un 14 Pro de 852 à 643 px
+de haut, et le logo tombait à 20,1 % de la largeur (capture de Taylor).
+Le palier court relève donc le plafond à 17 % : la largeur redevient le
+facteur décisif, 23,3 % à 24,0 % partout, et le plafond ne reprend la
+main qu'en dessous de ~555 px de hauteur utile.
+Les deux cas se mesurent ensemble avec `scratchpad/n1/nav.js`
+(navigateur : hauteur visible réduite, aucune marge système ; app :
+hauteur pleine, marges système simulées).
 
 ---
 
