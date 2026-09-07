@@ -103,6 +103,18 @@ situations où il ne doit rien interrompre).
 Le verset a été essayé en bas de l'écran (v145) : Taylor n'en a pas
 voulu. Il est remonté sous le titre, sa place d'origine.
 
+**La rangée de couleurs du Profil** a raté deux fois pour une raison
+invisible dans la feuille de style : `background-clip:content-box` y
+était bien écrit, mais l'attribut `style="background:…"` du bouton est
+un RACCOURCI — il remet `background-clip` à `border-box`. Le
+remplissage ne rognait donc rien, les six pastilles faisaient 44 px
+pleins et se touchaient presque (« ça fait pavé »). Les enfermer dans
+un champ crème n'a fait qu'ajouter un pavé blanc par-dessus (« encore
+pire »). Depuis la v156 le bouton écrit `background-color` (une
+longhand ne touche pas au clip) : disque visible de 28 px, cible de
+44 px, aucune surface pour les porter, et la couleur retenue GRANDIT à
+36 px avec sa coche au lieu de s'entourer de quoi que ce soit.
+
 ---
 
 ## LE SYSTÈME VISUEL (depuis la v141)
@@ -158,6 +170,50 @@ d'entre eux :
 Les trois prennent la médiane sur plusieurs points par arête : sinon la
 texture de la photo produit de faux positifs. Le test des traits clairs
 écarte en plus les sondes qui traversent du texte.
+
+---
+
+## L'ÉCRAN NE DOIT PAS GLISSER POUR VINGT PIXELS (v156)
+
+`fitScroll()` ouvre le défilement dès que le contenu dépasse de plus de
+2 px. Sur un écran qui a l'air complet, un débord de vingt pixels donne
+donc un glissement d'un centimètre puis un arrêt sec : Taylor l'a lu
+comme « un petit décalage » sur la Progression, et c'en est un.
+
+**Le piège de mesure** : sans marges de sécurité (encoche, barre
+d'accueil), un iPhone 14 Pro fait 852 px et tout tient. Posé sur
+l'écran d'accueil, il n'en reste que 747 — et la Progression dépassait
+de 29 px, l'accueil de 12 (la bande des sept jours était coupée). Toute
+mesure de tenue à l'écran DOIT simuler ces marges :
+`scratchpad/n1/hauteur2.js` le fait pour huit appareils (le padding de
+`#app` est forcé à `max(safe + 0,4rem, 0,7rem)`, comme
+`html.is-standalone`).
+
+Le test de tenue ne peut pas lire `scrollHeight - clientHeight` quand
+ça tient : `.flex-sp` absorbe le reste et les deux s'égalisent. Il faut
+comparer le BAS DU DERNIER BLOC réel au bas de la zone utile — c'est ce
+que fait `hauteur2.js`, et c'est ce qui donne la marge réelle.
+
+État après v156, marge sous le dernier bloc de la Progression : 16 px
+(14 Pro), 22 (13), 30 (15 Pro), 63 (Pro Max), 21 (Android), 3 (iPhone 8).
+Le SE déborde de 83 px : là le défilement est vrai, et personne ne le
+confond avec un décalage.
+
+---
+
+## LE LOGO DE L'ACCUEIL (v156)
+
+Il valait 19,4 % de la largeur sur un iPhone 8 et 28,5 % sur un 13 —
+une marche de 46 % entre deux téléphones voisins, parce que la taille
+suivait la HAUTEUR (`13.3 * var(--hu)`) et qu'un palier de media query
+(`max-height:700px`) la coupait en deux.
+
+La taille suit maintenant la LARGEUR, plafonnée par la hauteur utile :
+`clamp(3.9rem, min(24vw, calc(12.5 * var(--hu))), 6.6rem)`. Résultat
+mesuré sur huit appareils : 21,9 % à 24,1 %. Le palier de la media
+query a été supprimé — le `min()` fait déjà le travail sur écran court.
+`scratchpad/n1/logo.js` mesure la taille, la proportion et l'air
+au-dessus, marges de sécurité comprises.
 
 ---
 

@@ -422,7 +422,7 @@
      tout l'écran vers le bas. */
   .icon-btn.hero-settings{ position:absolute; top:0.15rem; right:0.5rem; color:var(--ink); }
   .icon-btn.hero-profile{ position:absolute; top:0.15rem; left:0.5rem; padding:0; overflow:visible; background:transparent; border:none; box-shadow:none; }
-  .hero-icon{ width:clamp(4.7rem, calc(13.3 * var(--hu)), 7rem); height:auto; aspect-ratio:1; margin:0 auto 0.5rem; border-radius:23%; box-shadow:0 12px 30px rgba(10,8,6,0.44), 0 0 8px rgba(255,250,238,0.48), 0 0 24px rgba(255,247,228,0.34), 0 0 52px rgba(255,247,231,0.18), inset 0 0 9px rgba(255,252,245,0.4), inset 0 1.5px 4px rgba(255,255,255,0.28); display:block; object-fit:cover; animation:heroFloat 5s ease-in-out infinite; -webkit-user-drag:none; user-drag:none; -webkit-touch-callout:none; -webkit-user-select:none; user-select:none; pointer-events:none; }
+  .hero-icon{ width:clamp(3.9rem, min(24vw, calc(12.5 * var(--hu))), 6.6rem); height:auto; aspect-ratio:1; margin:0 auto 0.5rem; border-radius:23%; box-shadow:0 12px 30px rgba(10,8,6,0.44), 0 0 8px rgba(255,250,238,0.48), 0 0 24px rgba(255,247,228,0.34), 0 0 52px rgba(255,247,231,0.18), inset 0 0 9px rgba(255,252,245,0.4), inset 0 1.5px 4px rgba(255,255,255,0.28); display:block; object-fit:cover; animation:heroFloat 5s ease-in-out infinite; -webkit-user-drag:none; user-drag:none; -webkit-touch-callout:none; -webkit-user-select:none; user-select:none; pointer-events:none; }
   @keyframes heroFloat{ 0%,100%{ transform:translateY(0); } 50%{ transform:translateY(-6px); } }
   .hero-title{ font-family:'Poppins',sans-serif; font-weight:700; font-size:2rem; margin:0; letter-spacing:-0.01em; color:#fff; text-shadow:0 1px 12px rgba(0,0,0,0.35); }
   .hero-title{ font-family:'Poppins',sans-serif; font-weight:700; font-size:1.55rem; letter-spacing:-0.02em; color:#fff; margin:0 0 0.3rem; text-shadow:0 2px 14px rgba(0,0,0,0.55); }
@@ -1004,55 +1004,38 @@
   .text-input,.code-input{ width:100%; background:rgba(255,255,255,0.68); backdrop-filter:blur(14px) saturate(180%); -webkit-backdrop-filter:blur(14px) saturate(180%); border:1px solid var(--bord); border-radius:var(--r-s); padding:0.78rem 0.9rem; font-size:0.95rem; color:var(--ink); font-family:'Inter',sans-serif; }
   .text-input:focus,.code-input:focus{ outline:none; border-color:var(--primary); }
   .code-input{ text-align:center; font-family:'Poppins',sans-serif; font-weight:700; font-size:1.7rem; letter-spacing:0.42rem; text-transform:uppercase; }
-  /* LA COULEUR EST UN CHAMP, PAS SIX OBJETS POSÉS SUR LA PHOTO.
-     Réparties sur toute la largeur, les six pastilles s'alignaient bien — mais
-     six disques saturés de 44 px directement sur le décor, tous du même poids,
-     ça fait un pavage, pas un réglage. Juste au-dessus, « Nom affiché » est un
-     vrai champ : crème, plein cadre, coins arrondis. « Couleur » en est un
-     aussi, désormais — même surface, même rayon, même largeur. Les deux lignes
-     du formulaire se répondent, et les pastilles redeviennent le CONTENU d'un
-     champ au lieu d'être posées à même le paysage.
-     Sur cette crème elles n'ont plus besoin de peser : le disque visible perd
-     8 px et son ombre, mais le bouton garde ses 44 px — c'est le remplissage
-     qui rétrécit, pas la cible du doigt (voir background-clip). */
-  .color-row{ display:flex; gap:0.5rem; justify-content:space-between; align-items:center;
-    background:rgb(252,248,241); border-radius:var(--r-s); padding:0.42rem 0.6rem;
-    box-shadow:var(--rebord); }
-  /* LA PASTILLE DE COULEUR EST UNE COULEUR, PAS UNE COULEUR ENCADRÉE.
-     Chaque pastille portait un anneau blanc de 2px plus une lèvre blanche
-     interne ; la retenue y ajoutait un anneau plein #fff ET un halo de 3px,
-     soit 5px de blanc autour d'un disque de 34px, le tout agrandi de 12%. Sur
-     une pastille dont TOUT le propos est sa couleur, c'est le cadre qui
-     finissait par se voir — c'est le mot de Taylor, « grossier ».
-     Au repos : la couleur, rien d'autre, avec la même ombre douce que les
-     autres plaques colorées du jeu.
-     Retenue : le geste des sélecteurs de couleur d'iOS — la couleur se RETIRE
-     de 3px (bordure transparente + background-clip:padding-box, donc le décor
-     passe dans l'intervalle) et un anneau blanc FIN se pose au bord extérieur.
-     L'anneau n'entoure plus la couleur, il la cerne à distance. Plus
-     d'agrandissement : l'anneau suffit à dire lequel est choisi, grossir
-     par-dessus revenait à le dire deux fois. La taille de la boîte ne change
-     jamais — box-sizing est en border-box — donc la rangée ne bouge pas d'un
-     pixel au changement de couleur. */
-  /* LA COULEUR CHOISIE PORTE UNE COCHE, PAS UN ANNEAU BLANC.
-     La sélection était un cercle blanc à 94 % sur 2 px : mesuré, 112 unités de
-     luminance au-dessus de la pastille — de loin le contour le plus voyant du
-     jeu, sur un bouton. La coche dit la même chose à l'intérieur, sans rien
-     cerner, et c'est déjà le langage de la liste des versions de la Bible. */
+  /* LA COULEUR EST UNE COULEUR, PAS UNE PLAQUE.
+     Deux essais ont raté pour la même raison, invisible dans la feuille de
+     style : background-clip:content-box était bien écrit ici, mais l'attribut
+     style="background:…" du bouton est un RACCOURCI — il remet background-clip
+     à border-box. Le remplissage ne rognait donc rien : les six pastilles
+     faisaient 44 px pleins, se touchaient presque, et faisaient un pavage. Les
+     enfermer ensuite dans un champ crème n'a fait qu'ajouter un pavé blanc
+     par-dessus le premier.
+     On écrit maintenant background-COLOR (une longhand ne touche pas au clip) :
+     le disque visible fait 28 px, la cible du doigt en garde 44, et la rangée
+     respire sur la photo sans aucune surface pour la porter.
+     La couleur retenue ne s'entoure de rien — ni anneau, ni cadre : elle
+     GRANDIT (28 -> 36 px) et porte la coche. La boîte, elle, ne bouge jamais,
+     c'est le remplissage qui s'ouvre : la rangée reste immobile au changement.
+     L'ombre douce est celle des autres objets colorés du jeu ; elle pose les
+     pastilles sur le paysage sans les cerner. */
+  /* La rangée déborde de la largeur du champ EXACTEMENT du remplissage de la
+     pastille retenue (0,26rem) : le disque choisi vient donc s'aligner au
+     pixel sur le bord du champ « Nom affiché » juste au-dessus, et les six
+     autres restent 4 px en retrait. Sans ce débord, toute la rangée flottait
+     8 px à l'intérieur de la colonne du formulaire. */
+  .color-row{ display:flex; gap:0; justify-content:space-between; align-items:center; margin:0 -0.26rem; }
   .color-dot{ width:2.65rem; height:2.65rem; border-radius:50%; border:0 solid transparent;
-    padding:0.24rem; background-clip:content-box;
+    padding:0.5rem; background-clip:content-box;
     display:flex; align-items:center; justify-content:center;
-    box-shadow:none; transition:box-shadow 0.24s ease, padding 0.24s cubic-bezier(0.32,0.72,0,1); }
+    box-shadow:none; filter:drop-shadow(0 1px 2px rgba(24,16,10,0.3));
+    transition:padding 0.24s cubic-bezier(0.32,0.72,0,1); }
   .cd-ck{ width:1.15rem; height:1.15rem; color:#fff; display:inline-flex; opacity:0; transform:scale(0.5);
-    filter:drop-shadow(0 1px 1.5px rgba(50,28,6,0.45));
     transition:opacity 0.16s ease-out, transform var(--tr-ouvre); pointer-events:none; }
   .cd-ck svg{ width:100%; height:100%; }
+  .color-dot.sel{ padding:0.26rem; }
   .color-dot.sel .cd-ck{ opacity:1; transform:scale(1); }
-  /* La pastille choisie ne grandit pas — elle ne déborderait pas de son
-     emplacement, mais elle casserait l'alignement de la rangée. C'est son
-     REMPLISSAGE qui s'ouvre : le disque gagne les 4 px que les autres gardent
-     en marge, la coche s'allume, et la cible du doigt ne bouge pas. */
-  .color-dot.sel{ padding:0.08rem; }
   .btn-ghost{ width:100%; border:1px solid var(--bord); color:var(--ink); border-radius:var(--r-m); padding:0.8rem; font-weight:700; font-size:0.9rem; }
 
   .online-hero{ text-align:center; padding:0.7rem 1rem var(--e-3); }
@@ -1209,6 +1192,9 @@
   .modal-card.guide .guide-steps{ margin:0.9rem 0 0.2rem; }
   .modal-card.guide .set-row{ padding:0.72rem 0.1rem; }
   .modal-card.guide .set-ico{ width:2.15rem; height:2.15rem; padding:0.46rem; }
+  /* La ligne d'erreur (min-height) ne sert qu'aux modales à saisie : dans le
+     guide elle ouvrait un vide de 18 px entre le dernier geste et le bouton. */
+  .modal-card.guide .modal-err{ display:none; }
   .modal-input{ margin-top:0.95rem; text-align:center; }
   .modal-err{ color:var(--error); font-size:0.82rem; font-weight:600; min-height:1.1rem; margin-top:0.4rem; }
   .modal-actions{ display:flex; gap:0.6rem; margin-top:0.7rem; }
@@ -1613,7 +1599,7 @@
 
   /* Barre de stats : MÊME contour de verre premium que les cartes (bord .55 +
      ombre 4 couches) -> cohérent avec l'accueil et le reste du jeu. */
-  .parcours-sum{ display:flex; align-items:center; gap:0.9rem; padding:0.75rem 1rem; background:transparent; backdrop-filter:blur(28px) saturate(185%); -webkit-backdrop-filter:blur(28px) saturate(185%); border:1px solid var(--bord); --rim-cast:0 10px 34px rgba(15,12,10,0.2), 0 2px 8px rgba(15,12,10,0.08); box-shadow:none; }
+  .parcours-sum{ display:flex; align-items:center; gap:0.9rem; padding:0.75rem 1rem; margin-bottom:var(--e-2); background:transparent; backdrop-filter:blur(28px) saturate(185%); -webkit-backdrop-filter:blur(28px) saturate(185%); border:1px solid var(--bord); --rim-cast:0 10px 34px rgba(15,12,10,0.2), 0 2px 8px rgba(15,12,10,0.08); box-shadow:none; }
   /* QUATRE CHIFFRES, UN SEUL TRAITEMENT.
      Le nombre de livres vivait dans un médaillon rond cerné d'or, à côté de
      trois chiffres nus : un objet d'un autre âge, et le dernier rebord coloré
@@ -1637,7 +1623,7 @@
      chaque légende a la place de tenir sur une ligne, sur tous les téléphones. */
   .ps-cells small{ font-size:0.66rem; color:var(--ink-soft); font-weight:600; line-height:1.3; white-space:nowrap; display:block; }
 
-  .parcours-h{ display:flex; align-items:baseline; justify-content:space-between; font-family:'Poppins',sans-serif; font-size:0.98rem; font-weight:700; color:#fff; text-shadow:0 1px 6px rgba(0,0,0,0.45); margin:var(--e-3) 0.2rem var(--e-2); }
+  .parcours-h{ display:flex; align-items:baseline; justify-content:space-between; font-family:'Poppins',sans-serif; font-size:0.98rem; font-weight:700; color:#fff; text-shadow:0 1px 6px rgba(0,0,0,0.45); margin:var(--e-2) 0.2rem var(--e-2); }
   .parcours-h small{ font-weight:600; font-size:0.82rem; opacity:0.92; }
 
   /* Objectifs : VITRINE (grille compacte dans UNE carte de verre) au lieu d'une
@@ -1645,8 +1631,20 @@
      une TUILE COLORÉE à glyphe blanc, exactement comme les icônes de modes du
      jeu (coral/or/bleu/vert selon le thème) -> cohérent avec le reste, fini
      l'or partout. Débloqué = coche verte. */
-  .ach-card{ padding:0.7rem 0.7rem 0.62rem; }
-  .ach-grid{ display:grid; grid-template-columns:repeat(4, 1fr); gap:0.6rem 0.35rem; }
+  /* LA PROGRESSION DOIT TENIR DANS L'ÉCRAN, PAS DÉBORDER DE 29 PX.
+     Mesuré sur iPhone 14 Pro posé sur l'écran d'accueil (encoche + barre
+     d'accueil retirées de la hauteur utile) : le contenu dépassait de 29 px,
+     22 px sur un 13, 15 px sur un 15 Pro, 21 px sur un Android courant.
+     fitScroll() voyait un débord et ouvrait donc le défilement — pour vingt
+     malheureux pixels. À l'usage, l'écran a l'air complet mais glisse d'un
+     centimètre sous le doigt puis s'arrête : c'est le « petit décalage » que
+     Taylor a vu. On récupère 40 px là où il n'y avait que du vide (marge sous
+     la dernière carte, gouttières de la grille, marges de titre), l'écran tient
+     partout, et il ne bouge plus du tout. Les petits écrans (SE) débordent
+     toujours largement : là, le défilement est vrai et personne ne le confond
+     avec un décalage. */
+  .ach-card{ padding:0.62rem 0.7rem 0.55rem; margin-bottom:0; }
+  .ach-grid{ display:grid; grid-template-columns:repeat(4, 1fr); gap:0.45rem 0.35rem; }
   .ach{ display:flex; flex-direction:column; align-items:center; text-align:center; gap:0.3rem; background:none; border:none; padding:0; font:inherit; color:inherit; cursor:pointer; -webkit-tap-highlight-color:transparent; }
   .ach-tile{ transition:transform 0.14s cubic-bezier(0.34,1.4,0.6,1); }
   .ach:active .ach-tile{ transform:scale(0.9); }
@@ -1743,8 +1741,7 @@
     .home-verse{ display:none; } /* petits écrans : l'accueil garde son équilibre */
     .semaine{ display:none; }
     .daily-card .dc-streak{ display:inline-flex; }   /* pas de bande ici : la pastille reprend son rôle */
-    .hero-icon{ width:clamp(4.2rem, calc(11 * var(--uh)), 5.5rem); }
-    html .hero-zone{ height:clamp(4.8rem, calc(12 * var(--uh)), 6.2rem); margin-bottom:0.45rem; }
+    html .hero-zone{ margin-bottom:0.45rem; }
     .hero-title{ font-size:1.3rem; margin-bottom:0.15rem; }
     /* SE & co (≤700px de haut) : on resserre un poil les cartes pour que
        l'accueil tienne AUSSI ici, marges de sécurité comprises -> zéro débord,
@@ -2134,7 +2131,7 @@
      chevauche les boutons profil/réglages dans les coins. Sans pointer-events:none,
      il interceptait leurs taps (le hero-zone étant peint au-dessus) -> profil &
      réglages ne s'ouvraient plus. On ne laisse cliquables que ses enfants utiles. */
-  .hero-zone{ position:relative; height:clamp(5.1rem, calc(14.3 * var(--hu)), 7.5rem); margin:0 auto 0.55rem; display:flex; align-items:center; justify-content:center; pointer-events:none; }
+  .hero-zone{ position:relative; height:clamp(4.4rem, min(27vw, calc(14 * var(--hu))), 7.4rem); margin:0 auto 0.55rem; display:flex; align-items:center; justify-content:center; pointer-events:none; }
   .hero-zone .hero-icon{ margin:0; }
   /* Ombre de lévitation : reste « au sol » et respire à l'inverse du
      flottement de l'icône (petite & pâle quand l'icône monte, large &
@@ -9433,7 +9430,7 @@ function renderProfile(){
     <input class="text-input" id="profileName" maxlength="18" value="${escapeHtml(profile.name)}" placeholder="Ton prénom" autocomplete="off" enterkeyhint="done" oninput="onProfileNameInput(this)" onkeydown="if(event.key==='Enter'){event.preventDefault();this.blur();}">
     <label class="field-label" style="margin-top:var(--e-3)">Couleur</label>
     <div class="color-row">
-      ${TEAM_COLORS.map(c=>`<button class="color-dot${c===profile.color?' sel':''}" style="background:${c}" data-c="${c}" onclick="setProfileColor('${c}')" aria-label="couleur"><span class="cd-ck">${ACH_CHECK}</span></button>`).join("")}
+      ${TEAM_COLORS.map(c=>`<button class="color-dot${c===profile.color?' sel':''}" style="background-color:${c}" data-c="${c}" onclick="setProfileColor('${c}')" aria-label="couleur"><span class="cd-ck">${ACH_CHECK}</span></button>`).join("")}
     </div>
     <div class="flex-sp"></div>
     <button class="btn-primary" onclick="saveProfileAndBack()">Enregistrer</button>
@@ -9454,7 +9451,7 @@ function renderOnlineName(){
     <input class="text-input" id="nameInput" maxlength="18" placeholder="Ton prénom" value="${escapeHtml(profile.name)}" autocomplete="off" enterkeyhint="go" oninput="profile.name=this.value.slice(0,18)" onkeydown="if(event.key==='Enter'){event.preventDefault();this.blur();saveName(this.value);}">
     <label class="field-label" style="margin-top:var(--e-3)">Couleur</label>
     <div class="color-row">
-      ${TEAM_COLORS.map(c=>`<button class="color-dot${c===profile.color?' sel':''}" style="background:${c}" data-c="${c}" onclick="setProfileColor('${c}')" aria-label="couleur"><span class="cd-ck">${ACH_CHECK}</span></button>`).join("")}
+      ${TEAM_COLORS.map(c=>`<button class="color-dot${c===profile.color?' sel':''}" style="background-color:${c}" data-c="${c}" onclick="setProfileColor('${c}')" aria-label="couleur"><span class="cd-ck">${ACH_CHECK}</span></button>`).join("")}
     </div>
     <div class="flex-sp"></div>
     <button class="btn-primary" onclick="saveName(document.getElementById('nameInput').value)">Continuer</button>
@@ -11083,17 +11080,22 @@ if(IS_ANDROID && !isStandalone){
 /* LE GUIDE EN TROIS GESTES. C'était un pavé de texte : la seule page du jeu
    qui ne ressemblait à rien d'autre. On reprend EXACTEMENT la langue des
    Réglages — pastille colorée, titre, sous-titre — puisque c'est de là qu'on
-   arrive : trois lignes, trois gestes, dans l'ordre où on les fait. */
+   arrive : trois lignes, trois gestes, dans l'ordre où on les fait.
+   SIMPLIFIÉ ENSUITE (« les gens ne comprennent pas toujours ») : la phrase
+   d'ouverture expliquait pourquoi Safari NE SAIT PAS faire, ce qui n'aide
+   personne ; elle dit maintenant quoi faire, en une ligne. Et chaque geste
+   tient sur UNE ligne de titre et UNE de sous-titre — c'était deux, parfois
+   trois, ce qui donnait un mur de texte gris entre les pastilles. */
 const ICO_MENU_NAV = `<svg viewBox="0 0 24 24" fill="currentColor"><circle cx="12" cy="5" r="1.9"/><circle cx="12" cy="12" r="1.9"/><circle cx="12" cy="19" r="1.9"/></svg>`;
 function openFsGuide(){
   const etapes = IS_IOS ? [
-    { c:"fsx", i:ICONS.share,      t:"Ouvre le menu Partager",          s:"Le carré avec une flèche, en bas de Safari" },
-    { c:"scn", i:ICONS.plusCircle, t:"« Sur l'écran d'accueil »",       s:"Fais défiler la liste jusqu'à cette ligne" },
-    { c:"vol", i:ICONS.expand,     t:"Lance BibleTrivia depuis l'icône", s:"Elle s'ouvre en plein écran, sans aucune barre" },
+    { c:"fsx", i:ICONS.share,      t:"Touche Partager",            s:"L'icône en bas de Safari" },
+    { c:"scn", i:ICONS.plusCircle, t:"« Sur l'écran d'accueil »",  s:"Dans la liste qui s'ouvre" },
+    { c:"vol", i:ICONS.expand,     t:"Ouvre le jeu par son icône", s:"Il démarre en plein écran" },
   ] : [
-    { c:"fsx", i:ICO_MENU_NAV,     t:"Ouvre le menu du navigateur",     s:"Les trois points, en haut à droite" },
-    { c:"scn", i:ICONS.plusCircle, t:"« Installer l'application »",     s:"Ou « Ajouter à l'écran d'accueil »" },
-    { c:"vol", i:ICONS.expand,     t:"Lance BibleTrivia depuis l'icône", s:"Elle s'ouvre en plein écran, sans aucune barre" },
+    { c:"fsx", i:ICO_MENU_NAV,     t:"Ouvre le menu du navigateur", s:"Les trois points, en haut" },
+    { c:"scn", i:ICONS.plusCircle, t:"« Installer l'application »", s:"Ou « Ajouter à l'écran d'accueil »" },
+    { c:"vol", i:ICONS.expand,     t:"Ouvre le jeu par son icône",  s:"Il démarre en plein écran" },
   ];
   const corps = `<div class="guide-steps">${etapes.map(e=>`
       <div class="set-row">
@@ -11102,8 +11104,8 @@ function openFsGuide(){
       </div>`).join("")}</div>`;
   showModal({
     title:"Plein écran total",
-    message: IS_IOS ? "Safari ne peut pas passer une page web en plein écran. En trois gestes, une seule fois, le jeu s'ouvre comme une vraie app."
-                    : "En trois gestes, une seule fois, le jeu s'ouvre comme une vraie app.",
+    message: IS_IOS ? "Il faut ajouter BibleTrivia à ton écran d'accueil. Trois gestes, une seule fois."
+                    : "Il faut installer BibleTrivia depuis le navigateur. Trois gestes, une seule fois.",
     bodyHtml: corps, cardClass:"guide", okLabel:"Compris", hideCancel:true
   });
 }
