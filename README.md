@@ -63,6 +63,26 @@ volontaire, aucune option morte n'est affichée.
 
 ---
 
+## L'ACCUEIL
+
+De haut en bas : l'icône et le nom, le verset (il suit la version de la
+Bible choisie), les cinq cartes, puis **les sept derniers jours**.
+
+La bande des sept jours (`semaineHtml`) montre le rythme du joueur : une
+case par jour, allumée quand le Défi du jour a été relevé. Elle ne stocke
+rien de neuf — `last` et `streak` suffisent à retrouver les jours faits,
+puisqu'une série est par définition une suite de jours consécutifs. Sept
+jours GLISSANTS, pas une semaine de calendrier : la série du jeu ne se
+remet pas à zéro le lundi, l'affichage non plus.
+
+C'est de l'information, pas une commande : aucune ombre de bouton, aucun
+chevron. Le geste pour jouer reste la carte du Défi.
+
+Le verset a été essayé en bas de l'écran (v145) : Taylor n'en a pas
+voulu. Il est remonté sous le titre, sa place d'origine.
+
+---
+
 ## LE SYSTÈME VISUEL (depuis la v141)
 
 Trois choses tiennent tout le rendu, et rien d'autre ne doit s'y
