@@ -92,34 +92,44 @@
        résultat semblait juste, par accident.) */
     --bord-plein:rgba(255,255,255,0.16);
     --levre-pleine:transparent;
-    /* UN FILET SOMBRE, PAS UN CONTOUR BLANC AFFAIBLI. Le blanc à 0,20 posé sur
-       une surface crème ne délimite plus rien : « quasiment invisible, mais pas
-       assez subtil ». Une délimitation propre et discrète n'est pas un trait
-       blanc atténué, c'est un filet SOMBRE très faible : il se lit toujours,
-       sans jamais s'imposer, parce qu'il travaille dans le sens de l'ombre.
-       Il est posé sur l'ÉLÉMENT (box-shadow 0 0 0 1px) et non sur l'enfant
-       .glass-rim — celui-ci est en inset:0 dans une surface en overflow:clip,
-       donc tout ce qui déborde de lui est rogné. C'est la raison pour laquelle
-       --rim-edge et --rim-cast, déclarés partout dans la feuille de style,
-       n'ont JAMAIS rien peint : « Ajouter un joueur » demande un filet sombre à
-       0,24 depuis toujours et n'en a jamais montré la moindre trace. */
-    --filet:rgba(46,34,22,0.055);
-    /* TROIS RÔLES, UN SEUL SYSTÈME. Une surface POSÉE sur le décor porte le
-       filet et une ombre douce (c'est l'ombre qui dit « posée », pas un
-       trait). Une surface PLATE, imbriquée dans une autre, porte le filet
-       seul : elle ne flotte au-dessus de rien. Une surface PLEINE et
-       colorée n'a ni l'un ni l'autre — un filet sombre salirait la teinte,
-       son arête est une ombre de sa propre couleur. */
-    /* UN MÊME FILET NE SE VOIT PAS PAREIL SELON CE QU'IL Y A DERRIÈRE.
-       Posé sur le décor — sombre — il se devine. Posé sur une carte crème, le
-       même brun à 10 % descend de 16 à 19 unités de luminance sous son fond :
-       ce n'est plus un contact, c'est un TRAIT, et il se voyait (mesuré sur
-       les lignes de joueurs, les pastilles de réglage, « Partager le jeu »).
-       Or ces surfaces-là n'en ont pas besoin : leur fond crème les détache
-       déjà de 44 à 69 unités de la carte qui les porte. Le filet des surfaces
-       PLATES est donc deux fois plus léger — assez pour poser le contact,
-       plus assez pour dessiner une ligne. */
-    --filet-plat:rgba(46,34,22,0.028);
+    /* LE FILET : SUPPRIMÉ. C'était le dernier trait dessiné du jeu — un
+       pixel brun sur le pourtour de chaque surface, hérité de l'époque où
+       les contours étaient blancs et où on cherchait à les remplacer plutôt
+       qu'à s'en passer. Il a été allégé trois fois de suite ; à chaque fois
+       Taylor a répondu « je trouve les bords toujours trop gros ». Il avait
+       raison, et la mesure le dit : sur 71 surfaces relevées à travers dix
+       écrans, l'écart de luminance entre une surface et son fond, mesuré à
+       6-12 px de part et d'autre de l'arête — donc SANS le filet — ne
+       descend jamais sous 27,8 unités ; la médiane est à 110,6, et aucune
+       surface n'est sous 12. Autrement dit la frontière se lisait déjà
+       partout, et le filet ne délimitait rien : il POSAIT UN TRAIT sur une
+       limite existante. Pire, là où l'écart est le plus faible (les cartes
+       crème posées sur une feuille crème : versions de Bible, lignes de
+       joueurs, pastilles), c'est là qu'il se voyait le plus, parce qu'il
+       creusait 4 à 5 unités SOUS le fond — un sillon, pas un contact.
+       Ce qui délimite, c'est la MATIÈRE : le changement de fond, l'ombre
+       portée pour ce qui est posé, l'espacement et la typographie.
+       Les deux jetons restent déclarés — transparents — pour que le
+       box-shadow garde exactement sa forme et que rien ne se déplace. */
+    --filet:transparent;
+    /* TROIS RÔLES, UN SEUL SYSTÈME. Une surface POSÉE sur le décor porte une
+       ombre douce (c'est l'ombre qui dit « posée », pas un trait). Une
+       surface PLATE, imbriquée dans une autre, ne porte rien : elle ne
+       flotte au-dessus de rien, et son propre fond la détache déjà de 28 à
+       55 unités de la carte qui la porte. Une surface PLEINE et colorée
+       porte une ombre de sa propre couleur. */
+    --filet-plat:transparent;
+    /* La seule ligne qui reste DESSINÉE de tout le jeu : le séparateur entre
+       les trois chiffres du bilan solo. Là, il n'y a aucune matière à lire —
+       trois colonnes du même crème, sur le même fond — donc rien d'autre ne
+       peut les séparer. Une ligne qui SÉPARE deux contenus n'est pas un bord
+       qui ENTOURE une surface : c'est le seul cas où le trait a un travail.
+       Les lignes des Réglages sont dans le même cas, et elles tiraient bien
+       plus fort (0,08, soit 12 à 26 unités sous le crème — cinq fois le filet
+       qu'on vient de retirer) : elles passent sur le même jeton. Il ne reste
+       ainsi que DEUX traits dessinés dans toute la feuille de style, à la
+       même force, et aucun autour d'une surface. */
+    --separateur:rgba(46,34,22,0.055);
     --ombre-pose:0 1px 2px rgba(24,16,10,0.06), 0 6px 18px rgba(24,16,10,0.10);
     --rebord:0 0 0 1px var(--filet-plat);
     --rebord-pose:0 0 0 1px var(--filet), var(--ombre-pose);
@@ -794,7 +804,7 @@
   .ring-label{ font-size:0.62rem; color:var(--ink-soft); text-transform:uppercase; letter-spacing:0.04em; margin-top:0.3rem; white-space:nowrap; }
   .solo-stats{ display:flex; justify-content:center; gap:0; margin-top:0.3rem; }
   .solo-stat{ flex:1; padding:0 0.5rem; }
-  .solo-stat + .solo-stat{ border-left:1px solid var(--filet); }
+  .solo-stat + .solo-stat{ border-left:1px solid var(--separateur); }
   .solo-stat .val{ font-family:'Poppins',sans-serif; font-weight:700; font-size:1.15rem; display:flex; align-items:center; gap:0.3rem; justify-content:center; color:var(--ink); }
   .solo-stat .val .ico{ width:1.32rem; height:1.32rem; color:var(--gold); }
   .solo-stat .lbl{ font-size:0.8rem; color:var(--ink-soft); margin-top:0.2rem; }
@@ -2064,7 +2074,7 @@
   .sheet-title{ font-family:'Poppins',sans-serif; font-weight:700; font-size:1.12rem; color:var(--ink); display:flex; align-items:center; gap:0.55rem; margin-bottom:0.35rem; }
   .sheet-title .st-ico{ width:1.5rem; height:1.5rem; display:inline-flex; color:var(--primary); flex-shrink:0; }
   .set-row{ display:flex; align-items:center; gap:0.8rem; padding:0.88rem 0.1rem; }
-  .set-row + .set-row{ border-top:1px solid rgba(42,36,30,0.08); }
+  .set-row + .set-row{ border-top:1px solid var(--separateur); }
   .set-ico{ width:2.3rem; height:2.3rem; border-radius:var(--r-s); display:flex; align-items:center; justify-content:center; padding:0.5rem; color:#fff; flex-shrink:0; box-shadow:inset 0 1px 0 rgba(255,255,255,0.4), 0 3px 9px rgba(15,12,10,0.18); }
   /* Même rebord de verre que les icônes du menu (reflet haut + anneau blanc
      interne + séparation teintée + ombre colorée), couleur par couleur. */

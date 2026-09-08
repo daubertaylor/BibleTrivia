@@ -172,22 +172,39 @@ Trois choses tiennent tout le rendu, et rien d'autre ne doit s'y
 substituer :
 
 1. **Le rebord** (fin de la feuille de style, dernier bloc). Trois rôles
-   — `--rebord-pose` (posée sur le décor : filet + ombre douce),
-   `--rebord` (plate, dans une autre surface : filet **deux fois plus
-   léger**), `--rebord-plein` (pleine et colorée : ombre de sa propre
-   couleur). Chaque surface déclare son rôle dans `--mon-rebord`, une
-   seule règle le peint. Ajouter une famille demain = l'écrire dans le
-   bon rôle — et le rôle se choisit d'après CE QU'IL Y A DERRIÈRE, pas
-   d'après ce qu'est la surface : un bouton dans une feuille claire est
-   « plat », pas « posé ».
+   — `--rebord-pose` (posée sur le décor : une ombre douce, rien d'autre),
+   `--rebord` (plate, dans une autre surface : **rien**), `--rebord-plein`
+   (pleine et colorée : une ombre de sa propre couleur). Chaque surface
+   déclare son rôle dans `--mon-rebord`, une seule règle le peint. Ajouter
+   une famille demain = l'écrire dans le bon rôle — et le rôle se choisit
+   d'après CE QU'IL Y A DERRIÈRE, pas d'après ce qu'est la surface : un
+   bouton dans une feuille claire est « plat », pas « posé ».
 
-   Pourquoi deux filets : un même brun à 10 % se devine sur le décor
-   sombre mais descend de 16 à 19 unités de luminance sous une carte
-   crème — là, ce n'est plus un contact, c'est un trait. Mesurable :
-   `scratchpad/arete.js` + `arete2.py` traversent chaque arête en pixels
-   et donnent la hauteur du trait (médiane sur dix points, sinon la
-   texture de la photo fait de faux positifs). Repère : au-dessus de
-   ~10, l'œil lit une ligne dessinée. Maximum actuel dans le jeu : 9,5.
+   **Aucune surface du jeu n'a de bord dessiné (v167).** Le filet brun a
+   été allégé trois fois de suite ; à chaque fois la réponse a été « je
+   trouve les bords toujours trop gros ». La mesure a fini par expliquer
+   pourquoi : `banc-essai/matiere.js` + `matiere.py` comparent, sur 71
+   surfaces à travers dix écrans, la luminance 6-12 px dedans à celle
+   6-12 px dehors — donc SANS le filet. L'écart ne descend jamais sous
+   **27,8** unités, la médiane est à **110,6**, et aucune surface n'est
+   sous 12. La frontière se lisait déjà partout : le filet ne délimitait
+   rien, il posait un trait sur une limite existante. Et là où l'écart
+   était le plus faible (crème sur crème : versions de Bible, lignes de
+   joueurs), c'est là qu'il se voyait le plus, parce qu'il creusait 4 à 5
+   unités SOUS le fond — un sillon, pas un contact.
+
+   Ce qui délimite, c'est donc la MATIÈRE, l'ombre portée de ce qui est
+   posé, l'espacement et la typographie. `--filet` et `--filet-plat`
+   restent déclarés en `transparent` : le `box-shadow` garde sa forme,
+   rien ne se déplace, et le rôle reste lisible dans la feuille.
+
+   **Il reste exactement deux traits dessinés**, tous deux `--separateur`
+   (brun à 0,055) : entre les trois chiffres du bilan solo, et entre les
+   lignes des Réglages. Ce ne sont pas des bords — ils SÉPARENT deux
+   contenus de même matière, là où rien d'autre ne peut le faire. Celui
+   des Réglages tirait à 0,08, soit 12 à 26 unités sous le crème : cinq
+   fois le filet qu'on venait de retirer. Un bord qui ENTOURE une surface
+   n'a jamais ce travail-là.
 2. **Le rythme vertical** : `--e-1` à `--e-4` (0,4 / 0,62 / 1 / 1,5 rem,
    rapport constant d'environ 1,55). `--e-3` est le pas courant. Les
    micro-espacements internes d'un composant n'en font pas partie.
@@ -313,10 +330,12 @@ d'entre eux :
   Doit rapporter 0.
 - `scratchpad/arete.js` + `arete2.py` — les traits **sombres**, bords
   gauche et droite. Repère : au-dessus de ~10, l'œil lit une ligne.
-  Maximum actuel : 6,9 — le filet ne délimite plus rien à lui seul, il
-  ne fait que poser le contact. Ce qui délimite, c'est la MATIÈRE : une
-  surface crème se détache de sa carte de 44 à 69 unités, du décor de
-  158. Le filet est un raffinement, pas une nécessité.
+  Depuis la v167 il n'y a plus de filet du tout : ce qui reste au bord
+  d'une carte posée est son ombre, pas un trait.
+- `banc-essai/matiere.js` + `matiere.py` — le test qui a permis de le
+  retirer : l'écart de luminance que la MATIÈRE seule produit, de part
+  et d'autre de chaque arête. Sous 12, une surface ne tiendrait plus
+  sans aide. Relevé actuel : minimum 27,8 sur 71 surfaces.
 - `scratchpad/blanc.js` + `blanc.py` — les traits **clairs**, sur les
   QUATRE arêtes (un contour blanc, ici, c'est souvent une lèvre
   `inset 0 1px 0` : le bord du haut, que les deux autres tests ne
