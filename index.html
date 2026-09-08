@@ -692,7 +692,19 @@
   .streak-chip .ico{ width:1.08rem; height:1.08rem; }
   .streak-chip.hot .ico{ width:1.18rem; height:1.18rem; }
 
-  .progress-track{ position:relative; height:8px; margin-bottom:var(--e-4); background:rgba(255,255,255,0.32); backdrop-filter:blur(14px) saturate(180%); -webkit-backdrop-filter:blur(14px) saturate(180%); border-radius:var(--r-full); border:1px solid var(--bord); box-shadow:inset 0 1px 2px rgba(15,12,10,0.12); overflow:hidden; }
+  /* ===== LA BARRE SE REMPLIT JUSQU'AU BORD =====
+     Même famille que l'onde d'appui, et même pixel : le remplissage est un
+     enfant ABSOLU calé sur 0, donc il s'arrête à la boîte de PADDING — un
+     pixel avant le bord, tout autour. Sur une piste de 8 px, ça fait
+     beaucoup : mesuré, le remplissage n'en couvrait que 6, soit 75 % de la
+     hauteur, avec un anneau pâle de la piste tout autour du corail.
+     Ici on ne peut pas faire déborder l'enfant : overflow:hidden découpe
+     justement à la boîte de padding. C'est donc la BORDURE qui part. Elle ne
+     servait qu'à la géométrie (box-sizing:border-box) — or la piste n'a
+     aucun contenu, aucun padding, et une hauteur fixe : sans elle, la boîte
+     extérieure reste 8 px au pixel près et la boîte intérieure en fait
+     enfin 8 aussi. */
+  .progress-track{ position:relative; height:8px; margin-bottom:var(--e-4); background:rgba(255,255,255,0.32); backdrop-filter:blur(14px) saturate(180%); -webkit-backdrop-filter:blur(14px) saturate(180%); border-radius:var(--r-full); border:0; box-shadow:inset 0 1px 2px rgba(15,12,10,0.12); overflow:hidden; }
   .progress-fill{ position:absolute; left:0; top:0; bottom:0; border-radius:var(--r-full); background:linear-gradient(90deg, #FB6A45, #EFAD26); box-shadow:0 0 10px rgba(241,80,47,0.5); transition:width var(--tr-plie); }
   /* La lèvre blanche interne a sauté ici comme partout ailleurs. */
 
@@ -5406,8 +5418,42 @@ function shuffle(arr){
   }
   return a;
 }
+/* ===== LA PONCTUATION DOUBLE NE DOIT PAS TOMBER SEULE EN DÉBUT DE LIGNE =====
+   En français, « ! ? ; : » et le guillemet fermant veulent une espace
+   INSÉCABLE devant, le guillemet ouvrant une insécable derrière. L'interface
+   du jeu la respectait (160 occurrences écrites à la main), mais les 1545
+   questions, leurs réponses et leurs anecdotes portaient toutes une espace
+   ORDINAIRE — deux typographies dans le même écran.
+   CE QUE LA MESURE DIT VRAIMENT, ET CE QU'ELLE NE DIT PAS. La règle sert à
+   éviter qu'un « ? » tombe SEUL en début de ligne. Vérification faite dans la
+   vraie carte, en demandant au navigateur où il coupe ses lignes, sur les
+   1545 énoncés, leurs anecdotes et leurs options, à quatorze largeurs de 250
+   à 380 px : ZÉRO orphelin, avant comme après. Le défaut n'était pas là.
+   (Une première mesure en annonçait 78 : elle remplaçait le contenu de la
+   CARTE au lieu de celui du bloc de texte, ce qui refaisait la mise en page
+   dans un conteneur flex centré plus large, avec d'autres points de coupure.
+   Le détecteur, lui, est bon : sur un cas fabriqué exprès il se déclenche.)
+   Ce qui est corrigé ici est donc une INCOHÉRENCE, pas un défaut visible :
+   l'interface écrivait ses insécables à la main, les données non — deux
+   typographies dans le même écran. Le garde-fou reste utile pour le contenu
+   qui viendra.
+   On corrige au RENDU, pas dans les données : escapeHtml est le passage
+   obligé de tout texte affiché (énoncés, options, anecdotes, noms, erreurs
+   revues), donc une seule fonction suffit — et le contenu écrit demain en
+   hérite sans qu'on y pense. Seules les espaces DÉJÀ là deviennent
+   insécables : « Jean 3:16 » et « 8:39 », qui n'en ont pas, ne bougent pas,
+   comme le veut la règle des références. */
+/* Les points de suspension entrent dans la liste : dans ce jeu ils tiennent
+   souvent lieu de BLANC À COMPLÉTER en fin d'énoncé (« un esprit abattu
+   dessèche … »), et un blanc à compléter tout seul sur sa ligne ne veut plus
+   rien dire. */
+const PONCT_DOUBLE = /\u0020([!?;:»\u2026])/g;
+const GUILLEMET_OUVRANT = /(«)\u0020/g;
+function typoFr(s){
+  return String(s).replace(PONCT_DOUBLE, "\u00A0$1").replace(GUILLEMET_OUVRANT, "$1\u00A0");
+}
 function escapeHtml(s){
-  return s.replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;");
+  return typoFr(s).replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;");
 }
 
 /* ===================== RÉGLAGES PERSISTANTS (effets, musique, volume) ===================== */
@@ -9786,7 +9832,7 @@ function renderSetup(){
           <button class="chip ${state.themeKey==='nt'?'active':''}" data-group="theme" data-k="nt" onclick="setTheme('nt')">Nouveau<span class="sub">Testament</span></button>
         </div>
       </div>
-      <div class="rules"><b>Déroulé :</b> lisez la question à voix haute → révélez la réponse → attribuez les points au bon joueur (ou à la bonne équipe). Avec le chrono, la réponse se révèle toute seule à la fin du temps. Une erreur ? Les boutons −/+ corrigent à tout moment.</div>
+      <div class="rules"><b>Déroulé :</b> lisez la question à voix haute → révélez la réponse → attribuez les points au bon joueur (ou à la bonne équipe). Avec le chrono, la réponse se révèle toute seule à la fin du temps. Une erreur ? Les boutons −/+ corrigent à tout moment.</div>
       <div class="flex-sp"></div>
       <button class="btn-primary" onclick="startGame()">Commencer la partie</button>
       <div class="error-msg" id="setupError"></div>
@@ -9805,7 +9851,7 @@ function renderSetup(){
         </div>
       </div>
       ${(()=>{ const n = lastMissEntries().length; return n>0 ? `<button class="btn-review" onclick="startRevision()"><span class="ico">${ICONS.bookOpen}</span>Réviser la dernière partie (${n} erreur${n>1?"s":""})</button>` : ""; })()}
-      <div class="rules"><b>Déroulé :</b> réponds à chaque question avant la fin du chrono — tous niveaux mélangés. Enchaîne les bonnes réponses pour faire grimper ta série.</div>
+      <div class="rules"><b>Déroulé :</b> réponds à chaque question avant la fin du chrono — tous niveaux mélangés. Enchaîne les bonnes réponses pour faire grimper ta série.</div>
       <div class="flex-sp"></div>
       <button class="btn-primary" onclick="startGame()">Commencer la partie</button>
     `;
@@ -10011,7 +10057,7 @@ function renderEndSolo(){
       <p class="end-sub">${soloPerformanceMessage(pct)}</p>
       ${state.daily?`<div class="end-best">Série du défi : ${loadDaily().streak} jour${loadDaily().streak>1?"s":""} d'affilée · Reviens demain !</div>`:""}
       ${state.revision?`<div class="end-best">${state.questions.length-state.soloMissed.length} maîtrisée${state.questions.length-state.soloMissed.length>1?"s":""} sur ${state.questions.length} · ${lastMissEntries().length>0?lastMissEntries().length+" encore à revoir":"tout est maîtrisé, bravo !"}</div>`:""}
-      ${!state.daily && !state.revision && st.games>0?`<div class="end-best">Record personnel : ${st.bestPct}% · ${st.games} partie${st.games>1?"s":""} jouée${st.games>1?"s":""}</div>`:""}
+      ${!state.daily && !state.revision && st.games>0?`<div class="end-best">Record personnel : ${st.bestPct}% · ${st.games} partie${st.games>1?"s":""} jouée${st.games>1?"s":""}</div>`:""}
     </div>
     <div class="flex-sp"></div>
     <div class="solo-summary">
@@ -10193,7 +10239,7 @@ function renderOnline(){
         <h2 class="online-hero-title">Mode en ligne</h2>
         <p class="online-hero-sub">Le multijoueur a besoin d'un petit serveur temps réel gratuit (Supabase).</p>
       </div>
-      <div class="info-card">Ouvre le fichier, trouve le bloc <b>CONFIG EN LIGNE</b> tout en haut du script, et colle l'URL + la clé « anon » de ton projet Supabase. Aucune table à créer. Les instructions détaillées sont dans le message.</div>
+      <div class="info-card">Ouvre le fichier, trouve le bloc <b>CONFIG EN LIGNE</b> tout en haut du script, et colle l'URL + la clé « anon » de ton projet Supabase. Aucune table à créer. Les instructions détaillées sont dans le message.</div>
     `;
     return el;
   }
@@ -10331,7 +10377,7 @@ function renderOnlineRoom(){
       <div class="vs-mid">VS</div>
       <div class="vs-player${oppNew?' reveal-in':''}" id="oppSlot">${net.oppPresent?avatarHtml(net.opp.name, net.opp.color, 3, net.opp.isCreator):`<span class="avatar waiting" style="width:3rem;height:3rem;font-size:1.25rem;">?</span>`}<div class="vs-name">${net.oppPresent?escapeHtml(net.opp.name):"En attente…"}</div><div class="vs-tag${net.isHost?'':' is-host'}">${net.isHost?"Adversaire":"Hôte"}</div></div>
     </div>`}
-    <div class="host-note">${net.isHost?`Tu es l'hôte : paramètre la partie (longueur, chrono, testament) puis lance ${motSalon}.`:`L'hôte paramètre la partie puis lance ${motSalon}.`}</div>
+    <div class="host-note">${net.isHost?`Tu es l'hôte : paramètre la partie (longueur, chrono, testament) puis lance ${motSalon}.`:`L'hôte paramètre la partie puis lance ${motSalon}.`}</div>
     <div class="flex-sp"></div>
     ${net.isHost ? `
       <div class="len-label">Longueur ${aPlusieurs?"de la partie":"du duel"}</div>

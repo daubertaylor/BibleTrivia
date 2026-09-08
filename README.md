@@ -220,6 +220,40 @@ substituer :
    qui doit céder quand la place manque s'y accroche, avec la taille
    actuelle comme plafond.
 
+**La barre de progression ne se remplissait qu'aux trois quarts (v183).** Un
+balayage de tout le jeu à la recherche du défaut de la v182 — enfant absolu
+calé sur 0 dans un parent bordé — n'a trouvé qu'UN autre cas, et c'est celui
+qu'on voit à chaque partie : `.progress-fill` dans `.progress-track`. Sur une
+piste de 8 px, le remplissage n'en couvrait que **6**, avec un anneau pâle
+tout autour du corail.
+
+Ici l'enfant ne peut pas déborder — `overflow:hidden` découpe justement à la
+boîte de padding. C'est donc la **bordure** qui part : elle ne servait qu'à la
+géométrie, or la piste n'a aucun contenu, aucun padding et une hauteur fixe.
+Boîte extérieure inchangée, remplissage à **100 %**.
+
+**Deux typographies dans le même écran (v183).** L'interface écrivait ses
+espaces insécables à la main — 160 occurrences — pendant que les **1545
+questions**, leurs réponses et leurs anecdotes portaient toutes une espace
+ordinaire devant `?`, `!` et `»`. On corrige au RENDU : `escapeHtml` est le
+passage obligé de tout texte affiché, donc une seule fonction (`typoFr`)
+suffit, et le contenu écrit demain en hérite. Les espaces sont converties, pas
+ajoutées : « Jean 3:16 » ne bouge pas, et les citations Segond 1910 (« ne lui
+dites pas: Salut! ») restent au texte exact.
+
+**Et une leçon de mesure, payée sur place.** La première version du relevé
+annonçait **78 ponctuations orphelines** — un « ? » seul en début de ligne — et
+je m'apprêtais à en faire la justification du correctif. Elle remplaçait le
+contenu de la CARTE au lieu de celui de son bloc de texte : la mise en page se
+refaisait dans un conteneur flex centré plus large, avec d'autres points de
+coupure. Mesuré au bon endroit, sur les énoncés, les anecdotes et les options,
+à quatorze largeurs de 250 à 380 px : **zéro, avant comme après**.
+
+Le correctif reste — c'est une incohérence réelle — mais **il ne corrige pas
+ce que je croyais**. Le détecteur, lui, a été éprouvé sur un cas fabriqué
+exprès (il voit bien une dernière ligne de 9,3 px) avant d'accepter ses zéros :
+*un test qui ne trouve rien doit d'abord prouver qu'il sait trouver.*
+
 **Un enfant absolu s'arrête au PADDING, pas au bord (v182).** « L'aura de
 couleur s'applique, mais elle ne prend pas tous les bords. » L'onde d'appui
 est un pseudo-élément en position absolue avec `inset:0` — or un enfant

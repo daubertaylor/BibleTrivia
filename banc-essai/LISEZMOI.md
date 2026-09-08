@@ -35,6 +35,7 @@ notre code, et il est éprouvé. Tout le reste l'est.
     node motfin.js      # le mot de la fin ne se trompe jamais de joueur
     node pied.js        # le pied de l'accueil se tient pareil sur dix appareils
     node bords.js       # l'onde d'appui va-t-elle jusqu'au bord du bouton ?
+    node typo.js        # typographie française sur les 1545 questions et 12 écrans
     node fuite.js sansmarge "html.gl-xf .has-gs{ overflow-clip-margin:0px !important; }"
     python3 fuite.py sansmarge     # aucun trou d'un pixel au bord des feuilles
     node matiere.js /tmp/m mat && python3 matiere.py /tmp/m mat   # la matière suffit-elle ?
@@ -306,3 +307,25 @@ Deux autres pièges, trouvés en écrivant celui-ci :
   mais un relâchement sur le voile d'une feuille produit un clic sur ce voile,
   qui **referme la feuille**. Les cibles suivantes ne trouvaient plus rien.
   Chaque cible d'une feuille rouvre donc la feuille.
+
+
+## Un test qui ne trouve rien doit prouver qu'il sait trouver
+
+`typo.js` compte les ponctuations ORPHELINES : un « ? » tombé seul en début
+de ligne. Sa première version en annonçait 78 sur iPhone SE — un chiffre que
+j'ai failli mettre dans un message de commit comme justification.
+
+Il était faux. Le test écrivait dans la CARTE de question au lieu d'écrire
+dans son bloc de texte : la mise en page se refaisait alors dans un conteneur
+flex centré, 37 px plus large, avec d'autres points de coupure. Au bon
+endroit — le vrai bloc, par le vrai chemin d'affichage — le compte est ZÉRO,
+avant comme après, sur les énoncés, les anecdotes et les options, à quatorze
+largeurs.
+
+Un zéro n'est crédible que si l'on a montré que le détecteur sait dire autre
+chose que zéro. Celui-ci a donc été éprouvé sur un cas FABRIQUÉ pour
+orpheliner : il voit bien une dernière ligne de 9,3 px, sur 4 largeurs sur 22.
+
+Le correctif de typographie reste — l'interface et les données écrivaient
+deux typographies différentes dans le même écran — mais il ne corrige pas ce
+que je croyais qu'il corrigeait, et le commentaire du code le dit.

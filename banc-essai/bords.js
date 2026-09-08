@@ -28,7 +28,13 @@
 
        node bords.js        (jeu servi en HTTP sur 8099)
 
-   Repères : anneau = 0, halo = 0, sur toutes les familles. */
+   ET LE MÊME PIXEL AILLEURS. Un balayage de tout le jeu n'a trouvé qu'UN
+   autre enfant absolu calé sur 0 dans un parent bordé : le remplissage de la
+   barre de progression. Sur une piste de 8 px, il n'en couvrait que 6 — 75 %
+   de la hauteur, avec un anneau pâle tout autour du corail. Le test le
+   vérifie aussi, en fin de course.
+
+   Repères : anneau = 0, halo = 0, remplissage à 100 % de sa piste. */
 const { chromium } = require('/opt/node22/lib/node_modules/playwright');
 const { execSync } = require('child_process');
 const fs = require('fs');
@@ -126,8 +132,38 @@ const CIBLES = [
       (ombre ? '     (ombre portée)' : halo.toFixed(2).padStart(15) + ' px') +
       (anneau > 0.4 ? '   <-- L ONDE N ATTEINT PAS LE BORD' : (!ombre && halo > 0.4 ? '   <-- L ONDE DEBORDE' : '')));
   }
+  /* ===== LES REMPLISSAGES ===== */
+  const barres = await p.evaluate(() => {
+    state.mode = 'solo'; startGame();
+    return new Promise(res => setTimeout(() => {
+      const out = [];
+      const paires = [['.progress-track', '.progress-fill'], ['.progress-track', '.progress-ghost']];
+      for (const [cs_, fs_] of paires) {
+        const t = document.querySelector(cs_);
+        if (!t) { out.push([fs_, null]); continue; }
+        let f = t.querySelector(fs_);
+        /* le repère des autres joueurs n'existe qu'en ligne : on le pose dans
+           la vraie piste pour éprouver la règle qui le peint. */
+        if (!f && fs_ === '.progress-ghost') { f = document.createElement('div'); f.className = 'progress-ghost'; t.appendChild(f); }
+        if (!f) { out.push([fs_, null]); continue; }
+        f.style.transition = 'none'; f.style.width = '60%';
+        const rt = t.getBoundingClientRect(), rf = f.getBoundingClientRect();
+        out.push([fs_, { couv: rf.height / rt.height, haut: rf.top - rt.top, gauche: rf.left - rt.left }]);
+      }
+      res(out);
+    }, 900));
+  });
+  console.log('');
+  for (const [nom, m] of barres) {
+    if (!m) { console.log('  ' + nom.padEnd(28) + ' INTROUVABLE'); ok = false; continue; }
+    const bon = m.couv > 0.995 && Math.abs(m.haut) < 0.4 && Math.abs(m.gauche) < 0.4;
+    if (!bon) ok = false;
+    console.log('  ' + nom.padEnd(28) + 'couvre ' + (100*m.couv).toFixed(1).padStart(5) + ' % de sa piste' +
+      '   écart haut ' + m.haut.toFixed(2) + ' px, gauche ' + m.gauche.toFixed(2) + ' px' +
+      (bon ? '' : '   <-- NE REMPLIT PAS SA PISTE'));
+  }
   if (errs.length) { console.log('  ERREURS JS : ' + [...new Set(errs)].slice(0,3).join(' | ')); ok = false; }
-  console.log(ok ? '\n  OK — l\'onde prend tous les bords, partout' : '\n  ECHEC');
+  console.log(ok ? '\n  OK — l\'onde et les remplissages prennent tous les bords' : '\n  ECHEC');
   await b.close();
   process.exit(ok ? 0 : 1);
 })();
