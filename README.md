@@ -213,6 +213,45 @@ substituer :
    qui doit céder quand la place manque s'y accroche, avec la taille
    actuelle comme plafond.
 
+**Un rendu sur place ne doit pas couper une entrée d'écran (v170).**
+« Créer une partie » ouvrait le salon autrement que le reste du jeu : l'écran
+commençait à monter, la présence Supabase répondait vers 140 ms,
+`reRenderIfOnline()` refaisait un rendu complet, et le nœud en train d'animer
+était REMPLACÉ par un nœud neuf sans animation. Mesuré image par image : une
+entrée normale descend 874 → 726 → 374 → 175 → 78 → 33 → 3 → 0 ; celle du
+salon faisait 874 → 874 → 473 → **0**.
+Le nouveau nœud reprend désormais l'animation là où l'ancien en était
+(`animation-delay` négatif), et l'écoulement est lu sur `getAnimations()` et
+non sur une horloge : un écran lourd met parfois 50 ms à peindre sa première
+image, et l'horloge le croirait en retard. N'importe quel rendu sur place
+devient inoffensif pendant les cinq premiers dixièmes d'un écran.
+
+**Une surface de VERRE ne doit jamais être le conteneur qui défile (v170).**
+Le bandeau des scores à plusieurs portait `overflow-x:auto`. Or il porte aussi
+un enfant `.gs` — une copie floue du décor, large de tout l'écran — et cette
+copie entre dans la zone défilable. À trois joueurs, qui tiennent largement :
+`scrollWidth` 470 pour `clientWidth` 377, soit **93 px de défilement fantôme**.
+D'où deux défauts d'un coup : le dégradé de fin s'affichait toujours (le bord
+droit se dissolvait dans le vide) et un glissement du doigt faisait défiler le
+VERRE sous le contenu. Le défilement est descendu d'un cran, sur une piste
+intérieure. **Règle : le défilement va sur un enfant, jamais sur la surface.**
+
+**Une taille fixe posée sur un objet de taille variable finit par le manger
+(v170).** Le badge « Créateur » était figé à 1,2 rem pendant que les avatars
+vont de 1,55 rem (classement) à 4,2 rem (profil) : 77 % du plus petit, 29 % du
+plus grand — il couvrait entièrement le visage dans les lignes de classement.
+Il se mesure maintenant en fraction de l'avatar (`--av`), bornée aux deux
+bouts. Écart ramené de 48,8 à 15,2 points.
+
+**Le son doit revenir, quoi qu'il se soit passé avant (v170).** Deux trous.
+`reviveAudioHard()` appelait `close()` puis créait le contexte suivant sans
+attendre la promesse : iOS n'en autorise qu'un petit nombre à la fois, et au
+bout de quelques interruptions la création échouait — le son ne revenait plus
+JAMAIS. Et un seul essai au retour au premier plan ne suffit pas : quand une
+autre app tenait la sortie audio, iOS rend la main avec du retard et refuse
+`resume()`. On attend donc la fermeture avant de reconstruire, et on insiste :
+six tentatives sur trois secondes, qui s'arrêtent dès que le son est reparti.
+
 **Comment remplacer une bordure de couleur (v169).** Quatre en portaient
 encore une, chacune pour dire « celle-ci compte ». Aucune n'avait besoin
 d'un trait, et chacune s'est réglée par le même raisonnement — *qu'est-ce

@@ -124,11 +124,11 @@
        trois colonnes du même crème, sur le même fond — donc rien d'autre ne
        peut les séparer. Une ligne qui SÉPARE deux contenus n'est pas un bord
        qui ENTOURE une surface : c'est le seul cas où le trait a un travail.
-       Les lignes des Réglages sont dans le même cas, et elles tiraient bien
-       plus fort (0,08, soit 12 à 26 unités sous le crème — cinq fois le filet
-       qu'on vient de retirer) : elles passent sur le même jeton. Il ne reste
-       ainsi que DEUX traits dessinés dans toute la feuille de style, à la
-       même force, et aucun autour d'une surface. */
+       Les lignes des Réglages y sont passées aussi, puis ont disparu : même
+       ramenées ici, elles creusaient encore 8 à 10 unités, et une liste de
+       réglages a déjà ses pastilles de couleur et son espacement pour se
+       découper. Il ne reste donc plus qu'UN SEUL trait dessiné dans tout le
+       jeu — celui-ci — et aucun autour d'une surface. */
     --separateur:rgba(46,34,22,0.055);
     --ombre-pose:0 1px 2px rgba(24,16,10,0.06), 0 6px 18px rgba(24,16,10,0.10);
     --rebord:0 0 0 1px var(--filet-plat);
@@ -489,8 +489,6 @@
   .semaine{ display:flex; flex-direction:column; align-items:center; gap:0.42rem; }
   .sem-h{ display:flex; align-items:baseline; gap:0.42rem; }
   .sem-t{ font-family:'Poppins',sans-serif; font-size:0.6rem; font-weight:600; letter-spacing:0.09em; text-transform:uppercase; color:rgba(255,255,255,0.72); text-shadow:0 1px 8px rgba(0,0,0,0.5); }
-  .sem-n{ font-family:'Poppins',sans-serif; font-size:0.6rem; font-weight:700; letter-spacing:0.06em; text-transform:uppercase; color:rgba(255,201,90,0.92); text-shadow:0 1px 8px rgba(0,0,0,0.55); white-space:nowrap; }
-  .sem-n::before{ content:"·"; margin-right:0.42rem; color:rgba(255,255,255,0.45); font-weight:600; letter-spacing:0; }
   .sem-j{ display:flex; gap:0.4rem; }
   .sj{ width:2.05rem; height:2.05rem; border-radius:var(--r-s); display:flex; align-items:center; justify-content:center;
     font-family:'Poppins',sans-serif; font-size:0.72rem; font-weight:700; letter-spacing:0.01em;
@@ -664,7 +662,7 @@
 
   .progress-track{ position:relative; height:8px; margin-bottom:var(--e-4); background:rgba(255,255,255,0.32); backdrop-filter:blur(14px) saturate(180%); -webkit-backdrop-filter:blur(14px) saturate(180%); border-radius:var(--r-full); border:1px solid var(--bord); box-shadow:inset 0 1px 2px rgba(15,12,10,0.12); overflow:hidden; }
   .progress-fill{ position:absolute; left:0; top:0; bottom:0; border-radius:var(--r-full); background:linear-gradient(90deg, #FB6A45, #EFAD26); box-shadow:0 0 10px rgba(241,80,47,0.5); transition:width 0.55s cubic-bezier(0.16,1,0.3,1); }
-  .progress-fill::after{ content:""; position:absolute; inset:0; border-radius:var(--r-full); box-shadow:inset 0 1px 0 rgba(255,255,255,0.45); }
+  /* La lèvre blanche interne a sauté ici comme partout ailleurs. */
 
   .question-card{ position:relative; background:var(--surface); border:1px solid var(--border); border-radius:var(--r-l); padding:1.4rem 1.2rem; margin-bottom:var(--e-3); text-align:center; }
   .question-card::before{ content:""; position:absolute; top:0; left:18%; right:18%; height:2px; background:linear-gradient(90deg, transparent, rgba(239,173,38,0.75), transparent); }
@@ -804,13 +802,30 @@
   .rank-online .rank-score{ min-width:3.4rem; }
   /* Le bandeau de score, version à plusieurs : les pastilles défilent
      horizontalement plutôt que de rétrécir jusqu'à l'illisible. */
-  /* Le dernier joueur coupé net au bord donnait l'impression d'un bandeau
-     cassé. Le dégradé le fait fondre : on lit « ça continue », pas « ça
-     rate ». Il n'apparaît que lorsqu'il y a de quoi défiler. */
-  .duel-scorebar.multi{ justify-content:flex-start; gap:0.4rem; overflow-x:auto; scrollbar-width:none; padding:0.4rem 0.7rem;
-    -webkit-mask-image:linear-gradient(to right, #000 0, #000 calc(100% - 2.2rem), transparent 100%);
-    mask-image:linear-gradient(to right, #000 0, #000 calc(100% - 2.2rem), transparent 100%); }
-  .duel-scorebar.multi::-webkit-scrollbar{ display:none; }
+  /* CE N'EST PAS LA SURFACE QUI DÉFILE, C'EST SON CONTENU.
+     Le débordement horizontal était posé sur le bandeau lui-même — donc sur
+     une surface de VERRE, qui porte un enfant .gs : une copie floue du décor,
+     large de tout l'écran. Cette copie entrait dans la zone défilable.
+     Mesuré à trois joueurs, qui tiennent pourtant largement : scrollWidth 470
+     pour clientWidth 377, soit 93 px de défilement fantôme — exactement la
+     largeur qui dépassait de la couche de verre. D'où les deux défauts :
+     le dégradé de fin s'affichait TOUJOURS (le bandeau se croyait trop long,
+     et son bord droit se dissolvait dans le vide), et un glissement du doigt
+     faisait défiler le VERRE sous le contenu.
+     Le défilement descend donc d'un cran, sur une piste intérieure. La
+     surface de verre ne bouge plus jamais, et la piste ne contient que les
+     pastilles : elle sait donc dire la vérité sur sa propre largeur. */
+  .duel-scorebar.multi{ justify-content:flex-start; padding:0.4rem 0.7rem; }
+  .ds-piste{ display:flex; align-items:center; gap:0.4rem; width:100%; overflow-x:auto; scrollbar-width:none;
+    /* Les deux voiles valent zéro tant qu'il n'y a rien au-delà : le bandeau
+       garde alors ses deux bouts nets. Ils ne s'ouvrent que du côté où il
+       reste des joueurs à voir — donc jamais « fini en fondu » pour rien. */
+    --voile-g:0px; --voile-d:0px;
+    -webkit-mask-image:linear-gradient(to right, transparent 0, #000 var(--voile-g), #000 calc(100% - var(--voile-d)), transparent 100%);
+    mask-image:linear-gradient(to right, transparent 0, #000 var(--voile-g), #000 calc(100% - var(--voile-d)), transparent 100%); }
+  .duel-scorebar.multi.voile-g .ds-piste{ --voile-g:1.9rem; }
+  .duel-scorebar.multi.voile-d .ds-piste{ --voile-d:1.9rem; }
+  .ds-piste::-webkit-scrollbar{ display:none; }
   .ds-puce{ display:inline-flex; align-items:baseline; gap:0.32rem; flex-shrink:0; padding:0.16rem 0.55rem; border-radius:var(--r-full); background:rgba(255,255,255,0.55); border:1px solid transparent; }
   .ds-puce.moi{ background:rgba(241,80,47,0.13); border-color:transparent; }
   .ds-puce.gone{ opacity:0.5; }
@@ -990,6 +1005,18 @@
   .btn-primary, .btn-next, .btn-replay, .modal-btn.ok, .sheet-done, .set-go,
   .btn-ghost.btn-cancel, .chip.active, .len-chip.sel, .online-action.primary,
   .modal-btn.cancel.keep{ --press-tint: rgba(255,255,255,0.34); }
+  /* L'ONDE SUIT LE FOND DU BOUTON, PAS SA FAMILLE. Deux exceptions, trouvées
+     en composant chaque teinte sur la couleur réelle de son bouton :
+     — « Quitter » de la confirmation de sortie est un .modal-btn.ok, donc il
+       héritait de l'onde BLANCHE des boutons corail ; mais lui est CRÈME
+       (252,248,241). Blanc sur crème : 2,3 unités d'écart, invisible. C'est
+       très exactement le bouton où l'appui ne se sentait pas. Il reprend
+       l'onde corail des autres boutons clairs : 25,5 unités.
+     — les pastilles de couleur du profil sont saturées et toutes différentes ;
+       une onde corail sur un violet ne donne que 0,8. En blanc, l'appui se
+       lit sur n'importe quelle couleur. */
+  .modal-btn.ok.danger{ --press-tint: rgba(238,74,40,0.18); }
+  .color-dot{ --press-tint: rgba(255,255,255,0.55); }
   /* LES OBJETS, ET EUX SEULS, GARDENT UN ANNEAU CLAIR. Un avatar, un jeton,
      une vignette ne sont pas des surfaces posées sur le décor : ce sont de
      petits objets posés SUR une photo, souvent chargée. Sans un liseré clair
@@ -1045,7 +1072,22 @@
      était re-rastérisé sur la couche d'animation (légèrement flou) puis « sautait »
      net à la fin -> le petit C semblait changer. Là il reste identique avant,
      pendant et après la transition. */
-  .crown-badge{ position:absolute; bottom:-4px; right:-4px; width:1.2rem; height:1.2rem; background:linear-gradient(150deg,#FFC65C,#E8952A); border-radius:50%; display:flex; align-items:center; justify-content:center; padding:0.16rem; color:#fff; text-shadow:0 1px 2px rgba(122,78,4,0.35); border:0;  box-shadow:inset 0 1px 0 rgba(255,255,255,0.7), 0 2px 6px rgba(196,120,20,0.55); transform:translateZ(0); backface-visibility:hidden; }
+  /* LE BADGE SUIT LA TAILLE DE SON AVATAR. Il était figé à 1,2 rem pendant que
+     les avatars vont de 1,55 rem (lignes de classement) à 4,2 rem (profil) :
+     il occupait donc 77 % du plus petit et 29 % du plus grand — près de trois
+     fois plus gros ici que là, et sur l'avatar d'accueil (2,4 rem) il en
+     couvrait la moitié. Il se mesure maintenant en fraction de l'avatar
+     (--av, posé par avatarHtml), bornée aux deux bouts pour rester lisible sur
+     les plus petits sans jamais grossir sur les plus grands. Écart ramené de
+     77-29 % à 44-29 %, et il ne mange plus le visage nulle part.
+     (La lèvre blanche interne a sauté ici comme partout : son arête est
+     l'ombre dorée qu'elle porte déjà.) */
+  .crown-badge{ position:absolute;
+    bottom:calc(var(--av, 2.6rem) * -0.05); right:calc(var(--av, 2.6rem) * -0.05);
+    width:clamp(0.68rem, calc(var(--av, 2.6rem) * 0.34), 1.2rem);
+    height:clamp(0.68rem, calc(var(--av, 2.6rem) * 0.34), 1.2rem);
+    padding:clamp(0.09rem, calc(var(--av, 2.6rem) * 0.045), 0.16rem);
+    background:linear-gradient(150deg,#FFC65C,#E8952A); border-radius:50%; display:flex; align-items:center; justify-content:center; color:#fff; text-shadow:0 1px 2px rgba(122,78,4,0.35); border:0;  box-shadow:0 2px 6px rgba(196,120,20,0.55); transform:translateZ(0); backface-visibility:hidden; }
   /* Le brun sur verre clair (comme la pastille flamme du défi) restait fade à
      côté du badge rond du profil (dégradé or plein, opaque). Même recette
      que .streak-chip.hot : teinte dorée SATURÉE (au lieu du voile pâle) +
@@ -1190,9 +1232,17 @@
   .ds-name{ font-size:0.78rem; font-weight:600; color:var(--ink-soft); white-space:nowrap; overflow:hidden; text-overflow:ellipsis; max-width:100%; }
   .ds-score{ font-family:'Poppins',sans-serif; font-weight:700; font-size:1.15rem; line-height:1.15; color:var(--ink); font-variant-numeric:tabular-nums; }
   .ds-vs{ font-family:'Poppins',sans-serif; font-weight:700; font-size:0.84rem; color:var(--ink-soft); }
-  .opp-track{ position:relative; height:8px; background:rgba(255,255,255,0.32); backdrop-filter:blur(14px) saturate(180%); -webkit-backdrop-filter:blur(14px) saturate(180%); border-radius:var(--r-full); overflow:hidden; margin-bottom:1.4rem; border:1px solid var(--bord); box-shadow:inset 0 1px 2px rgba(15,12,10,0.12); }
-  .opp-fill{ position:absolute; left:0; top:0; bottom:0; background:linear-gradient(90deg,#4DA8FF,#2E7FE8); border-radius:var(--r-full); box-shadow:0 0 10px rgba(77,168,255,0.5); transition:width 0.55s cubic-bezier(0.16,1,0.3,1); }
-  .opp-fill::after{ content:""; position:absolute; inset:0; border-radius:var(--r-full); box-shadow:inset 0 1px 0 rgba(255,255,255,0.45); }
+  /* IL N'Y A PLUS QU'UNE BARRE DE PROGRESSION DANS LE JEU. En ligne, elle
+     était bleue, glissée AU-DESSUS de la ligne d'infos, et elle disait
+     l'avancement de L'ADVERSAIRE — pendant qu'en solo et en groupe une barre
+     corail, POSÉE EN DESSOUS, disait le mien. Trois différences pour le même
+     objet : couleur, place, sens. Elles sont maintenant la même barre, au même
+     endroit, et elle dit toujours la même chose : OÙ J'EN SUIS.
+     L'avancement des autres ne disparaît pas pour autant : il devient un
+     repère pâle sur la MÊME piste, derrière le mien — on lit d'un coup d'œil
+     qui est devant, sans avoir à comparer deux barres. */
+  .progress-ghost{ position:absolute; left:0; top:0; bottom:0; border-radius:var(--r-full);
+    background:rgba(255,255,255,0.5); transition:width 0.55s cubic-bezier(0.16,1,0.3,1); }
 
   .duel-result{ display:flex; align-items:stretch; justify-content:center; gap:0.7rem; margin-bottom:1.2rem; }
   .dr-side{ flex:1; display:flex; flex-direction:column; align-items:center; gap:0.4rem; background:rgba(255,255,255,0.55); backdrop-filter:blur(16px) saturate(180%); -webkit-backdrop-filter:blur(16px) saturate(180%); border:1px solid var(--bord); border-radius:var(--r-l); padding:0.95rem 0.55rem; }
@@ -1212,7 +1262,7 @@
   .option-btn, .btn-primary, .btn-next, .btn-replay, .fact-card, .tier-chip, .q-counter, .streak-chip, .timer-chip,
   .icon-btn, .btn-reveal, .btn-newgame, .award-btn, .progress-track,
   .presence-card, .me-row, .online-action, .searching-card, .waiting-card,
-  .info-card, .vs-row, .len-chip, .duel-scorebar, .opp-track, .dr-side,
+  .info-card, .vs-row, .len-chip, .duel-scorebar, .dr-side,
   .rank-row, .text-input, .code-input, .leave-banner, .fs-hint, .modal-card{
     transform: translateZ(0);
     -webkit-transform: translateZ(0);
@@ -1705,20 +1755,23 @@
      beige clair) restait fade à côté du .dc-ico (dégradé or plein, à côté).
      Teinte dorée saturée + texte blanc -> même impact visuel, cohérent avec
      l'icône flamme repalettée juste au-dessus. */
-  .daily-card .dc-streak{ display:inline-flex; align-items:center; gap:0.22rem; font-weight:800; font-size:0.9rem; font-variant-numeric:tabular-nums; color:#fff; text-shadow:0 1px 2px rgba(122,78,4,0.35); --glass-tint: rgb(240,163,26); border:1px solid var(--bord); border-radius:var(--r-full); padding:0.24rem 0.6rem; flex-shrink:0; box-shadow:inset 0 1px 0 rgba(255,255,255,0.4), 0 2px 8px rgba(196,144,32,0.24); }
+  .daily-card .dc-streak{ display:inline-flex; align-items:center; gap:0.22rem; font-weight:800; font-size:0.9rem; font-variant-numeric:tabular-nums; color:#fff; text-shadow:0 1px 2px rgba(122,78,4,0.35); --glass-tint: rgb(240,163,26); border:1px solid var(--bord); border-radius:var(--r-full); padding:0.24rem 0.6rem; flex-shrink:0; box-shadow:0 2px 8px rgba(196,144,32,0.24); }
   .daily-card .dc-streak svg{ width:0.92rem; height:0.92rem; }
   /* La carte terminée ne porte plus de disque vert : la coche occupe
      EXACTEMENT la place du chevron, dans la même encre douce. Le défi fini se
      lit alors comme une ligne au repos — pas comme une ligne décorée. */
-  /* LA SÉRIE NE SE DIT QU'UNE FOIS.
-     La pastille « flamme + nombre » et la bande des sept jours comptaient la
-     même chose, à 150 px l'une de l'autre : le bas de l'écran répétait la
-     carte du dessus, et c'est ça qui faisait paraître la bande orpheline.
-     La pastille s'efface donc là où la bande existe — et les cinq cartes de
-     l'accueil retrouvent exactement la même silhouette, ce qui était le
-     principe de départ. Sur un petit écran la bande n'a pas de place (voir
-     plus bas) : la pastille y reste, sinon la série ne serait dite nulle part. */
-  .daily-card .dc-streak{ display:none; }
+  /* LA SÉRIE NE SE DIT QU'UNE FOIS — MAIS ELLE SE DIT SUR LA CARTE.
+     On avait effacé la pastille « flamme + nombre » parce que la bande des
+     sept jours annonçait le même compte 150 px plus bas. Le raisonnement
+     tenait ; le choix de qui garde l'information, non. Une série ne sert à
+     rien là où on la lit : elle sert là où on DÉCIDE de jouer, c'est-à-dire
+     sur la carte du Défi du jour. Et une série se lit à une flamme, pas à une
+     phrase en petites capitales.
+     C'est donc la BANDE qui cesse de répéter le nombre (voir semaineHtml) :
+     elle garde ce qu'elle est seule à dire — QUELS jours, et où on en est
+     dans la semaine. La pastille garde ce qu'elle est seule à dire : combien
+     de jours d'affilée. Chacune dit une chose, une seule fois. */
+  .daily-card .dc-streak{ display:inline-flex; }
   .daily-card .dc-check{ opacity:1; }
   .daily-card .dc-check svg{ stroke-width:2.6; }
   .daily-card:disabled{ cursor:default; opacity:1; }
@@ -1884,8 +1937,7 @@
     .tst-head{ padding:0.5rem 0.8rem; }
     .parcours-h{ margin:0.5rem 0.2rem 0.4rem; }
     .home-verse{ display:none; } /* petits écrans : l'accueil garde son équilibre */
-    .semaine{ display:none; }
-    .daily-card .dc-streak{ display:inline-flex; }   /* pas de bande ici : la pastille reprend son rôle */
+    .semaine{ display:none; }   /* la pastille flamme, elle, est là de toute façon */
     /* ÉCRAN COURT = ÉCRAN DÉLESTÉ, DONC LE LOGO PEUT ÊTRE PLUS GRAND.
        Le plafond de hauteur du logo (12,5 % de la hauteur utile) est calculé
        pour la mise en page COMPLÈTE. Ici le verset et la bande des sept jours
@@ -1914,12 +1966,11 @@
      scratchpad/n1/seuil.js) ; on rouvre donc la bande à partir de 610 px, avec
      22 px de marge. Le verset, lui, reste masqué : il tient au-dessus, là où le
      logo vient justement de reprendre sa taille.
-     La série n'est toujours dite qu'une fois : la pastille flamme du Défi, que
-     le palier court avait rallumée, se retire de nouveau ici. */
+ La série reste dite une seule fois : la bande ne
+     compte plus les jours d'affilée, c'est la pastille du Défi qui le fait. */
   @media (min-height:610px) and (max-height:700px) and (orientation:portrait),
          (min-height:610px) and (max-height:700px) and (pointer:fine){
     .semaine{ display:flex; }
-    .daily-card .dc-streak{ display:none; }
   }
   .tst.open .tst-body{ grid-template-rows:1fr; margin-top:0.6rem; opacity:1; }
   .tst-body-block .ach-card, .tst-body-block .bk-card{ margin-bottom:0; }
@@ -2108,7 +2159,13 @@
   .sheet-title{ font-family:'Poppins',sans-serif; font-weight:700; font-size:1.12rem; color:var(--ink); display:flex; align-items:center; gap:0.55rem; margin-bottom:0.35rem; }
   .sheet-title .st-ico{ width:1.5rem; height:1.5rem; display:inline-flex; color:var(--primary); flex-shrink:0; }
   .set-row{ display:flex; align-items:center; gap:0.8rem; padding:0.88rem 0.1rem; }
-  .set-row + .set-row{ border-top:1px solid var(--separateur); }
+  /* LES LIGNES DES RÉGLAGES SONT PARTIES AUSSI. Ramenées de 0,08 à 0,055,
+     elles creusaient encore 8,2 à 10,3 unités sous la feuille — soit le seuil
+     exact au-dessus duquel l'œil lit une ligne DESSINÉE. Or ces lignes-là ont
+     déjà tout ce qu'il faut pour se séparer : une pastille de couleur par
+     réglage, et l'espace entre elles. Le trait reste déclaré, transparent,
+     pour que la hauteur des lignes ne bouge pas d'un pixel. */
+  .set-row + .set-row{ border-top:1px solid transparent; }
   .set-ico{ width:2.3rem; height:2.3rem; border-radius:var(--r-s); display:flex; align-items:center; justify-content:center; padding:0.5rem; color:#fff; flex-shrink:0; box-shadow:inset 0 1px 0 rgba(255,255,255,0.4), 0 3px 9px rgba(15,12,10,0.18); }
   /* Même rebord de verre que les icônes du menu (reflet haut + anneau blanc
      interne + séparation teintée + ombre colorée), couleur par couleur. */
@@ -5449,16 +5506,35 @@ let audioReviving = false;
    reprise doit reconstruire la musique à neuf (voir restartMusicClean) au lieu
    de laisser dégeler des notes/échos gelés = « bruit bizarre ». */
 let audioWasHidden = false, audioInterrupted = false;
+/* ON ATTEND QUE L'ANCIEN CONTEXTE SOIT VRAIMENT FERMÉ. iOS n'autorise qu'un
+   petit nombre de contextes audio à la fois. L'ancienne version appelait
+   close() puis créait le suivant DANS LA FOULÉE, sans attendre la promesse :
+   à chaque interruption (appel, autre app, veille) un contexte de plus restait
+   en cours de fermeture, et au bout de quelques allers-retours la création
+   échouait — le son ne revenait alors PLUS JAMAIS, quoi qu'on touche. On
+   reconstruit donc seulement une fois l'ancien refermé, et jamais plus d'une
+   fois toutes les trois secondes. */
+let derniereReconstruction = 0;
 function reviveAudioHard(){
   if(audioReviving || !audioActive()) return; // jamais pendant la fermeture
+  const maintenant = Date.now();
+  if(maintenant - derniereReconstruction < 3000) return;
+  derniereReconstruction = maintenant;
   audioReviving = true;
-  try { if(actx){ actx.close().catch(()=>{}); } } catch(e){}
+  const ancien = actx;
   actx = null; masterGain = null; masterFilter = null;
   if(musicTimer){ clearInterval(musicTimer); musicTimer = null; }
   musicBusNode = null; musicDelayIn = null; musicFb = null; qNoiseBuf = null; musicPlaying = false;
   audioWasHidden = false; audioInterrupted = false; // contexte neuf : plus rien de gelé
-  try { getCtx(); applyVolume(); if(settings.music) startMusic(); } catch(e){}
-  audioReviving = false;
+  const rebatir = ()=>{
+    audioReviving = false;
+    if(!audioActive()) return;
+    try { getCtx(); applyVolume(); if(settings.music) startMusic(); } catch(e){}
+  };
+  if(ancien){
+    try { const pr = ancien.close(); if(pr && pr.then){ pr.then(rebatir, rebatir); } else { rebatir(); } }
+    catch(e){ rebatir(); }
+  } else { rebatir(); }
 }
 /* COUPE PROPRE en arrière-plan / fermeture. La cause du « métallique » à la
    fermeture brusque : stopMusic ne baissait que le bus (fondu 0,7 s) pendant que
@@ -5543,6 +5619,34 @@ function wakeAudio(){
   } catch(e){}
   // si resume() n'a pas ramené le contexte à « running », on le recrée
   setTimeout(()=>{ if(!ok && actx && actx.state !== "running"){ reviveAudioHard(); } }, 400);
+}
+/* LE SON DOIT REVENIR, QUOI QU'IL SE SOIT PASSÉ AVANT.
+   Un seul essai au retour au premier plan ne suffit pas : quand une autre app
+   tenait la sortie audio (musique, vidéo, appel), iOS rend la main avec du
+   retard et refuse resume() tant qu'il n'a pas relâché sa session. L'essai
+   unique tombait donc dans le vide et l'app restait muette jusqu'au geste
+   suivant — parfois jamais, si le joueur se contentait de lire.
+   On INSISTE donc : six tentatives réparties sur trois secondes, qui
+   s'arrêtent dès que le contexte tourne et que la musique est repartie. Si
+   l'app repart en arrière-plan entre-temps, la série s'interrompt d'elle-même.
+   Et si le contexte a été perdu pour de bon, on le recrée avant d'essayer :
+   wakeAudio(), lui, renonce quand il n'y a plus de contexte du tout. */
+let relanceSonT = null;
+const RELANCES_MS = [0, 120, 350, 800, 1600, 3000];
+function relancerSon(){
+  clearTimeout(relanceSonT);
+  if(!audioUnlocked) return;   // aucun son n'a encore été autorisé : rien à reprendre
+  let n = 0;
+  const tenter = ()=>{
+    if(!audioActive()) return;
+    if(!actx){ try { getCtx(); applyVolume(); } catch(e){} }
+    wakeAudio(); maybeStartMusic();
+    const vivant = actx && actx.state === "running";
+    if(vivant && (!settings.music || musicPlaying)) return;   // tout est reparti
+    n++;
+    if(n < RELANCES_MS.length) relanceSonT = setTimeout(tenter, RELANCES_MS[n] - RELANCES_MS[n-1]);
+  };
+  tenter();
 }
 function applyVolume(){
   if(musicBusNode && actx){ musicBusNode.gain.setTargetAtTime(musicPlaying ? musicLevel() : 0.0001, actx.currentTime, 0.06); }
@@ -5992,20 +6096,25 @@ function setVolume(v, el){
 function volPreview(){ if(settings.sfx){ chime(659.25, 0, 0.55, 0.018); } }
 
 document.addEventListener("visibilitychange", ()=>{
-  if(document.visibilityState==="visible"){ wakeAudio(); maybeStartMusic(); }
-  else { audioHidden(); }
+  if(document.visibilityState==="visible"){ relancerSon(); }
+  else { clearTimeout(relanceSonT); audioHidden(); }
 });
-window.addEventListener("pageshow", ()=>{ wakeAudio(); maybeStartMusic(); });
+window.addEventListener("pageshow", relancerSon);
 /* pagehide : l'événement FIABLE quand l'app part (fermeture/arrière-plan iOS).
    Coupe audio en fondu express -> plus aucun « métallique » à la fermeture. */
 window.addEventListener("pagehide", audioHidden);
 /* focus/pointer : uniquement quand l'app est réellement au premier plan
    (wakeAudio se protège lui-même). PAS de « blur » : il se déclenche aussi à
    la fermeture et rallumait le son au mauvais moment. */
-window.addEventListener("focus", wakeAudio);
+window.addEventListener("focus", relancerSon);
 /* La musique ne peut démarrer qu'après un premier geste : on s'accroche au tout
    premier — et ce même geste ranime l'audio si un appel l'avait interrompu. */
 document.addEventListener("pointerdown", ()=>{ audioUnlocked = true; wakeAudio(); maybeStartMusic(); }, { capture:true, passive:true });
+/* Un geste est la SEULE chose qu'iOS accepte à coup sûr pour rouvrir l'audio :
+   on retente donc aussi au relâchement, et cette fois avec toute la série —
+   si le premier essai échoue encore (session pas rendue), les suivants
+   rattrapent sans que le joueur ait à toucher une deuxième fois. */
+document.addEventListener("touchend", ()=>{ audioUnlocked = true; relancerSon(); }, { capture:true, passive:true });
 /* REPRISE APRÈS UNE MISE À JOUR : le son ne doit pas s'apercevoir qu'on a
    rechargé. Le geste qui avait autorisé l'audio appartenait à la page
    précédente ; la nouvelle repartait donc muette jusqu'au toucher suivant.
@@ -8614,10 +8723,11 @@ function semaineHtml(){
     cases.push(`<span class="sj${faits.has(dayKey(-k)) ? " fait" : ""}${k === 0 ? " auj" : ""}">`
       + SEM_LETTRES[jour.getDay()] + `</span>`);
   }
-  const serie = dailyStreakShown();
-  const compte = serie > 0 ? `<span class="sem-n">${serie} jour${serie>1?"s":""} d'affilée</span>` : "";
+  /* Le nombre de jours d'affilée est dit par la pastille flamme du Défi du
+     jour, juste au-dessus. Ici on ne montre que ce que la pastille ne peut pas
+     dire : QUELS jours ont été joués, et où l'on en est dans la semaine. */
   return `<div class="semaine" aria-label="Tes sept derniers jours">`
-    + `<div class="sem-h"><span class="sem-t">Les 7 derniers jours</span>${compte}</div>`
+    + `<div class="sem-h"><span class="sem-t">Les 7 derniers jours</span></div>`
     + `<div class="sem-j">${cases.join("")}</div></div>`;
 }
 function dailyStreakShown(){ const d = loadDaily(); return (d.last===dayKey(0) || d.last===dayKey(-1)) ? d.streak : 0; }
@@ -9554,11 +9664,17 @@ function renderSplash(){
 }
 
 let lastScreen = null;
+/* Quand l'écran ACTUEL a commencé à entrer, et combien de temps dure l'entrée
+   (--tr-ouvre). Sert à ne jamais couper une entrée en cours. */
+let entreeDebut = 0;
+const ENTREE_MS = 500;
 /* ===================== ÉCRANS PROFIL & EN LIGNE ===================== */
 function avatarHtml(name, color, size, creator){
   const initial = escapeHtml((name||"?").charAt(0).toUpperCase());
   const s = size || 2.6;
-  return `<span class="avatar" style="width:${s}rem;height:${s}rem;background:${color};font-size:${(s*0.42).toFixed(2)}rem;">${initial}${creator?`<span class="crown-badge">${C_MONO_SVG}</span>`:""}</span>`;
+  /* --av : la taille de l'avatar, transmise au badge « Créateur » pour qu'il
+     reste à la même fraction quelle que soit la place où on l'affiche. */
+  return `<span class="avatar" style="--av:${s}rem;width:${s}rem;height:${s}rem;background:${color};font-size:${(s*0.42).toFixed(2)}rem;">${initial}${creator?`<span class="crown-badge">${C_MONO_SVG}</span>`:""}</span>`;
 }
 /* Capitale C de linéale classique, tracée à la main : dos gauche droit entre
    deux coins arrondis, et COUPES QUASI VERTICALES aux extrémités — les
@@ -9838,11 +9954,13 @@ function renderOnlinePlay(){
      à huit, un « VS » n'a plus de sens, et sept colonnes ne tiendraient pas. */
   const scorebar = aPlusieurs ? `
     <div class="duel-scorebar multi">
+      <div class="ds-piste" onscroll="majVoilesScores()">
       ${classement().map(j=>`
         <span class="ds-puce${j.moi?' moi':''}${j.gone?' gone':''}">
           <span class="dsp-nom">${escapeHtml((j.name||"?").slice(0,9))}</span>
           <span class="dsp-pts">${j.score|0}</span>
         </span>`).join("")}
+      </div>
     </div>` : `
     <div class="duel-scorebar">
       <div class="ds-side me"><span class="ds-name">${escapeHtml(profile.name)}</span><span class="ds-score">${net.score}</span></div>
@@ -9868,7 +9986,10 @@ function renderOnlinePlay(){
   }
   const q = net.deck[net.idx];
   const info = TIER_INFO[q.tier];
-  const oppPct = Math.round((net.oppIndex/total)*100);
+  /* MON avancement, et celui du joueur le plus avancé parmi les autres. */
+  const moiPct = Math.round(((net.idx + (net.revealed?1:0)) / total) * 100);
+  const idxAutres = autresJoueurs().filter(j=>!j.gone).map(j=>j.idx|0).concat([net.oppIndex|0]);
+  const devantPct = Math.round((Math.max.apply(null, idxAutres.concat([0])) / total) * 100);
   const fresh = (net.idx !== net.animIdx);
   net.animIdx = net.idx;
   const pop = net.justRevealed;
@@ -9890,8 +10011,11 @@ function renderOnlinePlay(){
   el.innerHTML = `${renderHeader(titrePartie(), true, "quitDuel()")}
     ${goneBanner}
     ${scorebar}
-    <div class="opp-track"><div class="opp-fill" style="width:${oppPct}%"></div></div>
     <div class="play-meta"><span class="tier-chip ${info.cls}">${tierDotsHtml(info.level)}${info.label} · ${info.pts} pts</span><span class="q-counter">${net.idx+1}/${total}</span>${!net.revealed ? timerChipHtml(timerSecondsFor(net.timerKey)) : ""}</div>
+    <div class="progress-track">
+      ${devantPct > 0 ? `<div class="progress-ghost" style="width:${devantPct}%"></div>` : ""}
+      <div class="progress-fill" style="width:${moiPct}%"></div>
+    </div>
     <div class="flex-sp" style="flex-grow:0.5"></div>
     <div class="question-card${fresh?' animate':''}"><div class="qtext">${escapeHtml(q.q)}</div></div>
     <div class="options-grid${fresh?' animate':''}">${optionsHtml}</div>
@@ -10025,8 +10149,40 @@ function render(){
        retire aussi de tout écran resté en place, pour qu'elle ne traîne jamais. */
     Array.prototype.forEach.call(app.children, (c)=>{ if(c && c.classList) c.classList.remove("arrivee"); });
     node.classList.add("screen-enter"); node.classList.add("arrivee");
+    entreeDebut = (typeof performance!=="undefined" ? performance.now() : Date.now());
     setTimeout(()=>{ node.classList.remove("arrivee"); fitScroll(); }, 540);
     Array.prototype.forEach.call(node.children, (c,i)=>{ if(c && c.style) c.style.setProperty("--i", i); });
+  } else {
+    /* UN RENDU SUR PLACE NE DOIT PAS COUPER UNE ENTRÉE EN COURS.
+       « Créer une partie » le montrait : l'écran du salon commençait à monter,
+       puis la présence Supabase répondait vers 140 ms, reRenderIfOnline()
+       refaisait un rendu complet, et le nœud en train d'animer était REMPLACÉ
+       par un nœud neuf, sans animation — l'écran sautait de 473 px à 0 en une
+       image. Mesuré : une entrée normale descend 874 → 726 → 374 → 175 → 78 →
+       33 → 3 → 0 ; celle du salon faisait 874 → 874 → 473 → 0.
+       Le nouveau nœud REPREND donc l'animation là où l'ancien en était, grâce
+       à un délai négatif : le mouvement continue sans que rien ne saute, et
+       n'importe quel rendu sur place (présence, minuterie, score) devient
+       inoffensif pendant les cinq premiers dixièmes d'un écran. */
+    const vieux = Array.prototype.find.call(app.children, (c)=> c && c.classList && c.classList.contains("screen-enter"));
+    /* On demande au navigateur OÙ EN EST l'animation plutôt que de le déduire
+       d'une horloge : un écran lourd (le salon et ses avatars) met parfois
+       50 ms à peindre sa première image, et l'horloge le croirait alors en
+       retard — la reprise ferait un bond au lieu d'un enchaînement. */
+    let ecoule = -1;
+    if(vieux && vieux.getAnimations){
+      try {
+        const a = vieux.getAnimations().find((x)=> /^screenIn/.test(x.animationName||"")) || vieux.getAnimations()[0];
+        if(a && typeof a.currentTime === "number") ecoule = a.currentTime;
+      } catch(e){}
+    }
+    if(ecoule < 0) ecoule = (typeof performance!=="undefined" ? performance.now() : Date.now()) - entreeDebut;
+    if(vieux && ecoule >= 0 && ecoule < ENTREE_MS){
+      node.classList.add("screen-enter"); node.classList.add("arrivee");
+      node.style.animationDelay = (-ecoule) + "ms";
+      setTimeout(()=>{ node.classList.remove("arrivee"); node.style.animationDelay = ""; fitScroll(); }, Math.max(60, 540 - ecoule));
+      Array.prototype.forEach.call(node.children, (c,i)=>{ if(c && c.style) c.style.setProperty("--i", i); });
+    }
   }
   const prevNode = !sameScreen ? Array.prototype.find.call(app.children, c=>c.classList && !c.classList.contains("screen-exit")) : null;
   if(prevNode){
@@ -10065,6 +10221,7 @@ function render(){
   if(prevNode){ glassFreezeForTransition(); } else { glassTrack(); }
   requestAnimationFrame(fitScroll);
   syncSpinners();
+  majVoilesScores();
 
   if(state.screen!=="play" && state.screen!=="online-play"){ stopQTimer(); }
   if(state.screen==="play") saveState();
@@ -10120,6 +10277,18 @@ function rendLeDefilement(a){
    chaque rafraîchissement. On cale la PHASE sur l'horloge : un délai d'animation
    NÉGATIF = « comme si elle tournait depuis toujours ». Un spinner recréé reprend
    donc pile où il en était -> rotation parfaitement continue, à l'infini. */
+/* LES VOILES DE LA BARRE DES SCORES. Un voile ne s'ouvre que du côté où il
+   reste vraiment quelque chose à voir — sinon le bandeau se termine net, comme
+   toutes les autres surfaces du jeu. Appelée à chaque rendu ET à chaque
+   défilement de la piste. */
+function majVoilesScores(){
+  const piste = document.querySelector(".ds-piste");
+  if(!piste || !piste.parentElement) return;
+  const bar = piste.parentElement;
+  const reste = piste.scrollWidth - piste.clientWidth;
+  bar.classList.toggle("voile-d", reste > 1 && piste.scrollLeft < reste - 1);
+  bar.classList.toggle("voile-g", reste > 1 && piste.scrollLeft > 1);
+}
 function syncSpinners(){
   const PERIOD = 800; // = durée de l'animation « spin » (0.8s)
   const delay = -(performance.now() % PERIOD) + "ms";

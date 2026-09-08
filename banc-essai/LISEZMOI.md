@@ -25,6 +25,7 @@ notre code, et il est éprouvé. Tout le reste l'est.
     node match-trace.js # la séquence d'appariement, horodatée des deux côtés
     node bascule.js     # le salon change de visage dans les deux sens
     node couleurs.js    # aucune bordure de couleur, écrans ET états
+    node appuis.js      # l'onde d'appui se voit-elle sur son propre bouton ?
     node matiere.js /tmp/m mat && python3 matiere.py /tmp/m mat   # la matière suffit-elle ?
 
 ## Un avertissement, payé cher
@@ -72,3 +73,17 @@ Conséquence à ne pas manquer : le raccourci de `reRenderIfOnline()` valait
 `nbJoueurs() <= 2`, ce qui laissait le face-à-face à l'écran quand l'invité
 repartait. Il vaut maintenant `=== 2`. C'est `bascule.js` qui garde ce sens-là,
 en descendant de huit à un après y être monté.
+
+
+## Un retour d'appui peut exister et rester invisible
+
+Le jeu répond au doigt de deux façons : le bouton s'enfonce, et une onde
+colorée s'allume dessous. Vérifier que l'onde est bien *appliquée* ne prouve
+rien — sur les 94 boutons du jeu, tous l'avaient. Ce qui compte, c'est
+l'écart entre la teinte de l'onde et la couleur du bouton.
+
+« Quitter » de la confirmation de sortie est un `.modal-btn.ok`, il héritait
+donc de l'onde **blanche** des boutons corail. Mais lui est **crème**. Deux
+unités et demie d'écart : l'appui ne se sentait pas, sur le seul bouton qu'on
+presse pour abandonner une partie. `appuis.js` compose chaque teinte sur la
+couleur réelle de son bouton et le dit.
