@@ -1,43 +1,42 @@
-/* LA DÉCHIRURE DE ROTATION.
-   Quand le téléphone tourne, l'écran « se déchirait » : des cartes dont le fond
-   s'arrête avant leur propre texte. La cause n'est pas un défaut de peinture,
-   c'est une mise en page qui DÉPEND DE L'ORIENTATION.
+/* LA DÉCHIRURE DE ROTATION — « l'écran se coupe en deux ».
+   Rien à voir avec la peinture : c'est une mise en page qui DÉPEND DE
+   L'ORIENTATION. iOS ne bascule pas la géométrie et les requêtes média dans la
+   même passe : il reste quelques images où l'écran est déjà couché et où les
+   règles « (orientation:landscape) » n'ont pas encore pris. Tout ce qui suit
+   l'écran change alors de valeur, et l'image affichée ne correspond plus à
+   celle d'avant.
 
-   La largeur de la colonne en dépendait deux fois : #app est borné à 430 px
-   (debout sur un écran de 393 il fait 393, couché il atteint 430), et au-delà
-   de 620 px de large un palier « grand écran » le pousse à 31 rem. Couché, les
-   deux se déclenchent : 393 → 509 px, les cartes 370 → 486, et les couches de
-   verre, elles, restent à 393. Mesuré : 25,3 px de carte au-delà de son verre.
+   CE TEST A DÉJÀ MENTI, ET C'EST SA LEÇON PRINCIPALE. Sa première version ne
+   comparait que la LARGEUR de la colonne. Elle passait au vert pendant que
+   l'écran se coupait toujours en deux — parce que le reste bougeait :
 
-   Une règle « (orientation:landscape) » gelait tout ça — mais iOS ne bascule
-   PAS la géométrie et les requêtes média dans la même passe. Il reste quelques
-   images où l'écran est déjà couché et où la règle n'a pas encore pris.
+       #app   [0, 0, 393, 852]  ->  [229,5, 0, 393, 393]
 
-   CE TEST SIMULE EXACTEMENT CETTE FENÊTRE : il annule les règles « paysage »
-   (comme si Safari ne les avait pas encore basculées), bascule la géométrie, et
-   vérifie que rien ne bouge. C'est le seul moyen de reproduire le défaut : un
-   navigateur de test, lui, bascule tout d'un coup et ne le montre jamais.
+   la colonne se RECENTRE de 229,5 px (margin:0 auto dans une fenêtre devenue
+   large) et sa HAUTEUR s'effondre (100lvh suit l'écran) ; puis, une fois ces
+   deux-là figés, il restait 14 px de glissement vertical, dus aux unités vw et
+   svh — jusqu'à la taille du rem, qui commande toute l'échelle du jeu.
 
-       node rotation.js                (jeu servi en HTTP sur 8099)
-       node rotation.js --sans-decalage   (bascule normale, pour comparaison) */
+   On compare donc la BOÎTE COMPLÈTE de plusieurs éléments, position verticale
+   comprise. Le seul résultat acceptable est zéro.
+
+       node rotation.js                    (jeu servi en HTTP sur 8099)
+       node rotation.js --sans-decalage    (bascule franche, pour comparaison) */
 const { chromium } = require('/opt/node22/lib/node_modules/playwright');
 const IOS='Mozilla/5.0 (iPhone; CPU iPhone OS 17_5 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.5 Mobile/15E148 Safari/604.1';
 const URL = (process.argv.find(a=>/^https?:/.test(a))) || 'http://127.0.0.1:8099/index.html';
 const DECALAGE = process.argv.indexOf('--sans-decalage') < 0;
-/* SIMULER LE RETARD, FIDÈLEMENT : on neutralise TOUTES les règles dont la
-   condition parle d'orientation — et rien d'autre. C'est exactement l'état où
-   se trouve Safari pendant quelques images : la géométrie a basculé, les
-   requêtes média non. Une mise en page qui ne dépend pas de l'orientation
-   traverse cet état sans bouger ; c'est tout ce qu'on lui demande. */
+const SEL = ['#app','.hero-zone','.hero-title','.mode-card','.daily-card','.parcours-card','.semaine'];
+/* Neutraliser TOUTES les règles dont la condition parle d'orientation — et rien
+   d'autre : c'est exactement l'état de Safari pendant la bascule. Un navigateur
+   de test, lui, bascule tout d'un coup et ne montrerait jamais le défaut. */
 function retarderLesRequetes(){
   let n = 0;
   for (const f of Array.from(document.styleSheets)) {
     let regles; try { regles = f.cssRules; } catch(e){ continue; }
     for (let i = regles.length - 1; i >= 0; i--) {
       const r = regles[i];
-      if (r.type === 4 && /orientation\s*:/.test(r.conditionText || r.media.mediaText || '')) {
-        f.deleteRule(i); n++;
-      }
+      if (r.type === 4 && /orientation\s*:/.test(r.conditionText || r.media.mediaText || '')) { f.deleteRule(i); n++; }
     }
   }
   return n;
@@ -50,47 +49,37 @@ function retarderLesRequetes(){
   await p.addInitScript(() => { localStorage.setItem('bt_profile', JSON.stringify({name:'Taylor',color:'#4C86E8'})); localStorage.setItem('bt_fs_hint','1'); });
   await p.goto(URL);
   await p.waitForFunction(() => { try { return state.screen==='mode'; } catch(e){ return false; } }, null, { timeout:20000 });
-  await p.waitForTimeout(1400);
+  await p.waitForTimeout(1500);
   if (DECALAGE) {
     const n = await p.evaluate(`(${retarderLesRequetes.toString()})()`);
-    console.log('  (' + n + ' regles « orientation » neutralisees : on simule le retard de Safari)');
+    console.log('  ' + n + ' regles « orientation » neutralisees — on simule le retard de Safari');
   }
-  const mesure = ()=>p.evaluate(()=>{
-    const app=document.getElementById('app'), c=document.querySelector('.mode-card');
-    if(!app || !c) return null;
-    const rc=c.getBoundingClientRect();
-    const g=c.querySelector(':scope > .gs'), rg=g?g.getBoundingClientRect():null;
-    const de=document.documentElement;
-    return { vue:de.clientWidth+'x'+de.clientHeight,
-             colonne:Math.round(app.getBoundingClientRect().width*10)/10,
-             carte:Math.round(rc.width*10)/10,
-             /* le verre couvre-t-il toute la carte ? sinon, ça se déchire */
-             hors: rg ? Math.max(0, Math.round((rc.right-rg.right)*10)/10, Math.round((rg.left-rc.left)*10)/10) : null,
-             voile: (()=>{const v=document.getElementById('rotate-lock'); return v?getComputedStyle(v).display!=='none':false;})() };
-  });
-  const depart = await mesure();
-  console.log('  debout, au repos : colonne ' + depart.colonne + '   carte ' + depart.carte);
-  let ok = true, sansVoile = 0;
-  const suivre = async (etiquette, attentes)=>{
-    for (const d of attentes) {
-      if (d) await p.waitForTimeout(d);
-      const m = await mesure();
-      const bouge = Math.abs(m.colonne - depart.colonne) > 0.6 || Math.abs(m.carte - depart.carte) > 0.6;
-      const dechire = (m.hors || 0) > 0.6;
-      if (bouge || dechire) ok = false;
-      if (etiquette === 'couche' && !m.voile) sansVoile++;
-      console.log('  ' + etiquette + ' : colonne ' + String(m.colonne).padStart(6) + '   carte ' + String(m.carte).padStart(6)
-        + '   hors verre ' + String(m.hors).padStart(5) + '   voile ' + (m.voile?'oui':'NON')
-        + (bouge||dechire ? '   <-- DECHIRURE' : ''));
+  const lire = ()=>p.evaluate((sel)=>{ const o={};
+    for (const s of sel){ const e=document.querySelector(s); if(!e) continue;
+      const r=e.getBoundingClientRect(); o[s]=[r.left,r.top,r.width,r.height].map(v=>Math.round(v*10)/10); }
+    return o; }, SEL);
+  const debout = await lire();
+  const voir = async (etiquette, w, h, attente)=>{
+    await ctx.pages()[0].setViewportSize({ width:w, height:h });
+    await p.waitForTimeout(attente);
+    const m = await lire();
+    let pire = 0;
+    console.log('\n  ' + etiquette + ' :');
+    for (const s of SEL) {
+      if (!debout[s] || !m[s]) continue;
+      const d = Math.max(...debout[s].map((v,i)=>Math.abs(v - m[s][i])));
+      const dd = Math.round(d*10)/10;
+      if (dd > pire) pire = dd;
+      console.log('   ' + String(dd).padStart(6) + ' px  ' + s.padEnd(16)
+        + JSON.stringify(debout[s]) + (dd > 1 ? ' -> ' + JSON.stringify(m[s]) + '   <-- BOUGE' : ''));
     }
+    return pire;
   };
-  await ctx.pages()[0].setViewportSize({width:852,height:393});
-  await suivre('couche', [0, 40, 60, 120, 250, 500]);
-  await ctx.pages()[0].setViewportSize({width:393,height:852});
-  await suivre('debout', [0, 60, 160, 400, 800]);
-  console.log('\n  mise en page ' + (ok ? 'INCHANGEE pendant toute la bascule' : 'DEFORMEE — ça se déchire'));
-  if (sansVoile) console.log('  ' + sansVoile + ' image(s) couchées SANS voile');
+  const a = await voir('couche', 852, 393, 220);
+  const b2 = await voir('redresse', 393, 852, 500);
+  const max = Math.max(a, b2);
+  console.log('\n  deplacement maximum : ' + max + ' px  ->  ' + (max <= 1 ? 'RIEN NE BOUGE' : 'L ECRAN SE COUPE EN DEUX'));
   console.log('  erreurs : ' + (errs.length?JSON.stringify([...new Set(errs)]):'aucune'));
   await ctx.close(); await b.close();
-  process.exit(ok && !sansVoile ? 0 : 1);
+  process.exit(max <= 1 ? 0 : 1);
 })();

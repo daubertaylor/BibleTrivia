@@ -186,6 +186,19 @@
        correctifs précédents (verre, photo, hauteur de #app) ne touchaient pas.
        Le garde-fou max-width:1023px laisse les tablettes se remettre en page
        normalement. */
+    /* DEUX UNITÉS QUI NE TOURNENT PAS AVEC LE TÉLÉPHONE.
+       vw et svh suivent l'écran : au moment où il bascule, TOUT ce qui s'y
+       accroche change de valeur — jusqu'à la taille du rem, donc jusqu'au
+       dernier pixel de la mise en page. C'est la deuxième moitié de la
+       déchirure, celle qui restait après avoir figé la colonne : 14 px de
+       glissement vertical sur toutes les cartes, parce que la hauteur du
+       héros est écrite en vw.
+       --lw et --lh valent la même chose que 1vw et 1svh DEBOUT, mais le JS
+       les fige en pixels sur un téléphone (voir figerColonne) : couché, elles
+       gardent leur valeur d'avant. Tout ce qui décide d'une TAILLE s'écrit
+       désormais avec elles. */
+    --lw:1vw;
+    --lh:1svh;
     --uh:1vh;
     /* --hu, c'est --uh mais honnête : 1 % de la hauteur qui RESTE une fois les
        zones système retirées, mesurée en JS (voir mesurerHauteurUtile). Sur un
@@ -448,7 +461,7 @@
      tout l'écran vers le bas. */
   .icon-btn.hero-settings{ position:absolute; top:0.15rem; right:0.5rem; color:var(--ink); }
   .icon-btn.hero-profile{ position:absolute; top:0.15rem; left:0.5rem; padding:0; overflow:visible; background:transparent; border:none; box-shadow:none; }
-  .hero-icon{ width:clamp(4.2rem, min(27vw, calc(14.2 * var(--hu))), 7.4rem); height:auto; aspect-ratio:1; margin:0 auto 0.5rem; border-radius:23%; box-shadow:0 12px 30px rgba(10,8,6,0.44), 0 0 8px rgba(255,250,238,0.48), 0 0 24px rgba(255,247,228,0.34), 0 0 52px rgba(255,247,231,0.18), inset 0 0 9px rgba(255,252,245,0.4), inset 0 1.5px 4px rgba(255,255,255,0.28); display:block; object-fit:cover; animation:heroFloat 5s ease-in-out infinite; -webkit-user-drag:none; user-drag:none; -webkit-touch-callout:none; -webkit-user-select:none; user-select:none; pointer-events:none; }
+  .hero-icon{ width:clamp(4.2rem, min(calc(27 * var(--lw)), calc(14.2 * var(--hu))), 7.4rem); height:auto; aspect-ratio:1; margin:0 auto 0.5rem; border-radius:23%; box-shadow:0 12px 30px rgba(10,8,6,0.44), 0 0 8px rgba(255,250,238,0.48), 0 0 24px rgba(255,247,228,0.34), 0 0 52px rgba(255,247,231,0.18), inset 0 0 9px rgba(255,252,245,0.4), inset 0 1.5px 4px rgba(255,255,255,0.28); display:block; object-fit:cover; animation:heroFloat 5s ease-in-out infinite; -webkit-user-drag:none; user-drag:none; -webkit-touch-callout:none; -webkit-user-select:none; user-select:none; pointer-events:none; }
   @keyframes heroFloat{ 0%,100%{ transform:translateY(0); } 50%{ transform:translateY(-6px); } }
   .hero-title{ font-family:'Poppins',sans-serif; font-weight:700; font-size:2rem; margin:0; letter-spacing:-0.01em; color:#fff; text-shadow:0 1px 12px rgba(0,0,0,0.35); }
   .hero-title{ font-family:'Poppins',sans-serif; font-weight:700; font-size:1.55rem; letter-spacing:-0.02em; color:#fff; margin:0 0 0.3rem; text-shadow:0 2px 14px rgba(0,0,0,0.55); }
@@ -666,7 +679,7 @@
 
   .question-card{ position:relative; background:var(--surface); border:1px solid var(--border); border-radius:var(--r-l); padding:1.4rem 1.2rem; margin-bottom:var(--e-3); text-align:center; }
   .question-card::before{ content:""; position:absolute; top:0; left:18%; right:18%; height:2px; background:linear-gradient(90deg, transparent, rgba(239,173,38,0.75), transparent); }
-  .question-card .qtext{ font-family:'Poppins',sans-serif; font-weight:600; font-size:clamp(1.05rem, 4vw, 1.32rem); line-height:1.45; }
+  .question-card .qtext{ font-family:'Poppins',sans-serif; font-weight:600; font-size:clamp(1.05rem, calc(4 * var(--lw)), 1.32rem); line-height:1.45; }
 
   .options-grid{ display:grid; grid-template-columns:1fr 1fr; gap:clamp(0.55rem, calc(1.2 * var(--uh)), 0.8rem); margin-bottom:clamp(var(--e-2), calc(1.8 * var(--uh)), var(--e-4)); }
   @media (max-width:420px){ .options-grid{ grid-template-columns:1fr; } }
@@ -675,7 +688,7 @@
     background:rgba(255,255,255,0.52); backdrop-filter:blur(20px) saturate(180%); -webkit-backdrop-filter:blur(20px) saturate(180%);
     -webkit-transform:translateZ(0); transform:translateZ(0);
     border:1px solid var(--bord); border-radius:var(--r-l);
-    padding:clamp(0.74rem, calc(1.5 * var(--uh)), 0.96rem) 0.85rem; font-size:clamp(0.88rem, 2.35vw, 0.96rem); color:var(--ink); text-align:left; width:100%;
+    padding:clamp(0.74rem, calc(1.5 * var(--uh)), 0.96rem) 0.85rem; font-size:clamp(0.88rem, calc(2.35 * var(--lw)), 0.96rem); color:var(--ink); text-align:left; width:100%;
     --rim-cast:0 2px 8px rgba(15,12,10,0.1); box-shadow:none;
   }
   /* LA LETTRE N'EST PLUS UNE PASTILLE. C'était le dernier endroit du jeu à
@@ -763,7 +776,7 @@
   .end-hero{ text-align:center; padding:0.15rem 0 0.7rem; }
   .end-trophy{ width:5.6rem; height:5.6rem; margin:0 auto 0.7rem; filter:drop-shadow(0 10px 20px rgba(217,138,16,0.38)); }
   .end-eyebrow{ font-family:'Fraunces',serif; font-style:italic; font-size:0.95rem; font-weight:500; color:#FFD968; letter-spacing:0.01em; text-shadow:0 1px 10px rgba(0,0,0,0.5); }
-  .end-title{ font-family:'Poppins',sans-serif; font-weight:700; font-size:clamp(1.35rem,5.5vw,1.7rem); margin:0.2rem 0 0.28rem; color:#fff; text-shadow:0 2px 14px rgba(0,0,0,0.55); }
+  .end-title{ font-family:'Poppins',sans-serif; font-weight:700; font-size:clamp(1.35rem, calc(5.5 * var(--lw)), 1.7rem); margin:0.2rem 0 0.28rem; color:#fff; text-shadow:0 2px 14px rgba(0,0,0,0.55); }
   .end-sub{ color:rgba(255,255,255,0.94); font-size:0.88rem; line-height:1.5; text-shadow:0 1px 8px rgba(0,0,0,0.5); }
 
   /* Group podium */
@@ -1462,8 +1475,26 @@
      donc plus rien à désynchroniser. Les tablettes et le bureau ne sont pas
      concernés (rien n'est épinglé au-dessus de 600 px de large debout) et
      gardent exactement leurs paliers. */
-  @media (pointer:coarse) and (max-width:1023px){
-    #app, html:not(.is-standalone) #app{ width:var(--colonne, 100%); }
+  /* LA COLONNE EST ÉPINGLÉE EN ENTIER, PAS SEULEMENT EN LARGEUR.
+     Première tentative : figer la largeur. Insuffisant, et le test le disait
+     déjà si on l'avait écouté — il ne mesurait QUE la largeur.
+     Mesuré pour de bon, dans la fenêtre où iOS a basculé la géométrie mais pas
+     les requêtes média, la colonne fait bien ses 393 px… mais :
+       #app  [0, 0, 393, 852]  ->  [229,5, 0, 393, 393]
+     Elle se RECENTRE de 229,5 px (margin:0 auto dans une fenêtre devenue large)
+     et sa HAUTEUR s'effondre de 852 à 393 (100lvh suit l'écran). Tout ce
+     qu'elle contient glisse donc de côté ET remonte : les cartes passent de
+     y=236 à y=188, la bande des sept jours de y=791 à y=606. C'est très
+     exactement ce que montre la photo — l'écran coupé en deux.
+     Les trois valeurs — largeur, hauteur, marge — sont donc mesurées DEBOUT et
+     posées en pixels, et plus jamais relues couché. La classe est posée par le
+     JS, pas par une requête média : elle ne peut donc pas être en retard.
+     Rien n'est épinglé au-dessus de 600 px de large debout : tablettes et
+     bureau gardent exactement leurs paliers et leur centrage. */
+  html.tel-fige #app,
+  html.tel-fige:not(.is-standalone) #app{
+    width:var(--colonne); height:var(--hauteur);
+    margin-left:var(--marge); margin-right:var(--marge);
   }
   /* Et le voile ne peut pas attendre la requête média non plus : la même
      fenêtre le laissait absent pendant que la mise en page s'étalait. Une
@@ -1730,13 +1761,13 @@
   /* ---------- Échelle fluide : tout est en rem, le rem suit la taille du téléphone ---------- */
   html{ font-size:16px; }
   @supports (height: 1svh){
-    html{ font-size:clamp(14.6px, 8.4px + 0.85svh + 0.2vw, 17.8px); }
+    html{ font-size:clamp(14.6px, calc(8.4px + 0.85 * var(--lh) + 0.2 * var(--lw)), 17.8px); }
     /* GRANDS ÉCRANS : police racine relevée -> toute l'UI (en rem) grandit pour
        habiter tablette/iPad/PC. Restée pilotée par la hauteur (svh) ET bornée
        aux écrans assez HAUTS (min-height:740px) -> jamais de débordement sur
        écran court. Téléphones : formule d'origine intacte. */
     @media (min-width:820px) and (min-height:740px){
-      html{ font-size:clamp(16px, 8.4px + 0.8svh + 0.5vw, 19px); }
+      html{ font-size:clamp(16px, calc(8.4px + 0.8 * var(--lh) + 0.5 * var(--lw)), 19px); }
     }
     /* TÉLÉPHONE COUCHÉ : LE REM NE BOUGE PAS. C'est lui qui commande TOUTE
        l'échelle du jeu (tout est en rem). Couché, la hauteur passe de 874 à
@@ -1748,9 +1779,13 @@
        grand côté, c'est-à-dire la hauteur qu'on avait debout. La formule rend
        alors EXACTEMENT la même valeur, et la mise en page ne bouge plus.
        (Vérifié : 16,63 px debout, 16,63 px couché sur un 402x874.) */
+    /* CE RATTRAPAGE N'EST QUE LE FILET DE SÉCURITÉ. Depuis que le JS fige
+       --lw et --lh (classe tel-fige), le rem ne bouge déjà plus : cette règle
+       ne sert donc que si le script n'a pas encore tourné. On l'écarte quand
+       il a tourné, pour n'avoir qu'UNE seule source de vérité. */
     @media (orientation:landscape) and (pointer:coarse) and (max-width:1023px){
-      html{ font-size:clamp(14.6px, 8.4px + 0.85vw + 0.2svh, 17.8px); }
-      :root{ --uh:1vw; }   /* couché, le grand côté = la hauteur d'avant */
+      html:not(.tel-fige){ font-size:clamp(14.6px, 8.4px + 0.85vw + 0.2svh, 17.8px); }
+      html:not(.tel-fige){ --uh:1vw; }   /* couché, le grand côté = la hauteur d'avant */
     }
   }
 
@@ -1970,8 +2005,8 @@
        hauteur utile) : la largeur redevient le facteur qui décide, le logo
        retrouve ses 24 % partout, et le plafond ne reprend la main qu'en dessous
        de ~555 px de hauteur utile, là où il y a vraiment urgence. */
-    .hero-icon{ width:clamp(4.2rem, min(27vw, calc(19 * var(--hu))), 7.4rem); }
-    html .hero-zone{ height:clamp(4.6rem, min(28.7vw, calc(21 * var(--hu))), 8rem); margin-bottom:0.35rem; }
+    .hero-icon{ width:clamp(4.2rem, min(calc(27 * var(--lw)), calc(19 * var(--hu))), 7.4rem); }
+    html .hero-zone{ height:clamp(4.6rem, min(calc(28.7 * var(--lw)), calc(21 * var(--hu))), 8rem); margin-bottom:0.35rem; }
     .hero-title{ font-size:1.3rem; margin-bottom:0.15rem; }
     /* SE & co (≤700px de haut) : on resserre un poil les cartes pour que
        l'accueil tienne AUSSI ici, marges de sécurité comprises -> zéro débord,
@@ -2082,14 +2117,14 @@
   .option-btn{ min-height:clamp(3.1rem, calc(7 * var(--uh)), 4.6rem); }
 
   /* ---------- Médaillon de fin : verre cerclé d'or, trophée intégré ---------- */
-  .end-medal{ position:relative; width:clamp(5.9rem, 27vw, 7.3rem); aspect-ratio:1; margin:0 auto 0.7rem; border-radius:50%; display:flex; align-items:center; justify-content:center; border:1px solid var(--bord); animation:trophyIn 0.75s cubic-bezier(0.18,1.25,0.32,1) backwards; transform:translateZ(0); -webkit-transform:translateZ(0); --rim-cast:0 10px 30px rgba(18,12,6,0.3); }
+  .end-medal{ position:relative; width:clamp(5.9rem, calc(27 * var(--lw)), 7.3rem); aspect-ratio:1; margin:0 auto 0.7rem; border-radius:50%; display:flex; align-items:center; justify-content:center; border:1px solid var(--bord); animation:trophyIn 0.75s cubic-bezier(0.18,1.25,0.32,1) backwards; transform:translateZ(0); -webkit-transform:translateZ(0); --rim-cast:0 10px 30px rgba(18,12,6,0.3); }
   .end-medal::before{ content:""; position:absolute; top:6%; left:6%; right:6%; bottom:6%; border-radius:50%; border:0; box-shadow:inset 0 0 14px rgba(239,173,38,0.3), 0 0 16px rgba(239,173,38,0.22); pointer-events:none; }
   .end-medal::after{ content:""; position:absolute; left:50%; top:50%; width:170%; aspect-ratio:1; transform:translate(-50%,-50%); background:radial-gradient(closest-side, rgba(255,205,90,0.32), rgba(255,205,90,0.08) 55%, transparent 72%); z-index:-1; pointer-events:none; }
   .em-cup{ width:56%; display:block; filter:drop-shadow(0 6px 12px rgba(150,90,8,0.4)); }
   .em-cup svg{ height:auto; overflow:visible; }
 
   /* ---------- Trophée premium (bas de coupe élancé, socle à étages) ---------- */
-  .end-trophy{ position:relative; width:clamp(6.6rem, 32vw, 8.4rem); height:auto; margin:0 auto 0.85rem; filter:drop-shadow(0 14px 26px rgba(150,90,8,0.45)); animation:trophyIn 0.75s cubic-bezier(0.18,1.25,0.32,1) backwards; }
+  .end-trophy{ position:relative; width:clamp(6.6rem, calc(32 * var(--lw)), 8.4rem); height:auto; margin:0 auto 0.85rem; filter:drop-shadow(0 14px 26px rgba(150,90,8,0.45)); animation:trophyIn 0.75s cubic-bezier(0.18,1.25,0.32,1) backwards; }
   .end-trophy svg{ height:auto; overflow:visible; }
   .end-trophy::before{ content:""; position:absolute; left:50%; top:40%; width:170%; aspect-ratio:1; transform:translate(-50%,-50%); background:radial-gradient(closest-side, rgba(255,205,90,0.38), rgba(255,205,90,0.1) 55%, transparent 72%); z-index:-1; pointer-events:none; }
   @keyframes trophyIn{ from{ opacity:0; transform:translateY(14px) scale(0.8); } to{ opacity:1; transform:translateY(0) scale(1); } }
@@ -2420,7 +2455,7 @@
      chevauche les boutons profil/réglages dans les coins. Sans pointer-events:none,
      il interceptait leurs taps (le hero-zone étant peint au-dessus) -> profil &
      réglages ne s'ouvraient plus. On ne laisse cliquables que ses enfants utiles. */
-  .hero-zone{ position:relative; height:clamp(4.6rem, min(28.7vw, calc(15.1 * var(--hu))), 8rem); margin:0 auto 0.35rem; display:flex; align-items:center; justify-content:center; pointer-events:none; }
+  .hero-zone{ position:relative; height:clamp(4.6rem, min(calc(28.7 * var(--lw)), calc(15.1 * var(--hu))), 8rem); margin:0 auto 0.35rem; display:flex; align-items:center; justify-content:center; pointer-events:none; }
   .hero-zone .hero-icon{ margin:0; }
   /* Ombre de lévitation : reste « au sol » et respire à l'inverse du
      flottement de l'icône (petite & pâle quand l'icône monte, large &
@@ -2519,8 +2554,8 @@
      grandit (elle flotte au-dessus de l'accueil, elle en a la place), et le
      corps ne descend jamais sous 0,94 rem. Deux tailles suffisent alors, là
      où il en fallait quatre pour rattraper un plafond trop bas. */
-  .hero-verse-text{ font-family:'Fraunces',serif; font-style:italic; color:var(--ink); font-size:clamp(1rem, 3.2vw, 1.15rem); line-height:1.5; }
-  .hero-verse-card.long .hero-verse-text{ font-size:clamp(0.94rem, 2.7vw, 1.04rem); line-height:1.45; }
+  .hero-verse-text{ font-family:'Fraunces',serif; font-style:italic; color:var(--ink); font-size:clamp(1rem, calc(3.2 * var(--lw)), 1.15rem); line-height:1.5; }
+  .hero-verse-card.long .hero-verse-text{ font-size:clamp(0.94rem, calc(2.7 * var(--lw)), 1.04rem); line-height:1.45; }
   /* UN VERSET ENTIER NE SE COUPE PAS. Les traductions ajoutées donnent le texte
      COMPLET (le recueil d'origine, lui, ne portait que de courtes citations :
      mesuré, 53% des versets y faisaient moins de la moitié du verset réel).
@@ -11238,11 +11273,25 @@ const mqGros = (typeof window.matchMedia === "function") ? window.matchMedia("(p
 function figerColonne(){
   const de = document.documentElement;
   const w = de.clientWidth || window.innerWidth || 0;
-  const h = de.clientHeight || window.innerHeight || 0;
+  const h = window.innerHeight || de.clientHeight || 0;
   if(!w || !h) return;
   if(w > h) return;                 // couché : on ne remesure surtout pas
-  if(w > 600){ de.style.removeProperty("--colonne"); return; }
-  de.style.setProperty("--colonne", Math.min(430, w) + "px");
+  if(w > 600){                      // tablette, bureau : rien d'épinglé
+    de.classList.remove("tel-fige");
+    de.style.removeProperty("--colonne"); de.style.removeProperty("--hauteur"); de.style.removeProperty("--marge");
+    return;
+  }
+  const l = Math.min(430, w);
+  de.style.setProperty("--colonne", l + "px");
+  de.style.setProperty("--hauteur", h + "px");
+  /* la marge qu'aurait donnée « margin:0 auto » DEBOUT, figée elle aussi :
+     sans ça, la colonne se recentre dans l'écran devenu large. */
+  de.style.setProperty("--marge", Math.max(0, Math.round((w - l) / 2)) + "px");
+  /* les deux unités de mise en page, figées elles aussi : plus rien dans la
+     feuille de style ne dépend de l'orientation de l'écran. */
+  de.style.setProperty("--lw", (w / 100) + "px");
+  de.style.setProperty("--lh", (h / 100) + "px");
+  de.classList.add("tel-fige");
 }
 /* LE VOILE SUIT LA GÉOMÉTRIE, PAS LA REQUÊTE MÉDIA. Il se lève dès que
    l'écran est réellement plus large que haut, sans attendre que Safari ait

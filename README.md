@@ -213,6 +213,34 @@ substituer :
    qui doit céder quand la place manque s'y accroche, avec la taille
    actuelle comme plafond.
 
+**Un test incomplet est pire qu'aucun test (v174).** La déchirure de
+rotation a survécu à un correctif ET à un test qui passait au vert. La
+raison : le test ne mesurait que la **largeur** de la colonne. Elle était
+bien figée — et tout le reste bougeait. Mesuré en comparant la boîte
+**complète** :
+
+| | debout | couché (requêtes média en retard) |
+|---|---|---|
+| `#app` | `[0, 0, 393, 852]` | `[229,5, 0, 393, 393]` |
+
+La colonne se **recentre de 229,5 px** (`margin:0 auto` dans une fenêtre
+devenue large) et sa **hauteur s'effondre** (`100lvh` suit l'écran). Une fois
+ces deux-là figés, il restait **14 px** de glissement vertical : les unités
+`vw` et `svh`, jusque dans la taille du **rem**, qui commande toute l'échelle
+du jeu.
+
+Trois choses sont donc épinglées en pixels, mesurées debout et jamais relues
+couché : la **largeur**, la **hauteur**, la **marge**. Et deux unités de mise
+en page gelées, `--lw` et `--lh`, remplacent partout `vw` et `svh` — plus rien
+dans la feuille de style ne dépend de l'orientation. La classe `tel-fige` est
+posée par le JS, jamais par une requête média : elle ne peut donc pas être en
+retard. **Résultat : 0 px de déplacement**, contre 459 avant.
+
+`banc-essai/rotation.js` compare désormais la boîte complète de sept éléments.
+Il échoue sur la version d'avant (459 px) et passe sur celle-ci (0).
+**La leçon : un test qui ne mesure qu'une dimension donne un feu vert faux, et
+un feu vert faux coûte plus cher que pas de test du tout.**
+
 **La mise en page ne doit pas dépendre de l'orientation (v172).** C'est la
 cause de la « déchirure » à la rotation : des cartes dont le fond s'arrête
 avant leur propre texte. Ce n'était pas un défaut de peinture. La largeur de
