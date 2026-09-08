@@ -311,7 +311,16 @@
   button:focus-visible{ outline:2px solid var(--primary); outline-offset:2px; }
   input:focus-visible, textarea:focus-visible{ outline:none; }
 
-  .text-input:focus, .code-input:focus{ box-shadow:0 0 0 1px var(--filet), 0 0 0 3px rgba(238,74,40,0.18); }
+  /* Le champ actif se signale par une LUEUR, pas par un trait : il portait en
+     plus une bordure corail pleine d'un pixel — une bordure de couleur, la
+     dernière des champs. La lueur monte un peu pour la remplacer. */
+  /* Le champ actif se signale par une LUEUR, jamais par un trait. Il portait
+     une bordure corail pleine d'un pixel PLUS un anneau net de 3 px : deux
+     bords de couleur, les derniers du jeu, et invisibles au test tant que
+     celui-ci ne visitait que des écrans au repos. Ce qui reste est un halo
+     FLOU — aucune arête à voir, et il tire quand même le rouge du décor de
+     +35 unités sous le champ actif : ça se voit, et ce n'est pas un bord. */
+  .text-input:focus, .code-input:focus{ box-shadow:0 0 14px 3px rgba(238,74,40,0.62); }
 
   #app{ position:relative; z-index:1; width:100%; max-width:430px; margin:0 auto; height:100%; overflow-y:auto; overflow-x:hidden; overscroll-behavior:none; display:flex; flex-direction:column; padding:calc(env(safe-area-inset-top) + 0.35rem) calc(env(safe-area-inset-right) + 0.7rem) calc(env(safe-area-inset-bottom) + 0.35rem) calc(env(safe-area-inset-left) + 0.7rem); }
   /* GRANDS ÉCRANS (tablette, iPad, PC) : l'app GRANDIT pour exploiter l'espace
@@ -559,7 +568,7 @@
      ligne, aux coins différents, qui n'apparaissait qu'au moment de taper :
      on voyait naître une boîte dans une boîte. La ligne, elle, est déjà là ;
      elle s'éclaire, elle se pose un peu plus haut, et c'est tout. */
-  .team-row:focus-within{ background:rgb(255,253,249); box-shadow:var(--rebord-pose), 0 0 0 3px rgba(238,74,40,0.16); }
+  .team-row:focus-within{ background:rgb(255,253,249); box-shadow:var(--rebord-pose), 0 0 12px 2px rgba(238,74,40,0.45); }
   .team-row input:focus{ background:transparent; }
   .team-remove{ background:none; border:none; color:var(--ink-soft); width:1.8rem; height:1.8rem; padding:0.4rem; display:flex; align-items:center; justify-content:center; flex-shrink:0; }
   .team-remove:disabled{ opacity:0.25; }
@@ -671,14 +680,34 @@
     padding:clamp(0.74rem, calc(1.5 * var(--uh)), 0.96rem) 0.85rem; font-size:clamp(0.88rem, 2.35vw, 0.96rem); color:var(--ink); text-align:left; width:100%;
     --rim-cast:0 2px 8px rgba(15,12,10,0.1); box-shadow:none;
   }
-  .option-btn .letter{ font-weight:700; color:var(--primary); font-size:0.84rem; flex-shrink:0; width:1.5rem; height:1.5rem; border-radius:50%; background:linear-gradient(160deg, #FFEEE5, #FFD9C6); display:flex; align-items:center; justify-content:center; border:1px solid transparent; box-shadow:inset 0 1px 0 rgba(255,255,255,0.8), 0 1px 2px rgba(214,58,30,0.15); }
+  /* LA LETTRE N'EST PLUS UNE PASTILLE. C'était le dernier endroit du jeu à
+     porter les trois traitements qu'on a retirés partout ailleurs : un dégradé
+     (#FFEEE5 -> #FFD9C6), une lèvre blanche interne à 0,8, et une ombre
+     colorée. Quatre petites bulles brillantes par question, dans un jeu qui
+     n'a plus ni dégradé ni lèvre nulle part — elles étaient devenues le seul
+     objet « collé » sur l'écran.
+     La lettre reste, parce qu'en mode Groupe on répond « la B » à voix haute.
+     Elle redevient ce qu'elle est : un repère typographique. Largeur fixe,
+     donc les quatre réponses restent alignées au pixel près comme avant. */
+  .option-btn .letter{ font-weight:700; color:var(--primary); opacity:0.72; font-size:0.8rem; letter-spacing:0.04em;
+    flex-shrink:0; width:1.05rem; text-align:center; border:0; background:none; box-shadow:none; }
   .option-btn .opt-text{ flex:1; }
   .option-btn .opt-icon{ flex-shrink:0; width:1.38rem; height:1.38rem; }
-  .option-btn.correct{ --glass-tint: rgb(198,242,216); border-color:var(--green); --rim-cast:0 3px 14px rgba(47,169,110,0.3); }
-  .option-btn.correct .letter{ background:var(--green); color:#fff; }
+  /* JAMAIS DE BORDURE DE COULEUR. La bonne réponse portait un trait vert d'un
+     pixel, la mauvaise un trait rouge : les deux dernières bordures colorées
+     du jeu. Elles ne servaient à rien — le remplissage vert se détache déjà de
+     45 unités des réponses voisines, et l'icône dit le reste. Ce qui remplace
+     le trait, c'est l'ÉLÉVATION : chacune reçoit une ombre de sa propre
+     couleur, exactement comme les surfaces pleines du reste du jeu. La couleur
+     sans le trait. (--rim-cast ne peignait rien : il est porté par .glass-rim,
+     rogné par overflow:clip — d'où une ombre écrite trois fois et jamais vue.) */
+  .option-btn.correct{ --glass-tint: rgb(198,242,216);
+    --mon-rebord:0 1px 2px rgba(18,88,58,0.12), 0 7px 18px rgba(47,169,110,0.24); }
+  .option-btn.correct .letter{ color:var(--green); opacity:1; }
   .option-btn.correct .opt-icon{ color:var(--green); filter:drop-shadow(0 1px 3px rgba(47,169,110,0.55)); }
-  .option-btn.incorrect{ --glass-tint: rgb(255,220,214); border-color:var(--error); --rim-cast:0 3px 14px rgba(226,75,55,0.26); }
-  .option-btn.incorrect .letter{ background:var(--error); color:#fff; }
+  .option-btn.incorrect{ --glass-tint: rgb(255,220,214);
+    --mon-rebord:0 1px 2px rgba(118,32,22,0.12), 0 7px 18px rgba(226,75,55,0.22); }
+  .option-btn.incorrect .letter{ color:var(--error); opacity:1; }
   .option-btn.incorrect .opt-icon{ color:var(--error); filter:drop-shadow(0 1px 3px rgba(226,75,55,0.5)); }
   /* UNE FOIS RÉPONDU, LE RESTE RECULE. Avant, seul le TEXTE des réponses non
      retenues pâlissait : leur carte gardait le même blanc crème que la question,
@@ -1042,7 +1071,7 @@
   .profile-sub{ color:var(--ink-soft); font-size:0.8rem; margin-top:0.3rem; }
   .field-label{ display:block; font-size:0.81rem; font-weight:600; color:rgba(255,255,255,0.9); margin:0 0 var(--e-1); text-shadow:0 1px 6px rgba(0,0,0,0.4); }
   .text-input,.code-input{ width:100%; background:rgba(255,255,255,0.68); backdrop-filter:blur(14px) saturate(180%); -webkit-backdrop-filter:blur(14px) saturate(180%); border:1px solid var(--bord); border-radius:var(--r-s); padding:0.78rem 0.9rem; font-size:0.95rem; color:var(--ink); font-family:'Inter',sans-serif; }
-  .text-input:focus,.code-input:focus{ outline:none; border-color:var(--primary); }
+  .text-input:focus,.code-input:focus{ outline:none; }
   .code-input{ text-align:center; font-family:'Poppins',sans-serif; font-weight:700; font-size:1.7rem; letter-spacing:0.42rem; text-transform:uppercase; }
   /* LA COULEUR EST UNE COULEUR, PAS UNE PLAQUE.
      Deux essais ont raté pour la même raison, invisible dans la feuille de
@@ -1167,7 +1196,12 @@
 
   .duel-result{ display:flex; align-items:stretch; justify-content:center; gap:0.7rem; margin-bottom:1.2rem; }
   .dr-side{ flex:1; display:flex; flex-direction:column; align-items:center; gap:0.4rem; background:rgba(255,255,255,0.55); backdrop-filter:blur(16px) saturate(180%); -webkit-backdrop-filter:blur(16px) saturate(180%); border:1px solid var(--bord); border-radius:var(--r-l); padding:0.95rem 0.55rem; }
-  .dr-side.winner{ border-color:var(--gold); box-shadow:inset 0 1px 0 rgba(255,255,255,0.6), 0 8px 24px rgba(239,173,38,0.35); }
+  /* Le vainqueur portait un LISERÉ OR plus une lèvre blanche à 0,6 — les deux
+     choses retirées partout ailleurs, oubliées ici parce que l'écran ne
+     s'atteint qu'en finissant un duel en ligne. L'or reste, en ombre : c'est
+     la règle des surfaces qui comptent, la couleur sans le trait. */
+  .dr-side.winner{ --glass-tint: rgb(255,240,203);
+    box-shadow:0 2px 4px rgba(120,84,10,0.14), 0 10px 26px rgba(239,173,38,0.42); }
   .dr-name{ font-weight:600; font-size:0.85rem; color:var(--ink); white-space:nowrap; overflow:hidden; text-overflow:ellipsis; max-width:100%; }
   .dr-score{ font-family:'Poppins',sans-serif; font-weight:700; font-size:1.65rem; color:var(--primary); }
   .dr-vs{ display:flex; align-items:center; font-family:'Poppins',sans-serif; font-weight:700; color:var(--ink-soft); }
@@ -2204,11 +2238,14 @@
   .bible-item.sel{ background:rgb(255,244,238); }
   .bible-item.sel .bible-txt b{ color:var(--primary); }
   .bible-ck svg{ width:100%; height:100%; }
-  /* Catalogue de fonds d'écran : vignettes photo, la retenue porte un liseré or */
+  /* Catalogue de fonds d'écran : vignettes photo. La retenue portait un liseré
+     or DE PLUS que sa coche — deux fois la même information, dont une en
+     bordure de couleur. La coche reste, seule : c'est déjà le signe employé
+     pour la version de Bible retenue. */
   .scene-row{ display:flex; gap:0.7rem; padding:0.1rem 0.25rem 0.6rem; flex-wrap:wrap; }
   .scn-thumb{ position:relative; width:3.55rem; height:5.4rem; border-radius:var(--r-ico); background-size:cover; background-position:center; border:2px solid var(--bord); --rim-edge:0 0 0 1px rgba(30,22,14,0.16); --rim-cast:0 4px 10px rgba(42,30,18,0.28); overflow:hidden; padding:0; display:flex; align-items:flex-end; justify-content:center; }
   .scn-thumb .scn-name{ width:100%; padding:0.2rem 0.2rem 0.24rem; font-family:'Poppins',sans-serif; font-weight:600; font-size:0.6rem; line-height:1; color:#fff; background:linear-gradient(180deg, rgba(0,0,0,0), rgba(0,0,0,0.5)); text-shadow:0 1px 4px rgba(0,0,0,0.65); }
-  .scn-thumb.sel{ border-color:#F2C94C; --rim-edge:0 0 0 1px rgba(166,120,14,0.45); --rim-cast:0 0 0 3px rgba(242,201,76,0.42), 0 5px 14px rgba(42,30,18,0.32); }
+  .scn-thumb.sel{ box-shadow:0 3px 12px rgba(242,201,76,0.34), 0 5px 14px rgba(42,30,18,0.3); }
   /* Partage : bouton PREMIUM — surface givrée PLEINE (plus délavée), liseré net
      et OMBRE PORTÉE qui le décolle de la feuille (vrai relief tactile). Compact,
      centré, au-dessus du « Fermer ». Icône dans une pastille orange (langage des

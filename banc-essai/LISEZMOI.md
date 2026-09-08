@@ -24,6 +24,8 @@ notre code, et il est éprouvé. Tout le reste l'est.
     node photos.js      # les trois écrans à plusieurs, en image
     node match-trace.js # la séquence d'appariement, horodatée des deux côtés
     node bascule.js     # le salon change de visage dans les deux sens
+    node couleurs.js    # aucune bordure de couleur, écrans ET états
+    node matiere.js /tmp/m mat && python3 matiere.py /tmp/m mat   # la matière suffit-elle ?
 
 ## Un avertissement, payé cher
 

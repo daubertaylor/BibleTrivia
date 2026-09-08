@@ -213,6 +213,22 @@ substituer :
    qui doit céder quand la place manque s'y accroche, avec la taille
    actuelle comme plafond.
 
+**Comment remplacer une bordure de couleur (v169).** Quatre en portaient
+encore une, chacune pour dire « celle-ci compte ». Aucune n'avait besoin
+d'un trait, et chacune s'est réglée par le même raisonnement — *qu'est-ce
+qui, dans la MATIÈRE, dit déjà la même chose ?* :
+
+| ce qui portait le trait | ce qui le remplace |
+|---|---|
+| bonne / mauvaise réponse | leur remplissage vert ou rouge, plus une ombre de leur propre couleur |
+| vainqueur d'un duel | une matière OR — le liseré d'avant se voyait à peine, la teinte se lit tout de suite |
+| champ de saisie actif | un halo FLOU (+30 unités de rouge sous le champ) — une lueur n'a pas d'arête |
+| vignette de fond retenue | sa coche dorée, qui était déjà là : le liseré répétait l'information |
+
+La règle qui en sort : une couleur qui doit désigner quelque chose se pose
+en REMPLISSAGE ou en OMBRE, jamais en contour. Les deux se voient mieux
+qu'un pixel de bord, et aucune ne dessine de ligne.
+
 **Le « bord blanc » peut être un TROU, pas de la peinture (v160).** Toutes
 les surfaces portent `border:1px solid transparent` — un reste utile,
 puisque `box-sizing` est en `border-box` et que cette bordure garde la
@@ -326,8 +342,16 @@ valeur est identique avec et sans le correctif.)*
 Trois tests, trois angles, parce qu'un rebord peut échapper à deux
 d'entre eux :
 
-- `scratchpad/couleur.js` — les rebords **saturés** (or, corail, vert).
-  Doit rapporter 0.
+- `banc-essai/couleurs.js` — les rebords **saturés** (or, corail, vert).
+  Doit rapporter 0. **Il a déjà menti** : sa première version ne visitait
+  que des écrans AU REPOS, et les quatre dernières bordures colorées du
+  jeu vivaient toutes dans un ÉTAT — la bonne réponse révélée (vert), la
+  mauvaise (rouge), le vainqueur d'un duel en ligne (or), le champ de
+  saisie actif (corail). Il annonçait « 0 » pendant que quatre liserés
+  vivaient dans le jeu. Il visite désormais les états, et la vignette de
+  fond retenue en injectant un second décor (`SCENES` n'en a qu'un, donc
+  la rangée ne s'affiche pas et ce liseré-là était intestable).
+  **Un écran au repos n'est pas un écran.**
 - `scratchpad/arete.js` + `arete2.py` — les traits **sombres**, bords
   gauche et droite. Repère : au-dessus de ~10, l'œil lit une ligne.
   Depuis la v167 il n'y a plus de filet du tout : ce qui reste au bord
