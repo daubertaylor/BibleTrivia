@@ -8,14 +8,25 @@
    Le test remplace Supabase par un canal dont on FIXE la latence, et mesure
    le temps entre le clic et la première image du salon.
 
-       node ouverture.js        (jeu servi en HTTP sur 8099)
+       node ouverture.js                       (jeu servi en HTTP sur 8099)
+       URL_ESSAI=<url> node ouverture.js       (pour comparer une autre version)
 
-   Repère : l'écart entre la plus lente et la plus rapide doit rester sous
-   80 ms — c'est-à-dire que la latence ne doit plus se voir. */
+   ET IL DOIT S'OUVRIR UNE SEULE FOIS. Le salon se peint avant que la présence
+   Supabase ne réponde ; quand elle arrive, un rendu sur place le rafraîchit.
+   Ce rendu-là reprend l'animation d'entrée là où elle en était (délai négatif)
+   — mais le nettoyage qui suivait remettait ce délai à zéro alors que la
+   classe screen-enter était encore posée, ce qui RELANCE l'animation. Mesuré
+   à 400 ms de latence : l'écran, posé depuis 40 ms, repartait de 18 px et
+   refaisait toute son entrée. « Ça saute puis ça revient. »
+   Le test suit donc aussi la position image par image APRÈS la première, et
+   relève le plus fort mouvement VERS LE BAS ainsi que l'instant où tout se
+   pose enfin.
+
+   Repères : écart d'ouverture <= 80 ms, saut <= 2 px, pose <= 620 ms. */
 const { chromium } = require('/opt/node22/lib/node_modules/playwright');
 const IOS = 'Mozilla/5.0 (iPhone; CPU iPhone OS 17_5 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.5 Mobile/15E148 Safari/604.1';
-const URL = process.argv[2] || 'http://127.0.0.1:8099/index.html';
-const LATENCES = [0, 150, 600, 1500];
+const URL = process.env.URL_ESSAI || process.argv[2] || 'http://127.0.0.1:8099/index.html';
+const LATENCES = [0, 150, 400, 600, 1500];
 (async () => {
   const b = await chromium.launch({ executablePath: '/opt/pw-browsers/chromium' });
   const mesures = [];
@@ -58,30 +69,43 @@ const LATENCES = [0, 150, 600, 1500];
     /* On part de l'écran « en ligne », comme un joueur qui vient d'y arriver. */
     await p.evaluate(() => { state.screen = 'online'; render(); });
     await p.waitForTimeout(900);
-    const ms = await p.evaluate(() => new Promise(res => {
-      const t0 = performance.now();
+    const suite = await p.evaluate(() => new Promise(res => {
+      const t0 = performance.now(); const releve = []; let premiere = -1;
       createRoomFlow();
-      /* La première IMAGE du salon, pas le simple changement d'état : on
-         attend que le nœud existe ET qu'il ait été peint. */
       const tic = () => {
-        if (document.querySelector('.salle-liste, .vs-row, .code-box, [data-salon]')
-            || (typeof state !== 'undefined' && state.screen === 'online-room'
-                && document.querySelector('.screen'))) {
-          requestAnimationFrame(() => res(Math.round(performance.now() - t0)));
-        } else requestAnimationFrame(tic);
+        const t = performance.now() - t0;
+        const li = document.querySelector('.salle-liste, .vs-row');
+        if (premiere < 0 && li) premiere = Math.round(t);
+        releve.push([Math.round(t), li ? Math.round(li.getBoundingClientRect().top * 10) / 10 : null]);
+        if (t < 2200) requestAnimationFrame(tic); else res({ premiere, releve });
       };
       requestAnimationFrame(tic);
     }));
-    mesures.push([lat, ms]);
-    console.log('  latence ' + String(lat).padStart(4) + ' ms  ->  salon à l\'écran en ' + String(ms).padStart(4) + ' ms');
+    const r = suite.releve.filter(x => x[1] !== null);
+    /* Le SAUT : un mouvement VERS LE BAS après que l'écran s'est posé une
+       première fois. L'entrée, elle, ne fait que monter. */
+    let saut = 0, quand = 0;
+    for (let i = 1; i < r.length; i++) { const d = r[i][1] - r[i-1][1]; if (d > saut) { saut = d; quand = r[i][0]; } }
+    let pose = 0;
+    for (let i = r.length - 1; i > 0; i--) { if (Math.abs(r[i][1] - r[i-1][1]) > 0.6) { pose = r[i][0]; break; } }
+    const ms = suite.premiere;
+    mesures.push([lat, ms, saut, pose]);
+    console.log('  latence ' + String(lat).padStart(4) + ' ms  ->  salon à l\'écran en ' + String(ms).padStart(4) +
+      ' ms  |  saut ' + saut.toFixed(1).padStart(6) + ' px' + (saut > 2 ? ' à ' + quand + ' ms' : '        ') +
+      '  |  posé à ' + String(pose).padStart(4) + ' ms' +
+      (saut > 2 ? '   <-- ÇA SAUTE PUIS ÇA REVIENT' : ''));
     await ctx.close();
   }
   const v = mesures.map(m => m[1]);
   const ecart = Math.max(...v) - Math.min(...v);
-  console.log('\n  écart entre la plus lente et la plus rapide : ' + ecart + ' ms');
+  const sautMax = Math.max(...mesures.map(m => m[2]));
+  const poseMax = Math.max(...mesures.map(m => m[3]));
+  console.log('\n  écart d\'ouverture entre la plus lente et la plus rapide : ' + ecart + ' ms');
+  console.log('  saut maximum après la première image : ' + sautMax.toFixed(1) + ' px');
+  console.log('  dernière image qui bouge, au pire : ' + poseMax + ' ms');
   if (errs.length) console.log('  ERREURS JS : ' + [...new Set(errs)].slice(0,3).join(' | '));
-  const ok = ecart <= 80 && !errs.length;
-  console.log(ok ? '  OK — la latence ne se voit plus' : '  ECHEC — l\'ouverture dépend encore du réseau');
+  const ok = ecart <= 80 && sautMax <= 2 && poseMax <= 620 && !errs.length;
+  console.log(ok ? '  OK — une seule ouverture, à vitesse fixe' : '  ECHEC');
   await b.close();
   process.exit(ok ? 0 : 1);
 })();

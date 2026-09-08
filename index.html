@@ -10576,7 +10576,24 @@ function render(){
     if(vieux && ecoule >= 0 && ecoule < ENTREE_MS){
       node.classList.add("screen-enter"); node.classList.add("arrivee");
       node.style.animationDelay = (-ecoule) + "ms";
-      setTimeout(()=>{ node.classList.remove("arrivee"); node.style.animationDelay = ""; fitScroll(); }, Math.max(60, 540 - ecoule));
+      /* ===== EFFACER LE DÉLAI RELANCE L'ANIMATION =====
+         Ce nettoyage remettait animation-delay à zéro alors que la classe
+         screen-enter était TOUJOURS là. Or changer le délai d'une animation
+         en cours la fait repartir de son premier instant : l'écran, posé
+         depuis 40 ms, sautait de 18 px et refaisait toute son entrée — les
+         cartes du salon reprenaient même leur apparition en cascade. Mesuré
+         image par image à 400 ms de latence : posé à 420 ms, puis 265 → 283
+         à 724 ms, et re-posé seulement à 868. « Ça saute puis ça revient. »
+         On retire donc la CLASSE dans le même souffle : sans elle il n'y a
+         plus d'animation du tout, et le délai qu'on efface juste après ne
+         peut plus rien relancer. L'état final de screenIn étant l'état
+         naturel de l'élément, rien ne bouge à cet instant. */
+      setTimeout(()=>{
+        node.classList.remove("arrivee");
+        node.classList.remove("screen-enter");
+        node.style.animationDelay = "";
+        fitScroll();
+      }, Math.max(60, 540 - ecoule));
       Array.prototype.forEach.call(node.children, (c,i)=>{ if(c && c.style) c.style.setProperty("--i", i); });
     }
   }

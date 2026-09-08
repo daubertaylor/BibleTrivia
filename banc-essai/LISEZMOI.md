@@ -258,3 +258,23 @@ deux chiffres :
 
 Le premier est un garde-fou, le second une mesure de qualité. Les deux
 étaient nécessaires : le garde-fou a servi le jour même où il a été écrit.
+
+
+## Un correctif crée son propre défaut, et le banc doit le voir
+
+Ouvrir le salon tout de suite (v178) a rendu FRÉQUENT un chemin qui était
+rare : le rendu sur place pendant l'animation d'entrée. C'est là qu'un vieux
+nettoyage — remettre `animation-delay` à zéro sans retirer la classe — s'est
+mis à relancer l'animation. Le défaut n'existait pas avant, il a été RÉVÉLÉ.
+
+Il ne se produit que si la présence répond entre ~300 et ~500 ms : plus tôt,
+la reprise est indolore ; plus tard, l'entrée est finie et on ne reprend rien.
+D'où quelque chose de « très rapide » et intermittent, que le premier essai
+d'`ouverture.js` ne voyait pas — il ne mesurait que le temps de la PREMIÈRE
+image, et celle-ci était parfaite.
+
+Leçon : **mesurer l'instant où ça commence ne dit rien de ce qui se passe
+ensuite.** Le test suit maintenant la position image par image pendant 2,2 s
+après le clic, et relève deux choses : le plus fort mouvement VERS LE BAS
+(l'entrée, elle, ne fait que monter) et l'instant de la dernière image qui
+bouge.

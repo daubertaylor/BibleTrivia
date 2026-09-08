@@ -220,6 +220,34 @@ substituer :
    qui doit céder quand la place manque s'y accroche, avec la taille
    actuelle comme plafond.
 
+**Effacer un délai d'animation la RELANCE (v181).** Le salon s'ouvre
+maintenant avant que la présence Supabase ne réponde ; quand elle arrive, un
+rendu sur place le rafraîchit, et ce rendu reprend l'animation d'entrée là où
+elle en était grâce à un `animation-delay` négatif (v170). Le nettoyage qui
+suivait remettait ce délai à zéro — **alors que la classe `screen-enter`
+était encore posée**. Changer le délai d'une animation en cours la fait
+repartir de son premier instant : l'écran, posé depuis 40 ms, sautait de 18 px
+et refaisait toute son entrée, cartes en cascade comprises.
+
+Mesuré image par image à 400 ms de latence :
+
+| | avant | après |
+|---|---|---|
+| saut vers le bas après la pose | 134,4 px à 600 ms | **0,1 px** |
+| dernière image qui bouge | 833 ms | **452 ms** |
+
+La classe est donc retirée **dans le même souffle** que le délai : sans elle
+il n'y a plus d'animation, et le délai qu'on efface ne peut plus rien
+relancer. L'état final de `screenIn` étant l'état naturel de l'élément, rien
+ne bouge à cet instant.
+
+Le défaut ne touchait pas que le salon : **tout rendu sur place pendant
+l'entrée d'un écran** le déclenchait. Et il ne se produisait que dans une
+fenêtre étroite (~300 à 500 ms d'attente), d'où un défaut « très rapide » et
+intermittent, impossible à attraper à l'œil. `banc-essai/ouverture.js` suit
+désormais la position image par image après la première et échoue sur la
+version d'avant.
+
 **Un fondu, ça a une FORME (v180).** Le voile qui dissout le bas de la liste
 des erreurs était une rampe droite. Une droite a deux coudes — là où la pente
 démarre et là où elle s'arrête — et l'œil les voit : deux lignes fantômes en
