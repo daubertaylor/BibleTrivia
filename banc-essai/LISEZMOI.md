@@ -36,6 +36,7 @@ notre code, et il est éprouvé. Tout le reste l'est.
     node pied.js        # le pied de l'accueil se tient pareil sur dix appareils
     node bords.js       # l'onde d'appui va-t-elle jusqu'au bord du bouton ?
     node typo.js        # typographie française sur les 1545 questions et 12 écrans
+    node doigt.js       # tout ce qui se touche fait-il 44 px, mesuré au doigt ?
     node fuite.js sansmarge "html.gl-xf .has-gs{ overflow-clip-margin:0px !important; }"
     python3 fuite.py sansmarge     # aucun trou d'un pixel au bord des feuilles
     node matiere.js /tmp/m mat && python3 matiere.py /tmp/m mat   # la matière suffit-elle ?
@@ -329,3 +330,22 @@ orpheliner : il voit bien une dernière ligne de 9,3 px, sur 4 largeurs sur 22.
 Le correctif de typographie reste — l'interface et les données écrivaient
 deux typographies différentes dans le même écran — mais il ne corrige pas ce
 que je croyais qu'il corrigeait, et le commentaire du code le dit.
+
+
+## Une zone tactile ne se mesure pas à la règle
+
+La première version de `doigt.js` lisait `getBoundingClientRect`. Elle mentait
+dans les deux sens : un bouton peut être plus GRAND que sa zone (un parent en
+`overflow:clip` — et une surface de verre en porte toujours une — coupe aussi
+le test de survol) ou plus PETIT (un pseudo-élément l'étend).
+
+On demande donc à la page qui reçoit le toucher, point par point, en
+s'éloignant du centre dans les quatre directions : `elementFromPoint` respecte
+les pseudo-éléments, les découpes et les recouvrements, exactement comme un
+doigt. C'est cette mesure qui a montré qu'un même correctif marchait sur le
+rond du Profil et pas sur celui des Réglages — le premier est en
+`overflow:visible` parce que son verre est masqué.
+
+Le relevé porte aussi ses **exceptions écrites**, avec leur raison. Une
+exception qu'on n'écrit pas est un défaut qu'on a oublié ; une exception qu'on
+écrit est une décision.

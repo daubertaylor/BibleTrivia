@@ -1377,7 +1377,7 @@
 
   .len-label{ font-size:0.82rem; font-weight:600; color:rgba(255,255,255,0.9); margin:0.95rem 0 0.45rem 0.2rem; text-shadow:0 1px 6px rgba(0,0,0,0.4); }
   .len-row{ display:flex; gap:0.5rem; }
-  .len-chip{ flex:1; --glass-tint: rgb(252,248,241); background:rgb(252,248,241); backdrop-filter:none; -webkit-backdrop-filter:none; border:1px solid var(--bord); border-radius:var(--r-m); padding:0.58rem 0.4rem; font-weight:600; font-size:0.84rem; color:var(--ink); }
+  .len-chip{ flex:1; display:flex; align-items:center; justify-content:center; min-height:2.75rem; --glass-tint: rgb(252,248,241); background:rgb(252,248,241); backdrop-filter:none; -webkit-backdrop-filter:none; border:1px solid var(--bord); border-radius:var(--r-m); padding:0.58rem 0.4rem; font-weight:600; font-size:0.84rem; color:var(--ink); }
   .len-chip.sel{ --glass-tint: rgb(236,60,26); color:#fff; border-color:var(--bord); --rim-edge:0 0 0 1px rgba(150,30,14,0.3); --rim-cast:0 4px 12px rgba(241,80,47,0.35); box-shadow:none; }
   .waiting-note{ text-align:center; color:var(--ink-soft); font-weight:700; font-size:0.92rem; padding:1.05rem 1rem; margin-top:0.4rem; border-radius:var(--r-l); border:1px solid var(--bord); }
 
@@ -2217,7 +2217,13 @@
   .ach-toast .at-txt b{ font-family:'Poppins',sans-serif; font-weight:700; font-size:0.68rem; letter-spacing:0.06em; text-transform:uppercase; color:#F5C453; }
   .ach-toast .at-txt small{ font-size:0.92rem; color:#fff; font-weight:600; }
   /* ---------- Inviter des amis (salon) ---------- */
-  .btn-invite{ display:flex; align-items:center; justify-content:center; gap:0.45rem; margin:0.15rem auto 0.9rem; width:auto; padding:0.55rem 1.05rem; border-radius:var(--r-full); border:1px solid var(--bord); color:var(--ink); font-weight:700; font-size:0.85rem; }
+  /* 44 px POUR DE BON. Ces trois-là sont des surfaces de verre : leur
+     découpe avale l'agrandisseur, il faut donc que la BOÎTE fasse la taille.
+     Et l'argument n'est pas seulement la règle d'Apple : ce sont les MÊMES
+     contrôles ailleurs dans le jeu, où ils dépassent déjà 44 px. Les
+     pastilles de longueur du salon faisaient 37 px quand celles des Réglages
+     de partie en font 46 — même geste, deux tailles. */
+  .btn-invite{ display:flex; align-items:center; justify-content:center; gap:0.45rem; margin:0.15rem auto 0.9rem; width:auto; min-height:2.75rem; padding:0.55rem 1.05rem; border-radius:var(--r-full); border:1px solid var(--bord); color:var(--ink); font-weight:700; font-size:0.85rem; }
   .btn-invite .ico{ width:1.05rem; height:1.05rem; display:inline-flex; color:var(--primary); }
 
   /* Léger retrait latéral : les cartes stats (1000+ / niveaux / Duel) ne
@@ -2408,7 +2414,36 @@
   .sheet-grab{ position:relative; display:block; width:3.4rem; height:1.5rem; margin:-0.25rem auto 0.7rem; padding:0; border:none; background:none; cursor:pointer; -webkit-tap-highlight-color:transparent; }
   .sheet-grab::after{ content:""; position:absolute; left:0; right:0; top:50%; height:0.32rem; margin-top:-0.16rem; border-radius:var(--r-full); background:rgba(42,36,30,0.22); transition:background 0.18s ease, transform 0.18s ease; }
   .sheet-grab:active::after{ background:rgba(42,36,30,0.34); transform:scaleX(0.88); }
-  .sheet-grab::before{ content:none; }
+  /* ===== TOUT CE QUI SE TOUCHE DOIT FAIRE 44 PX =====
+     Mesuré au doigt (elementFromPoint, qui respecte les pseudo-éléments, les
+     découpes et les recouvrements — la boîte, elle, ment dans les deux sens) :
+     la poignée des feuilles n'offrait que 26 px de haut, la croix d'un joueur
+     30, le bouton de version 34, les boutons du salon 38, les ronds de
+     l'en-tête 40. Le commentaire de la poignée promettait pourtant « une zone
+     bien plus grande que le trait visible ».
+     On agrandit la ZONE, jamais le dessin : un pseudo-élément transparent,
+     centré sur le bouton, porté à 44 px dans les deux sens quand le bouton
+     est plus petit. Il ne peint rien, il se touche. La poignée utilise son
+     ::before (libre : l'onde d'appui y est éteinte), les autres leur ::after.
+     Ce qui reste sous 44 et qu'on ASSUME : l'interrupteur des Réglages, 51x31
+     — la taille exacte d'un UISwitch iOS, celle que le doigt connaît. */
+  /* CE PSEUDO NE FRANCHIT PAS UNE DÉCOUPE. Une surface de verre porte
+     overflow:clip (le décor flouté doit s'arrêter au bord) — et overflow
+     découpe AUSSI le test de survol. Sur ces surfaces-là, l'agrandisseur ne
+     sert à rien : mesuré, il reste bloqué à la boîte. Elles sont donc
+     agrandies pour de bon, plus bas, et ne figurent pas ici. La preuve par
+     l'exemple : le rond du Profil, seul .icon-btn en overflow:visible (son
+     verre est masqué), est le seul que ce pseudo a suffi à corriger. */
+  .sheet-grab::before,
+  .team-remove::after,
+  .icon-btn::after,
+  .add-team::after{
+    content:""; position:absolute; left:50%; top:50%;
+    width:max(100%, 44px); height:max(100%, 44px);
+    transform:translate(-50%, -50%);
+    background:none; opacity:1; z-index:0; pointer-events:auto;
+    border-radius:var(--r-full);
+  }
   /* Pendant qu'on tire la feuille, elle suit le doigt sans transition.
      ATTENTION : on ne touche PAS à « animation » ici. Couper puis rétablir une
      animation la RELANCE depuis le début — au relâchement, la feuille repartait
@@ -2586,7 +2621,7 @@
      collé. Il prend exactement la matière de la pastille corail des Réglages —
      même dégradé, même lèvre de lumière en haut, même halo coloré — et devient
      un galet du même métal que le reste de la feuille. */
-  .set-go{ border:1px solid var(--bord); border-radius:var(--r-full); padding:0.48rem 0.95rem; font-weight:700; font-size:0.8rem; color:#fff; --glass-tint: rgb(236,60,26); background-image:linear-gradient(150deg, #F44E2C, #DE3616); --rim-edge:0 0 0 1px rgba(150,40,20,0.3); --rim-cast:0 5px 14px rgba(214,71,44,0.44); text-shadow:0 1px 2px rgba(120,26,10,0.32); flex-shrink:0; }
+  .set-go{ display:inline-flex; align-items:center; justify-content:center; min-height:2.75rem; border:1px solid var(--bord); border-radius:var(--r-full); padding:0.48rem 0.95rem; font-weight:700; font-size:0.8rem; color:#fff; --glass-tint: rgb(236,60,26); background-image:linear-gradient(150deg, #F44E2C, #DE3616); --rim-edge:0 0 0 1px rgba(150,40,20,0.3); --rim-cast:0 5px 14px rgba(214,71,44,0.44); text-shadow:0 1px 2px rgba(120,26,10,0.32); flex-shrink:0; }
   .set-txt{ flex:1; display:flex; flex-direction:column; gap:0.12rem; min-width:0; }
   .set-txt b{ font-size:0.93rem; color:var(--ink); }
   .set-txt small{ font-size:0.82rem; color:var(--ink-soft); }
@@ -2601,8 +2636,30 @@
   .switch.on::after{ transform:translateX(1.3rem); }
   .vol-row{ display:flex; align-items:center; gap:0.7rem; padding:0.15rem 0.1rem 0.4rem; }
   .vol-row .vr-ico{ width:1.05rem; height:1.05rem; color:var(--ink-soft); flex-shrink:0; display:inline-flex; }
-  input[type=range].vol{ -webkit-appearance:none; appearance:none; flex:1; height:0.6rem; border-radius:var(--r-full); outline:none; background:linear-gradient(90deg, #FB6A45 var(--vol,80%), rgba(42,36,30,0.14) var(--vol,80%)); }
-  input[type=range].vol::-webkit-slider-thumb{ -webkit-appearance:none; appearance:none; width:1.75rem; height:1.75rem; border-radius:50%; background:#fff; border:none; box-shadow:0 2px 8px rgba(0,0,0,0.3), 0 0 0 1px rgba(42,36,30,0.08); }
+  /* ===== LE CURSEUR DE VOLUME FAISAIT DIX PIXELS DE HAUT =====
+     Le rail était dessiné sur le champ lui-même, donc le champ FAISAIT la
+     hauteur du rail : 0,6 rem, soit 9,6 px. La pastille blanche, elle, est
+     grande (1,75 rem) mais elle DÉBORDE du champ — et ce qui déborde ne se
+     touche pas. Mesuré au doigt (elementFromPoint) : 30 px de haut en tout,
+     pour un contrôle qu'on attrape en glissant.
+     Le rail descend donc sur son propre pseudo-élément (::-webkit-slider-
+     runnable-track) et le champ prend 2,75 rem — 44 px, la règle d'Apple.
+     Rien ne bouge à l'écran : même rail, même pastille, même dégradé (la
+     variable --vol est posée sur le champ et le pseudo en hérite). Il fallait
+     seulement recentrer la pastille à la main, WebKit la calant sur le HAUT
+     du rail dès qu'on le dessine soi-même.
+     LA MARGE NÉGATIVE REND LA PLACE. Un champ de 44 px poussait la ligne des
+     Réglages de 26 à 54 px, et la feuille entière montait de 43 px — payer
+     une zone tactile en déplaçant tout l'écran, c'est trop cher. La marge
+     négative retire de la MISE EN PAGE ce que la hauteur a ajouté : la ligne
+     reprend ses 26 px, la zone garde ses 44. Ce qui dépasse ne recouvre rien
+     d'interactif — les lignes voisines des Réglages ne se touchent pas, et
+     le banc le vérifie (voir doigt.js : l'interrupteur au-dessus garde sa
+     propre zone). */
+  input[type=range].vol{ -webkit-appearance:none; appearance:none; flex:1; height:2.75rem; margin:-1.05rem 0; border-radius:var(--r-full); outline:none; background:none; }
+  input[type=range].vol::-webkit-slider-runnable-track{ height:0.6rem; border-radius:var(--r-full); background:linear-gradient(90deg, #FB6A45 var(--vol,80%), rgba(42,36,30,0.14) var(--vol,80%)); }
+  input[type=range].vol::-moz-range-track{ height:0.6rem; border-radius:var(--r-full); background:linear-gradient(90deg, #FB6A45 var(--vol,80%), rgba(42,36,30,0.14) var(--vol,80%)); }
+  input[type=range].vol::-webkit-slider-thumb{ -webkit-appearance:none; appearance:none; width:1.75rem; height:1.75rem; border-radius:50%; background:#fff; border:none; box-shadow:0 2px 8px rgba(0,0,0,0.3), 0 0 0 1px rgba(42,36,30,0.08); margin-top:calc((0.6rem - 1.75rem) / 2); }
   input[type=range].vol::-moz-range-thumb{ width:1.75rem; height:1.75rem; border-radius:50%; background:#fff; border:none; box-shadow:0 2px 8px rgba(0,0,0,0.3), 0 0 0 1px rgba(42,36,30,0.08); }
   .vol-val{ min-width:3rem; text-align:right; font-weight:700; font-variant-numeric:tabular-nums; font-size:0.9rem; color:var(--ink); }
   /* Bouton opaque à 100 % (dégradé plein) : rien à peindre, donc aucun « filtre »

@@ -220,6 +220,48 @@ substituer :
    qui doit céder quand la place manque s'y accroche, avec la taille
    actuelle comme plafond.
 
+**La règle des 44 px, mesurée là où le doigt tombe (v184).** Le jeu s'en
+réclamait déjà — « la zone tactile est bien plus grande que le trait
+visible », dit le commentaire de la poignée des feuilles — sans l'avoir
+vérifiée. Elle offrait 26 px.
+
+**La boîte ne suffit pas à le dire**, et elle ment dans les deux sens : un
+bouton peut être plus grand que sa zone (un parent qui découpe à
+`overflow:clip` coupe aussi le test de survol) ou plus petit (un
+pseudo-élément l'étend). `banc-essai/doigt.js` demande donc à la page, point
+par point, QUI reçoit le toucher — `elementFromPoint`, qui respecte les
+pseudo-éléments, les découpes et les recouvrements.
+
+| | zone avant | après |
+|---|---|---|
+| curseur de volume | 30 px | **45** |
+| poignée des feuilles | 26 px | **45** |
+| croix « retirer un joueur » | 30 px | **45** |
+| bouton de version (Réglages) | 34 px | **44** |
+| pastilles du salon, « Inviter des amis » | 38 px | **44** |
+
+Deux mécanismes, parce qu'un seul ne pouvait pas suffire :
+
+- un **pseudo-élément transparent** centré, porté à 44 px, pour les boutons
+  sans verre. Il agrandit la zone sans toucher au dessin ;
+- **la boîte pour de bon** là où le verre impose `overflow:clip`, qui avale
+  le pseudo. La preuve par l'exemple : le rond du Profil, seul `.icon-btn` en
+  `overflow:visible` (son verre est masqué), est le seul que le pseudo a suffi
+  à corriger.
+
+Le curseur de volume dessinait son rail sur le champ lui-même, donc le champ
+faisait 9,6 px de haut ; le rail est descendu sur son propre pseudo-élément.
+Et une **marge négative** rend à la mise en page ce que la hauteur a pris :
+sans elle la ligne des Réglages passait de 26 à 54 px et la feuille montait de
+43 px — payer une zone tactile en déplaçant tout l'écran, c'est trop cher.
+L'accueil, lui, est resté identique au pixel près.
+
+**Quatre exceptions, écrites plutôt qu'oubliées** : l'interrupteur (51×31, la
+taille exacte d'un UISwitch iOS), le champ de texte (visé sur 238 px de large)
+et les deux ronds d'en-tête — ils portent du verre, donc seule leur boîte
+pourrait grandir, et l'en-tête entier grandirait de 5,8 px sur TOUS les
+écrans. Cinq pixels de zone ne valent pas ça.
+
 **La barre de progression ne se remplissait qu'aux trois quarts (v183).** Un
 balayage de tout le jeu à la recherche du défaut de la v182 — enfant absolu
 calé sur 0 dans un parent bordé — n'a trouvé qu'UN autre cas, et c'est celui
