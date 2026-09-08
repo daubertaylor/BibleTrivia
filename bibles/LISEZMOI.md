@@ -212,3 +212,32 @@ de verre glisse un enfant `.gs` — une copie floutée de la scène — dans cha
 surface. Il fait la page entière. Trois mesures ont été faussées par là :
 la carte semblait déborder de 906 px, toujours du même verset, y compris sur
 les textes courts. **Mesurer les enfants réels, jamais la carte.**
+
+---
+
+## Les mots collés de l'extraction
+
+Quand un texte est extrait d'une source où le mot se coupe en fin de ligne,
+l'espace disparaît parfois : « car je suis doux » devient « suisdoux ».
+
+Chercher les mots **anormalement longs** ne les trouve pas — « suisdoux » n'en
+fait que huit, et au-dessus de quatorze lettres il n'y a que de vrais mots
+français (« irrépréhensibles », « merveilleusement »). La vraie signature est
+ailleurs : le mot collé est **rare**, et il se **coupe en deux mots courants**.
+
+`bibles/motscolles.py` se sert donc du corpus comme dictionnaire (les quatre
+versions plus tout le texte français du jeu) et sort les mots vus au plus deux
+fois qui se scindent en deux mots vus au moins quatre fois :
+
+    python3 bibles/motscolles.py
+
+La liste fait environ quatre-vingts entrées, presque toutes de vrais mots
+(« surface » = sur + face) ou des identifiants JavaScript. Elle se relit en une
+minute — et c'est comme ça qu'ont été trouvés les deux seuls vrais défauts :
+
+| version | référence | était | corrigé en |
+|---|---|---|---|
+| Segond 1910 | Matthieu 11:29 | `suisdoux` | `suis doux` |
+| Darby | Matthieu 6:24 | `servirDieu` | `servir Dieu` |
+
+À relancer après toute nouvelle extraction de texte biblique.
