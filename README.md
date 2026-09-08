@@ -220,6 +220,44 @@ substituer :
    qui doit céder quand la place manque s'y accroche, avec la taille
    actuelle comme plafond.
 
+**Un fondu, ça a une FORME (v180).** Le voile qui dissout le bas de la liste
+des erreurs était une rampe droite. Une droite a deux coudes — là où la pente
+démarre et là où elle s'arrête — et l'œil les voit : deux lignes fantômes en
+travers du texte, et entre elles une bande où chaque ligne se lit à moitié, ce
+qui donne du texte **à demi effacé** plutôt que du texte qui **s'éloigne**. La
+rampe suit maintenant un smoothstep en six paliers (pente nulle aux deux bouts,
+maximale au milieu), et elle est plus longue : 34 px couvraient 1,7 ligne de
+texte, 46 en couvrent 2,3.
+
+| | avant | après |
+|---|---|---|
+| coude maximal de la rampe (normalisé) | 0,00504 | **0,00150** |
+| netteté de la coupe au bord | 5,6 | **2,4** |
+| pose du cran après un lancer | 34 px **dans** le fondu | **0 px** sous le fondu |
+
+Le dernier point est un défaut que l'allongement du fondu a CRÉÉ : le cran de
+défilement aligne le haut d'une carte sur le haut de la zone défilante — c'est
+-à-dire dans le fondu. On atterrissait donc sur une carte à moitié effacée.
+`scroll-padding-top` décale la ligne de pose de la hauteur du voile.
+
+**Une variable qui en contient une autre se résout là où elle est DÉCLARÉE
+(v180).** Pour n'écrire le dessin du fondu qu'une fois, il avait été posé sur
+`:root` sous forme de `--voile-vertical`, avec des `var(--voile-h)` dedans.
+Résultat : **plus de fondu du tout** — pas « un peu moins bien », plus rien.
+Une propriété personnalisée contenant un `var()` est substituée au moment où
+ELLE est calculée, sur l'élément où elle est déclarée ; sur `:root`,
+`--voile-h` n'existe pas, toute la valeur devenait invalide, et les surfaces
+n'héritaient que de ce vide. Le dessin vit donc sur la surface elle-même, à
+côté des longueurs qu'il consomme — recopié deux fois (vertical, horizontal)
+plutôt que partagé.
+
+**Et c'est la mesure qui l'a vu.** À l'œil, sur une capture, un fondu absent
+sur une carte crème posée sur une feuille crème ne saute pas aux yeux. Le banc,
+lui, pose un bloc noir uni dans la liste et lit le profil de luminance à
+travers le bord : amplitude 0. `banc-essai/englouti.js` relève désormais cette
+amplitude ET la courbure, donc ni la disparition ni le retour à une droite ne
+peuvent passer.
+
 **Un vide « ce qui reste » n'est pas une mesure (v179).** « Sur certain
 appareil ça s'affiche pas comme sur le mien au niveau des 7 jours. » L'écart
 entre la dernière carte de l'accueil et la bande des sept jours n'était pas

@@ -233,3 +233,28 @@ pas bougé. Elle se fait élément par élément, en comparant l'ancien fichier 
 le nouveau à la même taille — 0 px sur iPhone 15. Sans elle, « ça se tient
 pareil partout » pourrait vouloir dire « c'est cassé partout de la même
 façon ».
+
+
+## Un effet peut disparaître sans que rien ne casse
+
+En voulant n'écrire le dessin du fondu qu'une seule fois, il a été posé sur
+`:root` sous forme de `--voile-vertical`, avec des `var(--voile-h)` dedans.
+Une propriété personnalisée qui contient un `var()` est substituée sur
+l'élément où elle est DÉCLARÉE : sur `:root`, `--voile-h` n'existe pas, la
+valeur devenait invalide, et **le fondu disparaissait entièrement**.
+
+Rien ne casse dans ce cas-là. Aucune erreur, aucune mise en page décalée, une
+capture qui a l'air normale — une carte crème coupée net sur une feuille
+crème, ça ne crie pas. Seule une mesure le dit.
+
+D'où le relevé « rampe » d'`englouti.js` : on pose un bloc NOIR UNI dans la
+liste, on force le voile à sa pleine longueur, et on lit le profil de
+luminance à travers le bord. Ce profil EST la rampe du masque. On en tire
+deux chiffres :
+
+    amplitude   y a-t-il un fondu ? (0 = il a disparu)
+    coude       sa dérivée seconde maximale : une droite fait deux pics,
+                un smoothstep n'en fait aucun (0,00504 -> 0,00150)
+
+Le premier est un garde-fou, le second une mesure de qualité. Les deux
+étaient nécessaires : le garde-fou a servi le jour même où il a été écrit.

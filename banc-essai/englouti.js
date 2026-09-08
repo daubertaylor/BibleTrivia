@@ -14,14 +14,19 @@
               40 px au-dessus du bord bas : une coupe franche fait un MUR,
               un fondu fait une PENTE.
      cran     apres un lancer au doigt, distance entre le haut de la carte en
-              tete et le haut de la liste. Sans cran de defilement on se pose
-              n'importe ou, souvent au milieu d'une ligne.
+              tete et la LIGNE DU VOILE (haut de la liste + fondu). Sans cran
+              on se pose n'importe ou, souvent au milieu d'une ligne ; et sans
+              scroll-padding on se pose DANS le fondu, donc sur une carte a
+              moitie effacee.
+     rampe    la forme du fondu : amplitude (y en a-t-il un ?) et coude
+              maximal (une droite fait deux coudes, une courbe aucun).
      rang     le compteur du titre suit-il le defilement (« 3 / 7 ») ?
 
        node englouti.js                 (jeu servi en HTTP sur 8099)
        node englouti.js "<css d essai>" (pour comparer un autre reglage)
 
-   Reperes : repos >= 16 px, tranche <= 12, cran <= 2 px, rang qui bouge. */
+   Reperes : repos >= 16 px, tranche <= 12, cran <= 2 px, amplitude du fondu
+   > 40, coude <= 0.0025, rang qui bouge. */
 const { chromium } = require('/opt/node22/lib/node_modules/playwright');
 const { execSync } = require('child_process');
 const D = '/tmp/claude-0/-home-user-BibleTrivia/fb9bf869-826b-5523-9825-ea1b24c294d0/scratchpad/';
@@ -64,10 +69,41 @@ const FAUX = [
   });
   const repos = g.vp - g.bot;
 
-  await p.screenshot({ path: D + 'englouti.png' });
+  await p.screenshot({ path: D + 'englouti-bord.png' });
   const bande = JSON.stringify({ left:g.left, right:g.right, bot:g.bot });
-  require('fs').writeFileSync(D + 'englouti.json', bande);
-  const tranche = parseFloat(execSync('python3 ' + __dirname + '/englouti.py').toString().trim());
+  require('fs').writeFileSync(D + 'englouti-bord.json', bande);
+  const tranche = parseFloat(execSync('python3 ' + __dirname + '/englouti.py bord').toString().trim());
+
+  /* LA FORME DU FONDU. On pose un bloc parfaitement uni dans la liste et on
+     force le voile bas a sa pleine longueur : le profil de luminance lu a
+     travers ne dit plus que le masque, sans le bruit du texte ni du verre. */
+  await p.evaluate(() => {
+    const li = document.querySelector('.rev-list');
+    const bloc = document.createElement('div');
+    bloc.id = 'blocEssai';
+    bloc.style.cssText = 'flex:0 0 auto;height:600px;background:#0a0a0a;';
+    li.appendChild(bloc);
+    /* on descend DANS le bloc : le bas de la liste ne montre plus que lui,
+       sinon on mesurerait la rampe par-dessus du texte. Le cran est coupe
+       le temps de la mesure, il ramenerait la vue sur une carte. */
+    li.style.scrollSnapType = 'none';
+    li.scrollTop = li.scrollHeight - li.clientHeight - 100;
+    li.style.setProperty('--voile-h', '0px');
+    li.style.setProperty('--voile-b', getComputedStyle(li).getPropertyValue('--voile-max').trim() || '46px');
+  });
+  await p.waitForTimeout(300);
+  await p.screenshot({ path: D + 'englouti-rampe.png' });
+  require('fs').writeFileSync(D + 'englouti-rampe.json', bande);
+  const [amp, coude] = execSync('python3 ' + __dirname + '/englouti.py rampe').toString().trim().split(' ').map(parseFloat);
+  await p.evaluate(() => {
+    const b = document.getElementById('blocEssai'); if (b) b.remove();
+    const li = document.querySelector('.rev-list');
+    li.style.scrollSnapType = '';
+    li.scrollTop = 0;
+    li.style.removeProperty('--voile-h'); li.style.removeProperty('--voile-b');
+    majVoilesErreurs();
+  });
+  await p.waitForTimeout(200);
 
   /* Le cran : un lancer au doigt, puis on regarde ou ca s'est pose. */
   await p.mouse.move(196, g.top + 200);
@@ -75,7 +111,8 @@ const FAUX = [
   await p.waitForTimeout(1400);
   const fin = await p.evaluate(() => {
     const li = document.querySelector('.review-sheet .rev-list');
-    const y = li.getBoundingClientRect().top;
+    /* la ligne de pose attendue : sous le fondu, pas dedans */
+    const y = li.getBoundingClientRect().top + parseFloat(getComputedStyle(li).getPropertyValue('--voile-h'));
     let mieux = 1e9;
     li.querySelectorAll('.rev-item').forEach(e => {
       const d = Math.abs(e.getBoundingClientRect().top - y);
@@ -91,11 +128,13 @@ const FAUX = [
   console.log('  liste  : haut ' + g.top + ', bas ' + g.bot + ', ecran ' + g.vp + ', reste a lire ' + g.dep + ' px');
   console.log('  repos  : ' + repos + ' px de feuille sous la liste' + (repos >= 16 ? '' : '   <-- LA LISTE TOMBE DU BORD'));
   console.log('  tranche: ' + tranche.toFixed(1) + (tranche <= 12 ? '' : '   <-- COUPE FRANCHE'));
-  console.log('  cran   : ' + fin.cran + ' px du haut apres un lancer' + (fin.cran <= 2 ? '' : '   <-- POSE AU MILIEU D UNE CARTE'));
+  console.log('  cran   : ' + fin.cran + ' px de la ligne du voile apres un lancer' + (fin.cran <= 2 ? '' : '   <-- POSE AU MILIEU D UNE CARTE'));
+  console.log('  rampe  : amplitude ' + amp.toFixed(1) + (amp > 40 ? '' : '   <-- PLUS DE FONDU DU TOUT') +
+    '   |   coude ' + coude.toFixed(5) + (coude <= 0.0025 ? '' : '   <-- RAMPE DROITE'));
   console.log('  rang   : « ' + g.rang + ' » en haut -> « ' + fin.rang +' » apres (defile de ' + fin.st + ' px)');
   console.log('  voiles : haut ' + fin.vh.trim() + ', bas ' + fin.vb.trim());
   if (errs.length) console.log('  ERREURS JS : ' + errs.slice(0,3).join(' | '));
-  const ok = repos >= 16 && tranche <= 12 && fin.cran <= 2 && fin.rang !== g.rang && !errs.length;
+  const ok = repos >= 16 && tranche <= 12 && fin.cran <= 2 && amp > 40 && coude <= 0.0025 && fin.rang !== g.rang && !errs.length;
   console.log(ok ? '\n  OK' : '\n  ECHEC');
   await b.close();
   process.exit(ok ? 0 : 1);

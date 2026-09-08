@@ -239,6 +239,16 @@
        Même famille, départ moins brutal : 32,5 px par image, 80 % à 237 ms.
        (Cette courbe est déjà celle de l'enfoncement des réponses.) */
     --tr-plie: 0.52s cubic-bezier(0.33,1,0.68,1);
+    /* ===== LE PIÈGE DES VARIABLES QUI EN CONTIENNENT D'AUTRES =====
+       Le dessin du voile a d'abord été posé ICI, sur :root, pour n'exister
+       qu'une fois. Il ne marchait pas — et pas « un peu moins bien » : PLUS
+       DE FONDU DU TOUT, mesuré à l'image (le bloc d'essai restait opaque
+       jusqu'au dernier pixel). Une propriété personnalisée qui contient un
+       var() est résolue au moment où ELLE est calculée, sur l'élément où elle
+       est DÉCLARÉE. Sur :root, --voile-h n'existe pas : toute la valeur
+       devenait invalide, et les surfaces qui l'utilisaient n'héritaient que
+       de ce vide. Le dessin vit donc sur la surface elle-même, à côté des
+       longueurs qu'il consomme (voir .rev-list et .ds-piste). */
     --tr-voile-in: 0.28s ease;
     --tr-voile-out: 0.24s ease;
   }
@@ -842,9 +852,27 @@
     /* Les deux voiles valent zéro tant qu'il n'y a rien au-delà : le bandeau
        garde alors ses deux bouts nets. Ils ne s'ouvrent que du côté où il
        reste des joueurs à voir — donc jamais « fini en fondu » pour rien. */
+    /* Mêmes six paliers que la liste des erreurs (smoothstep), en horizontal :
+       un seul dessin de fondu dans tout le jeu. Il est recopié plutôt que
+       partagé — voir le piège expliqué au-dessus de --tr-voile-in. */
     --voile-g:0px; --voile-d:0px;
-    -webkit-mask-image:linear-gradient(to right, transparent 0, #000 var(--voile-g), #000 calc(100% - var(--voile-d)), transparent 100%);
-    mask-image:linear-gradient(to right, transparent 0, #000 var(--voile-g), #000 calc(100% - var(--voile-d)), transparent 100%); }
+    --masque:linear-gradient(to right,
+      rgba(0,0,0,0) 0,
+      rgba(0,0,0,0.061) calc(var(--voile-g) * 0.15),
+      rgba(0,0,0,0.216) calc(var(--voile-g) * 0.30),
+      rgba(0,0,0,0.5)   calc(var(--voile-g) * 0.50),
+      rgba(0,0,0,0.784) calc(var(--voile-g) * 0.70),
+      rgba(0,0,0,0.939) calc(var(--voile-g) * 0.85),
+      #000 var(--voile-g),
+      #000 calc(100% - var(--voile-d)),
+      rgba(0,0,0,0.939) calc(100% - var(--voile-d) * 0.85),
+      rgba(0,0,0,0.784) calc(100% - var(--voile-d) * 0.70),
+      rgba(0,0,0,0.5)   calc(100% - var(--voile-d) * 0.50),
+      rgba(0,0,0,0.216) calc(100% - var(--voile-d) * 0.30),
+      rgba(0,0,0,0.061) calc(100% - var(--voile-d) * 0.15),
+      rgba(0,0,0,0) 100%);
+    -webkit-mask-image:var(--masque);
+    mask-image:var(--masque); }
   .duel-scorebar.multi.voile-g .ds-piste{ --voile-g:1.9rem; }
   .duel-scorebar.multi.voile-d .ds-piste{ --voile-d:1.9rem; }
   .ds-piste::-webkit-scrollbar{ display:none; }
@@ -910,11 +938,52 @@
        - un CRAN par carte : on se pose toujours sur une carte entière,
          jamais au milieu d'une ligne. */
   .settings-sheet.review-sheet{ padding-bottom:calc(env(safe-area-inset-bottom) * 0.55 + 1.15rem + 220px); }
+  /* ===== LA RAMPE DU VOILE : UNE COURBE, PAS UNE DROITE =====
+     Une rampe LINÉAIRE d'opacité a deux coudes — là où elle démarre et là où
+     elle s'arrête, la pente saute d'un coup de zéro à sa valeur puis revient
+     à zéro. L'œil les voit : deux lignes fantômes en travers du texte, et
+     entre les deux une bande où chaque ligne se lit à moitié, ce qui donne
+     du texte À DEMI EFFACÉ plutôt que du texte qui S'ÉLOIGNE.
+     La rampe suit donc un « smoothstep » (3t² − 2t³) en six paliers : pente
+     nulle aux deux bouts, maximale au milieu. Plus aucun coude, et le milieu
+     bascule vite — une ligne ne reste donc jamais longtemps à mi-opacité.
+     Et elle est plus longue : 34 px couvraient 1,7 ligne de texte, ce qui
+     laissait pile une ligne posée à ~50 %. À 46 px (2,3 lignes) la ligne du
+     bord est déjà nettement partie quand la suivante commence à s'estomper.
+     Les paliers sont exprimés en FRACTION de la longueur du voile : quand
+     celle-ci vaut zéro (haut de liste, fin de liste), tout se replie sur le
+     même point et le bord redevient franc, sans cas particulier. */
   .review-sheet .rev-list{ max-height:calc(58 * var(--hu)); overflow-y:auto; overscroll-behavior:contain; margin:0.3rem 0 0.2rem; display:flex; flex-direction:column; gap:0.65rem; -webkit-overflow-scrolling:touch; scrollbar-width:none;
+    /* ===== LE CRAN DOIT SE POSER SOUS LE VOILE, PAS DEDANS =====
+     Le cran aligne le haut d'une carte sur le haut de la zone défilante — or
+     c'est là que commence le fondu. En allongeant celui-ci de 34 à 46 px, la
+     carte sur laquelle on venait de se poser arrivait avec sa question à
+     moitié effacée : le cran et le voile se marchaient dessus.
+     scroll-padding-top décale la ligne de pose de la hauteur du voile : on
+     atterrit toujours sur une carte ENTIÈRE et NETTE, juste sous le fondu.
+     --voile-max est la SEULE écriture de cette longueur : le JS la relit
+     (voir majVoilesErreurs) au lieu d'en garder une copie. */
     scroll-snap-type:y proximity;
+    --voile-max:46px;
+    scroll-padding-top:var(--voile-max);
     --voile-h:0px; --voile-b:0px;
-    -webkit-mask-image:linear-gradient(to bottom, transparent 0, #000 var(--voile-h), #000 calc(100% - var(--voile-b)), transparent 100%);
-    mask-image:linear-gradient(to bottom, transparent 0, #000 var(--voile-h), #000 calc(100% - var(--voile-b)), transparent 100%); }
+    --masque:linear-gradient(to bottom,
+      rgba(0,0,0,0) 0,
+      rgba(0,0,0,0.061) calc(var(--voile-h) * 0.15),
+      rgba(0,0,0,0.216) calc(var(--voile-h) * 0.30),
+      rgba(0,0,0,0.5)   calc(var(--voile-h) * 0.50),
+      rgba(0,0,0,0.784) calc(var(--voile-h) * 0.70),
+      rgba(0,0,0,0.939) calc(var(--voile-h) * 0.85),
+      #000 var(--voile-h),
+      #000 calc(100% - var(--voile-b)),
+      rgba(0,0,0,0.939) calc(100% - var(--voile-b) * 0.85),
+      rgba(0,0,0,0.784) calc(100% - var(--voile-b) * 0.70),
+      rgba(0,0,0,0.5)   calc(100% - var(--voile-b) * 0.50),
+      rgba(0,0,0,0.216) calc(100% - var(--voile-b) * 0.30),
+      rgba(0,0,0,0.061) calc(100% - var(--voile-b) * 0.15),
+      rgba(0,0,0,0) 100%);
+    -webkit-mask-image:var(--masque);
+    mask-image:var(--masque); }
   .review-sheet .rev-list::-webkit-scrollbar{ display:none; }
   /* flex-shrink:0 indispensable : .rev-list est une colonne flex avec
      max-height+overflow-y:auto (défilement voulu au-delà de calc(58 * var(--hu))), mais un
@@ -6180,16 +6249,23 @@ function openMissedReview(list){
    Les deux bouts restent NETS quand il n'y a plus rien au-delà : en haut de
    liste, pas de voile haut ; arrivé au bout, pas de voile bas — la dernière
    carte se lit entière, franche, et on sait qu'on a fini. */
-const VOILE_ERR = 34;          // hauteur du fondu, en px
-const VOILE_ERR_RAMPE = 26;    // course sur laquelle il s'ouvre
+/* La hauteur du fondu est écrite dans la feuille de style (--voile-max sur
+   .rev-list) et relue ici : le cran de défilement s'en sert aussi, et deux
+   copies d'un même nombre finissent toujours par diverger. */
+function voileErr(li){
+  const v = parseFloat(getComputedStyle(li).getPropertyValue("--voile-max"));
+  return isFinite(v) && v > 0 ? v : 46;
+}
+const VOILE_ERR_RAMPE = 30;    // course sur laquelle il s'ouvre
 function majVoilesErreurs(){
   const li = document.querySelector(".review-sheet .rev-list");
   if(!li) return;
   const reste = li.scrollHeight - li.clientHeight;
   const st = li.scrollTop;
   const ouvert = reste > 1;
-  const haut = ouvert ? Math.min(1, Math.max(0, st) / VOILE_ERR_RAMPE) * VOILE_ERR : 0;
-  const bas  = ouvert ? Math.min(1, Math.max(0, reste - st) / VOILE_ERR_RAMPE) * VOILE_ERR : 0;
+  const V = voileErr(li);
+  const haut = ouvert ? Math.min(1, Math.max(0, st) / VOILE_ERR_RAMPE) * V : 0;
+  const bas  = ouvert ? Math.min(1, Math.max(0, reste - st) / VOILE_ERR_RAMPE) * V : 0;
   li.style.setProperty("--voile-h", Math.round(haut) + "px");
   li.style.setProperty("--voile-b", Math.round(bas) + "px");
   const cpt = document.querySelector(".review-sheet .sheet-title small");
