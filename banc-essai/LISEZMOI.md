@@ -26,6 +26,7 @@ notre code, et il est éprouvé. Tout le reste l'est.
     node bascule.js     # le salon change de visage dans les deux sens
     node couleurs.js    # aucune bordure de couleur, écrans ET états
     node appuis.js      # l'onde d'appui se voit-elle sur son propre bouton ?
+    node rotation.js    # la mise en page ne bouge pas quand le téléphone tourne
     node matiere.js /tmp/m mat && python3 matiere.py /tmp/m mat   # la matière suffit-elle ?
 
 ## Un avertissement, payé cher
@@ -87,3 +88,17 @@ donc de l'onde **blanche** des boutons corail. Mais lui est **crème**. Deux
 unités et demie d'écart : l'appui ne se sentait pas, sur le seul bouton qu'on
 presse pour abandonner une partie. `appuis.js` compose chaque teinte sur la
 couleur réelle de son bouton et le dit.
+
+
+## Un test qui bascule proprement ne prouve rien
+
+La déchirure de rotation n'apparaît que dans une fenêtre de quelques images où
+iOS a déjà changé la géométrie mais pas encore les requêtes média. Playwright,
+lui, bascule les deux d'un coup : le défaut y était **invisible**, alors qu'il
+était bien là.
+
+`rotation.js` neutralise donc toutes les règles dont la condition parle
+d'orientation — et rien d'autre — avant de basculer. Une mise en page qui ne
+dépend pas de l'orientation traverse cet état sans bouger ; c'est tout ce qu'on
+lui demande. Le test échoue sur la version d'avant et passe sur celle d'après :
+c'est la seule preuve qui vaille.

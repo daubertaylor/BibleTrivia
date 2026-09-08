@@ -1440,13 +1440,34 @@
      Les deux sélecteurs : le second doit battre « html:not(.is-standalone)
      #app » posé plus haut pour la version web. */
   @media (orientation:landscape) and (pointer:coarse) and (max-width:1023px){
-    /* La LARGEUR aussi : #app est borné à 430 px, donc debout sur un écran de
-       402 il fait 402, et couché il atteignait enfin 430. 28 px de plus, et le
-       texte ne se coupe plus aux mêmes endroits — les hauteurs changent, les
-       espaceurs se redistribuent, tout glisse. 100vh couché, c'est le PETIT
-       côté : la colonne garde sa laize. */
-    #app, html:not(.is-standalone) #app{ height:100vw; width:100vh; }
+    #app, html:not(.is-standalone) #app{ height:100vw; }
   }
+  /* ============ LA DÉCHIRURE DE ROTATION ============
+     La largeur de la colonne ne doit PAS dépendre de l'orientation.
+     Elle en dépendait deux fois : #app est borné à 430 px (donc debout sur un
+     écran de 393 il fait 393, couché il atteignait 430), et au-delà de 620 px
+     de large un palier « grand écran » le pousse même à 31 rem. Couché, les
+     deux se déclenchent : la colonne passe de 393 à 509 px, les cartes de 370
+     à 486, le texte se recoupe ailleurs, les espaceurs se redistribuent.
+     La règle « (orientation:landscape) » ci-dessus gelait tout ça — mais iOS
+     ne bascule PAS la géométrie et les requêtes média dans la même passe. Il
+     reste donc une fenêtre de quelques images où l'écran est déjà couché et
+     où la règle, elle, n'a pas encore pris : la mise en page s'étale à 509 px
+     pendant que les couches de verre, elles, sont restées à 393. Mesuré :
+     25,3 px de carte dépassent à droite de leur propre verre. C'est très
+     exactement la photo — des cartes dont le fond s'arrête avant leur texte.
+     La largeur est donc ÉPINGLÉE en pixels, mesurée debout (voir figerColonne)
+     et jamais relue couché : plus aucune requête média n'entre dans le calcul,
+     donc plus rien à désynchroniser. Les tablettes et le bureau ne sont pas
+     concernés (rien n'est épinglé au-dessus de 600 px de large debout) et
+     gardent exactement leurs paliers. */
+  @media (pointer:coarse) and (max-width:1023px){
+    #app, html:not(.is-standalone) #app{ width:var(--colonne, 100%); }
+  }
+  /* Et le voile ne peut pas attendre la requête média non plus : la même
+     fenêtre le laissait absent pendant que la mise en page s'étalait. Une
+     classe posée en JS sur la GÉOMÉTRIE le lève dès la première image. */
+  html.couche #rotate-lock{ display:flex !important; }
 
   /* ---------- VERRE GARANTI (photo pré-floutée, alignée au viewport) ----------
      Safari iOS n'entretient pas le backdrop-filter de façon fiable. On affiche
@@ -11186,6 +11207,34 @@ let rotReprises = [], appEpinglee = false;
    CSS donne vraiment, et ne la repose que si c'est encore faux. Tout se passe
    dans la même tâche, donc le navigateur ne peint jamais l'état intermédiaire
    — aucun clignotement. */
+/* LA LARGEUR DE LA COLONNE, ÉPINGLÉE UNE FOIS POUR TOUTES (voir la règle CSS).
+   On ne la mesure QUE debout, et seulement sur un téléphone : couché, on garde
+   la dernière valeur connue, donc la mise en page ne bouge pas d'un pixel
+   pendant toute la bascule — y compris pendant les quelques images où iOS a
+   déjà changé la géométrie mais pas encore les requêtes média.
+   Au-dessus de 600 px de large debout (tablettes, bureau) on n'épingle rien :
+   ces écrans-là ne tournent pas dans un voile, et leurs paliers de largeur
+   doivent continuer de vivre. */
+const mqGros = (typeof window.matchMedia === "function") ? window.matchMedia("(pointer:coarse)") : null;
+function figerColonne(){
+  const de = document.documentElement;
+  const w = de.clientWidth || window.innerWidth || 0;
+  const h = de.clientHeight || window.innerHeight || 0;
+  if(!w || !h) return;
+  if(w > h) return;                 // couché : on ne remesure surtout pas
+  if(w > 600){ de.style.removeProperty("--colonne"); return; }
+  de.style.setProperty("--colonne", Math.min(430, w) + "px");
+}
+/* LE VOILE SUIT LA GÉOMÉTRIE, PAS LA REQUÊTE MÉDIA. Il se lève dès que
+   l'écran est réellement plus large que haut, sans attendre que Safari ait
+   fini de basculer ses requêtes — c'est précisément l'intervalle où la
+   déchirure se voyait. */
+function majCouche(){
+  const de = document.documentElement;
+  const w = de.clientWidth || 0, h = de.clientHeight || 0;
+  const gros = !!(mqGros && mqGros.matches);
+  de.classList.toggle("couche", gros && w > h && w <= 1023);
+}
 function reparerHauteurApp(){
   const app = glassAppEl;
   if(!app) return;
@@ -11218,15 +11267,19 @@ function mesurerHauteurUtile(){
   if(utile > 80) document.documentElement.style.setProperty("--hu", (utile / 100) + "px");
 }
 try{
+  figerColonne(); majCouche();
   mesurerHauteurUtile();
-  requestAnimationFrame(mesurerHauteurUtile);
-  [120, 400, 1200].forEach(d => setTimeout(mesurerHauteurUtile, d));
+  requestAnimationFrame(()=>{ figerColonne(); majCouche(); mesurerHauteurUtile(); });
+  [120, 400, 1200].forEach(d => setTimeout(()=>{ figerColonne(); majCouche(); mesurerHauteurUtile(); }, d));
   window.addEventListener("orientationchange", ()=>setTimeout(mesurerHauteurUtile, 60));
 }catch(e){}
 function reposeApresRotation(){
   rotReprises.forEach(clearTimeout); rotReprises = [];
   const passe = ()=>{
-    /* La hauteur D'ABORD : le cadrage de la photo et le verre se calculent sur
+    /* Le voile et la largeur AVANT tout le reste : tant que l'écran est
+       couché, rien ne doit être remesuré, et rien ne doit être visible. */
+    try{ majCouche(); figerColonne(); }catch(e){}
+    /* La hauteur ENSUITE : le cadrage de la photo et le verre se calculent sur
        la mise en page, il faut donc qu'elle soit juste avant de les recaler. */
     try{ reparerHauteurApp(); }catch(e){}
     try{ mesurerHauteurUtile(); }catch(e){}
@@ -11251,7 +11304,7 @@ try {
   document.addEventListener("scroll", (e)=>{ if(e.target !== glassAppEl) armGlass(1300); }, { capture:true, passive:true });
   document.addEventListener("pointerdown", armPress, { capture:true, passive:true });
   document.addEventListener("pointerup", armPress, { capture:true, passive:true });
-  window.addEventListener("resize", ()=>{ reparerHauteurApp(); mesurerHauteurUtile(); glassRelayout(); armGlass(700); fitScroll(); });
+  window.addEventListener("resize", ()=>{ majCouche(); figerColonne(); reparerHauteurApp(); mesurerHauteurUtile(); glassRelayout(); armGlass(700); fitScroll(); });
   window.addEventListener("orientationchange", reposeApresRotation);
   // screen.orientation arrive parfois AVANT window.orientationchange : les deux
   // déclenchent la même reprise, qui est idempotente.

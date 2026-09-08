@@ -213,6 +213,30 @@ substituer :
    qui doit céder quand la place manque s'y accroche, avec la taille
    actuelle comme plafond.
 
+**La mise en page ne doit pas dépendre de l'orientation (v172).** C'est la
+cause de la « déchirure » à la rotation : des cartes dont le fond s'arrête
+avant leur propre texte. Ce n'était pas un défaut de peinture. La largeur de
+la colonne dépendait de l'orientation **deux fois** — `#app` est borné à
+430 px (debout sur un écran de 393 il fait 393, couché il atteint 430), et
+au-delà de 620 px de large un palier « grand écran » le pousse à 31 rem.
+Couché, les deux se déclenchent : **393 → 509 px**, les cartes 370 → 486, et
+les couches de verre restent à 393. Mesuré : **25,3 px de carte au-delà de
+son verre**.
+
+Une règle `(orientation:landscape)` gelait tout cela — mais iOS ne bascule pas
+la géométrie et les requêtes média dans la même passe, et il reste quelques
+images où l'écran est déjà couché et où la règle n'a pas encore pris. La
+largeur est donc **épinglée en pixels**, mesurée debout et jamais relue
+couché : plus aucune requête média n'entre dans le calcul. Le voile
+« tourne ton téléphone » se lève lui aussi sur la GÉOMÉTRIE (classe `couche`),
+sans attendre la requête média.
+
+`banc-essai/rotation.js` reproduit précisément cette fenêtre : il neutralise
+toutes les règles dont la condition parle d'orientation, bascule la géométrie
+et vérifie que rien ne bouge. **Un navigateur de test bascule tout d'un coup et
+ne montrerait jamais le défaut** — il faut simuler le retard. Le test échoue
+sur la version d'avant (colonne 509, 6 images sans voile) et passe sur celle-ci.
+
 **Un rendu sur place ne doit pas couper une entrée d'écran (v170).**
 « Créer une partie » ouvrait le salon autrement que le reste du jeu : l'écran
 commençait à monter, la présence Supabase répondait vers 140 ms,
