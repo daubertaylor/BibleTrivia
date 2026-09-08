@@ -32,7 +32,7 @@ const TOLERE = {
                '                          de 5,8 px sur TOUS les écrans. Cinq pixels de zone ne valent pas ça.',
   'input':     'champ de texte, 40 px : on le vise sur toute sa largeur (238 px),\n' +
                '                          et le clavier s\'ouvre au moindre contact.',
-  '.set-go':   'bouton Guide / version, 34 px : porté à 44, il devenait une grosse\n' +
+  '.set-go':   'bouton Guide / version, 30 px : porté à 44, il devenait une grosse\n' +
                '                          pastille corail pour une action secondaire. Il porte du verre, donc une\n' +
                '                          découpe : ni pseudo-élément ni bordure transparente ne peuvent agrandir\n' +
                '                          la zone sans grossir le dessin ou détacher son ombre. Le dessin gagne.',
