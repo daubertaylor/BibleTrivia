@@ -213,6 +213,40 @@ substituer :
    qui doit céder quand la place manque s'y accroche, avec la taille
    actuelle comme plafond.
 
+**Une liste qui défile doit dire où elle s'arrête (v177).** « Revoir mes
+erreurs » donnait la sensation d'être *englouti*. Trois causes, toutes
+mesurables, et aucune n'était le contenu :
+
+| | avant | après |
+|---|---|---|
+| feuille visible sous la liste | 10 px | 22 px |
+| écart de luminance sur la ligne du bord bas | 33,0 | 5,6 |
+| distance au haut d'une carte après un lancer | 57 px | 0 px |
+
+La liste s'arrêtait à dix pixels du bord de l'écran — sous l'indicateur
+d'accueil de l'iPhone — et y tranchait une carte en plein milieu d'une
+phrase, avec 588 px encore à lire, soit plus d'un écran entier, et rien
+pour le dire. Le contenu n'était pas coupé PAR une liste, il tombait DU
+bord. Trois gestes, ensemble : un repos sous la liste, un voile en fondu
+haut et bas qui ne s'ouvre que du côté où il reste quelque chose (même
+idiome que la barre des scores à plusieurs, en vertical), et un cran de
+défilement par carte. Le compte du titre devient un rang — « 3 / 7 » — et
+atteint « 7 / 7 » pile quand la dernière carte se lit en entier.
+
+**La mesure qui compte n'est pas celle qu'on croit** : la première version
+du test relevait le plus fort saut de luminance dans les 40 px du bas, et
+accusait un fond de carte parfaitement normal (une carte finit, la suivante
+commence). Ce qui fait « englouti » se lit sur **la ligne du bord**, et
+nulle part ailleurs : le dedans juste avant, le dehors juste après.
+`banc-essai/englouti.js` échoue sur la version d'avant.
+
+**Une porte à deux secondes vaut mieux qu'un délai d'attente de vingt
+(v177).** Un `const` déclaré deux fois dans la même portée a mis tout le
+jeu à terre — page blanche. Les essais du banc l'ont bien vu, mais sous la
+forme d'un `waitForFunction` qui expire : le symptôme d'un serveur mort.
+`banc-essai/syntaxe.js` fait simplement analyser le bloc `<script>` par
+node et nomme la ligne. À lancer en premier, toujours.
+
 **Un test incomplet est pire qu'aucun test (v174).** La déchirure de
 rotation a survécu à un correctif ET à un test qui passait au vert. La
 raison : le test ne mesurait que la **largeur** de la colonne. Elle était
@@ -600,28 +634,14 @@ Deux contournements ont été chiffrés et présentés à Taylor :
 le redemande.
 
 
-### L'écran se déchire au retour en portrait
+### L'écran se déchire au retour en portrait — RÉSOLU en v174
 
-Signalé plusieurs fois, jamais reproduit en machine — la rotation de
-Chromium est atomique (une image en paysage, la suivante en portrait,
-toutes les couches suivent).
+**Cette entrée ne décrit plus l'état du jeu.** Elle disait « jamais
+reproduit en machine » : c'était vrai tant que le banc basculait la
+géométrie et les requêtes média d'un seul coup, comme Playwright le fait
+par défaut. En les dissociant, la déchirure se reproduit — 459 px de
+déplacement — et le correctif la ramène à 0.
 
-Quatre causes ont été éliminées, mesures à l'appui :
-
-| Cause | Vérification |
-|---|---|
-| Le verre calculé pour le mauvais viewport | 170 images fautives sur 364 → 0 |
-| L'échange de photo au redressement | 2 échanges par aller-retour → 0 |
-| La hauteur de `#app` périmée | reproduit puis réparé (402 → 874) |
-| La mise en page qui se refait couché | debout et couché désormais identiques |
-
-**Hypothèse restante** : l'app maintient en permanence une soixantaine de
-couches GPU (chaque surface de verre est promue, chaque couche de flou fait
-563×1748 px). À la rotation, iOS doit toutes les re-rastériser ; celles qui
-ne le sont pas à temps affichent leur ancien contenu, et l'écran se déchire
-le long des frontières de couches. Piste : dé-promouvoir temporairement les
-couches pendant la rotation.
-
-Ce qui aiderait le plus : **une vidéo** de la rotation. Elle dirait si
-l'écran se coupe *pendant* l'animation ou *après* — deux causes sans
-rapport, indiscernables sur une photo.
+Voir « Un test incomplet est pire qu'aucun test (v174) » plus haut, et
+`banc-essai/rotation.js`, qui échoue sur la version d'avant et passe sur
+celle d'après.

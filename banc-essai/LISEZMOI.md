@@ -16,6 +16,7 @@ notre code, et il est éprouvé. Tout le reste l'est.
 ## Lancer
 
     cd banc-essai
+    node syntaxe.js     # EN PREMIER : le fichier s'analyse-t-il encore ?
     node duel.js        # salon privé : création, code, duel complet, départ brutal
     node duel2.js       # appariement aléatoire, fin des deux, revanche, départ avant lancement
     node salle.js       # CINQ joueurs : salon, mêmes questions, scores, classement, départ
@@ -28,6 +29,7 @@ notre code, et il est éprouvé. Tout le reste l'est.
     node appuis.js      # l'onde d'appui se voit-elle sur son propre bouton ?
     node rotation.js    # la mise en page ne bouge pas quand le téléphone tourne
     node pli.js         # déplier un testament glisse, et le verre suit
+    node englouti.js    # la liste des erreurs ne tombe pas du bord de l'écran
     node fuite.js sansmarge "html.gl-xf .has-gs{ overflow-clip-margin:0px !important; }"
     python3 fuite.py sansmarge     # aucun trou d'un pixel au bord des feuilles
     node matiere.js /tmp/m mat && python3 matiere.py /tmp/m mat   # la matière suffit-elle ?
@@ -131,3 +133,41 @@ mesuré, la couche de décor restait immobile 130 ms puis se téléportait, jusq
 relecture par image, le temps de l'animation. Retard ramené à **1 px**.
 
 La leçon : quatre `setTimeout` ne remplacent pas une boucle par image.
+
+
+## Ce qui fait « englouti »
+
+La feuille « Revoir mes erreurs » s'arrêtait à **10 px** du bord bas de
+l'écran, et y tranchait une carte en plein milieu d'une phrase — sous
+l'indicateur d'accueil de l'iPhone. 588 px restaient à lire, plus d'un
+écran entier, sans rien pour le dire.
+
+La première version d'`englouti.js` relevait le plus fort saut de
+luminance dans les 40 px du bas. Elle criait au loup : ce qu'elle voyait
+était un bord de carte parfaitement normal, au milieu de la liste. Ce qui
+fait « englouti » se lit **sur la ligne du bord et nulle part ailleurs** —
+le dedans juste avant, le dehors juste après. Reformulé ainsi : 33,0 avant,
+5,6 après.
+
+Trois relevés en tout, un par correction : le repos sous la liste (10 →
+22 px), la netteté de la coupe (33,0 → 5,6) et l'endroit où l'on se pose
+après un lancer (57 → 0 px du haut d'une carte).
+
+
+## Deux secondes valent mieux que vingt
+
+Un `const` déclaré deux fois dans la même portée met **tout** le jeu à
+terre : index.html est un seul fichier, une seule balise `<script>`. Les
+essais du banc l'ont vu — mais sous la forme d'un `waitForFunction` qui
+expire au bout de 20 s, ce qui ressemble à un serveur mort, pas à une faute
+de frappe. On a redémarré le serveur deux fois avant de comprendre.
+
+`syntaxe.js` extrait le bloc et le fait simplement analyser par node : deux
+secondes, et l'erreur est nommée avec sa ligne dans le fichier. Sa propre
+première version cherchait le `type` du script dans TOUT le bloc et tombait
+sur `masterFilter.type = "lowpass"` au milieu du code audio : elle sautait
+le fichier entier en annonçant « ignoré », c'est-à-dire en ne testant rien.
+Elle se vérifie donc sur un fichier volontairement cassé :
+
+    node syntaxe.js /tmp/casse.html   # doit ECHOUER
+    node syntaxe.js                   # doit passer
