@@ -104,3 +104,15 @@ d'orientation — et rien d'autre — avant de basculer. Une mise en page qui ne
 dépend pas de l'orientation traverse cet état sans bouger ; c'est tout ce qu'on
 lui demande. Le test échoue sur la version d'avant et passe sur celle d'après :
 c'est la seule preuve qui vaille.
+
+
+## Une onde d'appui doit avoir la forme de son bouton
+
+Elle était peinte en dégradé radial s'éteignant à 88 %. Mesuré sur un bouton
+pleine largeur : **centre 100 %, milieu des bords 84 %, coins 39 à 67 %**. Le
+doigt appuyait sur un bouton entier et voyait s'allumer une tache au milieu.
+
+La teinte est maintenant posée à plat — profil mesuré : 100 % sur toute la
+largeur. Le geste d'onde ne venait pas du dégradé mais de l'agrandissement
+(`scale(0.001)` → `scale(1)`), qui est intact ; vérifié en cours d'animation,
+à 55 ms la couverture est déjà nette et sans arête dure.

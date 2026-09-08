@@ -1011,7 +1011,18 @@
      tout au fond.) La teinte par défaut n'est plus celle du bouton — sinon
      l'onde serait invisible sur un bouton plein — mais un voile corail léger,
      la couleur d'action du jeu. */
-  button::before, .mode-card::before{ content:""; position:absolute; inset:0; z-index:-1; border-radius:inherit; background:radial-gradient(140% 140% at 50% 50%, var(--press-tint, rgba(238,74,40,0.18)), transparent 88%); transform:scale(0.001); opacity:0; transition:opacity 0.38s ease, transform 0.01s linear 0.38s; pointer-events:none; }
+  /* L'ONDE REMPLIT TOUT LE BOUTON, COINS COMPRIS.
+     Elle était peinte en dégradé radial s'éteignant à 88 % : au centre la
+     teinte était pleine, au milieu des bords il n'en restait que 84 %, et dans
+     les COINS 39 à 67 % — la moitié. Le doigt appuyait sur un bouton entier et
+     voyait s'allumer une tache au milieu : la forme du retour ne disait pas la
+     forme de l'objet. C'est ce que Taylor a repéré sur « Révéler la réponse ».
+     La teinte est donc POSÉE À PLAT. Le geste d'onde, lui, ne venait pas du
+     dégradé mais de l'agrandissement (scale 0,001 -> 1 en 0,22 s) : il est
+     intact, et le border-radius hérité découpe proprement les angles. Vérifié
+     en cours d'animation : à 55 ms la couverture est déjà nette, sans arête
+     dure. Profil mesuré sur la largeur : 100 % partout, au lieu de 70-100-73. */
+  button::before, .mode-card::before{ content:""; position:absolute; inset:0; z-index:-1; border-radius:inherit; background:var(--press-tint, rgba(238,74,40,0.18)); transform:scale(0.001); opacity:0; transition:opacity 0.38s ease, transform 0.01s linear 0.38s; pointer-events:none; }
   .chip, .len-chip{ --press-tint: rgba(238,74,40,0.28); }
   /* Sur les surfaces DÉJÀ corail, l'onde se fait blanche : sinon rien ne se
      verrait. Même logique, feedback identique. */
