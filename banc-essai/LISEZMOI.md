@@ -30,6 +30,9 @@ notre code, et il est éprouvé. Tout le reste l'est.
     node rotation.js    # la mise en page ne bouge pas quand le téléphone tourne
     node pli.js         # déplier un testament glisse, et le verre suit
     node englouti.js    # la liste des erreurs ne tombe pas du bord de l'écran
+    node plis.js        # tous les plis du jeu tournent-ils sur la même horloge ?
+    node ouverture.js   # « créer une partie » s'ouvre-t-il toujours aussi vite ?
+    node motfin.js      # le mot de la fin ne se trompe jamais de joueur
     node fuite.js sansmarge "html.gl-xf .has-gs{ overflow-clip-margin:0px !important; }"
     python3 fuite.py sansmarge     # aucun trou d'un pixel au bord des feuilles
     node matiere.js /tmp/m mat && python3 matiere.py /tmp/m mat   # la matière suffit-elle ?
@@ -171,3 +174,37 @@ Elle se vérifie donc sur un fichier volontairement cassé :
 
     node syntaxe.js /tmp/casse.html   # doit ECHOUER
     node syntaxe.js                   # doit passer
+
+
+## Une horloge par FAMILLE, pas une par ligne de code
+
+Le jeu a trois familles de mouvement, et rien d'autre ne devrait exister :
+ce qui ARRIVE (`--tr-ouvre`), ce qui S'EN VA (`--tr-ferme`), et le PLI —
+tout ce qui s'ouvre, se ferme ou se remplit sur place en poussant le reste
+(`--tr-plie`). Le pli tournait sur **sept horloges** : 0,26s le chevron
+d'un testament, 0,34s une ligne de joueur, 0,52s le pli lui-même, 0,55s la
+barre, 1s l'anneau, et 0,6 / 0,9 / 1s les trois compteurs.
+
+Deux choses le rendaient invisible en relecture : les valeurs sont
+éparpillées sur 9 000 lignes, et trois d'entre elles vivent en JS, pas en
+CSS. `plis.js` va donc les CHERCHER là où elles s'appliquent — sur l'écran
+de chacune, sur un vrai élément — et lit la durée et la courbe réellement
+calculées par le navigateur. Sept lignes, sept horloges, en une capture.
+
+Il mesure ensuite image par image les deux seuls plis qui DÉPLACENT la mise
+en page. C'est là que la coïncidence se voit : le testament et la ligne de
+joueur atteignent maintenant 80 % de leur course à 242 et 240 ms. Avant,
+173 et 242.
+
+
+## Une latence, ça se FIXE pour être mesurée
+
+« Créer une partie » s'ouvrait « parfois plus lentement ». Impossible à
+reproduire en regardant : c'est le réseau, et il n'est jamais deux fois le
+même. `ouverture.js` remplace donc Supabase par un canal de laboratoire qui
+ne fait qu'une chose — répondre `SUBSCRIBED` au bout de N millisecondes — et
+mesure du clic à la première image du salon.
+
+Le rapport était de **1 pour 1** : 27 ms à 0 de latence, 1533 ms à 1500. Le
+défaut n'était pas « parfois lent », il était « exactement aussi lent que le
+réseau ». Une fois écrit comme ça, le correctif est évident.

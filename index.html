@@ -119,17 +119,18 @@
        55 unités de la carte qui la porte. Une surface PLEINE et colorée
        porte une ombre de sa propre couleur. */
     --filet-plat:transparent;
-    /* La seule ligne qui reste DESSINÉE de tout le jeu : le séparateur entre
-       les trois chiffres du bilan solo. Là, il n'y a aucune matière à lire —
-       trois colonnes du même crème, sur le même fond — donc rien d'autre ne
-       peut les séparer. Une ligne qui SÉPARE deux contenus n'est pas un bord
-       qui ENTOURE une surface : c'est le seul cas où le trait a un travail.
-       Les lignes des Réglages y sont passées aussi, puis ont disparu : même
-       ramenées ici, elles creusaient encore 8 à 10 unités, et une liste de
-       réglages a déjà ses pastilles de couleur et son espacement pour se
-       découper. Il ne reste donc plus qu'UN SEUL trait dessiné dans tout le
-       jeu — celui-ci — et aucun autour d'une surface. */
-    --separateur:rgba(46,34,22,0.055);
+    /* PLUS AUCUNE LIGNE DESSINÉE NULLE PART.
+       Ce trait-ci était le dernier. Sa justification tenait en un mot :
+       « trois colonnes du même crème, rien d'autre ne peut les séparer ».
+       Elle a cessé d'être vraie le jour où le bilan solo est passé à DEUX
+       chiffres. Mesuré sur le pire cas — iPhone SE, « 118/120 » et une série
+       à 100, donc les contenus les plus larges possible — il reste 72 px
+       d'espace libre entre les deux colonnes : 4,5 rem, sur une carte où rien
+       d'autre n'est dessiné. L'espacement fait déjà tout le travail, et un
+       trait unique dans tout le jeu n'est plus une règle, c'est une exception.
+       La déclaration reste (transparente) : la géométrie ne bouge pas d'un
+       pixel, et le rôle continue de se lire dans la feuille. */
+    --separateur:transparent;
     --ombre-pose:0 1px 2px rgba(24,16,10,0.06), 0 6px 18px rgba(24,16,10,0.10);
     --rebord:0 0 0 1px var(--filet-plat);
     --rebord-pose:0 0 0 1px var(--filet), var(--ombre-pose);
@@ -682,7 +683,7 @@
   .streak-chip.hot .ico{ width:1.18rem; height:1.18rem; }
 
   .progress-track{ position:relative; height:8px; margin-bottom:var(--e-4); background:rgba(255,255,255,0.32); backdrop-filter:blur(14px) saturate(180%); -webkit-backdrop-filter:blur(14px) saturate(180%); border-radius:var(--r-full); border:1px solid var(--bord); box-shadow:inset 0 1px 2px rgba(15,12,10,0.12); overflow:hidden; }
-  .progress-fill{ position:absolute; left:0; top:0; bottom:0; border-radius:var(--r-full); background:linear-gradient(90deg, #FB6A45, #EFAD26); box-shadow:0 0 10px rgba(241,80,47,0.5); transition:width 0.55s cubic-bezier(0.16,1,0.3,1); }
+  .progress-fill{ position:absolute; left:0; top:0; bottom:0; border-radius:var(--r-full); background:linear-gradient(90deg, #FB6A45, #EFAD26); box-shadow:0 0 10px rgba(241,80,47,0.5); transition:width var(--tr-plie); }
   /* La lèvre blanche interne a sauté ici comme partout ailleurs. */
 
   .question-card{ position:relative; background:var(--surface); border:1px solid var(--border); border-radius:var(--r-l); padding:1.4rem 1.2rem; margin-bottom:var(--e-3); text-align:center; }
@@ -862,7 +863,7 @@
   .ring-wrap{ position:relative; width:7.3rem; height:7.3rem; margin:0 auto 0.7rem; }
   .ring-wrap svg{ width:100%; height:100%; transform:rotate(-90deg); }
   .ring-bg{ fill:none; stroke:var(--surface-alt); stroke-width:7.5; }
-  .ring-fg{ fill:none; stroke:url(#ringGrad); stroke-width:7.5; stroke-linecap:round; transition:stroke-dashoffset 1s cubic-bezier(0.32,0.72,0,1); }
+  .ring-fg{ fill:none; stroke:url(#ringGrad); stroke-width:7.5; stroke-linecap:round; transition:stroke-dashoffset var(--tr-plie); }
   /* Le texte reste bien à l'intérieur de l'anneau, sans jamais le toucher. */
   .ring-center{ position:absolute; inset:0; display:flex; flex-direction:column; align-items:center; justify-content:center; text-align:center; padding:0 0.7rem; }
   .ring-score{ font-family:'Poppins',sans-serif; font-weight:700; font-size:1.9rem; line-height:1; color:var(--ink); }
@@ -1297,7 +1298,7 @@
      repère pâle sur la MÊME piste, derrière le mien — on lit d'un coup d'œil
      qui est devant, sans avoir à comparer deux barres. */
   .progress-ghost{ position:absolute; left:0; top:0; bottom:0; border-radius:var(--r-full);
-    background:rgba(255,255,255,0.5); transition:width 0.55s cubic-bezier(0.16,1,0.3,1); }
+    background:rgba(255,255,255,0.5); transition:width var(--tr-plie); }
 
   .duel-result{ display:flex; align-items:stretch; justify-content:center; gap:0.7rem; margin-bottom:1.2rem; }
   .dr-side{ flex:1; display:flex; flex-direction:column; align-items:center; gap:0.4rem; background:rgba(255,255,255,0.55); backdrop-filter:blur(16px) saturate(180%); -webkit-backdrop-filter:blur(16px) saturate(180%); border:1px solid var(--bord); border-radius:var(--r-l); padding:0.95rem 0.55rem; }
@@ -1994,7 +1995,9 @@
   .tst-bar{ flex:1; height:6px; border-radius:var(--r-full); background:rgba(120,90,50,0.18); overflow:hidden; }
   .tst-bar i{ display:block; height:100%; border-radius:var(--r-full); background:linear-gradient(90deg,#FFC64F,#37B06B); }
   .tst-count{ font-family:'Poppins',sans-serif; font-size:0.8rem; font-weight:700; color:var(--ink); font-variant-numeric:tabular-nums; white-space:nowrap; flex-shrink:0; }
-  .tst-chev{ width:1.1rem; height:1.1rem; color:var(--ink-soft); flex-shrink:0; display:inline-flex; transition:transform 0.26s cubic-bezier(0.3,1,0.4,1); }
+  /* Le chevron tourne AVEC son pli, pas avant lui : à 0,26s il était arrivé
+     quand le panneau en était à la moitié de sa course. */
+  .tst-chev{ width:1.1rem; height:1.1rem; color:var(--ink-soft); flex-shrink:0; display:inline-flex; transition:transform var(--tr-plie); }
   .tst.open .tst-chev{ transform:rotate(90deg); }
   /* IL S'OUVRAIT D'UN COUP. « display:none » -> « display:grid » n'est pas une
      transition : la grille des livres apparaissait d'un bloc, la page sautait
@@ -2254,7 +2257,7 @@
      il est, seule la largeur se resserre. Sans ça la feuille aurait glissé
      vers le bas en rétrécissant, et le mouvement aurait eu l'air d'un
      décrochage plutôt que d'un recul. */
-  .settings-sheet{ transition:transform 0.34s cubic-bezier(0.32,0.72,0,1), border-radius 0.34s ease; }
+  .settings-sheet{ transition:transform var(--tr-plie), border-radius var(--tr-plie); }
   /* La feuille SURVOLE le décor au lieu d'y glisser (voir --elevation-feuille). */
   .settings-sheet, .modal-card{ box-shadow:var(--elevation-feuille); }
   .settings-sheet.feuille-recule{ transform:translateZ(0) scale(0.935) translateY(10px); transform-origin:50% 0; border-radius:calc(var(--r-xl) + 4px) calc(var(--r-xl) + 4px) 0 0; }
@@ -2849,7 +2852,17 @@ const ICONS = {
   flame: `<svg viewBox="0 0 24 24" fill="none"><defs><linearGradient id="flA" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#FFB238"/><stop offset="1" stop-color="#E8452B"/></linearGradient><linearGradient id="flB" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#FFDD8C"/><stop offset="1" stop-color="#FFAE3D"/></linearGradient></defs><path fill="url(#flA)" d="M13.1 1.6c.3 2.75 1.75 4.35 3.3 5.95 1.65 1.7 3.05 3.5 3.05 6.3A7.45 7.45 0 0 1 12 21.3a7.45 7.45 0 0 1-7.45-7.25c0-2.6 1.2-4.4 2.75-5.95.5 1 1.25 1.7 2.25 2.05-.6-2.9.35-5.8 3.55-8.55Z"/><path fill="url(#flB)" d="M12.25 9.8c1.95 1.95 3.1 3.4 3.1 5.45A3.48 3.48 0 0 1 12 18.7a3.5 3.5 0 0 1-3.35-3.45c0-1.35.55-2.4 1.45-3.3.35.6.9 1 1.55 1.1-.35-1.4 0-2.75.6-3.25Z"/><path fill="#FFDD8C" d="M12 13.9c.85.9 1.3 1.6 1.3 2.5 0 .85-.55 1.45-1.3 1.45s-1.3-.6-1.3-1.45c0-.9.45-1.6 1.3-2.5Z"/></svg>`,
   plusCircle: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><line x1="12" y1="8" x2="12" y2="16"/><line x1="8" y1="12" x2="16" y2="12"/></svg>`,
   crown: `<svg viewBox="0 0 24 24" fill="currentColor" stroke="none"><path d="M3 8.5L6.5 12L12 5.5L17.5 12L21 8.5V17.5C21 18.3 20.3 19 19.5 19H4.5C3.7 19 3 18.3 3 17.5V8.5Z"/></svg>`,
-  target: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.1" stroke-linecap="round"><circle cx="12" cy="12" r="8.6"/><circle cx="12" cy="12" r="4.7"/><circle cx="12" cy="12" r="1.15" fill="currentColor" stroke="none"/></svg>`,
+  /* LA CIBLE EST PEINTE, COMME LA FLAMME QUI EST À CÔTÉ D'ELLE.
+     Sur l'écran des résultats, « Bonnes réponses » et « Meilleure série » se
+     partagent la même ligne, au même rang, séparées d'un trait. L'une portait
+     un DESSIN AU TRAIT en or plat, l'autre un OBJET PEINT en dégradé
+     ambre-corail : deux langages graphiques côte à côte, dans le même rôle.
+     C'est la flamme qui a raison — c'est le même objet que sur le Défi du
+     jour et sur la pastille de série pendant la partie, un personnage du jeu
+     qu'on reconnaît. La cible le rejoint donc : anneaux d'or, cœur corail,
+     même famille de dégradés (or chaud vers le rouge du jeu), et un reflet
+     en haut à gauche comme en porte la flamme. */
+  target: `<svg viewBox="0 0 24 24" fill="none"><defs><linearGradient id="ciA" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#FFD264"/><stop offset="1" stop-color="#DD9410"/></linearGradient><linearGradient id="ciB" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#FFF1C8"/><stop offset="1" stop-color="#FFC953"/></linearGradient></defs><circle cx="12" cy="12" r="9.5" fill="url(#ciA)"/><circle cx="12" cy="12" r="6.9" fill="#FFF6E6"/><circle cx="12" cy="12" r="4.4" fill="url(#ciA)"/><circle cx="12" cy="12" r="1.95" fill="#EE5A32"/><path d="M5.9 8.1A7 7 0 0 1 10.4 4.2" fill="none" stroke="url(#ciB)" stroke-width="1.45" stroke-linecap="round"/></svg>`,
   gear: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3.2"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 1 1-4 0v-.09a1.65 1.65 0 0 0-1.08-1.51 1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 1 1 0-4h.09a1.65 1.65 0 0 0 1.51-1.08 1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33h.08a1.65 1.65 0 0 0 1-1.51V3a2 2 0 1 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82v.08a1.65 1.65 0 0 0 1.51 1H21a2 2 0 1 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1Z"/></svg>`,
   music: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M9 18.2V5.9l11-2.4v12.3"/><circle cx="6.2" cy="18.2" r="2.8"/><circle cx="17.2" cy="15.8" r="2.8"/></svg>`,
   share: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 14.5V3.2"/><polyline points="8.2 6.7 12 3 15.8 6.7"/><path d="M7.2 10.4H6a2 2 0 0 0-2 2V19a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-6.6a2 2 0 0 0-2-2h-1.2"/></svg>`,
@@ -4996,14 +5009,31 @@ function createRoom(code, host, _retry){
   /* Filet de sécurité : si aucun statut terminal n'arrive (socket bloqué), on
      considère l'échec au bout de 9 s -> le bouton ne reste jamais « mort ». */
   net.subTimer = setTimeout(fail, 9000);
+  /* ===== LE SALON S'OUVRE TOUT DE SUITE, TOUJOURS À LA MÊME VITESSE =====
+     Il n'apparaissait qu'une fois le canal Supabase abonné : le temps
+     d'ouverture ÉTAIT donc le temps du réseau. Mesuré en fixant la latence
+     (banc-essai/ouverture.js) : 27 ms à 0, 1533 ms à 1500 — le bouton
+     répondait à la vitesse du wifi. Et la toute première partie d'une session
+     paie en plus la poignée de main du socket, d'où « des fois plus lent que
+     d'autres ». Aucun autre écran du jeu ne se comporte comme ça : partout
+     ailleurs, on touche, l'écran monte.
+     Rien n'obligeait à attendre : le code est tiré ICI (genCode), l'hôte est
+     connu, la liste des joueurs est déjà vidée. L'écran a donc tout ce qu'il
+     lui faut pour se peindre, et l'abonnement se règle DERRIÈRE lui — comme
+     la présence qui arrive plus tard et que reRenderIfOnline() intègre sans
+     couper l'animation d'entrée (v170).
+     Le cas d'échec ne change pas : une nouvelle tentative transparente, puis
+     retour à l'écran précédent avec le message. On sort d'un salon au lieu de
+     rester sur un bouton — c'est la contrepartie, et elle est rare. */
+  state.screen = "online-room"; render();
   ch.subscribe(async (status)=>{
     if(status==="SUBSCRIBED"){
       if(settled) return; settled = true;
       if(net.subTimer){ clearTimeout(net.subTimer); net.subTimer=null; }
-      /* On bascule l'écran AVANT de tracer la présence : si ch.track() traîne ou
-         échoue par intermittence, l'UI a déjà répondu -> plus de bouton « mort ». */
-      state.screen="online-room"; render();
+      /* On trace la présence sans rien attendre : si ch.track() traîne ou
+         échoue par intermittence, l'écran est là depuis longtemps. */
       try { await ch.track(meMeta()); } catch(e){}
+      reRenderIfOnline();
       if(!host){
         net.joinTimer = setTimeout(()=>{
           net.joinTimer = null;
@@ -8046,10 +8076,33 @@ function syncTeamRows(){
    devient haute). On force la reprise de CETTE SEULE couche (bascule brève de
    will-change) : une couche au lieu de huit, coût négligeable, rendu identique.
    Puis un dernier recalage au frame suivant, quand la mise en page est posée. */
-/* LA MÊME COURBE POUR OUVRIR ET POUR FERMER. Une seule déclaration : les deux
-   sens ne peuvent pas diverger. Le couple a été choisi en mesurant six réglages
-   sur une copie du jeu (voir le commentaire du retrait). */
-const RESSORT_LIGNE = "0.34s cubic-bezier(0.25,0.4,0.25,1)";
+/* ===== UNE SEULE HORLOGE POUR TOUS LES PLIS DU JEU =====
+   Un PLI, c'est tout ce qui s'ouvre, se ferme ou se remplit SUR PLACE en
+   poussant le reste : un testament qui se déplie, une ligne de joueur qui
+   naît ou s'en va, une barre de progression, l'anneau des résultats, un
+   compteur qui monte. L'œil SUIT ces mouvements-là, contrairement à un écran
+   qui arrive (--tr-ouvre) ou à un voile qui s'efface (--tr-ferme).
+   Ils tournaient sur SIX horloges différentes : 0,34s pour une ligne de
+   joueur, 0,26s pour le chevron d'un testament, 0,52s pour son pli, 0,55s
+   pour la barre, 1s pour l'anneau, 0,6 / 0,9 / 1s pour les compteurs. Aucune
+   raison, juste l'ordre dans lequel elles ont été écrites.
+   Tout est désormais sur --tr-plie, et cette valeur est LUE dans la feuille
+   de style au lieu d'être recopiée : deux copies d'un même nombre finissent
+   toujours par diverger, c'est précisément ce qui s'était passé ici.
+   (La courbe de --tr-plie, cubic-bezier(0.33,1,0.68,1), EST easeOutCubic —
+   la même que celle des compteurs en JS depuis toujours. Seules les horloges
+   étaient à recaler, pas la forme du mouvement.) */
+let _tempoPli = "";
+function tempoPli(){
+  if(_tempoPli) return _tempoPli;
+  let v = "";
+  try{ v = getComputedStyle(document.documentElement).getPropertyValue("--tr-plie").trim(); }catch(e){}
+  _tempoPli = v || "0.52s cubic-bezier(0.33,1,0.68,1)";
+  return _tempoPli;
+}
+function msPli(){ const m = tempoPli().match(/([\d.]+)s/); return m ? Math.round(parseFloat(m[1]) * 1000) : 520; }
+/* Le filet de sécurité de chaque pli : largement APRÈS la fin du mouvement. */
+function filetPli(){ return msPli() + 280; }
 function settleTeamCard(c){
   /* PLUS DE BASCULE DE will-change ICI.
      On faisait passer la couche de verre de « transform » à « auto » puis
@@ -8120,9 +8173,10 @@ function plieAjout(add, nat){
   add.style.overflow = "hidden";
   poser(nat.h, nat.mt, nat.pt, nat.bt, "1");
   void add.offsetHeight;                               // l'état de départ est posé
-  add.style.transition = "height " + RESSORT_LIGNE + ", margin-top " + RESSORT_LIGNE +
-    ", padding-top " + RESSORT_LIGNE + ", padding-bottom " + RESSORT_LIGNE +
-    ", border-top-width " + RESSORT_LIGNE + ", border-bottom-width " + RESSORT_LIGNE +
+  const RP = tempoPli();
+  add.style.transition = "height " + RP + ", margin-top " + RP +
+    ", padding-top " + RP + ", padding-bottom " + RP +
+    ", border-top-width " + RP + ", border-bottom-width " + RP +
     ", opacity 0.15s cubic-bezier(0.4,0,0.6,1)";
   poser("0px", "0px", "0px", "0px", "0");
   let fini = false, filet = 0;
@@ -8146,7 +8200,7 @@ function plieAjout(add, nat){
   annule._estRepli = true;             // pour que le retrait sache à quoi il a affaire
   add._plieAnnule = annule;
   add.addEventListener("transitionend", surFin);
-  filet = setTimeout(finir, 620);
+  filet = setTimeout(finir, filetPli());
 }
 /* L'OUVERTURE EST LE MIROIR EXACT DE LA FERMETURE.
    Elle n'existait tout simplement pas : la ligne apparaissait d'un bloc, 65,5px
@@ -8181,15 +8235,18 @@ function ouvreLigne(row){
   row.style.opacity = "0";
   enfants.forEach(e => { e.style.transition = "none"; e.style.opacity = "0"; });
   void row.offsetHeight;                               // le départ est appliqué
-  row.style.transition = "height " + RESSORT_LIGNE + ", margin-bottom " + RESSORT_LIGNE +
-    ", padding-top " + RESSORT_LIGNE + ", padding-bottom " + RESSORT_LIGNE +
-    ", border-top-width " + RESSORT_LIGNE + ", border-bottom-width " + RESSORT_LIGNE +
+  const R = tempoPli();
+  row.style.transition = "height " + R + ", margin-bottom " + R +
+    ", padding-top " + R + ", padding-bottom " + R +
+    ", border-top-width " + R + ", border-bottom-width " + R +
     ", opacity 0.16s ease-out";
   poser(nat.h + "px", nat.mb, nat.pt, nat.bt);
   row.style.opacity = "1";
   /* le contenu entre APRÈS, quand la place est faite aux deux tiers */
-  enfants.forEach(e => { e.style.transition = "opacity 0.18s ease-out 0.14s"; e.style.opacity = "1"; });
-  try{ glassSuivre(460); }catch(e){}
+  /* Le contenu entre quand la place est faite aux deux tiers — la fraction
+     suit l'horloge du pli, elle n'est plus un nombre écrit à la main. */
+  enfants.forEach(e => { e.style.transition = "opacity 0.18s ease-out " + Math.round(msPli() * 0.4) + "ms"; e.style.opacity = "1"; });
+  try{ glassSuivre(filetPli()); }catch(e){}
   /* à l'arrivée on rend la ligne à elle-même : plus aucun style figé, sinon
      elle ne suivrait plus les changements de taille de police ou d'écran. */
   let fini = false, filet = 0;
@@ -8222,7 +8279,7 @@ function ouvreLigne(row){
   const annule = ()=>{ if(fini) return; fini = true; ranger(); };
   row._animLigne = annule;
   row.addEventListener("transitionend", surFin);
-  filet = setTimeout(finir, 620);                      // filet si l'événement manque
+  filet = setTimeout(finir, filetPli());                      // filet si l'événement manque
 }
 /* RETRAIT SANS SAUT. Retirer une ligne d'un coup raccourcit la carte d'un coup :
    si la page était défilée en bas (le cas dès qu'on a six joueurs), le
@@ -8381,7 +8438,7 @@ function removeTeam(btn){
      successeur. Le fondu est donc redevenu bref : la ligne a disparu avant
      qu'on ait le temps de lire le doublon, et l'espace, lui, se referme
      tranquillement. */
-  const RESSORT = RESSORT_LIGNE;
+  const RESSORT = tempoPli();
   const EFFACE = "0.15s cubic-bezier(0.4,0,0.6,1)";
   row.style.transition = "height " + RESSORT + ", margin-bottom " + RESSORT +
     ", padding-top " + RESSORT + ", padding-bottom " + RESSORT +
@@ -8410,7 +8467,7 @@ function removeTeam(btn){
   /* le verre suit le réajustement du défilement — ET la mise en page qui bouge :
      sans glassSuivre, la texture de décor des cartes situées SOUS la liste reste
      figée pendant tout le repli et le flou glisse à l'intérieur d'elles. */
-  try{ glassTrack(); glassSuivre(460); }catch(e){}
+  try{ glassTrack(); glassSuivre(filetPli()); }catch(e){}
   /* LE MÉNAGE ATTEND QUE PLUS RIEN NE BOUGE.
      Deux défauts se cachaient ici, et c'est ce qui rendait la fermeture moins
      nette que l'ouverture.
@@ -8449,7 +8506,7 @@ function removeTeam(btn){
     }));
   };
   row.addEventListener("transitionend", (e)=>{ if(e.propertyName === "height") finir(); });
-  setTimeout(finir, 620);              // filet, largement APRÈS la fin du mouvement
+  setTimeout(finir, filetPli());       // filet, largement APRÈS la fin du mouvement
 }
 /* Renommage : mise à jour du jeton (1re lettre) EN DIRECT, sans aucun rendu —
    plus de render() au blur (qui reconstruisait tout l'écran = saccade). */
@@ -9345,11 +9402,68 @@ function computeRanks(){
   return ranked.map((teamIdx,pos)=>({teamIdx, rank:ranks[pos]}));
 }
 function maxPossibleScore(){ return state.questions.reduce((sum,q)=>sum+TIER_INFO[q.tier].pts,0); }
+/* ===== LE MOT DE LA FIN DOIT SAVOIR À QUI IL PARLE =====
+   Il ne lisait que le score du jour. « Beau début ! Chaque partie t'apprend un
+   peu plus. » s'affichait donc à un joueur qui en était à sa 85e partie avec
+   100% de record — et il le lisait à CHAQUE partie basse, c'est-à-dire
+   souvent. Le mot était faux, et il était toujours le même.
+   Deux corrections dans la même fonction :
+   1. il lit aussi l'historique. « Beau début » n'est plus dit qu'à quelqu'un
+      qui commence vraiment ; une partie basse chez un habitué se dit
+      autrement — et si son record est nettement au-dessus, on le lui rappelle,
+      ce qui est à la fois vrai et encourageant ;
+   2. il TOURNE. Trois formulations par palier, choisies sur le NUMÉRO de la
+      partie : deux parties de suite dans le même palier ne se disent jamais
+      avec les mêmes mots. Le choix est DÉTERMINISTE — la même partie donne
+      toujours le même texte, re-rendue dix fois s'il le faut, et le jeu reste
+      identique pour tout le monde. */
+const MOTS_FIN = {
+  haut: [
+    "Excellent ! Tu connais vraiment bien ta Bible.",
+    "Presque sans faute — c'est du solide.",
+    "Très impressionnant : peu de questions t'ont résisté."
+  ],
+  bon: [
+    "Très bien ! Continue comme ça.",
+    "Belle partie — la Parole te devient familière.",
+    "Beau parcours : il n'en manquait pas beaucoup."
+  ],
+  moyen: [
+    "Une partie honnête — quelques-unes t'ont échappé.",
+    "Bien joué. Les erreurs feront le reste du chemin.",
+    "Pas mal du tout : il n'en manquait pas tant que ça."
+  ],
+  /* Palier bas, joueur qui commence vraiment. */
+  debut: [
+    "Beau début ! Chaque partie t'apprend un peu plus.",
+    "Premiers pas — c'est exactement comme ça qu'on apprend.",
+    "Le début est toujours le plus raide. Continue."
+  ],
+  /* Palier bas, mais le record est nettement au-dessus : on le dit. */
+  mieux: [
+    "Tu as déjà fait bien mieux — celle-ci était rude.",
+    "Journée sans. Ton record, lui, ne bouge pas.",
+    "Loin de ton meilleur : ces questions-là étaient coriaces."
+  ],
+  /* Palier bas, sans record à invoquer : on ne rabaisse pas, on renvoie aux
+     erreurs, qui sont juste en dessous. */
+  creux: [
+    "Ces questions-là étaient coriaces. Revois-les et reviens.",
+    "Ça arrive. Tes erreurs sont juste en dessous, prêtes à être revues.",
+    "Une partie qui résiste — c'est là qu'on apprend le plus."
+  ]
+};
 function soloPerformanceMessage(pct){
-  if(pct>=85) return "Excellent ! Tu connais vraiment bien ta Bible.";
-  if(pct>=65) return "Très bien ! Continue comme ça.";
-  if(pct>=40) return "Bien joué, il y a de bonnes bases.";
-  return "Beau début ! Chaque partie t'apprend un peu plus.";
+  const st = loadStats();
+  let palier;
+  if(pct >= 85) palier = "haut";
+  else if(pct >= 65) palier = "bon";
+  else if(pct >= 40) palier = "moyen";
+  else if(st.games <= 5 && st.bestPct < 65) palier = "debut";
+  else if(st.bestPct >= pct + 25) palier = "mieux";
+  else palier = "creux";
+  const choix = MOTS_FIN[palier];
+  return choix[Math.max(0, st.games - 1) % choix.length];
 }
 
 /* Célébration de fin : plus de confettis. Un halo doré éclot depuis le
@@ -9697,7 +9811,7 @@ function renderPlay(){
     const from = displayedSoloScore;
     displayedSoloScore = target;
     if(from !== target){
-      requestAnimationFrame(()=>animateCount(el.querySelector("[data-count-value]"), from, target, 600, " pts"));
+      requestAnimationFrame(()=>animateCount(el.querySelector("[data-count-value]"), from, target, msPli(), " pts"));
     }
   }
   return el;
@@ -9775,7 +9889,7 @@ function renderEndSolo(){
       <p class="end-sub">${soloPerformanceMessage(pct)}</p>
       ${state.daily?`<div class="end-best">Série du défi : ${loadDaily().streak} jour${loadDaily().streak>1?"s":""} d'affilée · Reviens demain !</div>`:""}
       ${state.revision?`<div class="end-best">${state.questions.length-state.soloMissed.length} maîtrisée${state.questions.length-state.soloMissed.length>1?"s":""} sur ${state.questions.length} · ${lastMissEntries().length>0?lastMissEntries().length+" encore à revoir":"tout est maîtrisé, bravo !"}</div>`:""}
-      ${!state.daily && !state.revision && st.games>0?`<div class="end-best">Record : ${st.bestPct}% du maximum · ${st.games} partie${st.games>1?"s":""} jouée${st.games>1?"s":""}</div>`:""}
+      ${!state.daily && !state.revision && st.games>0?`<div class="end-best">Record personnel : ${st.bestPct}% · ${st.games} partie${st.games>1?"s":""} jouée${st.games>1?"s":""}</div>`:""}
     </div>
     <div class="flex-sp"></div>
     <div class="solo-summary">
@@ -9818,7 +9932,7 @@ function renderEnd(){
       const ring = el.querySelector(".ring-fg");
       if(ring){ requestAnimationFrame(()=>{ ring.style.strokeDashoffset = ring.getAttribute("data-target"); }); }
       const pctEl = el.querySelector("[data-ring-pct]");
-      if(pctEl){ const tgt = parseInt(pctEl.getAttribute("data-target-pct"),10) || 0; animateCount(pctEl, 0, tgt, 1000, "%"); }
+      if(pctEl){ const tgt = parseInt(pctEl.getAttribute("data-target-pct"),10) || 0; animateCount(pctEl, 0, tgt, msPli(), "%"); }
     });
   }
   return el;
@@ -10297,8 +10411,8 @@ function renderOnlineEnd(){
     </div>`;
   requestAnimationFrame(()=>{
     const me = el.querySelector("[data-count-me]"), opp = el.querySelector("[data-count-opp]");
-    if(me) animateCount(me, 0, net.score, 900, "");
-    if(opp) animateCount(opp, 0, net.oppScore, 900, "");
+    if(me) animateCount(me, 0, net.score, msPli(), "");
+    if(opp) animateCount(opp, 0, net.oppScore, msPli(), "");
   });
   return el;
 }

@@ -1,0 +1,161 @@
+/* TOUS LES PLIS DU JEU TOURNENT-ILS SUR LA MÊME HORLOGE ?
+
+   Un PLI, c'est ce qui s'ouvre, se ferme ou se remplit SUR PLACE : un
+   testament qui se déplie, une ligne de joueur qui naît ou s'en va, une barre
+   de progression, l'anneau des résultats, un compteur qui monte. L'œil SUIT
+   ces mouvements-là — contrairement à un écran qui arrive (--tr-ouvre) ou à
+   un voile qui s'efface (--tr-ferme).
+
+   Ils tournaient sur SIX horloges : 0,26s le chevron, 0,34s la ligne de
+   joueur, 0,52s le pli du testament, 0,55s la barre, 1s l'anneau, et
+   0,6 / 0,9 / 1s les compteurs. Aucune raison, juste l'ordre d'écriture.
+
+   Le test lit la durée ET la courbe RÉELLEMENT appliquées à chacun, sur son
+   propre écran, puis mesure image par image les deux seuls qui déplacent la
+   mise en page (le testament et la ligne de joueur) : course, saut maximum
+   par image, et instant où 80 % du chemin est fait.
+
+       node plis.js        (jeu servi en HTTP sur 8099)
+
+   Repères : une seule durée et une seule courbe pour toute la famille ;
+   saut <= 40 px/image. */
+const { chromium } = require('/opt/node22/lib/node_modules/playwright');
+const IOS = 'Mozilla/5.0 (iPhone; CPU iPhone OS 17_5 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.5 Mobile/15E148 Safari/604.1';
+const URL = process.argv[2] || 'http://127.0.0.1:8099/index.html';
+
+/* La courbe telle que le navigateur la RÉÉCRIT (espaces normalisés). */
+const norme = (s) => (s || '').replace(/\s+/g, '');
+
+(async () => {
+  const b = await chromium.launch({ executablePath: '/opt/pw-browsers/chromium' });
+  const ctx = await b.newContext({ viewport:{width:393,height:852}, deviceScaleFactor:2,
+    userAgent:IOS, hasTouch:true, serviceWorkers:'block' });
+  const p = await ctx.newPage(); const errs = []; p.on('pageerror', e => errs.push(e.message));
+  await p.addInitScript(() => {
+    localStorage.setItem('bt_profile', JSON.stringify({ name:'Taylor', color:'#4C86E8' }));
+    localStorage.setItem('bt_fs_hint', '1');
+    localStorage.setItem('bt_progress', JSON.stringify({ books:{'Genèse':12,'Exode':8,'Matthieu':10}, correct:360, streakBest:21, ach:{'premiers-pas':1} }));
+  });
+  await p.goto(URL);
+  await p.waitForFunction(() => { try { return state.screen === 'mode'; } catch(e){ return false; } }, null, { timeout:20000 });
+
+  const releves = [];
+  const lire = async (nom, prep, sel, prop) => {
+    const r = await p.evaluate(({ prep, sel, prop }) => {
+      // eslint-disable-next-line no-new-func
+      new Function(prep)();
+      const el = document.querySelector(sel);
+      if (!el) return null;
+      const cs = getComputedStyle(el);
+      const props = cs.transitionProperty.split(',').map(s => s.trim());
+      const durs = cs.transitionDuration.split(',').map(s => s.trim());
+      const curs = cs.transitionTimingFunction.split(/,(?![^()]*\))/).map(s => s.trim());
+      let i = props.indexOf(prop);
+      if (i < 0) i = props.indexOf('all');
+      if (i < 0) return { manquant: props.join('/') };
+      return { d: durs[i % durs.length], c: curs[i % curs.length] };
+    }, { prep, sel, prop });
+    releves.push([nom, r]);
+  };
+
+  const attente = (ms) => p.waitForTimeout(ms);
+
+  await lire('testament (le pli)', "state.screen='parcours'; render();", '.tst .tst-body', 'grid-template-rows');
+  await lire('testament (chevron)', "", '.tst-chev', 'transform');
+  await attente(200);
+  /* On lance une VRAIE partie : fabriquer des questions à la main finit
+     toujours par mentir sur la forme réelle des données. */
+  await lire('barre de progression', "state.mode='solo'; startGame();", '.progress-fill', 'width');
+  /* Le repère pâle des AUTRES joueurs n'existe qu'en ligne. On le pose dans
+     la piste réelle de l'écran de jeu : c'est bien la règle du jeu qui le
+     peint, appliquée à un vrai élément, pas une lecture de feuille de style. */
+  await lire('barre (repère des autres)',
+    "var t=document.querySelector('.progress-track'); if(t && !t.querySelector('.progress-ghost')){ var g=document.createElement('div'); g.className='progress-ghost'; t.appendChild(g); }",
+    '.progress-ghost', 'width');
+  await attente(200);
+  await lire('anneau des résultats', "state.screen='end'; state.mode='solo'; state.soloScore=80; state.soloCorrect=3; state.soloBestStreak=2; state.soloMissed=[]; state.questions=new Array(9).fill(0).map((_,i)=>({q:'q'+i,tier:'moyen'})); render();", '.ring-fg', 'stroke-dashoffset');
+  await attente(300);
+  await lire('feuille qui recule', "openSettings();", '#settingsVeil .settings-sheet', 'transform');
+  await p.evaluate(() => closeSettings());
+  await attente(400);
+  /* La ligne de joueur : son pli est posé en style EN LIGNE, au moment du geste. */
+  const ligne = await p.evaluate(() => {
+    state.screen = 'setup'; state.mode = 'group'; state.teams = [{name:'Taylor'},{name:'Sarah'}]; render();
+    return new Promise(res => setTimeout(() => {
+      addTeam();
+      requestAnimationFrame(() => {
+        const rows = document.querySelectorAll('.team-row');
+        const r = rows[rows.length - 1];
+        const cs = getComputedStyle(r);
+        const i = cs.transitionProperty.split(',').map(s => s.trim()).indexOf('height');
+        res(i < 0 ? { manquant: cs.transitionProperty } : {
+          d: cs.transitionDuration.split(',')[i].trim(),
+          c: cs.transitionTimingFunction.split(/,(?![^()]*\))/)[i].trim() });
+      });
+    }, 400));
+  });
+  releves.push(['ligne de joueur', ligne]);
+  /* Les compteurs (points, pourcentage, scores du duel) sont animés en JS.
+     Sur la version d'avant, msPli() n'existe pas : chaque appel portait sa
+     propre durée écrite à la main. On le dit au lieu de planter. */
+  const cpt = await p.evaluate(() => {
+    try { return { ms: msPli() }; } catch(e){ return { ms: null }; }
+  });
+
+  const ref = await p.evaluate(() => getComputedStyle(document.documentElement).getPropertyValue('--tr-plie').trim());
+  const refD = (ref.match(/([\d.]+)s/) || [,''])[1] + 's';
+  const refC = norme_(ref.replace(/^[\d.]+s\s*/, ''));
+  function norme_(s){ return s.replace(/\s+/g,''); }
+
+  console.log('  --tr-plie = ' + ref + '   (msPli() = ' + cpt.ms + ' ms)\n');
+  let ok = true;
+  for (const [nom, r] of releves) {
+    if (!r) { console.log('  ' + nom.padEnd(26) + ' INTROUVABLE'); ok = false; continue; }
+    if (r.manquant) { console.log('  ' + nom.padEnd(26) + ' propriété non animée (' + r.manquant + ')'); ok = false; continue; }
+    const bon = r.d === refD && norme(r.c) === norme(refC);
+    if (!bon) ok = false;
+    console.log('  ' + nom.padEnd(26) + r.d.padEnd(8) + norme(r.c).padEnd(34) + (bon ? '' : '  <-- AUTRE HORLOGE'));
+  }
+  const bonCpt = cpt.ms !== null && Math.abs(cpt.ms - Math.round(parseFloat(refD) * 1000)) <= 1;
+  if (!bonCpt) ok = false;
+  console.log('  ' + 'compteurs (JS)'.padEnd(26) + (cpt.ms === null ? 'chacun' : cpt.ms + 'ms').padEnd(8) +
+    'easeOutCubic'.padEnd(34) + (bonCpt ? '' : '  <-- AUTRE HORLOGE'));
+
+  /* ===== le profil image par image des deux plis qui DÉPLACENT la page ===== */
+  const profil = async (nom, prep, cible) => {
+    const suite = await p.evaluate(({ prep, cible }) => new Promise(res => {
+      new Function(prep)();
+      const el = document.querySelector(cible);
+      if (!el) return res(null);
+      const releve = []; const t0 = performance.now();
+      const tic = () => { const t = performance.now() - t0;
+        releve.push([Math.round(t), Math.round(el.getBoundingClientRect().top * 10) / 10]);
+        if (t < 900) requestAnimationFrame(tic); else res(releve); };
+      requestAnimationFrame(tic);
+    }), { prep, cible });
+    if (!suite) { console.log('  ' + nom + ' : cible introuvable'); ok = false; return; }
+    const y0 = suite[0][1], y1 = suite[suite.length - 1][1];
+    const course = Math.abs(y1 - y0);
+    let saut = 0;
+    for (let i = 1; i < suite.length; i++) saut = Math.max(saut, Math.abs(suite[i][1] - suite[i-1][1]));
+    let t80 = 0;
+    for (const [t, y] of suite) { if (Math.abs(y - y0) >= course * 0.8) { t80 = t; break; } }
+    const bon = saut <= 40;
+    if (!bon) ok = false;
+    console.log('  ' + nom.padEnd(26) + 'course ' + String(Math.round(course)).padStart(4) + ' px  |  saut max ' +
+      saut.toFixed(1).padStart(5) + ' px/image  |  80 % à ' + String(t80).padStart(4) + ' ms' + (bon ? '' : '   <-- SECOUSSE'));
+  };
+  console.log('');
+  await p.evaluate(() => { state.screen = 'parcours'; render(); });
+  await attente(700);
+  await profil('pli du testament', "toggleTst(document.querySelector('.tst-head'));", '.ach-card');
+  await attente(900);
+  await p.evaluate(() => { state.screen = 'setup'; state.mode = 'group'; state.teams = [{name:'Taylor'},{name:'Sarah'}]; render(); });
+  await attente(700);
+  await profil('naissance d\'une ligne', "addTeam();", '.add-team');
+
+  if (errs.length) { console.log('\n  ERREURS JS : ' + [...new Set(errs)].slice(0,3).join(' | ')); ok = false; }
+  console.log(ok ? '\n  OK — une seule horloge pour tous les plis' : '\n  ECHEC');
+  await b.close();
+  process.exit(ok ? 0 : 1);
+})();

@@ -198,13 +198,20 @@ substituer :
    restent déclarés en `transparent` : le `box-shadow` garde sa forme,
    rien ne se déplace, et le rôle reste lisible dans la feuille.
 
-   **Il reste exactement deux traits dessinés**, tous deux `--separateur`
-   (brun à 0,055) : entre les trois chiffres du bilan solo, et entre les
-   lignes des Réglages. Ce ne sont pas des bords — ils SÉPARENT deux
-   contenus de même matière, là où rien d'autre ne peut le faire. Celui
-   des Réglages tirait à 0,08, soit 12 à 26 unités sous le crème : cinq
-   fois le filet qu'on venait de retirer. Un bord qui ENTOURE une surface
-   n'a jamais ce travail-là.
+   **Il ne reste plus AUCUN trait dessiné (v178).** Il en restait un,
+   `--separateur`, entre les chiffres du bilan solo — gardé parce que
+   « trois colonnes du même crème, rien d'autre ne peut les séparer ». Le
+   bilan est passé à DEUX chiffres et la phrase a cessé d'être vraie sans
+   que personne ne relise le commentaire. Mesuré sur le pire cas (iPhone
+   SE, « 118/120 » et une série à 100, donc les contenus les plus larges
+   possible) : **72 px d'espace libre** entre les deux colonnes, 4,5 rem,
+   sur une carte où rien d'autre n'est dessiné. L'espacement faisait déjà
+   tout le travail. La déclaration reste, en `transparent` : la géométrie
+   ne bouge pas d'un pixel.
+
+   La leçon vaut au-delà du trait : **une justification écrite en
+   commentaire ne se vérifie pas toute seule.** Celle-ci parlait de trois
+   colonnes devant deux, depuis des mois.
 2. **Le rythme vertical** : `--e-1` à `--e-4` (0,4 / 0,62 / 1 / 1,5 rem,
    rapport constant d'environ 1,55). `--e-3` est le pas courant. Les
    micro-espacements internes d'un composant n'en font pas partie.
@@ -212,6 +219,69 @@ substituer :
    zones système retirées, mesuré en JS (`mesurerHauteurUtile`). Tout ce
    qui doit céder quand la place manque s'y accroche, avec la taille
    actuelle comme plafond.
+
+**Un seul PLI pour tout le jeu (v178).** Un pli, c'est ce qui s'ouvre, se
+ferme ou se remplit SUR PLACE en poussant le reste : un testament qui se
+déplie, une ligne de joueur qui naît, une barre qui avance, l'anneau des
+résultats, un compteur qui monte. L'œil SUIT ces mouvements-là — contrairement
+à un écran qui arrive (`--tr-ouvre`) ou à un voile qui s'efface
+(`--tr-ferme`). Ils tournaient sur **sept horloges** :
+
+| | avant | après |
+|---|---|---|
+| pli d'un testament | 0,52s `(0.33,1,0.68,1)` | `--tr-plie` |
+| son chevron | 0,26s `(0.3,1,0.4,1)` | `--tr-plie` |
+| ligne de joueur | 0,34s `(0.25,0.4,0.25,1)` | `--tr-plie` |
+| barre de progression | 0,55s `(0.16,1,0.3,1)` | `--tr-plie` |
+| anneau des résultats | 1s `(0.32,0.72,0,1)` | `--tr-plie` |
+| feuille qui recule | 0,34s `(0.32,0.72,0,1)` | `--tr-plie` |
+| compteurs (points, %, duel) | 0,6 / 0,9 / 1s | `msPli()` |
+
+Aucune raison à cet éparpillement, juste l'ordre dans lequel les lignes ont
+été écrites. Deux conséquences visibles : le chevron d'un testament arrivait
+quand son panneau en était à la moitié de sa course, et sur l'écran des
+résultats l'anneau, le pourcentage et les points finissaient à trois instants
+différents.
+
+La valeur est désormais **LUE dans la feuille de style** (`tempoPli()` lit
+`--tr-plie`, `msPli()` en tire les millisecondes) au lieu d'être recopiée en
+JS : deux copies d'un même nombre finissent toujours par diverger, c'est
+exactement ce qui s'était passé. Et la courbe n'a pas eu à changer —
+`cubic-bezier(0.33,1,0.68,1)` **EST** easeOutCubic, celle des compteurs JS
+depuis toujours. Seules les horloges étaient à recaler.
+
+Effet mesuré sur la ligne de joueur : saut maximum 6,4 → **5,1 px/image**, et
+80 % du chemin fait à 173 ms → **240 ms**, c'est-à-dire en même temps que le
+pli d'un testament (242 ms). `banc-essai/plis.js` relève les sept horloges et
+échoue sur la version d'avant.
+
+**Un écran ne doit pas s'ouvrir à la vitesse du réseau (v178).** « Créer une
+partie » n'affichait le salon qu'une fois le canal Supabase abonné. Mesuré en
+fixant la latence (`banc-essai/ouverture.js`) :
+
+| latence | salon à l'écran |
+|---|---|
+| 0 ms | 27 ms |
+| 150 ms | 176 ms |
+| 600 ms | 635 ms |
+| 1500 ms | 1533 ms |
+
+Un rapport de 1 pour 1 : le bouton répondait à la vitesse du wifi, et la
+première partie d'une session payait en plus la poignée de main du socket —
+d'où « des fois plus lent que d'autres ». Rien n'obligeait à attendre : le
+code est tiré localement, l'hôte est connu, la liste est vide. Le salon se
+peint donc tout de suite et l'abonnement se règle derrière lui. **Écart entre
+la latence la plus forte et la plus faible : 1506 ms → 15 ms.**
+
+**Le mot de la fin doit savoir à qui il parle (v178).** « Beau début ! Chaque
+partie t'apprend un peu plus. » s'affichait à un joueur à sa 85e partie avec
+100 % de record, parce que le message ne lisait QUE le score du jour — et il
+le lisait à chaque partie basse, c'est-à-dire souvent. Il lit maintenant aussi
+l'historique (nombre de parties, meilleur pourcentage) et il TOURNE : trois
+formulations par palier, choisies sur le numéro de la partie, donc
+déterministes (un re-rendu ne change rien, et le jeu reste identique pour tout
+le monde). `banc-essai/motfin.js` balaie cinq profils de joueur × huit scores
+et refuse toute phrase de débutant chez quelqu'un qui a de la bouteille.
 
 **Une liste qui défile doit dire où elle s'arrête (v177).** « Revoir mes
 erreurs » donnait la sensation d'être *englouti*. Trois causes, toutes
