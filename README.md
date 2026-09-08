@@ -220,6 +220,38 @@ substituer :
    qui doit céder quand la place manque s'y accroche, avec la taille
    actuelle comme plafond.
 
+**Un vide « ce qui reste » n'est pas une mesure (v179).** « Sur certain
+appareil ça s'affiche pas comme sur le mien au niveau des 7 jours. » L'écart
+entre la dernière carte de l'accueil et la bande des sept jours n'était pas
+décidé : c'était la hauteur restante. Tous les objets de l'accueil ont un
+plafond — le logo, les cartes, le pied — si bien qu'au-delà de ~860 px plus
+rien ne grandit et **toute** la hauteur en trop tombait dans ce seul vide :
+
+| écran | écart carte → bande | en % de la hauteur utile |
+|---|---|---|
+| iPhone 15 en navigateur (643) | 58 px | 9,2 % |
+| iPhone 15 (852) | 119 px | 14,2 % |
+| Pixel 8 (915) | 156 px | 17,3 % |
+| Android très haut (1000) | 213 px | **21,6 %** |
+
+L'espaceur reçoit donc un plafond proportionnel, calé sur sa valeur actuelle
+sur iPhone 15. Le vide qui reste ne va ni en haut du bloc (un trou au milieu
+de l'écran, déjà refusé une fois) ni sous la bande seulement : `justify-content:
+safe center` le partage à parts égales au-dessus de l'en-tête et sous le pied.
+C'est une **marge de page**, pas un trou.
+
+Après : 14,2 % partout à partir de 852, et **l'appareil de référence ne bouge
+pas d'un pixel** (vérifié élément par élément : déplacement maximum 0 px sur
+iPhone 15 ; sur l'écran de 1000, le bloc descend de 37 px, soit la moitié du
+vide récupéré). `banc-essai/pied.js` balaie dix appareils et échoue sur la
+version d'avant.
+
+**La bonne unité n'est pas toujours le pixel.** La première version du test
+exigeait un écart en pixels dans une fourchette étroite — infaisable, puisqu'un
+écran court comprime légitimement tout. Ce qui n'est pas légitime, c'est que
+l'écart GRANDISSE quand plus rien d'autre ne grandit. Mesuré en fraction de la
+hauteur utile, le défaut se lit d'un coup, et le seuil devient évident.
+
 **Un seul PLI pour tout le jeu (v178).** Un pli, c'est ce qui s'ouvre, se
 ferme ou se remplit SUR PLACE en poussant le reste : un testament qui se
 déplie, une ligne de joueur qui naît, une barre qui avance, l'anneau des

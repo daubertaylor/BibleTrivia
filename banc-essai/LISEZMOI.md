@@ -33,6 +33,7 @@ notre code, et il est éprouvé. Tout le reste l'est.
     node plis.js        # tous les plis du jeu tournent-ils sur la même horloge ?
     node ouverture.js   # « créer une partie » s'ouvre-t-il toujours aussi vite ?
     node motfin.js      # le mot de la fin ne se trompe jamais de joueur
+    node pied.js        # le pied de l'accueil se tient pareil sur dix appareils
     node fuite.js sansmarge "html.gl-xf .has-gs{ overflow-clip-margin:0px !important; }"
     python3 fuite.py sansmarge     # aucun trou d'un pixel au bord des feuilles
     node matiere.js /tmp/m mat && python3 matiere.py /tmp/m mat   # la matière suffit-elle ?
@@ -208,3 +209,27 @@ mesure du clic à la première image du salon.
 Le rapport était de **1 pour 1** : 27 ms à 0 de latence, 1533 ms à 1500. Le
 défaut n'était pas « parfois lent », il était « exactement aussi lent que le
 réseau ». Une fois écrit comme ça, le correctif est évident.
+
+
+## Un vide qui grandit, et le seuil qui le dit
+
+Le pied de l'accueil « ne s'affiche pas pareil » selon le téléphone. La
+première version de `pied.js` mesurait l'écart en PIXELS et demandait une
+fourchette étroite : impossible à tenir, puisqu'un écran court comprime
+légitimement tout — la bande y est plus près des cartes, et c'est très bien.
+
+Ce qui n'est pas légitime, c'est que l'écart GRANDISSE quand plus rien
+d'autre ne grandit. Mesuré en **fraction de la hauteur utile**, le défaut
+saute aux yeux : 9,2 % sur un écran de 643 px, 14,2 % sur un iPhone 15,
+17,3 % sur un Pixel 8, **21,6 %** sur un écran de 1000. Le seuil s'écrit tout
+seul : ne jamais dépasser ce que fait l'appareil de référence.
+
+Le test relève aussi les deux marges de page (au-dessus de l'en-tête, sous le
+pied) : elles doivent rester ÉGALES, sinon le vide n'est pas partagé mais
+déplacé.
+
+Et une vérification que le test ne fait pas : que l'appareil de référence n'ait
+pas bougé. Elle se fait élément par élément, en comparant l'ancien fichier et
+le nouveau à la même taille — 0 px sur iPhone 15. Sans elle, « ça se tient
+pareil partout » pourrait vouloir dire « c'est cassé partout de la même
+façon ».
