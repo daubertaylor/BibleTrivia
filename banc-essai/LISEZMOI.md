@@ -34,6 +34,7 @@ notre code, et il est éprouvé. Tout le reste l'est.
     node ouverture.js   # « créer une partie » s'ouvre-t-il toujours aussi vite ?
     node motfin.js      # le mot de la fin ne se trompe jamais de joueur
     node pied.js        # le pied de l'accueil se tient pareil sur dix appareils
+    node bords.js       # l'onde d'appui va-t-elle jusqu'au bord du bouton ?
     node fuite.js sansmarge "html.gl-xf .has-gs{ overflow-clip-margin:0px !important; }"
     python3 fuite.py sansmarge     # aucun trou d'un pixel au bord des feuilles
     node matiere.js /tmp/m mat && python3 matiere.py /tmp/m mat   # la matière suffit-elle ?
@@ -278,3 +279,30 @@ ensuite.** Le test suit maintenant la position image par image pendant 2,2 s
 après le clic, et relève deux choses : le plus fort mouvement VERS LE BAS
 (l'entrée, elle, ne fait que monter) et l'instant de la dernière image qui
 bouge.
+
+
+## Mesurer un appui sans casser ce qu'on mesure
+
+`bords.js` compare l'image d'un bouton PRESSÉ à celle du même bouton au
+repos : les pixels qui changent sont l'onde, et sa boîte englobante dit si
+elle atteint le bord.
+
+Sauf que sous le doigt le bouton s'ENFONCE aussi. Tout bouge, et la
+comparaison ne dit plus rien. Le réflexe — `transform:none` — est le pire des
+choix : **c'est ce transform qui crée le contexte d'empilement** grâce auquel
+l'onde (`z-index:-1`) passe devant le fond du bouton. Sans lui elle disparaît
+complètement, et le test conclurait tranquillement que le bouton ne s'allume
+pas. `translateZ(0) scale(1)` garde le contexte et fige la géométrie. La
+leçon avait déjà été payée pour `appuis.js` ; elle se repaie à chaque nouveau
+test d'appui.
+
+Deux autres pièges, trouvés en écrivant celui-ci :
+
+- un bouton qui porte une **ombre portée** (`filter:drop-shadow`) voit sa
+  silhouette d'ombre changer en même temps que l'onde : des pixels bougent
+  DEHORS sans que l'onde y soit pour rien. Le relevé « halo » ne veut alors
+  rien dire, et le test l'annonce au lieu de faire semblant ;
+- pour ne pas déclencher le clic du bouton, on relâche le doigt AILLEURS —
+  mais un relâchement sur le voile d'une feuille produit un clic sur ce voile,
+  qui **referme la feuille**. Les cibles suivantes ne trouvaient plus rien.
+  Chaque cible d'une feuille rouvre donc la feuille.

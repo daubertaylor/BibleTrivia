@@ -220,6 +220,40 @@ substituer :
    qui doit céder quand la place manque s'y accroche, avec la taille
    actuelle comme plafond.
 
+**Un enfant absolu s'arrête au PADDING, pas au bord (v182).** « L'aura de
+couleur s'applique, mais elle ne prend pas tous les bords. » L'onde d'appui
+est un pseudo-élément en position absolue avec `inset:0` — or un enfant
+absolu se cale sur la boîte de **padding**. Toutes les surfaces du jeu portant
+`border:1px solid transparent`, l'onde s'arrêtait un pixel avant le bord, tout
+autour : il restait un anneau à la couleur du bouton. C'est le même trou d'un
+pixel que celui des feuilles, à l'envers.
+
+| famille | anneau avant | après |
+|---|---|---|
+| `.chip`, `.add-team`, `.set-go` | 1,00 px | **0** |
+| `.icon-btn` | 1,33 px | **0** |
+| `.mode-card`, `.daily-card`, `.parcours-card`, `.btn-primary`, `.option-btn`, `.tst-head`, `.share-btn` | 0,67 px | **0** |
+
+L'onde déborde donc de l'épaisseur de la bordure (`--onde-debord`, 1px par
+défaut) : sa boîte devient exactement la boîte de bordure, et comme
+`border-radius:inherit` reprend le rayon de cette même boîte, **les coins
+coïncident au pixel près** — ce qui n'était pas le cas avant. Les six familles
+sans bordure (`.switch`, `.color-dot`, `.ach`, `.team-remove`…) remettent la
+variable à zéro, sinon l'onde déborderait autour d'elles : le défaut inverse,
+que le même test relève.
+
+**Mesurer un appui exige de figer l'enfoncement — sans le supprimer.**
+`banc-essai/bords.js` compare l'image pressée à l'image au repos ; mais le
+bouton s'enfonce aussi, et tout bouge. Le neutraliser avec `transform:none`
+serait pire : **c'est ce transform qui crée le contexte d'empilement** grâce
+auquel l'onde (`z-index:-1`) passe devant le fond du bouton — sans lui, elle
+disparaît et le test mesurerait un bouton éteint. `translateZ(0) scale(1)`
+garde le contexte et fige la géométrie. Deux autres pièges relevés au passage :
+un bouton qui porte une **ombre portée** voit sa silhouette changer avec
+l'onde, donc le relevé « halo » n'a pas de sens pour lui et le test le dit ; et
+relâcher le doigt sur le voile d'une feuille produit un clic qui **referme la
+feuille**, ce qui faisait disparaître les cibles suivantes.
+
 **Effacer un délai d'animation la RELANCE (v181).** Le salon s'ouvre
 maintenant avant que la présence Supabase ne réponde ; quand elle arrive, un
 rendu sur place le rafraîchit, et ce rendu reprend l'animation d'entrée là où

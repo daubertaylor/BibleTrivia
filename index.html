@@ -1123,7 +1123,26 @@
      intact, et le border-radius hérité découpe proprement les angles. Vérifié
      en cours d'animation : à 55 ms la couverture est déjà nette, sans arête
      dure. Profil mesuré sur la largeur : 100 % partout, au lieu de 70-100-73. */
-  button::before, .mode-card::before{ content:""; position:absolute; inset:0; z-index:-1; border-radius:inherit; background:var(--press-tint, rgba(238,74,40,0.18)); transform:scale(0.001); opacity:0; transition:opacity 0.38s ease, transform 0.01s linear 0.38s; pointer-events:none; }
+  /* ===== L'ONDE DOIT ALLER JUSQU'AU BORD, PAS JUSQU'AU PADDING =====
+     Toutes les surfaces du jeu portent « border:1px solid transparent » — un
+     reste utile : box-sizing est en border-box, donc cette bordure garde la
+     géométrie exacte quoi qu'il arrive. Or un enfant en position ABSOLUE se
+     cale sur la boîte de PADDING, pas sur la boîte de bordure : avec inset:0,
+     l'onde s'arrêtait un pixel avant le bord, tout autour. Il restait un
+     anneau à la couleur du bouton — mesuré de 0,67 à 1,33 px sur DIX familles
+     (banc-essai/bords.js), et parfaitement visible sur une pastille pressée.
+     C'est le même trou d'un pixel que celui des feuilles, à l'envers.
+     L'onde déborde donc de l'épaisseur de la bordure. La boîte de l'onde
+     devient EXACTEMENT la boîte de bordure du bouton — et comme
+     border-radius:inherit reprend le rayon de cette même boîte, les coins
+     coïncident au pixel près, ce qui n'était pas le cas avant.
+     --onde-debord vaut 1px par défaut, l'épaisseur que portent presque tous
+     les boutons ; les rares qui n'ont pas de bordure le remettent à zéro,
+     sinon l'onde déborderait d'un pixel AUTOUR d'eux (le défaut inverse, que
+     le même test relève). */
+  button::before, .mode-card::before{ content:""; position:absolute; inset:calc(-1 * var(--onde-debord, 1px)); z-index:-1; border-radius:inherit; background:var(--press-tint, rgba(238,74,40,0.18)); transform:scale(0.001); opacity:0; transition:opacity 0.38s ease, transform 0.01s linear 0.38s; pointer-events:none; }
+  /* Les boutons SANS bordure : l'onde s'arrête à leur boîte. */
+  .ach, .color-dot, .switch, .team-remove, .hero-verse-card, .icon-btn.hero-profile{ --onde-debord:0px; }
   .chip, .len-chip{ --press-tint: rgba(238,74,40,0.28); }
   /* Sur les surfaces DÉJÀ corail, l'onde se fait blanche : sinon rien ne se
      verrait. Même logique, feedback identique. */
