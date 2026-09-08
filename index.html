@@ -4449,8 +4449,10 @@ function reRenderIfOnline(){
   /* LE RACCOURCI NE VAUT QU'À DEUX. Il retouche la seule case de l'adversaire
      sans redessiner l'écran — parfait pour un face-à-face, mais il empêchait
      le salon de BASCULER en liste quand un troisième joueur arrivait : la
-     case existait, donc on ne repassait jamais par un rendu complet. */
-  if(sc === "online-room" && document.getElementById("oppSlot") && nbJoueurs() <= 2){ updateRoomOpponent(); return; }
+     case existait, donc on ne repassait jamais par un rendu complet. Depuis
+     que le salon vide affiche lui aussi la liste, la condition est EXACTEMENT
+     deux : à un, le même piège reviendrait quand l'invité s'en va. */
+  if(sc === "online-room" && document.getElementById("oppSlot") && nbJoueurs() === 2){ updateRoomOpponent(); return; }
   render();
 }
 function updateOnlineLobby(){
@@ -9713,10 +9715,21 @@ function renderOnlineRoom(){
   const oppNew = net.oppPresent && !net._oppShown;
   net._oppShown = net.oppPresent;
   /* À DEUX, RIEN NE CHANGE : le face-à-face VS reste ce qu'il était, au pixel
-     près. C'est au-dessus de deux que la liste des joueurs prend le relais —
-     avec la même rangée de classement que le mode Groupe, donc la même
-     matière et le même rebord que partout ailleurs. */
-  const aPlusieurs = nbJoueurs() > 2;
+     près. Au-dessus de deux, la liste des joueurs prend le relais — avec la
+     même rangée de classement que le mode Groupe, donc la même matière et le
+     même rebord que partout ailleurs.
+
+     ET TANT QUE LE SALON EST VIDE, ON NE PRÉSUME PLUS. Seul, l'hôte voyait un
+     face-à-face « Taylor VS ? · Adversaire », « Longueur du duel » et « puis
+     lance le duel » — trois promesses de duel posées juste sous la ligne qui
+     annonce jusqu'à huit joueurs, et affichées précisément pendant qu'il
+     décide combien de personnes inviter. Or à ce moment-là personne ne sait
+     encore : le face-à-face n'apparaît donc qu'à DEUX, quand c'en est
+     vraiment un. Seul, c'est la même liste qu'à plusieurs, avec les places
+     restantes — elle dit ce qu'on sait, et rien de plus. */
+  const duel = nbJoueurs() === 2;
+  const aPlusieurs = !duel;
+  const motSalon = duel ? "le duel" : "la partie";
   el.innerHTML = `
     ${renderHeader("Salon", true, "leaveRoomToOnline()")}
     <div class="code-hero">
@@ -9750,7 +9763,7 @@ function renderOnlineRoom(){
       <div class="vs-mid">VS</div>
       <div class="vs-player${oppNew?' reveal-in':''}" id="oppSlot">${net.oppPresent?avatarHtml(net.opp.name, net.opp.color, 3, net.opp.isCreator):`<span class="avatar waiting" style="width:3rem;height:3rem;font-size:1.25rem;">?</span>`}<div class="vs-name">${net.oppPresent?escapeHtml(net.opp.name):"En attente…"}</div><div class="vs-tag${net.isHost?'':' is-host'}">${net.isHost?"Adversaire":"Hôte"}</div></div>
     </div>`}
-    <div class="host-note">${net.isHost?`Tu es l'hôte : paramètre la partie (longueur, chrono, testament) puis lance ${motPartie()}.`:`L'hôte paramètre la partie puis lance ${motPartie()}.`}</div>
+    <div class="host-note">${net.isHost?`Tu es l'hôte : paramètre la partie (longueur, chrono, testament) puis lance ${motSalon}.`:`L'hôte paramètre la partie puis lance ${motSalon}.`}</div>
     <div class="flex-sp"></div>
     ${net.isHost ? `
       <div class="len-label">Longueur ${aPlusieurs?"de la partie":"du duel"}</div>
@@ -9767,7 +9780,7 @@ function renderOnlineRoom(){
         <button class="len-chip${net.themeKey==='at'?' sel':''}" data-rgroup="theme" data-k="at" onclick="selectRoomOpt('theme','at')">Ancien</button>
         <button class="len-chip${net.themeKey==='nt'?' sel':''}" data-rgroup="theme" data-k="nt" onclick="selectRoomOpt('theme','nt')">Nouveau</button>
       </div>
-      <button class="btn-primary${canStart?'':' is-waiting'}" id="roomStartBtn" onclick="hostStart()">${canStart?("Commencer "+motPartie()):"En attente des joueurs…"}</button>
+      <button class="btn-primary${canStart?'':' is-waiting'}" id="roomStartBtn" onclick="hostStart()">${canStart?("Commencer "+motSalon):"En attente des joueurs…"}</button>
     ` : `
       <div class="waiting-note" id="waitNote">${net.oppPresent?"Prêt ! En attente du lancement par l'hôte…":"Connexion au salon…"}</div>
       <div class="flex-sp"></div>

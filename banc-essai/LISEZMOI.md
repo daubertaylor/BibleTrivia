@@ -23,6 +23,7 @@ notre code, et il est éprouvé. Tout le reste l'est.
     node exaequo.js     # trois à égalité : partagent-ils le rang ?
     node photos.js      # les trois écrans à plusieurs, en image
     node match-trace.js # la séquence d'appariement, horodatée des deux côtés
+    node bascule.js     # le salon change de visage dans les deux sens
 
 ## Un avertissement, payé cher
 
@@ -52,3 +53,20 @@ Le raccourci est maintenant réservé aux salons à deux.
 
 **Une capture vaut une assertion.** C'est en regardant l'image du salon à cinq
 que le défaut a sauté aux yeux ; les compteurs, eux, disaient tous « 5 joueurs ».
+
+
+## Le salon ne présume pas de ce qu'il ne sait pas
+
+Un salon vide affichait un face-à-face « Taylor VS ? · Adversaire »,
+« Longueur du duel » et « puis lance le duel » — trois promesses de duel
+posées juste sous la ligne qui annonce jusqu'à huit joueurs, et affichées
+précisément pendant que l'hôte décide combien de personnes inviter.
+
+Le face-à-face n'apparaît donc qu'à **exactement deux**. Seul, le salon montre
+la même liste qu'à plusieurs, avec les places restantes : elle dit ce qu'on
+sait, et rien de plus.
+
+Conséquence à ne pas manquer : le raccourci de `reRenderIfOnline()` valait
+`nbJoueurs() <= 2`, ce qui laissait le face-à-face à l'écran quand l'invité
+repartait. Il vaut maintenant `=== 2`. C'est `bascule.js` qui garde ce sens-là,
+en descendant de huit à un après y être monté.
