@@ -1306,13 +1306,14 @@
   .timeout-note .ico{ width:1.1rem; height:1.1rem; display:inline-flex; }
 
   /* ---------- Astuce plein écran ---------- */
-  .fs-hint{ display:flex; align-items:center; gap:0.6rem; background:rgba(255,255,255,0.55); backdrop-filter:blur(20px) saturate(180%); -webkit-backdrop-filter:blur(20px) saturate(180%); border:1px solid var(--bord); border-radius:var(--r-m); padding:0.65rem 0.75rem; margin-bottom:0.4rem; font-size:0.8rem; line-height:1.45; color:var(--ink); }
+  .fs-hint{ display:flex; align-items:center; gap:0.6rem; background:rgba(255,255,255,0.55); backdrop-filter:blur(20px) saturate(180%); -webkit-backdrop-filter:blur(20px) saturate(180%); border:0; border-radius:var(--r-m); padding:calc(0.65rem + 1px) calc(0.75rem + 1px); margin-bottom:0.4rem; font-size:0.8rem; line-height:1.45; color:var(--ink); }
   .fsh-txt{ flex:1; }
   .fsh-close{ width:1.6rem; height:1.6rem; border-radius:50%; border:1px solid var(--bord); color:var(--ink-soft); display:flex; align-items:center; justify-content:center; flex-shrink:0; }
 
   /* ---------- Modal maison ---------- */
   .modal-veil{ position:fixed; top:0; left:0; right:0; bottom:0; z-index:75; background:rgba(19,14,9,0.3); display:flex; align-items:center; justify-content:center; padding:1.6rem; animation:veilIn var(--tr-voile-in); }
-  .modal-card{ width:100%; max-width:21rem; border:1px solid var(--bord); border-radius:var(--r-l); padding:1.45rem 1.25rem 1.15rem; text-align:center; animation:modalIn var(--tr-ouvre); transform:translateZ(0); -webkit-transform:translateZ(0); --rim-cast:0 24px 60px rgba(18,12,6,0.42), 0 4px 12px rgba(18,12,6,0.22); }
+  /* Même trou d'un pixel, même correctif : la fenêtre modale recouvre l'app. */
+  .modal-card{ width:100%; max-width:21rem; border:0; border-radius:var(--r-l); padding:calc(1.45rem + 1px) calc(1.25rem + 1px) calc(1.15rem + 1px); text-align:center; animation:modalIn var(--tr-ouvre); transform:translateZ(0); -webkit-transform:translateZ(0); --rim-cast:0 24px 60px rgba(18,12,6,0.42), 0 4px 12px rgba(18,12,6,0.22); }
   .modal-title{ font-family:'Poppins',sans-serif; font-weight:700; font-size:1.15rem; color:var(--ink); }
   .modal-msg{ font-size:0.9rem; color:var(--ink-soft); line-height:1.5; margin-top:0.45rem; }
   /* GUIDE PLEIN ÉCRAN : les trois gestes reprennent, au pixel près, les lignes
@@ -2142,7 +2143,25 @@
      Le prolongement est absorbé par une marge négative de la même valeur : le
      contenu ne bouge pas d'un pixel, et l'animation d'entrée le déduit (voir
      sheetIn) pour partir EXACTEMENT d'où elle partait avant. */
-  .settings-sheet{ width:100%; max-width:430px; border:1px solid var(--bord); border-bottom:none; border-radius:var(--r-xl) var(--r-xl) 0 0; padding:0.8rem 1.25rem calc(env(safe-area-inset-bottom) * 0.55 + 0.4rem + 220px); margin-bottom:-220px; animation:sheetIn var(--tr-ouvre); transform:translateZ(0); -webkit-transform:translateZ(0); touch-action:none; --rim-cast:0 -6px 34px rgba(18,12,6,0.3); }
+  /* ===== LE TROU D'UN PIXEL AU BORD DES FEUILLES =====
+     Toutes les surfaces gardent un « border:1px solid transparent » : un reste
+     de l'époque des contours blancs, conservé pour que retirer le trait ne
+     déplace rien. Or overflow:clip découpe à la boîte de PADDING — ce pixel de
+     bordure est donc HORS de la découpe, et la couche de verre (.gs), qui est
+     un enfant, n'y peint pas. Il ne reste qu'un pixel transparent : on voit
+     droit à travers, jusqu'au contenu net qui passe derrière.
+     Sur une carte posée sur la photo, ça ne se remarque pas — la photo est
+     lisse, un pixel net au lieu d'un pixel flou ne dit rien. Sur une FEUILLE,
+     ce qu'il y a derrière, c'est l'application elle-même : du texte. Et on
+     voyait le haut des lettres traverser l'arête, ce que Taylor a repéré.
+     overflow-clip-margin:1px règle le cas là où il est honoré (Chromium :
+     variation locale mesurée à 0,70 dans la feuille) ; là où il ne l'est pas,
+     le trou revient tel quel (23,69 — mesuré en neutralisant la propriété).
+     On ne peut donc pas s'appuyer dessus. Pour les surfaces qui recouvrent
+     l'app, le pixel passe de la BORDURE au PADDING : la boîte de padding
+     devient la boîte entière, la découpe aussi, et le verre couvre tout.
+     Taille extérieure et position du contenu inchangées au pixel près. */
+  .settings-sheet{ width:100%; max-width:430px; border:0; border-radius:var(--r-xl) var(--r-xl) 0 0; padding:calc(0.8rem + 1px) calc(1.25rem + 1px) calc(env(safe-area-inset-bottom) * 0.55 + 0.4rem + 220px); margin-bottom:-220px; animation:sheetIn var(--tr-ouvre); transform:translateZ(0); -webkit-transform:translateZ(0); touch-action:none; --rim-cast:0 -6px 34px rgba(18,12,6,0.3); }
   /* DEUX FEUILLES L'UNE SUR L'AUTRE — LA FAÇON DONT ELLES SE SUPERPOSENT.
      Avant : le choix de version arrivait avec EXACTEMENT la même matière, la
      même largeur et le même coin arrondi que les Réglages, simplement décalé
@@ -2467,7 +2486,7 @@
      detail : centree, la carte la plus haute passait 9 px AU-DESSUS du haut de
      l'ecran sur iPhone SE — sous l'encoche. En bas, la place est trois fois
      plus grande, et la limite ci-dessous s'arrete avant les cartes de mode. */
-  .hero-verse-card{ position:absolute; top:0; bottom:auto; height:auto; min-height:100%; max-height:min(21.5rem, calc(64 * var(--hu))); left:max(0px, calc(50% - 11.5rem)); right:max(0px, calc(50% - 11.5rem)); display:flex; flex-direction:column; align-items:center; justify-content:center; gap:0.42rem; padding:0.8rem 1.1rem; border-radius:var(--r-l); border:1px solid transparent; box-shadow:var(--rebord-pose); opacity:0; transform:scale(0.82) translateY(10px); transition:transform 0.55s cubic-bezier(0.2,1.15,0.3,1), opacity 0.4s ease; will-change:transform, opacity; pointer-events:none; text-align:center; }
+  .hero-verse-card{ position:absolute; top:0; bottom:auto; height:auto; min-height:100%; max-height:min(21.5rem, calc(64 * var(--hu))); left:max(0px, calc(50% - 11.5rem)); right:max(0px, calc(50% - 11.5rem)); display:flex; flex-direction:column; align-items:center; justify-content:center; gap:0.42rem; padding:calc(0.8rem + 1px) calc(1.1rem + 1px); border-radius:var(--r-l); border:0; box-shadow:var(--rebord-pose); opacity:0; transform:scale(0.82) translateY(10px); transition:transform 0.55s cubic-bezier(0.2,1.15,0.3,1), opacity 0.4s ease; will-change:transform, opacity; pointer-events:none; text-align:center; }
   .hero-zone.show-verse .hero-verse-card{ opacity:1; transform:scale(1) translateY(0); pointer-events:auto; transition-delay:0.08s; }
   /* LE VERSET FLOTTE AU-DESSUS, IL NE SE GLISSE PAS DESSOUS.
      Les cartes de l'accueil viennent après le héros dans la page : sans ordre

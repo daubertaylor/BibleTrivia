@@ -27,6 +27,8 @@ notre code, et il est éprouvé. Tout le reste l'est.
     node couleurs.js    # aucune bordure de couleur, écrans ET états
     node appuis.js      # l'onde d'appui se voit-elle sur son propre bouton ?
     node rotation.js    # la mise en page ne bouge pas quand le téléphone tourne
+    node fuite.js sansmarge "html.gl-xf .has-gs{ overflow-clip-margin:0px !important; }"
+    python3 fuite.py sansmarge     # aucun trou d'un pixel au bord des feuilles
     node matiere.js /tmp/m mat && python3 matiere.py /tmp/m mat   # la matière suffit-elle ?
 
 ## Un avertissement, payé cher
