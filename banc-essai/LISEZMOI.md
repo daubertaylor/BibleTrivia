@@ -27,6 +27,7 @@ notre code, et il est éprouvé. Tout le reste l'est.
     node couleurs.js    # aucune bordure de couleur, écrans ET états
     node appuis.js      # l'onde d'appui se voit-elle sur son propre bouton ?
     node rotation.js    # la mise en page ne bouge pas quand le téléphone tourne
+    node pli.js         # déplier un testament glisse, et le verre suit
     node fuite.js sansmarge "html.gl-xf .has-gs{ overflow-clip-margin:0px !important; }"
     python3 fuite.py sansmarge     # aucun trou d'un pixel au bord des feuilles
     node matiere.js /tmp/m mat && python3 matiere.py /tmp/m mat   # la matière suffit-elle ?
@@ -116,3 +117,17 @@ La teinte est maintenant posée à plat — profil mesuré : 100 % sur toute la
 largeur. Le geste d'onde ne venait pas du dégradé mais de l'agrandissement
 (`scale(0.001)` → `scale(1)`), qui est intact ; vérifié en cours d'animation,
 à 55 ms la couverture est déjà nette et sans arête dure.
+
+
+## Un cache de positions doit être relu quand la mise en page BOUGE
+
+Le moteur de verre garde la position de chaque surface en cache : c'est ce qui
+le rend gratuit au défilement. Mais pendant qu'un accordéon se déplie, les
+surfaces situées dessous voyagent **sans que personne ne le lui dise**.
+
+`toggleTst` recalait à quatre instants pendant que la carte parcourait 354 px :
+mesuré, la couche de décor restait immobile 130 ms puis se téléportait, jusqu'à
+**257 px de retard**. `glassSuivre(ms)` existe exactement pour ça — une
+relecture par image, le temps de l'animation. Retard ramené à **1 px**.
+
+La leçon : quatre `setTimeout` ne remplacent pas une boucle par image.

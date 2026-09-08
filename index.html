@@ -230,6 +230,14 @@
        tempo et l'élan qui sont communs. */
     --tr-ouvre: 0.5s cubic-bezier(0.2,1.05,0.3,1);
     --tr-ferme: 0.24s cubic-bezier(0.4,0,1,1);
+    /* LE PLI. --tr-ouvre est la courbe de ce qui ARRIVE : elle démarre très
+       vite, ce qui est juste pour un écran qui monte. Un testament qui se
+       déplie, lui, POUSSE le reste de la page : mesuré, la carte « Objectifs »
+       parcourait 354 px avec des bonds de 57 px d'une image à l'autre, et
+       80 % du chemin était fait en 148 ms — d'où l'impression de secousse.
+       Même famille, départ moins brutal : 32,5 px par image, 80 % à 237 ms.
+       (Cette courbe est déjà celle de l'enfoncement des réponses.) */
+    --tr-plie: 0.52s cubic-bezier(0.33,1,0.68,1);
     --tr-voile-in: 0.28s ease;
     --tr-voile-out: 0.24s ease;
   }
@@ -1974,7 +1982,7 @@
      page (il n'est plus détruit puis recréé), donc le verre garde ses couches
      et n'a rien à refaire. */
   .tst .tst-body{ display:grid; grid-template-rows:0fr; margin-top:0; opacity:0;
-    transition:grid-template-rows var(--tr-ouvre), margin-top var(--tr-ouvre), opacity 0.22s ease; }
+    transition:grid-template-rows var(--tr-plie), margin-top var(--tr-plie), opacity 0.24s ease; }
   .tst .tst-body > *{ min-height:0; overflow:hidden; }
   /* Petits écrans (SE & co) : la Progression doit tenir SANS défiler tant que
      les testaments sont repliés -> on resserre juste ce qu'il faut. */
@@ -8632,10 +8640,20 @@ function toggleTst(btn){
   /* La grille masquée n'avait pas de position pour le verre : on force un
      recalcul de mise en page + un recalage à l'ouverture. Et on re-décide le
      défilement : ouvrir un testament peut faire déborder la page. */
-  try{ glassRelayout(); armGlass(900); queueGlassSync(); fitScroll(); }catch(e){}
-  /* La hauteur bouge pendant une demi-seconde : on re-décide le défilement et
-     on recale le verre PENDANT le mouvement, pas seulement au premier pixel. */
-  [120, 300, 520, 700].forEach(d=>setTimeout(()=>{ try{ glassRelayout(); queueGlassSync(); fitScroll(); }catch(e){} }, d));
+  try{ glassRelayout(); queueGlassSync(); fitScroll(); }catch(e){}
+  /* TOUT CE QUI EST SOUS LE TESTAMENT VOYAGE PENDANT UNE DEMI-SECONDE.
+     On recalait le verre à quatre instants (120, 300, 520, 700 ms) pendant que
+     la carte « Objectifs » parcourait 354 px. Mesuré image par image : la
+     couche de décor restait immobile 130 ms, puis se téléportait en quatre
+     positions — jusqu'à 355 px de décalage à l'intérieur de la carte. C'est
+     ça, la saccade : le contenu glissait, son fond sautait.
+     Le moteur a exactement l'outil qu'il faut, et il n'était pas appelé ici :
+     glassSuivre() lui demande de RELIRE LES POSITIONS À CHAQUE IMAGE, le temps
+     de l'animation seulement. Le fond suit alors la carte au pixel près.
+     (Le défilement, lui, n'a pas besoin d'être re-décidé soixante fois : deux
+     fois suffisent, au départ et à l'arrivée.) */
+  try{ glassSuivre(620); }catch(e){}
+  setTimeout(()=>{ try{ fitScroll(); }catch(e){} }, 560);
 }
 let achToastQueue = [], achToastBusy = false;
 function checkAchievements(opts){
