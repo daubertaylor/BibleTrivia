@@ -406,6 +406,22 @@ query a été supprimé — le `min()` fait déjà le travail sur écran court.
 `scratchpad/n1/logo.js` mesure la taille, la proportion et l'air
 au-dessus, marges de sécurité comprises.
 
+**QUAND L'IMAGE CHANGE, LA TAILLE DU CADRE N'EST PLUS LA BONNE (v165).**
+Le cadre était réglé à 24 % de la largeur pour l'ANCIENNE illustration.
+La nouvelle a sa propre marge intégrée : mesuré, l'enfant occupait
+315×387 px dans un cadre de 512, il n'en occupe plus que 265×344 —
+**16 % de moins en largeur, 11 % en hauteur**. À cadre constant, le
+logo a donc rétréci de lui-même le jour où l'image a changé, sans qu'une
+seule ligne de mise en page ne bouge. Taylor l'a vu.
+
+Le cadre rend ces 16 % : 24 % → **27 %** de la largeur. La leçon générale :
+*une taille de cadre n'est jamais absolue, elle vaut pour un remplissage
+donné.* Changer l'illustration, c'est devoir remesurer le cadre.
+
+Les 12 px que ça coûte en hauteur ne sont pas volés aux cartes : ils
+viennent de l'espaceur du haut (11,8 → 6 px) et de la marge sous la zone
+du logo (9 → 5,8 px). Du vide, contre un objet.
+
 **Le plafond dépend de la mise en page, pas seulement de l'écran
 (v159).** 12,5 % de la hauteur utile est calibré pour la page COMPLÈTE.
 Sur écran court le verset et la bande sont masqués : il reste 110 à
