@@ -38,6 +38,9 @@
   .avert{ background:#3A2418; color:#F6E4D6; border-radius:16px; padding:0.9rem 1rem; font-size:0.9rem; }
   [hidden]{ display:none !important; }
   .note{ color:#8E837A; font-size:0.82rem; margin-top:1.4rem; text-align:center; }
+  .ctrl{ margin-top:0.55rem !important; font-size:0.86rem; color:var(--encre) !important; }
+  .ctrl b{ font-family:ui-monospace,Menlo,Consolas,monospace; }
+  .attention{ margin-top:0.7rem !important; font-size:0.85rem; color:#9A5A3C !important; }
 </style>
 </head>
 <body>
@@ -59,9 +62,13 @@
   <div class="carte" id="pubCarte" hidden>
     <h2><span class="num">2</span> <span class="etiq ok">Clé publique</span></h2>
     <p>Celle-ci vit à l'intérieur du jeu, tout le monde peut la voir.
-    <strong>Envoie-la-moi.</strong></p>
+    <strong>Envoie-la-moi, seule dans un message</strong>, avec la ligne de
+    contrôle juste en dessous.</p>
     <div class="cle" id="pub"></div>
+    <p class="ctrl" id="pubCtrl"></p>
     <button class="copier" data-cible="pub">Copier la clé publique</button>
+    <p class="attention">Utilise le bouton. Ne la retape pas et ne la dicte pas :
+    une seule lettre de travers et la clé ne vaut plus rien.</p>
   </div>
 
   <div class="carte" id="privCarte" hidden>
@@ -98,8 +105,16 @@ document.getElementById("go").addEventListener("click", async () => {
       { name:"ECDSA", namedCurve:"P-256" }, true, ["sign", "verify"]);
     const pub = new Uint8Array(await crypto.subtle.exportKey("raw", paire.publicKey));
     const jwk = await crypto.subtle.exportKey("jwk", paire.privateKey);
-    document.getElementById("pub").textContent  = b64url(pub);
+    const pubTxt = b64url(pub);
+    document.getElementById("pub").textContent  = pubTxt;
     document.getElementById("priv").textContent = jwk.d;
+    /* DE QUOI VÉRIFIER QUE LA CLÉ EST ARRIVÉE ENTIÈRE. Une clé publique fait
+       toujours 87 caractères, et l'empreinte ci-dessous en dépend entièrement :
+       si un seul signe change en route, l'empreinte change avec lui. */
+    const h = new Uint8Array(await crypto.subtle.digest("SHA-256", new TextEncoder().encode(pubTxt)));
+    const emp = Array.from(h.slice(0, 3)).map(o => o.toString(16).padStart(2, "0")).join("").toUpperCase();
+    document.getElementById("pubCtrl").innerHTML =
+      "<b>" + pubTxt.length + "</b> caractères &nbsp;·&nbsp; empreinte <b>" + emp + "</b>";
     document.getElementById("pubCarte").hidden  = false;
     document.getElementById("privCarte").hidden = false;
     document.getElementById("avert").hidden     = false;
