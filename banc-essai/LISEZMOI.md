@@ -28,6 +28,8 @@ notre code, et il est éprouvé. Tout le reste l'est.
     node couleurs.js    # aucune bordure de couleur, écrans ET états
     node appuis.js      # l'onde d'appui se voit-elle sur son propre bouton ?
     node rotation.js    # la mise en page ne bouge pas quand le téléphone tourne
+    node coupe.js       # aucun texte coupé, sur cinq tailles d'écran
+    node progression.js # la progression ne recule jamais (règle numéro un)
     node pli.js         # déplier un testament glisse, et le verre suit
     node englouti.js    # la liste des erreurs ne tombe pas du bord de l'écran
     node plis.js        # tous les plis du jeu tournent-ils sur la même horloge ?

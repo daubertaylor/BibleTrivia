@@ -9055,8 +9055,8 @@ function toggleTst(btn){
      de l'animation seulement. Le fond suit alors la carte au pixel près.
      (Le défilement, lui, n'a pas besoin d'être re-décidé soixante fois : deux
      fois suffisent, au départ et à l'arrivée.) */
-  try{ glassSuivre(620); }catch(e){}
-  setTimeout(()=>{ try{ fitScroll(); }catch(e){} }, 560);
+  try{ glassSuivre(msPli() + 100); }catch(e){}
+  setTimeout(()=>{ try{ fitScroll(); }catch(e){} }, msPli() + 40);
 }
 let achToastQueue = [], achToastBusy = false;
 function checkAchievements(opts){
@@ -11639,8 +11639,11 @@ function glassTrack(){ glassRelayout(); armGlass(950); try{ queueGlassSync(); }c
 function glassFreezeForTransition(){
   glassRelayout();
   try{ queueGlassSync(true); }catch(e){}
-  glassFreezeUntil = performance.now() + 620;
-  setTimeout(()=>{ glassFreezeUntil = 0; glassRelayout(); armGlass(500); try{ queueGlassSync(); }catch(e){} }, 640);
+  /* Le gel doit couvrir l'animation ENTIÈRE, quelle que soit sa durée : ces
+     deux nombres étaient calés à la main sur une entrée de 500 ms. Ils la
+     lisent maintenant, comme tout le reste. */
+  glassFreezeUntil = performance.now() + msPli() + 100;
+  setTimeout(()=>{ glassFreezeUntil = 0; glassRelayout(); armGlass(msPli()); try{ queueGlassSync(); }catch(e){} }, msPli() + 120);
 }
 /* ===================== APPAREILS LENTS : ON S'ADAPTE, ON NE DEMANDE RIEN =====
    Le jeu reste STRICTEMENT le même pour tout le monde — mêmes questions,

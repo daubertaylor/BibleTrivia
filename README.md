@@ -220,6 +220,50 @@ substituer :
    qui doit céder quand la place manque s'y accroche, avec la taille
    actuelle comme plafond.
 
+**Deux gardiens de plus, et trois faux coupables (v191).** Rien ne vérifiait
+la règle numéro un de Taylor — *ne jamais remettre la progression à zéro* —
+ni qu'aucun texte n'était coupé sur les petits écrans. Deux bancs les tiennent
+désormais : `coupe.js` passe treize écrans sur cinq tailles d'appareil,
+`progression.js` part d'une progression riche et joue seize gestes plus deux
+accidents (mémoire abîmée, enregistrement d'une progression vide). Les deux
+sont propres. Ce sont les FAUX POSITIFS qui ont appris quelque chose.
+
+1. **`scrollWidth` ne parle pas du texte.** Premier jet de `coupe.js` :
+   cinquante-deux signalements par appareil. Chaque surface de verre héberge
+   une copie floutée du décor vingt fois plus grande qu'elle, donc son
+   défilement interne déborde toujours. Même piège que le défilement fantôme
+   de la v170. On demande maintenant au navigateur où sont les **lignes de
+   texte** (`Range`), et on ne mesure que les nœuds de texte : un `Range` sur
+   tout le contenu reprend les enfants, et « Courte » sortait alors de 273 px
+   de son propre bouton.
+2. **La boîte de police n'est pas la ligne.** `getClientRects()` rend la boîte
+   em de la fonte : en Poppins, 15 px pour un corps de 10,8 quand la ligne en
+   fait 12,6. Elle déborde donc de 1,2 px en haut et en bas sans qu'un pixel
+   d'encre soit perdu. Seize objectifs étaient accusés ; la capture agrandie
+   quatre fois montre « Premiers pas » entier, descendante comprise.
+3. **Une boîte qui défile n'est pas une boîte qui coupe.** « Testament »
+   tombe 17 px sous le bord sur un iPhone SE — et se lit d'un glissement du
+   doigt. Le banc remonte donc jusqu'à la première boîte qui défile, et
+   s'arrête là.
+
+Et un quatrième, du côté de la progression : `addInitScript` **se rejoue à
+chaque rechargement**. Le banc réécrivait lui-même la progression de départ
+par-dessus celle du joueur, puis accusait le jeu d'avoir perdu quatre
+objectifs qu'il avait parfaitement enregistrés. *Le geste que l'on veut
+mesurer ne doit jamais être celui de l'instrument.*
+
+Les deux bancs prouvent d'abord qu'ils savent trouver : `coupe.js` sur une
+boîte trop petite fabriquée exprès, `progression.js` en coupant le filet de
+fusion — quinze reculs, et l'échec attendu.
+
+**Le liseré des surfaces non pressables n'existe pas (v191).** Après la v189,
+trente-cinq règles gardaient encore `border:1px solid transparent` sur des
+surfaces qu'on ne presse pas. Leur copie floutée du décor s'arrête bien un
+pixel avant le bord — mais le fond de la surface, lui, est peint jusqu'à la
+boîte de bordure. Mesuré sur sept familles : **3/255 au pire**, invisible. On
+ne touche donc à rien. Une mesure qui dit « laisse-la tranquille » vaut une
+mesure qui dit « corrige ».
+
 **Le pli est devenu l'horloge de tout le jeu (v190).** « Je veux toutes les
 transitions de changement de page comme pour les testaments, exactement
 pareil. » Il restait deux courbes. Les plis — ce qui s'ouvre sur place —
