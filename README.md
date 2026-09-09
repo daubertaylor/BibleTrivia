@@ -1,8 +1,19 @@
-# BibleTrivia
+# Yada
 
 Quiz biblique — application web installable (PWA), en un seul fichier
 `index.html`. Publiée par GitHub Pages sur
-<https://daubertaylor.github.io/BibleTrivia/>.
+<https://daubertaylor.github.io/BibleTrivia/> (l'adresse suit le dépôt, pas le
+nom du jeu : la renommer casserait tous les liens déjà partagés et les
+installations déjà posées sur les écrans d'accueil).
+
+Le jeu s'appelait BibleTrivia jusqu'à la v202. **Le nom s'écrit maintenant à un
+seul endroit dans le code**, la constante `NOM_DU_JEU` — tout ce que le joueur
+lit le prend de là. Quatre endroits ne peuvent pas la lire, parce qu'ils sont
+servis avant que la moindre ligne de code ne tourne : `<title>` et
+`apple-mobile-web-app-title` dans l'en-tête, `name` et `short_name` dans
+`manifest.json`. Et trois choses ne suivent JAMAIS le nom, sous peine de perdre
+ce que le joueur a déjà : les clés `bt_…` de la mémoire locale, la base
+`bibletrivia` d'indexedDB, et l'adresse ci-dessus.
 
 Déploiement : pousser sur `claude/ios-app-polish-ui-ndgqle`, puis avancer
 `main` en avance rapide. **Toujours incrémenter `CACHE` dans `sw.js`** —
