@@ -1,0 +1,127 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Yada — créer la clé des notifications</title>
+<style>
+  :root{
+    --fond:#15100B; --creme:#FCF8F1; --encre:#2A241E; --doux:#6B6058;
+    --corail:#EE4A28; --or:#F2C94C; --vert:#2FA96E;
+  }
+  *{ box-sizing:border-box; }
+  body{
+    margin:0; padding:1.4rem 1.1rem 3rem; background:var(--fond); color:var(--creme);
+    font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;
+    line-height:1.55; -webkit-font-smoothing:antialiased;
+  }
+  .col{ max-width:34rem; margin:0 auto; }
+  h1{ font-size:1.35rem; margin:0 0 0.2rem; }
+  .sous{ color:#B8ADA2; margin:0 0 1.6rem; font-size:0.95rem; }
+  .carte{ background:var(--creme); color:var(--encre); border-radius:20px; padding:1.1rem 1.05rem; margin-bottom:1rem; }
+  .carte h2{ font-size:1rem; margin:0 0 0.35rem; display:flex; align-items:center; gap:0.5rem; }
+  .num{ width:1.5rem; height:1.5rem; border-radius:50%; background:var(--corail); color:#fff;
+        display:inline-flex; align-items:center; justify-content:center; font-size:0.85rem; font-weight:700; flex-shrink:0; }
+  .carte p{ margin:0.3rem 0 0; font-size:0.92rem; color:var(--doux); }
+  button{
+    font:inherit; font-weight:700; border:0; border-radius:14px; padding:0.85rem 1.1rem;
+    background:var(--corail); color:#fff; cursor:pointer; width:100%; margin-top:0.9rem;
+  }
+  button:active{ transform:scale(0.985); }
+  .copier{ background:var(--encre); font-size:0.9rem; padding:0.6rem 0.9rem; width:auto; margin-top:0.6rem; }
+  .cle{
+    margin-top:0.7rem; background:#F1ECE3; border-radius:12px; padding:0.7rem 0.8rem;
+    font-family:ui-monospace,Menlo,Consolas,monospace; font-size:0.78rem; word-break:break-all; color:var(--encre);
+  }
+  .etiq{ font-size:0.78rem; font-weight:700; letter-spacing:0.03em; text-transform:uppercase; }
+  .ok{ color:var(--vert); } .secret{ color:var(--corail); }
+  .avert{ background:#3A2418; color:#F6E4D6; border-radius:16px; padding:0.9rem 1rem; font-size:0.9rem; }
+  [hidden]{ display:none !important; }
+  .note{ color:#8E837A; font-size:0.82rem; margin-top:1.4rem; text-align:center; }
+</style>
+</head>
+<body>
+<div class="col">
+
+  <h1>La clé des notifications</h1>
+  <p class="sous">Pour que ton téléphone sache qu'un rappel vient bien de Yada,
+  le jeu a besoin d'une carte d'identité en deux moitiés. Cette page les
+  fabrique <strong>dans ton téléphone</strong> : rien n'est envoyé nulle part,
+  rien n'est enregistré.</p>
+
+  <div class="carte">
+    <h2><span class="num">1</span> Fabriquer les deux moitiés</h2>
+    <p>Un seul appui. Tu peux recommencer autant de fois que tu veux, mais
+    garde bien la paire que tu utilises : les deux vont ensemble.</p>
+    <button id="go">Créer les clés</button>
+  </div>
+
+  <div class="carte" id="pubCarte" hidden>
+    <h2><span class="num">2</span> <span class="etiq ok">Clé publique</span></h2>
+    <p>Celle-ci vit à l'intérieur du jeu, tout le monde peut la voir.
+    <strong>Envoie-la-moi.</strong></p>
+    <div class="cle" id="pub"></div>
+    <button class="copier" data-cible="pub">Copier la clé publique</button>
+  </div>
+
+  <div class="carte" id="privCarte" hidden>
+    <h2><span class="num">3</span> <span class="etiq secret">Clé privée</span></h2>
+    <p>Celle-ci est le secret. Elle va dans Supabase, dans le réglage
+    <strong>VAPID_PRIVEE</strong>, et <strong>nulle part ailleurs</strong> —
+    ni dans une conversation, ni dans le code du jeu. Qui l'a peut envoyer des
+    notifications au nom de Yada.</p>
+    <div class="cle" id="priv"></div>
+    <button class="copier" data-cible="priv">Copier la clé privée</button>
+  </div>
+
+  <div class="avert" id="avert" hidden>
+    Garde cette page ouverte le temps de coller la clé privée dans Supabase, ou
+    range-la tout de suite dans ton gestionnaire de mots de passe. Elle ne peut
+    pas être retrouvée : si tu la perds, il faut refaire les deux moitiés
+    ensemble.
+  </div>
+
+  <p class="note">Page temporaire. Elle sera retirée une fois les notifications en place.</p>
+</div>
+
+<script>
+/* Une paire de clés VAPID, c'est une paire ECDSA sur la courbe P-256.
+   - la moitié PUBLIQUE est le point non compressé (65 octets), en base64url ;
+   - la moitié PRIVÉE est la valeur « d » du JWK, déjà en base64url.
+   Tout est calculé par le navigateur, ici, sur cet appareil. */
+const b64url = (u8) => btoa(String.fromCharCode.apply(null, u8))
+  .replace(/\+/g, "-").replace(/\//g, "_").replace(/=+$/, "");
+
+document.getElementById("go").addEventListener("click", async () => {
+  try{
+    const paire = await crypto.subtle.generateKey(
+      { name:"ECDSA", namedCurve:"P-256" }, true, ["sign", "verify"]);
+    const pub = new Uint8Array(await crypto.subtle.exportKey("raw", paire.publicKey));
+    const jwk = await crypto.subtle.exportKey("jwk", paire.privateKey);
+    document.getElementById("pub").textContent  = b64url(pub);
+    document.getElementById("priv").textContent = jwk.d;
+    document.getElementById("pubCarte").hidden  = false;
+    document.getElementById("privCarte").hidden = false;
+    document.getElementById("avert").hidden     = false;
+    document.getElementById("go").textContent   = "Refaire une paire";
+  }catch(e){
+    alert("Ce navigateur n'a pas su fabriquer la clé : " + e);
+  }
+});
+
+document.querySelectorAll(".copier").forEach((b) => {
+  b.addEventListener("click", async () => {
+    const t = document.getElementById(b.dataset.cible).textContent;
+    try{ await navigator.clipboard.writeText(t); b.textContent = "Copié !"; }
+    catch(e){
+      /* Repli : on sélectionne, le joueur copie à la main. */
+      const r = document.createRange(); r.selectNodeContents(document.getElementById(b.dataset.cible));
+      const s = getSelection(); s.removeAllRanges(); s.addRange(r);
+      b.textContent = "Sélectionné — copie à la main";
+    }
+    setTimeout(() => { b.textContent = "Copier la clé " + (b.dataset.cible === "pub" ? "publique" : "privée"); }, 2200);
+  });
+});
+</script>
+</body>
+</html>
