@@ -165,7 +165,16 @@ const ECRANS = [
       if (!el) return null;
       const toutes = []; Object.keys(BANK).forEach(k => BANK[k].forEach(q => toutes.push(q)));
       const garde = el.innerHTML;
-      const dispo = el.getBoundingClientRect().width;
+      /* LA PLACE DISPONIBLE, PAS LA PLACE OCCUPÉE. .qtext est un bloc dans un
+         conteneur flex centré : sa largeur se RÉTRÉCIT sur son texte. La lire
+         directement revenait à mesurer la question tirée au hasard ce jour-là
+         — 316,7 px un jour, 239,1 px le lendemain, et un faux « DÉBORDE ». La
+         vraie place est la boîte de contenu du parent : largeur moins ses
+         rembourrages et ses bordures. Elle ne dépend d'aucun tirage. */
+      const par = el.parentElement, cp = getComputedStyle(par);
+      const dispo = par.getBoundingClientRect().width
+        - parseFloat(cp.paddingLeft) - parseFloat(cp.paddingRight)
+        - parseFloat(cp.borderLeftWidth) - parseFloat(cp.borderRightWidth);
       let seuls = 0, large = 0, pire = '';
       for (const q of toutes) {
         el.innerHTML = escapeHtml(q.q);          // le VRAI chemin d'affichage

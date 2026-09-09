@@ -220,6 +220,79 @@ substituer :
    qui doit céder quand la place manque s'y accroche, avec la taille
    actuelle comme plafond.
 
+**La bordure a changé de propriété (v189).** L'onde d'appui n'atteignait
+toujours pas le bord sur l'iPhone de Taylor. Le correctif de la v182 la faisait
+déborder d'un pixel (`inset:-1px`) pour compenser le `border:1px solid
+transparent` que portaient toutes les surfaces — mais ce débord n'est visible
+que si le rognage l'autorise, et cette autorisation s'appelle
+`overflow-clip-margin`. **Chromium l'applique, WebKit non.** Mesuré en
+simulant Safari (`overflow-clip-margin:0px !important`) : l'anneau était
+toujours là, entier, sur onze familles de boutons.
+
+Le remède ne dépend d'aucun moteur : **chaque bouton porte désormais son pixel
+dans le REMBOURRAGE, plus dans la bordure** (`padding: calc(x + 1px)`,
+`border:0`). La boîte de padding devient la boîte de bordure ; l'onde à
+`inset:0` couvre le bouton entier sans rien demander au navigateur. Trente-huit
+règles converties, `--onde-debord` supprimé.
+
+| | avant | après |
+|---|---|---|
+| anneau, Safari simulé, onze familles | 1,00 px | **0,00** |
+
+**Rien ne doit bouger, et il faut le prouver deux fois.** `box-sizing` est en
+`border-box`, donc le troc est neutre — *à condition que la compensation
+suive*. Deux bancs le vérifient : `scratchpad/compens.js` contrôle, élément par
+élément et côté par côté, que ce qui est retiré à la bordure est rendu au
+rembourrage (il a trouvé quatre règles oubliées, dont `.ach-card` et `.bk-card`
+qui redéfinissent leur propre `padding` par-dessus celui de `.card`) ; et le
+banc de géométrie compare 2358 boîtes sur seize écrans. Résultat : **zéro
+déplacement**, hors les deux couches internes du moteur de verre (`.gs` et
+`.glass-rim`), qui gagnent le pixel — c'est précisément le but.
+
+**`currentTime` ne compte pas depuis le début du mouvement (v189).** « Le mode
+créer une partie s'affiche, ça saute, puis ça revient. » La v181 avait corrigé
+une relance ; il en restait une autre, plus profonde. Un rendu sur place reprend
+l'animation d'entrée grâce à un `animation-delay` négatif, et pour savoir OÙ en
+est le mouvement le code lisait `animation.currentTime`. **Or `currentTime`
+compte depuis le début du délai, pas depuis le début du mouvement.** Sur le
+premier nœud le délai vaut zéro et les deux coïncident. Dès la première reprise
+le nœud porte un délai négatif : son `currentTime` repart de zéro alors que le
+mouvement est déjà aux trois quarts.
+
+Et la présence Supabase provoque **deux** rendus sur place, l'abonnement puis la
+synchro, à trente millisecondes d'écart. Le second lisait 29 ms au lieu de 412
+et redonnait au salon un délai de -29 ms : l'écran repartait du bas et refaisait
+toute son entrée. Le temps réel, c'est `currentTime` **moins** le délai (négatif,
+donc ajouté) — vérifié au banc : délai -300 ms, cinquante millisecondes plus
+tard, `currentTime` 50 et progression 0,700, soit bien 350/500.
+
+| latence du réseau | saut avant | après |
+|---|---|---|
+| 150 ms | 699,4 px | **0,2** |
+| 400 ms | 873,7 px | **0,1** |
+
+**Le banc ne pouvait pas le voir, parce qu'il ne jouait qu'une réponse.** Son
+Supabase de laboratoire répondait `SUBSCRIBED` et s'arrêtait là — un seul rendu
+sur place, donc jamais la relance qui vient du second. Il annonçait 0,1 px de
+saut pendant que le défaut était entier. Le laboratoire enchaîne maintenant la
+synchro de présence comme le vrai, et **il échoue sur la version d'avant** avant
+d'accepter ses zéros sur celle-ci : *un banc qui ne trouve rien doit d'abord
+prouver qu'il sait trouver.* (Deuxième fois que cette règle sert.)
+
+**Une largeur lue sur un bloc qui se rétrécit ne mesure rien (v189).** Le banc
+de typographie comparait la ligne la plus large de la banque à « la place
+disponible » — qu'il lisait sur `.qtext`. Or `.qtext` est un bloc dans un
+conteneur flex centré : sa largeur suit son texte, donc la question tirée au
+hasard ce jour-là. 316,7 px un matin, 239,1 px le lendemain, et un faux
+« DÉBORDE ». La vraie place est la boîte de contenu du parent. Même famille de
+piège que les 78 ponctuations orphelines qui n'existaient pas.
+
+**Deux boutons du même style doivent avoir la même taille (v189).** Les
+Réglages en alignent deux à droite, « Guide » et le sigle de la Bible. Leur
+largeur suivait leur texte : 64,7 px contre 53,5 px, une colonne de droite en
+escalier. Une largeur plancher calée sur le plus long les rend identiques à
+toutes les tailles d'écran, sans toucher au plus grand des deux.
+
 **La règle des 44 px, mesurée là où le doigt tombe (v184).** Le jeu s'en
 réclamait déjà — « la zone tactile est bien plus grande que le trait
 visible », dit le commentaire de la poignée des feuilles — sans l'avoir

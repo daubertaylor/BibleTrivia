@@ -45,10 +45,17 @@ const LATENCES = [0, 150, 400, 600, 1500];
         createClient(){
           return {
             channel(){
+              let syncCb = null;
               const api = {
-                on(){ return api; },
+                /* LE VRAI SUPABASE RÉPOND DEUX FOIS. L'abonnement d'abord, puis
+                   une synchro de présence juste après le track — deux rendus sur
+                   place à trente millisecondes d'écart, pendant l'entrée. Le
+                   laboratoire n'en jouait qu'un seul : il ne pouvait donc pas
+                   voir la relance qui vient du SECOND. Un banc qui ne trouve
+                   rien doit d'abord prouver qu'il sait trouver. */
+                on(t, o, cb){ if(t === 'presence' && o && o.event === 'sync') syncCb = cb; return api; },
                 subscribe(cb){ setTimeout(() => cb && cb('SUBSCRIBED'), ms); return api; },
-                track(){ return Promise.resolve('ok'); },
+                track(){ setTimeout(() => syncCb && syncCb(), 30); return Promise.resolve('ok'); },
                 untrack(){ return Promise.resolve('ok'); },
                 send(){ return Promise.resolve('ok'); },
                 presenceState(){ return {}; },
