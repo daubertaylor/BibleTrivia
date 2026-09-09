@@ -1,6 +1,6 @@
 /* Yada — service worker : rend l'app jouable hors connexion.
    À déposer à côté de index.html (même dossier, nom exact "sw.js"). */
-const CACHE = "yada-v204";
+const CACHE = "yada-v205";
 const CORE = ["./", "./index.html", "./manifest.json", "./apple-touch-icon.png", "./icon-192.png", "./icon-512.png", "./fonts/inter-latin.woff2", "./fonts/inter-latinext.woff2", "./fonts/fraunces-italic-latin.woff2", "./fonts/fraunces-italic-latinext.woff2", "./fonts/poppins-500-latin.woff2", "./fonts/poppins-500-latinext.woff2", "./fonts/poppins-600-latin.woff2", "./fonts/poppins-600-latinext.woff2", "./fonts/poppins-700-latin.woff2", "./fonts/poppins-700-latinext.woff2"];
 self.addEventListener("install", (e) => {
   e.waitUntil(caches.open(CACHE).then((c) => c.addAll(CORE)).catch(() => {}));
@@ -117,16 +117,42 @@ self.addEventListener("push", (e) => {
        - il a joué hier, donc la série est encore rattrapable aujourd'hui ;
        - on ne l'a pas déjà prévenu aujourd'hui. */
     if(!etat || !etat.actif) return;
-    if((etat.serie | 0) < 2) return;
-    if(etat.dernier === aujourdhui) return;
-    const hier = jourLocal(dec - 1440);
-    if(etat.dernier !== hier) return;
-    if(etat.prevenu === aujourdhui) return;
-    const n = (etat.serie | 0);
-    await self.registration.showNotification("Ta série de " + n + " jours s'arrête ce soir", {
-      body: "Un défi, et elle repart. \u00c0 tout de suite\u00a0!",
+    if(etat.prevenu === aujourdhui) return;      // un seul rappel par jour, tous cas confondus
+
+    /* DEUX CAS, ET LE SERVEUR DIT LEQUEL. L'appareil ne le croit pas sur
+       parole : il revérifie avec ce qu'il sait, lui, de première main. Entre
+       la décision du serveur et l'arrivée de l'envoi, le joueur a pu jouer —
+       auquel cas il ne doit rien voir du tout. */
+    const genre = charge.genre === "absence" ? "absence" : "serie";
+    let titre = "", corps = "";
+
+    if(genre === "serie"){
+      /* - il a une série à perdre (deux jours au moins) ;
+         - il n'a PAS déjà joué le défi aujourd'hui ;
+         - il l'a joué hier, donc la série est encore rattrapable. */
+      if((etat.serie | 0) < 2) return;
+      if(etat.dernier === aujourdhui) return;
+      if(etat.dernier !== jourLocal(dec - 1440)) return;
+      const n = (etat.serie | 0);
+      titre = "Ta série de " + n + " jours s'arrête ce soir";
+      corps = "Un défi, et elle repart. \u00c0 tout de suite\u00a0!";
+    } else {
+      /* LA LONGUE ABSENCE. On recompte l'écart ici : si le joueur a rejoué
+         depuis, « vu » vaut aujourd'hui et l'écart tombe à zéro. */
+      if(!etat.vu) return;
+      const j = Math.round((Date.parse(aujourdhui + "T00:00:00Z") - Date.parse(etat.vu + "T00:00:00Z")) / 86400000);
+      if(!(j >= 7)) return;
+      if(typeof charge.jours === "number" && j !== charge.jours) return;
+      titre = j >= 30 ? "\u00c7a fait un mois" : "\u00c7a fait une semaine";
+      corps  = j >= 30
+        ? "Ta progression est intacte. On reprend quand tu veux."
+        : "Un d\u00e9fi t'attend \u2014 trois minutes suffisent.";
+    }
+
+    await self.registration.showNotification(titre, {
+      body: corps,
       icon: "./icon-192.png", badge: "./icon-192.png",
-      tag: "serie", renotify: false, requireInteraction: false,
+      tag: genre, renotify: false, requireInteraction: false,
       data: { url: "./" },
     });
     /* on note le jour : même si un second envoi arrivait, il resterait muet */

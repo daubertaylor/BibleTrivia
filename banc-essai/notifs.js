@@ -100,8 +100,16 @@ const CLE = 'BOveRs4clrziwaZmqCy4re5c-vpsPRGRvw0mfUxP5D3u920HJW45-o7V1avGrvsKwFi
   await p.waitForFunction(() => { try { return state.screen === 'mode'; } catch(e){ return false; } }, null, { timeout:20000 });
   await p.waitForTimeout(600);
 
-  /* Un joueur QUI NE FAIT QUE DU SOLO : on ne touche jamais au mode en ligne. */
+  /* Un joueur QUI NE FAIT QUE DU SOLO : on ne touche jamais au mode en ligne.
+     Il joue une partie — c'est ce que le serveur doit savoir pour décider d'un
+     rappel d'absence, et la série du Défi du jour ne le dit pas. */
   const avantLigne = await p.evaluate(() => !!net.supa);
+  await p.evaluate(() => { state.mode = 'solo'; startGame(); });
+  await p.waitForTimeout(700);
+  const vuApresPartie = await p.evaluate(() => localStorage.getItem('bt_vu'));
+  const aujourdhui = await p.evaluate(() => dayKey(0));
+  await p.evaluate(() => { state.screen = 'mode'; render(); });
+  await p.waitForTimeout(500);
   await p.evaluate(() => setNotif(true));
   await p.waitForTimeout(900);
 
@@ -119,7 +127,7 @@ const CLE = 'BOveRs4clrziwaZmqCy4re5c-vpsPRGRvw0mfUxP5D3u920HJW45-o7V1avGrvsKwFi
 
   await nav.close();
 
-  const PERMIS = ['endpoint','abonnement','maj','dernier','serie','decalage'];
+  const PERMIS = ['endpoint','abonnement','maj','dernier','serie','vu','decalage'];
   const indiscret = [];
   for (const e of [inscription, suivi]) {
     if (!e) continue;
@@ -129,13 +137,16 @@ const CLE = 'BOveRs4clrziwaZmqCy4re5c-vpsPRGRvw0mfUxP5D3u920HJW45-o7V1avGrvsKwFi
   console.log('  le joueur n\'a jamais ouvert le mode en ligne : ' + (avantLigne ? 'FAUX (lien déjà ouvert)' : 'vrai'));
   console.log('  interrupteur allumé      : ' + (r.allume ? 'oui' : 'NON'));
   console.log('  inscrit dans push_subs   : ' + (inscription ? 'oui — ' + Object.keys(inscription.ligne).join(', ') : 'NON'));
+  console.log('  jour de la dernière partie retenu : ' + (vuApresPartie === aujourdhui ? 'oui' : 'NON (' + vuApresPartie + ')'));
   console.log('  série et fuseau transmis : ' + (suivi ? 'oui — ' + Object.keys(suivi.ligne).join(', ') : 'NON'));
   console.log('  rien de personnel envoyé : ' + (indiscret.length ? 'NON — ' + indiscret.join(', ') : 'oui'));
   console.log('  retiré à l\'extinction    : ' + (efface ? 'oui' : 'NON'));
   if (errs.length) console.log('  ERREURS JS : ' + [...new Set(errs)].slice(0,3).join(' | '));
 
   if (!injectee) console.log('  LA CLÉ N\'A PAS PU ÊTRE INJECTÉE — le banc ne teste rien');
-  const ok = injectee && !avantLigne && r.allume && !!inscription && !!suivi && !indiscret.length && efface && !errs.length;
+  const vuJuste = vuApresPartie === aujourdhui && !!suivi && Object.keys(suivi.ligne).includes('vu');
+  if (!vuJuste) console.log('  <-- LE SERVEUR NE SAURA PAS QUAND CE JOUEUR A JOUÉ POUR LA DERNIÈRE FOIS');
+  const ok = injectee && !avantLigne && r.allume && !!inscription && !!suivi && vuJuste && !indiscret.length && efface && !errs.length;
   console.log(ok ? '\n  OK — un appareil qui n\'a jamais joué en ligne est quand même inscrit'
                  : '\n  ÉCHEC — cet appareil ne recevra jamais de rappel');
   process.exit(ok ? 0 : 1);

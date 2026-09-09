@@ -231,6 +231,33 @@ substituer :
    qui doit céder quand la place manque s'y accroche, avec la taille
    actuelle comme plafond.
 
+**Un deuxième rappel : la longue absence (v205).** Demandé par Taylor — « pas
+seulement pour les séries, mais quand quelqu'un reste longtemps sans jouer ».
+Le jeu notifie donc deux cas, et toujours pas un de plus : une série en jeu ce
+soir, et une absence de sept jours puis de trente. **Deux rappels par absence,
+jamais davantage** : au-delà, plus rien tant que le joueur n'est pas revenu.
+
+Ce sont des égalités STRICTES, pas des seuils. « Exactement sept jours » n'est
+vrai qu'un seul jour, et l'heure du soir n'arrive qu'une fois ce jour-là : il
+n'y a donc aucun compteur à tenir pour éviter la répétition, c'est la FORME de
+la condition qui l'empêche. Un compteur, lui, aurait fallu le remettre à zéro,
+et c'est le genre de chose qu'on oublie.
+
+**Le piège était dans la définition de « jouer ».** La série ne parle que du
+Défi du jour. Quelqu'un qui joue tous les soirs en solo, en groupe ou en ligne
+sans jamais toucher au Défi a une série à zéro et une date de dernier défi
+vieille de plusieurs mois — se servir d'elle pour décider « il ne joue plus »
+aurait réveillé, chaque semaine, exactement les joueurs les plus assidus. La
+date de la dernière PARTIE, tous modes confondus, est donc suivie à part.
+
+**Le banc exécute le vrai code du serveur, pas une copie de sa règle.** La
+fonction est du TypeScript pour Deno : `banc-essai/rappels.js` la transpile,
+remplace ses deux dépendances par des doublures qui notent ce qu'on leur
+demande, fige l'horloge et lui présente treize joueurs fabriqués — dont celui
+qui joue tous les jours sans toucher au Défi. Trois envois attendus, trois
+reçus. Le même banc, lancé sur la version d'avant, ne trouve que le rappel de
+série : il sait donc échouer.
+
 **Une clé qui se décode n'est pas une clé (v204).** La première clé publique
 envoyée avait la bonne tête : 87 caractères, 65 octets une fois décodée. Elle
 était pourtant inutilisable — son premier octet valait `0x07` au lieu de `0x04`,

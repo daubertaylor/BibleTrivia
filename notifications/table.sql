@@ -5,12 +5,17 @@
 create table if not exists public.push_subs (
   endpoint   text primary key,          -- adresse d'envoi fournie par le navigateur
   abonnement jsonb       not null,      -- les clés de chiffrement de cet appareil
-  dernier    date,                      -- date du dernier défi joué
+  dernier    date,                      -- date du dernier DÉFI joué
   serie      int         not null default 0,
+  vu         date,                      -- date de la dernière PARTIE, tous modes
   decalage   int         not null default 0,   -- minutes par rapport à UTC
   maj        timestamptz not null default now()
 );
 create index if not exists push_subs_dernier on public.push_subs (dernier, serie);
+create index if not exists push_subs_vu on public.push_subs (vu);
+
+-- Si la table existe déjà sans la colonne « vu » (installée avant la v205) :
+alter table public.push_subs add column if not exists vu date;
 
 alter table public.push_subs enable row level security;
 

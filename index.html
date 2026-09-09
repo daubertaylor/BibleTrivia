@@ -5563,6 +5563,7 @@ function beginDuel(seed, lengthKey, timerKey, theme){
   net.animIdx = -1; net.justRevealed = false;
   net.oppLastSeen = Date.now();
   startDuelHeartbeat();
+  marquerJoue();                 // une partie en ligne compte comme les autres
   state.screen = "online-play";
   render();
 }
@@ -9481,6 +9482,24 @@ function loadDaily(){ try { const s = JSON.parse(localStorage.getItem("bt_daily"
 function saveDaily(x){ try { localStorage.setItem("bt_daily", JSON.stringify(x)); } catch(e){}
   try { notifMiroir(); } catch(e){}   /* le service worker lit ce miroir, pas le localStorage */ }
 function dailyDoneToday(){ return loadDaily().last === dayKey(0); }
+/* ===== LE JOUR OÙ L'ON A JOUÉ POUR LA DERNIÈRE FOIS =====
+   La série ne dit que le Défi du jour. Or on peut très bien jouer tous les
+   soirs en solo, en groupe ou en ligne sans jamais toucher au Défi : pour ce
+   joueur-là, la série vaut zéro et la date du dernier défi ne bouge plus. Se
+   servir d'elle pour décider « il ne joue plus » reviendrait à réveiller
+   quelqu'un qui joue tous les jours.
+   On retient donc, à part, le jour de la dernière PARTIE — tous modes
+   confondus. C'est cette date, et elle seule, qui répond à « depuis quand
+   n'est-il pas revenu ». */
+function loadVu(){ try { return localStorage.getItem("bt_vu") || ""; } catch(e){ return ""; } }
+function marquerJoue(){
+  try {
+    const j = dayKey(0);
+    if(localStorage.getItem("bt_vu") === j) return;   // déjà noté aujourd'hui
+    localStorage.setItem("bt_vu", j);
+  } catch(e){}
+  try { notifMiroir(); } catch(e){}
+}
 /* LE JOUR PEUT TOURNER PENDANT QUE LE JEU DORT.
    L'accueil est calculé au moment où on le dessine : la carte du Défi et la
    bande des sept jours figent donc l'état du jour où on l'a ouvert. Or sur
@@ -9634,8 +9653,9 @@ function notifMiroir(){
     notifBase().then(db => {
       const tx = db.transaction("etat", "readwrite");
       tx.objectStore("etat").put({
-        dernier: d.last,            // date du dernier défi joué
+        dernier: d.last,            // date du dernier DÉFI joué
         serie:   d.streak,          // longueur de la série
+        vu:      loadVu(),          // date de la dernière PARTIE, tous modes
         actif:   !!settings.notif,  // le joueur a-t-il accepté ?
         maj:     Date.now(),
       }, "serie");
@@ -9670,6 +9690,7 @@ function notifSync(){
       supa.from("push_subs").update({
         dernier: d.last || null,
         serie: d.streak | 0,
+        vu: loadVu() || null,                              // dernière partie, tous modes
         decalage: -(new Date().getTimezoneOffset()) | 0,   // minutes par rapport à UTC
         maj: new Date().toISOString(),
       }).eq("endpoint", sub.endpoint);
@@ -9768,7 +9789,7 @@ function notifRafraichir(){
   const t = document.getElementById("notifTxt");
   if(t) t.textContent = notifEtat() === "denied"
     ? "Bloquées dans les réglages"
-    : (on ? "Le soir, seulement si ta série est en jeu" : "Ne rien envoyer");
+    : (on ? "Le soir : série en jeu, ou longue absence" : "Ne rien envoyer");
 }
 
 /* ANTI-TRICHE DÉFI DU JOUR : le défi ne se joue qu'UNE fois par jour. On
@@ -9887,6 +9908,7 @@ function startGame(){
   /* Partie ordinaire : on sort TOUJOURS du contexte défi/révision, sinon une
      simple partie solo de 9 questions validerait la série du Défi du jour. */
   state.daily = false; state.revision = false;
+  marquerJoue();
   if(state.mode==="group"){
     const valid = validTeams();
     if(valid.length<2){

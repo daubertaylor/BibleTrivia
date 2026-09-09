@@ -1,7 +1,22 @@
-# Les rappels de série
+# Les rappels
 
-Le jeu ne notifie **qu'un seul cas** : une série de flammes sur le point de
-s'éteindre alors qu'elle est encore rattrapable. Rien d'autre ne le mérite.
+Le jeu ne notifie **que deux cas**, et rien d'autre ne le mérite :
+
+1. **Une série en jeu** — les flammes sont sur le point de s'éteindre alors
+   qu'elles sont encore rattrapables ce soir.
+2. **Une longue absence** — sept jours sans jouer, puis trente. Deux rappels
+   par absence, pas un de plus : après le trentième jour, plus rien tant que le
+   joueur n'est pas revenu.
+
+Ces deux cas s'excluent l'un l'autre : le premier demande d'avoir joué HIER, le
+second d'être absent depuis au moins une semaine. Et un joueur ne peut recevoir
+qu'un seul rappel par jour, quel qu'il soit.
+
+**« Jouer » veut dire une partie, dans n'importe quel mode.** Pas seulement le
+Défi du jour : quelqu'un qui joue tous les soirs en solo, en groupe ou en ligne
+sans jamais toucher au Défi a une série à zéro et une date de dernier défi
+vieille de plusieurs mois. Le réveiller serait le pire défaut possible ici. La
+date de la dernière PARTIE est donc suivie à part (colonne `vu`).
 
 Tant que la clé publique n'est pas renseignée, **aucun réglage n'apparaît** dans
 le jeu — mieux vaut ne rien proposer qu'un interrupteur qui ne fait rien.
@@ -40,7 +55,7 @@ dans les secrets Supabase (étape 3).
 
 **3. Déployer la fonction** :
 
-    supabase functions deploy rappel-serie
+    supabase functions deploy rappels
     supabase secrets set VAPID_PUBLIQUE="…" VAPID_PRIVEE="…" VAPID_SUJET="mailto:ton@adresse.fr"
 
 **4. La programmer toutes les heures** — coller `cron.sql` dans l'éditeur SQL
