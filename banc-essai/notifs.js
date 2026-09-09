@@ -48,6 +48,14 @@ const CLE = 'BOveRs4clrziwaZmqCy4re5c-vpsPRGRvw0mfUxP5D3u920HJW45-o7V1avGrvsKwFi
   await p.addInitScript(() => {
     localStorage.setItem('bt_profile', JSON.stringify({ name:'Taylor', color:'#4C86E8' }));
     localStorage.setItem('bt_fs_hint', '1');
+    /* LE JEU EST POSÉ SUR L'ÉCRAN D'ACCUEIL. Depuis la v206, c'est la condition
+       pour que les rappels existent : dans un onglet, la permission irait au
+       navigateur et pas au jeu. On ne détourne que les requêtes « display-mode »,
+       le reste de matchMedia sert à la mise en page et doit rester vrai. */
+    const vraiMM = window.matchMedia ? window.matchMedia.bind(window) : null;
+    window.matchMedia = (q) => /display-mode/.test(String(q))
+      ? { matches:true, media:q, onchange:null, addEventListener(){}, removeEventListener(){}, addListener(){}, removeListener(){}, dispatchEvent(){ return false; } }
+      : (vraiMM ? vraiMM(q) : { matches:false, media:q, addEventListener(){}, removeEventListener(){} });
     /* Une série de 3 jours en cours : c'est le cas où le rappel a un sens. */
     const j = (d) => { const x = new Date(Date.now() - d*86400000); const p2 = n => String(n).padStart(2,'0');
       return x.getFullYear() + '-' + p2(x.getMonth()+1) + '-' + p2(x.getDate()); };

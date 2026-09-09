@@ -6789,8 +6789,8 @@ function openSettings(){
       ${notifPossible() ? `
       <div class="set-row">
         <span class="set-ico ntf">${ICONS.bell}</span>
-        <span class="set-txt"><b>Rappel de série</b><small id="notifTxt">${notifEtat()==="denied" ? "Bloquées dans les réglages" : (settings.notif && notifEtat()==="granted" ? "Le soir, seulement si ta série est en jeu" : "Ne rien envoyer")}</small></span>
-        <button class="switch${settings.notif && notifEtat()==="granted" ? " on" : ""}" id="swNotif" role="switch" aria-checked="${!!(settings.notif && notifEtat()==="granted")}" aria-label="Rappel de série" ${notifEtat()==="denied" ? "disabled" : ""} onclick="setNotif(!(settings.notif && notifEtat()==='granted'))"></button>
+        <span class="set-txt"><b>Rappels</b><small id="notifTxt">${notifEtat()==="denied" ? "Bloquées dans les réglages" : (settings.notif && notifEtat()==="granted" ? "Le soir : série en jeu, ou longue absence" : "Ne rien envoyer")}</small></span>
+        <button class="switch${settings.notif && notifEtat()==="granted" ? " on" : ""}" id="swNotif" role="switch" aria-checked="${!!(settings.notif && notifEtat()==="granted")}" aria-label="Rappels" ${notifEtat()==="denied" ? "disabled" : ""} onclick="setNotif(!(settings.notif && notifEtat()==='granted'))"></button>
       </div>` : ""}
       <div class="set-row">
         <span class="set-ico bib">${ICONS.bookOpen}</span>
@@ -9627,9 +9627,20 @@ function notifSupporte(){
 /* iOS n'autorise les notifications QUE depuis une app posée sur l'écran
    d'accueil (16.4+). Proposer le réglage dans Safari donnerait un refus
    systématique et brûlerait la seule demande qu'on a le droit de faire. */
+/* ===== LES RAPPELS N'ONT DE SENS QUE DANS LE JEU INSTALLÉ =====
+   La règle valait déjà pour iOS, où ils sont carrément impossibles hors de
+   l'écran d'accueil. Elle vaut en réalité PARTOUT, pour une raison de bon sens :
+   dans un onglet de navigateur, la permission est accordée au NAVIGATEUR, pas
+   au jeu. Le joueur voit arriver « Chrome » ou « Safari » au lieu de Yada, la
+   notification survit à la fermeture de l'onglet sans qu'il comprenne d'où elle
+   vient, et il perd le seul « oui » qu'on avait le droit de lui demander — un
+   refus est définitif, le navigateur ne redemande plus jamais.
+   Alors on ne demande rien du tout tant que le jeu n'est pas posé sur l'écran
+   d'accueil. Le réglage n'apparaît même pas : mieux vaut ne rien proposer qu'un
+   interrupteur qui promet mal. */
 function notifPossible(){
   if(!notifSupporte() || !VAPID_PUBLIC) return false;
-  if(IS_IOS && !isStandalone) return false;
+  if(!isStandalone) return false;
   return true;
 }
 function notifEtat(){
@@ -9715,7 +9726,11 @@ function notifProposer(){
   setTimeout(() => {
     showModal({
       title: "Garder ta série ?",
-      message: "Le jeu peut te prévenir le soir, uniquement les jours où ta série est sur le point de s'éteindre. Jamais plus d'une fois par jour, et jamais si tu as déjà joué.",
+      /* ON DIT EXACTEMENT CE QU'ON ENVERRA. Depuis qu'il y a deux cas, une
+         promesse qui n'en nomme qu'un est une promesse à moitié tenue — et
+         c'est sur cette phrase que le joueur donne le seul « oui » qu'on ait
+         le droit de lui demander. */
+      message: "Deux cas, jamais d'autres : le soir où ta série est sur le point de s'éteindre, et après une longue absence. Au plus une fois par jour, et jamais si tu as déjà joué.",
       okLabel: "D'accord",
       cancelLabel: "Non merci",
       onOk: () => { notifActiver(); },

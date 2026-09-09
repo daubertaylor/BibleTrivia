@@ -86,8 +86,18 @@ Un joueur ne peut recevoir **qu'un seul rappel par jour**, et seulement s'il :
 - a joué hier, donc peut encore la sauver ;
 - n'a pas déjà été prévenu aujourd'hui.
 
-## iOS
+## Seulement dans le jeu INSTALLÉ, partout
 
-Les notifications n'existent que si le jeu a été **ajouté à l'écran d'accueil**
-(iOS 16.4+). Dans Safari, le réglage n'est pas proposé du tout : une demande y
-serait refusée d'office, et un refus est définitif.
+Le réglage n'apparaît que si le jeu a été **ajouté à l'écran d'accueil** — sur
+iOS comme sur Android. Sur iOS c'est une obligation technique (16.4+). Ailleurs
+c'est un choix : dans un onglet, la permission est accordée au NAVIGATEUR et pas
+au jeu. Le joueur verrait arriver « Chrome » au lieu de Yada, la notification
+survivrait à la fermeture de l'onglet sans qu'il comprenne d'où elle vient, et
+il aurait dépensé le seul « oui » qu'on ait le droit de lui demander : un refus
+est définitif, le navigateur ne redemande plus jamais.
+
+**Le nom affiché par le système est celui de l'installation.** La demande de
+permission dit le nom qu'avait le jeu au moment où l'icône a été posée sur
+l'écran d'accueil — « BibleTrivia » pour une icône posée avant la v202. Il ne
+change qu'en retirant l'icône et en la reposant, ce qui n'est PAS anodin sur
+iOS : la mémoire de l'app installée part avec elle.
