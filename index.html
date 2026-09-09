@@ -260,8 +260,15 @@
        devenait invalide, et les surfaces qui l'utilisaient n'héritaient que
        de ce vide. Le dessin vit donc sur la surface elle-même, à côté des
        longueurs qu'il consomme (voir .rev-list et .ds-piste). */
-    --tr-voile-in: 0.28s ease;
-    --tr-voile-out: 0.24s ease;
+    /* Le voile s'assombrit PENDANT que la feuille monte, pas avant elle : il
+       finissait en 0,28s quand elle en met 0,52, donc le décor était déjà noir
+       alors que la feuille était encore en route. Même horloge, un seul
+       geste. */
+    --tr-voile-in: var(--tr-ouvre);
+    /* Le voile s'efface EXACTEMENT comme la surface qu'il accompagne : c'était
+       la même durée mais une autre courbe (ease contre la nôtre), soit deux
+       horloges pour un seul geste. */
+    --tr-voile-out: var(--tr-ferme);
   }
   *{ box-sizing:border-box; scrollbar-width:none; }
   *::-webkit-scrollbar{ display:none; width:0; height:0; }
@@ -1523,7 +1530,22 @@
      l'impression que ce n'était pas la même transition. On applique donc au
      menu la règle EXACTE de la feuille : il part entièrement sous le bord bas
      et se pose à sa place, porté par le même ressort. */
-  @keyframes screenIn{ from{ transform:translate3d(0,100lvh,0); } to{ transform:translate3d(0,0,0); } }
+  /* ===== LA COURSE D'UN ÉCRAN QUI ARRIVE : 14 % DE LA HAUTEUR =====
+     Elle valait 100lvh, un écran entier. Conséquence mesurée image par image :
+     à 100 ms, 460 px du nouvel écran étaient ENCORE DEHORS — la moitié — et la
+     bande des sept jours, tout en bas, n'apparaissait qu'à 390 ms, aux trois
+     quarts du mouvement. Le reste de l'écran était là depuis longtemps. C'est
+     ce que Taylor a vu : « le bas de l'écran se charge un peu plus lentement,
+     on dirait que ça apparaît après ».
+     Rien ne se chargeait : tout est en place dès la première image (mesuré, les
+     sept repères de l'accueil apparaissent à 13 ms et se posent tous à 491).
+     C'était la COURSE. Un écran qui monte de toute sa hauteur passe le plus
+     clair du trajet à découvrir son propre bas.
+     À 14 % (14lvh), l'écran est là dès le départ, décalé de 119 px sur un
+     iPhone 15 : il ne manque plus qu'une carte de haut, et la bande du bas est
+     en place à 150 ms au lieu de 390. Le geste reste franchement visible — ce
+     n'est pas un fondu déguisé — et il garde la courbe et la durée du pli. */
+  @keyframes screenIn{ from{ transform:translate3d(0,14lvh,0); } to{ transform:translate3d(0,0,0); } }
   /* ANDROID (verre GPU backdrop-filter) UNIQUEMENT : le verre paraissait
      « ultra transparent » pendant le fondu d'opacité au changement d'écran.
      On y monte l'opacité très vite (pleine à 22%), seul le glissement reste.
@@ -1534,7 +1556,7 @@
      L'écran qui entre GLISSE sans fondu (verre intact du 1er au dernier
      instant) ; l'écran qui sort disparaît net (pas de fantôme au verre
      cassé) ; la fenêtre modale s'ouvre par un pur zoom, sans fondu. */
-  @keyframes screenInGl{ from{ transform:translate3d(0,100lvh,0); } to{ transform:translate3d(0,0,0); } }
+  @keyframes screenInGl{ from{ transform:translate3d(0,14lvh,0); } to{ transform:translate3d(0,0,0); } }
   /* Les DEUX moteurs de verre (gl-native backdrop ET gl-xf transform) partagent
      ces transitions SANS fondu d'opacité : animer l'opacité d'un groupe qui
      porte le verre coûte cher sur Android. En backdrop, Chrome coupe le
@@ -1592,7 +1614,25 @@
     90%{ transform:rotate(0deg); }
     100%{ transform:rotate(0deg); }
   }
+  /* ===== LE VERROU ARRIVE ET S'EN VA COMME TOUT LE RESTE =====
+     Il apparaissait et disparaissait NET — la seule surface du jeu à le faire,
+     alors que tout ce qui arrive porte la même courbe et la même durée depuis
+     la v190. Le voile prend donc l'horloge d'ouverture, son contenu monte de
+     14 px comme les autres arrivées, et le départ prend l'horloge de
+     fermeture.
+     La sortie demande une main du JS : « display:none » coupe une animation
+     net, donc la requête média ne peut pas la jouer. Quand le téléphone se
+     redresse, le JS pose « rl-sort » sur la racine — la règle ci-dessous garde
+     le voile affiché le temps de la fermeture, puis la classe est retirée (et
+     un filet la retire de toute façon, pour qu'un verrou ne puisse jamais
+     rester en travers du jeu). */
+  @keyframes rlIn{ from{ opacity:0; } to{ opacity:1; } }
+  @keyframes rlOut{ from{ opacity:1; } to{ opacity:0; } }
   @media (orientation:landscape) and (pointer:coarse){ #rotate-lock{ display:flex; } }
+  #rotate-lock{ animation:rlIn var(--tr-ouvre) both; }
+  #rotate-lock .rl-ico, #rotate-lock p{ animation:fadeSlide var(--tr-ouvre) both; }
+  html.rl-sort #rotate-lock{ display:flex !important; animation:rlOut var(--tr-ferme) forwards; pointer-events:none; }
+  html.rl-sort #rotate-lock .rl-ico, html.rl-sort #rotate-lock p{ animation:none; }
   /* TÉLÉPHONE COUCHÉ : ON NE REFAIT PAS LA MISE EN PAGE POUR RIEN.
      « Tourne ton téléphone » est un fond PLEIN (aucune transparence) : tant
      qu'il est là, rien de l'app n'est visible. Or l'app, elle, se remettait
@@ -2741,7 +2781,7 @@
      flottement de l'icône (petite & pâle quand l'icône monte, large &
      franche quand elle redescend) → le logo semble léviter. */
   .hero-zone::after{ content:""; position:absolute; left:50%; bottom:-0.15rem; width:46%; height:0.7rem; transform:translateX(-50%); background:radial-gradient(ellipse at center, rgba(10,8,6,0.42), rgba(10,8,6,0) 72%); filter:blur(3px); z-index:0; pointer-events:none; animation:heroShadow 5s ease-in-out infinite; }
-  .hero-zone.show-verse::after{ opacity:0; transition:opacity 0.3s ease; }
+  .hero-zone.show-verse::after{ opacity:0; transition:opacity var(--tr-ouvre); }
   @keyframes heroShadow{ 0%,100%{ transform:translateX(-50%) scale(1); opacity:0.5; } 50%{ transform:translateX(-50%) scale(0.78); opacity:0.26; } }
   .hero-icon-btn{ display:block; position:relative; z-index:1; background:none; border:none; padding:0; border-radius:26%; box-shadow:none; pointer-events:auto;
     -webkit-touch-callout:none; -webkit-user-select:none; user-select:none; touch-action:manipulation; }
@@ -2758,7 +2798,16 @@
      ce qui entrait en conflit avec l'animation JS et provoquait un double-rebond
      saccadé. Un seul pilote (pointer) = réaction instantanée et fluide, identique
      iOS/Android. */
-  .hero-icon-wrap{ display:block; position:relative; transition:transform 0.62s cubic-bezier(0.3,1.1,0.32,1), opacity 0.45s ease; will-change:transform, opacity; }
+  /* ===== LE LOGO ET SON VERSET : UNE SEULE HORLOGE =====
+     Ce seul geste — toucher le logo pour voir un verset, retoucher pour le
+     ranger — portait CINQ durées et TROIS courbes : 0,62s le logo qui part,
+     0,45s son fondu, 0,55s la carte qui vient, 0,4s le sien, 0,3s l'ombre
+     portée. Aucune raison, juste l'ordre d'écriture — la même dérive que les
+     six horloges des plis avant la v183. Le logo s'en va et le verset arrive :
+     ce sont deux ARRIVÉES, elles prennent donc l'horloge de tout ce qui
+     arrive. Le décalage de 0,08s sur la carte reste : il fait passer le relais
+     du logo au verset au lieu de les faire bouger l'un sur l'autre. */
+  .hero-icon-wrap{ display:block; position:relative; transition:transform var(--tr-ouvre), opacity var(--tr-ouvre); will-change:transform, opacity; }
   .hero-icon-wrap.bump{ animation:heroBump 0.32s cubic-bezier(0.17,1.32,0.32,1); }
   /* LUMIÈRE QUI TOURNE derrière l'icône : un balayage lumineux blanc chaud
      (deux arcs doux opposés, dégradé conique) qui ORBITE lentement autour de
@@ -2801,7 +2850,7 @@
      detail : centree, la carte la plus haute passait 9 px AU-DESSUS du haut de
      l'ecran sur iPhone SE — sous l'encoche. En bas, la place est trois fois
      plus grande, et la limite ci-dessous s'arrete avant les cartes de mode. */
-  .hero-verse-card{ position:absolute; top:0; bottom:auto; height:auto; min-height:100%; max-height:min(21.5rem, calc(64 * var(--hu))); left:max(0px, calc(50% - 11.5rem)); right:max(0px, calc(50% - 11.5rem)); display:flex; flex-direction:column; align-items:center; justify-content:center; gap:0.42rem; padding:calc(0.8rem + 1px) calc(1.1rem + 1px); border-radius:var(--r-l); border:0; box-shadow:var(--rebord-pose); opacity:0; transform:scale(0.82) translateY(10px); transition:transform 0.55s cubic-bezier(0.2,1.15,0.3,1), opacity 0.4s ease; will-change:transform, opacity; pointer-events:none; text-align:center; }
+  .hero-verse-card{ position:absolute; top:0; bottom:auto; height:auto; min-height:100%; max-height:min(21.5rem, calc(64 * var(--hu))); left:max(0px, calc(50% - 11.5rem)); right:max(0px, calc(50% - 11.5rem)); display:flex; flex-direction:column; align-items:center; justify-content:center; gap:0.42rem; padding:calc(0.8rem + 1px) calc(1.1rem + 1px); border-radius:var(--r-l); border:0; box-shadow:var(--rebord-pose); opacity:0; transform:scale(0.82) translateY(10px); transition:transform var(--tr-ouvre), opacity var(--tr-ouvre); will-change:transform, opacity; pointer-events:none; text-align:center; }
   .hero-zone.show-verse .hero-verse-card{ opacity:1; transform:scale(1) translateY(0); pointer-events:auto; transition-delay:0.08s; }
   /* LE VERSET FLOTTE AU-DESSUS, IL NE SE GLISSE PAS DESSOUS.
      Les cartes de l'accueil viennent après le héros dans la page : sans ordre
@@ -5486,7 +5535,7 @@ function closeModal(){
   if(!v) return;
   v.id = "";
   v.classList.add("closing");
-  setTimeout(()=>{ if(v.parentNode) v.remove(); }, 250);
+  setTimeout(()=>{ if(v.parentNode) v.remove(); }, msFerme() + 20);
 }
 function showModal(opts){
   closeModal();
@@ -5726,7 +5775,7 @@ function closeBibles(){
      fin de la fermeture aurait donné deux temps au lieu d'un. */
   const dessous = document.querySelector("#settingsVeil .settings-sheet");
   if(dessous) dessous.classList.remove("feuille-recule");
-  setTimeout(()=>{ if(v.parentNode) v.remove(); }, 250);
+  setTimeout(()=>{ if(v.parentNode) v.remove(); }, msFerme() + 20);
 }
 /* Changer de version ne recharge PAS l'écran : on retouche les deux seules
    choses qui bougent — la puce retenue et la mention légale. Le verset suivant
@@ -6392,7 +6441,7 @@ function closeSettings(){
   const v = document.getElementById("settingsVeil");
   if(!v || v.classList.contains("closing")) return;
   v.classList.add("closing");
-  setTimeout(()=>{ if(v.parentNode) v.remove(); }, 250);
+  setTimeout(()=>{ if(v.parentNode) v.remove(); }, msFerme() + 20);
 }
 /* Revoir les questions ratées (mode solo ET duel en ligne, mêmes données :
    chosen/correct/fact par question ratée) : feuille glissante avec la liste.
@@ -6470,7 +6519,7 @@ function closeMissedReview(){
   const v = document.getElementById("reviewVeil");
   if(!v || v.classList.contains("closing")) return;
   v.classList.add("closing");
-  setTimeout(()=>{ if(v.parentNode) v.remove(); }, 250);
+  setTimeout(()=>{ if(v.parentNode) v.remove(); }, msFerme() + 20);
 }
 /* UNE SEULE LIGNE PAR RÉGLAGE — SAUF QUAND LA SECONDE DIT UN ÉTAT.
    Chaque ligne portait sous son nom une petite phrase qui ne faisait que le
@@ -8100,9 +8149,13 @@ function heroIconRelease(){
   clearTimeout(w._pressT); clearTimeout(w._springT);
   /* Retour en ressort NATUREL (easeOutBack) : léger dépassement organique, plus
      soyeux que l'ancien rebond très fort (1.9) qui « claquait » au sommet. */
-  w.style.transition = "transform 0.6s cubic-bezier(0.34, 1.56, 0.64, 1)";
+  /* Le RELÂCHEMENT est du même ordre qu'un bouton qu'on lâche : il prend donc
+     la même courbe et la même durée que tous les autres appuis du jeu (0,44s),
+     au lieu d'un ressort à lui seul. Le petit « boing » du tapotement
+     (heroBump) reste, lui : c'est une fête, pas un changement d'état. */
+  w.style.transition = "transform 0.44s cubic-bezier(0.2,1,0.3,1)";
   w.style.transform = "";
-  w._springT = setTimeout(()=>{ w.style.transition = ""; }, 620);
+  w._springT = setTimeout(()=>{ w.style.transition = ""; }, 480);
 }
 function heroIconTap(){
   const zone = document.getElementById("heroZone");
@@ -8386,6 +8439,19 @@ function tempoPli(){
   return _tempoPli;
 }
 function msPli(){ const m = tempoPli().match(/([\d.]+)s/); return m ? Math.round(parseFloat(m[1]) * 1000) : 520; }
+/* L'horloge de FERMETURE, lue au même endroit que celle de l'ouverture : tout
+   ce qui s'efface (voile, feuille, fenêtre, verrou paysage) la partage. Elle
+   est plus courte que l'ouverture, et c'est voulu — on regarde une chose qui
+   arrive, on ne regarde pas une chose qui s'en va. Mais il n'y en a QU'UNE. */
+let _tempoFerme = "";
+function msFerme(){
+  if(!_tempoFerme){
+    let v = "";
+    try{ v = getComputedStyle(document.documentElement).getPropertyValue("--tr-ferme").trim(); }catch(e){}
+    _tempoFerme = v || "0.24s";
+  }
+  const m = _tempoFerme.match(/([\d.]+)s/); return m ? Math.round(parseFloat(m[1]) * 1000) : 240;
+}
 /* Le filet de sécurité de chaque pli : largement APRÈS la fin du mouvement. */
 function filetPli(){ return msPli() + 280; }
 function settleTeamCard(c){
@@ -10822,7 +10888,7 @@ function render(){
     if(CUSTOM_SCROLL) prevNode.style.transform = ""; // laisse l'anim de sortie repartir proprement
     app.appendChild(node);
     if(CUSTOM_SCROLL){ customScrollY = 0; applyScrollTransform(); } else { app.scrollTop = 0; }
-    setTimeout(()=>{ if(prevNode.parentNode) prevNode.remove(); }, 460);
+    setTimeout(()=>{ if(prevNode.parentNode) prevNode.remove(); }, msFerme() + 220);
   } else {
     app.replaceChildren(node);
     if(CUSTOM_SCROLL){ customScrollY = sameScreen ? prevScroll : 0; applyScrollTransform(); }
@@ -12068,12 +12134,27 @@ function updateRotateHint(){
      chaque changement de côté, la séquence repart proprement — couché du
      côté réel (pose de base), pause, redressement unique, et il reste
      droit (forwards). Caché : tout est réarmé pour la prochaine fois. */
+  const de = document.documentElement;
+  /* On lit la visibilité SANS compter la classe de sortie, sinon le verrou se
+     croirait encore là pendant qu'il s'en va. */
+  const sortEnCours = de.classList.contains("rl-sort");
+  if(sortEnCours) de.classList.remove("rl-sort");
   const vis = getComputedStyle(rl).display !== "none";
+  if(sortEnCours && !vis) de.classList.add("rl-sort");
   const side = right ? "R" : "L";
   if(!vis){
+    /* Le téléphone se redresse : on garde le voile affiché le temps de la
+       fermeture. Filet : la classe part de toute façon, même si rien d'autre
+       ne se produit — un verrou ne doit JAMAIS rester en travers du jeu. */
+    if(rotLockWasVisible){
+      de.classList.add("rl-sort");
+      clearTimeout(rotLockSortie);
+      rotLockSortie = setTimeout(()=>{ de.classList.remove("rl-sort"); }, msFerme() + 120);
+    }
     rl.classList.remove("run");
     rotLockSide = null;
   } else if(!rotLockWasVisible || side !== rotLockSide || !rl.classList.contains("run")){
+    clearTimeout(rotLockSortie); de.classList.remove("rl-sort");
     rl.classList.remove("run");
     rl.classList.toggle("from-right", right);
     void rl.offsetWidth;
@@ -12082,7 +12163,7 @@ function updateRotateHint(){
   }
   rotLockWasVisible = vis;
 }
-let rotLockWasVisible = false, rotLockSide = null;
+let rotLockWasVisible = false, rotLockSide = null, rotLockSortie = 0;
 /* iOS met à jour les angles juste APRÈS l'événement : on relit une seconde fois */
 function updateRotateHintSoon(){
   updateRotateHint();

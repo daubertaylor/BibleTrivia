@@ -45,7 +45,8 @@ const norme = (s) => (s || '').replace(/\s+/g, '');
   await p.waitForFunction(() => { try { return state.screen === 'mode'; } catch(e){ return false; } }, null, { timeout:20000 });
 
   const releves = [];
-  const lire = async (nom, prep, sel, prop) => {
+  const lire = async (nom, prep, sel, prop, taille) => {
+    if (taille) { await p.setViewportSize({ width: taille.w, height: taille.h }); await p.waitForTimeout(260); }
     const r = await p.evaluate(({ prep, sel, prop }) => {
       // eslint-disable-next-line no-new-func
       new Function(prep)();
@@ -68,7 +69,8 @@ const norme = (s) => (s || '').replace(/\s+/g, '');
   /* Ce qui ARRIVE est joué par une @keyframes, pas par une transition : on lit
      donc animation-duration / animation-timing-function, sur un élément qui
      porte VRAIMENT sa classe d'entrée au moment de la lecture. */
-  const lireAnim = async (nom, prep, sel) => {
+  const lireAnim = async (nom, prep, sel, taille) => {
+    if (taille) { await p.setViewportSize({ width: taille.w, height: taille.h }); await p.waitForTimeout(260); }
     /* On laisse passer DEUX images : plusieurs classes d'entrée (.animate sur
        la carte de question, par exemple) ne sont posées qu'au rendu suivant.
        Lire trop tôt, c'est lire « aucune animation » sur une animation qui va
@@ -148,6 +150,11 @@ const norme = (s) => (s || '').replace(/\s+/g, '');
   await p.evaluate(() => { document.querySelectorAll('.modal-veil, .modal-back').forEach(m => m.remove()); });
   await attente(300);
 
+  await lireAnim('verrou paysage (arrive)', "", '#rotate-lock', {w:852,h:393});
+  await lire('logo qui s\'efface', "", '.hero-icon-wrap', 'transform', {w:393,h:852});
+  await lire('verset qui arrive', "", '.hero-verse-card', 'transform');
+  await attente(300);
+
   const ref = await p.evaluate(() => getComputedStyle(document.documentElement).getPropertyValue('--tr-plie').trim());
   const refD = (ref.match(/([\d.]+)s/) || [,''])[1] + 's';
   const refC = norme_(ref.replace(/^[\d.]+s\s*/, ''));
@@ -166,6 +173,68 @@ const norme = (s) => (s || '').replace(/\s+/g, '');
   if (!bonCpt) ok = false;
   console.log('  ' + 'compteurs (JS)'.padEnd(26) + (cpt.ms === null ? 'chacun' : cpt.ms + 'ms').padEnd(8) +
     'easeOutCubic'.padEnd(34) + (bonCpt ? '' : '  <-- AUTRE HORLOGE'));
+
+  /* ===== ET TOUT CE QUI S'EN VA : UNE SEULE HORLOGE AUSSI =====
+     « Il faut que ce soit ultra cohérent », y compris pour revenir en arrière.
+     Les fermetures sont plus courtes que les ouvertures, et c'est voulu : on
+     regarde une chose qui arrive, on ne regarde pas une chose qui s'en va.
+     Mais il n'en faut QU'UNE — le voile des feuilles s'effaçait sur sa propre
+     courbe (ease) à côté de la nôtre, deux horloges pour un seul geste. */
+  const fermetures = [];
+  const lireFerme = async (nom, prep, sel) => {
+    const r = await p.evaluate(({ prep, sel }) => new Promise(res => {
+      // eslint-disable-next-line no-new-func
+      new Function(prep)();
+      setTimeout(() => {
+        const el = document.querySelector(sel);
+        if (!el) return res(null);
+        const cs = getComputedStyle(el);
+        if (!cs.animationName || cs.animationName === 'none') return res({ manquant:'aucune animation' });
+        res({ d: cs.animationDuration.split(',')[0].trim(),
+              c: cs.animationTimingFunction.split(/,(?![^()]*\))/)[0].trim() });
+      }, 60);
+    }), { prep, sel });
+    fermetures.push([nom, r]);
+  };
+  await p.setViewportSize({ width:393, height:852 }); await attente(300);
+  await p.evaluate(() => { state.screen='mode'; render(); }); await attente(700);
+  /* L'écran QUI SORT n'a pas d'animation, et c'est voulu : sur les deux
+     moteurs de verre il disparaît net (« display:none »), pour ne pas faire
+     composer au navigateur les couches floutées de DEUX écrans à la fois.
+     On le relève pour mémoire, sans le compter comme une horloge de plus. */
+  const sortieEcran = await p.evaluate(() => new Promise(res => {
+    state.screen = 'parcours'; render();
+    setTimeout(() => { const e = document.querySelector('.screen-exit');
+      res(e ? getComputedStyle(e).display + ' / ' + getComputedStyle(e).animationName : 'aucun'); }, 60);
+  }));
+  await attente(700);
+  await p.evaluate(() => { showModal({title:'T',message:'T',okLabel:'Oui',hideCancel:true}); }); await attente(400);
+  await lireFerme('fenêtre qui se ferme', "closeModal();", '.modal-veil.closing .modal-card');
+  await lireFerme('voile de la fenêtre', "", '.modal-veil.closing');
+  await attente(700);
+  await p.evaluate(() => { state.screen='mode'; render(); }); await attente(600);
+  await p.evaluate(() => { openSettings(); }); await attente(700);
+  await lireFerme('feuille qui se ferme', "closeSettings();", '#settingsVeil.closing .settings-sheet');
+  await lireFerme('voile de la feuille', "", '#settingsVeil.closing');
+  await attente(700);
+  /* Le verrou paysage : on le fait apparaître puis on redresse le téléphone. */
+  await p.setViewportSize({ width:852, height:393 }); await attente(500);
+  await p.setViewportSize({ width:393, height:852 }); await attente(40);
+  await lireFerme('verrou paysage (s\'en va)', "", 'html.rl-sort #rotate-lock');
+  await attente(700);
+
+  const refF = await p.evaluate(() => getComputedStyle(document.documentElement).getPropertyValue('--tr-ferme').trim());
+  const refFD = (refF.match(/([\d.]+)s/) || [,''])[1] + 's';
+  const refFC = norme(refF.replace(/^[\d.]+s\s*/, ''));
+  console.log('\n  --tr-ferme = ' + refF + '   (msFerme() = ' + await p.evaluate(()=>{ try{ return msFerme(); }catch(e){ return null; } }) + ' ms)\n');
+  console.log('  ' + 'écran qui sort'.padEnd(26) + 'disparaît net, sans animation : ' + sortieEcran + '  (voulu)');
+  for (const [nom, r] of fermetures) {
+    if (!r) { console.log('  ' + nom.padEnd(26) + ' INTROUVABLE'); ok = false; continue; }
+    if (r.manquant) { console.log('  ' + nom.padEnd(26) + ' ' + r.manquant); ok = false; continue; }
+    const bon = r.d === refFD && norme(r.c) === norme(refFC);
+    if (!bon) ok = false;
+    console.log('  ' + nom.padEnd(26) + r.d.padEnd(8) + norme(r.c).padEnd(34) + (bon ? '' : '  <-- AUTRE HORLOGE'));
+  }
 
   /* ===== le profil image par image des deux plis qui DÉPLACENT la page ===== */
   const profil = async (nom, prep, cible) => {

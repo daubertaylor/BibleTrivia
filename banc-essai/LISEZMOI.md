@@ -32,6 +32,7 @@ notre code, et il est éprouvé. Tout le reste l'est.
     node progression.js # la progression ne recule jamais (règle numéro un)
     node jumeaux.js     # même écran, iPhone et Android : rien ne bouge
     node installer.js   # un seul geste sur Android, le guide partout ailleurs
+    node entree.js      # l'écran arrive entier : le bas avec le haut
     node pli.js         # déplier un testament glisse, et le verre suit
     node englouti.js    # la liste des erreurs ne tombe pas du bord de l'écran
     node plis.js        # tous les plis du jeu tournent-ils sur la même horloge ?

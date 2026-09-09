@@ -220,6 +220,63 @@ substituer :
    qui doit céder quand la place manque s'y accroche, avec la taille
    actuelle comme plafond.
 
+**Le bas de l'écran n'arrivait pas après : il partait de plus loin (v193).**
+« Lorsque je reviens au menu principal, le bas de l'écran se charge un peu plus
+lentement, on dirait que ça apparaît après. » Rien ne se chargeait — les sept
+repères de l'accueil apparaissent tous à 13 ms et se posent tous à 491. C'était
+la COURSE. L'écran montait de **toute sa hauteur** (`100lvh`, 874 px), et
+passait donc le plus clair du trajet à découvrir son propre bas : à 100 ms,
+499 px étaient encore dehors, et la bande des sept jours n'apparaissait qu'à
+390 ms. Filmé image par image, c'est exactement ce qu'on voit.
+
+À `14lvh` — 119 px sur un iPhone 15 — l'écran est là dès la première image, et
+le geste reste franchement visible : ce n'est pas un fondu déguisé.
+
+| part de l'écran encore dehors | avant | après |
+|---|---|---|
+| à 100 ms | 59,3 % | **7,7 %** |
+| à 250 ms | 16,6 % | **1,7 %** |
+
+`banc-essai/entree.js` mesure la part manquante à ces deux instants, **pas**
+l'instant où le dernier pixel se pose : avec une courbe qui décélère, la fin
+est une traîne de quelques pixels que personne ne voit. Ce qui se voit, c'est
+combien il manque.
+
+**Tout ce qui s'en va partage aussi une seule horloge (v193).** « Il faut que
+ce soit ultra cohérent, y compris pour revenir en arrière. » Les ouvertures
+étaient déjà sur `--tr-plie` depuis la v190 ; les fermetures, elles, n'étaient
+surveillées nulle part. Deux dérives : le voile des feuilles et celui des
+fenêtres s'effaçaient sur `ease` à côté de la courbe du jeu, et le voile
+d'ARRIVÉE finissait en 0,28 s quand la feuille qu'il accompagne en met 0,52 —
+le décor était noir avant qu'elle soit arrivée. Cinq délais JavaScript
+recopiaient 250 ou 460 ms à la main : ils lisent maintenant `msFerme()`.
+
+La fermeture reste plus courte que l'ouverture (0,24 s contre 0,52), et c'est
+voulu : on regarde une chose qui arrive, on ne regarde pas une chose qui s'en
+va. Mais il n'y en a plus qu'une. `plis.js` tient les deux familles — quinze
+arrivées et cinq départs — et nomme la seule exception : l'écran qui SORT
+disparaît net, pour ne pas faire composer au navigateur les couches floutées de
+deux écrans à la fois.
+
+**Le verrou paysage apparaissait et disparaissait net (v193).** C'était la
+seule surface du jeu à le faire. Il prend l'horloge d'ouverture quand le
+téléphone se couche, son contenu monte de 14 px comme les autres arrivées, et
+il s'en va sur l'horloge de fermeture. La sortie demande une main du JS —
+`display:none` coupe une animation net, donc la requête média ne peut pas la
+jouer : une classe posée sur la racine garde le voile affiché le temps de la
+fermeture, avec un filet qui la retire de toute façon. Vérifié sur six bascules
+rapides d'affilée : le verrou ne reste jamais en travers.
+
+**Le logo et son verset : cinq durées, trois courbes, un seul geste (v193).**
+Toucher le logo pour voir un verset portait 0,62 s pour le logo qui part, 0,45 s
+pour son fondu, 0,55 s pour la carte qui vient, 0,4 s pour le sien, 0,3 s pour
+l'ombre portée. La même dérive que les six horloges des plis avant la v183. Le
+logo s'en va et le verset arrive : ce sont deux arrivées, elles prennent
+l'horloge des arrivées. Le relais de 0,08 s entre les deux reste — il évite
+qu'ils bougent l'un sur l'autre. Le relâchement du doigt prend la courbe de
+tous les autres appuis du jeu ; seul le petit « boing » du tapotement reste à
+part, parce que c'est une fête et pas un changement d'état.
+
 **Android savait installer en un geste ; on ne le lui demandait pas (v192).**
 Chrome prévient l'application dès qu'elle est installable
 (`beforeinstallprompt`) et lui laisse déclencher l'invitation officielle du
