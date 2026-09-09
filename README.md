@@ -231,6 +231,31 @@ substituer :
    qui doit céder quand la place manque s'y accroche, avec la taille
    actuelle comme plafond.
 
+**L'interrupteur des rappels s'allumait sans inscrire l'appareil (v203).**
+Trouvé avant la première notification envoyée, en relisant le chemin complet
+pour répondre à une question de Taylor : « je veux que TOUS les appareils aient
+les notifications, pas seulement moi. »
+
+Le rappel s'appuie sur une table du serveur ; un appareil qui n'y figure pas ne
+peut pas être réveillé. L'inscription était écrite `if(net.supa)` — « si le lien
+avec le serveur existe déjà ». Or ce lien n'est ouvert qu'en ENTRANT dans le
+mode en ligne. Un joueur qui ne fait que du solo activait donc le rappel, voyait
+l'interrupteur s'allumer, et restait inconnu du serveur. Le même `if` bloquait
+la mise à jour de sa série et de son fuseau : le serveur l'aurait cru
+éternellement à zéro.
+
+`initSupa()` est appelée là où on en a besoin, au lieu d'espérer qu'elle l'ait
+été ailleurs. Et si l'inscription échoue, **l'interrupteur ne reste pas
+allumé** : un rappel promis et jamais envoyé est pire que pas de rappel.
+
+**Un `if` qui teste un effet de bord au lieu de le produire.** C'est la forme du
+défaut, et elle est silencieuse par construction : tout marche, rien ne lève
+d'erreur, l'interface confirme. `banc-essai/notifs.js` joue le cas exact — un
+joueur qui n'ouvre jamais le mode en ligne — avec un Supabase de laboratoire qui
+NOTE ce qu'on lui écrit. Sur la v202 : interrupteur allumé, table vide. Il
+vérifie au passage que rien de personnel ne part avec l'inscription : ni pseudo,
+ni score, ni progression.
+
 **La petite saccade à l'ouverture de « Créer une partie » (v200).** Elle ne se
 produisait qu'« à certains moments » — et c'est le fait le plus utile de toute
 l'enquête. Le salon se peint tout de suite (v190) et l'abonnement Supabase se

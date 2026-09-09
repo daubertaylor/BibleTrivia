@@ -9648,11 +9648,17 @@ function notifMiroir(){
    reste en place : c'est la deuxième barrière, pas la seule. */
 function notifSync(){
   try {
-    if(!net.supa || !settings.notif || notifEtat() !== "granted") return;
+    if(!settings.notif || notifEtat() !== "granted") return;
+    /* Même raison qu'à l'activation : on ouvre le lien au lieu d'attendre
+       qu'une partie en ligne l'ait ouvert pour nous. Sans ça, la série et le
+       fuseau horaire d'un joueur qui ne joue que seul n'étaient jamais mis à
+       jour — le serveur le croyait éternellement à zéro. */
+    const supa = initSupa();
+    if(!supa) return;
     navigator.serviceWorker.ready.then(reg => reg.pushManager.getSubscription()).then(sub => {
       if(!sub) return;
       const d = loadDaily();
-      net.supa.from("push_subs").update({
+      supa.from("push_subs").update({
         dernier: d.last || null,
         serie: d.streak | 0,
         decalage: -(new Date().getTimezoneOffset()) | 0,   // minutes par rapport à UTC
@@ -9704,14 +9710,32 @@ async function notifActiver(){
     const reg = await navigator.serviceWorker.ready;
     let sub = await reg.pushManager.getSubscription();
     if(!sub) sub = await reg.pushManager.subscribe({ userVisibleOnly:true, applicationServerKey: b64ToU8(VAPID_PUBLIC) });
+    /* ===== TOUS LES APPAREILS, PAS SEULEMENT CEUX QUI ONT JOUÉ EN LIGNE =====
+       On écrivait « if(net.supa) », c'est-à-dire : si le lien avec le serveur
+       existe DÉJÀ. Or il n'est ouvert qu'en entrant dans le mode en ligne. Un
+       joueur qui n'a jamais fait de partie à distance activait donc son rappel,
+       voyait l'interrupteur s'allumer… et n'était inscrit nulle part : son
+       appareil restait inconnu du serveur, qui ne pouvait pas le réveiller.
+       On OUVRE le lien ici, au lieu d'espérer qu'il soit ouvert. La fonction
+       est sans effet si elle a déjà servi.
+       ET SI L'ON N'ARRIVE PAS À S'INSCRIRE, L'INTERRUPTEUR NE RESTE PAS ALLUMÉ.
+       Un rappel promis et jamais envoyé est pire que pas de rappel du tout :
+       on le dit, et on repasse le réglage à l'arrêt. */
+    const supa = initSupa();
+    if(!supa){ throw new Error("serveur injoignable"); }
     /* On envoie l'abonnement et RIEN d'autre : pas de pseudo, pas de score, pas
        de série. Le serveur n'a besoin que de savoir où frapper. */
-    if(net.supa) await net.supa.from("push_subs").upsert(
+    const rep = await supa.from("push_subs").upsert(
       { endpoint: sub.endpoint, abonnement: sub.toJSON(), maj: new Date().toISOString() },
       { onConflict: "endpoint" });
-    settings.notif = true; saveSettings(); notifMiroir(); notifRafraichir();
+    if(rep && rep.error){ throw rep.error; }
+    settings.notif = true; saveSettings(); notifMiroir(); notifSync(); notifRafraichir();
     return true;
-  } catch(e){ settings.notif = false; saveSettings(); notifRafraichir(); return false; }
+  } catch(e){
+    settings.notif = false; saveSettings(); notifRafraichir();
+    try{ showMiniToast("Impossible d'activer le rappel pour le moment."); }catch(_){}
+    return false;
+  }
 }
 async function notifCouper(){
   settings.notif = false; saveSettings(); notifMiroir(); notifRafraichir();
@@ -9719,7 +9743,8 @@ async function notifCouper(){
     const reg = await navigator.serviceWorker.ready;
     const sub = await reg.pushManager.getSubscription();
     if(sub){
-      if(net.supa) await net.supa.from("push_subs").delete().eq("endpoint", sub.endpoint);
+      const supa = initSupa();
+      if(supa) await supa.from("push_subs").delete().eq("endpoint", sub.endpoint);
       await sub.unsubscribe();
     }
   } catch(e){}
