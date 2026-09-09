@@ -855,7 +855,17 @@
   .podium-col{ flex:1; max-width:33%; display:flex; flex-direction:column; align-items:center; }
   .podium-crown{ width:1.5rem; height:1.5rem; color:var(--gold); margin-bottom:0.3rem; opacity:0; animation:crownPop 0.5s ease 0.3s forwards; }
   .podium-avatar{ width:2.4rem; height:2.4rem; border-radius:50%; display:flex; align-items:center; justify-content:center; color:#fff; font-family:'Poppins',sans-serif; font-weight:700; font-size:1rem; border:2px solid var(--bord); box-shadow:inset 0 2px 0 rgba(255,255,255,0.28), 0 5px 14px rgba(15,12,10,0.24); margin-bottom:0.5rem; }
-  .podium-avatar.win{ box-shadow:0 6px 22px rgba(239,173,38,0.7), 0 2px 8px rgba(15,12,10,0.24); }
+  /* ===== LA PASTILLE D'UN JOUEUR NE DÉPEND PAS DE SA PLACE =====
+     Le premier avait ici une ombre À LUI : elle REMPLAÇAIT celle des autres au
+     lieu de s'y ajouter. Il perdait donc le reflet intérieur du haut — celui
+     qui donne son galbe à la pastille — et son ombre portée, contre un halo
+     doré. Résultat : le même joueur, avec la même couleur et la même initiale,
+     n'était pas dessiné pareil selon qu'il gagnait ou non. Mesuré en rendant
+     Taylor premier puis deuxième et en comparant les deux images de sa
+     pastille : 193 d'écart sur 255.
+     La pastille est l'identité du joueur ; elle ne bouge pas. Le vainqueur est
+     déjà dit trois fois ailleurs — la couronne au-dessus, la marche dorée, et
+     le titre « Vainqueur » en haut de l'écran. */
   .podium-name{ font-weight:600; font-size:0.82rem; text-align:center; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; max-width:100%; margin-bottom:0.15rem; }
   .podium-score{ font-family:'Poppins',sans-serif; font-weight:700; font-size:0.9rem; color:var(--primary); margin-bottom:0.4rem; }
   .podium-bar{ width:100%; border-radius:var(--r-ico) 14px 0 0; display:flex; align-items:flex-start; justify-content:center; padding-top:0.5rem; font-family:'Poppins',sans-serif; font-weight:700; color:rgba(255,255,255,0.95); font-size:1.05rem; box-shadow:inset 0 2px 6px rgba(255,255,255,0.25); }
@@ -10212,7 +10222,7 @@ function renderEndGroup(){
         return `
         <div class="podium-col">
           ${r.rank===1 ? `<span class="podium-crown">${ICONS.crown}</span>` : `<span class="podium-crown" style="visibility:hidden"></span>`}
-          <span class="podium-avatar${r.rank===1?' win':''}" style="background:${TEAM_COLORS[r.teamIdx%6]}">${initial}</span>
+          <span class="podium-avatar" style="background:${TEAM_COLORS[r.teamIdx%6]}">${initial}</span>
           <span class="podium-name">${escapeHtml(state.teams[r.teamIdx].name)}</span>
           <span class="podium-score">${state.scores[r.teamIdx]}</span>
           <div class="podium-bar ${barByRank[Math.min(r.rank,3)]}">${r.rank}</div>

@@ -220,6 +220,28 @@ substituer :
    qui doit céder quand la place manque s'y accroche, avec la taille
    actuelle comme plafond.
 
+**La pastille d'un joueur ne dépend pas de sa place (v196).** « Le profil des
+joueurs bouge légèrement selon qui est sur le podium, et ça je n'aime pas. »
+C'était vrai. Le premier avait une ombre à lui, qui **remplaçait** celle des
+autres au lieu de s'y ajouter : il perdait le reflet intérieur du haut — celui
+qui donne son galbe à la pastille — et son ombre portée, contre un halo doré.
+Le même joueur, même couleur, même initiale, n'était pas dessiné pareil selon
+qu'il gagnait. La pastille est l'identité du joueur ; elle ne bouge plus. Le
+vainqueur est déjà dit trois fois ailleurs : la couronne au-dessus, la marche
+dorée, et le titre en haut de l'écran.
+
+**On ne compare pas des pixels quand les deux objets ne sont pas au même
+endroit.** Première tentative : rendre Taylor premier, puis deuxième, et
+soustraire les deux images de sa pastille. Écart 193 sur 255 — mais le décor
+derrière elle diffère forcément, puisqu'elle n'est pas au même endroit de
+l'écran. En masquant tout sauf le disque : encore 193, cette fois parce que
+`Math.round` sur la découpe décalait le glyphe d'un quart de pixel. En
+découpant au flottant : 91, le reste de ce même décalage. **Aucun de ces
+nombres ne parlait de la pastille.** `banc-essai/pastille.js` compare donc ce
+qui doit vraiment être identique — taille, bordure, ombre, police, rayon — sur
+cinq répartitions de score et à toutes les places, podium ET liste. Sur la
+version d'avant il trouve deux styles et nomme le coupable : « place 1 ».
+
 **On ne voyait plus où appuyer pour corriger un score (v195).** Dans le bandeau
 des joueurs, en mode Groupe, le pavé et ses deux ronds `−` / `+` portaient
 **exactement la même teinte de verre** — `rgb(252,248,241)` des deux côtés —
