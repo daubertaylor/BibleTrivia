@@ -39,6 +39,13 @@ const ECRANS = [
   ['iPhone 15',              393, 852],
   ['Galaxy S23 Ultra',       384, 854],
   ['Pixel 8',                412, 915],
+  /* Xiaomi : Taylor a signalé les sept jours « trop bas » sur un Xiaomi. Ces
+     appareils sont hauts ET étroits — un rapport hauteur/largeur de 2,22 à
+     2,29 quand l'iPhone 15 est à 2,17 — donc c'est là que les espaceurs
+     souples ont le plus de place à prendre. */
+  ['Xiaomi Redmi Note',      393, 873],
+  ['Xiaomi 13',              390, 866],
+  ['Xiaomi 14 / POCO',       412, 944],
   ['iPhone 15 Pro Max',      430, 932],
   ['Android très haut',      412, 1000],
 ];
@@ -100,13 +107,23 @@ const ECRANS = [
   const pcts = lignes.filter(l => l[3].pct !== null).map(l => l[3].pct);
   const compositions = new Set(lignes.map(l => (l[3].verset ? 'V' : '-') + (l[3].bande ? 'B' : '-')));
   const debords = lignes.filter(l => l[3].deborde > 0).length;
+  /* ===== L'AIR SOUS LE PIED DOIT ÊTRE LE MÊME PARTOUT =====
+     Il ne dépendait que de ce que le SYSTÈME déclare : 34 px de marge de
+     sécurité sur un iPhone posé sur l'écran d'accueil, ZÉRO sur presque tous
+     les Android. La bande des sept jours se retrouvait à 40 px du bord d'un
+     côté et à 6 de l'autre — « les 7 jours trop bas sur un Xiaomi ». On exige
+     donc que l'air du bas soit le même sur tous les écrans qui affichent la
+     bande, à la compression près des écrans courts. */
+  const airs = lignes.filter(l => l[3].bande && l[3].airBas !== null).map(l => l[3].airBas);
+  const ecartAir = airs.length ? Math.max(...airs) - Math.min(...airs) : 0;
   const hors = pcts.filter(v => v > PLAFOND).length;
   console.log('\n  écart en % de la hauteur utile : de ' + Math.min(...pcts) + ' à ' + Math.max(...pcts) + ' %   (plafond ' + PLAFOND + ')');
   console.log('  écrans où le pied décroche : ' + hors);
   console.log('  compositions différentes de l\'accueil : ' + compositions.size + '  [' + [...compositions].join(' ') + ']');
   console.log('  écrans qui débordent : ' + debords);
+  console.log('  air sous la bande : de ' + Math.min(...airs) + ' à ' + Math.max(...airs) + ' px  (écart ' + ecartAir + ', toléré 30)');
   if (errs.length) console.log('  ERREURS JS : ' + [...new Set(errs)].slice(0,3).join(' | '));
-  const ok = hors === 0 && debords === 0 && !errs.length;
+  const ok = hors === 0 && debords === 0 && ecartAir <= 30 && !errs.length;
   console.log(ok ? '\n  OK — le pied se tient pareil partout' : '\n  ECHEC');
   await b.close();
   process.exit(ok ? 0 : 1);

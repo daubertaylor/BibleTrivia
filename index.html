@@ -247,6 +247,20 @@
        modale se pose, un écran glisse) ; le tempo et l'élan sont communs.
        (Cette courbe, cubic-bezier(0.33,1,0.68,1), EST easeOutCubic — celle
        des compteurs en JS depuis toujours.) */
+    /* ===== L'AIR SOUS LE PIED, LE MÊME SUR TOUS LES TÉLÉPHONES =====
+       Le bas de l'écran ne réservait de la place que si le système en
+       DÉCLARAIT : env(safe-area-inset-bottom) vaut 34 px sur un iPhone posé
+       sur l'écran d'accueil, et ZÉRO sur presque tous les Android. La bande
+       des sept jours se retrouvait donc à 40 px du bord sur l'iPhone de
+       Taylor et à 6 ou 13 px sur un Xiaomi — « les 7 jours trop bas, c'est
+       pas exactement pareil que sur mon téléphone ». Ce n'était pas une
+       proportion qui dérapait (elle est identique au dixième de pour cent),
+       c'était l'air du bas qui n'existait que d'un côté.
+       La marge de sécurité sert à éviter le matériel ; l'ESPACE, lui, est un
+       choix de dessin et doit exister partout. On pose donc un plancher égal
+       à ce que l'iPhone obtient déjà : il ne bouge pas d'un pixel, et les
+       autres le rejoignent. */
+    --air-bas: 0.8rem;
     --tr-plie: 0.52s cubic-bezier(0.33,1,0.68,1);
     --tr-ouvre: var(--tr-plie);
     --tr-ferme: 0.24s cubic-bezier(0.4,0,1,1);
@@ -372,7 +386,7 @@
      +35 unités sous le champ actif : ça se voit, et ce n'est pas un bord. */
   .text-input:focus, .code-input:focus{ box-shadow:0 0 14px 3px rgba(238,74,40,0.62); }
 
-  #app{ position:relative; z-index:1; width:100%; max-width:430px; margin:0 auto; height:100%; overflow-y:auto; overflow-x:hidden; overscroll-behavior:none; display:flex; flex-direction:column; padding:calc(env(safe-area-inset-top) + 0.35rem) calc(env(safe-area-inset-right) + 0.7rem) calc(env(safe-area-inset-bottom) + 0.35rem) calc(env(safe-area-inset-left) + 0.7rem); }
+  #app{ position:relative; z-index:1; width:100%; max-width:430px; margin:0 auto; height:100%; overflow-y:auto; overflow-x:hidden; overscroll-behavior:none; display:flex; flex-direction:column; padding:calc(env(safe-area-inset-top) + 0.35rem) calc(env(safe-area-inset-right) + 0.7rem) max(calc(env(safe-area-inset-bottom) + 0.35rem), var(--air-bas)) calc(env(safe-area-inset-left) + 0.7rem); }
   /* GRANDS ÉCRANS (tablette, iPad, PC) : l'app GRANDIT pour exploiter l'espace
      au lieu d'une colonne téléphone perdue dans un vide noir. Le décor Canyon
      remplit désormais TOUT l'écran autour (plus de bande noire / « bandes
@@ -405,8 +419,8 @@
      avec le verre. Le défilement PROGRAMMATIQUE (scrollTop, mise au point d'un
      champ) reste possible. Absent sur iOS/desktop. */
   html.js-scroll #app{ touch-action:none; overflow:hidden; overflow-anchor:none; }
-  html.is-fs #app{ padding-top:max(calc(env(safe-area-inset-top) + 0.35rem), 3.4rem); padding-bottom:max(calc(env(safe-area-inset-bottom) + 0.2rem), 0.7rem); }
-  html.is-standalone #app{ padding-top:max(calc(env(safe-area-inset-top) + 0.4rem), 0.7rem); padding-bottom:max(calc(env(safe-area-inset-bottom) + 0.35rem), 0.8rem); }
+  html.is-fs #app{ padding-top:max(calc(env(safe-area-inset-top) + 0.35rem), 3.4rem); padding-bottom:max(calc(env(safe-area-inset-bottom) + 0.2rem), var(--air-bas)); }
+  html.is-standalone #app{ padding-top:max(calc(env(safe-area-inset-top) + 0.4rem), 0.7rem); padding-bottom:max(calc(env(safe-area-inset-bottom) + 0.35rem), var(--air-bas)); }
   /* LE CLAVIER SE POSE PAR-DESSUS. IL NE REFAIT PAS LA PAGE.
      Avant, on rétrécissait #app à la hauteur restante : toute la colonne se
      recomposait dans un espace deux fois plus petit — les cartes se
@@ -1725,6 +1739,10 @@
      fenêtre le laissait absent pendant que la mise en page s'étalait. Une
      classe posée en JS sur la GÉOMÉTRIE le lève dès la première image. */
   html.couche #rotate-lock{ display:flex !important; }
+  /* Le plancher d'air ne s'applique QUE si l'écran peut le donner. Sur un
+     iPhone SE dans le navigateur (553 px de haut), 2,4 rem au fond faisaient
+     déborder l'accueil de 14 px : on ne prend pas la place qu'on n'a pas. */
+  @media (min-height:600px){ :root{ --air-bas: 2.4rem; } }
 
   /* ---------- VERRE GARANTI (photo pré-floutée, alignée au viewport) ----------
      Safari iOS n'entretient pas le backdrop-filter de façon fiable. On affiche
@@ -8314,14 +8332,49 @@ function showMiniToast(msg){
   clearTimeout(el._t);
   el._t = setTimeout(()=>{ el.classList.remove("show"); }, 2100);
 }
+/* ===== « PARTAGER LE JEU » DOIT MARCHER À CHAQUE FOIS =====
+   Il ne marchait pas toujours, et surtout : quand il ne marchait pas, IL NE SE
+   PASSAIT RIEN. Le « .catch(()=>{}) » avalait tout, sans distinguer les trois
+   cas qui n'ont rien à voir entre eux :
+     • l'utilisateur ferme la feuille de partage — c'est un choix, on se tait ;
+     • une feuille est DÉJÀ ouverte et on retouche le bouton : le navigateur
+       lève InvalidStateError (« a earlier share had not yet completed ») et le
+       deuxième appui était perdu ;
+     • le navigateur refuse (geste consommé, contexte non autorisé, données
+       impossibles à partager) : là il faut faire QUELQUE CHOSE.
+   On retient donc qu'un partage est en cours, et tout refus qui n'est pas un
+   abandon volontaire retombe sur la copie du lien, elle-même doublée d'un
+   message qui affiche l'adresse. Le bouton fait toujours quelque chose. */
+let partageEnCours = false;
+function estAbandon(e){
+  const n = (e && e.name) || "";
+  return n === "AbortError" || /abort|cancel|annul/i.test(String((e && e.message) || ""));
+}
+function copierLeLien(){
+  if(navigator.clipboard && navigator.clipboard.writeText){
+    navigator.clipboard.writeText(GAME_URL)
+      .then(()=>showMiniToast("Lien copié !"))
+      .catch(()=>showMiniToast(GAME_URL));
+  } else { showMiniToast(GAME_URL); }
+}
 function shareGame(){
   // URL seule : « Copier » depuis la feuille de partage ne colle QUE le lien,
   // prêt à être collé dans un navigateur (plus de texte accroché autour).
   const data = { url: GAME_URL };
-  if(navigator.share){ navigator.share(data).catch(()=>{}); }
-  else if(navigator.clipboard && navigator.clipboard.writeText){
-    navigator.clipboard.writeText(GAME_URL).then(()=>showMiniToast("Lien copié !")).catch(()=>showMiniToast(GAME_URL));
-  } else { showMiniToast(GAME_URL); }
+  if(partageEnCours) return;   // une feuille est déjà ouverte : ne pas lever
+  const partageable = !navigator.share ? false
+    : (navigator.canShare ? (function(){ try{ return navigator.canShare(data); }catch(e){ return true; } })() : true);
+  if(!partageable){ copierLeLien(); return; }
+  let p = null;
+  try { p = navigator.share(data); }
+  catch(e){ copierLeLien(); return; }          // refus SYNCHRONE (geste perdu)
+  if(!p || typeof p.then !== "function"){ return; }
+  partageEnCours = true;
+  /* Filet : si la promesse ne revient jamais (feuille fermée par le système
+     sans réponse, vu sur certains Android), on rouvre le bouton. */
+  const filet = setTimeout(()=>{ partageEnCours = false; }, 20000);
+  p.then(()=>{ clearTimeout(filet); partageEnCours = false; })
+   .catch((e)=>{ clearTimeout(filet); partageEnCours = false; if(!estAbandon(e)) copierLeLien(); });
 }
 function shareScore(kind){
   let text = "";

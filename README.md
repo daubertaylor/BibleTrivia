@@ -220,6 +220,43 @@ substituer :
    qui doit céder quand la place manque s'y accroche, avec la taille
    actuelle comme plafond.
 
+**Les sept jours plus bas sur un Xiaomi : l'air du bas n'existait que d'un
+côté (v197).** La proportion, elle, était identique au dixième de pour cent —
+14,1 % de la hauteur utile sur l'iPhone 15 comme sur les trois Xiaomi mesurés.
+Ce qui différait, c'est l'espace SOUS la bande : le pied ne réservait de la
+place que si le système en **déclarait**. `env(safe-area-inset-bottom)` vaut
+34 px sur un iPhone posé sur l'écran d'accueil et **zéro sur presque tous les
+Android**. La bande se retrouvait donc à 40 px du bord d'un côté et à 6 ou
+13 px de l'autre.
+
+La marge de sécurité sert à éviter le matériel ; l'espace, lui, est un choix de
+dessin et doit exister partout. Un plancher (`--air-bas`) égal à ce que
+l'iPhone obtient déjà : il ne bouge pas d'un pixel, les autres le rejoignent.
+Le plancher cède sous 600 px de haut — sur un iPhone SE dans le navigateur,
+2,4 rem au fond faisaient déborder l'accueil de 14 px, et on ne prend pas la
+place qu'on n'a pas.
+
+| air sous la bande | avant | après |
+|---|---|---|
+| écart entre le plus petit et le plus grand | 38 px | **29 px** |
+| valeur la plus basse | 5 px | **35 px** |
+
+`pied.js` mesure maintenant trois Xiaomi (ils sont hauts et étroits, donc c'est
+là que les espaceurs souples prennent le plus) et **exige** que l'air du bas se
+tienne dans une fourchette. Il échoue sur la version d'avant.
+
+**« Partager le jeu » ne faisait parfois rien du tout (v197).** Le `catch`
+avalait tout, sans distinguer trois cas qui n'ont rien à voir : l'utilisateur
+ferme la feuille de partage (c'est un choix, on se tait) ; une feuille est déjà
+ouverte et le deuxième appui lève `InvalidStateError` ; le navigateur refuse et
+**il faut alors faire quelque chose**. Le refus synchrone, lui, remontait
+jusqu'à la console en erreur non attrapée.
+
+On retient donc qu'un partage est en cours, et tout refus qui n'est pas un
+abandon volontaire retombe sur la copie du lien, elle-même doublée d'un message
+qui affiche l'adresse. `banc-essai/partage.js` rejoue les six situations que le
+navigateur peut produire ; sur la version d'avant, trois échouent.
+
 **La pastille d'un joueur ne dépend pas de sa place (v196).** « Le profil des
 joueurs bouge légèrement selon qui est sur le podium, et ça je n'aime pas. »
 C'était vrai. Le premier avait une ombre à lui, qui **remplaçait** celle des
