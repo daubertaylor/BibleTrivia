@@ -12116,6 +12116,10 @@ window.addEventListener("offline", ()=>{
 });
 /* Plein écran permanent : activé dès le premier toucher, et rétabli au
    toucher suivant si le système en sort (geste, appel, etc.). */
+/* La MÊME condition que « @media (orientation:landscape) and (pointer:coarse) »
+   dans la feuille de style, au-dessus de #rotate-lock : si l'une change,
+   l'autre doit changer avec elle. */
+const rotMqVerrou = window.matchMedia ? window.matchMedia("(orientation: landscape) and (pointer: coarse)") : null;
 function updateRotateHint(){
   const rl = document.getElementById("rotate-lock");
   if(!rl) return;
@@ -12135,12 +12139,20 @@ function updateRotateHint(){
      côté réel (pose de base), pause, redressement unique, et il reste
      droit (forwards). Caché : tout est réarmé pour la prochaine fois. */
   const de = document.documentElement;
-  /* On lit la visibilité SANS compter la classe de sortie, sinon le verrou se
-     croirait encore là pendant qu'il s'en va. */
-  const sortEnCours = de.classList.contains("rl-sort");
-  if(sortEnCours) de.classList.remove("rl-sort");
-  const vis = getComputedStyle(rl).display !== "none";
-  if(sortEnCours && !vis) de.classList.add("rl-sort");
+  /* ===== RETIRER PUIS REMETTRE UNE CLASSE RELANCE SON ANIMATION =====
+     Pour connaître la vraie visibilité du verrou il faut ignorer la classe de
+     sortie, qui force justement l'affichage. On la retirait donc le temps de
+     lire, puis on la remettait — et ce simple aller-retour faisait REPARTIR
+     l'animation de fermeture depuis le début. Or iOS relit les angles trois
+     fois par rotation (tout de suite, à l'image suivante, puis à 120 ms) : le
+     verrou s'effaçait, redevenait opaque, s'effaçait encore. Filmé image par
+     image au redressement : visible à 20 ms, presque parti à 70, PLEIN de
+     nouveau à 130, puis parti pour de bon à 300. Un clignotement.
+     On ne touche donc plus au DOM pour lire : on demande directement au
+     navigateur si l'on est dans le cas d'affichage. LA CONDITION CI-DESSOUS
+     DOIT RESTER IDENTIQUE À CELLE DE LA FEUILLE DE STYLE (la requête média du
+     verrou, plus la classe « couche » posée par le JS de mise en page). */
+  const vis = (rotMqVerrou ? rotMqVerrou.matches : false) || de.classList.contains("couche");
   const side = right ? "R" : "L";
   if(!vis){
     /* Le téléphone se redresse : on garde le voile affiché le temps de la

@@ -220,6 +220,27 @@ substituer :
    qui doit céder quand la place manque s'y accroche, avec la taille
    actuelle comme plafond.
 
+**Retirer puis remettre une classe relance son animation (v194).** Le verrou
+paysage de la v193 clignotait au redressement. Pour lire sa vraie visibilité il
+fallait ignorer la classe qui force son affichage pendant la sortie : on la
+retirait le temps de lire, puis on la remettait. Cet aller-retour, dans la même
+image, fait **repartir l'animation depuis le début**. Or iOS relit les angles
+trois fois par rotation — tout de suite, à l'image suivante, puis à 120 ms.
+Filmé : le verrou visible à 20 ms, presque parti à 70, **plein de nouveau à
+130**, parti pour de bon à 300.
+
+On ne touche donc plus au DOM pour lire : la condition est demandée directement
+au navigateur (`matchMedia`), avec une note des deux côtés rappelant qu'elle
+doit rester identique à la requête média de la feuille de style.
+
+**Et le banc qui l'a laissé passer.** La première version ne regardait que deux
+instants — 60 ms, puis l'état final — et les deux étaient justes. Il suit
+maintenant l'opacité **image par image** et exige une courbe monotone : *ce qui
+doit descendre ne doit jamais remonter.* Sur la v193 il trouve le rebond à
+148 ms et le nomme. Deuxième fois dans ce projet qu'un test regarde au bon
+endroit mais pas assez souvent : les mesures ponctuelles mentent sur les
+mouvements.
+
 **Le bas de l'écran n'arrivait pas après : il partait de plus loin (v193).**
 « Lorsque je reviens au menu principal, le bas de l'écran se charge un peu plus
 lentement, on dirait que ça apparaît après. » Rien ne se chargeait — les sept
