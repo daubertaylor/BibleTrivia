@@ -25,6 +25,13 @@ La clé **publique** va dans `index.html` :
 
     const VAPID_PUBLIC = "…la clé publique…";
 
+**Fait depuis la v204** — la clé publique est posée et le réglage « Rappel de
+série » apparaît dans le jeu. Une clé se VÉRIFIE avant d'être posée : 87
+caractères, 65 octets, premier octet `0x04`, et le point qu'elle décrit doit
+tomber SUR la courbe P-256. La première envoyée décodait proprement et n'était
+pourtant pas une clé — rien ne l'aurait dit avant le jour où aucune
+notification ne serait partie.
+
 La clé **privée** ne quitte jamais le serveur. Elle n'a pas à passer par une
 conversation, une capture d'écran ou un fichier du dépôt : elle va directement
 dans les secrets Supabase (étape 3).

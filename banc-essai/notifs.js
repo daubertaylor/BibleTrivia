@@ -32,14 +32,17 @@ const CLE = 'BOveRs4clrziwaZmqCy4re5c-vpsPRGRvw0mfUxP5D3u920HJW45-o7V1avGrvsKwFi
   const errs = []; p.on('pageerror', e => errs.push(e.message));
   let injectee = true;
 
-  /* La page telle qu'elle est livrée, avec la seule clé publique en plus. */
+  /* Le banc teste le CHEMIN, pas la clé. Si le jeu en a déjà une (c'est le cas
+     depuis la v204), on n'y touche pas ; s'il n'en a pas encore — ou si l'on
+     compare avec une version d'avant — on en injecte une de laboratoire, sans
+     quoi le réglage reste volontairement caché et il n'y aurait rien à tester. */
   await p.route('**/*.html*', async (route) => {
     const rep = await route.fetch();
-    let corps = await rep.text();
-    const avant = corps;
-    corps = corps.replace('const VAPID_PUBLIC = "";', 'const VAPID_PUBLIC = "' + CLE + '";');
-    if (corps === avant) { injectee = false; }
-    await route.fulfill({ response: rep, body: corps });
+    const corps = await rep.text();
+    if (/const VAPID_PUBLIC = "[A-Za-z0-9_-]{80,}"/.test(corps)) { await route.fulfill({ response: rep, body: corps }); return; }
+    const remplace = corps.replace('const VAPID_PUBLIC = "";', 'const VAPID_PUBLIC = "' + CLE + '";');
+    if (remplace === corps) { injectee = false; }
+    await route.fulfill({ response: rep, body: remplace });
   });
 
   await p.addInitScript(() => {

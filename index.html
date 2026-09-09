@@ -9589,9 +9589,18 @@ function recordDailyResult(){
    (dernier défi joué, longueur de série) est donc recopié dans IndexedDB, que
    lui sait lire. Le localStorage reste la source de vérité du jeu ; ceci n'en
    est qu'un miroir, réécrit à chaque changement. */
-const VAPID_PUBLIC = "";   /* clé publique du serveur d'envoi. Tant qu'elle est
-   vide, aucune notification n'est proposée au joueur : mieux vaut ne rien
-   offrir qu'un interrupteur qui ne fait rien. Voir notifications/LISEZMOI.md. */
+/* Clé PUBLIQUE du serveur d'envoi : elle n'est pas un secret, elle est faite
+   pour vivre ici, à la vue de tous. Elle est la moitié visible d'une paire ;
+   l'autre moitié, la privée, ne vit que dans les secrets Supabase (réglage
+   VAPID_PRIVEE) et n'a rien à faire dans ce fichier.
+   Vérifiée avant d'être posée : 87 caractères, 65 octets, premier octet 0x04,
+   et le point qu'elle décrit est bien SUR la courbe P-256. Une clé qui décode
+   proprement mais tombe à côté de la courbe existe — la première envoyée était
+   exactement dans ce cas — et rien ne le dit tant qu'on n'essaie pas.
+   Tant que cette ligne est vide, aucune notification n'est proposée au joueur :
+   mieux vaut ne rien offrir qu'un interrupteur qui ne fait rien.
+   Voir notifications/LISEZMOI.md. */
+const VAPID_PUBLIC = "BJhsN4SGM3mJz-2PUVsP9qO5Gk60XZaRrnZUan82LLRbHB5xDjQIRMmeOLYHP0ZNj4lmJ28ZVPQ3NqQkSOEIPjU";
 
 function notifSupporte(){
   return typeof Notification !== "undefined" && "serviceWorker" in navigator && "PushManager" in window;

@@ -13,9 +13,17 @@
        node jumeaux.js            (jeu servi en HTTP sur 8099)
        TEMOIN=1 node jumeaux.js   (fabrique un écart, doit ÉCHOUER)
 
-   Repère : zéro déplacement. Les Réglages sont la seule exception admise —
-   le guide d'installation n'a pas le même texte des deux côtés, c'est la
-   raison d'être de cet écran. */
+   Repère : zéro déplacement. LA FEUILLE DES RÉGLAGES est la seule exception,
+   et tout ce qui s'ouvre DEDANS avec elle. Deux choses y diffèrent
+   légitimement, et c'est leur raison d'être :
+     - le guide d'installation ne dit pas la même chose des deux côtés ;
+     - la ligne « Rappel de série » n'existe pas sur un iPhone tant que le jeu
+       n'est pas posé sur l'écran d'accueil : iOS y refuserait la permission
+       d'office, et un refus est définitif. Une ligne de plus d'un côté
+       décale tout ce qui la suit dans la feuille — y compris la liste des
+       versions, qui s'ouvre à l'intérieur.
+   Rien de tout cela ne concerne les quatorze autres écrans, qui doivent rester
+   identiques au dixième de pixel. */
 const { chromium } = require('/opt/node22/lib/node_modules/playwright');
 const IOS = 'Mozilla/5.0 (iPhone; CPU iPhone OS 17_5 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.5 Mobile/15E148 Safari/604.1';
 const AND = 'Mozilla/5.0 (Linux; Android 14; Pixel 8) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/126.0.0.0 Mobile Safari/537.36';
@@ -23,7 +31,7 @@ const URL = process.env.URL_ESSAI || process.argv[2] || 'http://127.0.0.1:8099/i
 const TEMOIN = process.env.TEMOIN === '1';
 /* Les Réglages et le guide disent volontairement autre chose selon le
    téléphone : on les relève, on ne les compte pas comme un défaut. */
-const EXCEPTIONS = new Set(['reglages', 'guide']);
+const EXCEPTIONS = new Set(['reglages', 'versions', 'guide']);
 const ECRANS = [
   ["accueil",     "state.screen='mode'; render(); var v=document.getElementById('homeVerse'); if(v) v.textContent='Verset fige pour la mesure';"],
   ["groupe",      "state.mode='group'; state.teams=[{name:'Taylor'},{name:'Bea'}]; state.screen='setup'; render();"],
@@ -107,7 +115,7 @@ async function lire(b, ua, android) {
     if (mauvais) fautes++;
     console.log('   ' + ecran.padEnd(13) + String(Object.keys(a.tout[ecran]).length).padStart(4) + ' boîtes  écart ' +
       pire.toFixed(1).padStart(6) + ' px' + (absents ? '  ' + absents + ' absente(s)' : '') +
-      (mauvais ? '   <-- PAS LE MÊME JEU  (' + ou + ')' : (exception && (pire > 0.6 || absents) ? '   (écart admis : guide d\'installation)' : '')));
+      (mauvais ? '   <-- PAS LE MÊME JEU  (' + ou + ')' : (exception && (pire > 0.6 || absents) ? '   (écart admis : feuille des Réglages)' : '')));
   }
   console.log('\n  ' + boites + ' boîtes comparées sur ' + Object.keys(a.tout).length + ' écrans');
   const ok = fautes === 0;

@@ -231,6 +231,22 @@ substituer :
    qui doit céder quand la place manque s'y accroche, avec la taille
    actuelle comme plafond.
 
+**Une clé qui se décode n'est pas une clé (v204).** La première clé publique
+envoyée avait la bonne tête : 87 caractères, 65 octets une fois décodée. Elle
+était pourtant inutilisable — son premier octet valait `0x07` au lieu de `0x04`,
+et le point qu'elle décrit n'est pas sur la courbe P-256. Vérifié avant de la
+poser, pas après : les 87 positions essayées avec les 64 signes de l'alphabet,
+puis les six ordres possibles des trois morceaux reçus. Aucune réparation ne
+tombe juste — elle avait été abîmée en plusieurs endroits, recopiée plutôt que
+collée.
+
+**Le contrôle a été rendu au point de départ.** `cles.html` affiche maintenant,
+sous la clé, sa longueur et une empreinte de trois octets : un seul signe qui
+change en route, et l'empreinte change avec lui. Un défaut de transport se voit
+alors tout de suite, au lieu d'attendre le jour où personne ne reçoit rien —
+qui est exactement le genre de jour où l'on ne cherche pas du côté d'un copier
+-coller vieux d'un mois.
+
 **L'interrupteur des rappels s'allumait sans inscrire l'appareil (v203).**
 Trouvé avant la première notification envoyée, en relisant le chemin complet
 pour répondre à une question de Taylor : « je veux que TOUS les appareils aient
