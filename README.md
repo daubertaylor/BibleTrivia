@@ -288,14 +288,24 @@ onde : 25 boutons, aucun carré. Il ignore ceux dont le `::before` sert
 d'agrandisseur de zone tactile (la poignée des feuilles) — **il ne suffit pas
 qu'un pseudo-élément existe pour qu'il peigne.**
 
-**Deux matières pour la même pastille de joueur (v199).** Le rond qui porte
-l'initiale apparaît à sept endroits et dans quatre tailles. Cinq portaient le
-dégradé à 150° ; celle du podium et celle du profil étaient restées **à plat,
-avec un anneau blanc de 2 px** que personne d'autre n'a — visible sur la photo
-du désert. Elles rejoignent la matière commune ; la bordure du profil reste,
-mais transparente, parce que c'est elle qui devient le tiret de la place vide.
-`banc-essai/jeton.js` relève la matière de chacune sur son écran et refuse la
-moindre divergence.
+**Deux matières pour la même pastille de joueur — et j'ai choisi la mauvaise
+(v199, corrigé en v201).** Le rond qui porte l'initiale apparaît à six endroits
+et dans quatre tailles. Cinq portaient un dégradé à 150° ; celle du podium et
+celle du profil étaient **à plat, avec un anneau clair de 2 px**. Deux matières
+pour la même chose : il fallait n'en garder qu'une. J'ai aligné les deux
+minoritaires sur le dégradé, parce qu'il était majoritaire.
+
+**Le nombre ne désigne pas le modèle.** Taylor a répondu par une photo de SA
+pastille de profil — pleine, avec son anneau — et une phrase : « exactement
+comme ça partout ». Le modèle, c'était la minorité. Tout est repassé en couleur
+pleine avec l'anneau de 2 px, l'initiale en gras et l'ombre du profil.
+
+La leçon tient au banc, pas au choix : `banc-essai/jeton.js` ne recopie plus
+aucune valeur. Il RELÈVE la pastille du profil, puis exige des cinq autres
+exactement la même chose — fond, anneau, ombre, graisse, arrondi. **Un banc qui
+compare à un modèle vivant survit à un changement d'avis ; un banc qui recopie
+des valeurs, non.** Celui-ci a échoué sur la v199 comme sur la v200, pour des
+raisons opposées, sans qu'on y touche autrement que pour désigner le modèle.
 
 **« 2 / 7 » alors qu'on est sur la première erreur (v199).** Le compteur disait
 « jusqu'où j'ai vu » : la dernière carte qui tient ENTIÈREMENT dans la liste. En

@@ -617,7 +617,13 @@
      contraste réel, pour que la bordure se VOIE autant qu'ailleurs. */
   .team-row{ display:flex; align-items:center; gap:0.55rem; margin-bottom:0.6rem; padding:0.4rem 0.5rem; border-radius:var(--r-s); border:1px solid var(--bord); background:rgb(252,248,241);
     --rim-edge:0 0 0 1px rgba(58,42,26,0.26); --rim-cast:0 5px 14px rgba(34,26,16,0.12); }
-  .team-token{ width:1.9rem; height:1.9rem; border-radius:50%; color:#fff; font-family:'Poppins',sans-serif; font-weight:600; font-size:0.85rem; display:flex; align-items:center; justify-content:center; flex-shrink:0; --rim-edge:0 0 0 1px rgba(30,22,14,0.16); --rim-cast:0 3px 9px rgba(15,12,10,0.24); }
+  /* MÊME MATIÈRE QUE .avatar, AU DÉTAIL PRÈS : anneau clair de 2 px, initiale
+     en gras, même ombre. Ces quatre lignes sont la copie exacte de la règle du
+     profil ; seule la TAILLE distingue encore les places où la pastille
+     apparaît (.aw-token, .rank-token, .podium-avatar). Si l'une des deux
+     règles change, l'autre doit changer avec elle — banc-essai/jeton.js le
+     vérifie sur les six emplacements. */
+  .team-token{ width:1.9rem; height:1.9rem; border-radius:50%; color:#fff; font-family:'Poppins',sans-serif; font-weight:700; font-size:0.85rem; display:flex; align-items:center; justify-content:center; flex-shrink:0; border:2px solid var(--bord); --rim-edge:0 0 0 1px transparent; --rim-cast:0 4px 12px rgba(15,12,10,0.18); }
   .dot-sm{ display:inline-block; width:0.5rem; height:0.5rem; border-radius:50%; margin-right:0.4rem; vertical-align:middle; flex-shrink:0; }
   /* LE NOM DU JOUEUR N'EST PAS DANS UNE BOÎTE — LA LIGNE EST LA BOÎTE.
      Le champ portait son propre fond blanc, sa propre bordure et son propre
@@ -902,7 +908,7 @@
      endroit, elles ne peuvent plus diverger. Le diamètre extérieur ne bouge
      pas d'un pixel (la bordure était en border-box) et l'élévation reste
      exactement celle qu'elle avait. */
-  .podium-avatar{ width:2.4rem; height:2.4rem; font-weight:700; font-size:1rem; margin-bottom:0.5rem; --rim-cast:0 5px 14px rgba(15,12,10,0.24); }
+  .podium-avatar{ width:2.4rem; height:2.4rem; font-size:1rem; margin-bottom:0.5rem; }
   /* ===== LA PASTILLE D'UN JOUEUR NE DÉPEND PAS DE SA PLACE =====
      Le premier avait ici une ombre À LUI : elle REMPLAÇAIT celle des autres au
      lieu de s'y ajouter. Il perdait donc le reflet intérieur du haut — celui
@@ -1315,17 +1321,16 @@
 
   /* ---------- Profil & En ligne ---------- */
   .mode-icon.online{ background:linear-gradient(150deg, #4DA8FF, #2E7FE8); box-shadow:inset 0 1px 0 rgba(255,255,255,0.26), 0 2px 7px rgba(46,127,232,0.24); }
-  /* UNE SEULE MATIÈRE POUR TOUTES LES PASTILLES DE JOUEUR.
-     Celle-ci (profil, en-tête, salon, duel) était restée à plat avec un anneau
-     blanc de 2 px, quand celles d'une partie à plusieurs (.team-token) portent
-     un dégradé à 150° et aucun anneau. Deux matières pour la même chose : la
-     pastille changeait d'aspect selon l'écran où on la regardait.
-     Elle prend donc le dégradé. La bordure reste — mais TRANSPARENTE : c'est
-     elle qui devient le tiret de la place vide (.waiting), le seul cas où un
-     trait a un sens ici. Le fond est peint sous elle (background-clip vaut
-     border-box), le diamètre visible ne change donc pas. */
-  .avatar{ position:relative; border-radius:50%; color:#fff; display:inline-flex; align-items:center; justify-content:center; font-family:'Poppins',sans-serif; font-weight:700; border:2px solid transparent; --rim-edge:0 0 0 1px transparent; --rim-cast:0 4px 12px rgba(15,12,10,0.18); flex-shrink:0; }
-  .avatar.waiting{ background:rgba(255,255,255,0.5); color:var(--ink-soft); border-style:dashed; border-color:var(--bord); }
+  /* ===== LA PASTILLE DE JOUEUR, ET IL N'Y EN A QU'UNE =====
+     C'est CELLE-CI le modèle, désigné par Taylor sur sa photo : couleur PLEINE,
+     anneau clair de 2 px, initiale en gras, ombre douce. Toutes les autres
+     pastilles du jeu s'y alignent (voir .team-token) — profil, en-tête, salon,
+     duel, mode Groupe, attribution des points, podium, tableau des scores.
+     Un détour a été fait dans l'autre sens : aligner celle-ci sur le dégradé
+     des parties à plusieurs. Ce n'était pas le bon modèle. On ne garde qu'une
+     matière, et c'est celle que Taylor a montrée. */
+  .avatar{ position:relative; border-radius:50%; color:#fff; display:inline-flex; align-items:center; justify-content:center; font-family:'Poppins',sans-serif; font-weight:700; border:2px solid var(--bord); --rim-edge:0 0 0 1px transparent; --rim-cast:0 4px 12px rgba(15,12,10,0.18); flex-shrink:0; }
+  .avatar.waiting{ background:rgba(255,255,255,0.5); color:var(--ink-soft); border-style:dashed; }
   /* Même teinte dorée saturée que le badge « Créateur » (au lieu du dégradé
      pâle d'origine) : le petit C du profil et le badge du profil forment
      désormais un seul et même « look » doré vif, cohérent partout. */
@@ -8550,7 +8555,7 @@ function goToModeSelect(){ state.screen = "mode"; render(); }
    le clavier — et le nom se fixe au passage, puisque c'est ce que fait déjà la
    sortie du champ. */
 function teamRowInner(i, t){
-  return `<span class="team-token" style="background:linear-gradient(150deg, color-mix(in srgb, ${TEAM_COLORS[i%6]} 68%, #ffffff), ${TEAM_COLORS[i%6]})">${((t.name||"").trim().charAt(0).toUpperCase())||(i+1)}</span>
+  return `<span class="team-token" style="background:${TEAM_COLORS[i%6]}">${((t.name||"").trim().charAt(0).toUpperCase())||(i+1)}</span>
         <input type="text" value="${escapeHtml(t.name)}" maxlength="20" autocomplete="off" enterkeyhint="done" oninput="renameTeam(this)" onblur="renameSettle()" onkeydown="if(event.key==='Enter'){event.preventDefault();this.blur();}" placeholder="Nom du joueur ou de l'équipe">
         <button class="team-remove" onclick="removeTeam(this)" ${state.teams.length<=2?"disabled":""} aria-label="Retirer"><span class="ico" style="width:0.9rem;height:0.9rem;">${ICONS.close}</span></button>`;
 }
@@ -8618,7 +8623,7 @@ function syncTeamRows(){
     if(inp && inp !== document.activeElement && inp.value !== t.name) inp.value = t.name;
     const tok = rows[i].querySelector(".team-token");
     if(tok){
-      tok.style.background = `linear-gradient(150deg, color-mix(in srgb, ${TEAM_COLORS[i%6]} 68%, #ffffff), ${TEAM_COLORS[i%6]})`;
+      tok.style.background = TEAM_COLORS[i%6];
       tok.textContent = (t.name||"").trim().charAt(0).toUpperCase() || (i+1);
     }
     const rm = rows[i].querySelector(".team-remove");
@@ -10327,7 +10332,7 @@ function renderPlay(){
         <div class="award-grid${pop?' reveal-in':''}">
           ${state.teams.map((t,i)=>`
             <button class="award-btn ${state.awarded.includes(i)?'awarded':''}" onclick="toggleAward(${i})">
-              <span class="team-token aw-token" style="background:linear-gradient(150deg, color-mix(in srgb, ${TEAM_COLORS[i%6]} 68%, #ffffff), ${TEAM_COLORS[i%6]})">${((t.name||"").trim().charAt(0).toUpperCase())||(i+1)}</span>
+              <span class="team-token aw-token" style="background:${TEAM_COLORS[i%6]}">${((t.name||"").trim().charAt(0).toUpperCase())||(i+1)}</span>
               <span class="aw-name">${escapeHtml(t.name)}</span>
               ${state.awarded.includes(i)?`<span class="aw-check" style="color:${TEAM_COLORS[i%6]}">${ICONS.checkCircle}</span>`:""}
               <span class="pts">+${info.pts}</span>
@@ -10412,7 +10417,7 @@ function renderEndGroup(){
         return `
         <div class="podium-col">
           ${r.rank===1 ? `<span class="podium-crown">${ICONS.crown}</span>` : `<span class="podium-crown" style="visibility:hidden"></span>`}
-          <span class="team-token podium-avatar" style="background:linear-gradient(150deg, color-mix(in srgb, ${TEAM_COLORS[r.teamIdx%6]} 68%, #ffffff), ${TEAM_COLORS[r.teamIdx%6]})">${initial}</span>
+          <span class="team-token podium-avatar" style="background:${TEAM_COLORS[r.teamIdx%6]}">${initial}</span>
           <span class="podium-name">${escapeHtml(state.teams[r.teamIdx].name)}</span>
           <span class="podium-score">${state.scores[r.teamIdx]}</span>
           <div class="podium-bar ${barByRank[Math.min(r.rank,3)]}">${r.rank}</div>
@@ -10434,7 +10439,7 @@ function renderEndGroup(){
         return `
         <div class="rank-row">
           <span class="rank-badge ${g}">${r.rank}</span>
-          <span class="team-token rank-token" style="background:linear-gradient(150deg, color-mix(in srgb, ${TEAM_COLORS[r.teamIdx%6]} 68%, #ffffff), ${TEAM_COLORS[r.teamIdx%6]})">${((state.teams[r.teamIdx].name||"").trim().charAt(0).toUpperCase())||"?"}</span>
+          <span class="team-token rank-token" style="background:${TEAM_COLORS[r.teamIdx%6]}">${((state.teams[r.teamIdx].name||"").trim().charAt(0).toUpperCase())||"?"}</span>
           <span class="rank-name">${escapeHtml(state.teams[r.teamIdx].name)}</span>
           <span class="rank-score-wrap">
             <button class="adj-btn" onclick="adjustScore(${r.teamIdx},-10)" aria-label="Retirer 10 points">−</button>
@@ -10551,7 +10556,7 @@ function avatarHtml(name, color, size, creator){
   const s = size || 2.6;
   /* --av : la taille de l'avatar, transmise au badge « Créateur » pour qu'il
      reste à la même fraction quelle que soit la place où on l'affiche. */
-  return `<span class="avatar" style="--av:${s}rem;width:${s}rem;height:${s}rem;background:linear-gradient(150deg, color-mix(in srgb, ${color} 68%, #ffffff), ${color});font-size:${(s*0.42).toFixed(2)}rem;">${initial}${creator?`<span class="crown-badge">${C_MONO_SVG}</span>`:""}</span>`;
+  return `<span class="avatar" style="--av:${s}rem;width:${s}rem;height:${s}rem;background:${color};font-size:${(s*0.42).toFixed(2)}rem;">${initial}${creator?`<span class="crown-badge">${C_MONO_SVG}</span>`:""}</span>`;
 }
 /* Capitale C de linéale classique, tracée à la main : dos gauche droit entre
    deux coins arrondis, et COUPES QUASI VERTICALES aux extrémités — les
