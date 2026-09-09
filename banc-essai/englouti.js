@@ -20,13 +20,18 @@
               moitie effacee.
      rampe    la forme du fondu : amplitude (y en a-t-il un ?) et coude
               maximal (une droite fait deux coudes, une courbe aucun).
-     rang     le compteur du titre suit-il le defilement (« 3 / 7 ») ?
+     rang     le compteur du titre. Il disait « 2 / 7 » alors qu'on etait
+              tout en haut, sur la premiere erreur : la liste montre deux
+              cartes et demie a la fois, il n'y a donc AUCUNE carte courante,
+              et aucun rang honnete a afficher. Il donne maintenant le nombre
+              d'erreurs — un chiffre qui ne se discute pas, et qui ne doit
+              plus bouger d'un cran quand on defile.
 
        node englouti.js                 (jeu servi en HTTP sur 8099)
        node englouti.js "<css d essai>" (pour comparer un autre reglage)
 
    Reperes : repos >= 16 px, tranche <= 12, cran <= 2 px, amplitude du fondu
-   > 40, coude <= 0.0025, rang qui bouge. */
+   > 40, coude <= 0.0025, compteur = nombre d'erreurs et immobile. */
 const { chromium } = require('/opt/node22/lib/node_modules/playwright');
 const { execSync } = require('child_process');
 const D = '/tmp/claude-0/-home-user-BibleTrivia/fb9bf869-826b-5523-9825-ea1b24c294d0/scratchpad/';
@@ -65,6 +70,7 @@ const FAUX = [
     const r = li.getBoundingClientRect();
     return { top:Math.round(r.top), bot:Math.round(r.bottom), left:Math.round(r.left),
              right:Math.round(r.right), vp:innerHeight, dep:li.scrollHeight-li.clientHeight,
+             n:li.querySelectorAll('.rev-item').length,
              rang:document.querySelector('.review-sheet .sheet-title small').textContent };
   });
   const repos = g.vp - g.bot;
@@ -131,10 +137,12 @@ const FAUX = [
   console.log('  cran   : ' + fin.cran + ' px de la ligne du voile apres un lancer' + (fin.cran <= 2 ? '' : '   <-- POSE AU MILIEU D UNE CARTE'));
   console.log('  rampe  : amplitude ' + amp.toFixed(1) + (amp > 40 ? '' : '   <-- PLUS DE FONDU DU TOUT') +
     '   |   coude ' + coude.toFixed(5) + (coude <= 0.0025 ? '' : '   <-- RAMPE DROITE'));
-  console.log('  rang   : « ' + g.rang + ' » en haut -> « ' + fin.rang +' » apres (defile de ' + fin.st + ' px)');
+  const compteurJuste = g.rang.trim() === String(g.n) && fin.rang.trim() === String(g.n);
+  console.log('  rang   : « ' + g.rang + ' » en haut -> « ' + fin.rang + ' » apres (defile de ' + fin.st + ' px), ' +
+    g.n + ' erreurs' + (compteurJuste ? '' : '   <-- LE COMPTEUR NE DIT PAS LE NOMBRE D ERREURS'));
   console.log('  voiles : haut ' + fin.vh.trim() + ', bas ' + fin.vb.trim());
   if (errs.length) console.log('  ERREURS JS : ' + errs.slice(0,3).join(' | '));
-  const ok = repos >= 16 && tranche <= 12 && fin.cran <= 2 && amp > 40 && coude <= 0.0025 && fin.rang !== g.rang && !errs.length;
+  const ok = repos >= 16 && tranche <= 12 && fin.cran <= 2 && amp > 40 && coude <= 0.0025 && compteurJuste && !errs.length;
   console.log(ok ? '\n  OK' : '\n  ECHEC');
   await b.close();
   process.exit(ok ? 0 : 1);

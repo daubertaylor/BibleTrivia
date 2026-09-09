@@ -639,7 +639,15 @@
      elle s'éclaire, elle se pose un peu plus haut, et c'est tout. */
   .team-row:focus-within{ background:rgb(255,253,249); box-shadow:var(--rebord-pose), 0 0 12px 2px rgba(238,74,40,0.45); }
   .team-row input:focus{ background:transparent; }
-  .team-remove{ background:none; border:none; color:var(--ink-soft); width:1.8rem; height:1.8rem; padding:0.4rem; display:flex; align-items:center; justify-content:center; flex-shrink:0; }
+  /* L'ONDE D'APPUI A LA FORME DU BOUTON — ET CELUI-CI N'EN AVAIT AUCUNE.
+     La croix de retrait était le seul bouton du jeu sans arrondi : l'onde
+     (un ::before à border-radius:inherit) sortait donc en CARRÉ net sous le
+     doigt, au milieu d'une ligne blanche, elle, arrondie. Un rond de 1,8 rem
+     la remet dans la langue du jeu — c'est la forme de toutes les autres
+     pastilles qu'on touche (réglages, retour, couleurs du profil). Le bouton
+     n'a pas de fond au repos : seule l'onde change, la mise en page ne bouge
+     pas d'un pixel. */
+  .team-remove{ background:none; border:none; border-radius:50%; color:var(--ink-soft); width:1.8rem; height:1.8rem; padding:0.4rem; display:flex; align-items:center; justify-content:center; flex-shrink:0; }
   .team-remove:disabled{ opacity:0.25; }
 
   /* Bordure pointillée retirée : détonnait avec le rebord de verre cohérent
@@ -882,7 +890,19 @@
      le banc de partie a mesuré à 6,85 px. « both » lui fait tenir sa position
      de départ dès le premier instant. */
   .podium-crown{ width:1.5rem; height:1.5rem; color:var(--gold); margin-bottom:0.3rem; opacity:0; animation:crownPop var(--tr-ouvre) 0.3s both; }
-  .podium-avatar{ width:2.4rem; height:2.4rem; border-radius:50%; display:flex; align-items:center; justify-content:center; color:#fff; font-family:'Poppins',sans-serif; font-weight:700; font-size:1rem; border:2px solid var(--bord); box-shadow:inset 0 2px 0 rgba(255,255,255,0.28), 0 5px 14px rgba(15,12,10,0.24); margin-bottom:0.5rem; }
+  /* ===== LA PASTILLE DU PODIUM EST LA PASTILLE DU JOUEUR, EN PLUS GRAND =====
+     Elle s'était mise à vivre sa vie : couleur À PLAT là où toutes les autres
+     du jeu (mode Groupe, attribution des points, tableau des scores) portent
+     le même dégradé à 150°, et surtout un anneau blanc de 2 px tout autour,
+     que personne d'autre n'a. Sur la photo du désert, cet anneau se voit —
+     d'où « ce n'est pas comme ça qu'ils sont normalement ».
+     Elle porte donc la classe .team-token comme les trois autres tailles
+     (.aw-token, .rank-token) et ne redéfinit plus QUE sa taille : la
+     matière, l'arrondi, le rebord et la couleur du texte viennent d'un seul
+     endroit, elles ne peuvent plus diverger. Le diamètre extérieur ne bouge
+     pas d'un pixel (la bordure était en border-box) et l'élévation reste
+     exactement celle qu'elle avait. */
+  .podium-avatar{ width:2.4rem; height:2.4rem; font-weight:700; font-size:1rem; margin-bottom:0.5rem; --rim-cast:0 5px 14px rgba(15,12,10,0.24); }
   /* ===== LA PASTILLE D'UN JOUEUR NE DÉPEND PAS DE SA PLACE =====
      Le premier avait ici une ombre À LUI : elle REMPLAÇAIT celle des autres au
      lieu de s'y ajouter. Il perdait donc le reflet intérieur du haut — celui
@@ -1295,8 +1315,17 @@
 
   /* ---------- Profil & En ligne ---------- */
   .mode-icon.online{ background:linear-gradient(150deg, #4DA8FF, #2E7FE8); box-shadow:inset 0 1px 0 rgba(255,255,255,0.26), 0 2px 7px rgba(46,127,232,0.24); }
-  .avatar{ position:relative; border-radius:50%; color:#fff; display:inline-flex; align-items:center; justify-content:center; font-family:'Poppins',sans-serif; font-weight:700; border:2px solid var(--bord); --rim-edge:0 0 0 1px transparent; --rim-cast:0 4px 12px rgba(15,12,10,0.18); flex-shrink:0; }
-  .avatar.waiting{ background:rgba(255,255,255,0.5); color:var(--ink-soft); border-style:dashed; }
+  /* UNE SEULE MATIÈRE POUR TOUTES LES PASTILLES DE JOUEUR.
+     Celle-ci (profil, en-tête, salon, duel) était restée à plat avec un anneau
+     blanc de 2 px, quand celles d'une partie à plusieurs (.team-token) portent
+     un dégradé à 150° et aucun anneau. Deux matières pour la même chose : la
+     pastille changeait d'aspect selon l'écran où on la regardait.
+     Elle prend donc le dégradé. La bordure reste — mais TRANSPARENTE : c'est
+     elle qui devient le tiret de la place vide (.waiting), le seul cas où un
+     trait a un sens ici. Le fond est peint sous elle (background-clip vaut
+     border-box), le diamètre visible ne change donc pas. */
+  .avatar{ position:relative; border-radius:50%; color:#fff; display:inline-flex; align-items:center; justify-content:center; font-family:'Poppins',sans-serif; font-weight:700; border:2px solid transparent; --rim-edge:0 0 0 1px transparent; --rim-cast:0 4px 12px rgba(15,12,10,0.18); flex-shrink:0; }
+  .avatar.waiting{ background:rgba(255,255,255,0.5); color:var(--ink-soft); border-style:dashed; border-color:var(--bord); }
   /* Même teinte dorée saturée que le badge « Créateur » (au lieu du dégradé
      pâle d'origine) : le petit C du profil et le badge du profil forment
      désormais un seul et même « look » doré vif, cohérent partout. */
@@ -1753,9 +1782,37 @@
      fenêtre le laissait absent pendant que la mise en page s'étalait. Une
      classe posée en JS sur la GÉOMÉTRIE le lève dès la première image. */
   html.couche #rotate-lock{ display:flex !important; }
+  /* ===== L'ÉCRAN COUPÉ EN DEUX, COUCHÉ =====
+     Le voile est un fond PLEIN : tant qu'il est là, rien de l'app ne doit se
+     voir. C'était vrai tant qu'il apparaissait NET. Depuis qu'il arrive avec
+     l'horloge du jeu (0,52 s), il y a une demi-seconde pendant laquelle on
+     voit AU TRAVERS — et ce qu'on voit couché, c'est la colonne figée à
+     393 px collée à gauche d'un écran de 852 : toute l'interface d'un côté,
+     le désert nu de l'autre. Mesuré : les cartes s'arrêtent net à 383 px sur
+     852. C'est exactement l'écran coupé en deux.
+     La colonne ne bouge pas (la figer est ce qui évite la déchirure au
+     retour) : c'est le REGARD qu'on coupe. L'app est simplement rendue
+     invisible tant que l'écran est couché, si bien que le voile monte sur la
+     photo pleine, uniforme, sans couture. « visibility » et non « display » :
+     rien n'est démonté, la position de défilement et les mesures de verre
+     restent intactes, et au redressement l'app est de nouveau là à l'image
+     même où la classe part — sous le voile qui, lui, s'efface en 0,24 s.
+     LES DEUX CONDITIONS DOIVENT RESTER LE MIROIR EXACT DE CELLES DU VOILE
+     (la requête média ci-dessus et la classe posée en JS) : si l'une lève le
+     voile sans l'autre, la couture revient le temps d'une image. */
+  @media (orientation:landscape) and (pointer:coarse){ #app{ visibility:hidden; } }
+  html.couche #app{ visibility:hidden; }
   /* Le plancher d'air ne s'applique QUE si l'écran peut le donner. Sur un
      iPhone SE dans le navigateur (553 px de haut), 2,4 rem au fond faisaient
-     déborder l'accueil de 14 px : on ne prend pas la place qu'on n'a pas. */
+     déborder l'accueil de 14 px : on ne prend pas la place qu'on n'a pas.
+     ET IL EST GELÉ AVEC LE RESTE, SUR TÉLÉPHONE. Cette requête média lit la
+     hauteur de la FENÊTRE : couché, elle tombe à 393 px, le plancher repassait
+     donc de 2,4 rem à 0,8 — et toute la mise en page du bas glissait de
+     26,3 px, puis refaisait le chemin inverse au redressement. Exactement la
+     déchirure que le gel de la colonne existe pour empêcher, réintroduite par
+     la porte de derrière. Sur téléphone, figerColonne pose donc la valeur
+     mesurée DEBOUT en style en ligne (voir sa dernière ligne), qui l'emporte
+     sur cette requête ; tablettes et bureau, eux, la gardent telle quelle. */
   @media (min-height:600px){ :root{ --air-bas: 2.4rem; } }
 
   /* ---------- VERRE GARANTI (photo pré-floutée, alignée au viewport) ----------
@@ -6569,21 +6626,27 @@ function majVoilesErreurs(){
   const bas  = ouvert ? Math.min(1, Math.max(0, reste - st) / VOILE_ERR_RAMPE) * V : 0;
   li.style.setProperty("--voile-h", Math.round(haut) + "px");
   li.style.setProperty("--voile-b", Math.round(bas) + "px");
+  /* ===== « 2 / 7 » ALORS QU'ON EST SUR LA PREMIÈRE =====
+     Le compteur disait « jusqu'où j'ai vu » : la dernière carte qui tient
+     ENTIÈREMENT dans la liste. En haut, les cartes 1 et 2 tiennent toutes les
+     deux, il affichait donc 2 — exact, mais illisible : à côté d'un titre,
+     « 2 / 7 » se lit « je suis sur la deuxième », et Taylor était sur la
+     première.
+     LA FRACTION ÉTAIT LE MAUVAIS INSTRUMENT. « n sur N » suppose qu'on voit UNE
+     chose à la fois, comme une photo en plein écran. Ici la liste montre deux
+     cartes et demie : il n'existe aucune carte « courante », donc aucun rang
+     honnête à afficher. Mesuré sur sept erreurs : la carte du haut donne 1 à 5
+     (elle n'atteint jamais 7, la dernière ne peut pas monter tout en haut), la
+     dernière entière donne 2 à 7, la dernière visible 3 à 7. Aucune des trois
+     ne va de 1 à 7.
+     On affiche donc le NOMBRE D'ERREURS, qui ne se discute pas. Le « combien
+     m'en reste-t-il » est déjà dit, et mieux : par le voile du bas, qui
+     s'efface quand il n'y a plus rien dessous. */
   const cpt = document.querySelector(".review-sheet .sheet-title small");
   if(!cpt) return;
   const cartes = li.querySelectorAll(".rev-item");
   if(!cartes.length) return;
-  if(!ouvert){ cpt.textContent = String(cartes.length); return; }
-  /* Jusqu'où l'on voit : la dernière carte qui tient ENTIÈREMENT dans la
-     liste. C'est ce chiffre-là qui répond à la vraie question — « combien
-     m'en reste-t-il dessous ? » — et il atteint « 7 / 7 » pile quand la
-     dernière carte se lit en entier : on sait qu'on a tout vu. */
-  const ligne = li.getBoundingClientRect().bottom + 2;
-  let rang = 1;
-  for(let i = 0; i < cartes.length; i++){
-    if(cartes[i].getBoundingClientRect().bottom <= ligne) rang = i + 1;
-  }
-  cpt.textContent = rang + " / " + cartes.length;
+  cpt.textContent = String(cartes.length);
 }
 function closeMissedReview(){
   const v = document.getElementById("reviewVeil");
@@ -10289,7 +10352,7 @@ function renderEndGroup(){
         return `
         <div class="podium-col">
           ${r.rank===1 ? `<span class="podium-crown">${ICONS.crown}</span>` : `<span class="podium-crown" style="visibility:hidden"></span>`}
-          <span class="podium-avatar" style="background:${TEAM_COLORS[r.teamIdx%6]}">${initial}</span>
+          <span class="team-token podium-avatar" style="background:linear-gradient(150deg, color-mix(in srgb, ${TEAM_COLORS[r.teamIdx%6]} 68%, #ffffff), ${TEAM_COLORS[r.teamIdx%6]})">${initial}</span>
           <span class="podium-name">${escapeHtml(state.teams[r.teamIdx].name)}</span>
           <span class="podium-score">${state.scores[r.teamIdx]}</span>
           <div class="podium-bar ${barByRank[Math.min(r.rank,3)]}">${r.rank}</div>
@@ -10428,7 +10491,7 @@ function avatarHtml(name, color, size, creator){
   const s = size || 2.6;
   /* --av : la taille de l'avatar, transmise au badge « Créateur » pour qu'il
      reste à la même fraction quelle que soit la place où on l'affiche. */
-  return `<span class="avatar" style="--av:${s}rem;width:${s}rem;height:${s}rem;background:${color};font-size:${(s*0.42).toFixed(2)}rem;">${initial}${creator?`<span class="crown-badge">${C_MONO_SVG}</span>`:""}</span>`;
+  return `<span class="avatar" style="--av:${s}rem;width:${s}rem;height:${s}rem;background:linear-gradient(150deg, color-mix(in srgb, ${color} 68%, #ffffff), ${color});font-size:${(s*0.42).toFixed(2)}rem;">${initial}${creator?`<span class="crown-badge">${C_MONO_SVG}</span>`:""}</span>`;
 }
 /* Capitale C de linéale classique, tracée à la main : dos gauche droit entre
    deux coins arrondis, et COUPES QUASI VERTICALES aux extrémités — les
@@ -11989,11 +12052,16 @@ function figerColonne(){
   if(w > 600){                      // tablette, bureau : rien d'épinglé
     de.classList.remove("tel-fige");
     de.style.removeProperty("--colonne"); de.style.removeProperty("--hauteur"); de.style.removeProperty("--marge");
+    de.style.removeProperty("--air-bas");
     return;
   }
   const l = Math.min(430, w);
   de.style.setProperty("--colonne", l + "px");
   de.style.setProperty("--hauteur", h + "px");
+  /* Le plancher d'air du bas, gelé lui aussi : mesuré debout, jamais relu
+     couché (voir --air-bas dans la feuille de style). Même seuil que la
+     requête média qu'il remplace ici. */
+  de.style.setProperty("--air-bas", h >= 600 ? "2.4rem" : "0.8rem");
   /* la marge qu'aurait donnée « margin:0 auto » DEBOUT, figée elle aussi :
      sans ça, la colonne se recentre dans l'écran devenu large. */
   de.style.setProperty("--marge", Math.max(0, Math.round((w - l) / 2)) + "px");

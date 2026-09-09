@@ -44,6 +44,9 @@ notre code, et il est éprouvé. Tout le reste l'est.
     node motfin.js      # le mot de la fin ne se trompe jamais de joueur
     node pied.js        # le pied de l'accueil se tient pareil sur dix appareils
     node bords.js       # l'onde d'appui va-t-elle jusqu'au bord du bouton ?
+    node forme.js       # l'onde d'appui a-t-elle la FORME de son bouton ?
+    node jeton.js       # une seule pastille de joueur, partout, en quatre tailles
+    node paysage.js     # couché, on ne voit rien de l'app sous le voile
     node typo.js        # typographie française sur les 1545 questions et 12 écrans
     node doigt.js       # tout ce qui se touche fait-il 44 px, mesuré au doigt ?
     node fuite.js sansmarge "html.gl-xf .has-gs{ overflow-clip-margin:0px !important; }"

@@ -220,6 +220,60 @@ substituer :
    qui doit céder quand la place manque s'y accroche, avec la taille
    actuelle comme plafond.
 
+**L'écran coupé en deux quand on couche le téléphone (v199).** Le voile
+« Tourne l'écran » est un fond PLEIN : tant qu'il est là, rien de l'app ne se
+voit. C'était vrai tant qu'il apparaissait NET. Depuis qu'il arrive avec
+l'horloge du jeu (v190, 0,52 s), il y a une demi-seconde où l'on voit AU
+TRAVERS — et couché, ce qu'on voit, c'est la colonne gelée à 393 px collée à
+gauche d'un écran de 852 : les cartes s'arrêtent net à 383 px, le désert nu
+occupe le reste. **Une animation ajoutée a rendu visible une chose qui, jusque
+là, ne l'était jamais.** La colonne ne bouge pas — la geler est ce qui évite la
+déchirure au retour ; c'est le REGARD qu'on coupe, l'app est rendue invisible
+tant que l'écran est couché. `banc-essai/paysage.js` fige le voile à opacité
+nulle, sur trois téléphones, et cherche une couture verticale au bord de la
+colonne en la comparant au plus fort contraste de la photo elle-même.
+
+**Le plancher d'air se dégelait tout seul à la rotation (v199).** Le même banc
+`rotation.js` qui avait trouvé la déchirure de la v174 la retrouvait — 26,3 px
+sur la bande des sept jours — et **plus personne ne l'avait relu depuis que la
+v197 avait ajouté `@media (min-height:600px)` pour `--air-bas`**. Cette requête
+lit la hauteur de la FENÊTRE : couchée, elle tombe à 393 px, le plancher
+repassait de 2,4 rem à 0,8, et tout le bas glissait — puis refaisait le chemin
+inverse au redressement. Exactement ce que le gel de la colonne existe pour
+empêcher, réintroduit par la porte de derrière. La valeur est désormais mesurée
+DEBOUT et posée en style en ligne par `figerColonne`, avec la largeur, la
+hauteur et la marge. **Un garde-fou n'en est un que si on le relit après chaque
+ajout.**
+
+**L'onde d'appui sortait carrée sur la croix de retrait (v199).** Elle a la
+forme du bouton (`border-radius:inherit`) — et ce bouton-là était le seul du jeu
+sans arrondi. Un carré rose net au milieu d'une ligne arrondie. Le rond de
+1,8 rem le remet dans la langue du jeu. `banc-essai/forme.js` compare, sur huit
+écrans, l'arrondi de chaque bouton qui peint réellement une onde à celui de son
+onde : 25 boutons, aucun carré. Il ignore ceux dont le `::before` sert
+d'agrandisseur de zone tactile (la poignée des feuilles) — **il ne suffit pas
+qu'un pseudo-élément existe pour qu'il peigne.**
+
+**Deux matières pour la même pastille de joueur (v199).** Le rond qui porte
+l'initiale apparaît à sept endroits et dans quatre tailles. Cinq portaient le
+dégradé à 150° ; celle du podium et celle du profil étaient restées **à plat,
+avec un anneau blanc de 2 px** que personne d'autre n'a — visible sur la photo
+du désert. Elles rejoignent la matière commune ; la bordure du profil reste,
+mais transparente, parce que c'est elle qui devient le tiret de la place vide.
+`banc-essai/jeton.js` relève la matière de chacune sur son écran et refuse la
+moindre divergence.
+
+**« 2 / 7 » alors qu'on est sur la première erreur (v199).** Le compteur disait
+« jusqu'où j'ai vu » : la dernière carte qui tient ENTIÈREMENT dans la liste. En
+haut, les cartes 1 et 2 tiennent toutes les deux — exact, et illisible : à côté
+d'un titre, « 2 / 7 » se lit « je suis sur la deuxième ». **La fraction était le
+mauvais instrument.** « n sur N » suppose qu'on voit UNE chose à la fois ; la
+liste en montre deux et demie, il n'existe donc aucune carte courante. Mesuré
+sur sept erreurs : la carte du haut donne 1 à 5, la dernière entière 2 à 7, la
+dernière visible 3 à 7 — aucune des trois ne va de 1 à 7. On affiche le NOMBRE
+d'erreurs, qui ne se discute pas ; le « combien reste-t-il » est déjà dit par le
+voile du bas.
+
 **EN PARTIE, cinq mouvements tournaient encore sur leur propre horloge
 (v198).** Les bancs d'animation regardaient les changements d'écran et les
 plis. Or pendant une partie, l'essentiel se passe SUR PLACE : on répond, la
