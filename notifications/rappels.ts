@@ -20,12 +20,68 @@ const SERIE_MINIMALE = 2;          // en dessous, il n'y a rien à sauver
    forme de la condition qui l'empêche. */
 const ABSENCES = [7, 30];
 
+/* ===== UN 500 NE DIT RIEN. CETTE FONCTION, SI. =====
+   Trois secrets à poser à la main, donc trois occasions de se tromper : un nom
+   mal orthographié, un espace invisible collé au bout, une moitié de paire qui
+   ne va pas avec l'autre. La bibliothèque d'envoi, elle, lève « no key set » —
+   le même message que le secret soit absent, vide ou vraiment mauvais.
+   On vérifie donc AVANT, et on répond en français ce qui manque exactement. */
+const b64urlVersOctets = (s: string) => {
+  const t = s.replace(/-/g, "+").replace(/_/g, "/");
+  const bin = atob(t + "=".repeat((4 - (t.length % 4)) % 4));
+  const o = new Uint8Array(bin.length);
+  for (let i = 0; i < bin.length; i++) o[i] = bin.charCodeAt(i);
+  return o;
+};
+const octetsVersB64url = (o: Uint8Array) =>
+  btoa(String.fromCharCode(...o)).replace(/\+/g, "-").replace(/\//g, "_").replace(/=+$/, "");
+
+/* Les deux moitiés vont-elles VRAIMENT ensemble ? On signe puis on vérifie :
+   c'est la seule preuve, et elle ne coûte qu'une milliseconde. */
+async function paireCoherente(pub: string, priv: string): Promise<string> {
+  let octets: Uint8Array;
+  try { octets = b64urlVersOctets(pub); }
+  catch { return "VAPID_PUBLIQUE n'est pas du base64url lisible"; }
+  if (octets.length !== 65) return `VAPID_PUBLIQUE fait ${octets.length} octets une fois décodée, il en faut 65`;
+  if (octets[0] !== 4) return `VAPID_PUBLIQUE commence par 0x${octets[0].toString(16)} au lieu de 0x04 : ce n'est pas une clé`;
+  const jwk = {
+    kty: "EC", crv: "P-256", ext: true, d: priv,
+    x: octetsVersB64url(octets.slice(1, 33)),
+    y: octetsVersB64url(octets.slice(33, 65)),
+  };
+  try {
+    const cleP = await crypto.subtle.importKey("jwk", jwk, { name: "ECDSA", namedCurve: "P-256" }, false, ["sign"]);
+    const cleV = await crypto.subtle.importKey("raw", octets, { name: "ECDSA", namedCurve: "P-256" }, false, ["verify"]);
+    const m = new TextEncoder().encode("yada");
+    const sig = await crypto.subtle.sign({ name: "ECDSA", hash: "SHA-256" }, cleP, m);
+    const ok = await crypto.subtle.verify({ name: "ECDSA", hash: "SHA-256" }, cleV, sig, m);
+    if (!ok) return "les deux moitiés ne vont pas ensemble : refais une paire et remets les DEUX";
+  } catch {
+    return "les deux moitiés ne vont pas ensemble : refais une paire et remets les DEUX";
+  }
+  return "";
+}
+
 Deno.serve(async () => {
-  webpush.setVapidDetails(
-    Deno.env.get("VAPID_SUJET")!,          // ex. "mailto:tonadresse@exemple.fr"
-    Deno.env.get("VAPID_PUBLIQUE")!,
-    Deno.env.get("VAPID_PRIVEE")!,
-  );
+  /* Les espaces au bout sont invisibles et suffisent à tout casser. */
+  const sujet = (Deno.env.get("VAPID_SUJET") ?? "").trim();
+  const pub   = (Deno.env.get("VAPID_PUBLIQUE") ?? "").trim();
+  const priv  = (Deno.env.get("VAPID_PRIVEE") ?? "").trim();
+
+  const soucis: string[] = [];
+  if (!sujet) soucis.push("VAPID_SUJET est absent ou vide");
+  else if (!/^mailto:\S+@\S+$/.test(sujet)) soucis.push(`VAPID_SUJET doit ressembler à « mailto:toi@exemple.fr » (reçu : « ${sujet} »)`);
+  if (!pub) soucis.push("VAPID_PUBLIQUE est absente ou vide — vérifie l'orthographe du nom du secret");
+  else if (pub.length !== 87) soucis.push(`VAPID_PUBLIQUE fait ${pub.length} caractères au lieu de 87`);
+  if (!priv) soucis.push("VAPID_PRIVEE est absente ou vide — vérifie l'orthographe du nom du secret");
+  else if (priv.length !== 43) soucis.push(`VAPID_PRIVEE fait ${priv.length} caractères au lieu de 43`);
+  if (!soucis.length) {
+    const m = await paireCoherente(pub, priv);
+    if (m) soucis.push(m);
+  }
+  if (soucis.length) return Response.json({ erreur: "clés VAPID", details: soucis }, { status: 400 });
+
+  webpush.setVapidDetails(sujet, pub, priv);
   const db = createClient(Deno.env.get("SUPABASE_URL")!, Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!);
 
   /* On ne filtre plus sur la série : un joueur absent depuis un mois a

@@ -54,9 +54,10 @@ const createClient = () => ({
   }; },
 });
 
-/* ---- le vrai code, transpilé ---- */
+/* ---- les secrets, changeables d'un essai à l'autre ---- */
+const SECRETS = {};
 let handler = null;
-globalThis.Deno = { env:{ get:()=> 'valeur-de-laboratoire' }, serve:(fn)=>{ handler = fn; } };
+globalThis.Deno = { env:{ get:(k)=> SECRETS[k] }, serve:(fn)=>{ handler = fn; } };
 const source = fs.readFileSync(SRC, 'utf8')
   .replace(/^import .*$/gm, '');                 // les deux imports npm: sont remplacés par les doublures
 const js = ts.transpileModule(source, { compilerOptions:{ module: ts.ModuleKind.CommonJS, target: ts.ScriptTarget.ES2022 } }).outputText;
@@ -90,8 +91,32 @@ const CAS = [
 
 LIGNES = CAS.map(([nom, l], i) => Object.assign({ endpoint:'appareil-' + i, abonnement:{ endpoint:'appareil-' + i } }, l));
 
+/* Une VRAIE paire de clés, fabriquée ici : rien de secret n'entre dans le
+   dépôt, et la vérification de cohérence a de quoi mordre. */
+async function fabriquerPaire(){
+  const kp = await crypto.subtle.generateKey({ name:'ECDSA', namedCurve:'P-256' }, true, ['sign','verify']);
+  const pub = new Uint8Array(await crypto.subtle.exportKey('raw', kp.publicKey));
+  const jwk = await crypto.subtle.exportKey('jwk', kp.privateKey);
+  const b64 = (u) => Buffer.from(u).toString('base64').replace(/\+/g,'-').replace(/\//g,'_').replace(/=+$/,'');
+  return { pub: b64(pub), priv: jwk.d };
+}
+
 (async () => {
-  await handler();
+  const paire = await fabriquerPaire();
+  const autre = await fabriquerPaire();
+  Object.assign(SECRETS, {
+    VAPID_SUJET: 'mailto:taylor@exemple.fr',
+    VAPID_PUBLIQUE: paire.pub,
+    VAPID_PRIVEE: paire.priv,
+    SUPABASE_URL: 'https://laboratoire.exemple',
+    SUPABASE_SERVICE_ROLE_KEY: 'cle-de-laboratoire',
+  });
+
+  const rep = await handler();
+  if (rep && rep.status === 400) {
+    console.log('  LA FONCTION A REFUSÉ DES CLÉS POURTANT VALIDES :', JSON.stringify(await rep.json()));
+    process.exit(1);
+  }
   Date.now = vraiNow;
   let ok = true;
   console.log('  cas                                       attendu      reçu');
@@ -107,6 +132,34 @@ LIGNES = CAS.map(([nom, l], i) => Object.assign({ endpoint:'appareil-' + i, abon
     console.log('  ' + nom.padEnd(40) + veut.padEnd(12) + recu + (bon ? '' : '   <-- NON'));
   });
   console.log('\n  ' + envois.length + ' envoi(s) pour ' + CAS.length + ' joueurs');
-  console.log(ok ? '  OK — les deux cas, et rien d\'autre' : '  ÉCHEC');
+
+  /* ===== ET QUAND LES SECRETS SONT MAL POSÉS ? =====
+     Trois secrets à recopier à la main, donc trois occasions de se tromper. La
+     bibliothèque d'envoi répond « no key set » dans les trois cas, ce qui
+     n'aide personne. La fonction doit, elle, nommer le coupable. */
+  console.log('\n  secrets mal posés                          message attendu');
+  const ESSAIS = [
+    ['nom du secret mal orthographié', { VAPID_PUBLIQUE: undefined }, /VAPID_PUBLIQUE est absente/],
+    ['clé publique tronquée',          { VAPID_PUBLIQUE: paire.pub.slice(0, 80) }, /VAPID_PUBLIQUE fait 80 caract/],
+    ['espace collé au bout',           { VAPID_PUBLIQUE: paire.pub + ' ' }, null],   /* doit PASSER : on rogne */
+    ['clé privée d\'une autre paire',   { VAPID_PRIVEE: autre.priv }, /ne vont pas ensemble/],
+    ['sujet sans mailto:',             { VAPID_SUJET: 'taylor@exemple.fr' }, /mailto:/],
+  ];
+  const bon = { ...SECRETS };
+  for (const [nom, remplace, attendu] of ESSAIS) {
+    Object.keys(SECRETS).forEach(k => delete SECRETS[k]);
+    Object.assign(SECRETS, bon, remplace);
+    Object.keys(remplace).forEach(k => { if (remplace[k] === undefined) delete SECRETS[k]; });
+    const r = await handler();
+    const refuse = r && r.status === 400;
+    const dit = refuse ? (await r.json()).details.join(' ; ') : '(acceptée)';
+    const juste = attendu ? (refuse && attendu.test(dit)) : !refuse;
+    if (!juste) ok = false;
+    console.log('  ' + nom.padEnd(42) + dit.slice(0, 70) + (juste ? '' : '   <-- NON'));
+  }
+  Object.keys(SECRETS).forEach(k => delete SECRETS[k]);
+  Object.assign(SECRETS, bon);
+
+  console.log(ok ? '\n  OK — les deux cas, rien d\'autre, et un message clair quand les clés sont mauvaises' : '\n  ÉCHEC');
   process.exit(ok ? 0 : 1);
 })();
