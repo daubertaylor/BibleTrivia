@@ -36,6 +36,7 @@ notre code, et il est éprouvé. Tout le reste l'est.
     node verrou.js      # le verrou paysage arrive et s'en va sans clignoter
     node pastille.js    # la pastille d'un joueur ne dépend pas de sa place
     node partage.js     # « Partager le jeu » fait toujours quelque chose
+    node enpartie.js    # en partie : une horloge, aucun rebond, le bas avec le haut
     node pli.js         # déplier un testament glisse, et le verre suit
     node englouti.js    # la liste des erreurs ne tombe pas du bord de l'écran
     node plis.js        # tous les plis du jeu tournent-ils sur la même horloge ?

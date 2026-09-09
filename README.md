@@ -220,6 +220,37 @@ substituer :
    qui doit céder quand la place manque s'y accroche, avec la taille
    actuelle comme plafond.
 
+**EN PARTIE, cinq mouvements tournaient encore sur leur propre horloge
+(v198).** Les bancs d'animation regardaient les changements d'écran et les
+plis. Or pendant une partie, l'essentiel se passe SUR PLACE : on répond, la
+bonne réponse s'allume, l'anecdote arrive, les résultats se dressent.
+`banc-essai/enpartie.js` joue donc une vraie partie, solo puis groupe, et suit
+chaque geste image par image. Il a trouvé, en une passe :
+
+| ce qui bougeait | son horloge |
+|---|---|
+| le trophée et la médaille des résultats | 0,75 s, avec dépassement |
+| la couronne du vainqueur | 0,5 s |
+| les marches du podium | 0,55 s |
+| la lueur verte de la bonne réponse | 0,7 s |
+| l'éclat rouge de la mauvaise | 0,45 s |
+
+Les deux derniers sont **le même instant, dessiné à deux vitesses**. Tous
+rejoignent l'horloge unique.
+
+**Et un vrai saut, jamais vu jusque-là.** La couronne attend trois dixièmes de
+seconde que les marches soient montées. Elle était en `forwards` : rien ne
+tenait son état de DÉPART pendant l'attente. Elle restait donc à sa place,
+**sautait de 6,85 px vers le bas** à l'instant où l'animation démarrait, puis
+remontait. `both` lui fait tenir sa position de départ dès la première image.
+
+**Deux critères du banc étaient faux, et le banc le dit maintenant.** Une
+feuille qui se ferme DESCEND — c'est son animation de sortie, pas un rebond :
+on ne suit plus ce qui s'en va. Et en révélant à plusieurs, l'écran GRANDIT
+(les boutons d'attribution arrivent) et dépasse la fenêtre : c'est normal, il
+défile. Ce qu'il faut lire, c'est le `translateY` qui reste de l'animation
+d'entrée, rien d'autre.
+
 **Les sept jours plus bas sur un Xiaomi : l'air du bas n'existait que d'un
 côté (v197).** La proportion, elle, était identique au dixième de pour cent —
 14,1 % de la hauteur utile sur l'iPhone 15 comme sur les trois Xiaomi mesurés.

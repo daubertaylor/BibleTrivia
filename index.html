@@ -263,6 +263,13 @@
     --air-bas: 0.8rem;
     --tr-plie: 0.52s cubic-bezier(0.33,1,0.68,1);
     --tr-ouvre: var(--tr-plie);
+    /* Y COMPRIS EN PARTIE. Le banc enpartie.js a trouvé cinq mouvements qui
+       tournaient encore sur leur propre horloge, tous pendant une partie :
+       le trophée et la médaille (0,75s, avec dépassement), la couronne du
+       vainqueur (0,5s), les marches du podium (0,55s), la lueur verte de la
+       bonne réponse (0,7s) et l'éclat rouge de la mauvaise (0,45s). Les deux
+       derniers sont le MÊME instant, dessiné à deux vitesses. Tous rejoignent
+       l'horloge unique. */
     --tr-ferme: 0.24s cubic-bezier(0.4,0,1,1);
     /* ===== LE PIÈGE DES VARIABLES QUI EN CONTIENNENT D'AUTRES =====
        Le dessin du voile a d'abord été posé ICI, sur :root, pour n'exister
@@ -867,7 +874,14 @@
   /* Group podium */
   .podium{ display:flex; align-items:flex-end; justify-content:center; gap:0.55rem; margin:0.4rem 0 1.1rem; }
   .podium-col{ flex:1; max-width:33%; display:flex; flex-direction:column; align-items:center; }
-  .podium-crown{ width:1.5rem; height:1.5rem; color:var(--gold); margin-bottom:0.3rem; opacity:0; animation:crownPop 0.5s ease 0.3s forwards; }
+  /* « both » ET PAS « forwards ». La couronne attend trois dixièmes de seconde
+     que les marches soient montées, puis s'installe en venant de 6 px plus
+     bas. Avec « forwards » seul, rien ne tenait son état de DÉPART pendant
+     l'attente : elle restait à sa place, puis SAUTAIT de 6 px vers le bas au
+     moment où l'animation démarrait, avant de remonter. Un aller-retour que
+     le banc de partie a mesuré à 6,85 px. « both » lui fait tenir sa position
+     de départ dès le premier instant. */
+  .podium-crown{ width:1.5rem; height:1.5rem; color:var(--gold); margin-bottom:0.3rem; opacity:0; animation:crownPop var(--tr-ouvre) 0.3s both; }
   .podium-avatar{ width:2.4rem; height:2.4rem; border-radius:50%; display:flex; align-items:center; justify-content:center; color:#fff; font-family:'Poppins',sans-serif; font-weight:700; font-size:1rem; border:2px solid var(--bord); box-shadow:inset 0 2px 0 rgba(255,255,255,0.28), 0 5px 14px rgba(15,12,10,0.24); margin-bottom:0.5rem; }
   /* ===== LA PASTILLE D'UN JOUEUR NE DÉPEND PAS DE SA PLACE =====
      Le premier avait ici une ombre À LUI : elle REMPLAÇAIT celle des autres au
@@ -1270,8 +1284,8 @@
 
   /* one-shot feedback on the revealed answer */
   .option-btn.reveal-pop{ z-index:2; }
-  .option-btn.reveal-pop::before{ content:""; position:absolute; inset:-2px; border-radius:var(--r-l); background:radial-gradient(circle at center, rgba(47,169,110,0.4), transparent 70%); z-index:-1; animation:glowBurst 0.7s ease forwards; }
-  .option-btn.reveal-shake{ animation:wrongFlash 0.45s ease; }
+  .option-btn.reveal-pop::before{ content:""; position:absolute; inset:-2px; border-radius:var(--r-l); background:radial-gradient(circle at center, rgba(47,169,110,0.4), transparent 70%); z-index:-1; animation:glowBurst var(--tr-ouvre) forwards; }
+  .option-btn.reveal-shake{ animation:wrongFlash var(--tr-ouvre); }
   .option-btn{ position:relative; }
 
   @keyframes cardSlideIn{ from{ opacity:0; transform:translate3d(0,14px,0); } to{ opacity:1; transform:translate3d(0,0,0); } }
@@ -1567,7 +1581,7 @@
      langage que « Rejouer »/« Commencer »). Fini les deux boutons pâles jumeaux :
      corail = continuer/rester, blanc miroir = sortir, partout pareil. */
   .modal-btn.cancel.keep{ --glass-tint: rgb(236,60,26); color:#fff; border-color:transparent; box-shadow:var(--rebord-plein); }
-  .modal-card.shake{ animation:wrongFlash 0.45s ease; }
+  .modal-card.shake{ animation:wrongFlash var(--tr-ouvre); }
   @keyframes veilIn{ from{ opacity:0; } to{ opacity:1; } }
   /* UN MENU S'OUVRE COMME LES RÉGLAGES : il MONTE DEPUIS LE BAS DE L'ÉCRAN.
      Avant, il ne faisait qu'un petit pas de 34px là où la feuille Réglages
@@ -2006,7 +2020,7 @@
   .screen-exit{ animation:screenOut var(--tr-ferme) forwards; }
   @keyframes screenOut{ from{ opacity:1; transform:translate3d(0,0,0); } to{ opacity:0; transform:translate3d(0,-8px,0); } }
   .reveal-in{ animation:fadeSlide var(--tr-ouvre) both; }
-  .screen-enter .podium-bar{ transform-origin:bottom; animation:barUp 0.55s 0.12s cubic-bezier(0.32,0.72,0,1) backwards; }
+  .screen-enter .podium-bar{ transform-origin:bottom; animation:barUp var(--tr-ouvre) 0.12s backwards; }
   @keyframes barUp{ from{ transform:scaleY(0.15); opacity:0; } to{ transform:scaleY(1); opacity:1; } }
 
 
@@ -2404,14 +2418,14 @@
   .option-btn{ min-height:clamp(3.1rem, calc(7 * var(--uh)), 4.6rem); }
 
   /* ---------- Médaillon de fin : verre cerclé d'or, trophée intégré ---------- */
-  .end-medal{ position:relative; width:clamp(5.9rem, calc(27 * var(--lw)), 7.3rem); aspect-ratio:1; margin:0 auto 0.7rem; border-radius:50%; display:flex; align-items:center; justify-content:center; border:1px solid var(--bord); animation:trophyIn 0.75s cubic-bezier(0.18,1.25,0.32,1) backwards; transform:translateZ(0); -webkit-transform:translateZ(0); --rim-cast:0 10px 30px rgba(18,12,6,0.3); }
+  .end-medal{ position:relative; width:clamp(5.9rem, calc(27 * var(--lw)), 7.3rem); aspect-ratio:1; margin:0 auto 0.7rem; border-radius:50%; display:flex; align-items:center; justify-content:center; border:1px solid var(--bord); animation:trophyIn var(--tr-ouvre) backwards; transform:translateZ(0); -webkit-transform:translateZ(0); --rim-cast:0 10px 30px rgba(18,12,6,0.3); }
   .end-medal::before{ content:""; position:absolute; top:6%; left:6%; right:6%; bottom:6%; border-radius:50%; border:0; box-shadow:inset 0 0 14px rgba(239,173,38,0.3), 0 0 16px rgba(239,173,38,0.22); pointer-events:none; }
   .end-medal::after{ content:""; position:absolute; left:50%; top:50%; width:170%; aspect-ratio:1; transform:translate(-50%,-50%); background:radial-gradient(closest-side, rgba(255,205,90,0.32), rgba(255,205,90,0.08) 55%, transparent 72%); z-index:-1; pointer-events:none; }
   .em-cup{ width:56%; display:block; filter:drop-shadow(0 6px 12px rgba(150,90,8,0.4)); }
   .em-cup svg{ height:auto; overflow:visible; }
 
   /* ---------- Trophée premium (bas de coupe élancé, socle à étages) ---------- */
-  .end-trophy{ position:relative; width:clamp(6.6rem, calc(32 * var(--lw)), 8.4rem); height:auto; margin:0 auto 0.85rem; filter:drop-shadow(0 14px 26px rgba(150,90,8,0.45)); animation:trophyIn 0.75s cubic-bezier(0.18,1.25,0.32,1) backwards; }
+  .end-trophy{ position:relative; width:clamp(6.6rem, calc(32 * var(--lw)), 8.4rem); height:auto; margin:0 auto 0.85rem; filter:drop-shadow(0 14px 26px rgba(150,90,8,0.45)); animation:trophyIn var(--tr-ouvre) backwards; }
   .end-trophy svg{ height:auto; overflow:visible; }
   .end-trophy::before{ content:""; position:absolute; left:50%; top:40%; width:170%; aspect-ratio:1; transform:translate(-50%,-50%); background:radial-gradient(closest-side, rgba(255,205,90,0.38), rgba(255,205,90,0.1) 55%, transparent 72%); z-index:-1; pointer-events:none; }
   @keyframes trophyIn{ from{ opacity:0; transform:translateY(14px) scale(0.8); } to{ opacity:1; transform:translateY(0) scale(1); } }
