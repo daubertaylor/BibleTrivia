@@ -229,16 +229,27 @@
        tout bouge exactement pareil. La FORME du mouvement reste propre à chaque
        chose (une feuille monte, une modale se pose, un écran glisse) ; c'est le
        tempo et l'élan qui sont communs. */
-    --tr-ouvre: 0.5s cubic-bezier(0.2,1.05,0.3,1);
-    --tr-ferme: 0.24s cubic-bezier(0.4,0,1,1);
-    /* LE PLI. --tr-ouvre est la courbe de ce qui ARRIVE : elle démarre très
-       vite, ce qui est juste pour un écran qui monte. Un testament qui se
-       déplie, lui, POUSSE le reste de la page : mesuré, la carte « Objectifs »
-       parcourait 354 px avec des bonds de 57 px d'une image à l'autre, et
-       80 % du chemin était fait en 148 ms — d'où l'impression de secousse.
-       Même famille, départ moins brutal : 32,5 px par image, 80 % à 237 ms.
-       (Cette courbe est déjà celle de l'enfoncement des réponses.) */
+    /* ===== LE PLI EST DEVENU L'HORLOGE DE TOUT LE JEU =====
+       Il y avait encore DEUX courbes : celle du pli d'un testament, et celle
+       de tout ce qui arrive (écran, modale, feuille, carte de question). La
+       seconde démarrait très vite — cubic-bezier(0.2,1.05,0.3,1), avec en
+       plus un léger dépassement. Mesuré image par image sur les changements
+       d'écran : 874 px de course, des bonds de 147 px d'une image à l'autre,
+       et 80 % du chemin fait en 130 à 163 ms. C'est EXACTEMENT le profil que
+       le testament avait avant d'être corrigé, et que Taylor avait ressenti
+       comme une secousse : « j'aime énormément la transition des testaments,
+       je la veux partout ».
+       Elle est donc partout. --tr-ouvre n'est plus qu'un autre nom du pli :
+       même durée, même courbe, une seule horloge pour tout ce qui arrive. Le
+       même changement d'écran fait maintenant ses 874 px avec des bonds de
+       81 px et 80 % du chemin à 216 ms — le profil du pli, à l'échelle d'un
+       écran. La FORME reste propre à chaque chose (une feuille monte, une
+       modale se pose, un écran glisse) ; le tempo et l'élan sont communs.
+       (Cette courbe, cubic-bezier(0.33,1,0.68,1), EST easeOutCubic — celle
+       des compteurs en JS depuis toujours.) */
     --tr-plie: 0.52s cubic-bezier(0.33,1,0.68,1);
+    --tr-ouvre: var(--tr-plie);
+    --tr-ferme: 0.24s cubic-bezier(0.4,0,1,1);
     /* ===== LE PIÈGE DES VARIABLES QUI EN CONTIENNENT D'AUTRES =====
        Le dessin du voile a d'abord été posé ICI, sur :root, pour n'exister
        qu'une fois. Il ne marchait pas — et pas « un peu moins bien » : PLUS
@@ -10231,10 +10242,15 @@ function renderSplash(){
 }
 
 let lastScreen = null;
-/* Quand l'écran ACTUEL a commencé à entrer, et combien de temps dure l'entrée
-   (--tr-ouvre). Sert à ne jamais couper une entrée en cours. */
+/* Quand l'écran ACTUEL a commencé à entrer, et combien de temps dure l'entrée.
+   Sert à ne jamais couper une entrée en cours. La durée n'est plus recopiée
+   ici : elle est LUE dans la feuille de style (--tr-plie, l'horloge unique de
+   tout ce qui arrive). Deux copies d'un même nombre finissent toujours par
+   diverger — c'est déjà arrivé une fois dans ce fichier. */
 let entreeDebut = 0;
-const ENTREE_MS = 500;
+function entreeMs(){ return msPli(); }
+/* Le filet : largement après la fin de l'entrée. */
+function apresEntree(){ return msPli() + 40; }
 /* ===================== ÉCRANS PROFIL & EN LIGNE ===================== */
 function avatarHtml(name, color, size, creator){
   const initial = escapeHtml((name||"?").charAt(0).toUpperCase());
@@ -10717,7 +10733,7 @@ function render(){
     Array.prototype.forEach.call(app.children, (c)=>{ if(c && c.classList) c.classList.remove("arrivee"); });
     node.classList.add("screen-enter"); node.classList.add("arrivee");
     entreeDebut = (typeof performance!=="undefined" ? performance.now() : Date.now());
-    setTimeout(()=>{ node.classList.remove("arrivee"); fitScroll(); }, 540);
+    setTimeout(()=>{ node.classList.remove("arrivee"); fitScroll(); }, apresEntree());
     Array.prototype.forEach.call(node.children, (c,i)=>{ if(c && c.style) c.style.setProperty("--i", i); });
   } else {
     /* UN RENDU SUR PLACE NE DOIT PAS COUPER UNE ENTRÉE EN COURS.
@@ -10763,7 +10779,7 @@ function render(){
       } catch(e){}
     }
     if(ecoule < 0) ecoule = (typeof performance!=="undefined" ? performance.now() : Date.now()) - entreeDebut;
-    if(vieux && ecoule >= 0 && ecoule < ENTREE_MS){
+    if(vieux && ecoule >= 0 && ecoule < entreeMs()){
       node.classList.add("screen-enter"); node.classList.add("arrivee");
       node.style.animationDelay = (-ecoule) + "ms";
       /* ===== EFFACER LE DÉLAI RELANCE L'ANIMATION =====
@@ -10783,7 +10799,7 @@ function render(){
         node.classList.remove("screen-enter");
         node.style.animationDelay = "";
         fitScroll();
-      }, Math.max(60, 540 - ecoule));
+      }, Math.max(60, apresEntree() - ecoule));
       Array.prototype.forEach.call(node.children, (c,i)=>{ if(c && c.style) c.style.setProperty("--i", i); });
     }
   }
@@ -10791,6 +10807,12 @@ function render(){
   if(prevNode){
     // L'ancien écran reste visible et s'efface pendant que le nouveau entre.
     const cs = getComputedStyle(app);
+    /* Il gardait sa classe d'ENTRÉE en même temps que celle de sortie : deux
+       nœuds portaient donc « screen-enter » pendant un demi-tour d'horloge, et
+       le premier dans l'ordre du document était celui qui s'en va. Sans effet
+       visible (la règle de sortie est écrite plus bas, elle l'emporte), mais
+       un état faux qui trompe la lecture — et qui a d'abord trompé le banc. */
+    prevNode.classList.remove("screen-enter");
     prevNode.classList.add("screen-exit");
     prevNode.style.position = "absolute";
     prevNode.style.top = cs.paddingTop;
@@ -10816,7 +10838,7 @@ function render(){
     node.querySelectorAll(".reveal-pop").forEach(n=>n.classList.remove("reveal-pop"));
     node.querySelectorAll(".reveal-shake").forEach(n=>n.classList.remove("reveal-shake"));
     fitScroll();
-  }, 820);
+  }, msPli() + 300);
 
   // Verre : sur une VRAIE transition d'écran, on gèle le verre pour que
   // l'animation tourne en pur GPU (fluide sur Android) ; sinon (re-rendu sur

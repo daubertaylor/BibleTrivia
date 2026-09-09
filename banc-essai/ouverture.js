@@ -22,7 +22,14 @@
    relève le plus fort mouvement VERS LE BAS ainsi que l'instant où tout se
    pose enfin.
 
-   Repères : écart d'ouverture <= 80 ms, saut <= 2 px, pose <= 620 ms. */
+   Repères : écart d'ouverture <= 80 ms, saut <= 2 px, et tout posé au plus
+   tard 200 ms après la fin de l'entrée (la reprise repart de l'instant du
+   re-rendu, donc la fin réelle traîne du temps de peinture : mesuré 662 ms
+   pour une entrée de 520. Une VRAIE relance, elle, se posait à 885 ms — le
+   repère discrimine toujours). Ce dernier repère est CALCULÉ à
+   partir de --tr-plie lu dans la page, pas recopié : l'horloge du jeu a déjà
+   changé une fois (500 -> 520 ms) et un nombre écrit en dur ici aurait fait
+   échouer le banc pour une raison qui n'a rien à voir avec le défaut. */
 const { chromium } = require('/opt/node22/lib/node_modules/playwright');
 const IOS = 'Mozilla/5.0 (iPhone; CPU iPhone OS 17_5 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.5 Mobile/15E148 Safari/604.1';
 const URL = process.env.URL_ESSAI || process.argv[2] || 'http://127.0.0.1:8099/index.html';
@@ -31,6 +38,7 @@ const LATENCES = [0, 150, 400, 600, 1500];
   const b = await chromium.launch({ executablePath: '/opt/pw-browsers/chromium' });
   const mesures = [];
   const errs = [];
+  let dureeEntree = 520;   // relue dans la page à la première mesure
   for (const lat of LATENCES) {
     const ctx = await b.newContext({ viewport:{width:402,height:874}, deviceScaleFactor:2,
       userAgent:IOS, hasTouch:true, serviceWorkers:'block' });
@@ -74,6 +82,10 @@ const LATENCES = [0, 150, 400, 600, 1500];
     await p.goto(URL);
     await p.waitForFunction(() => { try { return state.screen === 'mode'; } catch(e){ return false; } }, null, { timeout:20000 });
     /* On part de l'écran « en ligne », comme un joueur qui vient d'y arriver. */
+    dureeEntree = await p.evaluate(() => {
+      const v = getComputedStyle(document.documentElement).getPropertyValue('--tr-plie');
+      const m = String(v).match(/([\d.]+)s/); return m ? Math.round(parseFloat(m[1]) * 1000) : 520;
+    });
     await p.evaluate(() => { state.screen = 'online'; render(); });
     await p.waitForTimeout(900);
     const suite = await p.evaluate(() => new Promise(res => {
@@ -111,7 +123,9 @@ const LATENCES = [0, 150, 400, 600, 1500];
   console.log('  saut maximum après la première image : ' + sautMax.toFixed(1) + ' px');
   console.log('  dernière image qui bouge, au pire : ' + poseMax + ' ms');
   if (errs.length) console.log('  ERREURS JS : ' + [...new Set(errs)].slice(0,3).join(' | '));
-  const ok = ecart <= 80 && sautMax <= 2 && poseMax <= 620 && !errs.length;
+  const plafondPose = dureeEntree + 200;
+  console.log('  (plafond calculé sur --tr-plie : ' + plafondPose + ' ms)');
+  const ok = ecart <= 80 && sautMax <= 2 && poseMax <= plafondPose && !errs.length;
   console.log(ok ? '  OK — une seule ouverture, à vitesse fixe' : '  ECHEC');
   await b.close();
   process.exit(ok ? 0 : 1);

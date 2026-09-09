@@ -220,6 +220,47 @@ substituer :
    qui doit céder quand la place manque s'y accroche, avec la taille
    actuelle comme plafond.
 
+**Le pli est devenu l'horloge de tout le jeu (v190).** « Je veux toutes les
+transitions de changement de page comme pour les testaments, exactement
+pareil. » Il restait deux courbes. Les plis — ce qui s'ouvre sur place —
+tournaient sur `--tr-plie`, easeOutCubic sur 0,52 s. Tout ce qui ARRIVE — un
+écran, une carte de question, une réponse, la feuille des Réglages, une
+fenêtre — tournait sur `--tr-ouvre`, une courbe qui démarre beaucoup plus fort
+et dépasse légèrement l'arrivée.
+
+Mesuré image par image sur les changements d'écran, c'était **exactement le
+profil que le testament avait avant d'être corrigé** — celui que Taylor avait
+appelé une secousse :
+
+| | avant | après |
+|---|---|---|
+| bond maximum d'une image à l'autre | 147,5 px | **82,2** |
+| 80 % du chemin fait à | 130-163 ms | **243-293 ms** |
+
+La course, elle, ne change pas : 874 px, la hauteur de l'écran. `--tr-ouvre`
+n'est plus qu'un autre nom de `--tr-plie` : une seule horloge, une seule
+courbe, pour tout ce qui bouge dans le jeu. La forme reste propre à chaque
+chose — une feuille monte, une fenêtre se pose, un écran glisse.
+
+**La durée n'est plus recopiée en JavaScript.** `ENTREE_MS` valait 500 en dur,
+et trois délais de nettoyage étaient écrits à la main (540, 820). Le pli avait
+déjà été mordu par cette erreur-là : deux copies d'un même nombre finissent
+toujours par diverger. La durée est maintenant LUE dans la feuille de style,
+comme `msPli()` le fait depuis la v183.
+
+**Le banc ne surveillait que les plis ; il surveille tout.** `plis.js` lit
+maintenant aussi la durée et la courbe des cinq animations d'arrivée. Il
+échoue sur la version d'avant en les nommant une par une, puis passe sur
+celle-ci : *un banc qui ne trouve rien doit d'abord prouver qu'il sait
+trouver.*
+
+**Deux écrans portaient la classe d'entrée en même temps.** Celui qui s'en va
+gardait `screen-enter` en plus de `screen-exit` pendant un demi-tour
+d'horloge. Sans effet visible — la règle de sortie est écrite plus bas et
+l'emporte — mais le premier nœud dans l'ordre du document était alors celui
+qui PART, ce qui trompait à la fois la reprise d'animation et le banc. La
+classe est retirée au moment où l'écran commence à sortir.
+
 **La bordure a changé de propriété (v189).** L'onde d'appui n'atteignait
 toujours pas le bord sur l'iPhone de Taylor. Le correctif de la v182 la faisait
 déborder d'un pixel (`inset:-1px`) pour compenser le `border:1px solid

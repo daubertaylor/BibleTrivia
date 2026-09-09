@@ -1,14 +1,19 @@
-/* TOUS LES PLIS DU JEU TOURNENT-ILS SUR LA MÊME HORLOGE ?
+/* TOUT LE JEU TOURNE-T-IL SUR LA MÊME HORLOGE ?
 
    Un PLI, c'est ce qui s'ouvre, se ferme ou se remplit SUR PLACE : un
    testament qui se déplie, une ligne de joueur qui naît ou s'en va, une barre
-   de progression, l'anneau des résultats, un compteur qui monte. L'œil SUIT
-   ces mouvements-là — contrairement à un écran qui arrive (--tr-ouvre) ou à
-   un voile qui s'efface (--tr-ferme).
+   de progression, l'anneau des résultats, un compteur qui monte.
 
    Ils tournaient sur SIX horloges : 0,26s le chevron, 0,34s la ligne de
    joueur, 0,52s le pli du testament, 0,55s la barre, 1s l'anneau, et
    0,6 / 0,9 / 1s les compteurs. Aucune raison, juste l'ordre d'écriture.
+
+   PUIS TAYLOR A DEMANDÉ LE PLI PARTOUT : « les transitions de changement de
+   page, comme pour les testaments, exactement pareil ». Ce qui ARRIVE — un
+   écran, une carte de question, une réponse, une feuille, une fenêtre —
+   tournait encore sur sa propre courbe, plus brutale au départ. Le banc
+   vérifie donc AUSSI ces animations-là : elles doivent porter la durée et la
+   courbe de --tr-plie, comme les plis.
 
    Le test lit la durée ET la courbe RÉELLEMENT appliquées à chacun, sur son
    propre écran, puis mesure image par image les deux seuls qui déplacent la
@@ -60,6 +65,31 @@ const norme = (s) => (s || '').replace(/\s+/g, '');
 
   const attente = (ms) => p.waitForTimeout(ms);
 
+  /* Ce qui ARRIVE est joué par une @keyframes, pas par une transition : on lit
+     donc animation-duration / animation-timing-function, sur un élément qui
+     porte VRAIMENT sa classe d'entrée au moment de la lecture. */
+  const lireAnim = async (nom, prep, sel) => {
+    /* On laisse passer DEUX images : plusieurs classes d'entrée (.animate sur
+       la carte de question, par exemple) ne sont posées qu'au rendu suivant.
+       Lire trop tôt, c'est lire « aucune animation » sur une animation qui va
+       très bien — le genre de faux négatif qui fait corriger le mauvais bout.
+       Et on vise le nœud qui ARRIVE, jamais celui qui s'en va : pendant un
+       demi-tour d'horloge ils coexistent tous les deux dans #app. */
+    const r = await p.evaluate(({ prep, sel }) => new Promise(res => {
+      // eslint-disable-next-line no-new-func
+      new Function(prep)();
+      setTimeout(() => {
+        const el = document.querySelector(sel);
+        if (!el) return res(null);
+        const cs = getComputedStyle(el);
+        if (!cs.animationName || cs.animationName === 'none') return res({ manquant: 'aucune animation' });
+        res({ d: cs.animationDuration.split(',')[0].trim(),
+              c: cs.animationTimingFunction.split(/,(?![^()]*\))/)[0].trim() });
+      }, 120);
+    }), { prep, sel });
+    releves.push([nom, r]);
+  };
+
   await lire('testament (le pli)', "state.screen='parcours'; render();", '.tst .tst-body', 'grid-template-rows');
   await lire('testament (chevron)', "", '.tst-chev', 'transform');
   await attente(200);
@@ -101,6 +131,22 @@ const norme = (s) => (s || '').replace(/\s+/g, '');
   const cpt = await p.evaluate(() => {
     try { return { ms: msPli() }; } catch(e){ return { ms: null }; }
   });
+
+  /* ===== ce qui ARRIVE : même horloge que les plis ===== */
+  await lireAnim("changement d'écran", "state.screen='parcours'; render();", '#app > .screen-enter:not(.screen-exit)');
+  await attente(700);
+  /* La carte ne s'anime que sur une question NEUVE (fresh) : une partie déjà
+     lancée plus haut dans ce banc a laissé lastPlayedQ sur zéro, et la carte
+     serait arrivée sans animation — un faux « INTROUVABLE ». On remet le
+     compteur à moins un pour retrouver la vraie arrivée. */
+  await lireAnim('carte de question', "state.screen='mode'; render(); state.mode='solo'; startGame(); lastPlayedQ=-1; render();", '.question-card.animate');
+  await lireAnim('réponse (option)', "", '.options-grid.animate .option-btn');
+  await attente(700);
+  await lireAnim("retour à l'accueil", "state.screen='mode'; render();", '#app > .screen-enter:not(.screen-exit)');
+  await attente(700);
+  await lireAnim('fenêtre modale', "showModal({title:'Test', message:'Test.', okLabel:'Oui', cancelLabel:'Non'});", '.modal-card');
+  await p.evaluate(() => { document.querySelectorAll('.modal-veil, .modal-back').forEach(m => m.remove()); });
+  await attente(300);
 
   const ref = await p.evaluate(() => getComputedStyle(document.documentElement).getPropertyValue('--tr-plie').trim());
   const refD = (ref.match(/([\d.]+)s/) || [,''])[1] + 's';
@@ -155,7 +201,7 @@ const norme = (s) => (s || '').replace(/\s+/g, '');
   await profil('naissance d\'une ligne', "addTeam();", '.add-team');
 
   if (errs.length) { console.log('\n  ERREURS JS : ' + [...new Set(errs)].slice(0,3).join(' | ')); ok = false; }
-  console.log(ok ? '\n  OK — une seule horloge pour tous les plis' : '\n  ECHEC');
+  console.log(ok ? '\n  OK — une seule horloge pour TOUT le jeu' : '\n  ECHEC');
   await b.close();
   process.exit(ok ? 0 : 1);
 })();
