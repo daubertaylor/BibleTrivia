@@ -101,6 +101,24 @@ const LATENCES = [0, 150, 400, 600, 1500];
       requestAnimationFrame(tic);
     }));
     const r = suite.releve.filter(x => x[1] !== null);
+    /* ===== LA SACCADE : LE MOUVEMENT S'ARRÊTE, PUIS REPART =====
+       Le salon fait deux rendus complets pendant qu'il monte — l'abonnement,
+       puis la synchro de présence. Chacun reconstruit l'écran entier et lui
+       repose ses couches de verre : dix à dix-sept millisecondes de fil
+       principal, en plein mouvement. L'écran se fige alors deux ou trois
+       images, ou saute une image entière. On compte donc, PENDANT la montée
+       (entre la première image qui bouge et la dernière), les images où rien
+       ne bouge et les trous entre deux images. */
+    let arrets = 0, trou = 0;
+    {
+      let debut = -1, fin = -1;
+      for (let i = 1; i < r.length; i++) if (Math.abs(r[i][1] - r[i-1][1]) > 0.05) { if (debut < 0) debut = i; fin = i; }
+      for (let i = debut + 1; i > 0 && i <= fin; i++) {
+        if (Math.abs(r[i][1] - r[i-1][1]) <= 0.05) arrets++;
+        const d = r[i][0] - r[i-1][0];
+        if (d > trou) trou = d;
+      }
+    }
     /* Le SAUT : un mouvement VERS LE BAS après que l'écran s'est posé une
        première fois. L'entrée, elle, ne fait que monter. */
     let saut = 0, quand = 0;
@@ -108,11 +126,12 @@ const LATENCES = [0, 150, 400, 600, 1500];
     let pose = 0;
     for (let i = r.length - 1; i > 0; i--) { if (Math.abs(r[i][1] - r[i-1][1]) > 0.6) { pose = r[i][0]; break; } }
     const ms = suite.premiere;
-    mesures.push([lat, ms, saut, pose]);
+    mesures.push([lat, ms, saut, pose, arrets, trou]);
     console.log('  latence ' + String(lat).padStart(4) + ' ms  ->  salon à l\'écran en ' + String(ms).padStart(4) +
       ' ms  |  saut ' + saut.toFixed(1).padStart(6) + ' px' + (saut > 2 ? ' à ' + quand + ' ms' : '        ') +
       '  |  posé à ' + String(pose).padStart(4) + ' ms' +
-      (saut > 2 ? '   <-- ÇA SAUTE PUIS ÇA REVIENT' : ''));
+      '  |  ' + String(arrets).padStart(2) + ' arrêt(s), plus grand trou ' + String(Math.round(trou)).padStart(3) + ' ms' +
+      (saut > 2 ? '   <-- ÇA SAUTE PUIS ÇA REVIENT' : (arrets > 1 || trou > 26 ? '   <-- ÇA SE FIGE EN PLEIN MOUVEMENT' : '')));
     await ctx.close();
   }
   const v = mesures.map(m => m[1]);
@@ -125,7 +144,10 @@ const LATENCES = [0, 150, 400, 600, 1500];
   if (errs.length) console.log('  ERREURS JS : ' + [...new Set(errs)].slice(0,3).join(' | '));
   const plafondPose = dureeEntree + 200;
   console.log('  (plafond calculé sur --tr-plie : ' + plafondPose + ' ms)');
-  const ok = ecart <= 80 && sautMax <= 2 && poseMax <= plafondPose && !errs.length;
+  const arretsMax = Math.max(...mesures.map(m => m[4]));
+  const trouMax = Math.max(...mesures.map(m => m[5]));
+  console.log('  arrêts en plein mouvement, au pire : ' + arretsMax + '   |   plus grand trou entre deux images : ' + Math.round(trouMax) + ' ms');
+  const ok = ecart <= 80 && sautMax <= 2 && poseMax <= plafondPose && arretsMax <= 1 && trouMax <= 26 && !errs.length;
   console.log(ok ? '  OK — une seule ouverture, à vitesse fixe' : '  ECHEC');
   await b.close();
   process.exit(ok ? 0 : 1);

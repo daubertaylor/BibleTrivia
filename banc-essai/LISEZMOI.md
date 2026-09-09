@@ -40,7 +40,7 @@ notre code, et il est éprouvé. Tout le reste l'est.
     node pli.js         # déplier un testament glisse, et le verre suit
     node englouti.js    # la liste des erreurs ne tombe pas du bord de l'écran
     node plis.js        # tous les plis du jeu tournent-ils sur la même horloge ?
-    node ouverture.js   # « créer une partie » s'ouvre-t-il toujours aussi vite ?
+    node ouverture.js   # « créer une partie » : même vitesse, et sans saccade
     node motfin.js      # le mot de la fin ne se trompe jamais de joueur
     node pied.js        # le pied de l'accueil se tient pareil sur dix appareils
     node bords.js       # l'onde d'appui va-t-elle jusqu'au bord du bouton ?

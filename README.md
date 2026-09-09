@@ -220,6 +220,40 @@ substituer :
    qui doit céder quand la place manque s'y accroche, avec la taille
    actuelle comme plafond.
 
+**La petite saccade à l'ouverture de « Créer une partie » (v200).** Elle ne se
+produisait qu'« à certains moments » — et c'est le fait le plus utile de toute
+l'enquête. Le salon se peint tout de suite (v190) et l'abonnement Supabase se
+règle derrière lui ; quand la réponse arrive PENDANT le demi-tour d'horloge de
+l'entrée, elle déclenche deux rendus complets à trente millisecondes d'écart,
+l'abonnement puis la synchro de présence. Chacun reconstruit l'écran entier et
+lui repose ses couches de verre : dix à dix-sept millisecondes de fil principal,
+en plein mouvement. Mesuré image par image, la montée passait de
+
+    43,1 → 32,6 → 32,6 → 32,6 → 24
+
+soit trois images figées, ou une image entière sautée (31 ms sans rien
+peindre). Si le réseau répond avant ou après ces cinq cents millisecondes, rien
+ne se voit : d'où l'intermittence.
+
+**Or ces deux rendus ne changeaient rien.** L'hôte est seul, la présence n'a
+encore personne à annoncer. Tant qu'un écran arrive, on compare donc ce qu'il
+montre à ce qu'il montrait — une signature de la présence, du salon et du
+message d'erreur — et on ne reconstruit que si c'est différent. Un joueur qui
+arrive vraiment change la signature et s'affiche tout de suite.
+
+**La comparaison ne vaut que pendant l'arrivée, et c'est délibéré.** Première
+version : reporter tous les rendus à la fin du mouvement. `bascule.js` l'a
+refusée en une passe — le salon restait en retard d'un cran, liste au lieu de
+face-à-face. Une signature ne peut pas prétendre connaître tout ce qu'un écran
+affiche ; hors arrivée on redessine donc comme avant, et le pire cas reste borné
+à un demi-tour d'horloge. **Un banc qui existait déjà a rejeté le premier
+correctif avant qu'il n'atteigne le téléphone.**
+
+Après : un seul rendu, aucune image sautée, et la même courbe au dixième de
+pixel que le réseau réponde à 80, 200 ou 350 ms. `ouverture.js` compte
+désormais, pendant la montée, les images où rien ne bouge et les trous entre
+deux images : cinq arrêts avant, zéro après.
+
 **L'écran coupé en deux quand on couche le téléphone (v199).** Le voile
 « Tourne l'écran » est un fond PLEIN : tant qu'il est là, rien de l'app ne se
 voit. C'était vrai tant qu'il apparaissait NET. Depuis qu'il arrive avec

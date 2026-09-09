@@ -5099,10 +5099,70 @@ function seededDeck(seed, lengthKey, theme){
 function genCode(){ const c="ABCDEFGHJKLMNPQRSTUVWXYZ23456789"; let s=""; for(let i=0;i<4;i++) s+=c[Math.floor(Math.random()*c.length)]; return s; }
 
 /* ===================== PRÉSENCE / LOBBY ===================== */
+/* Combien de temps reste-t-il à l'écran qui ARRIVE ? Zéro si aucun n'arrive.
+   On demande son temps à l'animation elle-même plutôt que de le déduire d'une
+   horloge : un écran lourd met parfois cinquante millisecondes à peindre sa
+   première image, et une horloge le croirait plus avancé qu'il n'est. Le
+   currentTime compte depuis le début du DÉLAI, qui est négatif sur une reprise
+   — le temps réellement écoulé est donc currentTime moins ce délai. */
+function resteEntree(){
+  const app = document.getElementById("app");
+  const n = app && app.querySelector ? app.querySelector(":scope > .arrivee") : null;
+  if(!n) return 0;
+  let ecoule = 0;
+  try{
+    if(n.getAnimations){
+      const a = n.getAnimations().find((x)=> /^screenIn/.test(x.animationName||"")) || n.getAnimations()[0];
+      if(a && typeof a.currentTime === "number"){
+        const dl = (a.effect && a.effect.getComputedTiming ? (a.effect.getComputedTiming().delay || 0) : 0);
+        ecoule = a.currentTime - dl;
+      }
+    }
+  }catch(e){}
+  return Math.max(40, apresEntree() - ecoule);
+}
+/* TOUT CE QU'UN ÉCRAN EN LIGNE MONTRE ET QUI PEUT CHANGER TOUT SEUL : la
+   présence des autres, l'état du salon, le message d'erreur. Deux signatures
+   identiques, c'est le même écran au pixel près. */
+function signaturePresence(){
+  let j = "";
+  try{
+    j = Object.keys(net.joueurs || {}).sort().map((k)=>{
+      const o = net.joueurs[k] || {};
+      return k + ":" + (o.name||"") + ":" + (o.color||"") + ":" + (o.isCreator?1:0) +
+             ":" + (o.score|0) + ":" + (o.idx|0) + ":" + (o.done?1:0) + ":" + (o.gone?1:0);
+    }).join("|");
+  }catch(e){}
+  return [state.screen, net.code, net.isHost?1:0, net.oppPresent?1:0, net.oppGone?1:0,
+          net.connected|0, net.searching?1:0, net.error||"",
+          net.lengthKey, net.timerKey, net.themeKey, j].join("~");
+}
+let derniereSignature = "";
 function reRenderIfOnline(){
   const sc = String(state.screen);
   if(sc.indexOf("online") !== 0) return;
   if(document.getElementById("modalVeil")){ return; }
+  /* ===== PENDANT QU'UN ÉCRAN ARRIVE, ON NE LE REDESSINE POUR RIEN =====
+     « Créer une partie » faisait DEUX rendus complets pendant que le salon
+     monte : l'abonnement Supabase répond, puis la synchro de présence trente
+     millisecondes plus tard. Chacun reconstruit tout l'écran et lui repose ses
+     couches de verre — dix à dix-sept millisecondes de fil principal, deux fois
+     de suite, en plein mouvement. Mesuré image par image : l'écran se fige deux
+     à trois images (43,1 -> 32,6 -> 32,6 -> 32,6 -> 24 px) ou saute une image
+     entière (31 ms sans rien peindre). C'est la petite saccade — et elle ne se
+     produit QUE si le réseau répond pendant le demi-tour d'horloge de l'entrée,
+     d'où « à certains moments ».
+     Or ces deux rendus-là ne changeaient RIEN : l'hôte est seul, la présence
+     n'a encore personne à annoncer. Tant qu'un écran arrive, on compare donc ce
+     qu'il montre à ce qu'il montrait ; si c'est identique, on ne le
+     reconstruit pas.
+     LA COMPARAISON NE VAUT QUE PENDANT L'ARRIVÉE. Ailleurs, on redessine comme
+     avant : une signature ne peut pas prétendre connaître tout ce qu'un écran
+     affiche, et un écran en retard d'un cran serait bien pire qu'un rendu de
+     trop. Pendant l'arrivée, le pire cas est borné à un demi-tour d'horloge —
+     et un joueur qui arrive vraiment, lui, change la signature et s'affiche
+     tout de suite. */
+  if(resteEntree() > 0 && signaturePresence() === derniereSignature) return;
   if(sc === "online" && document.querySelector(".presence-card")){ updateOnlineLobby(); return; }
   /* LE RACCOURCI NE VAUT QU'À DEUX. Il retouche la seule case de l'adversaire
      sans redessiner l'écran — parfait pour un face-à-face, mais il empêchait
@@ -11085,6 +11145,11 @@ function render(){
   if(state.screen!=="play" && state.screen!=="online-play"){ stopQTimer(); }
   if(state.screen==="play") saveState();
   else if(state.screen==="end" || state.screen==="mode") clearSavedGame();
+  /* Ce que cet écran vient de montrer, pour que la présence sache si elle a
+     quelque chose de neuf à annoncer (voir reRenderIfOnline). */
+  if(String(state.screen).indexOf("online") === 0){
+    try{ derniereSignature = signaturePresence(); }catch(e){}
+  }
 }
 
 /* STABILITÉ DE L'ÉCRAN : quand le contenu tient entièrement (accueil, setup…),
