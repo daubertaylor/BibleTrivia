@@ -220,6 +220,32 @@ substituer :
    qui doit céder quand la place manque s'y accroche, avec la taille
    actuelle comme plafond.
 
+**On ne voyait plus où appuyer pour corriger un score (v195).** Dans le bandeau
+des joueurs, en mode Groupe, le pavé et ses deux ronds `−` / `+` portaient
+**exactement la même teinte de verre** — `rgb(252,248,241)` des deux côtés —
+sans bordure (il n'y en a nulle part) et sans ombre (une commande posée DANS une
+surface n'en porte pas, c'est la règle du bloc de fin de feuille). Il ne restait
+que deux glyphes flottant sur du crème.
+
+Dans ce système, ce qui distingue une commande intérieure est son
+**remplissage**. Les ronds prennent donc le lavis d'encre du jeu — celui de la
+piste des testaments et de l'interrupteur — à 10 % sur le crème du pavé, soit
+`rgb(231,227,220)`. Aucun trait ajouté.
+
+**Et la teinte se pose là où toutes les teintes se posent.** Écrite à côté de la
+règle du bouton, elle était **écrasée** par le bloc unique de remplissage —
+exactement le piège que ce bloc a été créé pour supprimer, et qui avait déjà
+coûté dix-sept teintes mortes. `.adj-btn` sort donc de la liste uniforme et
+reçoit la sienne à côté des autres exceptions.
+
+**Le quatrième joueur s'étirait sur toute la largeur (v195).** Le bandeau était
+un `flex-wrap` avec `flex:1` sur chaque pavé : à trois joueurs tout allait bien,
+à quatre le dernier se retrouvait seul sur sa ligne et occupait toute la
+largeur — son `+` filait à l'autre bout de l'écran pendant que les trois autres
+restaient serrés. Une grille à colonnes fixes (`--cols`, plafonné à trois) donne
+la même largeur à tout le monde. Vérifié de deux à huit joueurs : **une seule
+largeur** à chaque fois.
+
 **Retirer puis remettre une classe relance son animation (v194).** Le verrou
 paysage de la v193 clignotait au redressement. Pour lire sa vraie visibilité il
 fallait ignorer la classe qui force son affichage pendant la sortie : on la
