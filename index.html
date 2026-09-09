@@ -12137,6 +12137,27 @@ function tryAutoFullscreen(e){
 if(IS_ANDROID && !isStandalone){
   document.addEventListener("pointerdown", tryAutoFullscreen, { capture:true, passive:true });
 }
+/* ===== ANDROID SAIT INSTALLER EN UN GESTE — ON LE LUI DEMANDE =====
+   Chrome prévient l'application dès qu'elle est installable
+   (« beforeinstallprompt ») et lui laisse déclencher l'invitation OFFICIELLE
+   du système au moment de son choix. Le jeu ignorait cet événement : un joueur
+   Android devait donc ouvrir le menu du navigateur et suivre trois gestes pour
+   ce que son téléphone fait en un seul — et Chrome, faute de réponse, posait
+   par-dessus sa propre bannière, hors du décor.
+   On garde l'invitation de côté ; « Guide » ouvre alors une fenêtre qui
+   INSTALLE au lieu d'expliquer. preventDefault() est ce qui range la bannière
+   de Chrome : sans lui, l'invitation s'affiche deux fois, une fois par le
+   navigateur et une fois par nous.
+   Sur iPhone rien ne change : Safari ne propose pas ce chemin, l'événement
+   n'existe pas, et le guide en trois gestes reste le seul — c'est lui qui
+   s'affiche. Une invitation ne sert QU'UNE FOIS : après usage on l'oublie, et
+   le guide reprend sa place jusqu'à ce que Chrome en renvoie une. */
+let invitePWA = null;
+window.addEventListener("beforeinstallprompt", (e)=>{
+  try{ e.preventDefault(); }catch(err){}
+  invitePWA = e;
+});
+window.addEventListener("appinstalled", ()=>{ invitePWA = null; });
 /* Pas de plein écran forcé sur le web : l'utilisateur passe par « écran d'accueil ».
    Le bandeau qui expliquait ça EN HAUT DE L'ACCUEIL a été retiré : la même chose
    est déjà dans les Réglages (« Installer le jeu », bouton Guide), rangée avec
@@ -12154,6 +12175,26 @@ if(IS_ANDROID && !isStandalone){
    trois, ce qui donnait un mur de texte gris entre les pastilles. */
 const ICO_MENU_NAV = `<svg viewBox="0 0 24 24" fill="currentColor"><circle cx="12" cy="5" r="1.9"/><circle cx="12" cy="12" r="1.9"/><circle cx="12" cy="19" r="1.9"/></svg>`;
 function openFsGuide(){
+  /* Quand le téléphone sait le faire, on n'explique pas : on installe. */
+  if(invitePWA){
+    const invitation = invitePWA;
+    showModal({
+      title:"Installer le jeu",
+      message:"BibleTrivia s'ajoute à ton écran d'accueil et démarre en plein écran. Un seul geste.",
+      bodyHtml:`<div class="guide-steps">
+      <div class="set-row">
+        <span class="set-ico fsx">${ICONS.telecharger}</span>
+        <span class="set-txt"><b>Touche Installer</b><small>Ton téléphone demande confirmation</small></span>
+      </div>
+      <div class="set-row">
+        <span class="set-ico vol">${ICONS.expand}</span>
+        <span class="set-txt"><b>Ouvre le jeu par son icône</b><small>Il démarre en plein écran</small></span>
+      </div></div>`,
+      cardClass:"guide", okLabel:"Installer", hideCancel:true,
+      onOk: ()=>{ invitePWA = null; try{ invitation.prompt(); }catch(e){} return true; }
+    });
+    return;
+  }
   const etapes = IS_IOS ? [
     { c:"fsx", i:ICONS.share,      t:"Touche Partager",            s:"L'icône en bas de Safari" },
     { c:"scn", i:ICONS.plusCircle, t:"« Sur l'écran d'accueil »",  s:"Dans la liste qui s'ouvre" },

@@ -220,6 +220,46 @@ substituer :
    qui doit céder quand la place manque s'y accroche, avec la taille
    actuelle comme plafond.
 
+**Android savait installer en un geste ; on ne le lui demandait pas (v192).**
+Chrome prévient l'application dès qu'elle est installable
+(`beforeinstallprompt`) et lui laisse déclencher l'invitation officielle du
+système au moment de son choix. Le jeu n'écoutait pas cet événement. Deux
+conséquences : un joueur Android suivait **trois gestes** (ouvrir le menu du
+navigateur, trouver « Installer l'application », rouvrir par l'icône) pour ce
+que son téléphone fait en un seul ; et Chrome, faute de réponse, posait sa
+propre bannière par-dessus le décor.
+
+L'invitation est maintenant gardée de côté. « Guide » ouvre alors une fenêtre
+qui **installe** au lieu d'expliquer : deux lignes, un bouton « Installer », et
+`preventDefault()` range la bannière du navigateur. Sur iPhone rien ne change —
+Safari ne propose pas ce chemin, l'événement n'existe pas, le guide en trois
+gestes reste le seul. Une invitation ne sert qu'une fois : après usage, le
+guide reprend sa place.
+
+Le libellé de la pastille reste « Guide » : « Installer » ne tiendrait pas dans
+la largeur commune aux deux pastilles des Réglages (v189), et la ligne dit déjà
+« Installer le jeu ».
+
+`banc-essai/installer.js` tient les trois chemins, et vérifie d'abord que le
+manifeste remplit les critères de Chrome — nom, nom court, `start_url`, icônes
+192 et 512, affichage autonome, service worker avec un gestionnaire `fetch`.
+Sans eux l'événement ne viendrait jamais et tout ce chemin serait mort.
+
+**Le même jeu sur les deux téléphones, mesuré (v192).** La règle « le jeu doit
+être le même pour tout le monde » n'avait jamais été vérifiée entre un iPhone
+et un Android. Le moteur de verre est déjà unique (`gl-xf` partout), mais le
+fichier lit encore l'appareil pour les notifications, le plein écran et
+l'avance du reflet au défilement. `banc-essai/jumeaux.js` ouvre le même écran
+à la même taille sous les deux identités et compare toutes les boîtes :
+
+| | |
+|---|---|
+| boîtes comparées, 14 écrans | 1489 |
+| écart maximum | **0,1 px** |
+
+La seule différence est le guide d'installation, qui n'a pas le même texte des
+deux côtés — c'est sa raison d'être, et le banc l'admet nommément.
+
 **Deux gardiens de plus, et trois faux coupables (v191).** Rien ne vérifiait
 la règle numéro un de Taylor — *ne jamais remettre la progression à zéro* —
 ni qu'aucun texte n'était coupé sur les petits écrans. Deux bancs les tiennent
