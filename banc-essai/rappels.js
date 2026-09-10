@@ -112,7 +112,9 @@ async function fabriquerPaire(){
     SUPABASE_SERVICE_ROLE_KEY: 'cle-de-laboratoire',
   });
 
-  const rep = await handler();
+  /* Le handler lit le corps de la requête (pour l'essai) : on lui en donne une. */
+  const requete = (corps) => ({ json: () => corps === undefined ? Promise.reject(new Error('pas de corps')) : Promise.resolve(corps) });
+  const rep = await handler(requete());
   if (rep && rep.status === 400) {
     console.log('  LA FONCTION A REFUSÉ DES CLÉS POURTANT VALIDES :', JSON.stringify(await rep.json()));
     process.exit(1);
@@ -133,6 +135,18 @@ async function fabriquerPaire(){
   });
   console.log('\n  ' + envois.length + ' envoi(s) pour ' + CAS.length + ' joueurs');
 
+  /* ===== L'ESSAI ===== écrit à TOUT LE MONDE, sans regarder l'heure ni la
+     série : c'est ce qui permet de voir la chaîne marcher le jour où on la
+     branche, au lieu d'attendre un soir à 19 h pour découvrir un défaut. */
+  envois.length = 0;
+  const repEssai = await handler(requete({ essai: true }));
+  const compte = await repEssai.json();
+  const tousTouches = envois.length === CAS.length && compte.essais === CAS.length;
+  const tousEssai = envois.every(e => e.charge.genre === 'essai');
+  if (!tousTouches || !tousEssai) ok = false;
+  console.log('  essai manuel : ' + envois.length + ' envoi(s) sur ' + CAS.length + ' joueurs, tous de genre « essai » : ' +
+    (tousEssai ? 'oui' : 'NON') + (tousTouches ? '' : '   <-- IL EN MANQUE'));
+
   /* ===== ET QUAND LES SECRETS SONT MAL POSÉS ? =====
      Trois secrets à recopier à la main, donc trois occasions de se tromper. La
      bibliothèque d'envoi répond « no key set » dans les trois cas, ce qui
@@ -150,7 +164,7 @@ async function fabriquerPaire(){
     Object.keys(SECRETS).forEach(k => delete SECRETS[k]);
     Object.assign(SECRETS, bon, remplace);
     Object.keys(remplace).forEach(k => { if (remplace[k] === undefined) delete SECRETS[k]; });
-    const r = await handler();
+    const r = await handler(requete());
     const refuse = r && r.status === 400;
     const dit = refuse ? (await r.json()).details.join(' ; ') : '(acceptée)';
     const juste = attendu ? (refuse && attendu.test(dit)) : !refuse;

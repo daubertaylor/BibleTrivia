@@ -58,6 +58,14 @@ dans les secrets Supabase (étape 3).
     supabase functions deploy rappels
     supabase secrets set VAPID_PUBLIQUE="…" VAPID_PRIVEE="…" VAPID_SUJET="mailto:ton@adresse.fr"
 
+**3 bis. Voir la chaîne marcher tout de suite.** Sans essai, la première preuve
+que tout est branché arriverait un soir à 19 h, des jours plus tard, et un
+défaut se découvrirait à l'aveugle. Appelée avec le corps `{"essai": true}`, la
+fonction écrit à TOUS les abonnés sans regarder ni l'heure ni la série, et
+l'appareil affiche « Les rappels sont bien branchés ». Ce n'est pas une porte
+ouverte : l'appel exige déjà la clé `service_role`. Un essai ne consomme pas le
+« déjà prévenu aujourd'hui » — il ne doit pas voler le rappel du jour.
+
 **4. La programmer toutes les heures** — coller `cron.sql` dans l'éditeur SQL
 (l'URL du projet y est déjà ; il ne reste que la clé `service_role` à mettre).
 Ou passer par Supabase → Database → Cron, avec `0 * * * *`.

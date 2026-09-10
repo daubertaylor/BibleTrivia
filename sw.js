@@ -1,6 +1,6 @@
 /* Yada — service worker : rend l'app jouable hors connexion.
    À déposer à côté de index.html (même dossier, nom exact "sw.js"). */
-const CACHE = "yada-v206";
+const CACHE = "yada-v207";
 const CORE = ["./", "./index.html", "./manifest.json", "./apple-touch-icon.png", "./icon-192.png", "./icon-512.png", "./fonts/inter-latin.woff2", "./fonts/inter-latinext.woff2", "./fonts/fraunces-italic-latin.woff2", "./fonts/fraunces-italic-latinext.woff2", "./fonts/poppins-500-latin.woff2", "./fonts/poppins-500-latinext.woff2", "./fonts/poppins-600-latin.woff2", "./fonts/poppins-600-latinext.woff2", "./fonts/poppins-700-latin.woff2", "./fonts/poppins-700-latinext.woff2"];
 self.addEventListener("install", (e) => {
   e.waitUntil(caches.open(CACHE).then((c) => c.addAll(CORE)).catch(() => {}));
@@ -123,10 +123,20 @@ self.addEventListener("push", (e) => {
        parole : il revérifie avec ce qu'il sait, lui, de première main. Entre
        la décision du serveur et l'arrivée de l'envoi, le joueur a pu jouer —
        auquel cas il ne doit rien voir du tout. */
-    const genre = charge.genre === "absence" ? "absence" : "serie";
+    const genre = charge.genre === "absence" ? "absence"
+                : charge.genre === "essai"   ? "essai"
+                : "serie";
     let titre = "", corps = "";
 
-    if(genre === "serie"){
+    if(genre === "essai"){
+      /* L'ESSAI PASSE OUTRE LES GARDE-FOUS, ET C'EST TOUT SON INTÉRÊT : il
+         prouve la chaîne entière (clés, signature, service d'envoi, appareil)
+         sans attendre le soir où un vrai rappel aurait lieu. Il ne consomme
+         pas le « déjà prévenu aujourd'hui » : un essai ne doit pas voler le
+         rappel du jour. */
+      titre = "Les rappels sont bien branch\u00e9s";
+      corps = "C'est un essai. Tu ne recevras rien d'autre que les deux cas pr\u00e9vus.";
+    } else if(genre === "serie"){
       /* - il a une série à perdre (deux jours au moins) ;
          - il n'a PAS déjà joué le défi aujourd'hui ;
          - il l'a joué hier, donc la série est encore rattrapable. */
@@ -155,7 +165,9 @@ self.addEventListener("push", (e) => {
       tag: genre, renotify: false, requireInteraction: false,
       data: { url: "./" },
     });
-    /* on note le jour : même si un second envoi arrivait, il resterait muet */
+    /* on note le jour : même si un second envoi arrivait, il resterait muet.
+       Sauf pour un essai, qui ne doit pas voler le rappel du jour. */
+    if(genre === "essai") return;
     try {
       const r = indexedDB.open("bibletrivia", 1);
       r.onsuccess = () => { try {

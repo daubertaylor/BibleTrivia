@@ -62,7 +62,16 @@ async function paireCoherente(pub: string, priv: string): Promise<string> {
   return "";
 }
 
-Deno.serve(async () => {
+Deno.serve(async (req: Request) => {
+  /* ===== UN ESSAI, POUR VOIR LA CHAÎNE MARCHER TOUT DE SUITE =====
+     Sans lui, la première preuve que tout est branché arriverait un soir à
+     19 h, des jours plus tard, et un défaut se découvrirait à l'aveugle.
+     Appelée avec { "essai": true }, la fonction écrit à TOUS les abonnés sans
+     regarder ni l'heure ni la série. Ce n'est pas une porte ouverte : l'appel
+     exige déjà la clé service_role, celle qui ouvre tout le projet. */
+  let essai = false;
+  try { essai = !!(await req.json())?.essai; } catch { /* pas de corps : passage normal */ }
+
   /* Les espaces au bout sont invisibles et suffisent à tout casser. */
   const sujet = (Deno.env.get("VAPID_SUJET") ?? "").trim();
   const pub   = (Deno.env.get("VAPID_PUBLIQUE") ?? "").trim();
@@ -98,9 +107,20 @@ Deno.serve(async () => {
   const ecart = (a: string, b: string) =>
     Math.round((Date.parse(b + "T00:00:00Z") - Date.parse(a + "T00:00:00Z")) / 86400000);
 
-  let envoyes = 0, retires = 0, series = 0, absences = 0;
+  let envoyes = 0, retires = 0, series = 0, absences = 0, essais = 0;
   for (const a of abos ?? []) {
     const dec = a.decalage | 0;
+    if (essai) {
+      try {
+        await webpush.sendNotification(a.abonnement, JSON.stringify({ genre: "essai", decalage: dec }));
+        envoyes++; essais++;
+      } catch (e: any) {
+        if (e?.statusCode === 404 || e?.statusCode === 410) {
+          await db.from("push_subs").delete().eq("endpoint", a.endpoint); retires++;
+        }
+      }
+      continue;
+    }
     const heureLocale = new Date(Date.now() + dec * 60000).getUTCHours();
     if (heureLocale !== HEURE_DU_SOIR) continue;         // pas encore le soir chez lui
     const aujourdhui = jour(dec);
@@ -136,5 +156,5 @@ Deno.serve(async () => {
       }
     }
   }
-  return Response.json({ envoyes, series, absences, retires, examines: abos?.length ?? 0 });
+  return Response.json({ envoyes, series, absences, essais, retires, examines: abos?.length ?? 0 });
 });
