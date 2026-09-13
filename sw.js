@@ -226,7 +226,15 @@ self.addEventListener("push", (e) => {
       val.n = n;
     } else if(genre === "verset"){
       /* Un verset, une fois par semaine. Il ne demande rien, il ne reproche
-         rien : c'est le seul rappel qui n'attend pas qu'on joue. */
+         rien : c'est le seul rappel qui n'attend pas qu'on joue. Il vérifie
+         quand même que le joueur n'a pas disparu — à quelqu'un parti depuis
+         deux mois, un verset du dimanche est la carte postale d'un jeu qu'il
+         a quitté, et c'est « absence » qui doit parler. Le serveur applique
+         déjà cette borne ; l'appareil la revérifie, comme pour les autres :
+         c'est la deuxième barrière, pas la seule. */
+      if(!etat.vu) return;
+      const absent = Math.round((Date.parse(aujourdhui + "T00:00:00Z") - Date.parse(etat.vu + "T00:00:00Z")) / 86400000);
+      if(absent > 14) return;
       val.n = 0;
     } else {
       /* LA LONGUE ABSENCE. On recompte l'écart ici : si le joueur a rejoué
