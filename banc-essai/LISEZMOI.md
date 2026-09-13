@@ -438,3 +438,27 @@ encore les moyens.
 
 Une mise en page qui tient sur l'appareil du jour et casse sur le suivant n'est
 pas une mise en page, c'est une coïncidence.
+
+
+## Un banc écrasé est un filet retiré (v219)
+
+En écrivant un test des TEXTES de notification, je l'ai nommé `rappels.js` —
+un fichier qui existait déjà, et qui faisait bien plus : il transpile le vrai
+`notifications/rappels.ts` et **exécute la règle du serveur** contre une table
+de joueurs fabriquée pour couvrir tous les cas. Écrasé sans un regard, parce
+que `git status` disait `M` et pas `A` et que je ne l'ai pas lu.
+
+Restauré, il a immédiatement cassé la règle que je venais d'écrire — et il
+avait raison : mon « rappeler le Défi à qui a joué dans les 14 derniers jours »
+réveillait tous les soirs, indéfiniment, le joueur qui joue tous les jours sans
+jamais toucher au Défi. C'est-à-dire **exactement le cas que la version d'avant
+protégeait**, et dont ce banc portait la garde depuis des mois.
+
+Deux règles, donc :
+
+- **`M` et `A` ne se lisent pas de la même façon.** Un fichier « modifié »
+  qu'on croyait créer est un fichier qu'on détruit.
+- **Un banc qui garde un cas précis ne se remplace pas, il s'étend.** Celui-ci
+  est passé de 13 à 23 cas ; le mien, qui vérifie les 152 formulations
+  possibles et leur conformité aux versets du jeu, vit à côté sous
+  `mots-rappels.js`.
