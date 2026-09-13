@@ -41,9 +41,39 @@ function v(nom, a, b){ const bon=JSON.stringify(a)===JSON.stringify(b); if(!bon)
   await p.waitForTimeout(600);
   v("la carte « À revoir » apparaît", await ev(()=>!!document.querySelector('.revoir-card')), true);
   v("et elle dit combien", await ev(()=>{ const e=document.querySelector('.rv-n'); return e?e.textContent:''; }), "1");
+  /* ===== LA CARTE NE PART PLUS, MÊME À VIDE (v219) =====
+     Le banc exigeait ici l'inverse : « rien à revoir, pas de carte ». C'était
+     la règle jusqu'à ce que Taylor demande le contraire, et pour une raison de
+     fond — « je veux qu'il reste en continu, je ne veux pas qu'il disparaisse
+     même si j'ai rempli toutes mes erreurs ». Un accueil dont les cartes vont
+     et viennent n'a pas de forme : on apprend où sont les choses en les
+     retrouvant à la même place, et une porte qui n'est là qu'un jour sur trois
+     ne s'apprend pas.
+     Ce qui change alors, c'est le SOUS-TITRE, pas la présence — exactement
+     comme la carte du Défi, qui reste qu'on ait joué ou non. Trois états, et
+     le banc les vérifie tous les trois. */
   await ev(()=>{ localStorage.setItem('bt_errbook','[]'); state.screen='mode'; render(); });
   await p.waitForTimeout(500);
-  v("rien à revoir : pas de carte", await ev(()=>!!document.querySelector('.revoir-card')), false);
+  v("carnet vide : la carte reste", await ev(()=>!!document.querySelector('.revoir-card')), true);
+  v("  et elle le dit", await ev(()=>{ const e=document.querySelector('.revoir-card .dc-txt small'); return e?e.textContent:''; }), "Tes erreurs reviendront ici");
+  v("  sans pastille", await ev(()=>!!document.querySelector('.revoir-card .rv-n')), false);
+  /* Rien pour AUJOURD'HUI, mais le carnet n'est pas vide : troisième état. */
+  await ev(()=>{ localStorage.setItem('bt_errbook', JSON.stringify([
+    {k:'plustard', n:1, p:1, du:dayKey(3), q:'Q ?', options:['a','b'], correct:'a', fact:'F', tier:'moyen'}]));
+    state.screen='mode'; render(); });
+  await p.waitForTimeout(500);
+  v("rien pour aujourd'hui, mais le carnet n'est pas vide", await ev(()=>{ const e=document.querySelector('.revoir-card .dc-txt small'); return e?e.textContent:''; }), "Rien pour aujourd'hui \u00b7 1 en attente");
+  v("  la pastille est calme", await ev(()=>{ const e=document.querySelector('.revoir-card .rv-n'); return e ? e.classList.contains('calme') : false; }), true);
+  /* Et la feuille de choix s'ouvre dans tous les cas, portes éteintes. */
+  await ev(()=>{ localStorage.setItem('bt_errbook','[]'); state.screen='mode'; render(); });
+  await p.waitForTimeout(400);
+  await ev(()=>ouvrirRevoir());
+  await p.waitForTimeout(700);
+  v("carnet vide : la feuille s'ouvre quand même", await ev(()=>!!document.querySelector('.revoir-sheet')), true);
+  v("  et ses trois portes sont éteintes, pas absentes", await ev(()=>{
+    const l=[...document.querySelectorAll('.rv-choix')]; return l.length===3 && l.every(b=>b.disabled); }), true);
+  await ev(()=>fermerRevoir());
+  await p.waitForTimeout(500);
 
   // ---------- DE BOUT EN BOUT : UNE VRAIE PARTIE ----------
   /* On joue pour de vrai : deux mauvaises réponses, une bonne. On vérifie
