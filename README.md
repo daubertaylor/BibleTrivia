@@ -231,6 +231,41 @@ substituer :
    qui doit céder quand la place manque s'y accroche, avec la taille
    actuelle comme plafond.
 
+**L'onde d'appui ne remplissait jamais le bouton (v209).** « Le remplissage se
+fait, mais pas à 100 %. » Elle était portée par `:active` : elle grandissait
+tant que le doigt restait posé et repartait à l'envers dès qu'il se levait. Or
+un tapotement dure une centaine de millisecondes et le remplissage en demandait
+deux cent vingt. Mesuré sur un appui de 100 ms : **0,938 d'échelle**, jamais 1.
+
+Une ANIMATION, une fois lancée, ne s'interrompt pas. Le JS pose la classe au
+contact et ne la retire qu'une fois le remplissage fini, même si le doigt est
+parti depuis longtemps. **Et l'effacement a dû devenir une animation lui
+aussi** : retirer la classe rendait la main à la transition de repos, sauf
+qu'une transition ne repart PAS de la valeur laissée par une animation — le
+navigateur calcule l'état d'avant sans elle, ne voit aucun changement, et
+l'onde disparaissait d'un coup. Mesuré : pleine à 254 ms, éteinte à 270. Seize
+millisecondes au lieu de deux cent quarante.
+
+Au passage, l'onde tournait sur **trois durées à elle** (0,22 s / 0,38 s /
+0,06 s), inventées à l'écriture. Elle prend la durée rapide du jeu, celle de
+`--tr-ferme`, avec la courbe d'arrivée pour se remplir et celle de départ pour
+s'effacer.
+
+**Et deux petites choses dites au même moment.** L'interrupteur des Rappels
+attendait le réseau pour verdir — permission système, abonnement navigateur,
+inscription serveur — et pendant ce temps il restait gris sous le doigt. Il
+bascule maintenant tout de suite ; s'il échoue, il revient à l'arrêt en le
+disant. Son sous-titre a disparu : c'était le seul interrupteur des Réglages à
+en porter un, et il changeait de texte à chaque bascule, ce qui décalait tout
+ce qui suit. Il ne reste que le cas où le téléphone a bloqué les notifications
+— une chose que le joueur ne peut pas deviner, et qui ne bouge pas quand on
+touche l'interrupteur.
+
+**Une série perdue est perdue tout de suite.** L'avancement des succès lisait la
+série brute : « En feu · 3/5 » restait affiché des jours après la rupture. Il
+lit maintenant la série telle qu'elle est aujourd'hui. Ce qui est déjà gagné ne
+se reprend pas.
+
 **Les lignes de joueurs sautaient de deux façons (v208).** Demandé en priorité :
 « quand j'ajoute un joueur, que je le retire, ou que je touche le champ, ça
 saute, ça fait une sorte de clignotement ». Deux causes, sans rapport l'une avec

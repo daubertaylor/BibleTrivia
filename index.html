@@ -271,6 +271,13 @@
        derniers sont le MÊME instant, dessiné à deux vitesses. Tous rejoignent
        l'horloge unique. */
     --tr-ferme: 0.24s cubic-bezier(0.4,0,1,1);
+    /* L'ONDE D'APPUI SUR L'HORLOGE DU JEU. Elle tournait sur trois durées à
+       elle (0,22 s pour grandir, 0,38 s pour s'effacer, 0,06 s pour l'opacité),
+       inventées à l'écriture. Elle prend la durée RAPIDE du jeu — celle de
+       --tr-ferme — avec la courbe d'arrivée pour se remplir et la courbe de
+       départ pour s'effacer. Un seul nombre, déjà dans la maison. */
+    --onde-duree: 0.24s;
+    --tr-onde: var(--onde-duree) cubic-bezier(0.33,1,0.68,1);
     /* ===== LE PIÈGE DES VARIABLES QUI EN CONTIENNENT D'AUTRES =====
        Le dessin du voile a d'abord été posé ICI, sur :root, pour n'exister
        qu'une fois. Il ne marchait pas — et pas « un peu moins bien » : PLUS
@@ -1272,7 +1279,31 @@
      alors le bouton ENTIER, sans dépendre d'aucune extension de rognage.
      Mesuré avec overflow-clip-margin neutralisé (Safari simulé) : 1,00 px
      d'anneau avant, 0,00 px après, sur les onze familles de boutons. */
-  button::before, .mode-card::before{ content:""; position:absolute; inset:0; z-index:-1; border-radius:inherit; background:var(--press-tint, rgba(238,74,40,0.18)); transform:scale(0.001); opacity:0; transition:opacity 0.38s ease, transform 0.01s linear 0.38s; pointer-events:none; }
+  button::before, .mode-card::before{ content:""; position:absolute; inset:0; z-index:-1; border-radius:inherit; background:var(--press-tint, rgba(238,74,40,0.18)); transform:scale(0.001); opacity:0; transition:opacity var(--onde-duree) cubic-bezier(0.4,0,1,1), transform 0.01s linear var(--onde-duree); pointer-events:none; }
+  /* ===== L'ONDE SE REMPLIT ENTIÈREMENT, MÊME SUR UN TAPOTEMENT =====
+     Elle était portée par « :active » : elle grandissait tant que le doigt
+     restait posé, et repartait à l'envers dès qu'il se levait. Or un
+     tapotement dure une centaine de millisecondes, et le remplissage en
+     demandait deux cent vingt. Mesuré sur un appui de 100 ms : l'onde
+     atteignait 0,938 d'échelle et pas 1 — elle s'effaçait sans jamais avoir
+     rempli le bouton. « Le remplissage se fait, mais pas à 100 %. »
+     Une ANIMATION, elle, va jusqu'au bout quoi qu'il arrive : une fois
+     lancée, lever le doigt ne l'interrompt pas. Le JS pose la classe au
+     contact et ne la retire qu'une fois le remplissage terminé (voir
+     ondeDebut). L'effacement, lui, reste une transition — il part de l'état
+     plein, donc toujours de 100 %. */
+  @keyframes ondeIn{ from{ transform:scale(0.001); opacity:0; } to{ transform:scale(1); opacity:1; } }
+  button.onde::before, .mode-card.onde::before{ animation:ondeIn var(--tr-onde) forwards; }
+  /* ET L'EFFACEMENT EST UNE ANIMATION LUI AUSSI. Retirer la classe rendait la
+     main à la transition de repos — sauf qu'une transition ne repart PAS de la
+     valeur laissée par une animation : le navigateur calcule l'état d'avant
+     sans elle, ne voit aucun changement, et l'onde disparaissait d'un coup.
+     Mesuré : pleine à 254 ms, éteinte à 270 — seize millisecondes au lieu de
+     deux cent quarante. Une seconde animation, elle, part bien de l'état
+     plein. L'onde reste à sa taille pendant qu'elle s'efface : elle a rempli
+     le bouton, elle s'en va sans rétrécir. */
+  @keyframes ondeOut{ from{ transform:scale(1); opacity:1; } to{ transform:scale(1); opacity:0; } }
+  button.onde-part::before, .mode-card.onde-part::before{ animation:ondeOut var(--onde-duree) cubic-bezier(0.4,0,1,1) forwards; }
   .chip, .len-chip{ --press-tint: rgba(238,74,40,0.28); }
   /* Sur les surfaces DÉJÀ corail, l'onde se fait blanche : sinon rien ne se
      verrait. Même logique, feedback identique. */
@@ -1302,8 +1333,9 @@
      anneau clair, mesuré à 14 unités au-dessus de son fond, était le
      dernier contour blanc du jeu. */
   .avatar, .podium-avatar, .team-token, .scn-thumb, .end-medal{ --bord:var(--bord-plein); --levre:var(--levre-pleine); }
-  button:active:not(:disabled)::before,
-  .mode-card:active::before{ transform:scale(1); opacity:1; transition:transform 0.22s cubic-bezier(0.2,0.8,0.32,1), opacity 0.06s ease; }
+  /* (l'ancienne règle « :active::before » a disparu : c'est l'animation
+     ci-dessus qui remplit, et elle seule — deux mécanismes se seraient
+     disputé la même surface.) */
   .hero-icon-btn::before{ content:none; }
   button:active:not(:disabled),
   .mode-card:active{ transform:translateZ(0) scale(0.968); transition-duration:0.09s; transition-timing-function:cubic-bezier(0.3,0,0.45,1); }
@@ -3258,6 +3290,54 @@
    vide, posé au tout début du script, débloque :active pour TOUTE l'appli :
    chaque bouton devient aussi instantané au toucher que sur Android. */
 document.addEventListener("touchstart", function(){}, { passive:true });
+
+/* ===== L'ONDE D'APPUI VA JUSQU'AU BOUT DE SON REMPLISSAGE =====
+   Portée par « :active », elle s'arrêtait où le doigt s'était arrêté : sur un
+   tapotement de 100 ms elle n'atteignait que 0,938 d'échelle, puis s'effaçait
+   sans avoir jamais rempli le bouton. Une ANIMATION, une fois lancée, ne
+   s'interrompt pas — on pose donc la classe au contact et on ne la retire
+   qu'une fois le remplissage FINI, même si le doigt est parti depuis
+   longtemps. L'effacement reprend ensuite la main, et il part toujours de
+   l'état plein.
+   Un seul doigt suivi à la fois : c'est le seul cas réel, et deux ondes
+   simultanées ne veulent rien dire sur un bouton. */
+let ondeCourante = null, ondePleine = false, ondeTenue = false;
+function ondeFinie(e){
+  if(!ondeCourante || e.animationName !== "ondeIn") return;
+  ondePleine = true;
+  if(!ondeTenue) ondeRanger();
+}
+function ondeRanger(){
+  if(!ondeCourante) return;
+  const b = ondeCourante;
+  b.removeEventListener("animationend", ondeFinie);
+  b.classList.remove("onde");
+  b.classList.add("onde-part");
+  const partie = (e)=>{
+    if(e.animationName !== "ondeOut") return;
+    b.removeEventListener("animationend", partie);
+    b.classList.remove("onde-part");
+  };
+  b.addEventListener("animationend", partie);
+  /* Filet : si l'animation ne rend jamais la main (onglet endormi, écran
+     éteint), la classe part quand même — sinon l'onde resterait allumée. */
+  setTimeout(()=>{ b.removeEventListener("animationend", partie); b.classList.remove("onde-part"); }, 900);
+  ondeCourante = null; ondePleine = false; ondeTenue = false;
+}
+document.addEventListener("pointerdown", (e)=>{
+  const b = e.target && e.target.closest ? e.target.closest("button, .mode-card") : null;
+  if(!b || b.disabled) return;
+  if(ondeCourante && ondeCourante !== b) ondeRanger();
+  b.classList.remove("onde-part");        // il repart plein, pas en train de s'effacer
+  /* Ré-appuyer sur le même bouton doit relancer l'onde depuis le début. */
+  if(ondeCourante === b){ b.classList.remove("onde"); void b.offsetWidth; }
+  ondeCourante = b; ondePleine = false; ondeTenue = true;
+  b.addEventListener("animationend", ondeFinie);
+  b.classList.add("onde");
+}, { passive:true, capture:true });
+const ondeLache = ()=>{ ondeTenue = false; if(ondePleine) ondeRanger(); };
+document.addEventListener("pointerup", ondeLache, { passive:true, capture:true });
+document.addEventListener("pointercancel", ondeLache, { passive:true, capture:true });
 /* ===================== ICONS (hand-built, no emoji) ===================== */
 const ICONS = {
   book: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M3 5.2C3 5.2 5.3 4.3 8.3 4.3C10.3 4.3 12 5 12 5V18C12 18 10.3 17.3 8.3 17.3C5.3 17.3 3 18.2 3 18.2V5.2Z"/><path d="M21 5.2C21 5.2 18.7 4.3 15.7 4.3C13.7 4.3 12 5 12 5V18C12 18 13.7 17.3 15.7 17.3C18.7 17.3 21 18.2 21 18.2V5.2Z"/></svg>`,
@@ -6804,7 +6884,7 @@ function openSettings(){
       ${notifPossible() ? `
       <div class="set-row">
         <span class="set-ico ntf">${ICONS.bell}</span>
-        <span class="set-txt"><b>Rappels</b><small id="notifTxt">${notifEtat()==="denied" ? "Bloquées dans les réglages" : (settings.notif && notifEtat()==="granted" ? "Le soir : série en jeu, ou longue absence" : "Ne rien envoyer")}</small></span>
+        <span class="set-txt"><b>Rappels</b>${notifEtat()==="denied" ? `<small id="notifTxt">Bloquées dans les réglages du téléphone</small>` : ``}</span>
         <button class="switch${settings.notif && notifEtat()==="granted" ? " on" : ""}" id="swNotif" role="switch" aria-checked="${!!(settings.notif && notifEtat()==="granted")}" aria-label="Rappels" ${notifEtat()==="denied" ? "disabled" : ""} onclick="setNotif(!(settings.notif && notifEtat()==='granted'))"></button>
       </div>` : ""}
       <div class="set-row">
@@ -9368,7 +9448,17 @@ const ACHIEVEMENTS = [
   { id:"fidele7",      ico:ACH_ICONS.calCheck,    clr:"green", t:"Fidèle",              d:"Défi du jour 7 jours d'affilée",        max:7,    cur:(p,d)=>Math.min(d.daily,7) },
   { id:"assidu",       ico:ACH_ICONS.calStar,     clr:"green", t:"Assidu",              d:"Défi du jour 30 jours d'affilée",       max:30,   cur:(p,d)=>Math.min(d.daily,30) }
 ];
-function achDerived(p){ const d = progressDerived(p); try { d.daily = loadDaily().streak||0; } catch(e){ d.daily=0; } return d; }
+/* ===== UNE SÉRIE PERDUE EST PERDUE TOUT DE SUITE =====
+   On lisait ici la série BRUTE, celle qui dort dans la mémoire : un joueur qui
+   avait laissé passer deux jours voyait encore « En feu · 3/5 » sur sa
+   Progression, comme si sa série tenait toujours. Elle ne tenait plus. On lit
+   donc la série TELLE QU'ELLE EST AUJOURD'HUI — zéro dès que le dernier défi
+   ne date ni d'aujourd'hui ni d'hier, exactement comme la carte du Défi
+   l'affiche déjà.
+   Ce qui est GAGNÉ ne se reprend pas : un succès déjà débloqué le reste pour
+   toujours (checkAchievements ne repasse jamais sur p.ach). Seul l'avancement
+   de ceux qui ne le sont pas encore redescend, et c'est la vérité. */
+function achDerived(p){ const d = progressDerived(p); try { d.daily = dailyStreakShown(); } catch(e){ d.daily=0; } return d; }
 const ACH_CHECK = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3.2" stroke-linecap="round" stroke-linejoin="round"><polyline points="5 12.5 10 17.5 19 7"/></svg>`;
 /* Tap sur un objectif -> petit popup : tuile, titre, à quoi il correspond, progression. */
 function openAchInfo(id){
@@ -9844,17 +9934,31 @@ async function notifCouper(){
     }
   } catch(e){}
 }
-function setNotif(on){ if(on) notifActiver(); else notifCouper(); }
+/* ===== L'INTERRUPTEUR RÉPOND AU DOIGT, PAS AU RÉSEAU =====
+   Allumer un rappel demande une permission au système, un abonnement au
+   navigateur, puis une inscription chez Supabase. Tant que tout cela n'avait
+   pas répondu, le bouton restait gris : on le touchait, il ne se passait rien
+   pendant une seconde, puis il verdissait tout seul. On le bascule donc tout
+   de suite — c'est ce que le doigt a demandé — et notifRafraichir le remet à
+   l'arrêt si quelque chose échoue, en le disant. */
+function setNotif(on){
+  const sw = document.getElementById("swNotif");
+  if(sw){
+    sw.classList.toggle("on", !!on);
+    sw.setAttribute("aria-checked", on ? "true" : "false");
+  }
+  if(on) notifActiver(); else notifCouper();
+}
 function notifRafraichir(){
   const sw = document.getElementById("swNotif");
   if(!sw) return;
   const on = !!settings.notif && notifEtat() === "granted";
   sw.classList.toggle("on", on);
   sw.setAttribute("aria-checked", on ? "true" : "false");
-  const t = document.getElementById("notifTxt");
-  if(t) t.textContent = notifEtat() === "denied"
-    ? "Bloquées dans les réglages"
-    : (on ? "Le soir : série en jeu, ou longue absence" : "Ne rien envoyer");
+  /* Plus de sous-titre à réécrire : la ligne n'en a plus (voir le balisage).
+     Le seul cas où l'on parle encore, c'est un refus posé dans les réglages du
+     téléphone — le joueur ne peut pas le deviner, et cette ligne-là ne change
+     pas quand on touche l'interrupteur. */
 }
 
 /* ANTI-TRICHE DÉFI DU JOUR : le défi ne se joue qu'UNE fois par jour. On
