@@ -8,15 +8,14 @@
    Le banc bride le processeur (comme un téléphone occupé), ouvre chaque
    feuille et relève image par image : la position de la feuille, son verre
    (couche .gs + rebord) et la fenêtre d'ouverture du moteur de verre.
-   Il exige quatre choses :
+   Il exige trois choses :
      1. la feuille ne part qu'une fois RELÂCHÉE (classe « monte ») : elle ne
         bouge donc jamais avant d'être finie ;
      2. à la première image qui bouge, le verre est déjà posé ;
-     3. la fenêtre d'ouverture du verre couvre TOUTE la montée — sinon le
-        moteur change de calage en plein vol ;
-     4. le décor ne saute pas d'un pixel DANS la feuille pendant la montée.
-   Mesuré sur la version d'avant, processeur bridé seize fois : le décor
-   sautait de 12 px dans les Réglages, 371 ms après le départ.
+     3. le décor ne bouge pas d'un pixel À L'ÉCRAN pendant la montée : le
+        verre est une fenêtre sur un paysage fixe, pas une image peinte sur la
+        vitre. Mesuré sur la v216, le décor voyageait AVEC la feuille —
+        458 px pour les Réglages, 349 pour les versions.
    Usage : node banc-essai/feuille.js [url] [bridage]
 */
 const { chromium } = require('/opt/node22/lib/node_modules/playwright');
@@ -76,20 +75,21 @@ const FEUILLES = [
             gs: f.querySelector(':scope > .gs') ? 1 : 0,
             rim: f.querySelector(':scope > .glass-rim') ? 1 : 0,
             m: f.classList.contains('monte') ? 1 : 0,
-            /* Où en est le FLOU de la feuille ? Tant que le moteur le cale sur
-               la position de mise en page, ce nombre ne bouge pas d'un poil :
-               le décor est peint sur la vitre et monte avec elle. S'il se met
-               à changer en plein vol, c'est que le moteur a basculé en suivi
-               écran — et le décor glisse alors DANS la feuille qui monte. */
+            /* OÙ EN EST LE DÉCOR, À L'ÉCRAN. Le verre est une fenêtre sur un
+               paysage fixe : pendant que la vitre monte, ce qu'on voit à
+               travers ne doit pas bouger d'un pixel. On relève donc la
+               position ÉCRAN de la couche, pas son transform — c'est le
+               transform qui doit changer, justement, pour que l'image ne
+               bouge pas. (La v216 mesurait l'inverse : elle exigeait un
+               transform constant, ce qui revenait à exiger que le décor
+               VOYAGE avec la feuille. 458 px de décalage à l'ouverture.) */
             gy: (function(){
               const gs = f.querySelector(':scope > .gs');
-              if(!gs) return null;
-              const m = new DOMMatrixReadOnly(getComputedStyle(gs).transform);
-              return +m.f.toFixed(1);
+              return gs ? +gs.getBoundingClientRect().top.toFixed(1) : null;
             })(),
             /* glassSheetOpenUntil est un « let » de premier niveau : il vit dans
                la portée lexicale globale, PAS sur window. */
-            fen: +(((typeof glassSheetOpenUntil === 'number' ? glassSheetOpenUntil : 0)) - performance.now()).toFixed(1),
+
           });
         }
         requestAnimationFrame(boucle);
@@ -114,11 +114,10 @@ const FEUILLES = [
     /* Dernière image encore en mouvement : la fenêtre de verre doit tenir. */
     let iDernier = -1;
     for (let i = rel.length - 1; i > 0; i--) { if (Math.abs(rel[i].y - rel[i-1].y) > 0.5) { iDernier = i; break; } }
-    const fenFin = iDernier < 0 ? 0 : rel[iDernier].fen;
     const iMonte = rel.findIndex(e => e.m === 1);
     const duree = (iMonte < 0 || iDernier < 0) ? 0 : rel[iDernier].t - rel[iMonte].t;
-    /* LE SAUT DU DÉCOR PENDANT LA MONTÉE. Zéro = le flou est peint sur la
-       vitre du début à la fin. Tout le reste se voit. */
+    /* LE DÉPLACEMENT DU DÉCOR PENDANT LA MONTÉE, à l'écran. Zéro = la vitre
+       glisse sur un paysage immobile. Tout le reste se voit. */
     let saut = 0, sautT = 0;
     if (iBouge >= 0 && iDernier > iBouge) {
       for (let i = iBouge + 1; i <= iDernier + 1 && i < rel.length; i++) {
@@ -131,22 +130,19 @@ const FEUILLES = [
     /* « Relâchée » = la classe monte est posée AVANT le premier mouvement. */
     const okFigees = iMonte >= 0 && (iBouge < 0 || iBouge >= iMonte);
     const okVerre  = !prem || (prem.verre === 1 && prem.gs === 1 && prem.rim === 1);
-    const okFen    = iDernier < 0 || fenFin > 0;
     const okSaut   = saut <= 1.5;
-    const bon = okFigees && okVerre && okFen && okSaut;
+    const bon = okFigees && okVerre && okSaut;
     if (!bon) ko++;
     console.log('  ' + nom.padEnd(9) + ' ' + (bon ? 'OK ' : 'KO ') +
       ' images figées avant le départ=' + figees +
       ' | 1re image mobile : verre=' + (prem ? prem.verre + '/' + prem.gs + '/' + prem.rim : '—') +
-      ' | fenêtre restante en fin de montée=' + fenFin.toFixed(0) + 'ms' +
       ' | course ' + y0.toFixed(0) + '→' + yFin.toFixed(0) + ' en ' + duree.toFixed(0) + 'ms' +
-      ' | saut du décor=' + saut.toFixed(1) + 'px');
+      ' | déplacement du décor=' + saut.toFixed(1) + 'px');
     if (!okFigees) console.log(iMonte < 0
       ? '             ↳ la feuille part sans être relâchée : elle bouge dès son insertion'
       : '             ↳ la feuille bouge AVANT d\'être relâchée');
     if (!okVerre)  console.log('             ↳ elle se met en marche AVANT que le verre soit posé');
-    if (!okFen)    console.log('             ↳ la fenêtre de verre expire pendant la montée');
-    if (!okSaut)   console.log('             ↳ le décor saute de ' + saut.toFixed(1) + 'px DANS la feuille, ' + sautT.toFixed(0) + 'ms après le départ');
+    if (!okSaut)   console.log('             ↳ le décor se déplace de ' + saut.toFixed(1) + 'px à l\'écran pendant la montée (' + sautT.toFixed(0) + 'ms après le départ)');
   }
 
   await nav.close();

@@ -1177,16 +1177,26 @@
   .fg-sem{ margin-bottom:0.3rem; }
   .fg-sem span{ text-align:center; font-family:'Poppins',sans-serif; font-size:0.62rem; font-weight:700;
     letter-spacing:0.06em; color:var(--ink-soft); }
-  /* La case : le carré de la bande des sept jours, sans sa lettre. Aucun
-     rebord de couleur — l'état se lit à la MATIÈRE, comme partout ailleurs. */
-  .fj{ aspect-ratio:1; border-radius:var(--r-s); background:rgba(42,36,30,0.09); }
-  .fj.fait{ background:linear-gradient(160deg, #FFC64F, #F09A18); box-shadow:0 1px 3px rgba(196,144,32,0.28); }
-  .fj.gele{ background:linear-gradient(160deg, #9FD8F5, #4FA6DC); box-shadow:0 1px 3px rgba(46,127,176,0.28); }
-  .fj.horschamp{ background:none; }
+  /* ===== UNE CASE PORTE SA FLAMME =====
+     Les cases n'étaient que des carrés de couleur : « en fait là ils sont
+     vides, on ne comprend pas bien ». Un carré or et un carré bleu ne disent
+     rien tout seuls — il faut avoir lu la légende, et s'en souvenir. Chaque
+     case porte donc le dessin lui-même : la flamme du jeu pour un jour joué,
+     la flamme gelée pour un jour couvert par un gel. Un jour manqué reste
+     vide, et c'est très bien : le vide EST l'information.
+     Le dessin vient de ICONS, pas d'une copie : le JS en fabrique une image de
+     fond une fois par ouverture (--fj-feu, --fj-glace, voir ouvrirFlamme).
+     Quatre-vingt-dix SVG dans le document auraient coûté quatre-vingt-dix
+     copies du même dégradé, et autant d'identifiants en double. */
+  .fj{ aspect-ratio:1; border-radius:var(--r-s); background-color:rgba(42,36,30,0.09);
+    background-repeat:no-repeat; background-position:center; background-size:68% 68%; }
+  .fj.fait{ background-color:rgba(240,154,24,0.18); background-image:var(--fj-feu); }
+  .fj.gele{ background-color:rgba(79,166,220,0.28); background-image:var(--fj-glace); }
+  .fj.horschamp{ background-color:transparent; background-image:none; }
   /* Aujourd'hui : plus clair, jamais cerné. */
   .fj.auj{ box-shadow:inset 0 0 0 2px rgba(255,255,255,0.75), 0 1px 3px rgba(42,36,30,0.16); }
   .flam-leg{ display:flex; align-items:center; gap:0.45rem; margin-top:0.6rem; font-size:0.78rem; color:var(--ink-soft); }
-  .flam-leg .fj{ width:0.85rem; aspect-ratio:1; flex-shrink:0; }
+  .flam-leg .fj{ width:1.15rem; aspect-ratio:1; flex-shrink:0; }
   .flam-leg b{ font-weight:600; margin-right:0.55rem; }
   .flam-regle{ font-size:0.78rem; color:var(--ink-soft); line-height:1.4; margin-top:0.15rem; }
   .flam-vide{ font-size:0.9rem; color:var(--ink-soft); padding:0.6rem 0.1rem; }
@@ -5979,7 +5989,7 @@ function showModal(opts){
       </div>
     </div>`;
   document.body.appendChild(veil);
-  glassSheetOpenUntil = performance.now() + fenetreFeuille(); glassTrack(680);
+  glassTrack(680);
   const input = veil.querySelector("#modalInput");
   if(input){ setTimeout(()=>{ try{ input.focus(); }catch(e){} }, 80); }
   const cancelBtn = veil.querySelector("#modalCancel");
@@ -6175,15 +6185,13 @@ function monterLaFeuille(veil){
   if(!f) return;
   const lacher = ()=>{
     if(!f.isConnected || f.classList.contains("monte")) return;   // refermée, ou déjà partie
-    /* LA FENÊTRE D'OUVERTURE DU VERRE PART D'ICI, pas de l'insertion. Pendant
-       cette fenêtre, le moteur cale le flou sur la position de MISE EN PAGE
-       pour qu'il reste solidaire de la vitre qui glisse (voir
-       glassSheetOpenUntil). Elle était armée à l'insertion : le temps
-       d'attente la grignotait, et sur un téléphone chargé elle expirait AVANT
-       la fin de l'ascension — le flou repassait alors en suivi écran en plein
-       vol, et le décor sautait DANS la feuille qui monte. On la réarme au
-       moment exact où la feuille se met en marche. */
-    try{ glassSheetOpenUntil = performance.now() + fenetreFeuille(); armGlass(fenetreFeuille() + 300); }catch(e){}
+    /* LE MOTEUR DOIT TOURNER PENDANT TOUTE LA MONTÉE. Le décor reste fixe à
+       l'écran parce qu'on relit la position réelle de la feuille À CHAQUE
+       IMAGE : si la boucle s'endort en route, le verre se fige et repart en
+       glissade avec la vitre. On la réveille au moment exact où la feuille se
+       met en marche, pas à son insertion — le temps d'attente aurait grignoté
+       la réserve. */
+    try{ armGlass(msPli() + 300); }catch(e){}
     f.classList.add("monte");
   };
   requestAnimationFrame(()=>{ requestAnimationFrame(lacher); });
@@ -6222,7 +6230,7 @@ function openBibles(){
      coup, et mal calé. Ces deux lignes sont celles des Réglages, du guide et
      du carnet : le verre est là dès la première image, et reste solidaire de
      la feuille pendant qu'elle monte. */
-  glassSheetOpenUntil = performance.now() + fenetreFeuille(); glassTrack(680);
+  glassTrack(680);
   /* LE RECUL EST UN TRANSFORM : il ne déplace AUCUNE mise en page. Inutile de
      demander au moteur de relire toutes les positions (glassSuivre) — il n'y a
      rien de neuf à lire, et c'était trente parcours d'offsetParent par image
@@ -6846,12 +6854,11 @@ function attachSheetDrag(feuille, fermer){
   const neutre = (t)=> !(t && t.closest && t.closest("input, button:not(.sheet-grab), .scn-thumb, .rev-list, .flam-list, .vol-row, .switch"));
   /* PENDANT LE GESTE, LE VERRE RESTE ACCROCHÉ À L'ÉCRAN, pas à la feuille :
      c'est tout l'effet de décalage — on tire le panneau et le décor glisse
-     derrière, comme une vitre qu'on déplace devant un paysage. Il faut donc
-     SORTIR du mode « solidaire » utilisé pendant l'animation d'ouverture (on
-     remet glassSheetOpenUntil à zéro) et garder la boucle éveillée : le moteur
-     relit alors la position réelle de la feuille à chaque image. On n'appelle
-     pas glassTrack() (il relirait toute la mise en page) — armGlass() suffit. */
-  const suivre = (ms)=>{ try{ glassSheetOpenUntil = 0; armGlass(ms || 700); }catch(e){} };
+     derrière, comme une vitre qu'on déplace devant un paysage. Il suffit de
+     garder la boucle éveillée : le moteur relit alors la position réelle de la
+     feuille à chaque image. On n'appelle pas glassTrack() (il relirait toute la
+     mise en page) — armGlass() suffit. */
+  const suivre = (ms)=>{ try{ armGlass(ms || 700); }catch(e){} };
   feuille.addEventListener("pointerdown", (e)=>{
     if(actif || e.button) return;
     if(!neutre(e.target)) return;
@@ -6946,7 +6953,7 @@ function openMissedReview(list){
   document.body.appendChild(veil);
   monterLaFeuille(veil);
   majVoilesErreurs();
-  glassSheetOpenUntil = performance.now() + fenetreFeuille(); glassTrack(680);
+  glassTrack(680);
   attachSheetDrag(veil.querySelector(".settings-sheet"), closeMissedReview);
 }
 /* LE FONDU DE LA LISTE DES ERREURS, ET LE RANG DE LA CARTE EN TÊTE.
@@ -7089,7 +7096,7 @@ function openSettings(){
     </div>`;
   document.body.appendChild(veil);
   monterLaFeuille(veil);
-  glassSheetOpenUntil = performance.now() + fenetreFeuille(); glassTrack(680);
+  glassTrack(680);
   attachSheetDrag(veil.querySelector(".settings-sheet"), closeSettings);
   veil.addEventListener("click", (e)=>{ if(e.target===veil){ closeSettings(); } });
 }
@@ -9052,18 +9059,6 @@ function tempoPli(){
   return _tempoPli;
 }
 function msPli(){ const m = tempoPli().match(/([\d.]+)s/); return m ? Math.round(parseFloat(m[1]) * 1000) : 520; }
-/* ===== LA FENÊTRE D'OUVERTURE DU VERRE SUIT L'HORLOGE =====
-   Pendant cette fenêtre, le moteur cale le flou d'une feuille sur sa position
-   de MISE EN PAGE : il reste solidaire de la vitre qui glisse. Après, il suit
-   la position réelle à l'écran. Les deux se rejoignent exactement quand la
-   feuille est posée — mais si la fenêtre ferme AVANT la fin de la montée, le
-   flou change de calage en plein vol.
-   Elle valait 560 ms, écrits à la main, pour une montée de 520 : quarante
-   millisecondes de marge, soit deux images sur un téléphone chargé. Mesuré,
-   processeur bridé six fois, la feuille des versions terminait sa course
-   0 ms avant l'expiration. On prend donc la durée RÉELLE du pli, plus une
-   marge franche : la fenêtre grandit toute seule si l'horloge change. */
-function fenetreFeuille(){ return msPli() + 160; }
 /* L'horloge de FERMETURE, lue au même endroit que celle de l'ouverture : tout
    ce qui s'efface (voile, feuille, fenêtre, verrou paysage) la partage. Elle
    est plus courte que l'ouverture, et c'est voulu — on regarde une chose qui
@@ -9733,7 +9728,7 @@ function openAchInfo(id){
       <button class="modal-btn ok" onclick="closeModal()">Fermer</button>
     </div>`;
   document.body.appendChild(veil);
-  try{ glassSheetOpenUntil = performance.now() + fenetreFeuille(); glassTrack(680); }catch(e){}
+  try{ glassTrack(680); }catch(e){}
   veil.addEventListener("click", (e)=>{ if(e.target===veil) closeModal(); });
 }
 /* Testaments repliables : pliés par défaut (fini le pavé), on déplie au tap. */
@@ -10194,6 +10189,13 @@ function dailyStreakShown(){ return flammeVivante() ? loadDaily().streak : 0; }
 const JOURS_FR = ["dimanche","lundi","mardi","mercredi","jeudi","vendredi","samedi"];
 const MOIS_FR = ["janvier","février","mars","avril","mai","juin","juillet","août","septembre","octobre","novembre","décembre"];
 function dateLongue(t){ return JOURS_FR[t.getDay()] + " " + t.getDate() + (t.getDate() === 1 ? "er" : "") + " " + MOIS_FR[t.getMonth()]; }
+/* Un dessin de ICONS devient une image de fond CSS. Le « xmlns » est
+   indispensable : inséré dans la page, un SVG s'en passe ; devenu image
+   autonome, il ne s'affiche pas sans lui. */
+function iconeEnFond(svg){
+  const avecNs = svg.indexOf("xmlns") >= 0 ? svg : svg.replace("<svg ", '<svg xmlns="http://www.w3.org/2000/svg" ');
+  return 'url("data:image/svg+xml,' + encodeURIComponent(avecNs) + '")';
+}
 function ouvrirFlamme(){
   if(document.getElementById("flammeVeil")) return;
   const d = loadDaily(), faits = joursFaits(), gels = joursGeles();
@@ -10243,13 +10245,19 @@ function ouvrirFlamme(){
       <div class="flam-list">${jours >= 0 ? grille : `<div class="flam-vide">Relève le Défi du jour : ta flamme commence ici.</div>`}</div>
       <div class="flam-leg"><span class="fj fait"></span><b>joué</b><span class="fj gele"></span><b>gelé</b></div>
     </div>`;
+  /* Les deux flammes, fabriquées une fois pour toutes les cases. */
+  try{
+    const f = veil.querySelector(".settings-sheet");
+    f.style.setProperty("--fj-feu", iconeEnFond(ICONS.flame));
+    f.style.setProperty("--fj-glace", iconeEnFond(ICONS.flammeGelee));
+  }catch(e){}
   document.body.appendChild(veil);
   /* ON OUVRE SUR AUJOURD'HUI, pas sur le premier jour. La grille se lit du
      plus ancien au plus récent — donc sans ça, un joueur de trois mois ouvre
      sa flamme sur juillet et doit défiler pour se voir. */
   try{ const l = veil.querySelector(".flam-list"); if(l) l.scrollTop = l.scrollHeight; }catch(e){}
   monterLaFeuille(veil);
-  glassSheetOpenUntil = performance.now() + fenetreFeuille(); glassTrack(680);
+  glassTrack(680);
   attachSheetDrag(veil.querySelector(".settings-sheet"), closeFlamme);
   veil.addEventListener("click", (e)=>{ if(e.target===veil){ closeFlamme(); } });
 }
@@ -12426,27 +12434,25 @@ function queueGlassXF(){
       const restTop = el._ly0 - st;
       if(restTop > vh + 200 || restTop + el._oh0 < -200) continue; // hors écran
       tx = sl - el._lx0 - ox; ty = st - el._ly0 - oy;
-    } else if(now < glassSheetOpenUntil && !echelleDe(el)){
-      /* Exception : la feuille qui RECULE derrière celle qui s'ouvre. La
-         branche ci-dessous cale le flou sur la position de MISE EN PAGE, pour
-         qu'il reste solidaire d'une vitre qui GLISSE — c'est ce qu'il faut
-         pour la feuille de devant. Mais celle du dessous ne glisse pas : elle
-         se met à l'échelle sur place. Son flou restait donc à la position
-         d'avant le recul, puis sautait d'un coup à la bonne à l'expiration de
-         la fenêtre d'ouverture. Mesuré : 13 px d'un seul bond, 630 ms après
-         l'ouverture. En la renvoyant vers le suivi de la position RÉELLE, son
-         flou accompagne le recul image par image. Le test .closest ne coûte
-         rien : il ne tourne que sur les rares surfaces hors #app, et
-         seulement pendant la demi-seconde d'ouverture. */
-      // Feuille / modale PENDANT son animation d'ouverture/fermeture : on cale le
-      // flou sur la position de MISE EN PAGE (fixe, position finale) -> le .gs
-      // reste SOLIDAIRE de la vitre qui glisse, sans AUCUN recalage par image,
-      // donc « Fermer » (tout en bas) entre sans le moindre saut. Au repos, la
-      // position finale == la position visuelle : la bascule vers le suivi réel
-      // (ci-dessous) est parfaitement continue, sans à-coup.
-      tx = -el._lx0 - ox; ty = -el._ly0 - oy;
     } else {
-      // Feuille / modale POSÉE : on suit la position VISUELLE réelle
+      /* ===== LE VERRE EST UNE FENÊTRE, PAS UNE PEINTURE =====
+         Il y avait ici une exception : pendant l'ouverture d'une feuille, le
+         flou était calé sur sa position de MISE EN PAGE, donc solidaire de la
+         vitre qui glisse. L'idée était d'éviter un recalage par image. Le
+         résultat, mesuré : pendant toute la montée, le décor vu à travers le
+         panneau voyage AVEC lui — 458 px pour les Réglages, 349 pour les
+         versions, 295 pour la flamme — et ne rejoint le vrai décor qu'à
+         l'arrivée. Le panneau s'ouvre donc avec un paysage décalé de presque
+         un demi-écran, qui se remet en place à la fin. C'est le « petit bug de
+         décalage » à l'ouverture, et il le faisait sur TOUTES les fenêtres.
+         L'exception est retirée : une seule règle pour tout ce qui n'est pas
+         dans #app, la position RÉELLE à l'écran. Le décor ne bouge plus d'un
+         pixel pendant que la vitre glisse dessus — 458 px ramenés à 1.
+         L'objection d'alors (« Fermer, tout en bas, entrerait en sautant »)
+         est mesurée fausse : plus grand saut d'une image à l'autre, 43 px
+         avant, 0,9 px après. Le rognage qui la causait ne concerne que les
+         surfaces de #app, pas celles d'une feuille. */
+      // On suit la position VISUELLE réelle
       // (getBoundingClientRect) -> vrai verre fixe à l'écran pendant qu'on défile
       // à l'intérieur. Peu de surfaces, et on n'écrit qu'un transform (n'invalide
       // pas la mise en page) -> aucun reflow forcé coûteux. Pas de culling ici.
@@ -12805,7 +12811,7 @@ function queueGlassSyncPainted(freeze){
    rotation) + une petite traîne pour laisser les reflets se reposer. Au repos,
    un simple battement toutes les ~0,5 s rattrape tout changement inattendu.
    L'effet est intact : dès qu'on touche/défile/change d'écran, c'est armé. */
-let glassActiveUntil = 0, glassFrame = 0, glassFreezeUntil = 0, glassGen = 1, glassPressUntil = 0, glassSheetOpenUntil = 0;
+let glassActiveUntil = 0, glassFrame = 0, glassFreezeUntil = 0, glassGen = 1, glassPressUntil = 0;
 /* Le recul d'une feuille dure un pli : pendant ce temps seulement, son échelle
    est relue à chaque image (voir queueGlassXF). Armé par openBibles et
    closeBibles, les deux seuls endroits où une feuille recule. */

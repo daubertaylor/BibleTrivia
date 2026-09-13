@@ -231,6 +231,54 @@ substituer :
    qui doit céder quand la place manque s'y accroche, avec la taille
    actuelle comme plafond.
 
+**Le verre est une fenêtre, pas une peinture (v217).** « J'ai toujours un petit
+décalage quand j'ouvre certaines fenêtres, notamment les réglages : ça s'ouvre
+et ensuite ça fait un petit bug de décalage. » La v216 avait cherché — et
+trouvé — un problème de COÛT. Il en restait un de GÉOMÉTRIE, et il était bien
+plus gros.
+
+La méthode, cette fois, a été de ne rien supposer : capture de l'écran entier
+toutes les cent millisecondes après l'ouverture (**zéro pixel** ne change une
+fois la feuille posée, hors halo du logo), puis position de chaque élément par
+rapport au haut de la feuille pendant la montée (**tout est solidaire**), puis
+enfin la position ÉCRAN de la couche de verre. Là :
+
+| pendant la montée | v216 | v217 |
+|---|---|---|
+| le décor se déplace à l'écran (Réglages) | **458 px** | **1 px** |
+| — versions | 349 px | 0 px |
+| — flamme | 295 px | 0 px |
+| plus grand saut d'une image à l'autre | **43 px** | 0,9 px |
+
+Le moteur avait une exception : pendant l'ouverture d'une feuille, le flou était
+calé sur sa position de **mise en page**, donc solidaire de la vitre qui glisse.
+Le décor voyageait avec le panneau et ne rejoignait le vrai paysage qu'à
+l'arrivée — le panneau s'ouvrait sur une image décalée de presque un demi-écran,
+qui se remettait en place à la fin. Sur TOUTES les fenêtres.
+
+L'exception avait sa raison : éviter un recalage par image, parce qu'on croyait
+qu'un bouton entrant par le bas sauterait. **Mesuré, c'est faux** : le rognage
+qui causait ça ne concerne que les surfaces de `#app`. Une seule règle
+désormais — la position réelle à l'écran — et `glassSheetOpenUntil`,
+`fenetreFeuille()` et leurs six armements disparaissent avec elle.
+
+**La leçon : quand une mesure ne trouve rien, changer de grandeur, pas
+d'insistance.** J'avais filmé la position, l'échelle, les animations, les
+classes, la fermeture, la réouverture — tout était juste. Puis le coût — j'y ai
+trouvé une vraie régression, et elle n'était pas la bonne. Ce qu'il fallait
+regarder, c'était **ce qu'on voit à travers**, pas ce qui bouge.
+
+**Et les cases de la flamme portent leur flamme (v217).** « Les petits carrés
+sont vides, on ne comprend pas bien. » Un carré or et un carré bleu ne disent
+rien tout seuls : il faut avoir lu la légende, et s'en souvenir. Chaque case
+porte donc le dessin — la flamme du jeu pour un jour joué, la flamme gelée pour
+un jour couvert. Un jour manqué reste vide, et c'est très bien : **le vide est
+l'information**. Le dessin vient de `ICONS`, pas d'une copie : le JS en
+fabrique une image de fond CSS à l'ouverture (quatre-vingt-dix SVG dans le
+document auraient coûté quatre-vingt-dix copies du même dégradé, et autant
+d'identifiants en double). Un piège à connaître : un SVG inséré dans la page se
+passe de `xmlns` ; devenu image autonome, il ne s'affiche pas sans lui.
+
 **Une flamme gelée, pas un flocon (v216).** « Pour l'icône de gel de série, je
 veux une flamme qui soit gelée, au lieu d'un petit flocon. » Un flocon dit
 « froid » ; il ne dit pas « TA flamme ». On reprend donc la silhouette exacte de
