@@ -135,7 +135,25 @@ const CLE = 'BOveRs4clrziwaZmqCy4re5c-vpsPRGRvw0mfUxP5D3u920HJW45-o7V1avGrvsKwFi
 
   await nav.close();
 
-  const PERMIS = ['endpoint','abonnement','maj','dernier','serie','vu','decalage'];
+  /* ===== CE QUI A LE DROIT DE QUITTER L'APPAREIL =====
+     Une liste BLANCHE, pas une liste noire : tout champ qu'on n'a pas déclaré
+     ici fait échouer le banc. C'est volontairement pénible — élargir la liste
+     doit être un geste conscient, écrit, daté. Elle vient de refuser « revoir »
+     (v219), et elle avait raison de le demander.
+       endpoint, abonnement   l'adresse d'envoi et les clés de chiffrement de
+                              cet appareil : sans elles, aucun envoi possible
+       dernier                date du dernier Défi COUVERT (gel compris)
+       serie                  longueur de la série
+       vu                     date de la dernière partie, tous modes
+       revoir                 COMBIEN de questions arrivent à échéance
+                              aujourd'hui — un nombre, jamais lesquelles, et
+                              jamais leur contenu. Le serveur en a besoin pour
+                              décider s'il envoie le rappel « à revoir » ; il
+                              ne peut rien en déduire d'autre qu'un compte.
+       decalage, maj          le fuseau (pour savoir quelle heure il est chez
+                              lui) et l'horodatage de la dernière écriture
+     Ni pseudo, ni score, ni réponse, ni progression, ni QUELLES questions. */
+  const PERMIS = ['endpoint','abonnement','maj','dernier','serie','vu','revoir','decalage'];
   const indiscret = [];
   for (const e of [inscription, suivi]) {
     if (!e) continue;
