@@ -615,7 +615,22 @@
      champ, crème sur crème, où le fil à 0,12 disparaissait. Le rebord reste
      exactement le même partout — seule l'intensité du fil de 1px s'ajuste au
      contraste réel, pour que la bordure se VOIE autant qu'ailleurs. */
-  .team-row{ display:flex; align-items:center; gap:0.55rem; margin-bottom:0.6rem; padding:0.4rem 0.5rem; border-radius:var(--r-s); border:1px solid var(--bord); background:rgb(252,248,241);
+  /* ===== LE PIXEL DE BORDURE EMPÊCHAIT LA LIGNE D'ATTEINDRE ZÉRO =====
+     Le repli anime la hauteur jusqu'à 0. Or en border-box, une boîte qui porte
+     1 px de bordure en haut et 1 px en bas ne peut PAS descendre sous 2 px : la
+     bordure, elle, ne se comprime pas. Le repli s'arrêtait donc à 2 px, y
+     restait deux dixièmes de seconde, et ces 2 px disparaissaient D'UN COUP au
+     moment où la ligne quittait le DOM. Mesuré image par image : la carte passe
+     de 303,9 à 301,9 en une seule image, tout à la fin. C'est le petit cran.
+     (La bordure s'animait bien, mais une largeur de bordure UTILISÉE est
+     arrondie au pixel entier : elle vaut 1 px tant qu'elle n'a pas franchi la
+     moitié, et tombe à 0 seulement à la toute dernière image.)
+     Le pixel passe donc dans le REMBOURRAGE, comme pour tous les boutons depuis
+     la v189 : le rembourrage, lui, s'interpole en continu et descend vraiment à
+     zéro. La bordure était transparente (--bord vaut transparent ici), et
+     box-sizing est en border-box : rien ne bouge à l'écran, la ligne fait le
+     même nombre de pixels au repos. */
+  .team-row{ display:flex; align-items:center; gap:0.55rem; margin-bottom:0.6rem; padding:calc(0.4rem + 1px) calc(0.5rem + 1px); border-radius:var(--r-s); border:0; background:rgb(252,248,241);
     --rim-edge:0 0 0 1px rgba(58,42,26,0.26); --rim-cast:0 5px 14px rgba(34,26,16,0.12); }
   /* MÊME MATIÈRE QUE .avatar, AU DÉTAIL PRÈS : anneau clair de 2 px, initiale
      en gras, même ombre. Ces quatre lignes sont la copie exacte de la règle du
@@ -6999,6 +7014,38 @@ try{
      pas au même endroit, d'où un placement qui paraissait aléatoire — mesuré
      sur 5 joueurs : 0 -> 102 -> 77. Ici tout se calcule dans les coordonnées du
      contenu : on repasse autant de fois qu'on veut, on retombe au même pixel. */
+  /* ===== LE CHAMP SE DÉGAGE EN GLISSANT, IL NE SAUTE PLUS =====
+     « app.scrollTop = cible » déplace la page d'un bloc, entre deux images.
+     Mesuré à l'ouverture du clavier sur la carte des joueurs : 45 px avalés en
+     UNE image, puis un retour de 8,7 px trois dixièmes plus tard quand le
+     second calage corrige la hauteur qu'iOS annonçait mal. Deux secousses là
+     où tout le reste du jeu glisse. C'est le « ça saute, ça clignote ».
+     Le défilement prend donc l'horloge d'arrivée du jeu, comme un écran qui
+     monte. Un seul glissement à la fois : le second calage reprend la main en
+     douceur au lieu de se cogner au premier. Et si le doigt touche l'écran
+     pendant le trajet, on s'arrête net — c'est lui qui commande. */
+  let glissement = null;
+  function glisserVers(app, cible){
+    if(glissement) { cancelAnimationFrame(glissement.id); glissement = null; }
+    const depart = app.scrollTop;
+    const course = cible - depart;
+    if(Math.abs(course) < 1){ app.scrollTop = cible; return; }
+    const duree = (typeof msPli === "function" ? msPli() : 520);
+    const t0 = (typeof performance !== "undefined" ? performance.now() : Date.now());
+    /* La même courbe que --tr-plie : easeOutCubic. */
+    const courbe = (x)=> 1 - Math.pow(1 - x, 3);
+    const pas = ()=>{
+      const t = ((typeof performance !== "undefined" ? performance.now() : Date.now()) - t0) / duree;
+      if(t >= 1){ app.scrollTop = cible; glissement = null; return; }
+      app.scrollTop = depart + course * courbe(t);
+      glissement.id = requestAnimationFrame(pas);
+    };
+    glissement = { id: requestAnimationFrame(pas), cible: cible };
+  }
+  function arreterGlissement(){ if(glissement){ cancelAnimationFrame(glissement.id); glissement = null; } }
+  document.addEventListener("touchstart", arreterGlissement, { passive:true, capture:true });
+  document.addEventListener("pointerdown", arreterGlissement, { passive:true, capture:true });
+
   function bringFieldIntoView(){
     const el = document.activeElement;
     if(!el || !el.getBoundingClientRect) return;
@@ -7059,8 +7106,11 @@ try{
     let cible = mini;
     cible = Math.max(mini, Math.min(maxi, cible));
     cible = pliPropre(app, ar, H, cible, mini, maxi);
-    if(Math.abs(cible - st) > 1) app.scrollTop = cible;
-    defilementPose = app.scrollTop;   // repère : si ça bouge après, c'est le doigt
+    if(Math.abs(cible - st) > 1) glisserVers(app, cible);
+    /* Repère : si ça bouge APRÈS, c'est le doigt. On note la CIBLE et non la
+       position du moment — le glissement est encore en route, et le prendre
+       pour un doigt annulerait le placement qu'on vient de décider. */
+    defilementPose = cible;
     if(window.scrollY){ try{ window.scrollTo(0, 0); }catch(e){} } // le document ne bouge jamais
     try{ glassRelayout(); queueGlassSync(); }catch(e){}           // verre recalé sur la nouvelle position
   }

@@ -231,6 +231,33 @@ substituer :
    qui doit céder quand la place manque s'y accroche, avec la taille
    actuelle comme plafond.
 
+**Les lignes de joueurs sautaient de deux façons (v208).** Demandé en priorité :
+« quand j'ajoute un joueur, que je le retire, ou que je touche le champ, ça
+saute, ça fait une sorte de clignotement ». Deux causes, sans rapport l'une avec
+l'autre, et aucune des deux visible en lisant le code.
+
+**Le clavier : 45 px avalés en une image.** Pour dégager le champ, le module
+clavier posait le défilement d'un bloc — `app.scrollTop = cible`. Tout le reste
+du jeu glisse ; celui-là sautait. Il prend maintenant l'horloge d'arrivée, comme
+un écran qui monte, avec un seul glissement à la fois et un arrêt net dès que le
+doigt touche l'écran.
+
+**Le retrait : 2 px qui disparaissent d'un coup, tout à la fin.** Le repli anime
+la hauteur jusqu'à zéro — sauf qu'en `border-box`, une boîte qui porte 1 px de
+bordure en haut et 1 px en bas **ne peut pas descendre sous 2 px**. Le repli
+s'arrêtait donc là, y restait deux dixièmes de seconde, et les 2 px partaient
+avec le noeud. Le détail qui brouille la piste : la bordure S'ANIMAIT bien, mais
+une largeur de bordure *utilisée* est arrondie au pixel entier, si bien que la
+mesure affichait « 1px » d'un bout à l'autre et donnait l'impression que la
+transition ne partait pas. Le pixel est passé dans le rembourrage — le même
+geste que pour les boutons en v189 — parce que le rembourrage, lui, s'interpole
+en continu et descend vraiment à zéro. La bordure était transparente : rien ne
+change à l'écran.
+
+`banc-essai/lignes.js` mesure les trois gestes image par image et refuse tout
+retour en arrière, toute marche à l'instant où un noeud quitte le DOM, et tout
+pas de plus de 20 px. Sur la v207 : 2,0 px et 45 px. Ici : zéro et 4 px.
+
 **Un deuxième rappel : la longue absence (v205).** Demandé par Taylor — « pas
 seulement pour les séries, mais quand quelqu'un reste longtemps sans jouer ».
 Le jeu notifie donc deux cas, et toujours pas un de plus : une série en jeu ce
