@@ -198,7 +198,17 @@ qui ne part jamais ne protège personne.
 Le garde-fou n'a jamais été la RARETÉ des motifs, c'est **le plafond d'un envoi
 par jour** — tenu deux fois, côté serveur par des heures distinctes et
 l'exclusion mutuelle des cas, côté appareil par `prevenu`. Ce qui change, ce
-sont les raisons d'envoyer, pas la fréquence maximale. Détail dans
+sont les raisons d'envoyer, pas la fréquence maximale.
+
+**Et le banc a attrapé la première écriture.** `banc-essai/rappels.js` ne relit
+pas la règle, il **exécute la vraie fonction serveur** (transpilée depuis le
+TypeScript, avec des doublures qui notent les envois). Il a immédiatement
+montré que « rappeler le Défi à qui a joué dans les 14 derniers jours »
+réveillait tous les soirs, indéfiniment, le joueur qui joue tous les jours sans
+jamais toucher au Défi — précisément le cas que l'ancienne version protégeait,
+et que j'avais rouvert sans le voir. La condition porte donc sur la date du
+dernier **Défi**, pas de la dernière partie : on ne rappelle un rendez-vous
+qu'à ceux qui l'ont pris. 23 cas, tous verts. Détail dans
 `notifications/LISEZMOI.md`.
 
 ### Le reste de la v219

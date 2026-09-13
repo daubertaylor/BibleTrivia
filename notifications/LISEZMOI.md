@@ -5,10 +5,27 @@ Le jeu notifie **cinq motifs**, jamais plus d'un par jour :
 | motif | heure locale | condition |
 |---|---|---|
 | **Série en jeu** | 19 h | série ≥ 2 jours, jouée hier, pas encore aujourd'hui |
-| **Défi du jour** | 19 h | pas encore relevé, et le joueur a joué dans les 14 derniers jours |
+| **Défi du jour** | 19 h | pas relevé aujourd'hui, mais relevé dans les 7 derniers jours |
 | **À revoir** | 12 h | au moins une question arrive à échéance aujourd'hui |
 | **Verset** | 9 h, le dimanche | le joueur n'a pas disparu (≤ 14 jours) |
 | **Longue absence** | 19 h | exactement 3, 7 ou 30 jours sans jouer |
+
+**« Fait le Défi d'habitude », pas « a joué récemment ».** La première écriture
+du motif « Défi du jour » disait *« a joué dans les 14 derniers jours »*. Le
+banc `banc-essai/rappels.js`, qui exécute la VRAIE fonction serveur, l'a
+cassée sur deux cas :
+
+- un joueur absent depuis 7 jours recevait *« le défi du jour t'attend »* au
+  lieu de *« ça fait une semaine »* — le motif mordait sur celui de l'absence ;
+- et surtout, **celui qui joue tous les jours en solo ou en ligne sans jamais
+  toucher au Défi** le recevait tous les soirs, indéfiniment. C'est la
+  définition du spam, et c'est exactement le cas que la version d'avant
+  protégeait.
+
+On ne rappelle un rendez-vous qu'à ceux qui l'ont pris : la condition porte
+donc sur la date du dernier **Défi**, pas sur celle de la dernière partie.
+Sept jours de mémoire — au-delà, ce n'est plus un oubli, c'est un choix, et un
+choix ne se rappelle pas tous les soirs.
 
 **Pourquoi c'est passé de deux motifs à cinq (v219).** On avait volontairement
 restreint à deux pour ne pas spammer. Bonne intention, mauvais réglage :

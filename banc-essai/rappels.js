@@ -1,108 +1,212 @@
-/* ============ BANC « LES MOTS DES RAPPELS » ============
-   Dix-huit formulations réparties sur cinq motifs, avec des trous à remplir
-   ({n}, {j}, {s}). Personne ne les verra avant qu'elles n'arrivent sur le
-   téléphone de quelqu'un, un soir, une fois — et une faute d'accord ou un
-   trou oublié y restera des mois.
-   On les rend donc TOUTES, pour toutes les valeurs qui comptent, et on
-   vérifie qu'il ne reste aucun trou, que le pluriel s'accorde, et que le
-   tirage du jour est stable (deux envois le même jour disent la même chose)
-   sans être figé (deux jours de suite disent autre chose).
-   Le service worker n'est pas chargé : on en extrait les trois morceaux
-   purs — ils n'ont besoin ni de navigateur ni de réseau.
+/* ============ BANC « QUI REÇOIT UN RAPPEL, ET QUAND » ============
+   Le vrai code du serveur, exécuté ici. La fonction Supabase est écrite en
+   TypeScript pour Deno : on la TRANSPILE avec le compilateur TypeScript, on
+   remplace ses deux dépendances (le client Supabase et l'envoi push) par des
+   doublures qui NOTENT ce qu'on leur demande, on fige l'horloge, et on lui
+   présente une table de joueurs fabriquée pour couvrir tous les cas.
+   Ce n'est pas une copie de la règle : c'est la règle elle-même.
+
+   CINQ MOTIFS depuis la v219, chacun à son heure, et jamais deux le même jour
+   pour le même joueur :
+     serie    19 h  série d'au moins deux jours, jouée hier, pas aujourd'hui
+     defi     19 h  Défi pas relevé aujourd'hui, mais relevé dans la semaine
+     revoir   12 h  au moins une question arrive à échéance
+     verset    9 h  le dimanche, à qui n'a pas disparu
+     absence  19 h  exactement 3, 7 ou 30 jours sans jouer
+   Le reste doit rester silencieux — et surtout le joueur qui joue TOUS LES
+   JOURS sans toucher au Défi du jour : sa série vaut zéro et la date de son
+   dernier défi est vieille de plusieurs mois. Le réveiller serait le pire des
+   défauts possibles pour cette fonction. C'est d'ailleurs CE CAS qui a fait
+   tomber la première écriture du motif « defi » (elle disait « a joué dans les
+   14 derniers jours », ce qui l'incluait) : le banc l'a attrapé avant qu'il ne
+   sorte, et la règle est devenue « fait le Défi d'habitude ».
+
    Usage : node banc-essai/rappels.js
 */
 const fs = require('fs');
-const src = fs.readFileSync(__dirname + '/../sw.js', 'utf8');
+const path = require('path');
+const ts = require('/opt/node22/lib/node_modules/typescript');
 
-/* Du début de « depart » jusqu'à la fin de « fin », bornes comprises. */
-function morceau(depart, fin){
-  const i = src.indexOf(depart);
-  if(i < 0) throw new Error('introuvable dans sw.js : ' + depart);
-  const j = src.indexOf(fin, i + depart.length);
-  if(j < 0) throw new Error('fin introuvable après : ' + depart);
-  return src.slice(i, j + fin.length);
+/* On peut viser une AUTRE version de la fonction, pour vérifier que le banc
+   sait échouer : node banc-essai/rappels.js /chemin/vers/rappels.ts */
+const SRC = process.argv[2] || path.join(__dirname, '..', 'notifications', 'rappels.ts');
+
+/* ---- l'horloge, figée : 15 mars 2026, 18 h UTC ---- */
+const MAINTENANT = Date.parse('2026-03-15T18:00:00Z');
+const vraiNow = Date.now;
+Date.now = () => MAINTENANT;
+
+/* ---- les doublures ---- */
+const envois = [];
+const webpush = {
+  setVapidDetails(){},
+  sendNotification(abo, corps){ envois.push({ qui: abo.endpoint, charge: JSON.parse(corps) }); return Promise.resolve(); },
+};
+let LIGNES = [];
+const createClient = () => ({
+  from(){ return {
+    /* Une requête qu'on peut filtrer AVANT de l'attendre, comme la vraie : la
+       version d'avant demandait « .gte("serie", 2) » et le banc doit pouvoir
+       l'exécuter telle quelle, sinon il ne compare rien. */
+    select(){
+      let lignes = LIGNES;
+      const q = {
+        gte(col, v){ lignes = lignes.filter(l => (l[col] | 0) >= v); return q; },
+        eq(col, v){ lignes = lignes.filter(l => l[col] === v); return q; },
+        then(r){ return Promise.resolve({ data: lignes, error: null }).then(r); },
+      };
+      return q;
+    },
+    delete(){ return { eq(){ return Promise.resolve({ error:null }); } }; },
+  }; },
+});
+
+/* ---- les secrets, changeables d'un essai à l'autre ---- */
+const SECRETS = {};
+let handler = null;
+globalThis.Deno = { env:{ get:(k)=> SECRETS[k] }, serve:(fn)=>{ handler = fn; } };
+const source = fs.readFileSync(SRC, 'utf8')
+  .replace(/^import .*$/gm, '');                 // les deux imports npm: sont remplacés par les doublures
+const js = ts.transpileModule(source, { compilerOptions:{ module: ts.ModuleKind.CommonJS, target: ts.ScriptTarget.ES2022 } }).outputText;
+new Function('createClient', 'webpush', js)(createClient, webpush);
+
+/* ---- la table de joueurs ---- */
+const jourLocal = (decMin, decalageJours = 0) => {
+  const d = new Date(MAINTENANT + decMin*60000 + decalageJours*86400000);
+  const p = (n) => String(n).padStart(2, '0');
+  return d.getUTCFullYear() + '-' + p(d.getUTCMonth()+1) + '-' + p(d.getUTCDate());
+};
+/* L'horloge est figée au DIMANCHE 15 mars 2026, 18 h UTC. Le décalage de
+   chaque joueur sert donc à choisir l'heure qu'il est CHEZ LUI, et c'est ainsi
+   qu'on éprouve les motifs à des heures différentes sans toucher à l'horloge. */
+const SOIR  = 60;      // UTC+1 -> 19 h chez lui
+const JOUR  = 0;       // UTC   -> 18 h : trop tôt pour le soir
+const MIDI  = -360;    // UTC-6 -> 12 h : l'heure de « à revoir »
+const MATIN = -540;    // UTC-9 ->  9 h, un dimanche : l'heure du verset
+const j = (n) => jourLocal(SOIR, -n);
+const jm = (n) => jourLocal(MIDI, -n);
+const jd = (n) => jourLocal(MATIN, -n);
+
+const CAS = [
+  /* ---- la série ---- */
+  ['série de 3, jouée hier',            { serie:3, dernier:j(1), vu:j(1), decalage:SOIR }, 'serie'],
+  ['série de 3, déjà jouée aujourd’hui',{ serie:3, dernier:j(0), vu:j(0), decalage:SOIR }, null],
+  ['série en jeu, mais il est 18 h',    { serie:3, dernier:j(1), vu:j(1), decalage:JOUR }, null],
+  /* ---- le défi du jour : pour qui le fait D'HABITUDE ---- */
+  ['série de 1, Défi fait hier',        { serie:1, dernier:j(1), vu:j(1), decalage:SOIR }, 'defi'],
+  ['Défi fait il y a 2 jours',          { serie:3, dernier:j(2), vu:j(2), decalage:SOIR }, 'defi'],
+  ['Défi fait il y a 7 jours',          { serie:0, dernier:j(7), vu:j(0), decalage:SOIR }, 'defi'],
+  ['Défi fait il y a 8 jours',          { serie:0, dernier:j(8), vu:j(0), decalage:SOIR }, null],
+  ['joue tous les jours, jamais le Défi',{ serie:0, dernier:j(120), vu:j(0), decalage:SOIR }, null],
+  ['Défi du jour déjà fait, série de 1',{ serie:1, dernier:j(0), vu:j(0), decalage:SOIR }, null],
+  /* ---- l'absence ---- */
+  ['absent depuis 3 jours',             { serie:0, dernier:j(40), vu:j(3),  decalage:SOIR }, 'absence3'],
+  ['absent depuis 4 jours',             { serie:0, dernier:j(40), vu:j(4),  decalage:SOIR }, null],
+  ['absent depuis 7 jours',             { serie:0, dernier:j(40), vu:j(7),  decalage:SOIR }, 'absence7'],
+  ['absent depuis 8 jours',             { serie:0, dernier:j(40), vu:j(8),  decalage:SOIR }, null],
+  ['absent depuis 30 jours',            { serie:0, dernier:j(60), vu:j(30), decalage:SOIR }, 'absence30'],
+  ['absent depuis 31 jours',            { serie:0, dernier:j(60), vu:j(31), decalage:SOIR }, null],
+  ['absent depuis 200 jours',           { serie:0, dernier:j(300), vu:j(200), decalage:SOIR }, null],
+  ['absent 7 jours, mais il est 18 h',  { serie:0, dernier:j(40), vu:j(7), decalage:JOUR }, null],
+  /* ---- à revoir, à midi ---- */
+  ['4 questions à revoir, il est midi', { serie:0, dernier:jm(1), vu:jm(1), revoir:4, decalage:MIDI }, 'revoir'],
+  ['carnet vide, il est midi',          { serie:0, dernier:jm(1), vu:jm(1), revoir:0, decalage:MIDI }, null],
+  ['4 questions à revoir, mais 19 h',   { serie:0, dernier:j(9),  vu:j(1),  revoir:4, decalage:SOIR }, null],
+  /* ---- le verset, dimanche matin ---- */
+  ['dimanche 9 h, joueur présent',      { serie:0, dernier:jd(3), vu:jd(2), decalage:MATIN }, 'verset'],
+  ['dimanche 9 h, absent 60 jours',     { serie:0, dernier:jd(90), vu:jd(60), decalage:MATIN }, null],
+  /* ---- le vide ---- */
+  ['n’a jamais joué (vu vide)',         { serie:0, dernier:null, vu:null, decalage:SOIR }, null],
+];
+
+LIGNES = CAS.map(([nom, l], i) => Object.assign({ endpoint:'appareil-' + i, abonnement:{ endpoint:'appareil-' + i }, revoir:0 }, l));
+
+/* Une VRAIE paire de clés, fabriquée ici : rien de secret n'entre dans le
+   dépôt, et la vérification de cohérence a de quoi mordre. */
+async function fabriquerPaire(){
+  const kp = await crypto.subtle.generateKey({ name:'ECDSA', namedCurve:'P-256' }, true, ['sign','verify']);
+  const pub = new Uint8Array(await crypto.subtle.exportKey('raw', kp.publicKey));
+  const jwk = await crypto.subtle.exportKey('jwk', kp.privateKey);
+  const b64 = (u) => Buffer.from(u).toString('base64').replace(/\+/g,'-').replace(/\//g,'_').replace(/=+$/,'');
+  return { pub: b64(pub), priv: jwk.d };
 }
-const code = morceau('const MOTS = {', '\n};\n')
-           + morceau('function motsDuJour', '\n}\n')
-           + morceau('function remplir', '\n}\n')
-           + '\nreturn { MOTS, motsDuJour, remplir };';
-const { MOTS, motsDuJour, remplir } = new Function(code)();
 
-let ko = 0;
-const dire = (bon, txt) => { if(!bon){ ko++; console.log('  KO  ' + txt); } };
+(async () => {
+  const paire = await fabriquerPaire();
+  const autre = await fabriquerPaire();
+  Object.assign(SECRETS, {
+    VAPID_SUJET: 'mailto:taylor@exemple.fr',
+    VAPID_PUBLIQUE: paire.pub,
+    VAPID_PRIVEE: paire.priv,
+    SUPABASE_URL: 'https://laboratoire.exemple',
+    SUPABASE_SERVICE_ROLE_KEY: 'cle-de-laboratoire',
+  });
 
-/* 1. AUCUN TROU NE RESTE. */
-let rendus = 0;
-for(const genre of Object.keys(MOTS)){
-  for(const [titre, corps] of MOTS[genre]){
-    for(const val of [{n:0,j:0},{n:1,j:1},{n:2,j:3},{n:12,j:30}]){
-      const t = remplir(titre, val), c = remplir(corps, val);
-      rendus += 2;
-      dire(!/[{}]/.test(t + c), genre + ' : il reste un trou -> ' + t + ' | ' + c);
-      dire(t.length > 3 && c.length > 3, genre + ' : texte trop court -> ' + t + ' | ' + c);
-      dire(!/undefined|NaN/.test(t + c), genre + ' : valeur manquante -> ' + t + ' | ' + c);
-    }
+  /* Le handler lit le corps de la requête (pour l'essai) : on lui en donne une. */
+  const requete = (corps) => ({ json: () => corps === undefined ? Promise.reject(new Error('pas de corps')) : Promise.resolve(corps) });
+  const rep = await handler(requete());
+  if (rep && rep.status === 400) {
+    console.log('  LA FONCTION A REFUSÉ DES CLÉS POURTANT VALIDES :', JSON.stringify(await rep.json()));
+    process.exit(1);
   }
-}
-console.log('  ' + rendus + ' textes rendus, tous motifs et toutes valeurs');
+  Date.now = vraiNow;
+  let ok = true;
+  console.log('  cas                                       attendu      reçu');
+  CAS.forEach(([nom, , attendu], i) => {
+    const e = envois.find(x => x.qui === 'appareil-' + i);
+    /* L'absence dit AUSSI combien de jours : c'est ce qui distingue les trois
+       paliers, et les confondre laisserait passer un rappel au mauvais jour. */
+    const recu = !e ? 'rien'
+      : (e.charge.genre === 'absence' ? 'absence' + e.charge.jours : (e.charge.genre || 'serie'));
+    const veut = attendu || 'rien';
+    const bon = recu === veut;
+    if (!bon) ok = false;
+    console.log('  ' + nom.padEnd(40) + veut.padEnd(12) + recu + (bon ? '' : '   <-- NON'));
+  });
+  console.log('\n  ' + envois.length + ' envoi(s) pour ' + CAS.length + ' joueurs');
 
-/* 2. LE PLURIEL S'ACCORDE. */
-for(const [titre] of MOTS.revoir){
-  if(!/\{s\}/.test(titre)) continue;
-  dire(/question(?!s)/.test(remplir(titre, {n:1,j:0})), 'pluriel : « 1 questions » -> ' + remplir(titre, {n:1,j:0}));
-  dire(/questions/.test(remplir(titre, {n:4,j:0})), 'pluriel : « 4 question » -> ' + remplir(titre, {n:4,j:0}));
-}
+  /* ===== L'ESSAI ===== écrit à TOUT LE MONDE, sans regarder l'heure ni la
+     série : c'est ce qui permet de voir la chaîne marcher le jour où on la
+     branche, au lieu d'attendre un soir à 19 h pour découvrir un défaut. */
+  envois.length = 0;
+  const repEssai = await handler(requete({ essai: true }));
+  const compte = await repEssai.json();
+  /* Le décompte renvoyé par la fonction porte le NOM DU MOTIF, au singulier
+     comme les quatre autres (serie, defi, revoir, verset, absence, essai) —
+     c'était « essais » avant qu'il y en ait cinq. */
+  const tousTouches = envois.length === CAS.length && compte.essai === CAS.length;
+  const tousEssai = envois.every(e => e.charge.genre === 'essai');
+  if (!tousTouches || !tousEssai) ok = false;
+  console.log('  essai manuel : ' + envois.length + ' envoi(s) sur ' + CAS.length + ' joueurs, tous de genre « essai » : ' +
+    (tousEssai ? 'oui' : 'NON') + (tousTouches ? '' : '   <-- IL EN MANQUE'));
 
-/* 3. LE TIRAGE EST STABLE DANS LA JOURNÉE, ET CHANGE D'UN JOUR À L'AUTRE. */
-for(const genre of Object.keys(MOTS)){
-  const a = motsDuJour(genre, '2026-09-13'), b = motsDuJour(genre, '2026-09-13');
-  dire(a === b, genre + ' : deux tirages du même jour diffèrent');
-}
-/* Sur trente jours, on doit voir plusieurs formulations de chaque motif — un
-   tirage qui retombe toujours sur la même n'est pas un tirage. */
-for(const genre of Object.keys(MOTS)){
-  const vus = new Set();
-  for(let d = 1; d <= 30; d++) vus.add(motsDuJour(genre, '2026-09-' + String(d).padStart(2,'0'))[0]);
-  const attendu = new Set(MOTS[genre].map(m=>m[0])).size;
-  dire(vus.size === attendu, genre + ' : ' + vus.size + ' formulation(s) vue(s) sur 30 jours, ' + attendu + ' attendue(s)');
-}
-console.log('  tirage : stable dans la journée, et il fait le tour des formulations en un mois');
+  /* ===== ET QUAND LES SECRETS SONT MAL POSÉS ? =====
+     Trois secrets à recopier à la main, donc trois occasions de se tromper. La
+     bibliothèque d'envoi répond « no key set » dans les trois cas, ce qui
+     n'aide personne. La fonction doit, elle, nommer le coupable. */
+  console.log('\n  secrets mal posés                          message attendu');
+  const ESSAIS = [
+    ['nom du secret mal orthographié', { VAPID_PUBLIQUE: undefined }, /VAPID_PUBLIQUE est absente/],
+    ['clé publique tronquée',          { VAPID_PUBLIQUE: paire.pub.slice(0, 80) }, /VAPID_PUBLIQUE fait 80 caract/],
+    ['espace collé au bout',           { VAPID_PUBLIQUE: paire.pub + ' ' }, null],   /* doit PASSER : on rogne */
+    ['clé privée d\'une autre paire',   { VAPID_PRIVEE: autre.priv }, /ne vont pas ensemble/],
+    ['sujet sans mailto:',             { VAPID_SUJET: 'taylor@exemple.fr' }, /mailto:/],
+  ];
+  const bon = { ...SECRETS };
+  for (const [nom, remplace, attendu] of ESSAIS) {
+    Object.keys(SECRETS).forEach(k => delete SECRETS[k]);
+    Object.assign(SECRETS, bon, remplace);
+    Object.keys(remplace).forEach(k => { if (remplace[k] === undefined) delete SECRETS[k]; });
+    const r = await handler(requete());
+    const refuse = r && r.status === 400;
+    const dit = refuse ? (await r.json()).details.join(' ; ') : '(acceptée)';
+    const juste = attendu ? (refuse && attendu.test(dit)) : !refuse;
+    if (!juste) ok = false;
+    console.log('  ' + nom.padEnd(42) + dit.slice(0, 70) + (juste ? '' : '   <-- NON'));
+  }
+  Object.keys(SECRETS).forEach(k => delete SECRETS[k]);
+  Object.assign(SECRETS, bon);
 
-/* 4. LES MOTIFS DU SERVEUR ET CEUX DE L'APPAREIL SONT LES MÊMES. Deux listes
-      dans deux fichiers finissent toujours par diverger ; on les compare. */
-const serveur = [...new Set([...fs.readFileSync(__dirname + '/../notifications/rappels.ts', 'utf8')
-  .matchAll(/genre:\s*"([a-z]+)"/g)].map(m=>m[1]))].sort();
-const swConnus = (src.match(/const CONNUS = \[([^\]]+)\]/) || [,''])[1]
-  .split(',').map(x=>x.trim().replace(/"/g,'')).filter(Boolean).sort();
-dire(JSON.stringify(serveur) === JSON.stringify(swConnus),
-  'motifs : le serveur envoie ' + JSON.stringify(serveur) + ', l\'appareil connaît ' + JSON.stringify(swConnus));
-/* Et chaque motif du serveur a bien des mots (sauf l'essai, qui a les siens). */
-for(const g of serveur){ if(g === 'essai') continue;
-  dire(!!MOTS[g], 'motif « ' + g +' » envoyé par le serveur mais sans formulation dans sw.js'); }
-console.log('  motifs : ' + serveur.join(', ') + ' — serveur et appareil d\'accord');
-
-/* 5. LES VERSETS SONT CEUX DU JEU, AU MOT PRÈS. Deux copies d'un même texte
-      dans deux fichiers finissent toujours par diverger — et ici la divergence
-      serait une citation fausse envoyée sur le téléphone de quelqu'un. On
-      compare donc chaque verset des rappels à la liste du jeu (HERO_VERSES),
-      et on vérifie au passage qu'aucun n'est tronqué. */
-const jeu = new Map([...fs.readFileSync(__dirname + '/../index.html', 'utf8')
-  .matchAll(/\{ t:"((?:[^"\\]|\\.)*)", r:"([^"]+)" \}/g)]
-  .map(m => [m[2], m[1].replace(/\\"/g, '"')]));
-for(const [, corps] of MOTS.verset){
-  const m = corps.match(/^«\s(.+)\s»\s(.+)$/);
-  dire(!!m, 'verset mal formé : ' + corps);
-  if(!m) continue;
-  const [, texte, ref] = m;
-  const attendu = jeu.get(ref);
-  dire(!!attendu, 'verset « ' + ref + ' » : introuvable dans la liste du jeu');
-  if(!attendu) continue;
-  /* Les espaces insécables du bandeau ne comptent pas comme une différence. */
-  const nu = (x) => x.replace(/\u00a0/g, ' ').trim();
-  dire(nu(texte) === nu(attendu),
-    ref + ' : le rappel dit « ' + texte + ' », le jeu dit « ' + attendu + ' »');
-}
-console.log('  versets : ' + MOTS.verset.length + ', tous conformes au texte du jeu et tous complets');
-
-console.log(ko === 0 ? '\n  OK — les rappels disent tous quelque chose de correct' : '\n  ' + ko + ' défaut(s)');
-process.exit(ko === 0 ? 0 : 1);
+  console.log(ok ? '\n  OK — les cinq motifs, rien d\'autre, et un message clair quand les clés sont mauvaises' : '\n  ÉCHEC');
+  process.exit(ok ? 0 : 1);
+})();

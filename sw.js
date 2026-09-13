@@ -206,16 +206,18 @@ self.addEventListener("push", (e) => {
       if(etat.dernier !== jourLocal(dec - 1440)) return;
       val.n = etat.serie | 0;
     } else if(genre === "defi"){
-      /* LE DÉFI DU JOUR, PAS ENCORE RELEVÉ. C'est le motif qui fait « sonner
-         un minimum » : il vaut pour le joueur régulier sans série en cours,
-         celui que rien n'appelait jamais. Deux conditions, et elles suffisent
-         à ce qu'il ne soit jamais de trop : le défi n'est pas fait, et le
-         joueur n'a pas disparu (sinon c'est « absence » qui parle, avec les
-         mots qu'il faut). */
+      /* LE DÉFI DU JOUR, PAS ENCORE RELEVÉ — pour celui qui le fait D'HABITUDE.
+         La condition n'est pas « a joué récemment » mais « a fait le Défi dans
+         la semaine » : on ne rappelle un rendez-vous qu'à ceux qui l'ont pris.
+         Sans cela, quelqu'un qui joue tous les jours en solo sans jamais
+         toucher au Défi le recevrait tous les soirs — c'est exactement le cas
+         que le banc du serveur a fait apparaître (voir DEFI_MEMOIRE dans
+         notifications/rappels.ts). Les deux côtés disent la même règle : le
+         serveur décide, l'appareil revérifie. */
+      if(!etat.dernier) return;
       if(etat.dernier === aujourdhui) return;
-      if(!etat.vu) return;
-      const depuis = Math.round((Date.parse(aujourdhui + "T00:00:00Z") - Date.parse(etat.vu + "T00:00:00Z")) / 86400000);
-      if(!(depuis >= 0 && depuis <= 14)) return;      // parti depuis trop longtemps : ce n'est plus ce motif
+      const depuisDefi = Math.round((Date.parse(aujourdhui + "T00:00:00Z") - Date.parse(etat.dernier + "T00:00:00Z")) / 86400000);
+      if(!(depuisDefi >= 1 && depuisDefi <= 7)) return;
     } else if(genre === "revoir"){
       /* CE QUI EST À REVOIR AUJOURD'HUI. L'appareil recompte : le carnet a pu
          être vidé depuis que le serveur a lu son chiffre. */

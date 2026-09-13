@@ -3,7 +3,7 @@
    joueur et par jour, et toujours à une heure qui a du sens chez lui :
 
      série en jeu       19 h   la série peut encore être sauvée ce soir
-     défi du jour       19 h   pas encore relevé, et le joueur est actif
+     défi du jour       19 h   pas relevé aujourd'hui, mais relevé dans la semaine
      à revoir           12 h   des questions arrivent à échéance aujourd'hui
      verset             9 h    le dimanche seulement
      longue absence     19 h   à 3, 7 et 30 jours, puis plus rien
@@ -26,9 +26,25 @@ const HEURE_DU_SOIR = 19;          // 19 h chez le joueur
 const HEURE_DE_MIDI = 12;          // pour ce qui est à revoir : au milieu de la journée
 const HEURE_DU_VERSET = 9;         // le dimanche matin
 const SERIE_MINIMALE = 2;          // en dessous, il n'y a rien à sauver
-/* Le défi du jour n'est rappelé qu'à un joueur ENCORE LÀ : au-delà, c'est
-   « absence » qui parle, et avec d'autres mots. */
-const ACTIF_JOURS = 14;
+/* ===== À QUI RAPPELLE-T-ON LE DÉFI DU JOUR ? =====
+   Première écriture : « à tout joueur ayant joué dans les 14 derniers jours ».
+   Le banc (banc-essai/rappels.js, qui exécute la vraie fonction) l'a
+   immédiatement cassée sur deux cas, et il avait raison les deux fois :
+     — un joueur absent depuis 7 jours recevait « le défi du jour t'attend »
+       au lieu de « ça fait une semaine » : le motif du défi mordait sur celui
+       de l'absence ;
+     — et surtout, celui qui joue TOUS LES JOURS en solo ou en ligne sans
+       jamais toucher au Défi le recevait tous les soirs, indéfiniment. C'est
+       la définition du spam, et c'est précisément le cas que l'ancienne
+       version protégeait — « le réveiller serait le pire défaut possible ».
+   La bonne condition n'est pas « a joué récemment », c'est « FAIT LE DÉFI
+   d'habitude » : on ne rappelle un rendez-vous qu'à ceux qui l'ont pris. Sept
+   jours de mémoire — au-delà, ce n'est plus un oubli, c'est un choix, et un
+   choix ne se rappelle pas tous les soirs. */
+const DEFI_MEMOIRE = 7;
+/* Le verset du dimanche, lui, ne demande rien : il peut aller à qui n'a pas
+   disparu, qu'il fasse le Défi ou non. */
+const VERSET_JOURS = 14;
 /* LE RETOUR APRÈS UNE LONGUE ABSENCE — le deuxième et dernier cas notifié.
    Trois rappels par absence, pas un de plus : à trois jours, à une semaine,
    puis à un mois.
@@ -164,13 +180,16 @@ Deno.serve(async (req: Request) => {
       compte.serie++;
     }
 
-    /* 2. LE DÉFI DU JOUR — pour le joueur ENCORE LÀ qui n'a pas de série à
-          perdre. C'est le motif qui fait « sonner un minimum » : sans lui, un
-          joueur régulier sans série ne recevait strictement jamais rien.
-          Il ne double jamais le premier : celui-là exige une série d'au moins
-          deux jours ET d'avoir joué hier, celui-ci prend tout le reste. */
+    /* 2. LE DÉFI DU JOUR — pour celui qui le fait D'HABITUDE et l'a oublié
+          aujourd'hui. C'est le motif qui fait « sonner un minimum » : sans
+          lui, un joueur régulier sans série de deux jours ne recevait
+          strictement jamais rien.
+          Il ne double jamais le premier (qui exige une série d'au moins deux
+          jours ET d'avoir joué hier), et il ne mord pas sur l'absence : passé
+          une semaine sans Défi, c'est « absence » qui parle. */
+    const defiRecent = a.dernier ? ecart(a.dernier, aujourdhui) : 9999;
     if (!charge && heureLocale === HEURE_DU_SOIR &&
-        !joueAujourdhui && depuis >= 0 && depuis <= ACTIF_JOURS) {
+        !joueAujourdhui && defiRecent >= 1 && defiRecent <= DEFI_MEMOIRE) {
       charge = { genre: "defi", decalage: dec };
       compte.defi++;
     }
@@ -187,7 +206,7 @@ Deno.serve(async (req: Request) => {
           part qu'aux joueurs qui n'ont pas disparu : à quelqu'un parti depuis
           deux mois, un verset du dimanche est une carte postale d'un jeu
           qu'il a quitté, et c'est « absence » qui doit parler. */
-    if (!charge && jourSemaine === 0 && heureLocale === HEURE_DU_VERSET && depuis <= ACTIF_JOURS) {
+    if (!charge && jourSemaine === 0 && heureLocale === HEURE_DU_VERSET && depuis <= VERSET_JOURS) {
       charge = { genre: "verset", decalage: dec };
       compte.verset++;
     }
