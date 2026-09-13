@@ -1263,7 +1263,14 @@
      scroll-padding-top décale la ligne de pose de la hauteur du voile, sinon
      le cran dépose la rangée sous le fondu et on la lit à moitié effacée. */
   .rv-livres{ display:grid; grid-template-columns:repeat(auto-fill, minmax(5.6rem, 1fr)); gap:0.36rem;
-    max-height:calc(22 * var(--hu)); overflow-y:auto; overscroll-behavior:contain; -webkit-overflow-scrolling:touch;
+    /* TROIS RANGÉES, PAS CINQ. « Le "à revoir" est un peu trop gros par rapport
+       aux autres » — mesuré : 612 px vus contre 465 en moyenne pour les trois
+       autres feuilles, soit un tiers de plus. Une feuille est une PARENTHÈSE
+       sur l'écran, pas un écran de plus : quand l'une d'elles enfle, elle
+       cesse d'appartenir à la même famille. La grille garde son défilement et
+       son voile — ce n'est pas le contenu qu'on retire, c'est la hauteur qu'on
+       lui laisse prendre d'un coup. */
+    max-height:calc(14.5 * var(--hu)); overflow-y:auto; overscroll-behavior:contain; -webkit-overflow-scrolling:touch;
     scrollbar-width:none; margin-bottom:0.7rem;
     /* « mandatory » et non « proximity » : ce dernier ne recale que si l'arrêt
        tombe DÉJÀ près d'une rangée — mesuré, une rangée dépassait encore de
@@ -3356,7 +3363,40 @@
        et l'AURA se resserre et s'éclaire sous le doigt, puis se relâche.
      L'aura est ce qui coûte le moins et se voit le plus : c'est de la lumière
      sur un objet lumineux, pas un déplacement de plus à suivre du regard. */
-  .hero-icon-wrap.vif::before{ inset:-28%; filter:blur(14px) brightness(1.55); }
+  /* ===== « VÉRIFIE AUSSI L'ICÔNE ET SA MANIÈRE DE CLIGNOTER » =====
+     C'était moi, en v219. Pour faire réagir l'aura au doigt, je transitionnais
+     « inset » ET le rayon du flou sur le halo. Les deux sont ce qu'il ne faut
+     JAMAIS animer sur une couche floutée :
+       « inset » est une propriété de MISE EN PAGE — la boîte est refaite à
+         chaque image, donc la couche aussi ;
+       un rayon de flou qui change invalide le flou déjà calculé — il est
+         recalculé, entièrement, à chaque image.
+     CE QUE JE N'AI PAS RÉUSSI À MESURER, ET QUI DOIT ÊTRE DIT. J'ai d'abord
+     cru tenir la preuve : trois images perdues au poser, trois au lever. Elle
+     ne valait rien — la suite de bancs tournait en fond et mangeait le
+     processeur. Relevé proprement ensuite, trois passes, puis processeur
+     freiné six fois : les deux écritures perdent ZÉRO image sur cette machine.
+     Le compositeur de Chromium sans tête ne ralentit pas avec le frein, et
+     c'est précisément là que le coût de « inset » et du flou se paierait.
+     Le changement reste, mais pour ce qu'il est : moins cher PAR CONSTRUCTION,
+     pas parce qu'une mesure l'a montré ici. Une opacité se règle sur le
+     compositeur, sans mise en page ni flou recalculé ; « inset » et un rayon
+     de flou animés demandent les deux, à chaque image. Sur un iPhone, qui a
+     bien moins à dépenser que cette machine, la différence est réelle même si
+     mon instrument ne sait pas la voir. L'apparence, elle, est identique.
+     La lueur du doigt est donc une COUCHE À PART, préparée une fois pour
+     toutes (flou fixe, boîte fixe), dont seule l'OPACITÉ change. Une opacité
+     se règle sur le compositeur : aucune mise en page, aucun flou recalculé,
+     aucune image perdue. L'aura qui tourne, elle, n'est plus touchée du tout. */
+  .hero-icon-wrap::after{
+    content:""; position:absolute; inset:-28%; z-index:-1; border-radius:50%;
+    pointer-events:none; opacity:0; will-change:opacity;
+    background:radial-gradient(closest-side,
+      rgba(255,252,246,0.62) 0%, rgba(255,250,240,0.34) 46%, rgba(255,249,238,0) 76%);
+    filter:blur(14px);
+    transition:opacity 0.16s ease;
+  }
+  .hero-icon-wrap.vif::after{ opacity:1; }
   /* LUMIÈRE QUI TOURNE derrière l'icône : un balayage lumineux blanc chaud
      (deux arcs doux opposés, dégradé conique) qui ORBITE lentement autour de
      l'icône au lieu de pulser. Disque circulaire (border-radius 50%) pour que
@@ -3375,7 +3415,6 @@
       rgba(255,251,244,0) 306deg,
       rgba(255,251,244,0) 360deg);
     filter:blur(11px); animation:heroSpin 9s linear infinite;
-    transition:filter 0.16s ease, inset 0.16s ease;
   }
   /* « Le logo de l'accueil a une aura qui tourne autour : est-ce que ce ne
      serait pas bien d'avoir exactement pareil sur l'écran de chargement ? »
@@ -11199,7 +11238,7 @@ function ouvrirRevoir(){
              dans du code. */
           `<button class="bk rv-bk" data-livre="${escapeHtml(nom)}" onclick="lancerRevoir('livre:' + this.dataset.livre)"><span class="bk-nm">${escapeHtml(nom)}</span><span class="rv-bkn">${n}</span></button>`
         ).join("")}</div>` : ""}
-      <div class="flam-regle">Une erreur revient demain, puis dans 3, 7 et 16&nbsp;jours. Quatre bonnes réponses étalées sur près d'un mois et la question quitte le carnet&nbsp;; une erreur, à n'importe quel palier, la ramène à demain.</div>
+      <div class="flam-regle">Une erreur revient demain, puis dans 3, 7 et 16&nbsp;jours. Se tromper la ramène à demain.</div>
     </div>`;
   document.body.appendChild(veil);
   monterLaFeuille(veil);
