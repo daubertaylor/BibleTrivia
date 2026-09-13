@@ -63,9 +63,24 @@ const ECRANS = [
     });
     for (const e of l) { const k = e.cls + '|' + e.w + 'x' + e.h; if (!vus.has(k)) vus.set(k, { ...e, ecran:nom }); }
   }
+  const marges = await p.evaluate(() => {
+    const out = {};
+    document.querySelectorAll('.has-gs').forEach(e => {
+      const m = getComputedStyle(e).overflowClipMargin;
+      if (m && m !== '0px' && m !== 'normal') out[m] = (out[m] || 0) + 1;
+    });
+    return out;
+  });
   await nav.close();
 
   const fautifs = [...vus.values()].filter(e => e.rb < 2 || Math.abs(e.rb - e.ro) > 0.6);
+  /* ===== ET RIEN NE DOIT DÉPASSER À CÔTÉ DE L'ONDE =====
+     L'onde est bornée à la boîte du bouton. Si la couche de verre, elle, peint
+     UN PIXEL PLUS LOIN (overflow-clip-margin), il reste tout autour un liseré
+     clair que l'onde ne peut pas atteindre — « ça ne se remplit pas
+     entièrement dans les bords ». Mesuré au huitième de pixel : le bord du
+     bouton à 446,02, l'onde qui démarre à 446,00, et la crème de 445 à 446,
+     c'est-à-dire dehors. La marge de découpe doit donc rester nulle. */
   console.log('  boutons qui peignent une onde : ' + vus.size + '\n');
   console.log('  écran         bouton                      taille   arrondi   onde');
   for (const e of [...vus.values()].sort((a,b) => a.rb - b.rb).slice(0, fautifs.length ? 999 : 6)) {
@@ -75,6 +90,10 @@ const ECRANS = [
       (mauvais ? (e.rb < 2 ? '   <-- ONDE CARRÉE' : '   <-- L ONDE N A PAS LA FORME DU BOUTON') : ''));
   }
   if (!fautifs.length) console.log('  …' + Math.max(0, vus.size - 6) + ' autres, tous arrondis');
-  console.log(fautifs.length ? '\n  ÉCHEC' : '\n  OK — chaque onde a la forme de son bouton');
-  process.exit(fautifs.length ? 1 : 0);
+  const cles = Object.keys(marges);
+  console.log('\n  marge de découpe des surfaces de verre : ' +
+    (cles.length ? cles.map(k => k + ' sur ' + marges[k] + ' surface(s)') .join(', ') + '   <-- UN LISERÉ DÉPASSE À CÔTÉ DE L\'ONDE' : 'nulle partout'));
+  const mauvais = fautifs.length || cles.length;
+  console.log(mauvais ? '\n  ÉCHEC' : '\n  OK — chaque onde a la forme de son bouton, et rien ne dépasse à côté');
+  process.exit(mauvais ? 1 : 0);
 })();

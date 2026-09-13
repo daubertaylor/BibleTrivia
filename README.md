@@ -231,6 +231,29 @@ substituer :
    qui doit céder quand la place manque s'y accroche, avec la taille
    actuelle comme plafond.
 
+**Le liseré que l'onde ne pouvait pas atteindre (v211).** « Quand je reste
+appuyé sur un bouton, ça ne se remplit pas entièrement dans les bords. » Et ce
+n'était pas l'onde : mesuré au huitième de pixel sur une pastille maintenue
+enfoncée, le bord du bouton est à **446,02**, l'onde démarre à **446,00** — elle
+couvre donc tout, jusqu'au dernier pixel.
+
+Ce qui dépassait, c'est la couche de verre. `overflow-clip-margin:1px`
+élargissait sa découpe d'un pixel, à l'époque où toutes les surfaces portaient
+une bordure de 1 px qu'il fallait recouvrir. Depuis la v189 ce pixel est passé
+dans le rembourrage : il n'y a plus de bordure, et la marge ne faisait plus que
+laisser la teinte déborder **d'un pixel autour** du bouton — un liseré clair que
+l'onde, bornée à la boîte, ne peut pas atteindre. La crème occupait 445,00 à
+446,00, c'est-à-dire dehors.
+
+La marge est retirée. `banc-essai/fuite.js` vérifiait déjà qu'aucun trou
+n'apparaît sans elle : c'est exactement ce qu'il simulait depuis le début.
+`forme.js` refuse désormais toute marge de découpe non nulle — 15 surfaces en
+portaient une.
+
+**La leçon : « ça ne se remplit pas » ne voulait pas dire « le remplissage est
+trop petit ».** Il était exact au centième de pixel. C'est ce qu'il y avait à
+CÔTÉ qui n'aurait pas dû exister.
+
 **Quelques pixels de débord ne sont pas un défilement, c'est du jeu (v210).**
 « Je peux prendre mon doigt et glisser un peu, il y a du jeu, ce n'est pas cent
 pour cent. » La tolérance de `fitScroll` était de 2 px : un écran qui dépasse de
