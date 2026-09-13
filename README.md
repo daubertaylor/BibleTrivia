@@ -231,6 +231,32 @@ substituer :
    qui doit céder quand la place manque s'y accroche, avec la taille
    actuelle comme plafond.
 
+**Une flamme gelée, pas un flocon (v216).** « Pour l'icône de gel de série, je
+veux une flamme qui soit gelée, au lieu d'un petit flocon. » Un flocon dit
+« froid » ; il ne dit pas « TA flamme ». On reprend donc la silhouette exacte de
+la flamme du jeu — au `path` près — et on n'en change que la matière : le feu
+devient glace, du glacier au blanc comme l'autre va de l'orange au jaune. Le
+lien se fait tout seul, à n'importe quelle taille.
+
+Deux choses apprises en la dessinant :
+
+- **Le givre par-dessus, c'était de trop.** J'avais posé des cristaux blancs sur
+  la flamme : à 56 px ils lisaient comme des flèches, à 16 px comme une
+  bouillie — et ils cachaient la seule chose qui compte, la silhouette. Une
+  flamme en glace posée à côté d'une flamme en feu se comprend sans rien
+  ajouter.
+- **Le dessin vit à deux endroits opposés** : sur le crème d'une feuille (il lui
+  faut un bord assez sombre) et sur la pastille bleue d'un bandeau (il lui faut
+  un cœur assez clair). D'où les trois tons, vérifiés dans les deux décors.
+
+**Et le bandeau ne faisait que la moitié de l'écran.** Trouvé en regardant la
+flamme gelée dedans : `.ach-toast` est posé en `left:50%` sans `right`, donc sa
+largeur disponible vaut **50 vw** — la mise à la taille du contenu plafonnait à
+196 px sur un iPhone, et une phrase un peu longue partait sur **cinq lignes**.
+`width:max-content` lui rend sa vraie largeur, que `max-width:88vw` borne
+ensuite. Deux lignes. Les messages ont été raccourcis au passage : un bandeau
+n'est pas une notice, la règle complète vit en tête de la feuille de la flamme.
+
 **Un getComputedStyle par image, pour une échelle qui vaut 1 (v216).**
 « L'ouverture des réglages et l'ouverture des choix de Bible buguent un petit
 peu. » Le film image par image de l'ouverture était PROPRE — position

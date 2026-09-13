@@ -173,13 +173,13 @@ function verifier(nom, obtenu, attendu){
   };
   const gagne = await bandeau("__poser({ last: __cle(-1), streak: 9, jours:[], geles:[], gels:0, palier:0 }); __jouer();");
   verifier("le gel gagné se dit, et Yada le donne", /Yada/.test((gagne&&gagne.tete)||''), true);
-  verifier("et le bandeau dit sa limite", /un seul/.test((gagne&&gagne.t)||''), true);
+  verifier("et le bandeau dit sa limite", /UN jour manqué/.test((gagne&&gagne.t)||''), true);
   const parties = await bandeau("__poser({ last:'', streak:0, jours:[], geles:[], gels:0, palier:0, parties:29, palierParties:0 }); compterPartie();");
   verifier("le gel des parties se dit aussi", /Yada/.test((parties&&parties.tete)||''), true);
   verifier("et il dit POURQUOI", /30 parties/.test((parties&&parties.t)||''), true);
   const paye = await bandeau("__poser({ last: __cle(-2), streak: 12, jours:[__cle(-2)], geles:[], gels:1, palier:10 }); reglerFlamme(); annoncerGel();");
   verifier("le gel dépensé se dit, et Yada le fait", /Yada a gelé/.test((paye&&paye.tete)||''), true);
-  verifier("et le bandeau dit ce qu'il reste", /Plus de gel/.test((paye&&paye.t)||''), true);
+  verifier("et le bandeau dit ce qu'il reste", /plus aucun gel/.test((paye&&paye.t)||''), true);
 
   // ---------- 9. LE BANDEAU ARRIVE APRÈS LA PARTIE ----------
   /* « Cela doit apparaître qu'on a eu un gel de série APRÈS la partie. » Il
