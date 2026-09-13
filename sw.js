@@ -1,6 +1,6 @@
 /* Yada — service worker : rend l'app jouable hors connexion.
    À déposer à côté de index.html (même dossier, nom exact "sw.js"). */
-const CACHE = "yada-v218";
+const CACHE = "yada-v219";
 const CORE = ["./", "./index.html", "./manifest.json", "./apple-touch-icon.png", "./icon-192.png", "./icon-512.png", "./fonts/inter-latin.woff2", "./fonts/inter-latinext.woff2", "./fonts/fraunces-italic-latin.woff2", "./fonts/fraunces-italic-latinext.woff2", "./fonts/poppins-500-latin.woff2", "./fonts/poppins-500-latinext.woff2", "./fonts/poppins-600-latin.woff2", "./fonts/poppins-600-latinext.woff2", "./fonts/poppins-700-latin.woff2", "./fonts/poppins-700-latinext.woff2"];
 self.addEventListener("install", (e) => {
   e.waitUntil(caches.open(CACHE).then((c) => c.addAll(CORE)).catch(() => {}));
@@ -103,6 +103,71 @@ function litEtat(){
     } catch(e){ res(null); }
   });
 }
+/* ===== CINQ MOTIFS, ET DES MOTS QUI CHANGENT =====
+   « Faisons en sorte d'envoyer quand même plus de notifications, et diverses
+   et variées. Je veux quand même que ça sonne un minimum. Parce que si ça
+   sonne presque jamais, ça n'a aucun intérêt. »
+   Il avait raison, et le raisonnement d'avant était incomplet. On avait
+   restreint à deux motifs pour éviter le spam, ce qui était juste ; mais un
+   rappel qui ne part jamais ne protège personne, il ne fait qu'exister. Le
+   bon réglage n'est pas « le moins possible », c'est « au plus une fois par
+   jour, et toujours pour une raison que le joueur reconnaîtrait ».
+   Le plafond ne bouge donc pas — un seul rappel par jour, tous motifs
+   confondus, c'est la ligne « etat.prevenu === aujourdhui » plus bas — mais
+   les raisons passent de deux à cinq, et chacune a plusieurs formulations qui
+   tournent. Le même texte reçu trois lundis de suite cesse d'être lu ; c'est
+   une autre façon de ne rien dire. */
+const MOTS = {
+  serie: [
+    ["Ta série de {n} jours s'arrête ce soir", "Un défi, et elle repart. À tout de suite !"],
+    ["{n} jours d'affilée, et ce soir ?", "Trois minutes suffisent pour la garder."],
+    ["Ne laisse pas tomber tes {n} jours", "Le défi du jour t'attend, il est court."],
+  ],
+  defi: [
+    ["Le défi du jour t'attend", "Le même pour tout le monde, aujourd'hui seulement."],
+    ["Trois minutes, dix questions", "Le défi d'aujourd'hui n'a pas encore été relevé."],
+    ["On se fait le défi du jour ?", "Il change demain — celui-là ne reviendra pas."],
+    ["Un défi t'attend", "Dix questions pour commencer ta série."],
+  ],
+  revoir: [
+    ["{n} question{s} à revoir aujourd'hui", "Ce sont tes erreurs passées. C'est là qu'on progresse."],
+    ["La mémoire réclame {n} question{s}", "Revues aujourd'hui, elles ne reviendront que dans trois jours."],
+    ["Tu as {n} question{s} à reprendre", "Deux minutes, et elles montent d'un palier."],
+  ],
+  absence: [
+    ["Ça fait {j} jours", "Ta progression est intacte. On reprend quand tu veux."],
+    ["Tu nous manques", "Ta progression t'attend, exactement où tu l'as laissée."],
+    ["Le défi du jour continue sans toi", "Rien n'est perdu — tout est encore là."],
+  ],
+  /* LES VERSETS SONT RECOPIÉS AU MOT PRÈS DE LA LISTE DU JEU (HERO_VERSES,
+     Segond 1910), et ce sont tous des versets COMPLETS. Un verset tronqué au
+     milieu d'une phrase pour tenir dans un bandeau, dans une app de Bible,
+     n'est pas un raccourci : c'est une citation fausse. Hébreux 4:16, pourtant
+     le verset signature de l'accueil, a été écarté d'ici pour cette seule
+     raison — il fait deux fois la longueur tenable dans une notification. */
+  verset: [
+    ["Un verset pour la semaine", "« Ta parole est une lampe à mes pieds, Et une lumière sur mon sentier. » Psaume 119:105"],
+    ["Un verset pour la semaine", "« Que tout ce qui respire loue l'Éternel ! Louez l'Éternel ! » Psaume 150:6"],
+    ["Un verset pour la semaine", "« Je puis tout par celui qui me fortifie. » Philippiens 4:13"],
+    ["Un verset pour la semaine", "« L'Éternel est mon berger : je ne manquerai de rien. » Psaume 23:1"],
+    ["Un verset pour la semaine", "« Que l'Éternel te bénisse, et qu'il te garde ! » Nombres 6:24"],
+    ["Un verset pour la semaine", "« Car rien n'est impossible à Dieu. » Luc 1:37"],
+  ],
+};
+/* La formulation du jour est TIRÉE DU JOUR, pas au hasard : deux envois du
+   même jour (une reprise du service d'envoi, par exemple) donnent le même
+   texte, et deux jours de suite en donnent deux différents. */
+function motsDuJour(genre, jour){
+  const liste = MOTS[genre] || MOTS.defi;
+  let h = 0;
+  for(let i = 0; i < jour.length; i++) h = (h * 31 + jour.charCodeAt(i)) >>> 0;
+  return liste[h % liste.length];
+}
+function remplir(t, val){
+  return t.replace(/\{n\}/g, String(val.n))
+          .replace(/\{j\}/g, String(val.j))
+          .replace(/\{s\}/g, val.n > 1 ? "s" : "");
+}
 self.addEventListener("push", (e) => {
   e.waitUntil((async () => {
     let charge = {};
@@ -112,21 +177,17 @@ self.addEventListener("push", (e) => {
     const aujourdhui = jourLocal(dec);
     /* Les garde-fous, dans l'ordre où ils comptent :
        - le joueur a bien accepté ;
-       - il a une série à perdre (deux jours au moins) ;
-       - il n'a PAS déjà joué aujourd'hui ;
-       - il a joué hier, donc la série est encore rattrapable aujourd'hui ;
-       - on ne l'a pas déjà prévenu aujourd'hui. */
+       - on ne l'a pas déjà prévenu aujourd'hui ;
+       - et, motif par motif, la raison tient-elle ENCORE à cet instant ?
+       Ce dernier point est la raison d'être de tout ce qui suit : entre la
+       décision du serveur et l'arrivée de l'envoi, le joueur a pu jouer. */
     if(!etat || !etat.actif) return;
-    if(etat.prevenu === aujourdhui) return;      // un seul rappel par jour, tous cas confondus
+    if(etat.prevenu === aujourdhui) return;      // un seul rappel par jour, tous motifs confondus
 
-    /* DEUX CAS, ET LE SERVEUR DIT LEQUEL. L'appareil ne le croit pas sur
-       parole : il revérifie avec ce qu'il sait, lui, de première main. Entre
-       la décision du serveur et l'arrivée de l'envoi, le joueur a pu jouer —
-       auquel cas il ne doit rien voir du tout. */
-    const genre = charge.genre === "absence" ? "absence"
-                : charge.genre === "essai"   ? "essai"
-                : "serie";
+    const CONNUS = ["serie", "defi", "revoir", "absence", "verset", "essai"];
+    const genre = CONNUS.indexOf(charge.genre) >= 0 ? charge.genre : "serie";
     let titre = "", corps = "";
+    const val = { n: 0, j: 0 };
 
     if(genre === "essai"){
       /* L'ESSAI PASSE OUTRE LES GARDE-FOUS, ET C'EST TOUT SON INTÉRÊT : il
@@ -135,7 +196,7 @@ self.addEventListener("push", (e) => {
          pas le « déjà prévenu aujourd'hui » : un essai ne doit pas voler le
          rappel du jour. */
       titre = "Les rappels sont bien branch\u00e9s";
-      corps = "C'est un essai. Tu ne recevras rien d'autre que les deux cas pr\u00e9vus.";
+      corps = "C'est un essai. Tu recevras au plus un rappel par jour.";
     } else if(genre === "serie"){
       /* - il a une série à perdre (deux jours au moins) ;
          - il n'a PAS déjà joué le défi aujourd'hui ;
@@ -143,20 +204,42 @@ self.addEventListener("push", (e) => {
       if((etat.serie | 0) < 2) return;
       if(etat.dernier === aujourdhui) return;
       if(etat.dernier !== jourLocal(dec - 1440)) return;
-      const n = (etat.serie | 0);
-      titre = "Ta série de " + n + " jours s'arrête ce soir";
-      corps = "Un défi, et elle repart. \u00c0 tout de suite\u00a0!";
+      val.n = etat.serie | 0;
+    } else if(genre === "defi"){
+      /* LE DÉFI DU JOUR, PAS ENCORE RELEVÉ. C'est le motif qui fait « sonner
+         un minimum » : il vaut pour le joueur régulier sans série en cours,
+         celui que rien n'appelait jamais. Deux conditions, et elles suffisent
+         à ce qu'il ne soit jamais de trop : le défi n'est pas fait, et le
+         joueur n'a pas disparu (sinon c'est « absence » qui parle, avec les
+         mots qu'il faut). */
+      if(etat.dernier === aujourdhui) return;
+      if(!etat.vu) return;
+      const depuis = Math.round((Date.parse(aujourdhui + "T00:00:00Z") - Date.parse(etat.vu + "T00:00:00Z")) / 86400000);
+      if(!(depuis >= 0 && depuis <= 14)) return;      // parti depuis trop longtemps : ce n'est plus ce motif
+    } else if(genre === "revoir"){
+      /* CE QUI EST À REVOIR AUJOURD'HUI. L'appareil recompte : le carnet a pu
+         être vidé depuis que le serveur a lu son chiffre. */
+      const n = etat.revoir | 0;
+      if(n < 1) return;
+      val.n = n;
+    } else if(genre === "verset"){
+      /* Un verset, une fois par semaine. Il ne demande rien, il ne reproche
+         rien : c'est le seul rappel qui n'attend pas qu'on joue. */
+      val.n = 0;
     } else {
       /* LA LONGUE ABSENCE. On recompte l'écart ici : si le joueur a rejoué
          depuis, « vu » vaut aujourd'hui et l'écart tombe à zéro. */
       if(!etat.vu) return;
       const j = Math.round((Date.parse(aujourdhui + "T00:00:00Z") - Date.parse(etat.vu + "T00:00:00Z")) / 86400000);
-      if(!(j >= 7)) return;
+      if(!(j >= 3)) return;
       if(typeof charge.jours === "number" && j !== charge.jours) return;
-      titre = j >= 30 ? "\u00c7a fait un mois" : "\u00c7a fait une semaine";
-      corps  = j >= 30
-        ? "Ta progression est intacte. On reprend quand tu veux."
-        : "Un d\u00e9fi t'attend \u2014 trois minutes suffisent.";
+      val.j = j;
+    }
+
+    if(!titre){
+      const m = motsDuJour(genre, aujourdhui);
+      titre = remplir(m[0], val);
+      corps = remplir(m[1], val);
     }
 
     await self.registration.showNotification(titre, {

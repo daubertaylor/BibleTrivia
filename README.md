@@ -55,6 +55,183 @@ Voir « Deux modes de plus » plus bas.
 
 ---
 
+## LA v219 — SIX CARTES, UNE AURA, ET DES MOTS QUI TOURNENT
+
+### L'accueil déborde depuis qu'il a six cartes
+
+*« Maintenant je ne vois plus les 7 derniers jours. »* — La carte « À revoir »
+(v218) a ajouté 90 px à une colonne qui n'en avait plus : 20 px de débord sur
+un iPhone 15, et la bande des sept jours passait sous l'indicateur d'accueil.
+
+Trois causes, trois corrections, toutes mesurées (`banc-essai/accueil.js`
+balaie **toutes** les hauteurs de 560 à 1000 px, pas seulement celle du
+téléphone du jour) :
+
+| débord de l'accueil | v218 | v219 |
+|---|---|---|
+| iPhone 15 (852) | 20 px | 0 |
+| Xiaomi (873) | 7 px | 0 |
+| iPhone SE (667) | 41 px | 0 |
+| navigateur (643) | 62 px | 0 |
+| hauteurs en défaut, de 560 à 1000 px | — | 0 |
+
+Le balayage a servi deux fois. Après les deux premières corrections, il restait
+**dix hauteurs en défaut** que ni l'iPhone 15 ni le SE ne montraient : la bande
+610-620, et surtout **700 à 780 px** — juste au-dessus du palier « petits
+écrans », là où l'accueil redevenait d'un coup grand format alors qu'il n'en
+avait pas encore les moyens (3 à 28 px de débord). Sans le balayage, cette
+bande partait en production.
+
+1. **Les six cartes étaient trois familles.** `.mode-card` avait un
+   rembourrage et une marge FLUIDES, `.daily-card` et `.parcours-card` des
+   valeurs FIGÉES. Sur un écran haut les deux formules se rejoignent au
+   plafond et l'illusion tenait ; dès que l'écran raccourcit, la fluide
+   descend seule — 62 px contre 66,3 sur un SE. *« Tu ne trouves pas que la
+   partie À revoir doit être de la même taille que les autres ? »* Elle l'est
+   maintenant partout, parce que la géométrie est dite **une fois**, pour les
+   trois.
+2. **L'écart entre deux cartes se resserre** (16 → 11,5 px sur un iPhone 15) :
+   on ne rapetisse pas des cartes qu'on touche du doigt, on réduit le blanc.
+   Et **la dernière carte ne porte plus de marge basse** — sous elle il y a
+   déjà l'espaceur qui pousse la bande en bas ; les deux disaient la même
+   chose, l'un des deux payait 16 px pour rien.
+3. **Le logo avait été agrandi sur les écrans courts** au motif qu'un écran
+   court est délesté (verset masqué, bande masquée, « il reste 110 à 155 px
+   inutilisés »). C'était vrai avec CINQ cartes. Le raisonnement avait
+   survécu à ses prémisses : ces 110 px valent maintenant −33.
+
+**La leçon** : une mise en page qui tient sur l'appareil du jour et casse sur
+le suivant n'est pas une mise en page, c'est une coïncidence. Le banc balaie
+donc une plage, jamais un point.
+
+### Le filet doré devient une aura
+
+*« Je préfère une aura de lumière bien gérée que ce petit bord jaune. »* Le
+filet de 2 px en haut de la carte de question était la dernière ligne de
+couleur du jeu, et la seule chose qui contredisait encore *« jamais de bordures
+de couleurs, nulle part »*. À sa place, une nappe chaude qui entre par le haut
+et se dissout au tiers — trois paliers, parce qu'avec deux l'œil retrouve un
+bord à l'endroit où la couleur s'arrête.
+
+### Le logo répond enfin
+
+*« Lorsque je tapote l'icône, elle ne réagit pas assez, je veux qu'elle se
+comporte de façon vivante. »* La v218 avait échangé de l'amplitude contre de la
+fiabilité (6 % d'enfoncement au lieu de 10) pour obtenir cinq appuis nets sur
+cinq. La fiabilité est acquise ; la réaction était devenue invisible.
+
+Ce qui rend un objet vivant n'est pas la profondeur, c'est le **ressort** et la
+**lumière** : l'échelle descend plus bas et remonte en **dépassant** sa taille
+avant de se poser, l'inclinaison double, et l'aura se resserre et s'éclaire
+sous le doigt.
+
+| | v218 | v219 |
+|---|---|---|
+| enfoncement | 3,5 à 5,4 % | 8,1 à 8,3 % |
+| ressort au retour | +0,0 % | +1,8 % |
+| retours à la taille pleine (5 taps à 120 ms) | 5/5 | 5/5 |
+
+Le banc a dû être corrigé au passage : sa première définition d'un « cran »
+était « une image qui fait plus de trois fois le pas médian ». Fausse, et elle
+condamnait le bon comportement — **un mouvement qui décélère a forcément son
+plus grand pas au début.** Ce que le doigt sent n'est pas un grand pas, c'est
+un pas qui REPART après avoir ralenti.
+
+### Le clavier : cent millisecondes d'immobilité
+
+*« Le clavier s'affiche et se règle parfaitement, mais de manière assez
+saccadée. »* Le banc d'avant disait « 0 image morte » — et il avait raison sur
+ce qu'il mesurait. Il faisait monter le clavier **d'un seul coup**, alors
+qu'iOS le fait GLISSER par paliers sur un quart de seconde.
+
+Relevé image par image avec un clavier qui glisse en douze paliers : le clavier
+a fini de monter à 805 ms, le champ est resté caché derrière lui, et la page
+n'a bougé qu'à 906 ms. **Cent millisecondes d'immobilité, puis 75 px d'un
+coup.** La page ne suivait pas le clavier, elle le rattrapait.
+
+Deux corrections :
+
+- **L'attente** : l'anti-rebond de 120 ms après le dernier « resize » passe à
+  40. J'ai d'abord essayé de SUIVRE le clavier (recadrer toutes les 60 ms
+  pendant sa montée) : nettement pire — +18, +8, **−15**, −6, +8, +33. La
+  cause n'est pas le suivi, c'est la CIBLE : `pliPropre` ajuste la destination
+  pour qu'aucune carte ne soit tranchée sur l'arête du clavier, et cet
+  ajustement **n'est pas monotone** en hauteur visible. Suivre une cible qui
+  recule fait reculer la page.
+- **La courbe** : le glissement avait une durée et une courbe, comme une
+  animation. Remplacé par un **suivi amorti** — à chaque image, une même
+  fraction de ce qui reste. Déplacer la cible en route ne provoque alors
+  aucune discontinuité, ni de position ni de vitesse, parce qu'il n'y a rien à
+  raccorder : la loi ne dépend que de l'écart du moment.
+
+| | v218 | v219 |
+|---|---|---|
+| immobilité après la montée du clavier | 121 à 136 ms | 48 à 52 ms |
+| profil des pas (8 joueurs) | 14 13 9 8 6 5 3 2 1 1 | 2 20 14 10 8 6 4 3 2 2 4 |
+| reprise de vitesse en cours de route | — | aucune |
+
+### Le sursaut à l'ouverture des Réglages — NON REPRODUIT
+
+*« Ça se rouvre parfaitement bien puis ensuite ça saute. »* Cinq mesures
+différentes, aucune n'a rien trouvé :
+
+1. position de la feuille et de son titre, image par image après la montée ;
+2. photographies de l'écran entier comparées deux à deux (le seul changement
+   trouvé était le halo du logo, qui tourne en permanence) ;
+3. la page DERRIÈRE — défilement, échelle, position d'un repère fixe ;
+4. trois ouvertures de suite au doigt, pour le cas où seule la deuxième saute ;
+5. le décalage résiduel du décor vu à travers le verre, processeur freiné ×8.
+
+Ce qui a quand même été corrigé : le moteur du verre s'arrêtait sur une **durée
+devinée** (`armGlass(msPli() + 300)`). Une durée devinée n'est pas la fin d'un
+mouvement — c'est une promesse sur le temps que va prendre le navigateur. Si
+l'animation s'attarde, le moteur s'arrête pendant que la vitre glisse encore, et
+le décor repart d'un coup avec elle. Il écoute maintenant la **vraie fin** de la
+transition. Ça ne corrige pas un défaut mesuré ; ça retire une supposition.
+
+### Les notifications : de deux motifs à cinq
+
+*« Si ça sonne presque jamais, ça n'a aucun intérêt. »* On avait restreint à
+deux motifs pour éviter le spam. Bonne intention, mauvais réglage : un rappel
+qui ne part jamais ne protège personne.
+
+Le garde-fou n'a jamais été la RARETÉ des motifs, c'est **le plafond d'un envoi
+par jour** — tenu deux fois, côté serveur par des heures distinctes et
+l'exclusion mutuelle des cas, côté appareil par `prevenu`. Ce qui change, ce
+sont les raisons d'envoyer, pas la fréquence maximale. Détail dans
+`notifications/LISEZMOI.md`.
+
+### Le reste de la v219
+
+- **« À revoir » ne part plus** et demande **quoi** réviser : les échéances du
+  jour, tout le carnet, la dernière partie, ou un livre en particulier. Un
+  accueil dont les cartes vont et viennent n'a pas de forme — on apprend où
+  sont les choses en les retrouvant à la même place.
+- **Les flammes de l'historique** passent de 22 à 34 px (*« on ne les voit
+  quasiment pas »*). La case était calée sur la bande de l'accueil ; ce n'est
+  pas le même objet — la bande est une note en bas de page, cette grille EST le
+  sujet de la feuille qu'on vient d'ouvrir.
+- **Les bandeaux** (gel offert, succès débloqué) restent 4,2 à 6,5 s selon la
+  longueur du texte, au lieu de 2,5 s dont 0,42 d'entrée.
+- **Le nom, au chargement**, s'assemble en 1,71 s au lieu de 1,01 — 1,41 s de
+  mouvement visible contre 0,73. Il empruntait
+  l'horloge des ARRIVÉES d'écran, dont la brièveté est une qualité là-bas ; ceci
+  est un générique — on ne répond à rien, on regarde.
+- **L'aura du chargement** est la même que celle de l'accueil (c'était déjà le
+  cas : une seule règle sert les deux). Elle arrivait seulement à pleine force
+  dès la première image, alors que la colombe se fond en une seconde ; elle
+  arrive maintenant avec elle.
+- **Les pastilles de livre** prennent enfin tous leurs bords : dernière famille
+  du jeu à porter une vraie bordure de 1 px, donc dernier endroit où l'onde
+  s'arrêtait un pixel avant l'arête. Anneau non peint : 1,33 px → 0,33.
+- **« Code invalide »** ne suit plus le joueur sur l'accueil En ligne : le
+  retour depuis « Rejoindre » efface le message. Une erreur de saisie ne
+  survit pas à l'écran de saisie.
+- **Le badge des petits prophètes** dit maintenant *« Maîtrise les 12 livres,
+  d'Osée à Malachie »* : exact, et on apprend lesquels.
+
+---
+
 ## EN ATTENTE DE TAYLOR
 
 ### Rappels de série (notifications)

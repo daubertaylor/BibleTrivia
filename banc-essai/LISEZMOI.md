@@ -372,3 +372,69 @@ rond du Profil et pas sur celui des Réglages — le premier est en
 Le relevé porte aussi ses **exceptions écrites**, avec leur raison. Une
 exception qu'on n'écrit pas est un défaut qu'on a oublié ; une exception qu'on
 écrit est une décision.
+
+
+## Un banc qui ne trouve rien mesure peut-être la mauvaise chose (v219)
+
+Deux fois dans la même journée, un relevé propre a dit « rien à signaler » sur
+un défaut que Taylor voyait de ses yeux.
+
+**Le clavier.** `lignes.js` annonçait « 0 image morte » sur le recadrage à
+l'ouverture du clavier, et c'était exact — pour ce qu'il mesurait. Il faisait
+monter le clavier **d'un seul coup** (`setViewportSize` une fois), alors qu'iOS
+le fait GLISSER par paliers sur un quart de seconde. `clavier.js` le fait
+monter en douze paliers, et le défaut apparaît immédiatement : cent
+millisecondes d'immobilité entre la fin de la montée et le premier pixel, puis
+soixante-quinze pixels d'un coup. La page ne suivait pas le clavier, elle le
+rattrapait.
+
+**Le sursaut des Réglages.** Cinq relevés, cinq fois rien : la position de la
+feuille, celle de son titre, celle de sa couche de verre, la page derrière,
+trois ouvertures de suite au doigt, des photographies de l'écran entier
+comparées deux à deux, et le tout avec le processeur freiné d'un facteur huit.
+Il est **noté comme non reproduit**, et le correctif posé (le moteur du verre
+écoute la vraie fin de la transition au lieu d'une durée devinée) est présenté
+pour ce qu'il est : le retrait d'une supposition, pas la correction d'une
+mesure.
+
+Écrire « je n'ai pas su le reproduire » vaut mieux que corriger au hasard. Mais
+la première question reste toujours la même : **est-ce que je mesure ce que
+l'œil regarde ?**
+
+
+## Un seuil doit dire pourquoi il vaut ce qu'il vaut
+
+`clavier.js` exige que l'immobilité après la montée du clavier reste sous 65 ms.
+Ce n'est pas un chiffre rond : le recadrage doit attendre que les paliers d'iOS
+aient cessé — sinon il repart sur une hauteur intermédiaire et la page RECULE,
+ce qui a été mesuré (+18, +8, −15, −6, +8, +33) — soit deux fois leur
+intervalle, 40 ms, plus l'image où le mouvement démarre. Sous cette valeur, on
+n'accélère plus : on casse.
+
+Un seuil arbitraire finit toujours par être relâché « parce que ça passe
+presque ». Un seuil dont la valeur est dérivée d'une contrainte réelle se
+défend tout seul.
+
+
+## Un mouvement qui décélère a son plus grand pas au début
+
+Première définition d'un « cran » dans `logo.js` : *une image qui fait plus de
+trois fois le pas médian*. Elle condamnait le bon comportement — la première
+image d'un ease-out vaut naturellement trois à quatre fois la médiane.
+
+Ce que le doigt sent n'est pas un grand pas, c'est un pas qui **repart** après
+avoir ralenti. Le relevé cherche donc le sommet, puis exige que ça ne remonte
+plus.
+
+
+## Une mise en page se balaie, elle ne se pointe pas
+
+`accueil.js` ne vérifie pas une hauteur d'écran, il en vérifie une cinquantaine
+de 560 à 1000 px — les deux bords de chaque palier CSS compris. C'est ce qui a
+montré que la correction évidente (resserrer les cartes) laissait intacte une
+**bande morte de 700 à 780 px**, juste au-dessus du palier « petits écrans »,
+où l'accueil redevenait d'un coup grand format alors qu'il n'en avait pas
+encore les moyens.
+
+Une mise en page qui tient sur l'appareil du jour et casse sur le suivant n'est
+pas une mise en page, c'est une coïncidence.

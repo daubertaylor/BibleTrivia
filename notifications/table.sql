@@ -8,6 +8,7 @@ create table if not exists public.push_subs (
   dernier    date,                      -- date du dernier DÉFI joué
   serie      int         not null default 0,
   vu         date,                      -- date de la dernière PARTIE, tous modes
+  revoir     int         not null default 0,   -- questions à revoir aujourd'hui (un COMPTE, pas leur contenu)
   decalage   int         not null default 0,   -- minutes par rapport à UTC
   maj        timestamptz not null default now()
 );
@@ -16,6 +17,8 @@ create index if not exists push_subs_vu on public.push_subs (vu);
 
 -- Si la table existe déjà sans la colonne « vu » (installée avant la v205) :
 alter table public.push_subs add column if not exists vu date;
+-- Et sans « revoir » (installée avant la v219) :
+alter table public.push_subs add column if not exists revoir int not null default 0;
 
 alter table public.push_subs enable row level security;
 

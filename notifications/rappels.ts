@@ -1,24 +1,43 @@
 /* Fonction Supabase (Deno) — les rappels.
-   À déclencher une fois par heure. DEUX CAS, et deux seulement : une série
-   réellement en jeu ce soir, ou une absence de sept jours puis de trente. Et
-   seulement quand il est le soir chez le joueur.
-   C'est ce filtre qui garantit l'absence de spam : un abonnement push est
-   déclaré « userVisibleOnly », donc chaque envoi doit produire une notification.
+   À déclencher une fois par heure. CINQ MOTIFS, jamais plus d'un envoi par
+   joueur et par jour, et toujours à une heure qui a du sens chez lui :
+
+     série en jeu       19 h   la série peut encore être sauvée ce soir
+     défi du jour       19 h   pas encore relevé, et le joueur est actif
+     à revoir           12 h   des questions arrivent à échéance aujourd'hui
+     verset             9 h    le dimanche seulement
+     longue absence     19 h   à 3, 7 et 30 jours, puis plus rien
+
+   POURQUOI C'EST PASSÉ DE DEUX À CINQ. On avait volontairement restreint à
+   deux, pour ne pas spammer. C'était la bonne intention et le mauvais réglage :
+   « si ça sonne presque jamais, ça n'a aucun intérêt » — un rappel qui ne part
+   pas ne protège personne. Le garde-fou n'est pas la RARETÉ des motifs, c'est
+   le plafond d'un envoi par jour (tenu ici par l'exclusion mutuelle des cas,
+   et une seconde fois sur l'appareil par « prevenu »), plus l'exigence que
+   chaque motif soit une raison que le joueur reconnaîtrait.
+   Ce plafond n'est pas décoratif : un abonnement push est déclaré
+   « userVisibleOnly », donc chaque envoi DOIT produire une notification.
    Envoyer à tout le monde ferait afficher au navigateur son propre message
    « ce site a été mis à jour en arrière-plan » — exactement ce qu'on évite. */
 import { createClient } from "npm:@supabase/supabase-js@2";
 import webpush from "npm:web-push@3.6.7";
 
 const HEURE_DU_SOIR = 19;          // 19 h chez le joueur
+const HEURE_DE_MIDI = 12;          // pour ce qui est à revoir : au milieu de la journée
+const HEURE_DU_VERSET = 9;         // le dimanche matin
 const SERIE_MINIMALE = 2;          // en dessous, il n'y a rien à sauver
+/* Le défi du jour n'est rappelé qu'à un joueur ENCORE LÀ : au-delà, c'est
+   « absence » qui parle, et avec d'autres mots. */
+const ACTIF_JOURS = 14;
 /* LE RETOUR APRÈS UNE LONGUE ABSENCE — le deuxième et dernier cas notifié.
-   Deux rappels par absence, pas un de plus : à une semaine, puis à un mois.
+   Trois rappels par absence, pas un de plus : à trois jours, à une semaine,
+   puis à un mois.
    Ensuite plus rien, tant que le joueur n'a pas rejoué. Ce sont des égalités
    STRICTES, pas des seuils : « exactement 7 jours » ne peut être vrai qu'un
    seul jour, et l'heure du soir n'arrive qu'une fois ce jour-là. Il n'y a donc
    aucun compteur à tenir côté serveur pour éviter la répétition — c'est la
    forme de la condition qui l'empêche. */
-const ABSENCES = [7, 30];
+const ABSENCES = [3, 7, 30];
 
 /* ===== UN 500 NE DIT RIEN. CETTE FONCTION, SI. =====
    Trois secrets à poser à la main, donc trois occasions de se tromper : un nom
@@ -107,13 +126,14 @@ Deno.serve(async (req: Request) => {
   const ecart = (a: string, b: string) =>
     Math.round((Date.parse(b + "T00:00:00Z") - Date.parse(a + "T00:00:00Z")) / 86400000);
 
-  let envoyes = 0, retires = 0, series = 0, absences = 0, essais = 0;
+  const compte: Record<string, number> = { serie: 0, defi: 0, revoir: 0, verset: 0, absence: 0, essai: 0 };
+  let envoyes = 0, retires = 0;
   for (const a of abos ?? []) {
     const dec = a.decalage | 0;
     if (essai) {
       try {
         await webpush.sendNotification(a.abonnement, JSON.stringify({ genre: "essai", decalage: dec }));
-        envoyes++; essais++;
+        envoyes++; compte.essai++;
       } catch (e: any) {
         if (e?.statusCode === 404 || e?.statusCode === 410) {
           await db.from("push_subs").delete().eq("endpoint", a.endpoint); retires++;
@@ -121,27 +141,61 @@ Deno.serve(async (req: Request) => {
       }
       continue;
     }
-    const heureLocale = new Date(Date.now() + dec * 60000).getUTCHours();
-    if (heureLocale !== HEURE_DU_SOIR) continue;         // pas encore le soir chez lui
+    const dLocale = new Date(Date.now() + dec * 60000);
+    const heureLocale = dLocale.getUTCHours();
+    const jourSemaine = dLocale.getUTCDay();          // 0 = dimanche
     const aujourdhui = jour(dec);
+    const joueAujourdhui = a.dernier === aujourdhui;
+    const depuis = a.vu ? ecart(a.vu, aujourdhui) : 9999;
 
-    /* Deux cas, et deux seulement. Ils s'excluent l'un l'autre par
-       construction : le premier demande d'avoir joué HIER, le second d'être
-       absent depuis au moins une semaine. */
+    /* CINQ MOTIFS, ET UN SEUL PEUT PARTIR. Ils sont examinés dans l'ordre de
+       ce qui compte le plus pour le joueur : ce qu'il peut PERDRE ce soir
+       d'abord, ce qu'il gagnerait à faire ensuite, la douceur en dernier.
+       Chacun a son heure, si bien qu'à un instant donné il y en a au plus un
+       de possible — l'ordre ne sert qu'à rendre l'intention lisible. */
     let charge: Record<string, unknown> | null = null;
 
     /* 1. LA SÉRIE EN JEU — elle peut encore être sauvée ce soir. */
-    if ((a.serie | 0) >= SERIE_MINIMALE &&
-        a.dernier !== aujourdhui &&
+    if (heureLocale === HEURE_DU_SOIR &&
+        (a.serie | 0) >= SERIE_MINIMALE &&
+        !joueAujourdhui &&
         a.dernier === jour(dec, -1)) {
       charge = { genre: "serie", decalage: dec };
-      series++;
+      compte.serie++;
     }
 
-    /* 2. LA LONGUE ABSENCE — sept jours, puis trente, puis plus rien. */
-    if (!charge && a.vu) {
-      const j = ecart(a.vu, aujourdhui);
-      if (ABSENCES.includes(j)) { charge = { genre: "absence", jours: j, decalage: dec }; absences++; }
+    /* 2. LE DÉFI DU JOUR — pour le joueur ENCORE LÀ qui n'a pas de série à
+          perdre. C'est le motif qui fait « sonner un minimum » : sans lui, un
+          joueur régulier sans série ne recevait strictement jamais rien.
+          Il ne double jamais le premier : celui-là exige une série d'au moins
+          deux jours ET d'avoir joué hier, celui-ci prend tout le reste. */
+    if (!charge && heureLocale === HEURE_DU_SOIR &&
+        !joueAujourdhui && depuis >= 0 && depuis <= ACTIF_JOURS) {
+      charge = { genre: "defi", decalage: dec };
+      compte.defi++;
+    }
+
+    /* 3. CE QUI EST À REVOIR — à midi, quand il y a vraiment des échéances.
+          Le nombre vient de l'appareil ; l'appareil le recompte avant
+          d'afficher, donc un carnet vidé entre-temps ne dit rien. */
+    if (!charge && heureLocale === HEURE_DE_MIDI && (a.revoir | 0) >= 1) {
+      charge = { genre: "revoir", decalage: dec, n: a.revoir | 0 };
+      compte.revoir++;
+    }
+
+    /* 4. LE VERSET DU DIMANCHE — le seul rappel qui ne demande rien. Il ne
+          part qu'aux joueurs qui n'ont pas disparu : à quelqu'un parti depuis
+          deux mois, un verset du dimanche est une carte postale d'un jeu
+          qu'il a quitté, et c'est « absence » qui doit parler. */
+    if (!charge && jourSemaine === 0 && heureLocale === HEURE_DU_VERSET && depuis <= ACTIF_JOURS) {
+      charge = { genre: "verset", decalage: dec };
+      compte.verset++;
+    }
+
+    /* 5. LA LONGUE ABSENCE — trois jours, sept, trente, puis plus rien. */
+    if (!charge && heureLocale === HEURE_DU_SOIR && a.vu && ABSENCES.includes(depuis)) {
+      charge = { genre: "absence", jours: depuis, decalage: dec };
+      compte.absence++;
     }
 
     if (!charge) continue;
@@ -156,5 +210,5 @@ Deno.serve(async (req: Request) => {
       }
     }
   }
-  return Response.json({ envoyes, series, absences, essais, retires, examines: abos?.length ?? 0 });
+  return Response.json({ envoyes, ...compte, retires, examines: abos?.length ?? 0 });
 });

@@ -1,16 +1,29 @@
 # Les rappels
 
-Le jeu ne notifie **que deux cas**, et rien d'autre ne le mérite :
+Le jeu notifie **cinq motifs**, jamais plus d'un par jour :
 
-1. **Une série en jeu** — les flammes sont sur le point de s'éteindre alors
-   qu'elles sont encore rattrapables ce soir.
-2. **Une longue absence** — sept jours sans jouer, puis trente. Deux rappels
-   par absence, pas un de plus : après le trentième jour, plus rien tant que le
-   joueur n'est pas revenu.
+| motif | heure locale | condition |
+|---|---|---|
+| **Série en jeu** | 19 h | série ≥ 2 jours, jouée hier, pas encore aujourd'hui |
+| **Défi du jour** | 19 h | pas encore relevé, et le joueur a joué dans les 14 derniers jours |
+| **À revoir** | 12 h | au moins une question arrive à échéance aujourd'hui |
+| **Verset** | 9 h, le dimanche | le joueur n'a pas disparu (≤ 14 jours) |
+| **Longue absence** | 19 h | exactement 3, 7 ou 30 jours sans jouer |
 
-Ces deux cas s'excluent l'un l'autre : le premier demande d'avoir joué HIER, le
-second d'être absent depuis au moins une semaine. Et un joueur ne peut recevoir
-qu'un seul rappel par jour, quel qu'il soit.
+**Pourquoi c'est passé de deux motifs à cinq (v219).** On avait volontairement
+restreint à deux pour ne pas spammer. Bonne intention, mauvais réglage :
+*« si ça sonne presque jamais, ça n'a aucun intérêt »*. Un rappel qui ne part
+jamais ne protège personne — il occupe seulement une case dans les réglages.
+
+Le garde-fou n'a jamais été la rareté des motifs, c'est **le plafond d'un envoi
+par jour**. Il est tenu deux fois : côté serveur par l'exclusion mutuelle des
+cas et leurs heures distinctes, côté appareil par le champ `prevenu`. Ce qui a
+changé, ce sont les RAISONS d'envoyer, pas la fréquence maximale.
+
+Et les mots tournent : chaque motif a trois à cinq formulations, tirées de la
+date du jour (donc stables pour un même jour, différentes d'un jour à l'autre).
+Le même texte reçu trois lundis de suite cesse d'être lu ; c'est une autre
+façon de ne rien dire.
 
 **« Jouer » veut dire une partie, dans n'importe quel mode.** Pas seulement le
 Défi du jour : quelqu'un qui joue tous les soirs en solo, en groupe ou en ligne
@@ -89,10 +102,11 @@ l'envoi, rien ne s'affiche.
 Un joueur ne peut recevoir **qu'un seul rappel par jour**, et seulement s'il :
 
 - a explicitement accepté (la demande n'arrive qu'après une série de 2 jours) ;
-- a une série d'au moins 2 jours ;
-- n'a pas déjà joué aujourd'hui ;
-- a joué hier, donc peut encore la sauver ;
-- n'a pas déjà été prévenu aujourd'hui.
+- n'a pas déjà été prévenu aujourd'hui (`prevenu`) ;
+- et remplit ENCORE, à l'instant où l'envoi arrive, la condition du motif —
+  le service worker les revérifie toutes, une par une. Entre la décision du
+  serveur et l'arrivée du message, le joueur a pu jouer, vider son carnet, ou
+  revenir : dans ce cas rien ne s'affiche.
 
 ## Seulement dans le jeu INSTALLÉ, partout
 

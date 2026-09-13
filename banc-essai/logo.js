@@ -48,15 +48,52 @@ const RYTHMES = [120, 160, 240];
     for(const e of rel){ if(e[1] < mini) mini = e[1];
       if(e[1] > 0.995){ if(!dedans){ retours++; dedans=true; } } else dedans=false; }
     const amplitude = 1 - mini;
-    /* CINQ APPUIS, CINQ RETOURS. Et l'amplitude reste celle d'un appui, pas
-       d'un écrasement : au-delà de dix pour cent, le logo « saute ». */
-    const bon = retours >= 5 && amplitude <= 0.10;
+    /* CINQ APPUIS, CINQ RETOURS. L'amplitude reste celle d'un appui, pas d'un
+       écrasement : au-delà de dix pour cent, le logo « saute ». Et il ne doit
+       pas non plus être trop discret : « lorsque je tapote l'icône, elle ne
+       réagit pas assez » — sous 7 % d'enfoncement, on ne voit rien répondre
+       (la v218 en faisait 6). Le RESSORT, lui, se mesure plus bas, sur un tap
+       isolé : aucun des cinq retours d'ici ne court librement. */
+    const bon = retours >= 5 && amplitude <= 0.10 && amplitude >= 0.07;
     if(!bon) ko++;
     console.log('  ' + (rythme + 'ms').padStart(6) + ' entre deux taps : ' + (bon?'OK ':'KO ')
-      + retours + ' retour(s) à la taille pleine sur 5, amplitude ' + (amplitude*100).toFixed(1) + ' %');
+      + retours + ' retour(s) sur 5, enfoncement ' + (amplitude*100).toFixed(1) + ' %');
+    if(amplitude < 0.07) console.log('           ↳ trop discret : on ne voit pas le logo répondre');
     if(retours < 5) console.log('           ↳ le logo n\'est jamais revenu : il tremble au lieu de s\'enfoncer');
     await p.waitForTimeout(500);
   }
+  /* ===== UN SEUL TAP : LE RESSORT =====
+     Ce qui fait qu'un objet paraît VIVANT n'est pas la profondeur de
+     l'enfoncement, c'est le retour : une masse qui remonte dépasse sa position
+     de repos avant de s'y poser. Sans ce dépassement, on a un élastique.
+     On l'observe sur un tap isolé — dans une salve, chaque retour est coupé
+     par l'appui suivant, et c'est le geste qui le veut. */
+  await p.evaluate(()=>{ try{ hideHeroVerse(); }catch(e){} state.screen='mode'; render(); });
+  await p.waitForTimeout(1000);
+  {
+    const b1 = await p.locator('.hero-icon-btn').boundingBox();
+    const cap = p.evaluate(()=> new Promise(res=>{
+      const rel=[]; const t0=performance.now();
+      const tic=()=>{
+        const w=document.querySelector('.hero-icon-wrap');
+        if(w){ const m=new DOMMatrixReadOnly(getComputedStyle(w).transform);
+          rel.push(+Math.sqrt(m.a*m.a+m.b*m.b).toFixed(4)); }
+        if(performance.now()-t0<900) requestAnimationFrame(tic); else res(rel);
+      };
+      requestAnimationFrame(tic);
+    }));
+    await p.mouse.move(b1.x+b1.width/2, b1.y+b1.height/2);
+    await p.mouse.down(); await p.waitForTimeout(90); await p.mouse.up();
+    const rel = await cap;
+    const maxi = Math.max(...rel), mini = Math.min(...rel);
+    const rebond = maxi - 1, creux = 1 - mini;
+    const bon = rebond >= 0.012 && creux >= 0.07;
+    if(!bon) ko++;
+    console.log('  un seul tap        : ' + (bon?'OK ':'KO ') + 'enfoncement '
+      + (creux*100).toFixed(1) + ' %, ressort au retour +' + (rebond*100).toFixed(1) + ' %');
+    if(rebond < 0.012) console.log('           ↳ pas de ressort : le retour est mou, le logo n\'a pas l\'air vivant');
+  }
+
   /* Et le secret marche toujours. */
   await p.evaluate(()=>{ try{ hideHeroVerse(); }catch(e){} state.screen='mode'; render(); });
   await p.waitForTimeout(900);

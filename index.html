@@ -549,6 +549,17 @@
      versions (74 signes au pire) pour qu'il y tienne sans jamais être coupé. */
   .home-verse{ margin:0.15rem auto 0; max-width:21.5rem; height:calc(2 * 0.8rem * 1.42); overflow:hidden; text-align:center; font-family:'Fraunces',serif; font-size:0.8rem; font-style:italic; font-weight:400; line-height:1.42; letter-spacing:0.01em; color:rgba(255,255,255,0.88); text-shadow:0 1px 10px rgba(0,0,0,0.5); text-wrap:balance; }
   .home-verse .hv-ref{ font-family:'Poppins',sans-serif; font-style:normal; font-weight:600; font-size:0.62rem; letter-spacing:0.06em; text-transform:uppercase; color:rgba(255,224,150,0.85); white-space:nowrap; }
+  /* JUSQU'OÙ LE VERSET TIENT.
+     Il partait sous 700 px, avec cinq cartes. Avec six, la colonne redemande
+     ses 39 px entre 700 et 750 — c'est exactement la bande où l'accueil
+     débordait encore de 9 à 16 px après avoir rendu le logo à sa taille
+     raisonnable. Le verset est ce qu'on retire en dernier, mais on le retire :
+     il est décoratif, la bande des sept jours ne l'est pas. */
+  @media (max-height:750px) and (orientation:portrait),
+         (max-height:750px) and (pointer:fine),
+         (orientation:landscape) and (pointer:coarse) and (max-width:750px){
+    .home-verse{ display:none; }
+  }
   /* CETTE SEMAINE — le pied de l'accueil (voir semaineHtml).
      Même famille que le reste : des pastilles au rayon des petits contrôles,
      le filet commun pour rebord, et la teinte ambrée du Défi du jour pour les
@@ -789,7 +800,22 @@
   /* La lèvre blanche interne a sauté ici comme partout ailleurs. */
 
   .question-card{ position:relative; background:var(--surface); border:0; border-radius:var(--r-l); padding:calc(1.4rem + 1px) calc(1.2rem + 1px); margin-bottom:var(--e-3); text-align:center; }
-  .question-card::before{ content:""; position:absolute; top:0; left:18%; right:18%; height:2px; background:linear-gradient(90deg, transparent, rgba(239,173,38,0.75), transparent); }
+  /* ===== UNE AURA, PLUS UN FILET =====
+     « Je préfère une aura de lumière bien gérée que ce petit bord jaune. »
+     Le filet était un TRAIT : 2 px d'or posés sur l'arête haute, la dernière
+     ligne de couleur du jeu, et la seule chose qui contredisait encore la
+     règle « aucune bordure de couleur nulle part ». Un trait se voit comme un
+     trait — on cherche ce qu'il sépare, et il ne sépare rien.
+     À sa place, de la LUMIÈRE : une nappe chaude qui entre par le haut de la
+     carte et se dissout au tiers, sans jamais former d'arête. Elle est posée
+     À L'INTÉRIEUR (la carte est découpée par overflow:clip, comme toute
+     surface de verre) : rien ne déborde, rien ne cerne. Les deux paliers du
+     dégradé sont là pour ça — sans le palier intermédiaire, l'oeil retrouve
+     un bord au point où la couleur s'arrête. */
+  .question-card::before{ content:""; position:absolute; top:0; left:0; right:0; height:58%;
+    border-radius:var(--r-l) var(--r-l) 0 0; pointer-events:none;
+    background:radial-gradient(118% 100% at 50% 0%,
+      rgba(239,173,38,0.30) 0%, rgba(239,173,38,0.155) 34%, rgba(239,173,38,0.05) 63%, rgba(239,173,38,0) 100%); }
   .question-card .qtext{ font-family:'Poppins',sans-serif; font-weight:600; font-size:clamp(1.05rem, calc(4 * var(--lw)), 1.32rem); line-height:1.45; }
 
   .options-grid{ display:grid; grid-template-columns:1fr 1fr; gap:clamp(0.55rem, calc(1.2 * var(--uh)), 0.8rem); margin-bottom:clamp(var(--e-2), calc(1.8 * var(--uh)), var(--e-4)); }
@@ -1080,7 +1106,7 @@
          chose (voir majVoilesErreurs) ;
        - un CRAN par carte : on se pose toujours sur une carte entière,
          jamais au milieu d'une ligne. */
-  .settings-sheet.review-sheet, .settings-sheet.flam-sheet{ padding-bottom:calc(env(safe-area-inset-bottom) * 0.55 + 1.15rem + 220px); }
+  .settings-sheet.review-sheet, .settings-sheet.flam-sheet, .settings-sheet.revoir-sheet{ padding-bottom:calc(env(safe-area-inset-bottom) * 0.55 + 1.15rem + 220px); }
   /* ===== LA RAMPE DU VOILE : UNE COURBE, PAS UNE DROITE =====
      Une rampe LINÉAIRE d'opacité a deux coudes — là où elle démarre et là où
      elle s'arrête, la pente saute d'un coup de zéro à sa valeur puis revient
@@ -1172,7 +1198,15 @@
      2,05 rem — la taille exacte de la bande des sept jours de l'accueil — on
      en voit sept semaines d'un coup, et c'est là que la FORME de la série
      apparaît. */
-  .fg-sem, .fg-cases{ display:grid; grid-template-columns:repeat(7, minmax(0, 2.05rem)); gap:0.3rem;
+  /* « Je veux voir le joué / rejoué en plus gros au niveau des émojis, je
+     trouve qu'ils sont beaucoup trop petits, on ne les voit quasiment pas. »
+     La case était calée sur la bande des sept jours de l'accueil (2,05 rem),
+     et la flamme n'en occupait que 68 % : 22 px de dessin. Or ce n'est pas le
+     même objet — la bande de l'accueil est une note en bas de page, cette
+     grille EST le sujet de la feuille qu'on vient d'ouvrir. La case passe donc
+     à 2,4 rem et la flamme à 88 % de la case : 34 px au lieu de 22, une fois
+     et demie plus grande, et sept semaines restent à l'écran. */
+  .fg-sem, .fg-cases{ display:grid; grid-template-columns:repeat(7, minmax(0, 2.4rem)); gap:0.3rem;
     justify-content:center; }
   .fg-sem{ margin-bottom:0.3rem; }
   .fg-sem span{ text-align:center; font-family:'Poppins',sans-serif; font-size:0.62rem; font-weight:700;
@@ -1189,16 +1223,41 @@
      Quatre-vingt-dix SVG dans le document auraient coûté quatre-vingt-dix
      copies du même dégradé, et autant d'identifiants en double. */
   .fj{ aspect-ratio:1; border-radius:var(--r-s); background-color:rgba(42,36,30,0.09);
-    background-repeat:no-repeat; background-position:center; background-size:68% 68%; }
+    background-repeat:no-repeat; background-position:center; background-size:88% 88%; }
   .fj.fait{ background-color:rgba(240,154,24,0.18); background-image:var(--fj-feu); }
   .fj.gele{ background-color:rgba(79,166,220,0.28); background-image:var(--fj-glace); }
   .fj.horschamp{ background-color:transparent; background-image:none; }
   /* Aujourd'hui : plus clair, jamais cerné. */
   .fj.auj{ box-shadow:inset 0 0 0 2px rgba(255,255,255,0.75), 0 1px 3px rgba(42,36,30,0.16); }
   .flam-leg{ display:flex; align-items:center; gap:0.45rem; margin-top:0.6rem; font-size:0.78rem; color:var(--ink-soft); }
-  .flam-leg .fj{ width:1.15rem; aspect-ratio:1; flex-shrink:0; }
+  .flam-leg .fj{ width:1.35rem; aspect-ratio:1; flex-shrink:0; }
   .flam-leg b{ font-weight:600; margin-right:0.55rem; }
   .flam-regle{ font-size:0.78rem; color:var(--ink-soft); line-height:1.4; margin-top:0.15rem; }
+  /* ===== LA FEUILLE « QUE VEUX-TU REVOIR ? » =====
+     Elle emprunte les rangées du mode en ligne (.online-action) : même objet,
+     même geste — une icône, un titre, une phrase, et on part. Rien de neuf
+     n'est inventé pour un écran qui fait exactement ce que font les autres.
+     La seule addition est le NOMBRE à droite : ici il ne décore pas, il décide
+     — c'est lui qui dit si la porte mène quelque part. */
+  .oa-ico.v{ background:linear-gradient(150deg,#A78BFA,#7C5CE0); box-shadow:inset 0 1px 0 rgba(255,255,255,0.26), 0 2px 7px rgba(110,80,200,0.26); }
+  .revoir-sheet .rv-choix{ margin-bottom:0.5rem; }
+  .rv-cnt{ flex-shrink:0; font-family:'Poppins',sans-serif; font-weight:700; font-size:1rem;
+    font-variant-numeric:tabular-nums; color:var(--ink-soft); min-width:1.5rem; text-align:right; }
+  /* Une porte fermée le dit en s'éteignant, pas en disparaissant : on garde la
+     ligne pour que la feuille ait toujours la même forme. */
+  .rv-choix.rv-off{ opacity:0.42; }
+  .rv-choix.rv-off .rv-cnt{ color:var(--ink-soft); }
+  .rv-livres-t{ font-family:'Poppins',sans-serif; font-size:0.7rem; font-weight:700; letter-spacing:0.07em;
+    text-transform:uppercase; color:var(--ink-soft); margin:0.85rem 0.15rem 0.45rem; }
+  .rv-livres{ display:grid; grid-template-columns:repeat(auto-fill, minmax(5.6rem, 1fr)); gap:0.36rem;
+    max-height:calc(22 * var(--hu)); overflow-y:auto; overscroll-behavior:contain; -webkit-overflow-scrolling:touch;
+    scrollbar-width:none; margin-bottom:0.7rem; }
+  .rv-livres::-webkit-scrollbar{ display:none; }
+  .rv-bk{ display:flex; align-items:center; justify-content:center; gap:0.32rem; }
+  .rv-bk .bk-nm{ display:inline; }
+  .rv-bkn{ font-family:'Poppins',sans-serif; font-weight:700; font-size:0.62rem; color:#fff;
+    background:linear-gradient(150deg,#A78BFA,#7C5CE0); border-radius:var(--r-full);
+    padding:0.05rem 0.34rem; flex-shrink:0; font-variant-numeric:tabular-nums; }
   .flam-vide{ font-size:0.9rem; color:var(--ink-soft); padding:0.6rem 0.1rem; }
   .flam-sheet .sheet-title{ display:flex; align-items:baseline; }
   .flam-sheet .sheet-title small{ margin-left:auto; font-family:'Poppins',sans-serif; font-size:0.85rem; font-weight:700; color:var(--ink-soft); font-variant-numeric:tabular-nums; }
@@ -1278,14 +1337,21 @@
      logo Yada. » Chaque lettre part d'un côté différent, tourne légèrement, et
      vient se poser à sa place. Le titre, lui, ne bouge plus : il n'a plus
      d'animation propre, ce sont ses lettres qui arrivent.
-     Elles empruntent l'horloge du jeu (--tr-ouvre) comme tout ce qui arrive :
-     une seule courbe pour tout le monde, y compris ici. Les départs sont
-     décalés de soixante-dix millisecondes — assez pour qu'on VOIE l'assemblage,
-     assez peu pour que le mot soit entier bien avant la fin de l'écran de
-     chargement (dernière lettre posée à 1,03 s, sur quatre secondes). */
+     LE TEMPS DE LE VOIR. Elles empruntaient l'horloge du jeu (--tr-ouvre,
+     0,52 s) et partaient à 70 ms d'intervalle : la dernière lettre était posée
+     à 1,01 s — « il va trop vite, on n'a pas trop le temps de le voir ». Or
+     l'horloge du jeu n'a rien à faire ici : elle règle des ARRIVÉES d'écran,
+     des gestes auxquels on répond, et sa brièveté est une qualité là-bas. Ceci
+     est un générique — on ne répond à rien, on regarde. Il a donc sa propre
+     durée, dite une fois : 0,9 s par lettre, 0,17 s entre deux départs, la
+     dernière posée à 1,71 s sur les quatre secondes de l'écran (mesuré, banc
+     scratchpad/splash.js). Le mouvement visible dure deux fois plus longtemps
+     qu'avant — 1,41 s contre 0,73 — et le mot reste ensuite entier plus de
+     deux secondes. */
+  :root{ --tr-lettre: 0.9s cubic-bezier(0.22, 1, 0.32, 1); }
   .splash-title{ font-family:'Poppins',sans-serif; font-weight:700; font-size:1.8rem; letter-spacing:-0.02em; color:#fff; margin:0 0 0.35rem; text-shadow:0 2px 16px rgba(0,0,0,0.6); display:flex; }
   .splash-l{ display:inline-block; opacity:0; will-change:transform, opacity;
-    animation:lettreArrive var(--tr-ouvre) forwards; }
+    animation:lettreArrive var(--tr-lettre) forwards; }
   @keyframes lettreArrive{
     from{ opacity:0; transform:translate(var(--lx,0), var(--ly,0)) rotate(var(--lr,0deg)) scale(0.72); }
     to{ opacity:1; transform:translate(0,0) rotate(0deg) scale(1); }
@@ -2291,7 +2357,16 @@
      Progression, ni le bleu du jeu en ligne. Une seule carte la porte, et
      seulement les jours où il y a quelque chose à revoir. */
   .daily-card.revoir-card .rv-ico{ background:linear-gradient(150deg,#A78BFA,#7C5CE0); box-shadow:inset 0 1px 0 rgba(255,255,255,0.26), 0 2px 7px rgba(110,80,200,0.26); }
+  /* La pastille est LA MÊME PILULE que celle de la série (.dc-streak) : même
+     hauteur, même rayon, même graisse — seule la couleur change. Une largeur
+     plancher lui évite d'être un simple rond quand le nombre tient sur un
+     chiffre : deux cartes voisines qui portent le même objet ne doivent pas
+     donner deux formes différentes. */
+  .daily-card .dc-streak{ min-width:2.55rem; justify-content:center; }
   .daily-card.revoir-card .rv-n{ --glass-tint: rgb(139,109,235); box-shadow:0 2px 8px rgba(110,80,200,0.24); }
+  /* Rien pour aujourd'hui, mais le carnet n'est pas vide : le nombre reste
+     dit, sans appeler. */
+  .daily-card.revoir-card .rv-n.calme{ --glass-tint: rgb(176,166,196); box-shadow:0 2px 8px rgba(60,50,80,0.16); }
   .daily-card .dc-ico svg{ width:100%; height:100%; }
   .daily-card .dc-txt{ flex:1; display:flex; flex-direction:column; gap:0.12rem; min-width:0; }
   .daily-card .dc-txt b{ font-family:'Poppins',sans-serif; font-weight:600; font-size:0.98rem; color:var(--ink); }
@@ -2330,6 +2405,45 @@
   .parcours-card .pc-txt{ flex:1; display:flex; flex-direction:column; gap:0.16rem; min-width:0; }
   .parcours-card .pc-txt b{ font-family:'Poppins',sans-serif; font-weight:600; font-size:0.98rem; color:var(--ink); }
   .parcours-card .pc-txt small{ font-size:0.8rem; color:var(--ink-soft); line-height:1.35; }
+
+  /* ===== LES SIX CARTES DE L'ACCUEIL SONT UNE SEULE CARTE =====
+     « Tu ne trouves pas que la partie À revoir doit être de la même taille que
+     les autres ? » — Elle l'était sur un iPhone 15, et seulement là. Les trois
+     familles avaient été écrites à trois moments différents :
+
+       .mode-card      padding  calc(clamp(0.6rem, 1.6 * hu, 0.82rem) + 1px)   FLUIDE
+                       marge    clamp(e-2, 1.95 * hu, e-3)                     FLUIDE
+       .daily-card     padding  calc(0.82rem + 1px)                            FIGÉE
+       .parcours-card  marge    e-3                                            FIGÉE
+
+     Sur un écran haut les deux formules se rejoignent par le haut de leur
+     plafond et l'illusion tenait ; dès que l'écran raccourcit, la formule
+     fluide descend seule et les cartes se désolidarisent — 62 px contre 66,3
+     sur un SE, mesuré. Trois écritures pour un seul objet : la géométrie est
+     donc dite UNE fois, ici, pour les trois. L'apparence, elle, reste propre à
+     chacune (le verre du Défi, la couleur des icônes) — c'est la TAILLE qui
+     est commune, pas le style.
+
+     L'ÉCART ENTRE DEUX CARTES SE RESSERRE, parce qu'il y en a six maintenant.
+     La carte « À revoir » a ajouté 90 px à une colonne qui n'en avait plus :
+     l'accueil débordait de 20 px et la bande des sept jours passait sous
+     l'indicateur d'accueil de l'iPhone — « je ne vois plus les 7 derniers
+     jours ». On ne rend pas les cartes plus petites (elles se touchent déjà du
+     doigt), on rend le BLANC entre elles proportionnel à la hauteur : 11,5 px
+     sur un iPhone 15 au lieu de 16, et le plafond de 16 px reste pour les
+     écrans qui en ont les moyens.
+
+     ET LA DERNIÈRE CARTE NE PORTE PLUS DE MARGE BASSE : sous elle il y a déjà
+     l'espaceur qui pousse la bande des sept jours en bas de l'écran. Les deux
+     disaient la même chose, l'un des deux payait 16 px pour rien. */
+  .mode-card, .daily-card, .parcours-card{
+    padding:calc(clamp(0.6rem, calc(1.6 * var(--hu)), 0.82rem) + 1px) calc(0.95rem + 1px);
+    margin-bottom:clamp(var(--e-2), calc(1.35 * var(--hu)), var(--e-3));
+  }
+  .mode-text, .daily-card .dc-txt, .parcours-card .pc-txt{ gap:0.13rem; }
+  .mode-title, .daily-card .dc-txt b, .parcours-card .pc-txt b{ font-size:0.98rem; line-height:1.32; }
+  .mode-desc, .daily-card .dc-txt small, .parcours-card .pc-txt small{ font-size:0.8rem; line-height:1.3; }
+  .accueil > :is(.mode-card, .daily-card, .parcours-card):last-of-type{ margin-bottom:0; }
 
   /* Barre de stats : MÊME contour de verre premium que les cartes (bord .55 +
      ombre 4 couches) -> cohérent avec l'accueil et le reste du jeu. */
@@ -2483,7 +2597,10 @@
     .tst{ margin-top:0.42rem; }
     .tst-head{ padding:calc(0.5rem + 1px) calc(0.8rem + 1px); }
     .parcours-h{ margin:0.5rem 0.2rem 0.4rem; }
-    .home-verse{ display:none; } /* petits écrans : l'accueil garde son équilibre */
+    /* Le verset signature est déclaré plus haut, dans son propre palier
+       (max-height:750px) : la ligne est gardée ici pour que ce bloc reste
+       lisible seul, mais elle ne fait plus le travail à elle seule. */
+    .home-verse{ display:none; }
     .semaine{ display:none; }   /* la pastille flamme, elle, est là de toute façon */
     /* ÉCRAN COURT = ÉCRAN DÉLESTÉ, DONC LE LOGO PEUT ÊTRE PLUS GRAND.
        Le plafond de hauteur du logo (12,5 % de la hauteur utile) est calculé
@@ -2495,13 +2612,29 @@
        hauteur utile) : la largeur redevient le facteur qui décide, le logo
        retrouve ses 24 % partout, et le plafond ne reprend la main qu'en dessous
        de ~555 px de hauteur utile, là où il y a vraiment urgence. */
-    .hero-icon{ width:clamp(4.2rem, min(calc(27 * var(--lw)), calc(19 * var(--hu))), 7.4rem); }
-    html .hero-zone{ height:clamp(4.6rem, min(calc(28.7 * var(--lw)), calc(21 * var(--hu))), 8rem); margin-bottom:0.35rem; }
+    /* LE LOGO REPREND LA TAILLE QUE LA COLONNE PEUT PAYER.
+       Le plafond avait été relevé (19 et 21 fois la hauteur utile) au motif
+       qu'un écran court est un écran DÉLESTÉ : verset masqué, bande masquée,
+       « il reste 110 à 155 px inutilisés en bas ». C'était vrai avec CINQ
+       cartes. Il y en a six, la bande est revenue, et ces 110 px sont devenus
+       -33 : le raisonnement a survécu à ses prémisses. On rend donc au logo la
+       taille que la place autorise vraiment — mesurée, pas supposée : le
+       facteur en hauteur redescend de 21 à 12,6 pour la zone et de 19 à 11,3
+       pour l'icône, ce qui rend 29 px sur un navigateur de 643 px et 21 sur un
+       SE. La largeur reste l'autre facteur : sur un écran étroit c'est encore
+       elle qui décide, et le logo ne grossit pas au-delà. */
+    .hero-icon{ width:clamp(4.2rem, min(calc(27 * var(--lw)), calc(11.3 * var(--hu))), 7.4rem); }
+    html .hero-zone{ height:clamp(4.6rem, min(calc(28.7 * var(--lw)), calc(12.6 * var(--hu))), 8rem); margin-bottom:0.35rem; }
+    /* Le pied se resserre lui aussi : une note en bas de page, encore plus
+       note quand la page est courte. */
+    .sj{ width:1.85rem; height:1.85rem; font-size:0.68rem; }
+    .sem-j{ gap:0.32rem; }
+    .semaine{ gap:0.3rem; }
     .hero-title{ font-size:1.3rem; margin-bottom:0.15rem; }
     /* SE & co (≤700px de haut) : on resserre un poil les cartes pour que
        l'accueil tienne AUSSI ici, marges de sécurité comprises -> zéro débord,
        zéro défilement. */
-    .mode-card, .daily-card{ margin-bottom:var(--e-2); }
+    .mode-card, .daily-card, .parcours-card{ margin-bottom:var(--e-2); }
   }
   /* ÉCRAN MOYEN : LA BANDE DES SEPT JOURS REVIENT.
      Le palier unique à 700 px effaçait D'UN COUP le verset ET la bande. C'est
@@ -2515,8 +2648,11 @@
      logo vient justement de reprendre sa taille.
  La série reste dite une seule fois : la bande ne
      compte plus les jours d'affilée, c'est la pastille du Défi qui le fait. */
-  @media (min-height:610px) and (max-height:700px) and (orientation:portrait),
-         (min-height:610px) and (max-height:700px) and (pointer:fine){
+  /* Le seuil mesuré était 588 px, la bande revenait donc à 610. Six cartes
+     plus tard il est à 630 : en dessous, la bande ne rentre plus, et une
+     bande qu'il faut aller chercher en défilant ne rend service à personne. */
+  @media (min-height:630px) and (max-height:700px) and (orientation:portrait),
+         (min-height:630px) and (max-height:700px) and (pointer:fine){
     .semaine{ display:flex; }
   }
   .tst.open .tst-body{ grid-template-rows:1fr; margin-top:0.6rem; opacity:1; }
@@ -2535,7 +2671,15 @@
   /* La tuile est devenue un bouton : on lui rend les manières d'un bouton
      (largeur pleine, pas de police héritée du navigateur) sans changer d'un
      pixel ce qu'on voyait avant. */
-  .bk{ padding:0.4rem 0.45rem; border-radius:10px; text-align:center; background:rgba(255,253,247,0.42); --rim-edge:0 0 0 1px rgba(58,42,26,0.2); --rim-cast:0 2px 6px rgba(34,26,16,0.1); border:1px solid var(--bord);
+  /* « Regarde, lorsque je sélectionne un livre, ça ne prend pas tout dans les
+     bords. » — Le 1 px de bordure, encore lui. L'onde d'appui est un enfant
+     absolu calé sur inset:0, et un enfant absolu se cale sur la boîte de
+     PADDING : il s'arrêtait donc un pixel avant l'arête, tout autour, et il
+     restait l'anneau clair qu'on voit sur la photo de « 2 Pierre ». C'était la
+     dernière famille du jeu à porter encore une vraie bordure ; elle passe au
+     schéma commun (v189) — le pixel vit dans le padding, la boîte ne bouge pas
+     d'un cheveu, et l'onde va jusqu'au bord. */
+  .bk{ padding:calc(0.4rem + 1px) calc(0.45rem + 1px); border-radius:10px; text-align:center; background:rgba(255,253,247,0.42); --rim-cast:0 2px 6px rgba(34,26,16,0.1); border:0;
     width:100%; font-family:inherit; cursor:pointer; -webkit-tap-highlight-color:transparent; }
   /* Un livre sans question ne se touche pas, et se voit un peu en retrait. */
   .bk.vide{ opacity:0.55; cursor:default; }
@@ -3107,7 +3251,14 @@
      chevauche les boutons profil/réglages dans les coins. Sans pointer-events:none,
      il interceptait leurs taps (le hero-zone étant peint au-dessus) -> profil &
      réglages ne s'ouvraient plus. On ne laisse cliquables que ses enfants utiles. */
-  .hero-zone{ position:relative; height:clamp(4.6rem, min(calc(28.7 * var(--lw)), calc(15.1 * var(--hu))), 8rem); margin:0 auto 0.35rem; display:flex; align-items:center; justify-content:center; pointer-events:none; }
+  /* LE FACTEUR EN HAUTEUR DESCEND DE 15,1 À 13,2, et ça ne coûte rien là où
+     ça compte. Sur un iPhone 15 c'est la LARGEUR qui décide (28,7 × lw =
+     112,8 px, contre 13,2 × hu = 112,5) : le logo ne bouge pas d'un pixel. Le
+     facteur en hauteur ne reprenait la main qu'entre 700 et 800 px — la bande
+     morte juste au-dessus du palier des « petits écrans », là où l'accueil
+     redevenait d'un coup grand format alors qu'il n'en avait pas encore les
+     moyens. Mesuré avant : 28 px de débord à 710 px de haut, 3 à 780. */
+  .hero-zone{ position:relative; height:clamp(4.6rem, min(calc(28.7 * var(--lw)), calc(13.2 * var(--hu))), 8rem); margin:0 auto 0.35rem; display:flex; align-items:center; justify-content:center; pointer-events:none; }
   .hero-zone .hero-icon{ margin:0; }
   /* Ombre de lévitation : reste « au sol » et respire à l'inverse du
      flottement de l'icône (petite & pâle quand l'icône monte, large &
@@ -3141,6 +3292,21 @@
      du logo au verset au lieu de les faire bouger l'un sur l'autre. */
   .hero-icon-wrap{ display:block; position:relative; transition:transform var(--tr-ouvre), opacity var(--tr-ouvre); will-change:transform, opacity; }
   .hero-icon-wrap.bump{ animation:heroBump 0.32s cubic-bezier(0.17,1.32,0.32,1); }
+  /* ===== LE LOGO RÉPOND, IL NE SE CONTENTE PAS DE RAPETISSER =====
+     « Lorsque je tapote l'icône, elle ne réagit pas assez ; je veux qu'elle se
+     comporte de façon vivante. » La v218 avait échangé de l'amplitude contre
+     de la fiabilité — 6 % d'enfoncement au lieu de 10, retour aussi rapide que
+     l'appui — pour que cinq taps donnent cinq appuis nets. La fiabilité est
+     acquise ; la réaction, elle, est devenue trop discrète pour se voir.
+     Ce qui rend un objet vivant n'est pas la profondeur seule, c'est le
+     RESSORT et la LUMIÈRE. Trois choses répondent maintenant ensemble :
+       l'échelle descend à 0,905 (contre 0,94) et remonte en dépassant
+         légèrement sa taille avant de se poser — un ressort, pas un élastique ;
+       l'inclinaison double (3° au lieu de 1,5) ;
+       et l'AURA se resserre et s'éclaire sous le doigt, puis se relâche.
+     L'aura est ce qui coûte le moins et se voit le plus : c'est de la lumière
+     sur un objet lumineux, pas un déplacement de plus à suivre du regard. */
+  .hero-icon-wrap.vif::before{ inset:-28%; filter:blur(14px) brightness(1.55); }
   /* LUMIÈRE QUI TOURNE derrière l'icône : un balayage lumineux blanc chaud
      (deux arcs doux opposés, dégradé conique) qui ORBITE lentement autour de
      l'icône au lieu de pulser. Disque circulaire (border-radius 50%) pour que
@@ -3159,7 +3325,17 @@
       rgba(255,251,244,0) 306deg,
       rgba(255,251,244,0) 360deg);
     filter:blur(11px); animation:heroSpin 9s linear infinite;
+    transition:filter 0.16s ease, inset 0.16s ease;
   }
+  /* « Le logo de l'accueil a une aura qui tourne autour : est-ce que ce ne
+     serait pas bien d'avoir exactement pareil sur l'écran de chargement ? »
+     — C'est déjà exactement pareil : la même règle sert les deux (le sélecteur
+     ci-dessus nomme les deux enveloppes), même dégradé conique, même flou,
+     même tour de neuf secondes. Une seule chose clochait : l'aura était à
+     pleine force dès la première image alors que la colombe, elle, se fond en
+     une seconde — on voyait donc le halo AVANT l'objet qui le porte. Elle
+     arrive maintenant avec lui, sur la même seconde. */
+  .splash-dove-wrap::before{ opacity:0; animation:heroSpin 9s linear infinite, splashFade 1s ease forwards; }
   @keyframes heroSpin{ from{ transform:rotate(0deg); } to{ transform:rotate(360deg); } }
   /* APPAREIL LENT (mesuré, voir perfReleve) : les deux seules animations qui
      tournent SANS ARRÊT s'arrêtent. Le halo reste, l'ombre reste — elles ne
@@ -3168,6 +3344,11 @@
   html.perf-bas .hero-icon-wrap::before,
   html.perf-bas .splash-dove-wrap::before,
   html.perf-bas .hero-zone::after{ animation:none; }
+  /* Le halo du chargement doit sa PRÉSENCE à une animation (il entre avec la
+     colombe) : coupée sans rien d'autre, il resterait à zéro et disparaîtrait
+     complètement sur les appareils lents. On lui rend son opacité à la main —
+     il ne tourne plus, il est là. */
+  html.perf-bas .splash-dove-wrap::before{ opacity:1; }
   @keyframes heroBump{ 0%{ transform:scale(1); } 45%{ transform:scale(1.09) rotate(2.5deg); } 100%{ transform:scale(1); } }
   .hero-zone.show-verse .hero-icon-btn{ pointer-events:none; }
   .hero-zone.show-verse .hero-icon-wrap{ transform:scale(0.5) rotate(-9deg); opacity:0; }
@@ -6224,6 +6405,30 @@ function monterLaFeuille(veil){
        la réserve. */
     try{ armGlass(msPli() + 300); }catch(e){}
     f.classList.add("monte");
+    /* ===== ET UN DERNIER RECALAGE À LA VRAIE FIN DU MOUVEMENT =====
+       Le moteur est armé pour une DURÉE DEVINÉE (la montée plus 300 ms). Tant
+       que le téléphone suit, la montée est finie bien avant et le compte est
+       bon. Mais une durée devinée n'est pas la fin du mouvement : c'est une
+       promesse sur le temps que va prendre le navigateur. Si l'animation
+       s'attarde — reprise d'arrière-plan, rastérisation d'une feuille chargée —
+       le moteur s'arrête pendant que la vitre glisse encore, et le décor,
+       jusque-là cloué, repart d'un coup avec elle. C'est exactement la forme
+       du défaut décrit : « ça s'ouvre parfaitement bien puis ensuite ça saute ».
+       Je n'ai pas su le reproduire en sans-tête, même en freinant le
+       processeur d'un facteur huit — le compositeur, lui, ne ralentit pas. Ce
+       qui suit ne corrige donc pas un défaut mesuré : ça retire la SUPPOSITION.
+       On écoute la fin réelle de la transition et on recale une fois de plus,
+       là où l'on sait que la feuille est arrivée. Coût : un événement et une
+       passe de plus. Sur un appareil rapide, ce recalage ne change rien
+       (la position est déjà la bonne) ; sur un appareil lent, il rattrape
+       précisément ce que le minuteur aurait manqué. */
+    const fini = (e)=>{
+      if(e && e.target !== f) return;              // pas les transitions des enfants
+      if(e && e.propertyName && e.propertyName !== "transform") return;
+      f.removeEventListener("transitionend", fini);
+      try{ glassRelayout(); queueGlassSync(); }catch(err){}
+    };
+    f.addEventListener("transitionend", fini);
   };
   requestAnimationFrame(()=>{ requestAnimationFrame(lacher); });
   /* FILET. requestAnimationFrame ne tourne PAS dans un onglet caché : si le
@@ -7341,60 +7546,82 @@ try{
      d'un pixel par image — le défileur ne peut alors qu'alterner « un pixel »
      et « rien ». Relevé sur la carte des joueurs, 54 px de course :
      3 6 4 4 4 3 4 3 3 2 3 1 3 1 2 1 0 1 0 1 0 1 — la fin bégaie.
-     Trois corrections, et aucune ne touche à la courbe :
-       1. LA DURÉE SUIT LA DISTANCE. 520 ms, c'est l'horloge d'un écran entier ;
-          une course de 54 px n'a rien à y faire. Proportionnelle, plancher à
-          160 ms, plafond à l'horloge du jeu.
-       2. ON COUPE LA QUEUE. Dès qu'il reste moins d'un pixel et demi, on pose
-          la valeur finale et on s'arrête : un saut invisible au lieu de deux
-          cents millisecondes de bégaiement.
-       3. UNE CORRECTION MINUSCULE NE GLISSE PAS. Le second calage (celui qui
-          arrive quand iOS a fini d'annoncer la hauteur du clavier) ne vaut que
-          trois ou quatre pixels : les étaler sur dix images, c'est fabriquer
-          la saccade qu'on essaie d'éviter. En dessous de quatre pixels, on
-          pose, point.
-     Et si un glissement est DÉJÀ en route, on ne le relance pas — on déplace
-     sa destination sans bouger la position du moment (voir plus bas) : relancer
-     une courbe d'arrivée en plein vol, c'est repartir à pleine vitesse alors
-     qu'on ralentissait. Mesuré : deux reprises de vitesse, la pire à 586 ms. */
-  const GLISSE_MINI = 4, GLISSE_QUEUE = 1.5;
+     La réponse d'alors : une durée proportionnelle à la distance, une queue
+     coupée sous un pixel et demi, et rien en dessous de quatre pixels. Elle
+     valait pour une cible IMMOBILE, et elle a tenu tant que le banc faisait
+     monter le clavier d'un seul coup.
+     LA v219 A CHANGÉ D'OUTIL, parce que la cible bouge. Il n'y a plus ni durée
+     ni courbe : un SUIVI AMORTI (voir glisserVers) avale à chaque image une
+     même fraction de ce qui reste. La queue de bégaiement disparaît pour la
+     même raison qu'avant — on pose les cinq derniers pixels d'un coup — mais
+     le raccord d'une cible qui se déplace, lui, devient gratuit : il n'y a
+     plus de vitesse à raccorder, la loi ne dépend que de l'écart du moment.
+     Ce qui reste vrai et le restera : un défileur ne connaît que les pixels
+     entiers, donc toute fin de mouvement sous un pixel par image bégaie. */
+  /* GLISSE_QUEUE : à quelle distance de la cible on pose le dernier pixel d'un
+     coup au lieu de continuer la courbe. Un défileur ne connaît QUE les
+     pixels entiers : sous un pixel par image, la courbe ne fait plus avancer
+     que la moitié des images, et le reste rampe. Relevé sur le recadrage du
+     clavier à huit joueurs, dernières images : 73, 74, 75 — trois images pour
+     deux pixels, à la fin d'un mouvement qui en a fait soixante-quinze. C'est
+     là qu'on sent « des petites saccades quand ça se place ».
+     À cinq pixels, la dernière image du mouvement fait cinq pixels d'un coup
+     — l'ordre de grandeur du pas médian, donc parfaitement dans le rythme, et
+     il n'y a plus de rampe du tout. GLISSE_MINI vaut le même nombre : on ne se
+     déplace pas pour moins de cinq pixels, et les cinq derniers se font en une
+     image. Les deux seuils disent la même chose, ils ont la même valeur. */
+  const GLISSE_MINI = 5, GLISSE_QUEUE = 5;
   let glissement = null;
-  const courbeGlisse = (x)=> 1 - Math.pow(1 - x, 3);   // easeOutCubic, comme --tr-plie
+  /* ===== ON NE JOUE PAS UNE ANIMATION, ON SUIT UNE CIBLE =====
+     Ce glissement avait une DURÉE et une COURBE, comme une animation : on
+     décide où aller, en combien de temps, et on déroule. C'est juste quand la
+     destination ne bouge pas. Ici elle bouge tout le temps — le clavier monte
+     par paliers, et chaque palier redonne une cible plus lointaine.
+     Le rattrapage d'alors gardait la position exacte à l'image du changement
+     (aucun saut, c'était l'objet du soin) mais pas la VITESSE : la distance
+     restante grandissait pendant que le temps restant, lui, ne bougeait pas.
+     Le mobile accélérait donc d'un coup à chaque palier. Relevé image par
+     image sur huit joueurs : +13, +1, +2, +11, +14, +8 — c'est ça, « ça se
+     place bien mais de manière assez saccadée ».
+     UN SUIVI AMORTI n'a ni durée ni courbe : à chaque image il avale une même
+     FRACTION de ce qui reste. Déplacer la cible en cours de route ne provoque
+     alors aucune discontinuité — ni de position ni de vitesse — parce qu'il
+     n'y a rien à raccorder : la loi ne dépend que de l'écart du moment. Et le
+     mouvement reste indépendant de la cadence, la fraction étant recalculée
+     d'après le temps réellement écoulé. */
+  const GLISSE_K = 0.26;          // fraction de l'écart avalée par image de 60 Hz
   function glisserVers(app, cible){
+    const maintenant = ()=> (typeof performance !== "undefined" ? performance.now() : Date.now());
     const pos = app.scrollTop;
     if(Math.abs(cible - pos) < GLISSE_MINI){
       if(glissement){ cancelAnimationFrame(glissement.id); glissement = null; }
       app.scrollTop = cible; return;
     }
-    const maintenant = ()=> (typeof performance !== "undefined" ? performance.now() : Date.now());
-    /* DÉPLACER LA DESTINATION SANS DÉPLACER LE MOBILE. On garde l'horloge et
-       la courbe en cours, et on recalcule le DÉPART pour que la position de
-       cette image reste exactement la même : aucun saut, aucune reprise de
-       vitesse, et on finit quand même à la nouvelle cible. Tout à la fin
-       (c proche de 1) le calcul explose — on relance alors proprement. */
-    if(glissement){
-      const c = courbeGlisse(Math.min(1, (maintenant() - glissement.t0) / glissement.duree));
-      if(c < 0.94){
-        glissement.cible = cible;
-        glissement.depart = (pos - cible * c) / (1 - c);
-        return;
-      }
-      cancelAnimationFrame(glissement.id); glissement = null;
-    }
-    const course = cible - pos;
-    const duree = Math.max(160, Math.min((typeof msPli === "function" ? msPli() : 520),
-                                         Math.round(Math.abs(course) * 3.2)));
+    /* Une course déjà lancée n'est pas relancée : on lui donne la nouvelle
+       cible, et c'est tout. C'est tout l'intérêt du suivi. */
+    if(glissement){ glissement.cible = cible; return; }
     const pas = ()=>{
       const g = glissement;
       if(!g) return;
-      const t = (maintenant() - g.t0) / g.duree;
-      if(t >= 1 || Math.abs(g.cible - app.scrollTop) <= GLISSE_QUEUE){
-        app.scrollTop = g.cible; glissement = null; return;
-      }
-      app.scrollTop = g.depart + (g.cible - g.depart) * courbeGlisse(t);
+      const p = app.scrollTop;
+      const reste = g.cible - p;
+      if(Math.abs(reste) <= GLISSE_QUEUE){ app.scrollTop = g.cible; glissement = null; return; }
+      const t = maintenant();
+      const dt = Math.min(50, Math.max(1, t - g.tPrec));   // une image sautée ne fait pas bondir
+      g.tPrec = t;
+      app.scrollTop = p + reste * (1 - Math.pow(1 - GLISSE_K, dt / 16.667));
+      /* ===== UN SUIVI N'A PAS DE FIN, IL FAUT DONC LUI EN DONNER UNE =====
+         L'ancien glissement s'arrêtait tout seul : il avait une durée. Celui-ci
+         ne s'arrête que quand il ARRIVE. Si la cible devient inatteignable — la
+         mise en page se raccourcit après coup, le contenu à défiler disparaît —
+         le défileur bute et la boucle tournerait indéfiniment, à consommer de
+         la batterie pour ne rien déplacer. Six images sans le moindre pixel
+         gagné : on est bloqué, on pose et on s'arrête. */
+      if(Math.abs(app.scrollTop - p) < 0.5){ if(++g.bloque >= 6){ glissement = null; return; } }
+      else g.bloque = 0;
       g.id = requestAnimationFrame(pas);
     };
-    glissement = { id: requestAnimationFrame(pas), cible: cible, depart: pos, t0: maintenant(), duree: duree };
+    glissement = { id: requestAnimationFrame(pas), cible: cible, tPrec: maintenant(), bloque: 0 };
   }
   function arreterGlissement(){ if(glissement){ cancelAnimationFrame(glissement.id); glissement = null; } }
   document.addEventListener("touchstart", arreterGlissement, { passive:true, capture:true });
@@ -7460,7 +7687,12 @@ try{
     let cible = mini;
     cible = Math.max(mini, Math.min(maxi, cible));
     cible = pliPropre(app, ar, H, cible, mini, maxi);
-    if(Math.abs(cible - st) > 1) glisserVers(app, cible);
+    /* UN PIXEL N'EST PAS UNE CORRECTION. Le seuil était à 1 px : pendant que le
+       clavier monte, une cible d'un pixel faisait avancer la page d'un pixel,
+       et le palier suivant la ramenait — un aller-retour visible (+1 puis -1,
+       relevé). On ne bouge que pour ce qui vaut la peine d'être vu, c'est-à-dire
+       le même seuil que celui du glissement lui-même. */
+    if(Math.abs(cible - st) >= GLISSE_MINI) glisserVers(app, cible);
     /* Repère : si ça bouge APRÈS, c'est le doigt. On note la CIBLE et non la
        position du moment — le glissement est encore en route, et le prendre
        pour un doigt annulerait le placement qu'on vient de décider. */
@@ -7534,13 +7766,33 @@ try{
          (borné à --vvh) se retrouvait décalé vers le haut, coupé n'importe
          comment. On le remet à 0 : #app reste calé au bord haut, toujours pareil. */
       if(window.scrollY){ try{ window.scrollTo(0, 0); }catch(e){} }
-      /* UN SEUL recentrage, APRÈS stabilisation. iOS émet plusieurs « resize »
-         pendant l'ouverture du clavier ; enchaîner les scrollIntoView donnait un
-         placement erratique (« le clavier arrive mal de plusieurs façons »). On
-         débounce -> le champ actif se cale TOUJOURS de la même manière, bien
-         visible juste au-dessus du clavier. */
+      /* ===== POURQUOI ON ATTEND QUAND MÊME LA FIN DU CLAVIER =====
+         J'ai essayé de SUIVRE le clavier plutôt que de l'attendre : recadrer
+         tout de suite puis toutes les soixante millisecondes pendant qu'il
+         monte, en comptant sur le suivi amorti pour absorber les cibles
+         successives. Mesuré, c'est nettement pire — la page part de dix-huit
+         pixels, revient de quinze, repart de huit :
+
+             +18  +8  -15  -6  +8  +3  +33  ...
+
+         La cause n'est pas le suivi, elle est dans la CIBLE : pliPropre ajuste
+         la destination pour qu'aucune carte ne soit tranchée sur l'arête du
+         clavier, et cet ajustement n'est pas monotone en hauteur visible. À
+         mi-course, la carte qui gênait ne gêne plus, la cible redescend, et la
+         page recule. Suivre une cible qui recule, c'est faire reculer la page.
+         On attend donc que le clavier ait fini — mais on n'attend QUE ça. Le
+         délai était de 120 ms après le dernier « resize », soit cent
+         millisecondes d'immobilité mesurées entre la fin de la montée et le
+         premier pixel. À 55 ms, la marge reste suffisante pour ne pas partir
+         sur une hauteur intermédiaire (les paliers d'iOS sont espacés d'une
+         vingtaine de millisecondes) et la page part deux fois plus tôt.
+         C'est un PLANCHER, pas un réglage libre : sous deux fois l'intervalle
+         entre deux paliers d'iOS, on repartirait sur une hauteur intermédiaire
+         et la page reculerait — ce qui a été mesuré et rejeté juste au-dessus.
+         Le temps mort total ne peut donc pas descendre sous ce délai plus une
+         image : c'est la borne que le banc vérifie. */
       clearTimeout(kbScrollTimer);
-      kbScrollTimer = setTimeout(bringFieldIntoView, 120);
+      kbScrollTimer = setTimeout(bringFieldIntoView, 40);
       /* SECOND CALAGE, une fois le clavier vraiment fini de monter (~0,35s sur
          iOS). Le premier passage tombe parfois PENDANT l'animation : la hauteur
          visible n'est pas encore la bonne, donc le champ se place presque bien.
@@ -8754,8 +9006,11 @@ function heroIconPress(){
      quart de seconde, et ce qui reste de tremblement est six fois plus petit
      que l'ancien. Le « boing » du cinquième tap (heroBump), lui, ne change
      pas : c'est une fête, pas un état. */
-  w.style.transition = "transform 0.13s cubic-bezier(0.33, 0, 0.25, 1)";
-  w.style.transform = "scale(0.94) rotate(-1.5deg)";
+  /* v219 : plus profond, plus incliné, et l'aura suit. Le plafond reste celui
+     du banc (moins de 10 % d'enfoncement, au-delà le logo « saute »). */
+  w.classList.add("vif");
+  w.style.transition = "transform 0.11s cubic-bezier(0.33, 0, 0.25, 1)";
+  w.style.transform = "scale(0.905) rotate(-3deg)";
 }
 function heroIconRelease(){
   const zone = document.getElementById("heroZone");
@@ -8763,11 +9018,16 @@ function heroIconRelease(){
   const w = zone.querySelector(".hero-icon-wrap");
   if(!w) return;
   clearTimeout(w._pressT); clearTimeout(w._springT);
-  /* Le retour est AUSSI RAPIDE que l'enfoncement : voir heroIconPress. Un
-     ressort de 0,44 s était plus lent que le geste lui-même. */
-  w.style.transition = "transform 0.13s cubic-bezier(0.33,1,0.68,1)";
+  /* UN RESSORT QUI DÉPASSE, MAIS QUI EST DÉJÀ REVENU AU TAP SUIVANT.
+     La leçon de la v218 tient : un retour de 0,44 s était plus lent que le
+     geste (120 ms entre deux taps) et le logo n'était jamais revenu. La courbe
+     ci-dessous dépasse la taille pleine vers 0,10 s — donc AVANT le tap
+     suivant, même au rythme le plus rapide — puis se pose. On garde les cinq
+     retours sur cinq du banc, et on gagne le rebond qui manquait. */
+  w.classList.remove("vif");
+  w.style.transition = "transform 0.34s cubic-bezier(0.16,1.9,0.4,1)";
   w.style.transform = "";
-  w._springT = setTimeout(()=>{ w.style.transition = ""; }, 170);
+  w._springT = setTimeout(()=>{ w.style.transition = ""; }, 380);
 }
 function heroIconTap(){
   const zone = document.getElementById("heroZone");
@@ -8779,7 +9039,7 @@ function heroIconTap(){
   if(heroTaps >= 5){
     heroTaps = 0;
     const w = zone.querySelector(".hero-icon-wrap");
-    if(w){ clearTimeout(w._pressT); clearTimeout(w._springT); w.style.transition = ""; w.style.transform = ""; }
+    if(w){ clearTimeout(w._pressT); clearTimeout(w._springT); w.classList.remove("vif"); w.style.transition = ""; w.style.transform = ""; }
     showHeroVerse();
   }
 }
@@ -9723,7 +9983,7 @@ const ACHIEVEMENTS = [
   { id:"bibliophile",  ico:ACH_ICONS.books,       clr:"gold",  t:"Bibliophile",         d:"Maîtrise 10 livres",                    max:10,   cur:(p,d)=>Math.min(d.mastered,10) },
   { id:"pentateuque",  ico:ACH_ICONS.scroll,      clr:"gold",  t:"Pentateuque",         d:"Maîtrise les 5 livres de la Torah",     max:5,    cur:(p,d)=>nMastered(TORAH,d) },
   { id:"evangiles",    ico:ACH_ICONS.cross,       clr:"gold",  t:"Les quatre Évangiles",d:"Maîtrise Matthieu, Marc, Luc et Jean",  max:4,    cur:(p,d)=>nMastered(GOSPELS,d) },
-  { id:"prophetes",    ico:ACH_ICONS.horn,        clr:"gold",  t:"Petits prophètes",    d:"Maîtrise les 12 petits prophètes",      max:12,   cur:(p,d)=>nMastered(MINOR_PROPHETS,d) },
+  { id:"prophetes",    ico:ACH_ICONS.horn,        clr:"gold",  t:"Petits prophètes",    d:"Maîtrise les 12 livres, d'Osée à Malachie", max:12,   cur:(p,d)=>nMastered(MINOR_PROPHETS,d) },
   { id:"toute-bible",  ico:ACH_ICONS.crown,       clr:"gold",  t:"Toute la Bible",      d:"Maîtrise les 66 livres",                max:66,   cur:(p,d)=>d.mastered },
   { id:"serie10",      ico:ACH_ICONS.flame,       clr:"coral", t:"En feu",              d:"Une série de 10 bonnes réponses",       max:10,   cur:(p)=>Math.min(p.bestStreak,10) },
   { id:"serie20",      ico:ACH_ICONS.bolt,        clr:"coral", t:"Incandescent",        d:"Une série de 21 bonnes réponses",       max:21,   cur:(p)=>Math.min(p.bestStreak,21) },
@@ -9889,7 +10149,20 @@ function pumpAchToast(){
   el.innerHTML = `<span class="at-tile c-${a.clr}">${a.ico}</span><span class="at-txt"><b>${escapeHtml(a.tete || "Objectif débloqué")}</b><small>${escapeHtml(a.t)}</small></span>`;
   document.body.appendChild(el);
   requestAnimationFrame(()=>{ el.classList.add("show"); });
-  setTimeout(()=>{ el.classList.remove("show"); setTimeout(()=>{ if(el.parentNode) el.remove(); achToastBusy=false; pumpAchToast(); }, 380); }, 2500);
+  /* ===== ON DOIT AVOIR LE TEMPS DE LIRE =====
+     « Le message qui nous dit qu'on a gagné une flamme doit rester beaucoup
+     plus longtemps, on n'a pas le temps de voir » — et pareil pour les succès.
+     2 500 ms comptaient l'entrée du bandeau : 420 ms d'arrivée, il restait
+     deux secondes de lecture pour deux lignes et une icône. Un titre en
+     capitales plus une phrase, c'est le temps de le VOIR (une demi-seconde,
+     l'oeil est ailleurs), puis de le lire.
+     La durée suit donc la longueur du texte, entre 4,2 s (le message le plus
+     court a droit au même temps de découverte) et 6,5 s (au-delà, un bandeau
+     qui s'attarde devient un obstacle). Les bandeaux s'enchaînent toujours un
+     par un : c'est la file qui garde l'écran habitable. */
+  const lu = (a.t || "").length + (a.tete || "").length;
+  const duree = Math.min(6500, Math.max(4200, 1400 + 60 * lu));
+  setTimeout(()=>{ el.classList.remove("show"); setTimeout(()=>{ if(el.parentNode) el.remove(); achToastBusy=false; pumpAchToast(); }, 380); }, duree);
 }
 function openParcours(){ state.screen = "parcours"; render(); }
 function parcoursSummary(){ const p = loadProgress(), d = progressDerived(p); return { mastered:d.mastered, touched:d.touched, totalCorrect:p.totalCorrect }; }
@@ -10458,6 +10731,10 @@ function notifMiroir(){
         dernier: dernierJourSerie(),
         serie:   d.streak,          // longueur de la série
         vu:      loadVu(),          // date de la dernière PARTIE, tous modes
+        /* CE QUI EST À REVOIR AUJOURD'HUI. Le service worker recompte avant
+           d'afficher : si le carnet a été vidé entre-temps, le rappel reste
+           muet. C'est le même principe que pour la série. */
+        revoir:  (function(){ try{ return aRevoir().length; }catch(e){ return 0; } })(),
         actif:   !!settings.notif,  // le joueur a-t-il accepté ?
         maj:     Date.now(),
       }, "serie");
@@ -10472,11 +10749,13 @@ function notifMiroir(){
    plusieurs envois SANS notification affichée finit par en afficher une de
    lui-même — « ce site a été mis à jour en arrière-plan ». On aurait fabriqué
    très exactement le spam qu'on cherche à éviter.
-   Le serveur reçoit donc trois informations, et rien d'autre : la date du
-   dernier défi, la longueur de la série, le décalage horaire. Ni pseudo, ni
-   score, ni réponses, ni progression. De quoi décider s'il faut frapper, et
-   à quelle heure il est le soir chez ce joueur. La vérification sur l'appareil
-   reste en place : c'est la deuxième barrière, pas la seule. */
+   Le serveur reçoit donc CINQ NOMBRES, et rien d'autre : la date du dernier
+   défi couvert, la longueur de la série, la date de la dernière partie, le
+   nombre de questions à revoir aujourd'hui, et le décalage horaire. Ni pseudo,
+   ni score, ni réponses, ni progression, ni QUELLES questions — un compte, pas
+   un contenu. De quoi décider s'il faut frapper, pour quelle raison, et à
+   quelle heure il est chez ce joueur. La vérification sur l'appareil reste en
+   place pour chacun des motifs : c'est la deuxième barrière, pas la seule. */
 function notifSync(){
   try {
     if(!settings.notif || notifEtat() !== "granted") return;
@@ -10489,13 +10768,27 @@ function notifSync(){
     navigator.serviceWorker.ready.then(reg => reg.pushManager.getSubscription()).then(sub => {
       if(!sub) return;
       const d = loadDaily();
-      supa.from("push_subs").update({
+      const base = {
         dernier: dernierJourSerie() || null,   // le dernier jour COUVERT, gel compris
         serie: d.streak | 0,
         vu: loadVu() || null,                              // dernière partie, tous modes
         decalage: -(new Date().getTimezoneOffset()) | 0,   // minutes par rapport à UTC
         maj: new Date().toISOString(),
-      }).eq("endpoint", sub.endpoint);
+      };
+      const nRev = (function(){ try{ return aRevoir().length; }catch(e){ return 0; } })();
+      /* ===== UNE COLONNE NEUVE NE DOIT PAS EMPORTER LES ANCIENNES =====
+         « revoir » est arrivée avec la v219 ; la table en ligne, elle, existe
+         depuis la v205 et ne l'aura que le jour où l'ALTER TABLE sera passé.
+         Or Postgres refuse un UPDATE ENTIER dès qu'une seule de ses colonnes
+         est inconnue : sans ce repli, un jeu à jour parlant à une table en
+         retard cesserait de mettre à jour la série ET le fuseau horaire — les
+         rappels tomberaient tous, pour un champ qui n'était qu'un bonus.
+         On réessaie donc sans lui. Silencieux et sans conséquence : le serveur
+         se passe alors du motif « à revoir », et de lui seul. */
+      supa.from("push_subs").update(Object.assign({ revoir: nRev }, base))
+        .eq("endpoint", sub.endpoint)
+        .then(r => { if(r && r.error){ supa.from("push_subs").update(base).eq("endpoint", sub.endpoint); } },
+              () => { supa.from("push_subs").update(base).eq("endpoint", sub.endpoint); });
     }).catch(()=>{});
   } catch(e){}
 }
@@ -10516,12 +10809,12 @@ function notifProposer(){
   try { localStorage.setItem("bt_notif_ask", "1"); } catch(e){}
   setTimeout(() => {
     showModal({
-      title: "Garder ta série ?",
-      /* ON DIT EXACTEMENT CE QU'ON ENVERRA. Depuis qu'il y a deux cas, une
-         promesse qui n'en nomme qu'un est une promesse à moitié tenue — et
-         c'est sur cette phrase que le joueur donne le seul « oui » qu'on ait
-         le droit de lui demander. */
-      message: "Deux cas, jamais d'autres : le soir où ta série est sur le point de s'éteindre, et après une longue absence. Au plus une fois par jour, et jamais si tu as déjà joué.",
+      title: "Recevoir les rappels ?",
+      /* ON DIT EXACTEMENT CE QU'ON ENVERRA — et il y en a cinq maintenant, pas
+         deux. C'est sur cette phrase que le joueur donne le seul « oui » qu'on
+         ait le droit de lui demander : elle doit couvrir tout ce qui peut
+         arriver, et surtout la borne, qui est ce qui compte vraiment. */
+      message: "Ta série sur le point de s'éteindre, le défi du jour pas encore relevé, tes erreurs à revoir, un verset le dimanche, et un mot si tu t'absentes. Au plus UN rappel par jour, et jamais si tu as déjà joué.",
       okLabel: "D'accord",
       cancelLabel: "Non merci",
       onOk: () => { notifActiver(); },
@@ -10738,7 +11031,6 @@ function jouerLivre(nom){
   /* Comme toute partie : ce qui a été tiré est noté comme vu. */
   try{ choix.forEach(q=>vues.add(qKey(q))); saveSeen(vues); }catch(e){}
   state.mode = "solo"; state.daily = false; state.revision = false;
-  state.livre = nom;
   state.soloScore = 0; state.soloStreak = 0; state.soloBestStreak = 0; state.soloCorrect = 0;
   displayedSoloScore = 0; state.soloMissed = []; state.soloIsRecord = false;
   state.questions = choix.map(q=>Object.assign({}, q, { shuffledOptions: shuffle(q.options.slice()) }));
@@ -10747,10 +11039,86 @@ function jouerLivre(nom){
   marquerJoue();
   render();
 }
+/* ===== ON CHOISIT CE QU'ON RÉVISE =====
+   « J'aimerais vraiment un truc où en gros ça te demande ce que tu veux
+   réviser, pas juste lancer les questions direct. »
+   La carte lançait la révision du jour sans rien demander. C'est commode le
+   jour où l'on veut exactement ça, et frustrant tous les autres : on peut
+   vouloir reprendre TOUT son carnet avant un dimanche, ou seulement les
+   Psaumes, ou seulement ce qu'on vient de rater. Le carnet sait déjà tout ça,
+   il ne le proposait simplement pas.
+   Quatre entrées, jamais plus, et chacune dit son nombre — une porte fermée
+   qui annonce « 0 » est plus honnête qu'une porte absente. */
+function livresDuCarnet(){
+  const par = new Map();
+  loadErrbook().forEach(x=>{
+    const l = bookOf(x) || "Autres";
+    par.set(l, (par.get(l) || 0) + 1);
+  });
+  return [...par.entries()].sort((a,b)=> b[1] - a[1] || a[0].localeCompare(b[0], "fr"));
+}
+function ouvrirRevoir(){
+  if(document.getElementById("revoirVeil")) return;
+  const dus = aRevoir().length, tout = errbookCount(), derniere = lastMissEntries().length;
+  const livres = livresDuCarnet();
+  const ligne = (cls, ico, titre, sous, n, action) =>
+    `<button class="online-action rv-choix${n ? "" : " rv-off"}" ${n ? 'onclick="' + action + '"' : "disabled"}>
+       <span class="oa-ico ${cls}">${ico}</span>
+       <span class="oa-txt"><b>${titre}</b><small>${sous}</small></span>
+       <span class="rv-cnt">${n}</span>
+     </button>`;
+  const veil = document.createElement("div");
+  veil.className = "sheet-veil"; veil.id = "revoirVeil";
+  veil.onclick = (e)=>{ if(e.target===veil) fermerRevoir(); };
+  veil.innerHTML = `
+    <div class="settings-sheet revoir-sheet" role="dialog" aria-label="Que veux-tu revoir ?">
+      <button class="sheet-grab" aria-label="Fermer" onclick="fermerRevoir()"></button>
+      <div class="sheet-title"><span class="st-ico">${ICONS.bookOpen}</span>Que veux-tu revoir&nbsp;?<small>${tout}</small></div>
+      ${ligne("v", ICONS.clock, "Les échéances du jour", "Ce que la mémoire réclame", dus, "lancerRevoir('dus')")}
+      ${ligne("g", ICONS.book, "Tout mon carnet", "Sans attendre leur tour", tout, "lancerRevoir('tout')")}
+      ${ligne("b", ICONS.target, "Ma dernière partie", "Ce que je viens de rater", derniere, "lancerRevoir('derniere')")}
+      ${livres.length ? `<div class="rv-livres-t">Ou un livre en particulier</div>
+        <div class="rv-livres">${livres.map(([nom,n])=>
+          /* Le nom passe par un attribut, jamais par le corps du onclick :
+             « Cantique des cantiques » ou un livre à apostrophe casserait la
+             chaîne, et un nom venu du carnet n'a pas à être recollé à la main
+             dans du code. */
+          `<button class="bk rv-bk" data-livre="${escapeHtml(nom)}" onclick="lancerRevoir('livre:' + this.dataset.livre)"><span class="bk-nm">${escapeHtml(nom)}</span><span class="rv-bkn">${n}</span></button>`
+        ).join("")}</div>` : ""}
+      <div class="flam-regle">Une erreur revient demain, puis dans 3, 7 et 16&nbsp;jours. Quatre bonnes réponses étalées sur près d'un mois et la question quitte le carnet&nbsp;; une erreur, à n'importe quel palier, la ramène à demain.</div>
+    </div>`;
+  document.body.appendChild(veil);
+  monterLaFeuille(veil);
+  glassTrack(680);
+  attachSheetDrag(veil.querySelector(".settings-sheet"), fermerRevoir);
+}
+function fermerRevoir(){
+  const v = document.getElementById("revoirVeil");
+  if(!v || v.classList.contains("closing")) return;
+  v.classList.add("closing");
+  setTimeout(()=>{ if(v.parentNode) v.remove(); }, msFerme() + 20);
+}
+/* La feuille se referme AVANT que la partie ne monte : sans ça, le voile
+   resterait par-dessus l'écran de jeu. On laisse la fermeture aller au bout —
+   c'est la même horloge partout. */
+function lancerRevoir(quoi){
+  fermerRevoir();
+  setTimeout(()=>{ startRevision(quoi); }, msFerme() + 30);
+}
 function startRevision(quoi){
-  /* « dus » : les échéances du jour, toutes parties confondues. Sans argument,
-     on garde le comportement d'origine — les erreurs de la dernière partie. */
-  const source = (quoi === "dus") ? aRevoir() : lastMissEntries();
+  /* « dus »      les échéances du jour, toutes parties confondues
+     « tout »     l'intégralité du carnet
+     « livre:X »  ce qui reste à revoir dans un livre
+     sans argument, les erreurs de la dernière partie (comportement d'origine,
+     encore utilisé par le bouton de l'écran des résultats). */
+  let source;
+  if(quoi === "dus") source = aRevoir();
+  else if(quoi === "tout") source = loadErrbook();
+  else if(typeof quoi === "string" && quoi.indexOf("livre:") === 0){
+    const nom = quoi.slice(6);
+    source = loadErrbook().filter(x => (bookOf(x) || "Autres") === nom);
+  }
+  else source = lastMissEntries();
   const b = shuffle(source).slice(0, 9);
   if(!b.length) return;
   state.mode = "solo"; state.daily = false; state.revision = true;
@@ -11171,12 +11539,29 @@ function renderModeSelect(){
       const solo = `<button class="mode-card" onclick="selectMode('solo')"><span class="mode-icon solo">${ICONS.user}</span><span class="mode-text"><span class="mode-title">Mode Solo</span><span class="mode-desc">Une partie, à ton rythme</span></span><span class="chev">${ICONS.chevronRight}</span></button>`;
       const online = `<button class="mode-card" onclick="openOnline()"><span class="mode-icon online">${ICONS.bolt}</span><span class="mode-text"><span class="mode-title">Jouer en ligne</span><span class="mode-desc">Jusqu'à 8 joueurs, en direct</span></span><span class="chev">${ICONS.chevronRight}</span></button>`;
       const daily = `<button class="daily-card${dDone?' done':''}" onclick="tapDefi(event)"><span class="dc-ico">${ICONS.flame}</span><span class="dc-txt"><b>Défi du jour</b><small>${doneTxt}</small></span>${dSk>0 ? `<span class="dc-streak">${ICONS.flame}${dSk}</span>` : ''}${dDone ? `<span class="chev dc-check">${ACH_CHECK}</span>` : `<span class="chev">${ICONS.chevronRight}</span>`}</button>`;
-      /* ===== LA CARTE « À REVOIR » N'APPARAÎT QUE S'IL Y A À REVOIR =====
-         Elle se greffe sur le rythme du Défi : une fois par jour, ce qui est
-         arrivé à échéance revient. Zéro échéance, zéro carte — l'accueil ne
-         gagne pas une ligne permanente pour un état vide. */
+      /* ===== LA CARTE « À REVOIR » NE PART JAMAIS =====
+         Elle n'apparaissait que les jours où quelque chose arrivait à échéance
+         — « je veux qu'il reste en continu et je ne veux pas qu'il disparaisse
+         même si j'ai rempli toutes mes erreurs, je veux qu'il reste affiché ».
+         Il avait raison, et pour une raison de fond : un accueil dont les
+         cartes vont et viennent n'a pas de forme. On apprend où sont les
+         choses en les retrouvant à la même place ; une porte qui n'est là
+         qu'un jour sur trois ne s'apprend pas. Elle reste donc, et c'est son
+         SOUS-TITRE qui dit l'état — comme la carte du Défi, qui reste elle
+         aussi qu'on ait joué ou non.
+         Et elle ne lance plus rien directement : elle OUVRE LE CHOIX. « En
+         gros ça te demande ce que tu veux réviser, pas juste lancer les
+         questions direct. » */
       const nRev = (function(){ try{ return aRevoir().length; }catch(e){ return 0; } })();
-      const revoir = nRev === 0 ? "" : `<button class="daily-card revoir-card" onclick="startRevision('dus')"><span class="dc-ico rv-ico">${ICONS.bookOpen}</span><span class="dc-txt"><b>À revoir</b><small>${nRev === 1 ? "Une question pour aujourd'hui" : nRev + " questions pour aujourd'hui"}</small></span><span class="dc-streak rv-n">${nRev}</span><span class="chev">${ICONS.chevronRight}</span></button>`;
+      const nCarnet = (function(){ try{ return errbookCount(); }catch(e){ return 0; } })();
+      const revTxt = nRev > 0
+        ? (nRev === 1 ? "Une question pour aujourd'hui" : nRev + " questions pour aujourd'hui")
+        : (nCarnet > 0
+            ? (nCarnet === 1 ? "Rien pour aujourd'hui \u00b7 1 en attente" : "Rien pour aujourd'hui \u00b7 " + nCarnet + " en attente")
+            : "Tes erreurs reviendront ici");
+      const revPast = nRev > 0 ? `<span class="dc-streak rv-n">${nRev}</span>`
+        : (nCarnet > 0 ? `<span class="dc-streak rv-n calme">${nCarnet}</span>` : "");
+      const revoir = `<button class="daily-card revoir-card" onclick="ouvrirRevoir()"><span class="dc-ico rv-ico">${ICONS.bookOpen}</span><span class="dc-txt"><b>À revoir</b><small>${revTxt}</small></span>${revPast}<span class="chev">${ICONS.chevronRight}</span></button>`;
       return group + solo + online + daily + revoir;
     })()}
     ${(()=>{ const s = parcoursSummary(); return `
@@ -11506,7 +11891,7 @@ function lettresQuiSAssemblent(mot){
     const loin = 168 - i * 20;                    // les premières viennent de plus loin
     const haut = (i % 4 < 2) ? -1 : 1;
     const st = "--lx:" + (cote * loin) + "px; --ly:" + (haut * 42) + "px; --lr:"
-             + (cote * -16) + "deg; animation-delay:" + (0.28 + i * 0.07).toFixed(2) + "s;";
+             + (cote * -16) + "deg; animation-delay:" + (0.3 + i * 0.17).toFixed(2) + "s;";
     out += '<span class="splash-l" style="' + st + '" aria-hidden="true">' + escapeHtml(mot.charAt(i)) + '</span>';
   }
   return out;
@@ -11710,10 +12095,18 @@ function renderOnline(){
 }
 function createRoomFlow(){ net.autoMatch = false; clearTimeout(net.matchGuard); createRoom(genCode(), true); }
 
+/* LE MESSAGE APPARTIENT À L'ÉCRAN QUI L'A PRODUIT.
+   « Code invalide. » se voyait sur l'accueil En ligne, où l'on ne saisit aucun
+   code. Le chemin : taper deux lettres, toucher Rejoindre — le message
+   s'affiche ici, à sa place — puis revenir en arrière. Le retour changeait
+   d'écran sans effacer le message, et l'accueil En ligne, qui a ses propres
+   raisons d'afficher net.error (« ce salon est complet », « l'hôte a quitté le
+   salon »), l'affichait à son tour. On l'efface donc en sortant : une erreur de
+   saisie ne survit pas à l'écran de saisie. */
 function renderOnlineJoin(){
   const el=document.createElement("div"); el.className="screen";
   el.innerHTML = `
-    ${renderHeader("Rejoindre", true, "state.screen='online';render()")}
+    ${renderHeader("Rejoindre", true, "net.error='';state.screen='online';render()")}
     <div class="flex-sp"></div>
     <div class="online-hero">
       <div class="online-hero-icon">${ICONS.users}</div>

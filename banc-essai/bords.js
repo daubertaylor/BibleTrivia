@@ -63,6 +63,12 @@ const CIBLES = [
   ['réglages',     "closeSettings(); openSettings();",                                                          '.set-go'],
   ['réglages',     "closeSettings(); openSettings();",                                                          '.share-btn'],
   ['en-tête',      "closeSettings(); state.screen='parcours'; render();",                                      '.icon-btn'],
+  /* LES PASTILLES DE LIVRE — la dernière famille du jeu à porter encore une
+     vraie bordure de 1 px, donc le dernier endroit où l'onde s'arrêtait un
+     pixel avant l'arête. « Regarde, lorsque je sélectionne un livre, ça ne
+     prend pas tout dans les bords. » Elle est passée au schéma commun (v219) ;
+     le banc le vérifie désormais comme pour les autres. */
+  ['livres',       "document.querySelectorAll('.tst-head')[0].click();",                                     '.bk:not(.vide)'],
 ];
 (async () => {
   const b = await chromium.launch({ executablePath: '/opt/pw-browsers/chromium' });
