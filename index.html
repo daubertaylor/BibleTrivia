@@ -2620,7 +2620,7 @@
      l'app, le pixel passe de la BORDURE au PADDING : la boîte de padding
      devient la boîte entière, la découpe aussi, et le verre couvre tout.
      Taille extérieure et position du contenu inchangées au pixel près. */
-  .settings-sheet{ width:100%; max-width:430px; border:0; border-radius:var(--r-xl) var(--r-xl) 0 0; padding:calc(0.8rem + 1px) calc(1.25rem + 1px) calc(env(safe-area-inset-bottom) * 0.55 + 0.4rem + 220px); margin-bottom:-220px; animation:sheetIn var(--tr-ouvre); transform:translateZ(0); -webkit-transform:translateZ(0); touch-action:none; --rim-cast:0 -6px 34px rgba(18,12,6,0.3); }
+  .settings-sheet{ width:100%; max-width:430px; border:0; border-radius:var(--r-xl) var(--r-xl) 0 0; padding:calc(0.8rem + 1px) calc(1.25rem + 1px) calc(env(safe-area-inset-bottom) * 0.55 + 0.4rem + 220px); margin-bottom:-220px; transform:translateZ(0); -webkit-transform:translateZ(0); touch-action:none; --rim-cast:0 -6px 34px rgba(18,12,6,0.3); }
   /* DEUX FEUILLES L'UNE SUR L'AUTRE — LA FAÇON DONT ELLES SE SUPERPOSENT.
      Avant : le choix de version arrivait avec EXACTEMENT la même matière, la
      même largeur et le même coin arrondi que les Réglages, simplement décalé
@@ -2969,6 +2969,16 @@
   /* « 100% » compte désormais la jupe : on la retranche pour que la feuille
      parte du bord bas de l'écran, comme avant (650px de course mesurés). */
   @keyframes sheetIn{ from{ transform:translateY(calc(100% - 220px)); } to{ transform:translateY(0); } }
+  /* ===== LA FEUILLE EST FINIE AVANT DE BOUGER =====
+     Elle démarrait son ascension à l'instant même où on l'insérait dans la
+     page — c'est-à-dire AVANT que le moteur de verre ne lui ait posé ses
+     couches. Sur un téléphone chargé, la première image montre alors un pavé
+     crème nu qui monte, et le décor arrive en route : « la page s'affiche en
+     même temps que l'ouverture ».
+     Elle attend donc la classe « monte », posée à l'image SUIVANTE, une fois
+     le verre en place. En attendant elle est là, complète, mais hors champ. */
+  .settings-sheet:not(.monte){ transform:translateZ(0) translateY(calc(100% - 220px)); }
+  .settings-sheet.monte{ animation:sheetIn var(--tr-ouvre); }
   @keyframes sheetOut{ to{ transform:translateY(calc(100% - 190px)); } }
   @keyframes veilOut{ to{ opacity:0; } }
 
@@ -5873,7 +5883,7 @@ function showModal(opts){
       </div>
     </div>`;
   document.body.appendChild(veil);
-  glassSheetOpenUntil = performance.now() + 560; glassTrack(680);
+  glassSheetOpenUntil = performance.now() + fenetreFeuille(); glassTrack(680);
   const input = veil.querySelector("#modalInput");
   if(input){ setTimeout(()=>{ try{ input.focus(); }catch(e){} }, 80); }
   const cancelBtn = veil.querySelector("#modalCancel");
@@ -6057,6 +6067,37 @@ function ligneBible(b){
    PLUS AUCUN BOUTON dans le panneau : la poignée ferme, une ligne choisit.
    Rien sous les noms non plus : quatre versions que les évangéliques
    connaissent n'ont pas besoin d'être présentées. */
+/* ===== ON NE FAIT MONTER QU'UNE FEUILLE FINIE =====
+   La feuille partait vers le haut à l'instant même de son insertion, donc
+   AVANT que le moteur de verre ne lui ait posé ses couches : la première
+   image montrait un pavé nu qui monte, et le décor arrivait en route. On
+   attend une image — le temps que le verre soit posé — puis on lance
+   l'ascension. Rien ne se voit d'ici là : la feuille est hors champ tant
+   qu'elle n'a pas la classe. */
+function monterLaFeuille(veil){
+  const f = veil && veil.querySelector ? veil.querySelector(".settings-sheet") : null;
+  if(!f) return;
+  const lacher = ()=>{
+    if(!f.isConnected || f.classList.contains("monte")) return;   // refermée, ou déjà partie
+    /* LA FENÊTRE D'OUVERTURE DU VERRE PART D'ICI, pas de l'insertion. Pendant
+       cette fenêtre, le moteur cale le flou sur la position de MISE EN PAGE
+       pour qu'il reste solidaire de la vitre qui glisse (voir
+       glassSheetOpenUntil). Elle était armée à l'insertion : le temps
+       d'attente la grignotait, et sur un téléphone chargé elle expirait AVANT
+       la fin de l'ascension — le flou repassait alors en suivi écran en plein
+       vol, et le décor sautait DANS la feuille qui monte. On la réarme au
+       moment exact où la feuille se met en marche. */
+    try{ glassSheetOpenUntil = performance.now() + fenetreFeuille(); armGlass(fenetreFeuille() + 300); }catch(e){}
+    f.classList.add("monte");
+  };
+  requestAnimationFrame(()=>{ requestAnimationFrame(lacher); });
+  /* FILET. requestAnimationFrame ne tourne PAS dans un onglet caché : si le
+     téléphone se verrouille pile à l'ouverture, la feuille resterait garée
+     hors champ — c'est-à-dire invisible. Le minuteur, lui, tourne toujours.
+     Le premier des deux qui arrive relâche la feuille ; le second ne fait
+     rien. */
+  setTimeout(lacher, 250);
+}
 function openBibles(){
   if(document.getElementById("biblesVeil")) return;
   const veil = document.createElement("div");
@@ -6068,6 +6109,7 @@ function openBibles(){
       <div class="bible-list">${BIBLES.map(ligneBible).join("")}</div>
     </div>`;
   document.body.appendChild(veil);
+  monterLaFeuille(veil);
   /* La feuille des Réglages passe en SECOND PLAN (voir .feuille-recule). */
   const dessous = document.querySelector("#settingsVeil .settings-sheet");
   if(dessous){
@@ -6085,7 +6127,7 @@ function openBibles(){
      coup, et mal calé. Ces deux lignes sont celles des Réglages, du guide et
      du carnet : le verre est là dès la première image, et reste solidaire de
      la feuille pendant qu'elle monte. */
-  glassSheetOpenUntil = performance.now() + 560; glassTrack(680);
+  glassSheetOpenUntil = performance.now() + fenetreFeuille(); glassTrack(680);
 }
 function closeBibles(){
   const v = document.getElementById("biblesVeil");
@@ -6718,6 +6760,11 @@ function attachSheetDrag(feuille, fermer){
     /* L'animation d'entrée a fini de jouer : on l'éteint DÉFINITIVEMENT pour
        cette feuille, sinon elle se relancerait au relâchement. */
     feuille.style.animation = "none";
+    /* Et on la marque RELÂCHÉE : sans « monte », la règle de garage la
+       renverrait hors champ dès que l'animation est coupée (voir
+       monterLaFeuille). Un doigt qui arrive avant le relâchement — deux
+       images — ne doit pas faire disparaître la feuille. */
+    feuille.classList.add("monte");
     feuille.classList.add("dragging");
     try{ glassRelayout(); }catch(err){}   // positions à jour avant de suivre le doigt
     suivre(1400);
@@ -6797,8 +6844,9 @@ function openMissedReview(list){
       <div class="rev-list" onscroll="majVoilesErreurs()">${items}</div>
     </div>`;
   document.body.appendChild(veil);
+  monterLaFeuille(veil);
   majVoilesErreurs();
-  glassSheetOpenUntil = performance.now() + 560; glassTrack(680);
+  glassSheetOpenUntil = performance.now() + fenetreFeuille(); glassTrack(680);
   attachSheetDrag(veil.querySelector(".settings-sheet"), closeMissedReview);
 }
 /* LE FONDU DE LA LISTE DES ERREURS, ET LE RANG DE LA CARTE EN TÊTE.
@@ -6940,7 +6988,8 @@ function openSettings(){
       </button>
     </div>`;
   document.body.appendChild(veil);
-  glassSheetOpenUntil = performance.now() + 560; glassTrack(680);
+  monterLaFeuille(veil);
+  glassSheetOpenUntil = performance.now() + fenetreFeuille(); glassTrack(680);
   attachSheetDrag(veil.querySelector(".settings-sheet"), closeSettings);
   veil.addEventListener("click", (e)=>{ if(e.target===veil){ closeSettings(); } });
 }
@@ -8858,6 +8907,18 @@ function tempoPli(){
   return _tempoPli;
 }
 function msPli(){ const m = tempoPli().match(/([\d.]+)s/); return m ? Math.round(parseFloat(m[1]) * 1000) : 520; }
+/* ===== LA FENÊTRE D'OUVERTURE DU VERRE SUIT L'HORLOGE =====
+   Pendant cette fenêtre, le moteur cale le flou d'une feuille sur sa position
+   de MISE EN PAGE : il reste solidaire de la vitre qui glisse. Après, il suit
+   la position réelle à l'écran. Les deux se rejoignent exactement quand la
+   feuille est posée — mais si la fenêtre ferme AVANT la fin de la montée, le
+   flou change de calage en plein vol.
+   Elle valait 560 ms, écrits à la main, pour une montée de 520 : quarante
+   millisecondes de marge, soit deux images sur un téléphone chargé. Mesuré,
+   processeur bridé six fois, la feuille des versions terminait sa course
+   0 ms avant l'expiration. On prend donc la durée RÉELLE du pli, plus une
+   marge franche : la fenêtre grandit toute seule si l'horloge change. */
+function fenetreFeuille(){ return msPli() + 160; }
 /* L'horloge de FERMETURE, lue au même endroit que celle de l'ouverture : tout
    ce qui s'efface (voile, feuille, fenêtre, verrou paysage) la partage. Elle
    est plus courte que l'ouverture, et c'est voulu — on regarde une chose qui
@@ -9527,7 +9588,7 @@ function openAchInfo(id){
       <button class="modal-btn ok" onclick="closeModal()">Fermer</button>
     </div>`;
   document.body.appendChild(veil);
-  try{ glassSheetOpenUntil = performance.now() + 560; glassTrack(680); }catch(e){}
+  try{ glassSheetOpenUntil = performance.now() + fenetreFeuille(); glassTrack(680); }catch(e){}
   veil.addEventListener("click", (e)=>{ if(e.target===veil) closeModal(); });
 }
 /* Testaments repliables : pliés par défaut (fini le pavé), on déplie au tap. */

@@ -231,6 +231,41 @@ substituer :
    qui doit céder quand la place manque s'y accroche, avec la taille
    actuelle comme plafond.
 
+**Une feuille doit être finie avant de bouger (v212).** « Quand j'ouvre les
+réglages, je trouve que la page s'affiche en même temps que l'ouverture ; je
+veux qu'elle soit proprement affichée au lieu de s'afficher au moment de
+l'ouverture. » Deux causes, l'une derrière l'autre.
+
+**La feuille partait à l'instant même de son insertion.** L'animation `sheetIn`
+était déclarée sur la règle de base : la toute première image où le navigateur
+avait à peindre la feuille était aussi l'image zéro de sa montée. Elle est
+maintenant *garée* hors champ (`.settings-sheet:not(.monte)`) et n'est relâchée
+qu'à l'image suivante, par `monterLaFeuille()`. Le verre est posé, la mise en
+page est faite, tout est rastérisé : ce qui monte est un objet fini.
+
+**Et la fenêtre d'ouverture du verre expirait en plein vol.** Pendant
+`glassSheetOpenUntil`, le moteur cale le flou d'une feuille sur sa position de
+MISE EN PAGE : le décor est peint sur la vitre et monte avec elle. Après, il
+suit la position réelle à l'écran. Au repos les deux coïncident exactement — la
+bascule est invisible. En vol, non. Or la fenêtre valait **560 ms écrits à la
+main** pour une montée de **520** : quarante millisecondes de marge, soit deux
+images. Mesuré, processeur bridé dix fois, la fenêtre fermait **15 ms avant**
+la fin de la montée des Réglages et **41 ms avant** celle des versions ; bridé
+seize fois, le décor sautait de **12 px DANS la feuille**, 371 ms après le
+départ. C'est très exactement « la page s'affiche en même temps que
+l'ouverture ».
+
+La fenêtre lit désormais l'horloge (`fenetreFeuille()` = `msPli() + 160`) et
+elle est réarmée au moment où la feuille se met VRAIMENT en marche, pas à son
+insertion. Après : saut du décor **0,0 px** sur les trois feuilles, à tous les
+bridages, avec 135 à 212 ms de marge restante.
+
+**La leçon : un délai écrit à la main à côté d'une durée qui vit dans une
+variable est une bombe à retardement.** Les 560 ms n'ont jamais été faux — ils
+étaient juste trop justes, et personne ne le voyait tant que le téléphone
+n'était pas chargé. `banc-essai/feuille.js` bride le processeur exprès, et
+échoue sur la v211.
+
 **Le liseré que l'onde ne pouvait pas atteindre (v211).** « Quand je reste
 appuyé sur un bouton, ça ne se remplit pas entièrement dans les bords. » Et ce
 n'était pas l'onde : mesuré au huitième de pixel sur une pastille maintenue

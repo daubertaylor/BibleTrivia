@@ -49,6 +49,7 @@ notre code, et il est éprouvé. Tout le reste l'est.
     node notifs.js      # un appareil qui n'a jamais joué en ligne est-il inscrit ?
     node rappels.js     # qui reçoit un rappel, et quand (le vrai code du serveur)
     node lignes.js      # ajouter, retirer, clavier : les lignes de joueurs ne sautent pas
+    node feuille.js     # une feuille est-elle FINIE avant de commencer à monter ?
     node paysage.js     # couché, on ne voit rien de l'app sous le voile
     node typo.js        # typographie française sur les 1545 questions et 12 écrans
     node doigt.js       # tout ce qui se touche fait-il 44 px, mesuré au doigt ?
