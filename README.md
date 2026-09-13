@@ -231,6 +231,32 @@ substituer :
    qui doit céder quand la place manque s'y accroche, avec la taille
    actuelle comme plafond.
 
+**Quelques pixels de débord ne sont pas un défilement, c'est du jeu (v210).**
+« Je peux prendre mon doigt et glisser un peu, il y a du jeu, ce n'est pas cent
+pour cent. » La tolérance de `fitScroll` était de 2 px : un écran qui dépasse de
+4 px ouvrait le défilement, et l'écran se laissait tirer d'un centimètre puis
+revenait. Mesuré : Progression 4 px sur un iPhone SE, l'écran de réponse 13 px
+sur un grand Xiaomi. Ce qui dépasse de si peu, c'est de l'AIR — le rembourrage
+du bas est la dernière chose du document, donc c'est lui que la découpe mange
+en premier. La tolérance vaut désormais la hauteur de ce rembourrage, plafonnée
+à 26 px : **jamais plus, pour ne jamais rogner du contenu**, et au-delà le
+défilement s'ouvre pour de bon comme avant.
+
+**Une feuille qui recule emporte sa texture avec elle (v210).** « Quand je ferme
+l'onglet Bible, la page derrière bug légèrement au moment de reprendre sa
+place. » La feuille des Réglages recule pour laisser la place à celle des
+versions — un `transform` qui la déplace et la réduit. Or sa couche de verre
+est une copie du décor **calée sur la fenêtre** : elle part avec la feuille.
+Mesuré au retour : la feuille revient de 33,6 px et le décor qu'elle contient
+parcourt **83,1 px** à l'écran, puis se remet d'un coup.
+
+Recaler la couche à chaque image ne suffit pas — essayé, 83 px ramenés à 51,
+pas à zéro : elle vit dans un repère qui se déforme, pas seulement qui se
+déplace. On l'éteint donc le temps du mouvement. La feuille garde sa teinte
+pleine, qui est déjà ce que la couche peint, elle est derrière un voile sombre,
+et il n'y a plus rien qui puisse glisser. Elle se rallume une fois la feuille
+revenue à sa place. Voyage visible : **0,0 px**.
+
 **L'onde d'appui ne remplissait jamais le bouton (v209).** « Le remplissage se
 fait, mais pas à 100 %. » Elle était portée par `:active` : elle grandissait
 tant que le doigt restait posé et repartait à l'envers dès qu'il se levait. Or

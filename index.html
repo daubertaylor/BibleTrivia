@@ -2626,6 +2626,22 @@
   /* La feuille SURVOLE le décor au lieu d'y glisser (voir --elevation-feuille). */
   .settings-sheet, .modal-card{ box-shadow:var(--elevation-feuille); }
   .settings-sheet.feuille-recule{ transform:translateZ(0) scale(0.935) translateY(10px); transform-origin:50% 0; border-radius:calc(var(--r-xl) + 4px) calc(var(--r-xl) + 4px) 0 0; }
+  /* ===== UNE FEUILLE QUI RECULE EMPORTE SA TEXTURE AVEC ELLE =====
+     La couche de verre est une copie du décor CALÉE SUR LA FENÊTRE. Tant que
+     la feuille ne bouge pas, tout va bien. Mais quand elle recule pour laisser
+     la place à la feuille des versions, elle est déplacée ET réduite par un
+     transform : sa texture part avec elle. Mesuré au retour : la feuille
+     revient de 33,6 px et le décor qu'elle contient parcourt 83,1 px à
+     l'écran. Le décor glisse à l'intérieur du panneau, puis se remet d'un
+     coup — « la page derrière bug légèrement au moment de reprendre sa place ».
+     Recaler la couche à chaque image ne suffit pas (essayé : 83 px ramenés à
+     51, pas à zéro) : elle est dans un repère qui se déforme.
+     On l'ÉTEINT donc le temps du mouvement. La feuille garde sa teinte pleine,
+     qui est déjà ce que la couche peint ; elle est de toute façon derrière un
+     voile sombre, et il n'y a plus rien qui puisse glisser. Elle se rallume
+     une fois la feuille revenue à sa place, pas avant. */
+  .settings-sheet > .gs{ transition:opacity 0.18s ease; }
+  .settings-sheet.verre-eteint > .gs{ opacity:0; }
   /* Le voile de la feuille de DEVANT porte un fond sombre — le seul du jeu.
      Les voiles de premier niveau restent transparents (le décor doit passer au
      travers, c'est la signature du jeu) ; ici il sépare deux panneaux de même
@@ -6040,7 +6056,10 @@ function openBibles(){
   document.body.appendChild(veil);
   /* La feuille des Réglages passe en SECOND PLAN (voir .feuille-recule). */
   const dessous = document.querySelector("#settingsVeil .settings-sheet");
-  if(dessous) dessous.classList.add("feuille-recule");
+  if(dessous){
+    /* Elle recule ET sa texture s'éteint : voir .verre-eteint. */
+    dessous.classList.add("feuille-recule", "verre-eteint");
+  }
   veil.classList.add("voile-second");
   attachSheetDrag(veil.querySelector(".settings-sheet"), closeBibles);
   veil.addEventListener("click", (e)=>{ if(e.target===veil){ closeBibles(); } });
@@ -6062,7 +6081,16 @@ function closeBibles(){
      redescend : les deux mouvements se croisent, comme à l'aller. Attendre la
      fin de la fermeture aurait donné deux temps au lieu d'un. */
   const dessous = document.querySelector("#settingsVeil .settings-sheet");
-  if(dessous) dessous.classList.remove("feuille-recule");
+  if(dessous){
+    dessous.classList.remove("feuille-recule");
+    /* La texture se rallume une fois la feuille REVENUE, pas pendant : sinon
+       elle réapparaîtrait en train de glisser, ce qu'on cherche justement à
+       ne plus voir. */
+    setTimeout(()=>{
+      dessous.classList.remove("verre-eteint");
+      try{ glassRelayout(); queueGlassSync(); }catch(e){}
+    }, msPli());
+  }
   setTimeout(()=>{ if(v.parentNode) v.remove(); }, msFerme() + 20);
 }
 /* Changer de version ne recharge PAS l'écran : on retouche les deux seules
@@ -11422,7 +11450,22 @@ function fitScroll(){
      se remettait en place. On verrouille, et on redécide une fois posé (voir
      l'appel à fitScroll dans render, à la fin de l'arrivée). */
   if(a.querySelector(":scope > .arrivee")){ a.style.overflowY = "hidden"; return; }
-  const overflows = a.scrollHeight > a.clientHeight + 2;
+  /* ===== QUELQUES PIXELS DE DÉBORD NE SONT PAS UN DÉFILEMENT, C'EST DU JEU =====
+     La tolérance était de 2 px. Un écran qui dépasse de 4 ou de 13 px ouvrait
+     donc le défilement — et l'écran se laissait tirer d'un centimètre sous le
+     doigt, puis revenait. Ce n'est pas défiler, c'est du jeu dans la
+     mécanique : « je peux glisser un peu, ce n'est pas cent pour cent ».
+     Mesuré : Progression 4 px sur un iPhone SE, l'écran de réponse 13 px sur
+     un grand Xiaomi, et le Salon quelques pixels selon la taille.
+     Ce qui dépasse de si peu, c'est de l'AIR : le rembourrage du bas est la
+     dernière chose du document, donc c'est lui que la découpe mange en
+     premier. On absorbe donc jusqu'à la hauteur de ce rembourrage — jamais
+     plus, pour ne JAMAIS rogner du contenu — et au-delà on ouvre le
+     défilement pour de bon, comme avant. */
+  let pied = 0;
+  try{ pied = parseFloat(getComputedStyle(a).paddingBottom) || 0; }catch(e){}
+  const tolerance = Math.max(2, Math.min(26, pied));
+  const overflows = a.scrollHeight > a.clientHeight + tolerance;
   a.style.overflowY = overflows ? "auto" : "hidden";
   if(!overflows) rendLeDefilement(a);
 }
