@@ -48,18 +48,10 @@ trancher le moment venu :
   l'authentification Google — ce serait le même projet, sans service
   supplémentaire.
 
-### Idées proposées à Taylor (en attente de sa réponse)
+### Les deux idées sont faites (v218)
 
-1. **Jouer un livre depuis la Progression.** La grille des 66 livres est
-   aujourd'hui un tableau de bord : on la regarde, on n'agit pas dessus.
-   Toucher « Marc » lancerait une partie tirée de ce seul livre, et sa
-   barre monterait. Aucune donnée nouvelle, aucun serveur — le suivi par
-   livre existe déjà.
-2. **Les erreurs reviennent, espacées dans le temps.** Le jeu retient
-   déjà les questions ratées (« Revoir mes 8 erreurs »), mais on ne les
-   revoit qu'une fois. Les faire revenir le lendemain, puis trois jours
-   après, puis une semaine : c'est ce qui transformerait le quiz en un
-   jeu qui fait vraiment retenir. Se greffe sur le Défi du jour.
+Elles étaient en attente ; Taylor les a demandées, elles sont en ligne.
+Voir « Deux modes de plus » plus bas.
 
 ---
 
@@ -230,6 +222,67 @@ substituer :
    zones système retirées, mesuré en JS (`mesurerHauteurUtile`). Tout ce
    qui doit céder quand la place manque s'y accroche, avec la taille
    actuelle comme plafond.
+
+**Deux modes de plus, et le nom qui s'assemble (v218).**
+
+**Jouer un seul livre.** La grille des 66 livres était un tableau de bord : on
+la regardait, on n'agissait pas dessus. Chaque tuile est devenue un bouton —
+toucher « Marc » lance une partie tirée de ce seul livre, et sa barre monte.
+Aucune donnée nouvelle : le suivi par livre existait déjà, il ne manquait que
+la porte. Une ligne le dit en tête de chaque testament, sinon personne ne
+trouverait : *« Touche un livre pour t'entraîner dessus. »*
+
+Un piège payé au premier essai : **le niveau d'une question n'est pas dans la
+question**, c'est la clé de sa corbeille dans `BANK`. L'oublier cassait l'écran
+de jeu (`TIER_INFO[undefined]`).
+
+**Les erreurs reviennent, espacées.** Le carnet retenait les questions ratées,
+mais on ne les revoyait qu'une fois, juste après la partie. Or ce qui fait
+retenir, ce n'est pas de revoir une erreur : c'est de la revoir **demain, puis
+dans trois jours, puis dans une semaine**. L'échelle est `1, 3, 7, 16` jours —
+quatre bonnes réponses étalées sur près d'un mois, et la question est acquise.
+Une erreur, à n'importe quel palier, ramène tout en bas.
+
+Le changement de fond tient en une phrase : **une bonne réponse ne supprime
+plus, elle promeut.** Savoir une fois ne veut pas dire savoir. Deux champs de
+plus par entrée (`du`, `p`) et rien d'autre ; une entrée d'avant la mise à jour
+n'a ni l'un ni l'autre, donc elle est à revoir tout de suite — exactement ce
+qu'on veut. Une carte « À revoir » apparaît sur l'accueil **les jours où il y a
+quelque chose à revoir**, et seulement ces jours-là.
+
+`banc-essai/revoir.js` vérifie les vingt sorties du système, échelle comprise,
+**et joue une vraie partie** de bout en bout : deux ratées, une réussie, puis le
+carnet, la feuille « Revoir mes erreurs », le bouton « Réviser la dernière
+partie », la carte de l'accueil, la promotion en révision et la rechute.
+
+**Le nom s'assemble au démarrage.** « Les lettres arrivent de part et d'autre,
+elles s'assemblent et ça crée le logo Yada. » Chaque lettre part d'un côté
+différent — les paires de la gauche, les impaires de la droite, les premières de
+plus loin que les dernières — tourne un peu, et vient se poser. Elles empruntent
+l'horloge du jeu comme tout ce qui arrive ; la dernière est posée à 1,03 s, sur
+quatre secondes d'écran de chargement.
+
+**Cinq taps rapides, cinq appuis nets (v218).** « Le logo se comporte d'une
+manière un peu bizarre quand je clique cinq fois dessus. » Mesuré image par
+image à cent vingt millisecondes entre deux taps — le rythme exact du geste :
+l'échelle errait entre 0,86 et 1,00 et ne revenait à sa taille pleine
+**qu'une fois sur cinq**. Le logo ne faisait pas cinq appuis, il tremblait.
+
+La cause : l'enfoncement descendait à 0,90 en 0,13 s, mais le retour durait
+**0,44 s** — trois fois et demie l'intervalle entre deux taps. Chaque nouvel
+appui coupait un retour à peine entamé. Le retour prend désormais la même durée
+que l'enfoncement, et l'amplitude passe de 0,90 à 0,94.
+
+| entre deux taps | avant | après |
+|---|---|---|
+| 120 ms | **1 retour sur 5**, amplitude 14 % | **5 sur 5**, 4,9 % |
+| 160 ms | 2 sur 5, 8,6 % | 5 sur 5, 3,5 % |
+| 240 ms | 5 sur 5, 8,0 % | 5 sur 5, 3,5 % |
+
+**La leçon : une animation se juge au rythme du geste, pas au repos.** Tapée une
+fois, l'ancienne était très bien. C'est le geste réel — cinq taps en une demi-
+seconde — qui la mettait en défaut, et c'est à ce rythme-là qu'il fallait la
+mesurer.
 
 **Le verre est une fenêtre, pas une peinture (v217).** « J'ai toujours un petit
 décalage quand j'ouvre certaines fenêtres, notamment les réglages : ça s'ouvre

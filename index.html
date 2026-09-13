@@ -1273,13 +1273,28 @@
     -webkit-user-drag:none; user-drag:none; -webkit-touch-callout:none; -webkit-user-select:none; user-select:none; pointer-events:none;
   }
   .splash-cross{ position:absolute; top:-0.5rem; right:-0.7rem; width:1.7rem; height:1.7rem; color:#fff; filter:drop-shadow(0 2px 6px rgba(0,0,0,0.55)); opacity:0; animation: splashFade 0.8s ease 0.7s forwards; }
-  .splash-title{ font-family:'Poppins',sans-serif; font-weight:700; font-size:1.8rem; letter-spacing:-0.02em; color:#fff; margin:0 0 0.35rem; text-shadow:0 2px 16px rgba(0,0,0,0.6); opacity:0; animation:splashRise 0.8s ease 0.4s forwards; }
+  /* ===== LE NOM S'ASSEMBLE =====
+     « Les lettres arrivent de part et d'autre, elles s'assemblent et ça crée le
+     logo Yada. » Chaque lettre part d'un côté différent, tourne légèrement, et
+     vient se poser à sa place. Le titre, lui, ne bouge plus : il n'a plus
+     d'animation propre, ce sont ses lettres qui arrivent.
+     Elles empruntent l'horloge du jeu (--tr-ouvre) comme tout ce qui arrive :
+     une seule courbe pour tout le monde, y compris ici. Les départs sont
+     décalés de soixante-dix millisecondes — assez pour qu'on VOIE l'assemblage,
+     assez peu pour que le mot soit entier bien avant la fin de l'écran de
+     chargement (dernière lettre posée à 1,03 s, sur quatre secondes). */
+  .splash-title{ font-family:'Poppins',sans-serif; font-weight:700; font-size:1.8rem; letter-spacing:-0.02em; color:#fff; margin:0 0 0.35rem; text-shadow:0 2px 16px rgba(0,0,0,0.6); display:flex; }
+  .splash-l{ display:inline-block; opacity:0; will-change:transform, opacity;
+    animation:lettreArrive var(--tr-ouvre) forwards; }
+  @keyframes lettreArrive{
+    from{ opacity:0; transform:translate(var(--lx,0), var(--ly,0)) rotate(var(--lr,0deg)) scale(0.72); }
+    to{ opacity:1; transform:translate(0,0) rotate(0deg) scale(1); }
+  }
   .splash-dots{ position:absolute; bottom:3rem; left:50%; transform:translateX(-50%); display:flex; gap:0.5rem; }
   .splash-dot{ width:8px; height:8px; border-radius:50%; background:rgba(255,255,255,0.9); animation:dotPulse 1.4s ease-in-out infinite; }
   .splash-dot:nth-child(2){ animation-delay:0.2s; }
   .splash-dot:nth-child(3){ animation-delay:0.4s; }
   @keyframes splashFade{ from{ opacity:0; } to{ opacity:1; } }
-  @keyframes splashRise{ from{ opacity:0; transform:translateY(10px); } to{ opacity:1; transform:translateY(0); } }
   @keyframes splashRiseBig{ from{ opacity:0; transform:translateY(54px) scale(0.94); } to{ opacity:1; transform:translateY(0) scale(1); } }
   @keyframes doveFloat3D{ 0%,100%{ transform:perspective(700px) rotateY(-6deg) rotateX(3deg) translateY(0); } 50%{ transform:perspective(700px) rotateY(6deg) rotateX(-3deg) translateY(-10px); } }
   @keyframes dotPulse{ 0%,80%,100%{ opacity:0.3; transform:scale(0.8); } 40%{ opacity:1; transform:scale(1.15); } }
@@ -2272,6 +2287,11 @@
      liseré blanc (haut plus lumineux, anneau interne plus marqué) et on
      ajoute une fine séparation ambrée qui détache l'icône de la carte. */
   .daily-card .dc-ico{ background:linear-gradient(150deg,#FFC64F,#F09A18); box-shadow:inset 0 1px 0 rgba(255,255,255,0.26), 0 2px 7px rgba(206,138,42,0.24); }
+  /* La révision a sa propre couleur : ni l'or du Défi, ni le vert de la
+     Progression, ni le bleu du jeu en ligne. Une seule carte la porte, et
+     seulement les jours où il y a quelque chose à revoir. */
+  .daily-card.revoir-card .rv-ico{ background:linear-gradient(150deg,#A78BFA,#7C5CE0); box-shadow:inset 0 1px 0 rgba(255,255,255,0.26), 0 2px 7px rgba(110,80,200,0.26); }
+  .daily-card.revoir-card .rv-n{ --glass-tint: rgb(139,109,235); box-shadow:0 2px 8px rgba(110,80,200,0.24); }
   .daily-card .dc-ico svg{ width:100%; height:100%; }
   .daily-card .dc-txt{ flex:1; display:flex; flex-direction:column; gap:0.12rem; min-width:0; }
   .daily-card .dc-txt b{ font-family:'Poppins',sans-serif; font-weight:600; font-size:0.98rem; color:var(--ink); }
@@ -2512,7 +2532,18 @@
      translucides en héritent visuellement : rendu verre intégral, coût
      minimal (même architecture que la vitrine des Objectifs). */
   .bk-card{ padding:calc(0.55rem + 1px) calc(0.55rem + 1px) calc(0.5rem + 1px); }
-  .bk{ padding:0.4rem 0.45rem; border-radius:10px; text-align:center; background:rgba(255,253,247,0.42); --rim-edge:0 0 0 1px rgba(58,42,26,0.2); --rim-cast:0 2px 6px rgba(34,26,16,0.1); border:1px solid var(--bord); }
+  /* La tuile est devenue un bouton : on lui rend les manières d'un bouton
+     (largeur pleine, pas de police héritée du navigateur) sans changer d'un
+     pixel ce qu'on voyait avant. */
+  .bk{ padding:0.4rem 0.45rem; border-radius:10px; text-align:center; background:rgba(255,253,247,0.42); --rim-edge:0 0 0 1px rgba(58,42,26,0.2); --rim-cast:0 2px 6px rgba(34,26,16,0.1); border:1px solid var(--bord);
+    width:100%; font-family:inherit; cursor:pointer; -webkit-tap-highlight-color:transparent; }
+  /* Un livre sans question ne se touche pas, et se voit un peu en retrait. */
+  .bk.vide{ opacity:0.55; cursor:default; }
+  /* L'INDICATION, SANS LAQUELLE PERSONNE NE TROUVERAIT. Une grille de 39 noms
+     ne dit pas d'elle-même qu'on peut la toucher : la ligne le dit, une fois,
+     en tête de chaque testament. */
+  .bk-mode{ display:flex; align-items:center; gap:0.4rem; margin:0 0 0.55rem; font-size:0.78rem; color:var(--ink-soft); }
+  .bk-mode-i{ width:0.95rem; height:0.95rem; flex-shrink:0; color:var(--primary); display:inline-flex; }
   /* L'ÉTAT D'UN LIVRE SE LIT À SA MATIÈRE, PAS À SON ANNEAU.
      Chaque puce portait TROIS traitements de bord empilés : le liseré clair
      commun, le filet sombre commun, et par-dessus un anneau coloré propre à son
@@ -8708,10 +8739,23 @@ function heroIconPress(){
   const w = zone.querySelector(".hero-icon-wrap");
   if(!w) return;
   clearTimeout(w._pressT); clearTimeout(w._springT);
-  /* Enfoncement DOUX : décélération progressive (au lieu d'un ease-out sec) ->
-     le doigt « pose » l'icône au lieu de la claquer. Léger tilt pour la vie. */
+  /* ===== CINQ TAPS RAPIDES, CINQ APPUIS NETS =====
+     « Le logo se comporte d'une manière un peu bizarre quand je clique cinq
+     fois dessus. » Mesuré, image par image, à cent vingt millisecondes entre
+     deux taps — le rythme exact du geste : l'échelle errait entre 0,86 et 1,00
+     et ne revenait à sa taille pleine QU'UNE FOIS SUR CINQ. Le logo ne faisait
+     pas cinq appuis, il tremblait.
+     La cause : l'enfoncement descendait à 0,90 en 0,13 s, mais le retour durait
+     0,44 s — trois fois et demie l'intervalle entre deux taps. Chaque nouvel
+     appui coupait un retour à peine entamé, et le logo n'était jamais revenu.
+     Deux corrections, et rien d'autre : le retour prend la MÊME durée que
+     l'enfoncement (0,13 s, la durée d'appui de toutes les surfaces du jeu), et
+     l'amplitude passe de 0,90 à 0,94. Un cycle complet tient alors dans un
+     quart de seconde, et ce qui reste de tremblement est six fois plus petit
+     que l'ancien. Le « boing » du cinquième tap (heroBump), lui, ne change
+     pas : c'est une fête, pas un état. */
   w.style.transition = "transform 0.13s cubic-bezier(0.33, 0, 0.25, 1)";
-  w.style.transform = "scale(0.9) rotate(-2deg)";
+  w.style.transform = "scale(0.94) rotate(-1.5deg)";
 }
 function heroIconRelease(){
   const zone = document.getElementById("heroZone");
@@ -8719,15 +8763,11 @@ function heroIconRelease(){
   const w = zone.querySelector(".hero-icon-wrap");
   if(!w) return;
   clearTimeout(w._pressT); clearTimeout(w._springT);
-  /* Retour en ressort NATUREL (easeOutBack) : léger dépassement organique, plus
-     soyeux que l'ancien rebond très fort (1.9) qui « claquait » au sommet. */
-  /* Le RELÂCHEMENT est du même ordre qu'un bouton qu'on lâche : il prend donc
-     la même courbe et la même durée que tous les autres appuis du jeu (0,44s),
-     au lieu d'un ressort à lui seul. Le petit « boing » du tapotement
-     (heroBump) reste, lui : c'est une fête, pas un changement d'état. */
-  w.style.transition = "transform 0.44s cubic-bezier(0.2,1,0.3,1)";
+  /* Le retour est AUSSI RAPIDE que l'enfoncement : voir heroIconPress. Un
+     ressort de 0,44 s était plus lent que le geste lui-même. */
+  w.style.transition = "transform 0.13s cubic-bezier(0.33,1,0.68,1)";
   w.style.transform = "";
-  w._springT = setTimeout(()=>{ w.style.transition = ""; }, 480);
+  w._springT = setTimeout(()=>{ w.style.transition = ""; }, 170);
 }
 function heroIconTap(){
   const zone = document.getElementById("heroZone");
@@ -9864,10 +9904,22 @@ function renderParcours(){
   const p = loadProgress(), d = achDerived(p);
   const unlocked = ACHIEVEMENTS.filter(a=>p.ach[a.id]).length;
   const BK_SHORT = { "Deutéronome":"Deutér.", "Cantique des cantiques":"Cantiques", "1 Thessaloniciens":"1 Thess.", "2 Thessaloniciens":"2 Thess.", "1 Corinthiens":"1 Cor.", "2 Corinthiens":"2 Cor.", "1 Chroniques":"1 Chron.", "2 Chroniques":"2 Chron.", "Lamentations":"Lament." };
+  /* ===== UNE TUILE N'EST PLUS UN VOYANT, C'EST UNE PORTE =====
+     La grille des 66 livres était un tableau de bord : on la regardait, on
+     n'agissait pas dessus. Toucher « Marc » lance maintenant une partie tirée
+     de CE SEUL livre, et sa barre monte. Aucune donnée nouvelle : le suivi par
+     livre existait déjà, il ne manquait que la porte.
+     Un livre sans question reste inerte — il y en a, la banque ne couvre pas
+     encore les 66 — et il le DIT (title), au lieu de ne rien faire. */
   const bookTile = (name)=>{
     const c = p.books[name]||0, tgt = bookTarget(name);
-    const cls = c>=tgt ? "mastered" : (c>0 ? "started" : "");
-    return `<div class="bk ${cls}"><span class="bk-nm">${escapeHtml(BK_SHORT[name]||name)}</span></div>`;
+    const dispo = (BOOK_TOTALS[name]||0) > 0;
+    const cls = (c>=tgt ? "mastered" : (c>0 ? "started" : "")) + (dispo ? " jouable" : " vide");
+    const dit = dispo ? ("S'entraîner sur " + name + " · " + c + " sur " + tgt)
+                      : (name + " — pas encore de question");
+    return `<button class="bk ${cls}" ${dispo ? `onclick="jouerLivre('${name.replace(/'/g,"\\'")}')"` : "disabled"}`
+      + ` title="${escapeHtml(dit)}" aria-label="${escapeHtml(dit)}">`
+      + `<span class="bk-nm">${escapeHtml(BK_SHORT[name]||name)}</span></button>`;
   };
   const at = BIBLE_BOOKS.slice(0, BIBLE_AT_COUNT), nt = BIBLE_BOOKS.slice(BIBLE_AT_COUNT);
   const achBadge = (a)=>{
@@ -9902,7 +9954,9 @@ function renderParcours(){
             <span class="tst-count">${nm}/${tot}</span>
             <span class="tst-chev">${ICONS.chevronRight}</span>
           </button>
-          <div class="tst-body tst-body-block"><div class="card bk-card"><div class="bk-grid">${list.map(bookTile).join("")}</div></div></div>
+          <div class="tst-body tst-body-block"><div class="card bk-card">
+            <p class="bk-mode"><span class="bk-mode-i">${ICONS.bolt}</span>Touche un livre pour t'entraîner dessus</p>
+            <div class="bk-grid">${list.map(bookTile).join("")}</div></div></div>
         </div>`;
       };
       return tstBlock("Ancien Testament", at) + tstBlock("Nouveau Testament", nt) + objHead + objGrid;
@@ -10608,19 +10662,46 @@ function startDailyChallenge(){
    rejouer uniquement ces questions, sans chrono ni statistiques. */
 function loadErrbook(){ try { const a = JSON.parse(localStorage.getItem("bt_errbook")||"[]"); return Array.isArray(a) ? a : []; } catch(e){ return []; } }
 function saveErrbook(a){ try { localStorage.setItem("bt_errbook", JSON.stringify(a.slice(-200))); } catch(e){} }
+/* ===== LES ERREURS REVIENNENT, ESPACÉES DANS LE TEMPS =====
+   Le carnet retenait bien les questions ratées, mais on ne les revoyait qu'UNE
+   fois, juste après la partie. Or ce qui fait retenir, ce n'est pas de revoir
+   une erreur ; c'est de la revoir DEMAIN, puis dans trois jours, puis dans une
+   semaine — chaque fois un peu plus tard, tant qu'on répond juste.
+   L'échelle : 1, 3, 7 puis 16 jours. Quatre bonnes réponses étalées sur près
+   d'un mois, et la question quitte le carnet pour de bon. Une erreur, à
+   n'importe quel palier, ramène tout en bas : on la revoit dès demain.
+   Deux champs de plus par entrée, et rien d'autre : « du », le jour où elle
+   redevient à revoir, et « p », le palier atteint. Une entrée d'avant cette
+   version n'a ni l'un ni l'autre : elle est donc à revoir tout de suite, ce
+   qui est exactement ce qu'on veut. */
+const REVOIR_ECHELLE = [1, 3, 7, 16];
 function errbookAdd(q){
   const k = qKey(q); const a = loadErrbook();
   const i = a.findIndex(x=>x.k===k);
-  if(i>=0){ a[i].n = (a[i].n||1)+1; }
-  else { a.push({ k, n:1, q:q.q, options:q.options, correct:q.correct, fact:q.fact, tier:q.tier||"moyen" }); }
+  /* Une erreur remet le compteur à zéro, même sur une question déjà promue. */
+  if(i>=0){ a[i].n = (a[i].n||1)+1; a[i].p = 0; a[i].du = dayKey(1); }
+  else { a.push({ k, n:1, p:0, du:dayKey(1), q:q.q, options:q.options, correct:q.correct, fact:q.fact, tier:q.tier||"moyen" }); }
   saveErrbook(a);
 }
+/* UNE BONNE RÉPONSE NE SUPPRIME PLUS, ELLE PROMEUT. C'est tout le principe :
+   savoir une fois ne veut pas dire savoir. Au bout de l'échelle seulement, la
+   question est acquise et quitte le carnet. */
 function errbookRemove(q){
   const k = qKey(q); const a = loadErrbook();
   const i = a.findIndex(x=>x.k===k);
-  if(i>=0){ a.splice(i,1); saveErrbook(a); }
+  if(i < 0) return;
+  const p = (a[i].p | 0) + 1;
+  if(p >= REVOIR_ECHELLE.length){ a.splice(i,1); }
+  else { a[i].p = p; a[i].du = dayKey(REVOIR_ECHELLE[p]); }
+  saveErrbook(a);
 }
 function errbookCount(){ return loadErrbook().length; }
+/* Ce qui est à revoir AUJOURD'HUI : tout ce dont le jour est arrivé, plus tout
+   ce qui n'a pas de date (les entrées d'avant l'échelle). */
+function aRevoir(){
+  const auj = dayKey(0);
+  return loadErrbook().filter(x => !x.du || x.du <= auj);
+}
 /* Révision ciblée : uniquement les erreurs de la DERNIÈRE partie jouée
    (celles déjà maîtrisées entre-temps ont quitté le carnet). */
 function lastMissEntries(){
@@ -10630,8 +10711,47 @@ function lastMissEntries(){
   const set = new Set(keys);
   return loadErrbook().filter(x=>set.has(x.k));
 }
-function startRevision(){
-  const b = shuffle(lastMissEntries()).slice(0, 9);
+/* ===== S'ENTRAÎNER SUR UN SEUL LIVRE =====
+   Même moteur que le solo, une seule différence : le tirage est borné à un
+   livre. On ne touche ni au chrono choisi, ni aux scores, ni aux objectifs —
+   c'est une partie solo ordinaire, sur un rayon plus étroit. La progression du
+   livre monte donc normalement, puisque c'est progressCredit qui la tient. */
+/* LE NIVEAU N'EST PAS DANS LA QUESTION, C'EST LA CLÉ DE SA CORBEILLE. Une
+   question de BANK n'a pas de propriété « tier » : c'est buildQuestions qui la
+   pose en la tirant. L'oublier ici cassait l'écran de jeu (TIER_INFO[undefined]
+   n'a pas de « cls ») — attrapé par le premier essai. */
+function questionsDuLivre(nom){
+  const out = [];
+  ["facile","moyen","difficile"].forEach(tier=>{
+    (BANK[tier]||[]).forEach(q=>{ if(bookOf(q) === nom) out.push(Object.assign({}, q, { tier })); });
+  });
+  return out;
+}
+function jouerLivre(nom){
+  const pool = questionsDuLivre(nom);
+  if(!pool.length) return;
+  /* On privilégie ce qu'il n'a jamais vu, comme partout ailleurs. */
+  const vues = loadSeen();
+  const neuves = shuffle(pool.filter(q=>!vues.has(qKey(q))));
+  const revues = shuffle(pool.filter(q=>vues.has(qKey(q))));
+  const choix = neuves.concat(revues).slice(0, Math.min(9, pool.length));
+  /* Comme toute partie : ce qui a été tiré est noté comme vu. */
+  try{ choix.forEach(q=>vues.add(qKey(q))); saveSeen(vues); }catch(e){}
+  state.mode = "solo"; state.daily = false; state.revision = false;
+  state.livre = nom;
+  state.soloScore = 0; state.soloStreak = 0; state.soloBestStreak = 0; state.soloCorrect = 0;
+  displayedSoloScore = 0; state.soloMissed = []; state.soloIsRecord = false;
+  state.questions = choix.map(q=>Object.assign({}, q, { shuffledOptions: shuffle(q.options.slice()) }));
+  state.currentIndex = 0; state.revealed = false; state.awarded = []; state.soloSelected = null; state.timedOut = false;
+  state.screen = "play";
+  marquerJoue();
+  render();
+}
+function startRevision(quoi){
+  /* « dus » : les échéances du jour, toutes parties confondues. Sans argument,
+     on garde le comportement d'origine — les erreurs de la dernière partie. */
+  const source = (quoi === "dus") ? aRevoir() : lastMissEntries();
+  const b = shuffle(source).slice(0, 9);
   if(!b.length) return;
   state.mode = "solo"; state.daily = false; state.revision = true;
   state.soloScore = 0; state.soloStreak = 0; state.soloBestStreak = 0; state.soloCorrect = 0; displayedSoloScore = 0; state.soloMissed = []; state.soloIsRecord = false;
@@ -10766,7 +10886,7 @@ function soloAnswer(idx){
     state.soloScore += TIER_INFO[q.tier].pts;
     state.soloCorrect += 1;
     state.soloStreak += 1;
-    errbookRemove(q); // maîtrisée : elle quitte le carnet de révision
+    errbookRemove(q); // juste : elle monte d'un palier (voir REVOIR_ECHELLE)
     if(state.soloStreak > state.soloBestStreak) state.soloBestStreak = state.soloStreak;
     progressCredit(q, state.soloStreak); // parcours : crédite le livre + objectifs
     playCorrect(); // toujours le même son, quelle que soit la série
@@ -11051,7 +11171,13 @@ function renderModeSelect(){
       const solo = `<button class="mode-card" onclick="selectMode('solo')"><span class="mode-icon solo">${ICONS.user}</span><span class="mode-text"><span class="mode-title">Mode Solo</span><span class="mode-desc">Une partie, à ton rythme</span></span><span class="chev">${ICONS.chevronRight}</span></button>`;
       const online = `<button class="mode-card" onclick="openOnline()"><span class="mode-icon online">${ICONS.bolt}</span><span class="mode-text"><span class="mode-title">Jouer en ligne</span><span class="mode-desc">Jusqu'à 8 joueurs, en direct</span></span><span class="chev">${ICONS.chevronRight}</span></button>`;
       const daily = `<button class="daily-card${dDone?' done':''}" onclick="tapDefi(event)"><span class="dc-ico">${ICONS.flame}</span><span class="dc-txt"><b>Défi du jour</b><small>${doneTxt}</small></span>${dSk>0 ? `<span class="dc-streak">${ICONS.flame}${dSk}</span>` : ''}${dDone ? `<span class="chev dc-check">${ACH_CHECK}</span>` : `<span class="chev">${ICONS.chevronRight}</span>`}</button>`;
-      return group + solo + online + daily;
+      /* ===== LA CARTE « À REVOIR » N'APPARAÎT QUE S'IL Y A À REVOIR =====
+         Elle se greffe sur le rythme du Défi : une fois par jour, ce qui est
+         arrivé à échéance revient. Zéro échéance, zéro carte — l'accueil ne
+         gagne pas une ligne permanente pour un état vide. */
+      const nRev = (function(){ try{ return aRevoir().length; }catch(e){ return 0; } })();
+      const revoir = nRev === 0 ? "" : `<button class="daily-card revoir-card" onclick="startRevision('dus')"><span class="dc-ico rv-ico">${ICONS.bookOpen}</span><span class="dc-txt"><b>À revoir</b><small>${nRev === 1 ? "Une question pour aujourd'hui" : nRev + " questions pour aujourd'hui"}</small></span><span class="dc-streak rv-n">${nRev}</span><span class="chev">${ICONS.chevronRight}</span></button>`;
+      return group + solo + online + daily + revoir;
     })()}
     ${(()=>{ const s = parcoursSummary(); return `
     <button class="parcours-card" onclick="openParcours()">
@@ -11367,6 +11493,24 @@ function renderEnd(){
 }
 
 /* ===================== RENDER ROOT ===================== */
+/* Une lettre par <span>, chacune avec son point de départ. Les impaires
+   viennent de la droite, les paires de la gauche ; les premières de plus loin
+   que les dernières, sinon le mot arrive en bloc au lieu de s'assembler. Le
+   titre garde son nom lisible pour les lecteurs d'écran : les <span> sont
+   masqués et l'ensemble porte un aria-label. */
+function lettresQuiSAssemblent(mot){
+  const n = mot.length;
+  let out = "";
+  for(let i = 0; i < n; i++){
+    const cote = (i % 2 === 0) ? -1 : 1;
+    const loin = 168 - i * 20;                    // les premières viennent de plus loin
+    const haut = (i % 4 < 2) ? -1 : 1;
+    const st = "--lx:" + (cote * loin) + "px; --ly:" + (haut * 42) + "px; --lr:"
+             + (cote * -16) + "deg; animation-delay:" + (0.28 + i * 0.07).toFixed(2) + "s;";
+    out += '<span class="splash-l" style="' + st + '" aria-hidden="true">' + escapeHtml(mot.charAt(i)) + '</span>';
+  }
+  return out;
+}
 function renderSplash(){
   const el = document.createElement("div");
   el.className = "screen splash-screen";
@@ -11377,7 +11521,7 @@ function renderSplash(){
       <div class="splash-dove-wrap">
         <img class="splash-dove" src="${DOVE_ICON}" alt="${NOM_DU_JEU}" draggable="false">
       </div>
-      <h1 class="splash-title">${NOM_DU_JEU}</h1>
+      <h1 class="splash-title" aria-label="${NOM_DU_JEU}">${lettresQuiSAssemblent(NOM_DU_JEU)}</h1>
     </div>
     <div class="splash-dots"><span class="splash-dot"></span><span class="splash-dot"></span><span class="splash-dot"></span></div>
   `;

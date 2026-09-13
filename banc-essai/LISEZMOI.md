@@ -55,6 +55,8 @@ notre code, et il est éprouvé. Tout le reste l'est.
     node plein.js       # l'onde d'appui recouvre-t-elle TOUT le bouton, logo compris ?
     node camera.js      # le recadrage à l'ouverture du clavier bégaie-t-il ?
     node charge.js      # le moteur de verre paie-t-il pour une feuille qui ne recule pas ?
+    node logo.js        # cinq taps rapides sur le logo : cinq appuis nets ?
+    node revoir.js      # les erreurs reviennent-elles, espacées, et tout le carnet tient-il ?
     node paysage.js     # couché, on ne voit rien de l'app sous le voile
     node typo.js        # typographie française sur les 1545 questions et 12 écrans
     node doigt.js       # tout ce qui se touche fait-il 44 px, mesuré au doigt ?
