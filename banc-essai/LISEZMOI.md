@@ -462,3 +462,24 @@ Deux règles, donc :
   est passé de 13 à 23 cas ; le mien, qui vérifie les 152 formulations
   possibles et leur conformité aux versets du jeu, vit à côté sous
   `mots-rappels.js`.
+
+
+## Un banc qui observe sans toucher ne trouve pas ce que le toucher déclenche (v220)
+
+Le sursaut des feuilles avait résisté à cinq relevés : position de la feuille
+et de son titre image par image, photographies de l'écran entier comparées deux
+à deux, la page derrière, trois ouvertures de suite, le décor vu à travers le
+verre avec le processeur freiné huit fois. Tous propres, tous muets.
+
+**Ils regardaient tous une feuille que personne ne touchait.** Le défaut se
+déclenche au contact : un doigt posé dérive de deux ou trois pixels — c'est la
+main, pas l'intention — et le glissement prenait cette dérive pour un geste.
+
+La question « est-ce que je mesure ce que l'œil regarde ? » ne suffisait pas.
+Il en fallait une seconde : **est-ce que je reproduis le geste ?** Poser,
+dériver de deux pixels, relâcher. Trois lignes de banc, et le défaut apparaît
+au premier essai.
+
+Et un correctif de geste doit prouver qu'il n'a pas cassé le geste : le même
+banc vérifie que glisser ferme toujours, que taper la poignée ferme toujours,
+et qu'un appui avec dérive ne ferme rien.

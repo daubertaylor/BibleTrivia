@@ -55,6 +55,79 @@ Voir « Deux modes de plus » plus bas.
 
 ---
 
+## LA v220 — LE SAUT DES FEUILLES, C'ÉTAIT LE DOIGT
+
+### Cinq mesures pour rien, parce qu'aucune ne touchait la feuille
+
+*« Une fois ouvert parfaitement, ça saute. »* J'avais cherché pendant toute la
+v219 : position de la feuille et de son titre image par image, photographies de
+l'écran entier comparées deux à deux, la page derrière, trois ouvertures de
+suite, le décor vu à travers le verre avec le processeur freiné huit fois. Rien.
+
+**Toutes ces mesures regardaient une feuille que personne ne touchait.** Le
+défaut n'était pas dans le temps, il était dans le geste.
+
+Le geste réel : la feuille arrive, on pose le doigt dessus pour lire ou pour
+toucher quelque chose — et le doigt **dérive**. Deux ou trois pixels, toujours ;
+c'est la main, pas l'intention. `attachSheetDrag` prenait cette dérive pour un
+glissement et déplaçait le panneau d'autant, immédiatement.
+
+| dérive du doigt | v219 | v220 |
+|---|---|---|
+| 2 px sur les Réglages | la feuille bouge de **2 px** | 0 |
+| 2 px sur la flamme | la feuille bouge de **2 px** | 0 |
+| glisser 160 px pour fermer | ferme | ferme |
+| taper la poignée | ferme | ferme |
+| appuyer avec 3 px de dérive | ne ferme rien | ne ferme rien |
+
+**Un geste commence quand on a décidé de le faire.** Neuf pixels de seuil —
+l'ordre de grandeur que le système retient lui-même pour distinguer un appui
+d'un glissement. En dessous, la feuille ne bouge pas d'un cheveu ; au-dessus,
+le glissement démarre **depuis le seuil** (l'origine est rebasée), donc l'écart
+vaut zéro à l'instant où il s'engage et il n'y a pas de saut là non plus.
+
+Deux conséquences en prime : tant que rien n'est engagé on ne coupe plus
+l'animation d'entrée — un doigt posé sur une feuille qui monte encore ne
+l'arrête plus au milieu de sa course — et le `transform` du glissement garde
+son `translateZ(0)`, sans quoi il passait de 3D à plat, la couche composée
+était détruite et refaite, et le flou se rejouait sous les yeux.
+
+**La leçon, et elle est chère** : *est-ce que je mesure ce que l'œil regarde ?*
+avait été la bonne question pour le clavier. Ici il fallait une question de
+plus : **est-ce que je reproduis le GESTE ?** Un banc qui observe sans toucher
+ne peut pas trouver un défaut que le toucher déclenche.
+
+### Et la grille des livres ne défilait pas du tout
+
+Invisible sur une capture, et plus grave que le reste. La feuille porte
+`touch-action:none` — sans quoi on ne peut pas la fermer au doigt sur Android —
+et ce refus vaut pour **toute sa descendance**. La grille des livres à revoir,
+arrivée en v219, n'avait jamais été déclarée `pan-y` : les livres du bas
+étaient hors d'atteinte.
+
+Elle l'est maintenant, comme les deux autres listes défilantes du jeu, et elle
+est ajoutée au sélecteur `neutre` d'`attachSheetDrag` pour qu'un doigt qui la
+défile ne tire pas la feuille sous elle. Les deux listes doivent rester
+d'accord : absente de l'une, la grille tire la feuille au lieu de défiler ;
+absente de l'autre, elle ne défile pas du tout.
+
+La liste des versions, elle, n'y est **pas** — elle n'a pas d'`overflow`, elle
+tient toujours entière. L'ajouter ne lui rendrait rien et lui retirerait
+quelque chose : on ne pourrait plus tirer la feuille en posant le doigt dessus.
+
+### Le reste de la capture
+
+La grille s'arrêtait en plein milieu d'une rangée, sans rien pour l'expliquer.
+Un cran (`scroll-snap: y mandatory`) la pose désormais sur une rangée entière,
+et le voile — le même dégradé que la liste des erreurs, sorti dans une fonction
+générique `majVoilesListe` — fond les deux bouts tant qu'il reste quelque chose
+au-delà, et les rend nets quand on est arrivé. La coupure devient un fondu.
+
+Deux bancs neufs : `feuille-doigt.js` (le geste qu'aucun autre ne simulait) et
+`grille-livres.js`.
+
+---
+
 ## LA v219 — SIX CARTES, UNE AURA, ET DES MOTS QUI TOURNENT
 
 ### L'accueil déborde depuis qu'il a six cartes
