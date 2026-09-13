@@ -231,6 +231,75 @@ substituer :
    qui doit céder quand la place manque s'y accroche, avec la taille
    actuelle comme plafond.
 
+**Un défileur ne connaît que les pixels entiers (v215).** « Quand le clavier
+s'ouvre et que la caméra s'ajuste, fais en sorte que ce soit ultra fluide ; là
+ça saccade un tout petit peu. » Vérifié dans le moteur, en trois lignes :
+`app.scrollTop = 10,25` donne **10** ; `10,5` donne **11**. Le défilement d'un
+élément snappe au pixel entier — il n'existe pas de demi-pixel de défilement.
+
+Or une courbe d'arrivée passe son dernier tiers à parcourir **moins d'un pixel
+par image**. Le défileur ne peut alors qu'alterner « un pixel » et « rien ».
+Relevé image par image sur la carte des joueurs, 54 px de course :
+`3 6 4 4 4 3 4 3 2 3 2 3 2 1 2 1 0 1 0 1 0 1`. Le pire cas est la liste pleine :
+**21 px étalés sur 465 ms, dont 11 images sans le moindre mouvement.**
+
+Ce qui ne se voit pas dans la durée totale se voit dans les **images mortes** —
+celles où rien ne bouge alors que le geste n'est pas fini. C'est la seule mesure
+qui compte ici, et c'est celle que `banc-essai/camera.js` relève.
+
+Trois corrections, aucune ne touche à la courbe :
+
+1. **La durée suit la distance.** 520 ms, c'est l'horloge d'un écran entier ;
+   une course de 54 px n'a rien à y faire. Proportionnelle, plancher 160 ms,
+   plafond l'horloge du jeu.
+2. **On coupe la queue.** Sous un pixel et demi restant, on pose la valeur
+   finale : un saut invisible au lieu de deux cents millisecondes de
+   bégaiement.
+3. **Une correction minuscule ne glisse pas.** Le second calage — celui qui
+   arrive quand iOS a fini d'annoncer la hauteur du clavier — ne vaut que trois
+   ou quatre pixels. Les étaler sur dix images, c'est fabriquer la saccade
+   qu'on essaie d'éviter.
+
+Et un quatrième point, trouvé en mesurant : un glissement déjà en route était
+**relancé** par le second calage — donc reparti à pleine vitesse alors qu'il
+ralentissait. Il est désormais *redirigé* : on garde l'horloge et la courbe, et
+on recalcule le départ pour que la position de l'image en cours ne bouge pas
+d'un pixel.
+
+| | avant | après |
+|---|---|---|
+| carte des joueurs, 54 px | 512 ms, **9 images mortes** | 150 ms, **0** |
+| liste pleine, 21 px | 465 ms, **11 images mortes** | 133 ms, **0** |
+
+**Les gels se gagnent aussi en jouant (v215).** « Lorsque tu fais pas mal de
+parties, on nous offre un gel de série en fonction. » Deux voies désormais : la
+**régularité** (dix jours d'affilée au Défi) et le **volume** (trente parties
+terminées, tous modes) — deux joueurs différents, deux mérites différents.
+
+Ce qui empêche le cumul d'être abusif n'est aucun des deux compteurs : c'est le
+**plafond**. Quoi qu'on fasse, on ne tient jamais plus de deux gels, un gel ne
+couvre qu'un seul jour, et jamais deux jours de suite. Le maximum de protection
+achetable reste **deux jours, séparés** — le banc le vérifie avec un joueur à
+neuf mille parties, qui perd quand même sa flamme après deux jours d'absence.
+Une partie ne compte que TERMINÉE (sinon il suffirait de lancer et quitter
+trente fois), et un palier atteint réserve pleine est perdu, pas mis de côté.
+
+**Et Yada le dit.** Le gel se gagnait en silence : un cadeau qu'on ne voit pas
+arriver n'encourage personne, et un filet qu'on croit infini pousse à s'arrêter
+de jouer. Les deux bandeaux nomment donc le donneur ET la limite dans la même
+phrase — « Yada t'offre un gel de série · 10 jours d'affilée. Il couvrira un
+jour manqué, un seul. » — et celui de la dépense dit ce qu'il reste : « Yada a
+gelé ta série · Hier était manqué. Plus de gel : le prochain se gagne en 10
+jours. » La règle complète est écrite en tête de la feuille de la flamme.
+
+**La flamme se lit en grille, plus en liste (v215).** La liste datée coûtait une
+ligne de 44 px par jour : trente jours faisaient huit écrans, et à cent jours
+elle devenait inutilisable. Une grille de sept colonnes — les mêmes carrés que
+la bande des sept jours de l'accueil, à la même taille — montre sept semaines
+d'un coup, et montre en plus ce que la liste cachait : la FORME de la série,
+ses trous, la place des gels. La date n'est pas perdue, elle reste sur chaque
+case au toucher. La feuille s'ouvre sur aujourd'hui, pas sur le premier jour.
+
 **Éteindre une couche de verre, c'est éteindre le panneau (v214).** Photo de
 Taylor : le choix des versions est ouvert, et derrière lui le panneau des
 Réglages a DISPARU — son titre, ses interrupteurs et son engrenage flottent

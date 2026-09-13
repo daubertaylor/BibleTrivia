@@ -115,14 +115,71 @@ function verifier(nom, obtenu, attendu){
   verifier("la bande des sept jours : 4 jours joués, 1 jour gelé", sem, [4, 1]);
   const feuille = await ev(()=>{
     ouvrirFlamme();
-    const l = document.querySelectorAll('#flammeVeil .flam-row');
-    const etats = Array.from(l).map(r=>r.querySelector('.fr-e').textContent);
-    const res = { n:l.length, etats, gele:(document.querySelector('#flammeVeil .ft-g')||{}).textContent };
+    /* La grille : une case par jour, du plus ancien au plus récent. Les cases
+       « horschamp » ne sont que le calage des colonnes sur les jours de la
+       semaine — elles ne comptent pas. */
+    const l = Array.from(document.querySelectorAll('#flammeVeil .fj'))
+      .filter(c => !c.classList.contains('horschamp') && !c.closest('.flam-leg'));
+    const etats = l.map(c => c.classList.contains('fait') ? 'fait'
+                          : c.classList.contains('gele') ? 'gele' : 'vide');
+    const res = { etats, auj: l.filter(c=>c.classList.contains('auj')).length,
+      colonnes: getComputedStyle(document.querySelector('#flammeVeil .fg-cases')).gridTemplateColumns.split(' ').length,
+      total: document.querySelectorAll('#flammeVeil .fg-cases .fj').length,
+      gele:(document.querySelector('#flammeVeil .ft-g')||{}).textContent,
+      regle:(document.querySelector('#flammeVeil .flam-regle')||{}).textContent,
+      dates: l.map(c=>c.getAttribute('aria-label')).filter(Boolean).length };
     closeFlamme();
     return res;
   });
-  verifier("la feuille liste les cinq jours, dans l'ordre", feuille.etats, ["Joué","Joué","Gelé","Joué","Joué"]);
+  verifier("la grille : cinq jours, du plus ancien au plus récent", feuille.etats, ["fait","fait","gele","fait","fait"]);
+  verifier("sept colonnes, une par jour de la semaine", feuille.colonnes, 7);
+  verifier("les colonnes sont calées (multiple de sept)", feuille.total % 7, 0);
+  verifier("une seule case marquée aujourd'hui", feuille.auj, 1);
+  verifier("chaque case garde sa date au toucher", feuille.dates, 5);
   verifier("elle dit la réserve", (feuille.gele||'').trim(), "1 gel en réserve");
+  verifier("et la règle du gel est écrite", /un seul jour manqué/.test(feuille.regle||''), true);
+
+  // ---------- 7. L'AUTRE VOIE : BEAUCOUP DE PARTIES ----------
+  await ev(()=>{ __poser({ last:'', streak:0, jours:[], geles:[], gels:0, palier:0, parties:0, palierParties:0 });
+                 for(let i=0;i<29;i++) compterPartie(); });
+  verifier("vingt-neuf parties : rien encore",
+    await ev(()=> [loadDaily().parties, loadDaily().gels]), [29, 0]);
+  await ev(()=>{ compterPartie(); });
+  verifier("la trentième : un gel offert",
+    await ev(()=> [loadDaily().parties, loadDaily().gels]), [30, 1]);
+  await ev(()=>{ for(let i=0;i<29;i++) compterPartie(); });
+  verifier("vingt-neuf de plus : toujours un seul",
+    await ev(()=> loadDaily().gels), 1);
+  await ev(()=>{ compterPartie(); });
+  verifier("la soixantième : le deuxième",
+    await ev(()=> [loadDaily().parties, loadDaily().gels]), [60, 2]);
+  await ev(()=>{ for(let i=0;i<30;i++) compterPartie(); });
+  verifier("la quatre-vingt-dixième : la réserve reste à deux",
+    await ev(()=> [loadDaily().parties, loadDaily().gels]), [90, 2]);
+  verifier("et le palier a bien été consommé, pas mis de côté",
+    await ev(()=> loadDaily().palierParties), 90);
+  /* LE PLAFOND EST LE VRAI GARDE-FOU : quelle que soit la voie, on ne tient
+     jamais plus de deux gels, et deux jours de suite tuent la flamme. */
+  await ev(()=>{ const c=(d)=>__cle(d);
+    __poser({ last:c(-3), streak:200, jours:[c(-3)], geles:[], gels:2, palier:200, parties:9000, palierParties:9000 });
+    reglerFlamme(); });
+  verifier("neuf mille parties ne rachètent pas deux jours d'absence",
+    await ev(()=> dailyStreakShown()), 0);
+
+  // ---------- 8. CE QUE YADA DIT AU JOUEUR ----------
+  const bandeau = async (script)=>{
+    await ev((s)=>{ achToastQueue.length = 0; new Function(s)(); }, script);
+    return ev(()=>{ const a = achToastQueue[0]; return a ? { tete:a.tete, t:a.t } : null; });
+  };
+  const gagne = await bandeau("__poser({ last: __cle(-1), streak: 9, jours:[], geles:[], gels:0, palier:0 }); __jouer();");
+  verifier("le gel gagné se dit, et Yada le donne", /Yada/.test((gagne&&gagne.tete)||''), true);
+  verifier("et le bandeau dit sa limite", /un seul/.test((gagne&&gagne.t)||''), true);
+  const parties = await bandeau("__poser({ last:'', streak:0, jours:[], geles:[], gels:0, palier:0, parties:29, palierParties:0 }); compterPartie();");
+  verifier("le gel des parties se dit aussi", /Yada/.test((parties&&parties.tete)||''), true);
+  verifier("et il dit POURQUOI", /30 parties/.test((parties&&parties.t)||''), true);
+  const paye = await bandeau("__poser({ last: __cle(-2), streak: 12, jours:[__cle(-2)], geles:[], gels:1, palier:10 }); reglerFlamme(); annoncerGel();");
+  verifier("le gel dépensé se dit, et Yada le fait", /Yada a gelé/.test((paye&&paye.tete)||''), true);
+  verifier("et le bandeau dit ce qu'il reste", /Plus de gel/.test((paye&&paye.t)||''), true);
 
   await nav.close();
   console.log(ko === 0 ? '\n  OK' : '\n  ' + ko + ' règle(s) en défaut');

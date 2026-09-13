@@ -1154,15 +1154,40 @@
   .flam-tete .ft-n{ font-family:'Poppins',sans-serif; font-weight:700; font-size:1rem; color:var(--ink); }
   .flam-tete .ft-g{ font-size:0.83rem; color:var(--ink-soft); display:inline-flex; align-items:center; gap:0.3rem; }
   .flam-tete .ft-g svg{ width:0.95rem; height:0.95rem; flex-shrink:0; color:#4FA6DC; }
-  .flam-list{ max-height:calc(50 * var(--hu)); overflow-y:auto; overscroll-behavior:contain; -webkit-overflow-scrolling:touch;
-    scrollbar-width:none; display:flex; flex-direction:column; gap:0.3rem; margin:0 0 0.2rem; }
+  /* ===== UNE CASE PAR JOUR, PAS UNE LIGNE PAR JOUR =====
+     La première version listait les jours, un par ligne, avec la date en
+     toutes lettres et l'état à droite. Ça se lit, mais ligne par ligne : trente
+     jours faisaient huit écrans, et à cent jours c'était inutilisable.
+     Une grille dit la même chose d'un coup d'œil, et elle dit EN PLUS ce que la
+     liste cachait — la forme de la série, les trous, la place des gels. Sept
+     colonnes, une par jour de la semaine, comme la bande de l'accueil : c'est
+     le même objet, en plus grand. La date n'est pas perdue : elle reste sur
+     chaque case, au toucher (title + aria-label). */
+  .flam-list{ max-height:calc(46 * var(--hu)); overflow-y:auto; overscroll-behavior:contain; -webkit-overflow-scrolling:touch;
+    scrollbar-width:none; margin:0 0 0.2rem; }
   .flam-list::-webkit-scrollbar{ display:none; }
-  .flam-row{ display:flex; align-items:center; gap:0.7rem; flex-shrink:0; padding:0.2rem 0.1rem; }
-  .flam-row .sj{ flex-shrink:0; }
-  .flam-row .fr-d{ flex:1; min-width:0; font-size:0.9rem; font-weight:600; color:var(--ink); overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
-  .flam-row .fr-e{ font-size:0.8rem; font-weight:700; color:var(--ink-soft); flex-shrink:0; }
-  .flam-row.r-fait .fr-e{ color:#C07A0C; }
-  .flam-row.r-gele .fr-e{ color:#2E7FB0; }
+  /* DE VRAIS PETITS CARRÉS. À pleine largeur ils faisaient 46 px de côté :
+     une case par jour, mais seulement deux semaines à l'écran. Bridés à
+     2,05 rem — la taille exacte de la bande des sept jours de l'accueil — on
+     en voit sept semaines d'un coup, et c'est là que la FORME de la série
+     apparaît. */
+  .fg-sem, .fg-cases{ display:grid; grid-template-columns:repeat(7, minmax(0, 2.05rem)); gap:0.3rem;
+    justify-content:center; }
+  .fg-sem{ margin-bottom:0.3rem; }
+  .fg-sem span{ text-align:center; font-family:'Poppins',sans-serif; font-size:0.62rem; font-weight:700;
+    letter-spacing:0.06em; color:var(--ink-soft); }
+  /* La case : le carré de la bande des sept jours, sans sa lettre. Aucun
+     rebord de couleur — l'état se lit à la MATIÈRE, comme partout ailleurs. */
+  .fj{ aspect-ratio:1; border-radius:var(--r-s); background:rgba(42,36,30,0.09); }
+  .fj.fait{ background:linear-gradient(160deg, #FFC64F, #F09A18); box-shadow:0 1px 3px rgba(196,144,32,0.28); }
+  .fj.gele{ background:linear-gradient(160deg, #9FD8F5, #4FA6DC); box-shadow:0 1px 3px rgba(46,127,176,0.28); }
+  .fj.horschamp{ background:none; }
+  /* Aujourd'hui : plus clair, jamais cerné. */
+  .fj.auj{ box-shadow:inset 0 0 0 2px rgba(255,255,255,0.75), 0 1px 3px rgba(42,36,30,0.16); }
+  .flam-leg{ display:flex; align-items:center; gap:0.45rem; margin-top:0.6rem; font-size:0.78rem; color:var(--ink-soft); }
+  .flam-leg .fj{ width:0.85rem; aspect-ratio:1; flex-shrink:0; }
+  .flam-leg b{ font-weight:600; margin-right:0.55rem; }
+  .flam-regle{ font-size:0.78rem; color:var(--ink-soft); line-height:1.4; margin-top:0.15rem; }
   .flam-vide{ font-size:0.9rem; color:var(--ink-soft); padding:0.6rem 0.1rem; }
   .flam-sheet .sheet-title{ display:flex; align-items:baseline; }
   .flam-sheet .sheet-title small{ margin-left:auto; font-family:'Poppins',sans-serif; font-size:0.85rem; font-weight:700; color:var(--ink-soft); font-variant-numeric:tabular-nums; }
@@ -5768,6 +5793,7 @@ function onlineNext(){
   net.idx += 1; net.selected=null; net.revealed=false; net.timedOut=false;
   if(net.idx >= net.deck.length){
     net.myDone = true;
+    compterPartie();   // en ligne : le joueur a fini SES questions
     broadcastProgress(true);
     /* On attend que TOUT LE MONDE ait fini — un joueur comme sept. Ceux qui
        sont partis ne retiennent personne. */
@@ -7246,23 +7272,68 @@ try{
      monte. Un seul glissement à la fois : le second calage reprend la main en
      douceur au lieu de se cogner au premier. Et si le doigt touche l'écran
      pendant le trajet, on s'arrête net — c'est lui qui commande. */
+  /* ===== UN DÉFILEUR NE CONNAÎT QUE LES PIXELS ENTIERS =====
+     « Quand le clavier s'ouvre et que la caméra s'ajuste, ça saccade un tout
+     petit peu. » Vérifié : écrire app.scrollTop = 10,25 donne 10 ; 10,5 donne
+     11. Le défilement d'un élément SNAPPE au pixel entier. Une courbe
+     d'arrivée, elle, passe le dernier tiers de son temps à parcourir moins
+     d'un pixel par image — le défileur ne peut alors qu'alterner « un pixel »
+     et « rien ». Relevé sur la carte des joueurs, 54 px de course :
+     3 6 4 4 4 3 4 3 3 2 3 1 3 1 2 1 0 1 0 1 0 1 — la fin bégaie.
+     Trois corrections, et aucune ne touche à la courbe :
+       1. LA DURÉE SUIT LA DISTANCE. 520 ms, c'est l'horloge d'un écran entier ;
+          une course de 54 px n'a rien à y faire. Proportionnelle, plancher à
+          160 ms, plafond à l'horloge du jeu.
+       2. ON COUPE LA QUEUE. Dès qu'il reste moins d'un pixel et demi, on pose
+          la valeur finale et on s'arrête : un saut invisible au lieu de deux
+          cents millisecondes de bégaiement.
+       3. UNE CORRECTION MINUSCULE NE GLISSE PAS. Le second calage (celui qui
+          arrive quand iOS a fini d'annoncer la hauteur du clavier) ne vaut que
+          trois ou quatre pixels : les étaler sur dix images, c'est fabriquer
+          la saccade qu'on essaie d'éviter. En dessous de quatre pixels, on
+          pose, point.
+     Et si un glissement est DÉJÀ en route, on ne le relance pas — on déplace
+     sa destination sans bouger la position du moment (voir plus bas) : relancer
+     une courbe d'arrivée en plein vol, c'est repartir à pleine vitesse alors
+     qu'on ralentissait. Mesuré : deux reprises de vitesse, la pire à 586 ms. */
+  const GLISSE_MINI = 4, GLISSE_QUEUE = 1.5;
   let glissement = null;
+  const courbeGlisse = (x)=> 1 - Math.pow(1 - x, 3);   // easeOutCubic, comme --tr-plie
   function glisserVers(app, cible){
-    if(glissement) { cancelAnimationFrame(glissement.id); glissement = null; }
-    const depart = app.scrollTop;
-    const course = cible - depart;
-    if(Math.abs(course) < 1){ app.scrollTop = cible; return; }
-    const duree = (typeof msPli === "function" ? msPli() : 520);
-    const t0 = (typeof performance !== "undefined" ? performance.now() : Date.now());
-    /* La même courbe que --tr-plie : easeOutCubic. */
-    const courbe = (x)=> 1 - Math.pow(1 - x, 3);
+    const pos = app.scrollTop;
+    if(Math.abs(cible - pos) < GLISSE_MINI){
+      if(glissement){ cancelAnimationFrame(glissement.id); glissement = null; }
+      app.scrollTop = cible; return;
+    }
+    const maintenant = ()=> (typeof performance !== "undefined" ? performance.now() : Date.now());
+    /* DÉPLACER LA DESTINATION SANS DÉPLACER LE MOBILE. On garde l'horloge et
+       la courbe en cours, et on recalcule le DÉPART pour que la position de
+       cette image reste exactement la même : aucun saut, aucune reprise de
+       vitesse, et on finit quand même à la nouvelle cible. Tout à la fin
+       (c proche de 1) le calcul explose — on relance alors proprement. */
+    if(glissement){
+      const c = courbeGlisse(Math.min(1, (maintenant() - glissement.t0) / glissement.duree));
+      if(c < 0.94){
+        glissement.cible = cible;
+        glissement.depart = (pos - cible * c) / (1 - c);
+        return;
+      }
+      cancelAnimationFrame(glissement.id); glissement = null;
+    }
+    const course = cible - pos;
+    const duree = Math.max(160, Math.min((typeof msPli === "function" ? msPli() : 520),
+                                         Math.round(Math.abs(course) * 3.2)));
     const pas = ()=>{
-      const t = ((typeof performance !== "undefined" ? performance.now() : Date.now()) - t0) / duree;
-      if(t >= 1){ app.scrollTop = cible; glissement = null; return; }
-      app.scrollTop = depart + course * courbe(t);
-      glissement.id = requestAnimationFrame(pas);
+      const g = glissement;
+      if(!g) return;
+      const t = (maintenant() - g.t0) / g.duree;
+      if(t >= 1 || Math.abs(g.cible - app.scrollTop) <= GLISSE_QUEUE){
+        app.scrollTop = g.cible; glissement = null; return;
+      }
+      app.scrollTop = g.depart + (g.cible - g.depart) * courbeGlisse(t);
+      g.id = requestAnimationFrame(pas);
     };
-    glissement = { id: requestAnimationFrame(pas), cible: cible };
+    glissement = { id: requestAnimationFrame(pas), cible: cible, depart: pos, t0: maintenant(), duree: duree };
   }
   function arreterGlissement(){ if(glissement){ cancelAnimationFrame(glissement.id); glissement = null; } }
   document.addEventListener("touchstart", arreterGlissement, { passive:true, capture:true });
@@ -9832,7 +9903,51 @@ function dayKey(off){ const d = new Date(Date.now() + (off||0)*86400000); const 
        d'acheter des vacances.
    Un gel se dépense TOUT SEUL, le lendemain du jour manqué, et le joueur
    l'apprend par un bandeau. Rien à activer, rien à cliquer. */
-const GEL_MAX = 2, GEL_PALIER = 10, FLAMME_MEMOIRE = 90;
+const GEL_MAX = 2, GEL_PALIER = 10, GEL_PARTIES = 30, FLAMME_MEMOIRE = 90;
+/* ===== DEUX FAÇONS DE MÉRITER UN GEL, ET UN SEUL PLAFOND =====
+   La RÉGULARITÉ (dix jours d'affilée au Défi) récompense celui qui revient.
+   Le VOLUME (trente parties terminées, tous modes) récompense celui qui joue
+   beaucoup sans forcément passer chaque jour — deux joueurs différents, deux
+   mérites différents.
+   Ce qui empêche le cumul d'être abusif n'est aucun des deux compteurs : c'est
+   le PLAFOND. Quoi qu'on fasse, on ne tient jamais plus de deux gels, un gel ne
+   couvre qu'un seul jour, et jamais deux jours de suite. Le maximum de
+   protection achetable par le jeu reste donc DEUX JOURS, séparés. On peut
+   accélérer la cadence des dons ; on ne peut pas acheter de vacances.
+   Un palier atteint alors que la réserve est pleine est PERDU, pas mis de
+   côté : sans ça, un joueur qui aurait moulu mille parties repartirait avec
+   une réserve pleine à chaque dépense. */
+function offrirGel(raison){
+  const d = loadDaily();
+  if(d.gels >= GEL_MAX) return false;
+  saveDaily({ gels: d.gels + 1 });
+  achToastQueue.push({ clr:"blue", ico:ICONS.flocon,
+    tete:"Yada t'offre un gel de série",
+    t: raison + " Il couvrira un jour manqué, un seul." });
+  try{ pumpAchToast(); }catch(e){}
+  return true;
+}
+/* LA PARTIE COMPTE QUAND ELLE EST FINIE, pas quand elle commence : sinon il
+   suffirait de lancer et de quitter trente fois. Appelé à l'unique instant où
+   le joueur arrive au bout de ses questions — une fois par partie, dans
+   chacun des trois modes. */
+function compterPartie(){
+  try{
+    const d = loadDaily();
+    const parties = (d.parties | 0) + 1;
+    let palier = d.palierParties | 0;
+    /* Garde-fou : une donnée abîmée (palier devant le compteur) ne doit pas
+       distribuer un gel à chaque partie. */
+    if(palier > parties) palier = parties;
+    if(parties - palier >= GEL_PARTIES){
+      palier = parties;
+      saveDaily({ parties, palierParties: palier });
+      offrirGel(GEL_PARTIES + " parties jouées.");
+      return;
+    }
+    saveDaily({ parties, palierParties: palier });
+  }catch(e){}
+}
 function loadDaily(){ try { const s = JSON.parse(localStorage.getItem("bt_daily")||"{}"); return { last:s.last||"", streak:+s.streak||0, score:+s.score||0, total:+s.total||0,
   /* jours == null veut dire « ce joueur date d'avant les gels » : on retombe
      alors sur l'ancienne dérivation (voir joursFaits). Rien n'est perdu, rien
@@ -9841,7 +9956,9 @@ function loadDaily(){ try { const s = JSON.parse(localStorage.getItem("bt_daily"
   geles: Array.isArray(s.geles) ? s.geles : [],
   gels: Math.max(0, Math.min(GEL_MAX, +s.gels||0)),
   palier: Math.max(0, +s.palier||0),
-  annonce: s.annonce||"" }; } catch(e){ return { last:"", streak:0, score:0, total:0, jours:null, geles:[], gels:0, palier:0, annonce:"" }; } }
+  parties: Math.max(0, +s.parties||0),
+  palierParties: Math.max(0, +s.palierParties||0),
+  annonce: s.annonce||"" }; } catch(e){ return { last:"", streak:0, score:0, total:0, jours:null, geles:[], gels:0, palier:0, parties:0, palierParties:0, annonce:"" }; } }
 /* saveDaily FUSIONNE. Il écrasait l'objet entier : le jour où recordDailyResult
    n'aurait pas repassé les gels, la réserve d'un joueur aurait disparu. Une
    écriture ne touche plus que ce qu'on lui donne. */
@@ -10050,20 +10167,28 @@ function ouvrirFlamme(){
   let plusVieux = auj;
   faits.forEach(j=>{ if(j < plusVieux) plusVieux = j; });
   gels.forEach(j=>{ if(j < plusVieux) plusVieux = j; });
-  const lignes = [];
-  for(let k = 0; k < FLAMME_MEMOIRE; k++){
-    const cle = dayKey(-k);
-    if(cle < plusVieux) break;
-    const t = dateDeCle(cle);
+  /* LA GRILLE SE LIT COMME UN CALENDRIER : sept colonnes, du dimanche au
+     samedi, la semaine la plus ancienne en haut, aujourd'hui en bas. On
+     complète le début et la fin par des cases vides pour que chaque colonne
+     reste le même jour de la semaine — sans ça, la forme de la série ne veut
+     plus rien dire. */
+  const cases = [];
+  const tVieux = dateDeCle(plusVieux) || dateDeCle(auj);
+  for(let i = 0; i < tVieux.getDay(); i++) cases.push(`<span class="fj horschamp"></span>`);
+  const tAuj = dateDeCle(auj);
+  const jours = Math.round((tAuj - tVieux) / 86400000);
+  for(let k = 0; k <= jours; k++){
+    const t = new Date(tVieux.getFullYear(), tVieux.getMonth(), tVieux.getDate() + k);
+    const cle = cleDeDate(t);
     const fait = faits.has(cle), gele = !fait && gels.has(cle);
-    const etat = fait ? "Joué" : (gele ? "Gelé" : (cle === auj ? "À faire" : "Manqué"));
-    const cls = fait ? "r-fait" : (gele ? "r-gele" : "");
-    const pas = fait ? " fait" : (gele ? " gele" : "");
-    lignes.push(`<div class="flam-row ${cls}">`
-      + `<span class="sj${pas}${cle === auj ? " auj" : ""}">${SEM_LETTRES[t.getDay()]}</span>`
-      + `<span class="fr-d">${escapeHtml(dateLongue(t))}</span>`
-      + `<span class="fr-e">${etat}</span></div>`);
+    const etat = fait ? "joué" : (gele ? "gelé" : (cle === auj ? "à faire" : "manqué"));
+    const cls = (fait ? " fait" : (gele ? " gele" : "")) + (cle === auj ? " auj" : "");
+    const dit = dateLongue(t) + " — " + etat;
+    cases.push(`<span class="fj${cls}" title="${escapeHtml(dit)}" aria-label="${escapeHtml(dit)}"></span>`);
   }
+  for(let i = tAuj.getDay() + 1; i < 7; i++) cases.push(`<span class="fj horschamp"></span>`);
+  const grille = `<div class="fg-sem">${SEM_LETTRES.map(l=>`<span>${l}</span>`).join("")}</div>`
+    + `<div class="fg-cases" role="img" aria-label="Tes jours, du plus ancien au plus récent">${cases.join("")}</div>`;
   const reserve = d.gels === 0 ? "Aucun gel en réserve"
     : (d.gels === 1 ? "1 gel en réserve" : d.gels + " gels en réserve");
   const veil = document.createElement("div");
@@ -10076,11 +10201,17 @@ function ouvrirFlamme(){
         <span class="ft-txt">
           <span class="ft-n">${serie === 0 ? "Aucune série en cours" : (serie === 1 ? "1 jour d'affilée" : serie + " jours d'affilée")}</span>
           <span class="ft-g">${ICONS.flocon}${escapeHtml(reserve)}</span>
+          <span class="flam-regle">Un gel tous les ${GEL_PALIER} jours, ${GEL_MAX} au maximum. Il couvre un seul jour manqué&nbsp;: deux jours de suite et la flamme s'éteint.</span>
         </span>
       </div>
-      <div class="flam-list">${lignes.length ? lignes.join("") : `<div class="flam-vide">Relève le Défi du jour : ta flamme commence ici.</div>`}</div>
+      <div class="flam-list">${jours >= 0 ? grille : `<div class="flam-vide">Relève le Défi du jour : ta flamme commence ici.</div>`}</div>
+      <div class="flam-leg"><span class="fj fait"></span><b>joué</b><span class="fj gele"></span><b>gelé</b></div>
     </div>`;
   document.body.appendChild(veil);
+  /* ON OUVRE SUR AUJOURD'HUI, pas sur le premier jour. La grille se lit du
+     plus ancien au plus récent — donc sans ça, un joueur de trois mois ouvre
+     sa flamme sur juillet et doit défiler pour se voir. */
+  try{ const l = veil.querySelector(".flam-list"); if(l) l.scrollTop = l.scrollHeight; }catch(e){}
   monterLaFeuille(veil);
   glassSheetOpenUntil = performance.now() + fenetreFeuille(); glassTrack(680);
   attachSheetDrag(veil.querySelector(".settings-sheet"), closeFlamme);
@@ -10114,8 +10245,16 @@ function annoncerGel(){
     if(!d.annonce) return;
     const t = dateDeCle(d.annonce);
     saveDaily({ annonce:"" });
-    achToastQueue.push({ clr:"blue", ico:ICONS.flocon, tete:"Flamme sauvée",
-      t: t ? ("Gel de série utilisé " + (d.annonce === dayKey(-1) ? "hier" : "le " + t.getDate() + " " + MOIS_FR[t.getMonth()])) : "Gel de série utilisé" });
+    const quand = !t ? "Un jour manqué" : (d.annonce === dayKey(-1) ? "Hier était manqué"
+      : ("Le " + t.getDate() + " " + MOIS_FR[t.getMonth()] + " était manqué"));
+    /* LE SOLDE FAIT PARTIE DU MESSAGE. « Ta flamme est sauvée » tout seul
+       laisse croire qu'elle l'est toujours. On dit ce qu'il reste, et à quel
+       prix se gagne le suivant : c'est là que le joueur comprend qu'un gel ne
+       remplace pas le fait de revenir. */
+    const reste = loadDaily().gels;
+    achToastQueue.push({ clr:"blue", ico:ICONS.flocon, tete:"Yada a gelé ta série",
+      t: quand + (reste === 0 ? ". Plus de gel : le prochain se gagne en " + GEL_PALIER + " jours."
+                 : reste === 1 ? ". Il te reste 1 gel." : ". Il te reste " + reste + " gels.") });
     pumpAchToast();
   }catch(e){}
 }
@@ -10128,11 +10267,13 @@ function recordDailyResult(){
      série EN COURS ; une série qui repart de un repart de zéro palier, sinon
      un joueur revenu de loin toucherait son gel au premier jour. La réserve,
      elle, ne se perd pas : c'est un acquis, plafonné à deux. */
-  let palier = (streak === 1) ? 0 : d.palier, gels = d.gels;
-  if(streak - palier >= GEL_PALIER){ palier = streak; gels = Math.min(GEL_MAX, gels + 1); }
+  let palier = (streak === 1) ? 0 : d.palier;
+  const gagne = (streak - palier >= GEL_PALIER);
+  if(gagne) palier = streak;
   const jours = bornerJours((d.jours || Array.from(joursDerives(d))).concat([dayKey(0)]));
   saveDaily({ last:dayKey(0), streak, score:state.soloCorrect, total:state.questions.length,
-              jours, geles:bornerJours(d.geles), gels, palier });
+              jours, geles:bornerJours(d.geles), palier });
+  if(gagne) offrirGel(GEL_PALIER + " jours d'affilée.");
   checkAchievements({ toast:true }); // objectifs de régularité (Fidèle, Assidu)
   try { notifProposer(); } catch(e){}   /* il a maintenant une série à protéger */
 }
@@ -10607,6 +10748,7 @@ function adjustScore(teamIdx, delta){ const cap = maxPossibleScore(); state.scor
 function nextQuestion(){
   if(!state.revealed) return;
   if(state.currentIndex >= state.questions.length-1){
+    compterPartie();   // solo ET groupe : c'est ici qu'on arrive au bout
     if(state.mode==="solo"){
       recordSoloResult();
       if(state.daily){ recordDailyResult(); clearDailyProg(); }
