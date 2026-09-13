@@ -231,6 +231,158 @@ substituer :
    qui doit céder quand la place manque s'y accroche, avec la taille
    actuelle comme plafond.
 
+**Éteindre une couche de verre, c'est éteindre le panneau (v214).** Photo de
+Taylor : le choix des versions est ouvert, et derrière lui le panneau des
+Réglages a DISPARU — son titre, ses interrupteurs et son engrenage flottent
+au-dessus de l'accueil, sans aucun fond. C'est ma faute, et elle date de la
+v210.
+
+La v210 corrigeait une glissade : quand la feuille recule (elle rétrécit à
+0,935 depuis son bord haut), sa couche de verre est un enfant, donc elle
+rétrécit avec elle et le décor part en glissade — 83 px mesurés. Je l'avais
+donc ÉTEINTE, en écrivant dans le commentaire « la feuille garde sa teinte
+pleine ». C'était faux, et vérifiable en une ligne : en voie XF, `.has-gs`
+retire son fond à la surface (`background-image:none`) parce que c'est la
+couche qui le peint. Mesuré après coup : `background-color: rgba(0,0,0,0)`,
+`background-image: none`, couche à `opacity:0`. Le panneau ne peignait
+strictement rien.
+
+**La vraie cause de la glissade, c'était l'échelle, pas la translation.** La
+v210 avait essayé de recaler la couche image par image et n'était descendue
+que de 83 px à 51 : normal, le repère lui-même se déforme. On annule donc
+l'échelle — `scale(1/s)` sur la couche — et là tout tombe juste : **0,5 px au
+recul, 0,9 px au retour**, verre allumé.
+
+Deux pièges dans ce calcul, tous deux payés :
+
+- **La translation ne se divise PAS par l'échelle.** `scale(k) translate(t)`
+  translate le point AVANT de le mettre à l'échelle ; le parent multiplie par
+  s, et comme `s·k = 1` la translation traverse intacte. Je l'avais divisée :
+  cinq pixels de dérive de plus à chaque image.
+- **Ne pas se fier à la classe.** `feuille-recule` est retirée dès la première
+  ligne de `closeBibles`, alors que la feuille met un pli entier à revenir :
+  pendant tout le retour la classe dit « posée » et l'échelle dit 0,94.
+  Mesuré : 113 px de glissade au retour contre 58 à l'aller. On lit désormais
+  l'échelle RÉELLE, image par image — la seule chose qui ne mente jamais.
+
+`banc-essai/recul.js` mesure les deux sens ET exige que le panneau peigne
+quelque chose. Il échoue trois fois sur trois sur la v213.
+
+**Les manques du remplissage n'étaient pas aux bords (v214).** Troisième
+signalement de Taylor sur la même chose, et les deux premières fois j'avais
+corrigé le mauvais défaut — une marge de découpe (v211), puis une durée
+(v209). Cette fois j'ai mesuré au **pixel appareil**, appui maintenu : l'onde
+s'arrête très exactement là où s'arrête le fond du bouton, pas un pixel avant.
+Les bords n'ont jamais été le problème.
+
+Les manques sont des **TROUS, au milieu**. L'onde vivait en `z-index:-1`, donc
+DERRIÈRE le contenu : chaque enfant opaque y découpait sa silhouette. Mesuré,
+avec une teinte d'essai franche pour que même une pastille corail compte :
+
+| bouton | avant | après |
+|---|---|---|
+| ligne de version | **9,04 %** | 0,00 % |
+| carte de mode | **9,77 %** | 0,00 % |
+| carte du Défi | **9,64 %** | 0,00 % |
+| en-tête de testament | **5,16 %** | 0,00 % |
+| puce | 2,29 % | 0,00 % |
+| bouton de réponse | 0,65 % | 0,00 % |
+
+Un dixième d'un bouton n'était jamais recouvert. L'onde passe au-dessus — ce
+que fait un appui sur iOS. Le contraste du texte tombe de 11,5 à 9,4 sur une
+ligne de version, de 10,2 à 7,3 sur une puce : très au-dessus du seuil de
+lisibilité, et seulement le temps de l'appui.
+
+**La leçon, en trois versions : « ce n'est pas plein » ne dit pas OÙ.** J'ai
+cherché deux fois au bord parce que la première phrase disait « un petit jour
+dans les bords ». La bonne méthode était de cartographier le bouton ENTIER,
+pas de profiler son contour. `banc-essai/plein.js` le fait, et il échoue sur
+les six familles de boutons en v213.
+
+**Le pli des testaments partait en retard et prenait la courbe à l'envers
+(v213).** « À l'ouverture des testaments, ce n'est pas assez fluide, comme une
+marche qui bloque légèrement. » Le pli est animé par `grid-template-rows:
+0fr → 1fr` — la trouvaille de la v141, qui avait remplacé un `height:0` qui ne
+glissait pas du tout. Chronométré sur le rail lui-même, image par image, sans
+bridage, il fait deux choses que personne n'a demandées.
+
+1. **Il part en retard, et seulement à l'ouverture.** 52 ms d'immobilité après
+   le tap pour ouvrir, 30 ms pour fermer : deux images de plus pendant
+   lesquelles il ne se passe rien. Le navigateur doit résoudre le `fr`, donc
+   mettre en page un contenu jusque-là écrasé à zéro.
+2. **Il prend la courbe à l'envers.** Pas relevés à l'ouverture :
+   **5,9 / 16,6 / 19,0 / 20,8 / 21,9 px**. Ça *accélère*. `--tr-plie`
+   (`cubic-bezier(0.33,1,0.68,1)`) ralentit. Et à la fermeture c'est l'inverse
+   exact : **64,9 / 55,0 / 45,9 / 38,8**, un plongeon de 65 px sur la première
+   image. Les deux sens du même geste n'avaient pas la même allure.
+
+Interpoler un **facteur de flexibilité** n'est pas interpoler une hauteur. La
+règle CSS ne bouge pas — l'état au repos reste au pixel près celui d'avant, et
+le pli marcherait encore sans JavaScript — mais le temps de l'animation
+`plierTst()` épingle les **deux bouts en pixels** : plus rien à résoudre.
+Après : **18 ms** de départ, **32,4 / 30,2 / 27,9 / 26,1 / 24,0 px** à
+l'ouverture, **32,2 / 30,2 / 28,1 / 26,1 / 24,0** à la fermeture. Le geste est
+enfin son propre miroir. Coût : deux mises en page forcées pour lire la hauteur
+d'arrivée, moins d'une milliseconde — contre les cinquante que coûtait la
+marche.
+
+**La leçon : une animation qui « marche » peut être fausse depuis toujours.**
+Personne n'avait mesuré le rail lui-même, seulement la carte qu'il pousse — et
+celle-là bougeait, donc tout semblait bon. `banc-essai/pli.js` relève désormais
+le départ et la forme de la courbe dans les deux sens ; il échoue sur la v212.
+
+**Les gels de série, et l'histoire de la flamme (v213).** « Pour les
+utilisateurs vraiment réguliers qui viennent à perdre leur flamme, on pourra
+leur donner un gel pour garder leur motivation. Mais attention, pas de façon
+trop abusive. » Tout le système tient dans trois nombres, et chacun a sa
+raison :
+
+- **un gel tous les dix jours** d'affilée, et seulement au Défi du jour. Assez
+  rare pour rester un cadeau, assez fréquent pour qu'un joueur régulier en ait
+  toujours un sous la main ;
+- **deux en réserve au maximum.** Sans plafond, six mois de série vaudraient
+  dix-huit jours d'absence : la flamme ne voudrait plus rien dire ;
+- **un gel couvre un jour.** Deux jours de suite sans jouer et la flamme
+  s'éteint, même avec deux gels en poche. C'est cette règle-là, et elle seule,
+  qui empêche d'acheter des vacances.
+
+Et une quatrième, trouvée en écrivant le banc : **tout ou rien**. Si un seul
+trou ne peut pas être couvert, la flamme s'éteint de toute façon — brûler un
+gel au passage reviendrait à le perdre pour rien. Il reste en réserve.
+
+Le gel se dépense **tout seul**, au réveil du jeu, et un bandeau le dit :
+« Flamme sauvée · Gel de série utilisé hier ». Sans ce bandeau, le joueur voit
+sa flamme intacte après un jour manqué et croit que le jeu compte mal.
+
+Deux pièges attrapés en chemin, tous deux invisibles à l'œil :
+
+- **`saveDaily` écrasait l'objet entier.** Le jour où une écriture n'aurait pas
+  repassé la réserve, elle aurait disparu. Il fusionne maintenant.
+- **Le miroir du service worker envoyait `dernier: d.last`**, la date du
+  dernier défi *joué*. Or `sw.js` n'envoie son rappel que si ce jour est HIER.
+  Un jour couvert par un gel laissait donc `dernier` sur avant-hier : la série
+  était bien vivante, et le rappel ne partait plus — pile le joueur qu'il faut
+  réveiller. Il envoie désormais le dernier jour **couvert**, joué ou gelé, et
+  le service worker n'a rien à apprendre des gels.
+
+**Rien ne repart jamais à zéro.** Les champs sont ajoutés, jamais remplacés :
+un joueur qui n'a pas rejoué depuis la mise à jour n'a pas de liste `jours`, et
+`joursFaits()` retombe alors exactement sur l'ancienne dérivation. Sa bande des
+sept jours est au pixel près celle d'avant. `banc-essai/gels.js` vérifie les
+deux moitiés de la demande — la générosité et la retenue — plus celle-là, en
+vingt-trois règles.
+
+**Et on peut voir son histoire.** « Je veux voir quelle série a été gelée ou
+non. » Un tap sur la pastille flamme ouvre une feuille : une ligne par jour,
+*Joué / Gelé / Manqué*, la réserve en tête. Les jours gelés prennent aussi une
+case froide dans la bande des sept jours de l'accueil — on voit d'un coup d'œil
+que la série tient grâce à un gel, et non parce qu'on aurait joué ce jour-là.
+La carte du Défi a donc deux portes : la pastille ouvre l'histoire, le reste
+lance le défi ; et une fois le défi relevé, la carte entière devient cette
+porte. C'est pour ça qu'elle n'est plus `disabled` : **un bouton désactivé ne
+reçoit aucun événement**, la pastille posée dessus aurait été morte. Son seul
+style propre était `cursor:default`, repris par la classe `.done`.
+
 **Une feuille doit être finie avant de bouger (v212).** « Quand j'ouvre les
 réglages, je trouve que la page s'affiche en même temps que l'ouverture ; je
 veux qu'elle soit proprement affichée au lieu de s'afficher au moment de

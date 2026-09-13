@@ -15,21 +15,33 @@
       chemin fait en 144 ms. Sur une courbe de PLI (--tr-plie) : 32,6 px par
       image, 80 % à 239 ms.
 
-   Le test relève les deux, image par image.
+   3. LE DÉPART ET LA COURBE (v213). 0fr -> 1fr est commode, mais chronométré
+      sur le rail lui-même il fait deux choses que personne n'a demandées :
+      l'OUVERTURE reste immobile 67 ms après le tap là où la fermeture part en
+      25, et les pas ACCÉLÈRENT (16,5 / 19,1 / 20,8 / 21,8 px) alors que
+      --tr-plie ralentit. « Une marche qui bloque légèrement. » On épingle donc
+      les deux bouts en pixels le temps de l'animation : départ 29 ms, pas
+      32,3 / 30,2 / 28,1 / 25,9 px, et la fermeture devient son exact miroir.
+
+   Le test relève tout ça, image par image.
 
        node pli.js                  (jeu servi en HTTP sur 8099)
        node pli.js "<css d essai>"  (pour comparer une autre courbe)
 
-   Repères : retard du verre <= 2 px, saut max <= 40 px/image. */
+   Repères : retard du verre <= 2 px, saut max <= 40 px/image, l'ouverture ne
+   part pas plus d'une image après la fermeture, et le premier pas est le plus
+   grand (la courbe ralentit, elle n'accélère pas). */
 const { chromium } = require('/opt/node22/lib/node_modules/playwright');
 const CSS=process.argv[2]||'';
+/* URL=... pour comparer une autre version (argv[2] est déjà pris par le CSS). */
+const LIEN=process.env.URL||'http://127.0.0.1:8099/index.html';
 const IOS='Mozilla/5.0 (iPhone; CPU iPhone OS 17_5 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.5 Mobile/15E148 Safari/604.1';
 (async()=>{ const b=await chromium.launch({executablePath:'/opt/pw-browsers/chromium'});
  const ctx=await b.newContext({viewport:{width:393,height:852},deviceScaleFactor:2,userAgent:IOS,hasTouch:true,serviceWorkers:'block'});
  const p=await ctx.newPage(); const errs=[]; p.on('pageerror',e=>errs.push(e.message));
  await p.addInitScript(()=>{localStorage.setItem('bt_profile',JSON.stringify({name:'Taylor',color:'#4C86E8'}));localStorage.setItem('bt_fs_hint','1');
    localStorage.setItem('bt_progress',JSON.stringify({books:{'Genèse':12,'Exode':8,'Matthieu':10},correct:360,streakBest:21,ach:{'premiers-pas':1}}));});
- await p.goto('http://127.0.0.1:8099/index.html');
+ await p.goto(LIEN);
  await p.waitForFunction(()=>{try{return state.screen==='mode';}catch(e){return false;}},null,{timeout:20000});
  if(CSS) await p.addStyleTag({content:CSS});
  await p.evaluate(()=>{ state.screen='parcours'; render(); });
@@ -77,6 +89,48 @@ const IOS='Mozilla/5.0 (iPhone; CPU iPhone OS 17_5 like Mac OS X) AppleWebKit/60
    + ' px/image   |   80 % du chemin en : ' + t80 + ' ms   (course ' + Math.round(total) + ' px)');
  const bon = pire <= 2 && saut <= 40;
  console.log('  ' + (bon ? 'LE PLI GLISSE, ET SON VERRE SUIT' : 'DEFAUT : ca saccade'));
+
+ /* ===== LE DÉPART ET LA FORME DE LA COURBE, DANS LES DEUX SENS =====
+    On relit le rail lui-même (grid-template-rows), pas la carte d'à côté :
+    c'est LUI qu'on anime, et c'est lui qui partait en retard. */
+ await p.waitForTimeout(1200);
+ const sens = [];
+ for (const quoi of ['fermeture','ouverture']) {   // il est ouvert : on ferme, puis on rouvre
+   sens.push(await p.evaluate(()=> new Promise(res=>{
+     const tete = document.querySelector('.tst-head');
+     const corps = tete.closest('.tst').querySelector('.tst-body');
+     const val = ()=> parseFloat(getComputedStyle(corps).gridTemplateRows) || 0;
+     const rel = []; const t0 = performance.now(); let tap = null;
+     const tic = ()=>{ rel.push([performance.now()-t0, val()]);
+       if(performance.now()-t0 < 420) requestAnimationFrame(tic); else res({rel, tap}); };
+     requestAnimationFrame(tic);
+     setTimeout(()=>{ tap = performance.now()-t0; toggleTst(tete); }, 60);
+   })));
+   await p.waitForTimeout(1400);
+ }
+ const analyse = ({rel, tap})=>{
+   const dep = rel.find(x=>x[0] >= tap);
+   const v0 = dep ? dep[1] : rel[0][1];
+   let iB = -1;
+   for (let i=0;i<rel.length;i++){ if (rel[i][0] >= tap && Math.abs(rel[i][1]-v0) > 0.5){ iB = i; break; } }
+   if (iB < 0) return { attente:9999, pas:[] };
+   const pas = [];
+   for (let i=iB;i<rel.length && pas.length<5;i++){ pas.push(Math.abs(rel[i][1] - rel[i-1][1])); }
+   return { attente: rel[iB][0] - tap, pas };
+ };
+ const F = analyse(sens[0]), O = analyse(sens[1]);
+ const dit = (n,a)=> '  ' + n + ' : part en ' + a.attente.toFixed(0) + 'ms, pas ' + a.pas.map(x=>x.toFixed(1)).join(' / ') + ' px';
+ console.log(dit('fermeture', F));
+ console.log(dit('ouverture', O));
+ /* Une seule image d'écart admise entre les deux sens : au-delà, l'ouverture
+    « bloque » et la fermeture non — c'est exactement ce que Taylor sentait. */
+ const symetrique = (O.attente - F.attente) <= 20;
+ const ralentit = (a)=> a.pas.length >= 3 && a.pas[0] >= a.pas[1] && a.pas[1] >= a.pas[2];
+ const bon2 = symetrique && ralentit(F) && ralentit(O);
+ if(!symetrique) console.log('  DEFAUT : l ouverture part ' + (O.attente-F.attente).toFixed(0) + 'ms apres la fermeture');
+ if(!ralentit(O)) console.log('  DEFAUT : la courbe d ouverture ACCELERE au lieu de ralentir');
+ if(!ralentit(F)) console.log('  DEFAUT : la courbe de fermeture ACCELERE au lieu de ralentir');
+ console.log('  ' + (bon2 ? 'LE PLI PART TOUT DE SUITE, ET SUIT SA COURBE' : 'DEFAUT : le pli a une marche'));
  console.log('  erreurs : ' + (errs.length?JSON.stringify([...new Set(errs)]):'aucune'));
  await ctx.close(); await b.close();
- process.exit(bon?0:1); })();
+ process.exit((bon && bon2)?0:1); })();

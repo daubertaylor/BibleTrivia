@@ -575,6 +575,11 @@
   /* Aujourd'hui : plus lumineux, jamais cerné — le jeu n'a aucun rebord de couleur. */
   .sj.auj{ background:rgba(255,255,255,0.3); color:#fff; }
   .sj.fait{ background:linear-gradient(160deg, #FFC64F, #F09A18); color:#fff; text-shadow:0 1px 2px rgba(122,78,4,0.3); }
+  /* UN JOUR GELÉ N'EST PAS UN JOUR JOUÉ, et il n'est pas non plus un jour
+     perdu : il a sa propre couleur, froide, à côté de l'or des jours joués.
+     Aucun rebord — la case gelée se distingue par sa MATIÈRE, comme tout le
+     reste du jeu. */
+  .sj.gele{ background:linear-gradient(160deg, #9FD8F5, #4FA6DC); color:#fff; text-shadow:0 1px 2px rgba(10,60,92,0.32); }
   .hero-tag{ font-family:'Fraunces',serif; font-style:italic; color:rgba(255,255,255,0.95); font-size:1rem; margin-top:0; line-height:1.5; text-shadow:0 1px 3px rgba(0,0,0,0.35), 0 2px 16px rgba(0,0,0,0.55); max-width:18rem; margin-left:auto; margin-right:auto; }
 
   /* MODES UNIFORMES : toutes les cartes de l'accueil ont la MÊME taille et la même
@@ -1075,7 +1080,7 @@
          chose (voir majVoilesErreurs) ;
        - un CRAN par carte : on se pose toujours sur une carte entière,
          jamais au milieu d'une ligne. */
-  .settings-sheet.review-sheet{ padding-bottom:calc(env(safe-area-inset-bottom) * 0.55 + 1.15rem + 220px); }
+  .settings-sheet.review-sheet, .settings-sheet.flam-sheet{ padding-bottom:calc(env(safe-area-inset-bottom) * 0.55 + 1.15rem + 220px); }
   /* ===== LA RAMPE DU VOILE : UNE COURBE, PAS UNE DROITE =====
      Une rampe LINÉAIRE d'opacité a deux coudes — là où elle démarre et là où
      elle s'arrête, la pente saute d'un coup de zéro à sa valeur puis revient
@@ -1138,6 +1143,29 @@
   .review-sheet .sheet-title{ display:flex; align-items:baseline; }
   .review-sheet .sheet-title small{ margin-left:auto; font-family:'Poppins',sans-serif; font-size:0.85rem; font-weight:700; color:var(--ink-soft); font-variant-numeric:tabular-nums; }
   .rev-item{ text-align:left; border-radius:var(--r-m); border:1px solid var(--bord); --rim-cast:0 5px 14px rgba(34,26,16,0.12); padding:0.8rem 0.9rem; flex-shrink:0; scroll-snap-align:start; }
+  /* ===== L'HISTOIRE DE LA FLAMME =====
+     Une ligne par jour, la plus récente en haut. Pas de verre sur les lignes :
+     trente surfaces de plus coûteraient bien plus cher que ce qu'elles
+     apporteraient, et la feuille en porte déjà une. Elles se distinguent donc
+     par leur pastille — la MÊME que celle de la bande des sept jours, pour
+     qu'un jour joué se reconnaisse d'un écran à l'autre. */
+  .flam-tete{ display:flex; align-items:center; gap:0.7rem; margin:0.15rem 0 0.7rem; }
+  .flam-tete .ft-txt{ display:flex; flex-direction:column; gap:0.1rem; min-width:0; }
+  .flam-tete .ft-n{ font-family:'Poppins',sans-serif; font-weight:700; font-size:1rem; color:var(--ink); }
+  .flam-tete .ft-g{ font-size:0.83rem; color:var(--ink-soft); display:inline-flex; align-items:center; gap:0.3rem; }
+  .flam-tete .ft-g svg{ width:0.95rem; height:0.95rem; flex-shrink:0; color:#4FA6DC; }
+  .flam-list{ max-height:calc(50 * var(--hu)); overflow-y:auto; overscroll-behavior:contain; -webkit-overflow-scrolling:touch;
+    scrollbar-width:none; display:flex; flex-direction:column; gap:0.3rem; margin:0 0 0.2rem; }
+  .flam-list::-webkit-scrollbar{ display:none; }
+  .flam-row{ display:flex; align-items:center; gap:0.7rem; flex-shrink:0; padding:0.2rem 0.1rem; }
+  .flam-row .sj{ flex-shrink:0; }
+  .flam-row .fr-d{ flex:1; min-width:0; font-size:0.9rem; font-weight:600; color:var(--ink); overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+  .flam-row .fr-e{ font-size:0.8rem; font-weight:700; color:var(--ink-soft); flex-shrink:0; }
+  .flam-row.r-fait .fr-e{ color:#C07A0C; }
+  .flam-row.r-gele .fr-e{ color:#2E7FB0; }
+  .flam-vide{ font-size:0.9rem; color:var(--ink-soft); padding:0.6rem 0.1rem; }
+  .flam-sheet .sheet-title{ display:flex; align-items:baseline; }
+  .flam-sheet .sheet-title small{ margin-left:auto; font-family:'Poppins',sans-serif; font-size:0.85rem; font-weight:700; color:var(--ink-soft); font-variant-numeric:tabular-nums; }
   .rev-q{ font-weight:700; color:var(--ink); font-size:0.92rem; margin-bottom:0.5rem; line-height:1.35; }
   .rev-a{ display:flex; align-items:center; gap:0.45rem; font-size:0.88rem; font-weight:600; margin-top:0.18rem; }
   .rev-a .ico{ width:1rem; height:1rem; flex-shrink:0; }
@@ -1279,7 +1307,18 @@
      alors le bouton ENTIER, sans dépendre d'aucune extension de rognage.
      Mesuré avec overflow-clip-margin neutralisé (Safari simulé) : 1,00 px
      d'anneau avant, 0,00 px après, sur les onze familles de boutons. */
-  button::before, .mode-card::before{ content:""; position:absolute; inset:0; z-index:-1; border-radius:inherit; background:var(--press-tint, rgba(238,74,40,0.18)); transform:scale(0.001); opacity:0; transition:opacity var(--onde-duree) cubic-bezier(0.4,0,1,1), transform 0.01s linear var(--onde-duree); pointer-events:none; }
+  /* ===== L'ONDE PASSE AU-DESSUS DU CONTENU =====
+     « Le remplissage rosé ne se fait pas à cent pour cent, il reste quelques
+     manques. » Les manques ne sont pas aux bords — mesuré au pixel appareil,
+     l'onde s'arrête exactement là où s'arrête le bouton, pas un pixel avant.
+     Ce sont des TROUS, au milieu : l'onde vivait en z-index:-1, donc DERRIÈRE
+     le contenu. Chaque enfant opaque y découpait sa silhouette — la pastille
+     d'une version (10 % de la surface d'une carte de mode), la coche, les
+     lettres. On pressait une ligne et le rose se peignait AUTOUR du logo.
+     Elle passe au-dessus. C'est ce que fait un appui sur iOS : le voile
+     recouvre la ligne entière, icône comprise. La teinte est translucide, le
+     texte reste lisible — vérifié au contraste. */
+  button::before, .mode-card::before{ content:""; position:absolute; inset:0; z-index:3; border-radius:inherit; background:var(--press-tint, rgba(238,74,40,0.18)); transform:scale(0.001); opacity:0; transition:opacity var(--onde-duree) cubic-bezier(0.4,0,1,1), transform 0.01s linear var(--onde-duree); pointer-events:none; }
   /* ===== L'ONDE SE REMPLIT ENTIÈREMENT, MÊME SUR UN TAPOTEMENT =====
      Elle était portée par « :active » : elle grandissait tant que le doigt
      restait posé, et repartait à l'envers dès qu'il se levait. Or un
@@ -2017,7 +2056,11 @@
      FLUIDE, à l'identique sur iOS et Android. Le flou + la teinte vivent ici ;
      la surface elle-même devient transparente (classe .has-gs). Découpée par le
      overflow:hidden + border-radius de la surface -> mêmes coins arrondis. */
-  .gs{ position:absolute; top:0; left:0; z-index:-2; pointer-events:none; background-repeat:no-repeat; background-position:0 0;
+  /* transform-origin au COIN : sans repère fixe, impossible d'annuler
+     proprement la mise à l'échelle d'une feuille qui recule (voir le contre-
+     zoom dans queueGlassXF). Aucun effet sur les surfaces ordinaires : une
+     translation pure ne dépend pas de son origine. */
+  .gs{ position:absolute; top:0; left:0; transform-origin:0 0; z-index:-2; pointer-events:none; background-repeat:no-repeat; background-position:0 0;
        background-image:linear-gradient(var(--glass-tint, rgba(255,253,247,0.58)), var(--glass-tint, rgba(255,253,247,0.58))), var(--blur-url);
        will-change:transform; transform:translate3d(0,0,0); backface-visibility:hidden; -webkit-backface-visibility:hidden; }
   /* EN MOTEUR « XF », LA COUCHE .gs FAIT TOUT — ET ELLE SEULE.
@@ -2220,7 +2263,7 @@
   .daily-card .dc-streak{ display:inline-flex; }
   .daily-card .dc-check{ opacity:1; }
   .daily-card .dc-check svg{ stroke-width:2.6; }
-  .daily-card:disabled{ cursor:default; opacity:1; }
+  .daily-card:disabled, .daily-card.done{ cursor:default; opacity:1; }
 
   /* ---------- Parcours : progression & objectifs ---------- */
   /* « Mon parcours » : carte COMPACTE (comme les modes du bas) pour laisser
@@ -2646,16 +2689,20 @@
      la place à la feuille des versions, elle est déplacée ET réduite par un
      transform : sa texture part avec elle. Mesuré au retour : la feuille
      revient de 33,6 px et le décor qu'elle contient parcourt 83,1 px à
-     l'écran. Le décor glisse à l'intérieur du panneau, puis se remet d'un
-     coup — « la page derrière bug légèrement au moment de reprendre sa place ».
-     Recaler la couche à chaque image ne suffit pas (essayé : 83 px ramenés à
-     51, pas à zéro) : elle est dans un repère qui se déforme.
-     On l'ÉTEINT donc le temps du mouvement. La feuille garde sa teinte pleine,
-     qui est déjà ce que la couche peint ; elle est de toute façon derrière un
-     voile sombre, et il n'y a plus rien qui puisse glisser. Elle se rallume
-     une fois la feuille revenue à sa place, pas avant. */
-  .settings-sheet > .gs{ transition:opacity 0.18s ease; }
-  .settings-sheet.verre-eteint > .gs{ opacity:0; }
+     l'écran — « la page derrière bug au moment de reprendre sa place ».
+     LA V210 L'AVAIT ÉTEINTE, ET C'ÉTAIT UNE FAUTE. Le commentaire disait « la
+     feuille garde sa teinte pleine » : c'est faux. En voie XF, .has-gs retire
+     à la surface son fond (background-image:none) parce que c'est la couche
+     .gs qui le peint. Éteindre la couche ne laissait donc RIEN : mesuré,
+     background-color rgba(0,0,0,0) et background-image none. Le panneau des
+     Réglages devenait transparent, son titre et ses interrupteurs flottant
+     au-dessus de l'accueil. C'est la photo de Taylor.
+     LA VRAIE RAISON du glissement, c'était l'échelle : recaler la TRANSLATION
+     ne suffit pas quand le repère lui-même rétrécit (83 px ramenés à 51, pas
+     à zéro). On annule donc l'échelle. La couche porte scale(1/s) et sa
+     translation est divisée par s : le repère déformé est exactement défait,
+     et la texture reste collée au décor, image par image, pendant tout le
+     recul. Le verre reste ALLUMÉ. */
   /* Le voile de la feuille de DEVANT porte un fond sombre — le seul du jeu.
      Les voiles de premier niveau restent transparents (le décor doit passer au
      travers, c'est la signature du jeu) ; ici il sépare deux panneaux de même
@@ -2667,7 +2714,7 @@
      son ombre d'élévation. On voyait le filtre avant de voir la superposition.
      Le voile ne sert donc plus qu'à capter le tap qui referme. */
   .sheet-veil.voile-second{ background:none; }
-  .settings-sheet .rev-list{ touch-action:pan-y; }
+  .settings-sheet .rev-list, .settings-sheet .flam-list{ touch-action:pan-y; }
   /* LA POIGNÉE FERME LA FEUILLE. Elle n'était qu'un trait décoratif ; c'est
      désormais la vraie sortie : on tire la feuille vers le bas, ou on tape la
      barre. Le bouton « Fermer » a donc disparu — il occupait une pleine largeur
@@ -3380,6 +3427,9 @@ document.addEventListener("pointerup", ondeLache, { passive:true, capture:true }
 document.addEventListener("pointercancel", ondeLache, { passive:true, capture:true });
 /* ===================== ICONS (hand-built, no emoji) ===================== */
 const ICONS = {
+  /* Le flocon du gel de série. Trait seul, comme les autres pictogrammes
+     d'interface — la flamme est le seul dessin en couleur. */
+  flocon: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round"><path d="M12 2.6v18.8M4.85 6.8l14.3 10.4M19.15 6.8 4.85 17.2"/><path d="M12 6.4 9.7 4.3M12 6.4l2.3-2.1M12 17.6l-2.3 2.1M12 17.6l2.3 2.1"/><path d="m7.6 9.3-3-.5M7.6 9.3l-.9-2.9M16.4 14.7l3 .5M16.4 14.7l.9 2.9"/><path d="m7.6 14.7-3 .5M7.6 14.7l-.9 2.9M16.4 9.3l3-.5M16.4 9.3l.9-2.9"/></svg>`,
   book: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M3 5.2C3 5.2 5.3 4.3 8.3 4.3C10.3 4.3 12 5 12 5V18C12 18 10.3 17.3 8.3 17.3C5.3 17.3 3 18.2 3 18.2V5.2Z"/><path d="M21 5.2C21 5.2 18.7 4.3 15.7 4.3C13.7 4.3 12 5 12 5V18C12 18 13.7 17.3 15.7 17.3C18.7 17.3 21 18.2 21 18.2V5.2Z"/></svg>`,
   speakerOn: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M4 9.3V14.7H7.3L12.3 18.7V5.3L7.3 9.3H4Z"/><path d="M15.8 8.7C16.9 9.7 17.5 11 17.5 12.5C17.5 14 16.9 15.3 15.8 16.3"/><path d="M18.3 6C19.9 7.7 20.8 10 20.8 12.5C20.8 15 19.9 17.3 18.3 19"/></svg>`,
   speakerOff: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M4 9.3V14.7H7.3L12.3 18.7V5.3L7.3 9.3H4Z"/><line x1="16.5" y1="9" x2="21.5" y2="16"/><line x1="21.5" y1="9" x2="16.5" y2="16"/></svg>`,
@@ -6113,8 +6163,7 @@ function openBibles(){
   /* La feuille des Réglages passe en SECOND PLAN (voir .feuille-recule). */
   const dessous = document.querySelector("#settingsVeil .settings-sheet");
   if(dessous){
-    /* Elle recule ET sa texture s'éteint : voir .verre-eteint. */
-    dessous.classList.add("feuille-recule", "verre-eteint");
+    dessous.classList.add("feuille-recule");
   }
   veil.classList.add("voile-second");
   attachSheetDrag(veil.querySelector(".settings-sheet"), closeBibles);
@@ -6128,6 +6177,9 @@ function openBibles(){
      du carnet : le verre est là dès la première image, et reste solidaire de
      la feuille pendant qu'elle monte. */
   glassSheetOpenUntil = performance.now() + fenetreFeuille(); glassTrack(680);
+  /* Le recul de la feuille du dessous dure un pli entier : le moteur relit les
+     positions ET l'échelle à chaque image pendant tout ce temps. */
+  try{ glassSuivre(msPli() + 120); }catch(e){}
 }
 function closeBibles(){
   const v = document.getElementById("biblesVeil");
@@ -6139,13 +6191,12 @@ function closeBibles(){
   const dessous = document.querySelector("#settingsVeil .settings-sheet");
   if(dessous){
     dessous.classList.remove("feuille-recule");
-    /* La texture se rallume une fois la feuille REVENUE, pas pendant : sinon
-       elle réapparaîtrait en train de glisser, ce qu'on cherche justement à
-       ne plus voir. */
-    setTimeout(()=>{
-      dessous.classList.remove("verre-eteint");
-      try{ glassRelayout(); queueGlassSync(); }catch(e){}
-    }, msPli());
+    /* LE MOTEUR DOIT RESTER ÉVEILLÉ TOUT LE RETOUR. La couche de verre porte
+       un contre-zoom qui suit l'échelle de la feuille image par image (voir
+       queueGlassXF) : si la boucle s'endort en route, le contre-zoom se fige
+       sur une échelle périmée et la texture saute. */
+    try{ glassSuivre(msPli() + 120); armGlass(msPli() + 300); }catch(e){}
+    setTimeout(()=>{ try{ glassRelayout(); queueGlassSync(); }catch(e){} }, msPli() + 40);
   }
   setTimeout(()=>{ if(v.parentNode) v.remove(); }, msFerme() + 20);
 }
@@ -6743,7 +6794,7 @@ function maybeStartMusic(){ if(settings.music && audioUnlocked && !musicPlaying 
 function attachSheetDrag(feuille, fermer){
   if(!feuille) return;
   let y0 = 0, t0 = 0, dy = 0, actif = false, poignee = false;
-  const neutre = (t)=> !(t && t.closest && t.closest("input, button:not(.sheet-grab), .scn-thumb, .rev-list, .vol-row, .switch"));
+  const neutre = (t)=> !(t && t.closest && t.closest("input, button:not(.sheet-grab), .scn-thumb, .rev-list, .flam-list, .vol-row, .switch"));
   /* PENDANT LE GESTE, LE VERRE RESTE ACCROCHÉ À L'ÉCRAN, pas à la feuille :
      c'est tout l'effet de décalage — on tire le panneau et le décor glisse
      derrière, comme une vitre qu'on déplace devant un paysage. Il faut donc
@@ -9592,10 +9643,54 @@ function openAchInfo(id){
   veil.addEventListener("click", (e)=>{ if(e.target===veil) closeModal(); });
 }
 /* Testaments repliables : pliés par défaut (fini le pavé), on déplie au tap. */
+/* ===== LE PLI PART TOUT DE SUITE, ET SUIT VRAIMENT SA COURBE =====
+   « À l'ouverture des testaments, ce n'est pas assez fluide, comme une marche
+   qui bloque légèrement. »
+   0fr -> 1fr est commode : c'est une vraie hauteur qui s'anime sans qu'on ait
+   à la mesurer, et c'est ce qui avait remplacé l'ancien height:0 qui, lui, ne
+   glissait pas du tout. Mais mesuré image par image, il fait deux choses que
+   personne n'a demandées.
+     1. IL PART EN RETARD, et seulement à l'OUVERTURE. Chronométré sans
+        bridage : 54 ms d'immobilité après le tap à l'ouverture, 25 ms à la
+        fermeture. Deux images de plus, pendant lesquelles il ne se passe
+        RIEN — le navigateur doit résoudre le « fr », donc mettre en page un
+        contenu jusque-là écrasé à zéro.
+     2. IL PREND LA COURBE À L'ENVERS. Les pas relevés sur le rail lui-même :
+        16,5 / 19,1 / 20,8 / 21,8 / 22,5 px. Ça ACCÉLÈRE. --tr-plie
+        (cubic-bezier(0.33,1,0.68,1)) ralentit : 30,2 / 27,9 / 26,2 / 24,1 /
+        22,4. Interpoler un facteur de flexibilité n'est pas interpoler une
+        hauteur.
+   La règle CSS ne bouge pas — l'état au repos reste au pixel près celui
+   d'avant, et le pli marcherait encore sans JavaScript. Mais LE TEMPS DE
+   L'ANIMATION on épingle les DEUX bouts en pixels : plus rien à résoudre, le
+   navigateur part à l'image suivante et suit la courbe. Deux mises en page
+   forcées pour lire la hauteur d'arrivée, moins d'une milliseconde — à
+   comparer aux cinquante que coûtait la marche. */
+function plierTst(t){
+  const corps = t.querySelector(".tst-body");
+  const ouvrir = !t.classList.contains("open");
+  if(!corps){ t.classList.toggle("open", ouvrir); return; }
+  const depart = corps.getBoundingClientRect().height;
+  /* La hauteur d'arrivée se mesure SANS jouer l'animation : on pose la valeur
+     de destination, on lit, on remet le départ. */
+  corps.style.transition = "none";
+  corps.style.gridTemplateRows = ouvrir ? "max-content" : "0fr";
+  const arrivee = corps.getBoundingClientRect().height;
+  corps.style.gridTemplateRows = depart + "px";
+  void corps.offsetHeight;              // le départ est figé, en pixels
+  corps.style.transition = "";
+  t.classList.toggle("open", ouvrir);   // margin-top et opacité partent d'ici
+  corps.style.gridTemplateRows = arrivee + "px";
+  /* À l'arrivée on rend la main au CSS. La valeur épinglée et la valeur
+     calculée sont la même : la reprise ne se voit pas. Un second tap pendant
+     l'animation annule ce nettoyage et repart de la hauteur du moment. */
+  clearTimeout(corps._pliT);
+  corps._pliT = setTimeout(()=>{ corps.style.gridTemplateRows = ""; }, msPli() + 60);
+}
 function toggleTst(btn){
   const t = btn && btn.closest ? btn.closest(".tst") : null;
   if(!t) return;
-  t.classList.toggle("open");
+  plierTst(t);
   /* La grille masquée n'avait pas de position pour le verre : on force un
      recalcul de mise en page + un recalage à l'ouverture. Et on re-décide le
      défilement : ouvrir un testament peut faire déborder la page. */
@@ -9649,7 +9744,7 @@ function pumpAchToast(){
   const a = achToastQueue.shift();
   const el = document.createElement("div");
   el.className = "ach-toast";
-  el.innerHTML = `<span class="at-tile c-${a.clr}">${a.ico}</span><span class="at-txt"><b>Objectif débloqué</b><small>${escapeHtml(a.t)}</small></span>`;
+  el.innerHTML = `<span class="at-tile c-${a.clr}">${a.ico}</span><span class="at-txt"><b>${escapeHtml(a.tete || "Objectif débloqué")}</b><small>${escapeHtml(a.t)}</small></span>`;
   document.body.appendChild(el);
   requestAnimationFrame(()=>{ el.classList.add("show"); });
   setTimeout(()=>{ el.classList.remove("show"); setTimeout(()=>{ if(el.parentNode) el.remove(); achToastBusy=false; pumpAchToast(); }, 380); }, 2500);
@@ -9721,9 +9816,101 @@ function renderParcours(){
    de jours d'affilée récompense la régularité. */
 function dailySeedToday(){ const d = new Date(); return (d.getFullYear()*10000 + (d.getMonth()+1)*100 + d.getDate()) >>> 0; }
 function dayKey(off){ const d = new Date(Date.now() + (off||0)*86400000); const p = n=>String(n).padStart(2,"0"); return d.getFullYear()+"-"+p(d.getMonth()+1)+"-"+p(d.getDate()); }
-function loadDaily(){ try { const s = JSON.parse(localStorage.getItem("bt_daily")||"{}"); return { last:s.last||"", streak:+s.streak||0, score:+s.score||0, total:+s.total||0 }; } catch(e){ return { last:"", streak:0, score:0, total:0 }; } }
-function saveDaily(x){ try { localStorage.setItem("bt_daily", JSON.stringify(x)); } catch(e){}
+/* ===== LES GELS DE SÉRIE =====
+   « Pour les utilisateurs qui sont vraiment réguliers et qui viennent à perdre
+   leur flamme, on pourra leur donner un gel pour garder leur motivation. Mais
+   attention, pas de façon trop abusive. »
+   Les trois nombres qui tiennent tout le système, et pourquoi ceux-là :
+     - un gel tous les DIX jours d'affilée. Assez rare pour rester un cadeau,
+       assez fréquent pour qu'un joueur régulier en ait toujours un sous la
+       main. On ne les achète pas, on ne les gagne pas en solo : seule la
+       régularité au Défi du jour en donne.
+     - DEUX en réserve au maximum. Sans plafond, six mois de série vaudraient
+       dix-huit jours d'absence — la flamme ne voudrait plus rien dire.
+     - un gel couvre UN jour. Deux jours de suite sans jouer et la flamme
+       s'éteint, même avec deux gels en poche : c'est la règle qui empêche
+       d'acheter des vacances.
+   Un gel se dépense TOUT SEUL, le lendemain du jour manqué, et le joueur
+   l'apprend par un bandeau. Rien à activer, rien à cliquer. */
+const GEL_MAX = 2, GEL_PALIER = 10, FLAMME_MEMOIRE = 90;
+function loadDaily(){ try { const s = JSON.parse(localStorage.getItem("bt_daily")||"{}"); return { last:s.last||"", streak:+s.streak||0, score:+s.score||0, total:+s.total||0,
+  /* jours == null veut dire « ce joueur date d'avant les gels » : on retombe
+     alors sur l'ancienne dérivation (voir joursFaits). Rien n'est perdu, rien
+     n'est remis à zéro. */
+  jours: Array.isArray(s.jours) ? s.jours : null,
+  geles: Array.isArray(s.geles) ? s.geles : [],
+  gels: Math.max(0, Math.min(GEL_MAX, +s.gels||0)),
+  palier: Math.max(0, +s.palier||0),
+  annonce: s.annonce||"" }; } catch(e){ return { last:"", streak:0, score:0, total:0, jours:null, geles:[], gels:0, palier:0, annonce:"" }; } }
+/* saveDaily FUSIONNE. Il écrasait l'objet entier : le jour où recordDailyResult
+   n'aurait pas repassé les gels, la réserve d'un joueur aurait disparu. Une
+   écriture ne touche plus que ce qu'on lui donne. */
+function saveDaily(x){ try { const n = Object.assign(loadDaily(), x || {});
+  if(n.jours === null) delete n.jours;
+  localStorage.setItem("bt_daily", JSON.stringify(n)); } catch(e){}
   try { notifMiroir(); } catch(e){}   /* le service worker lit ce miroir, pas le localStorage */ }
+/* Les outils de calendrier : une clé ISO -> une date, et l'inverse. */
+function dateDeCle(k){ const m = /^(\d{4})-(\d{2})-(\d{2})$/.exec(k||""); return m ? new Date(+m[1], +m[2]-1, +m[3]) : null; }
+function cleDeDate(t){ const p = n=>String(n).padStart(2,"0"); return t.getFullYear()+"-"+p(t.getMonth()+1)+"-"+p(t.getDate()); }
+/* Les jours STRICTEMENT entre deux clés — c'est-à-dire les jours manqués. La
+   borne de 400 est un garde-fou : un joueur parti un an ne doit pas faire
+   tourner une boucle sans fin au démarrage. */
+function joursEntre(a, b){
+  const out = [], t = dateDeCle(a);
+  if(!t) return out;
+  for(let i = 0; i < 400; i++){
+    t.setDate(t.getDate() + 1);
+    const k = cleDeDate(t);
+    if(k >= b) break;
+    out.push(k);
+  }
+  return out;
+}
+function bornerJours(l){ const u = Array.from(new Set(l)); u.sort(); return u.slice(-FLAMME_MEMOIRE); }
+/* LA FLAMME EST-ELLE ENCORE ALLUMÉE ? Elle l'est si tous les jours entre le
+   dernier défi et aujourd'hui sont couverts par un gel. Sans aucun gel, la
+   règle est mot pour mot celle d'avant : joué aujourd'hui ou hier. */
+function dernierJourSerie(){
+  const d = loadDaily();
+  if(!d.last) return "";
+  if(d.last === dayKey(0) || !flammeVivante()) return d.last;
+  return dayKey(-1);   // vivante sans avoir joué aujourd'hui : hier est couvert
+}
+function flammeVivante(){
+  const d = loadDaily();
+  if(!d.last || !d.streak) return false;
+  const auj = dayKey(0);
+  if(d.last === auj) return true;
+  const trous = joursEntre(d.last, auj);
+  for(let i = 0; i < trous.length; i++){ if(d.geles.indexOf(trous[i]) < 0) return false; }
+  return true;
+}
+/* ON DÉPENSE LES GELS ICI, ET NULLE PART AILLEURS. Appelé au démarrage, au
+   retour au premier plan et à minuit : à chaque fois, on regarde les jours
+   manqués depuis le dernier défi et on les couvre tant qu'on peut. */
+function reglerFlamme(){
+  try{
+    const d = loadDaily();
+    if(!d.last || !d.streak) return;
+    const trous = joursEntre(d.last, dayKey(0));
+    if(!trous.length) return;
+    const geles = d.geles.slice();
+    let gels = d.gels, neufs = [], precGele = false, tient = true;
+    for(let i = 0; i < trous.length; i++){
+      const j = trous[i];
+      if(geles.indexOf(j) >= 0){ precGele = true; continue; }
+      /* JAMAIS DEUX JOURS DE SUITE. C'est ce seul test qui empêche un joueur
+         avec deux gels de s'absenter deux jours. */
+      if(gels > 0 && !precGele){ gels--; geles.push(j); neufs.push(j); precGele = true; continue; }
+      tient = false; break;
+    }
+    /* TOUT OU RIEN. Si un seul trou ne peut pas être couvert, la flamme
+       s'éteint de toute façon : dépenser un gel au passage reviendrait à le
+       brûler pour rien. Il reste en réserve pour la série suivante. */
+    if(!tient) return;
+    if(neufs.length) saveDaily({ geles:bornerJours(geles), gels, annonce:neufs[neufs.length-1] });
+  }catch(e){}
+}
 function dailyDoneToday(){ return loadDaily().last === dayKey(0); }
 /* ===== LE JOUR OÙ L'ON A JOUÉ POUR LA DERNIÈRE FOIS =====
    La série ne dit que le Défi du jour. Or on peut très bien jouer tous les
@@ -9756,6 +9943,10 @@ function marquerJoue(){
    silencieuse, on ne redessine que ce qui peut l'être sans rien déranger. */
 let jourAffiche = dayKey(0), minuitT = 0;
 function verifierJour(){
+  /* AVANT le test de date : le jour a pu tourner pendant que le jeu dormait,
+     et c'est précisément là qu'un gel doit être dépensé. La fonction ne fait
+     rien tant qu'aucun jour ne manque, on peut l'appeler à chaque réveil. */
+  reglerFlamme();
   const j = dayKey(0);
   if(j === jourAffiche) return;
   jourAffiche = j;
@@ -9778,23 +9969,33 @@ try{
   window.addEventListener("pageshow", verifierJour);
   window.addEventListener("focus", verifierJour);
   armerMinuit();
+  reglerFlamme();   /* au tout premier chargement aussi */
 }catch(e){}
 /* LES JOURS DÉJÀ FAITS, SANS RIEN STOCKER DE NEUF.
    Une série est par définition une suite de jours CONSÉCUTIFS qui se termine
    au dernier défi joué : « last » et « streak » suffisent donc à retrouver
    exactement quels jours ont été faits, y compris pour un joueur qui a
    commencé avant cette version. Aucune donnée nouvelle, aucune migration. */
-function joursFaits(){
-  const d = loadDaily(), faits = new Set();
+/* DEPUIS LES GELS, LA DÉRIVATION NE SUFFIT PLUS. Une série peut désormais
+   enjamber un jour gelé : les jours joués ne forment plus une suite. On les
+   écrit donc, un par un, à mesure. Pour un joueur qui n'a pas rejoué depuis la
+   mise à jour, la liste n'existe pas encore — on retombe alors exactement sur
+   l'ancien calcul, et sa bande des sept jours reste ce qu'elle était. */
+function joursDerives(d){
+  const faits = new Set();
   if(!d.last || !d.streak) return faits;
-  const m = /^(\d{4})-(\d{2})-(\d{2})$/.exec(d.last); if(!m) return faits;
-  const p = n=>String(n).padStart(2,"0");
+  const t = dateDeCle(d.last); if(!t) return faits;
   for(let k = 0; k < d.streak; k++){
-    const t = new Date(+m[1], +m[2] - 1, +m[3] - k);
-    faits.add(t.getFullYear() + "-" + p(t.getMonth()+1) + "-" + p(t.getDate()));
+    faits.add(cleDeDate(t));
+    t.setDate(t.getDate() - 1);
   }
   return faits;
 }
+function joursFaits(){
+  const d = loadDaily();
+  return d.jours ? new Set(d.jours) : joursDerives(d);
+}
+function joursGeles(){ return new Set(loadDaily().geles); }
 /* LA SEMAINE, EN BAS DE L'ACCUEIL.
    Le pied de l'écran ne dit rien qui soit déjà dit ailleurs : la série vit sur
    la carte du Défi, les livres et les réponses sous Progression. Ce qui manque,
@@ -9812,10 +10013,13 @@ function joursFaits(){
    soit le jour où l'on ouvre le jeu. */
 const SEM_LETTRES = ["D","L","M","M","J","V","S"];   // index = Date.getDay()
 function semaineHtml(){
-  const faits = joursFaits(), cases = [];
+  const faits = joursFaits(), gels = joursGeles(), cases = [];
   for(let k = 6; k >= 0; k--){
-    const jour = new Date(Date.now() - k * 86400000);
-    cases.push(`<span class="sj${faits.has(dayKey(-k)) ? " fait" : ""}${k === 0 ? " auj" : ""}">`
+    const jour = new Date(Date.now() - k * 86400000), cle = dayKey(-k);
+    /* Un jour GELÉ prend la case froide : on voit d'un coup d'œil que la série
+       tient grâce à un gel, et non parce qu'on aurait joué ce jour-là. */
+    const et = faits.has(cle) ? " fait" : (gels.has(cle) ? " gele" : "");
+    cases.push(`<span class="sj${et}${k === 0 ? " auj" : ""}">`
       + SEM_LETTRES[jour.getDay()] + `</span>`);
   }
   /* Le nombre de jours d'affilée est dit par la pastille flamme du Défi du
@@ -9825,12 +10029,110 @@ function semaineHtml(){
     + `<div class="sem-h"><span class="sem-t">Les 7 derniers jours</span></div>`
     + `<div class="sem-j">${cases.join("")}</div></div>`;
 }
-function dailyStreakShown(){ const d = loadDaily(); return (d.last===dayKey(0) || d.last===dayKey(-1)) ? d.streak : 0; }
+function dailyStreakShown(){ return flammeVivante() ? loadDaily().streak : 0; }
+/* ===== L'HISTOIRE DE LA FLAMME =====
+   « Je veux la possibilité de voir quelle série a été gelée ou non : en
+   cliquant sur la série de flamme je pourrais voir la liste de mes flammes et
+   quel jour a été gelé. »
+   Une feuille, une ligne par jour, la plus récente en haut. On ne remonte pas
+   plus haut que le premier jour dont on ait la trace : afficher trente
+   « Manqué » à quelqu'un qui vient d'installer le jeu serait un reproche, pas
+   une information. */
+const JOURS_FR = ["dimanche","lundi","mardi","mercredi","jeudi","vendredi","samedi"];
+const MOIS_FR = ["janvier","février","mars","avril","mai","juin","juillet","août","septembre","octobre","novembre","décembre"];
+function dateLongue(t){ return JOURS_FR[t.getDay()] + " " + t.getDate() + (t.getDate() === 1 ? "er" : "") + " " + MOIS_FR[t.getMonth()]; }
+function ouvrirFlamme(){
+  if(document.getElementById("flammeVeil")) return;
+  const d = loadDaily(), faits = joursFaits(), gels = joursGeles();
+  const serie = dailyStreakShown(), auj = dayKey(0);
+  /* Le plus ancien jour dont on ait la trace borne la liste par le bas ; on ne
+     montre jamais plus de trois mois. */
+  let plusVieux = auj;
+  faits.forEach(j=>{ if(j < plusVieux) plusVieux = j; });
+  gels.forEach(j=>{ if(j < plusVieux) plusVieux = j; });
+  const lignes = [];
+  for(let k = 0; k < FLAMME_MEMOIRE; k++){
+    const cle = dayKey(-k);
+    if(cle < plusVieux) break;
+    const t = dateDeCle(cle);
+    const fait = faits.has(cle), gele = !fait && gels.has(cle);
+    const etat = fait ? "Joué" : (gele ? "Gelé" : (cle === auj ? "À faire" : "Manqué"));
+    const cls = fait ? "r-fait" : (gele ? "r-gele" : "");
+    const pas = fait ? " fait" : (gele ? " gele" : "");
+    lignes.push(`<div class="flam-row ${cls}">`
+      + `<span class="sj${pas}${cle === auj ? " auj" : ""}">${SEM_LETTRES[t.getDay()]}</span>`
+      + `<span class="fr-d">${escapeHtml(dateLongue(t))}</span>`
+      + `<span class="fr-e">${etat}</span></div>`);
+  }
+  const reserve = d.gels === 0 ? "Aucun gel en réserve"
+    : (d.gels === 1 ? "1 gel en réserve" : d.gels + " gels en réserve");
+  const veil = document.createElement("div");
+  veil.className = "sheet-veil"; veil.id = "flammeVeil";
+  veil.innerHTML = `
+    <div class="settings-sheet flam-sheet" role="dialog" aria-label="Ta flamme">
+      <button class="sheet-grab" aria-label="Fermer" onclick="closeFlamme()"></button>
+      <div class="sheet-title"><span class="st-ico">${ICONS.flame}</span>Ta flamme<small>${serie}</small></div>
+      <div class="flam-tete">
+        <span class="ft-txt">
+          <span class="ft-n">${serie === 0 ? "Aucune série en cours" : (serie === 1 ? "1 jour d'affilée" : serie + " jours d'affilée")}</span>
+          <span class="ft-g">${ICONS.flocon}${escapeHtml(reserve)}</span>
+        </span>
+      </div>
+      <div class="flam-list">${lignes.length ? lignes.join("") : `<div class="flam-vide">Relève le Défi du jour : ta flamme commence ici.</div>`}</div>
+    </div>`;
+  document.body.appendChild(veil);
+  monterLaFeuille(veil);
+  glassSheetOpenUntil = performance.now() + fenetreFeuille(); glassTrack(680);
+  attachSheetDrag(veil.querySelector(".settings-sheet"), closeFlamme);
+  veil.addEventListener("click", (e)=>{ if(e.target===veil){ closeFlamme(); } });
+}
+function closeFlamme(){
+  const v = document.getElementById("flammeVeil");
+  if(!v || v.classList.contains("closing")) return;
+  v.classList.add("closing");
+  setTimeout(()=>{ if(v.parentNode) v.remove(); }, msFerme() + 20);
+}
+/* LA CARTE DU DÉFI A DEUX PORTES. Un tap sur la pastille flamme ouvre
+   l'histoire de la série ; partout ailleurs, il lance le défi. Et une fois le
+   défi relevé, la carte entière devient cette porte : elle ne sert plus à
+   jouer, autant qu'elle serve à quelque chose. C'est pour ça qu'elle n'est
+   plus « disabled » — un bouton désactivé ne reçoit AUCUN événement, la
+   pastille dessus aurait été morte. Son seul style propre était
+   « cursor:default », qui reste porté par la classe .done. */
+function tapDefi(e){
+  const sur = e && e.target && e.target.closest ? e.target.closest(".dc-streak") : null;
+  if(sur || dailyDoneToday()){ ouvrirFlamme(); return; }
+  startDailyChallenge();
+}
+/* Un gel dépensé pendant que le jeu dormait doit se DIRE. Sans ça, le joueur
+   voit sa flamme intacte après un jour manqué et n'y comprend rien — ou pire,
+   croit que le jeu compte mal. Le bandeau ne passe qu'une fois : la date est
+   effacée dès qu'elle est annoncée. */
+function annoncerGel(){
+  try{
+    const d = loadDaily();
+    if(!d.annonce) return;
+    const t = dateDeCle(d.annonce);
+    saveDaily({ annonce:"" });
+    achToastQueue.push({ clr:"blue", ico:ICONS.flocon, tete:"Flamme sauvée",
+      t: t ? ("Gel de série utilisé " + (d.annonce === dayKey(-1) ? "hier" : "le " + t.getDate() + " " + MOIS_FR[t.getMonth()])) : "Gel de série utilisé" });
+    pumpAchToast();
+  }catch(e){}
+}
 function recordDailyResult(){
+  if(loadDaily().last === dayKey(0)) return; // déjà compté aujourd'hui
+  reglerFlamme();                            // un gel couvre peut-être le trou
   const d = loadDaily();
-  if(d.last === dayKey(0)) return; // déjà compté aujourd'hui
-  const streak = (d.last === dayKey(-1)) ? d.streak + 1 : 1;
-  saveDaily({ last:dayKey(0), streak, score:state.soloCorrect, total:state.questions.length });
+  const streak = flammeVivante() ? d.streak + 1 : 1;
+  /* LE GEL SE GAGNE ICI, ET SEULEMENT ICI. Un palier tous les dix jours de la
+     série EN COURS ; une série qui repart de un repart de zéro palier, sinon
+     un joueur revenu de loin toucherait son gel au premier jour. La réserve,
+     elle, ne se perd pas : c'est un acquis, plafonné à deux. */
+  let palier = (streak === 1) ? 0 : d.palier, gels = d.gels;
+  if(streak - palier >= GEL_PALIER){ palier = streak; gels = Math.min(GEL_MAX, gels + 1); }
+  const jours = bornerJours((d.jours || Array.from(joursDerives(d))).concat([dayKey(0)]));
+  saveDaily({ last:dayKey(0), streak, score:state.soloCorrect, total:state.questions.length,
+              jours, geles:bornerJours(d.geles), gels, palier });
   checkAchievements({ toast:true }); // objectifs de régularité (Fidèle, Assidu)
   try { notifProposer(); } catch(e){}   /* il a maintenant une série à protéger */
 }
@@ -9907,7 +10209,14 @@ function notifMiroir(){
     notifBase().then(db => {
       const tx = db.transaction("etat", "readwrite");
       tx.objectStore("etat").put({
-        dernier: d.last,            // date du dernier DÉFI joué
+        /* LE DERNIER JOUR QUI COMPTE POUR LA SÉRIE, pas le dernier joué.
+           Le service worker n'envoie son rappel que si ce jour est HIER
+           (sw.js, « etat.dernier !== jourLocal(dec - 1440) »). Un jour couvert
+           par un gel laissait donc « dernier » sur avant-hier : la série était
+           bien vivante, et le rappel ne partait plus — pile le joueur qu'il
+           faut réveiller. On mirroir donc le dernier jour COUVERT, joué ou
+           gelé. Le service worker n'a rien à apprendre des gels. */
+        dernier: dernierJourSerie(),
         serie:   d.streak,          // longueur de la série
         vu:      loadVu(),          // date de la dernière PARTIE, tous modes
         actif:   !!settings.notif,  // le joueur a-t-il accepté ?
@@ -9942,7 +10251,7 @@ function notifSync(){
       if(!sub) return;
       const d = loadDaily();
       supa.from("push_subs").update({
-        dernier: d.last || null,
+        dernier: dernierJourSerie() || null,   // le dernier jour COUVERT, gel compris
         serie: d.streak | 0,
         vu: loadVu() || null,                              // dernière partie, tous modes
         decalage: -(new Date().getTimezoneOffset()) | 0,   // minutes par rapport à UTC
@@ -10554,7 +10863,7 @@ function renderModeSelect(){
       const group = `<button class="mode-card" onclick="selectMode('group')"><span class="mode-icon group">${ICONS.users}</span><span class="mode-text"><span class="mode-title">Mode Groupe</span><span class="mode-desc">En équipes, sur un seul écran</span></span><span class="chev">${ICONS.chevronRight}</span></button>`;
       const solo = `<button class="mode-card" onclick="selectMode('solo')"><span class="mode-icon solo">${ICONS.user}</span><span class="mode-text"><span class="mode-title">Mode Solo</span><span class="mode-desc">Une partie, à ton rythme</span></span><span class="chev">${ICONS.chevronRight}</span></button>`;
       const online = `<button class="mode-card" onclick="openOnline()"><span class="mode-icon online">${ICONS.bolt}</span><span class="mode-text"><span class="mode-title">Jouer en ligne</span><span class="mode-desc">Jusqu'à 8 joueurs, en direct</span></span><span class="chev">${ICONS.chevronRight}</span></button>`;
-      const daily = `<button class="daily-card${dDone?' done':''}" onclick="${dDone?'':'startDailyChallenge()'}" ${dDone?'disabled':''}><span class="dc-ico">${ICONS.flame}</span><span class="dc-txt"><b>Défi du jour</b><small>${doneTxt}</small></span>${dSk>0 ? `<span class="dc-streak">${ICONS.flame}${dSk}</span>` : ''}${dDone ? `<span class="chev dc-check">${ACH_CHECK}</span>` : `<span class="chev">${ICONS.chevronRight}</span>`}</button>`;
+      const daily = `<button class="daily-card${dDone?' done':''}" onclick="tapDefi(event)"><span class="dc-ico">${ICONS.flame}</span><span class="dc-txt"><b>Défi du jour</b><small>${doneTxt}</small></span>${dSk>0 ? `<span class="dc-streak">${ICONS.flame}${dSk}</span>` : ''}${dDone ? `<span class="chev dc-check">${ACH_CHECK}</span>` : `<span class="chev">${ICONS.chevronRight}</span>`}</button>`;
       return group + solo + online + daily;
     })()}
     ${(()=>{ const s = parcoursSummary(); return `
@@ -10569,6 +10878,9 @@ function renderModeSelect(){
     <div class="flex-sp home-sp-bot"></div>
     ${semaineHtml()}
   `;
+  /* Le bandeau du gel attend que l'accueil soit posé : on l'annonce là où le
+     joueur peut le voir, pas au milieu du chargement. */
+  setTimeout(annoncerGel, 500);
   return el;
 }
 
@@ -11850,6 +12162,33 @@ function queueGlassXF(){
   if(glassElsGen !== glassGen){ glassEls = document.querySelectorAll(GLASS_SEL); glassElsGen = glassGen; }
   const els = glassEls, vh = h;
   const suivre = now < glassSuivreJusqu;   // une mise en page bouge : on relit tout
+  /* ===== LA FEUILLE QUI RECULE, ET SON ÉCHELLE DU MOMENT =====
+     ON NE SE FIE PAS À LA CLASSE. « feuille-recule » est retirée dès la
+     première ligne de closeBibles, alors que la feuille met un pli entier à
+     revenir à sa taille : pendant tout le retour, la classe dit « posée » et
+     l'échelle dit 0,94. Mesuré : 113 px de glissade au retour contre 58 à
+     l'aller. On lit donc l'ÉCHELLE RÉELLE, image par image, sur chaque feuille
+     ouverte — c'est la seule chose qui ne ment jamais.
+     Coût : un querySelectorAll et deux ou trois getComputedStyle, uniquement
+     quand une feuille est ouverte. */
+  let feuillesEch = null;
+  if(document.querySelector(".sheet-veil")){
+    const fs = document.querySelectorAll(".sheet-veil .settings-sheet");
+    for(let i = 0; i < fs.length; i++){
+      try{
+        const m = new DOMMatrixReadOnly(getComputedStyle(fs[i]).transform);
+        if(m.a > 0.05 && m.a < 0.999){ (feuillesEch || (feuillesEch = [])).push([fs[i], m.a]); }
+      }catch(e){}
+    }
+  }
+  const echelleDe = (el)=>{
+    if(!feuillesEch) return 0;
+    for(let i = 0; i < feuillesEch.length; i++){
+      const f = feuillesEch[i][0];
+      if(f === el || f.contains(el)) return feuillesEch[i][1];
+    }
+    return 0;
+  };
   for(let i = 0; i < els.length; i++){
     const el = els[i];
     if(el.tagName === "INPUT") continue; // <input> : fond statique (impossible d'y poser un enfant)
@@ -11884,7 +12223,7 @@ function queueGlassXF(){
       const restTop = el._ly0 - st;
       if(restTop > vh + 200 || restTop + el._oh0 < -200) continue; // hors écran
       tx = sl - el._lx0 - ox; ty = st - el._ly0 - oy;
-    } else if(now < glassSheetOpenUntil && !(el.closest && el.closest(".feuille-recule"))){
+    } else if(now < glassSheetOpenUntil && !echelleDe(el)){
       /* Exception : la feuille qui RECULE derrière celle qui s'ouvre. La
          branche ci-dessous cale le flou sur la position de MISE EN PAGE, pour
          qu'il reste solidaire d'une vitre qui GLISSE — c'est ce qu'il faut
@@ -11911,7 +12250,19 @@ function queueGlassXF(){
       const r = el.getBoundingClientRect();
       tx = -r.left - ox; ty = -r.top - oy;
     }
-    const t = "translate3d(" + Math.round(tx) + "px," + Math.round(ty) + "px,0)";
+    /* ===== ON DÉFAIT LE REPÈRE DÉFORMÉ =====
+       Une surface dans une feuille qui recule vit dans un repère mis à
+       l'échelle par s : sa couche de verre rétrécit avec elle, et le décor
+       part en glissade. On lui donne donc scale(1/s), et RIEN D'AUTRE.
+       Pourquoi la translation ne change pas : « scale(k) translate3d(t) »
+       translate le point AVANT de le mettre à l'échelle, donc la couche vaut
+       k·(p + t) ; le parent multiplie par s, et comme s·k = 1 il reste
+       exactement p + t. La translation traverse intacte — la diviser par s
+       (ce que j'avais fait d'abord) déplaçait le décor de cinq pixels de
+       plus à chaque image. */
+    const sEch = echelleDe(el);
+    const ech = sEch ? "scale(" + (1 / sEch).toFixed(5) + ") " : "";
+    const t = ech + "translate3d(" + Math.round(tx) + "px," + Math.round(ty) + "px,0)";
     /* ON RÉÉCRIT AUSSI QUAND LA SURFACE A CHANGÉ DE HAUTEUR, MÊME SI LE
        TRANSFORM EST LE MÊME. Une carte qui grandit vers le bas — la liste des
        joueurs quand on en ajoute un, un testament qui s'ouvre — garde son coin
