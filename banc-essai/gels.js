@@ -181,6 +181,31 @@ function verifier(nom, obtenu, attendu){
   verifier("le gel dépensé se dit, et Yada le fait", /Yada a gelé/.test((paye&&paye.tete)||''), true);
   verifier("et le bandeau dit ce qu'il reste", /Plus de gel/.test((paye&&paye.t)||''), true);
 
+  // ---------- 9. LE BANDEAU ARRIVE APRÈS LA PARTIE ----------
+  /* « Cela doit apparaître qu'on a eu un gel de série APRÈS la partie. » Il
+     partait à l'instant de la dernière question — donc pendant la transition
+     d'écran, où personne ne le voit. */
+  const quand = await p.evaluate(()=> new Promise(res=>{
+    const c=(d)=>{ const t=new Date(Date.now()+d*86400000), z=n=>String(n).padStart(2,'0'); return t.getFullYear()+'-'+z(t.getMonth()+1)+'-'+z(t.getDate()); };
+    localStorage.setItem('bt_daily', JSON.stringify({ last:c(-1), streak:3, jours:[c(-1)], geles:[], gels:0, palier:0, parties:29, palierParties:0 }));
+    /* On repart d'une file propre : les essais précédents ont pu laisser un
+       bandeau en cours (achToastBusy) qui bloquerait le suivant. */
+    achToastQueue.length = 0; achToastBusy = false; achToastPause = false;
+    document.querySelectorAll('.ach-toast').forEach(e=>e.remove());
+    state.mode='solo'; startGame();
+    state.currentIndex = state.questions.length - 1; state.revealed = true; state.soloSelected = 0;
+    let tFin = null, tBandeau = null; const t0 = performance.now();
+    const tic=()=>{
+      if(tFin === null && state.screen === 'end') tFin = performance.now()-t0;
+      if(tBandeau === null && document.querySelector('.ach-toast')) tBandeau = performance.now()-t0;
+      if(performance.now()-t0 < 3000) requestAnimationFrame(tic); else res({ tFin, tBandeau });
+    };
+    requestAnimationFrame(tic);
+    setTimeout(()=>{ nextQuestion(); }, 80);
+  }));
+  verifier("le bandeau du gel attend les résultats",
+    !!(quand.tBandeau !== null && quand.tFin !== null && quand.tBandeau > quand.tFin + 400), true);
+
   await nav.close();
   console.log(ko === 0 ? '\n  OK' : '\n  ' + ko + ' règle(s) en défaut');
   process.exit(ko === 0 ? 0 : 1);

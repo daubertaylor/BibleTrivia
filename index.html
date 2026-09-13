@@ -5793,6 +5793,7 @@ function onlineNext(){
   net.idx += 1; net.selected=null; net.revealed=false; net.timedOut=false;
   if(net.idx >= net.deck.length){
     net.myDone = true;
+    achToastPause = true;   // les félicitations attendent les résultats
     compterPartie();   // en ligne : le joueur a fini SES questions
     broadcastProgress(true);
     /* On attend que TOUT LE MONDE ait fini — un joueur comme sept. Ceux qui
@@ -6203,9 +6204,11 @@ function openBibles(){
      du carnet : le verre est là dès la première image, et reste solidaire de
      la feuille pendant qu'elle monte. */
   glassSheetOpenUntil = performance.now() + fenetreFeuille(); glassTrack(680);
-  /* Le recul de la feuille du dessous dure un pli entier : le moteur relit les
-     positions ET l'échelle à chaque image pendant tout ce temps. */
-  try{ glassSuivre(msPli() + 120); }catch(e){}
+  /* LE RECUL EST UN TRANSFORM : il ne déplace AUCUNE mise en page. Inutile de
+     demander au moteur de relire toutes les positions (glassSuivre) — il n'y a
+     rien de neuf à lire, et c'était trente parcours d'offsetParent par image
+     pour rien. Ce qu'il faut, c'est relire l'ÉCHELLE, et elle seule. */
+  reculJusqu = performance.now() + msPli() + 200;
 }
 function closeBibles(){
   const v = document.getElementById("biblesVeil");
@@ -6221,7 +6224,8 @@ function closeBibles(){
        un contre-zoom qui suit l'échelle de la feuille image par image (voir
        queueGlassXF) : si la boucle s'endort en route, le contre-zoom se fige
        sur une échelle périmée et la texture saute. */
-    try{ glassSuivre(msPli() + 120); armGlass(msPli() + 300); }catch(e){}
+    reculJusqu = performance.now() + msPli() + 200;
+    try{ armGlass(msPli() + 300); }catch(e){}
     setTimeout(()=>{ try{ glassRelayout(); queueGlassSync(); }catch(e){} }, msPli() + 40);
   }
   setTimeout(()=>{ if(v.parentNode) v.remove(); }, msFerme() + 20);
@@ -9781,6 +9785,19 @@ function toggleTst(btn){
   setTimeout(()=>{ try{ fitScroll(); }catch(e){} }, msPli() + 40);
 }
 let achToastQueue = [], achToastBusy = false;
+/* ===== ON NE FÉLICITE PAS QUELQU'UN EN PLEINE QUESTION =====
+   « Cela doit apparaître qu'on a eu un gel de série APRÈS la partie. »
+   Les bandeaux étaient lancés là où l'événement se produit — c'est-à-dire à la
+   dernière question, avant même que l'écran des résultats n'existe : le gel
+   passait pendant que le joueur regardait encore sa réponse, ou se faisait
+   recouvrir par la transition d'écran.
+   On retient donc la file le temps de la fin de partie, et on la relâche une
+   fois les résultats posés (voir renderEnd et renderOnlineEnd). Rien n'est
+   perdu : la file attend, elle ne se vide pas. */
+let achToastPause = false;
+function relacherToasts(ms){
+  setTimeout(()=>{ achToastPause = false; try{ pumpAchToast(); }catch(e){} }, ms || 1200);
+}
 function checkAchievements(opts){
   const p = loadProgress(), d = achDerived(p), newly = [];
   for(let i=0;i<ACHIEVEMENTS.length;i++){
@@ -9810,7 +9827,7 @@ function progressCredit(q, streak){
 }
 function progressFlawless(){ const p = loadProgress(); if(!p.flawless){ p.flawless = 1; saveProgress(p); } checkAchievements({ toast:true }); }
 function pumpAchToast(){
-  if(achToastBusy || !achToastQueue.length) return;
+  if(achToastPause || achToastBusy || !achToastQueue.length) return;
   achToastBusy = true;
   const a = achToastQueue.shift();
   const el = document.createElement("div");
@@ -9924,7 +9941,7 @@ function offrirGel(raison){
   achToastQueue.push({ clr:"blue", ico:ICONS.flocon,
     tete:"Yada t'offre un gel de série",
     t: raison + " Il couvrira un jour manqué, un seul." });
-  try{ pumpAchToast(); }catch(e){}
+  try{ pumpAchToast(); }catch(e){}   // ne part que si la file n'est pas retenue
   return true;
 }
 /* LA PARTIE COMPTE QUAND ELLE EST FINIE, pas quand elle commence : sinon il
@@ -10748,6 +10765,7 @@ function adjustScore(teamIdx, delta){ const cap = maxPossibleScore(); state.scor
 function nextQuestion(){
   if(!state.revealed) return;
   if(state.currentIndex >= state.questions.length-1){
+    achToastPause = true;   // les félicitations attendent les résultats
     compterPartie();   // solo ET groupe : c'est ici qu'on arrive au bout
     if(state.mode==="solo"){
       recordSoloResult();
@@ -11021,8 +11039,11 @@ function renderModeSelect(){
     ${semaineHtml()}
   `;
   /* Le bandeau du gel attend que l'accueil soit posé : on l'annonce là où le
-     joueur peut le voir, pas au milieu du chargement. */
-  setTimeout(annoncerGel, 500);
+     joueur peut le voir, pas au milieu du chargement. Et on relâche la file au
+     passage : une partie quittée en route, un adversaire parti, et les
+     félicitations resteraient coincées. */
+  relacherToasts(500);
+  setTimeout(annoncerGel, 700);
   return el;
 }
 
@@ -11304,6 +11325,7 @@ function renderEndSolo(){
 function renderEnd(){
   const el = document.createElement("div");
   el.className = "screen";
+  relacherToasts();   // l'écran des résultats est là : les bandeaux peuvent passer
   el.innerHTML = renderHeader("Résultats", false) + (state.mode==="group" ? renderEndGroup() : renderEndSolo());
   // Animate the solo progress ring + percentage after paint
   if(state.mode==="solo"){
@@ -11706,6 +11728,7 @@ function renderOnlinePlay(){
 }
 
 function renderOnlineEnd(){
+  relacherToasts();   // idem en ligne
   stopDuelHeartbeat();
   const el=document.createElement("div"); el.className="screen";
   const aPlusieurs = autresJoueurs().length > 1;
@@ -12309,20 +12332,39 @@ function queueGlassXF(){
      première ligne de closeBibles, alors que la feuille met un pli entier à
      revenir à sa taille : pendant tout le retour, la classe dit « posée » et
      l'échelle dit 0,94. Mesuré : 113 px de glissade au retour contre 58 à
-     l'aller. On lit donc l'ÉCHELLE RÉELLE, image par image, sur chaque feuille
-     ouverte — c'est la seule chose qui ne ment jamais.
-     Coût : un querySelectorAll et deux ou trois getComputedStyle, uniquement
-     quand une feuille est ouverte. */
+     l'aller. On lit donc l'ÉCHELLE RÉELLE — c'est la seule chose qui ne ment
+     jamais.
+     MAIS PAS À CHAQUE IMAGE, ET PAS POUR RIEN. La v214 lisait getComputedStyle
+     sur chaque feuille ouverte à CHAQUE image, dès qu'une feuille existait —
+     y compris quand rien ne reculait. Un getComputedStyle force un recalcul de
+     style au milieu de la boucle du verre : mesuré, bridage six fois, l'image
+     du moteur passait de 2,9 à 3,6 ms avec les Réglages ouverts, et de 3,0 à
+     4,5 ms avec les versions par-dessus. Cinquante pour cent de plus pour une
+     échelle qui vaut 1 dans l'immense majorité des cas — c'est ça, « ça bug un
+     petit peu à l'ouverture ».
+     Une seule chose fait reculer une feuille : le catalogue des versions. On ne
+     regarde donc que s'il existe, et on ne relit à chaque image que pendant le
+     mouvement (reculJusqu). Le reste du temps, l'échelle est posée : on la
+     garde en cache jusqu'à la prochaine relecture de mise en page. */
   let feuillesEch = null;
-  if(document.querySelector(".sheet-veil")){
-    const fs = document.querySelectorAll(".sheet-veil .settings-sheet");
-    for(let i = 0; i < fs.length; i++){
-      try{
-        const m = new DOMMatrixReadOnly(getComputedStyle(fs[i]).transform);
-        if(m.a > 0.05 && m.a < 0.999){ (feuillesEch || (feuillesEch = [])).push([fs[i], m.a]); }
-      }catch(e){}
+  /* Le voile des versions disparaît au bout d'une demi-fermeture, alors que la
+     feuille du dessous met un pli ENTIER à revenir : mesuré, 5,7 px de
+     glissade sur la fin du retour quand on ne regardait que le voile. La
+     fenêtre de recul, elle, couvre tout le mouvement. */
+  if(now < reculJusqu || document.getElementById("biblesVeil")){
+    if(now < reculJusqu || reculCacheGen !== glassGen){
+      reculCache = null;
+      const fs = document.querySelectorAll(".sheet-veil .settings-sheet");
+      for(let i = 0; i < fs.length; i++){
+        try{
+          const m = new DOMMatrixReadOnly(getComputedStyle(fs[i]).transform);
+          if(m.a > 0.05 && m.a < 0.999){ (reculCache || (reculCache = [])).push([fs[i], m.a]); }
+        }catch(e){}
+      }
+      reculCacheGen = glassGen;
     }
-  }
+    feuillesEch = reculCache;
+  } else if(reculCache){ reculCache = null; reculCacheGen = -1; }
   const echelleDe = (el)=>{
     if(!feuillesEch) return 0;
     for(let i = 0; i < feuillesEch.length; i++){
@@ -12745,6 +12787,10 @@ function queueGlassSyncPainted(freeze){
    un simple battement toutes les ~0,5 s rattrape tout changement inattendu.
    L'effet est intact : dès qu'on touche/défile/change d'écran, c'est armé. */
 let glassActiveUntil = 0, glassFrame = 0, glassFreezeUntil = 0, glassGen = 1, glassPressUntil = 0, glassSheetOpenUntil = 0;
+/* Le recul d'une feuille dure un pli : pendant ce temps seulement, son échelle
+   est relue à chaque image (voir queueGlassXF). Armé par openBibles et
+   closeBibles, les deux seuls endroits où une feuille recule. */
+let reculJusqu = 0, reculCache = null, reculCacheGen = -1;
 /* Fenêtre de SUIVI : pendant ce laps, on relit la position de chaque surface à
    CHAQUE image au lieu de se fier au cache. Voir glassSuivre(). */
 let glassSuivreJusqu = 0;

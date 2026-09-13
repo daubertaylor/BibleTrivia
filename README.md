@@ -231,6 +231,53 @@ substituer :
    qui doit céder quand la place manque s'y accroche, avec la taille
    actuelle comme plafond.
 
+**Un getComputedStyle par image, pour une échelle qui vaut 1 (v216).**
+« L'ouverture des réglages et l'ouverture des choix de Bible buguent un petit
+peu. » Le film image par image de l'ouverture était PROPRE — position
+monotone, verre immobile, aucune reprise d'animation. Ce n'était donc pas le
+mouvement : c'était le **coût**.
+
+Le contre-zoom de la v214 lisait `getComputedStyle` sur chaque feuille ouverte,
+à chaque image, pour connaître l'échelle d'un recul qui la plupart du temps
+n'a pas lieu. Un `getComputedStyle` force un recalcul de style AU MILIEU de la
+boucle du verre. Mesuré, processeur bridé six fois :
+
+| une image du moteur | v211 | v214 | v216 |
+|---|---|---|---|
+| accueil seul | 1,9 ms | 2,0 ms | 2,1 ms |
+| réglages ouverts | 2,9 ms | **3,6 ms** | 3,0 ms |
+| versions par-dessus | 3,0 ms | **4,5 ms** | 3,4 ms |
+
+Cinquante pour cent de plus, en pleine animation d'ouverture, sur l'appareil le
+plus lent du parc. Une seule chose fait reculer une feuille — le catalogue des
+versions : on ne regarde donc que s'il existe, et on ne relit à chaque image que
+pendant le mouvement. Posée, l'échelle est en cache. Au passage, le
+`glassSuivre()` ajouté en v214 est retiré : **un recul est un transform, il ne
+déplace aucune mise en page** — c'étaient trente parcours d'`offsetParent` par
+image pour relire des positions qui n'avaient pas bougé.
+
+**Un piège dans le correctif**, payé une fois : borner la lecture à
+« le voile des versions existe » ne suffit pas. Ce voile disparaît au bout d'une
+demi-fermeture, alors que la feuille du dessous met un **pli entier** à revenir
+— 5,7 px de glissade sur la fin du retour. C'est la fenêtre de recul qui fait
+foi, pas le voile.
+
+**La leçon : un film propre ne prouve pas qu'il n'y a rien.** J'ai filmé
+l'ouverture sous tous les angles — position, échelle, animations en cours,
+transform du verre, ouverture puis fermeture puis réouverture — et tout était
+juste. Ce qui manquait à la mesure, c'était le temps que ça coûte.
+`banc-essai/charge.js` ne chronomètre pas (trop bruyant d'une machine à
+l'autre) : il COMPTE les lectures de style forcées pendant une passe du moteur.
+Zéro attendu quand rien ne recule ; il en trouve 1 et 2 sur la v214.
+
+**Et les félicitations attendent la fin de la partie (v216).** « Cela doit
+apparaître qu'on a eu un gel de série APRÈS la partie. » Les bandeaux partaient
+là où l'événement se produit — à la dernière question, avant même que l'écran
+des résultats n'existe. Mesuré : bandeau à 158 ms, écran des résultats à
+158 ms — il passait pendant la transition, donc invisible. La file est
+maintenant retenue le temps de la fin de partie et relâchée une fois les
+résultats posés : bandeau à **1294 ms**. Rien n'est perdu, la file attend.
+
 **Un défileur ne connaît que les pixels entiers (v215).** « Quand le clavier
 s'ouvre et que la caméra s'ajuste, fais en sorte que ce soit ultra fluide ; là
 ça saccade un tout petit peu. » Vérifié dans le moteur, en trois lignes :

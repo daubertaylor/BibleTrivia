@@ -54,6 +54,7 @@ notre code, et il est éprouvé. Tout le reste l'est.
     node recul.js       # la feuille qui recule garde-t-elle son décor, et son fond ?
     node plein.js       # l'onde d'appui recouvre-t-elle TOUT le bouton, logo compris ?
     node camera.js      # le recadrage à l'ouverture du clavier bégaie-t-il ?
+    node charge.js      # le moteur de verre paie-t-il pour une feuille qui ne recule pas ?
     node paysage.js     # couché, on ne voit rien de l'app sous le voile
     node typo.js        # typographie française sur les 1545 questions et 12 écrans
     node doigt.js       # tout ce qui se touche fait-il 44 px, mesuré au doigt ?
