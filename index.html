@@ -9334,74 +9334,127 @@ const HERO_VERSES = [
   { t:"La grâce est trompeuse, et la beauté est vaine ; La femme qui craint l'Éternel est celle qui sera louée.", r:"Proverbes 31:30" },
 ];
 let heroTaps = 0, heroTapReset = null, lastVerseIdx = -1;
-/* Le côté du prochain appui. Il s'inverse à chaque fois : le logo se balance
-   au lieu de répéter le même clic. */
-let heroSens = 1;
 /* ENFONCEMENT DE L'ICÔNE — piloté par pointerdown/up (voir le commentaire CSS
    sur :active). pointerdown enfonce INSTANTANÉMENT (pas de délai de clic iOS),
    pointerup/leave/cancel relâche en ressort. Un seul pilote, zéro conflit avec
    :active -> réaction fluide et identique iOS/Android. Le comptage des 5 touches
    reste sur le clic (heroIconTap), qui ne touche plus au visuel. */
-function heroIconPress(){
+/* ===================== LE LOGO EST UNE MASSE AU BOUT D'UN RESSORT =====
+   « Pas assez fluide. » Il avait raison, et la cause n'était pas le réglage :
+   c'était la FORME. Il y avait deux animations qui se relayaient — une pour
+   l'appui, une pour le retour — et un relais, par construction, casse la
+   vitesse. Le doigt se lève au milieu de l'enfoncement ? Le retour repartait
+   d'une vitesse nulle, avec une durée fixe, qu'il ait deux pour cent ou neuf
+   pour cent de chemin à faire. Deux gestes collés bout à bout, jamais un seul.
+   Pire : j'avais fait alterner le côté à chaque tap pour que ce soit « vivant ».
+   Le logo était à +3,4° et l'appui suivant l'arrachait à −3,4° en onze
+   centièmes — six degrés et demi d'un coup. Ce n'est pas un balancement, c'est
+   une secousse. J'avais confondu vivant avec ample.
+
+   ON NE PILOTE PLUS UNE POSITION, ON PILOTE UNE FORCE. Deux ressorts, intégrés
+   à chaque image :
+     « enf »  l'enfoncement (0 au repos, 1 sous le doigt) -> l'échelle
+     « bal »  le balancement (-1 à +1, le côté change à chaque tap) -> la
+              rotation et le petit pas de côté
+   Chacun garde sa VITESSE. Lever le doigt ne coupe rien : la masse continue sur
+   son élan et le ressort la ramène. Enchaîner cinq taps ne produit plus cinq
+   arrachements mais un pendule qui traverse le zéro — parce que la vitesse
+   acquise passe d'un tap au suivant au lieu d'être jetée.
+
+   DEUX RAIDEURS, ET C'EST PHYSIQUE. Sous le doigt, le mouvement est FORCÉ :
+   raide et amorti, il rejoint vite sa pose sans osciller (on ne veut pas d'un
+   logo qui tremble pendant qu'on appuie). Doigt levé, il est LIBRE : plus
+   souple, moins amorti, il dépasse le repos avant de s'y poser — c'est ce
+   dépassement qui fait qu'une chose paraît vivante plutôt qu'élastique.
+
+   Réglages mesurés sur banc-essai/logo.js, pas choisis au jugé : voir les
+   chiffres en tête du banc. */
+const HERO_APPUI  = { k:1400, z:0.90 };   // forcé : rejoint sans osciller
+/* Le retour doit être FINI avant le tap suivant. À cent vingt millisecondes
+   entre deux appuis — le rythme du geste qui ouvre le verset — une raideur de
+   520 laissait le logo à mi-chemin : le banc voyait « il tremble au lieu de
+   s'enfoncer ». À 1000, il repasse sa taille de repos en cinquante-quatre
+   millisecondes. L'ampleur du dépassement, elle, ne dépend que de
+   l'amortissement, pas de la raideur : elle ne change donc pas. */
+const HERO_LIBRE  = { k:1000, z:0.40 };   // libre : dépasse, puis se pose
+const HERO_CREUX  = 0.098;                // enfoncement à pleine pose
+const HERO_PENCHE = 4.0;                  // degrés au bout du balancement
+const HERO_PAS    = 3.6;                  // pixels de côté au bout du balancement
+let heroEnf = 0, heroEnfV = 0, heroBal = 0, heroBalV = 0;
+let heroCibleEnf = 0, heroCibleBal = 0, heroSens = 1;
+let heroImage = 0, heroHorloge = 0, heroPresse = false;
+
+function heroSurface(){
   const zone = document.getElementById("heroZone");
-  if(!zone || zone.classList.contains("show-verse")) return;
-  const w = zone.querySelector(".hero-icon-wrap");
+  if(!zone || zone.classList.contains("show-verse")) return null;
+  return zone.querySelector(".hero-icon-wrap");
+}
+function heroPoser(w){
   if(!w) return;
-  clearTimeout(w._pressT); clearTimeout(w._springT);
-  /* ===== CINQ TAPS RAPIDES, CINQ APPUIS NETS =====
-     « Le logo se comporte d'une manière un peu bizarre quand je clique cinq
-     fois dessus. » Mesuré, image par image, à cent vingt millisecondes entre
-     deux taps — le rythme exact du geste : l'échelle errait entre 0,86 et 1,00
-     et ne revenait à sa taille pleine QU'UNE FOIS SUR CINQ. Le logo ne faisait
-     pas cinq appuis, il tremblait.
-     La cause : l'enfoncement descendait à 0,90 en 0,13 s, mais le retour durait
-     0,44 s — trois fois et demie l'intervalle entre deux taps. Chaque nouvel
-     appui coupait un retour à peine entamé, et le logo n'était jamais revenu.
-     Deux corrections, et rien d'autre : le retour prend la MÊME durée que
-     l'enfoncement (0,13 s, la durée d'appui de toutes les surfaces du jeu), et
-     l'amplitude passe de 0,90 à 0,94. Un cycle complet tient alors dans un
-     quart de seconde, et ce qui reste de tremblement est six fois plus petit
-     que l'ancien. Le « boing » du cinquième tap (heroBump), lui, ne change
-     pas : c'est une fête, pas un état. */
-  /* v219 : plus profond, plus incliné, et l'aura suit. Le plafond reste celui
-     du banc (moins de 10 % d'enfoncement, au-delà le logo « saute »). */
-  /* ===== VIVANT, ET SURTOUT FLUIDE =====
-     « Je tape dessus, il réagit de manière vivante, à droite, à gauche. Et
-     fluide, surtout très très important. »
-     VIVANT : l'inclinaison CHANGE DE CÔTÉ à chaque tap, et s'accompagne d'un
-     petit pas dans la même direction. Un objet qui répond toujours
-     identiquement est un bouton ; un objet qui répond différemment à chaque
-     fois est vivant. Cinq taps de suite dessinent donc un balancement, pas
-     cinq fois le même clic.
-     FLUIDE : le ressort du retour dépassait de neuf pour cent
-     (cubic-bezier 1,9). À ce niveau, le dépassement se LIT comme un à-coup —
-     l'oeil voit deux mouvements au lieu d'un. Ramené à 1,42 : il dépasse
-     encore, assez pour qu'on sente le rebond, plus assez pour qu'on le compte
-     comme un second geste. Et il dure 0,30 s, pas 0,36 : à 0,36 la courbe ne
-     repassait la taille pleine qu'au bout de 144 ms, donc APRÈS le tap suivant
-     (120 ms) — le banc l'a vu tout de suite, « le logo n'est jamais revenu, il
-     tremble ». Un retour doit être fini avant que le doigt ne revienne. */
-  heroSens = -heroSens;
+  /* PAS DE BORNE À ZÉRO ICI. Je l'avais mise pour « éviter une échelle
+     supérieure à un » — c'est-à-dire que j'écrasais exactement le dépassement
+     qui fait le ressort. Le banc l'a dit en une ligne : « ressort au retour
+     +0,0 % ». Quand l'enfoncement passe sous zéro, le logo dépasse sa taille de
+     repos : c'est voulu, c'est toute la vie du geste. */
+  w.style.transform = "translateX(" + (heroBal * HERO_PAS).toFixed(2) + "px) scale("
+    + (1 - heroEnf * HERO_CREUX).toFixed(4) + ") rotate(" + (heroBal * HERO_PENCHE).toFixed(2) + "deg)";
+}
+function heroBoucle(maintenant){
+  heroImage = 0;
+  const w = heroSurface();
+  if(!w){ heroHorloge = 0; return; }
+  /* Le pas de temps est BORNÉ : au retour d'arrière-plan, requestAnimationFrame
+     rend un écart énorme et un ressort explose. */
+  const dt = heroHorloge ? Math.min(0.034, (maintenant - heroHorloge) / 1000) : 0.016;
+  heroHorloge = maintenant;
+  const r = heroPresse ? HERO_APPUI : HERO_LIBRE;
+  const w0 = Math.sqrt(r.k), c = 2 * r.z * w0;
+  heroEnfV += ((heroCibleEnf - heroEnf) * r.k - heroEnfV * c) * dt; heroEnf += heroEnfV * dt;
+  heroBalV += ((heroCibleBal - heroBal) * r.k - heroBalV * c) * dt; heroBal += heroBalV * dt;
+  heroPoser(w);
+  const pose = Math.abs(heroCibleEnf - heroEnf) < 0.0015 && Math.abs(heroEnfV) < 0.02
+            && Math.abs(heroCibleBal - heroBal) < 0.0015 && Math.abs(heroBalV) < 0.02;
+  if(pose){
+    heroEnf = heroCibleEnf; heroBal = heroCibleBal; heroEnfV = heroBalV = 0;
+    heroPoser(w); heroHorloge = 0;
+    /* Posé au repos : on rend la main au style, pour que le repli du verset
+       (qui passe par une transition CSS) retrouve une surface propre. */
+    if(!heroCibleEnf && !heroCibleBal){ w.style.transform = ""; w.style.transition = ""; }
+    return;
+  }
+  heroImage = requestAnimationFrame(heroBoucle);
+}
+function heroReveiller(){
+  const w = heroSurface();
+  if(!w) return;
+  w.style.transition = "none";      // le ressort pilote, pas la transition
+  if(!heroImage){ heroHorloge = 0; heroImage = requestAnimationFrame(heroBoucle); }
+}
+/* Tout arrêter et rendre la surface au style : le verset la reprend en main. */
+function heroArreter(){
+  if(heroImage){ cancelAnimationFrame(heroImage); heroImage = 0; }
+  heroEnf = heroEnfV = heroBal = heroBalV = 0;
+  heroCibleEnf = heroCibleBal = 0; heroPresse = false; heroHorloge = 0;
+  const zone = document.getElementById("heroZone");
+  const w = zone ? zone.querySelector(".hero-icon-wrap") : null;
+  if(w){ w.classList.remove("vif"); w.style.transform = ""; w.style.transition = ""; }
+}
+function heroIconPress(){
+  const w = heroSurface();
+  if(!w) return;
+  heroSens = -heroSens;             // le côté change : cinq taps font un pendule
+  heroPresse = true;
+  heroCibleEnf = 1; heroCibleBal = heroSens;
   w.classList.add("vif");
-  w.style.transition = "transform 0.11s cubic-bezier(0.33, 0, 0.25, 1)";
-  w.style.transform = "translateX(" + (heroSens * 3.2).toFixed(1) + "px) scale(0.905) rotate(" + (heroSens * 3.4).toFixed(1) + "deg)";
+  heroReveiller();
 }
 function heroIconRelease(){
-  const zone = document.getElementById("heroZone");
-  if(!zone || zone.classList.contains("show-verse")) return;
-  const w = zone.querySelector(".hero-icon-wrap");
+  const w = heroSurface();
   if(!w) return;
-  clearTimeout(w._pressT); clearTimeout(w._springT);
-  /* UN RESSORT QUI DÉPASSE, MAIS QUI EST DÉJÀ REVENU AU TAP SUIVANT.
-     La leçon de la v218 tient : un retour de 0,44 s était plus lent que le
-     geste (120 ms entre deux taps) et le logo n'était jamais revenu. La courbe
-     ci-dessous dépasse la taille pleine vers 0,10 s — donc AVANT le tap
-     suivant, même au rythme le plus rapide — puis se pose. On garde les cinq
-     retours sur cinq du banc, et on gagne le rebond qui manquait. */
+  heroPresse = false;
+  heroCibleEnf = 0; heroCibleBal = 0;
   w.classList.remove("vif");
-  w.style.transition = "transform 0.30s cubic-bezier(0.16,1.86,0.32,1)";
-  w.style.transform = "";
-  w._springT = setTimeout(()=>{ w.style.transition = ""; }, 380);
+  heroReveiller();
 }
 function heroIconTap(){
   const zone = document.getElementById("heroZone");
@@ -9412,8 +9465,7 @@ function heroIconTap(){
   heroTapReset = setTimeout(()=>{ heroTaps = 0; }, 1500);
   if(heroTaps >= 5){
     heroTaps = 0;
-    const w = zone.querySelector(".hero-icon-wrap");
-    if(w){ clearTimeout(w._pressT); clearTimeout(w._springT); w.classList.remove("vif"); w.style.transition = ""; w.style.transform = ""; }
+    heroArreter();
     showHeroVerse();
   }
 }
