@@ -573,8 +573,13 @@ moitié des bancs a lu un fichier, l'autre moitié un autre.
 **Avant de lancer :**
 
 ```
-ps aux | grep -c "[b]anc-essai/"     # doit valoir 0
+pgrep -f "banc-essa[i]/" && echo "UNE SUITE TOURNE DÉJÀ" || echo "libre"
 ```
+
+Et surtout PAS `ps aux | grep -c ...` enchaîné avec `&&` : `grep -c` sort avec
+le code 1 quand il compte zéro. La commande affiche donc « 0 », ce qui est la
+bonne nouvelle, et le `&&` qui suit ne s'exécute jamais. Je viens de perdre une
+suite comme ça — elle n'a simplement pas démarré, sans un mot.
 
 Le crochet autour de la lettre n'est pas une coquetterie : sans lui, le motif
 se trouve lui-même dans sa propre ligne de commande, et on attend un processus
