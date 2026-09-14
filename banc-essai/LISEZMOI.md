@@ -556,3 +556,33 @@ jours volés à un joueur fidèle. Quand la marche atteint le plus ancien jour
 connu ET que la liste est pleine, on ne peut PAS conclure — on garde ce qui
 était annoncé. Si la liste n'est pas pleine, atteindre son plus ancien jour
 veut dire que la série commence là, et il n'y a rien à croire sur parole.
+
+## Une seule suite à la fois. Une seule.
+
+Trois fois dans la même journée : une suite lancée alors qu'une autre tournait
+encore. À chaque fois le même résultat — des rouges qui n'existent pas.
+`ouverture`, `plis`, `rotation` et `duel` sont les premiers à tomber : ils
+mesurent des millisecondes ou prennent un port, et deux navigateurs sans tête
+qui se disputent le processeur suffisent à les faire mentir. Une fois, `duel` a
+même échoué sur `EADDRINUSE` — son jumeau tenait le port.
+
+Et le pire n'est pas le faux rouge, c'est le **faux vert** : une suite lancée
+sur un arbre qu'on modifie pendant qu'elle tourne ne valide rien du tout. La
+moitié des bancs a lu un fichier, l'autre moitié un autre.
+
+**Avant de lancer :**
+
+```
+ps aux | grep -c "[b]anc-essai/"     # doit valoir 0
+```
+
+Le crochet autour de la lettre n'est pas une coquetterie : sans lui, le motif
+se trouve lui-même dans sa propre ligne de commande, et on attend un processus
+qui est celui qu'on vient de lancer. Même piège avec `pkill` — un `pkill -f
+"suite.sh"` s'est tué lui-même aujourd'hui, parce que « suite.sh » figurait
+dans sa propre ligne de commande.
+
+**Et ne jamais toucher à `index.html` pendant qu'une suite tourne.** Si une
+mesure est urgente, on arrête la suite, on mesure, et on relance UNE suite
+propre qui couvre tout. C'est moins long que d'interpréter des résultats qui ne
+veulent rien dire.
