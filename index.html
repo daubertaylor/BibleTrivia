@@ -1247,56 +1247,31 @@
      ligne pour que la feuille ait toujours la même forme. */
   .rv-choix.rv-off{ opacity:0.42; }
   .rv-choix.rv-off .rv-cnt{ color:var(--ink-soft); }
-  .rv-livres-t{ font-family:'Poppins',sans-serif; font-size:0.7rem; font-weight:700; letter-spacing:0.07em;
-    text-transform:uppercase; color:var(--ink-soft); margin:0.85rem 0.15rem 0.45rem; }
-  /* ===== UNE LISTE QUI DÉFILE DOIT LE DIRE, ET NE JAMAIS COUPER UNE RANGÉE EN DEUX =====
-     Sur la capture de Taylor (200 erreurs au carnet, une soixantaine de
-     livres), la grille était arrêtée en plein milieu d'une rangée : une
-     tranche de pastilles en haut, sans rien pour expliquer pourquoi. Ce n'est
-     pas « il y a plus en dessous », c'est « c'est cassé ».
-     Deux corrections, les deux déjà employées ailleurs dans le jeu :
-       LE CRAN (scroll-snap) pose toujours la grille sur une rangée ENTIÈRE ;
-       LE VOILE (le même dégradé que la liste des erreurs, piloté par
-         majVoilesListe) fond les deux bouts quand il reste quelque chose
-         au-delà, et les rend NETS quand il n'y a plus rien — c'est ainsi
-         qu'on sait qu'on est arrivé au bout.
-     scroll-padding-top décale la ligne de pose de la hauteur du voile, sinon
-     le cran dépose la rangée sous le fondu et on la lit à moitié effacée. */
-  .rv-livres{ display:grid; grid-template-columns:repeat(auto-fill, minmax(5.6rem, 1fr)); gap:0.36rem;
-    /* TROIS RANGÉES, PAS CINQ. « Le "à revoir" est un peu trop gros par rapport
-       aux autres » — mesuré : 612 px vus contre 465 en moyenne pour les trois
-       autres feuilles, soit un tiers de plus. Une feuille est une PARENTHÈSE
-       sur l'écran, pas un écran de plus : quand l'une d'elles enfle, elle
-       cesse d'appartenir à la même famille. La grille garde son défilement et
-       son voile — ce n'est pas le contenu qu'on retire, c'est la hauteur qu'on
-       lui laisse prendre d'un coup. */
-    max-height:calc(14.5 * var(--hu)); overflow-y:auto; overscroll-behavior:contain; -webkit-overflow-scrolling:touch;
-    scrollbar-width:none; margin-bottom:0.7rem;
-    /* « mandatory » et non « proximity » : ce dernier ne recale que si l'arrêt
-       tombe DÉJÀ près d'une rangée — mesuré, une rangée dépassait encore de
-       13 px du bord. Ici la promesse doit être entière : jamais de rangée
-       coupée en deux, jamais. Le dernier rang reste atteignable, le navigateur
-       autorisant toujours la fin de course même quand elle ne s'aligne pas. */
-    scroll-snap-type:y mandatory;
-    --voile-max:26px;
-    scroll-padding-top:var(--voile-max);
-    --voile-h:0px; --voile-b:0px;
-    --masque:linear-gradient(to bottom,
-      rgba(0,0,0,0) 0,
-      rgba(0,0,0,0.216) calc(var(--voile-h) * 0.30),
-      rgba(0,0,0,0.5)   calc(var(--voile-h) * 0.50),
-      rgba(0,0,0,0.784) calc(var(--voile-h) * 0.70),
-      #000 var(--voile-h),
-      #000 calc(100% - var(--voile-b)),
-      rgba(0,0,0,0.784) calc(100% - var(--voile-b) * 0.70),
-      rgba(0,0,0,0.5)   calc(100% - var(--voile-b) * 0.50),
-      rgba(0,0,0,0.216) calc(100% - var(--voile-b) * 0.30),
-      rgba(0,0,0,0) 100%);
-    -webkit-mask-image:var(--masque); mask-image:var(--masque); }
-  .rv-livres::-webkit-scrollbar{ display:none; }
-  .rv-bk{ scroll-snap-align:start; }
-  .rv-bk{ display:flex; align-items:center; justify-content:center; gap:0.32rem; scroll-snap-align:start; }
+  /* ===== LA GRILLE DES LIVRES A QUITTÉ LA FEUILLE (v221) =====
+     Elle y était enfermée dans une fenêtre de trois rangées, avec son propre
+     défilement, son cran et son voile — toute une mécanique pour compenser le
+     fait qu'elle n'avait pas la place. Sur son écran, elle n'a plus besoin de
+     rien de tout ça : elle défile avec la page, comme les 66 livres de la
+     Progression, et aucune rangée n'est jamais coupée puisque rien ne la
+     rogne. Moins de code, et le problème ne se pose plus au lieu d'être
+     contenu. La fonction majVoilesListe reste : la liste des erreurs s'en sert. */
+  .rv-bk{ display:flex; align-items:center; justify-content:center; gap:0.32rem; }
   .rv-bk .bk-nm{ display:inline; }
+  /* ===== L'ÉCRAN DES LIVRES À REVOIR =====
+     La grille de la Progression est faite pour tenir SOUS un testament, entre
+     deux autres blocs : quatre colonnes serrées, des noms coupés, des pastilles
+     de 0,7 rem. Ici elle est seule sur l'écran — la recopier telle quelle
+     laissait les deux tiers de la page vides ET les noms tronqués, ce qui est
+     le pire des deux mondes : ni compact, ni lisible.
+     Trois colonnes au lieu de quatre (les noms tiennent, abréviations
+     comprises), des pastilles plus hautes et un texte plus grand : la liste
+     occupe la page parce qu'elle EST la page. */
+  .rvl-card{ padding:calc(0.9rem + 1px); }
+  .rvl-card .bk-mode{ margin-bottom:0.85rem; font-size:0.84rem; }
+  .rvl-card .bk-grid{ grid-template-columns:repeat(auto-fill, minmax(6.2rem, 1fr)); gap:0.5rem; }
+  .rvl-card .bk{ padding:calc(0.62rem + 1px) calc(0.5rem + 1px); border-radius:12px; }
+  .rvl-card .bk-nm{ font-size:0.82rem; }
+  .rvl-card .rv-bkn{ font-size:0.68rem; padding:0.1rem 0.4rem; }
   .rv-bkn{ font-family:'Poppins',sans-serif; font-weight:700; font-size:0.62rem; color:#fff;
     background:linear-gradient(150deg,#A78BFA,#7C5CE0); border-radius:var(--r-full);
     padding:0.05rem 0.34rem; flex-shrink:0; font-variant-numeric:tabular-nums; }
@@ -2976,18 +2951,18 @@
      La feuille porte « touch-action:none » (sans quoi on ne peut pas la fermer
      au doigt sur Android). Ce refus vaut pour TOUTE sa descendance : une liste
      à l'intérieur ne défile plus, sauf à le redemander explicitement — c'est
-     ce que fait cette ligne. Elle nommait deux listes ; la grille des livres à
-     revoir (v219) manquait — on ne pouvait tout simplement pas atteindre les
-     livres du bas.
+     ce que fait cette ligne.
      N'Y METTRE QUE CE QUI DÉFILE VRAIMENT. La liste des versions, par exemple,
      n'a pas d'overflow : elle tient toujours entière. L'ajouter ici ne lui
      rendrait aucun service et lui retirerait quelque chose — on ne pourrait
      plus tirer la feuille en posant le doigt dessus.
+     (La grille des livres à revoir figurait ici en v220. Elle a quitté la
+     feuille en v221 pour son propre écran, où elle défile avec la page : le
+     problème ne se pose plus au lieu d'être contenu.)
      Le sélecteur « neutre » de attachSheetDrag nomme exactement les mêmes
-     trois listes : un doigt qui en défile une ne doit jamais tirer la feuille
-     sous elle, et une liste absente d'un des deux endroits casse l'autre. */
-  .settings-sheet .rev-list, .settings-sheet .flam-list,
-  .settings-sheet .rv-livres{ touch-action:pan-y; }
+     listes : un doigt qui en défile une ne doit jamais tirer la feuille sous
+     elle, et une liste absente d'un des deux endroits casse l'autre. */
+  .settings-sheet .rev-list, .settings-sheet .flam-list{ touch-action:pan-y; }
   /* LA POIGNÉE FERME LA FEUILLE. Elle n'était qu'un trait décoratif ; c'est
      désormais la vraie sortie : on tire la feuille vers le bas, ou on tape la
      barre. Le bouton « Fermer » a donc disparu — il occupait une pleine largeur
@@ -3298,7 +3273,23 @@
      Elle attend donc la classe « monte », posée à l'image SUIVANTE, une fois
      le verre en place. En attendant elle est là, complète, mais hors champ. */
   .settings-sheet:not(.monte){ transform:translateZ(0) translateY(calc(100% - 220px)); }
-  .settings-sheet.monte{ animation:sheetIn var(--tr-ouvre); }
+  /* ===== « UNE FOIS OUVERT PARFAITEMENT, ÇA SAUTE » : LE PASSAGE DE TÉMOIN =====
+     Sans « forwards », une animation REND LA MAIN à sa fin : la valeur cesse de
+     venir de l'animation et revient au style de base. Ici les deux valeurs sont
+     identiques (translateY(0) d'un côté, translateZ(0) de l'autre), donc rien ne
+     devrait bouger — et rien ne bouge, géométriquement. Mais le passage lui-même
+     est un changement d'état pour le moteur de rendu : la feuille porte trente
+     surfaces de verre, chacune avec sa copie floutée du décor, et sur iOS une
+     couche composée qu'on rend au style de base est démontée puis refaite. Ce
+     n'est pas un déplacement, c'est une RE-RASTÉRISATION — et elle tombe pile
+     à la fin de la montée, mesurée ici à 583 ms.
+     « both » supprime le passage : l'animation garde la main sur la valeur
+     finale, et il n'y a plus d'instant où quelqu'un d'autre la reprend.
+     « will-change » sur la feuille dit au moteur de garder sa couche promue au
+     lieu de la reconstruire. Aucune des deux ne change un pixel d'apparence :
+     elles changent seulement qui tient le pinceau, et jusqu'à quand. */
+  .settings-sheet{ will-change:transform; }
+  .settings-sheet.monte{ animation:sheetIn var(--tr-ouvre) both; }
   @keyframes sheetOut{ to{ transform:translateY(calc(100% - 190px)); } }
   @keyframes veilOut{ to{ opacity:0; } }
 
@@ -6511,13 +6502,24 @@ function monterLaFeuille(veil){
        passe de plus. Sur un appareil rapide, ce recalage ne change rien
        (la position est déjà la bonne) ; sur un appareil lent, il rattrape
        précisément ce que le minuteur aurait manqué. */
+    /* ===== J'AVAIS ÉCOUTÉ LE MAUVAIS ÉVÉNEMENT (corrigé en v221) =====
+       La v219 posait ici un « transitionend » pour recaler le verre à la vraie
+       fin du mouvement. La feuille ne monte pas par une TRANSITION mais par une
+       ANIMATION (@keyframes sheetIn) : elle émet « animationstart » puis
+       « animationend », jamais « transitionend ». Vérifié en écoutant les cinq
+       événements possibles — seuls les deux premiers arrivent. Ce recalage
+       n'avait donc jamais tourné une seule fois depuis qu'il était écrit.
+       On écoute les deux : l'animation pour la montée d'aujourd'hui, la
+       transition pour le jour où l'une des feuilles monterait autrement. */
     const fini = (e)=>{
-      if(e && e.target !== f) return;              // pas les transitions des enfants
+      if(e && e.target !== f) return;              // pas les enfants
       if(e && e.propertyName && e.propertyName !== "transform") return;
       f.removeEventListener("transitionend", fini);
+      f.removeEventListener("animationend", fini);
       try{ glassRelayout(); queueGlassSync(); }catch(err){}
     };
     f.addEventListener("transitionend", fini);
+    f.addEventListener("animationend", fini);
   };
   requestAnimationFrame(()=>{ requestAnimationFrame(lacher); });
   /* FILET. requestAnimationFrame ne tourne PAS dans un onglet caché : si le
@@ -7179,10 +7181,10 @@ function attachSheetDrag(feuille, fermer){
   /* CE QUI N'EST PAS « NEUTRE » NE TIRE PAS LA FEUILLE : un champ, un bouton,
      un curseur, et TOUTE LISTE QUI DÉFILE. Cette dernière catégorie doit
      rester d'accord avec la règle « touch-action:pan-y » de la feuille de
-     style — les deux nomment les mêmes trois listes. Une liste absente ici se
+     style — les deux nomment les mêmes listes. Une liste absente ici se
      met à tirer la feuille au lieu de défiler ; absente là-bas, elle ne défile
      pas du tout. */
-  const neutre = (t)=> !(t && t.closest && t.closest("input, button:not(.sheet-grab), .scn-thumb, .rev-list, .flam-list, .rv-livres, .vol-row, .switch"));
+  const neutre = (t)=> !(t && t.closest && t.closest("input, button:not(.sheet-grab), .scn-thumb, .rev-list, .flam-list, .vol-row, .switch"));
   /* PENDANT LE GESTE, LE VERRE RESTE ACCROCHÉ À L'ÉCRAN, pas à la feuille :
      c'est tout l'effet de décalage — on tire le panneau et le décor glisse
      derrière, comme une vitre qu'on déplace devant un paysage. Il suffit de
@@ -10104,6 +10106,22 @@ function progressDerived(p){
 function nMastered(list, d){ let n=0; for(let i=0;i<list.length;i++){ if(d.set[list[i]]) n++; } return n; }
 const TORAH = ["Genèse","Exode","Lévitique","Nombres","Deutéronome"];
 const GOSPELS = ["Matthieu","Marc","Luc","Jean"];
+/* ===== LES NOMS TROP LONGS, ABRÉGÉS UNE SEULE FOIS =====
+   Deux écrans montrent les mêmes livres dans la même grille : la Progression
+   et « Revoir un livre ». Ils portaient chacun leur propre table
+   d'abréviations, recopiée — deux copies d'une même chose finissent toujours
+   par diverger, et c'est déjà ce qui commençait : l'écran de révision tronquait
+   « Apocalypse » et « Ecclésiaste » que l'autre n'avait jamais eu à abréger.
+   Une table, deux écrans. On n'abrège que ce qui déborde vraiment. */
+const LIVRES_COURTS = {
+  "Deutéronome":"Deutér.", "Cantique des cantiques":"Cantiques",
+  "1 Thessaloniciens":"1 Thess.", "2 Thessaloniciens":"2 Thess.",
+  "1 Corinthiens":"1 Cor.", "2 Corinthiens":"2 Cor.",
+  "1 Chroniques":"1 Chron.", "2 Chroniques":"2 Chron.",
+  "Lamentations":"Lament.", "Apocalypse":"Apoc.", "Ecclésiaste":"Ecclés.",
+  "Ézéchiel":"Ézéch.", "Lévitique":"Lévit.", "Néhémie":"Néhém.",
+  "Proverbes":"Prov.", "Philippiens":"Philip.", "Colossiens":"Coloss.",
+};
 const MINOR_PROPHETS = ["Osée","Joël","Amos","Abdias","Jonas","Michée","Nahum","Habacuc","Sophonie","Aggée","Zacharie","Malachie"];
 /* Icônes maison des objectifs : des glyphes SVG monochromes (currentColor),
    dessinés dans le MÊME langage que le reste de l'app (viewBox 24, trait/plein,
@@ -10329,7 +10347,6 @@ function renderParcours(){
   checkAchievements({ toast:false });
   const p = loadProgress(), d = achDerived(p);
   const unlocked = ACHIEVEMENTS.filter(a=>p.ach[a.id]).length;
-  const BK_SHORT = { "Deutéronome":"Deutér.", "Cantique des cantiques":"Cantiques", "1 Thessaloniciens":"1 Thess.", "2 Thessaloniciens":"2 Thess.", "1 Corinthiens":"1 Cor.", "2 Corinthiens":"2 Cor.", "1 Chroniques":"1 Chron.", "2 Chroniques":"2 Chron.", "Lamentations":"Lament." };
   /* ===== UNE TUILE N'EST PLUS UN VOYANT, C'EST UNE PORTE =====
      La grille des 66 livres était un tableau de bord : on la regardait, on
      n'agissait pas dessus. Toucher « Marc » lance maintenant une partie tirée
@@ -10345,7 +10362,7 @@ function renderParcours(){
                       : (name + " — pas encore de question");
     return `<button class="bk ${cls}" ${dispo ? `onclick="jouerLivre('${name.replace(/'/g,"\\'")}')"` : "disabled"}`
       + ` title="${escapeHtml(dit)}" aria-label="${escapeHtml(dit)}">`
-      + `<span class="bk-nm">${escapeHtml(BK_SHORT[name]||name)}</span></button>`;
+      + `<span class="bk-nm">${escapeHtml(LIVRES_COURTS[name]||name)}</span></button>`;
   };
   const at = BIBLE_BOOKS.slice(0, BIBLE_AT_COUNT), nt = BIBLE_BOOKS.slice(BIBLE_AT_COUNT);
   const achBadge = (a)=>{
@@ -11230,24 +11247,50 @@ function ouvrirRevoir(){
       ${ligne("v", ICONS.clock, "Les échéances du jour", "Ce que la mémoire réclame", dus, "lancerRevoir('dus')")}
       ${ligne("g", ICONS.book, "Tout mon carnet", "Sans attendre leur tour", tout, "lancerRevoir('tout')")}
       ${ligne("b", ICONS.target, "Ma dernière partie", "Ce que je viens de rater", derniere, "lancerRevoir('derniere')")}
-      ${livres.length ? `<div class="rv-livres-t">Ou un livre en particulier</div>
-        <div class="rv-livres" onscroll="majVoilesListe(this)">${livres.map(([nom,n])=>
-          /* Le nom passe par un attribut, jamais par le corps du onclick :
-             « Cantique des cantiques » ou un livre à apostrophe casserait la
-             chaîne, et un nom venu du carnet n'a pas à être recollé à la main
-             dans du code. */
-          `<button class="bk rv-bk" data-livre="${escapeHtml(nom)}" onclick="lancerRevoir('livre:' + this.dataset.livre)"><span class="bk-nm">${escapeHtml(nom)}</span><span class="rv-bkn">${n}</span></button>`
-        ).join("")}</div>` : ""}
+      ${livres.length ? ligne("j", ICONS.book, "Un livre en particulier",
+        livres.length === 1 ? "1 livre dans ton carnet" : livres.length + " livres dans ton carnet",
+        livres.length, "ouvrirRevoirLivres()") : ""}
       <div class="flam-regle">Une erreur revient demain, puis dans 3, 7 et 16&nbsp;jours. Se tromper la ramène à demain.</div>
     </div>`;
   document.body.appendChild(veil);
   monterLaFeuille(veil);
-  /* Le voile est posé AVANT la première image : sans ça, la grille apparaît
-     nette puis se fond, et c'est une image de trop. */
-  majVoilesListe(veil.querySelector(".rv-livres"));
   glassTrack(680);
   attachSheetDrag(veil.querySelector(".settings-sheet"), fermerRevoir);
 }
+/* ===== UN LIVRE EN PARTICULIER MÉRITE SON ÉCRAN =====
+   « La partie livre est devenue toute petite ; tu penses qu'il serait mieux de
+   le mettre directement sur une nouvelle page plutôt que sur un menu
+   déroulant ? » — Oui, et pour une raison plus forte que la taille.
+   La feuille mélangeait DEUX natures. Les trois premières rangées sont des
+   DÉCISIONS : on touche, on joue, il n'y a rien à examiner. La liste des
+   livres est une EXPLORATION : on parcourt une soixantaine d'entrées, on
+   compare des nombres, on choisit. Les tenir ensemble obligeait à un
+   compromis qui s'est fait sentir deux fois de suite — feuille trop haute
+   (612 px, un tiers de plus que les autres), puis grille trop petite (trois
+   rangées). Quand un même réglage a deux défauts opposés et qu'on ne peut
+   corriger l'un qu'en aggravant l'autre, c'est qu'il y a deux objets, pas un.
+   La feuille garde donc ses trois décisions et une PORTE ; les livres ont un
+   écran entier, où ils tiennent tous, triés du plus fourni au moins fourni. */
+function ouvrirRevoirLivres(){
+  fermerRevoir();
+  setTimeout(()=>{ state.screen = "revoir-livres"; render(); }, msFerme() + 30);
+}
+function renderRevoirLivres(){
+  const el = document.createElement("div"); el.className = "screen";
+  const livres = livresDuCarnet();
+  const total = livres.reduce((a,b)=>a + b[1], 0);
+  el.innerHTML = renderHeader("Revoir un livre", true, "state.screen='mode'; render(); setTimeout(ouvrirRevoir, " + (msPli() + 60) + ")")
+    + `<div class="card bk-card rvl-card">
+        <div class="bk-mode"><span class="bk-mode-i">${ICONS.bookOpen}</span>${
+          total === 1 ? "1 question à revoir, dans 1 livre"
+                      : total + " questions à revoir, dans " + livres.length + (livres.length > 1 ? " livres" : " livre")}</div>
+        <div class="bk-grid">${livres.map(([nom,n])=>
+          `<button class="bk rv-bk" data-livre="${escapeHtml(nom)}" onclick="lancerRevoirLivre(this.dataset.livre)"><span class="bk-nm">${escapeHtml(LIVRES_COURTS[nom] || nom)}</span><span class="rv-bkn">${n}</span></button>`
+        ).join("")}</div>
+      </div>`;
+  return el;
+}
+function lancerRevoirLivre(nom){ startRevision("livre:" + nom); }
 function fermerRevoir(){
   const v = document.getElementById("revoirVeil");
   if(!v || v.classList.contains("closing")) return;
@@ -12556,6 +12599,7 @@ function render(){
   else if(state.screen==="play") node = renderPlay();
   else if(state.screen==="profile") node = renderProfile();
   else if(state.screen==="parcours") node = renderParcours();
+  else if(state.screen==="revoir-livres") node = renderRevoirLivres();
   else if(state.screen==="online-name") node = renderOnlineName();
   else if(state.screen==="online") node = renderOnline();
   else if(state.screen==="online-join") node = renderOnlineJoin();

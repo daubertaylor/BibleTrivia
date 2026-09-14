@@ -7,11 +7,14 @@
    « touch-action:none » (sans quoi on ne peut pas la fermer au doigt sur
    Android), ce qui vaut pour toute sa descendance. La grille ne POUVAIT PAS
    défiler — les livres du bas étaient hors d'atteinte.
-   Quatre exigences, donc :
-     elle défile vraiment (touch-action:pan-y) ;
-     le cran la pose sur une rangée entière ;
-     le voile fond les deux bouts tant qu'il reste quelque chose au-delà ;
-     et un doigt qui la défile ne tire PAS la feuille sous elle.
+   LA v221 A CHANGÉ LA RÉPONSE. Plutôt que de mieux contenir la grille dans la
+   feuille, elle lui a donné son ÉCRAN : la feuille mélangeait trois décisions
+   (on touche, on joue) et une exploration (parcourir soixante livres, comparer
+   des nombres), et ce mélange forçait un compromis qui a montré ses deux
+   défauts opposés coup sur coup — feuille trop haute, puis grille trop petite.
+   Le banc suit : il vérifie désormais que la feuille propose une PORTE, que
+   l'écran derrière montre TOUS les livres sans rien couper ni tronquer, qu'on
+   peut y lancer une révision, et que rien ne déborde.
    Usage : node banc-essai/grille-livres.js [url]
 */
 const { chromium } = require('/opt/node22/lib/node_modules/playwright');
@@ -33,71 +36,48 @@ const D='/tmp/claude-0/-home-user-BibleTrivia/fb9bf869-826b-5523-9825-ea1b24c294
   await p.waitForTimeout(500);
   await p.evaluate(()=>ouvrirRevoir());
   await p.waitForTimeout(1200);
-  const av = await p.evaluate(()=>{ const l=document.querySelector('.rv-livres');
-    return { n:l.children.length, st:l.scrollTop, defile:l.scrollHeight>l.clientHeight+1,
-      ta:getComputedStyle(l).touchAction, vh:l.style.getPropertyValue('--voile-h'), vb:l.style.getPropertyValue('--voile-b') }; });
-  console.log('  ' + av.n + ' livres, défile : ' + av.defile + ', touch-action : ' + av.ta);
-  console.log('  au repos : voile haut ' + (av.vh||'0px') + ', voile bas ' + (av.vb||'0px'));
-  await p.screenshot({ path: D+'grille-haut.png' });
-  const yf = await p.evaluate(()=>{ const b=document.querySelector('.rv-livres').getBoundingClientRect(); return { x:b.left+b.width/2, y:b.top+b.height*0.6, ftop:document.querySelector('.settings-sheet').getBoundingClientRect().top }; });
-  /* ON DÉFILE LA GRILLE. La souris de Playwright ne respecte pas
-     « touch-action » et ne produit pas de défilement natif : c'est la molette
-     qui joue le rôle du doigt ici. Le vrai geste tactile, lui, est éprouvé
-     juste après — on vérifie qu'il ne tire pas la feuille. */
-  await p.mouse.move(yf.x, yf.y);
-  await p.mouse.wheel(0, 140);
-  await p.waitForTimeout(500);
-  const ap = await p.evaluate(()=>{ const l=document.querySelector('.rv-livres');
-    const f=document.querySelector('.settings-sheet');
-    return { st:Math.round(l.scrollTop), ftop:f?Math.round(f.getBoundingClientRect().top):null,
-      vh:l.style.getPropertyValue('--voile-h'), vb:l.style.getPropertyValue('--voile-b'),
-      /* UNE RANGÉE COUPÉE, C'EST UNE PASTILLE À CHEVAL SUR LE BORD : une
-         partie dedans, une partie dehors. Ce n'est PAS « la première pastille
-         n'est pas au ras du bord » — avec scroll-padding-top, une rangée bien
-         posée se trouve volontairement SOUS le voile. On mesure donc le
-         nombre de pixels d'une pastille cachés au-dessus du bord haut. */
-      coupe:(()=>{ const zb=l.getBoundingClientRect(); let m=0;
-        for(const e of l.children){ const b=e.getBoundingClientRect();
-          if(b.bottom <= zb.top + 1 || b.top >= zb.top - 1) continue;   // dehors, ou entière
-          m = Math.max(m, Math.round(zb.top - b.top)); }
-        return m; })(),
-      voileMax: Math.round(parseFloat(getComputedStyle(l).getPropertyValue('--voile-max')) || 26) }; });
-  console.log('  après un défilement au doigt : scrollTop=' + ap.st + ', voiles ' + ap.vh + ' / ' + ap.vb);
-  console.log('  la feuille a-t-elle bougé ? ' + (Math.abs(ap.ftop - Math.round(yf.ftop)) < 1 ? 'non' : 'OUI de ' + Math.abs(ap.ftop-Math.round(yf.ftop)) + ' px'));
-  /* UNE RANGÉE QUI DÉPASSE SOUS LE FONDU N'EST PAS UNE RANGÉE COUPÉE — c'est
-     l'inverse : scroll-padding-top la laisse volontairement paraître sous le
-     voile, et c'est ainsi qu'on voit qu'il y en a au-dessus. Ce qui serait
-     mauvais, c'est qu'elle dépasse AU-DELÀ du fondu, en pleine lumière : là
-     elle est tranchée net, et c'est ce que Taylor a photographié. */
-  console.log('  rangée sous le voile : ' + ap.coupe + ' px, pour un fondu de ' + ap.voileMax + ' px'
-    + (ap.coupe <= ap.voileMax ? '  (elle reste dans le fondu)' : '  <-- TRANCHÉE EN PLEINE LUMIÈRE'));
-  await p.screenshot({ path: D+'grille-defilee.png' });
-  /* ET LE VRAI GESTE : un doigt qui remonte de 84 px dans la grille. Il ne
-     doit PAS tirer la feuille — c'est tout l'objet de « neutre ». */
-  const avantDoigt = await p.evaluate(()=>Math.round(document.querySelector('.settings-sheet').getBoundingClientRect().top));
-  await p.mouse.move(yf.x, yf.y); await p.mouse.down();
-  for(let i=1;i<=6;i++){ await p.mouse.move(yf.x, yf.y - i*14); await p.waitForTimeout(16); }
-  await p.mouse.up(); await p.waitForTimeout(600);
-  const apresDoigt = await p.evaluate(()=>{ const f=document.querySelector('.sheet-veil:not(.closing) .settings-sheet');
-    return f ? Math.round(f.getBoundingClientRect().top) : null; });
-  const tiree = apresDoigt === null || Math.abs(apresDoigt - avantDoigt) > 1;
-  console.log('  un doigt qui défile la grille tire la feuille ? ' + (tiree ? 'OUI' : 'non'));
+  let ok = true;
+  const dire = (bon, txt) => { console.log('  ' + (bon ? 'OK ' : 'KO ') + txt); if(!bon) ok = false; };
 
-  /* LE DERNIER LIVRE DOIT RESTER ATTEIGNABLE. Un cran « mandatory » qui
-     empêcherait d'arriver au bout serait pire que la rangée coupée. */
-  const bout = await p.evaluate(()=> new Promise(res=>{
-    const l=document.querySelector('.rv-livres');
-    l.scrollTop = l.scrollHeight;
-    setTimeout(()=>{ const zb=l.getBoundingClientRect();
-      const d=l.children[l.children.length-1].getBoundingClientRect();
-      res({ vu: d.bottom <= zb.bottom + 1 && d.top >= zb.top - 1, reste: Math.round(l.scrollHeight - l.clientHeight - l.scrollTop) });
-    }, 400);
-  }));
-  console.log('  le dernier livre est atteignable : ' + (bout.vu ? 'oui' : 'NON') + ' (il reste ' + bout.reste + ' px de course)');
+  /* 1. LA FEUILLE : quatre rangées, dont la porte vers les livres, et une
+        hauteur qui la remet dans la famille des autres feuilles. */
+  const f = await p.evaluate(()=>{
+    const s=document.querySelector('.revoir-sheet').getBoundingClientRect();
+    return { vue: Math.round(Math.min(s.bottom, innerHeight) - s.top),
+      lignes: [...document.querySelectorAll('.rv-choix')].map(b=>b.querySelector('.oa-txt b').textContent),
+      grilleDedans: !!document.querySelector('.revoir-sheet .bk-grid') };
+  });
+  dire(f.lignes.length === 4, 'la feuille propose quatre chemins : ' + f.lignes.join(' / '));
+  dire(!f.grilleDedans, 'la grille des livres n\'est plus DANS la feuille');
+  dire(f.vue <= 560, 'la feuille est revenue dans la famille : ' + f.vue + ' px vus (les autres font 516 à 526)');
 
-  const ok = av.defile && av.ta === 'pan-y' && ap.st > 20 && bout.vu && Math.abs(ap.ftop - Math.round(yf.ftop)) < 1 && ap.coupe <= ap.voileMax && !tiree && !errs.length;
-  if(errs.length) console.log('  ERREURS : ' + [...new Set(errs)].join(' | '));
+  /* 2. LA PORTE MÈNE À L'ÉCRAN. */
+  await p.evaluate(()=>document.querySelectorAll('.rv-choix')[3].click());
+  await p.waitForTimeout(1400);
+  const e = await p.evaluate(()=>{
+    const app=document.getElementById('app');
+    const noms=[...document.querySelectorAll('.rvl-card .bk-nm')];
+    const g=document.querySelector('.rvl-card .bk-grid');
+    return { ecran: state.screen, livres: noms.length,
+      colonnes: g ? getComputedStyle(g).gridTemplateColumns.split(' ').length : 0,
+      tronques: noms.filter(n=>n.scrollWidth > n.clientWidth + 1).map(n=>n.textContent),
+      debord: app.scrollHeight - app.clientHeight,
+      attendus: (()=>{ try{ return livresDuCarnet().length; }catch(x){ return -1; } })() };
+  });
+  dire(e.ecran === 'revoir-livres', 'la porte mène à l\'écran des livres');
+  dire(e.livres === e.attendus && e.livres > 0, 'TOUS les livres du carnet y sont : ' + e.livres + ' sur ' + e.attendus);
+  dire(e.tronques.length === 0, 'aucun nom tronqué' + (e.tronques.length ? ' — ' + e.tronques.join(', ') : ''));
+  dire(e.colonnes === 3, e.colonnes + ' colonnes (trois, pour que les noms tiennent)');
+  dire(e.debord <= 0 || e.livres > 24, 'rien ne déborde inutilement (débord ' + e.debord + ' px)');
+
+  /* 3. ET ON PEUT JOUER. */
+  const nom = await p.evaluate(()=>{ const b=document.querySelector('.rvl-card .bk'); const n=b.dataset.livre; b.click(); return n; });
+  await p.waitForTimeout(1000);
+  const j = await p.evaluate(()=>({ ecran: state.screen, n: state.questions.length, rev: state.revision }));
+  dire(j.ecran === 'play' && j.n > 0 && j.rev, 'toucher « ' + nom + ' » lance la révision de ce livre (' + j.n + ' questions)');
+
+  if(errs.length){ ok=false; console.log('  ERREURS : ' + [...new Set(errs)].join(' | ')); }
   await nav.close();
-  console.log(ok ? '\n  OK — la grille défile, se pose net, et ne tire pas la feuille' : '\n  ÉCHEC');
+  console.log(ok ? '\n  OK — la feuille décide, l\'écran explore' : '\n  ÉCHEC');
   process.exit(ok?0:1);
 })();
