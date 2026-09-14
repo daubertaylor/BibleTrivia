@@ -168,6 +168,24 @@ serveur, et elles n'ont pas été relues dans cette session.
 **Pourquoi ça compte.** Le jour où un compte porte la progression d'un joueur,
 une règle trop permissive laisse n'importe qui lire ou écrire chez les autres.
 
+**Ce que j'ai trouvé en écrivant la table des comptes.** La politique actuelle
+de `push_subs` est `for all to anon using (true) with check (true)` :
+**n'importe qui peut lire, modifier et supprimer toutes les lignes**. Le
+commentaire d'origine l'assumait, en s'appuyant sur le fait qu'aucune donnée
+personnelle n'y est stockée. Deux nuances aujourd'hui :
+
+- la LECTURE permet d'énumérer tous les abonnements, donc les clés de
+  chiffrement de chaque appareil. Envoyer une notification reste impossible
+  sans la clé privée VAPID, qui ne quitte pas le serveur — mais il n'y a aucune
+  raison de laisser lire.
+- la SUPPRESSION permet de vider la table : tous les joueurs perdraient leurs
+  rappels, en silence.
+
+`comptes/table.sql` retire la lecture (ce qui supprime l'énumération) et garde
+l'écriture. La suppression en masse reste théoriquement possible tant qu'il n'y
+a pas d'identité — c'est réglé pour de bon quand chaque abonnement sera
+rattaché à un compte.
+
 **Quand.** En même temps que la table des comptes (#37), pas après.
 
 ---
