@@ -3268,7 +3268,29 @@
   .sheet-veil.closing .settings-sheet:not(.glisse){ animation:sheetOut var(--tr-ferme) forwards !important; }
   /* « 100% » compte désormais la jupe : on la retranche pour que la feuille
      parte du bord bas de l'écran, comme avant (650px de course mesurés). */
-  @keyframes sheetIn{ from{ transform:translateY(calc(100% - 220px)); } to{ transform:translateY(0); } }
+  /* ===== LA FEUILLE NE QUITTE JAMAIS SON ESPACE =====
+     Partout ailleurs dans sa vie, la feuille porte un transform À TROIS
+     DIMENSIONS : au garage (règle « :not(.monte) » plus bas) et sous le doigt
+     (attachSheetDrag écrit « translateZ(0) translateY(...) »). Seule sa MONTÉE
+     l'écrivait à deux dimensions — et comme l'animation garde la main à la fin
+     (« both »), elle l'y laissait pour toute la durée d'ouverture.
+     Géométriquement, les deux sont identiques : translateZ(0) ne déplace rien.
+     Mais ce n'est pas une position, c'est un ESPACE. La feuille porte trente
+     surfaces de verre, et chacune de ces surfaces porte un translate3d que le
+     moteur repose à chaque image. Un parent qui passe de trois dimensions à
+     deux change la matrice accumulée de tous ses enfants, donc leur arrondi
+     sub-pixel — à l'instant exact où le mouvement s'arrête.
+     CE QUE CETTE CORRECTION A CHANGÉ, MESURÉ, ET CE QU'ELLE N'A PAS CHANGÉ.
+     Sur des images réelles du compositeur, le résidu de la feuille à l'image
+     qui suit la fin de la montée vaut 57 pixels AVANT comme APRÈS (bande
+     y=798..809). J'ai d'abord cru à une baisse de 277 à 93 : c'était le logo
+     qui, derrière le voile, ne flottait pas au même endroit d'une passe à
+     l'autre. Cette correction ne déplace donc rien de mesurable ICI.
+     Elle reste parce qu'elle est juste et qu'elle ne coûte rien : la montée
+     est écrite dans le même espace que le reste de la vie de la feuille, et il
+     n'y a plus aucun changement de repère à aucun instant. Ce n'est pas une
+     correction de défaut, c'est une incohérence retirée. */
+  @keyframes sheetIn{ from{ transform:translateZ(0) translateY(calc(100% - 220px)); } to{ transform:translateZ(0) translateY(0); } }
   /* ===== LA FEUILLE EST FINIE AVANT DE BOUGER =====
      Elle démarrait son ascension à l'instant même où on l'insérait dans la
      page — c'est-à-dire AVANT que le moteur de verre ne lui ait posé ses
@@ -3295,7 +3317,7 @@
      elles changent seulement qui tient le pinceau, et jusqu'à quand. */
   .settings-sheet{ will-change:transform; }
   .settings-sheet.monte{ animation:sheetIn var(--tr-ouvre) both; }
-  @keyframes sheetOut{ to{ transform:translateY(calc(100% - 190px)); } }
+  @keyframes sheetOut{ to{ transform:translateZ(0) translateY(calc(100% - 190px)); } }
   @keyframes veilOut{ to{ opacity:0; } }
 
 
