@@ -591,3 +591,25 @@ dans sa propre ligne de commande.
 mesure est urgente, on arrête la suite, on mesure, et on relance UNE suite
 propre qui couvre tout. C'est moins long que d'interpréter des résultats qui ne
 veulent rien dire.
+
+## Un banc qui vérifie une compensation doit d'abord constater le mouvement
+
+`recul.js` mesure que le décor reste fixe pendant que la feuille du dessous
+rétrécit. Pendant quatre versions, la feuille ne rétrécissait plus du tout —
+`both` sur son animation d'entrée battait la règle du recul, une animation
+remplie gardant la main sur `transform` pour toujours. Le banc passait au vert
+à chaque fois : il n'y avait rien à compenser, donc rien ne glissait.
+
+Taylor l'a vu en trois secondes sur une photo. Aucun banc ne l'a vu en quatre
+versions.
+
+**Le vert d'un banc de compensation ne veut rien dire tant qu'on n'a pas
+établi que la chose à compenser se produit.** Toute mesure du type « X ne doit
+pas bouger pendant que Y bouge » commence donc par vérifier que Y bouge.
+
+Et le corollaire, plus large : **une animation remplie (`both`, `forwards`) ne
+rend jamais la main**. Elle bat toute règle ordinaire sur la propriété qu'elle
+anime, y compris un style en ligne. Si une autre règle doit pouvoir agir sur
+cette propriété plus tard, l'animation ne doit pas être remplie — on lui donne
+plutôt une valeur de repos IDENTIQUE à sa fin, et le passage de témoin ne
+déplace rien.

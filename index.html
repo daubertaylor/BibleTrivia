@@ -2951,7 +2951,11 @@
   .settings-sheet{ transition:transform var(--tr-plie), border-radius var(--tr-plie); }
   /* La feuille SURVOLE le décor au lieu d'y glisser (voir --elevation-feuille). */
   .settings-sheet, .modal-card{ box-shadow:var(--elevation-feuille); }
-  .settings-sheet.feuille-recule{ transform:translateZ(0) scale(0.935) translateY(10px); transform-origin:50% 0; border-radius:calc(var(--r-xl) + 4px) calc(var(--r-xl) + 4px) 0 0; }
+  /* LA CLASSE « monte » DANS LE SÉLECTEUR N'EST PAS DÉCORATIVE. La règle
+     « .settings-sheet.monte » déclare elle aussi un transform, avec la même
+     spécificité et plus bas dans le fichier : sans ce troisième sélecteur, le
+     recul perdait le départage et ne s'appliquait jamais. */
+  .settings-sheet.monte.feuille-recule{ transform:translateZ(0) scale(0.935) translateY(10px); transform-origin:50% 0; border-radius:calc(var(--r-xl) + 4px) calc(var(--r-xl) + 4px) 0 0; }
   /* ===== UNE FEUILLE QUI RECULE EMPORTE SA TEXTURE AVEC ELLE =====
      La couche de verre est une copie du décor CALÉE SUR LA FENÊTRE. Tant que
      la feuille ne bouge pas, tout va bien. Mais quand elle recule pour laisser
@@ -3347,7 +3351,23 @@
      lieu de la reconstruire. Aucune des deux ne change un pixel d'apparence :
      elles changent seulement qui tient le pinceau, et jusqu'à quand. */
   .settings-sheet{ will-change:transform; }
-  .settings-sheet.monte{ animation:sheetIn var(--tr-ouvre) both; }
+  /* ===== « ÇA NE SE SUPERPOSE PAS COMME D'HABITUDE » =====
+     La v221 avait mis « both » ici pour supprimer le passage de témoin de fin
+     d'animation. Conséquence que je n'avais pas vue : une animation remplie
+     garde la main sur « transform » POUR TOUJOURS, et elle bat toute règle
+     ordinaire. Or le recul de la feuille du dessous EST un transform. Depuis la
+     v221, la classe était donc posée et sans le moindre effet — seul son
+     arrondi passait, ce qui se voit sur la photo de Taylor : deux feuilles à
+     pleine largeur, l'une sur l'autre, au lieu d'une qui s'efface derrière
+     l'autre. Mesuré : échelle 1,0000 au lieu de 0,935.
+     L'animation rend donc la main, mais elle la rend à une valeur IDENTIQUE à
+     la sienne : « translateZ(0) translateY(0) », déclarée juste ici. Le passage
+     existe à nouveau, et il ne peut rien déplacer puisque les deux valeurs sont
+     les mêmes au pixel près. Ce que la v221 cherchait à éviter — une feuille
+     qui saute à l'arrivée — reste évité ; ce qu'elle avait cassé sans le savoir
+     est réparé. Et « will-change » reste, lui : c'est lui qui garde la couche
+     promue, pas le remplissage. */
+  .settings-sheet.monte{ transform:translateZ(0) translateY(0); animation:sheetIn var(--tr-ouvre); }
   @keyframes sheetOut{ to{ transform:translateZ(0) translateY(calc(100% - 190px)); } }
   @keyframes veilOut{ to{ opacity:0; } }
 

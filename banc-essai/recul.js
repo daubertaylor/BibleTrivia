@@ -62,7 +62,25 @@ const URL = process.argv[2] || 'http://127.0.0.1:8099/index.html';
       + '  (le panneau, lui, se resserre de ' + course.toFixed(1) + ' px)');
   };
 
+  /* ===== D'ABORD CONSTATER QUE LA FEUILLE RECULE VRAIMENT =====
+     Ce banc mesure une COMPENSATION : que le décor reste fixe pendant que la
+     feuille rétrécit. Pendant quatre versions, la feuille ne rétrécissait plus
+     du tout — « both » sur son animation d'entrée battait la règle du recul —
+     et le banc passait au vert en vérifiant une correction pour un mouvement
+     qui n'existait pas. Photo à l'appui : deux feuilles à pleine largeur, l'une
+     sur l'autre.
+     Un banc qui vérifie une compensation doit donc TOUJOURS commencer par
+     établir que la chose à compenser se produit. Sinon son vert ne veut rien
+     dire. */
   juge('recul', await sonde('openBibles();'));
+  {
+    const e = await p.evaluate(()=>{ const f=document.querySelector('#settingsVeil .settings-sheet');
+      if(!f) return null; return +(new DOMMatrixReadOnly(getComputedStyle(f).transform).a).toFixed(4); });
+    const bon = e !== null && e > 0.90 && e < 0.97;
+    if(!bon) ko++;
+    console.log('  ' + (bon?'OK ':'KO ') + 'la feuille du dessous recule pour de bon'.padEnd(46)
+      + 'échelle ' + e + (bon ? '' : '   attendu ~0,935 — SANS RECUL, TOUT CE BANC NE MESURE RIEN'));
+  }
   await p.waitForTimeout(900);
   juge('retour', await sonde('closeBibles();'));
   await p.waitForTimeout(900);
