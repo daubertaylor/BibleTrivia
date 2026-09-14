@@ -3390,9 +3390,29 @@
     background:radial-gradient(closest-side,
       rgba(255,252,246,0.62) 0%, rgba(255,250,240,0.34) 46%, rgba(255,249,238,0) 76%);
     filter:blur(14px);
-    transition:opacity 0.16s ease;
+    /* ===== UNE LUEUR NE CLIGNOTE PAS : ELLE S'ALLUME VITE ET S'ÉTEINT LENTEMENT =====
+       « Vérifie aussi l'icône et sa manière de clignoter. » Mesurée image par
+       image, à cent vingt millisecondes entre deux taps — le rythme réel du
+       geste — la lueur faisait exactement cela : elle montait à 0,71 puis
+       retombait à 0,09 avant le tap suivant, remontait à 0,78, retombait à
+       0,13, et ainsi cinq fois. Un battement à huit hertz, 80 % de contraste :
+       un stroboscope, pas une lumière.
+       La faute était à la SYMÉTRIE — 0,16 s pour s'allumer, 0,16 s pour
+       s'éteindre. Avec un doigt qui se pose et se lève en soixante-dix
+       millisecondes et revient cinquante millisecondes plus tard, une
+       extinction aussi rapide que l'allumage a tout le temps de finir entre
+       deux taps.
+       Les deux durées sont donc séparées, et c'est la règle qui porte l'état
+       d'arrivée qui décide : l'ALLUMAGE est sur « .vif » (0,09 s — assez court
+       pour que le tap le plus bref atteigne la pleine force), l'EXTINCTION sur
+       la règle de base (0,55 s). Entre deux taps, la lueur ne perd alors qu'un
+       dixième de sa force : cinq taps font UNE lumière qui reste, et non cinq
+       éclairs. Et après le dernier tap, elle survit une demi-seconde au geste,
+       le temps que le logo finisse son ressort — une matière chaude garde la
+       trace du doigt, elle ne s'éteint pas avec lui. */
+    transition:opacity 0.55s cubic-bezier(0.4, 0.05, 0.55, 0.95);
   }
-  .hero-icon-wrap.vif::after{ opacity:1; }
+  .hero-icon-wrap.vif::after{ opacity:1; transition:opacity 0.09s linear; }
   /* LUMIÈRE QUI TOURNE derrière l'icône : un balayage lumineux blanc chaud
      (deux arcs doux opposés, dégradé conique) qui ORBITE lentement autour de
      l'icône au lieu de pulser. Disque circulaire (border-radius 50%) pour que

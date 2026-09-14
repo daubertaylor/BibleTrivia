@@ -483,3 +483,38 @@ au premier essai.
 Et un correctif de geste doit prouver qu'il n'a pas cassé le geste : le même
 banc vérifie que glisser ferme toujours, que taper la poignée ferme toujours,
 et qu'un appui avec dérive ne ferme rien.
+
+## Une durée symétrique, c'est un clignotement
+
+La lueur du doigt sur le logo montait en 0,16 s et descendait en 0,16 s. Sur
+un tap unique, parfait. Sur cinq taps à cent vingt millisecondes — le geste qui
+ouvre le verset — elle avait tout le temps de s'éteindre entre deux appuis :
+0,71 puis 0,09 puis 0,78 puis 0,13, cinq fois. Un stroboscope à huit hertz.
+
+**Une lumière qui répond au toucher n'a pas une durée, elle en a deux.** Elle
+s'allume à la vitesse du doigt et s'éteint à la vitesse du regard. La règle qui
+porte l'état d'arrivée décide : allumage sur la classe active, extinction sur la
+règle de base.
+
+Et le corollaire pour les bancs : **un banc qui n'essaie qu'un seul geste ne
+voit pas le rythme.** `logo.js` tapait déjà cinq fois — mais il ne regardait que
+l'échelle, jamais la lumière. Ce qu'on ne relève pas n'existe pas.
+
+## Un banc mesure le geste, pas ce qui vient après
+
+Première écriture de `clignote.js` : la fenêtre d'observation allait jusqu'à la
+dernière image où le logo était à son échelle minimale. Or le cinquième tap
+ouvre le verset, qui met le logo à 0,5 — la fenêtre courait donc jusqu'au bout
+du repli, et comptait l'extinction NORMALE de la lueur comme un battement
+(creux 0,54, contraste 0,295 sur une version pourtant correcte).
+
+## « Revenu » et « posé » ne sont pas le même instant
+
+Le même banc datait la fin du ressort du logo à la première image où l'échelle
+revalait un. Mais la courbe de retour DÉPASSE : elle traverse la taille pleine
+à 0,10 s, monte à 1,018, puis redescend jusqu'à 0,45 s. Mesurée à la traversée,
+l'ancienne version passait le test ; mesurée à la pose, elle échoue — la lumière
+mourait à 0,24 s quand le mouvement durait jusqu'à 0,40 s.
+
+**Quand une courbe dépasse, on cherche la dernière image qui bouge, jamais la
+première qui retombe juste.**
