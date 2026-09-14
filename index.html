@@ -9413,11 +9413,41 @@ const HERO_APPUI  = { k:1400, z:0.90 };   // forcé : rejoint sans osciller
    millisecondes. L'ampleur du dépassement, elle, ne dépend que de
    l'amortissement, pas de la raideur : elle ne change donc pas. */
 const HERO_LIBRE  = { k:1000, z:0.40 };   // libre : dépasse, puis se pose
-const HERO_CREUX  = 0.098;                // enfoncement à pleine pose
-const HERO_PENCHE = 4.0;                  // degrés au bout du balancement
-const HERO_PAS    = 3.6;                  // pixels de côté au bout du balancement
+/* ===== IL RÉPOND À L'ENDROIT OÙ ON LE TOUCHE =====
+   « Pas juste des droite-gauche, mais un vrai ressenti. » Le balancement
+   alterné était un pendule SCRIPTÉ : il faisait la même chose quel que soit
+   l'endroit du doigt. Un objet réel, lui, ne répond pas à « on m'a touché »
+   mais à « on m'a touché LÀ ».
+   Trois choses entrent donc dans la physique, toutes pilotées par des ressorts
+   comme le reste — donc sans rien casser de la fluidité gagnée :
+
+   LE PIVOT. Presser un coin ne fait pas rétrécir l'objet vers son centre : il
+   s'enfonce VERS LE DOIGT. On ne change pas transform-origin pour autant — il
+   sauterait d'un tap à l'autre, quand l'échelle n'est pas encore revenue à un.
+   On l'exprime en translation : pivoter autour d'un point P avec l'échelle s
+   équivaut à translater de (1−s)·P. Le point P est lui-même tenu par un
+   ressort, donc il se déplace continûment d'un appui au suivant.
+
+   L'INCLINAISON. Presser le bord droit fait basculer ce bord vers l'arrière :
+   une vraie rotation dans l'espace, avec perspective. C'est ce qui donne le
+   plus de matière — l'objet cesse d'être une image plate qui rapetisse.
+
+   L'ÉCRASEMENT. Un corps souple comprimé s'aplatit sur l'axe de l'appui et
+   s'étire sur l'autre. L'échelle cesse d'être uniforme : un peu plus en
+   hauteur qu'en largeur. Au retour, le dépassement du ressort inverse
+   naturellement l'écrasement en étirement — sans une ligne de plus.
+
+   Le balancement alterné reste, mais réduit et ADDITIONNÉ au reste : il ne sert
+   plus qu'au tap pile au centre, où aucune direction ne se dégage. */
+const HERO_CREUX_X = 0.090;               // écrasement en largeur
+const HERO_CREUX_Y = 0.112;               // ... et en hauteur : le corps s'aplatit
+const HERO_INCLINE = 9.5;                 // degrés de bascule au bord
+const HERO_PENCHE = 2.6;                  // degrés du balancement résiduel
+const HERO_PAS    = 2.4;                  // pixels de côté du balancement résiduel
 let heroEnf = 0, heroEnfV = 0, heroBal = 0, heroBalV = 0;
-let heroCibleEnf = 0, heroCibleBal = 0, heroSens = 1;
+let heroPx = 0, heroPxV = 0, heroPy = 0, heroPyV = 0;   // le point de contact
+let heroCibleEnf = 0, heroCibleBal = 0, heroCiblePx = 0, heroCiblePy = 0, heroSens = 1;
+let heroDemiL = 32, heroDemiH = 32;
 let heroImage = 0, heroHorloge = 0, heroPresse = false;
 
 function heroSurface(){
@@ -9431,9 +9461,19 @@ function heroPoser(w){
      supérieure à un » — c'est-à-dire que j'écrasais exactement le dépassement
      qui fait le ressort. Le banc l'a dit en une ligne : « ressort au retour
      +0,0 % ». Quand l'enfoncement passe sous zéro, le logo dépasse sa taille de
-     repos : c'est voulu, c'est toute la vie du geste. */
-  w.style.transform = "translateX(" + (heroBal * HERO_PAS).toFixed(2) + "px) scale("
-    + (1 - heroEnf * HERO_CREUX).toFixed(4) + ") rotate(" + (heroBal * HERO_PENCHE).toFixed(2) + "deg)";
+     repos : c'est voulu, c'est toute la vie du geste — et c'est aussi ce qui
+     transforme l'écrasement en étirement au retour, gratuitement. */
+  const sx = 1 - heroEnf * HERO_CREUX_X;
+  const sy = 1 - heroEnf * HERO_CREUX_Y;
+  /* Pivoter autour du point de contact, exprimé en translation (voir plus haut). */
+  const dx = (1 - sx) * heroPx * heroDemiL + heroBal * HERO_PAS;
+  const dy = (1 - sy) * heroPy * heroDemiH;
+  w.style.transform =
+    "perspective(600px) translate3d(" + dx.toFixed(2) + "px," + dy.toFixed(2) + "px,0)"
+    + " rotateY(" + (heroPx * HERO_INCLINE).toFixed(2) + "deg)"
+    + " rotateX(" + (-heroPy * HERO_INCLINE).toFixed(2) + "deg)"
+    + " rotate(" + (heroBal * HERO_PENCHE).toFixed(2) + "deg)"
+    + " scale(" + sx.toFixed(4) + "," + sy.toFixed(4) + ")";
 }
 function heroBoucle(maintenant){
   heroImage = 0;
@@ -9447,15 +9487,20 @@ function heroBoucle(maintenant){
   const w0 = Math.sqrt(r.k), c = 2 * r.z * w0;
   heroEnfV += ((heroCibleEnf - heroEnf) * r.k - heroEnfV * c) * dt; heroEnf += heroEnfV * dt;
   heroBalV += ((heroCibleBal - heroBal) * r.k - heroBalV * c) * dt; heroBal += heroBalV * dt;
+  heroPxV  += ((heroCiblePx  - heroPx)  * r.k - heroPxV  * c) * dt; heroPx  += heroPxV  * dt;
+  heroPyV  += ((heroCiblePy  - heroPy)  * r.k - heroPyV  * c) * dt; heroPy  += heroPyV  * dt;
   heroPoser(w);
   const pose = Math.abs(heroCibleEnf - heroEnf) < 0.0015 && Math.abs(heroEnfV) < 0.02
-            && Math.abs(heroCibleBal - heroBal) < 0.0015 && Math.abs(heroBalV) < 0.02;
+            && Math.abs(heroCibleBal - heroBal) < 0.0015 && Math.abs(heroBalV) < 0.02
+            && Math.abs(heroCiblePx - heroPx) < 0.0015 && Math.abs(heroPxV) < 0.02
+            && Math.abs(heroCiblePy - heroPy) < 0.0015 && Math.abs(heroPyV) < 0.02;
   if(pose){
-    heroEnf = heroCibleEnf; heroBal = heroCibleBal; heroEnfV = heroBalV = 0;
+    heroEnf = heroCibleEnf; heroBal = heroCibleBal; heroPx = heroCiblePx; heroPy = heroCiblePy;
+    heroEnfV = heroBalV = heroPxV = heroPyV = 0;
     heroPoser(w); heroHorloge = 0;
     /* Posé au repos : on rend la main au style, pour que le repli du verset
        (qui passe par une transition CSS) retrouve une surface propre. */
-    if(!heroCibleEnf && !heroCibleBal){ w.style.transform = ""; w.style.transition = ""; }
+    if(!heroCibleEnf && !heroCibleBal && !heroCiblePx && !heroCiblePy){ w.style.transform = ""; w.style.transition = ""; }
     return;
   }
   heroImage = requestAnimationFrame(heroBoucle);
@@ -9469,18 +9514,30 @@ function heroReveiller(){
 /* Tout arrêter et rendre la surface au style : le verset la reprend en main. */
 function heroArreter(){
   if(heroImage){ cancelAnimationFrame(heroImage); heroImage = 0; }
-  heroEnf = heroEnfV = heroBal = heroBalV = 0;
-  heroCibleEnf = heroCibleBal = 0; heroPresse = false; heroHorloge = 0;
+  heroEnf = heroEnfV = heroBal = heroBalV = heroPx = heroPxV = heroPy = heroPyV = 0;
+  heroCibleEnf = heroCibleBal = heroCiblePx = heroCiblePy = 0; heroPresse = false; heroHorloge = 0;
   const zone = document.getElementById("heroZone");
   const w = zone ? zone.querySelector(".hero-icon-wrap") : null;
   if(w){ w.classList.remove("vif"); w.style.transform = ""; w.style.transition = ""; }
 }
-function heroIconPress(){
+function heroIconPress(e){
   const w = heroSurface();
   if(!w) return;
-  heroSens = -heroSens;             // le côté change : cinq taps font un pendule
+  /* OÙ le doigt s'est posé, ramené à [-1, 1] depuis le centre. Sans événement
+     (appel direct, banc, clavier), on retombe sur le centre : le logo s'enfonce
+     droit, ce qui est la réponse juste quand il n'y a pas de direction. */
+  let ox = 0, oy = 0;
+  try{
+    const b = w.getBoundingClientRect();
+    heroDemiL = b.width / 2; heroDemiH = b.height / 2;
+    if(e && e.clientX != null && b.width > 4){
+      ox = Math.max(-1, Math.min(1, (e.clientX - (b.left + heroDemiL)) / heroDemiL));
+      oy = Math.max(-1, Math.min(1, (e.clientY - (b.top + heroDemiH)) / heroDemiH));
+    }
+  }catch(err){}
+  heroSens = -heroSens;             // le balancement résiduel, pour les taps au centre
   heroPresse = true;
-  heroCibleEnf = 1; heroCibleBal = heroSens;
+  heroCibleEnf = 1; heroCibleBal = heroSens; heroCiblePx = ox; heroCiblePy = oy;
   w.classList.add("vif");
   heroReveiller();
 }
@@ -9488,7 +9545,7 @@ function heroIconRelease(){
   const w = heroSurface();
   if(!w) return;
   heroPresse = false;
-  heroCibleEnf = 0; heroCibleBal = 0;
+  heroCibleEnf = 0; heroCibleBal = 0; heroCiblePx = 0; heroCiblePy = 0;
   w.classList.remove("vif");
   heroReveiller();
 }
@@ -12303,7 +12360,7 @@ function renderModeSelect(){
       <button class="icon-btn hero-profile" onclick="openProfile()" aria-label="Profil">${avatarHtml(profile.name||"?", profile.color, 2.4, profile.isCreator)}</button>
       <button class="icon-btn hero-settings" onclick="openSettings()" aria-label="Réglages"><span class="ico" style="width:1.22rem;height:1.22rem;">${ICONS.gear}</span></button>
       <div class="hero-zone" id="heroZone">
-        <button class="hero-icon-btn" onclick="heroIconTap()" onpointerdown="heroIconPress()" onpointerup="heroIconRelease()" onpointerleave="heroIconRelease()" onpointercancel="heroIconRelease()" aria-label="${NOM_DU_JEU}">
+        <button class="hero-icon-btn" onclick="heroIconTap()" onpointerdown="heroIconPress(event)" onpointerup="heroIconRelease()" onpointerleave="heroIconRelease()" onpointercancel="heroIconRelease()" aria-label="${NOM_DU_JEU}">
           <span class="hero-icon-wrap"><img class="hero-icon" src="${DOVE_ICON}" alt="${NOM_DU_JEU}" draggable="false"></span>
         </button>
         <button class="hero-verse-card" onclick="hideHeroVerse()" aria-label="Fermer le verset">

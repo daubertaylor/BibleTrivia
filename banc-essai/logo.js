@@ -94,6 +94,47 @@ const RYTHMES = [120, 160, 240];
     if(rebond < 0.012) console.log('           ↳ pas de ressort : le retour est mou, le logo n\'a pas l\'air vivant');
   }
 
+  /* ===== IL RÉPOND À L'ENDROIT OÙ ON LE TOUCHE =====
+     « Pas juste des droite-gauche, mais un vrai ressenti. » Un objet réel ne
+     répond pas à « on m'a touché » mais à « on m'a touché LÀ ». On presse donc
+     cinq points et on lit la matrice : presser le bord droit doit faire
+     basculer ce bord vers l'arrière, presser le haut doit le faire piquer,
+     presser le centre ne doit rien incliner du tout — il n'y a alors aucune
+     direction, et en inventer une serait du bruit. */
+  await p.evaluate(()=>{ try{ heroArreter(); hideHeroVerse(); }catch(e){} state.screen='mode'; render(); });
+  await p.waitForTimeout(900);
+  {
+    const POINTS = [['centre', 0, 0], ['bord gauche', -0.8, 0], ['bord droit', 0.8, 0],
+                    ['haut', 0, -0.8], ['coin bas-droit', 0.7, 0.7]];
+    const lu = [];
+    for (const [nom, fx, fy] of POINTS) {
+      await p.evaluate(()=>{ try{ heroArreter(); }catch(e){} });
+      await p.waitForTimeout(420);
+      const bo = await p.locator('.hero-icon-btn').boundingBox();
+      await p.mouse.move(bo.x + bo.width/2 * (1+fx), bo.y + bo.height/2 * (1+fy));
+      await p.mouse.down(); await p.waitForTimeout(150);
+      lu.push([nom, await p.evaluate(()=>{
+        const M = new DOMMatrixReadOnly(getComputedStyle(document.querySelector('.hero-icon-wrap')).transform);
+        return { ry:+(Math.atan2(-M.m13, M.m11)*180/Math.PI).toFixed(2),
+                 rx:+(Math.atan2(-M.m23, M.m22)*180/Math.PI).toFixed(2),
+                 sx:+Math.hypot(M.m11,M.m12).toFixed(4), sy:+Math.hypot(M.m21,M.m22).toFixed(4) };
+      })]);
+      await p.mouse.up();
+    }
+    const m = Object.fromEntries(lu);
+    const v = (nom, bon, det) => { if(!bon) ko++; console.log('  ' + (bon?'OK ':'KO ') + nom.padEnd(48) + det); };
+    v("le centre n'incline rien", Math.abs(m['centre'].ry) < 1 && Math.abs(m['centre'].rx) < 1,
+      'Y ' + m['centre'].ry + '°, X ' + m['centre'].rx + '°');
+    v("le bord droit bascule vers l'arrière", m['bord droit'].ry > 4, 'Y ' + m['bord droit'].ry + '°');
+    v("le bord gauche bascule dans l'autre sens", m['bord gauche'].ry < -4, 'Y ' + m['bord gauche'].ry + '°');
+    v("le haut pique", m['haut'].rx < -4, 'X ' + m['haut'].rx + '°');
+    v("un coin fait les deux à la fois", m['coin bas-droit'].ry > 3 && m['coin bas-droit'].rx > 3,
+      'Y ' + m['coin bas-droit'].ry + '°, X ' + m['coin bas-droit'].rx + '°');
+    /* ET LE CORPS S'ÉCRASE : comprimé, il s'aplatit — moins haut que large. */
+    v("le corps s'aplatit sous l'appui", m['centre'].sy < m['centre'].sx - 0.005,
+      'largeur ' + m['centre'].sx + ', hauteur ' + m['centre'].sy);
+  }
+
   /* Et le secret marche toujours. */
   await p.evaluate(()=>{ try{ hideHeroVerse(); }catch(e){} state.screen='mode'; render(); });
   await p.waitForTimeout(900);
