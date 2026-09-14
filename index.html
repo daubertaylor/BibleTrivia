@@ -6187,7 +6187,7 @@ function onlineNext(){
   net.idx += 1; net.selected=null; net.revealed=false; net.timedOut=false;
   if(net.idx >= net.deck.length){
     net.myDone = true;
-    achToastPause = true;   // les félicitations attendent les résultats
+    retenirToasts();   // les félicitations attendent les résultats
     compterPartie();   // en ligne : le joueur a fini SES questions
     broadcastProgress(true);
     /* On attend que TOUT LE MONDE ait fini — un joueur comme sept. Ceux qui
@@ -10505,9 +10505,21 @@ let achToastQueue = [], achToastBusy = false;
    On retient donc la file le temps de la fin de partie, et on la relâche une
    fois les résultats posés (voir renderEnd et renderOnlineEnd). Rien n'est
    perdu : la file attend, elle ne se vide pas. */
-let achToastPause = false;
+let achToastPause = false, achRelache = 0;
+/* ===== UNE RELÂCHE EN RETARD NE DOIT PAS OUVRIR LA PARTIE SUIVANTE =====
+   relacherToasts posait un minuteur et l'oubliait. Deux parties enchaînées, et
+   le minuteur de la PREMIÈRE tombait pendant la seconde : il remettait la file
+   en marche alors qu'on venait tout juste de la retenir, et le bandeau partait
+   pendant la transition d'écran — c'est-à-dire là où personne ne le voit.
+   C'est exactement le défaut que la retenue existe pour empêcher.
+   Mesuré par le banc des gels : le bandeau arrivait 70 ms après les résultats
+   au lieu des 1200 attendues, et de façon parfaitement reproductible.
+   Retenir annule donc la relâche en attente, et relâcher annule la précédente :
+   il n'y a jamais plus d'un minuteur en vol. */
+function retenirToasts(){ clearTimeout(achRelache); achRelache = 0; achToastPause = true; }
 function relacherToasts(ms){
-  setTimeout(()=>{ achToastPause = false; try{ pumpAchToast(); }catch(e){} }, ms || 1200);
+  clearTimeout(achRelache);
+  achRelache = setTimeout(()=>{ achRelache = 0; achToastPause = false; try{ pumpAchToast(); }catch(e){} }, ms || 1200);
 }
 function checkAchievements(opts){
   const p = loadProgress(), d = achDerived(p), newly = [];
@@ -11991,7 +12003,7 @@ function adjustScore(teamIdx, delta){ const cap = maxPossibleScore(); state.scor
 function nextQuestion(){
   if(!state.revealed) return;
   if(state.currentIndex >= state.questions.length-1){
-    achToastPause = true;   // les félicitations attendent les résultats
+    retenirToasts();   // les félicitations attendent les résultats
     compterPartie();   // solo ET groupe : c'est ici qu'on arrive au bout
     if(state.mode==="solo"){
       recordSoloResult();
