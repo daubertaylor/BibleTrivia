@@ -169,6 +169,44 @@ const CIBLES = [
       (bon ? '' : '   <-- NE REMPLIT PAS SA PISTE'));
   }
   if (errs.length) { console.log('  ERREURS JS : ' + [...new Set(errs)].slice(0,3).join(' | ')); ok = false; }
+  /* ===== UN REMPLISSAGE QUI NE BOUGE PAS NE PEUT PAS MANQUER UN BORD =====
+     Tout ce banc mesurait la couverture de l'onde UNE FOIS FINIE. Il avait
+     raison sur cet instant-là, et il est passé à côté du défaut que Taylor a
+     photographié : l'onde GRANDISSAIT depuis un point, donc pendant toute sa
+     montée elle était plus petite que la puce, avec un anneau clair autour.
+     Mesurer au bon moment ne suffit pas quand le défaut est justement dans les
+     AUTRES moments. On vérifie donc la seule chose qui vaille à tous les
+     instants : la couche d'appui ne porte AUCUNE mise à l'échelle. Sans
+     transform, elle occupe sa boîte entière dès la première image, et la
+     question du bord ne peut plus se poser. */
+  {
+    const r = await p.evaluate(() => {
+      state.mode='group'; state.teams=[{name:'A'},{name:'B'},{name:'C'}]; state.screen='setup'; render();
+      const out = [];
+      for (const sel of ['.chip', '.btn-primary', '.add-team']) {
+        const el = document.querySelector(sel);
+        out.push([sel, el ? getComputedStyle(el, '::before').transform : 'introuvable']);
+      }
+      let coupables = '';
+      for (const feuille of document.styleSheets) {
+        let regles; try { regles = feuille.cssRules; } catch(e) { continue; }
+        for (const f of regles) {
+          if (f.type === CSSRule.KEYFRAMES_RULE && /^onde/.test(f.name)) {
+            for (const k of f.cssRules) if (/scale/.test((k.style && k.style.transform) || '')) coupables += f.name + ' ';
+          }
+        }
+      }
+      out.push(['@keyframes onde*', coupables ? 'ÉCHELLE dans ' + coupables : 'aucune échelle']);
+      return out;
+    });
+    console.log('');
+    for (const [nom, val] of r) {
+      const bon = val === 'none' || val === 'aucune échelle';
+      if (!bon) ok = false;
+      console.log('  ' + (bon ? 'OK ' : 'KO ') + ("couche d'appui de " + nom).padEnd(34) + val);
+    }
+  }
+
   console.log(ok ? '\n  OK — l\'onde et les remplissages prennent tous les bords' : '\n  ECHEC');
   await b.close();
   process.exit(ok ? 0 : 1);

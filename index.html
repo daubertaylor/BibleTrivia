@@ -1470,7 +1470,23 @@
      Elle passe au-dessus. C'est ce que fait un appui sur iOS : le voile
      recouvre la ligne entière, icône comprise. La teinte est translucide, le
      texte reste lisible — vérifié au contraste. */
-  button::before, .mode-card::before{ content:""; position:absolute; inset:0; z-index:3; border-radius:inherit; background:var(--press-tint, rgba(238,74,40,0.18)); transform:scale(0.001); opacity:0; transition:opacity var(--onde-duree) cubic-bezier(0.4,0,1,1), transform 0.01s linear var(--onde-duree); pointer-events:none; }
+  /* ===== L'ONDE NE GRANDIT PLUS : ELLE ARRIVE DÉJÀ PLEINE =====
+     « Ici aussi les bords ne sont pas pleins. » Ce n'était pas un bord mal
+     peint : l'onde GRANDISSAIT depuis un point (scale 0,001 -> 1). Photographiée
+     en plein vol, elle donne exactement ce que Taylor voyait — un rectangle
+     coloré plus petit que la puce, avec un anneau clair tout autour. Le banc,
+     lui, mesurait la couverture UNE FOIS L'ONDE FINIE : il trouvait 0,00 px
+     d'anneau et avait raison, sur cet instant-là seulement.
+     C'est la deuxième fois que ce reproche revient — la première portait sur
+     les pastilles de livre. Le fond de l'affaire est le même à chaque fois :
+     un remplissage d'appui doit prendre TOUS les bords À CHAQUE INSTANT, pas
+     seulement à la fin. Un cercle qui s'étale est une jolie idée sur un bouton
+     rectangulaire large ; sur une puce de cent pixels, on ne voit que le trou
+     entre lui et l'arête.
+     L'onde occupe donc toute la surface dès la première image et ne fait plus
+     que se révéler. Rien ne bouge, donc rien ne peut manquer un bord — et on
+     économise au passage la mise à l'échelle d'une couche par bouton pressé. */
+  button::before, .mode-card::before{ content:""; position:absolute; inset:0; z-index:3; border-radius:inherit; background:var(--press-tint, rgba(238,74,40,0.18)); opacity:0; transition:opacity var(--onde-duree) cubic-bezier(0.4,0,1,1); pointer-events:none; }
   /* ===== L'ONDE SE REMPLIT ENTIÈREMENT, MÊME SUR UN TAPOTEMENT =====
      Elle était portée par « :active » : elle grandissait tant que le doigt
      restait posé, et repartait à l'envers dès qu'il se levait. Or un
@@ -1483,7 +1499,7 @@
      contact et ne la retire qu'une fois le remplissage terminé (voir
      ondeDebut). L'effacement, lui, reste une transition — il part de l'état
      plein, donc toujours de 100 %. */
-  @keyframes ondeIn{ from{ transform:scale(0.001); opacity:0; } to{ transform:scale(1); opacity:1; } }
+  @keyframes ondeIn{ from{ opacity:0; } to{ opacity:1; } }
   button.onde::before, .mode-card.onde::before{ animation:ondeIn var(--tr-onde) forwards; }
   /* ET L'EFFACEMENT EST UNE ANIMATION LUI AUSSI. Retirer la classe rendait la
      main à la transition de repos — sauf qu'une transition ne repart PAS de la
@@ -1493,7 +1509,7 @@
      deux cent quarante. Une seconde animation, elle, part bien de l'état
      plein. L'onde reste à sa taille pendant qu'elle s'efface : elle a rempli
      le bouton, elle s'en va sans rétrécir. */
-  @keyframes ondeOut{ from{ transform:scale(1); opacity:1; } to{ transform:scale(1); opacity:0; } }
+  @keyframes ondeOut{ from{ opacity:1; } to{ opacity:0; } }
   button.onde-part::before, .mode-card.onde-part::before{ animation:ondeOut var(--onde-duree) cubic-bezier(0.4,0,1,1) forwards; }
   .chip, .len-chip{ --press-tint: rgba(238,74,40,0.28); }
   /* Sur les surfaces DÉJÀ corail, l'onde se fait blanche : sinon rien ne se

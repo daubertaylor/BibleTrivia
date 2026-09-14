@@ -613,3 +613,26 @@ anime, y compris un style en ligne. Si une autre règle doit pouvoir agir sur
 cette propriété plus tard, l'animation ne doit pas être remplie — on lui donne
 plutôt une valeur de repos IDENTIQUE à sa fin, et le passage de témoin ne
 déplace rien.
+
+## Mesurer au bon moment ne suffit pas quand le défaut est dans les autres
+
+`bords.js` mesurait la couverture de l'onde d'appui UNE FOIS FINIE : 0,00 px
+d'anneau non peint, et c'était exact. Taylor a photographié la même puce en
+plein vol : un rectangle coloré plus petit que la puce, un anneau clair tout
+autour. L'onde GRANDISSAIT depuis un point — donc pendant toute sa montée elle
+ne prenait pas les bords, et le banc regardait précisément l'instant où le
+défaut n'existait plus.
+
+Deux façons de s'en prémunir, et il faut préférer la seconde :
+
+1. mesurer à plusieurs instants (mieux, mais on choisit encore les instants) ;
+2. **rendre le défaut impossible par construction, et vérifier la
+   construction.** Ici : la couche d'appui ne porte plus aucune mise à
+   l'échelle. Sans transform, elle occupe sa boîte entière dès la première
+   image, et la question du bord ne peut plus se poser à AUCUN instant. Le banc
+   vérifie donc `transform: none` et l'absence de `scale` dans les keyframes —
+   une propriété vraie tout le temps, pas une mesure vraie à un moment.
+
+C'est la deuxième fois que ce reproche revient (la première portait sur les
+pastilles de livre). Quand un même reproche revient sous une autre forme, ce
+n'est pas le réglage qu'il faut refaire, c'est la règle.
