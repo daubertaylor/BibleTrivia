@@ -10,6 +10,33 @@ Relue avant chaque grande étape. Quand un point est réglé, il descend dans
 
 ---
 
+## ⚠ CE QUI CHANGE TOUT : IL Y A DÉJÀ DES JOUEURS
+
+Entre vingt et cinquante personnes utilisent Yada, et ça se répand. Cette
+liste avait été écrite en supposant qu'on avait le temps — « à faire avant
+d'ouvrir le jeu à des gens qu'on ne connaît pas ». Ce moment est passé.
+
+Trois conséquences, et elles ne sont pas théoriques.
+
+**Le risque de perte est en cours, pas à venir.** Vingt à cinquante personnes
+ont une progression qui n'existe QUE sur leur téléphone. Chaque jour sans
+compte est un jour où l'un d'eux peut tout perdre — réinstallation, changement
+de téléphone, iOS qui vide le stockage d'une app web restée fermée trop
+longtemps. Ce ne sera pas récupérable, et ça ne préviendra pas.
+
+**On est aveugles en direct.** Si quelque chose casse chez cinq d'entre eux sur
+un modèle de téléphone précis, personne ne l'apprendra. Les 111 blocs
+`try/catch` garantissent que le jeu ne s'arrête pas ; ils garantissent aussi
+que l'échec est silencieux.
+
+**Chaque publication va directement chez eux.** Il n'y a pas de préproduction :
+je pousse sur `main`, GitHub Pages sert, le service worker met à jour. Plusieurs
+fois par jour. Ça a bien marché jusqu'ici parce que la suite de bancs tourne
+avant chaque publication — c'est justement pour ça qu'elle existe, et c'est
+maintenant qu'elle vaut son prix. Elle reste obligatoire, sans exception.
+
+---
+
 ## 1. Les données d'un joueur vivent sur son téléphone, et nulle part ailleurs
 
 **Le fait.** Toute la progression — livres, bonnes réponses, série de flammes,
@@ -21,7 +48,9 @@ efface tout. Sur iPhone, iOS peut aussi vider le stockage d'une app web restée
 longtemps sans être ouverte. Un joueur qui perd trois mois de série ne revient
 pas, et il a raison.
 
-**Quand.** MAINTENANT. C'est la tâche en cours (#37).
+**Quand.** MAINTENANT, et plus seulement « en cours » : il y a déjà des
+joueurs, donc il y a déjà des progressions qui peuvent disparaître. C'est la
+tâche #37, et c'est la priorité absolue.
 
 **Fait quand.** Un joueur peut se connecter, changer de téléphone, retrouver sa
 progression entière — et se connecter n'a JAMAIS pu retirer quoi que ce soit.
@@ -41,7 +70,8 @@ Un bouton qui ne répond plus sur un modèle de téléphone précis peut durer d
 mois sans que personne ne l'apprenne. Aujourd'hui, le seul capteur du jeu,
 c'est Taylor qui l'utilise. Ça ne tient plus dès qu'il y a des joueurs.
 
-**Quand.** Avant d'ouvrir le jeu à des gens qu'on ne connaît pas.
+**Quand.** Tout de suite après le compte. Le jeu est DÉJÀ ouvert à des gens
+qu'on ne connaît pas — cette échéance est dépassée, pas à venir.
 
 **Fait quand.** Une erreur survenue sur le téléphone d'un joueur arrive
 quelque part où on la lit, avec la version du jeu, l'écran, et sans aucune
@@ -89,16 +119,26 @@ d'un bloc.
 
 ---
 
-## 5. Le sélecteur de décor ne propose qu'un seul décor
+## 5. ~~Le sélecteur de décor ne propose qu'un seul décor~~ — J'AVAIS TORT
 
-**Le fait mesuré.** `SCENES.length === 1`.
+**Correction.** J'avais annoncé un menu à une seule option. C'est faux, et je
+ne l'avais pas vérifié avant de l'écrire : la rangée « Arrière-plan » est déjà
+conditionnée à `SCENES.length > 1`. Avec un seul décor, **elle ne s'affiche
+pas du tout**. Et elle revient toute seule le jour où un second décor entre
+dans le catalogue — rien à se rappeler de remettre.
 
-**Pourquoi ça compte.** Un menu à une seule option est une promesse non tenue :
-on ouvre, on choisit ce qui est déjà choisi, on referme. C'est petit, et c'est
-exactement le genre de détail qui fait dire « c'est pas fini ».
+**La décision, elle, tient : on GARDE la machinerie.** Un jeu qu'on ouvre tous
+les jours pendant des mois est exactement ce dont on se lasse en premier par
+l'image ; le décor est l'axe de personnalisation le moins cher et le plus
+juste de ton (paysages bibliques). Et tout est déjà écrit et éprouvé : deux
+cadrages par décor, la texture pré-floutée que le moteur de verre consomme, le
+retour au Canyon si un décor disparaît du catalogue. Supprimer du code qui
+marche pour le réécrire dans six mois, c'est du risque gratuit.
 
-**Quand.** Vite, c'est peu cher. Soit on ajoute des décors, soit on retire le
-sélecteur jusqu'à ce qu'il y en ait.
+**Ce qu'il faut pour ajouter un décor** (donc ce n'est plus une dette, c'est du
+contenu) : une image dont on détient les droits ou libre de droits, en deux
+cadrages — vertical pour le téléphone, horizontal — plus sa version floutée
+pour le verre. Le reste est automatique.
 
 ---
 
