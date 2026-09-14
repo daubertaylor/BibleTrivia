@@ -1106,7 +1106,7 @@
          chose (voir majVoilesErreurs) ;
        - un CRAN par carte : on se pose toujours sur une carte entière,
          jamais au milieu d'une ligne. */
-  .settings-sheet.review-sheet, .settings-sheet.flam-sheet, .settings-sheet.revoir-sheet{ padding-bottom:calc(env(safe-area-inset-bottom) * 0.55 + 1.15rem + 220px); }
+  .settings-sheet.review-sheet, .settings-sheet.flam-sheet{ padding-bottom:calc(env(safe-area-inset-bottom) * 0.55 + 1.15rem + 220px); }
   /* ===== LA RAMPE DU VOILE : UNE COURBE, PAS UNE DROITE =====
      Une rampe LINÉAIRE d'opacité a deux coudes — là où elle démarre et là où
      elle s'arrête, la pente saute d'un coup de zéro à sa valeur puis revient
@@ -1240,7 +1240,7 @@
      La seule addition est le NOMBRE à droite : ici il ne décore pas, il décide
      — c'est lui qui dit si la porte mène quelque part. */
   .oa-ico.v{ background:linear-gradient(150deg,#A78BFA,#7C5CE0); box-shadow:inset 0 1px 0 rgba(255,255,255,0.26), 0 2px 7px rgba(110,80,200,0.26); }
-  .revoir-sheet .rv-choix{ margin-bottom:0.5rem; }
+  .rv-choix{ margin-bottom:0.5rem; }
   .rv-cnt{ flex-shrink:0; font-family:'Poppins',sans-serif; font-weight:700; font-size:1rem;
     font-variant-numeric:tabular-nums; color:var(--ink-soft); min-width:1.5rem; text-align:right; }
   /* Une porte fermée le dit en s'éteignant, pas en disparaissant : on garde la
@@ -1257,6 +1257,11 @@
      contenu. La fonction majVoilesListe reste : la liste des erreurs s'en sert. */
   .rv-bk{ display:flex; align-items:center; justify-content:center; gap:0.32rem; }
   .rv-bk .bk-nm{ display:inline; }
+  /* Le titre de section, entre les trois portes et la grille des livres. */
+  .rvl-t{ font-family:'Poppins',sans-serif; font-size:0.72rem; font-weight:700; letter-spacing:0.07em;
+    text-transform:uppercase; color:rgba(255,255,255,0.8); text-shadow:0 1px 8px rgba(0,0,0,0.5);
+    margin:1rem 0.2rem 0.5rem; }
+  .rvl-regle{ margin:0.8rem 0.2rem 0; color:rgba(255,255,255,0.82); text-shadow:0 1px 8px rgba(0,0,0,0.5); }
   /* ===== L'ÉCRAN DES LIVRES À REVOIR =====
      La grille de la Progression est faite pour tenir SOUS un testament, entre
      deux autres blocs : quatre colonnes serrées, des noms coupés, des pastilles
@@ -11227,8 +11232,25 @@ function livresDuCarnet(){
   });
   return [...par.entries()].sort((a,b)=> b[1] - a[1] || a[0].localeCompare(b[0], "fr"));
 }
-function ouvrirRevoir(){
-  if(document.getElementById("revoirVeil")) return;
+/* ===== UNE SEULE PAGE, PAS UNE FEUILLE ET UNE PAGE =====
+   « Oui, mais je parle de toute la page entière qui doit être ici. »
+   J'avais coupé en deux : une feuille pour les trois décisions, un écran pour
+   les livres. Taylor a raison de refuser — c'était encore un compromis, juste
+   déplacé d'un cran.
+   LE FOND DE L'AFFAIRE. Une feuille est une PARENTHÈSE : on l'ouvre sur ce
+   qu'on regardait, on répond à une question courte, elle se referme. Réviser
+   n'est pas ça — on arrive avec une intention vague (« je veux revoir quelque
+   chose »), on regarde ce qu'on a, on compare, on choisit. C'est un LIEU, pas
+   une question. Un lieu se visite, il a une adresse, on peut y revenir.
+   Le symptôme l'avait dit trois fois : feuille trop haute, puis grille trop
+   petite, puis découpée en deux endroits. Trois formes d'un même refus.
+   Tout tient donc sur une page : les trois portes, tous les livres, la règle
+   du carnet. Rien à faire défiler dans un cadre, rien à tirer, rien à
+   refermer — et la feuille glissante, avec son voile, son glissement au
+   doigt et son verre, disparaît entièrement de ce chemin. */
+function ouvrirRevoir(){ state.screen = "revoir"; render(); }
+function renderRevoir(){
+  const el = document.createElement("div"); el.className = "screen";
   const dus = aRevoir().length, tout = errbookCount(), derniere = lastMissEntries().length;
   const livres = livresDuCarnet();
   const ligne = (cls, ico, titre, sous, n, action) =>
@@ -11237,73 +11259,21 @@ function ouvrirRevoir(){
        <span class="oa-txt"><b>${titre}</b><small>${sous}</small></span>
        <span class="rv-cnt">${n}</span>
      </button>`;
-  const veil = document.createElement("div");
-  veil.className = "sheet-veil"; veil.id = "revoirVeil";
-  veil.onclick = (e)=>{ if(e.target===veil) fermerRevoir(); };
-  veil.innerHTML = `
-    <div class="settings-sheet revoir-sheet" role="dialog" aria-label="Que veux-tu revoir ?">
-      <button class="sheet-grab" aria-label="Fermer" onclick="fermerRevoir()"></button>
-      <div class="sheet-title"><span class="st-ico">${ICONS.bookOpen}</span>Que veux-tu revoir&nbsp;?<small>${tout}</small></div>
-      ${ligne("v", ICONS.clock, "Les échéances du jour", "Ce que la mémoire réclame", dus, "lancerRevoir('dus')")}
-      ${ligne("g", ICONS.book, "Tout mon carnet", "Sans attendre leur tour", tout, "lancerRevoir('tout')")}
-      ${ligne("b", ICONS.target, "Ma dernière partie", "Ce que je viens de rater", derniere, "lancerRevoir('derniere')")}
-      ${livres.length ? ligne("j", ICONS.book, "Un livre en particulier",
-        livres.length === 1 ? "1 livre dans ton carnet" : livres.length + " livres dans ton carnet",
-        livres.length, "ouvrirRevoirLivres()") : ""}
-      <div class="flam-regle">Une erreur revient demain, puis dans 3, 7 et 16&nbsp;jours. Se tromper la ramène à demain.</div>
-    </div>`;
-  document.body.appendChild(veil);
-  monterLaFeuille(veil);
-  glassTrack(680);
-  attachSheetDrag(veil.querySelector(".settings-sheet"), fermerRevoir);
-}
-/* ===== UN LIVRE EN PARTICULIER MÉRITE SON ÉCRAN =====
-   « La partie livre est devenue toute petite ; tu penses qu'il serait mieux de
-   le mettre directement sur une nouvelle page plutôt que sur un menu
-   déroulant ? » — Oui, et pour une raison plus forte que la taille.
-   La feuille mélangeait DEUX natures. Les trois premières rangées sont des
-   DÉCISIONS : on touche, on joue, il n'y a rien à examiner. La liste des
-   livres est une EXPLORATION : on parcourt une soixantaine d'entrées, on
-   compare des nombres, on choisit. Les tenir ensemble obligeait à un
-   compromis qui s'est fait sentir deux fois de suite — feuille trop haute
-   (612 px, un tiers de plus que les autres), puis grille trop petite (trois
-   rangées). Quand un même réglage a deux défauts opposés et qu'on ne peut
-   corriger l'un qu'en aggravant l'autre, c'est qu'il y a deux objets, pas un.
-   La feuille garde donc ses trois décisions et une PORTE ; les livres ont un
-   écran entier, où ils tiennent tous, triés du plus fourni au moins fourni. */
-function ouvrirRevoirLivres(){
-  fermerRevoir();
-  setTimeout(()=>{ state.screen = "revoir-livres"; render(); }, msFerme() + 30);
-}
-function renderRevoirLivres(){
-  const el = document.createElement("div"); el.className = "screen";
-  const livres = livresDuCarnet();
-  const total = livres.reduce((a,b)=>a + b[1], 0);
-  el.innerHTML = renderHeader("Revoir un livre", true, "state.screen='mode'; render(); setTimeout(ouvrirRevoir, " + (msPli() + 60) + ")")
-    + `<div class="card bk-card rvl-card">
-        <div class="bk-mode"><span class="bk-mode-i">${ICONS.bookOpen}</span>${
-          total === 1 ? "1 question à revoir, dans 1 livre"
-                      : total + " questions à revoir, dans " + livres.length + (livres.length > 1 ? " livres" : " livre")}</div>
+  el.innerHTML = renderHeader("À revoir", true, "state.screen='mode'; render()")
+    + ligne("v", ICONS.clock, "Les échéances du jour", "Ce que la mémoire réclame", dus, "startRevision('dus')")
+    + ligne("g", ICONS.book, "Tout mon carnet", "Sans attendre leur tour", tout, "startRevision('tout')")
+    + ligne("b", ICONS.target, "Ma dernière partie", "Ce que je viens de rater", derniere, "startRevision('derniere')")
+    + (livres.length ? `<div class="rvl-t">Ou un livre en particulier</div>
+      <div class="card bk-card rvl-card">
         <div class="bk-grid">${livres.map(([nom,n])=>
           `<button class="bk rv-bk" data-livre="${escapeHtml(nom)}" onclick="lancerRevoirLivre(this.dataset.livre)"><span class="bk-nm">${escapeHtml(LIVRES_COURTS[nom] || nom)}</span><span class="rv-bkn">${n}</span></button>`
         ).join("")}</div>
-      </div>`;
+      </div>` : "")
+    + `<div class="flam-regle rvl-regle">Une erreur revient demain, puis dans 3, 7 et 16&nbsp;jours. Se tromper la ramène à demain.</div>`;
   return el;
 }
 function lancerRevoirLivre(nom){ startRevision("livre:" + nom); }
-function fermerRevoir(){
-  const v = document.getElementById("revoirVeil");
-  if(!v || v.classList.contains("closing")) return;
-  v.classList.add("closing");
-  setTimeout(()=>{ if(v.parentNode) v.remove(); }, msFerme() + 20);
-}
-/* La feuille se referme AVANT que la partie ne monte : sans ça, le voile
-   resterait par-dessus l'écran de jeu. On laisse la fermeture aller au bout —
-   c'est la même horloge partout. */
-function lancerRevoir(quoi){
-  fermerRevoir();
-  setTimeout(()=>{ startRevision(quoi); }, msFerme() + 30);
-}
+
 function startRevision(quoi){
   /* « dus »      les échéances du jour, toutes parties confondues
      « tout »     l'intégralité du carnet
@@ -12599,7 +12569,7 @@ function render(){
   else if(state.screen==="play") node = renderPlay();
   else if(state.screen==="profile") node = renderProfile();
   else if(state.screen==="parcours") node = renderParcours();
-  else if(state.screen==="revoir-livres") node = renderRevoirLivres();
+  else if(state.screen==="revoir") node = renderRevoir();
   else if(state.screen==="online-name") node = renderOnlineName();
   else if(state.screen==="online") node = renderOnline();
   else if(state.screen==="online-join") node = renderOnlineJoin();

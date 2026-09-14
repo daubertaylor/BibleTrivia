@@ -64,15 +64,24 @@ function v(nom, a, b){ const bon=JSON.stringify(a)===JSON.stringify(b); if(!bon)
   await p.waitForTimeout(500);
   v("rien pour aujourd'hui, mais le carnet n'est pas vide", await ev(()=>{ const e=document.querySelector('.revoir-card .dc-txt small'); return e?e.textContent:''; }), "Rien pour aujourd'hui \u00b7 1 en attente");
   v("  la pastille est calme", await ev(()=>{ const e=document.querySelector('.revoir-card .rv-n'); return e ? e.classList.contains('calme') : false; }), true);
-  /* Et la feuille de choix s'ouvre dans tous les cas, portes éteintes. */
+  /* ===== ET L'ÉCRAN S'OUVRE DANS TOUS LES CAS =====
+     La v221 a remplacé la feuille glissante par un ÉCRAN — « je parle de toute
+     la page entière qui doit être ici ». Réviser n'est pas une question courte
+     à laquelle on répond dans une parenthèse : on arrive avec une intention
+     vague, on regarde ce qu'on a, on choisit. C'est un lieu.
+     Carnet vide, on doit quand même pouvoir y aller : les trois portes s'y
+     trouvent, ÉTEINTES et non absentes — une porte fermée qui annonce « 0 »
+     est plus honnête qu'une porte qui a disparu. */
   await ev(()=>{ localStorage.setItem('bt_errbook','[]'); state.screen='mode'; render(); });
   await p.waitForTimeout(400);
-  await ev(()=>ouvrirRevoir());
-  await p.waitForTimeout(700);
-  v("carnet vide : la feuille s'ouvre quand même", await ev(()=>!!document.querySelector('.revoir-sheet')), true);
+  await ev(()=>document.querySelector('.revoir-card').click());
+  await p.waitForTimeout(900);
+  v("carnet vide : l'écran « À revoir » s'ouvre quand même", await ev(()=>state.screen), "revoir");
+  v("  aucune feuille glissante sur ce chemin", await ev(()=>!!document.querySelector('.sheet-veil')), false);
   v("  et ses trois portes sont éteintes, pas absentes", await ev(()=>{
     const l=[...document.querySelectorAll('.rv-choix')]; return l.length===3 && l.every(b=>b.disabled); }), true);
-  await ev(()=>fermerRevoir());
+  v("  pas de grille de livres quand le carnet est vide", await ev(()=>document.querySelectorAll('.rvl-card .bk').length), 0);
+  await ev(()=>{ state.screen='mode'; render(); });
   await p.waitForTimeout(500);
 
   // ---------- DE BOUT EN BOUT : UNE VRAIE PARTIE ----------

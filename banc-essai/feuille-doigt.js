@@ -39,8 +39,8 @@ const URL = process.argv[2] || process.env.URL_ESSAI || 'http://127.0.0.1:8099/i
 
   const CAS = [
     ['réglages', "openSettings()",   "closeSettings()", 0.30],   // dans le titre, zone neutre
-    ['à revoir', "ouvrirRevoir()",   "fermerRevoir()",  0.30],
     ['flamme',   "ouvrirFlamme()",   "closeFlamme()",   0.30],
+    /* (« À revoir » est un écran depuis la v221, plus une feuille.) */
   ];
   let ok = true;
   console.log('  feuille      au repos            au POSER du doigt       après 2 px de dérive');

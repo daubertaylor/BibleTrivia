@@ -51,7 +51,9 @@ const CAS = [
   ['réglages',   "openSettings()",                       "closeSettings()"],
   ['versions',   "openSettings(); setTimeout(()=>{ try{ openBibles(); }catch(e){} }, 700)", "try{closeBibles()}catch(e){}; closeSettings()"],
   ['flamme',     "ouvrirFlamme()",                       "closeFlamme()"],
-  ['à revoir',   "ouvrirRevoir()",                       "fermerRevoir()"],
+  /* « À revoir » n'est plus une feuille depuis la v221 : c'est un écran. Il
+     n'a donc plus rien à faire dans un banc qui juge des feuilles — il est
+     éprouvé par revoir.js, qui le juge en tant qu'écran. */
 ];
 (async () => {
   const nav = await chromium.launch({ executablePath: '/opt/pw-browsers/chromium' });

@@ -7,14 +7,14 @@
    « touch-action:none » (sans quoi on ne peut pas la fermer au doigt sur
    Android), ce qui vaut pour toute sa descendance. La grille ne POUVAIT PAS
    défiler — les livres du bas étaient hors d'atteinte.
-   LA v221 A CHANGÉ LA RÉPONSE. Plutôt que de mieux contenir la grille dans la
-   feuille, elle lui a donné son ÉCRAN : la feuille mélangeait trois décisions
-   (on touche, on joue) et une exploration (parcourir soixante livres, comparer
-   des nombres), et ce mélange forçait un compromis qui a montré ses deux
-   défauts opposés coup sur coup — feuille trop haute, puis grille trop petite.
-   Le banc suit : il vérifie désormais que la feuille propose une PORTE, que
-   l'écran derrière montre TOUS les livres sans rien couper ni tronquer, qu'on
-   peut y lancer une révision, et que rien ne déborde.
+   LA v221 A CHANGÉ LA RÉPONSE, DEUX FOIS. D'abord en donnant aux livres leur
+   écran, la feuille gardant les trois décisions et une porte. Puis en
+   supprimant la feuille : « je parle de toute la page entière qui doit être
+   ici ». Réviser n'est pas une question courte à laquelle on répond dans une
+   parenthèse — on arrive avec une intention vague, on regarde ce qu'on a, on
+   compare, on choisit. C'est un LIEU.
+   Le banc juge donc un ÉCRAN : les trois portes avec leurs comptes, TOUS les
+   livres sans un nom tronqué, et une révision qui part.
    Usage : node banc-essai/grille-livres.js [url]
 */
 const { chromium } = require('/opt/node22/lib/node_modules/playwright');
@@ -34,26 +34,19 @@ const D='/tmp/claude-0/-home-user-BibleTrivia/fb9bf869-826b-5523-9825-ea1b24c294
     render();
   });
   await p.waitForTimeout(500);
-  await p.evaluate(()=>ouvrirRevoir());
-  await p.waitForTimeout(1200);
+  /* On y va comme le joueur : par la carte de l'accueil. */
+  await p.evaluate(()=>document.querySelector('.revoir-card').click());
+  await p.waitForTimeout(1300);
   let ok = true;
   const dire = (bon, txt) => { console.log('  ' + (bon ? 'OK ' : 'KO ') + txt); if(!bon) ok = false; };
 
-  /* 1. LA FEUILLE : quatre rangées, dont la porte vers les livres, et une
-        hauteur qui la remet dans la famille des autres feuilles. */
-  const f = await p.evaluate(()=>{
-    const s=document.querySelector('.revoir-sheet').getBoundingClientRect();
-    return { vue: Math.round(Math.min(s.bottom, innerHeight) - s.top),
-      lignes: [...document.querySelectorAll('.rv-choix')].map(b=>b.querySelector('.oa-txt b').textContent),
-      grilleDedans: !!document.querySelector('.revoir-sheet .bk-grid') };
-  });
-  dire(f.lignes.length === 4, 'la feuille propose quatre chemins : ' + f.lignes.join(' / '));
-  dire(!f.grilleDedans, 'la grille des livres n\'est plus DANS la feuille');
-  dire(f.vue <= 560, 'la feuille est revenue dans la famille : ' + f.vue + ' px vus (les autres font 516 à 526)');
-
-  /* 2. LA PORTE MÈNE À L'ÉCRAN. */
-  await p.evaluate(()=>document.querySelectorAll('.rv-choix')[3].click());
-  await p.waitForTimeout(1400);
+  /* 1. C'EST UN ÉCRAN, PAS UNE FEUILLE. */
+  const f = await p.evaluate(()=>({
+    feuille: !!document.querySelector('.sheet-veil'),
+    portes: [...document.querySelectorAll('.rv-choix')].map(b=>b.querySelector('.oa-txt b').textContent),
+  }));
+  dire(!f.feuille, 'aucune feuille glissante sur ce chemin');
+  dire(f.portes.length === 3, 'trois portes : ' + f.portes.join(' / '));
   const e = await p.evaluate(()=>{
     const app=document.getElementById('app');
     const noms=[...document.querySelectorAll('.rvl-card .bk-nm')];
@@ -64,11 +57,21 @@ const D='/tmp/claude-0/-home-user-BibleTrivia/fb9bf869-826b-5523-9825-ea1b24c294
       debord: app.scrollHeight - app.clientHeight,
       attendus: (()=>{ try{ return livresDuCarnet().length; }catch(x){ return -1; } })() };
   });
-  dire(e.ecran === 'revoir-livres', 'la porte mène à l\'écran des livres');
+  dire(e.ecran === 'revoir', 'la carte de l\'accueil mène droit à l\'écran « À revoir »');
   dire(e.livres === e.attendus && e.livres > 0, 'TOUS les livres du carnet y sont : ' + e.livres + ' sur ' + e.attendus);
   dire(e.tronques.length === 0, 'aucun nom tronqué' + (e.tronques.length ? ' — ' + e.tronques.join(', ') : ''));
   dire(e.colonnes === 3, e.colonnes + ' colonnes (trois, pour que les noms tiennent)');
-  dire(e.debord <= 0 || e.livres > 24, 'rien ne déborde inutilement (débord ' + e.debord + ' px)');
+  /* SUR UNE PAGE, DÉFILER EST NORMAL — c'est même tout l'intérêt d'avoir
+     quitté la feuille. Ce qu'on vérifie, c'est qu'aucune pastille ne soit
+     COUPÉE par un cadre : il n'y en a plus, donc la dernière doit être
+     entièrement dans la page une fois qu'on est allé au bout. */
+  const bout = await p.evaluate(()=> new Promise(res=>{
+    const a=document.getElementById('app'); a.scrollTop = a.scrollHeight;
+    setTimeout(()=>{ const l=[...document.querySelectorAll('.rvl-card .bk')];
+      const d=l[l.length-1].getBoundingClientRect();
+      res({ vu: d.top >= -1 && d.bottom <= innerHeight + 1, haut: Math.round(d.top), bas: Math.round(d.bottom) }); }, 450);
+  }));
+  dire(bout.vu, 'le dernier livre se voit entièrement en bas de page (y ' + bout.haut + '..' + bout.bas + ')');
 
   /* 3. ET ON PEUT JOUER. */
   const nom = await p.evaluate(()=>{ const b=document.querySelector('.rvl-card .bk'); const n=b.dataset.livre; b.click(); return n; });
