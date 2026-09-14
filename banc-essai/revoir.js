@@ -62,7 +62,11 @@ function v(nom, a, b){ const bon=JSON.stringify(a)===JSON.stringify(b); if(!bon)
     {k:'plustard', n:1, p:1, du:dayKey(3), q:'Q ?', options:['a','b'], correct:'a', fact:'F', tier:'moyen'}]));
     state.screen='mode'; render(); });
   await p.waitForTimeout(500);
-  v("rien pour aujourd'hui, mais le carnet n'est pas vide", await ev(()=>{ const e=document.querySelector('.revoir-card .dc-txt small'); return e?e.textContent:''; }), "Rien aujourd'hui \u00b7 1 en attente");
+  v("rien pour aujourd'hui, mais le carnet n'est pas vide", await ev(()=>{ const e=document.querySelector('.revoir-card .dc-txt small'); return e?e.textContent:''; }), "Rien pour aujourd'hui");
+  /* LE COMPTE A QUITTÉ LA PHRASE POUR LA PASTILLE. « Rien aujourd'hui · 143 en
+     attente » demandait 193 px de large pour 155 disponibles sur un petit
+     Android : la phrase était rognée. Le nombre est sur la pastille calme, à
+     trente pixels — le répéter, c'était le dire deux fois ET déborder. */
   v("  la pastille est calme", await ev(()=>{ const e=document.querySelector('.revoir-card .rv-n'); return e ? e.classList.contains('calme') : false; }), true);
   /* ===== ET L'ÉCRAN S'OUVRE DANS TOUS LES CAS =====
      La v221 a remplacé la feuille glissante par un ÉCRAN — « je parle de toute
