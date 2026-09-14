@@ -6384,10 +6384,42 @@ function loadSettings(){
   if(typeof s.scene !== "string") s.scene = "canyon";
   if(typeof s.bible !== "string") s.bible = "lsg1910";
   if(typeof s.notif !== "boolean") s.notif = false;   // jamais sans accord explicite
+  if(typeof s.majGout !== "number" || !(s.majGout > 0)) s.majGout = 0;
   return s;
 }
 const settings = loadSettings();
-function saveSettings(){ try { localStorage.setItem("bt_settings", JSON.stringify(settings)); } catch(e){} }
+/* L'INSTANT DU GOÛT, ET POURQUOI IL FAUT LE DATER.
+   Le son, la musique, le volume et les notifications appartiennent à
+   l'APPAREIL. La TRADUCTION et la SCÈNE, elles, appartiennent au JOUEUR : sur
+   son nouveau téléphone, il doit retrouver la Bible qu'il lit.
+   Mais « ce qui est ici l'emporte » ne marche pas pour elles : un téléphone a
+   TOUJOURS une valeur — celle par défaut — donc le choix du compte ne pourrait
+   jamais arriver. Et « le compte l'emporte » ne marche pas non plus : on
+   écraserait le choix qu'on vient de faire ici.
+   Il faut donc savoir laquelle des deux a été choisie EN DERNIER. On date le
+   goût, et seulement lui : baisser le volume ne fait pas de ce téléphone
+   l'autorité sur la traduction. Et tant que rien n'a jamais été choisi sur cet
+   appareil, il ne date rien du tout — c'est ainsi qu'un téléphone neuf adopte
+   le goût du compte au lieu de lui imposer le sien. */
+/* On ne relit le disque QU'UNE FOIS. saveSettings est appelé à chaque image
+   quand on fait glisser le volume : y ajouter un getItem + un JSON.parse par
+   appel, c'est du localStorage synchrone soixante fois par seconde pendant un
+   geste. Le goût déjà écrit tient dans une variable. */
+let goutPose, goutLu = false;
+function saveSettings(){
+  try {
+    if(!goutLu){
+      goutLu = true;
+      let ancien = null;
+      try { ancien = JSON.parse(localStorage.getItem("bt_settings") || "null"); } catch(e){}
+      goutPose = ancien ? (ancien.bible + "|" + ancien.scene) : undefined;
+    }
+    const gout = settings.bible + "|" + settings.scene;
+    if(goutPose !== undefined && goutPose !== gout) settings.majGout = Date.now();
+    goutPose = gout;
+    localStorage.setItem("bt_settings", JSON.stringify(settings));
+  } catch(e){}
+}
 
 /* ===================== FONDS D'ÉCRAN (catalogue) =====================
    Chaque scène = photo nette (--scene) + texture pré-floutée au format du
@@ -10075,8 +10107,20 @@ function bookTarget(name){ return Math.max(1, Math.min(9, Math.round((BOOK_TOTAL
      3. REFUS DU VIDE : une progression vide n'écrase jamais une progression
         existante. */
 const PROG_KEY = "bt_progress", PROG_BAK = "bt_progress_bak";
+/* Un entier positif, ou zéro. Sert partout où une donnée peut venir d'ailleurs
+   que de ce téléphone. */
+function nEntier(x){ const n = Math.floor(+x); return (isFinite(n) && n > 0) ? n : 0; }
+/* NORMALISER, C'EST AUSSI REFUSER LES NOMBRES IMPOSSIBLES.
+   « +x || 0 » laissait passer les NÉGATIFS : -6 est vrai, donc il survivait, et
+   progMergeMax gardait consciencieusement le plus grand de deux -6. Tant que
+   ces nombres ne venaient que du jeu lui-même, aucun ne pouvait être négatif.
+   Le jour où ils peuvent venir d'un compte, « -6 parties parfaites » s'affiche.
+   Le banc de la fusion l'a trouvé sur quarante-six paires. */
 function progNormalize(p){
-  return { books:(p && p.books) || {}, totalCorrect:+(p && p.totalCorrect)||0, bestStreak:+(p && p.bestStreak)||0, flawless:+(p && p.flawless)||0, ach:(p && p.ach) || {} };
+  const livres = {}, src = (p && p.books) || {};
+  for(const k in src){ const n = nEntier(src[k]); if(n) livres[k] = n; }
+  return { books:livres, totalCorrect:nEntier(p && p.totalCorrect), bestStreak:nEntier(p && p.bestStreak),
+           flawless:nEntier(p && p.flawless), ach:(p && p.ach) || {} };
 }
 function progIsEmpty(p){
   return !p || (!p.totalCorrect && !p.bestStreak && !p.flawless && !Object.keys(p.books||{}).length && !Object.keys(p.ach||{}).length);
@@ -10655,7 +10699,20 @@ function joursDerives(d){
   const faits = new Set();
   if(!d.last || !d.streak) return faits;
   const t = dateDeCle(d.last); if(!t) return faits;
-  for(let k = 0; k < d.streak; k++){
+  /* BORNÉ À LA MÉMOIRE, ET C'EST UN GARDE-FOU AUTANT QU'UNE COHÉRENCE.
+     Cohérence : bornerJours ne garde de toute façon que les quatre-vingt-dix
+     derniers jours, donc en dériver davantage ne servirait à rien.
+     Garde-fou : cette boucle tourne autant de fois que la série ANNONCÉE. Tant
+     que ce nombre venait du seul appareil, il était sain. Le jour où il peut
+     venir d'ailleurs — un compte, un serveur, un octet retourné — « série =
+     un milliard » construirait un ensemble d'un milliard d'entrées et
+     l'application se figerait, à l'ouverture, sans rien afficher. Le banc de
+     la fusion l'a trouvé à sa première passe.
+     La série longue n'est pas perdue pour autant : serieDepuisLesJours sait
+     qu'au bord de la mémoire il ne faut pas conclure, et garde ce qui était
+     annoncé. */
+  const n = Math.min(FLAMME_MEMOIRE, Math.max(0, Math.floor(+d.streak) || 0));
+  for(let k = 0; k < n; k++){
     faits.add(cleDeDate(t));
     t.setDate(t.getDate() - 1);
   }
@@ -11163,12 +11220,43 @@ function saveErrbook(a){ try { localStorage.setItem("bt_errbook", JSON.stringify
    version n'a ni l'un ni l'autre : elle est donc à revoir tout de suite, ce
    qui est exactement ce qu'on veut. */
 const REVOIR_ECHELLE = [1, 3, 7, 16];
+/* ===== LES QUESTIONS ACQUISES, ET POURQUOI IL EN FAUT UNE TRACE =====
+   Une question qui a monté toute l'échelle quitte le carnet. Son ABSENCE ne
+   veut alors plus rien dire pour une fusion : entre un carnet qui l'a encore
+   et un carnet qui ne l'a plus, l'union la ramène — et elle reviendrait à
+   CHAQUE synchro, juste après avoir été maîtrisée. L'échelle ne finirait
+   jamais.
+   On garde donc la clé et l'INSTANT où elle a été acquise, et chaque entrée du
+   carnet porte l'instant de sa dernière écriture. La règle devient simple et
+   marche dans les deux sens : une entrée ne survit que si elle est PLUS
+   RÉCENTE que l'acquisition. Se retromper après avoir acquis la ramène ;
+   acquérir après une vieille erreur la retire.
+   Rien d'autre que des clés et des instants — aucune question, aucun texte. */
+const ACQ_KEY = "bt_acquises", ACQ_MAX = 600;
+function loadAcquises(){
+  try{ const o = JSON.parse(localStorage.getItem(ACQ_KEY) || "{}");
+       return (o && typeof o === "object" && !Array.isArray(o)) ? o : {}; }catch(e){ return {}; }
+}
+function saveAcquises(o){
+  try{
+    let out = o || {};
+    const cles = Object.keys(out);
+    if(cles.length > ACQ_MAX){                    // on garde les plus récentes
+      cles.sort((x,y)=>(+out[y]||0)-(+out[x]||0));
+      const court = {}; for(let i=0;i<ACQ_MAX;i++) court[cles[i]] = out[cles[i]];
+      out = court;
+    }
+    localStorage.setItem(ACQ_KEY, JSON.stringify(out));
+  }catch(e){}
+}
+function marquerAcquise(k){ const o = loadAcquises(); o[k] = Date.now(); saveAcquises(o); }
+
 function errbookAdd(q){
   const k = qKey(q); const a = loadErrbook();
   const i = a.findIndex(x=>x.k===k);
   /* Une erreur remet le compteur à zéro, même sur une question déjà promue. */
-  if(i>=0){ a[i].n = (a[i].n||1)+1; a[i].p = 0; a[i].du = dayKey(1); }
-  else { a.push({ k, n:1, p:0, du:dayKey(1), q:q.q, options:q.options, correct:q.correct, fact:q.fact, tier:q.tier||"moyen" }); }
+  if(i>=0){ a[i].n = (a[i].n||1)+1; a[i].p = 0; a[i].du = dayKey(1); a[i].maj = Date.now(); }
+  else { a.push({ k, n:1, p:0, du:dayKey(1), maj:Date.now(), q:q.q, options:q.options, correct:q.correct, fact:q.fact, tier:q.tier||"moyen" }); }
   saveErrbook(a);
 }
 /* UNE BONNE RÉPONSE NE SUPPRIME PLUS, ELLE PROMEUT. C'est tout le principe :
@@ -11179,8 +11267,8 @@ function errbookRemove(q){
   const i = a.findIndex(x=>x.k===k);
   if(i < 0) return;
   const p = (a[i].p | 0) + 1;
-  if(p >= REVOIR_ECHELLE.length){ a.splice(i,1); }
-  else { a[i].p = p; a[i].du = dayKey(REVOIR_ECHELLE[p]); }
+  if(p >= REVOIR_ECHELLE.length){ a.splice(i,1); marquerAcquise(k); }
+  else { a[i].p = p; a[i].du = dayKey(REVOIR_ECHELLE[p]); a[i].maj = Date.now(); }
   saveErrbook(a);
 }
 function errbookCount(){ return loadErrbook().length; }
@@ -11199,6 +11287,241 @@ function lastMissEntries(){
   const set = new Set(keys);
   return loadErrbook().filter(x=>set.has(x.k));
 }
+/* ===================== FUSIONNER DEUX SAUVEGARDES =====================
+   Se connecter ne remet JAMAIS une progression à zéro. Cette règle ne tient pas
+   à la bonne volonté de celui qui appellera ces fonctions : elle tient à la
+   FORME de celle-ci, et banc-essai/fusion.js la vérifie sur quatre cents
+   paires tirées au hasard, avec des nombres négatifs, des chaînes à la place de
+   nombres et des listes nulles — tout ce qu'un serveur peut cracher.
+
+   MONOTONE — chaque compteur du résultat est supérieur ou égal aux deux
+   entrées, et chaque ensemble contient leur union. Rien de ce qu'un joueur a
+   fait ne peut disparaître dans une fusion.
+
+   IDEMPOTENTE — fusionner deux fois donne le même résultat qu'une fois. Une
+   synchro qui repasse (réseau coupé, onglet rouvert, deux appareils qui se
+   répondent) ne gonfle et n'efface rien. C'est pour cela qu'AUCUN PLAFOND n'est
+   appliqué ici : « garder les cinq cents dernières » dépend de l'ordre, donc
+   une deuxième passe ne rendrait pas le même résultat qu'une première. Les
+   plafonds restent là où ils ont toujours été — à l'écriture, dans saveSeen,
+   saveErrbook et saveAcquises.
+
+   ASYMÉTRIQUE, ET C'EST VOULU — le premier argument est « moi, ici,
+   maintenant ». Le nom, la couleur, la traduction et la scène du téléphone
+   qu'on tient l'emportent : on vient de les choisir. Tout le reste fusionne.
+
+   N'APPARTIENNENT PAS AU COMPTE : le son, la musique, le volume, les
+   notifications. Ils sont à l'APPAREIL — un volume réglé sur une tablette n'a
+   rien à faire sur un téléphone, et un abonnement push est lié à un appareil
+   précis. Le JEU, lui, reste le même pour tout le monde : rien de ce qui est
+   synchronisé ne change une règle, une question ou un barème. */
+function sauvegardeVide(){
+  return { v:1, profil:{ name:"", color:"" }, progres:progNormalize(null),
+           stats:{ bestScore:0, bestPct:0, games:0 },
+           flamme:{ last:"", streak:0, score:0, total:0, jours:[], geles:[], gels:0,
+                    palier:0, parties:0, palierParties:0, annonce:"" },
+           vues:[], carnet:[], acquises:{}, modes:{}, gout:{ bible:"", scene:"", maj:0 } };
+}
+/* La photo de CE téléphone, à cet instant. */
+function sauvegardeIci(){
+  const d = loadDaily();
+  return { v:1,
+    profil:  { name:profile.name || "", color:profile.color || "" },
+    progres: loadProgress(),
+    stats:   loadStats(),
+    flamme:  { last:d.last, streak:d.streak, score:d.score, total:d.total,
+               jours:[...joursFaits()], geles:(d.geles||[]).slice(), gels:d.gels,
+               palier:d.palier, parties:d.parties, palierParties:d.palierParties, annonce:d.annonce || "" },
+    vues:    [...loadSeen()],
+    carnet:  loadErrbook(),
+    acquises:loadAcquises(),
+    modes:   loadModeUse(),
+    gout:    { bible:settings.bible, scene:settings.scene, maj:nEntier(settings.majGout) } };
+}
+function listeDeCles(x){ return Array.isArray(x) ? x.filter(k => typeof k === "string" && k) : []; }
+/* Union qui garde l'ordre : d'abord les miennes, puis celles d'en face. */
+function unionDeCles(a, b){
+  const vu = Object.create(null), out = [];
+  const pousse = l => { for(const k of l){ if(!vu[k]){ vu[k] = 1; out.push(k); } } };
+  pousse(listeDeCles(a)); pousse(listeDeCles(b));
+  return out;
+}
+/* Deux comptages par clé : on garde le plus grand de chaque. */
+function maxParCle(a, b){
+  const out = {}, noms = Object.assign({}, a || {}, b || {});
+  for(const k in noms) out[k] = Math.max(nEntier((a||{})[k]), nEntier((b||{})[k]));
+  return out;
+}
+/* LES JOURS D'UN CÔTÉ, MÊME S'IL N'EN A PAS.
+   Une sauvegarde d'avant les gels ne porte pas la liste des jours, seulement
+   « dernier jour + série ». On la redéploie avant de fusionner, exactement
+   comme joursFaits le fait sur l'appareil. Sans cela, ce côté apporterait zéro
+   jour à l'union et la série recalculée tomberait sous celle qu'il annonçait. */
+function joursDeLaFlamme(f){
+  const l = listeDeCles(f.jours);
+  if(l.length) return l;
+  return [...joursDerives({ last:f.last, streak:nEntier(f.streak) })];
+}
+/* LA SÉRIE SE RECALCULE, ELLE NE SE CHOISIT PAS.
+   Prendre le plus grand des deux nombres inventerait une série que personne n'a
+   faite : un appareil qui annonce dix jours en s'étant arrêté le 1er septembre
+   et un autre qui a joué le 14 ne font pas onze jours d'affilée — ils en font
+   UN, parce que rien n'a été joué entre les deux. On repart donc des JOURS, qui
+   eux s'unissent honnêtement, et on remonte tant que la veille a été jouée ou
+   gelée. Un jour gelé ne COMPTE pas (la série compte les jours joués, voir
+   recordDailyResult) mais il ne l'interrompt pas non plus.
+   C'est la seule entorse à la monotonie, et c'est la vérité : une série cassée
+   était déjà cassée, le jeu le voit tout seul au prochain défi.
+
+   LE BORD DE LA MÉMOIRE. La liste des jours est bornée à quatre-vingt-dix
+   (FLAMME_MEMOIRE) : un joueur qui tient depuis cent vingt jours n'a pas ses
+   trente premiers en liste. Si la marche va jusqu'au plus ancien jour connu,
+   on ne peut PAS voir plus loin — il serait faux d'en conclure que la série
+   s'arrête là. On garde alors ce qui était annoncé. */
+function serieDepuisLesJours(dernier, jours, geles, annonce){
+  if(!dernier || !jours.length) return 0;
+  const faits = new Set(jours), gel = new Set(geles);
+  /* Si le dernier jour annoncé n'est pas dans les jours connus — des données
+     incohérentes, ça arrive — on repart du dernier jour qu'on connaît VRAIMENT
+     plutôt que de rendre zéro. */
+  if(!faits.has(dernier)) dernier = jours[jours.length - 1];
+  const plusAncien = jours[0];                            // jours est trié
+  const t = dateDeCle(dernier);
+  if(!t) return 0;
+  /* Le bord ne compte QUE si la liste est pleine. Atteindre le plus ancien jour
+     d'une liste de trois jours ne cache rien : la série commence là, point.
+     C'est seulement quand la mémoire est saturée (quatre-vingt-dix jours) qu'on
+     ne peut pas voir plus loin et qu'il faut croire ce qui était annoncé. */
+  const memoirePleine = jours.length >= FLAMME_MEMOIRE;
+  let n = 0, bord = false;
+  for(let garde = 0; garde < 4000; garde++){
+    const k = cleDeDate(t);
+    if(faits.has(k)) n++;
+    else if(!gel.has(k)) break;             // un vrai trou : la série s'arrête
+    if(k <= plusAncien){ bord = true; break; }
+    t.setDate(t.getDate() - 1);
+  }
+  return (bord && memoirePleine) ? Math.max(n, nEntier(annonce)) : n;
+}
+function fusionner(ici, ailleurs){
+  const a = Object.assign(sauvegardeVide(), ici || {});
+  const b = Object.assign(sauvegardeVide(), ailleurs || {});
+  const fa = Object.assign(sauvegardeVide().flamme, a.flamme || {});
+  const fb = Object.assign(sauvegardeVide().flamme, b.flamme || {});
+
+  /* AUCUN JOUR DANS LE FUTUR. Une horloge déréglée, une vieille version, un
+     octet retourné : il suffit qu'un seul jour à venir entre dans la liste pour
+     que « dernier jour joué » tombe demain — et recordDailyResult croirait le
+     défi du jour déjà compté. Le joueur perdrait sa flamme d'aujourd'hui sans
+     rien comprendre. On ne peut pas avoir joué demain : on coupe. */
+  const auj = dayKey(0);
+  const passe = l => l.filter(k => k <= auj);
+  const jours = passe(unionDeCles(joursDeLaFlamme(fa), joursDeLaFlamme(fb))).sort();
+  const geles = passe(unionDeCles(fa.geles, fb.geles)).sort();
+  /* LE DERNIER JOUR SE DÉDUIT DES JOURS, il ne s'annonce pas. « last » et
+     « jours » disent la même chose ; quand ils se contredisent, ce sont les
+     jours qui ont raison — ce sont eux qu'on a vraiment joués. */
+  const dernier = jours.length ? jours[jours.length - 1] : "";
+  /* La série annoncée ne sert QU'AU BORD de la mémoire, là où les jours ne
+     peuvent plus rien montrer. */
+  const annonce = Math.max(nEntier(fa.streak), nEntier(fb.streak));
+
+  /* LES ACQUISES : la clé, et l'instant le plus récent où elle a été acquise. */
+  const acquises = {};
+  for(const o of [a.acquises, b.acquises]){
+    if(!o || typeof o !== "object") continue;
+    for(const k in o){ const t = nEntier(o[k]); if(t > (acquises[k] || 0)) acquises[k] = t; }
+  }
+  /* LE CARNET. Une clé vue des deux côtés : c'est l'écriture la PLUS RÉCENTE
+     qui l'emporte (maj). À égalité — deux appareils, pas d'instant, ou de
+     vieilles entrées sans date — on garde l'état qui demande le plus de
+     travail : palier le plus bas, échéance la plus proche, n le plus grand.
+     Entre un appareil qui dit « tu la sais » et un autre qui dit « tu l'as
+     ratée », on croit celui qui dit qu'on l'a ratée : une révision de vingt
+     secondes coûte moins cher qu'une erreur perdue.
+     Puis les acquises tranchent : une entrée plus VIEILLE que son acquisition
+     a déjà été maîtrisée, elle ne ressuscite pas. */
+  const parCle = Object.create(null), ordre = [];
+  const verse = (l) => { for(const e of (Array.isArray(l) ? l : [])){
+    if(!e || typeof e !== "object" || typeof e.k !== "string" || !e.k) continue;
+    const v = parCle[e.k];
+    if(!v){ parCle[e.k] = Object.assign({}, e); ordre.push(e.k); continue; }
+    const tv = nEntier(v.maj), te = nEntier(e.maj);
+    if(te > tv){ parCle[e.k] = Object.assign({}, e); continue; }
+    if(te < tv) continue;
+    v.p = Math.min(nEntier(v.p), nEntier(e.p));
+    v.n = Math.max(nEntier(v.n), nEntier(e.n));
+    if(e.du && (!v.du || e.du < v.du)) v.du = e.du;
+  } };
+  verse(a.carnet); verse(b.carnet);
+  const carnet = ordre.map(k => parCle[k])
+                      .filter(e => !(e.k in acquises) || nEntier(e.maj) > acquises[e.k]);
+
+  return { v:1,
+    /* Ce qu'on vient de choisir sur ce téléphone l'emporte ; à défaut, l'autre. */
+    profil: { name:  a.profil.name  || b.profil.name  || "",
+              color: a.profil.color || b.profil.color || "" },
+    progres: progMergeMax(progNormalize(a.progres), progNormalize(b.progres)),
+    stats: { bestScore: Math.max(nEntier(a.stats.bestScore), nEntier(b.stats.bestScore)),
+             bestPct:   Math.max(nEntier(a.stats.bestPct),   nEntier(b.stats.bestPct)),
+             games:     Math.max(nEntier(a.stats.games),     nEntier(b.stats.games)) },
+    flamme: { last: dernier,
+              streak: serieDepuisLesJours(dernier, jours, geles, annonce),
+              score: Math.max(nEntier(fa.score), nEntier(fb.score)),
+              total: Math.max(nEntier(fa.total), nEntier(fb.total)),
+              jours, geles,
+              gels:          Math.min(GEL_MAX, Math.max(nEntier(fa.gels), nEntier(fb.gels))),
+              palier:        Math.max(nEntier(fa.palier),        nEntier(fb.palier)),
+              parties:       Math.max(nEntier(fa.parties),       nEntier(fb.parties)),
+              palierParties: Math.max(nEntier(fa.palierParties), nEntier(fb.palierParties)),
+              annonce: fa.annonce || fb.annonce || "" },
+    vues:   unionDeCles(a.vues, b.vues),
+    carnet: carnet,
+    acquises: acquises,
+    modes:  maxParCle(a.modes, b.modes),
+    /* LE GOÛT : le plus RÉCEMMENT choisi. À égalité — deux appareils qui n'ont
+       jamais rien choisi — celui d'ici, qui au pire est le défaut. */
+    gout: (function(){
+      const ta = nEntier(a.gout.maj), tb = nEntier(b.gout.maj);
+      const premier = (tb > ta) ? b.gout : a.gout, second = (tb > ta) ? a.gout : b.gout;
+      return { bible: premier.bible || second.bible || "",
+               scene: premier.scene || second.scene || "",
+               maj: Math.max(ta, tb) };
+    })() };
+}
+/* POSER UNE SAUVEGARDE SUR L'APPAREIL.
+   Toutes les écritures passent par les fonctions qui existaient déjà, avec
+   leurs propres garde-fous : saveProgress ne sait pas écrire moins qu'avant et
+   refuse le vide, saveDaily fusionne au lieu d'écraser, saveSeen et saveErrbook
+   plafonnent. Et la première ligne refusionne avec l'état d'ICI : même appelée
+   avec n'importe quoi, cette fonction ne peut pas faire perdre un point. */
+function appliquerSauvegarde(recue){
+  if(!recue || typeof recue !== "object") return null;
+  const sur = fusionner(sauvegardeIci(), recue);
+  if(sur.profil.name)  profile.name  = sur.profil.name;
+  if(sur.profil.color) profile.color = sur.profil.color;
+  saveProfile();
+  saveProgress(sur.progres);
+  saveStats(sur.stats);
+  saveDaily({ last:sur.flamme.last, streak:sur.flamme.streak, score:sur.flamme.score,
+              total:sur.flamme.total, jours:bornerJours(sur.flamme.jours),
+              geles:bornerJours(sur.flamme.geles), gels:sur.flamme.gels,
+              palier:sur.flamme.palier, parties:sur.flamme.parties,
+              palierParties:sur.flamme.palierParties, annonce:sur.flamme.annonce });
+  saveSeen(new Set(sur.vues));
+  saveErrbook(sur.carnet);
+  saveAcquises(sur.acquises);
+  try{ localStorage.setItem("bt_modeuse", JSON.stringify(sur.modes)); }catch(e){}
+  /* Le goût ne s'applique que s'il désigne quelque chose qui existe encore :
+     une scène retirée du catalogue ou une traduction inconnue laisseraient le
+     jeu sans fond ni texte. */
+  if(sur.gout.bible && BIBLES.some(x=>x.cle === sur.gout.bible)) settings.bible = sur.gout.bible;
+  if(sur.gout.scene && SCENES.some(x=>x.key === sur.gout.scene)) settings.scene = sur.gout.scene;
+  settings.majGout = Math.max(nEntier(settings.majGout), nEntier(sur.gout.maj));
+  saveSettings();
+  return sur;
+}
+
 /* ===== S'ENTRAÎNER SUR UN SEUL LIVRE =====
    Même moteur que le solo, une seule différence : le tirage est borné à un
    livre. On ne touche ni au chrono choisi, ni aux scores, ni aux objectifs —

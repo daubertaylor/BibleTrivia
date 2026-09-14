@@ -518,3 +518,41 @@ mourait à 0,24 s quand le mouvement durait jusqu'à 0,40 s.
 
 **Quand une courbe dépasse, on cherche la dernière image qui bouge, jamais la
 première qui retombe juste.**
+
+## Une donnée qui peut venir d'ailleurs se borne DEUX fois
+
+`joursDerives` boucle autant de fois que la série annoncée. Tant que ce nombre
+ne venait que de l'appareil, il était sain par construction. Le banc de la
+fusion, qui tire des valeurs hostiles, l'a fait tomber à sa première passe :
+« série = un milliard » construit un ensemble d'un milliard d'entrées et
+l'application se fige à l'ouverture, écran noir, sans message.
+
+Le même banc a trouvé le jumeau silencieux : `progNormalize` écrivait
+`+x || 0`, qui laisse passer les NÉGATIFS — `-6` est vrai, donc il survivait, et
+`progMergeMax` gardait consciencieusement le plus grand de deux `-6`.
+
+**Borner la VALEUR ne suffit pas, il faut aussi borner la BOUCLE** — et
+inversement. Toute donnée qui cesse d'être écrite uniquement par le jeu doit
+repasser par les deux.
+
+## Un défaut n'est pas un choix
+
+La traduction et la scène suivent le joueur, pas l'appareil. Règle naïve : « ce
+qui est ici l'emporte ». Elle ne peut pas marcher — un téléphone a TOUJOURS une
+valeur, celle par défaut, donc le choix du compte n'arriverait jamais. La règle
+inverse ne marche pas non plus : on écraserait ce qu'on vient de choisir ici.
+
+**Quand deux côtés ont toujours une réponse, ce n'est pas « qui parle » qu'il
+faut départager, c'est « qui a parlé en dernier ».** On date le choix — et
+seulement lui, baisser le volume ne fait pas d'un téléphone l'autorité sur la
+traduction. Un appareil qui n'a jamais rien choisi ne date rien, et adopte donc
+le goût du compte.
+
+## Le bord d'une mémoire bornée n'est pas une fin
+
+La liste des jours est plafonnée à quatre-vingt-dix. Une série de cent vingt
+jours, recalculée depuis cette liste, en rendrait quatre-vingt-dix : trente
+jours volés à un joueur fidèle. Quand la marche atteint le plus ancien jour
+connu ET que la liste est pleine, on ne peut PAS conclure — on garde ce qui
+était annoncé. Si la liste n'est pas pleine, atteindre son plus ancien jour
+veut dire que la série commence là, et il n'y a rien à croire sur parole.
