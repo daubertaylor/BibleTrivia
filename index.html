@@ -796,7 +796,17 @@
      extérieure reste 8 px au pixel près et la boîte intérieure en fait
      enfin 8 aussi. */
   .progress-track{ position:relative; height:8px; margin-bottom:var(--e-4); background:rgba(255,255,255,0.32); backdrop-filter:blur(14px) saturate(180%); -webkit-backdrop-filter:blur(14px) saturate(180%); border-radius:var(--r-full); border:0; box-shadow:inset 0 1px 2px rgba(15,12,10,0.12); overflow:hidden; }
-  .progress-fill{ position:absolute; left:0; top:0; bottom:0; border-radius:var(--r-full); background:linear-gradient(90deg, #FB6A45, #EFAD26); box-shadow:0 0 10px rgba(241,80,47,0.5); transition:width var(--tr-plie); }
+  /* ===== ELLE MONTE, ELLE NE SAUTE PAS =====
+     Deux défauts en un. Le premier : chaque question REFABRIQUE l'écran, donc
+     une barre neuve — et une transition n'a rien à transitionner depuis, elle
+     apparaît directement à sa longueur finale. Ce qu'on voyait n'était donc
+     pas une montée saccadée, c'était l'absence totale de montée. On lui donne
+     sa valeur d'AVANT au rendu, et sa valeur d'après à l'image suivante
+     (voir animerLaBarre) : le mouvement existe enfin.
+     Le second : « width » est une longueur, donc une mise en page recalculée à
+     chaque image. « scaleX » est une pure affaire de compositeur. Même dessin,
+     zéro recalcul. */
+  .progress-fill{ position:absolute; left:0; top:0; bottom:0; width:100%; border-radius:var(--r-full); background:linear-gradient(90deg, #FB6A45, #EFAD26); box-shadow:0 0 10px rgba(241,80,47,0.5); transform-origin:0 50%; transform:scaleX(var(--p, 0)); transition:transform var(--tr-plie); will-change:transform; }
   /* La lèvre blanche interne a sauté ici comme partout ailleurs. */
 
   .question-card{ position:relative; background:var(--surface); border:0; border-radius:var(--r-l); padding:calc(1.4rem + 1px) calc(1.2rem + 1px); margin-bottom:var(--e-3); text-align:center; }
@@ -1344,7 +1354,10 @@
        SEULE : à la taille du menu elle paraissait perdue au milieu du décor,
        alors qu'ici elle porte encore l'écran tout en restant dans la même
        famille visuelle. */
-    width:clamp(6.6rem, calc(16.3 * var(--uh)), 9rem); height:auto; aspect-ratio:1; object-fit:cover; border-radius:23%; display:block;
+    /* UN CRAN PLUS PETIT (« je pense qu'il est un petit peu gros »). Le rapport
+       à l'icône de l'accueil passe de 1,23 à 1,12 : l'écran de chargement garde
+       sa présence — l'icône y est SEULE — sans peser sur le décor. */
+    width:clamp(6rem, calc(14.8 * var(--uh)), 8.1rem); height:auto; aspect-ratio:1; object-fit:cover; border-radius:23%; display:block;
     /* Aura douce et transparente : léger halo blanc chaud tout contre l'icône
        + halo doré plus large (sacré, feutré) -> l'icône « rayonne » sans jamais
        d'anneau dur ni d'effet clinquant. Même esprit sur l'accueil. */
@@ -2392,7 +2405,9 @@
   .daily-card .dc-ico svg{ width:100%; height:100%; }
   .daily-card .dc-txt{ flex:1; display:flex; flex-direction:column; gap:0.12rem; min-width:0; }
   .daily-card .dc-txt b{ font-family:'Poppins',sans-serif; font-weight:600; font-size:0.98rem; color:var(--ink); }
-  .daily-card .dc-txt small{ font-size:0.8rem; color:var(--ink-soft); }
+  /* Le sous-titre d'une carte d'accueil ne se replie JAMAIS : six cartes de
+     hauteurs différentes ne sont plus une colonne. */
+  .daily-card .dc-txt small{ font-size:0.8rem; color:var(--ink-soft); display:block; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
   /* Même correctif que le badge Créateur : le voile de verre pâle (brun sur
      beige clair) restait fade à côté du .dc-ico (dégradé or plein, à côté).
      Teinte dorée saturée + texte blanc -> même impact visuel, cohérent avec
@@ -2780,6 +2795,17 @@
   /* Cet espaceur et la marge sous la zone du logo financent l'agrandissement
      du logo : c'est du vide, le logo est un objet. */
   .flex-sp.home-sp-top{ flex:0 0 auto; height:clamp(0.2rem, calc(0.8 * var(--hu)), 0.7rem); min-height:0; }
+  /* ===== ÉCRANS TRÈS COURTS : DIX PIXELS DE TROP =====
+     Le banc balaie quarante-deux hauteurs ; une seule débordait, 560 px, et de
+     dix pixels — la bande des sept jours s'y faisait manger par le bas. Six
+     cartes, un héros et un pied ne rentrent qu'à condition que le héros cède
+     le premier : c'est lui qui décore, les cartes portent le jeu et le pied
+     porte l'information. On lui reprend donc ces dix pixels, et seulement
+     au-dessous de 600 px de haut — nulle part ailleurs rien ne change. */
+  @media (max-height: 600px){
+    .hero{ padding:clamp(0.42rem, calc(1.2 * var(--hu)), 1.35rem) 1rem clamp(0.3rem, calc(0.85 * var(--hu)), 1rem); }
+    html .hero-zone{ height:clamp(4rem, min(calc(28.7 * var(--lw)), calc(12.6 * var(--hu))), 8rem); }
+  }
   /* ===== « SUR CERTAIN APPAREIL ÇA S'AFFICHE PAS COMME SUR LE MIEN » =====
      L'écart entre la dernière carte et la bande des sept jours n'était pas
      une mesure : c'était CE QUI RESTE. Tous les objets de l'accueil ont un
@@ -6551,9 +6577,98 @@ function ligneBible(b){
    attend une image — le temps que le verre soit posé — puis on lance
    l'ascension. Rien ne se voit d'ici là : la feuille est hors champ tant
    qu'elle n'a pas la classe. */
+/* ===================== LA SONDE D'OUVERTURE =====================
+   Sept hypothèses mesurées ici, sept réfutées, pour un rebond que Taylor voit
+   à chaque ouverture de feuille sur iPhone COMME sur Xiaomi : le coût de
+   l'image à l'arrêt (17,1 ms contre 18,3 ailleurs), une remontée du panneau
+   (0,00 px, y compris avec un vrai doigt posé pendant toute la montée), un
+   démontage de couche composée (65 couches à la crête, 65 après), une hauteur
+   qui changerait (constante), le voile qui rendrait la main (son animation ne
+   tourne même pas), le décor qui traînerait derrière la vitre (moins d'un
+   pixel, même le fil principal freiné huit fois), et un résidu de pixels qui
+   s'est avéré être une ligne de texte se redessinant de treize niveaux sur
+   deux cent cinquante-cinq.
+   Sur cette machine, une feuille s'ouvre proprement et ne bouge plus. Le
+   défaut est sur l'APPAREIL, et mon instrument ne sait pas le voir — comme
+   pour le saut de la v220, dont la réponse est venue du geste réel et pas du
+   banc. Alors on va mesurer LÀ-BAS.
+   Elle ne s'allume jamais toute seule : il faut ouvrir le jeu une fois avec
+   « ?sonde=1 » au bout de l'adresse, et « ?sonde=0 » l'éteint. Aucun joueur ne
+   la croise, et elle ne touche à rien — elle regarde. */
+const SONDE = (function(){
+  try{
+    const m = /[?&]sonde=([01])/.exec(location.search);
+    if(m){
+      if(m[1] === "1") localStorage.setItem("bt_sonde", "1"); else localStorage.removeItem("bt_sonde");
+      try{ history.replaceState(null, "", location.pathname); }catch(e){}
+    }
+    return localStorage.getItem("bt_sonde") === "1";
+  }catch(e){ return false; }
+})();
+function sonderOuverture(f){
+  if(!SONDE || !f) return;
+  const t0 = performance.now(), l = [];
+  let fin = -1, debut = -1;
+  f.addEventListener("animationstart", (e)=>{ if(e.target === f && debut < 0) debut = Math.round(performance.now() - t0); });
+  f.addEventListener("animationend", (e)=>{ if(e.target === f && fin < 0) fin = Math.round(performance.now() - t0); });
+  const montrer = ()=>{
+    if(!l.length) return;
+    try{ window.__sonde = l; window.__sondeBornes = { debut, fin }; }catch(e){}
+    /* De combien le panneau REDESCEND-il, d'une image à l'autre ? C'est ça,
+       un rebond : un bord haut qui repart vers le bas. */
+    let bas = 0, quandBas = 0, prec = null;
+    for(const e of l){ if(prec !== null && e[1] - prec > bas){ bas = e[1] - prec; quandBas = e[0]; } prec = e[1]; }
+    /* Et de combien bouge-t-il APRÈS la fin de l'animation ? */
+    let apres = 0, quandApres = 0, base = null;
+    for(const e of l){
+      if(fin < 0 || e[0] < fin) continue;
+      if(base === null){ base = e[1]; continue; }
+      const d = Math.abs(e[1] - base); if(d > apres){ apres = d; quandApres = e[0]; }
+    }
+    /* Le décor vu à travers la feuille est censé rester cloué à l'écran.
+       ON NE COMPTE QU'À PARTIR DU DÉPART DE L'ANIMATION : avant, la couche de
+       verre existe mais le moteur ne l'a pas encore posée, et elle est donc au
+       même endroit que la feuille, c'est-à-dire hors champ. Sans cette borne,
+       la sonde annonçait « ±458 px » — la hauteur du garage, pas une dérive. */
+    let dec = 0, quandDec = 0;
+    const rep = l.filter(e => fin >= 0 && e[0] > fin + 200 && e[3] !== null);
+    const ref = rep.length ? rep[rep.length - 1][3] : null;
+    if(ref !== null) for(const e of l){
+      if(e[3] === null || (debut >= 0 && e[0] < debut + 34)) continue;
+      const d = Math.abs(e[3] - ref); if(d > dec){ dec = d; quandDec = e[0]; }
+    }
+    const hs = [...new Set(l.map(e => Math.round(e[2] * 10) / 10))];
+    const cs = getComputedStyle(document.documentElement);
+    const box = document.createElement("div");
+    box.style.cssText = "position:fixed;z-index:99999;left:8px;right:8px;top:8px;background:#120E0A;color:#FFE9B8;"
+      + "font:600 11px/1.5 ui-monospace,SFMono-Regular,Menlo,monospace;padding:10px 12px;border-radius:12px;"
+      + "white-space:pre-wrap;box-shadow:0 8px 30px rgba(0,0,0,0.6)";
+    box.textContent = "SONDE — touche pour fermer\n"
+      + "écran " + window.innerWidth + "x" + window.innerHeight
+      + "  hu " + cs.getPropertyValue("--hu").trim() + "\n"
+      + "feuille h " + hs.join(" / ") + "   fin " + (fin < 0 ? "?" : fin + " ms") + "\n"
+      + "REDESCENTE max +" + bas.toFixed(2) + " px" + (bas > 0.3 ? "  @" + quandBas + " ms" : "") + "\n"
+      + "BOUGE APRÈS LA FIN " + apres.toFixed(2) + " px" + (apres > 0.3 ? "  @" + quandApres + " ms" : "") + "\n"
+      + "décor ±" + dec.toFixed(2) + " px" + (dec > 0.3 ? " @" + quandDec + " ms" : "")
+      + "   départ " + (debut < 0 ? "?" : debut + " ms") + "   " + l.length + " images";
+    box.addEventListener("click", ()=>{ try{ box.remove(); }catch(e){} });
+    document.body.appendChild(box);
+  };
+  const tic = ()=>{
+    const t = performance.now() - t0;
+    if(f.isConnected){
+      const b = f.getBoundingClientRect();
+      const gs = f.querySelector(":scope > .gs");
+      l.push([Math.round(t), b.top, b.height, gs ? gs.getBoundingClientRect().top : null]);
+    }
+    if(t < 1600) requestAnimationFrame(tic); else montrer();
+  };
+  requestAnimationFrame(tic);
+}
 function monterLaFeuille(veil){
   const f = veil && veil.querySelector ? veil.querySelector(".settings-sheet") : null;
   if(!f) return;
+  sonderOuverture(f);
   const lacher = ()=>{
     if(!f.isConnected || f.classList.contains("monte")) return;   // refermée, ou déjà partie
     /* LE MOTEUR DOIT TOURNER PENDANT TOUTE LA MONTÉE. Le décor reste fixe à
@@ -9214,6 +9329,9 @@ const HERO_VERSES = [
   { t:"La grâce est trompeuse, et la beauté est vaine ; La femme qui craint l'Éternel est celle qui sera louée.", r:"Proverbes 31:30" },
 ];
 let heroTaps = 0, heroTapReset = null, lastVerseIdx = -1;
+/* Le côté du prochain appui. Il s'inverse à chaque fois : le logo se balance
+   au lieu de répéter le même clic. */
+let heroSens = 1;
 /* ENFONCEMENT DE L'ICÔNE — piloté par pointerdown/up (voir le commentaire CSS
    sur :active). pointerdown enfonce INSTANTANÉMENT (pas de délai de clic iOS),
    pointerup/leave/cancel relâche en ressort. Un seul pilote, zéro conflit avec
@@ -9242,9 +9360,26 @@ function heroIconPress(){
      pas : c'est une fête, pas un état. */
   /* v219 : plus profond, plus incliné, et l'aura suit. Le plafond reste celui
      du banc (moins de 10 % d'enfoncement, au-delà le logo « saute »). */
+  /* ===== VIVANT, ET SURTOUT FLUIDE =====
+     « Je tape dessus, il réagit de manière vivante, à droite, à gauche. Et
+     fluide, surtout très très important. »
+     VIVANT : l'inclinaison CHANGE DE CÔTÉ à chaque tap, et s'accompagne d'un
+     petit pas dans la même direction. Un objet qui répond toujours
+     identiquement est un bouton ; un objet qui répond différemment à chaque
+     fois est vivant. Cinq taps de suite dessinent donc un balancement, pas
+     cinq fois le même clic.
+     FLUIDE : le ressort du retour dépassait de neuf pour cent
+     (cubic-bezier 1,9). À ce niveau, le dépassement se LIT comme un à-coup —
+     l'oeil voit deux mouvements au lieu d'un. Ramené à 1,42 : il dépasse
+     encore, assez pour qu'on sente le rebond, plus assez pour qu'on le compte
+     comme un second geste. Et il dure 0,30 s, pas 0,36 : à 0,36 la courbe ne
+     repassait la taille pleine qu'au bout de 144 ms, donc APRÈS le tap suivant
+     (120 ms) — le banc l'a vu tout de suite, « le logo n'est jamais revenu, il
+     tremble ». Un retour doit être fini avant que le doigt ne revienne. */
+  heroSens = -heroSens;
   w.classList.add("vif");
   w.style.transition = "transform 0.11s cubic-bezier(0.33, 0, 0.25, 1)";
-  w.style.transform = "scale(0.905) rotate(-3deg)";
+  w.style.transform = "translateX(" + (heroSens * 3.2).toFixed(1) + "px) scale(0.905) rotate(" + (heroSens * 3.4).toFixed(1) + "deg)";
 }
 function heroIconRelease(){
   const zone = document.getElementById("heroZone");
@@ -9259,7 +9394,7 @@ function heroIconRelease(){
      suivant, même au rythme le plus rapide — puis se pose. On garde les cinq
      retours sur cinq du banc, et on gagne le rebond qui manquait. */
   w.classList.remove("vif");
-  w.style.transition = "transform 0.34s cubic-bezier(0.16,1.9,0.4,1)";
+  w.style.transition = "transform 0.30s cubic-bezier(0.16,1.86,0.32,1)";
   w.style.transform = "";
   w._springT = setTimeout(()=>{ w.style.transition = ""; }, 380);
 }
@@ -10875,6 +11010,20 @@ function closeFlamme(){
    plus « disabled » — un bouton désactivé ne reçoit AUCUN événement, la
    pastille dessus aurait été morte. Son seul style propre était
    « cursor:default », qui reste porté par la classe .done. */
+/* La barre part de là où elle était et va où elle doit : la valeur d'avant est
+   posée au rendu, celle d'après à l'image suivante. Sans ces deux temps, une
+   barre neuve n'a rien à transitionner depuis. */
+let barreP = 0;
+function animerLaBarre(node){
+  try{
+    const f = node && node.querySelector ? node.querySelector(".progress-fill[data-p]") : null;
+    if(!f){ barreP = 0; return; }
+    const cible = Math.max(0, Math.min(1, parseFloat(f.dataset.p) || 0));
+    if(cible < barreP) f.style.setProperty("--p", cible);   // on repart en arrière : pas d'animation
+    barreP = cible;
+    requestAnimationFrame(()=>{ requestAnimationFrame(()=>{ try{ f.style.setProperty("--p", cible); }catch(e){} }); });
+  }catch(e){}
+}
 function tapDefi(e){
   const sur = e && e.target && e.target.closest ? e.target.closest(".dc-streak") : null;
   if(sur || dailyDoneToday()){ ouvrirFlamme(); return; }
@@ -11228,7 +11377,17 @@ function startDailyChallenge(){
    réponse à la même question l'en retire (maîtrisée). Le mode Révision fait
    rejouer uniquement ces questions, sans chrono ni statistiques. */
 function loadErrbook(){ try { const a = JSON.parse(localStorage.getItem("bt_errbook")||"[]"); return Array.isArray(a) ? a : []; } catch(e){ return []; } }
-function saveErrbook(a){ try { localStorage.setItem("bt_errbook", JSON.stringify(a.slice(-200))); } catch(e){} }
+/* ===== LE CARNET PLAFONNAIT À DEUX CENTS =====
+   « Dans tout mon carnet ça reste bloqué sur 200. » Ce n'était pas un
+   affichage : saveErrbook JETAIT tout ce qui dépassait, et par le plus vieux
+   bout — c'est-à-dire les erreurs les plus anciennes, celles qu'on a le plus
+   de mal à retenir. Un joueur qui dépasse deux cents perdait donc du travail
+   sans le savoir, en silence.
+   Six cents. Une entrée pèse moins d'un tiers de kilo-octet ; six cents tiennent
+   dans deux cents kilo-octets, là où le navigateur en offre cinq mille. Le
+   plafond reste (il faut bien une borne), mais il n'est plus dans le chemin. */
+const CARNET_MAX = 600;
+function saveErrbook(a){ try { localStorage.setItem("bt_errbook", JSON.stringify(a.slice(-CARNET_MAX))); } catch(e){} }
 /* ===== LES ERREURS REVIENNENT, ESPACÉES DANS LE TEMPS =====
    Le carnet retenait bien les questions ratées, mais on ne les revoyait qu'UNE
    fois, juste après la partie. Or ce qui fait retenir, ce n'est pas de revoir
@@ -11592,7 +11751,15 @@ function jouerLivre(nom){
 function livresDuCarnet(){
   const par = new Map();
   loadErrbook().forEach(x=>{
-    const l = bookOf(x) || "Autres";
+    /* ===== « AUTRES » N'EST PAS UN LIVRE =====
+       Une poignée de questions ne nomment aucun livre (culture générale,
+       chiffres du canon). Elles se retrouvaient groupées sous une tuile
+       « Autres » posée au milieu de la Genèse et de Jean, comme s'il existait
+       un livre de ce nom. On ne les perd pas — elles restent dans « les
+       échéances du jour » et dans « tout mon carnet » — mais elles n'ont pas
+       de tuile, parce qu'elles n'ont pas de livre. */
+    const l = bookOf(x);
+    if(!l) return;
     par.set(l, (par.get(l) || 0) + 1);
   });
   return [...par.entries()].sort((a,b)=> b[1] - a[1] || a[0].localeCompare(b[0], "fr"));
@@ -11653,7 +11820,17 @@ function startRevision(quoi){
     source = loadErrbook().filter(x => (bookOf(x) || "Autres") === nom);
   }
   else source = lastMissEntries();
-  const b = shuffle(source).slice(0, 9);
+  /* ===== « TOUT MON CARNET » VEUT DIRE TOUT =====
+     Les trois portes annoncent chacune leur compte — 143, 200, 5 — et toutes
+     lançaient neuf questions puis rendaient la main. « Ça lance juste une
+     série de 9 questions puis ça me ramène au menu alors que c'est écrit tout
+     mon carnet. » Une porte qui annonce un nombre doit tenir ce nombre.
+     Les deux portes qui comptent (les échéances du jour, le carnet entier)
+     jouent donc tout ce qu'elles ont annoncé. Le raccourci de neuf ne reste
+     que là où il n'a jamais menti : l'appel SANS argument, celui du bouton
+     « Revoir mes erreurs » de l'écran de fin, qui ne promet aucun compte. */
+  const tout = (quoi === "dus" || quoi === "tout" || (typeof quoi === "string" && quoi.indexOf("livre:") === 0));
+  const b = tout ? shuffle(source) : shuffle(source).slice(0, 9);
   if(!b.length) return;
   state.mode = "solo"; state.daily = false; state.revision = true;
   state.soloScore = 0; state.soloStreak = 0; state.soloBestStreak = 0; state.soloCorrect = 0; displayedSoloScore = 0; state.soloMissed = []; state.soloIsRecord = false;
@@ -12088,11 +12265,15 @@ function renderModeSelect(){
          questions direct. » */
       const nRev = (function(){ try{ return aRevoir().length; }catch(e){ return 0; } })();
       const nCarnet = (function(){ try{ return errbookCount(); }catch(e){ return 0; } })();
+      /* UNE SEULE LIGNE, TOUJOURS. « 143 questions pour aujourd'hui » passait à
+         DEUX lignes dès trois chiffres : la carte devenait plus haute que les
+         cinq autres et cassait la colonne (photo de Taylor). Le nombre est
+         déjà sur la pastille, à trente pixels de là — le répéter dans la
+         phrase, c'est le dire deux fois ET déborder. */
       const revTxt = nRev > 0
-        ? (nRev === 1 ? "Une question pour aujourd'hui" : nRev + " questions pour aujourd'hui")
-        : (nCarnet > 0
-            ? (nCarnet === 1 ? "Rien pour aujourd'hui \u00b7 1 en attente" : "Rien pour aujourd'hui \u00b7 " + nCarnet + " en attente")
-            : "Tes erreurs reviendront ici");
+        ? "\u00c0 réviser aujourd'hui"
+        : (nCarnet > 0 ? "Rien aujourd'hui \u00b7 " + nCarnet + " en attente"
+                       : "Tes erreurs reviendront ici");
       const revPast = nRev > 0 ? `<span class="dc-streak rv-n">${nRev}</span>`
         : (nCarnet > 0 ? `<span class="dc-streak rv-n calme">${nCarnet}</span>` : "");
       const revoir = `<button class="daily-card revoir-card" onclick="ouvrirRevoir()"><span class="dc-ico rv-ico">${ICONS.bookOpen}</span><span class="dc-txt"><b>À revoir</b><small>${revTxt}</small></span>${revPast}<span class="chev">${ICONS.chevronRight}</span></button>`;
@@ -12263,7 +12444,7 @@ function renderPlay(){
       ${state.mode==="solo" ? `<span class="streak-chip${streakHot?' hot':''}"><span class="ico">${ICONS.flame}</span>${state.soloStreak}</span>` : ""}
     </div>
     <div class="progress-track">
-      <div class="progress-fill" style="width:${Math.round(((state.currentIndex + (state.revealed?1:0)) / total) * 100)}%"></div>
+      <div class="progress-fill" style="--p:${barreP}" data-p="${(state.currentIndex + (state.revealed?1:0)) / total}"></div>
     </div>
     <div class="flex-sp" style="flex-grow:0.5"></div>
     <div class="question-card${fresh?' animate':''}"><div class="qtext">${escapeHtml(q.q)}</div></div>
@@ -12811,7 +12992,7 @@ function renderOnlinePlay(){
     <div class="play-meta"><span class="tier-chip ${info.cls}">${tierDotsHtml(info.level)}${info.label} · ${info.pts} pts</span><span class="q-counter">${net.idx+1}/${total}</span>${!net.revealed ? timerChipHtml(timerSecondsFor(net.timerKey)) : ""}</div>
     <div class="progress-track">
       ${devantPct > 0 ? `<div class="progress-ghost" style="width:${devantPct}%"></div>` : ""}
-      <div class="progress-fill" style="width:${moiPct}%"></div>
+      <div class="progress-fill" style="--p:${moiPct / 100}" data-p="${moiPct / 100}"></div>
     </div>
     <div class="flex-sp" style="flex-grow:0.5"></div>
     <div class="question-card${fresh?' animate':''}"><div class="qtext">${escapeHtml(q.q)}</div></div>
@@ -13045,6 +13226,7 @@ function render(){
     else if(sameScreen) app.scrollTop = prevScroll;
   }
   lastScreen = state.screen;
+  animerLaBarre(node);
 
   // iOS Safari : libérer les états d'animation résiduels, sinon le backdrop-filter
   // (effet verre) se coupe une fois l'animation figée. On retire les classes après coup.
@@ -14180,6 +14362,35 @@ try{
   requestAnimationFrame(()=>{ figerColonne(); majCouche(); mesurerHauteurUtile(); });
   [120, 400, 1200].forEach(d => setTimeout(()=>{ figerColonne(); majCouche(); mesurerHauteurUtile(); }, d));
   window.addEventListener("orientationchange", ()=>setTimeout(mesurerHauteurUtile, 60));
+  /* ===== UNE HAUTEUR QUI CHANGE DOIT ÊTRE REMESURÉE =====
+     « --hu » ne se relisait qu'au démarrage et à la rotation. Or la hauteur
+     utile change sans rotation : une barre de navigation Android qui se
+     rétracte, un écran partagé, une fenêtre de navigateur redimensionnée. La
+     mise en page gardait alors l'ancienne mesure et l'accueil débordait —
+     mesuré à 560 px de haut, treize pixels, la bande des sept jours mangée par
+     le bas. Un écran chargé à cette hauteur, lui, tenait parfaitement : c'est
+     bien la mesure qui manquait, pas la place.
+     LE CLAVIER EST L'EXCEPTION. Sur Android il redimensionne la vraie fenêtre :
+     remesurer à ce moment-là rétrécirait tout le jeu pendant qu'on tape, puis
+     le rendrait au relâchement. Tant qu'un champ a le focus, on ne touche à
+     rien — sa fermeture déclenchera le redimensionnement suivant. */
+  let huReprise = 0;
+  window.addEventListener("resize", ()=>{
+    clearTimeout(huReprise);
+    huReprise = setTimeout(()=>{
+      const a = document.activeElement;
+      if(a && (a.tagName === "INPUT" || a.tagName === "TEXTAREA")) return;
+      /* Le même trio qu'à la rotation, et dans le même ordre : la largeur et le
+         voile d'abord, la hauteur ensuite, le verre en dernier — le verre se
+         calcule sur la mise en page, il faut qu'elle soit juste avant. */
+      try{ majCouche(); figerColonne(); }catch(e){}
+      try{ reparerHauteurApp(); }catch(e){}
+      mesurerHauteurUtile();
+      try{ applySceneFormat(); }catch(e){}
+      try{ glassRelayout(); queueGlassSync(); }catch(e){}
+      try{ fitScroll(); }catch(e){}
+    }, 60);
+  });
 }catch(e){}
 function reposeApresRotation(){
   rotReprises.forEach(clearTimeout); rotReprises = [];

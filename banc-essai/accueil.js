@@ -77,6 +77,29 @@ const RELEVE = () => {
      peint par le même render(). */
   const pret = () => { try { return typeof render === 'function' && typeof state === 'object'; } catch(e){ return false; } };
   await p.waitForFunction(pret, null, { timeout:20000 });
+  /* ===== ON LAISSE LA MISE EN PAGE SE POSER AVANT LA PREMIÈRE MESURE =====
+     Sauter l'écran de chargement fait gagner quatre secondes par banc, mais il
+     fait aussi mesurer un état que PERSONNE ne voit : mesuré à 560 px, l'accueil
+     déborde de dix pixels à 200 ms et de zéro à 400 ms — le temps que les
+     polices arrivent et que le texte prenne sa vraie taille. En usage réel
+     l'écran de chargement couvre largement cette seconde-là.
+     On attend donc que ce soit posé. Ce n'est pas masquer un défaut : c'est
+     mesurer ce que le joueur a sous les yeux. Le débord des polices, lui, est
+     réel mais invisible — et le jour où l'écran de chargement disparaîtrait,
+     ce banc devrait repasser à la mesure immédiate. */
+  /* ===== UNE PASSE DE CHAUFFE, ET ON DIT POURQUOI =====
+     Mesuré : 560 px échoue quand c'est la PREMIÈRE hauteur visitée (débord 10)
+     et passe quand c'est la DERNIÈRE — même hauteur, mêmes données, même
+     mesure. Ce n'est donc pas la mise en page qui est fausse à 560, c'est le
+     tout premier instant de la vie de l'application qui l'est : polices en
+     route, décor pas encore chargé, verre pas encore posé. En usage réel, cet
+     instant est entièrement couvert par l'écran de chargement — personne ne le
+     voit jamais, et c'est bien pour ça que le banc le saute.
+     On chauffe donc une fois, à une hauteur qu'on ne juge pas, puis on balaie.
+     560 reste mesurée comme les quarante et une autres. */
+  await p.setViewportSize({ width:393, height:844 });
+  await p.evaluate(() => { state.screen = 'mode'; render(); });
+  await p.waitForTimeout(900);
 
   const pires = [];
   for (const h of HAUTEURS) {
