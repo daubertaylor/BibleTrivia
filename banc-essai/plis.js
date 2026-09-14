@@ -97,7 +97,12 @@ const norme = (s) => (s || '').replace(/\s+/g, '');
   await attente(200);
   /* On lance une VRAIE partie : fabriquer des questions à la main finit
      toujours par mentir sur la forme réelle des données. */
-  await lire('barre de progression', "state.mode='solo'; startGame();", '.progress-fill', 'width');
+  /* ELLE NE SE MEUT PLUS PAR SA LARGEUR, ET C'EST VOULU (v224). Une longueur
+     est une mise en page recalculée à chaque image ; une échelle se règle sur
+     le compositeur. Même dessin, zéro recalcul. Le banc suit la propriété
+     réellement animée — sinon il verrouille une implémentation au lieu de
+     verrouiller une durée, qui est son vrai sujet. */
+  await lire('barre de progression', "state.mode='solo'; startGame();", '.progress-fill', 'transform');
   /* Le repère pâle des AUTRES joueurs n'existe qu'en ligne. On le pose dans
      la piste réelle de l'écran de jeu : c'est bien la règle du jeu qui le
      peint, appliquée à un vrai élément, pas une lecture de feuille de style. */

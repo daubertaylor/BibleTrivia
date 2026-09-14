@@ -2795,6 +2795,15 @@
   /* Cet espaceur et la marge sous la zone du logo financent l'agrandissement
      du logo : c'est du vide, le logo est un objet. */
   .flex-sp.home-sp-top{ flex:0 0 auto; height:clamp(0.2rem, calc(0.8 * var(--hu)), 0.7rem); min-height:0; }
+  /* PORTRAIT SEULEMENT. Sans cette précision, tourner le téléphone fait passer
+     la hauteur sous 600 px en plein mouvement : la règle se déclenche, le héros
+     rétrécit pendant la rotation, et le banc « rotation » a vu l'écran se
+     couper en deux (11,7 px de déplacement). En paysage la mise en page est de
+     toute façon gelée — il n'y a rien à économiser. */
+  @media (max-height: 600px) and (orientation: portrait){
+    .hero{ padding:clamp(0.42rem, calc(1.2 * var(--hu)), 1.35rem) 1rem clamp(0.3rem, calc(0.85 * var(--hu)), 1rem); }
+    html .hero-zone{ height:clamp(4rem, min(calc(28.7 * var(--lw)), calc(12.6 * var(--hu))), 8rem); }
+  }
   /* ===== ÉCRANS TRÈS COURTS : DIX PIXELS DE TROP =====
      Le banc balaie quarante-deux hauteurs ; une seule débordait, 560 px, et de
      dix pixels — la bande des sept jours s'y faisait manger par le bas. Six
@@ -2802,10 +2811,6 @@
      le premier : c'est lui qui décore, les cartes portent le jeu et le pied
      porte l'information. On lui reprend donc ces dix pixels, et seulement
      au-dessous de 600 px de haut — nulle part ailleurs rien ne change. */
-  @media (max-height: 600px){
-    .hero{ padding:clamp(0.42rem, calc(1.2 * var(--hu)), 1.35rem) 1rem clamp(0.3rem, calc(0.85 * var(--hu)), 1rem); }
-    html .hero-zone{ height:clamp(4rem, min(calc(28.7 * var(--lw)), calc(12.6 * var(--hu))), 8rem); }
-  }
   /* ===== « SUR CERTAIN APPAREIL ÇA S'AFFICHE PAS COMME SUR LE MIEN » =====
      L'écart entre la dernière carte et la bande des sept jours n'était pas
      une mesure : c'était CE QUI RESTE. Tous les objets de l'accueil ont un
@@ -14392,15 +14397,22 @@ try{
     huReprise = setTimeout(()=>{
       const a = document.activeElement;
       if(a && (a.tagName === "INPUT" || a.tagName === "TEXTAREA")) return;
-      /* Le même trio qu'à la rotation, et dans le même ordre : la largeur et le
-         voile d'abord, la hauteur ensuite, le verre en dernier — le verre se
-         calcule sur la mise en page, il faut qu'elle soit juste avant. */
-      try{ majCouche(); figerColonne(); }catch(e){}
-      try{ reparerHauteurApp(); }catch(e){}
+      /* ===== ON NE REFAIT PAS CE QUI EST DÉJÀ FAIT AILLEURS =====
+         J'avais mis ici le trio complet de la rotation — largeur, voile,
+         hauteur, décor, verre, défilement. C'était une faute, et deux bancs
+         l'ont dit tout de suite : « rotation » a vu l'écran se couper en deux
+         (11,7 px de déplacement) et « plis » a vu le pli d'un testament sauter
+         de 35,5 px d'une image à l'autre. La raison est simple : une rotation
+         déclenche AUSSI un redimensionnement, donc les deux chemins tournaient
+         en même temps et se marchaient dessus, l'un recalculant la mise en page
+         pendant que l'autre animait dessus.
+         La rotation a son chemin, complet et éprouvé (reposeApresRotation).
+         Celui-ci ne sert qu'aux redimensionnements qu'elle ne couvre PAS — une
+         barre de navigation Android qui se rétracte, un écran partagé, une
+         fenêtre de navigateur. Il ne fait donc que la seule chose qui manquait :
+         relire la hauteur utile. Rien d'autre. */
+      if(typeof ecranVerrouille === "function" && ecranVerrouille()) return;
       mesurerHauteurUtile();
-      try{ applySceneFormat(); }catch(e){}
-      try{ glassRelayout(); queueGlassSync(); }catch(e){}
-      try{ fitScroll(); }catch(e){}
     }, 60);
   });
 }catch(e){}
