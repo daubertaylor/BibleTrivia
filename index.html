@@ -1617,6 +1617,43 @@
   .hero-icon-btn::before{ content:none; }
   button:active:not(:disabled),
   .mode-card:active{ transform:translateZ(0) scale(0.968); transition-duration:0.09s; transition-timing-function:cubic-bezier(0.3,0,0.45,1); }
+  /* ===== CE QUI VIT EN RANGÉE NE S'ENFONCE PAS : ÇA SE REMPLIT =====
+     « Le remplissage ne se fait pas à 100 %. » Mesuré sur la rangée Testament,
+     les trois puces au même instant, doigt posé sur celle du milieu :
+
+         Tout (sélectionnée)  106,0 px
+         Ancien (APPUYÉE)     102,5 px   <-- 3,5 px de moins
+         Nouveau (au repos)   106,0 px
+
+     Le rose remplissait bien cent pour cent de SA puce. C'est la puce qui
+     rétrécit sous le doigt — scale(0,968), la compression commune à tous les
+     boutons. Il restait 1,75 px de carte de chaque côté ; l'œil, qui compare
+     avec les voisines restées grandes, lit « ça ne va pas jusqu'au bord ».
+     Ce n'était ni une couleur, ni un rayon, ni une bordure : une différence de
+     TAILLE avec les voisines. (Et ce n'est pas une régression : la v230 donne
+     102,5 px elle aussi. Ça a toujours été là.)
+
+     POURQUOI ON NE PEUT PAS COMPENSER. J'ai essayé de rendre à l'onde
+     l'inverse exact de l'échelle (1 / 0,968) : le navigateur l'applique bien,
+     et on ne voit RIEN. Ces surfaces sont en « overflow:clip » — il le faut,
+     elles découpent la copie floutée du décor qui fait leur verre. Tout ce qui
+     dépasse du bouton est coupé, y compris l'onde. Mesuré : 102,5 px avant,
+     102,5 px après. La compensation a été retirée.
+
+     LA RÈGLE, ALORS. Un bouton SEUL peut s'enfoncer : il n'y a rien à côté
+     pour dire qu'il a rétréci. Un bouton qui vit EN RANGÉE avec des jumeaux
+     visibles au même instant, non — son enfoncement se lit comme un
+     remplissage raté. Pour ceux-là, le remplissage EST le geste, et il doit
+     couvrir exactement la même silhouette que ses voisines.
+     On garde donc « translateZ(0) » (même couche de composition, même
+     fluidité) et on remet l'échelle à 1. Rien d'autre ne change : la
+     compression reste partout ailleurs, sur les grands boutons et les cartes
+     de mode, où elle n'a jamais gêné personne.
+     (« :not(:disabled) » est là pour la spécificité, pas pour le sens : sans
+     lui, la règle générale ci-dessus l'emporte — mesuré, 102,5 px inchangés.) */
+  .chip:active:not(:disabled),
+  .len-chip:active:not(:disabled),
+  .bk:active:not(:disabled){ transform:translateZ(0) scale(1); }
   /* smoother color transitions on option reveal */
   .option-btn{ transition:transform 0.24s cubic-bezier(0.33,1,0.68,1), background-color 0.28s ease, border-color 0.28s ease; }
   /* subtle gradient depth on primary actions */
