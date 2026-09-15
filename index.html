@@ -9549,14 +9549,28 @@ let heroTaps = 0, heroTapReset = null, lastVerseIdx = -1;
 
    Réglages mesurés sur banc-essai/logo.js, pas choisis au jugé : voir les
    chiffres en tête du banc. */
-const HERO_APPUI  = { k:1400, z:0.90 };   // forcé : rejoint sans osciller
+/* ===== L'ENFONCEMENT DOIT TOUJOURS ALLER AU FOND =====
+   « Ça bouge trop, ce n'est pas fluide, il n'y a rien de satisfaisant à
+   tapoter. » Mesuré, profondeur atteinte selon la durée du tap :
+        40 ms  7,8 %      120 ms  8,5 %
+        60 ms  6,4 %      250 ms  9,0 %
+   Sur un tap rapide, l'enfoncement REBROUSSAIT CHEMIN avant d'avoir touché le
+   fond — l'arc montait à -64 puis repartait, au lieu d'aller à -90. Le même
+   geste ne donnait donc jamais le même mouvement, et un geste inconstant n'est
+   jamais satisfaisant : la main n'apprend rien, elle ne peut rien anticiper.
+   Ce n'était pas une question d'amplitude mais de VITESSE D'ARRIVÉE. À 1400,
+   le ressort mettait quatre-vingt-dix millisecondes à se poser ; un tap en
+   dure soixante. À 3400 il y est en cinquante : le tap le plus bref touche
+   désormais le fond, comme le plus long. Et il reste critique (z = 1), donc il
+   ne dépasse pas en descendant — on enfonce, on ne cogne pas. */
+const HERO_APPUI  = { k:6400, z:1.00 };   // forcé : au fond en 50 ms, sans dépasser
 /* Le retour doit être FINI avant le tap suivant. À cent vingt millisecondes
    entre deux appuis — le rythme du geste qui ouvre le verset — une raideur de
    520 laissait le logo à mi-chemin : le banc voyait « il tremble au lieu de
    s'enfoncer ». À 1000, il repasse sa taille de repos en cinquante-quatre
    millisecondes. L'ampleur du dépassement, elle, ne dépend que de
    l'amortissement, pas de la raideur : elle ne change donc pas. */
-const HERO_LIBRE  = { k:1000, z:0.42 };   // libre : dépasse, puis se pose
+const HERO_LIBRE  = { k:1250, z:0.38 };   // libre : dépasse, puis se pose
 /* ===== IL RÉPOND À L'ENDROIT OÙ ON LE TOUCHE =====
    « Pas juste des droite-gauche, mais un vrai ressenti. » Le balancement
    alterné était un pendule SCRIPTÉ : il faisait la même chose quel que soit
@@ -9602,14 +9616,57 @@ const HERO_LIBRE  = { k:1000, z:0.42 };   // libre : dépasse, puis se pose
 const HERO_POINT  = { k:600, z:0.95 };    // la bascule : douce, et sans rebond
 const HERO_CREUX_X = 0.090;               // écrasement en largeur
 const HERO_CREUX_Y = 0.112;               // ... et en hauteur : le corps s'aplatit
-const HERO_INCLINE = 6.9;                 // degrés de bascule au bord
-const HERO_PENCHE = 1.3;                  // degrés du balancement résiduel
-const HERO_PAS    = 1.3;                  // pixels de côté du balancement résiduel
+const HERO_INCLINE = 6.2;                 // degrés de bascule au bord
+/* ===== LE BALANCEMENT ALTERNÉ EST PARTI, ET C'EST LUI LE « ÇA BOUGE TROP » =====
+   C'était un pendule SCRIPTÉ : à chaque tap il repartait dans l'autre sens,
+   quel que soit l'endroit touché. Deux raisons de le supprimer, pas une.
+   D'abord il ne répond à rien — le doigt ne lui dit rien, il alterne, point.
+   Un objet réel ne fait pas ça, et l'œil le sent même sans savoir le nommer.
+   Ensuite et surtout, il s'INVERSE : tapoter cinq fois, c'est cinq départs
+   dans cinq directions décidées par un compteur. C'est exactement « ça part
+   dans tous les sens », et aucun réglage d'amplitude ne pouvait le corriger,
+   puisque le défaut était dans le principe.
+   Il reste donc TROIS mouvements, tous commandés par le doigt : l'enfoncement
+   (où l'on appuie), l'écrasement (le corps s'aplatit) et la bascule (vers
+   l'endroit touché). Un tap pile au centre n'incline plus rien du tout — et
+   c'est juste : il n'y a alors aucune direction, et en inventer une était du
+   bruit. PLUS DE RESSENTI NE VEUT PAS DIRE PLUS DE MOUVEMENT. */
+const HERO_PENCHE = 0;                    // (supprimé : voir ci-dessus)
+const HERO_PAS    = 0;                    // (supprimé : voir ci-dessus)
 let heroEnf = 0, heroEnfV = 0, heroBal = 0, heroBalV = 0;
 let heroPx = 0, heroPxV = 0, heroPy = 0, heroPyV = 0;   // le point de contact
 let heroCibleEnf = 0, heroCibleBal = 0, heroCiblePx = 0, heroCiblePy = 0, heroSens = 1;
 let heroDemiL = 32, heroDemiH = 32;
 let heroImage = 0, heroHorloge = 0, heroPresse = false;
+/* ===== UN PAS DE RESSORT EXACT, PAS APPROCHÉ =====
+   Le ressort était intégré par petits pas (v += a·dt ; x += v·dt). C'est
+   simple et ça marche tant qu'il est mou — mais l'erreur grandit avec la
+   raideur, et au-delà d'un certain seuil le calcul DIVERGE : en passant la
+   raideur de l'appui à 3400 pour que le tap le plus bref touche le fond,
+   l'échelle du logo est montée à 12,9. Pas un réglage trop fort : un calcul
+   faux.
+   La solution d'un ressort amorti s'écrit pourtant en clair. On l'applique
+   donc telle quelle à chaque image, ce qui rend le mouvement :
+     — STABLE à n'importe quelle raideur, donc on peut enfin choisir la
+       raideur d'après le geste voulu et non d'après ce que le calcul supporte ;
+     — INDÉPENDANT DE LA CADENCE : à 30 images par seconde sur un vieux
+       téléphone, la courbe est la même qu'à 120 sur un neuf, seul le tracé est
+       moins fin. C'est le même choix que pour le recadrage du clavier.
+   Deux cas, parce que la forme change : amorti critique (z = 1, il rejoint
+   sans dépasser) et sous-amorti (z < 1, il dépasse puis se pose). */
+function heroRessort(x, v, cible, r, dt){
+  const w = Math.sqrt(r.k), z = r.z, d = x - cible;
+  const e = Math.exp(-z * w * dt);
+  if(z >= 0.999){
+    const B = v + w * d, dt2 = d + B * dt;
+    return [cible + dt2 * e, (B - w * dt2) * e];
+  }
+  const wd = w * Math.sqrt(1 - z * z);
+  const co = Math.cos(wd * dt), si = Math.sin(wd * dt);
+  const A = (v + z * w * d) / wd;
+  return [cible + e * (d * co + A * si),
+          e * (v * co - ((w * w * d + z * w * v) / wd) * si)];
+}
 
 function heroSurface(){
   const zone = document.getElementById("heroZone");
@@ -9645,15 +9702,13 @@ function heroBoucle(maintenant){
   const dt = heroHorloge ? Math.min(0.034, (maintenant - heroHorloge) / 1000) : 0.016;
   heroHorloge = maintenant;
   const r = heroPresse ? HERO_APPUI : HERO_LIBRE;
-  const c = 2 * r.z * Math.sqrt(r.k);
-  heroEnfV += ((heroCibleEnf - heroEnf) * r.k - heroEnfV * c) * dt; heroEnf += heroEnfV * dt;
-  heroBalV += ((heroCibleBal - heroBal) * r.k - heroBalV * c) * dt; heroBal += heroBalV * dt;
+  let p1 = heroRessort(heroEnf, heroEnfV, heroCibleEnf, r, dt); heroEnf = p1[0]; heroEnfV = p1[1];
+  p1 = heroRessort(heroBal, heroBalV, heroCibleBal, r, dt);     heroBal = p1[0]; heroBalV = p1[1];
   /* Le point de contact — donc la bascule — suit son propre ressort, le même
      à l'appui et au relâchement : il n'a aucune raison de claquer dans un sens
      et de flotter dans l'autre. */
-  const q = HERO_POINT, cq = 2 * q.z * Math.sqrt(q.k);
-  heroPxV  += ((heroCiblePx  - heroPx)  * q.k - heroPxV  * cq) * dt; heroPx  += heroPxV  * dt;
-  heroPyV  += ((heroCiblePy  - heroPy)  * q.k - heroPyV  * cq) * dt; heroPy  += heroPyV  * dt;
+  p1 = heroRessort(heroPx, heroPxV, heroCiblePx, HERO_POINT, dt); heroPx = p1[0]; heroPxV = p1[1];
+  p1 = heroRessort(heroPy, heroPyV, heroCiblePy, HERO_POINT, dt); heroPy = p1[0]; heroPyV = p1[1];
   heroPoser(w);
   const pose = Math.abs(heroCibleEnf - heroEnf) < 0.0015 && Math.abs(heroEnfV) < 0.02
             && Math.abs(heroCibleBal - heroBal) < 0.0015 && Math.abs(heroBalV) < 0.02
