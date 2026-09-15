@@ -13,7 +13,7 @@
    ici ». Réviser n'est pas une question courte à laquelle on répond dans une
    parenthèse — on arrive avec une intention vague, on regarde ce qu'on a, on
    compare, on choisit. C'est un LIEU.
-   Le banc juge donc un ÉCRAN : les trois portes avec leurs comptes, TOUS les
+   Le banc juge donc un ÉCRAN : les portes avec leurs comptes, TOUS les
    livres sans un nom tronqué, et une révision qui part.
    Usage : node banc-essai/grille-livres.js [url]
 */
@@ -46,7 +46,19 @@ const D='/tmp/claude-0/-home-user-BibleTrivia/fb9bf869-826b-5523-9825-ea1b24c294
     portes: [...document.querySelectorAll('.rv-choix')].map(b=>b.querySelector('.oa-txt b').textContent),
   }));
   dire(!f.feuille, 'aucune feuille glissante sur ce chemin');
-  dire(f.portes.length === 3, 'trois portes : ' + f.portes.join(' / '));
+  /* ON NOMME LES PORTES, ON NE LES COMPTE PLUS. Le banc exigeait « exactement
+     trois », et il a refusé le jour où une quatrième est arrivée — « Celles
+     qui me résistent », qui joue les questions ratées plusieurs fois. Il avait
+     raison de le voir : c'est bien un changement d'écran. Mais compter n'était
+     pas la bonne exigence — ce qui compte, c'est que CHAQUE porte promise soit
+     là, et qu'aucune ne se perde en chemin. On les nomme donc. Le jour où on
+     en ajoute une cinquième, il faudra l'écrire ici : c'est voulu. */
+  const ATTENDUES = ['Celles qui me résistent', 'Les échéances du jour',
+                     'Tout mon carnet', 'Ma dernière partie'];
+  const manquantes = ATTENDUES.filter(x => !f.portes.some(p => p.trim() === x));
+  dire(manquantes.length === 0 && f.portes.length === ATTENDUES.length,
+       'les quatre portes : ' + f.portes.join(' / ')
+       + (manquantes.length ? '  MANQUE : ' + manquantes.join(', ') : ''));
   const e = await p.evaluate(()=>{
     const app=document.getElementById('app');
     const noms=[...document.querySelectorAll('.rvl-card .bk-nm')];

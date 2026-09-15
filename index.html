@@ -3176,6 +3176,19 @@
   .settings-sheet.dragging{ transition:none !important; }
   .sheet-title{ font-family:'Poppins',sans-serif; font-weight:700; font-size:1.12rem; color:var(--ink); display:flex; align-items:center; gap:0.55rem; margin-bottom:0.35rem; }
   .sheet-title .st-ico{ width:1.5rem; height:1.5rem; display:inline-flex; color:var(--primary); flex-shrink:0; }
+  /* LE DRAPEAU DE LA LANGUE. Il se range à droite de la rangée de titre, dans
+     la place qui était déjà vide : la feuille ne gagne pas un pixel de hauteur.
+     Sa hauteur (1,5rem) est celle de l'icône d'engrenage en face — la rangée
+     garde donc exactement la taille qu'elle avait. */
+  .lang-btn{ margin-left:auto; display:flex; align-items:center; gap:0.34rem; flex-shrink:0;
+    background:rgb(252,248,241); border:0; border-radius:var(--r-s);
+    padding:calc(0.22rem + 1px) calc(0.44rem + 1px); cursor:pointer;
+    --press-tint: rgba(238,74,40,0.28); }
+  .lang-btn .lang-dr{ width:1.32rem; height:0.88rem; display:block; border-radius:2px; overflow:hidden;
+    box-shadow:0 0 0 1px rgba(34,26,16,0.1); }
+  .lang-btn .lang-dr svg{ width:100%; height:100%; display:block; }
+  .lang-btn .lang-cd{ font-family:'Poppins',sans-serif; font-weight:700; font-size:0.7rem;
+    letter-spacing:0.03em; color:var(--ink-soft); }
   .set-row{ display:flex; align-items:center; gap:0.8rem; padding:0.88rem 0.1rem; }
   /* LES LIGNES DES RÉGLAGES SONT PARTIES AUSSI. Ramenées de 0,08 à 0,055,
      elles creusaient encore 8,2 à 10,3 unités sous la feuille — soit le seuil
@@ -3960,6 +3973,136 @@
    vide, posé au tout début du script, débloque :active pour TOUTE l'appli :
    chaque bouton devient aussi instantané au toucher que sur Android. */
 document.addEventListener("touchstart", function(){}, { passive:true });
+
+/* ===================== LES LANGUES =====================
+   « Intègre le nouveau système de langues, pour avoir des langues différentes.
+   Tu cales ça dans les réglages, mais fais en sorte que les réglages ne
+   montent pas trop haut. Un petit truc avec un drapeau, ça permettrait de
+   comprendre en quelques secondes que c'est le truc pour changer de langue,
+   sans avoir trop d'explicatifs. »
+
+   OÙ IL SE POSE, ET POURQUOI LÀ. La feuille des réglages a déjà une rangée de
+   titre, en flex : « ⚙ Réglages ». Le drapeau s'y range à droite, dans la
+   place vide qui existait déjà. Résultat : ZÉRO pixel de hauteur ajouté, aucune
+   rangée de plus, rien qui descend d'un cran. C'était la condition posée, et
+   c'est la seule place de toute la feuille qui la respecte vraiment.
+
+   POURQUOI DES DRAPEAUX DESSINÉS ET NON DES ÉMOJIS. 🇫🇷 ne s'affiche pas
+   partout : certains navigateurs rendent deux lettres dans un carré au lieu du
+   drapeau. Le jeu doit être le même pour tout le monde — ce sont donc deux
+   dessins, quelques lignes chacun, identiques sur tous les appareils.
+
+   COMMENT ON TRADUIT, ET POURQUOI PAS AUTREMENT. Les textes sont indexés PAR
+   LEUR VERSION FRANÇAISE, exactement comme les versets d'une autre Bible le
+   sont par leur référence (VERSETS_ALT). Trois raisons, et elles ont toutes
+   déjà servi ici :
+     — aucune clé à inventer, donc aucune clé à se tromper ;
+     — ce qui n'est PAS traduit retombe sur le français : une langue incomplète
+       fonctionne dès le premier mot déposé, et ne laisse jamais de trou ;
+     — le français, lui, ne peut pas casser : il est la source, pas une entrée
+       de tableau.
+   Une langue s'ajoute donc en déposant un dictionnaire. Rien d'autre à toucher.
+
+   CE QUE ÇA NE TRADUIT PAS ENCORE, ET IL FAUT LE DIRE. Les 1545 questions font
+   269 Ko de texte français. Les traduire est un travail de CONTENU, pas de
+   mécanique — et sur des questions bibliques, une traduction bâclée serait
+   pire que pas de traduction du tout. Elles suivront par lots. La mécanique,
+   elle, est entière dès maintenant. */
+const DRAPEAUX = {
+  fr: `<svg viewBox="0 0 24 16" aria-hidden="true"><rect width="24" height="16" rx="2.4" fill="#F5F3EE"/><path d="M2.4 0H8v16H2.4A2.4 2.4 0 0 1 0 13.6V2.4A2.4 2.4 0 0 1 2.4 0Z" fill="#2B4DA8"/><path d="M16 0h5.6A2.4 2.4 0 0 1 24 2.4v11.2a2.4 2.4 0 0 1-2.4 2.4H16V0Z" fill="#D8352A"/></svg>`,
+  en: `<svg viewBox="0 0 24 16" aria-hidden="true"><rect width="24" height="16" rx="2.4" fill="#F5F3EE"/><g fill="#D8352A"><rect y="1.23" width="24" height="1.23"/><rect y="3.69" width="24" height="1.23"/><rect y="6.15" width="24" height="1.23"/><rect y="8.62" width="24" height="1.23"/><rect y="11.08" width="24" height="1.23"/><rect y="13.54" width="24" height="1.23"/></g><path d="M0 2.4A2.4 2.4 0 0 1 2.4 0H11v8.62H0V2.4Z" fill="#2B4DA8"/></svg>`,
+};
+/* « dispo » dit si la langue est offerte au joueur. Une langue dont les textes
+   ne sont pas prêts reste ici, visible dans le code, mais pas proposée — même
+   règle que pour une Bible dont on n'a pas le droit de livrer le texte. */
+const LANGUES = [
+  { cle:"fr", code:"FR", nom:"Français", drapeau:DRAPEAUX.fr, dispo:true },
+  { cle:"en", code:"EN", nom:"English",  drapeau:DRAPEAUX.en, dispo:true },
+];
+const TEXTES = {
+  en: {
+    /* --- la feuille des réglages --- */
+    "Réglages":"Settings",
+    "Fermer":"Close",
+    "Effets sonores":"Sound effects",
+    "Musique de fond":"Background music",
+    "Installer le jeu":"Install the game",
+    "Guide":"Guide",
+    "Volume de la musique":"Music volume",
+    "Volume":"Volume",
+    "Arrière-plan":"Background",
+    "Langue":"Language",
+    /* --- la navigation --- */
+    "Retour":"Back",
+    "Accueil":"Home",
+    "Durée de la partie":"Game length",
+    "questions":"questions",
+    "Chrono par question":"Timer per question",
+    "par question":"per question",
+    "Testament":"Testament",
+    "Tout":"All",
+    "Toute la Bible":"The whole Bible",
+    "Ancien":"Old",
+    "Nouveau":"New",
+    "Commencer la partie":"Start the game",
+    "Courte":"Short",
+    "Normale":"Normal",
+    "Longue":"Long",
+    "Sans":"None",
+    "prenez votre temps":"take your time",
+    /* --- à revoir --- */
+    "À revoir":"To review",
+    "Celles qui me résistent":"The ones that resist me",
+    "Ratées au moins deux fois":"Missed at least twice",
+    "Les échéances du jour":"Due today",
+    "Ce que la mémoire réclame":"What memory is asking for",
+    "Tout mon carnet":"My whole notebook",
+    "Sans attendre leur tour":"Without waiting their turn",
+    "Ma dernière partie":"My last game",
+    "Ce que je viens de rater":"What I just missed",
+    "Ou un livre en particulier":"Or one book in particular",
+  },
+};
+let LANGUE = "fr";
+/* T() : le texte dans la langue du joueur, ou le français si rien n'est déposé.
+   Volontairement minuscule et sans état : elle est appelée à chaque rendu. */
+function T(fr){
+  if(LANGUE === "fr") return fr;
+  const d = TEXTES[LANGUE];
+  return (d && Object.prototype.hasOwnProperty.call(d, fr)) ? d[fr] : fr;
+}
+function langueActive(){
+  return LANGUES.find(l => l.cle === LANGUE) || LANGUES[0];
+}
+/* Le drapeau est un BOUTON, pas un menu : avec deux langues, un menu serait
+   une porte de plus pour un choix qui n'en a pas besoin. Le jour où il y en
+   aura quatre, il ouvrira une liste — et ce sera le même bouton. */
+function langueSuivante(){
+  const dispo = LANGUES.filter(l => l.dispo);
+  const i = dispo.findIndex(l => l.cle === LANGUE);
+  LANGUE = dispo[(i + 1) % dispo.length].cle;
+  try{ localStorage.setItem("bt_langue", LANGUE); }catch(e){}
+  try{ document.documentElement.setAttribute("lang", LANGUE); }catch(e){}
+  try{ if(settings.sfx) playTap(); }catch(e){}
+  /* On refait la feuille SUR PLACE, sans la fermer : le joueur voit la langue
+     changer sous ses yeux, il n'a pas à rouvrir les réglages pour vérifier. */
+  try{
+    const v = document.getElementById("settingsVeil");
+    if(v){ v.remove(); openSettings(); }
+  }catch(e){}
+  try{ render(); }catch(e){}
+}
+try{
+  const l = localStorage.getItem("bt_langue");
+  if(l && LANGUES.some(x => x.cle === l && x.dispo)) LANGUE = l;
+  document.documentElement.setAttribute("lang", LANGUE);
+}catch(e){}
+function boutonLangue(){
+  const l = langueActive();
+  return `<button class="lang-btn" onclick="langueSuivante()" aria-label="${T("Langue")}" title="${T("Langue")}">
+      <span class="lang-dr">${l.drapeau}</span><span class="lang-cd">${l.code}</span>
+    </button>`;
+}
 
 /* ===== L'ONDE D'APPUI VA JUSQU'AU BOUT DE SON REMPLISSAGE =====
    Portée par « :active », elle s'arrêtait où le doigt s'était arrêté : sur un
@@ -7860,28 +8003,28 @@ function openSettings(){
   veil.className = "sheet-veil"; veil.id = "settingsVeil";
   const pct = Math.round(settings.volume*100);
   veil.innerHTML = `
-    <div class="settings-sheet" role="dialog" aria-label="Réglages">
-      <button class="sheet-grab" aria-label="Fermer" onclick="closeSettings()"></button>
-      <div class="sheet-title"><span class="st-ico">${ICONS.gear}</span>Réglages</div>
+    <div class="settings-sheet" role="dialog" aria-label="${T("Réglages")}">
+      <button class="sheet-grab" aria-label="${T("Fermer")}" onclick="closeSettings()"></button>
+      <div class="sheet-title"><span class="st-ico">${ICONS.gear}</span>${T("Réglages")}${boutonLangue()}</div>
       <div class="set-row">
         <span class="set-ico sfx">${ICONS.bell}</span>
-        <span class="set-txt"><b>Effets sonores</b></span>
-        <button class="switch${settings.sfx?' on':''}" id="swSfx" role="switch" aria-checked="${settings.sfx}" aria-label="Effets sonores" onclick="setSfx(!settings.sfx)"></button>
+        <span class="set-txt"><b>${T("Effets sonores")}</b></span>
+        <button class="switch${settings.sfx?' on':''}" id="swSfx" role="switch" aria-checked="${settings.sfx}" aria-label="${T("Effets sonores")}" onclick="setSfx(!settings.sfx)"></button>
       </div>
       <div class="set-row">
         <span class="set-ico mus">${ICONS.music}</span>
-        <span class="set-txt"><b>Musique de fond</b></span>
-        <button class="switch${settings.music?' on':''}" id="swMusic" role="switch" aria-checked="${settings.music}" aria-label="Musique de fond" onclick="setMusic(!settings.music)"></button>
+        <span class="set-txt"><b>${T("Musique de fond")}</b></span>
+        <button class="switch${settings.music?' on':''}" id="swMusic" role="switch" aria-checked="${settings.music}" aria-label="${T("Musique de fond")}" onclick="setMusic(!settings.music)"></button>
       </div>
       ${(IS_PHONE && !isStandalone) ? `
       <div class="set-row">
         <span class="set-ico fsx">${ICONS.telecharger}</span>
-        <span class="set-txt"><b>Installer le jeu</b></span>
-        <button class="set-go" onclick="openFsGuide()">Guide</button>
+        <span class="set-txt"><b>${T("Installer le jeu")}</b></span>
+        <button class="set-go" onclick="openFsGuide()">${T("Guide")}</button>
       </div>` : ``}
       <div class="set-row">
         <span class="set-ico vol">${ICONS.speakerOn}</span>
-        <span class="set-txt"><b>Volume de la musique</b></span>
+        <span class="set-txt"><b>${T("Volume de la musique")}</b></span>
         <span class="vol-val" id="volPct">${pct}%</span>
       </div>
       <div class="vol-row">
@@ -7901,7 +8044,7 @@ function openSettings(){
       ${SCENES.length > 1 ? `
         <div class="set-row">
           <span class="set-ico scn"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="16" rx="3"/><circle cx="8.6" cy="9.6" r="1.5"/><path d="M3 17l5.2-5.2 3.8 3.8 3-3L21 18.5"/></svg></span>
-          <span class="set-txt"><b>Arrière-plan</b></span>
+          <span class="set-txt"><b>${T("Arrière-plan")}</b></span>
         </div>
         <div class="scene-row">
           ${SCENES.map(s=>`<button class="scn-thumb${settings.scene===s.key?' sel':''}" data-scene="${s.key}" style="background-image:url('${s.thumb}')" onclick="setScene('${s.key}')" aria-label="${s.name}"><span class="scn-name">${s.name}</span></button>`).join("")}
@@ -10053,8 +10196,24 @@ const HERO_INCLINE = 6.2;                 // degrés de bascule au bord
    chaque fois, et surprendre n'est pas plaisir.
    L'amplitude reste la moitié de l'ancienne : ce n'est pas un pendule, c'est
    un objet qu'on pousse et qui revient. */
-const HERO_PENCHE = 1.1;                  // degrés de balancement latéral
-const HERO_PAS    = 1.5;                  // pixels de côté du balancement
+/* ===== IL PART SUR LE CÔTÉ FRANCHEMENT, ET IL Y VA UNE SEULE FOIS =====
+   « Juste quand je tape, j'aimerais qu'il réagisse, qu'il aille un petit peu
+   vers la gauche, qu'il penche d'un certain côté. »
+   Mesuré avant : 2,58 px de déplacement latéral sur un logo de 106 px, et
+   1,40° d'inclinaison. Un quarantième de sa largeur — on ne le voit pas, on
+   le devine. Il fallait tripler.
+   MAIS TRIPLER SEUL NE MARCHE PAS, et le banc l'a dit tout de suite : trois
+   demi-tours au lieu de deux, « ça part dans tous les sens ». Le balancement
+   partageait le ressort de l'ÉCRASEMENT — celui qui dépasse exprès, parce
+   qu'un corps qu'on écrase doit rebondir en se relâchant. Amplifier ce
+   rebond-là, c'est fabriquer un pendule.
+   Le côté a donc son propre ressort, comme la bascule en avait reçu un
+   (HERO_POINT) pour exactement la même raison. Il dépasse à peine — juste
+   assez pour qu'on sente qu'il revient — et il ne repart pas. On pousse un
+   objet, il penche, il revient. Une fois. */
+const HERO_COTE   = { k:900, z:0.78 };    // le côté : il revient une fois, pas trois
+const HERO_PENCHE = 4.6;                  // degrés de balancement latéral
+const HERO_PAS    = 7.5;                  // pixels de côté du balancement
 let heroEnf = 0, heroEnfV = 0, heroBal = 0, heroBalV = 0;
 let heroPx = 0, heroPxV = 0, heroPy = 0, heroPyV = 0;   // le point de contact
 let heroCibleEnf = 0, heroCibleBal = 0, heroCiblePx = 0, heroCiblePy = 0, heroSens = 1;
@@ -10125,7 +10284,8 @@ function heroBoucle(maintenant){
   heroHorloge = maintenant;
   const r = heroPresse ? HERO_APPUI : HERO_LIBRE;
   let p1 = heroRessort(heroEnf, heroEnfV, heroCibleEnf, r, dt); heroEnf = p1[0]; heroEnfV = p1[1];
-  p1 = heroRessort(heroBal, heroBalV, heroCibleBal, r, dt);     heroBal = p1[0]; heroBalV = p1[1];
+  const rc = heroPresse ? HERO_APPUI : HERO_COTE;   // sous le doigt il file, relâché il se pose
+  p1 = heroRessort(heroBal, heroBalV, heroCibleBal, rc, dt);    heroBal = p1[0]; heroBalV = p1[1];
   /* Le point de contact — donc la bascule — suit son propre ressort, le même
      à l'appui et au relâchement : il n'a aucune raison de claquer dans un sens
      et de flotter dans l'autre. */

@@ -82,8 +82,15 @@ function v(nom, a, b){ const bon=JSON.stringify(a)===JSON.stringify(b); if(!bon)
   await p.waitForTimeout(900);
   v("carnet vide : l'écran « À revoir » s'ouvre quand même", await ev(()=>state.screen), "revoir");
   v("  aucune feuille glissante sur ce chemin", await ev(()=>!!document.querySelector('.sheet-veil')), false);
-  v("  et ses trois portes sont éteintes, pas absentes", await ev(()=>{
-    const l=[...document.querySelectorAll('.rv-choix')]; return l.length===3 && l.every(b=>b.disabled); }), true);
+  /* CE QUI COMPTE N'EST PAS COMBIEN, C'EST QU'ELLES SOIENT LÀ ET ÉTEINTES.
+     Le banc exigeait « exactement trois » et il a refusé le jour où une
+     quatrième porte est arrivée (« Celles qui me résistent »). Il avait raison
+     de voir le changement — mais la propriété qu'il protège, c'est qu'un
+     carnet vide n'efface pas les portes : elles restent visibles, grisées, et
+     le joueur comprend qu'il n'a rien à réviser au lieu de croire que l'écran
+     est cassé. On vérifie donc ça, et on ne fige plus un nombre. */
+  v("  et toutes ses portes sont éteintes, pas absentes", await ev(()=>{
+    const l=[...document.querySelectorAll('.rv-choix')]; return l.length>=3 && l.every(b=>b.disabled); }), true);
   v("  pas de grille de livres quand le carnet est vide", await ev(()=>document.querySelectorAll('.rvl-card .bk').length), 0);
   await ev(()=>{ state.screen='mode'; render(); });
   await p.waitForTimeout(500);
