@@ -2,7 +2,17 @@
 <html lang="fr" style="background:#15100B">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1, viewport-fit=cover">
+<!-- « interactive-widget=overlays-content » : LE CLAVIER SE POSE PAR-DESSUS,
+     IL NE REDIMENSIONNE PLUS RIEN. Sans cette déclaration, chaque navigateur
+     décide seul — et Android ne fait pas comme iOS. Tout le recadrage du jeu a
+     été écrit pour le comportement iOS (le clavier recouvre, la page ne bouge
+     pas d'un pixel) ; sur Android, la page RÉTRÉCISSAIT, donc --hu changeait,
+     donc toutes les tailles du jeu avec. Mesuré sur un Android, à l'ouverture :
+     --hu tombait de 7,37 px à 4,99 px (−32 %), la carte des joueurs perdait
+     26 px de haut ; à la fermeture, elle remontait en CINQ relayouts
+     successifs. C'est ça, « ça saute, l'écran clignote ».
+     Un seul mot, et les deux systèmes font enfin la même chose. -->
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1, viewport-fit=cover, interactive-widget=overlays-content">
 <meta name="theme-color" content="#15100B">
 <meta name="color-scheme" content="dark">
 <meta name="mobile-web-app-capable" content="yes">
@@ -14995,7 +15005,52 @@ try {
   document.addEventListener("scroll", (e)=>{ if(e.target !== glassAppEl) armGlass(1300); }, { capture:true, passive:true });
   document.addEventListener("pointerdown", armPress, { capture:true, passive:true });
   document.addEventListener("pointerup", armPress, { capture:true, passive:true });
-  window.addEventListener("resize", ()=>{ majCouche(); figerColonne(); reparerHauteurApp(); mesurerHauteurUtile(); glassRelayout(); armGlass(700); fitScroll(); try{ majVoilesErreurs(); }catch(e){} });
+  /* ===== UN CLAVIER N'EST PAS UN REDIMENSIONNEMENT =====
+     Ce gestionnaire refaisait TOUTE la mise en page à chaque événement
+     « resize » — sans garde et sans délai. Sur Android, où le clavier peut
+     rétrécir la page, il partait donc à chaque palier de sa montée ET de sa
+     descente : cinq relayouts complets pour fermer un clavier, avec --hu qui
+     s'effondrait de 32 % puis remontait par paliers. Tout l'écran bougeait à
+     chaque fois. C'est l'origine du « ça saute, l'écran clignote ».
+     (J'avais posé une garde en v224 — sur l'AUTRE gestionnaire de resize,
+     celui du recadrage. Il y en a deux. C'est pour ça que la correction
+     d'alors n'avait rien changé, et pourquoi le reproche revenait.)
+     CE QUI DISTINGUE UN VRAI REDIMENSIONNEMENT : la LARGEUR. Une rotation, un
+     passage en fenêtre, un changement d'écran la changent tous. Un clavier,
+     une barre d'adresse qui se replie, une barre système qui apparaît : jamais.
+     À largeur constante, on ne refait donc rien — et la déclaration
+     « interactive-widget » ci-dessus fait en sorte qu'Android n'envoie même
+     plus l'événement. Deux verrous pour la même porte : si un navigateur
+     ignore la déclaration, la garde tient quand même. */
+  let largeurConnue = window.innerWidth, reposeHauteur = 0;
+  const reposerLaPage = ()=>{
+    majCouche(); figerColonne(); reparerHauteurApp(); mesurerHauteurUtile();
+    glassRelayout(); armGlass(700); fitScroll();
+    try{ majVoilesErreurs(); }catch(e){}
+  };
+  window.addEventListener("resize", ()=>{
+    const largeur = window.innerWidth;
+    const memeLargeur = largeur === largeurConnue;
+    largeurConnue = largeur;
+    if(!memeLargeur){ clearTimeout(reposeHauteur); reposerLaPage(); return; }
+    /* À LARGEUR CONSTANTE, ON ATTEND QUE ÇA SE POSE. Un clavier ne descend pas
+       d'un bloc : il envoie cinq ou six hauteurs successives. Refaire la mise
+       en page à chacune, c'est cinq relayouts pour un seul geste — et c'est
+       exactement ce qu'on voyait clignoter. Relevé à la fermeture, --hu :
+       5,998 puis 6,779 puis 7,560 puis 8,068. Quatre secousses.
+       On attend donc que la hauteur ne bouge plus pendant un quart de seconde,
+       et on repose UNE fois. Le clavier n'y a alors plus droit du tout (il est
+       déjà reparti), une barre d'adresse qui se replie non plus — mais un vrai
+       changement de hauteur, lui, finit toujours par arriver. On ne supprime
+       pas la capacité, on supprime le tremblement. */
+    let champ = false;
+    try{ const a = document.activeElement;
+         champ = !!(a && (a.tagName === "INPUT" || a.tagName === "TEXTAREA"))
+                 || document.documentElement.classList.contains("kb"); }catch(e){}
+    if(champ) return;            // clavier À L'ÉCRAN : on ne touche à rien
+    clearTimeout(reposeHauteur);
+    reposeHauteur = setTimeout(reposerLaPage, 250);
+  });
   window.addEventListener("orientationchange", reposeApresRotation);
   // screen.orientation arrive parfois AVANT window.orientationchange : les deux
   // déclenchent la même reprise, qui est idempotente.
