@@ -755,7 +755,10 @@
 
   .chip-row{ display:flex; gap:0.5rem; flex-wrap:wrap; }
   .chip{ flex:1; min-width:30%; text-align:center; --glass-tint: rgb(252,248,241); background:rgb(252,248,241); backdrop-filter:none; -webkit-backdrop-filter:none; border:0; color:var(--ink); padding:calc(0.62rem + 1px) calc(0.5rem + 1px); border-radius:var(--r-m); font-size:0.82rem; font-weight:600; }
-  .chip.active{ --glass-tint: rgb(236,60,26); border-color:var(--bord); color:#fff; --rim-edge:0 0 0 1px rgba(150,30,14,0.3); --rim-cast:0 4px 12px rgba(241,80,47,0.35); box-shadow:none; }
+  /* Une puce choisie ne change QUE de couleur. Son bord, lui, ne lui
+     appartient pas : il est décidé par le bloc des rôles, à la fin de la
+     feuille — voir « LE REBORD DES SURFACES ». */
+  .chip.active{ --glass-tint: rgb(236,60,26); color:#fff; }
   .chip.active .sub{ opacity:0.92; }
   /* ===== SUR UNE PUCE DE RÉGLAGE, L'ONDE VA JUSQU'AU BOUT =====
      « La partie que j'ai sélectionnée n'est pas remplie à 100 %. »
@@ -872,7 +875,7 @@
   /* Verre peint comme les autres puces (plus de backdrop-filter, invisible
      sur iOS) : la teinte passe par --glass-tint, le fond photo transparaît. */
   .streak-chip{ display:flex; align-items:center; gap:0.32rem; --glass-tint: rgb(255,226,150); border:1px solid transparent; color:#8a5e14; padding:0.34rem 0.7rem; border-radius:var(--r-full); font-size:0.8rem; font-weight:700; }
-  .streak-chip.hot{ --glass-tint: rgb(242,96,44); border-color:var(--bord); color:#fff; --rim-cast:0 3px 12px rgba(242,100,48,0.5); }
+  .streak-chip.hot{ --glass-tint: rgb(242,96,44); color:#fff; }
   .streak-chip.hot .ico{ animation:flameFlicker 0.9s ease-in-out infinite; }
   @keyframes flameFlicker{ 0%,100%{ transform:scale(1) rotate(-2deg); } 50%{ transform:scale(1.12) rotate(2deg); } }
   .streak-chip .ico{ width:1.08rem; height:1.08rem; }
@@ -1853,7 +1856,8 @@
   .len-label{ font-size:0.82rem; font-weight:600; color:rgba(255,255,255,0.9); margin:0.95rem 0 0.45rem 0.2rem; text-shadow:0 1px 6px rgba(0,0,0,0.4); }
   .len-row{ display:flex; gap:0.5rem; }
   .len-chip{ flex:1; display:flex; align-items:center; justify-content:center; min-height:2.75rem; --glass-tint: rgb(252,248,241); background:rgb(252,248,241); backdrop-filter:none; -webkit-backdrop-filter:none; border:0; border-radius:var(--r-m); padding:calc(0.58rem + 1px) calc(0.4rem + 1px); font-weight:600; font-size:0.84rem; color:var(--ink); }
-  .len-chip.sel{ --glass-tint: rgb(236,60,26); color:#fff; border-color:var(--bord); --rim-edge:0 0 0 1px rgba(150,30,14,0.3); --rim-cast:0 4px 12px rgba(241,80,47,0.35); box-shadow:none; }
+  /* Même chose pour les puces du salon : aucun bord à elles. */
+  .len-chip.sel{ --glass-tint: rgb(236,60,26); color:#fff; }
   .waiting-note{ text-align:center; color:var(--ink-soft); font-weight:700; font-size:0.92rem; padding:1.05rem 1rem; margin-top:0.4rem; border-radius:var(--r-l); border:1px solid var(--bord); }
 
   .duel-scorebar{ display:flex; align-items:center; gap:0.5rem; background:rgba(255,255,255,0.5); backdrop-filter:blur(18px) saturate(180%); -webkit-backdrop-filter:blur(18px) saturate(180%); border:1px solid var(--bord); border-radius:var(--r-full); padding:0.45rem 1rem; margin-bottom:0.7rem; }
@@ -3898,8 +3902,33 @@
   .rev-item, .bible-item, .me-row, .vs-row, .rank-row, .team-row, .add-team,
   .text-input, .code-input, .bk, .dc-streak, .adj-btn, .sj,
   .share-btn, .btn-ghost, .modal-btn.cancel{ --mon-rebord:var(--rebord); }
+  /* ===== UNE PUCE CHOISIE EST « PLATE », PAS « PLEINE » =====
+     « Lorsque je sélectionne, c'est toujours pas plein dans les bords. »
+     Reproche répété quatre fois, et j'ai cherché DEDANS les quatre fois. Le
+     remplissage était pourtant parfait : mesuré au pixel sur la capture de
+     Taylor ET en machine, le dernier pixel avant le bord vaut exactement
+     rgb(236,60,26), la largeur est identique à celle d'une puce blanche (314
+     px contre 314) et la forme du coin identique à un pixel près.
+     LE DÉFAUT ÉTAIT DEHORS. En lisant le box-shadow calculé :
+         puce choisie   rgba(120,30,14,0.16) 0 1px 2px,
+                        rgba(214,60,34,0.26) 0 8px 20px      <- halo corail
+         puce normale   rgba(0,0,0,0) 0 0 0 1px              <- rien
+     Un flou corail de vingt pixels, décalé vers le bas. Contre le beige de la
+     carte, il brouille le bord : la puce ne se termine pas net, elle bave. Et
+     c'est, littéralement, une bordure de couleur.
+     CE N'ÉTAIT PAS UN OUBLI MAIS UN RÔLE MAL ATTRIBUÉ. Le système dit trois
+     choses, et il a raison : posée sur le décor -> filet et ombre douce ;
+     PLATE DANS UNE AUTRE SURFACE -> filet seul, « elle ne flotte au-dessus de
+     rien, lui donner une ombre serait mentir sur sa profondeur » ; pleine et
+     colorée -> ombre de sa propre couleur. Une puce de réglage vit DANS une
+     carte : elle est plate. Elle était rangée avec les boutons pleins, qui
+     eux flottent sur le décor — et elle en a hérité leur halo.
+     Les trois puces rejoignent donc leurs sœurs non choisies, juste au-dessus :
+     même filet, même coin, même absence d'ombre. Seule la couleur de fond
+     distingue une puce choisie d'une puce libre, et c'est tout ce qui doit les
+     distinguer. */
   .btn-primary, .btn-next, .btn-replay, .btn-reveal, .sheet-done, .set-go,
-  .chip.active, .len-chip.sel, .streak-chip.hot, .online-action.primary,
+  .online-action.primary,
   .modal-btn.ok, .modal-btn.cancel.keep{ --mon-rebord:var(--rebord-plein); --levre:var(--levre-pleine); }
 
   .app-header, .icon-btn, .card, .mode-card, .question-card, .fact-card,
