@@ -186,6 +186,27 @@ l'écriture. La suppression en masse reste théoriquement possible tant qu'il n'
 a pas d'identité — c'est réglé pour de bon quand chaque abonnement sera
 rattaché à un compte.
 
+**Ce que j'ai trouvé ENSUITE, en relisant ma propre table des comptes.** Elle
+avait exactement le défaut contre lequel elle est censée protéger. La fonction
+`poser_sauvegarde()` refuse d'écraser une version plus récente que celle qu'on
+a lue — c'est elle qui rend la perte de progression impossible. Mais je
+laissais AUSSI une politique `for update` : n'importe quelle écriture directe
+(`.update()` depuis le téléphone) contournait le contrôle et pouvait écraser.
+La protection reposait donc sur ma discipline, pas sur le serveur.
+
+Corrigé : la table n'a plus aucune politique d'écriture. On écrit uniquement
+par la fonction, devenue `security definer` avec `search_path = ''`, qui
+vérifie le jeton, n'écrit que sur la ligne de son appelant, et refuse une
+sauvegarde qui ne serait pas un objet. Les droits de table `insert/update/
+delete` sont retirés à `anon` et `authenticated` par-dessus : deux serrures.
+
+**Et le SQL n'est plus installé sur parole.** `comptes/essai.sh` monte un vrai
+PostgreSQL 16 jetable, y recrée le décor de Supabase (schéma `auth`, fonction
+`auth.uid()`, rôles `anon` et `authenticated`), applique le fichier et vérifie
+les sept propriétés qui comptent — dont « deux téléphones écrivent en même
+temps, le retardataire n'efface rien » et « l'écriture directe est refusée,
+même à son propriétaire ».
+
 **Quand.** En même temps que la table des comptes (#37), pas après.
 
 ---

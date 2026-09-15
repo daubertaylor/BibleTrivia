@@ -7955,7 +7955,7 @@ try{
      il n'y a plus de rampe du tout. GLISSE_MINI vaut le même nombre : on ne se
      déplace pas pour moins de cinq pixels, et les cinq derniers se font en une
      image. Les deux seuils disent la même chose, ils ont la même valeur. */
-  const GLISSE_MINI = 5, GLISSE_QUEUE = 5;
+  const GLISSE_MINI = 2, GLISSE_QUEUE = 2;
   let glissement = null;
   /* ===== ON NE JOUE PAS UNE ANIMATION, ON SUIT UNE CIBLE =====
      Ce glissement avait une DURÉE et une COURBE, comme une animation : on
@@ -7974,7 +7974,64 @@ try{
      n'y a rien à raccorder : la loi ne dépend que de l'écart du moment. Et le
      mouvement reste indépendant de la cadence, la fraction étant recalculée
      d'après le temps réellement écoulé. */
-  const GLISSE_K = 0.26;          // fraction de l'écart avalée par image de 60 Hz
+  /* ===== UN SUIVI AMORTI PART À SA VITESSE MAXIMALE. UN RESSORT PART DE ZÉRO.
+     « Pour l'ouverture du clavier je veux qu'il se règle parfaitement en
+     douceur et pas de saccade rapide. »
+     Le suivi amorti avalait une FRACTION de l'écart à chaque image. Sa vitesse
+     est donc maximale à l'instant zéro, par construction : sur 75 px de
+     course, 19 px dès la première image, depuis l'arrêt complet. Ce n'est pas
+     un réglage trop nerveux, c'est la forme même de la loi — aucune valeur de
+     K ne peut lui donner un départ doux sans rendre tout le reste mou.
+     Un RESSORT CRITIQUE, lui, part à vitesse nulle, accélère, culmine au
+     milieu et se pose. C'est la forme d'un geste. Et il garde ce qui faisait
+     l'intérêt du suivi : la vitesse est un état, donc déplacer la cible en
+     cours de route (le clavier monte par paliers) ne provoque aucune
+     discontinuité — ni de position ni de vitesse.
+     ON L'INTÈGRE EXACTEMENT, pas par petits pas. La solution d'un ressort
+     critique s'écrit en clair : avec d l'écart et v la vitesse,
+        d(t) = (d + (v + ω·d)·t)·e^(−ω·t)
+     C'est la vraie courbe à n'importe quel pas de temps. Un intégrateur
+     approché, lui, se trompe d'autant plus que l'image est longue — il donnait
+     ici 5,3 px de première image au lieu de 2,2. Autrement dit : sur un vieux
+     téléphone qui rend 30 images par seconde, la forme du geste resterait
+     IDENTIQUE, seule la finesse du tracé change.
+     Simulé sur une course de 75 px, première image :
+        60 im/s   ancienne loi 19,5 px   ressort  4,0 px
+        30 im/s   ancienne loi 33,9 px   ressort 12,6 px
+     L'ancienne loi devient DEUX FOIS PLUS BRUTALE sur un appareil lent, parce
+     qu'elle avale une fraction par image et qu'une image longue avale plus.
+     C'est exactement l'inverse de ce qu'on veut pour le vieux téléphone.
+     LA RAIDEUR EST CHOISIE PAR BALAYAGE, pas au jugé. De 13 à 30 rad/s, sur
+     des courses de 75, 54 et 20 px, en surveillant quatre choses : le départ,
+     l'arrivée, la forme, et la durée — parce qu'un recadrage trop lent est un
+     défaut aussi. À 13, le geste est très doux mais met 367 ms : trop long, le
+     clavier est monté depuis longtemps. À 22, il met 250 / 233 / 167 ms —
+     l'ordre de grandeur de l'ancienne loi (167 / 150 / 100) — et c'est la
+     première valeur où la fin ne rampe plus du tout, à aucune distance. */
+  const GLISSE_W = 22;            // raideur du ressort, en radians par seconde
+  /* ===== UN DÉFILEUR NE CONNAÎT QUE LES PIXELS ENTIERS, TOUJOURS =====
+     Ça reste vrai, et ça donne les deux planchers ci-dessous.
+     AU DÉPART, la courbe passe ses premières images sous un pixel : le
+     défileur ne bouge alors pas du tout, et une image immobile en plein geste
+     se voit (c'est ce que compte banc-essai/camera.js). On ne demande donc
+     jamais moins d'UN pixel tant qu'on accélère.
+     À L'ARRIVÉE, la courbe passe sa fin sous un pixel par image : le défileur
+     alterne « un pixel » et « rien », et ça rampe. On ne descend donc jamais
+     sous DEUX pixels une fois qu'on ralentit — la course se termine en
+     quelques images franches au lieu de s'éteindre en bégayant.
+     L'ancien code réglait la fin autrement : il posait les cinq derniers
+     pixels d'un seul bloc. Ça supprimait bien la rampe, mais au prix d'un COUP
+     à l'atterrissage — 5 px d'un coup juste après une image qui n'en faisait
+     que 1,7, soit trois fois la vitesse du moment, à l'instant précis où le
+     mouvement devrait mourir. C'est l'autre moitié de « ça saccade ».
+     Mesuré sur les deux lois, course de 75 px, où « arrivée » compare la
+     dernière image à la médiane des trois précédentes :
+        suivi amorti + queue de 5 px   départ 1,00   arrivée 2,11   à-coup 0,17
+        ressort + planchers 1 et 2 px  départ 0,40   arrivée 0,34   à-coup 0,00
+     « à-coup » est la plus forte REMONTÉE de vitesse après le sommet : elle
+     vaut zéro pour un geste qui monte, culmine et redescend — une seule
+     bosse, la forme d'un vrai mouvement. Voir banc-essai/douceur.js. */
+  const GLISSE_MONTE = 1, GLISSE_POSE = 2;   // px par image, mini
   function glisserVers(app, cible){
     const maintenant = ()=> (typeof performance !== "undefined" ? performance.now() : Date.now());
     const pos = app.scrollTop;
@@ -7983,18 +8040,39 @@ try{
       app.scrollTop = cible; return;
     }
     /* Une course déjà lancée n'est pas relancée : on lui donne la nouvelle
-       cible, et c'est tout. C'est tout l'intérêt du suivi. */
+       cible, et c'est tout. C'est tout l'intérêt du suivi — et le ressort
+       garde en plus sa vitesse, donc le raccord est invisible. */
     if(glissement){ glissement.cible = cible; return; }
     const pas = ()=>{
       const g = glissement;
       if(!g) return;
       const p = app.scrollTop;
-      const reste = g.cible - p;
-      if(Math.abs(reste) <= GLISSE_QUEUE){ app.scrollTop = g.cible; glissement = null; return; }
+      /* On repart de la position RÉELLE à chaque image, pas de notre modèle :
+         le défileur arrondit, et c'est lui qui a raison. */
+      const d = p - g.cible;
+      if(Math.abs(d) <= GLISSE_QUEUE){ app.scrollTop = g.cible; glissement = null; return; }
       const t = maintenant();
-      const dt = Math.min(50, Math.max(1, t - g.tPrec));   // une image sautée ne fait pas bondir
+      const dtms = Math.min(50, Math.max(1, t - g.tPrec));  // une image sautée ne fait pas bondir
       g.tPrec = t;
-      app.scrollTop = p + reste * (1 - Math.pow(1 - GLISSE_K, dt / 16.667));
+      const dt = dtms / 1000;
+      const e = Math.exp(-GLISSE_W * dt);
+      const B = g.v + GLISSE_W * d;
+      let d2 = (d + B * dt) * e;
+      let v2 = (B - GLISSE_W * (d + B * dt)) * e;
+      /* Le plancher, et POURQUOI il dépend du sens : tant que la vitesse
+         monte, on est au départ du geste et un pixel suffit à ne pas figer
+         l'image ; dès qu'elle baisse, on est à l'arrivée et il en faut deux
+         pour ne pas ramper. Un seul et même plancher raterait l'un ou
+         l'autre : à 2 px partout le départ deviendrait brusque, à 1 px partout
+         la fin rampe. */
+      const mini = (Math.abs(v2) > Math.abs(g.v)) ? GLISSE_MONTE : GLISSE_POSE;
+      if(Math.abs(d) - Math.abs(d2) < mini){
+        d2 = d - Math.sign(d) * mini;
+        if(Math.sign(d2) !== Math.sign(d)) d2 = 0;
+        v2 = -Math.sign(d) * mini / dt;
+      }
+      g.v = v2;
+      app.scrollTop = g.cible + d2;
       /* ===== UN SUIVI N'A PAS DE FIN, IL FAUT DONC LUI EN DONNER UNE =====
          L'ancien glissement s'arrêtait tout seul : il avait une durée. Celui-ci
          ne s'arrête que quand il ARRIVE. Si la cible devient inatteignable — la
@@ -8006,7 +8084,7 @@ try{
       else g.bloque = 0;
       g.id = requestAnimationFrame(pas);
     };
-    glissement = { id: requestAnimationFrame(pas), cible: cible, tPrec: maintenant(), bloque: 0 };
+    glissement = { id: requestAnimationFrame(pas), cible: cible, tPrec: maintenant(), bloque: 0, v: 0 };
   }
   function arreterGlissement(){ if(glissement){ cancelAnimationFrame(glissement.id); glissement = null; } }
   document.addEventListener("touchstart", arreterGlissement, { passive:true, capture:true });

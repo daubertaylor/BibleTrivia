@@ -38,13 +38,13 @@ create policy "chacun lit la sienne"
   on public.sauvegardes for select to authenticated
   using (auth.uid() = id);
 
-create policy "chacun crée la sienne"
-  on public.sauvegardes for insert to authenticated
-  with check (auth.uid() = id);
-
-create policy "chacun met à jour la sienne"
-  on public.sauvegardes for update to authenticated
-  using (auth.uid() = id) with check (auth.uid() = id);
+-- AUCUNE POLITIQUE D'ÉCRITURE DIRECTE, ET C'EST LE POINT IMPORTANT.
+-- On écrit UNIQUEMENT par poser_sauvegarde(), plus bas, qui refuse d'écraser
+-- une version plus récente que celle qu'on a lue. Si on laissait en plus une
+-- politique « for update », n'importe quelle écriture directe — y compris une
+-- ligne de code à moi, écrite trop vite un soir — contournerait ce contrôle et
+-- pourrait effacer des mois de progression. La protection ne doit pas reposer
+-- sur ma discipline : elle doit être la seule route ouverte.
 
 -- AUCUNE POLITIQUE DE SUPPRESSION, ET C'EST VOLONTAIRE. Une progression ne se
 -- supprime pas depuis un téléphone : un bouton mal placé, un doigt qui glisse,
@@ -63,21 +63,45 @@ create policy "chacun met à jour la sienne"
 -- correspond plus, la fonction ne touche à rien et rend la version actuelle :
 -- le téléphone refusionne (fusionner() est fait pour ça) et retente. Personne
 -- n'écrase personne.
+
+-- POURQUOI « security definer ». La table n'a plus aucune politique
+-- d'écriture : personne ne peut écrire directement, pas même son propriétaire.
+-- Cette fonction doit donc écrire avec les droits de son créateur, et pas avec
+-- ceux de l'appelant. C'est précisément ce qui la rend obligatoire — c'est la
+-- seule porte, et elle contrôle la révision avant de laisser passer.
+-- Ce qui la garde sûre, ligne par ligne :
+--   * elle refuse tout appel sans jeton (auth.uid() is null) ;
+--   * elle n'écrit QUE sur la ligne auth.uid() — jamais sur un identifiant
+--     fourni par l'appelant, qui n'en fournit d'ailleurs aucun ;
+--   * elle ne relit QUE la ligne auth.uid() ;
+--   * « set search_path = '' » : tous les noms qu'elle emploie sont écrits en
+--     entier (public.sauvegardes, auth.uid()), donc plus personne ne peut lui
+--     glisser une table ou une fonction de son cru devant les vraies. C'est le
+--     réflexe à avoir sur TOUTE fonction « definer » : elle tourne avec les
+--     droits de son créateur, autant qu'elle ne puisse appeler que ce qu'on
+--     croit.
 create or replace function public.poser_sauvegarde(p_donnees jsonb, p_revision bigint)
 returns public.sauvegardes
 language plpgsql
-security invoker            -- la fonction n'a pas plus de droits que l'appelant
-set search_path = public
+security definer
+set search_path = ''
 as $$
 declare
   ligne public.sauvegardes;
+  moi   uuid := auth.uid();
 begin
-  if auth.uid() is null then
+  if moi is null then
     raise exception 'non connecté';
+  end if;
+  -- Une sauvegarde est un OBJET. Un tableau ou un nombre passerait le type
+  -- jsonb sans broncher, et ferait échouer la fusion côté téléphone bien plus
+  -- tard, une fois la ligne déjà écrite.
+  if jsonb_typeof(p_donnees) is distinct from 'object' then
+    raise exception 'sauvegarde malformée';
   end if;
 
   insert into public.sauvegardes (id, donnees, revision, maj)
-  values (auth.uid(), p_donnees, 1, now())
+  values (moi, p_donnees, 1, now())
   on conflict (id) do update
      set donnees  = excluded.donnees,
          revision = public.sauvegardes.revision + 1,
@@ -85,15 +109,26 @@ begin
    where public.sauvegardes.revision = p_revision   -- la condition qui protège
   returning * into ligne;
 
-  if ligne.id is null then
+  if not found then
     -- Rien n'a été écrit : quelqu'un d'autre est passé entre-temps. On rend
     -- l'état actuel pour que l'appelant refusionne dessus.
-    select * into ligne from public.sauvegardes where id = auth.uid();
+    select * into ligne from public.sauvegardes where id = moi;
   end if;
 
   return ligne;
 end;
 $$;
+
+-- Qui a le droit d'appeler cette porte : les connectés, et eux seuls. Par
+-- défaut PostgreSQL ouvre l'exécution à tout le monde ; on la referme d'abord.
+revoke all on function public.poser_sauvegarde(jsonb, bigint) from public;
+revoke all on function public.poser_sauvegarde(jsonb, bigint) from anon;
+grant execute on function public.poser_sauvegarde(jsonb, bigint) to authenticated;
+
+-- Et on retire aussi les droits de table que Supabase accorde d'office : plus
+-- aucune politique d'écriture n'existe, mais autant que les droits le disent
+-- aussi. Deux serrures valent mieux qu'une.
+revoke insert, update, delete on public.sauvegardes from anon, authenticated;
 
 -- ============================================================================
 -- CE QUI DOIT ÊTRE CORRIGÉ SUR LA TABLE EXISTANTE (push_subs)

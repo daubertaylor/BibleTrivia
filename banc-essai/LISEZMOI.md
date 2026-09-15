@@ -623,16 +623,57 @@ autour. L'onde GRANDISSAIT depuis un point — donc pendant toute sa montée ell
 ne prenait pas les bords, et le banc regardait précisément l'instant où le
 défaut n'existait plus.
 
-Deux façons de s'en prémunir, et il faut préférer la seconde :
+Deux façons de s'en prémunir :
 
 1. mesurer à plusieurs instants (mieux, mais on choisit encore les instants) ;
-2. **rendre le défaut impossible par construction, et vérifier la
-   construction.** Ici : la couche d'appui ne porte plus aucune mise à
-   l'échelle. Sans transform, elle occupe sa boîte entière dès la première
-   image, et la question du bord ne peut plus se poser à AUCUN instant. Le banc
-   vérifie donc `transform: none` et l'absence de `scale` dans les keyframes —
-   une propriété vraie tout le temps, pas une mesure vraie à un moment.
+2. rendre le défaut impossible par construction, et vérifier la construction.
+
+**J'AI PRIS LA DEUXIÈME, ET C'ÉTAIT UNE ERREUR DE JUGEMENT.** J'avais retiré
+toute mise à l'échelle de la couche d'appui : sans transform, elle occupe sa
+boîte entière dès la première image, la question du bord ne se pose plus à
+aucun instant, et le banc vérifiait cette propriété au lieu d'une mesure.
+Techniquement irréprochable — et j'avais supprimé, au passage, l'animation de
+remplissage qui grandit. Taylor me l'a dit deux fois : « j'ai perdu mes
+animations de remplissage », puis « remet tout ». C'est revenu en v230, et le
+contrôle de structure avec.
+
+LA LEÇON N'EST PAS TECHNIQUE. Rendre un défaut impossible par construction est
+une bonne méthode ; elle cesse de l'être à la seconde où la construction
+supprime quelque chose que le joueur aime. Un artefact d'un pixel sur un bord
+pendant 240 ms ne vaut pas une animation entière. Avant de supprimer un
+comportement pour régler un défaut, il faut se demander si ce comportement est
+voulu — et si la réponse est oui, le défaut se règle AUTREMENT, ou ne se règle
+pas.
 
 C'est la deuxième fois que ce reproche revient (la première portait sur les
 pastilles de livre). Quand un même reproche revient sous une autre forme, ce
 n'est pas le réglage qu'il faut refaire, c'est la règle.
+
+## Une métrique peut punir exactement ce qu'on cherche
+
+« Pour l'ouverture du clavier je veux que ça se règle en douceur, pas de
+saccade rapide. » Le banc `camera.js` ne comptait que les IMAGES MORTES — les
+images où rien ne bouge. C'était la bonne mesure pour le défaut précédent (la
+fin qui rampe), et elle était verte. Mais un geste peut n'avoir aucune image
+morte et rester brutal : le suivi amorti avalait 26 % de l'écart par image,
+donc sa vitesse était MAXIMALE à l'instant zéro, et il posait les cinq derniers
+pixels d'un bloc juste après une image de 1,7 px.
+
+J'ai donc écrit `douceur.js`, avec trois mesures : le départ, l'arrivée, et
+« la plus grande variation de vitesse entre deux images ». Les deux premières
+étaient bonnes. **La troisième était fausse, et aucune valeur de raideur ne
+pouvait la satisfaire** : la variation de vitesse la plus grande d'un geste qui
+accélère en douceur se trouve, par définition, au DÉPART — c'est-à-dire
+précisément là où tout va bien. La métrique punissait la douceur.
+
+La bonne forme se mesure, pas l'amplitude : un vrai geste MONTE, CULMINE,
+DESCEND — une seule bosse. La mesure est donc « la plus forte REMONTÉE de
+vitesse après le sommet », qui vaut zéro pour un geste bien formé et attrape
+tous les coups. Relevé sur le vrai moteur, course de 54 px :
+
+    avant   pas 4 14 9 7 5 4 3 2 1 5     départ 0,29  arrivée 2,50  à-coup 0,29
+    après   pas 1 6 7 7 6 6 4 4 3 2 2 2  départ 0,14  arrivée 1,00  à-coup 0,00
+
+Avant de régler quoi que ce soit sur une métrique, il faut vérifier qu'elle
+peut atteindre zéro sur le comportement qu'on VEUT. Si rien ne peut la
+satisfaire, c'est elle qui est fausse.
