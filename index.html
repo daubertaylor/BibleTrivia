@@ -1283,6 +1283,22 @@
   /* Une porte fermée le dit en s'éteignant, pas en disparaissant : on garde la
      ligne pour que la feuille ait toujours la même forme. */
   .rv-choix.rv-off{ opacity:0.42; }
+  /* LA JAUGE DU CARNET. Elle ne remplace pas le nombre — la porte doit
+     continuer d'annoncer ce qu'elle jouera — elle montre le CHEMIN : les
+     paliers franchis sur les paliers à franchir. C'est la seule grandeur qui
+     bouge à chaque bonne réponse, donc la seule qui réponde à « ça ne descend
+     pas même si je m'entraîne ».
+     Aucun trait : un creux et un remplissage, comme la barre de partie. Et le
+     remplissage se fait en scaleX, jamais en largeur, pour qu'il glisse sur le
+     compositeur au lieu de refaire la mise en page à chaque image. */
+  .rv-prog{ display:flex; align-items:center; gap:0.45rem; margin-top:0.3rem; }
+  .rv-jauge{ flex:1; min-width:0; height:4px; border-radius:999px; background:rgba(92,72,56,0.16); overflow:hidden; }
+  .rv-jauge i{ display:block; width:100%; height:100%; border-radius:inherit;
+    transform-origin:0 50%; transform:scaleX(var(--m, 0));
+    background:linear-gradient(90deg, #F2A62C, #EC3C1A);
+    transition:transform var(--tr-plie); will-change:transform; }
+  .rv-pct{ flex-shrink:0; font-family:'Poppins',sans-serif; font-weight:700; font-size:0.72rem;
+    font-variant-numeric:tabular-nums; color:var(--ink-soft); }
   .rv-choix.rv-off .rv-cnt{ color:var(--ink-soft); }
   /* ===== LA GRILLE DES LIVRES A QUITTÉ LA FEUILLE (v221) =====
      Elle y était enfermée dans une fenêtre de trois rangées, avec son propre
@@ -11312,6 +11328,22 @@ function animerLaBarre(node){
     requestAnimationFrame(()=>{ requestAnimationFrame(()=>{ try{ f.style.setProperty("--p", cible); }catch(e){} }); });
   }catch(e){}
 }
+/* La jauge du carnet se remplit à l'ouverture de l'écran, toujours depuis
+   zéro : on la pose à sa valeur à l'image suivante, et la transition CSS fait
+   le reste. Elle n'a pas de mémoire entre deux ouvertures — contrairement à la
+   barre de partie, qui doit repartir d'où elle en était — parce qu'ici le
+   geste utile est justement de REVOIR son avance, chaque fois qu'on ouvre. */
+function animerLaJauge(node){
+  try{
+    const j = node && node.querySelectorAll ? node.querySelectorAll(".rv-jauge i[data-m]") : null;
+    if(!j || !j.length) return;
+    requestAnimationFrame(()=>{ requestAnimationFrame(()=>{
+      for(let i=0;i<j.length;i++){
+        try{ j[i].style.setProperty("--m", Math.max(0, Math.min(1, parseFloat(j[i].dataset.m) || 0))); }catch(e){}
+      }
+    }); });
+  }catch(e){}
+}
 function tapDefi(e){
   const sur = e && e.target && e.target.closest ? e.target.closest(".dc-streak") : null;
   if(sur || dailyDoneToday()){ ouvrirFlamme(); return; }
@@ -11741,6 +11773,34 @@ function errbookRemove(q){
   saveErrbook(a);
 }
 function errbookCount(){ return loadErrbook().length; }
+/* ===== CE QUE LE CARNET NE DISAIT PAS : LE TRAVAIL DÉJÀ FAIT =====
+   « Tout mon carnet, c'est à 209 questions mais ça ne descend pas même si je
+   m'entraîne. » Vérifié en machine, sur un carnet témoin de douze questions
+   révisées à fond quatre fois de suite :
+       avant      12   (toutes au palier 0)
+       passage 1  12   (toutes au palier 1)
+       passage 2  12   (toutes au palier 2)
+       passage 3  12   (toutes au palier 3)
+       passage 4   0   (toutes acquises)
+   Le mécanisme est donc juste : rien n'est cassé. Mais avec 209 questions, il
+   faut 836 bonnes réponses avant que le nombre ne bouge d'un seul cran —
+   pendant que chaque partie en ajoute. Du point de vue du joueur, le compteur
+   est GELÉ, et un compteur gelé ne dit pas « ça marche, patiente » ; il dit
+   « c'est cassé ».
+   LE NOMBRE, LUI, NE PEUT PAS MENTIR : la porte annonce ce qu'elle jouera, et
+   elle jouera bien 209 questions (c'est la règle posée quand « tout mon
+   carnet » n'en lançait que neuf). On n'y touche donc pas. Ce qui manquait
+   n'était pas un autre nombre, c'était la VUE DU CHEMIN : chaque bonne réponse
+   fait monter une question d'un palier sur quatre, et ça, ça bouge à chaque
+   fois. La jauge compte les paliers franchis sur les paliers à franchir. */
+function maitriseCarnet(){
+  const a = loadErrbook();
+  if(!a.length) return { part:0, faits:0, total:0 };
+  let faits = 0;
+  for(let i=0;i<a.length;i++) faits += Math.max(0, Math.min(REVOIR_ECHELLE.length, a[i].p | 0));
+  const total = a.length * REVOIR_ECHELLE.length;
+  return { part: total ? faits/total : 0, faits, total };
+}
 /* Ce qui est à revoir AUJOURD'HUI : tout ce dont le jour est arrivé, plus tout
    ce qui n'a pas de date (les entrées d'avant l'échelle). */
 function aRevoir(){
@@ -12073,15 +12133,23 @@ function renderRevoir(){
   const el = document.createElement("div"); el.className = "screen";
   const dus = aRevoir().length, tout = errbookCount(), derniere = lastMissEntries().length;
   const livres = livresDuCarnet();
-  const ligne = (cls, ico, titre, sous, n, action) =>
+  const m = maitriseCarnet();
+  /* La jauge part de zéro et se remplit à l'ouverture de l'écran : le joueur
+     VOIT son avance au lieu de la déduire. Même procédé que la barre de
+     partie — on pose la valeur à l'image suivante. */
+  const jauge = (part) => `<span class="rv-prog">
+       <span class="rv-jauge"><i data-m="${part.toFixed(4)}" style="--m:0"></i></span>
+       <span class="rv-pct">${Math.round(part*100)}&nbsp;%</span>
+     </span>`;
+  const ligne = (cls, ico, titre, sous, n, action, extra) =>
     `<button class="online-action rv-choix${n ? "" : " rv-off"}" ${n ? 'onclick="' + action + '"' : "disabled"}>
        <span class="oa-ico ${cls}">${ico}</span>
-       <span class="oa-txt"><b>${titre}</b><small>${sous}</small></span>
+       <span class="oa-txt"><b>${titre}</b><small>${sous}</small>${extra || ""}</span>
        <span class="rv-cnt">${n}</span>
      </button>`;
   el.innerHTML = renderHeader("À revoir", true, "state.screen='mode'; render()")
     + ligne("v", ICONS.clock, "Les échéances du jour", "Ce que la mémoire réclame", dus, "startRevision('dus')")
-    + ligne("g", ICONS.book, "Tout mon carnet", "Sans attendre leur tour", tout, "startRevision('tout')")
+    + ligne("g", ICONS.book, "Tout mon carnet", "Sans attendre leur tour", tout, "startRevision('tout')", tout ? jauge(m.part) : "")
     + ligne("b", ICONS.target, "Ma dernière partie", "Ce que je viens de rater", derniere, "startRevision('derniere')")
     + (livres.length ? `<div class="rvl-t">Ou un livre en particulier</div>
       <div class="card bk-card rvl-card">
@@ -12089,7 +12157,7 @@ function renderRevoir(){
           `<button class="bk rv-bk" data-livre="${escapeHtml(nom)}" onclick="lancerRevoirLivre(this.dataset.livre)"><span class="bk-nm">${escapeHtml(LIVRES_COURTS[nom] || nom)}</span><span class="rv-bkn">${n}</span></button>`
         ).join("")}</div>
       </div>` : "")
-    + `<div class="flam-regle rvl-regle">Une erreur revient demain, puis dans 3, 7 et 16&nbsp;jours. Se tromper la ramène à demain.</div>`;
+    + `<div class="flam-regle rvl-regle">Une erreur revient demain, puis dans 3, 7 et 16&nbsp;jours. Il faut <b>4 bonnes réponses</b> pour qu'une question quitte le carnet&nbsp;: c'est ce que montre la barre. Se tromper la ramène à demain.</div>`;
   return el;
 }
 function lancerRevoirLivre(nom){ startRevision("livre:" + nom); }
@@ -13521,6 +13589,7 @@ function render(){
   }
   lastScreen = state.screen;
   animerLaBarre(node);
+  animerLaJauge(node);
 
   // iOS Safari : libérer les états d'animation résiduels, sinon le backdrop-filter
   // (effet verre) se coupe une fois l'animation figée. On retire les classes après coup.
