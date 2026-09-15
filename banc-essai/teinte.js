@@ -78,6 +78,46 @@ const CAS = [
     await p.evaluate(()=>{ const e=document.querySelector('[data-teinte]'); if(e) e.removeAttribute('data-teinte'); });
     await p.waitForTimeout(400);
   }
+  /* ===== ET LA MÊME CHOSE POUR TOUS LES AUTRES, PAR CONSTRUCTION =====
+     Les trois cas ci-dessus sont des PUCES DE RÉGLAGE. Mais le piège existe
+     partout où un bouton gagne sa couleur pendant qu'on appuie — les puces du
+     salon en ligne (« .len-chip » devient « .sel »), les pastilles de couleur
+     du profil, et tout ce qu'on ajoutera demain. Les atteindre une par une
+     demanderait d'ouvrir un salon, donc du réseau, dans un banc.
+     On vérifie donc la CONSTRUCTION plutôt que chaque cas : au contact, la
+     teinte est lue et POSÉE sur l'élément. Tant que ce style en ligne est là,
+     aucune règle ne peut la déplacer — et il doit repartir une fois l'onde
+     éteinte, sinon la teinte resterait figée pour les appuis suivants.
+     C'est une propriété vraie de tout bouton, pas une mesure sur un écran. */
+  {
+    await p.evaluate(()=>{ state.mode='group'; state.teams=[{name:'A'},{name:'B'}]; state.screen='setup'; render(); });
+    await p.waitForTimeout(700);
+    const r = await p.evaluate(async ()=>{
+      /* On prend un bouton qui a VRAIMENT une teinte déclarée : sinon il n'y a
+         rien à figer et le contrôle ne peut pas échouer. Un contrôle qui ne
+         peut pas échouer ne vaut rien — première version de celui-ci, elle
+         visait « .mode-card », qui n'en a pas. */
+      const b = [...document.querySelectorAll('button')]
+        .find(x => getComputedStyle(x).getPropertyValue('--press-tint').trim());
+      if(!b) return { err:'aucun bouton avec une teinte déclarée' };
+      const calculee = getComputedStyle(b).getPropertyValue('--press-tint').trim();
+      b.dispatchEvent(new PointerEvent('pointerdown', { bubbles:true }));
+      const posee = b.style.getPropertyValue('--press-tint').trim();
+      b.dispatchEvent(new PointerEvent('pointerup', { bubbles:true }));
+      await new Promise(r=>setTimeout(r, 1100));
+      const restante = b.style.getPropertyValue('--press-tint').trim();
+      return { calculee, posee, restante };
+    });
+    if(r.err){ console.log('  ' + r.err); ko++; }
+    else {
+      const bon = (!r.calculee || r.posee === r.calculee) && !r.restante;
+      if(!bon) ko++;
+      console.log('  ' + (bon ? 'OK ' : 'KO ') + 'la teinte est posée au contact, et rendue après'.padEnd(22)
+        + '  calculée « ' + r.calculee + ' »  posée « ' + r.posee + ' »  après « ' + r.restante + ' »');
+      if(r.calculee && r.posee !== r.calculee) console.log('           ↳ elle n\'est pas figée : une règle pourra la changer en plein vol');
+      if(r.restante) console.log('           ↳ elle n\'est pas rendue : le bouton garderait cette teinte pour toujours');
+    }
+  }
   if(errs.length){ ko++; console.log('  erreurs : ' + [...new Set(errs)].slice(0,2).join(' | ')); }
   await b.close();
   console.log(ko === 0 ? '\n  OK' : '\n  ' + ko + ' défaut(s)');
