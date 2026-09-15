@@ -761,7 +761,53 @@
      d'une image ou deux. L'onde couvre la zone du libellé vers quarante à
      soixante millisecondes ; la bascule part donc à cinquante-cinq, jamais
      avant. Relevé après : plus rien ne descend sous 3,7:1. */
-  .chip.onde, .chip.onde-part{ color:#fff; transition:color 0.10s linear 0.055s; }
+  /* ===== LE REMPLISSAGE VA JUSQU'AU BOUT, SUR TOUS LES BOUTONS =====
+     « Fais aussi en sorte que le remplissage remplisse à 100 % le bouton, tous
+     les boutons. » L'onde descend donc sous le contenu partout (z-index -1, le
+     verre étant à -2) et porte une vraie couleur au lieu d'une teinte.
+     ET LE TEXTE AVEC : il ne suffit pas de mettre la couleur sur le bouton.
+     Mesuré à l'essai : sur une tuile de mode, « Mode Groupe » restait NOIR sur
+     le corail et le chevron restait gris — parce que ces éléments portent leur
+     propre couleur, qui bat celle héritée du bouton. On nomme donc aussi les
+     descendants. Le retard de 55 ms est le même que pour les puces : le temps
+     que le remplissage ait rejoint les lettres (mesuré : il les couvre entre
+     quarante et soixante millisecondes).
+     POURQUOI « !important » ICI, ET NULLE PART AILLEURS. Deuxième essai : la
+     carte du Défi du jour gardait son titre NOIR sur le corail, parce que sa
+     règle « .daily-card .dc-txt b » est plus spécifique que la mienne et
+     l'emportait. Je pourrais empiler des sélecteurs pour gagner la course —
+     mais il faudrait recommencer à chaque nouveau composant, et un jour
+     j'oublierais. Un appui est un ÉTAT MOMENTANÉ qui doit primer sur toute
+     couleur de repos, quelle qu'elle soit : c'est exactement ce que ce mot
+     déclare, et le déclarer une fois vaut mieux que le regagner sans cesse. */
+  button.onde, button.onde *, button.onde-part, button.onde-part *,
+  .mode-card.onde, .mode-card.onde *, .mode-card.onde-part, .mode-card.onde-part *{
+    color:#fff !important; transition:color 0.10s linear 0.055s; }
+  /* ===== ET LES ENFANTS OPAQUES SE FONDENT DEDANS =====
+     Un remplissage posé SOUS le contenu laisse chaque enfant opaque y découper
+     sa silhouette : la pastille d'icône d'une carte de mode fait à elle seule
+     près de sept pour cent de sa surface, et ces trous se voient. C'est
+     exactement le reproche d'origine — « le remplissage ne se fait pas à cent
+     pour cent, c'est toujours quelques manques » — et banc-essai/plein.js est
+     né pour ça.
+     On ne peut pas le régler en remontant l'onde AU-DESSUS du contenu : à
+     pleine couleur, elle effacerait le libellé. Pendant le geste, les fonds
+     des enfants s'effacent donc dans la teinte, et il ne reste que leurs
+     glyphes — passés au blanc comme le texte. Le bouton devient une seule
+     surface pleine, et son icône reste lisible dessus. Tout revient à sa place
+     quand l'onde s'éteint. */
+  button.onde *, button.onde-part *, .mode-card.onde *, .mode-card.onde-part *{
+    background-image:none !important; background-color:transparent !important;
+    box-shadow:none !important;
+    transition:background-color 0.10s linear 0.055s, box-shadow 0.10s linear 0.055s; }
+  /* Les glyphes qui portent LEURS PROPRES couleurs — la flamme du défi, les
+     logos de version — ne suivent pas « color », et restaient donc en relief
+     sur le remplissage : 0,72 % de la carte du défi, mesuré. On les passe au
+     blanc franc le temps du geste. Le bouton devient alors une seule surface
+     pleine, avec son icône et son texte en blanc dessus. */
+  button.onde svg, button.onde img, button.onde-part svg, button.onde-part img,
+  .mode-card.onde svg, .mode-card.onde img, .mode-card.onde-part svg, .mode-card.onde-part img{
+    filter:brightness(0) invert(1); transition:filter 0.10s linear 0.055s; }
   .chip .sub{ display:block; font-weight:400; font-size:0.78rem; margin-top:0.15rem; opacity:0.85; }
 
   .rules{ font-size:0.85rem; color:var(--ink-soft); line-height:1.6; background:rgba(244,239,231,0.78); backdrop-filter:blur(14px) saturate(180%); -webkit-backdrop-filter:blur(14px) saturate(180%); border:1px solid var(--bord); border-radius:var(--r-m); padding:0.9rem 1rem; margin-bottom:var(--e-3); }
@@ -1524,7 +1570,7 @@
      grandit ne touche les bords qu'à la fin, par définition. Entre une onde
      qu'on SENT à chaque appui et un anneau qu'on VOIT sur une capture d'écran
      figée, c'est l'onde qui gagne — elle se vit cent fois par partie. */
-  button::before, .mode-card::before{ content:""; position:absolute; inset:0; z-index:3; border-radius:inherit; background:var(--press-tint, rgba(238,74,40,0.18)); transform:scale(0.001); opacity:0; transition:opacity var(--onde-duree) cubic-bezier(0.4,0,1,1), transform 0.01s linear var(--onde-duree); pointer-events:none; }
+  button::before, .mode-card::before{ content:""; position:absolute; inset:0; z-index:-1; border-radius:inherit; background:var(--press-tint, rgb(236,60,26)); transform:scale(0.001); opacity:0; transition:opacity var(--onde-duree) cubic-bezier(0.4,0,1,1), transform 0.01s linear var(--onde-duree); pointer-events:none; }
   /* ===== L'ONDE SE REMPLIT ENTIÈREMENT, MÊME SUR UN TAPOTEMENT =====
      Elle était portée par « :active » : elle grandissait tant que le doigt
      restait posé, et repartait à l'envers dès qu'il se levait. Or un
@@ -1549,7 +1595,6 @@
      le bouton, elle s'en va sans rétrécir. */
   @keyframes ondeOut{ from{ transform:scale(1); opacity:1; } to{ transform:scale(1); opacity:0; } }
   button.onde-part::before, .mode-card.onde-part::before{ animation:ondeOut var(--onde-duree) cubic-bezier(0.4,0,1,1) forwards; }
-  .len-chip{ --press-tint: rgba(238,74,40,0.28); }
   /* LA PUCE DE RÉGLAGE SE REMPLIT POUR DE BON, elle ne se teinte pas.
      (« .len-chip » garde une teinte, elle : son onde reste au-dessus de son
      texte, donc elle doit rester translucide. C'est l'étage qui décide de la
@@ -1559,7 +1604,7 @@
      verrait. Même logique, feedback identique. */
   .btn-primary, .btn-next, .btn-replay, .modal-btn.ok, .sheet-done, .set-go,
   .btn-ghost.btn-cancel, .chip.active, .len-chip.sel, .online-action.primary,
-  .modal-btn.cancel.keep{ --press-tint: rgba(255,255,255,0.34); }
+  .modal-btn.cancel.keep{ --press-tint: rgb(184,40,14); }
   /* L'ONDE SUIT LE FOND DU BOUTON, PAS SA FAMILLE. Deux exceptions, trouvées
      en composant chaque teinte sur la couleur réelle de son bouton :
      — « Quitter » de la confirmation de sortie est un .modal-btn.ok, donc il
@@ -1570,7 +1615,7 @@
      — les pastilles de couleur du profil sont saturées et toutes différentes ;
        une onde corail sur un violet ne donne que 0,8. En blanc, l'appui se
        lit sur n'importe quelle couleur. */
-  .modal-btn.ok.danger{ --press-tint: rgba(238,74,40,0.18); }
+  .modal-btn.ok.danger{ --press-tint: rgb(236,60,26); }
   .color-dot{ --press-tint: rgba(255,255,255,0.55); }
   /* LES OBJETS, ET EUX SEULS, GARDENT UN ANNEAU CLAIR. Un avatar, un jeton,
      une vignette ne sont pas des surfaces posées sur le décor : ce sont de
@@ -1593,7 +1638,7 @@
   .option-btn{ transition:transform 0.24s cubic-bezier(0.33,1,0.68,1), background-color 0.28s ease, border-color 0.28s ease; }
   /* subtle gradient depth on primary actions */
   .btn-primary, .btn-next, .btn-replay{ background-image:linear-gradient(180deg, #FB6A45, #EA4A28); }
-  .btn-reveal{ --press-tint: rgba(206,130,26,0.8); }
+  .btn-reveal{ --press-tint: rgb(198,124,22); }
 
   /* progress fill fades in */
 
@@ -9617,22 +9662,24 @@ const HERO_POINT  = { k:600, z:0.95 };    // la bascule : douce, et sans rebond
 const HERO_CREUX_X = 0.090;               // écrasement en largeur
 const HERO_CREUX_Y = 0.112;               // ... et en hauteur : le corps s'aplatit
 const HERO_INCLINE = 6.2;                 // degrés de bascule au bord
-/* ===== LE BALANCEMENT ALTERNÉ EST PARTI, ET C'EST LUI LE « ÇA BOUGE TROP » =====
-   C'était un pendule SCRIPTÉ : à chaque tap il repartait dans l'autre sens,
-   quel que soit l'endroit touché. Deux raisons de le supprimer, pas une.
-   D'abord il ne répond à rien — le doigt ne lui dit rien, il alterne, point.
-   Un objet réel ne fait pas ça, et l'œil le sent même sans savoir le nommer.
-   Ensuite et surtout, il s'INVERSE : tapoter cinq fois, c'est cinq départs
-   dans cinq directions décidées par un compteur. C'est exactement « ça part
-   dans tous les sens », et aucun réglage d'amplitude ne pouvait le corriger,
-   puisque le défaut était dans le principe.
-   Il reste donc TROIS mouvements, tous commandés par le doigt : l'enfoncement
-   (où l'on appuie), l'écrasement (le corps s'aplatit) et la bascule (vers
-   l'endroit touché). Un tap pile au centre n'incline plus rien du tout — et
-   c'est juste : il n'y a alors aucune direction, et en inventer une était du
-   bruit. PLUS DE RESSENTI NE VEUT PAS DIRE PLUS DE MOUVEMENT. */
-const HERO_PENCHE = 0;                    // (supprimé : voir ci-dessus)
-const HERO_PAS    = 0;                    // (supprimé : voir ci-dessus)
+/* ===== LE BALANCEMENT REVIENT, MAIS IL N'ALTERNE PLUS =====
+   « Je voudrais qu'il bouge un peu sur le côté ou autre. »
+   L'ancien balancement était un pendule SCRIPTÉ : à chaque tap il repartait
+   dans l'AUTRE sens, quel que soit l'endroit touché. C'est ça qui donnait
+   « ça part dans tous les sens » — tapoter cinq fois, c'était cinq départs
+   dans cinq directions décidées par un compteur, sans rapport avec le doigt.
+   Aucun réglage d'amplitude ne pouvait le corriger : le défaut était dans le
+   principe, pas dans la valeur.
+   CE QUI CHANGE : le côté n'est plus tiré d'un compteur, il vient du DOIGT.
+   On touche à droite du centre, il part à droite ; à gauche, il part à gauche.
+   Et pile au centre — où aucune direction ne se dégage — il part TOUJOURS du
+   même côté. C'est la différence qui compte : un mouvement constant se laisse
+   anticiper, donc il se laisse apprécier ; un mouvement qui alterne surprend à
+   chaque fois, et surprendre n'est pas plaisir.
+   L'amplitude reste la moitié de l'ancienne : ce n'est pas un pendule, c'est
+   un objet qu'on pousse et qui revient. */
+const HERO_PENCHE = 1.1;                  // degrés de balancement latéral
+const HERO_PAS    = 1.5;                  // pixels de côté du balancement
 let heroEnf = 0, heroEnfV = 0, heroBal = 0, heroBalV = 0;
 let heroPx = 0, heroPxV = 0, heroPy = 0, heroPyV = 0;   // le point de contact
 let heroCibleEnf = 0, heroCibleBal = 0, heroCiblePx = 0, heroCiblePy = 0, heroSens = 1;
@@ -9755,7 +9802,10 @@ function heroIconPress(e){
       oy = Math.max(-1, Math.min(1, (e.clientY - (b.top + heroDemiH)) / heroDemiH));
     }
   }catch(err){}
-  heroSens = -heroSens;             // le balancement résiduel, pour les taps au centre
+  /* Le côté vient du doigt, jamais d'un compteur. Au centre — où il n'y a
+     aucune direction — c'est toujours le même, pour que le geste reste
+     constant d'un tap à l'autre. */
+  heroSens = Math.abs(ox) > 0.15 ? Math.sign(ox) : 1;
   heroPresse = true;
   heroCibleEnf = 1; heroCibleBal = heroSens; heroCiblePx = ox; heroCiblePy = oy;
   w.classList.add("vif");

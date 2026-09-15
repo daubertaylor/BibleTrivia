@@ -49,9 +49,16 @@
                         savoir est ailleurs : quand on arrête de toucher, est-
                         ce que ça se pose ?
      chemin / écart     longueur totale du trajet divisée par l'écart maximal
-                        au repos. Un aller-retour vaut 2. Au-delà de 4, le
-                        coin a fait bien plus de route que de déplacement :
-                        c'est de l'agitation, pas un geste.
+                        au repos, PAR TAP. Un aller-retour vaut 2 ; au-delà de
+                        3,5 le coin fait bien plus de route que de déplacement,
+                        c'est de l'agitation et non un geste.
+                        « PAR TAP » N'EST PAS UN DÉTAIL. Sans cette division,
+                        le rapport grandit mécaniquement avec le nombre de
+                        taps — une salve de quatre affichait 10,0 là où un tap
+                        isolé donnait 2,4, et j'ai cru un instant à un défaut.
+                        Divisé, tout tombe à 2,5 : le mouvement par tap est le
+                        même, isolé ou en salve. C'est justement ce qu'on veut
+                        savoir, et c'est invisible sans normaliser.
      retour au calme    millisecondes APRÈS LE DERNIER DOIGT LEVÉ avant que
                         le coin ne bouge plus de façon visible (8 px/s).
 
@@ -78,7 +85,7 @@ const URL = process.argv[2] || 'http://127.0.0.1:8099/index.html';
 const S_VITESSE = 900;     // px/s
 const S_BASCULE = 120;     // °/s
 const S_INVERSIONS = 2;   // dépasser le repos et revenir : c'est deux, pas plus
-const S_CHEMIN = 4.5;
+const S_CHEMIN = 3.5;   // par tap
 /* 600 ms, et pas 450 : le réglage retenu s'établit à 415 ms après une salve,
    et l'ancien aussi. Un seuil à 450 serait passé de justesse sans rien
    distinguer — il aurait fini par clignoter d'un jour à l'autre en n'attrapant
@@ -92,7 +99,12 @@ const DT_MINI = 8;         // ms : sous une demi-image, l'intervalle n'est pas u
 const CAS = [
   ['tap centre',   [[0, 0]],                                                   0],
   ['tap bord',     [[0.8, 0]],                                                 0],
-  ['salve de 5',   [[0.1,-0.1],[-0.2,0.15],[0.25,0.05],[-0.1,-0.2],[0.15,0.1]], 150],
+  /* QUATRE TAPS, PAS CINQ, ET C'EST IMPORTANT : le CINQUIÈME révèle le verset,
+     ce qui appelle heroArreter() et remet la surface au style. Le coin saute
+     alors d'un bloc et le banc mesurait cette apparition au lieu du logo —
+     1895 px/s relevés, qui ne voulaient rien dire. Quatre taps mesurent
+     exactement la même chose, sans déclencher autre chose que le geste. */
+  ['salve de 4',   [[0.1,-0.1],[-0.2,0.15],[0.25,0.05],[-0.1,-0.2]], 150],
 ];
 (async()=>{
   const b = await chromium.launch({ executablePath:'/opt/pw-browsers/chromium' });
@@ -184,7 +196,7 @@ const CAS = [
       if(Math.sign(d) === sens){ borne = proj[i]; continue; }
       if(Math.abs(d) > REBROUSSE){ inversions++; sens = -sens; borne = proj[i]; }
     }
-    const rapport = ecart > 0.5 ? chemin/ecart : 0;
+    const rapport = ecart > 0.5 ? chemin/(ecart * taps.length) : 0;
     const mauvais = vmax > S_VITESSE || amax > S_BASCULE || inversions > S_INVERSIONS || rapport > S_CHEMIN || calme > S_CALME;
     if(mauvais) ko++;
     console.log('  ' + nom.padEnd(16) + (vmax.toFixed(0)+' px/s').padStart(10)
