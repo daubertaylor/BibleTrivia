@@ -9485,7 +9485,7 @@ const HERO_APPUI  = { k:1400, z:0.90 };   // forcé : rejoint sans osciller
    s'enfoncer ». À 1000, il repasse sa taille de repos en cinquante-quatre
    millisecondes. L'ampleur du dépassement, elle, ne dépend que de
    l'amortissement, pas de la raideur : elle ne change donc pas. */
-const HERO_LIBRE  = { k:1000, z:0.40 };   // libre : dépasse, puis se pose
+const HERO_LIBRE  = { k:1000, z:0.42 };   // libre : dépasse, puis se pose
 /* ===== IL RÉPOND À L'ENDROIT OÙ ON LE TOUCHE =====
    « Pas juste des droite-gauche, mais un vrai ressenti. » Le balancement
    alterné était un pendule SCRIPTÉ : il faisait la même chose quel que soit
@@ -9512,11 +9512,28 @@ const HERO_LIBRE  = { k:1000, z:0.40 };   // libre : dépasse, puis se pose
 
    Le balancement alterné reste, mais réduit et ADDITIONNÉ au reste : il ne sert
    plus qu'au tap pile au centre, où aucune direction ne se dégage. */
+/* ===== LA BASCULE N'A PAS À PARTAGER LA PHYSIQUE DE L'ENFONCEMENT =====
+   « Elle bouge beaucoup trop vite et elle va trop dans tous les sens, ça fait
+   mal aux yeux. » Les quatre ressorts tiraient tous sur les mêmes réglages, et
+   ces réglages sont choisis pour l'ENFONCEMENT : il doit être vif, parce qu'à
+   cent vingt millisecondes entre deux taps un retour mou fait trembler le logo
+   au lieu de l'enfoncer (voir banc-essai/logo.js). Mais rien n'obligeait la
+   BASCULE à être vive aussi — et c'est elle qu'on voit tourner.
+   Mesuré : au tap sur le bord, la bascule tournait à 162 °/s. Sur un objet de
+   trois centimètres, c'est une aiguille qui ferait un demi-tour par seconde.
+   Le point de contact a donc désormais son propre ressort : presque
+   critique — il ne dépasse pas, donc il ne repart pas dans l'autre sens — et
+   trois fois moins raide. Même mouvement, même direction, même réponse à
+   l'endroit touché ; simplement, il se pose au lieu de claquer.
+   Relevé sur banc-essai/agitation.js, tap sur le bord :
+       avant  233 px/s, bascule 162 °/s, 2 demi-tours
+       après  voir le banc — le seuil est à 120 °/s. */
+const HERO_POINT  = { k:600, z:0.95 };    // la bascule : douce, et sans rebond
 const HERO_CREUX_X = 0.090;               // écrasement en largeur
 const HERO_CREUX_Y = 0.112;               // ... et en hauteur : le corps s'aplatit
-const HERO_INCLINE = 9.5;                 // degrés de bascule au bord
-const HERO_PENCHE = 2.6;                  // degrés du balancement résiduel
-const HERO_PAS    = 2.4;                  // pixels de côté du balancement résiduel
+const HERO_INCLINE = 6.9;                 // degrés de bascule au bord
+const HERO_PENCHE = 1.3;                  // degrés du balancement résiduel
+const HERO_PAS    = 1.3;                  // pixels de côté du balancement résiduel
 let heroEnf = 0, heroEnfV = 0, heroBal = 0, heroBalV = 0;
 let heroPx = 0, heroPxV = 0, heroPy = 0, heroPyV = 0;   // le point de contact
 let heroCibleEnf = 0, heroCibleBal = 0, heroCiblePx = 0, heroCiblePy = 0, heroSens = 1;
@@ -9557,11 +9574,15 @@ function heroBoucle(maintenant){
   const dt = heroHorloge ? Math.min(0.034, (maintenant - heroHorloge) / 1000) : 0.016;
   heroHorloge = maintenant;
   const r = heroPresse ? HERO_APPUI : HERO_LIBRE;
-  const w0 = Math.sqrt(r.k), c = 2 * r.z * w0;
+  const c = 2 * r.z * Math.sqrt(r.k);
   heroEnfV += ((heroCibleEnf - heroEnf) * r.k - heroEnfV * c) * dt; heroEnf += heroEnfV * dt;
   heroBalV += ((heroCibleBal - heroBal) * r.k - heroBalV * c) * dt; heroBal += heroBalV * dt;
-  heroPxV  += ((heroCiblePx  - heroPx)  * r.k - heroPxV  * c) * dt; heroPx  += heroPxV  * dt;
-  heroPyV  += ((heroCiblePy  - heroPy)  * r.k - heroPyV  * c) * dt; heroPy  += heroPyV  * dt;
+  /* Le point de contact — donc la bascule — suit son propre ressort, le même
+     à l'appui et au relâchement : il n'a aucune raison de claquer dans un sens
+     et de flotter dans l'autre. */
+  const q = HERO_POINT, cq = 2 * q.z * Math.sqrt(q.k);
+  heroPxV  += ((heroCiblePx  - heroPx)  * q.k - heroPxV  * cq) * dt; heroPx  += heroPxV  * dt;
+  heroPyV  += ((heroCiblePy  - heroPy)  * q.k - heroPyV  * cq) * dt; heroPy  += heroPyV  * dt;
   heroPoser(w);
   const pose = Math.abs(heroCibleEnf - heroEnf) < 0.0015 && Math.abs(heroEnfV) < 0.02
             && Math.abs(heroCibleBal - heroBal) < 0.0015 && Math.abs(heroBalV) < 0.02

@@ -677,3 +677,58 @@ tous les coups. Relevé sur le vrai moteur, course de 54 px :
 Avant de régler quoi que ce soit sur une métrique, il faut vérifier qu'elle
 peut atteindre zéro sur le comportement qu'on VEUT. Si rien ne peut la
 satisfaire, c'est elle qui est fausse.
+
+
+## Trois métriques fausses en une soirée, et ce qu'elles avaient en commun
+
+« L'icône bouge beaucoup trop vite et va trop dans tous les sens, ça fait mal
+aux yeux. » Pour le mesurer, j'ai écrit `agitation.js`. Il m'a fallu QUATRE
+versions avant qu'il ne voie quoi que ce soit, et les trois premières échouaient
+chacune d'une façon différente — qui vaut d'être notée, parce qu'elles se
+répètent :
+
+**1. L'horloge a fabriqué une vitesse.** Premier relevé : 1082 px/s au centre.
+Faux. Le transform passe de « none » à une matrice en une seule image, et mes
+deux points étaient séparés d'UNE milliseconde. Une vitesse ne se lit pas entre
+deux relevés tombés dans la même image. → tout intervalle plus court qu'une
+demi-image est ignoré.
+
+**2. J'ai compté le geste au lieu de l'agitation.** Sur une salve de cinq taps,
+mes « demi-tours » valaient huit — et c'est la bonne réponse : cinq taps font
+cinq enfoncements et cinq retours, soit neuf changements de direction par
+construction. La question n'était pas « combien de fois ça change de sens »
+mais « quand on arrête de toucher, est-ce que ça se pose ». → on ne mesure que
+la QUEUE, après le dernier doigt levé.
+
+**3. J'ai mesuré au mauvais endroit, et pas assez d'endroits.** Je suivais un
+point à 32 px du centre d'un logo qui en fait 53 de demi-largeur : 40 % de
+sous-estimation sur toutes les vitesses. Et je ne suivais qu'UN coin, alors
+qu'une bascule en 3D fait pivoter tout le carré. → on lit la taille réelle de
+l'élément, on suit les quatre coins, et on retient le pire.
+
+C'est seulement à la quatrième version que le défaut est apparu, et il était
+gros : **162 °/s de bascule** au tap sur le bord. Sur un objet de trois
+centimètres, une aiguille qui ferait un demi-tour par seconde.
+
+CE QU'ELLES ONT EN COMMUN : à chaque fois, la métrique était verte pendant que
+l'œil voyait le défaut, et à chaque fois j'ai été tenté de conclure « le banc
+dit que c'est bon ». **Quand celui qui regarde dit qu'il y a un défaut et que
+l'instrument dit non, c'est l'instrument qu'on répare.** On ne clôt jamais un
+reproche en montrant une mesure verte.
+
+ET LE CORRECTIF QUI A SUIVI ÉTAIT UNE ERREUR DE CONCEPTION, PAS UN RÉGLAGE.
+Les quatre ressorts du logo partageaient les mêmes constantes, et ces
+constantes sont choisies pour l'ENFONCEMENT : il doit être vif, sinon le logo
+tremble au lieu de s'enfoncer quand on tapote vite (c'est `logo.js` qui
+l'exige). La BASCULE n'avait aucune raison d'être vive — et c'est elle qu'on
+voit tourner. Elle a désormais son propre ressort, presque critique : elle ne
+dépasse pas, donc elle ne repart jamais dans l'autre sens.
+
+    tap sur le bord    avant  233 px/s, bascule 162 °/s, 2 demi-tours
+                       après  193 px/s, bascule  59 °/s, 1 demi-tour
+
+Deux bancs se tiennent maintenant par les deux bouts : `logo.js` garde les
+bornes BASSES (au moins 7 % d'enfoncement, au moins 1,2 % de ressort, au moins
+4° de bascule) et `agitation.js` les bornes HAUTES. Un banc qui n'a que des
+bornes basses ne freine rien — il pousse. C'est comme ça que j'en étais arrivé
+à 162 °/s sans qu'aucun voyant ne s'allume.
