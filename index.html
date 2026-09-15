@@ -14862,10 +14862,79 @@ let rotReprises = [], appEpinglee = false;
    ces écrans-là ne tournent pas dans un voile, et leurs paliers de largeur
    doivent continuer de vivre. */
 const mqGros = (typeof window.matchMedia === "function") ? window.matchMedia("(pointer:coarse)") : null;
+/* ===== LE CLAVIER NE DONNE PAS SA HAUTEUR AU JEU =====
+   La feuille de style l'a posé en règle : « LE CLAVIER SE POSE PAR-DESSUS, IL
+   NE REFAIT PAS LA PAGE ». On ne rétrécit rien, on pose une cale hors flux sous
+   le contenu et le champ remonte en défilant. Sur iOS c'est vrai tout seul : le
+   clavier n'y touche pas à la fenêtre.
+   SUR ANDROID, LE CLAVIER RÉTRÉCIT LA VRAIE FENÊTRE — et tout ce qui se mesure
+   sur elle rétrécit avec. LE PIRE N'EST PAS #app, C'EST LE REM. figerColonne
+   gèle « --lh » sur window.innerHeight, et --lh commande la police racine ;
+   or TOUT le jeu est en rem. Le clavier ne décalait donc pas la page : il
+   RAPETISSAIT LE JEU ENTIER. Mesuré sur un Android, clavier ouvert, à trois
+   joueurs — tout dans le même rapport, 1,125 :
+
+       carte des joueurs  301,9 -> 268,4 px      ligne de joueur  55,2 -> 48,6
+       pastille du joueur  31,2 -> 27,7 px       titre H2          18   -> 17
+       icône de retrait    14,8 -> 13,1 px
+
+   C'est ça que Taylor voit sauter et clignoter, et c'est pour ça qu'aucune
+   retouche de défilement n'y changeait rien : ce n'était pas le défilement.
+   ET UN SECOND PIÈGE, PLUS GRAVE ENCORE : sur un téléphone 360x640, un clavier
+   de 336 px laisse 304 px de haut. La largeur devient alors plus grande que la
+   hauteur — figerColonne se croit COUCHÉ et abandonne, majCouche lève le voile
+   « tourne ton téléphone ». En plein milieu d'une saisie, à l'endroit.
+   LA RÈGLE QUI TRANCHE, ET ELLE EST SÛRE : un clavier ne change JAMAIS la
+   largeur. Une rotation, un écran partagé, une fenêtre redimensionnée, si.
+   Tant qu'un champ a le focus et que la largeur n'a pas bougé, la hauteur de
+   référence reste celle du repos. Dès que la largeur bouge, on la reprend —
+   même le doigt sur le champ. */
+let hauteurAuRepos = window.innerHeight || document.documentElement.clientHeight || 0;
+let largeurAuRepos = window.innerWidth || document.documentElement.clientWidth || 0;
+/* ===== UN CLAVIER MET AUSSI DU TEMPS À REDESCENDRE =====
+   Le focus part d'un coup, le clavier non : il glisse vers le bas pendant
+   environ un tiers de seconde, en cinq ou six paliers. Si on rendait la
+   géométrie au premier d'entre eux, le jeu se remettrait à l'échelle à CHAQUE
+   palier — relevé pendant la seule descente : 268,7 puis 284,5 puis 296,3 puis
+   301,9 px de carte. Quatre tailles, au lieu d'une. C'est la fermeture qui
+   clignotait, et c'est la même que l'ouverture vue à l'envers.
+   On tient donc la géométrie de repos jusqu'à ce qu'il ait fini, et on repose
+   la page UNE fois à la fin. Comme la hauteur retrouvée est celle d'avant, il
+   n'y a strictement rien à voir : le jeu n'a pas bougé du début à la fin. */
+const DESCENTE_CLAVIER = 380;
+let sortieDeChamp = 0, reposeApresClavier = 0;
+function clavierDevant(){
+  try{
+    if(document.documentElement.classList.contains("kb")) return true;
+    if(sortieDeChamp && Date.now() - sortieDeChamp < DESCENTE_CLAVIER) return true;
+    const a = document.activeElement;
+    return !!(a && (a.tagName === "INPUT" || a.tagName === "TEXTAREA"));
+  }catch(e){ return false; }
+}
+document.addEventListener("focusout", (e)=>{
+  const t = e && e.target;
+  if(!t || (t.tagName !== "INPUT" && t.tagName !== "TEXTAREA")) return;
+  sortieDeChamp = Date.now();
+  /* UNE seule reprise, quand il est vraiment parti. Si la fenêtre a changé
+     pour de bon entre-temps (écran partagé pendant qu'on tapait), c'est ici
+     qu'elle est prise en compte — une fois, pas six. */
+  clearTimeout(reposeApresClavier);
+  reposeApresClavier = setTimeout(()=>{
+    try{ figerColonne(); majCouche(); reparerHauteurApp(); mesurerHauteurUtile(); fitScroll(); }catch(e2){}
+  }, DESCENTE_CLAVIER + 30);
+}, true);
+function hauteurDeRepos(){
+  const large = window.innerWidth || document.documentElement.clientWidth || 0;
+  if(!hauteurAuRepos || large !== largeurAuRepos || !clavierDevant()){
+    hauteurAuRepos = window.innerHeight || document.documentElement.clientHeight || 0;
+    largeurAuRepos = large;
+  }
+  return hauteurAuRepos;
+}
 function figerColonne(){
   const de = document.documentElement;
   const w = de.clientWidth || window.innerWidth || 0;
-  const h = window.innerHeight || de.clientHeight || 0;
+  const h = hauteurDeRepos();       // pas celle d'un clavier ouvert : c'est le rem qui est en jeu
   if(!w || !h) return;
   if(w > h) return;                 // couché : on ne remesure surtout pas
   if(w > 600){                      // tablette, bureau : rien d'épinglé
@@ -14896,14 +14965,17 @@ function figerColonne(){
    déchirure se voyait. */
 function majCouche(){
   const de = document.documentElement;
-  const w = de.clientWidth || 0, h = de.clientHeight || 0;
+  /* Même raison qu'au-dessus : clavier ouvert sur un petit téléphone, la
+     hauteur restante passe SOUS la largeur et le voile « tourne ton
+     téléphone » se lèverait en pleine saisie. On lit donc la hauteur de repos. */
+  const w = de.clientWidth || 0, h = hauteurDeRepos();
   const gros = !!(mqGros && mqGros.matches);
   de.classList.toggle("couche", gros && w > h && w <= 1023);
 }
 function reparerHauteurApp(){
   const app = glassAppEl;
   if(!app) return;
-  const vraie = window.innerHeight || document.documentElement.clientHeight || 0;
+  const vraie = hauteurDeRepos();   // jamais la hauteur d'un clavier ouvert
   if(!vraie) return;
   if(appEpinglee){ app.style.height = ""; appEpinglee = false; }
   if(app.getBoundingClientRect().height < vraie - 24){
@@ -15005,52 +15077,40 @@ try {
   document.addEventListener("scroll", (e)=>{ if(e.target !== glassAppEl) armGlass(1300); }, { capture:true, passive:true });
   document.addEventListener("pointerdown", armPress, { capture:true, passive:true });
   document.addEventListener("pointerup", armPress, { capture:true, passive:true });
-  /* ===== UN CLAVIER N'EST PAS UN REDIMENSIONNEMENT =====
-     Ce gestionnaire refaisait TOUTE la mise en page à chaque événement
-     « resize » — sans garde et sans délai. Sur Android, où le clavier peut
-     rétrécir la page, il partait donc à chaque palier de sa montée ET de sa
-     descente : cinq relayouts complets pour fermer un clavier, avec --hu qui
-     s'effondrait de 32 % puis remontait par paliers. Tout l'écran bougeait à
-     chaque fois. C'est l'origine du « ça saute, l'écran clignote ».
-     (J'avais posé une garde en v224 — sur l'AUTRE gestionnaire de resize,
-     celui du recadrage. Il y en a deux. C'est pour ça que la correction
-     d'alors n'avait rien changé, et pourquoi le reproche revenait.)
-     CE QUI DISTINGUE UN VRAI REDIMENSIONNEMENT : la LARGEUR. Une rotation, un
-     passage en fenêtre, un changement d'écran la changent tous. Un clavier,
-     une barre d'adresse qui se replie, une barre système qui apparaît : jamais.
-     À largeur constante, on ne refait donc rien — et la déclaration
-     « interactive-widget » ci-dessus fait en sorte qu'Android n'envoie même
-     plus l'événement. Deux verrous pour la même porte : si un navigateur
-     ignore la déclaration, la garde tient quand même. */
-  let largeurConnue = window.innerWidth, reposeHauteur = 0;
-  const reposerLaPage = ()=>{
-    majCouche(); figerColonne(); reparerHauteurApp(); mesurerHauteurUtile();
-    glassRelayout(); armGlass(700); fitScroll();
-    try{ majVoilesErreurs(); }catch(e){}
-  };
-  window.addEventListener("resize", ()=>{
-    const largeur = window.innerWidth;
-    const memeLargeur = largeur === largeurConnue;
-    largeurConnue = largeur;
-    if(!memeLargeur){ clearTimeout(reposeHauteur); reposerLaPage(); return; }
-    /* À LARGEUR CONSTANTE, ON ATTEND QUE ÇA SE POSE. Un clavier ne descend pas
-       d'un bloc : il envoie cinq ou six hauteurs successives. Refaire la mise
-       en page à chacune, c'est cinq relayouts pour un seul geste — et c'est
-       exactement ce qu'on voyait clignoter. Relevé à la fermeture, --hu :
-       5,998 puis 6,779 puis 7,560 puis 8,068. Quatre secousses.
-       On attend donc que la hauteur ne bouge plus pendant un quart de seconde,
-       et on repose UNE fois. Le clavier n'y a alors plus droit du tout (il est
-       déjà reparti), une barre d'adresse qui se replie non plus — mais un vrai
-       changement de hauteur, lui, finit toujours par arriver. On ne supprime
-       pas la capacité, on supprime le tremblement. */
-    let champ = false;
-    try{ const a = document.activeElement;
-         champ = !!(a && (a.tagName === "INPUT" || a.tagName === "TEXTAREA"))
-                 || document.documentElement.classList.contains("kb"); }catch(e){}
-    if(champ) return;            // clavier À L'ÉCRAN : on ne touche à rien
-    clearTimeout(reposeHauteur);
-    reposeHauteur = setTimeout(reposerLaPage, 250);
-  });
+  /* ===== UN CLAVIER N'EST PAS UN REDIMENSIONNEMENT DU JEU =====
+     Ce gestionnaire remesurait « --hu » à chaque événement « resize ». Or --hu
+     est l'unité à laquelle s'accroche TOUTE la mise en page du jeu : la
+     remesurer, c'est redimensionner le jeu entier. Sur Android, où le clavier
+     rétrécit la vraie fenêtre, il le faisait donc à chaque palier de sa montée
+     ET de sa descente. Relevé sur un Android, pour UN SEUL cycle :
+
+         --hu  7,37 -> 4,99 px à l'ouverture (−32 %)
+               puis 5,43 / 6,00 / 6,78 / 7,56 / 8,07 à la fermeture
+         hauteur de la carte des joueurs  294 -> 268 -> 302 px
+
+     Onze valeurs de --hu, sept hauteurs de carte, pour un seul geste. C'est ça,
+     « ça saute, l'écran clignote ».
+
+     OR --hu A DÉJÀ SON PROPRE GESTIONNAIRE, et lui est juste : il attend 60 ms
+     que la hauteur se pose, il ne mesure rien tant qu'un champ a le focus, et
+     il se tait pendant une rotation (voir « UNE HAUTEUR QUI CHANGE DOIT ÊTRE
+     REMESURÉE », plus haut). La ligne d'ici ne faisait que le doubler — sans
+     aucune de ses gardes. C'est la ligne en trop qui parlait, pas lui.
+     (J'avais posé une garde en v224 : sur l'AUTRE gestionnaire de resize, celui
+     du recadrage. Il y en a deux. C'est pour ça que la correction d'alors
+     n'avait rien changé, et pourquoi le reproche revenait.)
+
+     ET ON NE RETIRE QUE ÇA. J'avais d'abord coupé tout le gestionnaire quand un
+     champ a le focus, et amorti le reste d'un quart de seconde. Trois bancs ont
+     refusé, le jour même : « clavier » (3 joueurs : 0 px de course, le champ
+     resté caché sous le clavier), « douceur » (« la page ne bouge pas ») et
+     « accueil » (3 px de débord au-dessus de 852). Tous pour la même raison :
+     #app doit coller à la taille RÉELLE de la fenêtre et le défilement doit
+     être redécidé à chaque fois, sinon le champ qu'on vient de toucher devient
+     tout simplement inatteignable. Ce n'est pas de la mise en page, c'est de la
+     mécanique — et la mécanique, elle, suit la fenêtre toujours.
+     Une seule ligne de trop, une seule ligne en moins. */
+  window.addEventListener("resize", ()=>{ majCouche(); figerColonne(); reparerHauteurApp(); glassRelayout(); armGlass(700); fitScroll(); try{ majVoilesErreurs(); }catch(e){} });
   window.addEventListener("orientationchange", reposeApresRotation);
   // screen.orientation arrive parfois AVANT window.orientationchange : les deux
   // déclenchent la même reprise, qui est idempotente.

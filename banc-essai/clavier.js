@@ -63,6 +63,23 @@ const PALIERS = 12, DUREE_CLAVIER = 260;    // il glisse, il ne saute pas
       await p.waitForTimeout(Math.round(DUREE_CLAVIER / PALIERS));
     }
     const rel = await cap;
+    /* ===== ON REGARDE LE CHAMP, ON NE LE DÉDUIT PLUS =====
+       Ce banc tenait « la page n'a pas défilé » pour « le champ est caché ».
+       C'était une déduction, pas une mesure — et elle est fausse : quand le
+       champ est DÉJÀ au-dessus du clavier, ne pas bouger est exactement la
+       bonne réponse. Elle est devenue visible le jour où le jeu a cessé de
+       rapetisser sous le clavier : à trois joueurs, plus rien à recadrer, et
+       le banc criait à la saccade devant un écran parfait.
+       Ce qu'on exige vraiment tient en une phrase : le champ finit ENTIÈREMENT
+       visible, avec l'air que le code lui promet — marge = min(28, 6 % de la
+       hauteur visible), plancher 12. On vérifie donc ce plancher. */
+    const vu = await p.evaluate(()=>{
+      const l = document.querySelectorAll('.team-row input'); const e = l[l.length-1];
+      const r = e.getBoundingClientRect();
+      return { haut:+r.top.toFixed(1), bas:+r.bottom.toFixed(1), vvh:Math.round(visualViewport.height) };
+    });
+    const air = +(vu.vvh - vu.bas).toFixed(1);
+    const visible = vu.haut >= 0 && air >= 12;
     /* DEUX HORLOGES NE SE COMPARENT PAS. La fin du clavier était prise côté
        Node (Date.now) et le mouvement côté page (performance.now, démarré à
        l'appel de la capture) : entre les deux, l'aller-retour du protocole,
@@ -117,15 +134,25 @@ const PALIERS = 12, DUREE_CLAVIER = 260;    // il glisse, il ne saute pas
        courbe est passée sous le pixel par image. Le défileur ne connaît pas le
        demi-pixel : ce sont des images à moitié mortes. */
     const rampe = (()=>{ let n = 0; for(let i = pas.length - 2; i >= 0 && pas[i] <= 1; i--) n++; return n; })();
-    const mauvais = mortes > 1 || cran > 0 || attente > 65 || rampe > 1;
+    /* ON NE JUGE LE RYTHME QUE S'IL Y A UN MOUVEMENT À JUGER. Douze pixels
+       posés en deux images ne sont pas une saccade : c'est un mouvement trop
+       court pour avoir un rythme. Les critères de régularité ont été calibrés
+       sur des courses de 45 à 75 px ; les appliquer à 12 px condamne le bon
+       comportement. En dessous, seule la visibilité compte. */
+    const juge = course >= 20;
+    const mauvais = !visible
+      || (juge && (mortes > 1 || cran > 0 || attente > 65 || rampe > 1));
     if(mauvais) ok = false;
     if(process.env.DETAIL) console.log('     profil : ' + pas.map(x=>x.toFixed(0)).join(' '));
     console.log('  ' + nom.padEnd(12) + (Math.round(course)+' px').padStart(8)
       + (attente+' ms').padStart(9) + String(pas.length).padStart(9)
       + (med.toFixed(1)+' px').padStart(13) + String(rampe).padStart(15)
       + (cran ? ('+' + cran.toFixed(0)+' px').padStart(21) : '—'.padStart(21))
-      + (mauvais ? '   <-- SACCADE' : ''));
-    if(attente > 65) console.log('           ↳ le clavier est monté, le champ est caché, et la page attend ' + attente + ' ms avant de bouger');
+      + (mauvais ? (visible ? '   <-- SACCADE' : '   <-- CHAMP CACH\u00c9') : '')
+      + ('   air ' + air + ' px'));
+    if(!visible) console.log('           \u21b3 le champ n\'est PAS d\u00e9gag\u00e9 : bas \u00e0 ' + vu.bas + ', clavier \u00e0 ' + vu.vvh + ' (air ' + air + ' px, minimum 12)');
+    else if(!juge) console.log('           \u21b3 rien \u00e0 recadrer : le champ est d\u00e9j\u00e0 d\u00e9gag\u00e9, ' + air + ' px d\'air au-dessus du clavier');
+    if(juge && attente > 65) console.log('           \u21b3 le clavier est mont\u00e9, le champ reste \u00e0 recadrer, et la page attend ' + attente + ' ms avant de bouger');
     if(rampe > 1) console.log('           ↳ ' + rampe + ' images à un pixel en fin de course : ça rampe au lieu de se poser');
     await p.evaluate(()=>{ try{ document.activeElement.blur(); }catch(e){} });
     await p.waitForTimeout(400);

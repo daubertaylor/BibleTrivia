@@ -89,14 +89,34 @@ const med = a => { const b=[...a].sort((x,y)=>x-y); return b.length? b[b.length>
       if (d > 0.01){ if(!cur){ cur = { i0:i-1, i1:i, pas:[] }; mouv.push(cur); } cur.i1 = i; cur.pas.push(d); }
       else if (cur && rel[i][0] - rel[cur.i1][0] > 100) cur = null;
     }
-    if(!mouv.length){ console.log('  ' + nom.padEnd(7) + ' : la page ne bouge pas'); ko++; continue; }
+    /* MÊME CORRECTION QUE DANS « clavier » : ne pas bouger n'est un défaut que
+       si le champ en avait besoin. On le regarde au lieu de le supposer. */
+    const vu = await p.evaluate((s)=>{ const e=document.querySelector(s); const r=e.getBoundingClientRect();
+      return { haut:+r.top.toFixed(1), bas:+r.bottom.toFixed(1), vvh:Math.round(visualViewport.height) }; }, sel);
+    const air = +(vu.vvh - vu.bas).toFixed(1);
+    if(!mouv.length){
+      if(vu.haut >= 0 && air >= 12){
+        console.log('  ' + nom.padEnd(7) + ' : rien \u00e0 recadrer, ' + air + ' px d\'air au-dessus du clavier');
+      } else {
+        console.log('  ' + nom.padEnd(7) + ' : la page ne bouge pas ET le champ est cach\u00e9 (air ' + air + ' px)'); ko++;
+      }
+      continue;
+    }
+    if(vu.haut < 0 || air < 12){ console.log('  ' + nom.padEnd(7) + ' : le champ n\'est pas d\u00e9gag\u00e9 (air ' + air + ' px)'); ko++; }
     let n = 0;
     for (const m of mouv){
       n++;
       const course = Math.abs(rel[m.i1][1] - rel[m.i0][1]);
-      /* Les tout petits gestes ne veulent rien dire : trois pixels se posent
-         forcément d'un bloc, ce n'est pas une saccade, c'est un pixel. */
-      if (course < 12) { console.log('  ' + nom.padEnd(7) + ' geste ' + n + ' : ' + course.toFixed(0) + ' px — trop court pour juger'); continue; }
+      /* LES TOUT PETITS GESTES NE VEULENT RIEN DIRE, et le seuil était trop
+         bas. Les trois critères ont été calibrés sur des courses de 45 à
+         75 px ; sous une vingtaine de pixels, c'est la QUANTIFICATION qui
+         parle, pas le mouvement. Mesuré sur une course de 12 px en six
+         images : pas 3 2 2 2 2 1 — « départ 1,00 », donc condamné, alors que
+         l'écart entre le premier pas et le suivant est d'UN pixel. Aucun
+         doigt ne sent ça ; un défileur ne connaît pas le demi-pixel.
+         On ne juge donc le rythme qu'à partir de 20 px — le même plancher que
+         dans « clavier », pour que les deux bancs disent la même chose. */
+      if (course < 20) { console.log('  ' + nom.padEnd(7) + ' geste ' + n + ' : ' + course.toFixed(0) + ' px — trop court pour juger (air ' + air + ' px)'); continue; }
       /* Le CORPS du geste, c'est tout sauf la dernière image : celle-ci se
          pose sur la cible et vaut ce qui restait, elle ne dit rien du rythme.
          C'est « arrivée » qui la juge, et elle seule. */
