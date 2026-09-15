@@ -3890,15 +3890,17 @@ function ondeRanger(){
   b.removeEventListener("animationend", ondeFinie);
   b.classList.remove("onde");
   b.classList.add("onde-part");
+  const rendreLaTeinte = ()=>{ try{ b.style.removeProperty("--press-tint"); }catch(e){} };
   const partie = (e)=>{
     if(e.animationName !== "ondeOut") return;
     b.removeEventListener("animationend", partie);
     b.classList.remove("onde-part");
+    rendreLaTeinte();
   };
   b.addEventListener("animationend", partie);
   /* Filet : si l'animation ne rend jamais la main (onglet endormi, écran
      éteint), la classe part quand même — sinon l'onde resterait allumée. */
-  setTimeout(()=>{ b.removeEventListener("animationend", partie); b.classList.remove("onde-part"); }, 900);
+  setTimeout(()=>{ b.removeEventListener("animationend", partie); b.classList.remove("onde-part"); rendreLaTeinte(); }, 900);
   ondeCourante = null; ondePleine = false; ondeTenue = false;
 }
 document.addEventListener("pointerdown", (e)=>{
@@ -3908,6 +3910,27 @@ document.addEventListener("pointerdown", (e)=>{
   b.classList.remove("onde-part");        // il repart plein, pas en train de s'effacer
   /* Ré-appuyer sur le même bouton doit relancer l'onde depuis le début. */
   if(ondeCourante === b){ b.classList.remove("onde"); void b.offsetWidth; }
+  /* ===== LA TEINTE SE FIGE AU CONTACT =====
+     « Lors du remplissage des boutons avec le rouge, il y a un petit truc à la
+     fin. » Relevé image par image sur une puce de réglage :
+         104 ms   onde rgb(236,60,26)          à 62 % de sa course
+         121 ms   onde rgba(255,255,255,0.34)  à 72 %
+     Au milieu du remplissage, la puce devenait SÉLECTIONNÉE — et une surface
+     déjà corail reçoit une onde BLANCHE, sinon un appui ne s'y verrait pas.
+     La règle est juste ; c'est son moment qui ne l'était pas. L'onde
+     changeait de couleur en plein vol, finissait sa course en voile blanc, et
+     ce voile s'effaçait ensuite : d'où le petit éclair pâle à la fin.
+     ON NE FAIT PAS UNE EXCEPTION DE PLUS. Une onde est déclenchée par un
+     geste, à un instant précis ; sa couleur est donc celle de ce qu'on a
+     touché, pas celle de ce que le bouton est devenu entre-temps. On lit donc
+     la teinte au contact et on la POSE sur l'élément, où aucune règle ne peut
+     plus la déplacer. Elle est rendue au style quand l'onde a fini de
+     s'effacer. Ça vaut pour tous les boutons, y compris ceux qu'on ajoutera :
+     aucun ne pourra plus changer de couleur en cours de route. */
+  try{
+    const teinte = getComputedStyle(b).getPropertyValue("--press-tint").trim();
+    if(teinte) b.style.setProperty("--press-tint", teinte);
+  }catch(e){}
   ondeCourante = b; ondePleine = false; ondeTenue = true;
   b.addEventListener("animationend", ondeFinie);
   b.classList.add("onde");
