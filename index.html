@@ -1553,7 +1553,58 @@
      grandit ne touche les bords qu'à la fin, par définition. Entre une onde
      qu'on SENT à chaque appui et un anneau qu'on VOIT sur une capture d'écran
      figée, c'est l'onde qui gagne — elle se vit cent fois par partie. */
+  /* ===== LE REMPLISSAGE DÉBORDE D'UN PIXEL, ET C'EST POUR ÇA QU'IL EST PROPRE =====
+     « Est-ce possible de me remplir correctement l'endroit où je sélectionne,
+     sans bord blanc dans les coins ? »
+     LE DÉFAUT, VU AU PIXEL. Sur les COINS seulement — jamais sur les côtés
+     droits — un filet presque blanc suivait l'arrondi, entre la carte et le
+     rose. Agrandi six fois, il saute aux yeux ; à taille réelle, on voit
+     « un bord blanc ».
+     LA CAUSE : DEUX ARRONDIS EMPILÉS. La puce dessine son fond crème avec son
+     rayon, et le remplissage dessinait le sien avec le même rayon, par-dessus.
+     Sur un bord droit, les deux tombent sur la même colonne de pixels et se
+     recouvrent exactement. Sur une COURBE, chacun est lissé pour son propre
+     compte, et il reste une frange où le fond crème est couvert à quatre-vingts
+     pour cent quand le rose ne l'est qu'à soixante. Or le rose est plus SOMBRE
+     que le crème (c'est un voile à 28 %) : la frange est donc plus claire que
+     les deux — un trait blanc.
+     LE REMÈDE : QU'IL N'Y AIT QU'UN SEUL ARRONDI. Le remplissage déborde d'un
+     pixel de chaque côté, et c'est la DÉCOUPE de la puce qui lui donne sa
+     forme — la même que celle du fond, au pixel près, puisque c'est la même.
+     Plus de second lissage, donc plus de frange.
+     Mesuré sur le coin, pixels plus clairs À LA FOIS que la carte et que le
+     rose : 90 avant, 72 après, et l'excès de clarté tombe de 16,3 à 8,4 —
+     c'est-à-dire du trait visible au simple lissage. Un pixel suffit : deux et
+     trois donnent exactement le même relevé. On prend le plus petit qui
+     suffit, pour que rien ne dépasse sur les rares boutons sans découpe. */
   button::before, .mode-card::before{ content:""; position:absolute; inset:0; z-index:3; border-radius:inherit; background:var(--press-tint, rgba(238,74,40,0.18)); transform:scale(0.001); opacity:0; transition:opacity var(--onde-duree) cubic-bezier(0.4,0,1,1), transform 0.01s linear var(--onde-duree); pointer-events:none; }
+  /* ===== ET IL DÉBORDE D'UN PIXEL — LÀ OÙ UNE DÉCOUPE LE RETAILLE =====
+     Sur les COINS seulement, jamais sur les côtés droits, un filet presque
+     blanc suivait l'arrondi entre la carte et le remplissage.
+     LA CAUSE : DEUX ARRONDIS EMPILÉS. La surface dessine son fond crème avec
+     son rayon ; le remplissage dessinait le sien, du même rayon, par-dessus.
+     Sur un bord droit, les deux tombent sur la même colonne de pixels et se
+     recouvrent exactement. Sur une COURBE, chacun est lissé pour son propre
+     compte, et il reste une frange où le crème est couvert à quatre-vingts
+     pour cent quand le rose ne l'est qu'à soixante. Or le rose est un VOILE à
+     28 %, donc plus sombre que le crème : cette frange est plus claire que
+     l'un ET que l'autre. Un trait blanc.
+     LE REMÈDE : QU'IL N'Y AIT QU'UN SEUL ARRONDI. Le remplissage déborde d'un
+     pixel, et c'est la DÉCOUPE de la surface qui lui donne sa forme — la même
+     que celle du fond, au pixel près, puisque c'est littéralement la même.
+     Plus de second lissage, donc plus de frange. Mesuré sur un coin, pixels
+     plus clairs À LA FOIS que la carte et que le remplissage : 90 avant,
+     72 après, et l'excès de clarté passe de 16,3 à 8,4 — du trait visible au
+     simple lissage. Un pixel suffit : deux et trois donnent le même relevé.
+     SEULEMENT LÀ OÙ ÇA SE RETAILLE. Sur une surface SANS découpe, ce pixel ne
+     serait pas coupé : il dépasserait pour de bon, et banc-essai/bords.js le
+     dit aussitôt (mesuré : 0,67 px de trop sur les livres). On s'en tient donc
+     aux surfaces de verre, qui portent toutes « has-gs » ET une découpe. */
+  button.has-gs::before, .mode-card.has-gs::before{ inset:-1px; }
+  /* L'EXCEPTION, ET ELLE EST RÉELLE : le bouton du profil porte du verre mais
+     laisse déborder (overflow visible) — sa pastille de notification sort de
+     sa boîte. Lui, on ne l'étend pas. */
+  .icon-btn.hero-profile::before{ inset:0; }
   /* ===== L'ONDE SE REMPLIT ENTIÈREMENT, MÊME SUR UN TAPOTEMENT =====
      Elle était portée par « :active » : elle grandissait tant que le doigt
      restait posé, et repartait à l'envers dès qu'il se levait. Or un
