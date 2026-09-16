@@ -13,7 +13,25 @@
        fond   2 valeurs   rouge -> blanc en une image
        texte 14 valeurs   fondu propre sur 200 ms
    Le texte fondait pendant que le fond claquait : c'est ce DÉCALAGE qui se
-   voit, pas la vitesse. On exige donc les deux, et qu'ils finissent ensemble.
+   voyait, pas la vitesse.
+
+   ET J'EN AVAIS TIRÉ UNE EXIGENCE DE TROP. J'ai écrit « on exige les deux, et
+   qu'ils finissent ensemble ». Le relevé disait pourtant ce qu'il fallait
+   corriger : c'était LE FOND qui claquait. Demander en plus au texte de se
+   fondre AVEC lui a fabriqué un autre défaut, que Taylor a vu avant moi :
+   « quand je change de bouton, il y a un petit effet bizarre ». Mesuré, la
+   cause est nette — le texte va du blanc à l'encre pendant que le fond va du
+   rouge au crème, et au milieu les deux clartés sont ÉGALES : contraste 1,00,
+   texte rgb(168,166,163) sur fond rgb(243,137,114). Le mot ne pâlit pas, il
+   disparaît, deux images durant.
+   Un texte clair sur fond sombre qui devient sombre sur fond clair DOIT passer
+   par là. Le bon geste n'est pas de traverser lentement, c'est de franchir
+   d'un coup, au bon instant. Le texte a donc le droit — et même le devoir — de
+   claquer. Ce banc ne le lui reproche plus.
+   CE QU'ON EXIGE DÉSORMAIS ICI : que le FOND se fonde, ce qui était le vrai
+   sujet depuis le début. La lisibilité du texte, elle, a son propre banc et
+   une mesure bien plus juste que « en combien d'étapes » : banc-essai/
+   lisible.js vérifie qu'à aucune image le contraste ne descend sous 3.
 
    LA CAUSE ÉTAIT PROFONDE : la couleur vient de « --glass-tint », et une
    variable CSS ordinaire ne s'anime pas — le moteur la traite comme du texte.
@@ -25,7 +43,7 @@
 const { chromium } = require('/opt/node22/lib/node_modules/playwright');
 const URL = process.argv[2] || 'http://127.0.0.1:8099/index.html';
 const S_ETAPES = 6;     // sous six valeurs distinctes, ce n'est pas un fondu
-const S_ECART  = 90;    // ms : le fond et le texte doivent finir ensemble
+const S_ECART  = 0;     // plus d'exigence d'écart : voir le commentaire en tête
 (async()=>{
   const b = await chromium.launch({ executablePath:'/opt/pw-browsers/chromium' });
   const ctx = await b.newContext({ viewport:{width:393,height:852}, deviceScaleFactor:2, isMobile:true, hasTouch:true, serviceWorkers:'block' });
@@ -60,15 +78,19 @@ const S_ECART  = 90;    // ms : le fond et le texte doivent finir ensemble
     const finit  = (i)=>{ const der = rel[rel.length-1][i]; for(let k=rel.length-1;k>=0;k--) if(rel[k][i] !== der) return rel[k+1][0]; return 0; };
     const eF = etapes(1), eT = etapes(2), tF = finit(1), tT = finit(2);
     const ecart = Math.abs(tF - tT);
-    const mauvais = eF < S_ETAPES || eT < S_ETAPES || ecart > S_ECART;
+    /* SEUL LE FOND EST JUGÉ ICI. Le texte a le droit de claquer — c'est même
+       ce qu'on lui demande maintenant, pour qu'il ne traverse pas le gris.
+       Sa lisibilité est vérifiée par banc-essai/lisible.js, qui mesure le
+       contraste à chaque image au lieu de compter des étapes. */
+    const mauvais = eF < S_ETAPES;
     if(mauvais) ko++;
     console.log('  ' + (mauvais?'KO ':'OK ') + nom.padEnd(20)
       + 'fond ' + String(eF).padStart(2) + ' étapes (fini à ' + String(tF).padStart(3) + ' ms)   '
       + 'texte ' + String(eT).padStart(2) + ' étapes (fini à ' + String(tT).padStart(3) + ' ms)   '
       + 'écart ' + ecart + ' ms');
     if(eF < S_ETAPES) console.log('           ↳ le fond CLAQUE : ' + eF + ' valeur(s) distincte(s), il ne se fond pas');
-    if(eT < S_ETAPES) console.log('           ↳ le texte claque : ' + eT + ' valeur(s) distincte(s)');
-    if(ecart > S_ECART) console.log('           ↳ le fond et le texte ne finissent pas ensemble : ' + ecart + ' ms d\'écart (max ' + S_ECART + ')');
+
+
     await p.waitForTimeout(300);
   }
   if(errs.length){ ko++; console.log('  erreurs : ' + [...new Set(errs)].slice(0,2).join(' | ')); }
