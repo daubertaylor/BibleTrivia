@@ -3176,6 +3176,31 @@
   .settings-sheet.dragging{ transition:none !important; }
   .sheet-title{ font-family:'Poppins',sans-serif; font-weight:700; font-size:1.12rem; color:var(--ink); display:flex; align-items:center; gap:0.55rem; margin-bottom:0.35rem; }
   .sheet-title .st-ico{ width:1.5rem; height:1.5rem; display:inline-flex; color:var(--primary); flex-shrink:0; }
+  /* LE DRAPEAU DE LA LANGUE. Il se range à droite de la rangée de titre, dans
+     la place qui était déjà vide : la feuille ne gagne pas un pixel de hauteur.
+     Sa hauteur (1,5rem) est celle de l'icône d'engrenage en face — la rangée
+     garde donc exactement la taille qu'elle avait. */
+  .lang-btn{ margin-left:auto; display:flex; align-items:center; gap:0.34rem; flex-shrink:0;
+    background:rgb(252,248,241); border:0; border-radius:var(--r-s);
+    padding:calc(0.22rem + 1px) calc(0.44rem + 1px); cursor:pointer; position:relative;
+    --press-tint: rgba(238,74,40,0.28); }
+  /* LA ZONE GRANDIT, PAS LE DESSIN. Le bouton fait 26 px de haut — c'est la
+     taille juste pour ne pas faire monter la rangée de titre d'un pixel, et
+     c'est la condition qui a été posée. Mais un doigt vise 44 px, pas 26 : le
+     banc « doigt » l'a refusé, et il a raison, on rate ce bouton une fois sur
+     trois sinon. On pose donc une zone invisible et CENTRÉE de 44 px par-dessus :
+     elle n'a ni fond ni ombre, elle ne change rien à ce qu'on voit, elle ne
+     déplace rien — elle ne fait qu'attraper le doigt. (Possible ici, et pas sur
+     les boutons voisins, parce que celui-ci ne porte pas de verre : aucune
+     découpe ne vient couper ce qui dépasse.) */
+  .lang-btn::after{ content:""; position:absolute; left:50%; top:50%;
+    transform:translate(-50%,-50%); width:max(100%, 2.75rem); height:2.75rem;
+    border-radius:var(--r-s); }
+  .lang-btn .lang-dr{ width:1.32rem; height:0.88rem; display:block; border-radius:2px; overflow:hidden;
+    box-shadow:0 0 0 1px rgba(34,26,16,0.1); }
+  .lang-btn .lang-dr svg{ width:100%; height:100%; display:block; }
+  .lang-btn .lang-cd{ font-family:'Poppins',sans-serif; font-weight:700; font-size:0.7rem;
+    letter-spacing:0.03em; color:var(--ink-soft); }
   .set-row{ display:flex; align-items:center; gap:0.8rem; padding:0.88rem 0.1rem; }
   /* LES LIGNES DES RÉGLAGES SONT PARTIES AUSSI. Ramenées de 0,08 à 0,055,
      elles creusaient encore 8,2 à 10,3 unités sous la feuille — soit le seuil
@@ -3296,6 +3321,8 @@
   .bible-sig.ostervald{ --bs-clair:#F4703F; --bs-fonce:#DE4A1C; --bs-bord:rgba(150,50,20,0.3); --bs-ombre:rgba(214,86,44,0.44); }
   /* Vert : la Bible Annotée, celle de l'étude. */
   .bible-sig.ba{ --bs-clair:#6FD3B4; --bs-fonce:#2FA184; --bs-bord:rgba(20,110,90,0.3); --bs-ombre:rgba(47,161,132,0.44); }
+  /* Prune : la Martin, la plus ancienne des cinq. */
+  .bible-sig.martin1744{ --bs-clair:#B08BE0; --bs-fonce:#7B51C0; --bs-bord:rgba(70,30,130,0.3); --bs-ombre:rgba(123,81,192,0.44); }
   .bible-txt{ flex:1; min-width:0; }
   .bible-txt b{ font-family:'Poppins',sans-serif; font-weight:600; font-size:0.95rem; }
   .bible-txt b i{ font-style:normal; font-weight:500; color:var(--ink-soft); font-size:0.78rem; }
@@ -3948,9 +3975,6 @@
 <div id="bg-grain"></div>
 <div id="rotate-lock"><span class="rl-ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><rect x="7" y="2.5" width="10" height="19" rx="2.5"/><line x1="10.3" y1="18.4" x2="13.7" y2="18.4"/></svg></span><p>Tourne l’écran —<br>Yada se joue en portrait</p></div>
 <div id="app"></div>
-<!-- BANDEAU D'ESSAI : présent UNIQUEMENT dans essai/index.html, jamais dans le
-     jeu publié. Il dit clairement où l'on est, pour qu'un essai ne soit jamais
-     confondu avec l'app des joueurs. -->
 <div style="position:fixed;left:50%;transform:translateX(-50%);bottom:calc(env(safe-area-inset-bottom) + 6px);z-index:99999;
             background:rgba(20,14,9,0.72);color:#FFE7D6;font:600 11px/1 -apple-system,system-ui,sans-serif;
             letter-spacing:0.04em;padding:6px 12px;border-radius:999px;pointer-events:none;backdrop-filter:blur(8px)">VERSION D'ESSAI</div>
@@ -3964,6 +3988,136 @@
    vide, posé au tout début du script, débloque :active pour TOUTE l'appli :
    chaque bouton devient aussi instantané au toucher que sur Android. */
 document.addEventListener("touchstart", function(){}, { passive:true });
+
+/* ===================== LES LANGUES =====================
+   « Intègre le nouveau système de langues, pour avoir des langues différentes.
+   Tu cales ça dans les réglages, mais fais en sorte que les réglages ne
+   montent pas trop haut. Un petit truc avec un drapeau, ça permettrait de
+   comprendre en quelques secondes que c'est le truc pour changer de langue,
+   sans avoir trop d'explicatifs. »
+
+   OÙ IL SE POSE, ET POURQUOI LÀ. La feuille des réglages a déjà une rangée de
+   titre, en flex : « ⚙ Réglages ». Le drapeau s'y range à droite, dans la
+   place vide qui existait déjà. Résultat : ZÉRO pixel de hauteur ajouté, aucune
+   rangée de plus, rien qui descend d'un cran. C'était la condition posée, et
+   c'est la seule place de toute la feuille qui la respecte vraiment.
+
+   POURQUOI DES DRAPEAUX DESSINÉS ET NON DES ÉMOJIS. 🇫🇷 ne s'affiche pas
+   partout : certains navigateurs rendent deux lettres dans un carré au lieu du
+   drapeau. Le jeu doit être le même pour tout le monde — ce sont donc deux
+   dessins, quelques lignes chacun, identiques sur tous les appareils.
+
+   COMMENT ON TRADUIT, ET POURQUOI PAS AUTREMENT. Les textes sont indexés PAR
+   LEUR VERSION FRANÇAISE, exactement comme les versets d'une autre Bible le
+   sont par leur référence (VERSETS_ALT). Trois raisons, et elles ont toutes
+   déjà servi ici :
+     — aucune clé à inventer, donc aucune clé à se tromper ;
+     — ce qui n'est PAS traduit retombe sur le français : une langue incomplète
+       fonctionne dès le premier mot déposé, et ne laisse jamais de trou ;
+     — le français, lui, ne peut pas casser : il est la source, pas une entrée
+       de tableau.
+   Une langue s'ajoute donc en déposant un dictionnaire. Rien d'autre à toucher.
+
+   CE QUE ÇA NE TRADUIT PAS ENCORE, ET IL FAUT LE DIRE. Les 1545 questions font
+   269 Ko de texte français. Les traduire est un travail de CONTENU, pas de
+   mécanique — et sur des questions bibliques, une traduction bâclée serait
+   pire que pas de traduction du tout. Elles suivront par lots. La mécanique,
+   elle, est entière dès maintenant. */
+const DRAPEAUX = {
+  fr: `<svg viewBox="0 0 24 16" aria-hidden="true"><rect width="24" height="16" rx="2.4" fill="#F5F3EE"/><path d="M2.4 0H8v16H2.4A2.4 2.4 0 0 1 0 13.6V2.4A2.4 2.4 0 0 1 2.4 0Z" fill="#2B4DA8"/><path d="M16 0h5.6A2.4 2.4 0 0 1 24 2.4v11.2a2.4 2.4 0 0 1-2.4 2.4H16V0Z" fill="#D8352A"/></svg>`,
+  en: `<svg viewBox="0 0 24 16" aria-hidden="true"><rect width="24" height="16" rx="2.4" fill="#F5F3EE"/><g fill="#D8352A"><rect y="1.23" width="24" height="1.23"/><rect y="3.69" width="24" height="1.23"/><rect y="6.15" width="24" height="1.23"/><rect y="8.62" width="24" height="1.23"/><rect y="11.08" width="24" height="1.23"/><rect y="13.54" width="24" height="1.23"/></g><path d="M0 2.4A2.4 2.4 0 0 1 2.4 0H11v8.62H0V2.4Z" fill="#2B4DA8"/></svg>`,
+};
+/* « dispo » dit si la langue est offerte au joueur. Une langue dont les textes
+   ne sont pas prêts reste ici, visible dans le code, mais pas proposée — même
+   règle que pour une Bible dont on n'a pas le droit de livrer le texte. */
+const LANGUES = [
+  { cle:"fr", code:"FR", nom:"Français", drapeau:DRAPEAUX.fr, dispo:true },
+  { cle:"en", code:"EN", nom:"English",  drapeau:DRAPEAUX.en, dispo:true },
+];
+const TEXTES = {
+  en: {
+    /* --- la feuille des réglages --- */
+    "Réglages":"Settings",
+    "Fermer":"Close",
+    "Effets sonores":"Sound effects",
+    "Musique de fond":"Background music",
+    "Installer le jeu":"Install the game",
+    "Guide":"Guide",
+    "Volume de la musique":"Music volume",
+    "Volume":"Volume",
+    "Arrière-plan":"Background",
+    "Langue":"Language",
+    /* --- la navigation --- */
+    "Retour":"Back",
+    "Accueil":"Home",
+    "Durée de la partie":"Game length",
+    "questions":"questions",
+    "Chrono par question":"Timer per question",
+    "par question":"per question",
+    "Testament":"Testament",
+    "Tout":"All",
+    "Toute la Bible":"The whole Bible",
+    "Ancien":"Old",
+    "Nouveau":"New",
+    "Commencer la partie":"Start the game",
+    "Courte":"Short",
+    "Normale":"Normal",
+    "Longue":"Long",
+    "Sans":"None",
+    "prenez votre temps":"take your time",
+    /* --- à revoir --- */
+    "À revoir":"To review",
+    "Celles qui me résistent":"The ones that resist me",
+    "Ratées au moins deux fois":"Missed at least twice",
+    "Les échéances du jour":"Due today",
+    "Ce que la mémoire réclame":"What memory is asking for",
+    "Tout mon carnet":"My whole notebook",
+    "Sans attendre leur tour":"Without waiting their turn",
+    "Ma dernière partie":"My last game",
+    "Ce que je viens de rater":"What I just missed",
+    "Ou un livre en particulier":"Or one book in particular",
+  },
+};
+let LANGUE = "fr";
+/* T() : le texte dans la langue du joueur, ou le français si rien n'est déposé.
+   Volontairement minuscule et sans état : elle est appelée à chaque rendu. */
+function T(fr){
+  if(LANGUE === "fr") return fr;
+  const d = TEXTES[LANGUE];
+  return (d && Object.prototype.hasOwnProperty.call(d, fr)) ? d[fr] : fr;
+}
+function langueActive(){
+  return LANGUES.find(l => l.cle === LANGUE) || LANGUES[0];
+}
+/* Le drapeau est un BOUTON, pas un menu : avec deux langues, un menu serait
+   une porte de plus pour un choix qui n'en a pas besoin. Le jour où il y en
+   aura quatre, il ouvrira une liste — et ce sera le même bouton. */
+function langueSuivante(){
+  const dispo = LANGUES.filter(l => l.dispo);
+  const i = dispo.findIndex(l => l.cle === LANGUE);
+  LANGUE = dispo[(i + 1) % dispo.length].cle;
+  try{ localStorage.setItem("bt_langue", LANGUE); }catch(e){}
+  try{ document.documentElement.setAttribute("lang", LANGUE); }catch(e){}
+  try{ if(settings.sfx) playTap(); }catch(e){}
+  /* On refait la feuille SUR PLACE, sans la fermer : le joueur voit la langue
+     changer sous ses yeux, il n'a pas à rouvrir les réglages pour vérifier. */
+  try{
+    const v = document.getElementById("settingsVeil");
+    if(v){ v.remove(); openSettings(); }
+  }catch(e){}
+  try{ render(); }catch(e){}
+}
+try{
+  const l = localStorage.getItem("bt_langue");
+  if(l && LANGUES.some(x => x.cle === l && x.dispo)) LANGUE = l;
+  document.documentElement.setAttribute("lang", LANGUE);
+}catch(e){}
+function boutonLangue(){
+  const l = langueActive();
+  return `<button class="lang-btn" onclick="langueSuivante()" aria-label="${T("Langue")}" title="${T("Langue")}">
+      <span class="lang-dr">${l.drapeau}</span><span class="lang-cd">${l.code}</span>
+    </button>`;
+}
 
 /* ===== L'ONDE D'APPUI VA JUSQU'AU BOUT DE SON REMPLISSAGE =====
    Portée par « :active », elle s'arrêtait où le doigt s'était arrêté : sur un
@@ -7060,7 +7214,19 @@ function getCtx(){
     try { actx.addEventListener("statechange", ()=>{
       if(!actx) return;
       const s = actx.state;
-      if(s === "suspended" || s === "interrupted"){ audioInterrupted = true; }
+      if(s === "suspended" || s === "interrupted"){
+        audioInterrupted = true;
+        /* ET ON REVIENT. On se contentait de NOTER l'interruption en attendant
+           un « running » — qui ne pouvait pas arriver tout seul. Le contexte
+           reste suspendu jusqu'à ce que quelqu'un demande sa reprise, et
+           personne ne la demandait : le jeu devenait muet sous les yeux du
+           joueur, sans qu'aucun événement de visibilité prévienne, et le son
+           ne revenait qu'au geste suivant — parfois jamais, s'il lisait.
+           C'est le cas d'une bannière d'appel entrant, de Siri, d'une autre
+           app qui prend la sortie, d'un casque qui se connecte : l'app reste
+           AU PREMIER PLAN tout du long. */
+        if(audioUnlocked && audioActive()) relancerSon();
+      }
       else if(s === "running"){ wakeAudio(); }
     }); } catch(e){}
   }
@@ -7341,6 +7507,38 @@ function relancerSon(){
   };
   tenter();
 }
+/* ===== LE GUETTEUR : « EN TOUT TEMPS » NE SE DÉMONTRE PAS CAS PAR CAS =====
+   On a bouché, un par un, tous les chemins par lesquels le son se perdait :
+   arrière-plan, appel, veille, contexte fermé, geste. Chaque fois, il en
+   revenait un nouveau — parce qu'on réparait des CAUSES, et qu'on ne peut pas
+   les énumérer toutes. Un casque qui se déconnecte, une app de navigation qui
+   parle, un réglage système, la version d'iOS de l'an prochain.
+   On surveille donc la CONSÉQUENCE, la seule qui compte : le contexte
+   est-il vivant ? Deux fois par seconde suffirait ; toutes les deux secondes
+   suffit largement, et ça ne coûte qu'une lecture de propriété — rien, même
+   sur un vieux téléphone (c'est pour ça qu'on regarde au lieu de reconstruire).
+   Le guetteur dort dès que l'app est en arrière-plan, et il ne tente une
+   relance qu'au plus une fois toutes les six secondes : si le son ne peut PAS
+   revenir (le bouton silence du téléphone, par exemple), on n'y use pas la
+   batterie du joueur à essayer en boucle. */
+const VEILLE_SON_MS = 2000, VEILLE_SON_REPOS = 6000;
+let veilleSonT = 0, veilleSonDernier = 0;
+function veillerLeSon(){
+  clearInterval(veilleSonT);
+  veilleSonT = setInterval(()=>{
+    try{
+      if(!audioUnlocked || !audioActive()) return;      // pas encore autorisé, ou en arrière-plan
+      if(!settings.music && !settings.sfx) return;      // le joueur a tout coupé : c'est son choix
+      const mort = !actx || actx.state !== "running" || (settings.music && !musicPlaying);
+      if(!mort) return;
+      const t = Date.now();
+      if(t - veilleSonDernier < VEILLE_SON_REPOS) return;
+      veilleSonDernier = t;
+      relancerSon();
+    }catch(e){}
+  }, VEILLE_SON_MS);
+}
+try{ veillerLeSon(); }catch(e){}
 function applyVolume(){
   if(musicBusNode && actx){ musicBusNode.gain.setTargetAtTime(musicPlaying ? musicLevel() : 0.0001, actx.currentTime, 0.06); }
 }
@@ -7820,28 +8018,28 @@ function openSettings(){
   veil.className = "sheet-veil"; veil.id = "settingsVeil";
   const pct = Math.round(settings.volume*100);
   veil.innerHTML = `
-    <div class="settings-sheet" role="dialog" aria-label="Réglages">
-      <button class="sheet-grab" aria-label="Fermer" onclick="closeSettings()"></button>
-      <div class="sheet-title"><span class="st-ico">${ICONS.gear}</span>Réglages</div>
+    <div class="settings-sheet" role="dialog" aria-label="${T("Réglages")}">
+      <button class="sheet-grab" aria-label="${T("Fermer")}" onclick="closeSettings()"></button>
+      <div class="sheet-title"><span class="st-ico">${ICONS.gear}</span>${T("Réglages")}${boutonLangue()}</div>
       <div class="set-row">
         <span class="set-ico sfx">${ICONS.bell}</span>
-        <span class="set-txt"><b>Effets sonores</b></span>
-        <button class="switch${settings.sfx?' on':''}" id="swSfx" role="switch" aria-checked="${settings.sfx}" aria-label="Effets sonores" onclick="setSfx(!settings.sfx)"></button>
+        <span class="set-txt"><b>${T("Effets sonores")}</b></span>
+        <button class="switch${settings.sfx?' on':''}" id="swSfx" role="switch" aria-checked="${settings.sfx}" aria-label="${T("Effets sonores")}" onclick="setSfx(!settings.sfx)"></button>
       </div>
       <div class="set-row">
         <span class="set-ico mus">${ICONS.music}</span>
-        <span class="set-txt"><b>Musique de fond</b></span>
-        <button class="switch${settings.music?' on':''}" id="swMusic" role="switch" aria-checked="${settings.music}" aria-label="Musique de fond" onclick="setMusic(!settings.music)"></button>
+        <span class="set-txt"><b>${T("Musique de fond")}</b></span>
+        <button class="switch${settings.music?' on':''}" id="swMusic" role="switch" aria-checked="${settings.music}" aria-label="${T("Musique de fond")}" onclick="setMusic(!settings.music)"></button>
       </div>
       ${(IS_PHONE && !isStandalone) ? `
       <div class="set-row">
         <span class="set-ico fsx">${ICONS.telecharger}</span>
-        <span class="set-txt"><b>Installer le jeu</b></span>
-        <button class="set-go" onclick="openFsGuide()">Guide</button>
+        <span class="set-txt"><b>${T("Installer le jeu")}</b></span>
+        <button class="set-go" onclick="openFsGuide()">${T("Guide")}</button>
       </div>` : ``}
       <div class="set-row">
         <span class="set-ico vol">${ICONS.speakerOn}</span>
-        <span class="set-txt"><b>Volume de la musique</b></span>
+        <span class="set-txt"><b>${T("Volume de la musique")}</b></span>
         <span class="vol-val" id="volPct">${pct}%</span>
       </div>
       <div class="vol-row">
@@ -7861,7 +8059,7 @@ function openSettings(){
       ${SCENES.length > 1 ? `
         <div class="set-row">
           <span class="set-ico scn"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="16" rx="3"/><circle cx="8.6" cy="9.6" r="1.5"/><path d="M3 17l5.2-5.2 3.8 3.8 3-3L21 18.5"/></svg></span>
-          <span class="set-txt"><b>Arrière-plan</b></span>
+          <span class="set-txt"><b>${T("Arrière-plan")}</b></span>
         </div>
         <div class="scene-row">
           ${SCENES.map(s=>`<button class="scn-thumb${settings.scene===s.key?' sel':''}" data-scene="${s.key}" style="background-image:url('${s.thumb}')" onclick="setScene('${s.key}')" aria-label="${s.name}"><span class="scn-name">${s.name}</span></button>`).join("")}
@@ -8502,11 +8700,271 @@ const BIBLES = [
   { cle:"darby", sigle:"JND", court:"Darby", nom:"Bible J. N. Darby", annee:"1885", dispo:true },
   { cle:"ostervald", sigle:"OST", court:"Ostervald", nom:"La Sainte Bible, Ostervald", annee:"1744", dispo:true },
   { cle:"ba", sigle:"BA", court:"Bible Annot\u00e9e", nom:"La Bible Annot\u00e9e, Bonnet et Bovet", annee:"1900", dispo:true },
+  /* ===== MARTIN 1744 : LA PLUS ANCIENNE, ET LA PLUS SÛREMENT LIBRE =====
+     Domaine public sans discussion (David Martin, mort en 1721), protestante :
+     les deux conditions sont remplies. Son texte n'a pas été recopié à la main
+     ni « adapté » : il est EXTRAIT du module Sword FreBDM1744, référence par
+     référence, et chaque verset a été retrouvé PAR SON CONTENU, pas par son
+     numéro. C'était indispensable — ce module n'emploie pas la numérotation
+     habituelle mais la versification « Calvin » : Romains 8 y compte 38 versets
+     au lieu de 39 (les 20 et 21 y sont fondus), Romains 3 en compte 30 au lieu
+     de 31. Lire « le verset 28 » y donne le 29 de la Bible que le joueur a
+     sous les yeux. Six références sont donc décalées, et les six ont une
+     explication structurelle vérifiée — les quatre de Romains 8 et celle de
+     Romains 3 par la fusion de versets, celle d'Ésaïe 64 parce que c'est
+     SEGOND qui y suit la numérotation hébraïque, pas Martin.
+     240 références sur 248. Les trois qui manquent sont des demi-versets
+     (« Michée 6:8b ») : on ne livre pas un verset entier là où le jeu n'en
+     cite qu'une moitié. Elles restent en Segond, comme tout ce qui n'est pas
+     déposé ici — une version incomplète n'a jamais de trou. */
+  { cle:"martin1744", sigle:"MAR", court:"Martin", nom:"Bible David Martin", annee:"1744", dispo:true },
 ];
 /* Le texte d'une autre version se dépose ici, référence par référence. Ce qui
    n'y figure pas retombe sur la traduction par défaut : une version incomplète
    fonctionne donc dès le premier verset déposé, sans jamais laisser de trou. */
 const VERSETS_ALT = {
+  martin1744: {
+    "1 Chroniques 16:11":"Recherchez l’Eternel et sa force, cherchez continuellement sa face.",
+    "1 Corinthiens 10:13":"Aucune tentation ne vous a éprouvés, qui n’ait été une tentation humaine ; et Dieu est fidèle, qui ne permettra point que vous soyez tentés au-delà de vos forces, mais avec la tentation il vous en fera trouver l’issue, afin que vous la puissiez soutenir.",
+    "1 Corinthiens 10:31":"Soit donc que vous mangiez, soit que vous buviez, ou que vous fassiez quelque autre chose, faites tout à la gloire de Dieu.",
+    "1 Corinthiens 13:13":"Or maintenant ces trois choses demeurent, la foi, l’espérance, et la charité ; mais la plus excellente de ces vertus c’est la charité.",
+    "1 Corinthiens 13:4":"La charité est patience ; elle est douce ; la charité n’est point envieuse ; la charité n’use point d’insolence ; elle ne s’enorgueillit point ;",
+    "1 Corinthiens 13:8":"La charité ne périt jamais, au lieu que quant aux prophéties, elles seront abolies ; et quant aux Langues, elles cesseront ; et quant à la connaissance, elle sera abolie.",
+    "1 Corinthiens 16:13":"Veillez, soyez fermes en la foi, portez-vous vaillamment, fortifiez-vous.",
+    "1 Corinthiens 16:14":"Que toutes vos affaires se fassent en charité.",
+    "1 Corinthiens 3:16":"Ne savez-vous pas que vous êtes le Temple de Dieu, et que l’Esprit de Dieu habite en vous ?",
+    "1 Jean 1:9":"Si nous confessons nos péchés, il est fidèle et juste pour nous pardonner nos péchés, et nous nettoyer de toute iniquité.",
+    "1 Jean 3:1":"Voyez quelle charité le Père a eue pour nous, que nous soyons appelés les enfants de Dieu ; mais le monde ne nous connaît point, parce qu’il ne l’a point connu.",
+    "1 Jean 4:18":"Il n’y a point de crainte dans la charité, mais la parfaite charité bannit la crainte ; car la crainte cause de la peine ; or celui qui craint, n’est pas accompli dans la charité.",
+    "1 Jean 4:19":"Nous l’aimons, parce qu’il nous a aimés le premier.",
+    "1 Jean 4:4":"Mes petits enfants, vous êtes de Dieu, et vous les avez vaincus ; parce que celui qui est en vous, est plus grand que celui qui est au monde.",
+    "1 Jean 4:8":"Celui qui n’aime point son prochain, n’a point connu Dieu ; car Dieu est charité.",
+    "1 Pierre 1:23":"Vu que vous avez été régénérés, non par une semence corruptible, mais par une semence incorruptible, savoir par la parole de Dieu, vivante, et permanente à toujours.",
+    "1 Pierre 2:9":"Mais vous êtes la race élue, la Sacrificature royale, la nation sainte, le peuple acquis, afin que vous annonciez les vertus de celui qui vous a appelés des ténèbres à sa merveilleuse lumière ;",
+    "1 Pierre 3:15":"Mais sanctifiez le Seigneur dans vos coeurs, et soyez toujours prêts à répondre avec douceur et avec respect à chacun qui vous demande raison de l’espérance qui est en vous.",
+    "1 Pierre 4:8":"Mais surtout, ayez entre vous une ardente charité : car la charité couvrira une multitude de péchés.",
+    "1 Pierre 5:6":"Humiliez-vous donc sous la puissante main de Dieu, afin qu’il vous élève quand il en sera temps ;",
+    "1 Pierre 5:7":"Lui remettant tout ce qui peut vous inquiéter : car il a soin de vous.",
+    "1 Samuel 16:7":"Mais l’Eternel dit à Samuel : Ne prends point garde à son visage, ni à la grandeur de sa taille, car je l’ai rejeté ; parce que l’Eternel n’a point égard à ce à quoi l’homme a égard ; car l’homme a égard à ce qui est devant les yeux ; mais l’Eternel a égard au coeur.",
+    "1 Thessaloniciens 3:13":"Pour affermir vos coeurs sans reproche en sainteté, devant Dieu qui est notre Père, à la venue de notre Seigneur Jésus-Christ, accompagné de tous ses Saints.",
+    "1 Thessaloniciens 5:16-18":"Soyez toujours joyeux. Priez sans cesse. Rendez grâces pour toutes choses, car c’est la volonté de Dieu par Jésus-Christ.",
+    "1 Thessaloniciens 5:17":"Priez sans cesse.",
+    "1 Thessaloniciens 5:18":"Rendez grâces pour toutes choses, car c’est la volonté de Dieu par Jésus-Christ.",
+    "1 Thessaloniciens 5:21":"Eprouvez toutes choses ; retenez ce qui est bon.",
+    "1 Timothée 4:8":"Car l’exercice corporel est utile à peu de chose, mais la piété est utile à toutes choses, ayant les promesses de la vie présente, et de celle qui est à venir.",
+    "1 Timothée 6:12":"Combats le bon combat de la foi ; saisis la vie éternelle, à laquelle aussi tu es appelé, et dont tu as fait une belle profession devant beaucoup de témoins.",
+    "2 Chroniques 7:14":"Et que mon peuple, sur lequel mon nom est invoqué, s’humilie, prie, et cherche ma face, et qu’il se détourne de ses mauvaises voies, alors je l’exaucerai des cieux, je pardonnerai ses péchés, et je guérirai son pays.",
+    "2 Corinthiens 12:9":"Mais le Seigneur m’a dit : ma grâce te suffit : car ma vertu manifeste sa force dans l’infirmité. Je me glorifierai donc très volontiers plutôt dans mes infirmités ; afin que la vertu de Christ habite en moi.",
+    "2 Corinthiens 4:18":"Quand nous ne regardons point aux choses visibles, mais aux invisibles ; car les choses visibles ne sont que pour un temps, mais les invisibles sont éternelles.",
+    "2 Corinthiens 4:8":"Étant affligés à tous égards, mais non pas réduits entièrement à l’étroit ; étant en perplexité, mais non pas sans secours.",
+    "2 Corinthiens 5:17":"Si donc quelqu’un est en Christ, il est une nouvelle créature ; les choses vieilles sont passées ; voici, toutes choses sont faites nouvelles.",
+    "2 Corinthiens 5:7":"Car nous marchons par la foi, et non par la vue.",
+    "2 Corinthiens 9:7":"Mais que chacun contribue selon qu’il se l’est proposé en son coeur, non point à regret, ou par contrainte ; car Dieu aime celui qui donne gaiement.",
+    "2 Pierre 3:18":"Mais croissez en la grâce et en la connaissance de notre Seigneur et Sauveur Jésus-Christ. A lui soit gloire maintenant, et jusqu'au jour d'éternité, Amen!",
+    "2 Pierre 3:9":"Le Seigneur ne retarde point [l'exécution de] sa promesse, comme quelques-uns estiment qu'il y ait du retardement, mais il est patient envers nous, ne voulant point qu'aucun périsse, mais que tous se repentent.",
+    "2 Thessaloniciens 3:3":"Or le Seigneur est fidèle, qui vous affermira, et vous gardera du mal.",
+    "2 Timothée 1:7":"Car Dieu ne nous a pas donné un esprit de timidité, mais de force, de charité et de prudence.",
+    "2 Timothée 3:16":"Toute l’Ecriture est divinement inspirée, et utile pour enseigner, pour convaincre, pour corriger, et pour instruire selon la justice ;",
+    "2 Timothée 4:7":"J’ai combattu le bon combat, j’ai achevé la course, j’ai gardé la foi.",
+    "Actes 16:31":"Ils dirent : crois au Seigneur Jésus-Christ ; et tu seras sauvé, toi et ta maison.",
+    "Actes 1:8":"Mais vous recevrez la vertu du Saint-Esprit qui viendra sur vous ; et vous me serez témoins tant à Jérusalem qu’en toute la Judée, et dans la Samarie, et jusqu’au bout de la terre.",
+    "Actes 20:35":"Je vous ai montré en toutes choses qu’en travaillant ainsi il faut supporter les infirmes, et se souvenir des paroles du Seigneur Jésus, qui a dit qu’on est plus heureux de pouvoir donner que d’être appelé à recevoir.",
+    "Actes 4:12":"Et il n’y a point de salut en aucun autre : car aussi il n’y a point sous le ciel d’autre Nom qui soit donné aux hommes par lequel il nous faille être sauvés.",
+    "Aggée 2:4":"Maintenant donc toi, Zorobabel, fortifie-toi, dit l’Eternel ; aussi toi, Jéhosuah, fils de Jéhotsadak, grand Sacrificateur, fortifie toi ; vous aussi, tout le peuple du pays, fortifiez-vous, dit l’Eternel, et travaillez, car je suis avec vous, dit l’Eternel des armées.",
+    "Amos 5:24":"Mais le jugement roulera comme de l’eau, et la justice comme un torrent impétueux.",
+    "Apocalypse 21:4":"Et Dieu essuiera toutes larmes de leurs yeux, et la mort ne sera plus ; et il n’y aura plus ni deuil, ni cri, ni travail ; car les premières choses sont passées.",
+    "Apocalypse 21:5":"Et celui qui était assis sur le trône, dit : voici, je fais toutes choses nouvelles. Puis il me dit : Ecris, car ces paroles sont véritables et certaines.",
+    "Apocalypse 22:13":"Je suis l’Alpha et l’Oméga, le premier et le dernier, le commencement et la fin.",
+    "Apocalypse 2:10":"Ne crains rien des choses que tu as à souffrir. Voici, il arrivera que le Démon mettra quelques-uns de vous en prison, afin que vous soyez éprouvés ; et vous aurez une affliction de dix jours. Sois fidèle jusques à la mort, et je te donnerai la couronne de vie.",
+    "Apocalypse 3:20":"Voici, je me tiens à la porte, et je frappe : si quelqu’un entend ma voix, et m’ouvre la porte, j’entrerai chez lui, je souperai avec lui, et lui avec moi.",
+    "Cantique 8:7":"Beaucoup d’eaux ne pourraient point éteindre cet amour-là, et les fleuves mêmes ne le pourraient pas noyer ; si quelqu’un donnait tous les biens de sa maison pour cet amour, certainement on n’en tiendrait aucun compte.",
+    "Colossiens 3:14":"Et outre tout cela, soyez revêtus de la charité, qui est le lien de la perfection.",
+    "Colossiens 3:15":"Et que la paix de Dieu, à laquelle vous êtes appelés pour être un seul corps, tienne le principal lieu dans vos coeurs ; et soyez reconnaissants.",
+    "Colossiens 3:16":"Que la parole de Christ habite en vous abondamment en toute sagesse, vous enseignant et vous exhortant l’un l’autre par des Psaumes, des hymnes et des cantiques spirituels, avec grâce, chantant de votre coeur au Seigneur.",
+    "Colossiens 3:23":"Et quelque chose que vous fassiez, faites tout de bon coeur, comme le faisant pour le Seigneur, et non pas pour les hommes ;",
+    "Colossiens 4:6":"Que votre parole soit toujours assaisonnée de sel avec grâce, afin que vous sachiez comment vous avez à répondre à chacun.",
+    "Daniel 12:3":"Et ceux qui auront été intelligents, luiront comme la splendeur de l’étendue ; et ceux qui en auront amené plusieurs à la justice luiront comme des étoiles, à toujours et à perpétuité.",
+    "Daniel 3:17":"Voici, notre Dieu, que nous servons, nous peut délivrer de la fournaise de feu ardent, et il nous délivrera de ta main, ô Roi !",
+    "Deutéronome 31:8":"Car l’Eternel, qui est celui qui marche devant toi, sera lui-même avec toi ; il ne te délaissera point, et ne t’abandonnera point ; ne crains donc point, et ne sois point effrayé.",
+    "Ecclésiaste 3:1":"A toute chose sa saison, et à toute affaire sous les cieux, son temps.",
+    "Ecclésiaste 4:9":"Deux valent mieux qu’un ; car ils ont un meilleur salaire de leur travail.",
+    "Exode 14:14":"L’Eternel combattra pour vous, et vous demeurerez tranquilles.",
+    "Galates 2:20":"Je suis crucifié avec Christ, et je vis, non pas maintenant moi, mais Christ vit en moi ; et ce que je vis maintenant en la chair, je le vis en la foi du Fils de Dieu, qui m’a aimé, et qui s’est donné lui-même pour moi.",
+    "Galates 3:28":"Où il n’y a ni Juif ni Grec ; où il n’y a ni esclave ni libre ; où il n’y a ni mâle ni femelle ; car vous êtes tous un en Jésus- Christ.",
+    "Galates 5:22":"Mais le fruit de l’Esprit est la charité, la joie, la paix, un esprit patient, la bonté, la bénéficence, la fidélité, la douceur, la tempérance.",
+    "Galates 6:2":"Portez les charges les uns des autres, et accomplissez ainsi la Loi de Christ.",
+    "Galates 6:9":"Or ne nous relâchons point en faisant le bien ; car nous moissonnerons en la propre saison, si nous ne devenons point lâches.",
+    "Genèse 1:1":"Au commencement DIEU créa les cieux et la terre.",
+    "Habacuc 3:19":"L’Eternel, le Seigneur est ma force, et il rendra mes pieds semblables à ceux des biches, et me fera marcher sur mes lieux élevés. Au maître chantre sur Néguinoth. Retournez au Début ===============================================================================",
+    "Hébreux 10:23":"Retenons la profession de notre espérance sans varier, car celui qui nous a fait les promesses, est fidèle.",
+    "Hébreux 11:1":"Or la foi rend présentes les choses qu’on espère, et elle est une démonstration de celles qu’on ne voit point.",
+    "Hébreux 12:1":"Nous donc aussi, puisque nous sommes environnés d’une si grande nuée de témoins, rejetant tout fardeau, et le péché qui nous enveloppe si aisément, poursuivons constamment la course qui nous est proposée ;",
+    "Hébreux 13:2":"N’oubliez point l’hospitalité : car par elle quelques-uns ont logé des Anges, n’en sachant rien.",
+    "Hébreux 13:8":"Jésus-Christ a été le même hier et aujourd’hu1, et il l’est aussi éternellement.",
+    "Hébreux 4:12":"Car la Parole de Dieu est vivante et efficace, et plus pénétrante que nulle épée à deux tranchants, et elle atteint jusques à la division de l’âme, de l’esprit, des jointures et des moelles, et elle est juge des pensées et des intentions du coeur.",
+    "Hébreux 4:16":"Allons donc avec assurance au trône de la Grâce ; afin que nous obtenions miséricorde, et que nous trouvions grâce, pour être aidés dans le besoin.",
+    "Jacques 1:17":"Tout le bien qui nous est donné, et tout don parfait vient d’en haut, descendant du Père des lumières, par devers lequel il n’y a point de variation, ni d’ombre de changement.",
+    "Jacques 1:22":"Et mettez en exécution la parole, et ne l’écoutez pas seulement, en vous décevant vous-mêmes par de vains discours.",
+    "Jacques 1:5":"Que si quelqu’un de vous manque de sagesse, qu’il la demande à Dieu, qui la donne à tous libéralement, et qui ne la reproche point, et elle lui sera donnée ;",
+    "Jacques 4:10":"Humiliez-vous en la présence du Seigneur, et il vous élèvera.",
+    "Jacques 4:8":"Approchez-vous de Dieu, et il s’approchera de vous ; pécheurs, nettoyez vos mains ; et vous qui êtes doubles de coeur, purifiez vos coeurs.",
+    "Jacques 5:16":"Confessez vos fautes l’un à l’autre, et priez l’un pour l’autre ; afin que vous soyez guéris ; car la prière du juste faite avec véhémence est de grande efficace.",
+    "Jean 10:11":"Je suis le bon berger : le bon berger met sa vie pour ses brebis.",
+    "Jean 10:27":"Mes brebis entendent ma voix, et je les connais, et elles me suivent.",
+    "Jean 11:25":"Jésus lui dit : je suis la résurrection et la vie : celui qui croit en moi, encore qu’il soit mort, il vivra.",
+    "Jean 13:34":"Je vous donne un nouveau commandement, que vous vous aimiez l’un l’autre, et que comme je vous ai aimés, vous vous aimiez aussi l’un l’autre.",
+    "Jean 14:27":"Je vous laisse la paix, je vous donne ma paix ; je ne vous la donne point comme le monde la donne ; que votre coeur ne soit point agité ni craintif.",
+    "Jean 14:6":"Jésus lui dit : je suis le chemin, et la vérité, et la vie ; nul ne vient au Père que par moi.",
+    "Jean 15:13":"Personne n’a un plus grand amour que celui-ci, savoir, quand quelqu’un expose sa vie pour ses amis.",
+    "Jean 15:4":"Demeurez en moi, et moi en vous ; comme le sarment ne peut point de lui-même porter de fruit, s’il ne demeure au cep ; vous ne le pouvez point aussi, si vous ne demeurez en moi.",
+    "Jean 15:5":"Je suis le Cep, et vous en êtes les sarments ; celui qui demeure en moi, et moi en lui, porte beaucoup de fruit ; car hors de moi, vous ne pouvez rien produire.",
+    "Jean 16:33":"Je vous ai dit ces choses afin que vous ayez la paix en moi ; vous aurez de l’angoisse au monde, mais ayez bon courage, j’ai vaincu le monde.",
+    "Jean 1:1":"Au commencement était la Parole, et la Parole était avec Dieu ; et cette parole était Dieu :",
+    "Jean 1:29":"Le lendemain Jean vit Jésus venir à lui, et il dit : voilà l’Agneau de Dieu, qui ôte le péché du monde.",
+    "Jean 3:16":"Car Dieu a tant aimé le monde, qu’il a donné son Fils unique, afin que quiconque croit en lui ne périsse point, mais qu’il ait la vie éternelle.",
+    "Jean 3:30":"Il faut qu’il croisse, et que je diminue.",
+    "Jean 6:35":"Et Jésus leur dit : je suis le pain de vie. Celui qui vient à moi, n’aura point de faim ; et celui qui croit en moi, n’aura jamais soif.",
+    "Jean 7:37":"Et en la dernière et grande journée de la Fête, Jésus se trouva là, criant, et disant : si quelqu’un a soif, qu’il vienne à moi, et qu’il boive.",
+    "Jean 8:12":"Et Jésus leur parla encore, en disant : je suis la lumière du monde ; celui qui me suit ne marchera point dans les ténèbres, mais il aura la lumière de la vie.",
+    "Jean 8:32":"Et vous connaîtrez la vérité, et la vérité vous rendra libres.",
+    "Jean 8:36":"Si donc le Fils vous affranchit, vous serez véritablement libres.",
+    "Jean 8:7":"Et comme ils continuaient à l’interroger, s’étant relevé, il leur dit : que celui de vous qui est sans péché, jette le premier la pierre contre elle.",
+    "Job 19:25":"Pour moi, je sais que mon Rédempteur est vivant, qu’à la fin il se lèvera sur la terre,",
+    "Josué 1:9":"Ne t’ai-je pas commandé, et dit, fortifie-toi et te renforce ? Ne t’épouvante point, et ne t’effraye de rien ; car l’Eternel ton Dieu est avec toi partout où tu iras.",
+    "Josué 24:15":"Que s’il vous déplaît de servir l’Eternel, choisissez-vous aujourd’hui qui vous voulez servir, ou les dieux que vos pères qui étaient au delà du fleuve, ont servis, ou les dieux des Amorrhéens, au pays desquels vous habitez ; mais pour moi et ma maison, nous servirons l’Eternel.",
+    "Joël 2:32":"Et il arrivera que quiconque invoquera le Nom de l’Eternel sera sauvé ; car le salut sera en la montagne de Sion, et dans Jérusalem, comme l’Eternel a dit, et dans les résidus que l’Eternel aura appelés. Retournez au Début",
+    "Jude 24":"Or à celui qui est puissant pour vous garder sans que vous fassiez aucune chute et vous présenter irrépréhensibles devant sa gloire, avec joie ;",
+    "Jérémie 17:14":"Eternel, guéris-moi, et je serai guéri ; sauve-moi, et je serai sauvé ; car tu es ma louange.",
+    "Jérémie 29:11":"Car je sais que les pensées que j’ai sur vous, dit l’Eternel, sont des pensées de paix, et non pas d’adversité, pour vous donner une fin telle que vous attendez.",
+    "Jérémie 29:13":"Vous me chercherez, et vous me trouverez, après que vous m’aurez recherché de tout votre coeur.",
+    "Jérémie 31:3":"L’Eternel m’est apparu de loin, et m’a dit : je t’ai aimée d’un amour éternel, c’est pourquoi j’ai prolongé envers toi ma gratuité.",
+    "Lamentations 3:22-23":"Ce sont les gratuités de l’Eternel que nous n’avons point été consumés, parce que ses compassions ne sont point taries. Elles se renouvellent chaque matin ; c’est une chose grande que ta fidélité.",
+    "Lamentations 3:23":"Elles se renouvellent chaque matin ; c’est une chose grande que ta fidélité.",
+    "Luc 11:9":"Ainsi je vous dis : demandez, et il vous sera donné ; cherchez, et vous trouverez ; heurtez, et il vous sera ouvert.",
+    "Luc 19:10":"Car le Fils de l’homme est venu chercher et sauver ce qui était perdu.",
+    "Luc 1:37":"Car rien ne sera impossible à Dieu.",
+    "Luc 23:34":"Mais Jésus disait : Père, pardonne-leur, car ils ne savent ce qu’ils font. Ils firent ensuite le partage de ses vêtements, et ils les jetèrent au sort.",
+    "Luc 23:46":"Et Jésus criant à haute voix, dit : Père, je remets mon esprit entre tes mains ! Et ayant dit cela, il rendit l’esprit.",
+    "Luc 6:38":"Donnez, et il vous sera donné ; on vous donnera dans le sein bonne mesure, pressée et entassée, et qui s’en ira par-dessus ; car de la mesure que vous mesurerez, on vous mesurera réciproquement.",
+    "Luc 7:50":"Mais il dit à la femme : ta foi t’a sauvée ; va-t’en en paix.",
+    "Malachie 4:2":"Mais pour vous qui craignez mon Nom, se lèvera le Soleil de justice, et la santé sera dans ses rayons ; vous sortirez, et vous acquerrez de l’embonpoint comme de jeunes boeufs que l’on engraisse.",
+    "Marc 12:31":"Et le second, qui est semblable au premier, est celui-ci : tu aimeras ton prochain comme toi-même. Il n’y a point d’autre Commandement plus grand que ceux-ci.",
+    "Marc 2:27":"Puis il leur dit : le Sabbat est fait pour l’homme, et non pas l’homme pour le Sabbat.",
+    "Marc 5:36":"Mais Jésus ayant aussitôt entendu ce qu’on disait, dit au Principal de la Synagogue : ne crains point ; crois seulement.",
+    "Marc 8:36":"Car que profiterait-il à un homme de gagner tout le monde, s’il fait la perte de son âme ?",
+    "Marc 9:23":"Alors Jésus lui dit : si tu le peux croire, toutes choses sont possibles au croyant.",
+    "Matthieu 11:15":"Qui a des oreilles pour ouïr, qu’il entende.",
+    "Matthieu 11:28":"Venez à moi vous tous qui êtes fatigués et chargés, et je vous soulagerai.",
+    "Matthieu 11:29":"Chargez mon joug sur vous, et apprenez de moi parce que je suis doux et humble de coeur ; et vous trouverez le repos de vos âmes.",
+    "Matthieu 18:20":"Car là où il y en a deux ou trois assemblés en mon Nom, je suis là au milieu d’eux.",
+    "Matthieu 19:26":"Et Jésus les regardant, leur dit : quant aux hommes, cela est impossible ; mais quant à Dieu, toutes choses sont possibles.",
+    "Matthieu 21:22":"Et quoi que vous demandiez en priant Dieu si vous croyez, vous le recevrez.",
+    "Matthieu 22:21":"Ils lui répondirent : de César. Alors il leur dit : rendez donc à César les choses qui sont à César, et à Dieu, celles qui sont à Dieu.",
+    "Matthieu 24:35":"Le ciel et la terre passeront, mais mes paroles ne passeront point.",
+    "Matthieu 25:13":"Veillez donc ; car vous ne savez ni le jour ni l’heure en laquelle le Fils de l’homme viendra.",
+    "Matthieu 26:41":"Veillez, et priez que vous n’entriez point en tentation : car l’esprit est prompt, mais la chair est faible.",
+    "Matthieu 28:19":"Allez donc, et enseignez toutes les nations, les baptisant au Nom du Père, et du Fils, et du Saint-Esprit ;",
+    "Matthieu 28:20":"Et les enseignant de garder tout ce que je vous ai commandé. Et voici, je suis toujours avec vous jusques à la fin du monde. Amen. Retournez au Début This Website is Hosted by ../../lilacsandbutterflies/images/EClilacsbanner.gif ===============================================================================",
+    "Matthieu 5:14":"Vous êtes la lumière du monde ; une ville située sur une montagne ne peut point être cachée.",
+    "Matthieu 5:16":"Ainsi, que votre lumière luise devant les hommes, afin qu’ils voient vos bonnes oeuvres, et qu’ils glorifient votre Père qui est aux cieux.",
+    "Matthieu 5:4":"Bienheureux sont ceux qui pleurent ; car ils seront consolés.",
+    "Matthieu 5:6":"Bienheureux sont ceux qui sont affamés et altérés de la justice ; car ils seront rassasiés.",
+    "Matthieu 5:8":"Bienheureux sont ceux qui sont nets de coeur ; car ils verront Dieu.",
+    "Matthieu 5:9":"Bienheureux sont ceux qui procurent la paix ; car ils seront appelés enfants de Dieu.",
+    "Matthieu 6:10":"Ton Règne vienne. Ta volonté soit faite sur la terre comme au ciel.",
+    "Matthieu 6:21":"Car où est votre trésor, là sera aussi votre coeur.",
+    "Matthieu 6:24":"Nul ne peut servir deux maîtres ; car, ou il haïra l’un, et aimera l’autre ; ou il s’attachera à l’un, et méprisera l’autre ; vous ne pouvez servir Dieu et Mammon.",
+    "Matthieu 6:33":"Mais cherchez premièrement le Royaume de Dieu, et sa justice, et toutes ces choses vous seront données par-dessus.",
+    "Matthieu 7:7":"Demandez, et il vous sera donné ; cherchez, et vous trouverez ; heurtez, et il vous sera ouvert.",
+    "Matthieu 9:37":"Et il dit à ses Disciples : certes la moisson est grande, mais il y a peu d’ouvriers.",
+    "Michée 6:8":"Ô homme ! Il t’a déclaré ce qui est bon ; et qu’est-ce que l’Eternel requiert de toi, sinon que tu fasses ce qui est juste, que tu aimes la bénignité, et que tu marches en toute humilité avec ton Dieu.",
+    "Nahum 1:7":"L’Eternel est bon, il est une forteresse au temps de la détresse, et il connaît ceux qui se confient en lui.",
+    "Nombres 6:24":"L’Eternel te bénisse, et te garde.",
+    "Néhémie 8:10":"Puis on leur dit : Allez, mangez du plus gras, et buvez du plus doux ; et envoyez-en des portions à ceux qui n’ont rien de prêt ; car ce jour est saint à notre Seigneur : ne soyez donc point tristes, puisque la joie de l’Eternel est votre force.",
+    "Osée 6:3":"Car nous connaîtrons l’Eternel, et nous continuerons à le connaître ; son lever se prépare comme celui du point du jour, et il viendra à nous comme la pluie, comme la pluie de la dernière saison qui humecte la terre.",
+    "Philippiens 4:13":"Je puis toutes choses en Christ qui me fortifie.",
+    "Philippiens 4:4":"Réjouissez-vous en notre Seigneur ; je vous le dis encore, réjouissez-vous.",
+    "Philippiens 4:6":"Ne vous inquiétez de rien, mais en toutes choses présentez vos demandes à Dieu par des prières et des supplications, avec des actions de grâces.",
+    "Proverbes 11:30":"Le fruit du juste est un arbre de vie ; et celui qui gagne les âmes est sage.",
+    "Proverbes 15:1":"La réponse douce apaise la fureur ; mais la parole fâcheuse excite la colère.",
+    "Proverbes 16:3":"Remets tes affaires à l’Eternel, et tes pensées seront bien ordonnées.",
+    "Proverbes 16:9":"Le coeur de l’homme délibère de sa voie ; mais l’Eternel conduit ses pas.",
+    "Proverbes 17:17":"L’intime ami aime en tout temps, et il naîtra comme un frère dans la détresse.",
+    "Proverbes 18:10":"Le nom de l’Eternel est une forte tour, le juste y courra, et il y sera en une haute retraite.",
+    "Proverbes 1:7":"La crainte de l’Eternel est la principale science ; mais les fous méprisent la sagesse et l’instruction.",
+    "Proverbes 22:6":"Instruis le jeune enfant, à l’entrée de sa voie ; lors même qu’il sera devenu vieux, il ne s’en retirera point.",
+    "Proverbes 27:17":"Comme le fer aiguise le fer, ainsi l’homme aiguise la face de son ami.",
+    "Proverbes 31:30":"Scin. La grâce trompe, et la beauté s’évanouit ; mais la femme qui craint l’Eternel, sera celle qui sera louée.",
+    "Proverbes 3:5":"Confie-toi de tout ton coeur en l’Eternel, et ne t’appuie point sur ta prudence.",
+    "Proverbes 3:7":"Ne sois point sage à tes yeux ; crains l’Eternel, et détourne-toi du mal.",
+    "Proverbes 3:9":"Honore l’Eternel de ton bien, et des prémices de tout ton revenu.",
+    "Proverbes 4:23":"Garde ton coeur de tout ce dont il faut se garder ; car de lui procèdent les sources de la vie.",
+    "Proverbes 9:10":"Le commencement de la sagesse est la crainte de l’Eternel ; et la science des saints, c’est la prudence.",
+    "Psaume 103:2":"Mon âme, bénis l’Eternel, et n’oublie pas un de ses bienfaits.",
+    "Psaume 104:1":"Mon âme, bénis l’Eternel. Ô Eternel mon Dieu, tu es merveilleusement grand, tu es revêtu de majesté et de magnificence.",
+    "Psaume 118:24":"C’est ici la journée que l’Eternel a faite ; égayons-nous ? et nous réjouissons en elle.",
+    "Psaume 118:8":"Mieux vaut se confier en l’Eternel, que de se confier en l’homme.",
+    "Psaume 119:105":"Ta parole est une lampe à mon pied, et une lumière à mon sentier.",
+    "Psaume 121:1":"Cantique de Mahaloth. J’élève mes yeux vers les montagnes, d’où me viendra le secours.",
+    "Psaume 121:2":"Mon secours vient de l’Eternel qui a fait les cieux et la terre.",
+    "Psaume 126:5":"Ceux qui sèment avec larmes, moissonneront avec chant de triomphe.",
+    "Psaume 133:1":"Voici, oh ! Que c’est une chose bonne, et que c’est une chose agréable, que les frères s’entretiennent, qu’ils s’entretiennent, dis-je, ensemble !",
+    "Psaume 136:1":"Célébrez l’Eternel, car il est bon ; parce que sa miséricorde demeure à toujours.",
+    "Psaume 139:1":"Psaume de David, donné au maître chantre. Eternel, tu m’as sondé, et tu m’as connu.",
+    "Psaume 139:14":"Je te célébrerai de ce que j’ai été fait d’une si étrange et si admirable manière ; tes oeuvres sont merveilleuses, et mon âme le connaît très-bien.",
+    "Psaume 139:23":"Ô Dieu Fort ! sonde-moi, et considère mon coeur ; éprouve-moi, et considère mes discours.",
+    "Psaume 139:7":"Où irai-je loin de ton Esprit ; et où fuirai-je loin de ta face ?",
+    "Psaume 141:2":"Que ma requête te soit agréable comme le parfum ; et l’élévation de mes mains, comme l’oblation du soir.",
+    "Psaume 145:14":"L’Eternel soutient tous ceux qui s’en vont tomber, et redresse tous ceux qui sont courbés.",
+    "Psaume 145:18":"L’Eternel est près de tous ceux qui l’invoquent, de tous ceux, dis-je, qui l’invoquent en vérité.",
+    "Psaume 145:9":"L’Eternel est bon envers tous, et ses compassions sont au- dessus de toutes ses oeuvres.",
+    "Psaume 147:3":"Il guérit ceux qui sont brisés de coeur, et il bande leurs plaies.",
+    "Psaume 150:6":"Que tout ce qui respire loue l’Eternel ! Louez l’Eternel.",
+    "Psaume 18:3":"L’Eternel est ma roche, et ma forteresse, et mon libérateur ; mon Dieu Fort est mon rocher, je me confierai en lui ; il est mon bouclier, et la corne de mon salut, ma haute retraite.",
+    "Psaume 23:1":"Psaume de David. L’Eternel est mon berger, je n’aurai point de disette.",
+    "Psaume 27:1":"Psaume de David. L’Eternel est ma lumière et ma délivrance ; de qui aurai-je peur ? l’Eternel est la force de ma vie ; de qui aurai-je frayeur ?",
+    "Psaume 30:6":"Car il n’y a qu’un moment en sa colère, mais il y a toute une vie en sa faveur ; la lamentation loge-t-elle le soir chez nous ? le chant de triomphe y est le matin.",
+    "Psaume 34:18":"Quand les justes crient, l’Eternel les exauce, et il les délivre de toutes leurs détresses.",
+    "Psaume 34:8":"L’Ange de l’Eternel se campe tout autour de ceux qui le craignent, et les garantit.",
+    "Psaume 34:9":"Savourez, et voyez que l’Eternel est bon ; ô que bienheureux est l’homme qui se confie en lui !",
+    "Psaume 37:5":"Remets ta voie sur l’Eternel, et te confie en lui ; et il agira ;",
+    "Psaume 46:1":"Cantique des enfants de Coré, donné au maître chantre, pour le chanter sur Halamoth.",
+    "Psaume 46:10":"Il a fait cesser les guerres jusques au bout de la terre ; il rompt les arcs, il brise les hallebardes, il brûle les chariots par feu.",
+    "Psaume 51:10":"Fais-moi entendre la joie et l’allégresse, et fais que les os que tu as brisés se réjouissent.",
+    "Psaume 55:22":"Les paroles de sa bouche sont plus douces que le beurre, mais la guerre est dans son coeur ; ses paroles sont plus douces que l’huile, néanmoins elles sont tout autant d’épées nues.",
+    "Psaume 55:23":"Rejette ta charge sur l’Eternel, et il te soulagera : il ne permettra jamais que le juste tombe.",
+    "Psaume 56:4":"Le jour auquel je craindrai je me confierai en toi.",
+    "Psaume 90:12":"Enseigne-nous à tellement compter nos jours, que nous en puissions avoir un coeur rempli de sagesse.",
+    "Romains 10:17":"La foi donc est de l’ouïe ; et l’ouïe par la parole de Dieu.",
+    "Romains 12:12":"Soyez joyeux dans l’espérance ; patients dans la tribulation ; persévérants dans l’oraison.",
+    "Romains 12:15":"Soyez en joie avec ceux qui sont en joie ; et pleurez avec ceux qui pleurent.",
+    "Romains 12:2":"Et ne vous conformez point à ce présent siècle, mais soyez transformés par le renouvellement de votre entendement, afin que vous éprouviez quelle est la volonté de Dieu, bonne, agréable, et parfaite.",
+    "Romains 12:21":"Ne sois point surmonté par le mal, mais surmonte le mal par le bien.",
+    "Romains 15:13":"Le Dieu d’espérance donc vous veuille remplir de toute joie et de toute paix, en croyant ; afin que vous abondiez en espérance par la puissance du Saint-Esprit.",
+    "Romains 15:2":"Que chacun de nous donc complaise à son prochain pour son bien, pour son édification.",
+    "Romains 1:17":"Car la justice de Dieu se révèle en lui pleinement de foi en foi ; selon qu’il est écrit : or le juste vivra de foi.",
+    "Romains 3:23":"La justice, dis-je, de Dieu par la foi en Jésus-Christ, s’étend à tous et sur tous ceux qui croient ; car il n’y a nulle différence, vu que tous ont péché, et qu’ils sont entièrement privés de la gloire de Dieu.",
+    "Romains 5:8":"Mais Dieu signale son amour envers nous en ce que lorsque nous n’étions que pécheurs, Christ est mort pour nous.",
+    "Romains 6:23":"Car les gages du péché, c’est la mort ; mais le don de Dieu, c’est la vie éternelle par Jésus-Christ notre Seigneur.",
+    "Romains 8:1":"Il n’y a donc maintenant aucune condamnation pour ceux qui sont en Jésus- Christ, lesquels ne marchent point selon la chair, mais selon l’Esprit.",
+    "Romains 8:26":"De même aussi l’Esprit soulage de sa part nos faiblesses. Car nous ne savons pas comme il faut ce que nous devons demander ; mais l’Esprit lui-même prie pour nous par des soupirs qui ne se peuvent exprimer.",
+    "Romains 8:28":"Or nous savons aussi que toutes choses contribuent au bien de ceux qui aiment Dieu, c’est-à-dire, de ceux qui sont appelés selon son propos arrêté.",
+    "Romains 8:31":"Que dirons-nous donc à ces choses ? Si Dieu est pour nous, qui sera contre nous.",
+    "Romains 8:39":"Ni la hauteur, ni la profondeur, ni aucune autre créature, ne nous pourra séparer de l’amour de Dieu, qu’il nous a montré en Jésus-Christ notre Seigneur.",
+    "Ruth 1:16":"Mais Ruth répondit : Ne me prie point de te laisser, pour m’éloigner de toi ; car où tu iras, j’irai ; et où tu demeureras, je demeurerai ; ton peuple sera mon peuple, et ton Dieu sera mon Dieu.",
+    "Sophonie 3:17":"L’Eternel ton Dieu est au milieu de toi ; le Puissant te délivrera ; il se réjouira à cause de toi d’une grande joie : Il se taira à cause de son amour, et il s’égayera à cause de toi avec chant de triomphe.",
+    "Tite 3:5":"Non par des oeuvres de justice que nous eussions faites, mais selon la miséricorde ; par le baptême de la régénération, et le renouvellement du Saint-Esprit ;",
+    "Zacharie 4:6":"Et il répondit, et me dit : C’est ici la parole de l’Eternel à Zorobabel, disant : Ce n’est point par armée, ni par force, mais par mon Esprit, a dit l’Eternel des armées.",
+    "Éphésiens 2:10":"Car nous sommes son ouvrage, étant créés en Jésus-Christ pour les bonnes oeuvres, que Dieu a préparées afin que nous marchions en elles.",
+    "Éphésiens 2:8":"Car vous êtes sauvés par la grâce, par la foi ; et cela ne vient point de vous, c’est le don de Dieu.",
+    "Éphésiens 6:11":"Soyez revêtus de toutes les armes de Dieu, afin que vous puissiez résister aux embûches du Démon.",
+    "Ésaïe 40:31":"Mais ceux qui s’attendent à l’Eternel prennent de nouvelles forces ; les ailes leur reviennent comme aux aigles ; ils courront ; et ne se fatigueront point ; ils marcheront, et ne se lasseront point.",
+    "Ésaïe 41:10":"Ne crains point, car je suis avec toi ; ne sois point étonné, car je suis ton Dieu ; je t’ai fortifié, et je t’ai aidé, même je t’ai maintenu par la dextre de ma justice.",
+    "Ésaïe 55:8":"Car mes pensées ne sont pas vos pensées, et mes voies ne sont pas vos voies, dit l’Eternel.",
+    "Ésaïe 64:8":"Eternel, ne sois point excessivement indigné contre nous, et ne te souviens point à toujours de notre iniquité. Voici, regarde, nous te prions, nous sommes tous ton peuple.",
+    "Ésaïe 6:8":"Puis j’ouïs la voix du Seigneur, disant ; qui enverrai-je, et qui ira pour nous ? et je dis ; me voici, envoie-moi.",
+    "Ézéchiel 36:26":"Je vous donnerai un nouveau coeur, je mettrai au dedans de vous un Esprit nouveau ; j’ôterai de votre chair le coeur de pierre, et je vous donnerai un coeur de chair.",
+  },
   darby: {
     "1 Chroniques 16:11":"Recherchez l'Éternel et sa force, cherchez continuellement sa face ;",
     "1 Corinthiens 10:13":"Aucune tentation ne vous est survenue qui n'ait été une tentation humaine ; et Dieu est fidèle, qui ne permettra pas que vous soyez tentés au-delà de ce que vous pouvez supporter, mais avec la tentation il fera aussi l'issue, afin que vous puissiez la supporter.",
@@ -9753,8 +10211,24 @@ const HERO_INCLINE = 6.2;                 // degrés de bascule au bord
    chaque fois, et surprendre n'est pas plaisir.
    L'amplitude reste la moitié de l'ancienne : ce n'est pas un pendule, c'est
    un objet qu'on pousse et qui revient. */
-const HERO_PENCHE = 1.1;                  // degrés de balancement latéral
-const HERO_PAS    = 1.5;                  // pixels de côté du balancement
+/* ===== IL PART SUR LE CÔTÉ FRANCHEMENT, ET IL Y VA UNE SEULE FOIS =====
+   « Juste quand je tape, j'aimerais qu'il réagisse, qu'il aille un petit peu
+   vers la gauche, qu'il penche d'un certain côté. »
+   Mesuré avant : 2,58 px de déplacement latéral sur un logo de 106 px, et
+   1,40° d'inclinaison. Un quarantième de sa largeur — on ne le voit pas, on
+   le devine. Il fallait tripler.
+   MAIS TRIPLER SEUL NE MARCHE PAS, et le banc l'a dit tout de suite : trois
+   demi-tours au lieu de deux, « ça part dans tous les sens ». Le balancement
+   partageait le ressort de l'ÉCRASEMENT — celui qui dépasse exprès, parce
+   qu'un corps qu'on écrase doit rebondir en se relâchant. Amplifier ce
+   rebond-là, c'est fabriquer un pendule.
+   Le côté a donc son propre ressort, comme la bascule en avait reçu un
+   (HERO_POINT) pour exactement la même raison. Il dépasse à peine — juste
+   assez pour qu'on sente qu'il revient — et il ne repart pas. On pousse un
+   objet, il penche, il revient. Une fois. */
+const HERO_COTE   = { k:900, z:0.78 };    // le côté : il revient une fois, pas trois
+const HERO_PENCHE = 4.6;                  // degrés de balancement latéral
+const HERO_PAS    = 7.5;                  // pixels de côté du balancement
 let heroEnf = 0, heroEnfV = 0, heroBal = 0, heroBalV = 0;
 let heroPx = 0, heroPxV = 0, heroPy = 0, heroPyV = 0;   // le point de contact
 let heroCibleEnf = 0, heroCibleBal = 0, heroCiblePx = 0, heroCiblePy = 0, heroSens = 1;
@@ -9825,7 +10299,8 @@ function heroBoucle(maintenant){
   heroHorloge = maintenant;
   const r = heroPresse ? HERO_APPUI : HERO_LIBRE;
   let p1 = heroRessort(heroEnf, heroEnfV, heroCibleEnf, r, dt); heroEnf = p1[0]; heroEnfV = p1[1];
-  p1 = heroRessort(heroBal, heroBalV, heroCibleBal, r, dt);     heroBal = p1[0]; heroBalV = p1[1];
+  const rc = heroPresse ? HERO_APPUI : HERO_COTE;   // sous le doigt il file, relâché il se pose
+  p1 = heroRessort(heroBal, heroBalV, heroCibleBal, rc, dt);    heroBal = p1[0]; heroBalV = p1[1];
   /* Le point de contact — donc la bascule — suit son propre ressort, le même
      à l'appui et au relâchement : il n'a aucune raison de claquer dans un sens
      et de flotter dans l'autre. */
@@ -11976,6 +12451,26 @@ function errbookRemove(q){
   saveErrbook(a);
 }
 function errbookCount(){ return loadErrbook().length; }
+/* ===== CE QUI RÉSISTE N'EST PAS CE QUI TOMBE SOUS LA MAIN =====
+   « Fais aussi en sorte de pas seulement revoir les erreurs une par une, mais
+   plutôt les erreurs récurrentes, pour vraiment cibler le joueur. »
+   Il a mis le doigt sur quelque chose que le carnet SAVAIT DÉJÀ sans jamais
+   s'en servir : chaque entrée compte ses échecs dans « n », incrémenté à
+   chaque faute — et ce nombre n'était lu nulle part. Ni pour choisir, ni pour
+   ordonner. Une question ratée sept fois avait exactement autant de chances de
+   passer en dernier qu'une ratée une seule : le tirage était au hasard.
+   Réviser au hasard, c'est réviser ce qu'on sait déjà aussi souvent que ce
+   qu'on ne sait pas. Deux choses changent donc, et elles vont ensemble :
+   une PORTE qui ne joue que ce qui a résisté au moins deux fois, et un ORDRE
+   — partout — qui fait passer devant ce qui résiste le plus. */
+const TETUE_SEUIL = 2;
+function errbookTetues(){ return loadErrbook().filter(x => (x.n | 0) >= TETUE_SEUIL); }
+/* L'ORDRE DE RÉVISION. On trie par entêtement décroissant, et À ÉGALITÉ on
+   mélange : sans ce mélange, les mêmes questions reviendraient toujours dans
+   le même ordre, et une liste apprise par cœur n'apprend plus rien. */
+function parEntetement(liste){
+  return shuffle(liste.slice()).sort((a, b) => ((b.n | 0) - (a.n | 0)));
+}
 /* ===== CE QUE LE CARNET NE DISAIT PAS : LE TRAVAIL DÉJÀ FAIT =====
    « Tout mon carnet, c'est à 209 questions mais ça ne descend pas même si je
    m'entraîne. » Vérifié en machine, sur un carnet témoin de douze questions
@@ -12335,6 +12830,7 @@ function ouvrirRevoir(){ state.screen = "revoir"; render(); }
 function renderRevoir(){
   const el = document.createElement("div"); el.className = "screen";
   const dus = aRevoir().length, tout = errbookCount(), derniere = lastMissEntries().length;
+  const tetues = errbookTetues();
   const livres = livresDuCarnet();
   const m = maitriseCarnet();
   /* La jauge part de zéro et se remplit à l'ouverture de l'écran : le joueur
@@ -12351,6 +12847,7 @@ function renderRevoir(){
        <span class="rv-cnt">${n}</span>
      </button>`;
   el.innerHTML = renderHeader("À revoir", true, "state.screen='mode'; render()")
+    + ligne("", ICONS.target, "Celles qui me résistent", "Ratées au moins deux fois", tetues.length, "startRevision('tetues')")
     + ligne("v", ICONS.clock, "Les échéances du jour", "Ce que la mémoire réclame", dus, "startRevision('dus')")
     + ligne("g", ICONS.book, "Tout mon carnet", "Sans attendre leur tour", tout, "startRevision('tout')", tout ? jauge(m.part) : "")
     + ligne("b", ICONS.target, "Ma dernière partie", "Ce que je viens de rater", derniere, "startRevision('derniere')")
@@ -12373,6 +12870,7 @@ function startRevision(quoi){
      encore utilisé par le bouton de l'écran des résultats). */
   let source;
   if(quoi === "dus") source = aRevoir();
+  else if(quoi === "tetues") source = errbookTetues();
   else if(quoi === "tout") source = loadErrbook();
   else if(typeof quoi === "string" && quoi.indexOf("livre:") === 0){
     const nom = quoi.slice(6);
@@ -12388,8 +12886,12 @@ function startRevision(quoi){
      jouent donc tout ce qu'elles ont annoncé. Le raccourci de neuf ne reste
      que là où il n'a jamais menti : l'appel SANS argument, celui du bouton
      « Revoir mes erreurs » de l'écran de fin, qui ne promet aucun compte. */
-  const tout = (quoi === "dus" || quoi === "tout" || (typeof quoi === "string" && quoi.indexOf("livre:") === 0));
-  const b = tout ? shuffle(source) : shuffle(source).slice(0, 9);
+  const tout = (quoi === "dus" || quoi === "tout" || quoi === "tetues" || (typeof quoi === "string" && quoi.indexOf("livre:") === 0));
+  /* Ce qui résiste passe devant, dans TOUTES les portes — pas seulement dans
+     la sienne. Et quand on n'en joue que neuf (le bouton de l'écran de fin,
+     qui ne promet aucun compte), ce sont les neuf qui résistent le plus, pas
+     neuf au hasard. */
+  const b = tout ? parEntetement(source) : parEntetement(source).slice(0, 9);
   if(!b.length) return;
   state.mode = "solo"; state.daily = false; state.revision = true;
   state.soloScore = 0; state.soloStreak = 0; state.soloBestStreak = 0; state.soloCorrect = 0; displayedSoloScore = 0; state.soloMissed = []; state.soloIsRecord = false;
