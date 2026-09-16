@@ -3281,6 +3281,13 @@
   .lang-btn .lang-dr svg{ width:100%; height:100%; display:block; }
   .lang-btn .lang-cd{ font-family:'Poppins',sans-serif; font-weight:700; font-size:0.7rem;
     letter-spacing:0.03em; color:var(--ink-soft); }
+  /* LE DRAPEAU DANS LA LISTE prend la place du sigle d'une version : même
+     pastille, même taille, même rythme de ligne. La liste des langues et celle
+     des Bibles se lisent donc exactement pareil. */
+  .lang-pav{ width:2.3rem; height:2.3rem; border-radius:var(--r-s); flex-shrink:0;
+    display:flex; align-items:center; justify-content:center; overflow:hidden;
+    background:rgb(252,248,241); box-shadow:inset 0 0 0 1px rgba(34,26,16,0.1); }
+  .lang-pav svg{ width:1.62rem; height:1.08rem; display:block; border-radius:2px; }
   .set-row{ display:flex; align-items:center; gap:0.8rem; padding:0.88rem 0.1rem; }
   /* LES LIGNES DES RÉGLAGES SONT PARTIES AUSSI. Ramenées de 0,08 à 0,055,
      elles creusaient encore 8,2 à 10,3 unités sous la feuille — soit le seuil
@@ -4106,13 +4113,23 @@ document.addEventListener("touchstart", function(){}, { passive:true });
 const DRAPEAUX = {
   fr: `<svg viewBox="0 0 24 16" aria-hidden="true"><rect width="24" height="16" rx="2.4" fill="#F5F3EE"/><path d="M2.4 0H8v16H2.4A2.4 2.4 0 0 1 0 13.6V2.4A2.4 2.4 0 0 1 2.4 0Z" fill="#2B4DA8"/><path d="M16 0h5.6A2.4 2.4 0 0 1 24 2.4v11.2a2.4 2.4 0 0 1-2.4 2.4H16V0Z" fill="#D8352A"/></svg>`,
   en: `<svg viewBox="0 0 24 16" aria-hidden="true"><rect width="24" height="16" rx="2.4" fill="#F5F3EE"/><g fill="#D8352A"><rect y="1.23" width="24" height="1.23"/><rect y="3.69" width="24" height="1.23"/><rect y="6.15" width="24" height="1.23"/><rect y="8.62" width="24" height="1.23"/><rect y="11.08" width="24" height="1.23"/><rect y="13.54" width="24" height="1.23"/></g><path d="M0 2.4A2.4 2.4 0 0 1 2.4 0H11v8.62H0V2.4Z" fill="#2B4DA8"/></svg>`,
+  es: `<svg viewBox="0 0 24 16" aria-hidden="true"><rect width="24" height="16" rx="2.4" fill="#D8352A"/><rect y="4" width="24" height="8" fill="#F2C53D"/></svg>`,
+  pt: `<svg viewBox="0 0 24 16" aria-hidden="true"><rect width="24" height="16" rx="2.4" fill="#D8352A"/><path d="M2.4 0H9v16H2.4A2.4 2.4 0 0 1 0 13.6V2.4A2.4 2.4 0 0 1 2.4 0Z" fill="#2E8B57"/><circle cx="9" cy="8" r="3.1" fill="#F2C53D"/><circle cx="9" cy="8" r="1.9" fill="#F5F3EE"/></svg>`,
 };
 /* « dispo » dit si la langue est offerte au joueur. Une langue dont les textes
    ne sont pas prêts reste ici, visible dans le code, mais pas proposée — même
    règle que pour une Bible dont on n'a pas le droit de livrer le texte. */
 const LANGUES = [
-  { cle:"fr", code:"FR", nom:"Français", drapeau:DRAPEAUX.fr, dispo:true },
-  { cle:"en", code:"EN", nom:"English",  drapeau:DRAPEAUX.en, dispo:true },
+  { cle:"fr", code:"FR", nom:"Français", natif:"Français", drapeau:DRAPEAUX.fr, dispo:true },
+  { cle:"en", code:"EN", nom:"Anglais",  natif:"English",  drapeau:DRAPEAUX.en, dispo:true },
+  /* CE QUI N'EST PAS PRÊT LE DIT, AU LIEU DE NE PAS EXISTER. Une langue
+     déclarée « dispo:false » apparaît dans la liste, grisée : le joueur voit
+     qu'elle arrive au lieu de croire qu'elle n'existera jamais. C'est la même
+     règle que pour une Bible dont on n'a pas le droit de livrer le texte, et
+     elle devient vraie le jour où le dictionnaire est déposé — rien d'autre à
+     toucher. */
+  { cle:"es", code:"ES", nom:"Espagnol", natif:"Español",  drapeau:DRAPEAUX.es, dispo:false },
+  { cle:"pt", code:"PT", nom:"Portugais", natif:"Português", drapeau:DRAPEAUX.pt, dispo:false },
 ];
 const TEXTES = {
   en: {
@@ -4127,6 +4144,10 @@ const TEXTES = {
     "Volume":"Volume",
     "Arrière-plan":"Background",
     "Langue":"Language",
+    "bientôt":"soon",
+    "Anglais":"English",
+    "Espagnol":"Spanish",
+    "Portugais":"Portuguese",
     /* --- la navigation --- */
     "Retour":"Back",
     "Accueil":"Home",
@@ -4156,6 +4177,45 @@ const TEXTES = {
     "Ma dernière partie":"My last game",
     "Ce que je viens de rater":"What I just missed",
     "Ou un livre en particulier":"Or one book in particular",
+    "Mode Groupe":"Group Mode",
+    "En équipes, sur un seul écran":"In teams, on one screen",
+    "Mode Solo":"Solo Mode",
+    "Une partie, à ton rythme":"A game, at your own pace",
+    "Jouer en ligne":"Play online",
+    "Jusqu'à 8 joueurs, en direct":"Up to 8 players, live",
+    "Défi du jour":"Daily challenge",
+    "Le même pour tous, chaque jour":"The same for everyone, every day",
+    "À réviser aujourd'hui":"To review today",
+    "Progression":"Progress",
+    "Les 7 derniers jours":"The last 7 days",
+    "livres":"books",
+    "bonne réponse":"correct answer",
+    "bonnes réponses":"correct answers",
+    "livres maîtrisés":"books mastered",
+    "meilleure série":"best streak",
+    "Touche un livre pour t'entraîner dessus":"Tap a book to practise it",
+    "Joueurs ou équipes":"Players or teams",
+    "Ajouter un joueur ou une équipe":"Add a player or team",
+    "Version de la Bible":"Bible version",
+    "Partager le jeu":"Share the game",
+    "Déroulé :":"How it works:",
+    "réponds à chaque question avant la fin du chrono — tous niveaux mélangés. Enchaîne les bonnes réponses pour faire grimper ta série.":"answer each question before the timer runs out — all levels mixed. String correct answers together to grow your streak.",
+    "lisez la question à voix haute → révélez la réponse → attribuez les points au bon joueur (ou à la bonne équipe). Avec le chrono, la réponse se révèle toute seule à la fin du temps. Une erreur ? Les boutons −/+ corrigent à tout moment.":"read the question aloud → reveal the answer → award the points to the right player (or team). With the timer on, the answer reveals itself when time runs out. A mistake? The −/+ buttons fix it at any time.",
+    "Une erreur revient demain, puis dans 3, 7 et 16 jours. Il faut":"A mistake comes back tomorrow, then in 3, 7 and 16 days. It takes",
+    "4 bonnes réponses":"4 correct answers",
+    "pour qu'une question quitte le carnet : c'est ce que montre la barre. Se tromper la ramène à demain.":"for a question to leave the notebook — that is what the bar shows. Getting it wrong brings it back to tomorrow.",
+    "Résultats":"Results",
+    "Égalité":"Tie",
+    "Ex æquo en tête !":"Tied for the lead!",
+    "Bravo à tous — continuez à explorer la Parole.":"Well done everyone — keep exploring the Word.",
+    "Premiers pas":"First steps",
+    "Sans faute":"Flawless",
+    "En feu":"On fire",
+    "Fidèle":"Faithful",
+    "Érudit":"Scholar",
+    "Millénaire":"Millennial",
+    "Les quatre Évangiles":"The four Gospels",
+    "Petits prophètes":"Minor prophets",
   },
 };
 let LANGUE = "fr";
@@ -4192,9 +4252,89 @@ try{
   if(l && LANGUES.some(x => x.cle === l && x.dispo)) LANGUE = l;
   document.documentElement.setAttribute("lang", LANGUE);
 }catch(e){}
+/* ===== LE DRAPEAU OUVRE UN MENU, PAS UN INTERRUPTEUR =====
+   « Je veux pas juste appuyer pour changer de langue, mais avoir un menu avec
+   plusieurs langues par la suite. »
+   Il a raison, et pour une raison qui se voit dès la troisième langue : un
+   bouton qui fait DÉFILER ne dit jamais ce qu'il propose. À deux langues on
+   devine ; à quatre, il faut tapoter trois fois pour revenir où l'on était, et
+   on ne sait toujours pas ce qui existe. Un menu montre la liste, et on choisit.
+   ON REPREND EXACTEMENT LA FEUILLE DES VERSIONS DE LA BIBLE — même composant,
+   même montée, même verre, même coche. Ce n'est pas de l'économie : c'est que
+   le joueur a déjà appris ce geste ici, et qu'un second modèle de liste pour
+   la même sorte de choix serait une chose de plus à comprendre. */
+function ligneLangue(l){
+  const retenue = LANGUE === l.cle && l.dispo;
+  return `<button class="bible-item lang-item${retenue?' sel':''}${l.dispo?'':' indispo'}" data-langue="${l.cle}"`
+    + ` ${l.dispo?`onclick="setLangue('${l.cle}')"`:'disabled'}`
+    + ` aria-label="${l.natif}${l.dispo?'':' — bientôt'}">`
+    + `<span class="lang-pav">${l.drapeau}</span>`
+    /* LE NOM DANS SA PROPRE LANGUE, D'ABORD — c'est celui que reconnaît
+       quelqu'un qui ne lit pas encore l'interface. Le second nom n'apparaît que
+       s'il APPREND quelque chose : « Français Français » ne dit rien de plus. */
+    + `<span class="bible-txt"><b>${l.natif}${(!l.dispo || l.nom !== l.natif) ? ` <i>${l.dispo?T(l.nom):T("bientôt")}</i>` : ""}</b></span>`
+    + `<span class="bible-ck">${ACH_CHECK}</span></button>`;
+}
+function openLangues(){
+  if(document.getElementById("languesVeil")) return;
+  const veil = document.createElement("div");
+  veil.className = "sheet-veil"; veil.id = "languesVeil";
+  veil.innerHTML = `
+    <div class="settings-sheet bibles-sheet" role="dialog" aria-label="${T("Langue")}">
+      <button class="sheet-grab" aria-label="${T("Fermer")}" onclick="closeLangues()"></button>
+      <div class="sheet-title"><span class="st-ico">${ICONS.globe}</span>${T("Langue")}</div>
+      <div class="bible-list">${LANGUES.map(ligneLangue).join("")}</div>
+    </div>`;
+  document.body.appendChild(veil);
+  monterLaFeuille(veil);
+  const dessous = document.querySelector("#settingsVeil .settings-sheet");
+  if(dessous) dessous.classList.add("feuille-recule");
+  veil.classList.add("voile-second");
+  attachSheetDrag(veil.querySelector(".settings-sheet"), closeLangues);
+  veil.addEventListener("click", (e)=>{ if(e.target===veil){ closeLangues(); } });
+  glassTrack(680);
+  reculJusqu = performance.now() + msPli() + 200;
+}
+function closeLangues(){
+  const v = document.getElementById("languesVeil");
+  if(!v || v.classList.contains("closing")) return;
+  v.classList.add("closing");
+  const dessous = document.querySelector("#settingsVeil .settings-sheet");
+  if(dessous){
+    dessous.classList.remove("feuille-recule");
+    reculJusqu = performance.now() + msPli() + 200;
+    try{ armGlass(msPli() + 300); }catch(e){}
+    setTimeout(()=>{ try{ glassRelayout(); queueGlassSync(); }catch(e){} }, msPli() + 40);
+  }
+  setTimeout(()=>{ if(v.parentNode) v.remove(); }, msFerme() + 20);
+}
+function setLangue(cle){
+  const l = LANGUES.find(x => x.cle === cle);
+  if(!l || !l.dispo || LANGUE === cle) return;
+  LANGUE = cle;
+  try{ localStorage.setItem("bt_langue", LANGUE); }catch(e){}
+  try{ document.documentElement.setAttribute("lang", LANGUE); }catch(e){}
+  try{ if(settings.sfx) playTap(); }catch(e){}
+  /* La coche change de ligne sans rien remplacer — même geste que les versions
+     de la Bible : on ne réécrit que les deux lignes qui changent d'état. */
+  document.querySelectorAll(".lang-item").forEach(x => {
+    const doit = x.dataset.langue === cle;
+    if(x.classList.contains("sel") !== doit) x.classList.toggle("sel", doit);
+  });
+  /* On referme, on refait les réglages dans la nouvelle langue, et l'écran
+     dessous aussi. Le joueur voit la langue changer sous ses yeux. */
+  closeLangues();
+  setTimeout(()=>{
+    try{
+      const v = document.getElementById("settingsVeil");
+      if(v){ v.remove(); openSettings(); }
+    }catch(e){}
+    try{ render(); }catch(e){}
+  }, 40);
+}
 function boutonLangue(){
   const l = langueActive();
-  return `<button class="lang-btn" onclick="langueSuivante()" aria-label="${T("Langue")}" title="${T("Langue")}">
+  return `<button class="lang-btn" onclick="openLangues()" aria-label="${T("Langue")}" title="${T("Langue")}">
       <span class="lang-dr">${l.drapeau}</span><span class="lang-cd">${l.code}</span>
     </button>`;
 }
@@ -4300,6 +4440,7 @@ const ICONS = {
   checkCircle: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><polyline points="8 12.3 10.7 15 16 9.3"/></svg>`,
   xCircle: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><line x1="9.2" y1="9.2" x2="14.8" y2="14.8"/><line x1="14.8" y1="9.2" x2="9.2" y2="14.8"/></svg>`,
   bolt: `<svg viewBox="0 0 24 24" fill="currentColor" stroke="none"><path d="M13 2L4.5 13.5H10.5L9.5 22L18.5 10H12.5L13 2Z"/></svg>`,
+  globe: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M3 12h18"/><path d="M12 3a14 14 0 0 1 0 18a14 14 0 0 1 0-18Z"/></svg>`,
   clock: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="8.5"/><polyline points="12 7.5 12 12 15 13.8"/></svg>`,
   expand: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="8.2 4 4 4 4 8.2"/><polyline points="15.8 4 20 4 20 8.2"/><polyline points="8.2 20 4 20 4 15.8"/><polyline points="15.8 20 20 20 20 15.8"/></svg>`,
   /* LE JEU S'INSTALLE, IL NE S'AGRANDIT PAS. La ligne des Réglages disait
@@ -8158,7 +8299,7 @@ function openSettings(){
       </div>
       <button class="share-btn" onclick="shareGame()">
         <span class="share-ico">${ICONS.shareUp}</span>
-        <span class="share-lbl">Partager le jeu</span>
+        <span class="share-lbl">${T("Partager le jeu")}</span>
       </button>
     </div>`;
   document.body.appendChild(veil);
@@ -9901,7 +10042,282 @@ function bibleActive(){
   if(settings.bible !== BIBLES[0].cle){ settings.bible = BIBLES[0].cle; try{ saveSettings(); }catch(e){} }
   return BIBLES[0];
 }
+/* ===== EN ANGLAIS, L'ÉCRITURE AUSSI =====
+   « Lorsque c'est en anglais, tout absolument tout doit être en anglais. »
+   Un verset ne se TRADUIT pas : on prend une édition anglaise. C'est la King
+   James (1769), domaine public et protestante — les deux règles gravées dans
+   BIBLES valent ici aussi.
+
+   L'ALIGNEMENT N'A PAS ÉTÉ DEVINÉ, et il m'a coûté deux méthodes ratées.
+   La première comparait les mots APPARENTÉS entre français et anglais
+   (grâce/grace, trône/throne) : passée sur six références dont je connaissais
+   la réponse, elle en a raté trois — « berger » et « shepherd » n'ont aucune
+   racine commune. Le garde-fou a refusé de livrer, et c'est tout ce qu'on lui
+   demandait.
+   La seconde appliquait partout la différence des canons « segond » et « kjv »,
+   tous deux publiés. Quatorze références décalées — et trois étaient FAUSSES :
+   Marc 9:23 livrait le 9:22, Nahum 1:7 le 1:8. La faute de raisonnement est
+   nette : deux chapitres qui n'ont pas le même nombre de versets ne sont
+   décalés SUR TOUTE LEUR LONGUEUR que si la différence est AU DÉBUT.
+   CE QUI MARCHE : on n'applique le décalage que là où sa cause est connue —
+   les Psaumes, où Segond compte le titre comme verset 1 et la King James non,
+   plus Ésaïe 64 où c'est Segond qui suit l'hébreu. Onze décalages, relus UN
+   PAR UN contre le français avant livraison. Six témoins sur six.
+   239 références sur 248. Les manquantes sont trois demi-versets et le
+   Psaume 46:1, qui EST le titre du psaume et n'a donc pas d'équivalent. */
+const VERSETS_EN = {
+    /* LE DEMI-VERSET DE L'ACCUEIL, POSÉ À LA MAIN. L'extraction refuse les
+       références en « a » ou « b » — on ne livre pas un verset entier là où le
+       jeu n'en cite qu'une moitié. Celui-ci est la signature du jeu : on prend
+       donc la première moitié de la King James Hébreux 4:16, coupée au même
+       endroit que le français. */
+    "H\u00e9breux 4:16a":"Let us therefore come boldly unto the throne of grace",
+    "1 Chroniques 16:11":"Seek the Lord and his strength, seek his face continually.",
+    "1 Corinthiens 10:13":"There hath no temptation taken you but such as is common to man: but God is faithful, who will not suffer you to be tempted above that ye are able; but will with the temptation also make a way to escape, that ye may be able to bear it.",
+    "1 Corinthiens 10:31":"Whether therefore ye eat, or drink, or whatsoever ye do, do all to the glory of God.",
+    "1 Corinthiens 13:13":"And now abideth faith, hope, charity, these three; but the greatest of these is charity.",
+    "1 Corinthiens 13:4":"Charity suffereth long, and is kind; charity envieth not; charity vaunteth not itself, is not puffed up,",
+    "1 Corinthiens 13:8":"Charity never faileth: but whether there be prophecies, they shall fail; whether there be tongues, they shall cease; whether there be knowledge, it shall vanish away.",
+    "1 Corinthiens 16:13":"Watch ye, stand fast in the faith, quit you like men, be strong.",
+    "1 Corinthiens 16:14":"Let all your things be done with charity.",
+    "1 Corinthiens 3:16":"Know ye not that ye are the temple of God, and that the Spirit of God dwelleth in you?",
+    "1 Jean 1:9":"If we confess our sins, he is faithful and just to forgive us our sins, and to cleanse us from all unrighteousness.",
+    "1 Jean 3:1":"Behold, what manner of love the Father hath bestowed upon us, that we should be called the sons of God: therefore the world knoweth us not, because it knew him not.",
+    "1 Jean 4:18":"There is no fear in love; but perfect love casteth out fear: because fear hath torment. He that feareth is not made perfect in love.",
+    "1 Jean 4:19":"We love him, because he first loved us.",
+    "1 Jean 4:4":"Ye are of God, little children, and have overcome them: because greater is he that is in you, than he that is in the world.",
+    "1 Jean 4:8":"He that loveth not knoweth not God; for God is love.",
+    "1 Pierre 1:23":"Being born again, not of corruptible seed, but of incorruptible, by the word of God, which liveth and abideth for ever.",
+    "1 Pierre 2:9":"But ye are a chosen generation, a royal priesthood, an holy nation, a peculiar people; that ye should shew forth the praises of him who hath called you out of darkness into his marvellous light:",
+    "1 Pierre 3:15":"But sanctify the Lord God in your hearts: and be ready always to give an answer to every man that asketh you a reason of the hope that is in you with meekness and fear:",
+    "1 Pierre 4:8":"And above all things have fervent charity among yourselves: for charity shall cover the multitude of sins.",
+    "1 Pierre 5:6":"Humble yourselves therefore under the mighty hand of God, that he may exalt you in due time:",
+    "1 Pierre 5:7":"Casting all your care upon him; for he careth for you.",
+    "1 Samuel 16:7":"But the Lord said unto Samuel, Look not on his countenance, or on the height of his stature; because I have refused him: for the Lord seeth not as man seeth; for man looketh on the outward appearance, but the Lord looketh on the heart.",
+    "1 Thessaloniciens 3:13":"To the end he may stablish your hearts unblameable in holiness before God, even our Father, at the coming of our Lord Jesus Christ with all his saints.",
+    "1 Thessaloniciens 5:16-18":"Rejoice evermore. Pray without ceasing. In every thing give thanks: for this is the will of God in Christ Jesus concerning you.",
+    "1 Thessaloniciens 5:17":"Pray without ceasing.",
+    "1 Thessaloniciens 5:18":"In every thing give thanks: for this is the will of God in Christ Jesus concerning you.",
+    "1 Thessaloniciens 5:21":"Prove all things; hold fast that which is good.",
+    "1 Timothée 4:8":"For bodily exercise profiteth little: but godliness is profitable unto all things, having promise of the life that now is, and of that which is to come.",
+    "1 Timothée 6:12":"Fight the good fight of faith, lay hold on eternal life, whereunto thou art also called, and hast professed a good profession before many witnesses.",
+    "2 Chroniques 7:14":"If my people, which are called by my name, shall humble themselves, and pray, and seek my face, and turn from their wicked ways; then will I hear from heaven, and will forgive their sin, and will heal their land.",
+    "2 Corinthiens 12:9":"And he said unto me, My grace is sufficient for thee: for my strength is made perfect in weakness. Most gladly therefore will I rather glory in my infirmities, that the power of Christ may rest upon me.",
+    "2 Corinthiens 4:18":"While we look not at the things which are seen, but at the things which are not seen: for the things which are seen are temporal; but the things which are not seen are eternal.",
+    "2 Corinthiens 4:8":"We are troubled on every side, yet not distressed; we are perplexed, but not in despair;",
+    "2 Corinthiens 5:17":"Therefore if any man be in Christ, he is a new creature: old things are passed away; behold, all things are become new.",
+    "2 Corinthiens 5:7":"(For we walk by faith, not by sight:)",
+    "2 Corinthiens 9:7":"Every man according as he purposeth in his heart, so let him give; not grudgingly, or of necessity: for God loveth a cheerful giver.",
+    "2 Pierre 3:18":"But grow in grace, and in the knowledge of our Lord and Saviour Jesus Christ. To him be glory both now and for ever. Amen.",
+    "2 Pierre 3:9":"The Lord is not slack concerning his promise, as some men count slackness; but is longsuffering to us-ward, not willing that any should perish, but that all should come to repentance.",
+    "2 Thessaloniciens 3:3":"But the Lord is faithful, who shall stablish you, and keep you from evil.",
+    "2 Timothée 1:7":"For God hath not given us the spirit of fear; but of power, and of love, and of a sound mind.",
+    "2 Timothée 3:16":"All scripture is given by inspiration of God, and is profitable for doctrine, for reproof, for correction, for instruction in righteousness:",
+    "2 Timothée 4:7":"I have fought a good fight, I have finished my course, I have kept the faith:",
+    "Actes 16:31":"And they said, Believe on the Lord Jesus Christ, and thou shalt be saved, and thy house.",
+    "Actes 1:8":"But ye shall receive power, after that the Holy Ghost is come upon you: and ye shall be witnesses unto me both in Jerusalem, and in all Judea, and in Samaria, and unto the uttermost part of the earth.",
+    "Actes 20:35":"I have shewed you all things, how that so labouring ye ought to support the weak, and to remember the words of the Lord Jesus, how he said, It is more blessed to give than to receive.",
+    "Actes 4:12":"Neither is there salvation in any other: for there is none other name under heaven given among men, whereby we must be saved.",
+    "Aggée 2:4":"Yet now be strong, O Zerubbabel, saith the Lord; and be strong, O Joshua, son of Josedech, the high priest; and be strong, all ye people of the land, saith the Lord, and work: for I am with you, saith the Lord of hosts:",
+    "Amos 5:24":"But let judgment run down as waters, and righteousness as a mighty stream.",
+    "Apocalypse 21:4":"And God shall wipe away all tears from their eyes; and there shall be no more death, neither sorrow, nor crying, neither shall there be any more pain: for the former things are passed away.",
+    "Apocalypse 21:5":"And he that sat upon the throne said, Behold, I make all things new. And he said unto me, Write: for these words are true and faithful.",
+    "Apocalypse 22:13":"I am Alpha and Omega, the beginning and the end, the first and the last.",
+    "Apocalypse 2:10":"Fear none of those things which thou shalt suffer: behold, the devil shall cast some of you into prison, that ye may be tried; and ye shall have tribulation ten days: be thou faithful unto death, and I will give thee a crown of life.",
+    "Apocalypse 3:20":"Behold, I stand at the door, and knock: if any man hear my voice, and open the door, I will come in to him, and will sup with him, and he with me.",
+    "Cantique 8:7":"Many waters cannot quench love, neither can the floods drown it: if a man would give all the substance of his house for love, it would utterly be contemned.",
+    "Colossiens 3:14":"And above all these things put on charity, which is the bond of perfectness.",
+    "Colossiens 3:15":"And let the peace of God rule in your hearts, to the which also ye are called in one body; and be ye thankful.",
+    "Colossiens 3:16":"Let the word of Christ dwell in you richly in all wisdom; teaching and admonishing one another in psalms and hymns and spiritual songs, singing with grace in your hearts to the Lord.",
+    "Colossiens 3:23":"And whatsoever ye do, do it heartily, as to the Lord, and not unto men;",
+    "Colossiens 4:6":"Let your speech be alway with grace, seasoned with salt, that ye may know how ye ought to answer every man.",
+    "Daniel 12:3":"And they that be wise shall shine as the brightness of the firmament; and they that turn many to righteousness as the stars for ever and ever.",
+    "Daniel 3:17":"If it be so, our God whom we serve is able to deliver us from the burning fiery furnace, and he will deliver us out of thine hand, O king.",
+    "Deutéronome 31:8":"And the Lord, he it is that doth go before thee; he will be with thee, he will not fail thee, neither forsake thee: fear not, neither be dismayed.",
+    "Ecclésiaste 3:1":"To every thing there is a season, and a time to every purpose under the heaven:",
+    "Ecclésiaste 4:9":"Two are better than one; because they have a good reward for their labour.",
+    "Exode 14:14":"The Lord shall fight for you, and ye shall hold your peace.",
+    "Galates 2:20":"I am crucified with Christ: nevertheless I live; yet not I, but Christ liveth in me: and the life which I now live in the flesh I live by the faith of the Son of God, who loved me, and gave himself for me.",
+    "Galates 3:28":"There is neither Jew nor Greek, there is neither bond nor free, there is neither male nor female: for ye are all one in Christ Jesus.",
+    "Galates 5:22":"But the fruit of the Spirit is love, joy, peace, longsuffering, gentleness, goodness, faith,",
+    "Galates 6:2":"Bear ye one another’s burdens, and so fulfil the law of Christ.",
+    "Galates 6:9":"And let us not be weary in well doing: for in due season we shall reap, if we faint not.",
+    "Genèse 1:1":"In the beginning God created the heaven and the earth.",
+    "Habacuc 3:19":"The Lord God is my strength, and he will make my feet like hinds’ feet, and he will make me to walk upon mine high places. To the chief singer on my stringed instruments.",
+    "Hébreux 10:23":"Let us hold fast the profession of our faith without wavering; (for he is faithful that promised;)",
+    "Hébreux 11:1":"Now faith is the substance of things hoped for, the evidence of things not seen.",
+    "Hébreux 12:1":"Wherefore seeing we also are compassed about with so great a cloud of witnesses, let us lay aside every weight, and the sin which doth so easily beset us, and let us run with patience the race that is set before us,",
+    "Hébreux 13:2":"Be not forgetful to entertain strangers: for thereby some have entertained angels unawares.",
+    "Hébreux 13:8":"Jesus Christ the same yesterday, and to day, and for ever.",
+    "Hébreux 4:12":"For the word of God is quick, and powerful, and sharper than any twoedged sword, piercing even to the dividing asunder of soul and spirit, and of the joints and marrow, and is a discerner of the thoughts and intents of the heart.",
+    "Hébreux 4:16":"Let us therefore come boldly unto the throne of grace, that we may obtain mercy, and find grace to help in time of need.",
+    "Jacques 1:17":"Every good gift and every perfect gift is from above, and cometh down from the Father of lights, with whom is no variableness, neither shadow of turning.",
+    "Jacques 1:22":"But be ye doers of the word, and not hearers only, deceiving your own selves.",
+    "Jacques 1:5":"If any of you lack wisdom, let him ask of God, that giveth to all men liberally, and upbraideth not; and it shall be given him.",
+    "Jacques 4:10":"Humble yourselves in the sight of the Lord, and he shall lift you up.",
+    "Jacques 4:8":"Draw nigh to God, and he will draw nigh to you. Cleanse your hands, ye sinners; and purify your hearts, ye double minded.",
+    "Jacques 5:16":"Confess your faults one to another, and pray one for another, that ye may be healed. The effectual fervent prayer of a righteous man availeth much.",
+    "Jean 10:11":"I am the good shepherd: the good shepherd giveth his life for the sheep.",
+    "Jean 10:27":"My sheep hear my voice, and I know them, and they follow me:",
+    "Jean 11:25":"Jesus said unto her, I am the resurrection, and the life: he that believeth in me, though he were dead, yet shall he live:",
+    "Jean 13:34":"A new commandment I give unto you, That ye love one another; as I have loved you, that ye also love one another.",
+    "Jean 14:27":"Peace I leave with you, my peace I give unto you: not as the world giveth, give I unto you. Let not your heart be troubled, neither let it be afraid.",
+    "Jean 14:6":"Jesus saith unto him, I am the way, the truth, and the life: no man cometh unto the Father, but by me.",
+    "Jean 15:13":"Greater love hath no man than this, that a man lay down his life for his friends.",
+    "Jean 15:4":"Abide in me, and I in you. As the branch cannot bear fruit of itself, except it abide in the vine; no more can ye, except ye abide in me.",
+    "Jean 15:5":"I am the vine, ye are the branches: He that abideth in me, and I in him, the same bringeth forth much fruit: for without me ye can do nothing.",
+    "Jean 16:33":"These things I have spoken unto you, that in me ye might have peace. In the world ye shall have tribulation: but be of good cheer; I have overcome the world.",
+    "Jean 1:1":"In the beginning was the Word, and the Word was with God, and the Word was God.",
+    "Jean 1:29":"The next day John seeth Jesus coming unto him, and saith, Behold the Lamb of God, which taketh away the sin of the world.",
+    "Jean 3:16":"For God so loved the world, that he gave his only begotten Son, that whosoever believeth in him should not perish, but have everlasting life.",
+    "Jean 3:30":"He must increase, but I must decrease.",
+    "Jean 6:35":"And Jesus said unto them, I am the bread of life: he that cometh to me shall never hunger; and he that believeth on me shall never thirst.",
+    "Jean 7:37":"In the last day, that great day of the feast, Jesus stood and cried, saying, If any man thirst, let him come unto me, and drink.",
+    "Jean 8:12":"Then spake Jesus again unto them, saying, I am the light of the world: he that followeth me shall not walk in darkness, but shall have the light of life.",
+    "Jean 8:32":"And ye shall know the truth, and the truth shall make you free.",
+    "Jean 8:36":"If the Son therefore shall make you free, ye shall be free indeed.",
+    "Jean 8:7":"So when they continued asking him, he lifted up himself, and said unto them, He that is without sin among you, let him first cast a stone at her.",
+    "Job 19:25":"For I know that my redeemer liveth, and that he shall stand at the latter day upon the earth:",
+    "Josué 1:9":"Have not I commanded thee? Be strong and of a good courage; be not afraid, neither be thou dismayed: for the Lord thy God is with thee whithersoever thou goest.",
+    "Josué 24:15":"And if it seem evil unto you to serve the Lord, choose you this day whom ye will serve; whether the gods which your fathers served that were on the other side of the flood, or the gods of the Amorites, in whose land ye dwell: but as for me and my house, we will serve the Lord.",
+    "Joël 2:32":"And it shall come to pass, that whosoever shall call on the name of the Lord shall be delivered: for in mount Zion and in Jerusalem shall be deliverance, as the Lord hath said, and in the remnant whom the Lord shall call.",
+    "Jude 24":"Now unto him that is able to keep you from falling, and to present you faultless before the presence of his glory with exceeding joy,",
+    "Jérémie 17:14":"Heal me, O Lord, and I shall be healed; save me, and I shall be saved: for thou art my praise.",
+    "Jérémie 29:11":"For I know the thoughts that I think toward you, saith the Lord, thoughts of peace, and not of evil, to give you an expected end.",
+    "Jérémie 29:13":"And ye shall seek me, and find me, when ye shall search for me with all your heart.",
+    "Jérémie 31:3":"The Lord hath appeared of old unto me, saying, Yea, I have loved thee with an everlasting love: therefore with lovingkindness have I drawn thee.",
+    "Lamentations 3:22-23":"It is of the Lord’s mercies that we are not consumed, because his compassions fail not. They are new every morning: great is thy faithfulness.",
+    "Lamentations 3:23":"They are new every morning: great is thy faithfulness.",
+    "Luc 11:9":"And I say unto you, Ask, and it shall be given you; seek, and ye shall find; knock, and it shall be opened unto you.",
+    "Luc 19:10":"For the Son of man is come to seek and to save that which was lost.",
+    "Luc 1:37":"For with God nothing shall be impossible.",
+    "Luc 23:34":"Then said Jesus, Father, forgive them; for they know not what they do. And they parted his raiment, and cast lots.",
+    "Luc 23:46":"And when Jesus had cried with a loud voice, he said, Father, into thy hands I commend my spirit: and having said thus, he gave up the ghost.",
+    "Luc 6:38":"Give, and it shall be given unto you; good measure, pressed down, and shaken together, and running over, shall men give into your bosom. For with the same measure that ye mete withal it shall be measured to you again.",
+    "Luc 7:50":"And he said to the woman, Thy faith hath saved thee; go in peace.",
+    "Malachie 4:2":"But unto you that fear my name shall the Sun of righteousness arise with healing in his wings; and ye shall go forth, and grow up as calves of the stall.",
+    "Marc 12:31":"And the second is like, namely this, Thou shalt love thy neighbour as thyself. There is none other commandment greater than these.",
+    "Marc 2:27":"And he said unto them, The sabbath was made for man, and not man for the sabbath:",
+    "Marc 5:36":"As soon as Jesus heard the word that was spoken, he saith unto the ruler of the synagogue, Be not afraid, only believe.",
+    "Marc 8:36":"For what shall it profit a man, if he shall gain the whole world, and lose his own soul?",
+    "Marc 9:23":"Jesus said unto him, If thou canst believe, all things are possible to him that believeth.",
+    "Matthieu 11:15":"He that hath ears to hear, let him hear.",
+    "Matthieu 11:28":"Come unto me, all ye that labour and are heavy laden, and I will give you rest.",
+    "Matthieu 11:29":"Take my yoke upon you, and learn of me; for I am meek and lowly in heart: and ye shall find rest unto your souls.",
+    "Matthieu 18:20":"For where two or three are gathered together in my name, there am I in the midst of them.",
+    "Matthieu 19:26":"But Jesus beheld them, and said unto them, With men this is impossible; but with God all things are possible.",
+    "Matthieu 21:22":"And all things, whatsoever ye shall ask in prayer, believing, ye shall receive.",
+    "Matthieu 22:21":"They say unto him, Cesar’s. Then saith he unto them, Render therefore unto Cesar the things which are Cesar’s; and unto God the things that are God’s.",
+    "Matthieu 24:35":"Heaven and earth shall pass away, but my words shall not pass away.",
+    "Matthieu 25:13":"Watch therefore, for ye know neither the day nor the hour wherein the Son of man cometh.",
+    "Matthieu 26:41":"Watch and pray, that ye enter not into temptation: the spirit indeed is willing, but the flesh is weak.",
+    "Matthieu 28:19":"Go ye therefore, and teach all nations, baptizing them in the name of the Father, and of the Son, and of the Holy Ghost:",
+    "Matthieu 28:20":"Teaching them to observe all things whatsoever I have commanded you: and, lo, I am with you alway, even unto the end of the world. Amen.",
+    "Matthieu 5:14":"Ye are the light of the world. A city that is set on an hill cannot be hid.",
+    "Matthieu 5:16":"Let your light so shine before men, that they may see your good works, and glorify your Father which is in heaven.",
+    "Matthieu 5:4":"Blessed are they that mourn: for they shall be comforted.",
+    "Matthieu 5:6":"Blessed are they which do hunger and thirst after righteousness: for they shall be filled.",
+    "Matthieu 5:8":"Blessed are the pure in heart: for they shall see God.",
+    "Matthieu 5:9":"Blessed are the peacemakers: for they shall be called the children of God.",
+    "Matthieu 6:10":"Thy kingdom come. Thy will be done in earth, as it is in heaven.",
+    "Matthieu 6:21":"For where your treasure is, there will your heart be also.",
+    "Matthieu 6:24":"No man can serve two masters: for either he will hate the one, and love the other; or else he will hold to the one, and despise the other. Ye cannot serve God and mammon.",
+    "Matthieu 6:33":"But seek ye first the kingdom of God, and his righteousness; and all these things shall be added unto you.",
+    "Matthieu 7:7":"Ask, and it shall be given you; seek, and ye shall find; knock, and it shall be opened unto you:",
+    "Matthieu 9:37":"Then saith he unto his disciples, The harvest truly is plenteous, but the labourers are few;",
+    "Michée 6:8":"He hath shewed thee, O man, what is good; and what doth the Lord require of thee, but to do justly, and to love mercy, and to walk humbly with thy God?",
+    "Nahum 1:7":"The Lord is good, a strong hold in the day of trouble; and he knoweth them that trust in him.",
+    "Nombres 6:24":"The Lord bless thee, and keep thee:",
+    "Néhémie 8:10":"Then he said unto them, Go your way, eat the fat, and drink the sweet, and send portions unto them for whom nothing is prepared: for this day is holy unto our Lord: neither be ye sorry; for the joy of the Lord is your strength.",
+    "Osée 6:3":"Then shall we know, if we follow on to know the Lord: his going forth is prepared as the morning; and he shall come unto us as the rain, as the latter and former rain unto the earth.",
+    "Philippiens 4:13":"I can do all things through Christ which strengtheneth me.",
+    "Philippiens 4:4":"Rejoice in the Lord alway: and again I say, Rejoice.",
+    "Philippiens 4:6":"Be careful for nothing; but in every thing by prayer and supplication with thanksgiving let your requests be made known unto God.",
+    "Proverbes 11:30":"The fruit of the righteous is a tree of life; and he that winneth souls is wise.",
+    "Proverbes 15:1":"A soft answer turneth away wrath: but grievous words stir up anger.",
+    "Proverbes 16:3":"Commit thy works unto the Lord, and thy thoughts shall be established.",
+    "Proverbes 16:9":"A man’s heart deviseth his way: but the Lord directeth his steps.",
+    "Proverbes 17:17":"A friend loveth at all times, and a brother is born for adversity.",
+    "Proverbes 18:10":"The name of the Lord is a strong tower: the righteous runneth into it, and is safe.",
+    "Proverbes 1:7":"The fear of the Lord is the beginning of knowledge: but fools despise wisdom and instruction.",
+    "Proverbes 22:6":"Train up a child in the way he should go: and when he is old, he will not depart from it.",
+    "Proverbes 27:17":"Iron sharpeneth iron; so a man sharpeneth the countenance of his friend.",
+    "Proverbes 31:30":"Favour is deceitful, and beauty is vain: but a woman that feareth the Lord, she shall be praised.",
+    "Proverbes 3:5":"Trust in the Lord with all thine heart; and lean not unto thine own understanding.",
+    "Proverbes 3:7":"Be not wise in thine own eyes: fear the Lord, and depart from evil.",
+    "Proverbes 3:9":"Honour the Lord with thy substance, and with the firstfruits of all thine increase:",
+    "Proverbes 4:23":"Keep thy heart with all diligence; for out of it are the issues of life.",
+    "Proverbes 9:10":"The fear of the Lord is the beginning of wisdom: and the knowledge of the holy is understanding.",
+    "Psaume 103:2":"Bless the Lord, O my soul, and forget not all his benefits:",
+    "Psaume 104:1":"Bless the Lord, O my soul. O Lord my God, thou art very great; thou art clothed with honour and majesty.",
+    "Psaume 118:24":"This is the day which the Lord hath made; we will rejoice and be glad in it.",
+    "Psaume 118:8":"It is better to trust in the Lord than to put confidence in man.",
+    "Psaume 119:105":"Thy word is a lamp unto my feet, and a light unto my path.",
+    "Psaume 121:1":"I will lift up mine eyes unto the hills, from whence cometh my help.",
+    "Psaume 121:2":"My help cometh from the Lord, which made heaven and earth.",
+    "Psaume 126:5":"They that sow in tears shall reap in joy.",
+    "Psaume 133:1":"Behold, how good and how pleasant it is for brethren to dwell together in unity!",
+    "Psaume 136:1":"O give thanks unto the Lord; for he is good: for his mercy endureth for ever.",
+    "Psaume 139:1":"O Lord, thou hast searched me, and known me.",
+    "Psaume 139:14":"I will praise thee; for I am fearfully and wonderfully made: marvellous are thy works; and that my soul knoweth right well.",
+    "Psaume 139:23":"Search me, O God, and know my heart: try me, and know my thoughts:",
+    "Psaume 139:7":"Whither shall I go from thy spirit? or whither shall I flee from thy presence?",
+    "Psaume 141:2":"Let my prayer be set forth before thee as incense; and the lifting up of my hands as the evening sacrifice.",
+    "Psaume 145:14":"The Lord upholdeth all that fall, and raiseth up all those that be bowed down.",
+    "Psaume 145:18":"The Lord is nigh unto all them that call upon him, to all that call upon him in truth.",
+    "Psaume 145:9":"The Lord is good to all: and his tender mercies are over all his works.",
+    "Psaume 147:3":"He healeth the broken in heart, and bindeth up their wounds.",
+    "Psaume 150:6":"Let every thing that hath breath praise the Lord. Praise ye the Lord.",
+    "Psaume 18:3":"The Lord is my rock, and my fortress, and my deliverer; my God, my strength, in whom I will trust; my buckler, and the horn of my salvation, and my high tower.",
+    "Psaume 23:1":"The Lord is my shepherd; I shall not want.",
+    "Psaume 27:1":"The Lord is my light and my salvation; whom shall I fear? the Lord is the strength of my life; of whom shall I be afraid?",
+    "Psaume 30:6":"For his anger endureth but a moment; in his favour is life: weeping may endure for a night, but joy cometh in the morning.",
+    "Psaume 34:18":"The righteous cry, and the Lord heareth, and delivereth them out of all their troubles.",
+    "Psaume 34:8":"The angel of the Lord encampeth round about them that fear him, and delivereth them.",
+    "Psaume 34:9":"O taste and see that the Lord is good: blessed is the man that trusteth in him.",
+    "Psaume 37:5":"Commit thy way unto the Lord; trust also in him; and he shall bring it to pass.",
+    "Psaume 46:10":"He maketh wars to cease unto the end of the earth; he breaketh the bow, and cutteth the spear in sunder; he burneth the chariot in the fire.",
+    "Psaume 51:10":"Make me to hear joy and gladness; that the bones which thou hast broken may rejoice.",
+    "Psaume 55:22":"The words of his mouth were smoother than butter, but war was in his heart: his words were softer than oil, yet were they drawn swords.",
+    "Psaume 55:23":"Cast thy burden upon the Lord, and he shall sustain thee: he shall never suffer the righteous to be moved.",
+    "Psaume 56:4":"What time I am afraid, I will trust in thee.",
+    "Psaume 90:12":"So teach us to number our days, that we may apply our hearts unto wisdom.",
+    "Romains 10:17":"So then faith cometh by hearing, and hearing by the word of God.",
+    "Romains 12:12":"Rejoicing in hope; patient in tribulation; continuing instant in prayer;",
+    "Romains 12:15":"Rejoice with them that do rejoice, and weep with them that weep.",
+    "Romains 12:2":"And be not conformed to this world: but be ye transformed by the renewing of your mind, that ye may prove what is that good, and acceptable, and perfect, will of God.",
+    "Romains 12:21":"Be not overcome of evil, but overcome evil with good.",
+    "Romains 15:13":"Now the God of hope fill you with all joy and peace in believing, that ye may abound in hope, through the power of the Holy Ghost.",
+    "Romains 15:2":"Let every one of us please his neighbour for his good to edification.",
+    "Romains 1:17":"For therein is the righteousness of God revealed from faith to faith: as it is written, The just shall live by faith.",
+    "Romains 3:23":"For all have sinned, and come short of the glory of God;",
+    "Romains 5:8":"But God commendeth his love toward us, in that, while we were yet sinners, Christ died for us.",
+    "Romains 6:23":"For the wages of sin is death; but the gift of God is eternal life through Jesus Christ our Lord.",
+    "Romains 8:1":"There is therefore now no condemnation to them which are in Christ Jesus, who walk not after the flesh, but after the Spirit.",
+    "Romains 8:26":"Likewise the Spirit also helpeth our infirmities: for we know not what we should pray for as we ought: but the Spirit itself maketh intercession for us with groanings which cannot be uttered.",
+    "Romains 8:28":"And we know that all things work together for good to them that love God, to them who are the called according to his purpose.",
+    "Romains 8:31":"What shall we then say to these things? If God be for us, who can be against us?",
+    "Romains 8:39":"Nor height, nor depth, nor any other creature, shall be able to separate us from the love of God, which is in Christ Jesus our Lord.",
+    "Ruth 1:16":"And Ruth said, Intreat me not to leave thee, or to return from following after thee: for whither thou goest, I will go; and where thou lodgest, I will lodge: thy people shall be my people, and thy God my God:",
+    "Sophonie 3:17":"The Lord thy God in the midst of thee is mighty; he will save, he will rejoice over thee with joy; he will rest in his love, he will joy over thee with singing.",
+    "Tite 3:5":"Not by works of righteousness which we have done, but according to his mercy he saved us, by the washing of regeneration, and renewing of the Holy Ghost;",
+    "Zacharie 4:6":"Then he answered and spake unto me, saying, This is the word of the Lord unto Zerubbabel, saying, Not by might, nor by power, but by my spirit, saith the Lord of hosts.",
+    "Éphésiens 2:10":"For we are his workmanship, created in Christ Jesus unto good works, which God hath before ordained that we should walk in them.",
+    "Éphésiens 2:8":"For by grace are ye saved through faith; and that not of yourselves: it is the gift of God:",
+    "Éphésiens 6:11":"Put on the whole armour of God, that ye may be able to stand against the wiles of the devil.",
+    "Ésaïe 40:31":"But they that wait upon the Lord shall renew their strength; they shall mount up with wings as eagles; they shall run, and not be weary; and they shall walk, and not faint.",
+    "Ésaïe 41:10":"Fear thou not; for I am with thee: be not dismayed; for I am thy God: I will strengthen thee; yea, I will help thee; yea, I will uphold thee with the right hand of my righteousness.",
+    "Ésaïe 55:8":"For my thoughts are not your thoughts, neither are your ways my ways, saith the Lord.",
+    "Ésaïe 64:8":"Be not wroth very sore, O Lord, neither remember iniquity for ever: behold, see, we beseech thee, we are all thy people.",
+    "Ésaïe 6:8":"Also I heard the voice of the Lord, saying, Whom shall I send, and who will go for us? Then said I, Here am I; send me.",
+    "Ézéchiel 36:26":"A new heart also will I give you, and a new spirit will I put within you: and I will take away the stony heart out of your flesh, and I will give you an heart of flesh.",
+};
 function texteVerset(ref, defaut){
+  /* L'ANGLAIS PASSE AVANT LA VERSION CHOISIE. Les versions du panneau sont
+     toutes françaises : les proposer à quelqu'un qui lit l'anglais n'aurait pas
+     de sens. Ce qui n'est pas dans la King James retombe sur le français,
+     comme partout ailleurs — jamais de trou. */
+  if(LANGUE === "en" && VERSETS_EN[ref]) return VERSETS_EN[ref];
   const lot = VERSETS_ALT[bibleActive().cle];
   return (lot && lot[ref]) || defaut;
 }
@@ -9919,7 +10335,10 @@ function texteAccueil(){ return frSpace(texteVerset(ACCUEIL_REF, ACCUEIL_DEF)); 
    demi-pixel. En réécrivant la ligne complète, le paragraphe retrouve
    exactement la structure qu'il a au chargement : zéro différence. */
 function ligneAccueil(){
-  return "\u00ab " + texteAccueil() + "&nbsp;\u00bb <span class=\"hv-ref\">H\u00e9breux&nbsp;4:16</span>";
+  /* La référence suit la langue, elle aussi : « Hébreux 4:16 » se lit
+     « Hebrews 4:16 » en anglais. Même nom, mêmes numéros. */
+  return "\u00ab " + texteAccueil() + "&nbsp;\u00bb <span class=\"hv-ref\">"
+    + refLivre("H\u00e9breux 4:16").replace(" ", "&nbsp;") + "</span>";
 }
 const HERO_VERSES = [
   { t:"Ta parole est une lampe à mes pieds, Et une lumière sur mon sentier.", r:"Psaume 119:105" },
@@ -10471,7 +10890,7 @@ function showHeroVerse(){
      passait à deux lignes et déformait la carte (mesuré sur les 248). Le sigle
      est la convention de toute édition biblique, et le nom entier reste lisible
      dans les Réglages, à l'endroit où on choisit. */
-  if(r) r.textContent = v.r + " · " + bibleActive().sigle;
+  if(r) r.textContent = refLivre(v.r) + " · " + bibleActive().sigle;
   /* Les versets longs passent en corps réduit. La carte grandit d'abord ; le
      corps ne diminue que lorsqu'elle a fini de grandir. Vérifié sur les 248
      références des quatre versions, du plus court au plus long (377 signes). */
@@ -10650,9 +11069,9 @@ function teamRowInner(i, t){
 }
 function teamCardInner(){
   normalizeTeams(); saveTeams();   // six au plus, numérotés dans l'ordre
-  return `<h2>Joueurs ou équipes</h2>
+  return `<h2>${T("Joueurs ou équipes")}</h2>
     ${state.teams.map((t,i)=>`<div class="team-row">${teamRowInner(i,t)}</div>`).join("")}
-    <button class="add-team" onclick="addTeam()" ${state.teams.length>=MAX_TEAMS?"disabled":""}><span class="ico">${ICONS.plusCircle}</span>Ajouter un joueur ou une équipe</button>`;
+    <button class="add-team" onclick="addTeam()" ${state.teams.length>=MAX_TEAMS?"disabled":""}><span class="ico">${ICONS.plusCircle}</span>${T("Ajouter un joueur ou une équipe")}</button>`;
 }
 /* La ligne en cours de retrait est encore dans la page pendant qu'elle se replie :
    on l'EXCLUT partout, sinon les jetons, les couleurs et surtout l'index visé
@@ -11372,6 +11791,27 @@ const GOSPELS = ["Matthieu","Marc","Luc","Jean"];
    par diverger, et c'est déjà ce qui commençait : l'écran de révision tronquait
    « Apocalypse » et « Ecclésiaste » que l'autre n'avait jamais eu à abréger.
    Une table, deux écrans. On n'abrège que ce qui déborde vraiment. */
+/* ===== LES LIVRES ONT LEUR NOM DANS CHAQUE LANGUE =====
+   Un nom de livre n'est pas un mot d'interface : c'est un nom propre, et il
+   change complètement d'une langue à l'autre — « Cantique des cantiques »
+   devient « Song of Songs », « Apocalypse » devient « Revelation ». Il lui faut
+   donc sa propre table, à côté du dictionnaire.
+   ET LES RÉFÉRENCES AUSSI : « Hébreux 4:16 » doit se lire « Hebrews 4:16 ».
+   C'est le même nom, suivi du même numéro — une seule fonction s'en occupe. */
+const LIVRES_EN = {"Genèse": "Genesis", "Exode": "Exodus", "Lévitique": "Leviticus", "Nombres": "Numbers", "Deutéronome": "Deuteronomy", "Josué": "Joshua", "Juges": "Judges", "Ruth": "Ruth", "1 Samuel": "1 Samuel", "2 Samuel": "2 Samuel", "1 Rois": "1 Kings", "2 Rois": "2 Kings", "1 Chroniques": "1 Chronicles", "2 Chroniques": "2 Chronicles", "Esdras": "Ezra", "Néhémie": "Nehemiah", "Esther": "Esther", "Job": "Job", "Psaumes": "Psalms", "Psaume": "Psalm", "Proverbes": "Proverbs", "Ecclésiaste": "Ecclesiastes", "Cantique des cantiques": "Song of Songs", "Ésaïe": "Isaiah", "Jérémie": "Jeremiah", "Lamentations": "Lamentations", "Ézéchiel": "Ezekiel", "Daniel": "Daniel", "Osée": "Hosea", "Joël": "Joel", "Amos": "Amos", "Abdias": "Obadiah", "Jonas": "Jonah", "Michée": "Micah", "Nahum": "Nahum", "Habacuc": "Habakkuk", "Sophonie": "Zephaniah", "Aggée": "Haggai", "Zacharie": "Zechariah", "Malachie": "Malachi", "Matthieu": "Matthew", "Marc": "Mark", "Luc": "Luke", "Jean": "John", "Actes": "Acts", "Romains": "Romans", "1 Corinthiens": "1 Corinthians", "2 Corinthiens": "2 Corinthians", "Galates": "Galatians", "Éphésiens": "Ephesians", "Philippiens": "Philippians", "Colossiens": "Colossians", "1 Thessaloniciens": "1 Thessalonians", "2 Thessaloniciens": "2 Thessalonians", "1 Timothée": "1 Timothy", "2 Timothée": "2 Timothy", "Tite": "Titus", "Philémon": "Philemon", "Hébreux": "Hebrews", "Jacques": "James", "1 Pierre": "1 Peter", "2 Pierre": "2 Peter", "1 Jean": "1 John", "2 Jean": "2 John", "3 Jean": "3 John", "Jude": "Jude", "Apocalypse": "Revelation"};
+function nomLivre(fr){
+  if(LANGUE === "fr") return fr;
+  const t = (LANGUE === "en") ? LIVRES_EN : null;
+  return (t && t[fr]) ? t[fr] : fr;
+}
+/* « Hébreux 4:16 » -> « Hebrews 4:16 ». On ne touche QUE le nom, jamais les
+   numéros : ils sont les mêmes dans toutes les langues. */
+function refLivre(ref){
+  if(LANGUE === "fr") return ref;
+  const m = String(ref).match(/^(.*?)(\s+\d.*)$/);
+  if(!m) return nomLivre(ref);
+  return nomLivre(m[1].trim()) + m[2];
+}
 const LIVRES_COURTS = {
   "Deutéronome":"Deutér.", "Cantique des cantiques":"Cantiques",
   "1 Thessaloniciens":"1 Thess.", "2 Thessaloniciens":"2 Thess.",
@@ -13288,7 +13728,7 @@ function renderHeader(title, showBack, backAction){
 function renderLengthCard(){
   return `
     <div class="card">
-      <h2>Durée de la partie</h2>
+      <h2>${T("Durée de la partie")}</h2>
       <div class="chip-row">
         ${Object.keys(LENGTHS).map(k=>`
           <button class="chip ${state.lengthKey===k?'active':''}" data-group="len" data-k="${k}" onclick="setLength('${k}')">
@@ -13374,9 +13814,9 @@ function renderModeSelect(){
            Android : la phrase était rognée. Même faute que sur « À revoir » ce
            matin — dire deux fois le même nombre, et déborder pour cela. */
         : (dSk >= 2 ? 'S\u00e9rie \u00e0 garder' : 'Le m\u00eame pour tous, chaque jour'));
-      const group = `<button class="mode-card" onclick="selectMode('group')"><span class="mode-icon group">${ICONS.users}</span><span class="mode-text"><span class="mode-title">Mode Groupe</span><span class="mode-desc">En équipes, sur un seul écran</span></span><span class="chev">${ICONS.chevronRight}</span></button>`;
-      const solo = `<button class="mode-card" onclick="selectMode('solo')"><span class="mode-icon solo">${ICONS.user}</span><span class="mode-text"><span class="mode-title">Mode Solo</span><span class="mode-desc">Une partie, à ton rythme</span></span><span class="chev">${ICONS.chevronRight}</span></button>`;
-      const online = `<button class="mode-card" onclick="openOnline()"><span class="mode-icon online">${ICONS.bolt}</span><span class="mode-text"><span class="mode-title">Jouer en ligne</span><span class="mode-desc">Jusqu'à 8 joueurs, en direct</span></span><span class="chev">${ICONS.chevronRight}</span></button>`;
+      const group = `<button class="mode-card" onclick="selectMode('group')"><span class="mode-icon group">${ICONS.users}</span><span class="mode-text"><span class="mode-title">${T("Mode Groupe")}</span><span class="mode-desc">${T("En équipes, sur un seul écran")}</span></span><span class="chev">${ICONS.chevronRight}</span></button>`;
+      const solo = `<button class="mode-card" onclick="selectMode('solo')"><span class="mode-icon solo">${ICONS.user}</span><span class="mode-text"><span class="mode-title">${T("Mode Solo")}</span><span class="mode-desc">${T("Une partie, à ton rythme")}</span></span><span class="chev">${ICONS.chevronRight}</span></button>`;
+      const online = `<button class="mode-card" onclick="openOnline()"><span class="mode-icon online">${ICONS.bolt}</span><span class="mode-text"><span class="mode-title">${T("Jouer en ligne")}</span><span class="mode-desc">${T("Jusqu'à 8 joueurs, en direct")}</span></span><span class="chev">${ICONS.chevronRight}</span></button>`;
       const daily = `<button class="daily-card${dDone?' done':''}" onclick="tapDefi(event)"><span class="dc-ico">${ICONS.flame}</span><span class="dc-txt"><b>Défi du jour</b><small>${doneTxt}</small></span>${dSk>0 ? `<span class="dc-streak">${ICONS.flame}${dSk}</span>` : ''}${dDone ? `<span class="chev dc-check">${ACH_CHECK}</span>` : `<span class="chev">${ICONS.chevronRight}</span>`}</button>`;
       /* ===== LA CARTE « À REVOIR » NE PART JAMAIS =====
          Elle n'apparaissait que les jours où quelque chose arrivait à échéance
@@ -13440,7 +13880,7 @@ function renderSetup(){
       <div class="card" id="teamCard">${teamCardInner()}</div>
       ${renderLengthCard()}
       <div class="card">
-        <h2>Testament</h2>
+        <h2>${T("Testament")}</h2>
         <div class="chip-row">
           <button class="chip ${(state.themeKey||'tout')==='tout'?'active':''}" data-group="theme" data-k="tout" onclick="setTheme('tout')">Tout<span class="sub">Toute la Bible</span></button>
           <button class="chip ${state.themeKey==='at'?'active':''}" data-group="theme" data-k="at" onclick="setTheme('at')">Ancien<span class="sub">Testament</span></button>
@@ -13449,7 +13889,7 @@ function renderSetup(){
       </div>
       <div class="rules"><b>Déroulé :</b> lisez la question à voix haute → révélez la réponse → attribuez les points au bon joueur (ou à la bonne équipe). Avec le chrono, la réponse se révèle toute seule à la fin du temps. Une erreur ? Les boutons −/+ corrigent à tout moment.</div>
       <div class="flex-sp"></div>
-      <button class="btn-primary" onclick="startGame()">Commencer la partie</button>
+      <button class="btn-primary" onclick="startGame()">${T("Commencer la partie")}</button>
       <div class="error-msg" id="setupError"></div>
     `;
   } else {
@@ -13458,7 +13898,7 @@ function renderSetup(){
       <div class="flex-sp"></div>
       ${renderLengthCard()}
       <div class="card">
-        <h2>Testament</h2>
+        <h2>${T("Testament")}</h2>
         <div class="chip-row">
           <button class="chip ${(state.themeKey||'tout')==='tout'?'active':''}" data-group="theme" data-k="tout" onclick="setTheme('tout')">Tout<span class="sub">Toute la Bible</span></button>
           <button class="chip ${state.themeKey==='at'?'active':''}" data-group="theme" data-k="at" onclick="setTheme('at')">Ancien<span class="sub">Testament</span></button>
@@ -13468,7 +13908,7 @@ function renderSetup(){
       ${(()=>{ const n = lastMissEntries().length; return n>0 ? `<button class="btn-review" onclick="startRevision()"><span class="ico">${ICONS.bookOpen}</span>Réviser la dernière partie (${n} erreur${n>1?"s":""})</button>` : ""; })()}
       <div class="rules"><b>Déroulé :</b> réponds à chaque question avant la fin du chrono — tous niveaux mélangés. Enchaîne les bonnes réponses pour faire grimper ta série.</div>
       <div class="flex-sp"></div>
-      <button class="btn-primary" onclick="startGame()">Commencer la partie</button>
+      <button class="btn-primary" onclick="startGame()">${T("Commencer la partie")}</button>
     `;
   }
   return el;

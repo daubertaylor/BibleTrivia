@@ -61,9 +61,25 @@ const FRANCAIS = /[àâäéèêëîïôöùûüçÀÂÄÉÈÊËÎÏÔÖÙÛÜÇ]
   v("il est bien à DROITE du titre", a.btnDroite !== null && Math.abs(a.btnDroite) < 2,
     a.btnDroite === null ? '—' : (a.btnDroite + ' px du bord droit'));
 
-  await p.click('.lang-btn'); await p.waitForTimeout(800);
+  /* LE DRAPEAU OUVRE UN MENU, il ne fait plus défiler les langues. « Je veux
+     pas juste appuyer pour changer de langue, mais avoir un menu avec plusieurs
+     langues. » Un bouton qui fait défiler ne dit jamais ce qu'il propose ; à
+     quatre langues, il faut tapoter trois fois pour revenir où l'on était. */
+  await p.click('.lang-btn'); await p.waitForTimeout(900);
+  const menu = await p.evaluate(()=>{
+    const f=document.querySelector('#languesVeil .settings-sheet');
+    const l=[...document.querySelectorAll('.lang-item')];
+    return { ouvert:!!f, n:l.length, cochee:l.filter(x=>x.classList.contains('sel')).length,
+             grisees:l.filter(x=>x.disabled).length, drapeaux:l.filter(x=>x.querySelector('.lang-pav svg')).length };
+  });
+  v("le drapeau ouvre un menu de langues", menu.ouvert && menu.n >= 2,
+    menu.ouvert ? (menu.n + ' langues, ' + menu.drapeaux + ' drapeaux, ' + menu.grisees + ' pas encore prêtes') : 'aucun menu');
+  v("une seule langue est cochée", menu.cochee === 1, menu.cochee + ' coche(s)');
+  await p.evaluate(()=>{ const b=[...document.querySelectorAll('.lang-item')].find(x=>x.dataset.langue==='en'); if(b) b.click(); });
+  await p.waitForTimeout(1200);
   const b2 = await mesure();
-  v("un tap change la langue", b2.lang === 'en' && b2.code === 'EN', 'html lang=' + b2.lang + ', bouton ' + b2.code);
+  v("choisir une langue la change", b2.lang === 'en' && b2.code === 'EN', 'html lang=' + b2.lang + ', bouton ' + b2.code);
+  v("et referme le menu", await p.evaluate(()=>!document.getElementById('languesVeil')), '');
   v("la feuille ne gagne PAS un pixel",
     a.feuille === b2.feuille && a.haut === b2.haut && a.titre === b2.titre,
     'hauteur ' + a.feuille + '->' + b2.feuille + ', haut ' + a.haut + '->' + b2.haut + ', titre ' + a.titre + '->' + b2.titre);
