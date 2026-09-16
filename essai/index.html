@@ -3182,8 +3182,20 @@
      garde donc exactement la taille qu'elle avait. */
   .lang-btn{ margin-left:auto; display:flex; align-items:center; gap:0.34rem; flex-shrink:0;
     background:rgb(252,248,241); border:0; border-radius:var(--r-s);
-    padding:calc(0.22rem + 1px) calc(0.44rem + 1px); cursor:pointer;
+    padding:calc(0.22rem + 1px) calc(0.44rem + 1px); cursor:pointer; position:relative;
     --press-tint: rgba(238,74,40,0.28); }
+  /* LA ZONE GRANDIT, PAS LE DESSIN. Le bouton fait 26 px de haut — c'est la
+     taille juste pour ne pas faire monter la rangée de titre d'un pixel, et
+     c'est la condition qui a été posée. Mais un doigt vise 44 px, pas 26 : le
+     banc « doigt » l'a refusé, et il a raison, on rate ce bouton une fois sur
+     trois sinon. On pose donc une zone invisible et CENTRÉE de 44 px par-dessus :
+     elle n'a ni fond ni ombre, elle ne change rien à ce qu'on voit, elle ne
+     déplace rien — elle ne fait qu'attraper le doigt. (Possible ici, et pas sur
+     les boutons voisins, parce que celui-ci ne porte pas de verre : aucune
+     découpe ne vient couper ce qui dépasse.) */
+  .lang-btn::after{ content:""; position:absolute; left:50%; top:50%;
+    transform:translate(-50%,-50%); width:max(100%, 2.75rem); height:2.75rem;
+    border-radius:var(--r-s); }
   .lang-btn .lang-dr{ width:1.32rem; height:0.88rem; display:block; border-radius:2px; overflow:hidden;
     box-shadow:0 0 0 1px rgba(34,26,16,0.1); }
   .lang-btn .lang-dr svg{ width:100%; height:100%; display:block; }
