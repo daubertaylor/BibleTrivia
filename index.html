@@ -607,8 +607,19 @@
      sur la MÊME ligne centrée que l'intitulé et séparée d'un point médian.
      Sans elle, sept lettres et quatre cases dorées ne disent pas d'eux-mêmes
      qu'on tient une série de quatre jours ; avec elle, rien ne s'élargit. */
-  .semaine{ display:flex; flex-direction:column; align-items:center; gap:0.42rem; }
-  .sem-h{ display:flex; align-items:center; gap:0.5rem; }
+  /* La colonne prend la largeur de sa RANGÉE DE JOURS, pas celle de l'écran :
+     sans quoi « width:100% » sur la ligne du titre l'étale d'un bord à
+     l'autre et renvoie la flamme encore plus loin de la dernière pastille —
+     exactement le défaut qu'on corrige. */
+  .semaine{ display:flex; flex-direction:column; align-items:center; gap:0.42rem; width:fit-content; margin-left:auto; margin-right:auto; }
+  /* ===== LA FLAMME SE CALE SUR LA RANGÉE, ELLE NE FLOTTE PLUS À CÔTÉ =====
+     « Je trouve la flamme pas idéalement placée. » Elle l'était mal : la ligne
+     du titre était plus large que la rangée des jours (elle prenait la largeur
+     de son contenu), si bien que la flamme dépassait à droite des sept
+     pastilles, alignée sur rien. On donne à la ligne du titre EXACTEMENT la
+     largeur de la rangée, et on écarte ses deux bouts : le titre à gauche, la
+     flamme à droite — c'est-à-dire pile au-dessus de la dernière pastille. */
+  .sem-h{ display:flex; align-items:center; justify-content:space-between; gap:0.5rem; width:100%; }
   /* ===== LA PASTILLE DE FLAMME, SUR LA RANGÉE DES SEPT JOURS =====
      C'est exactement la pilule qui vivait sur la carte du Défi (.dc-streak) :
      même or, même flamme, même graisse. Rien n'a changé pour l'œil, seule
@@ -650,7 +661,17 @@
     backdrop-filter:blur(12px) saturate(160%); -webkit-backdrop-filter:blur(12px) saturate(160%); }
   /* Aujourd'hui : plus lumineux, jamais cerné — le jeu n'a aucun rebord de couleur. */
   .sj.auj{ background:rgba(255,255,255,0.3); color:#fff; }
-  .sj.fait{ background:linear-gradient(160deg, #FFC64F, #F09A18); color:#fff; text-shadow:0 1px 2px rgba(122,78,4,0.3); }
+  /* ===== LES JOURS NE SONT PLUS DE LA COULEUR DE LA FLAMME =====
+     « La flamme et les 7 jours devraient être d'une couleur différente. » Ils
+     étaient du même or : sept pastilles dorées plus une pilule dorée font une
+     masse d'or où la flamme — qui est le compteur, donc ce qu'on cherche des
+     yeux — ne ressort plus du tout.
+     Les jours joués passent au VIOLET. Il se détache franchement sur un décor
+     chaud (l'or, lui, s'y fondait), il ne se confond pas avec le bleu d'un
+     jour gelé, et c'est déjà la couleur de « À revoir » : celle du travail
+     accompli. L'or reste à la flamme seule, et redevient ce qu'il doit être :
+     le seul point chaud de la rangée. */
+  .sj.fait{ background:linear-gradient(160deg, #A78BFA, #7C4DE0); color:#fff; text-shadow:0 1px 2px rgba(48,20,96,0.32); }
   /* UN JOUR GELÉ N'EST PAS UN JOUR JOUÉ, et il n'est pas non plus un jour
      perdu : il a sa propre couleur, froide, à côté de l'or des jours joués.
      Aucun rebord — la case gelée se distingue par sa MATIÈRE, comme tout le
@@ -3164,7 +3185,12 @@
      « .flex-sp » est déclaré plus bas dans la feuille et, à spécificité égale,
      c'est l'ordre qui l'emporte. Écrit en simple, ce bloc était purement et
      simplement ignoré — l'espaceur restait souple et reprenait tout le vide. */
-  .flex-sp.home-sp-bot{ flex:0 0 auto; min-height:0; height:clamp(0.9rem, calc(2.6 * var(--hu)), 1.7rem); }
+  /* « Je trouve les 7 jours trop haut. » Mesuré : 21 px entre la dernière
+     carte et la bande, 39 entre la bande et le bas de l'écran — elle était
+     presque deux fois plus près des cartes que du bord. On ouvre l'écart du
+     dessus pour qu'elle descende ; la place vient des écarts entre cartes,
+     qui sont souples. */
+  .flex-sp.home-sp-bot{ flex:0 0 auto; min-height:0; height:clamp(1.15rem, calc(4.1 * var(--hu)), 2.5rem); }
   /* Pastilles alignées sur le LANGAGE des cartes de l'accueil : mêmes bords
      (bord à bord avec les cartes au-dessus), même rayon 16 px, même bordure,
      et le même écart de 16 px entre elles qu'entre les cartes. */
