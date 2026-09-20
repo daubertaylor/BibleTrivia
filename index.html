@@ -1872,7 +1872,21 @@
   .online-hero-title{ font-family:'Poppins',sans-serif; font-weight:700; font-size:1.15rem; color:#fff; margin:0 0 0.3rem; text-shadow:0 1px 12px rgba(0,0,0,0.4); }
   .online-hero-sub{ color:rgba(255,255,255,0.9); font-size:0.85rem; line-height:1.5; max-width:18rem; margin:0 auto; text-shadow:0 1px 8px rgba(0,0,0,0.35); }
   .info-card{ background:rgba(255,255,255,0.6); backdrop-filter:blur(18px) saturate(180%); -webkit-backdrop-filter:blur(18px) saturate(180%); border:1px solid var(--bord); border-radius:var(--r-m); padding:0.85rem 0.95rem; font-size:0.84rem; line-height:1.55; color:var(--ink); }
-  .err-msg{ color:#fff; background:rgba(226,75,55,0.85); border-radius:var(--r-s); padding:0.6rem 0.9rem; font-size:0.85rem; font-weight:600; margin-top:0.9rem; text-align:center; }
+  /* ===== LE MESSAGE D'ERREUR NE POUSSE PLUS RIEN =====
+     « Lorsque le code est invalide, il ne faut pas que ça décale le reste. »
+     Le bandeau n'existait QUE lorsqu'il y avait une erreur : en apparaissant
+     il prenait sa place dans la colonne et poussait le bouton « Rejoindre »
+     vers le bas. La place est donc réservée en permanence, et c'est la seule
+     façon de n'avoir aucun décalage : un bandeau qui naît déplace toujours
+     ses voisins, quelle que soit la douceur de son apparition.
+     DEUX LIGNES, PAS UNE. Le plus long message (« La connexion au salon a
+     échoué. Réessaie. ») passe à deux lignes sur un écran étroit : réserver
+     une seule ligne aurait déplacé le problème d'un cran au lieu de le régler.
+     La boîte vide ne se voit pas — ni fond, ni texte, ni ombre. */
+  .err-msg{ color:#fff; background:rgba(226,75,55,0.85); border-radius:var(--r-s); padding:0.6rem 0.9rem; font-size:0.85rem; font-weight:600; margin-top:0.9rem; text-align:center;
+    min-height:calc(2 * 1.35em + 1.2rem); display:flex; align-items:center; justify-content:center;
+    transition:opacity 0.2s ease; }
+  .err-msg.vide{ background:transparent; box-shadow:none; opacity:0; }
 
   .presence-card{ display:flex; align-items:center; gap:0.62rem; justify-content:center; background:rgba(255,255,255,0.55); backdrop-filter:blur(18px) saturate(180%); -webkit-backdrop-filter:blur(18px) saturate(180%); border:1px solid var(--bord); border-radius:var(--r-full); padding:0.45rem 0.95rem; margin-bottom:0.8rem; }
   .live-dot{ width:0.55rem; height:0.55rem; border-radius:50%; flex-shrink:0; background:#2FBF74; animation:liveHalo 2.4s ease-out infinite; }
@@ -14759,7 +14773,7 @@ function renderOnlineJoin(){
       <p class="online-hero-sub">Demande à ton ami le code à 4 caractères de sa partie.</p>
     </div>
     <input class="code-input" id="joinCode" maxlength="4" placeholder="ABCD" autocapitalize="characters" autocomplete="off" enterkeyhint="go" oninput="this.value=this.value.toUpperCase().replace(/[^A-Z0-9]/g,'')" onkeydown="if(event.key==='Enter'){event.preventDefault();this.blur();joinRoom(this.value,false);}">
-    ${net.error?`<div class="err-msg">${escapeHtml(net.error)}</div>`:""}
+    <div class="err-msg${net.error?"":" vide"}">${net.error?escapeHtml(net.error):""}</div>
     <div class="flex-sp"></div>
     <button class="btn-primary" onclick="joinRoom(document.getElementById('joinCode').value,false)">Rejoindre</button>
   `;
