@@ -1940,10 +1940,24 @@
      échoué. Réessaie. ») passe à deux lignes sur un écran étroit : réserver
      une seule ligne aurait déplacé le problème d'un cran au lieu de le régler.
      La boîte vide ne se voit pas — ni fond, ni texte, ni ombre. */
-  .err-msg{ color:#fff; background:rgba(226,75,55,0.85); border-radius:var(--r-s); padding:0.6rem 0.9rem; font-size:0.85rem; font-weight:600; margin-top:0.9rem; text-align:center;
-    min-height:calc(2 * 1.35em + 1.2rem); display:flex; align-items:center; justify-content:center;
-    transition:opacity 0.2s ease; }
-  .err-msg.vide{ background:transparent; box-shadow:none; opacity:0; }
+  /* ===== LE MESSAGE NE PREND PLUS DE PLACE DU TOUT =====
+     « L'interface au-dessous est décalée par rapport au message d'erreur. »
+     Il avait raison, et la faute était à moi : pour que rien ne bouge quand un
+     message apparaît, j'avais RÉSERVÉ sa hauteur — deux lignes, tout le temps.
+     Résultat, un trou de 88 px sous le titre, en permanence, sur un écran qui
+     n'affiche un message qu'une fois sur mille. J'avais réglé le déplacement
+     en payant le prix fort, et en continu.
+     La bonne réponse ne coûte rien : le message ne participe plus à la mise en
+     page. Il se pose PAR-DESSUS, juste sous le titre, aligné au pixel sur lui
+     (sa gauche et sa largeur sont relues sur l'en-tête lui-même, donc justes
+     sur tous les appareils). Rien à réserver, rien à déplacer : l'écran est le
+     même à un pixel près, message ou pas. */
+  .err-flot{ position:fixed; color:#fff; background:rgba(226,75,55,0.94);
+    border-radius:var(--r-s); padding:0.6rem 0.9rem; font-size:0.85rem; font-weight:600;
+    text-align:center; box-shadow:0 10px 28px rgba(0,0,0,0.20);
+    z-index:60; opacity:0; transform:translateY(-8px); pointer-events:none;
+    transition:opacity 0.22s ease, transform 0.22s cubic-bezier(0.33,1,0.68,1); }
+  .err-flot.show{ opacity:1; transform:translateY(0); }
 
   .presence-card{ display:flex; align-items:center; gap:0.62rem; justify-content:center; background:rgba(255,255,255,0.55); backdrop-filter:blur(18px) saturate(180%); -webkit-backdrop-filter:blur(18px) saturate(180%); border:1px solid var(--bord); border-radius:var(--r-full); padding:0.45rem 0.95rem; margin-bottom:0.8rem; }
   .live-dot{ width:0.55rem; height:0.55rem; border-radius:50%; flex-shrink:0; background:#2FBF74; animation:liveHalo 2.4s ease-out infinite; }
@@ -4329,6 +4343,9 @@ const TEXTES = {
     "Nom du joueur ou de l'équipe":"Player or team name",
     "Partie aléatoire":"Random game",
     "Recherche d'un adversaire…":"Looking for an opponent…",
+    "{n} autre en recherche…":"{n} other player searching…",
+    "{n} autres en recherche…":"{n} other players searching…",
+    "Dès qu'un autre joueur cherche, la partie démarre.":"As soon as another player searches, the game starts.",
     "Refuser":"Decline",
     "Rejoindre":"Join",
     "Rejoindre une partie":"Join a game",
@@ -15114,9 +15131,8 @@ function renderOnline(){
          bouton ni d'un joueur : elle parle de L'ÉCRAN. Sa place est donc sous
          le titre, là où toute application pose ce qu'elle a à dire de la page
          entière, et où rien ne peut se l'approprier.
-         Sa hauteur reste RÉSERVÉE, vide comme pleine : la page est identique
-         qu'il y ait un message ou non, rien ne bouge jamais d'un pixel. -->
-    <div class="err-msg${net.error?"":" vide"}">${net.error?escapeHtml(net.error):""}</div>
+         Et il ne réserve plus rien : il se pose PAR-DESSUS (.err-flot), sous
+         le titre, sans participer à la mise en page. -->
     <div class="presence-card">
       <span class="live-dot"></span>
       <span class="presence-num">${n}</span>
@@ -15132,7 +15148,9 @@ function renderOnline(){
       <div class="searching-card${searchNew?' reveal-in':''}">
         <div class="spinner"></div>
         <div class="searching-txt">${T("Recherche d'un adversaire…")}</div>
-        <div class="opp-progress">${freshLookers()>0?(freshLookers()+" autre"+(freshLookers()>1?"s":"")+" en recherche…"):"Dès qu'un autre joueur cherche, la partie démarre."}</div>
+        <div class="opp-progress">${freshLookers()>0
+          ? Tf(freshLookers()>1?"{n} autres en recherche…":"{n} autre en recherche…", {n:freshLookers()})
+          : T("Dès qu'un autre joueur cherche, la partie démarre.")}</div>
         <button class="btn-ghost btn-cancel" style="margin-top:1rem" onclick="setSearching(false)">${T("Annuler")}</button>
       </div>
       <div class="flex-sp"></div>
@@ -15187,7 +15205,6 @@ function renderOnlineJoin(){
       <p class="online-hero-sub">${T("Demande à ton ami le code à 4 caractères de sa partie.")}</p>
     </div>
     <input class="code-input" id="joinCode" maxlength="4" placeholder="ABCD" autocapitalize="characters" autocomplete="off" enterkeyhint="go" oninput="this.value=this.value.toUpperCase().replace(/[^A-Z0-9]/g,'')" onkeydown="if(event.key==='Enter'){event.preventDefault();this.blur();joinRoom(this.value,false);}">
-    <div class="err-msg${net.error?"":" vide"}">${net.error?escapeHtml(net.error):""}</div>
     <div class="flex-sp"></div>
     <button class="btn-primary" onclick="joinRoom(document.getElementById('joinCode').value,false)">${T("Rejoindre")}</button>
   `;
@@ -15466,6 +15483,36 @@ function renderOnlineEnd(){
   return el;
 }
 
+/* ===== LE BANDEAU D'ERREUR, POSÉ PAR-DESSUS L'ÉCRAN =====
+   Il vit hors de la mise en page : ni marge, ni hauteur réservée, rien qui
+   pousse quoi que ce soit. On le place à la main sous l'en-tête, en relisant
+   la position RÉELLE de celui-ci — l'encoche, la barre d'état et le mode
+   installé changent tous sa hauteur, et un nombre écrit en dur aurait été
+   faux sur la moitié des téléphones.
+   Il reste tant que l'erreur reste. Sur le hub il recouvre la pastille
+   « 1 connecté » : c'est voulu. Quand la connexion a échoué, ce compte-là ne
+   veut plus rien dire, et le message qui le remplace, si. */
+function majErrFlottant(){
+  const msg = (typeof net === "object" && net && net.error) ? String(net.error) : "";
+  let el = document.querySelector(".err-flot");
+  if(!msg){ if(el) el.classList.remove("show"); return; }
+  if(!el){ el = document.createElement("div"); el.className = "err-flot";
+    el.setAttribute("role", "status"); document.body.appendChild(el); }
+  el.textContent = msg;
+  /* PENDANT UNE TRANSITION, DEUX ÉCRANS COEXISTENT. Le premier dans le
+     document est celui qui S'EN VA : prendre « le premier en-tête venu »
+     aurait calé le bandeau sur un écran en train de disparaître. On prend
+     donc l'en-tête de l'écran qui ARRIVE, et à défaut le dernier. */
+  const ecrans = [...document.querySelectorAll("#app > .screen")].filter(e => !e.classList.contains("screen-exit"));
+  const h = (ecrans[ecrans.length - 1] || document).querySelector(".app-header");
+  if(h){
+    const r = h.getBoundingClientRect();
+    el.style.left = Math.round(r.left) + "px";
+    el.style.width = Math.round(r.width) + "px";
+    el.style.top = Math.round(r.bottom + 8) + "px";
+  }
+  requestAnimationFrame(()=>{ el.classList.add("show"); });
+}
 function render(){
   const app = document.getElementById("app");
   const sameScreen = (state.screen === lastScreen);
@@ -15609,6 +15656,9 @@ function render(){
   requestAnimationFrame(fitScroll);
   syncSpinners();
   majVoilesScores();
+  /* Le bandeau se replace APRÈS le rendu : il se cale sur l'en-tête qui vient
+     d'être peint, et sur aucun autre. */
+  requestAnimationFrame(majErrFlottant);
 
   if(state.screen!=="play" && state.screen!=="online-play"){ stopQTimer(); }
   if(state.screen==="play") saveState();
@@ -16954,7 +17004,7 @@ try {
      tout simplement inatteignable. Ce n'est pas de la mise en page, c'est de la
      mécanique — et la mécanique, elle, suit la fenêtre toujours.
      Une seule ligne de trop, une seule ligne en moins. */
-  window.addEventListener("resize", ()=>{ majCouche(); figerColonne(); reparerHauteurApp(); glassRelayout(); armGlass(700); fitScroll(); try{ majVoilesErreurs(); }catch(e){} });
+  window.addEventListener("resize", ()=>{ majCouche(); figerColonne(); reparerHauteurApp(); glassRelayout(); armGlass(700); fitScroll(); try{ majVoilesErreurs(); }catch(e){} try{ majErrFlottant(); }catch(e){} });
   window.addEventListener("orientationchange", reposeApresRotation);
   // screen.orientation arrive parfois AVANT window.orientationchange : les deux
   // déclenchent la même reprise, qui est idempotente.

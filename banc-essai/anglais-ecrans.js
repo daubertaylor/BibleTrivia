@@ -183,7 +183,11 @@ const LIEUX_LIBRES = /avatar|code-big|rank-pts|sem-t$|scorebar|q-counter|timer|l
     ['Nom en ligne',      () => { state.screen='online-name'; render(); }],
     ['Hub en ligne',      () => { net.connected=1; net.error=''; state.screen='online'; render(); }],
     ['Hub · erreur',      () => { net.error = T("La connexion au salon a échoué. Réessaie."); render(); }],
-    ['Rejoindre',         () => { net.error=''; state.screen='online-join'; render(); }],
+    /* La carte de recherche d'adversaire : un écran entier que le banc ne
+       voyait pas, et qui contenait « Dès qu'un autre joueur cherche… » en
+       français dans le texte. */
+    ['Recherche',         () => { net.searching=true; render(); }],
+    ['Rejoindre',         () => { net.searching=false; net.error=''; state.screen='online-join'; render(); }],
     ['Code invalide',     () => { joinRoom('AB', false); }],
     ['Salon seul',        () => { net.error=''; net.code='ABCD'; net.isHost=true; net.joueurs={}; net.oppPresent=false; state.screen='online-room'; render(); }],
     ['Salon à deux',      () => { net.joueurs={ b:{ id:'b', name:'Sam', color:'#E8574C', ready:true } }; net.oppPresent=true; net.opp=net.joueurs.b; render(); }],

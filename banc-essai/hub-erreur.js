@@ -1,19 +1,30 @@
 /* ============ BANC « LE MESSAGE ROUGE DE L'ACCUEIL EN LIGNE » ============
-   « Ici le truc de connexion en rouge est mal placé. »
+   « Ici le truc de connexion en rouge est mal placé. »  Puis, deux versions
+   plus tard : « L'interface au-dessous est décalée par rapport au message
+   d'erreur. Règle ça et mets le message d'erreur ailleurs. »
 
-   Il était posé entre « 1 connecté » et la ligne du joueur : il coupait en
-   deux le seul groupe de l'écran qui dise QUI EST LÀ, et il n'était à côté
-   d'aucun bouton pour réessayer. Mesuré : en apparaissant, il poussait aussi
-   les trois cartes d'action de 36 px vers le bas.
+   TROIS ÉTATS SUCCESSIFS, ET CE QUE CHACUN A COÛTÉ.
+     v-1 : le message était posé entre « 1 connecté » et la ligne du joueur ; il
+           coupait en deux le seul groupe qui dise QUI EST LÀ, et poussait les
+           trois cartes d'action de 36 px vers le bas.
+     v258 : je l'ai remonté sous le titre et j'ai RÉSERVÉ sa hauteur pour que
+           rien ne bouge. Plus rien ne bougeait, en effet — au prix d'un trou
+           de 88 px sous le titre, en permanence, sur un écran qui n'affiche un
+           message qu'une fois sur mille. Taylor l'a vu tout de suite.
+     v260 : le message ne participe plus du tout à la mise en page. Il se pose
+           PAR-DESSUS (.err-flot), sous le titre, aligné au pixel sur lui.
+           Rien à réserver : le trou tombe à 16 px, le rythme normal.
 
-   ON VÉRIFIE TROIS CHOSES, SUR TOUTES LES HAUTEURS :
-     1. la ligne du joueur touche la carte de présence — le groupe n'est plus
-        coupé ;
-     2. le message est AU-DESSUS des trois actions, donc à côté du remède ;
-     3. rien ne bouge d'un pixel quand il apparaît ou disparaît — sa place est
-        réservée, vide comme pleine.
-   Et pour les deux états de l'écran : au repos, et pendant la recherche d'un
-   adversaire.
+   ON VÉRIFIE QUATRE CHOSES, SUR TOUTES LES HAUTEURS :
+     1. pas de trou sous le titre — l'interface commence tout de suite, avec ou
+        sans message (c'est la plainte de Taylor, et elle se mesure) ;
+     2. le message est sous le titre et bien au-dessus des actions, donc à côté
+        du remède et jamais « dans les boutons » ;
+     3. rien ne bouge d'un demi-pixel quand il apparaît ou disparaît ;
+     4. il est aligné AU PIXEL sur l'en-tête — même gauche, même largeur. Un
+        bandeau posé à la main peut dériver sur un appareil qu'on n'a pas
+        essayé ; on relit donc sa position réelle plutôt que de la supposer.
+   Et pour les deux états de l'écran : au repos, et pendant la recherche.
 
    Usage : node banc-essai/hub-erreur.js [url]
 */
@@ -91,12 +102,16 @@ const HAUTEURS = [553, 600, 643, 667, 700, 780, 800, 852, 873, 915, 944, 1000];
       const bo = (s) => { const el = document.querySelector(s); if (!el) return null;
         const r = el.getBoundingClientRect(); return { t: Math.round(r.top), b: Math.round(r.bottom) }; };
       const app = document.getElementById('app');
-      return { presence: bo('.presence-card'), me: bo('.me-row'), err: bo('.err-msg'),
+      const cadre = (s) => { const el = document.querySelector(s); if(!el) return null;
+        const r = el.getBoundingClientRect(); return { t:r.top, b:r.bottom, g:r.left, l:r.width }; };
+      const ef = document.querySelector('.err-flot');
+      return { presence: bo('.presence-card'), me: bo('.me-row'), err: bo('.err-flot'),
+        entete: cadre('.screen .app-header'), bandeau: cadre('.err-flot'),
+        premier: bo('.presence-card') || bo('.online-action'),
         cible: bo('.online-action') || bo('.searching-card'),
         tous: [...document.querySelectorAll('.online-action, .searching-card')].map(e => e.getBoundingClientRect().top),
         deborde: Math.max(0, app.scrollHeight - app.clientHeight),
-        vu: (()=>{ const e = document.querySelector('.err-msg'); if(!e) return null;
-          return getComputedStyle(e).opacity !== '0'; })() };
+        vu: ef ? getComputedStyle(ef).opacity !== '0' : false };
     });
   };
 
@@ -108,17 +123,22 @@ const HAUTEURS = [553, 600, 643, 667, 700, 780, 800, 852, 873, 915, 944, 1000];
       const sans = await releve('', cherche);
       const avec = await releve(MSG, cherche);
       if (sans.instable || avec.instable) { soucis.push(h + ' px (' + etat + ') : la mise en page ne se pose jamais'); continue; }
+      /* 1. PAS DE TROU SOUS LE TITRE. C'est la plainte, et elle se chiffre :
+            88 px en v258, avec ou sans message. Le rythme normal entre deux
+            blocs de cet écran est de 16 px ; on refuse tout ce qui dépasse
+            largement, dans LES DEUX états. */
+      for(const [quoi, r] of [['sans message', sans], ['avec message', avec]]){
+        if(r.entete && r.premier){
+          const trou = Math.round(r.premier.t - r.entete.b);
+          if(trou > 28) soucis.push(h + ' px (' + etat + ', ' + quoi + ') : trou de ' + trou
+            + ' px sous le titre — l\'interface est décalée');
+        }
+      }
       if (!avec.err) { soucis.push(h + ' px (' + etat + ') : aucun message affiché'); continue; }
-      /* 1. le groupe « qui est là » n'est plus coupé */
-      const colle = avec.me && avec.presence && (avec.me.t - avec.presence.b) < 30;
-      if (!colle) soucis.push(h + ' px (' + etat + ') : le message coupe encore la carte de présence de la ligne du joueur ('
-        + (avec.me ? avec.me.t - avec.presence.b : '?') + ' px entre les deux)');
-      /* 2. il est EN HAUT DE PAGE, sous le titre : au-dessus de la carte de
-            présence, donc bien au-dessus des actions. Collé aux trois boutons,
-            il avait l'air d'appartenir au premier — « il est trop dans les
-            boutons ». Une alerte qui parle de l'écran se met sous le titre. */
-      if (avec.presence && avec.err.b > avec.presence.t + 1)
-        soucis.push(h + ' px (' + etat + ') : le message n\'est plus en haut de page (il passe sous « connecté »)');
+      /* 2. il est sous le titre, et bien au-dessus des actions : à côté du
+            remède, jamais collé aux boutons (« il est trop dans les boutons »). */
+      if (avec.entete && avec.err.t < avec.entete.b)
+        soucis.push(h + ' px (' + etat + ') : le message passe par-dessus le titre');
       if (avec.cible && avec.err.b > avec.cible.t - 40)
         soucis.push(h + ' px (' + etat + ') : le message colle aux actions');
       /* 3. rien ne bouge */
@@ -127,13 +147,20 @@ const HAUTEURS = [553, 600, 643, 667, 700, 780, 800, 852, 873, 915, 944, 1000];
       if (pire > 0.5) soucis.push(h + ' px (' + etat + ') : les actions bougent de ' + pire.toFixed(2) + ' px');
       if (avec.deborde > 0 || sans.deborde > 0)
         soucis.push(h + ' px (' + etat + ') : débord de ' + Math.max(avec.deborde, sans.deborde) + ' px');
+      /* 4. aligné AU PIXEL sur l'en-tête, gauche et largeur. */
+      if (avec.entete && avec.bandeau){
+        const dg = Math.abs(avec.bandeau.g - avec.entete.g), dl = Math.abs(avec.bandeau.l - avec.entete.l);
+        if (dg > 1 || dl > 1) soucis.push(h + ' px (' + etat + ') : bandeau désaligné du titre ('
+          + dg.toFixed(1) + ' px à gauche, ' + dl.toFixed(1) + ' px de largeur)');
+      }
       /* et la place réservée reste invisible tant qu'il n'y a rien à dire */
-      if (sans.vu) soucis.push(h + ' px (' + etat + ') : la place réservée se voit alors qu\'il n\'y a pas d\'erreur');
+      if (sans.vu) soucis.push(h + ' px (' + etat + ') : le bandeau se voit alors qu\'il n\'y a pas d\'erreur');
+      if (!avec.vu) soucis.push(h + ' px (' + etat + ') : le bandeau ne se voit pas alors qu\'il y a une erreur');
     }
   }
   if (errs.length) soucis.push('erreurs JS : ' + [...new Set(errs)].slice(0, 3).join(' | '));
   await nav.close();
   if (soucis.length) { console.log('  DÉFAUTS :'); soucis.forEach(s => console.log('   ' + s)); process.exit(1); }
-  console.log('  OK — ' + HAUTEURS.length + ' hauteurs x 2 états : le groupe reste entier, le message est\n'
-    + '       au-dessus du remède, et rien ne bouge de plus d\'un demi-pixel');
+  console.log('  OK — ' + HAUTEURS.length + ' hauteurs x 2 états : aucun trou sous le titre, le message\n'
+    + '       se pose par-dessus, aligné au pixel, et rien ne bouge d\'un demi-pixel');
 })();
