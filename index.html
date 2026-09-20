@@ -617,8 +617,19 @@
      sélectionne pour qu'on comprenne exactement où j'ai cliqué. » La rangée
      entière n'est donc pas cliquable : la zone touchée et la zone qui répond
      sont la même, et c'est tout l'intérêt. */
-  .sem-flamme{ display:inline-flex; align-items:center; gap:0.22rem; font-family:inherit; font-weight:800; font-size:0.9rem; font-variant-numeric:tabular-nums; color:#fff; text-shadow:0 1px 2px rgba(122,78,4,0.35); --glass-tint: rgb(240,163,26); border:0; border-radius:var(--r-full); padding:calc(0.18rem + 1px) calc(0.54rem + 1px); flex-shrink:0; box-shadow:0 2px 8px rgba(196,144,32,0.24); cursor:pointer; -webkit-tap-highlight-color:transparent; position:relative; }
-  .sem-flamme svg{ width:0.88rem; height:0.88rem; display:block; }
+  /* ===== ELLE FAIT 44 PX PARCE QU'ON LA TOUCHE =====
+     Écrite d'abord à la taille de l'ancienne pastille (26 px de haut), elle a
+     été prise en défaut par banc-essai/doigt.js — et il avait raison : ce
+     n'était plus un badge posé sur une carte qu'on touchait en entier, c'était
+     devenu LA cible. On ne peut pas non plus l'agrandir par un pseudo-élément :
+     elle porte du verre, donc une découpe (overflow:clip), qui rogne tout ce
+     qui dépasse. C'est donc la pilule elle-même qui fait 44 px.
+     Elle est donc plus haute que les carrés des jours (2,05 rem, soit 33 px) :
+     c'est le prix de la zone tactile, et on le paie. Mais une pilule de 44 px
+     de haut pour 60 de large est un pavé, pas une pilule — on l'allonge pour
+     que la forme reste lisible comme une pastille de compteur. */
+  .sem-flamme{ display:inline-flex; align-items:center; justify-content:center; gap:0.3rem; font-family:inherit; font-weight:800; font-size:1rem; font-variant-numeric:tabular-nums; color:#fff; text-shadow:0 1px 2px rgba(122,78,4,0.35); --glass-tint: rgb(240,163,26); border:0; border-radius:var(--r-full); min-height:2.75rem; padding:0 calc(1.1rem + 1px); flex-shrink:0; box-shadow:0 2px 8px rgba(196,144,32,0.24); cursor:pointer; -webkit-tap-highlight-color:transparent; position:relative; }
+  .sem-flamme svg{ width:1.05rem; height:1.05rem; display:block; }
   .sem-flamme b{ font-weight:800; }
   /* Flamme éteinte : on ne crie pas un zéro en or. Le même objet, en sourdine,
      parce qu'une série à zéro n'est pas une faute — c'est un début. */
@@ -3078,7 +3089,7 @@
      lui-même au lieu de couper le haut de l'écran (là où il n'est pas
      compris, toute la déclaration est ignorée, donc retour au comportement
      d'avant : rien de cassé). */
-  .accueil{ justify-content:safe center; }
+  .accueil{ justify-content:safe flex-end; }
   .home-sp-bot{ flex:1.3 1 0; min-height:0; max-height:min(calc(12.3 * var(--hu)), 8.5rem); }
   /* Pastilles alignées sur le LANGAGE des cartes de l'accueil : mêmes bords
      (bord à bord avec les cartes au-dessus), même rayon 16 px, même bordure,
@@ -13099,40 +13110,93 @@ function notifMiroir(){
    un contenu. De quoi décider s'il faut frapper, pour quelle raison, et à
    quelle heure il est chez ce joueur. La vérification sur l'appareil reste en
    place pour chacun des motifs : c'est la deuxième barrière, pas la seule. */
+/* Vrai dès qu'on a appris que la table en ligne n'a pas la colonne « revoir ».
+   Remis à faux au prochain chargement : un ALTER TABLE passé entre-temps est
+   alors repris tout seul. */
+let notifSansRevoir = false;
+/* Idem pour la fonction d'enregistrement : tant qu'elle n'est pas posée sur le
+   serveur, on écrit dans la table comme avant. */
+let notifSansRpc = false;
+
+/* ===== L'ÉTAT QUI DÉCIDE DES RAPPELS, EN UN SEUL ENDROIT =====
+   Cinq nombres, et rien d'autre : ni pseudo, ni score, ni réponses, ni
+   progression. De quoi savoir s'il faut frapper, pourquoi, et à quelle heure
+   il fait soir chez ce joueur. */
+function notifEtatCourant(){
+  const d = loadDaily();
+  return {
+    dernier: dernierJourSerie() || null,               // dernier jour COUVERT, gel compris
+    serie: d.streak | 0,
+    vu: loadVu() || null,                              // dernière partie, tous modes
+    revoir: (function(){ try{ return aRevoir().length; }catch(e){ return 0; } })(),
+    decalage: -(new Date().getTimezoneOffset()) | 0,   // minutes par rapport à UTC
+  };
+}
+
+/* ===== LE TÉLÉPHONE N'ÉCRIT PLUS DIRECTEMENT DANS LA TABLE =====
+   L'ancienne règle d'accès disait « tout le monde peut tout faire », en
+   s'appuyant sur l'idée que l'endpoint — une longue chaîne aléatoire — tenait
+   lieu de mot de passe. C'est faux : une règle RLS ne voit pas le FILTRE de la
+   requête, donc « using (true) » autorise « endpoint = le mien » exactement
+   comme « endpoint <> le mien ». Vérifié avec la seule clé publique, celle qui
+   est écrite en clair ici : lecture des huit abonnements (clés de chiffrement
+   comprises), insertion, suppression — tout passait. Qui a ces clés peut
+   écrire sur le téléphone d'un joueur sous le nom de Yada.
+   On passe donc par une fonction qui n'agit que sur LA ligne dont on donne
+   l'adresse et qui ne renvoie rien (notifications/verrouiller.sql).
+   AVEC UN REPLI, pour que l'ordre des deux mises à jour n'ait pas
+   d'importance : tant que la fonction n'existe pas, on écrit comme avant. */
+async function notifEcrire(supa, endpoint, abonnement){
+  const e = notifEtatCourant();
+  if(!notifSansRpc){
+    try{
+      const r = await supa.rpc("push_enregistrer", {
+        p_endpoint: endpoint, p_abonnement: abonnement || null,
+        p_dernier: e.dernier, p_serie: e.serie, p_vu: e.vu,
+        p_revoir: e.revoir, p_decalage: e.decalage });
+      if(!(r && r.error)) return true;
+    }catch(_){}
+    notifSansRpc = true;
+  }
+  const base = { dernier:e.dernier, serie:e.serie, vu:e.vu, decalage:e.decalage,
+                 maj:new Date().toISOString() };
+  if(abonnement) base.abonnement = abonnement;
+  /* UN REPLI QU'ON N'ATTEND PAS NE PART JAMAIS. Le client Supabase est
+     paresseux : « from().upsert() » ne construit qu'un objet, et la requête ne
+     quitte le téléphone qu'au moment où on l'attend. */
+  const poser = (corps) => supa.from("push_subs")
+    .upsert(Object.assign({ endpoint: endpoint }, corps), { onConflict: "endpoint" });
+  if(notifSansRevoir){ const r = await poser(base); return !(r && r.error); }
+  const r = await poser(Object.assign({ revoir: e.revoir }, base));
+  if(!(r && r.error)) return true;
+  notifSansRevoir = true;                 // la colonne n'existe pas : on ne la redemande plus
+  const r2 = await poser(base);
+  return !(r2 && r2.error);
+}
+async function notifEffacer(supa, endpoint){
+  if(!notifSansRpc){
+    try{
+      const r = await supa.rpc("push_oublier", { p_endpoint: endpoint });
+      if(!(r && r.error)) return;
+    }catch(_){}
+    notifSansRpc = true;
+  }
+  await supa.from("push_subs").delete().eq("endpoint", endpoint);
+}
+
 function notifSync(){
   try {
     if(!settings.notif || notifEtat() !== "granted") return;
-    /* Même raison qu'à l'activation : on ouvre le lien au lieu d'attendre
-       qu'une partie en ligne l'ait ouvert pour nous. Sans ça, la série et le
-       fuseau horaire d'un joueur qui ne joue que seul n'étaient jamais mis à
-       jour — le serveur le croyait éternellement à zéro. */
+    /* On OUVRE le lien au lieu d'attendre qu'une partie en ligne l'ait ouvert
+       pour nous : sans ça, la série et le fuseau horaire d'un joueur qui ne
+       joue que seul n'étaient jamais mis à jour — le serveur le croyait
+       éternellement à zéro. */
     const supa = initSupa();
     if(!supa) return;
-    navigator.serviceWorker.ready.then(reg => reg.pushManager.getSubscription()).then(sub => {
-      if(!sub) return;
-      const d = loadDaily();
-      const base = {
-        dernier: dernierJourSerie() || null,   // le dernier jour COUVERT, gel compris
-        serie: d.streak | 0,
-        vu: loadVu() || null,                              // dernière partie, tous modes
-        decalage: -(new Date().getTimezoneOffset()) | 0,   // minutes par rapport à UTC
-        maj: new Date().toISOString(),
-      };
-      const nRev = (function(){ try{ return aRevoir().length; }catch(e){ return 0; } })();
-      /* ===== UNE COLONNE NEUVE NE DOIT PAS EMPORTER LES ANCIENNES =====
-         « revoir » est arrivée avec la v219 ; la table en ligne, elle, existe
-         depuis la v205 et ne l'aura que le jour où l'ALTER TABLE sera passé.
-         Or Postgres refuse un UPDATE ENTIER dès qu'une seule de ses colonnes
-         est inconnue : sans ce repli, un jeu à jour parlant à une table en
-         retard cesserait de mettre à jour la série ET le fuseau horaire — les
-         rappels tomberaient tous, pour un champ qui n'était qu'un bonus.
-         On réessaie donc sans lui. Silencieux et sans conséquence : le serveur
-         se passe alors du motif « à revoir », et de lui seul. */
-      supa.from("push_subs").update(Object.assign({ revoir: nRev }, base))
-        .eq("endpoint", sub.endpoint)
-        .then(r => { if(r && r.error){ supa.from("push_subs").update(base).eq("endpoint", sub.endpoint); } },
-              () => { supa.from("push_subs").update(base).eq("endpoint", sub.endpoint); });
-    }).catch(()=>{});
+    navigator.serviceWorker.ready
+      .then(reg => reg.pushManager.getSubscription())
+      .then(sub => { if(sub) return notifEcrire(supa, sub.endpoint, null); })
+      .catch(()=>{});
   } catch(e){}
 }
 
@@ -13197,11 +13261,13 @@ async function notifActiver(){
     if(!supa){ throw new Error("serveur injoignable"); }
     /* On envoie l'abonnement et RIEN d'autre : pas de pseudo, pas de score, pas
        de série. Le serveur n'a besoin que de savoir où frapper. */
-    const rep = await supa.from("push_subs").upsert(
-      { endpoint: sub.endpoint, abonnement: sub.toJSON(), maj: new Date().toISOString() },
-      { onConflict: "endpoint" });
-    if(rep && rep.error){ throw rep.error; }
-    settings.notif = true; saveSettings(); notifMiroir(); notifSync(); notifRafraichir();
+    /* UN SEUL APPEL, qui pose l'abonnement ET l'état. L'ancien code écrivait
+       l'abonnement seul et comptait sur notifSync() pour le reste — or ce
+       reste ne partait jamais (voir notifEcrire). */
+    if(!(await notifEcrire(supa, sub.endpoint, sub.toJSON()))){
+      throw new Error("inscription refusée");
+    }
+    settings.notif = true; saveSettings(); notifMiroir(); notifRafraichir();
     return true;
   } catch(e){
     settings.notif = false; saveSettings(); notifRafraichir();
@@ -13216,7 +13282,7 @@ async function notifCouper(){
     const sub = await reg.pushManager.getSubscription();
     if(sub){
       const supa = initSupa();
-      if(supa) await supa.from("push_subs").delete().eq("endpoint", sub.endpoint);
+      if(supa) await notifEffacer(supa, sub.endpoint);
       await sub.unsubscribe();
     }
   } catch(e){}

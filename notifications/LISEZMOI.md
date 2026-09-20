@@ -1,5 +1,45 @@
 # Les rappels
 
+> ## ⚠️ POURQUOI AUCUN RAPPEL N'EST JAMAIS ARRIVÉ (relevé le 20/09/2026)
+>
+> « Je les ai activées et je n'ai jamais rien reçu depuis. » C'était vrai, et
+> ce n'était pas un réglage trop prudent : **aucun rappel ne POUVAIT partir**.
+> Trois ruptures, chacune suffisante à elle seule.
+>
+> **1. Le jeu n'écrivait jamais l'état du joueur.** Le client Supabase est
+> paresseux : `from().update().eq()` ne construit qu'un objet, et la requête ne
+> part qu'au moment où on l'attend. Le repli « réessayer sans la colonne
+> *revoir* » était écrit sans `then` ni `await` — il n'a jamais quitté le
+> téléphone. Comme le premier essai échouait toujours (la colonne n'existe pas
+> en ligne), toute l'écriture se perdait en silence. Relevé sur la vraie table :
+> les **huit** abonnements portaient `dernier = null`, `serie = 0`, `vu = null`.
+> Or les cinq motifs lisent chacun un de ces champs.
+> Corrigé dans le jeu (v251). Banc : `banc-essai/rappels-ecriture.js`, qui
+> compte les requêtes réellement émises — rouge sur la version publiée.
+>
+> **2. La colonne `revoir` n'a jamais été ajoutée** à la table en ligne. C'est
+> elle qui déclenchait le refus de toute l'écriture. → `verrouiller.sql`.
+>
+> **3. La fonction déployée est encore celle à DEUX motifs.** Appelée, elle
+> répond `{"envoyes":0,"series":0,"absences":0,...}` — les clés de la version
+> d'avant la v219. Les cinq motifs de `rappels.ts` ne sont pas en ligne.
+> → `supabase functions deploy rappels`.
+>
+> **Et la table était grande ouverte.** L'ancienne règle d'accès
+> (`for all to anon using (true)`) autorisait n'importe qui, avec la seule clé
+> publique écrite en clair dans `index.html`, à lire les huit abonnements
+> (`keys.p256dh` et `keys.auth` compris — de quoi écrire sur le téléphone d'un
+> joueur sous le nom de Yada), à en insérer, et à tous les supprimer. Vérifié :
+> `SELECT` 200, `INSERT` 201, `DELETE` 204. → `verrouiller.sql`.
+>
+> ### Ce qu'il reste à faire, dans cet ordre
+> 1. Coller **`notifications/verrouiller.sql`** dans l'éditeur SQL de Supabase.
+> 2. `supabase functions deploy rappels`
+> 3. Vérifier que la tâche horaire existe (Database → Cron, `0 * * * *`) —
+>    c'est le seul maillon que je ne peux pas contrôler d'ici.
+> 4. Pour tout voir marcher tout de suite, sans attendre 19 h :
+>    appeler la fonction avec `{"essai": true}` **et la clé service_role**.
+
 Le jeu notifie **cinq motifs**, jamais plus d'un par jour :
 
 | motif | heure locale | condition |
