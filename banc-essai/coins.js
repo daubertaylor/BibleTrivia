@@ -68,7 +68,9 @@ const SEUIL = 12;
        ici, et en ajouter un pour trois pixels serait une dépendance de plus à
        entretenir. Chromium, lui, sait déjà décoder une image : on lui rend la
        capture et il la mesure. Le banc reste autonome. */
-    const m = await p.evaluate(async (b64)=> new Promise(res=>{
+    /* Le rayon réel de la puce, lu sur elle — pas supposé. */
+    const rayon = await p.evaluate(e => parseFloat(getComputedStyle(e).borderTopLeftRadius) || 16, el);
+    const m = await p.evaluate(async ([b64, RAYON, ECH])=> new Promise(res=>{
       const img = new Image();
       img.onload = ()=>{
         const c = document.createElement('canvas');
@@ -77,23 +79,43 @@ const SEUIL = 12;
         const d = g.getImageData(0, 0, c.width, c.height).data;
         const L = (x,y)=>{ const i=(c.width*y+x)<<2; return (d[i]*299 + d[i+1]*587 + d[i+2]*114)/1000; };
         const fond = L(2,2), remp = L(c.width-3, c.height-3), haut = Math.max(fond, remp);
-        let pire = 0, combien = 0;
+        /* ===== ON NE REGARDE QUE L'ARC DU COIN, ET VOICI POURQUOI =====
+           La mesure balayait TOUT le carré de 34 px. Tant que le libellé
+           d'une puce appuyée était sombre, ça ne changeait rien. Le jour où
+           il est passé en blanc (le remplissage étant devenu plein, le texte
+           doit repasser en blanc pour rester lisible), le banc a compté les
+           lettres comme une frange : pixel le plus clair relevé à (135,106),
+           blanc pur, en plein milieu du mot « Testament ». Il annonçait
+           38,1 d'excès sur une puce dont le coin, photographié et agrandi
+           neuf fois, est parfaitement net.
+           Une frange de coin ne vit pas n'importe où : elle vit SUR L'ARC,
+           là où deux courbes lissées chacune pour son compte se désalignent.
+           On ne garde donc que la bande de deux pixels et demi de part et
+           d'autre de l'arc. Le texte n'y met jamais les pieds — il est à
+           l'intérieur de la forme, pas sur son bord. */
+        const R = RAYON * ECH, MARGE = 3 * ECH, BANDE = 2.5 * ECH;
+        const cx = MARGE + R, cy = MARGE + R;      // centre de l'arc du coin
+        let pire = 0, combien = 0, vus = 0;
         for(let y=0;y<c.height;y++) for(let x=0;x<c.width;x++){
+          const dist = Math.hypot(cx - x, cy - y);
+          if(x > cx || y > cy) continue;           // le quart haut-gauche seulement
+          if(Math.abs(dist - R) > BANDE) continue; // et seulement la bande de l'arc
+          vus++;
           const v = L(x,y);
           if(v > haut + 2){ combien++; if(v - haut > pire) pire = v - haut; }
         }
-        res({ fond, remp, pire, combien });
+        res({ fond, remp, pire, combien, vus });
       };
       img.onerror = ()=>res(null);
       img.src = 'data:image/png;base64,' + b64;
-    }), png.toString('base64'));
+    }), [png.toString('base64'), rayon, 4]);
 
     if(!m){ console.log('  ' + nom + ' : image illisible'); ko++; continue; }
     const bon = m.pire <= SEUIL;
     if(!bon) ko++;
     console.log('  ' + (bon?'OK ':'KO ') + nom.padEnd(20)
       + 'carte ' + m.fond.toFixed(0) + ', remplissage ' + m.remp.toFixed(0)
-      + '  |  ' + m.combien + ' pixels plus clairs, excès max ' + m.pire.toFixed(1)
+      + '  |  ' + m.combien + ' pixels plus clairs sur ' + m.vus + ' d\'arc, excès max ' + m.pire.toFixed(1)
       + ' (max ' + SEUIL + ')');
   }
   if(errs.length){ ko++; console.log('  erreurs JS : ' + [...new Set(errs)].slice(0,3).join(' | ')); }
