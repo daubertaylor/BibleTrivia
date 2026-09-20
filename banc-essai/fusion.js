@@ -156,7 +156,7 @@ function v(nom, bon, detail){
     /* Deux appareils, quatre jours qui se suivent : 2 + 2 = 4. */
     const colle = fusionner(f(j(2), [j(3),j(2)], [], 2), f(j(0), [j(1),j(0)], [], 2));
     /* Un trou GELÉ ne casse pas la série — mais il ne COMPTE pas non plus : la
-       série compte les jours joués (voir recordDailyResult), le gel ne fait que
+       série compte les jours joués (voir marquerJourJoue), le gel ne fait que
        l'empêcher de mourir. Deux jours joués, un gelé entre les deux : 2. */
     const gele = fusionner(f(j(0), [j(2),j(0)], [j(1)], 2), { v:1 });
     /* Une sauvegarde d'AVANT les gels (jours == null) apporte quand même ses

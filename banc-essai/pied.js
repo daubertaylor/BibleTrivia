@@ -114,16 +114,45 @@ const ECRANS = [
      côté et à 6 de l'autre — « les 7 jours trop bas sur un Xiaomi ». On exige
      donc que l'air du bas soit le même sur tous les écrans qui affichent la
      bande, à la compression près des écrans courts. */
-  const airs = lignes.filter(l => l[3].bande && l[3].airBas !== null).map(l => l[3].airBas);
-  const ecartAir = airs.length ? Math.max(...airs) - Math.min(...airs) : 0;
+  /* ===== ON NE COMPARE QUE CE QUI EST COMPARABLE =====
+     La marge de page du bas n'est pas la même de part et d'autre de 600 px :
+     --air-bas vaut 2,4 rem au-dessus et 0,8 rem en dessous. C'est une décision
+     prise pour TOUT le jeu, pas seulement pour l'accueil — sur un écran court,
+     chaque dixième de rem compte. Mesurer un écran de 553 px contre un de
+     1000 px, c'est donc mesurer l'écart entre deux décisions, pas une
+     incohérence : le bandeau de 12 px sur un navigateur étroit est voulu.
+     L'en-tête de ce banc le disait déjà (« à la compression près des écrans
+     courts ») ; ce n'était simplement écrit nulle part dans le code.
+     Les écrans courts restent mesurés et affichés — ils sont seulement
+     comparés entre eux. */
+  const COURT = 600;
+  const aveBande = lignes.filter(l => l[3].bande && l[3].airBas !== null);
+  const grp = (courts) => aveBande.filter(l => (l[2] < COURT) === courts).map(l => l[3].airBas);
+  const etendue = (v) => v.length ? Math.max(...v) - Math.min(...v) : 0;
+  const airs = grp(false), airsCourts = grp(true);
+  const ecartAir = Math.max(etendue(airs), etendue(airsCourts));
+  /* ===== ET LA TOLÉRANCE SE RESSERRE, PUISQUE LE LOT EST PLUS HOMOGÈNE =====
+     Les 30 px d'avant couvraient un lot qui MÉLANGEAIT les deux marges de
+     page ; les écrans courts, à eux seuls, en consommaient vingt-trois. Garder
+     30 après les avoir séparés, ce n'est pas assouplir un peu, c'est ouvrir
+     grand : vérifié, un accueil qui laissait 67 px de vide sous la bande sur
+     un écran de 1000 px passait encore (écart 29). Le banc aurait laissé
+     filer exactement le défaut qu'il venait de trouver.
+     On mesure donc ce que font les écrans normaux quand tout va bien —
+     version publiée 35 à 44 (écart 9), version corrigée 35 à 43 (écart 8) —
+     et on laisse le double de marge d'arrondi, pas trois fois plus. */
+  const TOLERANCE = 15;
   const hors = pcts.filter(v => v > PLAFOND).length;
   console.log('\n  écart en % de la hauteur utile : de ' + Math.min(...pcts) + ' à ' + Math.max(...pcts) + ' %   (plafond ' + PLAFOND + ')');
   console.log('  écrans où le pied décroche : ' + hors);
   console.log('  compositions différentes de l\'accueil : ' + compositions.size + '  [' + [...compositions].join(' ') + ']');
   console.log('  écrans qui débordent : ' + debords);
-  console.log('  air sous la bande : de ' + Math.min(...airs) + ' à ' + Math.max(...airs) + ' px  (écart ' + ecartAir + ', toléré 30)');
+  console.log('  air sous la bande, écrans normaux : de ' + Math.min(...airs) + ' à ' + Math.max(...airs)
+    + ' px  (écart ' + etendue(airs) + ', toléré ' + TOLERANCE + ')');
+  if (airsCourts.length) console.log('  air sous la bande, écrans courts (<' + COURT + ' px, marge de page réduite) : de '
+    + Math.min(...airsCourts) + ' à ' + Math.max(...airsCourts) + ' px  (écart ' + etendue(airsCourts) + ')');
   if (errs.length) console.log('  ERREURS JS : ' + [...new Set(errs)].slice(0,3).join(' | '));
-  const ok = hors === 0 && debords === 0 && ecartAir <= 30 && !errs.length;
+  const ok = hors === 0 && debords === 0 && ecartAir <= TOLERANCE && !errs.length;
   console.log(ok ? '\n  OK — le pied se tient pareil partout' : '\n  ECHEC');
   await b.close();
   process.exit(ok ? 0 : 1);

@@ -111,7 +111,11 @@ const RELEVE = () => {
     await p.evaluate(() => { state.screen = 'mode'; render(); });
     await p.waitForTimeout(NEUF ? 320 : 200);
     const r = await p.evaluate(RELEVE);
-    if (r.cartes !== 6) pires.push(h + ' px : ' + r.cartes + ' cartes au lieu de 6');
+    /* CINQ, ET NON PLUS SIX. La carte du Défi du jour a été retirée : elle
+       n'existait que pour allumer la flamme, et la flamme s'allume désormais
+       en jouant, quel que soit le mode. Restent cinq vraies destinations —
+       Groupe, Solo, En ligne, À revoir, Progression. */
+    if (r.cartes !== 5) pires.push(h + ' px : ' + r.cartes + ' cartes au lieu de 5');
     else if (r.deb > 0) pires.push(h + ' px : débord ' + r.deb + (r.semVue ? '' : ' (bande masquée)'));
     else if (r.semVue && r.semBas > r.ih) pires.push(h + ' px : bande sous le pli (' + r.semBas + ' > ' + r.ih + ')');
   }
@@ -119,5 +123,5 @@ const RELEVE = () => {
   await nav.close();
   if (pires.length) { console.log('  HAUTEURS EN DÉFAUT :'); pires.forEach(x => console.log('   ' + x)); process.exit(1); }
   console.log('  OK — ' + HAUTEURS.length + ' hauteurs de ' + HAUTEURS[0] + ' à ' + HAUTEURS[HAUTEURS.length-1]
-    + ' px : six cartes, aucun débord, la bande des sept jours au-dessus du pli');
+    + ' px : cinq cartes, aucun débord, la bande des sept jours au-dessus du pli');
 })();

@@ -510,7 +510,7 @@
   .chip, .icon-btn, .btn-reveal, .btn-newgame, .award-btn, .presence-card, .me-row, .online-action,
   .searching-card, .waiting-card, .info-card, .vs-row, .len-chip, .duel-scorebar, .timer-chip, .dr-side,
   .rank-row, .text-input, .code-input, .fs-hint, .modal-card, .add-team, .btn-ghost, .fsh-close, .settings-sheet, .hero-verse-card, .end-medal, .modal-btn, .leave-banner, .adj-btn, .waiting-note,
-  .rules, .btn-review, .daily-card, .dc-streak, .btn-invite, .creator-badge, .sheet-done, .set-go,
+  .rules, .btn-review, .daily-card, .dc-streak, .sem-flamme, .btn-invite, .creator-badge, .sheet-done, .set-go,
   .share-btn, .rev-item, .parcours-card, .parcours-sum, .tst-head, .team-row, .bk{
     --rim-cast:0 5px 14px rgba(34,26,16,0.12);
   }
@@ -608,7 +608,32 @@
      Sans elle, sept lettres et quatre cases dorées ne disent pas d'eux-mêmes
      qu'on tient une série de quatre jours ; avec elle, rien ne s'élargit. */
   .semaine{ display:flex; flex-direction:column; align-items:center; gap:0.42rem; }
-  .sem-h{ display:flex; align-items:baseline; gap:0.42rem; }
+  .sem-h{ display:flex; align-items:center; gap:0.5rem; }
+  /* ===== LA PASTILLE DE FLAMME, SUR LA RANGÉE DES SEPT JOURS =====
+     C'est exactement la pilule qui vivait sur la carte du Défi (.dc-streak) :
+     même or, même flamme, même graisse. Rien n'a changé pour l'œil, seule
+     l'adresse a changé.
+     ELLE EST UN BOUTON À ELLE SEULE. « Je veux que la flamme en elle-même se
+     sélectionne pour qu'on comprenne exactement où j'ai cliqué. » La rangée
+     entière n'est donc pas cliquable : la zone touchée et la zone qui répond
+     sont la même, et c'est tout l'intérêt. */
+  /* ===== ELLE FAIT 44 PX PARCE QU'ON LA TOUCHE =====
+     Écrite d'abord à la taille de l'ancienne pastille (26 px de haut), elle a
+     été prise en défaut par banc-essai/doigt.js — et il avait raison : ce
+     n'était plus un badge posé sur une carte qu'on touchait en entier, c'était
+     devenu LA cible. On ne peut pas non plus l'agrandir par un pseudo-élément :
+     elle porte du verre, donc une découpe (overflow:clip), qui rogne tout ce
+     qui dépasse. C'est donc la pilule elle-même qui fait 44 px.
+     Elle est donc plus haute que les carrés des jours (2,05 rem, soit 33 px) :
+     c'est le prix de la zone tactile, et on le paie. Mais une pilule de 44 px
+     de haut pour 60 de large est un pavé, pas une pilule — on l'allonge pour
+     que la forme reste lisible comme une pastille de compteur. */
+  .sem-flamme{ display:inline-flex; align-items:center; justify-content:center; gap:0.3rem; font-family:inherit; font-weight:800; font-size:1rem; font-variant-numeric:tabular-nums; color:#fff; text-shadow:0 1px 2px rgba(122,78,4,0.35); --glass-tint: rgb(240,163,26); border:0; border-radius:var(--r-full); min-height:2.75rem; padding:0 calc(1.1rem + 1px); flex-shrink:0; box-shadow:0 2px 8px rgba(196,144,32,0.24); cursor:pointer; -webkit-tap-highlight-color:transparent; position:relative; }
+  .sem-flamme svg{ width:1.05rem; height:1.05rem; display:block; }
+  .sem-flamme b{ font-weight:800; }
+  /* Flamme éteinte : on ne crie pas un zéro en or. Le même objet, en sourdine,
+     parce qu'une série à zéro n'est pas une faute — c'est un début. */
+  .sem-flamme.eteinte{ --glass-tint: rgba(255,255,255,0.16); color:rgba(255,255,255,0.8); box-shadow:none; text-shadow:0 1px 4px rgba(0,0,0,0.4); }
   .sem-t{ font-family:'Poppins',sans-serif; font-size:0.6rem; font-weight:600; letter-spacing:0.09em; text-transform:uppercase; color:rgba(255,255,255,0.72); text-shadow:0 1px 8px rgba(0,0,0,0.5); }
   .sem-j{ display:flex; gap:0.4rem; }
   .sj{ width:2.05rem; height:2.05rem; border-radius:var(--r-s); display:flex; align-items:center; justify-content:center;
@@ -1872,7 +1897,21 @@
   .online-hero-title{ font-family:'Poppins',sans-serif; font-weight:700; font-size:1.15rem; color:#fff; margin:0 0 0.3rem; text-shadow:0 1px 12px rgba(0,0,0,0.4); }
   .online-hero-sub{ color:rgba(255,255,255,0.9); font-size:0.85rem; line-height:1.5; max-width:18rem; margin:0 auto; text-shadow:0 1px 8px rgba(0,0,0,0.35); }
   .info-card{ background:rgba(255,255,255,0.6); backdrop-filter:blur(18px) saturate(180%); -webkit-backdrop-filter:blur(18px) saturate(180%); border:1px solid var(--bord); border-radius:var(--r-m); padding:0.85rem 0.95rem; font-size:0.84rem; line-height:1.55; color:var(--ink); }
-  .err-msg{ color:#fff; background:rgba(226,75,55,0.85); border-radius:var(--r-s); padding:0.6rem 0.9rem; font-size:0.85rem; font-weight:600; margin-top:0.9rem; text-align:center; }
+  /* ===== LE MESSAGE D'ERREUR NE POUSSE PLUS RIEN =====
+     « Lorsque le code est invalide, il ne faut pas que ça décale le reste. »
+     Le bandeau n'existait QUE lorsqu'il y avait une erreur : en apparaissant
+     il prenait sa place dans la colonne et poussait le bouton « Rejoindre »
+     vers le bas. La place est donc réservée en permanence, et c'est la seule
+     façon de n'avoir aucun décalage : un bandeau qui naît déplace toujours
+     ses voisins, quelle que soit la douceur de son apparition.
+     DEUX LIGNES, PAS UNE. Le plus long message (« La connexion au salon a
+     échoué. Réessaie. ») passe à deux lignes sur un écran étroit : réserver
+     une seule ligne aurait déplacé le problème d'un cran au lieu de le régler.
+     La boîte vide ne se voit pas — ni fond, ni texte, ni ombre. */
+  .err-msg{ color:#fff; background:rgba(226,75,55,0.85); border-radius:var(--r-s); padding:0.6rem 0.9rem; font-size:0.85rem; font-weight:600; margin-top:0.9rem; text-align:center;
+    min-height:calc(2 * 1.35em + 1.2rem); display:flex; align-items:center; justify-content:center;
+    transition:opacity 0.2s ease; }
+  .err-msg.vide{ background:transparent; box-shadow:none; opacity:0; }
 
   .presence-card{ display:flex; align-items:center; gap:0.62rem; justify-content:center; background:rgba(255,255,255,0.55); backdrop-filter:blur(18px) saturate(180%); -webkit-backdrop-filter:blur(18px) saturate(180%); border:1px solid var(--bord); border-radius:var(--r-full); padding:0.45rem 0.95rem; margin-bottom:0.8rem; }
   .live-dot{ width:0.55rem; height:0.55rem; border-radius:50%; flex-shrink:0; background:#2FBF74; animation:liveHalo 2.4s ease-out infinite; }
@@ -2272,7 +2311,7 @@
   .option-btn, .btn-primary, .btn-next, .btn-replay, .fact-card, .tier-chip, .q-counter, .streak-chip, .chip, .icon-btn, .btn-reveal,
   .btn-newgame, .award-btn, .presence-card, .me-row, .online-action, .searching-card,
   .waiting-card, .info-card, .vs-row, .len-chip, .duel-scorebar, .timer-chip, .dr-side, .rank-row,
-  .text-input, .code-input, .fs-hint, .modal-card, .btn-ghost, .fsh-close, .settings-sheet, .hero-verse-card, .end-medal, .modal-btn.ok, .modal-btn.cancel, .leave-banner, .adj-btn, .waiting-note, .rules, .btn-review, .daily-card, .dc-streak, .btn-invite, .creator-badge, .sheet-done, .set-go, .share-btn, .rev-item, .parcours-card, .tst-head{
+  .text-input, .code-input, .fs-hint, .modal-card, .btn-ghost, .fsh-close, .settings-sheet, .hero-verse-card, .end-medal, .modal-btn.ok, .modal-btn.cancel, .leave-banner, .adj-btn, .waiting-note, .rules, .btn-review, .daily-card, .dc-streak, .sem-flamme, .btn-invite, .creator-badge, .sheet-done, .set-go, .share-btn, .rev-item, .parcours-card, .tst-head{
     background-color:transparent;
     /* Deux voies pour le verre :
        - par DÉFAUT (iOS) : photo pré-floutée peinte (var(--blur-url)),
@@ -2347,7 +2386,7 @@
     .searching-card, .waiting-card, .info-card, .vs-row, .len-chip, .duel-scorebar, .timer-chip, .dr-side,
     .rank-row, .fs-hint, .modal-card, .btn-ghost, .fsh-close, .settings-sheet,
     .hero-verse-card, .end-medal, .modal-btn.ok, .modal-btn.cancel, .leave-banner, .adj-btn, .waiting-note,
-    .rules, .btn-review, .daily-card, .dc-streak, .btn-invite, .creator-badge, .sheet-done, .set-go,
+    .rules, .btn-review, .daily-card, .dc-streak, .sem-flamme, .btn-invite, .creator-badge, .sheet-done, .set-go,
     .share-btn, .rev-item, .parcours-card, .parcours-sum, .tst-head):not(.has-gs){
     /* Le MÊME rebord que la règle finale, au pixel près : la surface ne doit
        pas changer d'aspect à la seconde où sa couche de verre s'attache. */
@@ -2369,7 +2408,7 @@
     .option-btn, .btn-primary, .btn-next, .btn-replay, .fact-card, .tier-chip, .q-counter, .streak-chip, .chip, .icon-btn, .btn-reveal,
     .btn-newgame, .award-btn, .presence-card, .me-row, .online-action, .searching-card,
     .waiting-card, .info-card, .vs-row, .len-chip, .duel-scorebar, .timer-chip, .dr-side, .rank-row,
-    .text-input, .code-input, .fs-hint, .modal-card, .btn-ghost, .fsh-close, .settings-sheet, .hero-verse-card, .end-medal, .modal-btn.ok, .modal-btn.cancel, .leave-banner, .adj-btn, .waiting-note, .rules, .btn-review, .daily-card, .dc-streak, .btn-invite, .creator-badge, .sheet-done, .set-go, .share-btn, .rev-item, .parcours-card, .parcours-sum, .tst-head){
+    .text-input, .code-input, .fs-hint, .modal-card, .btn-ghost, .fsh-close, .settings-sheet, .hero-verse-card, .end-medal, .modal-btn.ok, .modal-btn.cancel, .leave-banner, .adj-btn, .waiting-note, .rules, .btn-review, .daily-card, .dc-streak, .sem-flamme, .btn-invite, .creator-badge, .sheet-done, .set-go, .share-btn, .rev-item, .parcours-card, .parcours-sum, .tst-head){
     --glass-photo: none;
     --glass-bf: blur(26px) saturate(1.35);
     /* La couleur de fond de base des surfaces (souvent blanc ~0,5) est
@@ -2843,7 +2882,15 @@
        (max-height:750px) : la ligne est gardée ici pour que ce bloc reste
        lisible seul, mais elle ne fait plus le travail à elle seule. */
     .home-verse{ display:none; }
-    .semaine{ display:none; }   /* la pastille flamme, elle, est là de toute façon */
+    /* ÉCRAN COURT : ON PERD LES SEPT CARRÉS, PAS LA FLAMME.
+       Avant, cette ligne masquait toute la rangée — et c'était sans dommage,
+       la pastille vivant alors sur la carte du Défi. Depuis que la flamme
+       habite ici, masquer la rangée reviendrait à masquer la flamme : un
+       joueur sur petit écran ne verrait plus du tout sa série. On garde donc
+       le compte, on laisse les carrés (leur détail se lit dans la feuille). */
+    .semaine{ display:flex; gap:0; }
+    .sem-j{ display:none; }
+    .sem-h .sem-t{ display:none; }
     /* ÉCRAN COURT = ÉCRAN DÉLESTÉ, DONC LE LOGO PEUT ÊTRE PLUS GRAND.
        Le plafond de hauteur du logo (12,5 % de la hauteur utile) est calculé
        pour la mise en page COMPLÈTE. Ici le verset et la bande des sept jours
@@ -3042,7 +3089,7 @@
      lui-même au lieu de couper le haut de l'écran (là où il n'est pas
      compris, toute la déclaration est ignorée, donc retour au comportement
      d'avant : rien de cassé). */
-  .accueil{ justify-content:safe center; }
+  .accueil{ justify-content:safe flex-end; }
   .home-sp-bot{ flex:1.3 1 0; min-height:0; max-height:min(calc(12.3 * var(--hu)), 8.5rem); }
   /* Pastilles alignées sur le LANGAGE des cartes de l'accueil : mêmes bords
      (bord à bord avec les cartes au-dessus), même rayon 16 px, même bordure,
@@ -4276,7 +4323,7 @@ const TEXTES = {
     /* les rappels */
     "Rappels":"Reminders",
     "Bloquées dans les réglages du téléphone":"Blocked in the phone settings",
-    "Ta série sur le point de s'éteindre, le défi du jour pas encore relevé, tes erreurs à revoir, un verset le dimanche, et un mot si tu t'absentes. Au plus UN rappel par jour, et jamais si tu as déjà joué.":"Your streak about to go out, the daily challenge not yet taken, your mistakes to review, a verse on Sunday, and a word if you stay away. At most ONE reminder a day, and never if you have already played.",
+    "Ta série sur le point de s'éteindre, tes erreurs à revoir, un verset le dimanche, et un mot si tu t'absentes. Au plus UN rappel par jour, et jamais si tu as déjà joué.":"Your streak about to go out, your mistakes to review, a verse on Sunday, and a word if you stay away. At most ONE reminder a day, and never if you have already played.",
     "Impossible d'activer le rappel pour le moment.":"Cannot turn the reminder on right now.",
     /* le partage */
     "Partager le résultat":"Share the result",
@@ -4402,9 +4449,9 @@ const TEXTES = {
     "Incandescent":"White-hot",
     "Une série de 21 bonnes réponses":"A streak of 21 correct answers",
     "Termine une partie sans erreur":"Finish a game without a single mistake",
-    "Défi du jour 7 jours d'affilée":"Daily challenge 7 days in a row",
+    "Joue 7 jours d'affilée":"Play 7 days in a row",
     "Assidu":"Diligent",
-    "Défi du jour 30 jours d'affilée":"Daily challenge 30 days in a row",
+    "Joue 30 jours d'affilée":"Play 30 days in a row",
     "Vainqueur":"Winner",
     "Nom du joueur ou de l'\u00e9quipe":"Player or team name",
     "Ton pr\u00e9nom":"Your first name",
@@ -12214,8 +12261,8 @@ const ACHIEVEMENTS = [
   { id:"serie10",      ico:ACH_ICONS.flame,       clr:"coral", t:"En feu",              d:"Une série de 10 bonnes réponses",       max:10,   cur:(p)=>Math.min(p.bestStreak,10) },
   { id:"serie20",      ico:ACH_ICONS.bolt,        clr:"coral", t:"Incandescent",        d:"Une série de 21 bonnes réponses",       max:21,   cur:(p)=>Math.min(p.bestStreak,21) },
   { id:"sans-faute",   ico:ACH_ICONS.medal,       clr:"green", t:"Sans faute",          d:"Termine une partie sans erreur",        max:1,    cur:(p)=>p.flawless?1:0 },
-  { id:"fidele7",      ico:ACH_ICONS.calCheck,    clr:"green", t:"Fidèle",              d:"Défi du jour 7 jours d'affilée",        max:7,    cur:(p,d)=>Math.min(d.daily,7) },
-  { id:"assidu",       ico:ACH_ICONS.calStar,     clr:"green", t:"Assidu",              d:"Défi du jour 30 jours d'affilée",       max:30,   cur:(p,d)=>Math.min(d.daily,30) }
+  { id:"fidele7",      ico:ACH_ICONS.calCheck,    clr:"green", t:"Fidèle",              d:"Joue 7 jours d'affilée",                max:7,    cur:(p,d)=>Math.min(d.daily,7) },
+  { id:"assidu",       ico:ACH_ICONS.calStar,     clr:"green", t:"Assidu",              d:"Joue 30 jours d'affilée",               max:30,   cur:(p,d)=>Math.min(d.daily,30) }
 ];
 /* ===== UNE SÉRIE PERDUE EST PERDUE TOUT DE SUITE =====
    On lisait ici la série BRUTE, celle qui dort dans la mémoire : un joueur qui
@@ -12528,6 +12575,20 @@ function offrirGel(raison){
    chacun des trois modes. */
 function compterPartie(){
   try{
+    /* ===== TOUTE PARTIE ALLUME LA FLAMME DU JOUR =====
+       « Le défi du jour ne sert à rien si ce n'est activer les flammes. Fais
+       en sorte d'activer les flammes sur d'autres modes. »
+       Il a raison, et pour une raison de fond : la flamme récompense la
+       RÉGULARITÉ, et on est régulier en JOUANT, pas en touchant une carte
+       particulière. Un joueur qui faisait sa partie en groupe tous les soirs
+       depuis un mois voyait sa flamme à zéro — le jeu ne récompensait pas ce
+       qu'il faisait, il récompensait un geste.
+       C'EST ICI, ET NULLE PART AILLEURS. Cette fonction est déjà le passage
+       obligé des trois modes : solo et groupe l'appellent à la dernière
+       question, le mode en ligne quand le joueur a fini les siennes. Un seul
+       endroit à brancher, donc aucun mode oublié — et aucun compté deux fois.
+       marquerJourJoue() sort d'elle-même si la journée est déjà marquée. */
+    marquerJourJoue();
     const d = loadDaily();
     const parties = (d.parties | 0) + 1;
     let palier = d.palierParties | 0;
@@ -12747,11 +12808,20 @@ function semaineHtml(){
     cases.push(`<span class="sj${et}${k === 0 ? " auj" : ""}">`
       + SEM_LETTRES[jour.getDay()] + `</span>`);
   }
-  /* Le nombre de jours d'affilée est dit par la pastille flamme du Défi du
-     jour, juste au-dessus. Ici on ne montre que ce que la pastille ne peut pas
-     dire : QUELS jours ont été joués, et où l'on en est dans la semaine. */
+  /* ===== LA RANGÉE DE LA SEMAINE PORTE LA FLAMME =====
+     La pastille vivait sur la carte du Défi du jour, qui n'existe plus. Elle
+     rejoint la rangée des sept jours, et c'est sa vraie place : cette rangée
+     DIT DÉJÀ la régularité — quels jours ont été joués, lesquels sont gelés.
+     Le compte et son histoire se retrouvent ainsi au même endroit, et
+     l'accueil gagne une carte entière.
+     La pastille est un BOUTON à elle seule, pas la rangée : « je veux que la
+     flamme en elle-même se sélectionne pour qu'on comprenne exactement où j'ai
+     cliqué ». On sait donc toujours ce qu'on a touché. */
+  const n = dailyStreakShown();
+  const flamme = `<button class="sem-flamme${n ? "" : " eteinte"}" onclick="ouvrirFlamme()"`
+    + ` aria-label="${T("Ta flamme")}">${ICONS.flame}<b>${n}</b></button>`;
   return `<div class="semaine" aria-label="Tes sept derniers jours">`
-    + `<div class="sem-h"><span class="sem-t">${T("Les 7 derniers jours")}</span></div>`
+    + `<div class="sem-h"><span class="sem-t">${T("Les 7 derniers jours")}</span>${flamme}</div>`
     + `<div class="sem-j">${cases.join("")}</div></div>`;
 }
 function dailyStreakShown(){ return flammeVivante() ? loadDaily().streak : 0; }
@@ -12909,7 +12979,11 @@ function annoncerGel(){
     pumpAchToast();
   }catch(e){}
 }
-function recordDailyResult(){
+/* Anciennement recordDailyResult : elle n'enregistrait que le Défi du jour.
+   Elle marque désormais LA JOURNÉE comme jouée, d'où qu'on vienne. Le coffre
+   ne change pas de nom (bt_daily) et pas de forme : la flamme, les gels et
+   l'historique de chaque joueur sont repris tels quels, sans un jour perdu. */
+function marquerJourJoue(){
   if(loadDaily().last === dayKey(0)) return; // déjà compté aujourd'hui
   reglerFlamme();                            // un gel couvre peut-être le trou
   const d = loadDaily();
@@ -13036,40 +13110,93 @@ function notifMiroir(){
    un contenu. De quoi décider s'il faut frapper, pour quelle raison, et à
    quelle heure il est chez ce joueur. La vérification sur l'appareil reste en
    place pour chacun des motifs : c'est la deuxième barrière, pas la seule. */
+/* Vrai dès qu'on a appris que la table en ligne n'a pas la colonne « revoir ».
+   Remis à faux au prochain chargement : un ALTER TABLE passé entre-temps est
+   alors repris tout seul. */
+let notifSansRevoir = false;
+/* Idem pour la fonction d'enregistrement : tant qu'elle n'est pas posée sur le
+   serveur, on écrit dans la table comme avant. */
+let notifSansRpc = false;
+
+/* ===== L'ÉTAT QUI DÉCIDE DES RAPPELS, EN UN SEUL ENDROIT =====
+   Cinq nombres, et rien d'autre : ni pseudo, ni score, ni réponses, ni
+   progression. De quoi savoir s'il faut frapper, pourquoi, et à quelle heure
+   il fait soir chez ce joueur. */
+function notifEtatCourant(){
+  const d = loadDaily();
+  return {
+    dernier: dernierJourSerie() || null,               // dernier jour COUVERT, gel compris
+    serie: d.streak | 0,
+    vu: loadVu() || null,                              // dernière partie, tous modes
+    revoir: (function(){ try{ return aRevoir().length; }catch(e){ return 0; } })(),
+    decalage: -(new Date().getTimezoneOffset()) | 0,   // minutes par rapport à UTC
+  };
+}
+
+/* ===== LE TÉLÉPHONE N'ÉCRIT PLUS DIRECTEMENT DANS LA TABLE =====
+   L'ancienne règle d'accès disait « tout le monde peut tout faire », en
+   s'appuyant sur l'idée que l'endpoint — une longue chaîne aléatoire — tenait
+   lieu de mot de passe. C'est faux : une règle RLS ne voit pas le FILTRE de la
+   requête, donc « using (true) » autorise « endpoint = le mien » exactement
+   comme « endpoint <> le mien ». Vérifié avec la seule clé publique, celle qui
+   est écrite en clair ici : lecture des huit abonnements (clés de chiffrement
+   comprises), insertion, suppression — tout passait. Qui a ces clés peut
+   écrire sur le téléphone d'un joueur sous le nom de Yada.
+   On passe donc par une fonction qui n'agit que sur LA ligne dont on donne
+   l'adresse et qui ne renvoie rien (notifications/verrouiller.sql).
+   AVEC UN REPLI, pour que l'ordre des deux mises à jour n'ait pas
+   d'importance : tant que la fonction n'existe pas, on écrit comme avant. */
+async function notifEcrire(supa, endpoint, abonnement){
+  const e = notifEtatCourant();
+  if(!notifSansRpc){
+    try{
+      const r = await supa.rpc("push_enregistrer", {
+        p_endpoint: endpoint, p_abonnement: abonnement || null,
+        p_dernier: e.dernier, p_serie: e.serie, p_vu: e.vu,
+        p_revoir: e.revoir, p_decalage: e.decalage });
+      if(!(r && r.error)) return true;
+    }catch(_){}
+    notifSansRpc = true;
+  }
+  const base = { dernier:e.dernier, serie:e.serie, vu:e.vu, decalage:e.decalage,
+                 maj:new Date().toISOString() };
+  if(abonnement) base.abonnement = abonnement;
+  /* UN REPLI QU'ON N'ATTEND PAS NE PART JAMAIS. Le client Supabase est
+     paresseux : « from().upsert() » ne construit qu'un objet, et la requête ne
+     quitte le téléphone qu'au moment où on l'attend. */
+  const poser = (corps) => supa.from("push_subs")
+    .upsert(Object.assign({ endpoint: endpoint }, corps), { onConflict: "endpoint" });
+  if(notifSansRevoir){ const r = await poser(base); return !(r && r.error); }
+  const r = await poser(Object.assign({ revoir: e.revoir }, base));
+  if(!(r && r.error)) return true;
+  notifSansRevoir = true;                 // la colonne n'existe pas : on ne la redemande plus
+  const r2 = await poser(base);
+  return !(r2 && r2.error);
+}
+async function notifEffacer(supa, endpoint){
+  if(!notifSansRpc){
+    try{
+      const r = await supa.rpc("push_oublier", { p_endpoint: endpoint });
+      if(!(r && r.error)) return;
+    }catch(_){}
+    notifSansRpc = true;
+  }
+  await supa.from("push_subs").delete().eq("endpoint", endpoint);
+}
+
 function notifSync(){
   try {
     if(!settings.notif || notifEtat() !== "granted") return;
-    /* Même raison qu'à l'activation : on ouvre le lien au lieu d'attendre
-       qu'une partie en ligne l'ait ouvert pour nous. Sans ça, la série et le
-       fuseau horaire d'un joueur qui ne joue que seul n'étaient jamais mis à
-       jour — le serveur le croyait éternellement à zéro. */
+    /* On OUVRE le lien au lieu d'attendre qu'une partie en ligne l'ait ouvert
+       pour nous : sans ça, la série et le fuseau horaire d'un joueur qui ne
+       joue que seul n'étaient jamais mis à jour — le serveur le croyait
+       éternellement à zéro. */
     const supa = initSupa();
     if(!supa) return;
-    navigator.serviceWorker.ready.then(reg => reg.pushManager.getSubscription()).then(sub => {
-      if(!sub) return;
-      const d = loadDaily();
-      const base = {
-        dernier: dernierJourSerie() || null,   // le dernier jour COUVERT, gel compris
-        serie: d.streak | 0,
-        vu: loadVu() || null,                              // dernière partie, tous modes
-        decalage: -(new Date().getTimezoneOffset()) | 0,   // minutes par rapport à UTC
-        maj: new Date().toISOString(),
-      };
-      const nRev = (function(){ try{ return aRevoir().length; }catch(e){ return 0; } })();
-      /* ===== UNE COLONNE NEUVE NE DOIT PAS EMPORTER LES ANCIENNES =====
-         « revoir » est arrivée avec la v219 ; la table en ligne, elle, existe
-         depuis la v205 et ne l'aura que le jour où l'ALTER TABLE sera passé.
-         Or Postgres refuse un UPDATE ENTIER dès qu'une seule de ses colonnes
-         est inconnue : sans ce repli, un jeu à jour parlant à une table en
-         retard cesserait de mettre à jour la série ET le fuseau horaire — les
-         rappels tomberaient tous, pour un champ qui n'était qu'un bonus.
-         On réessaie donc sans lui. Silencieux et sans conséquence : le serveur
-         se passe alors du motif « à revoir », et de lui seul. */
-      supa.from("push_subs").update(Object.assign({ revoir: nRev }, base))
-        .eq("endpoint", sub.endpoint)
-        .then(r => { if(r && r.error){ supa.from("push_subs").update(base).eq("endpoint", sub.endpoint); } },
-              () => { supa.from("push_subs").update(base).eq("endpoint", sub.endpoint); });
-    }).catch(()=>{});
+    navigator.serviceWorker.ready
+      .then(reg => reg.pushManager.getSubscription())
+      .then(sub => { if(sub) return notifEcrire(supa, sub.endpoint, null); })
+      .catch(()=>{});
   } catch(e){}
 }
 
@@ -13094,7 +13221,7 @@ function notifProposer(){
          deux. C'est sur cette phrase que le joueur donne le seul « oui » qu'on
          ait le droit de lui demander : elle doit couvrir tout ce qui peut
          arriver, et surtout la borne, qui est ce qui compte vraiment. */
-      message: T("Ta série sur le point de s'éteindre, le défi du jour pas encore relevé, tes erreurs à revoir, un verset le dimanche, et un mot si tu t'absentes. Au plus UN rappel par jour, et jamais si tu as déjà joué."),
+      message: T("Ta série sur le point de s'éteindre, tes erreurs à revoir, un verset le dimanche, et un mot si tu t'absentes. Au plus UN rappel par jour, et jamais si tu as déjà joué."),
       okLabel: "D'accord",
       cancelLabel: "Non merci",
       onOk: () => { notifActiver(); },
@@ -13134,11 +13261,13 @@ async function notifActiver(){
     if(!supa){ throw new Error("serveur injoignable"); }
     /* On envoie l'abonnement et RIEN d'autre : pas de pseudo, pas de score, pas
        de série. Le serveur n'a besoin que de savoir où frapper. */
-    const rep = await supa.from("push_subs").upsert(
-      { endpoint: sub.endpoint, abonnement: sub.toJSON(), maj: new Date().toISOString() },
-      { onConflict: "endpoint" });
-    if(rep && rep.error){ throw rep.error; }
-    settings.notif = true; saveSettings(); notifMiroir(); notifSync(); notifRafraichir();
+    /* UN SEUL APPEL, qui pose l'abonnement ET l'état. L'ancien code écrivait
+       l'abonnement seul et comptait sur notifSync() pour le reste — or ce
+       reste ne partait jamais (voir notifEcrire). */
+    if(!(await notifEcrire(supa, sub.endpoint, sub.toJSON()))){
+      throw new Error("inscription refusée");
+    }
+    settings.notif = true; saveSettings(); notifMiroir(); notifRafraichir();
     return true;
   } catch(e){
     settings.notif = false; saveSettings(); notifRafraichir();
@@ -13153,7 +13282,7 @@ async function notifCouper(){
     const sub = await reg.pushManager.getSubscription();
     if(sub){
       const supa = initSupa();
-      if(supa) await supa.from("push_subs").delete().eq("endpoint", sub.endpoint);
+      if(supa) await notifEffacer(supa, sub.endpoint);
       await sub.unsubscribe();
     }
   } catch(e){}
@@ -13918,7 +14047,7 @@ function nextQuestion(){
     compterPartie();   // solo ET groupe : c'est ici qu'on arrive au bout
     if(state.mode==="solo"){
       recordSoloResult();
-      if(state.daily){ recordDailyResult(); clearDailyProg(); }
+      if(state.daily){ clearDailyProg(); }
       // Mémorise les erreurs de CETTE partie pour « Réviser la dernière partie »
       if(!state.revision){ try { localStorage.setItem("bt_lastmiss", JSON.stringify(state.soloMissed.map(m=>qKey(m)))); } catch(e){} }
     }
@@ -14136,20 +14265,11 @@ function renderModeSelect(){
     ${(()=>{
       /* Ordre FIXE (Groupe / Solo / Ligne / Défi) : plus de tri par usage, les
          cartes ne bougent plus -> accueil prévisible. Toutes de taille identique. */
-      const dd = loadDaily(), dDone = dailyDoneToday(), dSk = dailyStreakShown(), dProg = dailyInProgress();
-      /* UNE SÉRIE QUI VA S'ÉTEINDRE SE DIT AVANT, PAS APRÈS. Mesuré : une série
-         de 5 jours passe de 5 à 0 à l'affichage dès qu'on saute une journée, et
-         elle disparaît sans un mot — alors qu'elle reste rattrapable pendant
-         TOUT le jour en cours. On le dit donc tant qu'il est temps.
-         Le ton compte autant que l'information : « Garde ta série » invite, là
-         où un compte à rebours ferait peur. Le jeu propose, il ne culpabilise
-         pas — et il ne réclame aucune permission de notification pour ça, donc
-         il se comporte exactement pareil sur iOS et sur Android.
-         La condition dit précisément « série d'hier, pas encore jouée
-         aujourd'hui » : dailyStreakShown() ne renvoie un nombre que si le
-         dernier défi date d'aujourd'hui ou d'hier, et dDone écarte le premier
-         cas. À partir de 2 jours seulement : une « série d'un jour » n'en est
-         pas une, et l'annoncer sonnerait faux. */
+      /* LE DÉFI DU JOUR EST PARTI, ET AVEC LUI TOUT SON ÉCHAFAUDAGE.
+         Il restait ici une quinzaine de lignes — état du jour, série affichée,
+         partie en cours, sous-titre « Réussi 2/9 · À demain » — qui ne
+         servaient plus qu'à une carte qui n'existe plus. Du code mort sur un
+         accueil est un piège : il se lit comme s'il comptait. */
       /* LES SOUS-TITRES DES CARTES — UNE SEULE FORME.
          Ils mélangeaient trois registres : une liste de noms sous Groupe, une
          phrase à l'impératif sous Solo, un groupe nominal sous En ligne — et
@@ -14166,17 +14286,9 @@ function renderModeSelect(){
          Deux fautes corrigées au passage : « à demain » prenait une minuscule
          en tête de proposition, et « 0 bonnes réponses » s'accordait au
          pluriel alors qu'en français zéro et un commandent le singulier. */
-      const doneTxt = dDone ? (T('R\u00e9ussi') + ' ' + dd.score + '/' + dd.total + '\u00a0\u00b7 ' + T('\u00c0 demain'))
-        : (dProg ? T('Partie en cours')
-        /* LE NOMBRE EST DÉJÀ SUR LA PASTILLE, À TRENTE PIXELS. « Série de 365
-           jours à garder » demandait 164 px pour 137 disponibles sur un petit
-           Android : la phrase était rognée. Même faute que sur « À revoir » ce
-           matin — dire deux fois le même nombre, et déborder pour cela. */
-        : (dSk >= 2 ? T('S\u00e9rie \u00e0 garder') : T('Le m\u00eame pour tous, chaque jour')));
       const group = `<button class="mode-card" onclick="selectMode('group')"><span class="mode-icon group">${ICONS.users}</span><span class="mode-text"><span class="mode-title">${T("Mode Groupe")}</span><span class="mode-desc">${T("En équipes, sur un seul écran")}</span></span><span class="chev">${ICONS.chevronRight}</span></button>`;
       const solo = `<button class="mode-card" onclick="selectMode('solo')"><span class="mode-icon solo">${ICONS.user}</span><span class="mode-text"><span class="mode-title">${T("Mode Solo")}</span><span class="mode-desc">${T("Une partie, à ton rythme")}</span></span><span class="chev">${ICONS.chevronRight}</span></button>`;
       const online = `<button class="mode-card" onclick="openOnline()"><span class="mode-icon online">${ICONS.bolt}</span><span class="mode-text"><span class="mode-title">${T("Jouer en ligne")}</span><span class="mode-desc">${T("Jusqu'à 8 joueurs, en direct")}</span></span><span class="chev">${ICONS.chevronRight}</span></button>`;
-      const daily = `<button class="daily-card${dDone?' done':''}" onclick="tapDefi(event)"><span class="dc-ico">${ICONS.flame}</span><span class="dc-txt"><b>${T("Défi du jour")}</b><small>${doneTxt}</small></span>${dSk>0 ? `<span class="dc-streak">${ICONS.flame}${dSk}</span>` : ''}${dDone ? `<span class="chev dc-check">${ACH_CHECK}</span>` : `<span class="chev">${ICONS.chevronRight}</span>`}</button>`;
       /* ===== LA CARTE « À REVOIR » NE PART JAMAIS =====
          Elle n'apparaissait que les jours où quelque chose arrivait à échéance
          — « je veux qu'il reste en continu et je ne veux pas qu'il disparaisse
@@ -14206,7 +14318,16 @@ function renderModeSelect(){
       const revPast = nRev > 0 ? `<span class="dc-streak rv-n">${nRev}</span>`
         : (nCarnet > 0 ? `<span class="dc-streak rv-n calme">${nCarnet}</span>` : "");
       const revoir = `<button class="daily-card revoir-card" onclick="ouvrirRevoir()"><span class="dc-ico rv-ico">${ICONS.bookOpen}</span><span class="dc-txt"><b>${T("À revoir")}</b><small>${revTxt}</small></span>${revPast}<span class="chev">${ICONS.chevronRight}</span></button>`;
-      return group + solo + online + daily + revoir;
+      /* ===== LE DÉFI DU JOUR N'EST PLUS UNE CARTE =====
+         « Le défi du jour ne sert à rien si ce n'est activer les flammes. Fais
+         en sorte d'activer les flammes sur d'autres modes, et retire-le : ça
+         prendra moins de place sur l'accueil et ce sera plus cohérent. »
+         C'est juste. Une carte qui n'existe que pour ouvrir un compteur n'est
+         pas un mode de jeu, c'est un péage. La flamme s'allume désormais en
+         JOUANT, quel que soit le mode (voir compterPartie), et elle se lit sur
+         la rangée des sept jours, en bas. L'accueil passe de cinq cartes à
+         quatre, et chacune des quatre est un vrai endroit où aller. */
+      return group + solo + online + revoir;
     })()}
     ${(()=>{ const s = parcoursSummary(); return `
     <button class="parcours-card" onclick="openParcours()">
@@ -14759,7 +14880,7 @@ function renderOnlineJoin(){
       <p class="online-hero-sub">Demande à ton ami le code à 4 caractères de sa partie.</p>
     </div>
     <input class="code-input" id="joinCode" maxlength="4" placeholder="ABCD" autocapitalize="characters" autocomplete="off" enterkeyhint="go" oninput="this.value=this.value.toUpperCase().replace(/[^A-Z0-9]/g,'')" onkeydown="if(event.key==='Enter'){event.preventDefault();this.blur();joinRoom(this.value,false);}">
-    ${net.error?`<div class="err-msg">${escapeHtml(net.error)}</div>`:""}
+    <div class="err-msg${net.error?"":" vide"}">${net.error?escapeHtml(net.error):""}</div>
     <div class="flex-sp"></div>
     <button class="btn-primary" onclick="joinRoom(document.getElementById('joinCode').value,false)">Rejoindre</button>
   `;
@@ -15285,7 +15406,7 @@ document.addEventListener("click", (e)=>{
    transforms compris) : la photo peinte reste donc collée au décor même pendant
    qu'une carte glisse — ce qui autorise de vraies transitions animées « à la
    Apple » sans le moindre décalage du verre. */
-const GLASS_SEL = ".app-header,.card,.mode-card,.question-card,.solo-summary,.solo-score-bar,.score-pane,.option-btn,.btn-primary,.btn-next,.btn-replay,.fact-card,.tier-chip,.q-counter,.streak-chip,.chip,.icon-btn,.btn-reveal,.btn-newgame,.award-btn,.presence-card,.me-row,.online-action,.searching-card,.waiting-card,.info-card,.vs-row,.len-chip,.duel-scorebar,.timer-chip,.dr-side,.rank-row,.text-input,.code-input,.fs-hint,.modal-card,.btn-ghost,.fsh-close,.settings-sheet,.hero-verse-card,.modal-btn.ok,.modal-btn.cancel,.leave-banner,.end-medal,.adj-btn,.waiting-note,.rules,.btn-review,.daily-card,.dc-streak,.btn-invite,.creator-badge,.sheet-done,.set-go,.share-btn,.rev-item,.parcours-card,.parcours-sum,.tst-head";
+const GLASS_SEL = ".app-header,.card,.mode-card,.question-card,.solo-summary,.solo-score-bar,.score-pane,.option-btn,.btn-primary,.btn-next,.btn-replay,.fact-card,.tier-chip,.q-counter,.streak-chip,.chip,.icon-btn,.btn-reveal,.btn-newgame,.award-btn,.presence-card,.me-row,.online-action,.searching-card,.waiting-card,.info-card,.vs-row,.len-chip,.duel-scorebar,.timer-chip,.dr-side,.rank-row,.text-input,.code-input,.fs-hint,.modal-card,.btn-ghost,.fsh-close,.settings-sheet,.hero-verse-card,.modal-btn.ok,.modal-btn.cancel,.leave-banner,.end-medal,.adj-btn,.waiting-note,.rules,.btn-review,.daily-card,.dc-streak,.sem-flamme,.btn-invite,.creator-badge,.sheet-done,.set-go,.share-btn,.rev-item,.parcours-card,.parcours-sum,.tst-head";
 const GLASS_SKIP = ".timer-chip.low,.btn-primary:disabled,.btn-next:disabled";
 /* RÉFRACTION VIVANTE : le verre est calé sur la position RÉELLE à l'écran et
    ré-aligné image par image pendant les mouvements -> quand une carte glisse
@@ -16257,7 +16378,16 @@ let largeurAuRepos = window.innerWidth || document.documentElement.clientWidth |
    On tient donc la géométrie de repos jusqu'à ce qu'il ait fini, et on repose
    la page UNE fois à la fin. Comme la hauteur retrouvée est celle d'avant, il
    n'y a strictement rien à voir : le jeu n'a pas bougé du début à la fin. */
-const DESCENTE_CLAVIER = 380;
+/* COMBIEN DE TEMPS UN CLAVIER MET-IL À S'EN ALLER, UNE FOIS LE FOCUS PARTI ?
+   380 ms était un pari, et il se perdait : mesuré sur le retrait d'un joueur
+   pendant la saisie, le clavier était encore à l'écran à 593 ms alors que le
+   focus était parti depuis le premier instant. Le jeu adoptait alors la
+   hauteur du clavier comme hauteur de repos — #app tombait de 852 à 516 px.
+   Cette valeur ne sert plus qu'à UNE chose : dire « un clavier est peut-être
+   encore là ». Elle couvre donc largement la descente la plus lente observée,
+   et c'est sans coût : pendant ce temps, une fenêtre qui GRANDIT est adoptée
+   immédiatement de toute façon (règle « ça remonte : c'est vrai »). */
+const DESCENTE_CLAVIER = 1200;
 let sortieDeChamp = 0, reposeApresClavier = 0;
 function clavierDevant(){
   try{
@@ -16310,9 +16440,23 @@ function hauteurDeRepos(){
   if(!hauteurAuRepos || !h) { prendre(); return hauteurAuRepos; }
   if(large !== largeurAuRepos){ prendre(); return hauteurAuRepos; }   // vraie géométrie
   if(h >= hauteurAuRepos){ prendre(); return hauteurAuRepos; }        // ça remonte : c'est vrai
-  /* Plus petit, à largeur constante : un recouvrement. On ne cède que s'il
-     s'installe, et jamais tant qu'un champ est en jeu. */
-  if(clavierDevant()){ retreciDepuis = 0; return hauteurAuRepos; }
+  /* ===== PLUS PETIT À LARGEUR CONSTANTE : QUI A MANGÉ LA PLACE ? =====
+     Deux causes possibles, et elles ne se traitent pas pareil :
+       — un CLAVIER (ou sa descente, quand le focus est déjà parti) : on ne
+         cède rien, jamais, sinon tout le jeu rétrécit sous le doigt ;
+       — une BARRE D'ADRESSE qui se replie, une barre système qui disparaît :
+         c'est de la vraie place gagnée, et il faut la prendre TOUT DE SUITE.
+     Ma première version attendait une seconde et demie dans les DEUX cas. Le
+     banc de l'accueil l'a dit sans détour : à 560 px la bande des sept jours
+     se retrouvait à 748 px, soit très loin sous le pli — le jeu restait
+     dimensionné pour la fenêtre d'avant pendant toute l'attente. Faire
+     attendre le joueur une seconde et demie pour un repli de barre d'adresse
+     est un défaut que j'avais introduit en en corrigeant un autre.
+     On ne demande donc confirmation QUE lorsqu'un champ est, ou vient d'être,
+     en jeu. Partout ailleurs, on prend la place immédiatement. */
+  if(!clavierDevant()){ prendre(); return hauteurAuRepos; }
+  /* Un champ est en jeu : on tient bon, et on ne cède que si le rétrécissement
+     S'INSTALLE bien au-delà de toute descente de clavier. */
   const t = Date.now();
   if(!retreciDepuis){ retreciDepuis = t; return hauteurAuRepos; }
   if(t - retreciDepuis < RETRECI_CONFIRME) return hauteurAuRepos;

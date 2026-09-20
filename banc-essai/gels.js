@@ -38,8 +38,10 @@ function verifier(nom, obtenu, attendu){
       return d.getFullYear()+'-'+p(d.getMonth()+1)+'-'+p(d.getDate()); };
     window.__poser = (o)=>{ localStorage.setItem('bt_daily', JSON.stringify(o)); };
     window.__lire  = ()=> JSON.parse(localStorage.getItem('bt_daily')||'{}');
-    /* Jouer le défi du jour = ce que fait recordDailyResult, avec un score. */
-    window.__jouer = ()=>{ state.soloCorrect = 7; state.questions = new Array(9); recordDailyResult(); };
+    /* Jouer une partie = ce que fait marquerJourJoue, avec un score.
+       (Anciennement recordDailyResult : depuis la v250, la journée est marquée
+       par N'IMPORTE QUELLE partie, plus seulement par le Défi du jour.) */
+    window.__jouer = ()=>{ state.soloCorrect = 7; state.questions = new Array(9); marquerJourJoue(); };
   });
 
   const ev = (f, ...a) => p.evaluate(f, ...a);
