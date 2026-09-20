@@ -14814,13 +14814,24 @@ function renderOnline(){
       <span class="presence-num">${n}</span>
       <span class="presence-lbl">${n>1?"connectés":"connecté"}</span>
     </div>
-    ${net.error?`<div class="err-msg" style="margin:0 0 0.9rem">${escapeHtml(net.error)}</div>`:""}
     <button class="me-row" onclick="openProfile()">
       ${avatarHtml(profile.name, profile.color, 2.05, profile.isCreator)}
       <span class="me-name">${escapeHtml(profile.name)}</span>
       ${profile.isCreator?creatorBadge():`<span class="me-edit">Modifier</span>`}
     </button>
     <div class="flex-sp"></div>
+    <!-- ===== LE MESSAGE SE MET OÙ EST LE REMÈDE =====
+         Il était posé entre « 1 connecté » et la ligne du joueur : il coupait
+         en deux le seul groupe de l'écran qui dise QUI EST LÀ, et il n'était
+         à côté d'aucun bouton permettant de réessayer. Mesuré, il poussait en
+         plus les trois cartes de 36 px vers le bas en apparaissant.
+         Il descend donc juste au-dessus des trois actions — « la connexion a
+         échoué, réessaie » et le bouton pour réessayer se touchent — et sa
+         place est RÉSERVÉE, vide comme pleine : la mise en page est la même
+         qu'il y ait un message ou non, rien ne bouge jamais. C'est le vide de
+         l'écran qui se resserre un peu, pas le contenu qui se déplace.
+         Même mécanique que « Code invalide » dans Rejoindre (v250). -->
+    <div class="err-msg${net.error?"":" vide"}">${net.error?escapeHtml(net.error):""}</div>
     ${net.searching ? `
       <div class="searching-card${searchNew?' reveal-in':''}">
         <div class="spinner"></div>
