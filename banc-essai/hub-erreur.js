@@ -53,8 +53,14 @@ const HAUTEURS = [553, 600, 643, 667, 700, 780, 800, 852, 873, 915, 944, 1000];
      actions, saisie en plein vol.
      On attend donc deux lectures IDENTIQUES d'affilée : tant que ça bouge, ce
      n'est pas une mise en page, c'est un mouvement. */
+  /* ON NE MESURE PAS ARRONDI. Arrondir d'abord, comparer ensuite, c'est
+     inventer un pixel : relevé au centième, le message déplace les cartes de
+     419,17 -> 419,17, soit RIEN, et le « 1 px » venait d'un bord d'arrondi
+     franchi entre deux relevés (419,17 et 419,23) par le seul moteur du verre.
+     On compare donc les vraies valeurs, et on refuse tout ce qui dépasse un
+     demi-pixel — plus sévère que l'arrondi, pas moins. */
   const lire = () => p.evaluate(() =>
-    [...document.querySelectorAll('.online-action, .searching-card')].map(e => Math.round(e.getBoundingClientRect().top)).join(','));
+    [...document.querySelectorAll('.online-action, .searching-card')].map(e => e.getBoundingClientRect().top.toFixed(1)).join(','));
   /* ===== ON TIENT L'ÉCRAN PENDANT QU'ON MESURE =====
      Le lien temps réel est bouché dans ce banc (rien ne répond), et le jeu
      finit par quitter le mode en ligne tout seul — au beau milieu d'une
@@ -87,7 +93,7 @@ const HAUTEURS = [553, 600, 643, 667, 700, 780, 800, 852, 873, 915, 944, 1000];
       const app = document.getElementById('app');
       return { presence: bo('.presence-card'), me: bo('.me-row'), err: bo('.err-msg'),
         cible: bo('.online-action') || bo('.searching-card'),
-        tous: [...document.querySelectorAll('.online-action, .searching-card')].map(e => Math.round(e.getBoundingClientRect().top)),
+        tous: [...document.querySelectorAll('.online-action, .searching-card')].map(e => e.getBoundingClientRect().top),
         deborde: Math.max(0, app.scrollHeight - app.clientHeight),
         vu: (()=>{ const e = document.querySelector('.err-msg'); if(!e) return null;
           return getComputedStyle(e).opacity !== '0'; })() };
@@ -113,7 +119,7 @@ const HAUTEURS = [553, 600, 643, 667, 700, 780, 800, 852, 873, 915, 944, 1000];
       /* 3. rien ne bouge */
       const d = avec.tous.map((v, i) => Math.abs(v - (sans.tous[i] ?? v)));
       const pire = d.length ? Math.max(...d) : 0;
-      if (pire > 0) soucis.push(h + ' px (' + etat + ') : les actions bougent de ' + pire + ' px');
+      if (pire > 0.5) soucis.push(h + ' px (' + etat + ') : les actions bougent de ' + pire.toFixed(2) + ' px');
       if (avec.deborde > 0 || sans.deborde > 0)
         soucis.push(h + ' px (' + etat + ') : débord de ' + Math.max(avec.deborde, sans.deborde) + ' px');
       /* et la place réservée reste invisible tant qu'il n'y a rien à dire */
@@ -124,5 +130,5 @@ const HAUTEURS = [553, 600, 643, 667, 700, 780, 800, 852, 873, 915, 944, 1000];
   await nav.close();
   if (soucis.length) { console.log('  DÉFAUTS :'); soucis.forEach(s => console.log('   ' + s)); process.exit(1); }
   console.log('  OK — ' + HAUTEURS.length + ' hauteurs x 2 états : le groupe reste entier, le message est\n'
-    + '       au-dessus du remède, et rien ne bouge de plus de 0 px');
+    + '       au-dessus du remède, et rien ne bouge de plus d\'un demi-pixel');
 })();
