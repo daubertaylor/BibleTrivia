@@ -661,17 +661,11 @@
     backdrop-filter:blur(12px) saturate(160%); -webkit-backdrop-filter:blur(12px) saturate(160%); }
   /* Aujourd'hui : plus lumineux, jamais cerné — le jeu n'a aucun rebord de couleur. */
   .sj.auj{ background:rgba(255,255,255,0.3); color:#fff; }
-  /* ===== LES JOURS NE SONT PLUS DE LA COULEUR DE LA FLAMME =====
-     « La flamme et les 7 jours devraient être d'une couleur différente. » Ils
-     étaient du même or : sept pastilles dorées plus une pilule dorée font une
-     masse d'or où la flamme — qui est le compteur, donc ce qu'on cherche des
-     yeux — ne ressort plus du tout.
-     Les jours joués passent au VIOLET. Il se détache franchement sur un décor
-     chaud (l'or, lui, s'y fondait), il ne se confond pas avec le bleu d'un
-     jour gelé, et c'est déjà la couleur de « À revoir » : celle du travail
-     accompli. L'or reste à la flamme seule, et redevient ce qu'il doit être :
-     le seul point chaud de la rangée. */
-  .sj.fait{ background:linear-gradient(160deg, #A78BFA, #7C4DE0); color:#fff; text-shadow:0 1px 2px rgba(48,20,96,0.32); }
+  /* L'or des jours joués : celui d'origine. J'avais tenté le violet pour
+     détacher la flamme de la rangée — « les couleurs que tu veux rajouter, je
+     n'aime pas du tout, il faut que ça reste cohérent ». La palette du jeu
+     passe avant mon idée ; on revient à l'or. */
+  .sj.fait{ background:linear-gradient(160deg, #FFC64F, #F09A18); color:#fff; text-shadow:0 1px 2px rgba(122,78,4,0.3); }
   /* UN JOUR GELÉ N'EST PAS UN JOUR JOUÉ, et il n'est pas non plus un jour
      perdu : il a sa propre couleur, froide, à côté de l'or des jours joués.
      Aucun rebord — la case gelée se distingue par sa MATIÈRE, comme tout le
@@ -1712,33 +1706,20 @@
      le bouton, elle s'en va sans rétrécir. */
   @keyframes ondeOut{ from{ transform:scale(1); opacity:1; } to{ transform:scale(1); opacity:0; } }
   button.onde-part::before, .mode-card.onde-part::before{ animation:ondeOut var(--onde-duree) cubic-bezier(0.4,0,1,1) forwards; }
-  /* ===== UNE PUCE SE REMPLIT À 100 %, PAS À 28 % =====
-     « Lorsque je sélectionne, il faut que les sélectionnages se fassent à
-     100 %. J'ai bien dit 100 %. » C'était juste, et je n'avais pas vu le vrai
-     obstacle : ce n'était pas un réglage de force, c'était un ÉTAGE.
-     L'onde est un pseudo-élément posé AU-DESSUS du texte (z-index 3). Une
-     couleur pleine à cet étage-là effacerait purement et simplement le libellé
-     — d'où les 28 % d'opacité, qui laissaient lire « Courte » à travers, et
-     d'où ce rose pâle qui ne ressemblait à rien.
-     On descend donc l'onde SOUS le texte (z-index -1, c'est-à-dire au-dessus
-     du fond de la puce et en dessous de son libellé), et là, plus rien
-     n'interdit le corail plein. La puce appuyée devient exactement la puce
-     sélectionnée : même corail, même texte blanc, aucune marche entre les
-     deux. Le blanc arrive avec le même retard de 0,14 s que pour la
-     sélection, le temps que le remplissage ait couvert la puce — sinon on
-     lirait du blanc sur du crème pendant un cinquième de seconde. */
-  .chip, .len-chip{ --press-tint: rgb(236,60,26); }
-  /* SON BORD EST CELUI DE LA PUCE, SANS RIEN À ALIGNER. La puce porte une
-     découpe (overflow:clip) qui respecte son rayon : c'est elle qui taille le
-     remplissage, pas le rayon du remplissage. Une seule courbe, donc aucune
-     frange possible dans les coins — vérifié à l'image, 2,6 d'excès de
-     clarté sur l'arc là où le seuil est à 12 (banc coins.js).
-     (J'y avais d'abord écrit « inset:-6px » : sans effet, « button.has-gs »
-     l'emporte en spécificité. Le laisser aurait été écrire une intention que
-     le navigateur n'applique pas.) */
-  .chip::before, .len-chip::before{ z-index:-1; }
-  .chip.onde, .chip.onde-part, .len-chip.onde, .len-chip.onde-part{
-    color:#fff; transition:color 0s linear 0.14s; }
+  /* ===== LE REMPLISSAGE EST ROSE, ET IL PREND TOUT LE BOUTON =====
+     « Je veux le truc de remplissage en rose, comme c'était, mais juste qu'il
+     remplisse parfaitement les boutons que je sélectionne. »
+     J'avais lu « 100 % » comme une OPACITÉ et posé un corail plein, avec le
+     texte en blanc par-dessus. C'était un contresens : les cent pour cent
+     parlaient de la SURFACE couverte, pas de la force de la couleur. Le voile
+     rose revient donc exactement comme il était, et l'onde repasse au-dessus
+     du texte — c'est sa place depuis toujours, et c'est ce qui permet aux
+     cartes de mode de ne pas se faire découper par leur pastille d'icône
+     (voir banc-essai/plein.js).
+     Ce qui RESTE de l'épisode : la couverture, elle, est bien vérifiée à
+     0,00 % de trou, et le banc des coins mesure maintenant l'arc seul au lieu
+     de tout un carré — deux gains qu'on garde. */
+  .chip, .len-chip{ --press-tint: rgba(238,74,40,0.28); }
   /* Sur les surfaces DÉJÀ corail, l'onde se fait blanche : sinon rien ne se
      verrait. Même logique, feedback identique. */
   .btn-primary, .btn-next, .btn-replay, .modal-btn.ok, .sheet-done, .set-go,
