@@ -113,9 +113,14 @@ const HAUTEURS = [553, 600, 643, 667, 700, 780, 800, 852, 873, 915, 944, 1000];
       const colle = avec.me && avec.presence && (avec.me.t - avec.presence.b) < 30;
       if (!colle) soucis.push(h + ' px (' + etat + ') : le message coupe encore la carte de présence de la ligne du joueur ('
         + (avec.me ? avec.me.t - avec.presence.b : '?') + ' px entre les deux)');
-      /* 2. le message est au-dessus de ce qu'il faut toucher pour réessayer */
-      if (avec.cible && avec.err.b > avec.cible.t + 1)
-        soucis.push(h + ' px (' + etat + ') : le message est SOUS les actions');
+      /* 2. il est EN HAUT DE PAGE, sous le titre : au-dessus de la carte de
+            présence, donc bien au-dessus des actions. Collé aux trois boutons,
+            il avait l'air d'appartenir au premier — « il est trop dans les
+            boutons ». Une alerte qui parle de l'écran se met sous le titre. */
+      if (avec.presence && avec.err.b > avec.presence.t + 1)
+        soucis.push(h + ' px (' + etat + ') : le message n\'est plus en haut de page (il passe sous « connecté »)');
+      if (avec.cible && avec.err.b > avec.cible.t - 40)
+        soucis.push(h + ' px (' + etat + ') : le message colle aux actions');
       /* 3. rien ne bouge */
       const d = avec.tous.map((v, i) => Math.abs(v - (sans.tous[i] ?? v)));
       const pire = d.length ? Math.max(...d) : 0;
