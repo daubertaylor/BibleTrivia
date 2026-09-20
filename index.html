@@ -636,7 +636,15 @@
   .sem-flamme.eteinte{ --glass-tint: rgba(255,255,255,0.16); color:rgba(255,255,255,0.8); box-shadow:none; text-shadow:0 1px 4px rgba(0,0,0,0.4); }
   .sem-t{ font-family:'Poppins',sans-serif; font-size:0.6rem; font-weight:600; letter-spacing:0.09em; text-transform:uppercase; color:rgba(255,255,255,0.72); text-shadow:0 1px 8px rgba(0,0,0,0.5); }
   .sem-j{ display:flex; gap:0.4rem; }
-  .sj{ width:2.05rem; height:2.05rem; border-radius:var(--r-s); display:flex; align-items:center; justify-content:center;
+  /* MÊME HAUTEUR QUE LA FLAMME. « La flamme en bas a l'air beaucoup trop
+     grosse » — elle faisait 1,34 fois la hauteur d'un carré, parce qu'elle a
+     dû passer à 44 px pour être touchable et que les carrés étaient restés à
+     2,05 rem. Ce n'est pas la flamme qui était trop grosse, c'est la rangée
+     qui n'allait plus avec elle : on les remet à la même hauteur, et les deux
+     redeviennent une seule famille. Les carrés deviennent des pastilles un peu
+     plus hautes que larges — la largeur, elle, ne bouge pas : à sept plus les
+     écarts, elle est déjà au bord de ce qui tient sur un écran de 360 px. */
+  .sj{ width:2.05rem; height:2.75rem; border-radius:var(--r-s); display:flex; align-items:center; justify-content:center;
     font-family:'Poppins',sans-serif; font-size:0.72rem; font-weight:700; letter-spacing:0.01em;
     color:rgba(255,255,255,0.78); background:rgba(255,255,255,0.15);
     backdrop-filter:blur(12px) saturate(160%); -webkit-backdrop-filter:blur(12px) saturate(160%); }
@@ -1683,11 +1691,25 @@
      le bouton, elle s'en va sans rétrécir. */
   @keyframes ondeOut{ from{ transform:scale(1); opacity:1; } to{ transform:scale(1); opacity:0; } }
   button.onde-part::before, .mode-card.onde-part::before{ animation:ondeOut var(--onde-duree) cubic-bezier(0.4,0,1,1) forwards; }
-  /* LA PUCE DE RÉGLAGE SE REMPLIT POUR DE BON, elle ne se teinte pas.
-     (« .len-chip » garde une teinte, elle : son onde reste au-dessus de son
-     texte, donc elle doit rester translucide. C'est l'étage qui décide de la
-     couleur possible, pas l'inverse.) */
-  .chip, .len-chip{ --press-tint: rgba(238,74,40,0.28); }
+  /* ===== UNE PUCE SE REMPLIT À 100 %, PAS À 28 % =====
+     « Lorsque je sélectionne, il faut que les sélectionnages se fassent à
+     100 %. J'ai bien dit 100 %. » C'était juste, et je n'avais pas vu le vrai
+     obstacle : ce n'était pas un réglage de force, c'était un ÉTAGE.
+     L'onde est un pseudo-élément posé AU-DESSUS du texte (z-index 3). Une
+     couleur pleine à cet étage-là effacerait purement et simplement le libellé
+     — d'où les 28 % d'opacité, qui laissaient lire « Courte » à travers, et
+     d'où ce rose pâle qui ne ressemblait à rien.
+     On descend donc l'onde SOUS le texte (z-index -1, c'est-à-dire au-dessus
+     du fond de la puce et en dessous de son libellé), et là, plus rien
+     n'interdit le corail plein. La puce appuyée devient exactement la puce
+     sélectionnée : même corail, même texte blanc, aucune marche entre les
+     deux. Le blanc arrive avec le même retard de 0,14 s que pour la
+     sélection, le temps que le remplissage ait couvert la puce — sinon on
+     lirait du blanc sur du crème pendant un cinquième de seconde. */
+  .chip, .len-chip{ --press-tint: rgb(236,60,26); }
+  .chip::before, .len-chip::before{ z-index:-1; }
+  .chip.onde, .chip.onde-part, .len-chip.onde, .len-chip.onde-part{
+    color:#fff; transition:color 0s linear 0.14s; }
   /* Sur les surfaces DÉJÀ corail, l'onde se fait blanche : sinon rien ne se
      verrait. Même logique, feedback identique. */
   .btn-primary, .btn-next, .btn-replay, .modal-btn.ok, .sheet-done, .set-go,
@@ -2882,15 +2904,15 @@
        (max-height:750px) : la ligne est gardée ici pour que ce bloc reste
        lisible seul, mais elle ne fait plus le travail à elle seule. */
     .home-verse{ display:none; }
-    /* ÉCRAN COURT : ON PERD LES SEPT CARRÉS, PAS LA FLAMME.
-       Avant, cette ligne masquait toute la rangée — et c'était sans dommage,
-       la pastille vivant alors sur la carte du Défi. Depuis que la flamme
-       habite ici, masquer la rangée reviendrait à masquer la flamme : un
-       joueur sur petit écran ne verrait plus du tout sa série. On garde donc
-       le compte, on laisse les carrés (leur détail se lit dans la feuille). */
-    .semaine{ display:flex; gap:0; }
-    .sem-j{ display:none; }
-    .sem-h .sem-t{ display:none; }
+    /* ÉCRAN COURT : LES SEPT CARRÉS RESTENT, EUX AUSSI.
+       Ils étaient masqués ici du temps où l'accueil portait SIX cartes — il
+       fallait bien prendre la place quelque part. Le Défi du jour parti, il
+       reste 59 px inutilisés sous la rangée sur un iPhone SE, et les carrés
+       en demandent 51 : ils tiennent, sans rien serrer.
+       Et c'est mieux ainsi. « Le jeu doit être le même pour tout le monde,
+       peu importe leur réglage » — un accueil qui perd sa semaine en dessous
+       de 700 px, c'est deux jeux différents selon le téléphone. */
+    .semaine{ display:flex; flex-direction:column; gap:0.3rem; }
     /* ÉCRAN COURT = ÉCRAN DÉLESTÉ, DONC LE LOGO PEUT ÊTRE PLUS GRAND.
        Le plafond de hauteur du logo (12,5 % de la hauteur utile) est calculé
        pour la mise en page COMPLÈTE. Ici le verset et la bande des sept jours
@@ -2916,7 +2938,9 @@
     html .hero-zone{ height:clamp(4.6rem, min(calc(28.7 * var(--lw)), calc(12.6 * var(--hu))), 8rem); margin-bottom:0.35rem; }
     /* Le pied se resserre lui aussi : une note en bas de page, encore plus
        note quand la page est courte. */
-    .sj{ width:1.85rem; height:1.85rem; font-size:0.68rem; }
+    /* Plus étroits qu'ailleurs, mais de la MÊME HAUTEUR que la flamme :
+       c'est la hauteur qui fait la famille, pas la largeur. */
+    .sj{ width:1.85rem; height:2.75rem; font-size:0.68rem; }
     .sem-j{ gap:0.32rem; }
     .semaine{ gap:0.3rem; }
     .hero-title{ font-size:1.3rem; margin-bottom:0.15rem; }
@@ -3090,7 +3114,36 @@
      compris, toute la déclaration est ignorée, donc retour au comportement
      d'avant : rien de cassé). */
   .accueil{ justify-content:safe flex-end; }
-  .home-sp-bot{ flex:1.3 1 0; min-height:0; max-height:min(calc(12.3 * var(--hu)), 8.5rem); }
+  /* LE BLOC DES CARTES PREND LA PLACE, ET LA PARTAGE.
+     Souple (flex:1) et « space-between » : le surplus se répartit à parts
+     égales dans les quatre écarts. « gap » est le plancher, jamais moins.
+     Les marges des cartes passent donc à zéro — deux mécaniques d'écart pour
+     la même chose, c'est ainsi qu'on se retrouve avec des rythmes qui ne
+     correspondent à rien. */
+  /* SOUPLE, POUR QUE SES ENFANTS PUISSENT PARTAGER. En « flex:0 1 auto » le
+     bloc ne prenait que la hauteur de son contenu : le surplus restait
+     dehors et remontait tout entier au-dessus du logo — le trou changeait
+     d'endroit, pas de taille. */
+  .home-cartes{ display:flex; flex-direction:column; flex:1 1 auto; min-height:0; }
+  /* LES CARTES PRENNENT LEUR PART, ELLES AUSSI. Cinq cartes et quatre
+     espaceurs, à parts égales : sur un grand écran la carte grandit un peu et
+     l'écart s'ouvre un peu, au lieu qu'un seul des deux encaisse tout. Le
+     plafond garde la carte dans ses proportions. */
+  .home-cartes > button{ flex:1 1 auto; max-height:clamp(3.6rem, calc(10 * var(--hu)), 5.8rem); }
+  .home-cartes > *{ margin-bottom:0 !important; }
+  /* Le PLANCHER (min-height) tient les cartes à distance sur un écran court ;
+     le PLAFOND (max-height) empêche la colonne de se disloquer sur un grand.
+     Entre les deux, ils prennent le surplus à parts égales. */
+  .ec-carte{ display:block; flex:1 1 0; min-height:clamp(0.62rem, calc(1.55 * var(--hu)), 0.95rem);
+    max-height:clamp(0.9rem, calc(3 * var(--hu)), 1.7rem); }
+  /* L'espaceur du bas n'est plus le seul à absorber : il redevient ce qu'il
+     doit être, une RESPIRATION DE SECTION entre les cartes et la rangée des
+     sept jours — de l'ordre de deux écarts de cartes, pas de huit. */
+  /* Sélecteur DOUBLE, pour la même raison que .home-sp-top juste au-dessus :
+     « .flex-sp » est déclaré plus bas dans la feuille et, à spécificité égale,
+     c'est l'ordre qui l'emporte. Écrit en simple, ce bloc était purement et
+     simplement ignoré — l'espaceur restait souple et reprenait tout le vide. */
+  .flex-sp.home-sp-bot{ flex:0 0 auto; min-height:0; height:clamp(0.9rem, calc(2.6 * var(--hu)), 1.7rem); }
   /* Pastilles alignées sur le LANGAGE des cartes de l'accueil : mêmes bords
      (bord à bord avec les cartes au-dessus), même rayon 16 px, même bordure,
      et le même écart de 16 px entre elles qu'entre les cartes. */
@@ -14262,6 +14315,18 @@ function renderModeSelect(){
       <p class="home-verse" id="homeVerse">${ligneAccueil()}</p>
     </div>
     <div class="flex-sp home-sp-top"></div>
+    <!-- ===== LES CINQ CARTES, DANS UN SEUL BLOC QUI RESPIRE =====
+         « Il y a un trou en bas qui est énorme. » Il l'était : 109 px sur un
+         15 Pro Max entre la dernière carte et la rangée des sept jours, contre
+         12 px entre deux cartes. Tout l'espace libéré par le Défi du jour
+         s'entassait à un seul endroit, parce qu'un seul élément était souple —
+         l'espaceur du bas — et que les écarts entre cartes, eux, étaient figés.
+         Le bloc ci-dessous est souple et répartit (space-between) : l'espace
+         en trop va dans les QUATRE écarts entre cartes, là où il se lit comme
+         de l'aération, au lieu de creuser un trou sous la dernière. Le « gap »
+         est le PLANCHER : sur un écran court, les cartes se resserrent jusqu'à
+         lui et pas en dessous. -->
+    <div class="home-cartes">
     ${(()=>{
       /* Ordre FIXE (Groupe / Solo / Ligne / Défi) : plus de tri par usage, les
          cartes ne bougent plus -> accueil prévisible. Toutes de taille identique. */
@@ -14327,9 +14392,18 @@ function renderModeSelect(){
          JOUANT, quel que soit le mode (voir compterPartie), et elle se lit sur
          la rangée des sept jours, en bas. L'accueil passe de cinq cartes à
          quatre, et chacune des quatre est un vrai endroit où aller. */
-      return group + solo + online + revoir;
+      /* ===== L'ESPACE EN TROP VA ENTRE LES CARTES, MAIS PAS SANS LIMITE =====
+         « space-between » seul répartissait tout le surplus et n'avait aucun
+         plafond : 45 px entre deux cartes sur un écran de 1000 px, et 30 px
+         sur un iPhone SE pour des cartes de 62 — la moitié de la carte. Un
+         écart qui dépasse la moitié de ce qu'il sépare ne relie plus rien.
+         On intercale donc des espaceurs SOUPLES ET PLAFONNÉS : ils prennent
+         le surplus à parts égales jusqu'à leur maximum, et ce qui reste
+         au-delà remonte au-dessus du logo, où il ne se voit pas. */
+      return [group, solo, online, revoir].join(`<i class="ec-carte"></i>`);
     })()}
     ${(()=>{ const s = parcoursSummary(); return `
+    <i class="ec-carte"></i>
     <button class="parcours-card" onclick="openParcours()">
       <span class="pc-ico">${ICONS.trophy}</span>
       <span class="pc-txt">
@@ -14338,6 +14412,7 @@ function renderModeSelect(){
       </span>
       <span class="chev">${ICONS.chevronRight}</span>
     </button>`; })()}
+    </div>
     <div class="flex-sp home-sp-bot"></div>
     ${semaineHtml()}
   `;
@@ -14809,6 +14884,17 @@ function renderOnline(){
   net._searchWas = net.searching;
   el.innerHTML = `
     ${renderHeader("En ligne", true, "leaveOnline()")}
+    <!-- ===== UNE ALERTE DE PAGE SE MET EN HAUT DE LA PAGE =====
+         Troisième place, et la bonne. Entre « 1 connecté » et la ligne du
+         joueur, elle coupait en deux le groupe qui dit QUI EST LÀ. Collée aux
+         trois actions, elle avait l'air d'appartenir au premier bouton —
+         « il est trop dans les boutons ». Elle ne parle pourtant ni d'un
+         bouton ni d'un joueur : elle parle de L'ÉCRAN. Sa place est donc sous
+         le titre, là où toute application pose ce qu'elle a à dire de la page
+         entière, et où rien ne peut se l'approprier.
+         Sa hauteur reste RÉSERVÉE, vide comme pleine : la page est identique
+         qu'il y ait un message ou non, rien ne bouge jamais d'un pixel. -->
+    <div class="err-msg${net.error?"":" vide"}">${net.error?escapeHtml(net.error):""}</div>
     <div class="presence-card">
       <span class="live-dot"></span>
       <span class="presence-num">${n}</span>
@@ -14820,18 +14906,6 @@ function renderOnline(){
       ${profile.isCreator?creatorBadge():`<span class="me-edit">Modifier</span>`}
     </button>
     <div class="flex-sp"></div>
-    <!-- ===== LE MESSAGE SE MET OÙ EST LE REMÈDE =====
-         Il était posé entre « 1 connecté » et la ligne du joueur : il coupait
-         en deux le seul groupe de l'écran qui dise QUI EST LÀ, et il n'était
-         à côté d'aucun bouton permettant de réessayer. Mesuré, il poussait en
-         plus les trois cartes de 36 px vers le bas en apparaissant.
-         Il descend donc juste au-dessus des trois actions — « la connexion a
-         échoué, réessaie » et le bouton pour réessayer se touchent — et sa
-         place est RÉSERVÉE, vide comme pleine : la mise en page est la même
-         qu'il y ait un message ou non, rien ne bouge jamais. C'est le vide de
-         l'écran qui se resserre un peu, pas le contenu qui se déplace.
-         Même mécanique que « Code invalide » dans Rejoindre (v250). -->
-    <div class="err-msg${net.error?"":" vide"}">${net.error?escapeHtml(net.error):""}</div>
     ${net.searching ? `
       <div class="searching-card${searchNew?' reveal-in':''}">
         <div class="spinner"></div>
