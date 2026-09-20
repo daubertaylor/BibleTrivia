@@ -125,8 +125,19 @@ const CLE = 'BOveRs4clrziwaZmqCy4re5c-vpsPRGRvw0mfUxP5D3u920HJW45-o7V1avGrvsKwFi
     ecrits: window.__banc.ecrits,
     allume: !!settings.notif,
   }));
-  const inscription = r.ecrits.find(e => e.op === 'upsert' && e.table === 'push_subs');
-  const suivi       = r.ecrits.find(e => e.op === 'update' && e.table === 'push_subs');
+  /* ===== CE QUI COMPTE N'EST PAS LE VERBE, C'EST QUE L'ÉTAT REPARTE =====
+     Ce banc cherchait un « update » pour reconnaître la mise à jour d'après
+     partie. Depuis la v251, l'inscription ET le suivi passent par le même
+     chemin — une fonction côté serveur, et en repli un « upsert » : le
+     téléphone n'écrit plus jamais ligne par ligne dans la table, c'est ce qui
+     permet de la fermer aux regards. Le banc annonçait donc « série et fuseau
+     transmis : NON » alors que l'état repartait bel et bien, sous un autre
+     verbe. On regarde ce qui compte : y a-t-il une SECONDE écriture, après la
+     partie, qui porte le jour de la dernière partie ? */
+  const ecrituresEtat = r.ecrits.filter(e =>
+    (e.op === 'upsert' || e.op === 'update' || e.op === 'rpc') && e.table === 'push_subs');
+  const inscription = ecrituresEtat[0];
+  const suivi       = ecrituresEtat.slice(1).find(e => Object.keys(e.ligne || {}).includes('vu'));
 
   /* Extinction : la ligne doit partir. */
   await p.evaluate(() => setNotif(false));

@@ -1707,6 +1707,14 @@
      sélection, le temps que le remplissage ait couvert la puce — sinon on
      lirait du blanc sur du crème pendant un cinquième de seconde. */
   .chip, .len-chip{ --press-tint: rgb(236,60,26); }
+  /* SON BORD EST CELUI DE LA PUCE, SANS RIEN À ALIGNER. La puce porte une
+     découpe (overflow:clip) qui respecte son rayon : c'est elle qui taille le
+     remplissage, pas le rayon du remplissage. Une seule courbe, donc aucune
+     frange possible dans les coins — vérifié à l'image, 2,6 d'excès de
+     clarté sur l'arc là où le seuil est à 12 (banc coins.js).
+     (J'y avais d'abord écrit « inset:-6px » : sans effet, « button.has-gs »
+     l'emporte en spécificité. Le laisser aurait été écrire une intention que
+     le navigateur n'applique pas.) */
   .chip::before, .len-chip::before{ z-index:-1; }
   .chip.onde, .chip.onde-part, .len-chip.onde, .len-chip.onde-part{
     color:#fff; transition:color 0s linear 0.14s; }
@@ -1978,18 +1986,31 @@
   .searching-txt{ font-weight:600; font-size:0.95rem; color:var(--ink); }
   .opp-progress{ margin-top:0.5rem; font-size:0.85rem; color:var(--ink-soft); }
 
-  .code-hero{ text-align:center; padding:0.5rem 1rem 1rem; }
-  .code-label{ text-transform:uppercase; letter-spacing:0.14em; font-size:0.8rem; font-weight:700; color:rgba(255,255,255,0.85); text-shadow:0 1px 6px rgba(0,0,0,0.4); }
-  .code-big{ font-family:'Poppins',sans-serif; font-weight:700; font-size:2.55rem; letter-spacing:0.38rem; color:#fff; margin:0.25rem 0 0.25rem 0.38rem; text-shadow:0 2px 18px rgba(0,0,0,0.45); }
-  .code-hint{ font-size:0.83rem; color:rgba(255,255,255,0.88); text-shadow:0 1px 6px rgba(0,0,0,0.35); }
+  /* ===== LE SALON DOIT TENIR DANS L'ÉCRAN, SANS GLISSER SOUS LE DOIGT =====
+     « L'écran n'est pas parfaitement adapté, il faut que ça ne bouge pas
+     lorsque je déplace mon doigt. » Il débordait — 6 px sur un iPhone 15
+     posé sur l'écran d'accueil, 37 sur un Galaxy S23, 119 sur un SE — et un
+     écran qui déborde glisse.
+     POURQUOI ÇA NE SE VOYAIT PAS DANS LES BANCS. Un navigateur sans tête a
+     env(safe-area-inset-*) à ZÉRO. Un vrai iPhone à encoche en prend 59 en
+     haut et 34 en bas : 93 px de hauteur utile en moins, soit exactement le
+     débord. On mesurait un téléphone qui n'existe pas.
+     Tout le rythme du salon passe donc en clamp sur --hu, qui est la hauteur
+     UTILE (elle retire déjà les zones sûres) : identique à ce qu'il était sur
+     un grand écran, resserré juste ce qu'il faut sur un petit. Les hauteurs
+     de 44 px, elles, ne bougent pas : ce sont des zones tactiles. */
+  .code-hero{ text-align:center; padding:clamp(0.12rem, calc(1.03 * var(--hu)), 0.5rem) 1rem clamp(0.3rem, calc(4.3 * var(--hu) - 19.1px), 1rem); }
+  .code-label{ text-transform:uppercase; letter-spacing:0.14em; font-size:clamp(0.66rem, calc(1.64 * var(--hu)), 0.8rem); font-weight:700; color:rgba(255,255,255,0.85); text-shadow:0 1px 6px rgba(0,0,0,0.4); }
+  .code-big{ font-family:'Poppins',sans-serif; font-weight:700; font-size:clamp(1.62rem, calc(8 * var(--hu) - 23px), 2.55rem); letter-spacing:0.38rem; color:#fff; margin:clamp(0.02rem, calc(0.51 * var(--hu)), 0.25rem) 0 clamp(0.01rem, calc(1.1 * var(--hu) - 5px), 0.25rem) 0.38rem; text-shadow:0 2px 18px rgba(0,0,0,0.45); }
+  .code-hint{ font-size:clamp(0.75rem, calc(1.7 * var(--hu)), 0.83rem); color:rgba(255,255,255,0.88); text-shadow:0 1px 6px rgba(0,0,0,0.35); }
 
-  .vs-row{ display:flex; align-items:center; justify-content:center; gap:0.7rem; background:rgba(255,255,255,0.52); backdrop-filter:blur(16px) saturate(180%); -webkit-backdrop-filter:blur(16px) saturate(180%); border:1px solid var(--bord); border-radius:var(--r-l); padding:1rem 0.85rem; margin-bottom:0.25rem; }
-  .vs-player{ display:flex; flex-direction:column; align-items:center; gap:0.4rem; flex:1; }
+  .vs-row{ display:flex; align-items:center; justify-content:center; gap:0.7rem; background:rgba(255,255,255,0.52); backdrop-filter:blur(16px) saturate(180%); -webkit-backdrop-filter:blur(16px) saturate(180%); border:1px solid var(--bord); border-radius:var(--r-l); padding:clamp(0.42rem, calc(4.3 * var(--hu) - 19.1px), 1rem) 0.85rem; margin-bottom:clamp(0.1rem, calc(0.51 * var(--hu)), 0.25rem); }
+  .vs-player{ display:flex; flex-direction:column; align-items:center; gap:clamp(0.15rem, calc(0.82 * var(--hu)), 0.4rem); flex:1; }
   .vs-name{ font-weight:600; font-size:0.87rem; color:var(--ink); text-align:center; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; max-width:100%; }
   .vs-tag{ font-size:0.82rem; color:var(--ink-soft); }
   .vs-mid{ font-family:'Poppins',sans-serif; font-weight:700; color:var(--primary); font-size:0.98rem; }
 
-  .len-label{ font-size:0.82rem; font-weight:600; color:rgba(255,255,255,0.9); margin:0.95rem 0 0.45rem 0.2rem; text-shadow:0 1px 6px rgba(0,0,0,0.4); }
+  .len-label{ font-size:clamp(0.75rem, calc(1.68 * var(--hu)), 0.82rem); font-weight:600; color:rgba(255,255,255,0.9); margin:clamp(0.28rem, calc(3.8 * var(--hu) - 14.9px), 0.95rem) 0 clamp(0.13rem, calc(1.9 * var(--hu) - 8.5px), 0.45rem) 0.2rem; text-shadow:0 1px 6px rgba(0,0,0,0.4); }
   .len-row{ display:flex; gap:0.5rem; }
   .len-chip{ flex:1; display:flex; align-items:center; justify-content:center; min-height:2.75rem; --glass-tint: rgb(252,248,241); background:rgb(252,248,241); backdrop-filter:none; -webkit-backdrop-filter:none; border:0; border-radius:var(--r-m); padding:calc(0.58rem + 1px) calc(0.4rem + 1px); font-weight:600; font-size:0.84rem; color:var(--ink); }
   /* Même chose pour les puces du salon : aucun bord à elles. */
@@ -2177,7 +2198,7 @@
   .leave-banner{ display:flex; align-items:flex-start; gap:0.6rem; --glass-tint: rgb(255,244,222); border:1px solid transparent; border-radius:var(--r-m); padding:0.75rem 0.95rem; margin-bottom:0.7rem; font-size:0.85rem; line-height:1.45; color:#5f4310; }
   .leave-banner .lb-ico{ width:1.2rem; height:1.2rem; flex-shrink:0; color:var(--gold); margin-top:0.1rem; }
   .vs-tag.is-host{ color:var(--gold-deep); font-weight:800; text-transform:uppercase; letter-spacing:0.06em; font-size:0.78rem; }
-  .host-note{ text-align:center; font-size:0.84rem; color:rgba(255,255,255,0.92); margin:0.6rem auto 0.15rem; max-width:20rem; text-shadow:0 1px 8px rgba(0,0,0,0.4); }
+  .host-note{ text-align:center; font-size:clamp(0.76rem, calc(1.72 * var(--hu)), 0.84rem); color:rgba(255,255,255,0.92); margin:clamp(0.15rem, calc(1.23 * var(--hu)), 0.6rem) auto 0.15rem; max-width:20rem; text-shadow:0 1px 8px rgba(0,0,0,0.4); }
 
   /* ---------- Verrou portrait : le téléphone tourne dans le bon sens ---------- */
   #rotate-lock{ position:fixed; top:0; left:0; right:0; bottom:0; z-index:80; display:none; align-items:center; justify-content:center; flex-direction:column; gap:1.05rem; text-align:center; padding:2rem; background:radial-gradient(120% 95% at 50% 30%, #241A11, #0E0A06); color:#fff; }
@@ -3041,7 +3062,7 @@
      contrôles ailleurs dans le jeu, où ils dépassent déjà 44 px. Les
      pastilles de longueur du salon faisaient 37 px quand celles des Réglages
      de partie en font 46 — même geste, deux tailles. */
-  .btn-invite{ display:flex; align-items:center; justify-content:center; gap:0.45rem; margin:0.15rem auto 0.9rem; width:auto; min-height:2.75rem; padding:calc(0.55rem + 1px) calc(1.05rem + 1px); border-radius:var(--r-full); border:0; color:var(--ink); font-weight:700; font-size:0.85rem; }
+  .btn-invite{ display:flex; align-items:center; justify-content:center; gap:0.45rem; margin:clamp(0.02rem, calc(0.31 * var(--hu)), 0.15rem) auto clamp(0.26rem, calc(3.9 * var(--hu) - 17.6px), 0.9rem); width:auto; min-height:2.75rem; padding:calc(0.55rem + 1px) calc(1.05rem + 1px); border-radius:var(--r-full); border:0; color:var(--ink); font-weight:700; font-size:0.85rem; }
   .btn-invite .ico{ width:1.05rem; height:1.05rem; display:inline-flex; color:var(--primary); }
 
   /* Léger retrait latéral : les cartes stats (1000+ / niveaux / Duel) ne
@@ -4344,7 +4365,7 @@ const TEXTES = {
     "Toi · Hôte":"You · Host",
     "Toi":"You",
     "Prêt":"Ready",
-    "Tu es l'hôte\u00a0: paramètre la partie (longueur, chrono, testament) puis lance {mot}.":"You are the host: set up the game (length, timer, testament) then start {mot}.",
+    "Tu es l'hôte\u00a0: règle la partie, puis lance {mot}.":"You are the host: set up the game, then start {mot}.",
     "L'hôte paramètre la partie puis lance {mot}.":"The host sets up the game then starts {mot}.",
     "Longueur de la partie":"Game length",
     "Longueur du duel":"Duel length",
@@ -13318,7 +13339,10 @@ async function notifActiver(){
        l'abonnement seul et comptait sur notifSync() pour le reste — or ce
        reste ne partait jamais (voir notifEcrire). */
     if(!(await notifEcrire(supa, sub.endpoint, sub.toJSON()))){
-      throw new Error("inscription refusée");
+      /* Message TECHNIQUE, jamais montré : il est rattrapé juste en dessous et
+         remplacé par une phrase traduite. Il ne doit donc pas être en français,
+         sinon le banc des traductions le réclame à juste titre. */
+      throw new Error("push:refus");
     }
     settings.notif = true; saveSettings(); notifMiroir(); notifRafraichir();
     return true;
@@ -14769,8 +14793,13 @@ function avatarHtml(name, color, size, creator){
   const initial = escapeHtml((name||"?").charAt(0).toUpperCase());
   const s = size || 2.6;
   /* --av : la taille de l'avatar, transmise au badge « Créateur » pour qu'il
-     reste à la même fraction quelle que soit la place où on l'affiche. */
-  return `<span class="avatar" style="--av:${s}rem;width:${s}rem;height:${s}rem;background:${color};font-size:${(s*0.42).toFixed(2)}rem;">${initial}${creator?`<span class="crown-badge">${C_MONO_SVG}</span>`:""}</span>`;
+     reste à la même fraction quelle que soit la place où on l'affiche.
+     ELLE PEUT ÊTRE UNE LONGUEUR CSS ENTIÈRE, pas seulement un nombre de rem :
+     le salon a besoin d'un avatar qui RÉTRÉCIT sur un écran court, et une
+     taille posée en style direct ne peut pas être reprise par une feuille.
+     On accepte donc « clamp(...) » tel quel. */
+  const L = (typeof s === "string") ? s : s + "rem";
+  return `<span class="avatar" style="--av:${L};width:${L};height:${L};background:${color};font-size:calc(${L} * 0.42);">${initial}${creator?`<span class="crown-badge">${C_MONO_SVG}</span>`:""}</span>`;
 }
 /* Capitale C de linéale classique, tracée à la main : dos gauche droit entre
    deux coins arrondis, et COUPES QUASI VERTICALES aux extrémités — les
@@ -14976,6 +15005,11 @@ function renderOnlineJoin(){
    pour que l'écran entier parle d'une seule voix. */
 function motPartie(){ return nbJoueurs() > 2 ? "la partie" : "le duel"; }
 function titrePartie(){ return nbJoueurs() > 2 ? "Partie" : "Duel"; }
+/* La taille des deux avatars du face-à-face. Écrite en clamp sur la hauteur
+   UTILE (--hu tient déjà compte de l'encoche et de la barre d'accueil) : 3 rem
+   sur un grand écran comme avant, jusqu'à 2,1 sur un iPhone SE posé sur
+   l'écran d'accueil, où chaque pixel compte pour que le salon tienne entier. */
+const AV_SALON = "clamp(1.95rem, calc(6.2 * var(--hu) - 5px), 3rem)";
 function renderOnlineRoom(){
   const el=document.createElement("div"); el.className="screen";
   const canStart = net.isHost && net.oppPresent;
@@ -15026,11 +15060,11 @@ function renderOnlineRoom(){
       ${nbJoueurs() < MAX_JOUEURS ? `<div class="rank-row salle-ligne vide"><span class="avatar waiting" style="width:2.1rem;height:2.1rem;font-size:0.95rem;">?</span><span class="rank-name">En attente…</span><span class="salle-tag">${MAX_JOUEURS - nbJoueurs()} place${MAX_JOUEURS-nbJoueurs()>1?"s":""}</span></div>` : ""}
     </div>` : `
     <div class="vs-row">
-      <div class="vs-player">${avatarHtml(profile.name, profile.color, 3, profile.isCreator)}<div class="vs-name">${escapeHtml(profile.name)}</div><div class="vs-tag${net.isHost?' is-host':''}">${net.isHost?"Toi · Hôte":"Toi"}</div></div>
+      <div class="vs-player">${avatarHtml(profile.name, profile.color, AV_SALON, profile.isCreator)}<div class="vs-name">${escapeHtml(profile.name)}</div><div class="vs-tag${net.isHost?' is-host':''}">${net.isHost?"Toi · Hôte":"Toi"}</div></div>
       <div class="vs-mid">VS</div>
-      <div class="vs-player${oppNew?' reveal-in':''}" id="oppSlot">${net.oppPresent?avatarHtml(net.opp.name, net.opp.color, 3, net.opp.isCreator):`<span class="avatar waiting" style="width:3rem;height:3rem;font-size:1.25rem;">?</span>`}<div class="vs-name">${net.oppPresent?escapeHtml(net.opp.name):"En attente…"}</div><div class="vs-tag${net.isHost?'':' is-host'}">${net.isHost?T("Adversaire"):T("Hôte")}</div></div>
+      <div class="vs-player${oppNew?' reveal-in':''}" id="oppSlot">${net.oppPresent?avatarHtml(net.opp.name, net.opp.color, AV_SALON, net.opp.isCreator):`<span class="avatar waiting" style="width:${AV_SALON};height:${AV_SALON};font-size:calc(${AV_SALON} * 0.42);">?</span>`}<div class="vs-name">${net.oppPresent?escapeHtml(net.opp.name):"En attente…"}</div><div class="vs-tag${net.isHost?'':' is-host'}">${net.isHost?T("Adversaire"):T("Hôte")}</div></div>
     </div>`}
-    <div class="host-note">${net.isHost?Tf("Tu es l'hôte : paramètre la partie (longueur, chrono, testament) puis lance {mot}.", {mot:motSalon}):Tf("L'hôte paramètre la partie puis lance {mot}.", {mot:motSalon})}</div>
+    <div class="host-note">${net.isHost?Tf("Tu es l'hôte : règle la partie, puis lance {mot}.", {mot:motSalon}):Tf("L'hôte paramètre la partie puis lance {mot}.", {mot:motSalon})}</div>
     <div class="flex-sp"></div>
     ${net.isHost ? `
       <div class="len-label">${aPlusieurs?T("Longueur de la partie"):T("Longueur du duel")}</div>
