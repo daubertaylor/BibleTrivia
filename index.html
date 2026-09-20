@@ -4287,9 +4287,79 @@ const LANGUES = [
 ];
 const TEXTES = {
   en: {
+    /* ===== LES TABLES DE DONNÉES : SUCCÈS, PORTES D'« À REVOIR », MOTS DE FIN =====
+       Ces phrases-là passaient DÉJÀ par T() au moment de s'afficher — le code
+       était juste. Ce qui manquait, c'est leur traduction : T() retombe en
+       français quand une clé n'existe pas, et l'oubli ne se voit nulle part.
+       La première porte du banc ne pouvait pas les trouver : l'argument de T()
+       y est une VARIABLE, pas un littéral. C'est la quatrième porte qui les a
+       sorties, en lisant les tables elles-mêmes. */
+    "Excellent\u00a0! Tu connais vraiment bien ta Bible.":"Excellent! You really know your Bible.",
+    "Très bien\u00a0! Continue comme ça.":"Very good! Keep it up.",
+    "Beau début\u00a0! Chaque partie t'apprend un peu plus.":"A fine start! Every game teaches you a little more.",
+    "Révision":"Review",
+    "Résultat":"Result",
+    /* ===== LE MODE EN LIGNE, LE PROFIL ET L'INSTALLATION =====
+       Trente-huit phrases qui s'affichaient en français sur un jeu réglé en
+       anglais — l'accueil En ligne au complet, le salon, le profil, les pas
+       de l'installation. Elles n'étaient pas oubliées au dictionnaire : elles
+       n'étaient jamais passées par T(). Le banc ne pouvait pas le voir, il
+       lisait ligne par ligne et tout le balisage est en gabarits multilignes. */
+    "Accepter":"Accept",
+    "Annuler":"Cancel",
+    "Avec le code reçu d'un ami":"With the code a friend sent you",
+    "C'est parti…":"Here we go…",
+    "Choisis ton nom":"Choose your name",
+    "Code de la partie":"Game code",
+    "Continuer":"Continue",
+    "Couleur":"Colour",
+    "Créer une partie":"Create a game",
+    "Demande à ton ami le code à 4 caractères de sa partie.":"Ask your friend for the 4-character code of their game.",
+    "En attente…":"Waiting…",
+    "{n} place":"{n} spot",
+    "{n} places":"{n} spots",
+    "Enregistrer":"Save",
+    "Entre le code":"Enter the code",
+    "Ex \u00e6quo en t\u00eate\u00a0!":"Tied for first!",
+    "Il sera visible par tes amis pendant les duels.":"Your friends will see it during duels.",
+    "Inviter des amis":"Invite friends",
+    "Le {j} {mois} était manqué":"{j} {mois} was missed",
+    "Mode en ligne":"Online mode",
+    "Modifier":"Edit",
+    "Nom du joueur ou de l'équipe":"Player or team name",
+    "Partie aléatoire":"Random game",
+    "Recherche d'un adversaire…":"Looking for an opponent…",
+    "Refuser":"Decline",
+    "Rejoindre":"Join",
+    "Rejoindre une partie":"Join a game",
+    "Profil":"Profile",
+    "couleur":"color",
+    "Retirer":"Remove",
+    "Facile":"Easy",
+    "Moyen":"Medium",
+    "Difficile":"Hard",
+    "En ligne":"Online",
+    "Salon":"Room",
+    "Terminer":"Finish",
+    "Revoir mes erreurs":"Review my mistakes",
+    "Revoir mes {n} erreurs":"Review my {n} mistakes",
+    "Revoir mon erreur":"Review my mistake",
+    "Score":"Score",
+    "Tes jours, du plus ancien au plus récent":"Your days, oldest to most recent",
+    "Ton prénom":"Your first name",
+    "Ton téléphone demande confirmation":"Your phone asks you to confirm",
+    "Touche Installer":"Tap Install",
+    "Tu as terminé, bien joué\u00a0!":"You're done — well played!",
+    "Un adversaire au hasard, tout de suite":"A random opponent, right now",
+    "Un code à partager, jusqu'à 8 joueurs":"A code to share, up to 8 players",
+    "Voir le résultat":"See the result",
+    "\u00c0 réviser aujourd'hui":"To review today",
+    "{jeu} — {gagnants} remporte la partie avec {p} points\u00a0!":"{jeu} — {gagnants} wins the game with {p} points!",
+    "{p}\u1d49 sur {n}":"#{p} of {n}",
     /* --- la feuille des réglages --- */
     "Réglages":"Settings",
     "Fermer":"Close",
+    "Fermer le verset":"Close the verse",
     "Effets sonores":"Sound effects",
     "Musique de fond":"Background music",
     "Installer le jeu":"Install the game",
@@ -4304,6 +4374,7 @@ const TEXTES = {
     "Portugais":"Portuguese",
     /* --- la navigation --- */
     "Retour":"Back",
+    "Tes sept derniers jours":"Your last seven days",
     "Accueil":"Home",
     "Durée de la partie":"Game length",
     "questions":"questions",
@@ -4388,6 +4459,13 @@ const TEXTES = {
     "Compris":"Got it",
     "Réessaie.":"Try again.",
     "Le salon est complet · {n} joueurs":"The room is full · {n} players",
+    "Code invalide.":"Invalid code.",
+    "la partie":"the game",
+    "le duel":"the duel",
+    "Partie":"Game",
+    "Duel":"Duel",
+    "Commencer {mot}":"Start {mot}",
+    "En attente des joueurs…":"Waiting for players…",
     "Partage ce code · jusqu'à {n} joueurs":"Share this code · up to {n} players",
     "Tu as rejoint la partie":"You have joined the game",
     "Toi · Hôte":"You · Host",
@@ -4561,6 +4639,8 @@ const TEXTES = {
     "Quitter la partie":"Leave the game",
     "Le {j} {mois} \u00e9tait manqu\u00e9":"{mois} {j} was missed",
     /* les douze mois, pour la date d'un jour manqu\u00e9 */
+    "dimanche":"Sunday", "lundi":"Monday", "mardi":"Tuesday", "mercredi":"Wednesday",
+    "jeudi":"Thursday", "vendredi":"Friday", "samedi":"Saturday",
     "janvier":"January", "f\u00e9vrier":"February", "mars":"March", "avril":"April",
     "mai":"May", "juin":"June", "juillet":"July", "ao\u00fbt":"August",
     "septembre":"September", "octobre":"October", "novembre":"November", "d\u00e9cembre":"December",
@@ -6848,7 +6928,7 @@ function updateRoomOpponent(){
   slot.innerHTML = (net.oppPresent
       ? avatarHtml(net.opp.name, net.opp.color, 3, net.opp.isCreator)
       : `<span class="avatar waiting" style="width:3rem;height:3rem;font-size:1.25rem;">?</span>`)
-    + `<div class="vs-name">${net.oppPresent?escapeHtml(net.opp.name):"En attente…"}</div>`
+    + `<div class="vs-name">${net.oppPresent?escapeHtml(net.opp.name):T("En attente…")}</div>`
     + `<div class="vs-tag${net.isHost?'':' is-host'}">${net.isHost?T("Adversaire"):T("Hôte")}</div>`;
   slot.dataset.filled = net.oppPresent ? "1" : "0";
   if(arrived){ slot.style.animation = "none"; void slot.offsetWidth; slot.style.animation = "oppIn 0.5s cubic-bezier(0.2,1.3,0.35,1)"; }
@@ -6858,7 +6938,7 @@ function updateRoomOpponent(){
      l'adversaire… » et « Commencer le duel » en dur. Le même bouton changeait
      donc de mot tout seul, à la seconde où un joueur arrivait ou partait. Une
      seule source pour les deux. */
-  if(btn){ const can = net.isHost && net.oppPresent; btn.classList.toggle("is-waiting", !can); btn.textContent = can ? ("Commencer " + motPartie()) : "En attente des joueurs…"; }
+  if(btn){ const can = net.isHost && net.oppPresent; btn.classList.toggle("is-waiting", !can); btn.textContent = can ? Tf("Commencer {mot}", {mot:motPartie()}) : T("En attente des joueurs…"); }
   const wait = document.getElementById("waitNote");
   if(wait) wait.textContent = net.oppPresent ? T("Prêt ! En attente du lancement par l'hôte…") : T("Connexion au salon…");
   queueGlassSync();
@@ -7039,7 +7119,7 @@ function bindRoom(ch){
         .sort((a,b)=> (a.t-b.t) || String(a.id).localeCompare(String(b.id)));
       if(file.findIndex(x=>x.id===myId) >= MAX_JOUEURS){
         cleanupRoom();
-        net.error = "Ce salon est complet (" + MAX_JOUEURS + " joueurs).";
+        net.error = Tf("Le salon est complet · {n} joueurs", {n:MAX_JOUEURS});
         state.screen = "online-join"; render();
         return;
       }
@@ -7186,7 +7266,7 @@ function createRoom(code, host, _retry){
 }
 function joinRoom(code, host){
   code = (code||"").toUpperCase().trim();
-  if(code.length<4){ net.error="Code invalide."; render(); return; }
+  if(code.length<4){ net.error=T("Code invalide."); render(); return; }
   createRoom(code, !!host);
 }
 function hostStart(){
@@ -7224,7 +7304,7 @@ function onlineAnswer(i){
   const opt = q.shuffledOptions[i];
   net.selected = opt; net.revealed = true; net.justRevealed = true;
   if(opt === q.correct){ net.score += TIER_INFO[q.tier].pts; net.correct += 1; errbookRemove(q); playCorrect(); }
-  else { net.missed.push({ q:q.q, correct:q.correct, chosen:opt, fact:q.fact }); errbookAdd(q); playIncorrect(); }
+  else { net.missed.push({ q:q.q, options:q.options, correct:q.correct, chosen:opt, fact:q.fact }); errbookAdd(q); playIncorrect(); }
   broadcastProgress(false);
   render();
 }
@@ -7395,7 +7475,7 @@ function showModal(opts){
       ${opts.input?`<input class="text-input modal-input" id="modalInput" placeholder="${escapeHtml(opts.placeholder||"")}" maxlength="30" autocomplete="off">`:""}
       <div class="modal-err" id="modalErr"></div>
       <div class="modal-actions">
-        ${opts.hideCancel?"":`<button class="modal-btn cancel${opts.danger?' keep':''}" id="modalCancel">${escapeHtml(opts.cancelLabel||"Annuler")}</button>`}
+        ${opts.hideCancel?"":`<button class="modal-btn cancel${opts.danger?' keep':''}" id="modalCancel">${escapeHtml(opts.cancelLabel||T("Annuler"))}</button>`}
         <button class="modal-btn ok${opts.danger?' danger':''}" id="modalOk">${escapeHtml(opts.okLabel||"OK")}</button>
       </div>
     </div>`;
@@ -7775,7 +7855,7 @@ function openBibles(){
   veil.className = "sheet-veil"; veil.id = "biblesVeil";
   veil.innerHTML = `
     <div class="settings-sheet bibles-sheet" role="dialog" aria-label="${T("Version de la Bible")}">
-      <button class="sheet-grab" aria-label="Fermer" onclick="closeBibles()"></button>
+      <button class="sheet-grab" aria-label="${T('Fermer')}" onclick="closeBibles()"></button>
       <div class="sheet-title"><span class="st-ico">${ICONS.bookOpen}</span>${T("Version de la Bible")}</div>
       <div class="bible-list">${BIBLES.map(ligneBible).join("")}</div>
     </div>`;
@@ -8592,17 +8672,21 @@ function openMissedReview(list){
   const veil = document.createElement("div");
   veil.className = "sheet-veil"; veil.id = "reviewVeil";
   veil.onclick = (e)=>{ if(e.target===veil) closeMissedReview(); };
-  const items = missed.map(m=>`
+  const items = missed.map(m=>{
+    /* Le carnet ne garde que du texte ; on reconstitue le strict nécessaire
+       pour que le rang de la question soit retrouvé et la traduction avec. */
+    const q = { q:m.q, options:m.options || [m.correct, m.chosen] };
+    return `
     <div class="rev-item">
-      <div class="rev-q">${escapeHtml(m.q)}</div>
-      <div class="rev-a rev-wrong"><span class="ico">${ICONS.xCircle}</span>${escapeHtml(m.chosen)}</div>
-      <div class="rev-a rev-right"><span class="ico">${ICONS.checkCircle}</span>${escapeHtml(m.correct)}</div>
-      <div class="rev-fact"><span class="ficon-sm">${ICONS.bookOpen}</span>${escapeHtml(faitVersion(m.fact))}</div>
-    </div>`).join("");
+      <div class="rev-q">${escapeHtml(texteQuestion(q))}</div>
+      <div class="rev-a rev-wrong"><span class="ico">${ICONS.xCircle}</span>${escapeHtml(texteOption(q, m.chosen))}</div>
+      <div class="rev-a rev-right"><span class="ico">${ICONS.checkCircle}</span>${escapeHtml(texteOption(q, m.correct))}</div>
+      <div class="rev-fact"><span class="ficon-sm">${ICONS.bookOpen}</span>${escapeHtml(faitVersion(texteFait({ q:m.q, fact:m.fact })))}</div>
+    </div>`;}).join("");
   veil.innerHTML = `
-    <div class="settings-sheet review-sheet" role="dialog" aria-label="Revoir mes erreurs">
-      <button class="sheet-grab" aria-label="Fermer" onclick="closeMissedReview()"></button>
-      <div class="sheet-title"><span class="st-ico">${ICONS.bookOpen}</span>Revoir mes erreurs<small>${missed.length}</small></div>
+    <div class="settings-sheet review-sheet" role="dialog" aria-label="${T("Revoir mes erreurs")}">
+      <button class="sheet-grab" aria-label="${T('Fermer')}" onclick="closeMissedReview()"></button>
+      <div class="sheet-title"><span class="st-ico">${ICONS.bookOpen}</span>${T("Revoir mes erreurs")}<small>${missed.length}</small></div>
       <div class="rev-list" onscroll="majVoilesErreurs()">${items}</div>
     </div>`;
   document.body.appendChild(veil);
@@ -11626,7 +11710,7 @@ function goToModeSelect(){ state.screen = "mode"; render(); }
 function teamRowInner(i, t){
   return `<span class="team-token" style="background:${TEAM_COLORS[i%6]}">${((t.name||"").trim().charAt(0).toUpperCase())||(i+1)}</span>
         <input type="text" value="${escapeHtml(t.name)}" maxlength="20" autocomplete="off" enterkeyhint="done" oninput="renameTeam(this)" onblur="renameSettle()" onkeydown="if(event.key==='Enter'){event.preventDefault();this.blur();}" placeholder="${T("Nom du joueur ou de l'équipe")}">
-        <button class="team-remove" onclick="removeTeam(this)" ${state.teams.length<=2?"disabled":""} aria-label="Retirer"><span class="ico" style="width:0.9rem;height:0.9rem;">${ICONS.close}</span></button>`;
+        <button class="team-remove" onclick="removeTeam(this)" ${state.teams.length<=2?"disabled":""} aria-label="${T('Retirer')}"><span class="ico" style="width:0.9rem;height:0.9rem;">${ICONS.close}</span></button>`;
 }
 function teamCardInner(){
   normalizeTeams(); saveTeams();   // six au plus, numérotés dans l'ordre
@@ -12472,7 +12556,7 @@ function openAchInfo(id){
       <div class="ach-info-d">${escapeHtml(T(a.d))}</div>
       <div class="ach-info-bar"><i class="${on?"done":""}" style="width:${pct}%"></i></div>
       <div class="ach-info-c ${on?"on":""}">${on?T("Objectif débloqué"):cur+" / "+a.max}</div>
-      <button class="modal-btn ok" onclick="closeModal()">Fermer</button>
+      <button class="modal-btn ok" onclick="closeModal()">${T("Fermer")}</button>
     </div>`;
   document.body.appendChild(veil);
   try{ glassTrack(680); }catch(e){}
@@ -12587,7 +12671,7 @@ function testamentTag(q){
   const b = bookOf(q);
   if(!b) return "";
   const at = BIBLE_BOOKS.indexOf(b) < BIBLE_AT_COUNT;
-  return `<span class="tst-tag" title="${at?"Ancien":"Nouveau"} Testament">${at?"AT":"NT"}</span>`;
+  return `<span class="tst-tag" title="${at?T("Ancien"):T("Nouveau")} Testament">${at?"AT":"NT"}</span>`;
 }
 function progressCredit(q, streak){
   const p = loadProgress();
@@ -12662,7 +12746,7 @@ function renderParcours(){
     </button>`;
   };
   el.innerHTML = `
-    ${renderHeader("Progression", true)}
+    ${renderHeader(T("Progression"), true)}
     <div class="card parcours-sum">
       <div class="ps-cells">
         <div><b>${d.mastered}<i>/66</i></b><small>${T("livres maîtrisés")}</small></div>
@@ -12971,7 +13055,8 @@ function joursGeles(){ return new Set(loadDaily().geles); }
    elle compte des jours consécutifs. L'affichage suit donc la même règle : les
    sept derniers jours, aujourd'hui à droite. Le rythme reste lisible quel que
    soit le jour où l'on ouvre le jeu. */
-const SEM_LETTRES = ["D","L","M","M","J","V","S"];   // index = Date.getDay()
+const SEM_LETTRES = (LANGUE === "en" ? ["S","M","T","W","T","F","S"]
+                                     : ["D","L","M","M","J","V","S"]);   // index = Date.getDay()
 function semaineHtml(){
   const faits = joursFaits(), gels = joursGeles(), cases = [];
   for(let k = 6; k >= 0; k--){
@@ -12994,7 +13079,7 @@ function semaineHtml(){
   const n = dailyStreakShown();
   const flamme = `<button class="sem-flamme${n ? "" : " eteinte"}" onclick="ouvrirFlamme()"`
     + ` aria-label="${T("Ta flamme")}">${ICONS.flame}<b>${n}</b></button>`;
-  return `<div class="semaine" aria-label="Tes sept derniers jours">`
+  return `<div class="semaine" aria-label="${T("Tes sept derniers jours")}">`
     + `<div class="sem-h"><span class="sem-t">${T("Les 7 derniers jours")}</span>${flamme}</div>`
     + `<div class="sem-j">${cases.join("")}</div></div>`;
 }
@@ -13009,7 +13094,15 @@ function dailyStreakShown(){ return flammeVivante() ? loadDaily().streak : 0; }
    une information. */
 const JOURS_FR = ["dimanche","lundi","mardi","mercredi","jeudi","vendredi","samedi"];
 const MOIS_FR = ["janvier","février","mars","avril","mai","juin","juillet","août","septembre","octobre","novembre","décembre"];
-function dateLongue(t){ return JOURS_FR[t.getDay()] + " " + t.getDate() + (t.getDate() === 1 ? "er" : "") + " " + MOIS_FR[t.getMonth()]; }
+/* MÊME JOUR, DEUX ÉCRITURES. « lundi 1er septembre » d'un côté,
+   « Monday, September 1 » de l'autre : ce n'est ni le même ordre ni la
+   même marque d'ordinal — le « er » du premier du mois n'existe pas en
+   anglais. */
+function dateLongue(t){
+  const jour = T(JOURS_FR[t.getDay()]), mois = T(MOIS_FR[t.getMonth()]), n = t.getDate();
+  if(LANGUE === "en") return jour + ", " + mois + " " + n;
+  return jour + " " + n + (n === 1 ? "er" : "") + " " + mois;
+}
 /* Un dessin de ICONS devient une image de fond CSS. Le « xmlns » est
    indispensable : inséré dans la page, un SVG s'en passe ; devenu image
    autonome, il ne s'affiche pas sans lui. */
@@ -13053,8 +13146,8 @@ function ouvrirFlamme(){
   const veil = document.createElement("div");
   veil.className = "sheet-veil"; veil.id = "flammeVeil";
   veil.innerHTML = `
-    <div class="settings-sheet flam-sheet" role="dialog" aria-label="Ta flamme">
-      <button class="sheet-grab" aria-label="Fermer" onclick="closeFlamme()"></button>
+    <div class="settings-sheet flam-sheet" role="dialog" aria-label="${T("Ta flamme")}">
+      <button class="sheet-grab" aria-label="${T('Fermer')}" onclick="closeFlamme()"></button>
       <div class="sheet-title"><span class="st-ico">${ICONS.flame}</span>${T("Ta flamme")}<small>${serie}</small></div>
       <div class="flam-tete">
         <span class="ft-txt">
@@ -14011,7 +14104,7 @@ function renderRevoir(){
        <span class="oa-txt"><b>${T(titre)}</b><small>${T(sous)}</small>${extra || ""}</span>
        <span class="rv-cnt">${n}</span>
      </button>`;
-  el.innerHTML = renderHeader("À revoir", true, "state.screen='mode'; render()")
+  el.innerHTML = renderHeader(T("À revoir"), true, "state.screen='mode'; render()")
     + ligne("", ICONS.target, "Celles qui me résistent", "Ratées au moins deux fois", tetues.length, "startRevision('tetues')")
     + ligne("v", ICONS.clock, "Les échéances du jour", "Ce que la mémoire réclame", dus, "startRevision('dus')")
     + ligne("g", ICONS.book, "Tout mon carnet", "Sans attendre leur tour", tout, "startRevision('tout')", tout ? jauge(m.part) : "")
@@ -14200,7 +14293,7 @@ function soloAnswer(idx){
     playCorrect(); // toujours le même son, quelle que soit la série
   } else {
     state.soloStreak = 0;
-    state.soloMissed.push({ q:q.q, correct:q.correct, chosen:opt, fact:q.fact });
+    state.soloMissed.push({ q:q.q, options:q.options, correct:q.correct, chosen:opt, fact:q.fact });
     errbookAdd(q);
     playIncorrect();
   }
@@ -14384,9 +14477,9 @@ function renderHeader(title, showBack, backAction){
   const back = backAction || "goToModeSelect()";
   return `
     <div class="app-header">
-      ${showBack ? `<button class="icon-btn" onclick="${back}" aria-label="Retour"><span class="ico" style="width:1.22rem;height:1.22rem;">${ICONS.chevronLeft}</span></button>` : `<span class="icon-btn spacer"></span>`}
+      ${showBack ? `<button class="icon-btn" onclick="${back}" aria-label="${T("Retour")}"><span class="ico" style="width:1.22rem;height:1.22rem;">${ICONS.chevronLeft}</span></button>` : `<span class="icon-btn spacer"></span>`}
       <span class="header-title">${escapeHtml(T(title))}</span>
-      <button class="icon-btn" onclick="openSettings()" aria-label="Réglages"><span class="ico" style="width:1.22rem;height:1.22rem;">${ICONS.gear}</span></button>
+      <button class="icon-btn" onclick="openSettings()" aria-label="${T("Réglages")}"><span class="ico" style="width:1.22rem;height:1.22rem;">${ICONS.gear}</span></button>
     </div>
   `;
 }
@@ -14407,7 +14500,7 @@ function renderLengthCard(){
         ${Object.keys(TIMER_OPTS).map(k=>`
           <button class="chip ${state.timerKey===k?'active':''}" data-group="tmr" data-k="${k}" onclick="setTimer('${k}')">
             ${T(TIMER_LABELS[k])}
-            <span class="sub">${T(TIMER_OPTS[k]?"par question":"prenez votre temps")}</span>
+            <span class="sub">${T(TIMER_OPTS[k]?T("par question"):T("prenez votre temps"))}</span>
           </button>
         `).join("")}
       </div>
@@ -14424,13 +14517,13 @@ function renderModeSelect(){
   el.className = "screen accueil";
   el.innerHTML = `
     <div class="hero">
-      <button class="icon-btn hero-profile" onclick="openProfile()" aria-label="Profil">${avatarHtml(profile.name||"?", profile.color, 2.4, profile.isCreator)}</button>
-      <button class="icon-btn hero-settings" onclick="openSettings()" aria-label="Réglages"><span class="ico" style="width:1.22rem;height:1.22rem;">${ICONS.gear}</span></button>
+      <button class="icon-btn hero-profile" onclick="openProfile()" aria-label="${T('Profil')}">${avatarHtml(profile.name||"?", profile.color, 2.4, profile.isCreator)}</button>
+      <button class="icon-btn hero-settings" onclick="openSettings()" aria-label="${T("Réglages")}"><span class="ico" style="width:1.22rem;height:1.22rem;">${ICONS.gear}</span></button>
       <div class="hero-zone" id="heroZone">
         <button class="hero-icon-btn" onclick="heroIconTap()" onpointerdown="heroIconPress(event)" onpointerup="heroIconRelease()" onpointerleave="heroIconRelease()" onpointercancel="heroIconRelease()" aria-label="${NOM_DU_JEU}">
           <span class="hero-icon-wrap"><img class="hero-icon" src="${DOVE_ICON}" alt="${NOM_DU_JEU}" draggable="false"></span>
         </button>
-        <button class="hero-verse-card" onclick="hideHeroVerse()" aria-label="Fermer le verset">
+        <button class="hero-verse-card" onclick="hideHeroVerse()" aria-label="${T('Fermer le verset')}">
           <span class="hero-verse-text"></span>
           <span class="hero-verse-ref"></span>
         </button>
@@ -14555,7 +14648,7 @@ function renderSetup(){
   el.className = "screen";
   if(state.mode==="group"){
     el.innerHTML = `
-      ${renderHeader("Mode Groupe", true)}
+      ${renderHeader(T("Mode Groupe"), true)}
       <div class="card" id="teamCard">${teamCardInner()}</div>
       ${renderLengthCard()}
       <div class="card">
@@ -14573,7 +14666,7 @@ function renderSetup(){
     `;
   } else {
     el.innerHTML = `
-      ${renderHeader("Mode Solo", true)}
+      ${renderHeader(T("Mode Solo"), true)}
       <div class="flex-sp"></div>
       ${renderLengthCard()}
       <div class="card">
@@ -14679,7 +14772,7 @@ function renderPlay(){
       ${state.revealed ? `<div class="fact-card${pop?' reveal-in':''}">${testamentTag(q)}<span class="ficon">${ICONS.bookOpen}</span><span class="ftext"><span class="fact-label">${T("Le savais-tu ?")}</span>${escapeHtml(faitVersion(texteFait(q)))}</span></div>` : ""}
       ${state.revealed ? `<button class="btn-next${pop?' reveal-in':''}" onclick="nextQuestion()">${state.currentIndex>=total-1 ? T("Voir les résultats") : T("Question suivante")}</button>` : ""}
       <div class="flex-sp"></div>
-      <div class="solo-score-bar"><span class="label">Score</span><span class="value" data-count-value>${state.soloScore} pts</span></div>
+      <div class="solo-score-bar"><span class="label">${T("Score")}</span><span class="value" data-count-value>${state.soloScore} pts</span></div>
     `;
   }
 
@@ -14687,7 +14780,7 @@ function renderPlay(){
   el.innerHTML = `
     ${renderHeader(state.daily ? "Défi du jour" : (state.revision ? "Révision" : NOM_DU_JEU), true, "confirmLeaveGame()")}
     <div class="play-meta">
-      <span class="tier-chip ${info.cls}">${tierDotsHtml(info.level)}${info.label} · ${info.pts} pts</span>
+      <span class="tier-chip ${info.cls}">${tierDotsHtml(info.level)}${T(info.label)} · ${info.pts} pts</span>
       <span class="q-counter">${state.currentIndex+1}/${total}</span>
       ${!state.revealed && !state.revision ? timerChipHtml(timerSecondsFor(state.timerKey)) : ""}
       ${state.mode==="solo" ? `<span class="streak-chip${streakHot?' hot':''}"><span class="ico">${ICONS.flame}</span>${state.soloStreak}</span>` : ""}
@@ -14829,7 +14922,7 @@ function renderEnd(){
   const el = document.createElement("div");
   el.className = "screen";
   relacherToasts();   // l'écran des résultats est là : les bandeaux peuvent passer
-  el.innerHTML = renderHeader("Résultats", false) + (state.mode==="group" ? renderEndGroup() : renderEndSolo());
+  el.innerHTML = renderHeader(T("Résultats"), false) + (state.mode==="group" ? renderEndGroup() : renderEndSolo());
   // Animate the solo progress ring + percentage after paint
   if(state.mode==="solo"){
     requestAnimationFrame(()=>{
@@ -14953,21 +15046,21 @@ function promptCreator(){
 function renderProfile(){
   const el=document.createElement("div"); el.className="screen";
   el.innerHTML = `
-    ${renderHeader("Profil", true, "saveProfileAndBack()")}
+    ${renderHeader(T("Profil"), true, "saveProfileAndBack()")}
     <div class="flex-sp" style="flex-grow:0.8"></div>
     <div class="profile-card">
-      <div onclick="promptCreator()" style="cursor:pointer" title="Code créateur" data-avatar-preview>${avatarHtml(profile.name||"Invité", profile.color, 4.2, profile.isCreator)}</div>
+      <div onclick="promptCreator()" style="cursor:pointer" title="${T("Code créateur")}" data-avatar-preview>${avatarHtml(profile.name||"Invité", profile.color, 4.2, profile.isCreator)}</div>
       <div class="profile-name" id="profileNameLabel">${escapeHtml(profile.name||"Invité")}</div>
       ${profile.isCreator?`<div style="margin-top:0.4rem">${creatorBadge()}</div>`:""}
     </div>
     <label class="field-label">${T("Nom affiché")}</label>
     <input class="text-input" id="profileName" maxlength="18" value="${escapeHtml(profile.name)}" placeholder="${T("Ton prénom")}" autocomplete="off" enterkeyhint="done" oninput="onProfileNameInput(this)" onkeydown="if(event.key==='Enter'){event.preventDefault();this.blur();}">
-    <label class="field-label" style="margin-top:var(--e-3)">Couleur</label>
+    <label class="field-label" style="margin-top:var(--e-3)">${T("Couleur")}</label>
     <div class="color-row">
-      ${TEAM_COLORS.map(c=>`<button class="color-dot${c===profile.color?' sel':''}" style="background-color:${c}" data-c="${c}" onclick="setProfileColor('${c}')" aria-label="couleur"><span class="cd-ck">${ACH_CHECK}</span></button>`).join("")}
+      ${TEAM_COLORS.map(c=>`<button class="color-dot${c===profile.color?' sel':''}" style="background-color:${c}" data-c="${c}" onclick="setProfileColor('${c}')" aria-label="${T('couleur')}"><span class="cd-ck">${ACH_CHECK}</span></button>`).join("")}
     </div>
     <div class="flex-sp"></div>
-    <button class="btn-primary" onclick="saveProfileAndBack()">Enregistrer</button>
+    <button class="btn-primary" onclick="saveProfileAndBack()">${T("Enregistrer")}</button>
   `;
   return el;
 }
@@ -14975,20 +15068,20 @@ function renderProfile(){
 function renderOnlineName(){
   const el=document.createElement("div"); el.className="screen";
   el.innerHTML = `
-    ${renderHeader("En ligne", true)}
+    ${renderHeader(T("En ligne"), true)}
     <div class="flex-sp"></div>
     <div class="online-hero">
       <div class="online-hero-icon">${ICONS.users}</div>
-      <h2 class="online-hero-title">Choisis ton nom</h2>
-      <p class="online-hero-sub">Il sera visible par tes amis pendant les duels.</p>
+      <h2 class="online-hero-title">${T("Choisis ton nom")}</h2>
+      <p class="online-hero-sub">${T("Il sera visible par tes amis pendant les duels.")}</p>
     </div>
     <input class="text-input" id="nameInput" maxlength="18" placeholder="${T("Ton prénom")}" value="${escapeHtml(profile.name)}" autocomplete="off" enterkeyhint="go" oninput="profile.name=this.value.slice(0,18)" onkeydown="if(event.key==='Enter'){event.preventDefault();this.blur();saveName(this.value);}">
-    <label class="field-label" style="margin-top:var(--e-3)">Couleur</label>
+    <label class="field-label" style="margin-top:var(--e-3)">${T("Couleur")}</label>
     <div class="color-row">
-      ${TEAM_COLORS.map(c=>`<button class="color-dot${c===profile.color?' sel':''}" style="background-color:${c}" data-c="${c}" onclick="setProfileColor('${c}')" aria-label="couleur"><span class="cd-ck">${ACH_CHECK}</span></button>`).join("")}
+      ${TEAM_COLORS.map(c=>`<button class="color-dot${c===profile.color?' sel':''}" style="background-color:${c}" data-c="${c}" onclick="setProfileColor('${c}')" aria-label="${T('couleur')}"><span class="cd-ck">${ACH_CHECK}</span></button>`).join("")}
     </div>
     <div class="flex-sp"></div>
-    <button class="btn-primary" onclick="saveName(document.getElementById('nameInput').value)">Continuer</button>
+    <button class="btn-primary" onclick="saveName(document.getElementById('nameInput').value)">${T("Continuer")}</button>
   `;
   return el;
 }
@@ -14997,10 +15090,10 @@ function renderOnline(){
   const el=document.createElement("div"); el.className="screen";
   if(!onlineConfigured()){
     el.innerHTML = `
-      ${renderHeader("En ligne", true)}
+      ${renderHeader(T("En ligne"), true)}
       <div class="online-hero">
         <div class="online-hero-icon">${ICONS.users}</div>
-        <h2 class="online-hero-title">Mode en ligne</h2>
+        <h2 class="online-hero-title">${T("Mode en ligne")}</h2>
         <p class="online-hero-sub">${T("Le multijoueur a besoin d'un petit serveur temps réel gratuit (Supabase).")}</p>
       </div>
       <div class="info-card">${T("Ouvre le fichier, trouve le bloc")} <b>CONFIG EN LIGNE</b> ${T("tout en haut du script, et colle l'URL + la clé « anon » de ton projet Supabase. Aucune table à créer. Les instructions détaillées sont dans le message.")}</div>
@@ -15012,7 +15105,7 @@ function renderOnline(){
   const actionsNew = !net.searching && net._searchWas === true;
   net._searchWas = net.searching;
   el.innerHTML = `
-    ${renderHeader("En ligne", true, "leaveOnline()")}
+    ${renderHeader(T("En ligne"), true, "leaveOnline()")}
     <!-- ===== UNE ALERTE DE PAGE SE MET EN HAUT DE LA PAGE =====
          Troisième place, et la bonne. Entre « 1 connecté » et la ligne du
          joueur, elle coupait en deux le groupe qui dit QUI EST LÀ. Collée aux
@@ -15027,20 +15120,20 @@ function renderOnline(){
     <div class="presence-card">
       <span class="live-dot"></span>
       <span class="presence-num">${n}</span>
-      <span class="presence-lbl">${n>1?"connectés":"connecté"}</span>
+      <span class="presence-lbl">${n>1?T("connectés"):T("connecté")}</span>
     </div>
     <button class="me-row" onclick="openProfile()">
       ${avatarHtml(profile.name, profile.color, 2.05, profile.isCreator)}
       <span class="me-name">${escapeHtml(profile.name)}</span>
-      ${profile.isCreator?creatorBadge():`<span class="me-edit">Modifier</span>`}
+      ${profile.isCreator?creatorBadge():`<span class="me-edit">${T("Modifier")}</span>`}
     </button>
     <div class="flex-sp"></div>
     ${net.searching ? `
       <div class="searching-card${searchNew?' reveal-in':''}">
         <div class="spinner"></div>
-        <div class="searching-txt">Recherche d'un adversaire…</div>
+        <div class="searching-txt">${T("Recherche d'un adversaire…")}</div>
         <div class="opp-progress">${freshLookers()>0?(freshLookers()+" autre"+(freshLookers()>1?"s":"")+" en recherche…"):"Dès qu'un autre joueur cherche, la partie démarre."}</div>
-        <button class="btn-ghost btn-cancel" style="margin-top:1rem" onclick="setSearching(false)">Annuler</button>
+        <button class="btn-ghost btn-cancel" style="margin-top:1rem" onclick="setSearching(false)">${T("Annuler")}</button>
       </div>
       <div class="flex-sp"></div>
     ` : `
@@ -15055,17 +15148,17 @@ function renderOnline(){
            chose en trois fois plus long. -->
       <button class="online-action${actionsNew?' reveal-in':''}" style="--i:0" onclick="setSearching(true)">
         <span class="oa-ico r">${ICONS.bolt}</span>
-        <span class="oa-txt"><b>Partie aléatoire</b><small>Un adversaire au hasard, tout de suite</small></span>
+        <span class="oa-txt"><b>${T("Partie aléatoire")}</b><small>${T("Un adversaire au hasard, tout de suite")}</small></span>
         <span class="chev">${ICONS.chevronRight}</span>
       </button>
       <button class="online-action${actionsNew?' reveal-in':''}" style="--i:1" onclick="createRoomFlow()">
         <span class="oa-ico g">${ICONS.plusCircle}</span>
-        <span class="oa-txt"><b>Créer une partie</b><small>Un code à partager, jusqu'à 8 joueurs</small></span>
+        <span class="oa-txt"><b>${T("Créer une partie")}</b><small>${T("Un code à partager, jusqu'à 8 joueurs")}</small></span>
         <span class="chev">${ICONS.chevronRight}</span>
       </button>
       <button class="online-action${actionsNew?' reveal-in':''}" style="--i:2" onclick="state.screen='online-join';net.error='';render()">
         <span class="oa-ico b">${ICONS.users}</span>
-        <span class="oa-txt"><b>Rejoindre une partie</b><small>Avec le code reçu d'un ami</small></span>
+        <span class="oa-txt"><b>${T("Rejoindre une partie")}</b><small>${T("Avec le code reçu d'un ami")}</small></span>
         <span class="chev">${ICONS.chevronRight}</span>
       </button>
       <div class="flex-sp"></div>
@@ -15086,25 +15179,25 @@ function createRoomFlow(){ net.autoMatch = false; clearTimeout(net.matchGuard); 
 function renderOnlineJoin(){
   const el=document.createElement("div"); el.className="screen";
   el.innerHTML = `
-    ${renderHeader("Rejoindre", true, "net.error='';state.screen='online';render()")}
+    ${renderHeader(T("Rejoindre"), true, "net.error='';state.screen='online';render()")}
     <div class="flex-sp"></div>
     <div class="online-hero">
       <div class="online-hero-icon">${ICONS.users}</div>
-      <h2 class="online-hero-title">Entre le code</h2>
-      <p class="online-hero-sub">Demande à ton ami le code à 4 caractères de sa partie.</p>
+      <h2 class="online-hero-title">${T("Entre le code")}</h2>
+      <p class="online-hero-sub">${T("Demande à ton ami le code à 4 caractères de sa partie.")}</p>
     </div>
     <input class="code-input" id="joinCode" maxlength="4" placeholder="ABCD" autocapitalize="characters" autocomplete="off" enterkeyhint="go" oninput="this.value=this.value.toUpperCase().replace(/[^A-Z0-9]/g,'')" onkeydown="if(event.key==='Enter'){event.preventDefault();this.blur();joinRoom(this.value,false);}">
     <div class="err-msg${net.error?"":" vide"}">${net.error?escapeHtml(net.error):""}</div>
     <div class="flex-sp"></div>
-    <button class="btn-primary" onclick="joinRoom(document.getElementById('joinCode').value,false)">Rejoindre</button>
+    <button class="btn-primary" onclick="joinRoom(document.getElementById('joinCode').value,false)">${T("Rejoindre")}</button>
   `;
   return el;
 }
 
 /* « Le duel » ne veut plus rien dire à cinq. Un seul endroit décide du mot,
    pour que l'écran entier parle d'une seule voix. */
-function motPartie(){ return nbJoueurs() > 2 ? "la partie" : "le duel"; }
-function titrePartie(){ return nbJoueurs() > 2 ? "Partie" : "Duel"; }
+function motPartie(){ return nbJoueurs() > 2 ? T("la partie") : T("le duel"); }
+function titrePartie(){ return nbJoueurs() > 2 ? T("Partie") : T("Duel"); }
 /* La taille des deux avatars du face-à-face. Écrite en clamp sur la hauteur
    UTILE (--hu tient déjà compte de l'encoche et de la barre d'accueil) : 3 rem
    sur un grand écran comme avant, jusqu'à 2,1 sur un iPhone SE posé sur
@@ -15130,11 +15223,11 @@ function renderOnlineRoom(){
      restantes — elle dit ce qu'on sait, et rien de plus. */
   const duel = nbJoueurs() === 2;
   const aPlusieurs = !duel;
-  const motSalon = duel ? "le duel" : "la partie";
+  const motSalon = duel ? T("le duel") : T("la partie");
   el.innerHTML = `
-    ${renderHeader("Salon", true, "leaveRoomToOnline()")}
+    ${renderHeader(T("Salon"), true, "leaveRoomToOnline()")}
     <div class="code-hero">
-      <div class="code-label">Code de la partie</div>
+      <div class="code-label">${T("Code de la partie")}</div>
       <div class="code-big">${escapeHtml(net.code||"")}</div>
       <!-- « Partage ce code avec ton ami » se disait au singulier tant que le
            salon n'avait pas dépassé deux joueurs — c'est-à-dire justement au
@@ -15147,7 +15240,7 @@ function renderOnlineRoom(){
             ? Tf("Le salon est complet · {n} joueurs", {n:MAX_JOUEURS})
             : Tf("Partage ce code · jusqu'à {n} joueurs", {n:MAX_JOUEURS}))
         : T("Tu as rejoint la partie")}</div>
-      ${net.isHost && nbJoueurs() < MAX_JOUEURS && (navigator.share || (navigator.clipboard&&navigator.clipboard.writeText)) ? `<button class="btn-invite" onclick="shareRoomCode()"><span class="ico">${ICONS.share}</span><span>Inviter des amis</span></button>` : ""}
+      ${net.isHost && nbJoueurs() < MAX_JOUEURS && (navigator.share || (navigator.clipboard&&navigator.clipboard.writeText)) ? `<button class="btn-invite" onclick="shareRoomCode()"><span class="ico">${ICONS.share}</span><span>${T("Inviter des amis")}</span></button>` : ""}
     </div>
     ${aPlusieurs ? `
     <div class="salle-liste">
@@ -15157,12 +15250,12 @@ function renderOnlineRoom(){
           <span class="rank-name">${escapeHtml(j.name||"Joueur")}</span>
           <span class="salle-tag">${j.moi ? (net.isHost?T("Toi · Hôte"):T("Toi")) : T("Prêt")}</span>
         </div>`).join("")}
-      ${nbJoueurs() < MAX_JOUEURS ? `<div class="rank-row salle-ligne vide"><span class="avatar waiting" style="width:2.1rem;height:2.1rem;font-size:0.95rem;">?</span><span class="rank-name">En attente…</span><span class="salle-tag">${MAX_JOUEURS - nbJoueurs()} place${MAX_JOUEURS-nbJoueurs()>1?"s":""}</span></div>` : ""}
+      ${nbJoueurs() < MAX_JOUEURS ? `<div class="rank-row salle-ligne vide"><span class="avatar waiting" style="width:2.1rem;height:2.1rem;font-size:0.95rem;">?</span><span class="rank-name">${T("En attente…")}</span><span class="salle-tag">${Tf(MAX_JOUEURS-nbJoueurs()>1?"{n} places":"{n} place", {n:MAX_JOUEURS-nbJoueurs()})}</span></div>` : ""}
     </div>` : `
     <div class="vs-row">
-      <div class="vs-player">${avatarHtml(profile.name, profile.color, AV_SALON, profile.isCreator)}<div class="vs-name">${escapeHtml(profile.name)}</div><div class="vs-tag${net.isHost?' is-host':''}">${net.isHost?"Toi · Hôte":"Toi"}</div></div>
+      <div class="vs-player">${avatarHtml(profile.name, profile.color, AV_SALON, profile.isCreator)}<div class="vs-name">${escapeHtml(profile.name)}</div><div class="vs-tag${net.isHost?' is-host':''}">${net.isHost?T("Toi · Hôte"):T("Toi")}</div></div>
       <div class="vs-mid">VS</div>
-      <div class="vs-player${oppNew?' reveal-in':''}" id="oppSlot">${net.oppPresent?avatarHtml(net.opp.name, net.opp.color, AV_SALON, net.opp.isCreator):`<span class="avatar waiting" style="width:${AV_SALON};height:${AV_SALON};font-size:calc(${AV_SALON} * 0.42);">?</span>`}<div class="vs-name">${net.oppPresent?escapeHtml(net.opp.name):"En attente…"}</div><div class="vs-tag${net.isHost?'':' is-host'}">${net.isHost?T("Adversaire"):T("Hôte")}</div></div>
+      <div class="vs-player${oppNew?' reveal-in':''}" id="oppSlot">${net.oppPresent?avatarHtml(net.opp.name, net.opp.color, AV_SALON, net.opp.isCreator):`<span class="avatar waiting" style="width:${AV_SALON};height:${AV_SALON};font-size:calc(${AV_SALON} * 0.42);">?</span>`}<div class="vs-name">${net.oppPresent?escapeHtml(net.opp.name):T("En attente…")}</div><div class="vs-tag${net.isHost?'':' is-host'}">${net.isHost?T("Adversaire"):T("Hôte")}</div></div>
     </div>`}
     <div class="host-note">${net.isHost?Tf("Tu es l'hôte : règle la partie, puis lance {mot}.", {mot:motSalon}):Tf("L'hôte paramètre la partie puis lance {mot}.", {mot:motSalon})}</div>
     <div class="flex-sp"></div>
@@ -15171,19 +15264,19 @@ function renderOnlineRoom(){
       <div class="len-row">
         ${Object.keys(LENGTHS).map(k=>`<button class="len-chip${net.lengthKey===k?' sel':''}" data-rgroup="len" data-k="${k}" onclick="selectRoomOpt('len','${k}')">${LENGTHS[k]*3} questions</button>`).join("")}
       </div>
-      <div class="len-label">Chrono par question</div>
+      <div class="len-label">${T("Chrono par question")}</div>
       <div class="len-row">
-        ${Object.keys(TIMER_OPTS).map(k=>`<button class="len-chip${net.timerKey===k?' sel':''}" data-rgroup="tmr" data-k="${k}" onclick="selectRoomOpt('tmr','${k}')">${TIMER_LABELS[k]}</button>`).join("")}
+        ${Object.keys(TIMER_OPTS).map(k=>`<button class="len-chip${net.timerKey===k?' sel':''}" data-rgroup="tmr" data-k="${k}" onclick="selectRoomOpt('tmr','${k}')">${T(TIMER_LABELS[k])}</button>`).join("")}
       </div>
-      <div class="len-label">Testament</div>
+      <div class="len-label">${T("Testament")}</div>
       <div class="len-row">
-        <button class="len-chip${net.themeKey==='tout'?' sel':''}" data-rgroup="theme" data-k="tout" onclick="selectRoomOpt('theme','tout')">Tout</button>
-        <button class="len-chip${net.themeKey==='at'?' sel':''}" data-rgroup="theme" data-k="at" onclick="selectRoomOpt('theme','at')">Ancien</button>
-        <button class="len-chip${net.themeKey==='nt'?' sel':''}" data-rgroup="theme" data-k="nt" onclick="selectRoomOpt('theme','nt')">Nouveau</button>
+        <button class="len-chip${net.themeKey==='tout'?' sel':''}" data-rgroup="theme" data-k="tout" onclick="selectRoomOpt('theme','tout')">${T("Tout")}</button>
+        <button class="len-chip${net.themeKey==='at'?' sel':''}" data-rgroup="theme" data-k="at" onclick="selectRoomOpt('theme','at')">${T("Ancien")}</button>
+        <button class="len-chip${net.themeKey==='nt'?' sel':''}" data-rgroup="theme" data-k="nt" onclick="selectRoomOpt('theme','nt')">${T("Nouveau")}</button>
       </div>
-      <button class="btn-primary${canStart?'':' is-waiting'}" id="roomStartBtn" onclick="hostStart()">${canStart?("Commencer "+motSalon):"En attente des joueurs…"}</button>
+      <button class="btn-primary${canStart?'':' is-waiting'}" id="roomStartBtn" onclick="hostStart()">${canStart?Tf("Commencer {mot}", {mot:motSalon}):T("En attente des joueurs…")}</button>
     ` : `
-      <div class="waiting-note" id="waitNote">${net.oppPresent?"Prêt ! En attente du lancement par l'hôte…":"Connexion au salon…"}</div>
+      <div class="waiting-note" id="waitNote">${net.oppPresent?T("Prêt ! En attente du lancement par l'hôte…"):T("Connexion au salon…")}</div>
       <div class="flex-sp"></div>
     `}
   `;
@@ -15222,7 +15315,7 @@ function renderOnlinePlay(){
       <div class="flex-sp"></div>
       <div class="searching-card">
         <div class="spinner"></div>
-        <div class="searching-txt">Tu as terminé, bien joué !</div>
+        <div class="searching-txt">${T("Tu as terminé, bien joué !")}</div>
         <div class="opp-progress">${net.oppGone ? (aPlusieurs?T("Les autres joueurs ont quitté la partie."):T("Ton adversaire a quitté la partie."))
           : (aPlusieurs
              ? joueursPresents().map(j=>escapeHtml(j.name||T("Joueur"))+" : "+(j.done?T("terminé"):(j.idx|0)+"/"+total)).join(" · ")
@@ -15259,7 +15352,7 @@ function renderOnlinePlay(){
   el.innerHTML = `${renderHeader(titrePartie(), true, "quitDuel()")}
     ${goneBanner}
     ${scorebar}
-    <div class="play-meta"><span class="tier-chip ${info.cls}">${tierDotsHtml(info.level)}${info.label} · ${info.pts} pts</span><span class="q-counter">${net.idx+1}/${total}</span>${!net.revealed ? timerChipHtml(timerSecondsFor(net.timerKey)) : ""}</div>
+    <div class="play-meta"><span class="tier-chip ${info.cls}">${tierDotsHtml(info.level)}${T(info.label)} · ${info.pts} pts</span><span class="q-counter">${net.idx+1}/${total}</span>${!net.revealed ? timerChipHtml(timerSecondsFor(net.timerKey)) : ""}</div>
     <div class="progress-track">
       ${devantPct > 0 ? `<div class="progress-ghost" style="width:${devantPct}%"></div>` : ""}
       <div class="progress-fill" style="--p:${moiPct / 100}" data-p="${moiPct / 100}"></div>
@@ -15268,7 +15361,7 @@ function renderOnlinePlay(){
     <div class="question-card${fresh?' animate':''}"><div class="qtext">${escapeHtml(texteQuestion(q))}</div></div>
     <div class="options-grid${fresh?' animate':''}">${optionsHtml}</div>
     ${net.timedOut && net.revealed ? `<div class="timeout-note${pop?' reveal-in':''}"><span class="ico">${ICONS.clock}</span>${T("Temps écoulé !")}</div>` : ""}
-    ${net.revealed?`<div class="fact-card${pop?' reveal-in':''}">${testamentTag(q)}<span class="ficon">${ICONS.bookOpen}</span><span class="ftext"><span class="fact-label">${T("Le savais-tu ?")}</span>${escapeHtml(faitVersion(texteFait(q)))}</span></div><button class="btn-next${pop?' reveal-in':''}" onclick="onlineNext()">${net.idx+1>=total?"Terminer":"Question suivante"}</button>`:""}
+    ${net.revealed?`<div class="fact-card${pop?' reveal-in':''}">${testamentTag(q)}<span class="ficon">${ICONS.bookOpen}</span><span class="ftext"><span class="fact-label">${T("Le savais-tu ?")}</span>${escapeHtml(faitVersion(texteFait(q)))}</span></div><button class="btn-next${pop?' reveal-in':''}" onclick="onlineNext()">${net.idx+1>=total?T("Terminer"):T("Question suivante")}</button>`:""}
     <div class="flex-sp"></div>`;
   if(fresh && !net.revealed){
     startQTimer(timerSecondsFor(net.timerKey), onlineTimeUp);
@@ -15296,29 +15389,29 @@ function renderOnlineEnd(){
   if(aPlusieurs && !net.oppGone){
     if(net.isHost){
       replayMsg = T("Tout le monde repart avec toi.");
-      replayActions = `<button class="btn-replay" onclick="relancerPartie()">Rejouer</button>`
-        + `<button class="btn-newgame btn-quit" onclick="leaveOnline()">Quitter</button>`;
+      replayActions = `<button class="btn-replay" onclick="relancerPartie()">${T("Rejouer")}</button>`
+        + `<button class="btn-newgame btn-quit" onclick="leaveOnline()">${T("Quitter")}</button>`;
     } else {
       replayMsg = T("L'hôte peut relancer une partie.");
-      replayActions = `<button class="btn-newgame btn-quit" onclick="leaveOnline()">Quitter</button>`;
+      replayActions = `<button class="btn-newgame btn-quit" onclick="leaveOnline()">${T("Quitter")}</button>`;
     }
   } else if(net.oppGone){
-    replayActions = `<button class="btn-newgame btn-quit" onclick="leaveOnline()">Quitter</button>`;
+    replayActions = `<button class="btn-newgame btn-quit" onclick="leaveOnline()">${T("Quitter")}</button>`;
   } else if(net.iWantReplay && net.oppWantReplay){
     replayMsg = T("Nouvelle partie en préparation…");
-    replayActions = `<button class="btn-replay is-waiting" disabled>C'est parti…</button>`;
+    replayActions = `<button class="btn-replay is-waiting" disabled>${T("C'est parti…")}</button>`;
   } else if(net.oppWantReplay){
     replayMsg = oppName + " aimerait rejouer. Tu acceptes ?";
-    replayActions = `<button class="btn-replay" onclick="onlineRematch()">Accepter</button>`
-      + `<button class="btn-newgame" onclick="declineRematch()">Refuser</button>`;
+    replayActions = `<button class="btn-replay" onclick="onlineRematch()">${T("Accepter")}</button>`
+      + `<button class="btn-newgame" onclick="declineRematch()">${T("Refuser")}</button>`;
   } else if(net.iWantReplay){
     replayMsg = Tf("En attente de la réponse de {nom}…", {nom:oppName});
-    replayActions = `<button class="btn-replay is-waiting" disabled>En attente…</button>`
-      + `<button class="btn-newgame" onclick="cancelRematch()">Annuler</button>`;
+    replayActions = `<button class="btn-replay is-waiting" disabled>${T("En attente…")}</button>`
+      + `<button class="btn-newgame" onclick="cancelRematch()">${T("Annuler")}</button>`;
   } else {
     if(net.replayDeclined){ replayMsg = Tf("{nom} ne souhaite pas rejouer pour l'instant.", {nom:oppName}); }
-    replayActions = `<button class="btn-replay" onclick="onlineRematch()">Rejouer</button>`
-      + `<button class="btn-newgame btn-quit" onclick="leaveOnline()">Quitter</button>`;
+    replayActions = `<button class="btn-replay" onclick="onlineRematch()">${T("Rejouer")}</button>`
+      + `<button class="btn-newgame btn-quit" onclick="leaveOnline()">${T("Quitter")}</button>`;
   }
   /* LE RÉSULTAT À PLUSIEURS reprend le classement du mode Groupe — mêmes
      rangées, mêmes médailles or/argent/bronze. Rien de neuf à dessiner : le
@@ -15336,7 +15429,7 @@ function renderOnlineEnd(){
   const title = aPlusieurs
     ? (maPlace===1 ? (exaequo ? T("Ex \u00e6quo en t\u00eate\u00a0!") : T("Victoire\u00a0!")) : Tf("{p}\u1d49 sur {n}", {p:maPlace, n:rang.length}))
     : (net.oppGone ? T("Victoire par forfait") : (tie?T("Égalité !"):(win?T("Victoire !"):T("Défaite"))));
-  el.innerHTML = `${renderHeader("Résultat", false)}
+  el.innerHTML = `${renderHeader(T("Résultat"), false)}
     <div class="end-hero"><div class="end-medal"><span class="em-cup">${TROPHY_GOLD}</span></div>
       <div class="end-eyebrow">${aPlusieurs?T("Partie terminée"):T("Duel terminé")}</div>
       <h1 class="end-title">${title}</h1></div>
@@ -15359,7 +15452,7 @@ function renderOnlineEnd(){
       <div class="dr-vs">VS</div>
       <div class="dr-side ${(!win&&!tie&&!net.oppGone)?'winner':''}">${net.opp?avatarHtml(net.opp.name,net.opp.color,3,net.opp.isCreator):`<span class="avatar waiting" style="width:3rem;height:3rem;font-size:1.25rem;">?</span>`}<div class="dr-name">${escapeHtml(net.opp?net.opp.name:"Adversaire")}</div><div class="dr-score" data-count-opp>0</div></div>
     </div>`}
-    ${net.missed && net.missed.length ? `<button class="btn-review" onclick="openMissedReview(net.missed)"><span class="ico">${ICONS.bookOpen}</span>Revoir ${net.missed.length>1?`mes ${net.missed.length} erreurs`:"mon erreur"}</button>` : ""}
+    ${net.missed && net.missed.length ? `<button class="btn-review" onclick="openMissedReview(net.missed)"><span class="ico">${ICONS.bookOpen}</span>${net.missed.length>1?Tf("Revoir mes {n} erreurs",{n:net.missed.length}):T("Revoir mon erreur")}</button>` : ""}
     <div class="end-bottom">
     ${net.oppGone?`<div class="info-card end-note">${T("Ton adversaire a quitté la partie.")}</div>`:(replayMsg?`<div class="info-card end-note">${replayMsg}</div>`:"")}
     <div class="end-actions">${replayActions}</div>
@@ -17161,11 +17254,11 @@ function openFsGuide(){
       bodyHtml:`<div class="guide-steps">
       <div class="set-row">
         <span class="set-ico fsx">${ICONS.telecharger}</span>
-        <span class="set-txt"><b>Touche Installer</b><small>Ton téléphone demande confirmation</small></span>
+        <span class="set-txt"><b>${T("Touche Installer")}</b><small>${T("Ton téléphone demande confirmation")}</small></span>
       </div>
       <div class="set-row">
         <span class="set-ico vol">${ICONS.expand}</span>
-        <span class="set-txt"><b>Ouvre le jeu par son icône</b><small>Il démarre en plein écran</small></span>
+        <span class="set-txt"><b>${T("Ouvre le jeu par son icône")}</b><small>${T("Il démarre en plein écran")}</small></span>
       </div></div>`,
       cardClass:"guide", okLabel:"Installer", hideCancel:true,
       onOk: ()=>{ invitePWA = null; try{ invitation.prompt(); }catch(e){} return true; }

@@ -178,6 +178,57 @@ const RE = /(["'`])((?:[^\\\n]|\\.)*?)\1/g;
 /* Le blanchiment garde la longueur : un décalage dans « net » est le même
    décalage dans « src ». On peut donc demander à zonesT si ce littéral-ci est
    déjà à l'intérieur d'un appel à T(). */
+/* ===== UN GABARIT MULTILIGNE EST UN LITTÉRAL, MÊME S'IL TIENT SUR DIX =====
+   Ce banc lisait LIGNE PAR LIGNE, et son motif exclut explicitement le saut
+   de ligne ([^\\n]). Or presque tout le balisage du jeu est écrit en gabarits
+   `…` qui s'étalent sur plusieurs lignes : aucun ne pouvait correspondre.
+   Le banc annonçait donc « aucune phrase française ne traîne hors de T() »
+   alors que des écrans ENTIERS n'étaient pas traduits — l'accueil En ligne au
+   complet, vu en anglais sur le téléphone de Taylor, en français.
+   On replie donc chaque gabarit sur une seule ligne AVANT de scanner : les
+   sauts de ligne qui sont À L'INTÉRIEUR d'un `…` deviennent des espaces. La
+   longueur ne bouge pas d'un caractère, donc les décalages calculés plus haut
+   (zonesT) restent exacts. */
+function replierGabarits(t){
+  /* Une PILE, et non un drapeau : le balisage du jeu est fait de gabarits
+     DANS des ${…} DANS des gabarits. Ma première version ne repliait que le
+     premier niveau, et « Partie aléatoire » — deux niveaux plus bas — lui
+     échappait encore. On empile donc : « tpl » quand on entre dans un `…`,
+     « expr » quand on entre dans un ${…}, « bloc » pour les accolades
+     ordinaires qu'il contient. Un retour à la ligne ne se replie que s'il est
+     DIRECTEMENT dans un gabarit : c'est là, et seulement là, qu'il y a du
+     texte lu par le joueur. */
+  const out = t.split('');
+  const pile = [];
+  let i = 0;
+  while(i < out.length){
+    const c = out[i];
+    const haut = pile.length ? pile[pile.length - 1] : null;
+    if(c === '\\'){ i += 2; continue; }
+    if(haut !== 'tpl' && (c === '"' || c === "'")){
+      const q = c; i++;
+      while(i < out.length && out[i] !== q){ if(out[i] === '\\') i++; i++; }
+      i++; continue;
+    }
+    if(c === '`'){ if(haut === 'tpl') pile.pop(); else pile.push('tpl'); i++; continue; }
+    if(haut === 'tpl'){
+      if(c === '$' && out[i + 1] === '{'){ pile.push('expr'); i += 2; continue; }
+      if(c === '\n') out[i] = ' ';
+      i++; continue;
+    }
+    if(haut === 'expr' || haut === 'bloc'){
+      if(c === '{'){ pile.push('bloc'); i++; continue; }
+      if(c === '}'){ pile.pop(); i++; continue; }
+    }
+    i++;
+  }
+  return out.join('');
+}
+/* Le repliage DÉPLACE les numéros de ligne : la troisième porte, qui les
+   affiche, travaille donc sur le texte d'origine. Elle n'a pas besoin du
+   repliage — un texte entre deux balises tient sur sa ligne. */
+const netBrut = net;
+net = replierGabarits(net);
 let debutLigne = 0;
 net.split('\n').forEach((ligne, n) => {
   const base = debutLigne;
@@ -231,6 +282,156 @@ if(trainent.size){
   [...trainent].sort((a, b) => a[1] - b[1]).slice(0, 12)
     .forEach(([t, n]) => console.log('       ligne ' + n + '  ' + t.slice(0, 100)));
 } else console.log('  OK aucune phrase française ne traîne hors de T()');
+
+/* ============ TROISIÈME PORTE : LE TEXTE HTML LUI-MÊME ============
+   Les deux premières cherchent des LITTÉRAUX. C'est le bon angle pour une
+   chaîne isolée, et le mauvais pour du balisage : le jeu est écrit en
+   gabarits `…` imbriqués les uns dans les autres, et aucun motif d'expression
+   régulière ne sait où l'un finit et où l'autre commence. Résultat, l'accueil
+   En ligne au complet — « Partie aléatoire », « Créer une partie »,
+   « Rejoindre une partie » — passait au travers, et Taylor l'a vu en français
+   sur un téléphone réglé en anglais.
+   On prend donc le problème par l'autre bout. Ce que le joueur lit dans une
+   page, c'est ce qui se trouve ENTRE deux balises. On efface les ${…} — tout
+   ce qui est calculé, donc tout ce qui passe par T() — et l'on regarde ce qui
+   reste entre « > » et « < ». Ce qui reste est, par construction, du texte
+   écrit en dur. S'il a l'air français, il ne sera jamais traduit. */
+const sansExpr = (function(){
+  /* On efface le CODE, on garde le TEXTE. Première version : j'effaçais tout
+     ce qui se trouve dans un ${…}. C'était trop — le balisage du jeu vit
+     précisément là, dans des branches conditionnelles
+     (« ${x ? `<b>Oui</b>` : `<b>Non</b>`} »), et j'ai effacé les écrans mêmes
+     que je cherchais. On suit donc la même pile qu'au-dessus : dans un
+     gabarit on garde, dans du code on blanchit, et un gabarit ouvert À
+     L'INTÉRIEUR du code se garde à nouveau. */
+  const o = netBrut.split('');
+  const pile = [];
+  let i = 0;
+  while(i < o.length){
+    const c = o[i];
+    const haut = pile.length ? pile[pile.length - 1] : null;
+    const code = haut === 'expr' || haut === 'bloc' || haut === null;
+    if(c === '\\'){ if(code && c !== '\n') o[i] = ' '; i += 2; continue; }
+    if(c === '`'){
+      if(haut === 'tpl') pile.pop(); else pile.push('tpl');
+      o[i] = ' '; i++; continue;
+    }
+    if(haut === 'tpl'){
+      if(c === '$' && o[i+1] === '{'){ pile.push('expr'); o[i] = ' '; o[i+1] = ' '; i += 2; continue; }
+      i++; continue;                                  // du texte : on le garde
+    }
+    if(haut === 'expr' || haut === 'bloc'){
+      if(c === '{'){ pile.push('bloc'); o[i] = ' '; i++; continue; }
+      if(c === '}'){ pile.pop(); o[i] = ' '; i++; continue; }
+    }
+    if(c !== '\n') o[i] = ' ';                         // du code : on l'efface
+    i++;
+  }
+  return o.join('');
+})();
+const enDur = new Map();
+let ligneN = 1, pos = 0;
+for(const ligne of sansExpr.split('\n')){
+  for(const m of ligne.matchAll(/>([^<>]{3,}?)</g)){
+    const txt = m[1].replace(/\s+/g, ' ').trim();
+    if(txt.length < 3) continue;
+    if(/^[\s\d.,:;%\/·—–()\[\]{}+*=-]*$/.test(txt)) continue;
+    if(/^[a-z][a-z0-9-]*$/.test(txt)) continue;
+    /* ===== ICI, PAS DE DEVINETTE SUR LA LANGUE =====
+       Les deux premières portes doivent deviner si un littéral est français,
+       parce qu'un littéral peut être une clé, une classe, une couleur. Celle-ci
+       n'a pas ce problème : ce qui est ENTRE DEUX BALISES et n'est pas
+       calculé, c'est du texte affiché, écrit en dur — quelle que soit sa
+       langue, il ne passera jamais par T(). La deviner coûtait cher :
+       « Rejoindre une partie » n'a pas d'accent et ne contient qu'un mot
+       outil, il passait au travers pendant que ses deux voisins étaient pris.
+       On les prend donc tous, et on écarte seulement ce qui n'est pas une
+       phrase : chiffres, symboles, un mot technique en minuscules. */
+    if(!/[A-Za-zÀ-ÿ]{2}/.test(txt)) continue;
+    /* Trois exceptions, nommées une par une — une liste d'exceptions qu'on
+       peut lire vaut mieux qu'un seuil qui en cache. Ce ne sont pas des
+       phrases : une unité, un séparateur de score, et le nom du bloc de code
+       que le message de configuration demande d'ouvrir. */
+    if(txt === '&nbsp;%' || txt === '· pts' || txt === 'CONFIG EN LIGNE') continue;
+    if(!enDur.has(txt)) enDur.set(txt, ligneN);
+  }
+  ligneN++; pos += ligne.length + 1;
+}
+if(enDur.size){
+  ko++;
+  console.log('  KO ' + enDur.size + ' texte(s) écrit(s) en dur dans le balisage :');
+  [...enDur].sort((a, b) => a[1] - b[1]).slice(0, 60)
+    .forEach(([t, n]) => console.log('       ligne ' + n + '  ' + t.slice(0, 92)));
+  if(enDur.size > 60) console.log('       … et ' + (enDur.size - 60) + ' autre(s)');
+} else console.log('  OK aucun texte français écrit en dur dans le balisage');
+
+/* ============ QUATRIÈME PORTE : LE TEXTE PASSÉ EN ARGUMENT ============
+   La troisième regarde ce qui est ENTRE deux balises. Restent les phrases que
+   le code donne à une fonction : renderHeader("En ligne"), un ternaire
+   n>1?"connectés":"connecté", le titre d'une fenêtre. Elles ne sont jamais
+   entre deux balises, et la première porte ne les voit pas non plus — son
+   motif ne sait pas traverser des gabarits imbriqués les uns dans les autres.
+   On prend donc l'INVERSE du masque précédent : on garde le code, on efface
+   le texte, et on y cherche les littéraux. Ce qui a un accent ou deux mots
+   outils est du français ; ce qui est déjà dans un T() ne compte pas. */
+const codeSeul = (function(){
+  const o = netBrut.split('');
+  const pile = [];
+  let i = 0;
+  while(i < o.length){
+    const c = o[i];
+    const haut = pile.length ? pile[pile.length - 1] : null;
+    if(c === '\\'){ i += 2; continue; }
+    if(c === '`'){
+      if(haut === 'tpl') pile.pop(); else pile.push('tpl');
+      o[i] = ' '; i++; continue;
+    }
+    if(haut === 'tpl'){
+      if(c === '$' && o[i+1] === '{'){ pile.push('expr'); o[i] = ' '; o[i+1] = ' '; i += 2; continue; }
+      if(c !== '\n') o[i] = ' ';                 // du texte : effacé ici
+      i++; continue;
+    }
+    if(haut === 'expr' || haut === 'bloc'){
+      if(c === '{'){ pile.push('bloc'); i++; continue; }
+      if(c === '}'){ pile.pop(); i++; continue; }
+    }
+    i++;                                         // du code : gardé
+  }
+  return o.join('');
+})();
+const enArg = new Map();
+const RE2 = /(["'])((?:[^\\\n]|\\.)*?)\1/g;
+let lg = 1, dl = 0;
+for(const ligne of codeSeul.split('\n')){
+  let m; RE2.lastIndex = 0;
+  while((m = RE2.exec(ligne))){
+    const txt = m[2].trim();
+    const abs = dl + m.index;
+    if(txt.length < 4) continue;
+    if(zonesT.some(([a, b]) => abs >= a && abs <= b)) continue;   // déjà dans un T()
+    if(/^[a-z][a-z0-9_-]*$/.test(txt)) continue;                  // une clé, une classe
+    if(/^(https?:|data:|#|\.|\/)/.test(txt)) continue;
+    if(/[=!]==?\s*$/.test(ligne.slice(0, m.index))) continue;      // une COMPARAISON
+    if(!(ACCENT.test(txt) || (txt.match(OUTILS) || []).length >= 2)) continue;
+    /* ===== UNE PHRASE AU DICTIONNAIRE N'EST PAS UN OUBLI =====
+       Ces phrases vivent dans des TABLES (les succès, les portes d'« À
+       revoir », les mots de fin) et passent par T() au moment de s'afficher :
+       T(a.t), T(choix[i]). Le littéral, lui, n'est pas dans un T() — la porte
+       les signalait donc toutes, y compris les cinquante-trois qui étaient
+       parfaitement traduites. Ce qu'on cherche ici, c'est une phrase de table
+       SANS traduction : celles-là retombent en français, en silence. */
+    if(clesPlates.has(plat(txt))) continue;
+    if(!enArg.has(txt)) enArg.set(txt, lg);
+  }
+  lg++; dl += ligne.length + 1;
+}
+if(enArg.size){
+  ko++;
+  console.log('  KO ' + enArg.size + ' phrase(s) française(s) passée(s) en argument :');
+  [...enArg].sort((a, b) => a[1] - b[1]).slice(0, 80)
+    .forEach(([t, n]) => console.log('       ligne ' + n + '  ' + t.slice(0, 92)));
+  if(enArg.size > 80) console.log('       … et ' + (enArg.size - 80) + ' autre(s)');
+} else console.log('  OK aucune phrase française passée en argument');
 
 console.log(ko === 0 ? '\n  OK' : '\n  ' + ko + ' défaut(s)');
 process.exit(ko === 0 ? 0 : 1);
