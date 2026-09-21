@@ -35,6 +35,7 @@ const { chromium } = require('/opt/node22/lib/node_modules/playwright');
 const fs = require('fs');
 const SUPA = '/tmp/claude-0/-home-user-BibleTrivia/fb9bf869-826b-5523-9825-ea1b24c294d0/scratchpad/supabase.js';
 const IOS = 'Mozilla/5.0 (iPhone; CPU iPhone OS 17_5 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.5 Mobile/15E148 Safari/604.1';
+const ANDROID = 'Mozilla/5.0 (Linux; Android 14; Pixel 8) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/126.0.0.0 Mobile Safari/537.36';
 const URL = process.argv[2] || process.env.URL_ESSAI || 'http://127.0.0.1:8099/index.html';
 
 /* Les mots-outils français qui NE SONT PAS des mots anglais. Volontairement
@@ -72,6 +73,11 @@ const PREP = (lg) => {
   localStorage.setItem('bt_langue', lg);
   localStorage.setItem('bt_profile', JSON.stringify({ name:'Taylor', color:'#4C86E8', isCreator:true }));
   localStorage.setItem('bt_fs_hint', '1');
+  /* SANS navigator.share, LE JEU NE DESSINE PAS SES BOUTONS DE PARTAGE.
+     shareLineHtml() rend "" quand le téléphone ne sait pas partager — et
+     Chromium sans tête ne sait pas. « Share the result » et « Invite friends »
+     n'avaient donc jamais été relus en anglais, faute d'exister. */
+  try { navigator.share = () => Promise.resolve(); } catch(e){}
   localStorage.setItem('bt_progress', JSON.stringify({ books:{ 'Genèse':12, 'Jean':7 }, correct:434 }));
   const k = (n)=>{ const d=new Date(Date.now()-n*86400000); return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0'); };
   localStorage.setItem('bt_daily', JSON.stringify({ last:k(1), streak:5, jours:[k(1),k(2),k(3),k(4)], geles:[k(5)], gels:1, parties:12 }));
@@ -114,6 +120,31 @@ const RAMASSER = () => {
 /* Ce qu'on laisse passer à la DEUXIÈME barrière : les textes qui ont le droit
    d'être identiques en français et en anglais. Chacun est ici pour une raison
    qu'on peut dire à voix haute. */
+/* ===== CE QU'AUCUN BANC NE PEUT PEINDRE, ET POURQUOI =====
+   La troisième barrière compte les phrases anglaises jamais vues à l'écran.
+   Tant qu'elle se contentait de les COMPTER, le nombre baissait sans jamais
+   vouloir dire « c'est fini ». Elle refuse maintenant tout ce qui n'est pas
+   ici — et ce qui est ici a dû être justifié à voix haute. */
+const JAMAIS_A_L_ECRAN = [
+  { quoi:'Spanish',  car:"la liste des langues écrit le nom NATIF (« Español ») ; « Spanish » n'y paraît jamais" },
+  { quoi:'Good duel', car:"n'existe que dans le texte PARTAGÉ d'un duel serré, jamais sur un écran" },
+  { quoi:'my opponent', car:"même chose : le repli du nom dans le texte partagé, jamais à l'écran" },
+  /* Les rappels : notifPossible() exige le mode installé, et isStandalone est
+     une const évaluée au chargement. L'émulation display-mode de Chromium ne
+     la change pas — vérifié. Ces trois-là ne se lisent que sur un vrai
+     téléphone, jeu installé, notifications refusées. */
+  { quoi:'Reminders', car:"la rangée des rappels n'existe que dans le jeu INSTALLÉ (notifPossible)" },
+  { quoi:'Blocked in the phone settings', car:'idem, et seulement si le téléphone a refusé' },
+  { quoi:'Cannot turn the reminder on right now.', car:"idem, et seulement si l'abonnement échoue" },
+  /* Le Défi du jour a quitté l'accueil ; son code, lui, est encore là. Ces
+     quatre phrases attendent le nettoyage, elles ne s'affichent plus. */
+  { quoi:'Daily challenge', car:'le Défi du jour a quitté l\'accueil ; le code reste à nettoyer' },
+  { quoi:'Daily challenge done', car:'idem' },
+  { quoi:'Take the daily challenge: your flame starts here.', car:'idem' },
+  { quoi:'Done', car:'« Réussi », sous-titre de la carte du Défi du jour, retirée' },
+  { quoi:'See you tomorrow', car:'« À demain », même carte' },
+];
+
 const MEME_DANS_LES_DEUX = [
   { quoi:/^(Yada|Taylor|Sam|Lee|Kim)$/,        car:'un nom propre' },
   { quoi:/^(Job|Daniel|Esther|Ruth|Jude|Amos|Nahum|Joel|Amen|Hosanna)$/i, car:'même mot dans les deux langues' },
@@ -140,8 +171,12 @@ const MEME_DANS_LES_DEUX = [
      de même « 2 Chron. » et « Philip. ». Vérifié dans LIVRES_COURTS_EN, qui les
      porte explicitement — ce n'est pas un oubli de traduction, c'est la bonne
      abréviation des deux côtés. */
-  { quoi:/^(1 Cor\.|2 Cor\.|1 Chron\.|2 Chron\.|Philip\.|Col\.|Dan\.|Jude|Job|Ruth|Esther|Amos|Joel|Nahum)$/, ou:/bk-nm/,
+  { quoi:/^(1 Cor\.|2 Cor\.|1 Chron\.|2 Chron\.|1 Samuel|2 Samuel|Philip\.|Lament\.|Col\.|Dan\.|Jude|Job|Ruth|Esther|Amos|Joel|Nahum)$/, ou:/bk-nm/,
     car:'la même abréviation dans les deux langues' },
+  /* Le nom du bloc de code que l'installateur doit trouver dans le fichier.
+     Ce n'est pas une phrase, c'est un repère : il s'écrit pareil partout,
+     sinon on ne le retrouve pas. */
+  { quoi:/^CONFIG EN LIGNE$/, ou:/info-card/, car:'le nom d\'un bloc de code, pas du texte' },
 ];
 /* Les endroits où un texte identique est normal quelle que soit la langue :
    l'initiale d'un avatar, le code du salon, un score, un chiffre.
@@ -298,7 +333,11 @@ const LIEUX_LIBRES = /avatar|code-big|rank-pts|sem-t$|scorebar|q-counter|timer|l
     /* Trois mois d'histoire : la feuille écrit alors le nom des mois et des
        jours de la semaine, les vingt-six dernières phrases du dictionnaire
        que rien d'autre n'affiche. */
-    ['Flamme · longue',    flamme, { jours:[0,1,2,3,5,6,7,30,31,60,61,90], geles:[4], gels:2, serie:4 }],
+    /* UNE ANNÉE ENTIÈRE, ET PAS TROIS MOIS. La grille remonte au plus vieux
+       jour dont on ait la trace, sans plafond : douze mois d'histoire, c'est
+       le seul endroit du jeu qui écrive « January » ou « October ». Avec trois
+       mois, huit noms de mois sur douze n'étaient jamais relus. */
+    ['Flamme · longue',    flamme, { jours:[0,1,2,3,5,6,7,30,31,60,61,90,120,150,180,210,240,270,300,330,360], geles:[4], gels:2, serie:4 }],
     ['Flamme · hier raté', flamme, { jours:[0,2,3,4], geles:[], gels:0, serie:1 }],
   ];
 
@@ -349,6 +388,152 @@ const LIEUX_LIBRES = /avatar|code-big|rank-pts|sem-t$|scorebar|q-counter|timer|l
     ['Duel · défaite',    finLigne, { moi:30, lui:90 }],
     ['Duel · égalité',    finLigne, { moi:60, lui:60 }],
     ['Duel · forfait',    finLigne, { moi:40, lui:20, parti:true }],
+  ];
+
+  /* ===== LE DERNIER LOT : LES ÉTATS QU'ON N'ATTEINT QU'EN LES PROVOQUANT ===== */
+  const DERNIERS = [
+    /* Le chrono qui expire : la note « Time's up! » n'existe qu'en solo. */
+    ['Solo · temps écoulé', () => { __fermerTout();
+      state.mode='solo'; state.daily=false; state.revision=false;
+      state.questions = seededDeck(21, '9', null); state.currentIndex = 2;
+      state.revealed = true; state.timedOut = true; state.soloScore = 40;
+      state.screen='play'; render(); }],
+    /* L'écran de fin avec des erreurs au compteur : le bouton « Review my
+       mistakes » et son singulier ne s'écrivent que là. */
+    ['Fin Solo · une erreur', () => { __fermerTout();
+      state.mode='solo'; state.revision=false;
+      state.questions = seededDeck(21, '9', null); state.currentIndex = state.questions.length;
+      state.soloMissed = [state.questions[0]]; state.soloScore = 120; state.soloCorrect = 8;
+      state.screen='end'; render(); }],
+    ['Fin Solo · erreurs',  () => { state.soloMissed = state.questions.slice(0, 3); render(); }],
+    /* L'accueil quand le carnet a des erreurs mais rien pour aujourd'hui. */
+    ['Accueil · carnet',    () => { __fermerTout();
+      localStorage.removeItem('bt_errbook');
+      const d = seededDeck(4242, '9', null); d.forEach(q => errbookAdd(q));
+      const a = loadErrbook(); a.forEach(x => { x.du = dayKey(7); }); saveErrbook(a);
+      state.screen='mode'; render(); }],
+    /* Un testament déplié : la phrase qui explique la grille des livres est
+       dans le corps replié, que personne n'ouvrait. */
+    ['Testament ouvert',   () => { __fermerTout(); state.screen='parcours'; render();
+      const h = document.querySelector('.tst-head'); if(h) h.click(); }],
+    /* Le verset d'accueil déplié : son bouton porte « Close the verse ». */
+    /* Le verset d'accueil déplié : son bouton porte « Close the verse ».
+       On passe par la porte du jeu — cinq tapes sur l'icône — plutôt que de
+       poser la classe à la main. */
+    ['Verset ouvert',      () => { __fermerTout(); state.screen='mode'; render();
+      try { showHeroVerse(); } catch(e){} }],
+    /* Le hub en ligne AVANT qu'on ait branché Supabase : trois phrases qui
+       s'adressent à celui qui installe le jeu. */
+    ['Hub non configuré',  () => { __fermerTout();
+      const vrai = window.onlineConfigured; window.onlineConfigured = () => false;
+      state.screen='online'; render(); window.onlineConfigured = vrai; }],
+    /* Le hub avec un joueur ordinaire : « Edit » n'apparaît qu'à qui n'a pas
+       le badge Créateur. */
+    ['Hub · joueur',       () => { __fermerTout(); profile.isCreator = false;
+      net.connected=1; net.error=''; state.screen='online'; render(); }],
+    /* Les deux refus du salon. */
+    ['Salon introuvable',  () => { __fermerTout(); net.error = T('Aucune partie trouvée pour ce code.');
+      state.screen='online-join'; render(); }],
+    ['Salon refusé',       () => { net.error = T('Impossible de rejoindre ce salon. Réessaie.'); render(); }],
+    ['Hôte parti',         () => { net.error = T("L'hôte a quitté le salon."); render(); }],
+    /* Le salon vu par un invité, et la ligne d'attente que le jeu écrit à la
+       main (hors rendu) quand l'adversaire arrive ou non. */
+    ['Salon · invité',     () => { __fermerTout(); net.error=''; net.code='ABCD'; net.isHost=false;
+      net.joueurs={ b:{ id:'b', name:'Sam', color:'#E8574C' } }; net.oppPresent=false;
+      state.screen='online-room'; render();
+      if(typeof updateRoomOpponent === 'function') updateRoomOpponent(); }],
+    ['Salon · prêt',       () => { net.oppPresent=true; net.opp=net.joueurs.b;
+      if(typeof updateRoomOpponent === 'function') updateRoomOpponent(); }],
+    /* Le duel fini de mon côté seulement. */
+    ['Duel · j\'ai fini',   () => { __fermerTout();
+      net.oppPresent=true; net.opp={ id:'b', name:'Sam', color:'#E8574C' };
+      net.joueurs={ b:net.opp }; net.deck = seededDeck(12345, '9', null);
+      net.idx = net.deck.length; net.myDone = true; net.oppDone = false; net.oppGone = false;
+      net.score = 60; net.oppScore = 30; net.oppIdx = 4;
+      state.screen='online-play'; render(); }],
+    /* L'adversaire parti en cours de route : la mention « gone » se colle à
+       son nom, dans la barre de scores du duel. */
+    ['Duel · parti',       () => { net.oppGone = true; net.myDone = false;
+      /* La barre de scores du duel ne s'affiche qu'EN partie : il faut donc
+         une question sous la main, pas l'index d'après la dernière. */
+      net.idx = net.deck.length - 1; net.revealed = false; render(); }],
+    /* Les quatre temps de la poignée de main « on rejoue ? ». */
+    ['Rejouer · on me demande', () => { __fermerTout();
+      net.oppPresent=true; net.opp={ id:'b', name:'Sam', color:'#E8574C' };
+      net.joueurs={ b:net.opp }; net.deck = seededDeck(12345, '9', null);
+      net.idx = net.deck.length; net.myDone=true; net.oppGone=false;
+      net.score=40; net.oppScore=70; net.iWantReplay=false; net.oppWantReplay=true;
+      state.screen='online-end'; render(); }],
+    ['Rejouer · les deux', () => { net.iWantReplay=true; net.oppWantReplay=true; render(); }],
+    ['Rejouer · à plusieurs hôte', () => { net.iWantReplay=false; net.oppWantReplay=false;
+      net.isHost=true;
+      net.joueurs={ b:{ id:'b', name:'Sam', color:'#E8574C' }, c:{ id:'c', name:'Lee', color:'#4CE88A' } };
+      render(); }],
+    ['Rejouer · à plusieurs invité', () => { net.isHost=false; render(); }],
+    /* Les deux bandeaux de gel, et la coupure de connexion. */
+    ['Gel offert',         () => { __fermerTout(); state.screen='mode'; render();
+      saveDaily({ gels:0 });
+      try { achToastPause = false; achToastBusy = false; } catch(e){}
+      offrirGel(Tf('{n} parties jouées', {n:30})); }],
+    ['Gel annoncé',        () => { __fermerTout();
+      saveDaily({ gels:0, annonce:dayKey(-1) });
+      try { achToastPause = false; achToastBusy = false; } catch(e){}
+      annoncerGel(); }],
+    /* Un jour manqué dont on n'a plus la date : l'autre branche de la phrase. */
+    ['Gel annoncé · sans date', () => { __fermerTout();
+      saveDaily({ gels:0, annonce:'x' });
+      try { achToastPause = false; achToastBusy = false; } catch(e){}
+      annoncerGel(); }],
+    ['Connexion perdue',   () => { __fermerTout();
+      showModal({ title:T('Connexion perdue'), message:T('Le mode en ligne a été interrompu. Tu peux continuer en Solo ou en Groupe.'), okLabel:'OK', cancelLabel:T('Fermer') }); }],
+    /* Le guide d'installation quand le navigateur propose lui-même d'installer. */
+    ['Guide · invitation', () => { __fermerTout();
+      invitePWA = { prompt(){} }; openFsGuide(); invitePWA = null; }],
+    /* Le code du salon copié, et le résultat partagé. */
+    ['Code copié',         () => { __fermerTout(); net.code='ABCD'; net.isHost=true;
+      net.joueurs={}; state.screen='online-room'; render();
+      const vrai = navigator.share; try { delete navigator.share; } catch(e){}
+      try { shareRoomCode(); } catch(e){}
+      try { navigator.share = vrai; } catch(e){} }],
+  ];
+
+  const RESTES = [
+    /* Le garde-fou du départ : deux joueurs sans nom, et le bouton refuse. */
+    /* LE GARDE-FOU NE SE DÉCLENCHE QU'AVEC DE VRAIES CASES VIDES. renderSetup
+       appelle normalizeTeams, qui rebaptise aussitôt « Joueur 1 » et
+       « Joueur 2 » — deux noms valides, donc pas de refus. On vide APRÈS le
+       rendu, comme le fait un joueur qui efface les deux cases. */
+    ['Groupe · refus',     () => { __fermerTout(); state.mode='group';
+      state.teams=[{name:'A'},{name:'B'}]; state.scores=[0,0]; state.screen='setup'; render();
+      state.teams.forEach(t => { t.name = ''; });
+      try { startGame(); } catch(e){} }],
+    /* Le duel dont on ne connaît plus l'adversaire : deux replis, « The
+       opponent » à l'écran et « my opponent » dans le texte partagé. */
+    ['Duel · sans nom',    () => { __fermerTout();
+      net.opp = null; net.oppPresent = false; net.oppGone = false;
+      net.joueurs = {}; net.deck = seededDeck(12345, '9', null);
+      net.idx = net.deck.length; net.myDone = true; net.score = 50; net.oppScore = 20;
+      net.iWantReplay = false; net.oppWantReplay = true;
+      state.screen='online-end'; render();
+      try { document.title = shareTexte ? shareTexte('duel') : document.title; } catch(e){} }],
+    /* Une table à plusieurs que tout le monde a quittée. La carte d'attente
+       ne se peint qu'à celui qui a FINI : c'est là qu'on lit ce qui reste. */
+    ['Duel · table vide',  () => { __fermerTout();
+      net.deck = seededDeck(12345, '9', null); net.idx = net.deck.length;
+      net.myDone = true; net.oppGone = true; net.score = 60; net.oppScore = 40;
+      net.opp = { id:'b', name:'Sam', color:'#E8574C' };
+      net.joueurs = { b:{ id:'b', name:'Sam', color:'#E8574C', gone:true },
+                      c:{ id:'c', name:'Lee', color:'#4CE88A', gone:true } };
+      state.screen='online-play'; render(); }],
+    /* Le lien du résultat copié faute de pouvoir partager. */
+    /* Le lien du jeu copié faute de pouvoir partager : c'est copierLeLien()
+       qui affiche le petit bandeau, pas shareScore(), qui ne fait qu'appeler
+       le partage du téléphone. */
+    ['Lien copié',         () => { __fermerTout(); state.screen='mode'; render();
+      /* navigator.clipboard est en lecture seule : on le REDÉFINIT. */
+      try { Object.defineProperty(navigator, 'clipboard',
+        { configurable:true, get:() => ({ writeText:() => Promise.resolve() }) }); } catch(e){}
+      try { copierLeLien(); } catch(e){} }],
   ];
 
   const ETAPES = [
@@ -453,6 +638,8 @@ const LIEUX_LIBRES = /avatar|code-big|rank-pts|sem-t$|scorebar|q-counter|timer|l
     ...FINS_LIGNE,
     ...FINS_SOLO,
     ...FINS_GROUPE,
+    ...DERNIERS,
+    ...RESTES,
     /* Le profil d'un joueur qui n'a pas encore choisi de nom. */
     ['Profil · invité',    () => { const g = JSON.parse(localStorage.getItem('bt_profile')||'{}');
       profile.name = ''; state.screen='profile'; render(); }],
@@ -478,6 +665,31 @@ const LIEUX_LIBRES = /avatar|code-big|rank-pts|sem-t$|scorebar|q-counter|timer|l
   const en = await passe('en');
   const fr = await passe('fr');
   const nav2 = nav;
+
+  /* ===== UNE PASSE DE PLUS, SUR ANDROID =====
+     IS_IOS est une const lue au chargement : le guide d'installation choisit
+     ses trois étapes une fois pour toutes, et les deux passes ci-dessus sont
+     des iPhone. Les quatre phrases du chemin Android — « Open the browser
+     menu », « The three dots, at the top », « “Install app” », « Or “Add to
+     Home Screen” » — n'avaient donc jamais été relues. Un autre téléphone,
+     deux écrans, et elles le sont. */
+  {
+    const ctx = await nav.newContext({ viewport:{ width:412, height:915 }, deviceScaleFactor:2,
+      userAgent:ANDROID, hasTouch:true, serviceWorkers:'block' });
+    const q = await ctx.newPage();
+    await q.addInitScript(PREP, 'en');
+    await q.goto(URL);
+    await q.waitForFunction(() => { try { return typeof render === 'function' && LANGUE === 'en'; } catch(e){ return false; } }, null, { timeout:20000 });
+    await q.waitForFunction(() => { try { return state.screen === 'mode'; } catch(e){ return false; } }, null, { timeout:20000 });
+    for(const [nom, faire] of [
+      ['Guide Android', () => { state.screen='mode'; render(); openFsGuide(); }],
+    ]){
+      try { await q.evaluate(faire); } catch(e){ en.ennuis.push(nom + ' : ' + e.message.split('\n')[0]); continue; }
+      await q.waitForTimeout(450);
+      en.releve.set(nom, await q.evaluate(RAMASSER));
+    }
+    await ctx.close();
+  }
 
   const fautes = [...en.ennuis, ...fr.ennuis];
   if(en.erreurs.length) fautes.push('erreurs JS (en) : ' + [...new Set(en.erreurs)].slice(0,2).join(' | '));
@@ -583,9 +795,17 @@ const LIEUX_LIBRES = /avatar|code-big|rank-pts|sem-t$|scorebar|q-counter|timer|l
   const jamais = [...new Set(dico)].filter(v => !/\{/.test(v)   /* les phrases à trou ne s'affichent jamais telles quelles */
     && aplat(v).length >= 2
     && !lus.has(aplat(v)) && toutLu.indexOf(aplat(v)) < 0);
-  console.log('  phrases anglaises jamais vues à l\'écran : ' + jamais.length + ' sur ' + new Set(dico).size);
-  if(jamais.length) jamais.slice(0, process.env.TOUT ? 999 : 40)
-    .forEach(v => console.log('     « ' + v.slice(0, 70) + ' »'));
+  const justifiees = new Set(JAMAIS_A_L_ECRAN.map(x => x.quoi));
+  const inexpliquees = jamais.filter(v => !justifiees.has(v));
+  console.log('  phrases anglaises jamais vues à l\'écran : ' + jamais.length + ' sur ' + new Set(dico).size
+    + '   (' + justifiees.size + ' justifiées)');
+  for(const v of inexpliquees)
+    fautes.push('JAMAIS VUE  ' + ' '.repeat(10) + ' « ' + v.slice(0, 70) + ' »');
+  /* Une justification qui ne sert plus est une justification qui ment : si la
+     phrase s'affiche enfin, la ligne doit disparaître de la liste. */
+  for(const x of JAMAIS_A_L_ECRAN)
+    if(!jamais.includes(x.quoi))
+      fautes.push('JUSTIFIÉE POUR RIEN  « ' + x.quoi.slice(0, 60) + ' » s\'affiche maintenant — retire sa ligne');
 
   if(fautes.length){
     console.log('  CE QUI NE PARLE PAS ANGLAIS (' + fautes.length + ') :');
