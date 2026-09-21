@@ -50,6 +50,63 @@ ensuite aux trois versions, qui partagent la numérotation anglaise. 244 sur 244
    notice d'Habacuc 3:1. Les éditions anglaises les numérotent comme des
    versets : on ne retire jamais une notice s'il ne reste rien derrière.
 
+## Et deux espagnoles
+
+| sigle | version | année | source |
+|---|---|---|---|
+| RVR | Santa Biblia Reina-Valera | 1909 | eBible `spaRV1909` |
+| RV65 | Santa Biblia Reina-Valera | 1865 | CrossWire `SpaRV1865` |
+
+Les deux mêmes règles — **domaine public** et **protestantes** — éliminent
+presque tout l'espagnol disponible, et il faut le dire précisément :
+
+| version | pourquoi elle n'y est pas |
+|---|---|
+| Reina-Valera 1960 | la plus lue de toutes, et sous droits (Sociedades Bíblicas Unidas) |
+| Reina Valera Gómez | « DERECHOS RESERVADOS », Dr. Humberto Gómez Caballero |
+| Valera 1602 Purificada | « Todos los derechos reservados », Iglesia Bautista Bíblica de la Gracia |
+| La Biblia de las Américas, NBLH | Lockman Foundation |
+| Platense (Straubinger) | **catholique** |
+| Versión Biblia Libre | libre (CC BY-SA) mais Nouveau Testament seulement, et personne ne la lit |
+
+Restent deux textes, tous deux de la lignée Reina-Valera. La **1909** est la
+version par défaut : la 1960 en est la révision, donc un lecteur de la 1960 s'y
+retrouve immédiatement. La **1865**, révision de Valera par Ángel de Mora, est
+encore lue dans les églises attachées au Texte Reçu — c'est l'équivalent
+espagnol de l'Ostervald.
+
+**La numérotation espagnole est celle des éditions anglaises**, pas celle du
+français. On ne l'a pas supposé : `bibles/aligne_es.py` compare, chapitre par
+chapitre, le nombre de versets des deux sources espagnoles à celui du témoin
+anglais, sur tous les chapitres que touche le jeu. Zéro écart, 244 coordonnées
+sur 244. Les douze références décalées sont donc les mêmes qu'en anglais, avec
+les noms espagnols : « Psaume 46:2 » est « Salmo 46:1 ».
+
+**Deux pièges propres à ces éditions** (`typo_es.py`), tous deux mesurés :
+
+1. La 1909 ouvre chaque chapitre par un mot en CAPITALES — « EN el principio »,
+   « JEHOVÁ es mi pastor », « DIOS es nuestro amparo ». C'est une convention
+   d'imprimeur de 1909 ; sur une carte de jeu, ça ressemble à quelqu'un qui
+   crie. On remet le mot en minuscules, mais **seulement en tête de verset** :
+   la même édition met en capitales, au MILIEU d'un verset, ce qui est nom
+   divin ou déclaration — « YO SOY EL QUE SOY » (Éxodo 3:14), « SANTIDAD Á
+   JEHOVÁ » (Éxodo 28:36), « alabe á JAH » (Salmo 150:6). 177 capitales sont
+   dans ce cas, et elles restent.
+2. La 1865 a une interjection cassée. Sa mise à jour orthographique de 2018 a
+   retiré l'accent de « ó » (l'ancien « oh » vocatif) et laissé le point
+   d'exclamation : « respóndeme, o! Dios de mi justicia ». 480 occurrences.
+   Ce n'est pas le texte de 1865, c'est un reste de traitement : on rend « oh ».
+
+**L'orthographe n'est pas modernisée.** La 1909 écrit « á » pour la préposition
+« a » 19 320 fois et « fué » pour « fue » 1 650 fois : c'est ainsi qu'elle est
+imprimée. Corriger cela reviendrait à réécrire le texte.
+
+Et les suscriptions de psaume, que la 1909 fait entrer dans le verset 1, sont
+retirées comme en anglais — plus les **lettres hébraïques du psaume 119**
+(ALEPH, BETH, GIMEL…), qui ouvrent chacune de ses vingt-deux strophes et
+seraient collées au verset sinon : « NUN. Lámpara es á mis pies tu palabra ».
+Contrôle en place : aucun des 488 versets extraits ne sort vide du nettoyage.
+
 **La typographie anglaise a ses propres règles** (`typo_en.py`) : pas d'espace
 avant « ? », guillemets courbes comme les 1545 questions anglaises, et le
 pied-de-mouche « ¶ » du roi Jacques (2 970 occurrences) retiré, comme les

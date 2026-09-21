@@ -56,8 +56,27 @@ function effacer(txt, debut, fin){
 }
 
 /* ---------- 1. toute clé appelée existe ---------- */
+/* ===== UNE LANGUE DE PLUS, ET LE BANC SE MET À MENTIR =====
+   Il lisait « du début de en: jusqu'à la fin de TEXTES » — ce qui marchait
+   tant qu'il n'y avait qu'une langue. Le jour où l'espagnol est arrivé, cette
+   tranche a couvert LES DEUX blocs : le détecteur de doublons a vu chaque clé
+   deux fois (une par langue) et a annoncé 344 doublons, tous faux. On découpe
+   donc TEXTES langue par langue, et on juge chaque bloc pour lui-même. */
 const d0 = src.indexOf('const TEXTES = {');
-const dEn = src.slice(src.indexOf('en: {', d0), src.indexOf('\n  },\n};', d0));
+const dFin = src.indexOf('\n};', d0);
+const LANGUES_DICO = [];
+{
+  const tete = /\n  ([a-z]{2}): \{/g;
+  tete.lastIndex = d0;
+  const bornes = [];
+  let m;
+  while((m = tete.exec(src)) && m.index < dFin) bornes.push([m[1], m.index]);
+  for(let i = 0; i < bornes.length; i++)
+    LANGUES_DICO.push({ code:bornes[i][0],
+      src: src.slice(bornes[i][1], i + 1 < bornes.length ? bornes[i + 1][1] : dFin) });
+}
+console.log('  langues au dictionnaire : ' + LANGUES_DICO.map(l => l.code).join(', '));
+const dEn = LANGUES_DICO.length ? LANGUES_DICO[0].src : '';
 const cles = new Set();
 /* ===== UNE CLÉ ÉCRITE DEUX FOIS, C'EST UNE TRADUCTION QUI EN EFFACE UNE =====
    Un objet JavaScript ne garde que la DERNIÈRE. Le jeu avait cinq clés en
@@ -68,15 +87,38 @@ const cles = new Set();
    l'une est corrigée et pas l'autre, la correction n'a aucun effet et on
    cherche pendant une heure pourquoi. */
 const doublons = [];
-{
+const CLES_PAR_LANGUE = new Map();
+for(const lg of LANGUES_DICO){
   const vues = new Map();
-  for(const m of dEn.matchAll(/\n\s*"((?:[^"\\]|\\.)*)"\s*:\s*"((?:[^"\\]|\\.)*)"/g)){
+  /* PAS DE \n EN TÊTE DU MOTIF : le bloc anglais écrit plusieurs paires sur
+     la même ligne (les douze mois, les sept jours), et un motif ancré au saut
+     de ligne n'en voyait qu'une par ligne — il déclarait alors quatorze clés
+     « absentes de l'anglais » alors qu'elles y étaient, juste à côté d'une
+     autre. */
+  for(const m of lg.src.matchAll(/"((?:[^"\\]|\\.)*)"\s*:\s*"((?:[^"\\]|\\.)*)"/g)){
     const k = JSON.parse('"' + m[1] + '"'), v = JSON.parse('"' + m[2] + '"');
-    if(vues.has(k)) doublons.push([k, vues.get(k), v]);
+    if(vues.has(k)) doublons.push([lg.code + ' · ' + k, vues.get(k), v]);
     vues.set(k, v);
   }
+  CLES_PAR_LANGUE.set(lg.code, vues);
 }
-for(const m of dEn.matchAll(/\n\s*"((?:[^"\\]|\\.)*)"\s*:/g)) cles.add(JSON.parse('"' + m[1] + '"'));
+/* ===== UNE LANGUE NE PEUT PAS AVOIR MOINS DE CLÉS QU'UNE AUTRE =====
+   T() retombe en français quand une clé manque : une phrase oubliée en
+   espagnol ne laisse aucun trou, elle laisse du FRANÇAIS, et rien ne le dit.
+   Les blocs doivent donc porter exactement les mêmes clés. */
+{
+  const manquantes = [];
+  const toutes = new Set();
+  for(const [, m] of CLES_PAR_LANGUE) for(const k of m.keys()) toutes.add(k);
+  for(const [lg, m] of CLES_PAR_LANGUE)
+    for(const k of toutes) if(!m.has(k)) manquantes.push(lg + ' · ' + k);
+  if(manquantes.length){
+    ko++;
+    console.log('  KO ' + manquantes.length + ' clé(s) absente(s) d\'une langue :');
+    manquantes.slice(0, 12).forEach(x => console.log('       ' + x.slice(0, 100)));
+  } else console.log('  OK toutes les langues portent les mêmes clés');
+}
+for(const [, m] of CLES_PAR_LANGUE) for(const k of m.keys()) cles.add(k);
 const clesPlates = new Set([...cles].map(plat));
 /* UNE RÉFÉRENCE BIBLIQUE EST UNE CLÉ, PAS UN TEXTE. REFS_EN dit, pour chaque
    référence française, sa forme anglaise : « Ésaïe 64:8 » y est à gauche,
@@ -167,11 +209,12 @@ if(doublons.length){
    ce que fait le repli de T(). */
 {
   const parPlat = new Map();
-  for(const m of dEn.matchAll(/"((?:[^"\\]|\\.)*)"\s*:\s*"((?:[^"\\]|\\.)*)"/g)){
-    const k = plat(JSON.parse('"' + m[1] + '"')), v = JSON.parse('"' + m[2] + '"');
-    if(!parPlat.has(k)) parPlat.set(k, []);
-    parPlat.get(k).push(v);
-  }
+  for(const [lg, m] of CLES_PAR_LANGUE)
+    for(const [k, v] of m){
+      const a = lg + ' · ' + plat(k);
+      if(!parPlat.has(a)) parPlat.set(a, []);
+      parPlat.get(a).push(v);
+    }
   const jumelles = [...parPlat].filter(([, v]) => v.length > 1);
   if(jumelles.length){
     ko++;
@@ -197,8 +240,10 @@ net = net.replace(/(^|\s)\/\/[^\n]*/g, (m, d) => d + blanc(m.slice(d.length)));
 for(const [a, b] of [['const TEXTES = {', '\n};'], ['const BANK = {', '\n  ]\n};'],
                      ['const VERSETS_ALT = {', '\n};'], ['const CITATIONS_ALT = {', '\n};'],
                      ['const VERSETS_EN = {', '\n};'], ['const HERO_VERSES = [', '\n];'],
-                     ['const LIVRES_EN = {', '};'], ['const LIVRES_COURTS = {', '\n};'],
-                     ['const LIVRES_COURTS_EN = {', '\n};'], ['const BIBLES = [', '\n];'],
+                     ['const LIVRES_EN = {', '};'], ['const LIVRES_ES = {', '};'],
+                     ['const LIVRES_COURTS = {', '\n};'],
+                     ['const LIVRES_COURTS_EN = {', '\n};'], ['const LIVRES_COURTS_ES = {', '\n};'],
+                     ['const REFS_ES = {', '\n};'], ['const BIBLES = [', '\n];'],
                      ['const DRAPEAUX = {', '\n};'], ['const LANGUES = [', '\n];'],
                      ['const SCENES = [', '\n];'], ['const BIBLE_BOOKS = [', '\n];'],
                      ['const MINOR_PROPHETS = [', '];'], ['const TORAH = [', '];'],
