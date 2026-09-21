@@ -22,6 +22,18 @@ const { chromium } = require('/opt/node22/lib/node_modules/playwright');
 const IOS = 'Mozilla/5.0 (iPhone; CPU iPhone OS 17_5 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.5 Mobile/15E148 Safari/604.1';
 const URL = process.argv[2] || process.env.URL_ESSAI || 'http://127.0.0.1:8099/index.html';
 const ACCENT = /[àâäéèêëîïôöùûüÿçœæÀÂÄÉÈÊËÎÏÔÖÙÛÜŸÇŒÆ]/;
+/* ===== ET LE SIGLE DOIT SE LIRE =====
+   « À ce niveau le texte blanc ne se voit pas beaucoup. » Les trois versions
+   anglaises n'avaient pas de couleurs de pastille : leur dégradé ne peignait
+   rien, et le sigle blanc tombait sur le crème de la ligne. Contraste relevé :
+   1,06 — au-dessous de 1,5, un mot n'est pas pâle, il n'existe plus.
+   UN FOND SEMI-TRANSPARENT N'EST PAS UNE COULEUR. Le comparer tel quel donnait
+   2,71 là où l'œil voit 4,6 : on compose le voile sur ce qu'il y a derrière,
+   comme le navigateur, avant de mesurer. */
+const SEUIL = 3;
+const lum = (c) => { const f = (v) => { v /= 255; return v <= 0.03928 ? v/12.92 : Math.pow((v+0.055)/1.055, 2.4); };
+  return 0.2126*f(c[0]) + 0.7152*f(c[1]) + 0.0722*f(c[2]); };
+const ctr = (a, b) => { const [x, y] = [lum(a), lum(b)].sort((m, n) => n - m); return (x + 0.05) / (y + 0.05); };
 const ATTENDU = { fr: ['LSG','JND','OST','BA','MAR'], en: ['KJV','ASV','WEB'] };
 
 (async () => {
@@ -87,6 +99,44 @@ const ATTENDU = { fr: ['LSG','JND','OST','BA','MAR'], en: ['KJV','ASV','WEB'] };
           if (ACCENT.test(t)) soucis.push('en : ' + s + ' laisse passer du français — « ' + t.slice(0, 60) + ' »');
       if (ACCENT.test(r.accueil)) soucis.push('en : le verset de l\'accueil est resté français — « ' + r.accueil.slice(0, 60) + ' »');
     }
+    /* 6. le sigle de chaque ligne se lit — panneau ouvert, styles réels */
+    await p.evaluate(() => { openSettings(); });
+    await p.waitForTimeout(400);
+    await p.evaluate(() => { openBibles(); });
+    await p.waitForTimeout(800);
+    const sigles = await p.evaluate(() => {
+      const rgb = (s) => { const m = String(s).match(/-?\d+(\.\d+)?/g); return m ? m.slice(0,3).map(Number) : [255,255,255]; };
+      const alpha = (s) => { const m = String(s).match(/-?\d+(\.\d+)?/g); return (m && m.length > 3) ? Number(m[3]) : 1; };
+      return [...document.querySelectorAll('.bible-sig')].map(e => {
+        const cs = getComputedStyle(e);
+        let derriere = [255,255,255], q = e.parentElement;
+        while (q) { const f = getComputedStyle(q).backgroundColor;
+          if (f !== 'rgba(0, 0, 0, 0)' && f !== 'transparent') { derriere = rgb(f); break; } q = q.parentElement; }
+        const a = alpha(cs.backgroundColor), c = rgb(cs.backgroundColor);
+        const fond = [0,1,2].map(i => Math.round(a*c[i] + (1-a)*derriere[i]));
+        /* UN DÉGRADÉ SE MESURE PAR SES ARRÊTS. On ne peut pas lire un pixel
+           depuis la page, mais un dégradé linéaire n'a pas d'autre couleur que
+           celles qu'il déclare : on les relève toutes et on retiendra la pire.
+           Sans ça le banc ne voyait que backgroundColor — transparent — et
+           annonçait « illisible » sur des pastilles parfaitement lisibles. */
+        const arrets = (cs.backgroundImage.match(/rgba?\([^)]*\)/g) || []).map(rgb);
+        return { sigle: e.textContent.trim(), encre: rgb(cs.color), fond, arrets,
+                 peint: cs.backgroundImage !== 'none' || a > 0.02, largeur: Math.round(e.getBoundingClientRect().width) };
+      });
+    });
+    if (!sigles.length) soucis.push(lg + ' : aucun sigle dans le panneau des versions');
+    for (const s of sigles) {
+      /* Un dégradé qu'on ne sait pas mesurer ne doit pas passer pour bon : on
+         exige d'abord qu'il y ait QUELQUE CHOSE de peint sous les lettres. */
+      if (!s.peint) { soucis.push(lg + ' : le sigle ' + s.sigle + ' n\'a aucun fond peint'); continue; }
+      const fonds = s.arrets.length ? s.arrets : [s.fond];
+      const c = Math.min(...fonds.map(f => ctr(s.encre, f)));
+      if (c < SEUIL) soucis.push(lg + ' : le sigle ' + s.sigle + ' ne se lit pas (contraste '
+        + c.toFixed(2) + ', le jeu s\'impose ' + SEUIL + ')');
+    }
+    /* Et un seul traitement : toutes les pastilles de la même largeur. */
+    const larg = [...new Set(sigles.map(s => s.largeur))];
+    if (larg.length > 1) soucis.push(lg + ' : les sigles n\'ont pas tous la même largeur (' + larg.join(', ') + ' px)');
     if (errs.length) soucis.push(lg + ' : erreurs JS — ' + [...new Set(errs)].slice(0, 2).join(' | '));
     await ctx.close();
   }
