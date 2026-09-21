@@ -7171,8 +7171,18 @@ function chargerBanque(){
   try{
     const s = document.createElement("script");
     s.src = "questions-" + LANGUE + ".js";
-    /* Une partie peut être à l'écran quand la banque arrive : on repeint. */
-    s.onload = ()=>{ try{ if(typeof render === "function") render(); }catch(e){} };
+    /* Une partie peut être à l'écran quand la banque arrive : on repeint. Et
+       on demande au service worker de la GARDER : au premier chargement il ne
+       contrôle pas encore la page, la requête lui échappe, et le joueur se
+       retrouverait sans ses questions hors ligne (voir sw.js). */
+    s.onload = ()=>{
+      try{ if(typeof render === "function") render(); }catch(e){}
+      try{
+        navigator.serviceWorker.ready.then(r => {
+          if(r && r.active) r.active.postMessage({ garder:"questions-" + LANGUE + ".js" });
+        }).catch(()=>{});
+      }catch(e){}
+    };
     s.onerror = ()=>{ banqueDemandee = ""; };
     document.head.appendChild(s);
   }catch(e){ banqueDemandee = ""; }

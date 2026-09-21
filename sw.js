@@ -1,6 +1,6 @@
 /* Yada — service worker : rend l'app jouable hors connexion.
    À déposer à côté de index.html (même dossier, nom exact "sw.js"). */
-const CACHE = "yada-v270";
+const CACHE = "yada-v271";
 /* ===== LES BANQUES DE QUESTIONS NE SONT PAS DANS LE SOCLE =====
    questions-en.js y était, et questions-es.js allait l'y rejoindre : six cent
    mille octets téléchargés à l'installation par TOUT LE MONDE, y compris les
@@ -16,6 +16,23 @@ const CORE = ["./", "./index.html", "./manifest.json", "./apple-touch-icon.png",
 self.addEventListener("install", (e) => {
   e.waitUntil(caches.open(CACHE).then((c) => c.addAll(CORE)).catch(() => {}));
   self.skipWaiting();
+});
+/* ===== « GARDE-MOI ÇA » : LA PAGE DEMANDE, LE SERVICE WORKER RANGE =====
+   La banque de questions de la langue n'est plus dans le socle (voir CORE), et
+   la porte des ressources ne suffisait pas à la rattraper : au TOUT PREMIER
+   chargement, le service worker vient à peine de s'installer, il ne contrôle
+   pas encore la page — la requête du <script> passe donc à côté de lui, et
+   rien n'est mis en cache. Mesuré : cache vide de questions-es.js après une
+   première visite en espagnol.
+   La page le lui demande donc explicitement, une fois la banque arrivée. Un
+   seul fichier, celui de SA langue, et il est en cache dès la première
+   ouverture — comme avant, mais sans faire payer les autres langues à tout le
+   monde. Si le réseau tombe entre-temps, cache.add() échoue sans bruit et la
+   demande sera refaite à la prochaine ouverture. */
+self.addEventListener("message", (e) => {
+  const u = e.data && e.data.garder;
+  if (typeof u !== "string" || !/^questions-[a-z]{2}\.js$/.test(u)) return;
+  e.waitUntil(caches.open(CACHE).then((c) => c.match(u).then((hit) => hit || c.add(u))).catch(() => {}));
 });
 self.addEventListener("activate", (e) => {
   e.waitUntil(
