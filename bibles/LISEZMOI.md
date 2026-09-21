@@ -14,6 +14,48 @@ ligne », **CrossWire** pour les modules SWORD.
 Quatre traductions, toutes libres de droits, et **toutes réellement lues** dans
 les églises évangéliques francophones. C'est le critère : pas le nombre.
 
+## Et trois anglaises, pour qui lit en anglais
+
+| sigle | version | année | source |
+|---|---|---|---|
+| KJV | King James Version | 1769 | eBible `eng-kjv2006` |
+| ASV | American Standard Version | 1901 | eBible `eng-asv` |
+| WEB | World English Bible | — | eBible `engwebp` |
+
+Les deux règles ne bougent pas : **domaine public** et **protestantes**. La
+World English Bible existe aussi en édition catholique (`eng-web-c` chez
+eBible) — ce n'est pas celle-là, et ce ne sera jamais celle-là.
+
+**Les numéros de versets ne se correspondent pas d'une langue à l'autre.** Dans
+les psaumes, le français compte la suscription comme verset 1 et l'anglais non :
+« Psaume 34:18 » en français, c'est le 34:17 anglais. Extraire par NUMÉRO livre
+donc le verset d'à côté — et ça ne se voit pas, le texte est plausible, il est
+juste faux. Douze références sont dans ce cas, onze psaumes et Ésaïe 64:8.
+
+`aligne_en.py` retrouve donc chaque verset **par son contenu** : il cherche le
+texte anglais connu dans la source et note où il tombe. Ces coordonnées servent
+ensuite aux trois versions, qui partagent la numérotation anglaise. 244 sur 244.
+
+**Deux pièges rencontrés en chemin, tous deux invisibles sans mesure.**
+
+1. Ma première liste de suscriptions acceptait « Praise » en tête de phrase.
+   Or « Praise ye the LORD. » ouvre la moitié des psaumes de louange : le
+   nettoyage mangeait de l'Écriture, et le psaume 150 perdait cinq versets,
+   réduits au vide, sans que rien ne le signale. Une suscription s'annonce par
+   un article (« A Psalm of David. ») ou par la formule du chantre ; un verset,
+   jamais. Contrôle en place : **aucun** verset des trois sources ne doit sortir
+   vide du nettoyage — il y en avait trois, il n'y en a plus.
+2. Trois versets de la Bible ne SONT qu'une notice — « The song of songs, which
+   is Solomon's. », « The prayers of David the son of Jesse are ended. », la
+   notice d'Habacuc 3:1. Les éditions anglaises les numérotent comme des
+   versets : on ne retire jamais une notice s'il ne reste rien derrière.
+
+**La typographie anglaise a ses propres règles** (`typo_en.py`) : pas d'espace
+avant « ? », guillemets courbes comme les 1545 questions anglaises, et le
+pied-de-mouche « ¶ » du roi Jacques (2 970 occurrences) retiré, comme les
+crochets des mots suppléés (14 241) — le même traitement que les crochets du
+Darby en français.
+
 **La « Sainte Bible libre pour le monde » a été retirée.** Elle avait été
 ajoutée pour combler un trou — la seule traduction en français d'aujourd'hui qui
 soit libre. Mais personne ne la lit : ce n'est la Bible d'aucune église. Une
