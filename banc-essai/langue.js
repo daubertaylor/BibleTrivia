@@ -75,14 +75,24 @@ const FRANCAIS = /[àâäéèêëîïôöùûüçÀÂÄÉÈÊËÎÏÔÖÙÛÜÇ]
   v("le drapeau ouvre un menu de langues", menu.ouvert && menu.n >= 2,
     menu.ouvert ? (menu.n + ' langues, ' + menu.drapeaux + ' drapeaux, ' + menu.grisees + ' pas encore prêtes') : 'aucun menu');
   v("une seule langue est cochée", menu.cochee === 1, menu.cochee + ' coche(s)');
+  /* ===== CHOISIR UNE LANGUE REDÉMARRE LE JEU =====
+     « Au changement de langue, je veux un jeu qui redémarre totalement, avec un
+     écran de chargement. » Ce banc vérifiait l'ANCIEN contrat : la feuille des
+     réglages restait ouverte et se repeignait sans gagner un pixel. Elle ne
+     reste plus ouverte — la page recharge, il n'y a plus de feuille à mesurer.
+     Le déroulé du redémarrage (voile, rechargement unique, écran de chargement,
+     accueil dans la nouvelle langue) a son propre banc :
+     banc-essai/langue-redemarre.js. Ici on garde ce qui reste vrai : après le
+     redémarrage, le jeu EST en anglais, et son drapeau le dit. */
   await p.evaluate(()=>{ const b=[...document.querySelectorAll('.lang-item')].find(x=>x.dataset.langue==='en'); if(b) b.click(); });
-  await p.waitForTimeout(1200);
+  await p.waitForFunction(()=>{ try{ return LANGUE==='en' && typeof render==='function'; }catch(e){ return false; } }, null, {timeout:25000});
+  await p.waitForFunction(()=>{ try{ return state.screen==='mode'; }catch(e){ return false; } }, null, {timeout:25000});
+  await p.waitForTimeout(500);
+  await p.evaluate(()=>openSettings());
+  await p.waitForTimeout(800);
   const b2 = await mesure();
   v("choisir une langue la change", b2.lang === 'en' && b2.code === 'EN', 'html lang=' + b2.lang + ', bouton ' + b2.code);
-  v("et referme le menu", await p.evaluate(()=>!document.getElementById('languesVeil')), '');
-  v("la feuille ne gagne PAS un pixel",
-    a.feuille === b2.feuille && a.haut === b2.haut && a.titre === b2.titre,
-    'hauteur ' + a.feuille + '->' + b2.feuille + ', haut ' + a.haut + '->' + b2.haut + ', titre ' + a.titre + '->' + b2.titre);
+  v("et le jeu est reparti à neuf", await p.evaluate(()=>!document.getElementById('languesVeil')), 'plus de menu de langues');
 
   /* LE COMPTE : ce qui reste en français, écran par écran. */
   await p.evaluate(()=>{ const v=document.getElementById('settingsVeil'); if(v) v.remove(); });

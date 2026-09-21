@@ -59,6 +59,23 @@ function effacer(txt, debut, fin){
 const d0 = src.indexOf('const TEXTES = {');
 const dEn = src.slice(src.indexOf('en: {', d0), src.indexOf('\n  },\n};', d0));
 const cles = new Set();
+/* ===== UNE CLÉ ÉCRITE DEUX FOIS, C'EST UNE TRADUCTION QUI EN EFFACE UNE =====
+   Un objet JavaScript ne garde que la DERNIÈRE. Le jeu avait cinq clés en
+   double, dont trois que j'avais ajoutées moi-même sans voir qu'elles
+   existaient déjà cent lignes plus bas : « Dès qu'un autre joueur cherche… »
+   était traduite deux fois, et c'est la seconde qui gagnait — en silence.
+   Tant que les deux disent la même chose, personne ne le voit ; le jour où
+   l'une est corrigée et pas l'autre, la correction n'a aucun effet et on
+   cherche pendant une heure pourquoi. */
+const doublons = [];
+{
+  const vues = new Map();
+  for(const m of dEn.matchAll(/\n\s*"((?:[^"\\]|\\.)*)"\s*:\s*"((?:[^"\\]|\\.)*)"/g)){
+    const k = JSON.parse('"' + m[1] + '"'), v = JSON.parse('"' + m[2] + '"');
+    if(vues.has(k)) doublons.push([k, vues.get(k), v]);
+    vues.set(k, v);
+  }
+}
 for(const m of dEn.matchAll(/\n\s*"((?:[^"\\]|\\.)*)"\s*:/g)) cles.add(JSON.parse('"' + m[1] + '"'));
 const clesPlates = new Set([...cles].map(plat));
 
@@ -115,6 +132,16 @@ if(manque.length){
   console.log('  KO ' + manque.length + ' clé(s) appelée(s) sans traduction :');
   manque.slice(0, 12).forEach(k => console.log('       ' + JSON.stringify(k).slice(0, 110)));
 } else console.log('  OK toute clé appelée a sa traduction');
+
+if(doublons.length){
+  ko++;
+  console.log('  KO ' + doublons.length + ' clé(s) écrite(s) deux fois — la seconde efface la première :');
+  doublons.slice(0, 8).forEach(([k, a, b]) => {
+    console.log('       « ' + k.slice(0, 60) + ' »');
+    console.log('           ignorée : ' + a.slice(0, 60));
+    console.log('           retenue : ' + b.slice(0, 60));
+  });
+} else console.log('  OK aucune clé écrite deux fois');
 
 /* ---------- 2. aucune phrase française hors de T() ---------- */
 let net = src;

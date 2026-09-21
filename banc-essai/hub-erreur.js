@@ -135,12 +135,24 @@ const HAUTEURS = [553, 600, 643, 667, 700, 780, 800, 852, 873, 915, 944, 1000];
         }
       }
       if (!avec.err) { soucis.push(h + ' px (' + etat + ') : aucun message affiché'); continue; }
-      /* 2. il est sous le titre, et bien au-dessus des actions : à côté du
-            remède, jamais collé aux boutons (« il est trop dans les boutons »). */
+      /* 2. il est sous la ligne du profil, et jamais collé aux boutons.
+            LE SEUIL EST PASSÉ DE 40 À 24 PX, ET IL FAUT DIRE POURQUOI. Les
+            40 px avaient été choisis quand le message vivait sous le TITRE,
+            à bonne distance des actions par construction. Taylor l'a depuis
+            placé SOUS SA LIGNE DE PROFIL — « je trouve cela bien comme
+            emplacement » — ce qui le rapproche forcément du bas sur un écran
+            court. Relevé : 148 px de blanc sur un iPhone 15, 122 sur un
+            Xiaomi, 81 sur un SE, et 38 au pire, sur un SE dans Safari (553 px
+            utiles) — sans jamais rien recouvrir. Refuser 38 px, ce n'était
+            plus mesurer « collé aux boutons », c'était mesurer l'ancien
+            emplacement. 24 px reste un vrai garde-fou : c'est plus serré que
+            le rythme de l'écran (16 px entre deux blocs) et ça attrape
+            n'importe quel chevauchement. */
       if (avec.entete && avec.err.t < avec.entete.b)
         soucis.push(h + ' px (' + etat + ') : le message passe par-dessus le titre');
-      if (avec.cible && avec.err.b > avec.cible.t - 40)
-        soucis.push(h + ' px (' + etat + ') : le message colle aux actions');
+      if (avec.cible && avec.err.b > avec.cible.t - 24)
+        soucis.push(h + ' px (' + etat + ') : le message colle aux actions ('
+          + (avec.cible.t - avec.err.b) + ' px de blanc)');
       /* 3. rien ne bouge */
       const d = avec.tous.map((v, i) => Math.abs(v - (sans.tous[i] ?? v)));
       const pire = d.length ? Math.max(...d) : 0;
