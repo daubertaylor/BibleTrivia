@@ -4605,6 +4605,10 @@ const TEXTES = {
     "{n} autre en recherche…":"{n} other player looking…",
     "{n} autres en recherche…":"{n} other players looking…",
     "Adversaire":"Opponent",
+    "L'adversaire":"The opponent",
+    "mon adversaire":"my opponent",
+    "{nom} aimerait rejouer. Tu acceptes\u00a0?":"{nom} would like a rematch. Do you accept?",
+    "Rejoins-moi sur {jeu}\u00a0! Code du salon\u00a0: {code}":"Join me on {jeu}! Room code: {code}",
     "Hôte":"Host",
     "Prêt\u00a0! En attente du lancement par l'hôte…":"Ready! Waiting for the host to start…",
     "Connexion au salon…":"Connecting to the room…",
@@ -4638,6 +4642,8 @@ const TEXTES = {
     "Les autres joueurs ont quitté la partie.":"The other players have left the game.",
     "Ton adversaire a quitté la partie.":"Your opponent has left the game.",
     "Joueur":"Player",
+    "Joueur {n}":"Player {n}",
+    "parti":"gone",
     "terminé":"done",
     "Ton adversaire en est à {i}/{t}":"Your opponent is at {i}/{t}",
     "Tout le monde repart avec toi.":"Everyone starts again with you.",
@@ -4691,6 +4697,9 @@ const TEXTES = {
     "Un jour manqué":"A missed day",
     "Hier était manqué":"Yesterday was missed",
     "{jeu} a gelé ta série":"{jeu} froze your streak",
+    "{jeu} t'offre un gel":"{jeu} gives you a freeze",
+    " — il te reste {n} gel":" — you have {n} freeze left",
+    " — il te reste {n} gels":" — you have {n} freezes left",
     " — plus aucun gel en réserve":" — no freeze left in reserve",
     /* la partie */
     "Le savais-tu ?":"Did you know?",
@@ -6904,6 +6913,25 @@ function loadTeams(){
     }
   } catch(e){}
   return [{name:"Joueur 1"},{name:"Joueur 2"}];
+}
+/* ===== « JOUEUR 1 » N'EST PAS UN NOM, C'EST UNE PLACE =====
+   Une équipe sans nom s'appelle « Joueur 1 », « Joueur 2 » — et ce nom-là est
+   ÉCRIT dans le carnet du téléphone (bt_teams), donc il survit au changement
+   de langue : un joueur anglophone lisait « Joueur 1 » sur sa feuille de
+   scores, au milieu d'un écran entièrement anglais.
+   ON NE RÉÉCRIT PAS CE QUI EST ENREGISTRÉ. C'est le réglage du joueur, et on
+   ne touche jamais à ses données. On traduit À L'AFFICHAGE, et seulement quand
+   le nom est EXACTEMENT un numéro par défaut ; le jour où il tape le sien, il
+   s'affiche tel quel, dans toutes les langues.
+   Le motif reconnaît les deux formes, parce qu'un joueur qui édite en anglais
+   enregistre « Player 3 » : normalizeTeams doit le reconnaître comme un
+   numéro, sans quoi il le prendrait pour un vrai nom et ne le renumérotrait
+   plus jamais. */
+const NUM_DEFAUT = /^(?:Joueur|Player)\s+(\d+)$/;
+function nomEquipe(nom){
+  const t = String(nom == null ? "" : nom).trim();
+  const m = NUM_DEFAUT.exec(t);
+  return m ? Tf("Joueur {n}", { n:m[1] }) : t;
 }
 function saveTeams(){ try { localStorage.setItem("bt_teams", JSON.stringify(state.teams.map(t=>({name:t.name})))); } catch(e){} }
 function loadProfile(){
@@ -12387,11 +12415,11 @@ function shareScore(kind){
   let text = "";
   if(kind === "group"){
     const withRanks = computeRanks();
-    const winners = withRanks.filter(r=>r.rank===1).map(r=>state.teams[r.teamIdx].name);
+    const winners = withRanks.filter(r=>r.rank===1).map(r=>nomEquipe(state.teams[r.teamIdx].name));
     text = Tf("{jeu} — {gagnants} remporte la partie avec {p} points !", {jeu:NOM_DU_JEU, gagnants:winners.join(" & "), p:state.scores[withRanks[0].teamIdx]});
   } else if(kind === "duel"){
     const win = net.score>net.oppScore, tie = net.score===net.oppScore;
-    const opp = net.opp ? net.opp.name : "mon adversaire";
+    const opp = net.opp ? net.opp.name : T("mon adversaire");
     text = Tf("{jeu} — {issue} contre {adv} : {a} à {b} !", {jeu:NOM_DU_JEU, issue:(tie?T("Égalité"):(win?T("Victoire"):T("Beau duel"))), adv:opp, a:net.score, b:net.oppScore});
   } else {
     const max = maxPossibleScore();
@@ -12421,7 +12449,7 @@ function goToModeSelect(){ state.screen = "mode"; render(); }
    sortie du champ. */
 function teamRowInner(i, t){
   return `<span class="team-token" style="background:${TEAM_COLORS[i%6]}">${((t.name||"").trim().charAt(0).toUpperCase())||(i+1)}</span>
-        <input type="text" value="${escapeHtml(t.name)}" maxlength="20" autocomplete="off" enterkeyhint="done" oninput="renameTeam(this)" onblur="renameSettle()" onkeydown="if(event.key==='Enter'){event.preventDefault();this.blur();}" placeholder="${T("Nom du joueur ou de l'équipe")}">
+        <input type="text" value="${escapeHtml(nomEquipe(t.name))}" maxlength="20" autocomplete="off" enterkeyhint="done" oninput="renameTeam(this)" onblur="renameSettle()" onkeydown="if(event.key==='Enter'){event.preventDefault();this.blur();}" placeholder="${T("Nom du joueur ou de l'équipe")}">
         <button class="team-remove" onclick="removeTeam(this)" ${state.teams.length<=2?"disabled":""} aria-label="${T('Retirer')}"><span class="ico" style="width:0.9rem;height:0.9rem;">${ICONS.close}</span></button>`;
 }
 function teamCardInner(){
@@ -12466,7 +12494,7 @@ function teamIndexOf(el){
    trafiquée) est ramenée à six avant même d'être dessinée. */
 function normalizeTeams(){
   if(state.teams.length > MAX_TEAMS) state.teams.length = MAX_TEAMS;
-  const parDefaut = /^Joueur\s+\d+$/;
+  const parDefaut = NUM_DEFAUT;
   for(let i = 0; i < state.teams.length; i++){
     const t = state.teams[i]; if(!t) continue;
     const nom = (t.name || "").trim();
@@ -13594,7 +13622,7 @@ function offrirGel(raison){
   if(d.gels >= GEL_MAX) return false;
   saveDaily({ gels: d.gels + 1 });
   achToastQueue.push({ clr:"blue", ico:ICONS.flammeGelee,
-    tete:"Yada t'offre un gel",
+    tete:Tf("{jeu} t'offre un gel", {jeu:NOM_DU_JEU}),
     t: raison + T(" — il couvre UN jour manqué") });
   try{ pumpAchToast(); }catch(e){}   // ne part que si la file n'est pas retenue
   return true;
@@ -14014,7 +14042,7 @@ function annoncerGel(){
     const reste = loadDaily().gels;
     achToastQueue.push({ clr:"blue", ico:ICONS.flammeGelee, tete:Tf("{jeu} a gelé ta série", {jeu:NOM_DU_JEU}),
       t: quand + (reste === 0 ? T(" — plus aucun gel en réserve")
-                 : reste === 1 ? " — il te reste 1 gel" : " — il te reste " + reste + " gels") });
+                 : Tf(reste === 1 ? " — il te reste {n} gel" : " — il te reste {n} gels", {n:reste})) });
     pumpAchToast();
   }catch(e){}
 }
@@ -14935,7 +14963,7 @@ function startRevision(quoi){
   render();
 }
 function shareRoomCode(){
-  const msg = "Rejoins-moi sur " + NOM_DU_JEU + " ! Code du salon : " + (net.code||"");
+  const msg = Tf("Rejoins-moi sur {jeu} ! Code du salon : {code}", {jeu:NOM_DU_JEU, code:(net.code||"")});
   if(navigator.share){ try { navigator.share({ text: msg }).catch(()=>{}); } catch(e){} return; }
   if(navigator.clipboard && navigator.clipboard.writeText){
     navigator.clipboard.writeText(msg).then(()=>{
@@ -15516,7 +15544,7 @@ function renderPlay(){
           ${state.teams.map((t,i)=>`
             <button class="award-btn ${state.awarded.includes(i)?'awarded':''}" onclick="toggleAward(${i})">
               <span class="team-token aw-token" style="background:${TEAM_COLORS[i%6]}">${((t.name||"").trim().charAt(0).toUpperCase())||(i+1)}</span>
-              <span class="aw-name">${escapeHtml(t.name)}</span>
+              <span class="aw-name">${escapeHtml(nomEquipe(t.name))}</span>
               ${state.awarded.includes(i)?`<span class="aw-check" style="color:${TEAM_COLORS[i%6]}">${ICONS.checkCircle}</span>`:""}
               <span class="pts">+${info.pts}</span>
             </button>
@@ -15528,7 +15556,7 @@ function renderPlay(){
       <div class="score-strip" style="--cols:${Math.min(3, ranked.length)}">
         ${ranked.map(i=>`
           <div class="score-pane">
-            <span class="nm"><span class="dot-sm" style="background:${TEAM_COLORS[i%6]}"></span>${escapeHtml(state.teams[i].name)}</span>
+            <span class="nm"><span class="dot-sm" style="background:${TEAM_COLORS[i%6]}"></span>${escapeHtml(nomEquipe(state.teams[i].name))}</span>
             <span class="score-row">
               <button class="adj-btn" onclick="adjustScore(${i},-10)" aria-label="${T("Retirer 10 points")}">−</button>
               <span class="sc">${state.scores[i]}</span>
@@ -15587,7 +15615,7 @@ function renderPlay(){
 /* ===================== RENDER: END ===================== */
 function renderEndGroup(){
   const withRanks = computeRanks();
-  const winners = withRanks.filter(r=>r.rank===1).map(r=>state.teams[r.teamIdx].name);
+  const winners = withRanks.filter(r=>r.rank===1).map(r=>nomEquipe(state.teams[r.teamIdx].name));
   const podiumOrder = [1,0,2]; // visual: 2nd, 1st, 3rd
   const barByRank = {1:"p1",2:"p2",3:"p3"};
   const podiumTeams = withRanks.slice(0,3);
@@ -15601,7 +15629,7 @@ function renderEndGroup(){
         <div class="podium-col">
           ${r.rank===1 ? `<span class="podium-crown">${ICONS.crown}</span>` : `<span class="podium-crown" style="visibility:hidden"></span>`}
           <span class="team-token podium-avatar" style="background:${TEAM_COLORS[r.teamIdx%6]}">${initial}</span>
-          <span class="podium-name">${escapeHtml(state.teams[r.teamIdx].name)}</span>
+          <span class="podium-name">${escapeHtml(nomEquipe(state.teams[r.teamIdx].name))}</span>
           <span class="podium-score">${state.scores[r.teamIdx]}</span>
           <div class="podium-bar ${barByRank[Math.min(r.rank,3)]}">${r.rank}</div>
         </div>`;
@@ -15623,7 +15651,7 @@ function renderEndGroup(){
         <div class="rank-row">
           <span class="rank-badge ${g}">${r.rank}</span>
           <span class="team-token rank-token" style="background:${TEAM_COLORS[r.teamIdx%6]}">${((state.teams[r.teamIdx].name||"").trim().charAt(0).toUpperCase())||"?"}</span>
-          <span class="rank-name">${escapeHtml(state.teams[r.teamIdx].name)}</span>
+          <span class="rank-name">${escapeHtml(nomEquipe(state.teams[r.teamIdx].name))}</span>
           <span class="rank-score-wrap">
             <button class="adj-btn" onclick="adjustScore(${r.teamIdx},-10)" aria-label="${T("Retirer 10 points")}">−</button>
             <span class="rank-score">${state.scores[r.teamIdx]} pts</span>
@@ -16021,7 +16049,7 @@ function renderOnlineRoom(){
       ${classement().sort((a,b)=> (a.moi?0:1)-(b.moi?0:1)).map(j=>`
         <div class="rank-row salle-ligne${j.moi?' moi':''}">
           ${avatarHtml(j.name, j.color, 2.1, j.isCreator)}
-          <span class="rank-name">${escapeHtml(j.name||"Joueur")}</span>
+          <span class="rank-name">${escapeHtml(j.name||T("Joueur"))}</span>
           <span class="salle-tag">${j.moi ? (net.isHost?T("Toi · Hôte"):T("Toi")) : T("Prêt")}</span>
         </div>`).join("")}
       ${nbJoueurs() < MAX_JOUEURS ? `<div class="rank-row salle-ligne vide"><span class="avatar waiting" style="width:2.1rem;height:2.1rem;font-size:0.95rem;">?</span><span class="rank-name">${T("En attente…")}</span><span class="salle-tag">${Tf(MAX_JOUEURS-nbJoueurs()>1?"{n} places":"{n} place", {n:MAX_JOUEURS-nbJoueurs()})}</span></div>` : ""}
@@ -16080,7 +16108,7 @@ function renderOnlinePlay(){
     <div class="duel-scorebar">
       <div class="ds-side me"><span class="ds-name">${escapeHtml(profile.name)}</span><span class="ds-score">${net.score}</span></div>
       <div class="ds-vs">VS</div>
-      <div class="ds-side${net.oppGone?' gone':''}"><span class="ds-name">${escapeHtml(oppName)}${net.oppGone?" · parti":""}</span><span class="ds-score">${net.oppScore}</span></div>
+      <div class="ds-side${net.oppGone?' gone':''}"><span class="ds-name">${escapeHtml(oppName)}${net.oppGone?" \u00b7 "+T("parti"):""}</span><span class="ds-score">${net.oppScore}</span></div>
     </div>`;
   if(net.myDone){
     el.innerHTML = `${renderHeader(titrePartie(), true, "quitDuel()")}
@@ -16154,7 +16182,7 @@ function renderOnlineEnd(){
   /* REJOUER À DEUX : l'écran de fin reflète l'état de la poignée de main —
      j'invite / on m'invite / les deux acceptent / refus. La nouvelle partie ne
      part jamais sans l'accord de l'adversaire. */
-  const oppName = net.opp ? escapeHtml(net.opp.name) : "L'adversaire";
+  const oppName = net.opp ? escapeHtml(net.opp.name) : T("L'adversaire");
   let replayMsg = "", replayActions = "";
   /* REJOUER À PLUSIEURS : la poignée de main à deux ne se généralise pas — à
      six, attendre l'accord de tous bloquerait la table sur le premier joueur
@@ -16175,7 +16203,7 @@ function renderOnlineEnd(){
     replayMsg = T("Nouvelle partie en préparation…");
     replayActions = `<button class="btn-replay is-waiting" disabled>${T("C'est parti…")}</button>`;
   } else if(net.oppWantReplay){
-    replayMsg = oppName + " aimerait rejouer. Tu acceptes ?";
+    replayMsg = Tf("{nom} aimerait rejouer. Tu acceptes\u00a0?", {nom:oppName});
     replayActions = `<button class="btn-replay" onclick="onlineRematch()">${T("Accepter")}</button>`
       + `<button class="btn-newgame" onclick="declineRematch()">${T("Refuser")}</button>`;
   } else if(net.iWantReplay){
@@ -16216,7 +16244,7 @@ function renderOnlineEnd(){
         <div class="rank-row${j.moi?' moi':''}${j.gone?' gone':''}">
           <span class="rank-badge ${g}">${j.rg}</span>
           ${avatarHtml(j.name, j.color, 1.55, j.isCreator)}
-          <span class="rank-name">${escapeHtml(j.name||"Joueur")}${j.gone?" \u00b7 parti":""}</span>
+          <span class="rank-name">${escapeHtml(j.name||T("Joueur"))}${j.gone?" \u00b7 "+T("parti"):""}</span>
           <span class="rank-score">${j.score|0} pts</span>
         </div>`;
       }).join("")}

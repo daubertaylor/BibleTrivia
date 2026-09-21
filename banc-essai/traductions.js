@@ -213,6 +213,32 @@ for(const [a, b] of [['const TEXTES = {', '\n};'], ['const BANK = {', '\n  ]\n};
   net = effacer(net, a, b);
 
 const OUTILS = /\b(le|la|les|des|une|est|sont|pour|avec|sans|dans|votre|vos|pas|plus|que|qui|cette|ces|aux|mon|ma|mes|nous|tout|toute|du|au|ou|et|un|de|se|sur|par|je|tu|ton|ta|tes|il|elle|on)\b/gi;
+/* ===== DEUX MOTS-OUTILS, C'ÉTAIT UN SEUIL TROP HAUT =====
+   La règle demandait un accent OU deux mots de cette liste. Une étiquette
+   courte n'a ni l'un ni l'autre : « Yada t'offre un gel », « il te reste 1
+   gel », « · parti », « Joueur 1 » sont passés des mois durant, et se sont
+   affichés en français sur un téléphone anglophone.
+   ON AJOUTE DONC UN SECOND FILET, À UN SEUL MOT — mais un mot qui n'existe
+   QU'EN FRANÇAIS. Chaque entrée de cette liste a été vérifiée contre
+   l'anglais : « on », « plus », « car », « son », « point », « question »,
+   « chance », « note », « client » en sont exclus exprès, ce sont aussi des
+   mots anglais. Ce qui reste ne peut pas apparaître dans une phrase anglaise
+   par accident. */
+const FRANCAIS_SEUL = new RegExp('\\b(' + [
+  'le','la','les','des','une','du','au','aux','ce','cet','cette','ces',
+  'mon','ma','mes','ton','ta','tes','son','sa','ses','nos','vos','leur','leurs',
+  'je','tu','il','elle','nous','vous','ils','elles','me','te','se','ne','lui','y',
+  'est','sont','était','sera','fait','faire','aller','avoir','être',
+  'avec','sans','pour','dans','sous','vers','chez','entre','depuis','jusqu',
+  'encore','déjà','aussi','alors','donc','mais','quand','comme','très','trop',
+  'bien','mieux','moins','tout','toute','tous','toutes','aucun','aucune',
+  'chaque','autre','autres','même','mêmes','ici','demain','hier','jamais','toujours',
+  'joueur','joueurs','partie','parties','jour','jours','erreur','erreurs',
+  'gel','gels','série','reste','quitter','rester','offre','couvre','manqué',
+  'réserve','terminé','terminée','parti','partie','perdue','perdu','réessaie',
+  'livre','livres','verset','versets','réponse','réponses','carnet','flamme',
+  'salon','adversaire','hôte','équipe','équipes','langue','réglages','accueil',
+].join('|') + ')\\b', 'i');
 const ACCENT = /[àâäéèêëîïôöùûüçÀÉÈÊÏÔÛÇæœ]/;
 /* RETIRER LES ${…} EN COMPTANT LES ACCOLADES.
    /\$\{[^}]*\}/ s'arrête à la PREMIÈRE accolade fermante — donc au milieu de
@@ -235,6 +261,29 @@ function sansTrous(t){
   }
   return out;
 }
+/* ===== CE QUI N'EST PAS DU TEXTE, ET QUI EN A L'AIR =====
+   Le filet à un seul mot français ramène aussi des noms de classes, des
+   sélecteurs et des clés internes : « accueil », « tout », « livre », « me »
+   sont à la fois des mots français et des morceaux de code. Chacun est ici
+   nommé EXACTEMENT, avec sa raison — pas de motif large qui rendrait le banc
+   aveugle à la première vraie phrase qui lui ressemblerait. */
+const PAS_DU_TEXTE = new Map([
+  ['Joueur 1',              'le nom ENREGISTRÉ d\'une équipe sans nom ; nomEquipe() le traduit à l\'affichage'],
+  ['Joueur 2',              'idem'],
+  ['--verset-max',          'le nom d\'une propriété CSS'],
+  ['plafond du verset :',   'un console.warn pour moi, jamais montré'],
+  ["startRevision('tout')", 'un morceau d\'attribut onclick'],
+  ['livre:',                'le préfixe d\'une clé passée à startRevision'],
+  ['Autres',                'une clé de comparaison ; livresDuCarnet ne fait jamais cette tuile'],
+  ['screen accueil',        'deux classes CSS'],
+  ['ds-side me',            'deux classes CSS'],
+  ['fj fait',               'deux classes CSS'],
+  ['[data-count-me]',       'un sélecteur CSS'],
+  ['<button class="sem-flamme', 'un début de balise'],
+  [' data-langue=',         'le nom d\'un attribut, coupé par une interpolation'],
+  ['" data-langue="',       'idem, guillemets compris : la balise ouvrante n\'est pas fermée sur la ligne'],
+]);
+
 const trainent = new Map();
 /* {3,} et non * : une chaîne VIDE, comme le premier argument de ligne(""…),
    désynchronisait le balayage — le moteur ouvrait sur la première apostrophe
@@ -329,7 +378,7 @@ net.split('\n').forEach((ligne, n) => {
       /* Un littéral COMPARÉ n'est pas un littéral AFFICHÉ : `x === "Ésaïe"`
          teste un nom de livre, il ne l'écrit pas à l'écran. */
       if(/[=!]==?\s*$/.test(ligne.slice(0, m.index))) continue;
-      if(!(ACCENT.test(txt) || (txt.match(OUTILS) || []).length >= 2)) continue;
+      if(!(ACCENT.test(txt) || (txt.match(OUTILS) || []).length >= 2 || FRANCAIS_SEUL.test(txt))) continue;
       /* DÉJÀ AU DICTIONNAIRE = DÉJÀ TRADUISIBLE. Certaines phrases vivent dans
          une table de données — les seize objectifs, les dix-huit mots de la
          fin, les libellés de durée — et ne passent par T() qu'au moment du
@@ -338,6 +387,7 @@ net.split('\n').forEach((ligne, n) => {
          traduites. Ce qui compte n'est donc pas la FORME de l'appel, mais la
          présence de la clé. Cette règle a l'avantage d'être la bonne dans les
          deux sens : pour taire ce banc, il faut poser la traduction. */
+      if(PAS_DU_TEXTE.has(txt)) continue;
       if(clesPlates.has(plat(txt))) continue;
       if(!trainent.has(txt)) trainent.set(txt, n + 1);
     }
@@ -479,7 +529,7 @@ for(const ligne of codeSeul.split('\n')){
     if(/^[a-z][a-z0-9_-]*$/.test(txt)) continue;                  // une clé, une classe
     if(/^(https?:|data:|#|\.|\/)/.test(txt)) continue;
     if(/[=!]==?\s*$/.test(ligne.slice(0, m.index))) continue;      // une COMPARAISON
-    if(!(ACCENT.test(txt) || (txt.match(OUTILS) || []).length >= 2)) continue;
+    if(!(ACCENT.test(txt) || (txt.match(OUTILS) || []).length >= 2 || FRANCAIS_SEUL.test(txt))) continue;
     /* ===== UNE PHRASE AU DICTIONNAIRE N'EST PAS UN OUBLI =====
        Ces phrases vivent dans des TABLES (les succès, les portes d'« À
        revoir », les mots de fin) et passent par T() au moment de s'afficher :
@@ -487,6 +537,7 @@ for(const ligne of codeSeul.split('\n')){
        les signalait donc toutes, y compris les cinquante-trois qui étaient
        parfaitement traduites. Ce qu'on cherche ici, c'est une phrase de table
        SANS traduction : celles-là retombent en français, en silence. */
+    if(PAS_DU_TEXTE.has(txt)) continue;
     if(clesPlates.has(plat(txt))) continue;
     if(!enArg.has(txt)) enArg.set(txt, lg);
   }
