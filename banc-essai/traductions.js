@@ -78,6 +78,18 @@ const doublons = [];
 }
 for(const m of dEn.matchAll(/\n\s*"((?:[^"\\]|\\.)*)"\s*:/g)) cles.add(JSON.parse('"' + m[1] + '"'));
 const clesPlates = new Set([...cles].map(plat));
+/* UNE RÉFÉRENCE BIBLIQUE EST UNE CLÉ, PAS UN TEXTE. REFS_EN dit, pour chaque
+   référence française, sa forme anglaise : « Ésaïe 64:8 » y est à gauche,
+   comme identifiant. L'écrire n'est pas laisser traîner du français — c'est
+   exactement le même cas que le dictionnaire lui-même, et on le traite pareil. */
+{
+  const i = src.indexOf('const REFS_EN = {');
+  if(i >= 0){
+    const j = src.indexOf('\n};', i);
+    for(const m of src.slice(i, j).matchAll(/"((?:[^"\\]|\\.)*)"\s*:/g))
+      clesPlates.add(plat(JSON.parse('"' + m[1] + '"')));
+  }
+}
 
 /* ON NE LIT PAS UN APPEL AVEC UNE EXPRESSION RÉGULIÈRE.
    Première version : /Tf?\(\s*"([^"]*)"/. Elle ne voyait que le littéral
@@ -142,6 +154,34 @@ if(doublons.length){
     console.log('           retenue : ' + b.slice(0, 60));
   });
 } else console.log('  OK aucune clé écrite deux fois');
+
+/* ===== DEUX CLÉS QUI NE DIFFÈRENT QUE PAR UNE ESPACE INSÉCABLE =====
+   « Beau début ! Chaque partie t'apprend un peu plus. » était au dictionnaire
+   DEUX fois — une avec l'espace fine avant le point d'exclamation, une sans —
+   et les deux n'y disaient pas la même chose : « A fine start! » d'un côté,
+   « Fine start! » de l'autre. Comme T() cherche d'abord la forme EXACTE, c'est
+   l'espace écrite dans MOTS_FIN qui décidait laquelle gagnait ; corriger
+   l'autre n'avait aucun effet visible. Rien ne les dénonçait : ce sont bien
+   deux clés distinctes, donc pas des doublons, et chacune est traduite, donc
+   pas un trou. Elles ne se voient qu'en aplatissant les espaces — exactement
+   ce que fait le repli de T(). */
+{
+  const parPlat = new Map();
+  for(const m of dEn.matchAll(/"((?:[^"\\]|\\.)*)"\s*:\s*"((?:[^"\\]|\\.)*)"/g)){
+    const k = plat(JSON.parse('"' + m[1] + '"')), v = JSON.parse('"' + m[2] + '"');
+    if(!parPlat.has(k)) parPlat.set(k, []);
+    parPlat.get(k).push(v);
+  }
+  const jumelles = [...parPlat].filter(([, v]) => v.length > 1);
+  if(jumelles.length){
+    ko++;
+    console.log('  KO ' + jumelles.length + ' clé(s) en double à l\'espace insécable près :');
+    jumelles.slice(0, 8).forEach(([k, v]) => {
+      console.log('       « ' + k.slice(0, 60) + ' »');
+      [...new Set(v)].forEach(x => console.log('           ' + x.slice(0, 70)));
+    });
+  } else console.log('  OK aucune clé en double à l\'espace insécable près');
+}
 
 /* ---------- 2. aucune phrase française hors de T() ---------- */
 let net = src;
@@ -459,6 +499,52 @@ if(enArg.size){
     .forEach(([t, n]) => console.log('       ligne ' + n + '  ' + t.slice(0, 92)));
   if(enArg.size > 80) console.log('       … et ' + (enArg.size - 80) + ' autre(s)');
 } else console.log('  OK aucune phrase française passée en argument');
+
+/* ============ CINQUIÈME PORTE : CE QU'ON CONFIE À showModal ============
+   LE TROU QUE LES QUATRE AUTRES ONT LAISSÉ PASSER PENDANT DES MOIS.
+   showModal ne traduit rien : l'appelant doit poser ses T() lui-même. Treize
+   phrases ne l'avaient jamais été — « Quitter la partie ? », « La partie en
+   cours sera perdue. », « Rester », « Non merci », « Code incorrect. » — et
+   aucune n'était seulement AU dictionnaire. Pourtant les portes précédentes
+   étaient vertes : elles jugent le français sur deux indices, un accent ou
+   deux mots-outils, et une étiquette courte n'a ni l'un ni l'autre.
+   « Quitter » n'a pas d'accent et pas un seul « le » ; « Quitter la partie ? »
+   n'en a qu'un. Le joueur anglophone qui quittait une partie lisait donc une
+   confirmation entièrement française, à l'endroit le plus risqué du jeu.
+   CETTE PORTE-CI NE DEVINE RIEN. Elle ne demande pas « est-ce que ça a l'air
+   français ? », elle demande « est-ce que c'est passé par T() ? » — la seule
+   question dont la réponse soit toujours sûre. Un littéral nu dans un champ
+   que le joueur LIT est refusé, quelle que soit la langue dans laquelle il
+   est écrit. */
+{
+  const CHAMPS = /(?:^|[{,\s])(title|message|okLabel|cancelLabel|placeholder|errorText)\s*:\s*(["'])/g;
+  /* « OK » est le même mot dans les deux langues, et c'est le repli du bouton
+     quand l'appelant ne dit rien. */
+  const LIBRES = new Set(['OK']);
+  const nus = [];
+  for(const m of src.matchAll(/\bshowModal\s*\(/g)){
+    let i = m.index + m[0].length, prof = 1;
+    while(i < src.length && prof > 0){
+      const c = src[i];
+      if(c === '(') prof++;
+      else if(c === ')') prof--;
+      else if(c === '"' || c === "'" || c === '`'){ i = litteral(src, i)[1]; continue; }
+      i++;
+    }
+    const bloc = src.slice(m.index, i);
+    let mm; CHAMPS.lastIndex = 0;
+    while((mm = CHAMPS.exec(bloc))){
+      const [v] = litteral(bloc, mm.index + mm[0].length - 1);
+      if(v === null || LIBRES.has(v) || !v.trim()) continue;
+      nus.push([src.slice(0, m.index).split('\n').length, mm[1], v]);
+    }
+  }
+  if(nus.length){
+    ko++;
+    console.log('  KO ' + nus.length + ' texte(s) confié(s) à showModal sans passer par T() :');
+    nus.slice(0, 20).forEach(([n, ch, v]) => console.log('       ligne ' + n + '  ' + ch + ' : ' + v.slice(0, 80)));
+  } else console.log('  OK tout ce que showModal affiche passe par T()');
+}
 
 console.log(ko === 0 ? '\n  OK' : '\n  ' + ko + ' défaut(s)');
 process.exit(ko === 0 ? 0 : 1);

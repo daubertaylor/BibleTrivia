@@ -135,6 +135,13 @@ const MEME_DANS_LES_DEUX = [
   /* Les lettres de repère : A B C D devant les options, l'initiale d'une
      équipe. Ce sont des numéros écrits en lettres, pas des mots. */
   { quoi:/^[A-Z]$/, ou:/letter|team-token/,    car:'une lettre de repère, pas un mot' },
+  /* L'ABRÉGÉ DE CERTAINS LIVRES EST LE MÊME DANS LES DEUX LANGUES.
+     « 1 Corinthiens » et « 1 Corinthians » s'abrègent tous deux en « 1 Cor. » ;
+     de même « 2 Chron. » et « Philip. ». Vérifié dans LIVRES_COURTS_EN, qui les
+     porte explicitement — ce n'est pas un oubli de traduction, c'est la bonne
+     abréviation des deux côtés. */
+  { quoi:/^(1 Cor\.|2 Cor\.|1 Chron\.|2 Chron\.|Philip\.|Col\.|Dan\.|Jude|Job|Ruth|Esther|Amos|Joel|Nahum)$/, ou:/bk-nm/,
+    car:'la même abréviation dans les deux langues' },
 ];
 /* Les endroits où un texte identique est normal quelle que soit la langue :
    l'initiale d'un avatar, le code du salon, un score, un chiffre.
@@ -167,6 +174,67 @@ const LIEUX_LIBRES = /avatar|code-big|rank-pts|sem-t$|scorebar|q-counter|timer|l
 
   /* Chaque étape : un nom, et ce qu'il faut faire pour y être. On force l'état
      plutôt que de cliquer — plus court, et surtout reproductible. */
+  /* ===== LES FINS DE PARTIE =====
+     Dix-huit mots de fin — trois par palier, six paliers — plus les lignes de
+     resultat : aucun ne s'affiche tant qu'on n'a pas FINI une partie. C'etait
+     le plus gros angle mort du banc, et c'est le moment ou le joueur lit le
+     plus attentivement.
+     LE MOT AFFICHE NE DEPEND PAS QUE DU SCORE. soloPerformanceMessage() lit
+     aussi l'historique : le palier vient du pourcentage ET du record, et la
+     variante vient du nombre de parties. Forcer le score seul ne montrait donc
+     qu'un mot sur dix-huit — c'est ce que faisait la premiere version de ces
+     etapes, et c'est pourquoi le compte des phrases jamais vues ne bougeait
+     presque pas. On pose donc les trois entrees ensemble. */
+  const finSolo = (o) => {
+    try { closeModal && closeModal(); } catch(e){}
+    localStorage.setItem('bt_stats', JSON.stringify({ bestScore:1, bestPct:o.best, games:o.games }));
+    state.mode = 'solo'; state.daily = false; state.revision = !!o.revision;
+    state.soloIsRecord = !!o.record;
+    state.questions = seededDeck(21, '9', null);
+    state.currentIndex = state.questions.length;
+    state.soloMissed = (o.rates || []).map(i => state.questions[i]);
+    localStorage.setItem('bt_lastmiss', JSON.stringify(o.reste ? ['a', 'b'] : []));
+    state.soloScore = Math.round(maxPossibleScore() * o.part);
+    state.soloCorrect = Math.round(state.questions.length * o.part);
+    state.soloBestStreak = state.soloCorrect;
+    state.screen = 'end'; render();
+  };
+  const FINS_SOLO = (() => {
+    const cas = [];
+    /* nom du palier, part du score maximal, record a l'historique */
+    const paliers = [['haut', 0.95, 20], ['bon', 0.72, 20], ['moyen', 0.50, 20],
+      /* bas + peu de parties + petit record = « debut » */
+      ['debut', 0.25, 20],
+      /* bas + record bien au-dessus = « mieux » ; le record >= 65 ecarte « debut » */
+      ['mieux', 0.25, 90]];
+    for(const [nom, part, best] of paliers)
+      for(const g of [1, 2, 3])
+        cas.push(['Fin Solo ' + nom + ' ' + g, finSolo, { part, best, games:g }]);
+    /* « creux » : bas, sans record a invoquer. Il faut sortir de « debut »
+       (plus de cinq parties) sans entrer dans « mieux » (record a moins de
+       25 points au-dessus du jour). */
+    for(const g of [7, 8, 9])
+      cas.push(['Fin Solo creux ' + (g - 6), finSolo, { part:0.30, best:40, games:g }]);
+    /* Les trois lignes qui coiffent le mot de fin. */
+    cas.push(['Fin Solo record', finSolo, { part:0.95, best:20, games:3, record:true }]);
+    cas.push(['Fin Revision tout', finSolo, { part:0.9, best:50, games:3, revision:true, rates:[], reste:false }]);
+    cas.push(['Fin Revision reste', finSolo, { part:0.6, best:50, games:3, revision:true, rates:[0, 1], reste:true }]);
+    return cas;
+  })();
+  const finGroupe = (o) => {
+    try { closeModal && closeModal(); } catch(e){}
+    state.mode = 'group';
+    state.teams = [{ name:'Taylor' }, { name:'Sam' }, { name:'Lee' }];
+    state.scores = o.scores;
+    state.questions = seededDeck(21, '9', null);
+    state.currentIndex = state.questions.length;
+    state.screen = 'end'; render();
+  };
+  const FINS_GROUPE = [
+    ['Fin Groupe', finGroupe, { scores:[120, 80, 40] }],
+    ['Fin Groupe ex aequo', finGroupe, { scores:[120, 120, 40] }],
+  ];
+
   const ETAPES = [
     ['Accueil',           () => { state.screen='mode'; render(); }],
     ['Réglages',          () => { openSettings(); }],
@@ -176,6 +244,25 @@ const LIEUX_LIBRES = /avatar|code-big|rank-pts|sem-t$|scorebar|q-counter|timer|l
     ['Profil',            () => { closeFlamme&&closeFlamme(); state.screen='profile'; render(); }],
     ['Progression',       () => { state.screen='parcours'; render(); }],
     ['À revoir',          () => { state.screen='revoir'; render(); }],
+    /* LE CARNET VIDE NE MONTRE PAS TOUT. Sans erreurs, la jauge, la liste des
+       livres et le compte des échéances ne sont pas peints du tout — six
+       intitulés que le banc ne voyait donc jamais. On remplit le carnet par le
+       CHEMIN DU JEU (errbookAdd), puis on avance deux échéances à aujourd'hui
+       et on rate deux questions une seconde fois, pour que les quatre portes
+       comptent quelque chose. */
+    ['À revoir · rempli', () => {
+      try { closeModal && closeModal(); } catch(e){}
+      localStorage.removeItem('bt_errbook');
+      const d = seededDeck(4242, '9', null);
+      d.forEach(q => errbookAdd(q));
+      errbookAdd(d[0]); errbookAdd(d[1]);
+      const a = loadErrbook();
+      if(a[2]) a[2].du = dayKey(0);
+      if(a[3]) a[3].du = dayKey(0);
+      if(a[4]) a[4].p = 2;
+      saveErrbook(a);
+      localStorage.setItem('bt_lastmiss', JSON.stringify([qKey(d[0]), qKey(d[1])]));
+      state.screen='revoir'; render(); }],
     ['Réglages Groupe',   () => { state.mode='group'; state.screen='setup'; render(); }],
     ['Réglages Solo',     () => { state.mode='solo'; state.screen='setup'; render(); }],
     ['Partie Solo',       () => { state.mode='solo'; startGame(); }],
@@ -217,13 +304,44 @@ const LIEUX_LIBRES = /avatar|code-big|rank-pts|sem-t$|scorebar|q-counter|timer|l
       openMissedReview(state.soloMissed); }],
     ['Succès',             () => { closeMissedReview&&closeMissedReview(); openAchInfo(ACHIEVEMENTS[0].id); }],
     ['Guide plein écran',  () => { closeModal&&closeModal(); state.screen='mode'; render(); openFsGuide(); }],
-    ['Hors connexion',     () => { closeModal&&closeModal(); showModal({ titre:T('Hors connexion'), texte:T('Le mode en ligne nécessite Internet. Les modes Solo et Groupe restent jouables sans connexion.'), ok:T('Compris') }); }],
+    /* ===== LES FENÊTRES DE CONFIRMATION =====
+       showModal ne traduit rien de lui-même : chaque appelant pose ses T().
+       Treize phrases ne les avaient jamais eus. On ouvre donc ici CHAQUE
+       fenêtre par la fonction du jeu qui l'ouvre — pas en réinventant l'appel.
+       La première version de cette étape passait « titre / texte / ok » là où
+       showModal attend « title / message / okLabel » : la fenêtre s'ouvrait
+       VIDE, le banc n'y lisait rien, et il en déduisait que tout allait bien. */
+    ['Hors connexion',     () => { closeModal&&closeModal();
+      const ol = Object.getOwnPropertyDescriptor(Navigator.prototype, 'onLine');
+      Object.defineProperty(navigator, 'onLine', { configurable:true, get:()=>false });
+      openOnline();
+      if(ol) Object.defineProperty(Navigator.prototype, 'onLine', ol); }],
+    ['Quitter la partie',  () => { closeModal&&closeModal(); confirmLeaveGame(); }],
+    ['Quitter le duel',    () => { closeModal&&closeModal();
+      net.myDone = false; net.oppGone = false;
+      net.deck = seededDeck(12345, '9', null); net.idx = 2;
+      quitDuel(); }],
+    ['Rappels proposés',   () => { closeModal&&closeModal();
+      showModal({ title:T('Recevoir les rappels\u00a0?'),
+        message:T("Ta série sur le point de s'éteindre, tes erreurs à revoir, un verset le dimanche, et un mot si tu t'absentes. Au plus UN rappel par jour, et jamais si tu as déjà joué."),
+        okLabel:T("D'accord"), cancelLabel:T('Non merci') }); }],
+    /* Le code créateur, et son refus : « Code incorrect. » ne s'écrit qu'après
+       une mauvaise saisie. */
+    ['Badge Créateur',     () => { closeModal&&closeModal(); profile.isCreator = false; promptCreator(); }],
+    ['Code incorrect',     () => { const i = document.getElementById('modalInput');
+      if(i) i.value = 'xxxx';
+      const b = document.getElementById('modalOk'); if(b) b.click(); }],
+    ...FINS_SOLO,
+    ...FINS_GROUPE,
+    /* Le profil d'un joueur qui n'a pas encore choisi de nom. */
+    ['Profil · invité',    () => { const g = JSON.parse(localStorage.getItem('bt_profile')||'{}');
+      profile.name = ''; state.screen='profile'; render(); }],
   ];
 
     const releve = new Map();
     const ennuis = [];
-    for(const [nom, faire] of ETAPES){
-      try { await p.evaluate(faire); } catch(e){ ennuis.push(nom + ' (' + lg + ') : impossible d\'ouvrir — ' + e.message.split('\n')[0]); continue; }
+    for(const [nom, faire, arg] of ETAPES){
+      try { await p.evaluate(faire, arg === undefined ? null : arg); } catch(e){ ennuis.push(nom + ' (' + lg + ') : impossible d\'ouvrir — ' + e.message.split('\n')[0]); continue; }
       await p.waitForTimeout(450);
       try { releve.set(nom, await p.evaluate(RAMASSER)); }
       catch(e){ ennuis.push(nom + ' (' + lg + ') : relevé impossible — ' + e.message.split('\n')[0]); }
@@ -234,7 +352,7 @@ const LIEUX_LIBRES = /avatar|code-big|rank-pts|sem-t$|scorebar|q-counter|timer|l
 
   const en = await passe('en');
   const fr = await passe('fr');
-  await nav.close();
+  const nav2 = nav;
 
   const fautes = [...en.ennuis, ...fr.ennuis];
   if(en.erreurs.length) fautes.push('erreurs JS (en) : ' + [...new Set(en.erreurs)].slice(0,2).join(' | '));
@@ -297,11 +415,35 @@ const LIEUX_LIBRES = /avatar|code-big|rank-pts|sem-t$|scorebar|q-counter|timer|l
     }
   }
 
+  /* ===== TROISIÈME BARRIÈRE : CE QUE LE BANC N'A JAMAIS VU =====
+     Un banc vert ne prouve rien sur les écrans qu'il n'ouvre pas. On demande
+     donc au jeu toutes ses phrases anglaises, et on retire celles qu'on a
+     effectivement lues à l'écran. Ce qui reste, ce sont les coins du jeu que
+     personne n'a relus en anglais. */
+  const dico = await (async () => {
+    const ctx2 = await nav2.newContext({ viewport:{ width:393, height:852 }, userAgent:IOS, serviceWorkers:'block' });
+    const q = await ctx2.newPage();
+    await q.addInitScript(() => localStorage.setItem('bt_langue', 'en'));
+    await q.goto(URL);
+    await q.waitForFunction(() => { try { return typeof TEXTES === 'object'; } catch(e){ return false; } }, null, { timeout:20000 });
+    const v = await q.evaluate(() => Object.values(TEXTES.en));
+    await ctx2.close();
+    return v;
+  })();
+  const lus = new Set();
+  for(const [, textes] of en.releve) for(const { t } of textes) lus.add(t);
+  const jamais = [...new Set(dico)].filter(v => !lus.has(v)
+    && !/\{/.test(v));      /* les phrases à trou ne s'affichent jamais telles quelles */
+  console.log('  phrases anglaises jamais vues à l\'écran : ' + jamais.length + ' sur ' + new Set(dico).size);
+  if(jamais.length) jamais.slice(0, process.env.TOUT ? 999 : 40)
+    .forEach(v => console.log('     « ' + v.slice(0, 70) + ' »'));
+
   if(fautes.length){
     console.log('  CE QUI NE PARLE PAS ANGLAIS (' + fautes.length + ') :');
     fautes.forEach(f => console.log('   ' + f));
-    process.exit(1);
+    nav.close().catch(()=>{}); process.exit(1);
   }
+  await nav.close();
   console.log('  OK — ' + en.nEtapes + ' écrans et panneaux peints dans les deux langues, '
     + compte + ' textes relevés, pas un mot de français');
   console.log('       ' + paires + ' textes identiques fr/en, tous justifiés');
