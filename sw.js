@@ -1,7 +1,18 @@
 /* Yada — service worker : rend l'app jouable hors connexion.
    À déposer à côté de index.html (même dossier, nom exact "sw.js"). */
 const CACHE = "yada-v270";
-const CORE = ["./", "./index.html", "./questions-en.js", "./manifest.json", "./apple-touch-icon.png", "./icon-192.png", "./icon-512.png", "./fonts/inter-latin.woff2", "./fonts/inter-latinext.woff2", "./fonts/fraunces-italic-latin.woff2", "./fonts/fraunces-italic-latinext.woff2", "./fonts/poppins-500-latin.woff2", "./fonts/poppins-500-latinext.woff2", "./fonts/poppins-600-latin.woff2", "./fonts/poppins-600-latinext.woff2", "./fonts/poppins-700-latin.woff2", "./fonts/poppins-700-latinext.woff2"];
+/* ===== LES BANQUES DE QUESTIONS NE SONT PAS DANS LE SOCLE =====
+   questions-en.js y était, et questions-es.js allait l'y rejoindre : six cent
+   mille octets téléchargés à l'installation par TOUT LE MONDE, y compris les
+   joueurs français, qui n'en liront jamais une ligne. C'était contraire à
+   l'intention écrite le jour même où le fichier est né (« chargés SEULEMENT si
+   le joueur est en anglais ») — une ligne ajoutée par réflexe.
+   Elles ne s'y trouvent plus. La règle des ressources ci-dessous les met en
+   cache à la PREMIÈRE lecture, et cette première lecture a lieu à l'ouverture
+   du jeu (chargerBanque), pas à la première partie : un joueur anglais ou
+   espagnol qui a ouvert le jeu une fois en ligne l'a hors ligne ensuite,
+   exactement comme avant. */
+const CORE = ["./", "./index.html", "./manifest.json", "./apple-touch-icon.png", "./icon-192.png", "./icon-512.png", "./fonts/inter-latin.woff2", "./fonts/inter-latinext.woff2", "./fonts/fraunces-italic-latin.woff2", "./fonts/fraunces-italic-latinext.woff2", "./fonts/poppins-500-latin.woff2", "./fonts/poppins-500-latinext.woff2", "./fonts/poppins-600-latin.woff2", "./fonts/poppins-600-latinext.woff2", "./fonts/poppins-700-latin.woff2", "./fonts/poppins-700-latinext.woff2"];
 self.addEventListener("install", (e) => {
   e.waitUntil(caches.open(CACHE).then((c) => c.addAll(CORE)).catch(() => {}));
   self.skipWaiting();

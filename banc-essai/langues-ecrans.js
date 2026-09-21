@@ -57,7 +57,14 @@ const MOTS = ('le les la une des du aux et est sont tu toi ta tes ne pas pour av
    qui crie à chaque écran — et qu'on finit par ne plus lire.
    On retire donc, pour l'espagnol, ce que les deux langues partagent. Le reste
    est aussi sévère qu'avant. */
-const AUSSI_ESPAGNOL = new Set(['la', 'tu', 'que', 'serie', 'bravo', 'une', 'sa']);
+/* MESURÉ, PAS DEVINÉ. Une fois la banque espagnole en place, on a compté ces
+   mots-outils français dans les 1545 questions espagnoles : la ×1370, que ×386,
+   le ×74, tu ×47, les ×6, deja ×3, sur ×1 — et zéro accent interdit. Les sept
+   sont de l'espagnol : « le » et « les » sont ses pronoms, « deja » son verbe
+   (« el pastor deja las 99 »), « sur » son point cardinal (« Roboam al sur »).
+   Ils sortent donc de la liste, sous peine d'un banc qui crie à chaque écran. */
+const AUSSI_ESPAGNOL = new Set(['la', 'tu', 'que', 'serie', 'bravo', 'une', 'sa',
+                                'le', 'les', 'deja', 'sur']);
 const CIBLE = {
   en: { mots:MOTS,
         accent:/[àâäéèêëîïôöùûüÿçœæÀÂÄÉÈÊËÎÏÔÖÙÛÜŸÇŒÆ]/ },
@@ -150,7 +157,6 @@ const LIEUX_QUESTION = /qtext|opt-text|ftext|rev-q|rev-a\b|rev-fact|fact-label/;
 const JAMAIS_A_L_ECRAN = [
   /* Chaque ligne porte SA langue : une phrase peut être hors d'atteinte en
      anglais et parfaitement visible en espagnol, et l'inverse. */
-  { lg:'en', quoi:'Spanish',  car:"la liste des langues écrit le nom NATIF (« Español ») ; « Spanish » n'y paraît jamais" },
   { lg:'en', quoi:'Good duel', car:"n'existe que dans le texte PARTAGÉ d'un duel serré, jamais sur un écran" },
   { lg:'en', quoi:'Win', car:"idem : « Victoire » sans point d'exclamation ne sert qu'au texte partagé" },
   { lg:'en', quoi:'Background', car:"la rangée des décors ne se peint que si SCENES en compte plus d'un ; il n'y en a qu'un" },
@@ -158,7 +164,12 @@ const JAMAIS_A_L_ECRAN = [
   /* ===== L'ESPAGNOL, MÊME EXAMEN ===== */
   { lg:'es', quoi:'Inicio', car:"« Accueil » est au dictionnaire mais aucun T() ne l'appelle — clé dormante" },
   { lg:'es', quoi:'Fondo',  car:"la rangée des décors ne se peint que si SCENES en compte plus d'un ; il n'y en a qu'un" },
-  { lg:'es', quoi:'pronto', car:"« bientôt » ne s'écrit qu'à côté d'une langue non ouverte ; en espagnol, il n'y en a aucune" },
+  /* « bientôt » ne s'écrit qu'à CÔTÉ D'UNE LANGUE NON OUVERTE. Depuis que
+     l'espagnol l'est, les trois langues du jeu sont ouvertes : le mot n'a plus
+     nulle part où s'afficher, dans aucune langue. Il reste au dictionnaire
+     pour la prochaine langue en chantier. */
+  { lg:'es', quoi:'pronto', car:"aucune langue n'est plus en attente : « bientôt » ne s'affiche nulle part" },
+  { lg:'en', quoi:'soon',   car:"aucune langue n'est plus en attente : « bientôt » ne s'affiche nulle part" },
   { lg:'es', quoi:'Victoria',  car:"« Victoire » sans point d'exclamation ne sert qu'au texte partagé" },
   { lg:'es', quoi:'Buen duelo', car:"n'existe que dans le texte PARTAGÉ d'un duel serré" },
   { lg:'es', quoi:'mi rival',   car:"le repli du nom dans le texte partagé, jamais à l'écran" },
@@ -232,7 +243,7 @@ const MEME_DANS_LES_DEUX = [
    ET LES QUESTIONS. « Amnon », « Absalom », « David » s'écrivent pareil dans
    les deux langues : un énoncé ou une option identique ne prouve rien ici.
    Ce n'est pas un trou — les 1545 questions sont vérifiées une par une, et
-   comparées à la banque française, par banc-essai/questions-en.js.
+   comparées à la banque française, par banc-essai/questions-langues.js.
    « sem-t » N'EN EST PLUS. L'intitulé de la bande des sept jours y figurait du
    temps où il portait une légende fixe. Il porte maintenant l'échéance du jour
    — « Plus que 6 h », « Fait pour aujourd'hui » —, une vraie phrase qui doit

@@ -52,6 +52,9 @@ notre code, et il est éprouvé. Tout le reste l'est.
     node feuille.js     # une feuille est-elle FINIE avant de commencer à monter ?
     node gels.js        # les gels de série : généreux, mais jamais abusifs
     node echeance.js    # « quand dois-je faire ma série ? » — le compte à rebours du jour
+    node traductions.js # les barrières statiques du dictionnaire (rien à lancer, tout à lire)
+    node langues-ecrans.js  # écran par écran, en anglais et en espagnol : rien ne reste français
+    node questions-langues.js # les 1545 questions traduites, alignées, et répondre marche encore
     node recul.js       # la feuille qui recule garde-t-elle son décor, et son fond ?
     node plein.js       # l'onde d'appui recouvre-t-elle TOUT le bouton, logo compris ?
     node camera.js      # le recadrage à l'ouverture du clavier bégaie-t-il ?
