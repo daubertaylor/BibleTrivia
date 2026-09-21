@@ -259,21 +259,34 @@ const LIEUX_LIBRES = /avatar|code-big|rank-pts|sem-t$|scorebar|q-counter|timer|l
   /* ON COMPARE PLACE PAR PLACE, PAS EN VRAC. Comparer deux sacs de mots
      faisait mentir le banc : le « M » anglais du lundi retrouvait le « M »
      français du mardi, et le banc annonçait une bande restée française alors
-     qu'elle était juste. Deux rendus du même écran ont le même nombre de
-     textes dans le même ordre — sauf si la mise en page elle-même diffère
-     selon la langue, et ce jour-là on veut le savoir aussi. */
+     qu'elle était juste.
+     MAIS PLACE PAR PLACE SUR TOUT L'ÉCRAN NE TIENT PLUS. Depuis que le panneau
+     des Bibles propose cinq versions en français et trois en anglais, les deux
+     rendus n'ont plus le même nombre de textes : le banc annonçait « les deux
+     rendus ne se superposent plus » sur onze écrans, ce qui était vrai et sans
+     intérêt — c'est voulu. On apparie donc PAR EMPLACEMENT : les textes d'une
+     même classe CSS, dans l'ordre, chacun avec son homologue. Une liste plus
+     courte d'un côté ne gêne plus que sa propre liste, et le reste de l'écran
+     reste comparé aussi sévèrement qu'avant. */
   let paires = 0;
+  const parLieu = (liste) => {
+    const m = new Map();
+    for(const x of liste){ const k = String(x.ou); if(!m.has(k)) m.set(k, []); m.get(k).push(x); }
+    return m;
+  };
   for(const [nom, textesEn] of en.releve){
     const textesFr = fr.releve.get(nom);
     if(!textesFr) continue;
-    if(textesFr.length !== textesEn.length){
-      fautes.push('DÉCALAGE  ' + nom.padEnd(18) + ' ' + textesEn.length + ' textes en anglais contre '
-        + textesFr.length + ' en français — les deux rendus ne se superposent plus');
-      continue;
+    const lieuxEn = parLieu(textesEn), lieuxFr = parLieu(textesFr);
+    const couples = [];
+    for(const [k, a] of lieuxEn){
+      const b = lieuxFr.get(k);
+      if(!b) continue;
+      for(let i = 0; i < Math.min(a.length, b.length); i++) couples.push([a[i], b[i]]);
     }
-    for(let i = 0; i < textesEn.length; i++){
-      const { t, ou } = textesEn[i];
-      if(textesFr[i].t !== t) continue;
+    for(const [x, y] of couples){
+      const { t, ou } = x;
+      if(y.t !== t) continue;
       paires++;
       if(MEME_DANS_LES_DEUX.some(r => r.quoi.test(t) && (!r.ou || r.ou.test(String(ou))))) continue;
       if(LIEUX_LIBRES.test(String(ou))) continue;
