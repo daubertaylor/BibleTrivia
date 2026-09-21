@@ -33,6 +33,7 @@
 */
 const { chromium } = require('/opt/node22/lib/node_modules/playwright');
 const fs = require('fs');
+const path = require('path');
 const SUPA = '/tmp/claude-0/-home-user-BibleTrivia/fb9bf869-826b-5523-9825-ea1b24c294d0/scratchpad/supabase.js';
 const IOS = 'Mozilla/5.0 (iPhone; CPU iPhone OS 17_5 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.5 Mobile/15E148 Safari/604.1';
 const ANDROID = 'Mozilla/5.0 (Linux; Android 14; Pixel 8) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/126.0.0.0 Mobile Safari/537.36';
@@ -48,8 +49,25 @@ const MOTS = ('le les la une des du aux et est sont tu toi ta tes ne pas pour av
   + 'livre livres verset versets serie flamme jour jours semaine prochaine derniere premiere '
   + 'bravo felicitations continuer recommencer rejouer terminer retour suivant '
   + 'chargement parametres').split(/\s+/);
-const RE_MOTS = new RegExp('(^|[^\\p{L}])(' + MOTS.join('|') + ')([^\\p{L}]|$)', 'iu');
-const RE_ACCENT = /[àâäéèêëîïôöùûüÿçœæÀÂÄÉÈÊËÎÏÔÖÙÛÜŸÇŒÆ]/;
+/* ===== UN MARQUEUR DE FRANÇAIS N'EST PAS LE MÊME SELON LA LANGUE D'EN FACE =====
+   « é » dénonce du français au milieu de l'anglais ; au milieu de l'espagnol
+   il ne dénonce rien du tout, « él » et « también » en portent un. Pareil pour
+   les mots : « la », « tu », « que » sont français ET espagnols, « serie » et
+   « bravo » aussi. Laisser la liste anglaise juger l'espagnol, c'est un banc
+   qui crie à chaque écran — et qu'on finit par ne plus lire.
+   On retire donc, pour l'espagnol, ce que les deux langues partagent. Le reste
+   est aussi sévère qu'avant. */
+const AUSSI_ESPAGNOL = new Set(['la', 'tu', 'que', 'serie', 'bravo', 'une', 'sa']);
+const CIBLE = {
+  en: { mots:MOTS,
+        accent:/[àâäéèêëîïôöùûüÿçœæÀÂÄÉÈÊËÎÏÔÖÙÛÜŸÇŒÆ]/ },
+  /* é et ü sortent : l'espagnol les écrit. à è ê ë î ï ô ö ù û ÿ ç œ æ restent,
+     aucun mot espagnol n'en porte. */
+  es: { mots:MOTS.filter(m => !AUSSI_ESPAGNOL.has(m)),
+        accent:/[àâäèêëîïôöùûÿçœæÀÂÄÈÊËÎÏÔÖÙÛŸÇŒÆ]/ },
+};
+for(const c of Object.values(CIBLE))
+  c.re = new RegExp('(^|[^\\p{L}])(' + c.mots.join('|') + ')([^\\p{L}]|$)', 'iu');
 
 /* Ce qu'on laisse passer : les noms propres et les sigles qui restent
    identiques dans toutes les langues. Rien d'autre. */
@@ -125,24 +143,47 @@ const RAMASSER = () => {
    Tant qu'elle se contentait de les COMPTER, le nombre baissait sans jamais
    vouloir dire « c'est fini ». Elle refuse maintenant tout ce qui n'est pas
    ici — et ce qui est ici a dû être justifié à voix haute. */
+/* Les endroits où s'affiche une question de la banque : énoncé, options, fait,
+   et les deux mêmes dans la feuille « À revoir ». */
+const LIEUX_QUESTION = /qtext|opt-text|ftext|rev-q|rev-a\b|rev-fact|fact-label/;
+
 const JAMAIS_A_L_ECRAN = [
-  { quoi:'Spanish',  car:"la liste des langues écrit le nom NATIF (« Español ») ; « Spanish » n'y paraît jamais" },
-  { quoi:'Good duel', car:"n'existe que dans le texte PARTAGÉ d'un duel serré, jamais sur un écran" },
-  { quoi:'my opponent', car:"même chose : le repli du nom dans le texte partagé, jamais à l'écran" },
+  /* Chaque ligne porte SA langue : une phrase peut être hors d'atteinte en
+     anglais et parfaitement visible en espagnol, et l'inverse. */
+  { lg:'en', quoi:'Spanish',  car:"la liste des langues écrit le nom NATIF (« Español ») ; « Spanish » n'y paraît jamais" },
+  { lg:'en', quoi:'Good duel', car:"n'existe que dans le texte PARTAGÉ d'un duel serré, jamais sur un écran" },
+  { lg:'en', quoi:'Win', car:"idem : « Victoire » sans point d'exclamation ne sert qu'au texte partagé" },
+  { lg:'en', quoi:'Background', car:"la rangée des décors ne se peint que si SCENES en compte plus d'un ; il n'y en a qu'un" },
+  { lg:'en', quoi:'Home', car:"« Accueil » est au dictionnaire mais aucun T() ne l'appelle — clé dormante" },
+  /* ===== L'ESPAGNOL, MÊME EXAMEN ===== */
+  { lg:'es', quoi:'Inicio', car:"« Accueil » est au dictionnaire mais aucun T() ne l'appelle — clé dormante" },
+  { lg:'es', quoi:'Fondo',  car:"la rangée des décors ne se peint que si SCENES en compte plus d'un ; il n'y en a qu'un" },
+  { lg:'es', quoi:'pronto', car:"« bientôt » ne s'écrit qu'à côté d'une langue non ouverte ; en espagnol, il n'y en a aucune" },
+  { lg:'es', quoi:'Victoria',  car:"« Victoire » sans point d'exclamation ne sert qu'au texte partagé" },
+  { lg:'es', quoi:'Buen duelo', car:"n'existe que dans le texte PARTAGÉ d'un duel serré" },
+  { lg:'es', quoi:'mi rival',   car:"le repli du nom dans le texte partagé, jamais à l'écran" },
+  { lg:'es', quoi:'Recordatorios', car:"la rangée des rappels n'existe que dans le jeu INSTALLÉ (notifPossible)" },
+  { lg:'es', quoi:'Bloqueados en los ajustes del teléfono', car:'idem, et seulement si le téléphone a refusé' },
+  { lg:'es', quoi:'No se puede activar el recordatorio ahora mismo.', car:"idem, et seulement si l'abonnement échoue" },
+  { lg:'es', quoi:'Reto del día', car:"le Défi du jour a quitté l'accueil ; le code reste à nettoyer" },
+  { lg:'es', quoi:'Reto del día completado', car:'idem' },
+  { lg:'es', quoi:'Acepta el Reto del día: tu llama empieza aquí.', car:'idem' },
+  { lg:'es', quoi:'Hasta mañana', car:'« À demain », même carte' },
+  { lg:'en', quoi:'my opponent', car:"même chose : le repli du nom dans le texte partagé, jamais à l'écran" },
   /* Les rappels : notifPossible() exige le mode installé, et isStandalone est
      une const évaluée au chargement. L'émulation display-mode de Chromium ne
      la change pas — vérifié. Ces trois-là ne se lisent que sur un vrai
      téléphone, jeu installé, notifications refusées. */
-  { quoi:'Reminders', car:"la rangée des rappels n'existe que dans le jeu INSTALLÉ (notifPossible)" },
-  { quoi:'Blocked in the phone settings', car:'idem, et seulement si le téléphone a refusé' },
-  { quoi:'Cannot turn the reminder on right now.', car:"idem, et seulement si l'abonnement échoue" },
+  { lg:'en', quoi:'Reminders', car:"la rangée des rappels n'existe que dans le jeu INSTALLÉ (notifPossible)" },
+  { lg:'en', quoi:'Blocked in the phone settings', car:'idem, et seulement si le téléphone a refusé' },
+  { lg:'en', quoi:'Cannot turn the reminder on right now.', car:"idem, et seulement si l'abonnement échoue" },
   /* Le Défi du jour a quitté l'accueil ; son code, lui, est encore là. Ces
      quatre phrases attendent le nettoyage, elles ne s'affichent plus. */
-  { quoi:'Daily challenge', car:'le Défi du jour a quitté l\'accueil ; le code reste à nettoyer' },
-  { quoi:'Daily challenge done', car:'idem' },
-  { quoi:'Take the daily challenge: your flame starts here.', car:'idem' },
-  { quoi:'Done', car:'« Réussi », sous-titre de la carte du Défi du jour, retirée' },
-  { quoi:'See you tomorrow', car:'« À demain », même carte' },
+  { lg:'en', quoi:'Daily challenge', car:'le Défi du jour a quitté l\'accueil ; le code reste à nettoyer' },
+  { lg:'en', quoi:'Daily challenge done', car:'idem' },
+  { lg:'en', quoi:'Take the daily challenge: your flame starts here.', car:'idem' },
+  { lg:'en', quoi:'Done', car:'« Réussi », sous-titre de la carte du Défi du jour, retirée' },
+  { lg:'en', quoi:'See you tomorrow', car:'« À demain », même carte' },
 ];
 
 const MEME_DANS_LES_DEUX = [
@@ -163,6 +204,14 @@ const MEME_DANS_LES_DEUX = [
      ait le droit de ne pas changer. Les six autres, si elles reparaissent
      identiques, c'est que la bande est repassée en français. */
   { quoi:/^S$/, ou:/\bsj\b|fg-sem/,            car:'samedi et Saturday, même initiale' },
+  /* LES SEPT INITIALES SONT LES MÊMES EN FRANÇAIS ET EN ESPAGNOL : domingo,
+     lunes, martes, miércoles, jueves, viernes, sábado — D L M M J V S, comme
+     dimanche, lundi, mardi, mercredi, jeudi, vendredi, samedi. Il n'y a rien
+     à traduire, et c'est vérifiable lettre par lettre. */
+  { lg:'es', quoi:/^[DLMJVS]$/, ou:/\bsj\b|fg-sem/, car:'les sept initiales sont les mêmes des deux côtés' },
+  /* Six livres s'écrivent pareil dans les deux langues. */
+  { lg:'es', quoi:/^(Josué|Esdras|Habacuc|Job|Daniel|Joel|1 Cor\.|2 Cor\.)$/, ou:/bk-nm/,
+    car:'le même nom, ou la même abréviation, en français et en espagnol' },
   /* Les lettres de repère : A B C D devant les options, l'initiale d'une
      équipe. Ce sont des numéros écrits en lettres, pas des mots. */
   { quoi:/^[A-Z]$/, ou:/letter|team-token/,    car:'une lettre de repère, pas un mot' },
@@ -186,6 +235,23 @@ const MEME_DANS_LES_DEUX = [
    comparées à la banque française, par banc-essai/questions-en.js. */
 const LIEUX_LIBRES = /avatar|code-big|rank-pts|sem-t$|scorebar|q-counter|timer|logo|st-ico|ficon|ico\b|opt-text|q-text|rev-q|rev-a|rev-fact|ftext|fact-|hero-verse/;
 
+/* ===== UNE LANGUE PAS ENCORE OUVERTE SE RELIT QUAND MÊME =====
+   Le jeu refuse une langue déclarée « dispo:false » : elle s'affiche grisée
+   dans la liste et ne se choisit pas. C'est la bonne règle pour un joueur — et
+   elle empêchait le banc d'aller voir si le travail déjà fait tient debout. On
+   sert donc au navigateur une copie de la page où CETTE langue-là est ouverte,
+   et seulement elle. Rien n'est modifié sur le disque : le fichier publié
+   reste celui des joueurs. */
+const ouvrirLaLangue = async (p, lg) => {
+  await p.route('**/index.html*', async (r) => {
+    let corps;
+    try { corps = await (await r.fetch()).text(); } catch(e){ return r.continue(); }
+    const motif = new RegExp('(cle:"' + lg + '"[^}]*?)dispo:false');
+    if(motif.test(corps)) corps = corps.replace(motif, '$1dispo:true');
+    r.fulfill({ status:200, contentType:'text/html; charset=utf-8', body:corps });
+  });
+};
+
 (async () => {
   const nav = await chromium.launch({ executablePath:'/opt/pw-browsers/chromium' });
 
@@ -202,6 +268,7 @@ const LIEUX_LIBRES = /avatar|code-big|rank-pts|sem-t$|scorebar|q-counter|timer|l
       await p.route('**/cdn.jsdelivr.net/**', r => r.fulfill({ status:200, contentType:'application/javascript', body:fs.readFileSync(SUPA) }));
       await p.route('**://*.supabase.co/**', r => r.fulfill({ status:204, headers:{ 'Access-Control-Allow-Origin':'*' } }));
     }
+    await ouvrirLaLangue(p, lg);
     await p.addInitScript(PREP, lg);
     await p.goto(URL);
     await p.waitForFunction((l) => { try { return typeof render === 'function' && typeof state === 'object' && LANGUE === l; } catch(e){ return false; } }, lg, { timeout:20000 });
@@ -526,6 +593,56 @@ const LIEUX_LIBRES = /avatar|code-big|rank-pts|sem-t$|scorebar|q-counter|timer|l
                       c:{ id:'c', name:'Lee', color:'#4CE88A', gone:true } };
       state.screen='online-play'; render(); }],
     /* Le lien du résultat copié faute de pouvoir partager. */
+    /* La dernière question d'un duel : le bouton dit « Terminer », pas
+       « Question suivante ». */
+    ['Duel · dernière',    () => { __fermerTout();
+      net.oppPresent=true; net.opp={ id:'b', name:'Sam', color:'#E8574C' };
+      net.joueurs={ b:net.opp }; net.deck = seededDeck(12345, '9', null);
+      net.idx = net.deck.length - 1; net.myDone=false; net.oppGone=false;
+      net.selected = net.deck[net.idx].correct; net.revealed = true; net.timerKey='30';
+      net.score=50; net.oppScore=30; state.screen='online-play'; render(); }],
+    /* À plus de deux, le salon et la partie s'appellent « Partie », pas
+       « Duel » : deux mots que seul ce chemin écrit. */
+    ['Salon · à plusieurs', () => { __fermerTout();
+      net.error=''; net.code='ABCD'; net.isHost=true;
+      net.joueurs={ b:{ id:'b', name:'Sam', color:'#E8574C' },
+                    c:{ id:'c', name:'Lee', color:'#4CE88A' },
+                    d:{ id:'d', name:'Kim', color:'#E8C84C' } };
+      net.oppPresent=true; net.opp=net.joueurs.b;
+      state.screen='online-room'; render();
+      if(typeof updateRoomOpponent === 'function') updateRoomOpponent(); }],
+    /* Une révision en cours : son en-tête ne dit ni le nom du jeu ni
+       « Partie », mais « Révision ». */
+    ['Révision en cours',  () => { __fermerTout();
+      state.mode='solo'; state.daily=false; state.revision=true;
+      state.questions = seededDeck(21, '9', null); state.currentIndex = 1;
+      state.revealed = false; state.soloScore = 20;
+      state.screen='play'; render(); }],
+    /* Plusieurs joueurs connectés : le compteur passe au pluriel, et la ligne
+       d'avancement écrit « terminé » pour qui a fini. */
+    ['Hub · plusieurs',    () => { __fermerTout();
+      net.connected = 4; net.error=''; state.screen='online'; render();
+      if(typeof majPresence === 'function') majPresence(4); }],
+    ['Duel · l\'autre a fini', () => { __fermerTout();
+      net.deck = seededDeck(12345, '9', null); net.idx = net.deck.length;
+      net.myDone = true; net.oppGone = false; net.score = 50; net.oppScore = 60;
+      net.opp = { id:'b', name:'Sam', color:'#E8574C' };
+      net.joueurs = { b:{ id:'b', name:'Sam', color:'#E8574C', done:true, idx:9 },
+                      c:{ id:'c', name:'Lee', color:'#4CE88A', done:false, idx:4 } };
+      state.screen='online-play'; render(); }],
+    /* À plus de deux, l'en-tête de la partie s'appelle « Partie » et non
+       « Duel » : titrePartie() ne dit « Partie » que là. */
+    ['Partie à plusieurs', () => {
+      net.deck = seededDeck(12345, '9', null); net.idx = 2;
+      net.selected = null; net.revealed = false; net.timerKey='30';
+      net.score=30; net.myDone=false; net.oppGone=false;
+      state.screen='online-play'; render(); }],
+    /* Le message d'erreur PAR DÉFAUT d'une fenêtre : celui que showModal écrit
+       quand l'appelant n'en fournit pas. */
+    ['Fenêtre · réessaie', () => { __fermerTout();
+      showModal({ title:T('Badge Créateur'), input:true, okLabel:T('Valider'),
+        onOk:() => false });
+      const b = document.getElementById('modalOk'); if(b) b.click(); }],
     /* Le lien du jeu copié faute de pouvoir partager : c'est copierLeLien()
        qui affiche le petit bandeau, pas shareScore(), qui ne fait qu'appeler
        le partage du téléphone. */
@@ -662,158 +779,182 @@ const LIEUX_LIBRES = /avatar|code-big|rank-pts|sem-t$|scorebar|q-counter|timer|l
     return { releve, ennuis, erreurs, nEtapes: ETAPES.length };
   };
 
-  const en = await passe('en');
+  /* ===== UNE PASSE PAR LANGUE, ET LE FRANÇAIS POUR TÉMOIN =====
+     Le banc s'appelait « anglais-ecrans » et ne savait faire qu'une langue.
+     L'espagnol arrivé, le choix était d'en écrire un second — deux fichiers à
+     tenir à jour, et le second qui prend du retard dès la semaine suivante —
+     ou d'en faire une boucle. C'est une boucle. */
+  const LANGUES = (process.env.LANGUES || 'en,es').split(',').map(x => x.trim()).filter(Boolean);
   const fr = await passe('fr');
-  const nav2 = nav;
-
-  /* ===== UNE PASSE DE PLUS, SUR ANDROID =====
-     IS_IOS est une const lue au chargement : le guide d'installation choisit
-     ses trois étapes une fois pour toutes, et les deux passes ci-dessus sont
-     des iPhone. Les quatre phrases du chemin Android — « Open the browser
-     menu », « The three dots, at the top », « “Install app” », « Or “Add to
-     Home Screen” » — n'avaient donc jamais été relues. Un autre téléphone,
-     deux écrans, et elles le sont. */
-  {
-    const ctx = await nav.newContext({ viewport:{ width:412, height:915 }, deviceScaleFactor:2,
-      userAgent:ANDROID, hasTouch:true, serviceWorkers:'block' });
-    const q = await ctx.newPage();
-    await q.addInitScript(PREP, 'en');
-    await q.goto(URL);
-    await q.waitForFunction(() => { try { return typeof render === 'function' && LANGUE === 'en'; } catch(e){ return false; } }, null, { timeout:20000 });
-    await q.waitForFunction(() => { try { return state.screen === 'mode'; } catch(e){ return false; } }, null, { timeout:20000 });
-    for(const [nom, faire] of [
-      ['Guide Android', () => { state.screen='mode'; render(); openFsGuide(); }],
-    ]){
-      try { await q.evaluate(faire); } catch(e){ en.ennuis.push(nom + ' : ' + e.message.split('\n')[0]); continue; }
-      await q.waitForTimeout(450);
-      en.releve.set(nom, await q.evaluate(RAMASSER));
-    }
-    await ctx.close();
-  }
-
-  const fautes = [...en.ennuis, ...fr.ennuis];
-  if(en.erreurs.length) fautes.push('erreurs JS (en) : ' + [...new Set(en.erreurs)].slice(0,2).join(' | '));
+  const fautes = [...fr.ennuis];
   if(fr.erreurs.length) fautes.push('erreurs JS (fr) : ' + [...new Set(fr.erreurs)].slice(0,2).join(' | '));
+  let compteTotal = 0, pairesTotal = 0, ecransTotal = 0;
+  const bilan = [];
 
-  /* ===== PREMIÈRE BARRIÈRE : du français reconnaissable dans le rendu anglais ===== */
-  const vus = new Set();
-  let compte = 0;
-  for(const [nom, textes] of en.releve){
-    compte += textes.length;
-    for(const { t, ou } of textes){
-      if(TOLERE.some(r => r.test(t))) continue;
-      if(!(RE_ACCENT.test(t) || RE_MOTS.test(t))) continue;
-      const cle = 'fr:' + t.slice(0, 80);
-      if(vus.has(cle)) continue;
-      vus.add(cle);
-      fautes.push('FRANÇAIS  ' + nom.padEnd(18) + ' « ' + t.slice(0, 80) + ' »   [' + String(ou).slice(0, 34) + ']');
+  for(const lg of LANGUES){
+    const cible = CIBLE[lg];
+    if(!cible){ fautes.push('langue inconnue du banc : ' + lg); continue; }
+    /* ===== LA BANQUE DE QUESTIONS EST UN FICHIER À PART =====
+       Les 1545 questions ne sont pas dans index.html : elles vivent dans
+       questions-<langue>.js, chargé seulement pour qui lit cette langue. Tant
+       qu'il manque, le jeu montre les questions FRANÇAISES — et la première
+       barrière en dénonce vingt, une par écran qui en affiche une. Vingt
+       lignes pour un seul fait. On le dit UNE fois, clairement, et on cesse de
+       juger les emplacements qui portent une question : le reste de l'écran
+       reste comparé aussi sévèrement qu'avant. */
+    const banque = path.join(__dirname, '..', 'questions-' + lg + '.js');
+    const sansBanque = !fs.existsSync(banque);
+    if(sansBanque) fautes.push('BANQUE ABSENTE  ' + lg + '  — questions-' + lg
+      + '.js n\'existe pas : les 1545 questions restent en français');
+    const p2 = await passe(lg);
+    fautes.push(...p2.ennuis);
+    if(p2.erreurs.length) fautes.push('erreurs JS (' + lg + ') : ' + [...new Set(p2.erreurs)].slice(0,2).join(' | '));
+
+    /* ===== UNE PASSE DE PLUS, SUR ANDROID =====
+       IS_IOS est une const lue au chargement : le guide d'installation choisit
+       ses trois étapes une fois pour toutes, et la passe ci-dessus est un
+       iPhone. Les quatre phrases du chemin Android n'auraient donc jamais été
+       relues. Un autre téléphone, un écran, et elles le sont. */
+    {
+      const ctx = await nav.newContext({ viewport:{ width:412, height:915 }, deviceScaleFactor:2,
+        userAgent:ANDROID, hasTouch:true, serviceWorkers:'block' });
+      const q = await ctx.newPage();
+      await ouvrirLaLangue(q, lg);
+      await q.addInitScript(PREP, lg);
+      await q.goto(URL);
+      await q.waitForFunction((l) => { try { return typeof render === 'function' && LANGUE === l; } catch(e){ return false; } }, lg, { timeout:20000 });
+      await q.waitForFunction(() => { try { return state.screen === 'mode'; } catch(e){ return false; } }, null, { timeout:20000 });
+      try {
+        await q.evaluate(() => { state.screen='mode'; render(); openFsGuide(); });
+        await q.waitForTimeout(450);
+        p2.releve.set('Guide Android', await q.evaluate(RAMASSER));
+      } catch(e){ fautes.push('Guide Android (' + lg + ') : ' + e.message.split('\n')[0]); }
+      await ctx.close();
     }
-  }
 
-  /* ===== DEUXIÈME BARRIÈRE : ce qui n'a pas bougé d'une langue à l'autre ===== */
-  /* ON COMPARE PLACE PAR PLACE, PAS EN VRAC. Comparer deux sacs de mots
-     faisait mentir le banc : le « M » anglais du lundi retrouvait le « M »
-     français du mardi, et le banc annonçait une bande restée française alors
-     qu'elle était juste.
-     MAIS PLACE PAR PLACE SUR TOUT L'ÉCRAN NE TIENT PLUS. Depuis que le panneau
-     des Bibles propose cinq versions en français et trois en anglais, les deux
-     rendus n'ont plus le même nombre de textes : le banc annonçait « les deux
-     rendus ne se superposent plus » sur onze écrans, ce qui était vrai et sans
-     intérêt — c'est voulu. On apparie donc PAR EMPLACEMENT : les textes d'une
-     même classe CSS, dans l'ordre, chacun avec son homologue. Une liste plus
-     courte d'un côté ne gêne plus que sa propre liste, et le reste de l'écran
-     reste comparé aussi sévèrement qu'avant. */
-  let paires = 0;
-  const parLieu = (liste) => {
-    const m = new Map();
-    for(const x of liste){ const k = String(x.ou); if(!m.has(k)) m.set(k, []); m.get(k).push(x); }
-    return m;
-  };
-  for(const [nom, textesEn] of en.releve){
-    const textesFr = fr.releve.get(nom);
-    if(!textesFr) continue;
-    const lieuxEn = parLieu(textesEn), lieuxFr = parLieu(textesFr);
-    const couples = [];
-    for(const [k, a] of lieuxEn){
-      const b = lieuxFr.get(k);
-      if(!b) continue;
-      for(let i = 0; i < Math.min(a.length, b.length); i++) couples.push([a[i], b[i]]);
+    /* ===== PREMIÈRE BARRIÈRE : du français reconnaissable dans le rendu ===== */
+    const vus = new Set();
+    let compte = 0;
+    for(const [nom, textes] of p2.releve){
+      compte += textes.length;
+      for(const { t, ou } of textes){
+        if(sansBanque && LIEUX_QUESTION.test(String(ou))) continue;
+        if(TOLERE.some(r => r.test(t))) continue;
+        if(!(cible.accent.test(t) || cible.re.test(t))) continue;
+        const cle = 'fr:' + t.slice(0, 80);
+        if(vus.has(cle)) continue;
+        vus.add(cle);
+        fautes.push('FRANÇAIS  ' + lg + ' ' + nom.padEnd(18) + ' « ' + t.slice(0, 80) + ' »   [' + String(ou).slice(0, 34) + ']');
+      }
     }
-    for(const [x, y] of couples){
-      const { t, ou } = x;
-      if(y.t !== t) continue;
-      paires++;
-      if(MEME_DANS_LES_DEUX.some(r => r.quoi.test(t) && (!r.ou || r.ou.test(String(ou))))) continue;
-      if(LIEUX_LIBRES.test(String(ou))) continue;
-      const cle = 'id:' + t.slice(0, 80);
-      if(vus.has(cle)) continue;
-      vus.add(cle);
-      fautes.push('INCHANGÉ  ' + nom.padEnd(18) + ' « ' + t.slice(0, 80) + ' »   [' + String(ou).slice(0, 34) + ']');
+
+    /* ===== DEUXIÈME BARRIÈRE : ce qui n'a pas bougé d'une langue à l'autre =====
+       ON COMPARE PLACE PAR PLACE, PAS EN VRAC. Comparer deux sacs de mots
+       faisait mentir le banc : le « M » anglais du lundi retrouvait le « M »
+       français du mardi. Et place par place sur TOUT l'écran ne tient pas non
+       plus, depuis que le panneau des Bibles propose cinq versions en français,
+       trois en anglais et deux en espagnol : on apparie par EMPLACEMENT, les
+       textes d'une même classe CSS, dans l'ordre. */
+    let paires = 0;
+    const parLieu = (liste) => {
+      const m = new Map();
+      for(const x of liste){ const k = String(x.ou); if(!m.has(k)) m.set(k, []); m.get(k).push(x); }
+      return m;
+    };
+    for(const [nom, textesLg] of p2.releve){
+      const textesFr = fr.releve.get(nom);
+      if(!textesFr) continue;
+      const lieuxLg = parLieu(textesLg), lieuxFr = parLieu(textesFr);
+      const couples = [];
+      for(const [k, a] of lieuxLg){
+        const b = lieuxFr.get(k);
+        if(!b) continue;
+        for(let i = 0; i < Math.min(a.length, b.length); i++) couples.push([a[i], b[i]]);
+      }
+      for(const [x, y] of couples){
+        const { t, ou } = x;
+        if(y.t !== t) continue;
+        if(sansBanque && LIEUX_QUESTION.test(String(ou))) continue;
+        paires++;
+        if(MEME_DANS_LES_DEUX.some(r => (!r.lg || r.lg === lg) && r.quoi.test(t) && (!r.ou || r.ou.test(String(ou))))) continue;
+        if(LIEUX_LIBRES.test(String(ou))) continue;
+        const cle = 'id:' + t.slice(0, 80);
+        if(vus.has(cle)) continue;
+        vus.add(cle);
+        fautes.push('INCHANGÉ  ' + lg + ' ' + nom.padEnd(18) + ' « ' + t.slice(0, 80) + ' »   [' + String(ou).slice(0, 34) + ']');
+      }
     }
+
+    /* ===== TROISIÈME BARRIÈRE : CE QUE LE BANC N'A JAMAIS VU =====
+       Un banc vert ne prouve rien sur les écrans qu'il n'ouvre pas. On demande
+       donc au jeu toutes ses phrases dans cette langue, et on retire celles
+       qu'on a effectivement lues. Ce qui reste doit être JUSTIFIÉ, une ligne
+       par phrase : sans quoi le banc échoue. */
+    const dico = await (async () => {
+      const ctx2 = await nav.newContext({ viewport:{ width:393, height:852 }, userAgent:IOS, serviceWorkers:'block' });
+      const q = await ctx2.newPage();
+      await ouvrirLaLangue(q, lg);
+      await q.addInitScript((l) => localStorage.setItem('bt_langue', l), lg);
+      await q.goto(URL);
+      await q.waitForFunction(() => { try { return typeof TEXTES === 'object'; } catch(e){ return false; } }, null, { timeout:20000 });
+      const v = await q.evaluate((l) => Object.values(TEXTES[l] || {}), lg);
+      await ctx2.close();
+      return v;
+    })();
+    /* ON COMPARE SUR UNE FORME APLATIE, ET PAR MORCEAU. RAMASSER écrase les
+       blancs, donc toute valeur portant une espace insécable ne retombait
+       jamais sur son homologue ; et le jeu COMPOSE ses phrases — « September »
+       ne s'affiche pas seul, il vit dans « September 21 — played ». */
+    const aplat = (x) => String(x).replace(/\s+/g, ' ').trim();
+    const lus = new Set();
+    for(const [, textes] of p2.releve) for(const { t } of textes) lus.add(aplat(t));
+    const toutLu = [...lus].join('\u0001');
+    if(process.env.ETAPE){
+      const tx = p2.releve.get(process.env.ETAPE);
+      console.log('  >>> ' + lg + ' ' + process.env.ETAPE + ' : ' + (tx ? tx.length + ' textes' : 'ABSENTE'));
+      if(tx) console.log('      ' + tx.map(x => x.t).slice(0, 30).join(' | ').slice(0, 900));
+    }
+    /* ===== UN MORCEAU, OUI — MAIS PAS LE DÉBUT D'UNE AUTRE PHRASE =====
+       Chercher la valeur DANS ce qui a été lu rattrape les phrases composées
+       (« September » vit dans « September 21 — played »). Mais elle créditait
+       aussi « Background », qui n'est le début que de « Background music », et
+       « Finish », début de « Finish at your own pace, or leave the duel. » :
+       deux étiquettes que personne n'avait jamais vues, déclarées vues parce
+       qu'une AUTRE entrée du dictionnaire commence par elles.
+       La différence est nette et se teste : « Background music » EST une
+       valeur du dictionnaire, « September 21 — played » n'en est pas une. Un
+       morceau ne compte donc que s'il est pris dans un texte qui n'est pas
+       lui-même une autre entrée. */
+    const valeurs = new Set(dico.map(aplat));
+    const dansUnTexteComposé = (v) => {
+      for(const t of lus) if(t !== v && t.indexOf(v) >= 0 && !valeurs.has(t)) return true;
+      return false;
+    };
+    const jamais = [...new Set(dico)].filter(v => !/\{/.test(v)
+      && aplat(v).length >= 2
+      && !lus.has(aplat(v)) && !dansUnTexteComposé(aplat(v)));
+    const mesJust = JAMAIS_A_L_ECRAN.filter(x => !x.lg || x.lg === lg);
+    const justifiees = new Set(mesJust.map(x => x.quoi));
+    for(const v of jamais) if(!justifiees.has(v))
+      fautes.push('JAMAIS VUE  ' + lg + '  « ' + v.slice(0, 70) + ' »');
+    /* Une justification qui ne sert plus est une justification qui ment. */
+    for(const x of mesJust) if(!jamais.includes(x.quoi))
+      fautes.push('JUSTIFIÉE POUR RIEN  ' + lg + '  « ' + x.quoi.slice(0, 60) + ' » s\'affiche maintenant — retire sa ligne');
+    if(process.env.TOUT) jamais.forEach(v => console.log('     ' + lg + '  « ' + v.slice(0, 70) + ' »'));
+
+    compteTotal += compte; pairesTotal += paires; ecransTotal = Math.max(ecransTotal, p2.releve.size);
+    bilan.push('  ' + lg + ' : ' + p2.releve.size + ' écrans, ' + compte + ' textes, '
+      + paires + ' identiques au français, ' + jamais.length + ' phrases jamais vues ('
+      + justifiees.size + ' justifiées)');
   }
 
-  /* ===== TROISIÈME BARRIÈRE : CE QUE LE BANC N'A JAMAIS VU =====
-     Un banc vert ne prouve rien sur les écrans qu'il n'ouvre pas. On demande
-     donc au jeu toutes ses phrases anglaises, et on retire celles qu'on a
-     effectivement lues à l'écran. Ce qui reste, ce sont les coins du jeu que
-     personne n'a relus en anglais. */
-  const dico = await (async () => {
-    const ctx2 = await nav2.newContext({ viewport:{ width:393, height:852 }, userAgent:IOS, serviceWorkers:'block' });
-    const q = await ctx2.newPage();
-    await q.addInitScript(() => localStorage.setItem('bt_langue', 'en'));
-    await q.goto(URL);
-    await q.waitForFunction(() => { try { return typeof TEXTES === 'object'; } catch(e){ return false; } }, null, { timeout:20000 });
-    const v = await q.evaluate(() => Object.values(TEXTES.en));
-    await ctx2.close();
-    return v;
-  })();
-  /* ON COMPARE SUR UNE FORME APLATIE, ET PAR MORCEAU.
-     Deux angles morts rendaient ce compte faux, tous les deux dans le même
-     sens — il accusait le jeu de ne pas montrer ce qu'il montrait :
-     1. RAMASSER écrase les blancs (\s+ -> une espace), donc toute valeur qui
-        porte une espace insécable — « 16 jours », « Série : » — ne pouvait
-        JAMAIS retomber sur son homologue à l'écran ;
-     2. le jeu COMPOSE ses phrases. « September » ne s'affiche pas seul : il
-        vit dans « September 21 — played », au titre d'une case de la flamme.
-        Une comparaison exacte ne le retrouvait jamais.
-     On aplatit donc des deux côtés, et on cherche le morceau DANS ce qui a
-     été lu. Ce qui reste après ça est vraiment du texte que personne n'a vu. */
-  const aplat = (x) => String(x).replace(/\s+/g, ' ').trim();
-  const lus = new Set();
-  for(const [, textes] of en.releve) for(const { t } of textes) lus.add(aplat(t));
-  const toutLu = [...lus].join('\u0001');
-  if(process.env.ETAPE){
-    const tx = en.releve.get(process.env.ETAPE);
-    console.log('  >>> ' + process.env.ETAPE + ' : ' + (tx ? tx.length + ' textes' : 'ABSENTE'));
-    if(tx) console.log('      ' + tx.map(x => x.t).slice(0, 30).join(' | ').slice(0, 900));
-  }
-  if(process.env.OU){
-    for(const [nom, textes] of en.releve)
-      if(textes.some(x => x.t === process.env.OU)) console.log('  >>> vu à : ' + nom);
-    console.log('  >>> étapes relevées : ' + en.releve.size + ' / ' + en.nEtapes + '   textes : ' + lus.size);
-  }
-  const jamais = [...new Set(dico)].filter(v => !/\{/.test(v)   /* les phrases à trou ne s'affichent jamais telles quelles */
-    && aplat(v).length >= 2
-    && !lus.has(aplat(v)) && toutLu.indexOf(aplat(v)) < 0);
-  const justifiees = new Set(JAMAIS_A_L_ECRAN.map(x => x.quoi));
-  const inexpliquees = jamais.filter(v => !justifiees.has(v));
-  console.log('  phrases anglaises jamais vues à l\'écran : ' + jamais.length + ' sur ' + new Set(dico).size
-    + '   (' + justifiees.size + ' justifiées)');
-  for(const v of inexpliquees)
-    fautes.push('JAMAIS VUE  ' + ' '.repeat(10) + ' « ' + v.slice(0, 70) + ' »');
-  /* Une justification qui ne sert plus est une justification qui ment : si la
-     phrase s'affiche enfin, la ligne doit disparaître de la liste. */
-  for(const x of JAMAIS_A_L_ECRAN)
-    if(!jamais.includes(x.quoi))
-      fautes.push('JUSTIFIÉE POUR RIEN  « ' + x.quoi.slice(0, 60) + ' » s\'affiche maintenant — retire sa ligne');
-
+  bilan.forEach(l => console.log(l));
   if(fautes.length){
-    console.log('  CE QUI NE PARLE PAS ANGLAIS (' + fautes.length + ') :');
+    console.log('  CE QUI NE PARLE PAS SA LANGUE (' + fautes.length + ') :');
     fautes.forEach(f => console.log('   ' + f));
     nav.close().catch(()=>{}); process.exit(1);
   }
   await nav.close();
-  console.log('  OK — ' + en.nEtapes + ' écrans et panneaux peints dans les deux langues, '
-    + compte + ' textes relevés, pas un mot de français');
-  console.log('       ' + paires + ' textes identiques fr/en, tous justifiés');
+  console.log('  OK — ' + LANGUES.join(' et ') + ' : ' + compteTotal
+    + ' textes relevés, pas un mot de français hors de sa place');
 })();
