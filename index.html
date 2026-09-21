@@ -1484,6 +1484,17 @@
   }
 
   .splash-screen{ flex:1; display:flex; flex-direction:column; align-items:center; justify-content:center; position:relative; text-align:center; min-height:100%; }
+  /* ===== LE VOILE DE REDÉMARRAGE =====
+     Changer de langue recharge la page. Entre le doigt qui choisit et la page
+     qui repart, iOS montre un blanc franc — un trou d'une demi-seconde en
+     plein milieu d'une action volontaire. Ce voile prend la couleur du fond du
+     jeu et porte la même colombe que l'écran de chargement : le joueur passe
+     de l'un à l'autre sans jamais voir la couture. */
+  .redem-veil{ position:fixed; inset:0; z-index:9500; background:#15100B;
+    display:flex; align-items:center; justify-content:center;
+    opacity:0; transition:opacity 0.22s ease; pointer-events:all; }
+  .redem-veil.show{ opacity:1; }
+  .redem-veil .splash-dove{ width:min(34vw, 7.5rem); height:auto; animation:none; opacity:0.92; }
   /* LE SIGNE MOINS NE PEUT PAS PRÉCÉDER calc(). La conversion des tailles
      exprimées en hauteur d'écran (voir --uh) a transformé « translateY(-13vh) »
      en « translateY(-calc(...)) » : c'est invalide, la déclaration était donc
@@ -2039,16 +2050,26 @@
      n'affiche un message qu'une fois sur mille. J'avais réglé le déplacement
      en payant le prix fort, et en continu.
      La bonne réponse ne coûte rien : le message ne participe plus à la mise en
-     page. Il se pose PAR-DESSUS, juste sous le titre, aligné au pixel sur lui
-     (sa gauche et sa largeur sont relues sur l'en-tête lui-même, donc justes
-     sur tous les appareils). Rien à réserver, rien à déplacer : l'écran est le
-     même à un pixel près, message ou pas. */
-  .err-flot{ position:fixed; color:#fff; background:rgba(226,75,55,0.94);
+     page. Il vit dans une boîte de HAUTEUR NULLE, posée juste après la ligne
+     du profil, et se peint par-dessus ce qui suit.
+     ET IL EST DANS L'ÉCRAN, PAS COLLÉ AU-DESSUS. Première version : position
+     fixe, coordonnées calculées en JavaScript d'après la position réelle de
+     l'ancre. Ça marchait — sauf que la mesure était prise pendant que l'écran
+     terminait son entrée, donc sur une position qui n'était pas encore la
+     bonne : le bandeau se posait 130 px trop bas et y restait. Une boîte de
+     hauteur nulle n'a pas ce problème : elle suit la mise en page, l'animation
+     d'entrée et le défilement, sans qu'on ait à les suivre nous-mêmes.
+     SOUS LA LIGNE DU PROFIL, pas sous le titre : « je trouve cela bien comme
+     emplacement ». Là, il ferme le bloc qui dit qui est là, au lieu de le
+     traverser. Sur l'écran « Rejoindre », qui n'a pas de ligne de profil, il
+     reste sous le titre. */
+  .err-place{ position:relative; height:0; flex:0 0 auto; }
+  .err-flot{ position:absolute; top:0.55rem; left:0; right:0; z-index:12;
+    color:#fff; background:rgba(226,75,55,0.94);
     border-radius:var(--r-s); padding:0.6rem 0.9rem; font-size:0.85rem; font-weight:600;
     text-align:center; box-shadow:0 10px 28px rgba(0,0,0,0.20);
-    z-index:60; opacity:0; transform:translateY(-8px); pointer-events:none;
-    transition:opacity 0.22s ease, transform 0.22s cubic-bezier(0.33,1,0.68,1); }
-  .err-flot.show{ opacity:1; transform:translateY(0); }
+    animation:errFlotIn 0.24s cubic-bezier(0.33,1,0.68,1) both; }
+  @keyframes errFlotIn{ from{ opacity:0; transform:translateY(-8px); } to{ opacity:1; transform:translateY(0); } }
 
   .presence-card{ display:flex; align-items:center; gap:0.62rem; justify-content:center; background:rgba(255,255,255,0.55); backdrop-filter:blur(18px) saturate(180%); -webkit-backdrop-filter:blur(18px) saturate(180%); border:1px solid var(--bord); border-radius:var(--r-full); padding:0.45rem 0.95rem; margin-bottom:0.8rem; }
   .live-dot{ width:0.55rem; height:0.55rem; border-radius:50%; flex-shrink:0; background:#2FBF74; animation:liveHalo 2.4s ease-out infinite; }
@@ -4402,8 +4423,6 @@ const TEXTES = {
     "Excellent\u00a0! Tu connais vraiment bien ta Bible.":"Excellent! You really know your Bible.",
     "Très bien\u00a0! Continue comme ça.":"Very good! Keep it up.",
     "Beau début\u00a0! Chaque partie t'apprend un peu plus.":"A fine start! Every game teaches you a little more.",
-    "Révision":"Review",
-    "Résultat":"Result",
     /* ===== LE MODE EN LIGNE, LE PROFIL ET L'INSTALLATION =====
        Trente-huit phrases qui s'affichaient en français sur un jeu réglé en
        anglais — l'accueil En ligne au complet, le salon, le profil, les pas
@@ -4425,18 +4444,12 @@ const TEXTES = {
     "{n} places":"{n} spots",
     "Enregistrer":"Save",
     "Entre le code":"Enter the code",
-    "Ex \u00e6quo en t\u00eate\u00a0!":"Tied for first!",
     "Il sera visible par tes amis pendant les duels.":"Your friends will see it during duels.",
     "Inviter des amis":"Invite friends",
-    "Le {j} {mois} était manqué":"{j} {mois} was missed",
     "Mode en ligne":"Online mode",
     "Modifier":"Edit",
-    "Nom du joueur ou de l'équipe":"Player or team name",
     "Partie aléatoire":"Random game",
     "Recherche d'un adversaire…":"Looking for an opponent…",
-    "{n} autre en recherche…":"{n} other player searching…",
-    "{n} autres en recherche…":"{n} other players searching…",
-    "Dès qu'un autre joueur cherche, la partie démarre.":"As soon as another player searches, the game starts.",
     "Refuser":"Decline",
     "Rejoindre":"Join",
     "Rejoindre une partie":"Join a game",
@@ -4450,20 +4463,12 @@ const TEXTES = {
     "Salon":"Room",
     "Terminer":"Finish",
     "Revoir mes erreurs":"Review my mistakes",
-    "Revoir mes {n} erreurs":"Review my {n} mistakes",
-    "Revoir mon erreur":"Review my mistake",
     "Score":"Score",
-    "Tes jours, du plus ancien au plus récent":"Your days, oldest to most recent",
-    "Ton prénom":"Your first name",
     "Ton téléphone demande confirmation":"Your phone asks you to confirm",
     "Touche Installer":"Tap Install",
     "Tu as terminé, bien joué\u00a0!":"You're done — well played!",
     "Un adversaire au hasard, tout de suite":"A random opponent, right now",
     "Un code à partager, jusqu'à 8 joueurs":"A code to share, up to 8 players",
-    "Voir le résultat":"See the result",
-    "\u00c0 réviser aujourd'hui":"To review today",
-    "{jeu} — {gagnants} remporte la partie avec {p} points\u00a0!":"{jeu} — {gagnants} wins the game with {p} points!",
-    "{p}\u1d49 sur {n}":"#{p} of {n}",
     /* --- la feuille des réglages --- */
     "Réglages":"Settings",
     "Fermer":"Close",
@@ -4915,16 +4920,32 @@ function setLangue(cle){
     const doit = x.dataset.langue === cle;
     if(x.classList.contains("sel") !== doit) x.classList.toggle("sel", doit);
   });
-  /* On referme, on refait les réglages dans la nouvelle langue, et l'écran
-     dessous aussi. Le joueur voit la langue changer sous ses yeux. */
+  /* ===== ON NE REPEINT PAS : ON REDÉMARRE =====
+     « Au changement de langue, je veux un jeu qui redémarre totalement, avec
+     un écran de chargement. »
+     Repeindre les écrans en place laissait derrière soi tout ce qui n'était
+     pas peint par render() : la banque des questions déjà tirée, les
+     minuteries, les noms de livres mémorisés, la feuille des réglages
+     elle-même. Un rechargement franc ne laisse rien — et c'est aussi la seule
+     façon honnête de garantir que la nouvelle langue s'applique PARTOUT,
+     y compris dans ce qu'on n'a pas pensé à rafraîchir.
+     ON COUVRE L'ÉCRAN AVANT DE RECHARGER. Sans ça, iOS montre un blanc franc
+     pendant que la page repart. Le voile reprend le fond et la colombe de
+     l'écran de chargement : le joueur ne voit qu'une seule arrivée, celle du
+     jeu dans sa nouvelle langue. */
   closeLangues();
-  setTimeout(()=>{
-    try{
-      const v = document.getElementById("settingsVeil");
-      if(v){ v.remove(); openSettings(); }
-    }catch(e){}
-    try{ render(); }catch(e){}
-  }, 40);
+  voileRedemarrage();
+  setTimeout(()=>{ try{ location.reload(); }catch(e){} }, 300);
+}
+/* Le voile de redémarrage : le même fond et la même colombe que l'écran de
+   chargement, posés par-dessus tout, le temps que la page reparte. */
+function voileRedemarrage(){
+  if(document.getElementById("redemVeil")) return;
+  const v = document.createElement("div");
+  v.id = "redemVeil"; v.className = "redem-veil";
+  v.innerHTML = `<img class="splash-dove" src="${DOVE_ICON}" alt="${NOM_DU_JEU}" draggable="false">`;
+  document.body.appendChild(v);
+  requestAnimationFrame(()=>{ v.classList.add("show"); });
 }
 function boutonLangue(){
   const l = langueActive();
@@ -15251,11 +15272,11 @@ function renderOnline(){
          joueur, elle coupait en deux le groupe qui dit QUI EST LÀ. Collée aux
          trois actions, elle avait l'air d'appartenir au premier bouton —
          « il est trop dans les boutons ». Elle ne parle pourtant ni d'un
-         bouton ni d'un joueur : elle parle de L'ÉCRAN. Sa place est donc sous
-         le titre, là où toute application pose ce qu'elle a à dire de la page
-         entière, et où rien ne peut se l'approprier.
-         Et il ne réserve plus rien : il se pose PAR-DESSUS (.err-flot), sous
-         le titre, sans participer à la mise en page. -->
+         bouton ni d'un joueur : elle parle de L'ÉCRAN.
+         Elle se pose donc SOUS LA LIGNE DU PROFIL — « je trouve cela bien
+         comme emplacement » — dans une boîte de hauteur nulle, par-dessus le
+         blanc qui sépare ce bloc des trois actions. Elle ferme le groupe au
+         lieu de le traverser, et ne déplace toujours rien. -->
     <div class="presence-card">
       <span class="live-dot"></span>
       <span class="presence-num">${n}</span>
@@ -15266,6 +15287,7 @@ function renderOnline(){
       <span class="me-name">${escapeHtml(profile.name)}</span>
       ${profile.isCreator?creatorBadge():`<span class="me-edit">${T("Modifier")}</span>`}
     </button>
+    <div class="err-place">${net.error?`<div class="err-flot" role="status">${escapeHtml(net.error)}</div>`:""}</div>
     <div class="flex-sp"></div>
     ${net.searching ? `
       <div class="searching-card${searchNew?' reveal-in':''}">
@@ -15321,6 +15343,7 @@ function renderOnlineJoin(){
   const el=document.createElement("div"); el.className="screen";
   el.innerHTML = `
     ${renderHeader(T("Rejoindre"), true, "net.error='';state.screen='online';render()")}
+    <div class="err-place">${net.error?`<div class="err-flot" role="status">${escapeHtml(net.error)}</div>`:""}</div>
     <div class="flex-sp"></div>
     <div class="online-hero">
       <div class="online-hero-icon">${ICONS.users}</div>
@@ -15606,36 +15629,6 @@ function renderOnlineEnd(){
   return el;
 }
 
-/* ===== LE BANDEAU D'ERREUR, POSÉ PAR-DESSUS L'ÉCRAN =====
-   Il vit hors de la mise en page : ni marge, ni hauteur réservée, rien qui
-   pousse quoi que ce soit. On le place à la main sous l'en-tête, en relisant
-   la position RÉELLE de celui-ci — l'encoche, la barre d'état et le mode
-   installé changent tous sa hauteur, et un nombre écrit en dur aurait été
-   faux sur la moitié des téléphones.
-   Il reste tant que l'erreur reste. Sur le hub il recouvre la pastille
-   « 1 connecté » : c'est voulu. Quand la connexion a échoué, ce compte-là ne
-   veut plus rien dire, et le message qui le remplace, si. */
-function majErrFlottant(){
-  const msg = (typeof net === "object" && net && net.error) ? String(net.error) : "";
-  let el = document.querySelector(".err-flot");
-  if(!msg){ if(el) el.classList.remove("show"); return; }
-  if(!el){ el = document.createElement("div"); el.className = "err-flot";
-    el.setAttribute("role", "status"); document.body.appendChild(el); }
-  el.textContent = msg;
-  /* PENDANT UNE TRANSITION, DEUX ÉCRANS COEXISTENT. Le premier dans le
-     document est celui qui S'EN VA : prendre « le premier en-tête venu »
-     aurait calé le bandeau sur un écran en train de disparaître. On prend
-     donc l'en-tête de l'écran qui ARRIVE, et à défaut le dernier. */
-  const ecrans = [...document.querySelectorAll("#app > .screen")].filter(e => !e.classList.contains("screen-exit"));
-  const h = (ecrans[ecrans.length - 1] || document).querySelector(".app-header");
-  if(h){
-    const r = h.getBoundingClientRect();
-    el.style.left = Math.round(r.left) + "px";
-    el.style.width = Math.round(r.width) + "px";
-    el.style.top = Math.round(r.bottom + 8) + "px";
-  }
-  requestAnimationFrame(()=>{ el.classList.add("show"); });
-}
 function render(){
   const app = document.getElementById("app");
   const sameScreen = (state.screen === lastScreen);
@@ -15779,9 +15772,6 @@ function render(){
   requestAnimationFrame(fitScroll);
   syncSpinners();
   majVoilesScores();
-  /* Le bandeau se replace APRÈS le rendu : il se cale sur l'en-tête qui vient
-     d'être peint, et sur aucun autre. */
-  requestAnimationFrame(majErrFlottant);
 
   if(state.screen!=="play" && state.screen!=="online-play"){ stopQTimer(); }
   if(state.screen==="play") saveState();
@@ -17127,7 +17117,7 @@ try {
      tout simplement inatteignable. Ce n'est pas de la mise en page, c'est de la
      mécanique — et la mécanique, elle, suit la fenêtre toujours.
      Une seule ligne de trop, une seule ligne en moins. */
-  window.addEventListener("resize", ()=>{ majCouche(); figerColonne(); reparerHauteurApp(); glassRelayout(); armGlass(700); fitScroll(); try{ majVoilesErreurs(); }catch(e){} try{ majErrFlottant(); }catch(e){} });
+  window.addEventListener("resize", ()=>{ majCouche(); figerColonne(); reparerHauteurApp(); glassRelayout(); armGlass(700); fitScroll(); try{ majVoilesErreurs(); }catch(e){} });
   window.addEventListener("orientationchange", reposeApresRotation);
   // screen.orientation arrive parfois AVANT window.orientationchange : les deux
   // déclenchent la même reprise, qui est idempotente.
