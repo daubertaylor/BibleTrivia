@@ -1689,6 +1689,13 @@
      dit aussitôt (mesuré : 0,67 px de trop sur les livres). On s'en tient donc
      aux surfaces de verre, qui portent toutes « has-gs » ET une découpe. */
   button.has-gs::before, .mode-card.has-gs::before{ inset:-1px; }
+  /* LA LIGNE D'UNE VERSION DE BIBLE N'EST PAS UNE SURFACE DE VERRE — elle peint
+     son fond et porte son rebord elle-même, sans couche .gs — mais elle a la
+     même découpe (overflow:clip) et donc le même besoin : sans ce pixel de
+     débord, l'onde s'arrêtait un pixel avant son fond. Mesuré : 957 pixels du
+     bord gauche jamais recouverts, soit 0,70 % de la ligne. Le même défaut
+     que celui du bord des puces, sur la seule famille qui avait été oubliée. */
+  .bible-item::before{ inset:-1px; }
   /* L'EXCEPTION, ET ELLE EST RÉELLE : le bouton du profil porte du verre mais
      laisse déborder (overflow visible) — sa pastille de notification sort de
      sa boîte. Lui, on ne l'étend pas. */
@@ -1717,6 +1724,33 @@
      le bouton, elle s'en va sans rétrécir. */
   @keyframes ondeOut{ from{ transform:scale(1); opacity:1; } to{ transform:scale(1); opacity:0; } }
   button.onde-part::before, .mode-card.onde-part::before{ animation:ondeOut var(--onde-duree) cubic-bezier(0.4,0,1,1) forwards; }
+  /* ===== LE LISERÉ PÂLE AU BORD D'UN BOUTON APPUYÉ =====
+     « Y a des bords blancs qui doivent pas être là. » Il avait raison, et il a
+     fallu qu'il l'entoure sur sa photo pour que je le trouve : je ne mesurais
+     que la CLARTÉ, et ce pixel-là n'est que trois unités plus clair que le
+     rose. Ce qui le trahit, c'est sa SATURATION — 38 là où la puce est à 63.
+     Du crème qui passe sans son voile rose.
+     IL NE SE VOIT QUE CONTRE LA CARTE, jamais entre deux puces : c'est
+     pourquoi mes premières mesures le rataient, prises sur la puce du milieu
+     d'une rangée. Contre une voisine claire, l'écart est invisible ; contre le
+     gris de la carte, c'est une couture blanche.
+     LA CAUSE : DEUX RASTÉRISATIONS DU MÊME ARRONDI. La surface peint son fond
+     avec son border-radius ; l'onde, elle, est DÉCOUPÉE par l'overflow de la
+     surface. Deux lissages calculés séparément pour la même courbe ne donnent
+     pas la même couverture au même pixel : là où le fond couvre à 80 % et
+     l'onde découpée à 55 %, il reste du crème sans rose.
+     LE REMÈDE : PENDANT L'APPUI, LA SURFACE NE PEINT PLUS SON FOND. La couche
+     de verre (.gs) le peint déjà, et elle est découpée par le MÊME overflow
+     que l'onde — une seule rastérisation, donc plus de couture. Vérifié :
+     aucune surface de verre du jeu ne porte de bordure, il n'y a donc aucun
+     anneau que ce fond serait seul à remplir.
+         essai                              dépassement   pixels de couture
+         tel quel                               9,0            156
+         onde en inset:0                       18,0            192
+         onde en inset:-2px                     9,0            156
+         fond transparent pendant l'appui       0,0              0   <- */
+  button.has-gs.onde, button.has-gs.onde-part,
+  .mode-card.has-gs.onde, .mode-card.has-gs.onde-part{ background-color:transparent; }
   /* ===== LE REMPLISSAGE EST ROSE, ET IL PREND TOUT LE BOUTON =====
      « Je veux le truc de remplissage en rose, comme c'était, mais juste qu'il
      remplisse parfaitement les boutons que je sélectionne. »
