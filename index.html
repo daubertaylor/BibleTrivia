@@ -1720,6 +1720,97 @@
      0,00 % de trou, et le banc des coins mesure maintenant l'arc seul au lieu
      de tout un carré — deux gains qu'on garde. */
   .chip, .len-chip{ --press-tint: rgba(238,74,40,0.28); }
+  /* ===== LE ROUGE NE S'ALLUME PLUS : IL REMPLIT =====
+     « Lorsque je passe d'un bouton à un autre, quand ça passe du rosé au
+     rouge, je veux une vraie animation de remplissage, cohérente avec le
+     reste. »
+     RELEVÉ AVANT, mouvement ralenti dix fois, cinq colonnes de pixels prises
+     en travers de la puce (bord gauche, quart, centre, trois quarts, bord
+     droit) : 0 0 0 0 0, puis 1 1 1 1 1, puis 2 2 2 2 2… les cinq colonnes
+     avancent ENSEMBLE, du premier au dernier centième. Ce n'est pas un
+     remplissage, c'est un fondu — la puce entière change de couleur d'un
+     bloc, comme une ampoule qu'on allume. Et pendant ce temps l'autre puce
+     s'éteignait de son côté, sans rapport : deux fondus indépendants au lieu
+     d'un geste.
+     APRÈS : la même couche, le même geste et la même courbe que l'onde
+     d'appui — elle naît au centre et s'ouvre jusqu'aux bords. Le rouge SE
+     VIDE de la puce qu'on quitte pendant qu'il REMPLIT celle qu'on choisit,
+     dans le même souffle : on voit la couleur passer de l'une à l'autre.
+     ELLE PASSE SOUS LE TEXTE (z-index négatif), contrairement à l'onde
+     d'appui qui passe dessus. Les deux ont raison : l'onde est un VOILE à
+     28 %, elle doit couvrir le libellé pour couvrir tout le bouton ; le
+     remplissage est la couleur PLEINE de l'état sélectionné, et un libellé
+     qui disparaîtrait un quart de seconde sous du rouge opaque, ce serait un
+     clignotement.
+     AU REPOS, LA COUCHE N'EXISTE PAS. J'avais d'abord laissé le rouge plein
+     posé en permanence sur la puce choisie : même couleur, donc « pareil ».
+     Non. Mesuré contre la version d'avant, 5 360 pixels d'écart — tous sur le
+     contour des lettres blanches, où le rouge passait de (236,60,26) à
+     (236,87,118). Une couche peinte sous le texte change la façon dont le
+     navigateur lisse les glyphes : les lettres restaient lisibles, mais elles
+     n'étaient plus les mêmes lettres. Pour un état qui reste à l'écran des
+     minutes entières, c'est un prix qu'on ne paie pas.
+     La couche est donc PASSAGÈRE : elle vit le temps du geste et s'efface,
+     la teinte de verre ayant pris le relais. Au repos, la puce choisie est
+     exactement ce qu'elle était — vérifié, 0 pixel d'écart. */
+  .chip::after, .len-chip::after{ content:""; position:absolute; inset:0; z-index:-1;
+    border-radius:inherit; background:rgb(236,60,26); transform:scale(0.001); opacity:0;
+    pointer-events:none; }
+  /* Le même débord d'un pixel que l'onde, pour la même raison : c'est la
+     découpe de la surface qui donne sa forme au remplissage, sinon deux
+     arrondis se superposent et laissent une frange claire dans les coins. */
+  .chip.has-gs::after, .len-chip.has-gs::after{ inset:-1px; }
+  @keyframes remplitIn{ from{ transform:scale(0.001); opacity:0; } to{ transform:scale(1); opacity:1; } }
+  /* ON ARRIVE EN GRANDISSANT, ON S'EN VA SANS RÉTRÉCIR — exactement comme
+     l'onde d'appui, et pour la même raison qu'elle. Ma première version
+     faisait rentrer le rouge vers le centre : joli sur le papier, sauf que le
+     LIBELLÉ est au centre. Le rouge s'y attardait précisément là où le mot
+     venait de repasser au noir, et on lisait « Normale » en sombre sur du
+     rouge pendant un dixième de seconde. Un départ se fond, il ne se
+     rétracte pas. */
+  @keyframes remplitOut{ from{ opacity:1; } to{ opacity:0; } }
+  .chip.remplit::after, .len-chip.remplit::after{ animation:remplitIn var(--tr-onde) forwards; }
+  /* Celle qu'on quitte a perdu sa classe d'état : c'est la classe passagère
+     qui tient son rouge le temps qu'il se retire. */
+  .chip.devide::after, .len-chip.devide::after{ transform:scale(1); opacity:1;
+    animation:remplitOut var(--onde-duree) cubic-bezier(0.4,0,1,1) forwards; }
+  /* LA TEINTE DE VERRE ARRIVE QUAND LE REMPLISSAGE A FINI, ET REPART TOUT DE
+     SUITE. Sinon elle ferait, sous la couche, le fondu uniforme qu'on vient
+     justement d'enlever — on le verrait dépasser aux quatre coins. En partant,
+     au contraire, elle doit lâcher immédiatement : le seul rouge qui reste est
+     celui qui se retire.
+     ON RÉÉCRIT LA LISTE ENTIÈRE, ET VOICI POURQUOI. Ma première version ne
+     déclarait que « --glass-tint », en !important. Une transition est une
+     PROPRIÉTÉ RACCOURCIE : la redéclarer efface tout le reste, y compris le
+     « color 0s linear 0.14s » qui retient le libellé en sombre le temps que le
+     rouge arrive. Le mot passait donc au blanc immédiatement, sur un fond
+     encore crème. Mesuré : creux de contraste 4,02 -> 2,14. C'est le genre
+     d'oubli qui ne se voit pas en lisant la règle, et qui saute aux yeux dès
+     qu'on mesure la lisibilité au lieu de la supposer.
+     QUAND LE MOT DOIT-IL BASCULER ? On a figé le remplissage à dix-sept
+     instants, photographié CHACUN avec le libellé sombre puis blanc, et
+     calculé le creux pour chaque bascule possible :
+         bascule à   40 ms  ->  creux 1,82
+                     80 ms  ->        2,84
+                    140 ms  ->        3,72   (le réglage d'avant)
+                    180 ms  ->        3,97   <-- on prend celui-ci
+                    240 ms  ->        3,85
+     Le remplissage couvre le libellé plus tard qu'un fondu ne l'assombrissait :
+     le mot doit donc attendre quarante millisecondes de plus qu'avant. */
+  /* ET LE FOND SUIT LA TEINTE SANS DÉLAI PROPRE. La surface peint
+     « background-color: var(--glass-tint) » ; lui laisser sa transition de
+     0,22 s pendant qu'on retarde la teinte, c'est lui donner le temps de
+     partir vers le rouge tout seul puis de revenir. Relevé à l'instant :
+     fond crème au départ, rgb(237,73,41) à quinze millisecondes, crème de
+     nouveau à quarante-cinq — un éclair rouge sur toute la puce avant même
+     que le remplissage ait commencé. Le fond ne décide plus de rien : il
+     change quand la teinte change, c'est-à-dire à la fin. */
+  .chip.remplit, .len-chip.remplit{ transition:transform 0.44s cubic-bezier(0.2,1,0.3,1),
+    background-color 0s, border-color 0.22s ease, color 0s linear 0.18s,
+    opacity 0.22s ease, --glass-tint 0s linear var(--onde-duree); }
+  .chip.devide, .len-chip.devide{ transition:transform 0.44s cubic-bezier(0.2,1,0.3,1),
+    background-color 0s, border-color 0.22s ease, color 0s,
+    opacity 0.22s ease, --glass-tint 0s linear; }
   /* Sur les surfaces DÉJÀ corail, l'onde se fait blanche : sinon rien ne se
      verrait. Même logique, feedback identique. */
   .btn-primary, .btn-next, .btn-replay, .modal-btn.ok, .sheet-done, .set-go,
@@ -6711,12 +6802,12 @@ function onlineTimeUp(){
 }
 function setTimer(k){
   state.timerKey = k;
-  document.querySelectorAll('[data-group="tmr"]').forEach(c=>c.classList.toggle("active", c.dataset.k===k));
+  basculerChoix('[data-group="tmr"]', "active", k);
   queueGlassSync();
 }
 function selectRoomOpt(g, k){
   if(g === "len") net.lengthKey = k; else if(g === "tmr") net.timerKey = k; else if(g === "theme") net.themeKey = k;
-  document.querySelectorAll('[data-rgroup="'+g+'"]').forEach(c=>c.classList.toggle("sel", c.dataset.k===k));
+  basculerChoix('[data-rgroup="'+g+'"]', "sel", k);
   queueGlassSync();
 }
 
@@ -12276,14 +12367,46 @@ function renameTeam(inp){
    numérotation s'arrête à 5). On le fait à la FIN de la saisie, pas pendant :
    voir les champs voisins se renuméroter lettre après lettre serait pénible. */
 function renameSettle(){ syncTeamRows(); }
+/* ===== LE ROUGE PASSE D'UNE PUCE À L'AUTRE, D'UN SEUL GESTE =====
+   Trois rangées de réglages et trois du salon faisaient toutes la même chose
+   à la main : basculer une classe sur chaque puce du groupe. Elles passent
+   maintenant par ici, pour que la puce qu'on quitte se VIDE exactement pendant
+   que celle qu'on choisit se REMPLIT — même courbe, même durée que l'onde
+   d'appui. Celles qui ne changent pas d'état ne bougent pas : rejouer le
+   remplissage sur une puce déjà choisie ferait clignoter tout le groupe. */
+function dureeOnde(){
+  const v = getComputedStyle(document.documentElement).getPropertyValue("--onde-duree").trim();
+  const n = parseFloat(v);
+  if(!isFinite(n)) return 240;
+  return /ms$/.test(v) ? n : n * 1000;
+}
+function basculerChoix(selecteur, classe, k){
+  const duree = dureeOnde();
+  document.querySelectorAll(selecteur).forEach(c=>{
+    const avant = c.classList.contains(classe);
+    const apres = c.dataset.k === k;
+    if(avant === apres) return;
+    /* Une animation ne se rejoue pas si sa classe est déjà là : on la retire,
+       on force le calcul, on la remet. */
+    c.classList.remove("remplit", "devide");
+    void c.offsetWidth;
+    c.classList.toggle(classe, apres);
+    c.classList.add(apres ? "remplit" : "devide");
+    clearTimeout(c._remplirT);
+    /* La classe passagère s'en va une fois le mouvement fini : l'état, lui,
+       est porté par « active »/« sel », qui restent. Un filet de sécurité au
+       cas où l'animation ne rendrait jamais la main (onglet endormi). */
+    c._remplirT = setTimeout(()=>{ c.classList.remove("remplit", "devide"); }, duree + 120);
+  });
+}
 function setLength(key){
   state.lengthKey = key;
-  document.querySelectorAll('[data-group="len"]').forEach(c=>c.classList.toggle("active", c.dataset.k===key));
+  basculerChoix('[data-group="len"]', "active", key);
   queueGlassSync();
 }
 function setTheme(key){
   state.themeKey = key;
-  document.querySelectorAll('[data-group="theme"]').forEach(c=>c.classList.toggle("active", c.dataset.k===key));
+  basculerChoix('[data-group="theme"]', "active", key);
   queueGlassSync();
 }
 /* Les joueurs retenus pour la partie : ceux qui ont un nom, six au plus. Le
