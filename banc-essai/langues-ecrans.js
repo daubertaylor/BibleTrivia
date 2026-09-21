@@ -176,10 +176,6 @@ const JAMAIS_A_L_ECRAN = [
   { lg:'es', quoi:'Recordatorios', car:"la rangée des rappels n'existe que dans le jeu INSTALLÉ (notifPossible)" },
   { lg:'es', quoi:'Bloqueados en los ajustes del teléfono', car:'idem, et seulement si le téléphone a refusé' },
   { lg:'es', quoi:'No se puede activar el recordatorio ahora mismo.', car:"idem, et seulement si l'abonnement échoue" },
-  { lg:'es', quoi:'Reto del día', car:"le Défi du jour a quitté l'accueil ; le code reste à nettoyer" },
-  { lg:'es', quoi:'Reto del día completado', car:'idem' },
-  { lg:'es', quoi:'Acepta el Reto del día: tu llama empieza aquí.', car:'idem' },
-  { lg:'es', quoi:'Hasta mañana', car:'« À demain », même carte' },
   { lg:'en', quoi:'my opponent', car:"même chose : le repli du nom dans le texte partagé, jamais à l'écran" },
   /* Les rappels : notifPossible() exige le mode installé, et isStandalone est
      une const évaluée au chargement. L'émulation display-mode de Chromium ne
@@ -188,13 +184,6 @@ const JAMAIS_A_L_ECRAN = [
   { lg:'en', quoi:'Reminders', car:"la rangée des rappels n'existe que dans le jeu INSTALLÉ (notifPossible)" },
   { lg:'en', quoi:'Blocked in the phone settings', car:'idem, et seulement si le téléphone a refusé' },
   { lg:'en', quoi:'Cannot turn the reminder on right now.', car:"idem, et seulement si l'abonnement échoue" },
-  /* Le Défi du jour a quitté l'accueil ; son code, lui, est encore là. Ces
-     quatre phrases attendent le nettoyage, elles ne s'affichent plus. */
-  { lg:'en', quoi:'Daily challenge', car:'le Défi du jour a quitté l\'accueil ; le code reste à nettoyer' },
-  { lg:'en', quoi:'Daily challenge done', car:'idem' },
-  { lg:'en', quoi:'Take the daily challenge: your flame starts here.', car:'idem' },
-  { lg:'en', quoi:'Done', car:'« Réussi », sous-titre de la carte du Défi du jour, retirée' },
-  { lg:'en', quoi:'See you tomorrow', car:'« À demain », même carte' },
 ];
 
 const MEME_DANS_LES_DEUX = [
