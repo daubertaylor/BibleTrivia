@@ -4483,13 +4483,12 @@ const LANGUES = [
      règle que pour une Bible dont on n'a pas le droit de livrer le texte, et
      elle devient vraie le jour où le dictionnaire est déposé — rien d'autre à
      toucher. */
-  /* L'ESPAGNOL EST PRÊT SAUF SUR UN POINT, ET C'EST LE PLUS GROS : les 1545
-     questions. L'interface, les noms de livres, les références et deux Bibles
-     Reina-Valera sont en place et vérifiés ; la banque, elle, n'existe encore
-     qu'en français et en anglais. Ouvrir la langue maintenant donnerait un jeu
-     à moitié français — exactement ce qu'on ne veut pas. Elle reste donc
-     annoncée et grisée jusqu'à ce que questions-es.js soit là. */
-  { cle:"es", code:"ES", nom:"Espagnol", natif:"Español",  drapeau:DRAPEAUX.es, dispo:false },
+  /* L'ESPAGNOL EST COMPLET. Il a été ouvert le jour où questions-es.js est
+     arrivé, et pas un jour avant : l'interface, les noms de livres, les
+     références et les deux Bibles Reina-Valera étaient en place depuis la
+     v269, mais les 1545 questions manquaient encore — ouvrir la langue à ce
+     moment-là aurait donné un jeu à moitié français. */
+  { cle:"es", code:"ES", nom:"Espagnol", natif:"Español",  drapeau:DRAPEAUX.es, dispo:true },
   /* LE PORTUGAIS EST RETIRÉ DE LA LISTE, pas supprimé du code : « on va
      rester sur les 3 langues principales pour l'instant ». Son drapeau et sa
      place attendent dans DRAPEAUX ; le jour où le dictionnaire existe, cette
@@ -5317,12 +5316,12 @@ try{
   const l = localStorage.getItem("bt_langue");
   if(l && LANGUES.some(x => x.cle === l && x.dispo)) LANGUE = l;
   /* ===== APRÈS LE CORPS DU SCRIPT, PAS PENDANT =====
-     Appelée ici directement, la fonction lève : elle lit « banqueEnDemandee »,
+     Appelée ici directement, la fonction lève : elle lit « banqueDemandee »,
      déclaré en « let » plus bas, donc encore dans sa zone morte temporelle.
      Le try l'avalait sans un mot et l'anglais restait en français — une heure
      de recherche pour une ligne. On remet donc l'appel APRÈS la fin du corps
      du script, quand toutes les déclarations existent. */
-  setTimeout(()=>{ try{ chargerBanqueEn(); }catch(e){} }, 0);
+  setTimeout(()=>{ try{ chargerBanque(); }catch(e){} }, 0);
   document.documentElement.setAttribute("lang", LANGUE);
 }catch(e){}
 /* ===== LE DRAPEAU OUVRE UN MENU, PAS UN INTERRUPTEUR =====
@@ -5385,10 +5384,9 @@ function setLangue(cle){
   const l = LANGUES.find(x => x.cle === cle);
   if(!l || !l.dispo || LANGUE === cle) return;
   LANGUE = cle;
-  /* La banque anglaise part se chercher dès le choix de la langue, pas à la
-     première partie : le temps que le joueur referme les réglages, elle est
-     là. */
-  try{ chargerBanqueEn(); }catch(e){}
+  /* La banque de la langue part se chercher dès le choix, pas à la première
+     partie : le temps que le joueur referme les réglages, elle est là. */
+  try{ chargerBanque(); }catch(e){}
   try{ localStorage.setItem("bt_langue", LANGUE); }catch(e){}
   try{ document.documentElement.setAttribute("lang", LANGUE); }catch(e){}
   try{ if(settings.sfx) playTap(); }catch(e){}
@@ -7143,11 +7141,12 @@ const TROPHY_GOLD = `<svg viewBox="0 0 24 26"><defs><linearGradient id="pcG" x1=
 const TEAM_COLORS = ["#3E8EE0","#E0506B","#2FA96E","#8E5BD8","#F08A2E","#1FA8A8"];
 const BANK_TOTAL = BANK.facile.length + BANK.moyen.length + BANK.difficile.length;
 
-/* ===================== LES QUESTIONS EN ANGLAIS =====================
-   Elles vivent dans questions-en.js, à côté de ce fichier, et ne sont
-   chargées QUE si le joueur est en anglais. Trois cent mille signes collés
-   ici seraient analysés par tout le monde — y compris par ceux qui ne verront
-   jamais un mot d'anglais, et sur le téléphone le plus lent. Le service
+/* ============== LES QUESTIONS DANS LA LANGUE DU JOUEUR ==============
+   Elles vivent dans questions-en.js et questions-es.js, à côté de ce fichier,
+   et ne sont chargées QUE si le joueur est dans cette langue-là. Trois cent
+   mille signes par langue collés ici seraient analysés par tout le monde — y
+   compris par ceux qui ne verront jamais un mot d'anglais ni d'espagnol, et
+   sur le téléphone le plus lent. Le service
    worker met le fichier en cache dès la première partie : hors connexion,
    l'anglais marche comme le reste.
 
@@ -7159,18 +7158,34 @@ const BANK_TOTAL = BANK.facile.length + BANK.moyen.length + BANK.difficile.lengt
 
    ET SI LE FICHIER MANQUE, le jeu reste en français plutôt que de se taire :
    une traduction absente n'a jamais valu un écran vide. */
-let banqueEnDemandee = false;
-function chargerBanqueEn(){
-  if(LANGUE !== "en" || banqueEnDemandee || self.BANQUE_EN) return;
-  banqueEnDemandee = true;
+/* UNE LANGUE, UN FICHIER, UN NOM DE VARIABLE. L'anglais était seul ; il a
+   fallu que l'espagnol arrive pour que la chose se généralise. Le tableau
+   ci-dessous est la seule ligne à écrire pour la langue suivante : le
+   chargeur, l'adressage et les trois fonctions d'affichage ne bougent plus. */
+const BANQUES = { en:"BANQUE_EN", es:"BANQUE_ES" };
+let banqueDemandee = "";
+function chargerBanque(){
+  const nom = BANQUES[LANGUE];
+  if(!nom || banqueDemandee === LANGUE || self[nom]) return;
+  banqueDemandee = LANGUE;
   try{
     const s = document.createElement("script");
-    s.src = "questions-en.js";
-    /* Une partie peut être à l'écran quand la banque arrive : on repeint. */
-    s.onload = ()=>{ try{ if(typeof render === "function") render(); }catch(e){} };
-    s.onerror = ()=>{ banqueEnDemandee = false; };
+    s.src = "questions-" + LANGUE + ".js";
+    /* Une partie peut être à l'écran quand la banque arrive : on repeint. Et
+       on demande au service worker de la GARDER : au premier chargement il ne
+       contrôle pas encore la page, la requête lui échappe, et le joueur se
+       retrouverait sans ses questions hors ligne (voir sw.js). */
+    s.onload = ()=>{
+      try{ if(typeof render === "function") render(); }catch(e){}
+      try{
+        navigator.serviceWorker.ready.then(r => {
+          if(r && r.active) r.active.postMessage({ garder:"questions-" + LANGUE + ".js" });
+        }).catch(()=>{});
+      }catch(e){}
+    };
+    s.onerror = ()=>{ banqueDemandee = ""; };
     document.head.appendChild(s);
-  }catch(e){ banqueEnDemandee = false; }
+  }catch(e){ banqueDemandee = ""; }
 }
 /* L'ADRESSE D'UNE QUESTION DANS LA BANQUE ANGLAISE, c'est son rang dans BANK.
    On ne peut pas se repérer à l'objet lui-même : une partie travaille sur des
@@ -7189,17 +7204,18 @@ function rangDeQuestion(q){
   const r = rangParEnonce.get(q && q.q);
   return r === undefined ? -1 : r;
 }
-function versionEn(q){
-  if(LANGUE !== "en" || !q || !self.BANQUE_EN) return null;
+function versionLangue(q){
+  const nom = BANQUES[LANGUE];
+  if(!nom || !q || !self[nom]) return null;
   const r = rangDeQuestion(q);
-  return r >= 0 ? (self.BANQUE_EN[r] || null) : null;
+  return r >= 0 ? (self[nom][r] || null) : null;
 }
-function texteQuestion(q){ const e = versionEn(q); return (e && e[0]) || (q ? q.q : ""); }
-function texteFait(q){ const e = versionEn(q); return (e && e[2]) || (q ? (q.fact || "") : ""); }
+function texteQuestion(q){ const e = versionLangue(q); return (e && e[0]) || (q ? q.q : ""); }
+function texteFait(q){ const e = versionLangue(q); return (e && e[2]) || (q ? (q.fact || "") : ""); }
 /* Une option s'affiche traduite, mais c'est TOUJOURS la chaîne française qui
    circule dans le code : on ne fait que remplacer l'étiquette, à sa place. */
 function texteOption(q, opt){
-  const e = versionEn(q); if(!e) return opt;
+  const e = versionLangue(q); if(!e) return opt;
   const i = (q && q.options ? q.options : []).indexOf(opt);
   return (i >= 0 && e[1][i]) || opt;
 }
