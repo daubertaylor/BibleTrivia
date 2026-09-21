@@ -611,7 +611,20 @@
      sans quoi « width:100% » sur la ligne du titre l'étale d'un bord à
      l'autre et renvoie la flamme encore plus loin de la dernière pastille —
      exactement le défaut qu'on corrige. */
-  .semaine{ display:flex; flex-direction:column; align-items:center; gap:0.42rem; width:fit-content; margin-left:auto; margin-right:auto; }
+  /* ===== LA LARGEUR DE LA LIGNE DU TITRE EST CALCULÉE, PLUS DEVINÉE =====
+     Elle valait « 100 % » — c'est-à-dire la largeur de la bande, qui était
+     elle-même celle du plus large de ses enfants. Tant que le titre était une
+     légende fixe, ça tombait juste. Le jour où il porte un compte à rebours,
+     un texte un peu plus long ÉLARGIT la bande et emporte la flamme à droite
+     des sept pastilles : exactement le défaut qu'on avait corrigé (« je trouve
+     la flamme pas idéalement placée »), revenu par la fenêtre. Mesuré au banc
+     avec « Plus que 59 min aujourd'hui » : 4,7 px de débord sur un écran court.
+     On donne donc à la ligne la largeur EXACTE de la rangée — sept pastilles
+     et six écarts — et cette largeur ne dépend plus de rien d'autre. La flamme
+     est au-dessus de la dernière pastille quoi qu'il arrive, dans toutes les
+     langues, et le texte le plus long du monde ne peut plus rien y faire. */
+  .semaine{ --sj-l:2.05rem; --sj-e:0.4rem;
+    display:flex; flex-direction:column; align-items:center; gap:0.42rem; width:fit-content; margin-left:auto; margin-right:auto; }
   /* ===== LA FLAMME SE CALE SUR LA RANGÉE, ELLE NE FLOTTE PLUS À CÔTÉ =====
      « Je trouve la flamme pas idéalement placée. » Elle l'était mal : la ligne
      du titre était plus large que la rangée des jours (elle prenait la largeur
@@ -619,7 +632,8 @@
      pastilles, alignée sur rien. On donne à la ligne du titre EXACTEMENT la
      largeur de la rangée, et on écarte ses deux bouts : le titre à gauche, la
      flamme à droite — c'est-à-dire pile au-dessus de la dernière pastille. */
-  .sem-h{ display:flex; align-items:center; justify-content:space-between; gap:0.5rem; width:100%; }
+  .sem-h{ display:flex; align-items:center; justify-content:space-between; gap:0.5rem;
+    width:calc(7 * var(--sj-l) + 6 * var(--sj-e)); }
   /* ===== LA PASTILLE DE FLAMME, SUR LA RANGÉE DES SEPT JOURS =====
      C'est exactement la pilule qui vivait sur la carte du Défi (.dc-streak) :
      même or, même flamme, même graisse. Rien n'a changé pour l'œil, seule
@@ -645,8 +659,21 @@
   /* Flamme éteinte : on ne crie pas un zéro en or. Le même objet, en sourdine,
      parce qu'une série à zéro n'est pas une faute — c'est un début. */
   .sem-flamme.eteinte{ --glass-tint: rgba(255,255,255,0.16); color:rgba(255,255,255,0.8); box-shadow:none; text-shadow:0 1px 4px rgba(0,0,0,0.4); }
-  .sem-t{ font-family:'Poppins',sans-serif; font-size:0.6rem; font-weight:600; letter-spacing:0.09em; text-transform:uppercase; color:rgba(255,255,255,0.72); text-shadow:0 1px 8px rgba(0,0,0,0.5); }
-  .sem-j{ display:flex; gap:0.4rem; }
+  /* UN CRAN PLUS GRAND QU'AVANT (0,6 rem). Ce n'était qu'une légende, c'est
+     devenu la seule ligne de l'accueil qui dise quoi faire aujourd'hui : elle
+     a le droit de se lire sans effort. La petite capitale reste, elle, parce
+     que c'est la langue des en-têtes du jeu. */
+  .sem-t{ font-family:'Poppins',sans-serif; font-size:0.66rem; font-weight:600; letter-spacing:0.08em; text-transform:uppercase; color:rgba(255,255,255,0.72); text-shadow:0 1px 8px rgba(0,0,0,0.5); }
+  /* IL RESTE QUELQUE CHOSE À FAIRE : la ligne se redresse. Pas une couleur,
+     pas un rebord — le jeu n'en a nulle part : juste du blanc franc et une
+     graisse de plus, comme un titre qu'on lit au lieu d'une légende qu'on
+     survole. Une fois la journée faite, elle retombe d'elle-même en sourdine. */
+  .sem-t.afaire{ color:rgba(255,255,255,0.95); font-weight:700; }
+  /* Et si un jour une langue écrivait plus long que la place : on coupe, on ne
+     pousse pas. Avec les textes d'aujourd'hui ça n'arrive dans aucune des
+     trois (banc-essai/pied.js le mesure), c'est une ceinture. */
+  .sem-t{ min-width:0; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+  .sem-j{ display:flex; gap:var(--sj-e); }
   /* MÊME HAUTEUR QUE LA FLAMME. « La flamme en bas a l'air beaucoup trop
      grosse » — elle faisait 1,34 fois la hauteur d'un carré, parce qu'elle a
      dû passer à 44 px pour être touchable et que les carrés étaient restés à
@@ -655,7 +682,7 @@
      redeviennent une seule famille. Les carrés deviennent des pastilles un peu
      plus hautes que larges — la largeur, elle, ne bouge pas : à sept plus les
      écarts, elle est déjà au bord de ce qui tient sur un écran de 360 px. */
-  .sj{ width:2.05rem; height:2.75rem; border-radius:var(--r-s); display:flex; align-items:center; justify-content:center;
+  .sj{ width:var(--sj-l); height:2.75rem; border-radius:var(--r-s); display:flex; align-items:center; justify-content:center;
     font-family:'Poppins',sans-serif; font-size:0.72rem; font-weight:700; letter-spacing:0.01em;
     color:rgba(255,255,255,0.78); background:rgba(255,255,255,0.15);
     backdrop-filter:blur(12px) saturate(160%); -webkit-backdrop-filter:blur(12px) saturate(160%); }
@@ -1321,6 +1348,10 @@
   .flam-tete{ display:flex; align-items:center; gap:0.7rem; margin:0.15rem 0 0.7rem; }
   .flam-tete .ft-txt{ display:flex; flex-direction:column; gap:0.1rem; min-width:0; }
   .flam-tete .ft-n{ font-family:'Poppins',sans-serif; font-weight:700; font-size:1rem; color:var(--ink); }
+  /* CE QU'IL RESTE À FAIRE AUJOURD'HUI, juste sous le compte de la série.
+     Elle passe avant la réserve de gels et avant la règle : on répond d'abord
+     à « qu'est-ce que je dois faire, et quand ». */
+  .flam-tete .flam-jour{ font-size:0.86rem; font-weight:600; color:var(--ink); line-height:1.4; margin-top:0.15rem; }
   .flam-tete .ft-g{ font-size:0.83rem; color:var(--ink-soft); display:inline-flex; align-items:center; gap:0.3rem; }
   /* La flamme gelée porte ses propres couleurs : rien à hériter ici. */
   .flam-tete .ft-g svg{ width:1.05rem; height:1.05rem; flex-shrink:0; }
@@ -3123,9 +3154,8 @@
        note quand la page est courte. */
     /* Plus étroits qu'ailleurs, mais de la MÊME HAUTEUR que la flamme :
        c'est la hauteur qui fait la famille, pas la largeur. */
-    .sj{ width:1.85rem; height:2.75rem; font-size:0.68rem; }
-    .sem-j{ gap:0.32rem; }
-    .semaine{ gap:0.3rem; }
+    .sj{ height:2.75rem; font-size:0.68rem; }
+    .semaine{ --sj-l:1.85rem; --sj-e:0.32rem; gap:0.3rem; }
     .hero-title{ font-size:1.3rem; margin-bottom:0.15rem; }
     /* SE & co (≤700px de haut) : on resserre un poil les cartes pour que
        l'accueil tienne AUSSI ici, marges de sécurité comprises -> zéro débord,
@@ -4578,7 +4608,6 @@ const TEXTES = {
     "Défi du jour":"Daily challenge",
     "À réviser aujourd'hui":"To review today",
     "Progression":"Progress",
-    "Les 7 derniers jours":"The last 7 days",
     "livres":"books",
     "bonne réponse":"correct answer",
     "bonnes réponses":"correct answers",
@@ -4694,6 +4723,13 @@ const TEXTES = {
     "Aucun gel en réserve":"No freeze in reserve",
     "1 gel en réserve":"1 freeze in reserve",
     "{n} gels en réserve":"{n} freezes in reserve",
+    "{n} h":"{n}h",
+    "{n} min":"{n} min",
+    "Fait pour aujourd'hui":"Done for today",
+    "Plus que {t}":"{t} left",
+    "C'est fait pour aujourd'hui. Reviens demain pour continuer.":"Done for today. Come back tomorrow to keep going.",
+    "Joue une partie avant minuit pour garder ta flamme. Il te reste {t}.":"Play one game before midnight to keep your flame. {t} left.",
+    "Joue une partie avant minuit pour allumer ta flamme. Il te reste {t}.":"Play one game before midnight to light your flame. {t} left.",
     "Ta flamme":"Your flame",
     "Aucune série en cours":"No streak running",
     "1 jour d'affilée":"1 day in a row",
@@ -4944,7 +4980,6 @@ const TEXTES = {
     "Défi du jour":"Reto del día",
     "À réviser aujourd'hui":"Para repasar hoy",
     "Progression":"Progreso",
-    "Les 7 derniers jours":"Los últimos 7 días",
     "livres":"libros",
     "bonne réponse":"respuesta correcta",
     "bonnes réponses":"respuestas correctas",
@@ -5056,6 +5091,13 @@ const TEXTES = {
     "Aucun gel en réserve":"Sin congelaciones en reserva",
     "1 gel en réserve":"1 congelación en reserva",
     "{n} gels en réserve":"{n} congelaciones en reserva",
+    "{n} h":"{n} h",
+    "{n} min":"{n} min",
+    "Fait pour aujourd'hui":"Hecho por hoy",
+    "Plus que {t}":"Quedan {t}",
+    "C'est fait pour aujourd'hui. Reviens demain pour continuer.":"Hecho por hoy. Vuelve mañana para continuar.",
+    "Joue une partie avant minuit pour garder ta flamme. Il te reste {t}.":"Juega una partida antes de medianoche para mantener tu llama. Quedan {t}.",
+    "Joue une partie avant minuit pour allumer ta flamme. Il te reste {t}.":"Juega una partida antes de medianoche para encender tu llama. Quedan {t}.",
     "Ta flamme":"Tu llama",
     "Aucune série en cours":"Sin racha en curso",
     "1 jour d'affilée":"1 día seguido",
@@ -14785,6 +14827,87 @@ const SEM_LETTRES = { en:["S","M","T","W","T","F","S"],
                       es:["D","L","M","M","J","V","S"],
                       fr:["D","L","M","M","J","V","S"] }[LANGUE]
                  || ["D","L","M","M","J","V","S"];   // index = Date.getDay()
+/* ===== QUAND DOIS-JE FAIRE MA SÉRIE ? =====
+   « Je veux un moyen de savoir lorsque je dois faire ma série, parce que là
+   je ne vois pas. » Il avait raison, et c'était un vrai trou : le jeu savait
+   tout — la journée est-elle faite, combien de temps reste-t-il — et n'en
+   disait rien. L'échéance ne vivait que dans un « title » de case, c'est-à-dire
+   nulle part sur un téléphone, où personne ne survole.
+   La réponse tient en un mot : AVANT MINUIT, heure du téléphone. C'est déjà la
+   règle du code (dayKey suit la date locale) ; il ne restait qu'à la dire.
+   Tout est ARRONDI VERS LE BAS, et jamais l'inverse : « plus que 5 h » quand il
+   reste 5 h 59, parce qu'une promesse de temps restant doit être tenable — il
+   vaut mieux donner une demi-heure de trop au joueur que lui en prendre une
+   minute. La dernière minute est le seul plancher : en dessous, on écrit
+   encore « plus que 1 min » plutôt qu'un zéro qui ferait croire que c'est
+   perdu. Et c'est aussi ce qui évite le « plus que 24 h » des trente premières
+   secondes d'une journée, qu'un arrondi au plus proche affichait. */
+function minutesAvantMinuit(){
+  const d = new Date();
+  const minuit = new Date(d.getFullYear(), d.getMonth(), d.getDate() + 1, 0, 0, 0);
+  return Math.max(0, Math.floor((minuit - d) / 60000));
+}
+function tempsAvantMinuit(){
+  const m = minutesAvantMinuit();
+  /* L'espace entre le nombre et son unité est INSÉCABLE, en français comme en
+     espagnol : « 6 h » ne doit jamais se couper en fin de ligne. */
+  return m >= 60 ? Tf("{n} h", { n: Math.floor(m / 60) }) : Tf("{n} min", { n: Math.max(1, m) });
+}
+/* Le petit intitulé de la bande, en haut à gauche. Il disait « Les 7 derniers
+   jours » — une légende qui décrivait ce qu'on voyait déjà (sept lettres de
+   jours, aujourd'hui à droite) et qui ne servait donc à rien. Il porte
+   désormais la seule chose que la bande ne montrait pas : le temps qu'il
+   reste. Aucune place prise, la ligne existait. */
+function etatDuJour(){
+  return dailyDoneToday() ? T("Fait pour aujourd'hui")
+                          : Tf("Plus que {t}", { t: tempsAvantMinuit() });
+}
+/* La même chose en une phrase entière, pour la feuille de la flamme — là, il y
+   a la place de dire AUSSI ce qu'il faut faire : une partie, n'importe
+   laquelle (voir compterPartie), avant minuit. */
+function phraseDuJour(){
+  if(dailyDoneToday()) return T("C'est fait pour aujourd'hui. Reviens demain pour continuer.");
+  const t = tempsAvantMinuit();
+  return dailyStreakShown() > 0
+    ? Tf("Joue une partie avant minuit pour garder ta flamme. Il te reste {t}.", { t })
+    : Tf("Joue une partie avant minuit pour allumer ta flamme. Il te reste {t}.", { t });
+}
+/* LE COMPTE À REBOURS DOIT RESTER VRAI. Un « plus que 5 h » posé au rendu et
+   jamais retouché ment au bout d'une heure — et le jeu reste ouvert longtemps.
+   On réécrit donc le seul texte concerné toutes les trente secondes, sans
+   redessiner quoi que ce soit : pas de render, pas de mise en page, rien qui
+   coûte sur un vieux téléphone. Et le compteur s'arrête quand l'écran est
+   caché : une minuterie qui tourne dans le dos du joueur use sa batterie pour
+   rien. */
+let compteT = 0;
+function rafraichirCompte(){
+  try{
+    /* TOUS les exemplaires, pas le premier : pendant un fondu d'écran, l'ancien
+       et le nouveau coexistent un instant dans la page. Retoucher le premier
+       venu, c'est risquer de corriger celui qui s'en va et de laisser mentir
+       celui qui reste. */
+    const bandes = document.querySelectorAll(".sem-t"), fait = dailyDoneToday(), t = etatDuJour();
+    for(let i = 0; i < bandes.length; i++){
+      if(bandes[i].textContent !== t) bandes[i].textContent = t;
+      bandes[i].classList.toggle("afaire", !fait);
+    }
+    const f = document.querySelectorAll(".flam-jour");
+    if(f.length){ const p = phraseDuJour();
+      for(let i = 0; i < f.length; i++) if(f[i].textContent !== p) f[i].textContent = p; }
+  }catch(e){}
+}
+function armerCompte(){
+  try{
+    clearInterval(compteT); compteT = 0;
+    if(document.hidden) return;
+    rafraichirCompte();
+    compteT = setInterval(rafraichirCompte, 30000);
+  }catch(e){}
+}
+try{
+  document.addEventListener("visibilitychange", armerCompte);
+  armerCompte();
+}catch(e){}
 function semaineHtml(){
   const faits = joursFaits(), gels = joursGeles(), cases = [];
   for(let k = 6; k >= 0; k--){
@@ -14808,7 +14931,7 @@ function semaineHtml(){
   const flamme = `<button class="sem-flamme${n ? "" : " eteinte"}" onclick="ouvrirFlamme()"`
     + ` aria-label="${T("Ta flamme")}">${ICONS.flame}<b>${n}</b></button>`;
   return `<div class="semaine" aria-label="${T("Tes sept derniers jours")}">`
-    + `<div class="sem-h"><span class="sem-t">${T("Les 7 derniers jours")}</span>${flamme}</div>`
+    + `<div class="sem-h"><span class="sem-t${dailyDoneToday() ? "" : " afaire"}">${etatDuJour()}</span>${flamme}</div>`
     + `<div class="sem-j">${cases.join("")}</div></div>`;
 }
 function dailyStreakShown(){ return flammeVivante() ? loadDaily().streak : 0; }
@@ -14887,6 +15010,7 @@ function ouvrirFlamme(){
       <div class="flam-tete">
         <span class="ft-txt">
           <span class="ft-n">${serie === 0 ? T("Aucune série en cours") : (serie === 1 ? T("1 jour d'affilée") : Tf("{n} jours d'affilée", {n:serie}))}</span>
+          <span class="flam-jour">${phraseDuJour()}</span>
           <span class="ft-g">${ICONS.flammeGelee}${escapeHtml(reserve)}</span>
           <span class="flam-regle">${Tf("Un gel tous les {p} jours d'affilée ou toutes les {g} parties, {m} en réserve au maximum. Il couvre un seul jour manqué : deux jours de suite et la flamme s'éteint.", {p:GEL_PALIER, g:GEL_PARTIES, m:GEL_MAX})}</span>
         </span>

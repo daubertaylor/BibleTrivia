@@ -232,8 +232,12 @@ const MEME_DANS_LES_DEUX = [
    ET LES QUESTIONS. « Amnon », « Absalom », « David » s'écrivent pareil dans
    les deux langues : un énoncé ou une option identique ne prouve rien ici.
    Ce n'est pas un trou — les 1545 questions sont vérifiées une par une, et
-   comparées à la banque française, par banc-essai/questions-en.js. */
-const LIEUX_LIBRES = /avatar|code-big|rank-pts|sem-t$|scorebar|q-counter|timer|logo|st-ico|ficon|ico\b|opt-text|q-text|rev-q|rev-a|rev-fact|ftext|fact-|hero-verse/;
+   comparées à la banque française, par banc-essai/questions-en.js.
+   « sem-t » N'EN EST PLUS. L'intitulé de la bande des sept jours y figurait du
+   temps où il portait une légende fixe. Il porte maintenant l'échéance du jour
+   — « Plus que 6 h », « Fait pour aujourd'hui » —, une vraie phrase qui doit
+   se traduire comme les autres : on la surveille. */
+const LIEUX_LIBRES = /avatar|code-big|rank-pts|scorebar|q-counter|timer|logo|st-ico|ficon|ico\b|opt-text|q-text|rev-q|rev-a|rev-fact|ftext|fact-|hero-verse/;
 
 /* ===== UNE LANGUE PAS ENCORE OUVERTE SE RELIT QUAND MÊME =====
    Le jeu refuse une langue déclarée « dispo:false » : elle s'affiche grisée
@@ -659,6 +663,14 @@ const ouvrirLaLangue = async (p, lg) => {
     ['Versions de Bible', () => { __fermerTout(); openBibles(); }],
     ['Langues',           () => { __fermerTout(); openLangues(); }],
     ['Flamme',            () => { __fermerTout(); state.screen='mode'; render(); ouvrirFlamme(); }],
+    /* LA JOURNÉE DÉJÀ FAITE EST UN AUTRE ÉCRAN. L'échéance du jour a deux
+       visages — « Plus que 6 h » tant qu'il reste une partie à jouer, « Fait
+       pour aujourd'hui » une fois qu'elle l'est — et la feuille de la flamme
+       change de phrase avec lui. Sans cette étape, la moitié des deux ne se
+       montre jamais au banc. On passe par saveDaily, le chemin du jeu. */
+    ['Journée faite',     () => { __fermerTout();
+      saveDaily({ last:dayKey(0), streak:5, jours:[dayKey(-1), dayKey(0)], geles:[], gels:1 });
+      state.screen='mode'; render(); ouvrirFlamme(); }],
     ['Profil',            () => { __fermerTout(); state.screen='profile'; render(); }],
     ['Progression',       () => { state.screen='parcours'; render(); }],
     ['À revoir',          () => { state.screen='revoir'; render(); }],
