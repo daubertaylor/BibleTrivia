@@ -4,14 +4,17 @@
    « Vérifie que certaines questions ne soient pas trop similaires au point
      d'être pareilles, juste un peu modifiées. »
 
-   Trois relevés, parce qu'un seul se trompe :
+   Quatre relevés, parce qu'un seul se trompe :
 
      1. MÊME RÉPONSE, ÉNONCÉ TRÈS PROCHE — le vrai doublon. Deux questions qui
         partagent leur réponse ET l'essentiel de leurs mots.
      2. MÊME NOMBRE ÉCRIT AUTREMENT — « Sept » et « 7 » sont la même réponse,
         et le premier relevé ne le voyait pas : seize doublons se cachaient
         derrière cette seule différence d'écriture.
-     3. ÉNONCÉ PROCHE, RÉPONSE DIFFÉRENTE — pour l'œil, sans déclarer de faute :
+     3. L'UNE SOUFFLE LA RÉPONSE DE L'AUTRE — « Qui renia Jésus trois fois ? »
+        donne la réponse de « Combien de fois Pierre renia-t-il Jésus ? ». Deux
+        questions correctes, mais l'une apprend l'autre par cœur.
+     4. ÉNONCÉ PROCHE, RÉPONSE DIFFÉRENTE — pour l'œil, sans déclarer de faute :
         « Où Jésus est-il né ? » et « Où a-t-il grandi ? » se ressemblent et
         sont deux bonnes questions. C'est là, en revanche, que se cachent les
         CONTRADICTIONS (la même question, deux réponses), qu'il faut lire.
@@ -23,7 +26,9 @@
    Usage :  node banc-essai/extraire-questions.js questions.json index.html
             python3 bibles/jumelles.py questions.json [seuil]
 
-   État au moment où ces lignes sont écrites : 0 et 0. Il y en avait 39 et 16.
+   État au moment où ces lignes sont écrites : 0, 0 et 0. Il y en avait 39, 16
+   et 22. Le quatrième relevé, lui, n'a pas à tomber à zéro : « Où Jésus est-il
+   né ? » et « Où a-t-il grandi ? » doivent rester deux questions.
 """
 import json, io, re, sys, unicodedata
 from itertools import combinations
@@ -74,9 +79,15 @@ def jaccard(a, b):
     return len(a & b) / len(a | b)
 
 d = json.load(io.open(sys.argv[1], encoding="utf-8"))
+# « Un corbeau » et « Le corbeau » sont la MÊME réponse : l'article n'en est pas.
+ARTICLES = set("le la les un une des du de d l au aux".split())
+def noyau(rep):
+    return " ".join(w for w in plat(rep).split() if w not in ARTICLES)
+
 for i, q in enumerate(d):
     q["_i"] = i; q["_m"] = mots(q["q"]); q["_r"] = plat(q["correct"]).strip()
-    q["_v"] = valeur(q["correct"])
+    q["_v"] = valeur(q["correct"]); q["_n"] = noyau(q["correct"])
+    q["_qp"] = " " + plat(q["q"]) + " "
 
 # On ne compare pas 1545x1545 à l'aveugle : on regroupe par mot rare partagé.
 index = {}
@@ -87,17 +98,24 @@ for m, gr in index.items():
     if len(gr) > 60: continue          # mot trop courant : n'apprend rien
     for a, b in combinations(gr, 2): paires.add((a["_i"], b["_i"]))
 
-doublons, chiffres, memeRep = [], [], []
+doublons, chiffres, souffle, memeRep = [], [], [], []
 for i, j in paires:
     a, b = d[i], d[j]
     js = jaccard(a["_m"], b["_m"])
     if js < 0.5: continue
     if a["_r"] == b["_r"]: doublons.append((js, i, j))
-    # « Sept » et « 7 » : la même réponse, écrite autrement.
+    # « Un corbeau » et « Le corbeau », « Sept » et « 7 » : la même réponse.
+    elif a["_n"] and a["_n"] == b["_n"]: doublons.append((js, i, j))
     elif a["_v"] is not None and a["_v"] == b["_v"]: chiffres.append((js, i, j))
+    # L'UNE SOUFFLE À L'AUTRE : la réponse de celle-ci est écrite dans l'énoncé
+    # de celle-là. « Qui renia Jésus trois fois ? » donne la réponse de
+    # « Combien de fois Pierre renia-t-il Jésus ? ».
+    elif (a["_n"] and a["_n"] in b["_qp"]) or (b["_n"] and b["_n"] in a["_qp"]):
+        souffle.append((js, i, j))
     else: memeRep.append((js, i, j))
 
-doublons.sort(reverse=True); chiffres.sort(reverse=True); memeRep.sort(reverse=True)
+doublons.sort(reverse=True); chiffres.sort(reverse=True)
+souffle.sort(reverse=True); memeRep.sort(reverse=True)
 print("=== MÊME RÉPONSE ET ÉNONCÉ TRÈS PROCHE (%d paires) ===" % len(doublons))
 for js, i, j in doublons[:40]:
     print("  %.2f  #%-5d %s" % (js, i, d[i]["q"]))
@@ -106,6 +124,11 @@ for js, i, j in doublons[:40]:
 print()
 print("=== MÊME NOMBRE ÉCRIT AUTREMENT, ÉNONCÉ TRÈS PROCHE (%d paires) ===" % len(chiffres))
 for js, i, j in chiffres[:40]:
+    print("  %.2f  #%-5d %s  -> %s" % (js, i, d[i]["q"], d[i]["correct"]))
+    print("        #%-5d %s  -> %s" % (j, d[j]["q"], d[j]["correct"]))
+print()
+print("=== L'UNE SOUFFLE LA RÉPONSE DE L'AUTRE (%d paires) ===" % len(souffle))
+for js, i, j in souffle[:40]:
     print("  %.2f  #%-5d %s  -> %s" % (js, i, d[i]["q"], d[i]["correct"]))
     print("        #%-5d %s  -> %s" % (j, d[j]["q"], d[j]["correct"]))
 print()
