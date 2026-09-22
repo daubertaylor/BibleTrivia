@@ -57,6 +57,8 @@ notre code, et il est éprouvé. Tout le reste l'est.
     node questions-langues.js # les 1545 questions traduites, alignées, et répondre marche encore
     node socle.js       # chacun ne télécharge que la banque de SA langue, et l'a hors ligne
     node reprise.js     # une partie sauvegardée reprend où elle en était, même celle d'avant
+    node extraire-questions.js questions.json index.html   # sortir les 1545 questions
+    python3 ../bibles/jumelles.py questions.json           # les questions trop semblables (0 et 0)
     node recul.js       # la feuille qui recule garde-t-elle son décor, et son fond ?
     node plein.js       # l'onde d'appui recouvre-t-elle TOUT le bouton, logo compris ?
     node camera.js      # le recadrage à l'ouverture du clavier bégaie-t-il ?
