@@ -79,6 +79,11 @@ for(const c of Object.values(CIBLE))
 /* Ce qu'on laisse passer : les noms propres et les sigles qui restent
    identiques dans toutes les langues. Rien d'autre. */
 const TOLERE = [
+  /* L'ADRESSE D'UN JOUEUR N'EST PAS UNE PHRASE. Elle s'affiche telle qu'il
+     l'a tapée sur la carte du compte, et elle peut très bien contenir des
+     mots français — « joueur@... », « famille@... ». La juger comme du texte,
+     c'est reprocher au jeu de ne pas traduire l'adresse de quelqu'un. */
+  /^[^\s@]+@[^\s@]+\.[^\s@]+$/,
   /^Yada$/i, /^Taylor$/i, /^[A-Z0-9]{2,6}$/,           /* sigles de versions, codes de salon */
   /^\d[\d\s:·%\/.,-]*$/,                                /* nombres, scores, minuteries */
   /^[·•→←✓×+\-–—\s]*$/,                                 /* ponctuation seule */
@@ -193,6 +198,9 @@ const MEME_DANS_LES_DEUX = [
   { quoi:/^\d+\s*(questions?|pts|points?|s|min)$/i, car:'un nombre et un mot écrit pareil' },
   { quoi:/^[^\p{L}]*$/u,                       car:'aucune lettre — chiffres, ponctuation, icône' },
   { quoi:/^(Français|English|Español|Português|Deutsch|Italiano)$/, car:'une langue s\'écrit dans sa langue' },
+  /* Une adresse e-mail ne se traduit pas : c'est celle du joueur, il l'a
+     tapée lui-même. Elle s'affiche telle quelle sur la carte du compte. */
+  { quoi:/^[^\s@]+@[^\s@]+\.[^\s@]+$/,        car:'une adresse e-mail' },
   { quoi:/^(La Sainte Bible|La Bible|Bible |Bible Annotée|Louis Segond|Segond|Darby|David Martin|Martin|Ostervald|Crampon|King James|American Standard|World English)/i, car:'le titre d\'une Bible est un nom propre' },
   /* DEUX SIGNES AU MINIMUM. Une SEULE lettre est justement ce qu'on cherche :
      les initiales des jours, « D L M M J V S », sont restées françaises très
@@ -772,6 +780,26 @@ const ouvrirLaLangue = async (p, lg) => {
     /* Le profil d'un joueur qui n'a pas encore choisi de nom. */
     ['Profil · invité',    () => { const g = JSON.parse(localStorage.getItem('bt_profile')||'{}');
       profile.name = ''; state.screen='profile'; render(); }],
+    /* ===== LA CARTE DU COMPTE, DANS SES QUATRE ÉTATS =====
+       Elle ne s'affiche que si la table existe côté serveur, ce qui n'est pas
+       le cas ici : on pose donc « dispo » à la main. Sans ces étapes, vingt et
+       une phrases du dictionnaire n'étaient JAMAIS vues — et une traduction
+       qu'aucun écran ne montre est une traduction qu'on ne peut pas relire. */
+    ['Compte · repos',     () => { compte.dispo = true; compte.session = null; compte.etape = 'repos';
+      compte.message = ''; state.screen = 'profile'; render(); }],
+    ['Compte · deux portes',() => { compte.google = true; compteOuvrir(); }],
+    ['Compte · pas une adresse', () => { compte.message = T("Cette adresse n'a pas l'air d'une adresse."); majCarteCompte(); }],
+    ['Compte · envoi refusé',    () => { compte.message = T("Impossible d'envoyer le code pour l'instant."); majCarteCompte(); }],
+    ['Compte · Google fermé',    () => { compte.message = T("Passe plutôt par ton adresse e-mail."); majCarteCompte(); }],
+    ['Compte · code envoyé', () => { compte.courriel = 'joueur@exemple.net'; compte.etape = 'code';
+      compte.message = T("Code envoyé. Regarde ta boîte mail."); majCarteCompte(); }],
+    ['Compte · six chiffres',    () => { compte.message = T("Le code fait six chiffres."); majCarteCompte(); }],
+    ['Compte · code refusé',     () => { compte.message = T("Ce code ne correspond pas."); majCarteCompte(); }],
+    ['Compte · connecté',  () => { compte.session = { user:{ id:'x', email:'joueur@exemple.net' } };
+      compte.etape = 'connecte'; compte.derniere = Date.now(); compte.message = ''; majCarteCompte(); }],
+    ['Compte · il y a une heure', () => { compte.derniere = Date.now() - 3700000;
+      compte.message = T("Pas de réseau. La sauvegarde reprendra toute seule."); majCarteCompte(); }],
+    ['Compte · il y a dix minutes', () => { compte.derniere = Date.now() - 600000; compte.message = ''; majCarteCompte(); }],
   ];
 
     const releve = new Map();

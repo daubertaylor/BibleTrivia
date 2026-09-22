@@ -80,8 +80,21 @@ create policy "chacun lit la sienne"
 --     réflexe à avoir sur TOUTE fonction « definer » : elle tourne avec les
 --     droits de son créateur, autant qu'elle ne puisse appeler que ce qu'on
 --     croit.
+-- ELLE DIT SI ELLE A ÉCRIT, ET C'EST TOUT L'INTÉRÊT.
+-- Première version : elle rendait la ligne, et le téléphone devait deviner en
+-- comparant la révision. Ça ne marche pas — si l'autre téléphone a écrit
+-- exactement une fois entre notre lecture et notre repose, la révision a
+-- avancé de un, c'est-à-dire exactement ce qu'aurait donné notre propre
+-- écriture. Les deux cas deviennent indiscernables, et le téléphone croit
+-- avoir sauvegardé alors qu'il n'a rien fait. Le serveur sait, lui : il le dit.
+--
+-- Elle rend du jsonb plutôt qu'une ligne de table, et volontairement : des
+-- paramètres de sortie nommés comme les colonnes rendent les références
+-- ambiguës dans le corps plpgsql. Un objet JSON n'a pas ce problème, et il
+-- permet en prime de renvoyer l'état courant AVEC les données en cas de
+-- conflit — le téléphone refusionne sans avoir à relire.
 create or replace function public.poser_sauvegarde(p_donnees jsonb, p_revision bigint)
-returns public.sauvegardes
+returns jsonb
 language plpgsql
 security definer
 set search_path = ''
@@ -109,13 +122,17 @@ begin
    where public.sauvegardes.revision = p_revision   -- la condition qui protège
   returning * into ligne;
 
-  if not found then
-    -- Rien n'a été écrit : quelqu'un d'autre est passé entre-temps. On rend
-    -- l'état actuel pour que l'appelant refusionne dessus.
-    select * into ligne from public.sauvegardes where id = moi;
+  if found then
+    return jsonb_build_object('ecrit', true, 'revision', ligne.revision);
   end if;
 
-  return ligne;
+  -- Rien n'a été écrit : quelqu'un d'autre est passé entre-temps. On rend
+  -- l'état actuel AVEC ses données, pour que l'appelant refusionne dessus et
+  -- retente sans avoir à relire.
+  select * into ligne from public.sauvegardes where id = moi;
+  return jsonb_build_object('ecrit', false,
+                            'revision', coalesce(ligne.revision, 0),
+                            'donnees', ligne.donnees);
 end;
 $$;
 
@@ -166,7 +183,15 @@ create policy "un appareil retire le sien"
 -- COMMENT L'INSTALLER
 -- ============================================================================
 -- Dans Supabase : SQL Editor → coller tout ce fichier → Run.
--- Puis Authentication → Providers → activer Google, et y coller l'identifiant
--- et le secret OAuth. L'adresse de retour à déclarer côté Google est celle que
--- Supabase affiche sur cette même page.
--- Rien à changer dans le jeu : l'URL et la clé publique y sont déjà.
+-- Puis Authentication → Providers, DEUX PORTES :
+--   * Email — déjà actif par défaut. Vérifier seulement que « Confirm email »
+--     est activé : c'est lui qui envoie le code à six chiffres. C'est un CODE
+--     et pas un lien, parce qu'un lien ouvre Safari : sur un iPhone où Yada
+--     est installé sur l'écran d'accueil, Safari serait connecté et l'app
+--     resterait dehors.
+--   * Google — coller l'identifiant et le secret OAuth. L'adresse de retour à
+--     déclarer côté Google est celle que Supabase affiche sur cette page. Si
+--     on ne le fait pas, le jeu s'en aperçoit au premier essai et cesse de
+--     proposer ce bouton.
+-- Rien à changer dans le jeu : l'URL et la clé publique y sont déjà, et la
+-- carte de sauvegarde apparaît d'elle-même dès que cette table existe.

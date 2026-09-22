@@ -4,7 +4,15 @@
 const { chromium } = require('/opt/node22/lib/node_modules/playwright');
 const fs=require('fs');
 const IOS='Mozilla/5.0 (iPhone; CPU iPhone OS 17_5 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.5 Mobile/15E148 Safari/604.1';
-const D=process.argv[2], TAG=process.argv[3]||'x', CSS=process.argv[4]||'';
+/* LE DOSSIER DE SORTIE A UNE VALEUR PAR DÉFAUT, ET ELLE EST HORS DU DÉPÔT.
+   Sans elle, D valait « undefined » et ce banc écrivait ses images dans un
+   dossier nommé « undefined/ » à la racine du projet : 43 Mo de PNG, ajoutés
+   au .gitignore par une session précédente au lieu d'être empêchés. Le même
+   piège a produit « http:/127.0.0.1:8099/index.html/ » le jour où un lanceur
+   lui a passé une URL. Un banc ne doit jamais salir le dépôt parce qu'on l'a
+   lancé sans argument. */
+const D=process.argv[2] || '/tmp/mesure-anneau', TAG=process.argv[3]||'x', CSS=process.argv[4]||'';
+fs.mkdirSync(D, { recursive:true });
 const VUES=[
  ['accueil',  ()=>{state.screen='mode';render();}],
  ['solo',     ()=>{state.mode='solo';state.screen='setup';render();}],
