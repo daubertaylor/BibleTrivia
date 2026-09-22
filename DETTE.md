@@ -37,7 +37,7 @@ maintenant qu'elle vaut son prix. Elle reste obligatoire, sans exception.
 
 ---
 
-## 1. Les données d'un joueur vivent sur son téléphone, et nulle part ailleurs
+## 1. Les données d'un joueur vivent sur son téléphone — CÔTÉ JEU, C'EST FAIT (v279)
 
 **Le fait.** Toute la progression — livres, bonnes réponses, série de flammes,
 gels, carnet d'erreurs, succès — est dans le stockage local de l'appareil.
@@ -48,14 +48,24 @@ efface tout. Sur iPhone, iOS peut aussi vider le stockage d'une app web restée
 longtemps sans être ouverte. Un joueur qui perd trois mois de série ne revient
 pas, et il a raison.
 
-**Quand.** MAINTENANT, et plus seulement « en cours » : il y a déjà des
-joueurs, donc il y a déjà des progressions qui peuvent disparaître. C'est la
-tâche #37, et c'est la priorité absolue.
+**Où ça en est, exactement (22/09/2026, v279).** Tout le côté téléphone est
+écrit, éprouvé et publié : la carte de sauvegarde dans le Profil, les deux
+portes (Google, ou un code à six chiffres par e-mail), la synchro à la
+connexion, au retour sur l'app et en fin de partie, la gestion du conflit entre
+deux téléphones. `banc-essai/comptes.js` joue le scénario complet contre un
+Supabase de poche, et prouve la règle absolue : un téléphone RICHE qui se
+connecte sur un compte PAUVRE ne perd rien, compteur par compteur, ensemble par
+ensemble.
 
-**Fait quand.** Un joueur peut se connecter, changer de téléphone, retrouver sa
-progression entière — et se connecter n'a JAMAIS pu retirer quoi que ce soit.
-Le moteur de fusion est écrit et prouvé (banc `fusion.js`) ; il reste la table
-côté serveur et le bouton.
+**Ce qui reste, et ce n'est pas du code.** Une action de Taylor, une seule :
+lancer `comptes/table.sql` dans l'éditeur SQL de Supabase et vérifier les deux
+fournisseurs. Tout est écrit dans `comptes/LISEZMOI.md`. Le jeu sonde la table
+et n'affiche la carte que si elle existe — donc rien à rebasculer le jour où
+c'est fait, et personne ne voit d'ici là un bouton qui échoue.
+
+**Ce point ne descendra dans « Réglés » que le jour où un vrai joueur aura
+retrouvé sa progression sur un deuxième téléphone.** Tant que la table n'existe
+pas, le risque de perte est intact — du code prêt ne sauve personne.
 
 ---
 
