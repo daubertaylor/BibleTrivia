@@ -59,26 +59,6 @@ côté serveur et le bouton.
 
 ---
 
-## 2. Aucune remontée d'erreur : si ça casse chez un joueur, personne ne le sait
-
-**Le fait mesuré.** Zéro occurrence de `window.onerror` ou d'un écouteur
-`error` dans tout le code. Et **111 blocs `try/catch`**.
-
-**Pourquoi ça compte.** Ces 111 blocs sont une force — rien ne casse
-brutalement — et exactement pour cette raison, **tout échec est silencieux**.
-Un bouton qui ne répond plus sur un modèle de téléphone précis peut durer des
-mois sans que personne ne l'apprenne. Aujourd'hui, le seul capteur du jeu,
-c'est Taylor qui l'utilise. Ça ne tient plus dès qu'il y a des joueurs.
-
-**Quand.** Tout de suite après le compte. Le jeu est DÉJÀ ouvert à des gens
-qu'on ne connaît pas — cette échéance est dépassée, pas à venir.
-
-**Fait quand.** Une erreur survenue sur le téléphone d'un joueur arrive
-quelque part où on la lit, avec la version du jeu, l'écran, et sans aucune
-donnée personnelle. Petit, sobre, et désactivable.
-
----
-
 ## 3. On ne sait pas ce que les joueurs font
 
 **Le fait.** Aucune mesure d'usage, d'aucune sorte.
@@ -225,16 +205,6 @@ s'improvise pas la veille.
 
 ---
 
-## 9. Une seule langue
-
-**Le fait.** Tout est en français : interface, questions, faits, versets.
-
-**Quand.** Le jour où on vise au-delà du francophone. À noter surtout parce que
-ça change la façon d'écrire le code **maintenant** : chaque texte codé en dur
-aujourd'hui sera à retrouver plus tard.
-
----
-
 ## En attente d'une mesure sur un vrai téléphone
 
 Ce ne sont pas des dettes mais des défauts signalés que mon instrument ne
@@ -252,5 +222,43 @@ reproduit pas. Ils attendent un chiffre venu de l'appareil.
 
 ## Réglés
 
-_(vide pour l'instant — chaque point réglé descend ici avec sa date et sa
-version)_
+### 2. La remontée d'erreur — v277, 22 septembre 2026
+
+**C'était.** Zéro `window.onerror` dans tout le code, et 111 blocs `try/catch`.
+Le jeu ne s'arrêtait jamais, et c'est exactement pour ça que tout échec était
+silencieux : le seul capteur, c'était Taylor qui joue.
+
+**C'est.** Les deux portes par où une erreur sort d'elle-même sont branchées
+(`error`, `unhandledrejection`). Ce qui est pris se range sur le téléphone,
+dédoublonné par message et par ligne — cent fois la même panne fait UNE ligne
+avec son compte —, vingt au maximum, et part à l'ouverture suivante. Hors
+ligne, rien ne se perd et rien ne bloque.
+
+Ce qui part : le message, l'endroit dans le fichier, l'écran, la version du
+jeu, la langue, une signature d'appareil grossière. Ce qui ne part jamais : le
+nom, l'adresse, le score, les réponses, et aucun identifiant qui suivrait
+quelqu'un d'une fois sur l'autre. `banc-essai/erreurs.js` ne le lit pas dans le
+code : il provoque de vraies pannes et cherche le nom du joueur dans ce qui est
+RÉELLEMENT écrit. Réglages → « Signaler les problèmes » coupe tout, et efface
+ce qui attendait.
+
+Ce qui ne remonte pas, et c'est mesuré : une ressource venue d'ailleurs (le
+script de Supabase sur son CDN, une police). Elle ne manque que pour une
+raison — le réseau du joueur —, et hors ligne c'était la première ligne du
+rapport de tout le monde.
+
+**Il reste une commande à passer**, trente secondes : coller `erreurs/table.sql`
+dans l'éditeur SQL de Supabase. Tant qu'elle n'y est pas, les erreurs
+s'accumulent sur les téléphones et repartiront le jour où elle y sera — rien
+n'est perdu, rien n'est envoyé.
+
+### 9. Une seule langue — v271, 21 septembre 2026
+
+Trois langues complètes : français, anglais, espagnol. Interface, 1545
+questions, faits, noms de livres, références et Bibles propres à chaque langue
+(KJV/ASV/WEB, Reina-Valera 1909 et 1865). Chaque joueur ne télécharge que la
+banque de SA langue (`banc-essai/socle.js`), et trois bancs tiennent la
+promesse : `traductions.js` (les barrières statiques), `langues-ecrans.js`
+(125 écrans par langue, pas un mot de français hors de sa place) et
+`questions-langues.js` (les 1545 alignements comparés un par un).
+
