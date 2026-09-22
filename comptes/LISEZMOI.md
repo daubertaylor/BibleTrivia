@@ -10,19 +10,54 @@ Quelqu'un qui perd trois mois de série ne revient pas, et il a raison.
 
 ## Ce qu'il y a à faire (une fois)
 
-1. Ouvre l'éditeur SQL de Supabase (Project → SQL Editor).
-2. Colle `comptes/table.sql` en entier, exécute.
-3. Authentication → Providers :
-   - **Email** est déjà actif par défaut. Vérifie seulement que
-     « Confirm email » est activé : c'est lui qui envoie le code.
-   - **Google** : colle l'identifiant et le secret OAuth. L'adresse de retour
-     à déclarer côté Google est celle que Supabase affiche sur cette page.
-     Si tu ne fais pas Google, ce n'est pas grave : le jeu s'en aperçoit tout
-     seul et n'affiche plus le bouton.
+### 1. La table
 
-**Rien à changer dans le jeu.** Il sonde la table au premier passage par le
-Profil, retient la réponse une journée, et n'affiche la carte de sauvegarde que
-si la table existe. Le jour où tu lances le SQL, elle apparaît d'elle-même.
+Supabase → **SQL Editor** → New query → colle `comptes/table.sql` en entier →
+**Run**. C'est tout : la table, les règles d'accès et la fonction d'écriture
+sont posées d'un coup.
+
+### 2. LES DEUX MODÈLES DE COURRIEL — l'étape qu'on oublie, et qui casse tout
+
+Supabase → **Authentication → Email Templates**
+(`supabase.com/dashboard/project/_/auth/templates`).
+
+**Par défaut, Supabase envoie un LIEN, pas un code.** C'est écrit noir sur
+blanc dans leur documentation : « Though the method is labelled OTP, it sends a
+Magic Link by default. » Le jeu, lui, demande six chiffres. Sans cette étape,
+le joueur reçoit un lien, n'a aucun code à taper, et rien ne marche — en
+silence, sans message d'erreur.
+
+Il faut donc ajouter la variable `{{ .Token }}` dans **DEUX** modèles :
+
+- **Confirm signup** — celui que reçoit un joueur qui se connecte pour la
+  PREMIÈRE fois. C'est le cas de tout le monde au départ, donc c'est le plus
+  important des deux.
+- **Magic Link** (parfois affiché « Magic link or OTP ») — celui que reçoit un
+  joueur qui revient.
+
+Dans chacun, remplace le corps par quelque chose comme :
+
+```html
+<h2>Ton code Yada</h2>
+<p>Entre ce code dans le jeu :</p>
+<p style="font-size:28px;letter-spacing:6px"><b>{{ .Token }}</b></p>
+<p>Il est valable une heure. Si tu n'as rien demandé, ignore ce message.</p>
+```
+
+Le lien peut rester en dessous si tu veux, ça ne gêne pas — ce qui compte,
+c'est que `{{ .Token }}` soit là.
+
+### 3. Google (facultatif)
+
+Authentication → **Providers** → Google : colle l'identifiant et le secret
+OAuth. L'adresse de retour à déclarer côté Google est celle que Supabase
+affiche sur cette page. Si tu ne le fais pas, ce n'est pas grave : le jeu s'en
+aperçoit au premier essai et cesse d'afficher le bouton.
+
+**Rien à changer dans le jeu.** Il sonde la table au passage par le Profil et
+n'affiche la carte de sauvegarde que si elle existe. Une réponse « elle existe »
+est gardée une journée ; une réponse « pas encore » seulement une demi-heure —
+pour que la carte apparaisse vite après ton SQL, et pas le lendemain.
 
 ## Ce que voit le joueur
 

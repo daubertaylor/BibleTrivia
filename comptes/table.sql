@@ -183,12 +183,21 @@ create policy "un appareil retire le sien"
 -- COMMENT L'INSTALLER
 -- ============================================================================
 -- Dans Supabase : SQL Editor → coller tout ce fichier → Run.
--- Puis Authentication → Providers, DEUX PORTES :
---   * Email — déjà actif par défaut. Vérifier seulement que « Confirm email »
---     est activé : c'est lui qui envoie le code à six chiffres. C'est un CODE
---     et pas un lien, parce qu'un lien ouvre Safari : sur un iPhone où Yada
---     est installé sur l'écran d'accueil, Safari serait connecté et l'app
---     resterait dehors.
+-- PUIS, ET C'EST L'ÉTAPE QU'ON OUBLIE : Authentication → Email Templates.
+-- Par défaut Supabase envoie un LIEN, pas un code — leur documentation le dit
+-- elle-même (« Though the method is labelled OTP, it sends a Magic Link by
+-- default »). Le jeu, lui, demande six chiffres. Sans cette étape, le joueur
+-- reçoit un lien, n'a aucun code à taper, et rien ne marche, en silence.
+-- Il faut ajouter {{ .Token }} dans DEUX modèles :
+--   * « Confirm signup » — le courriel d'un joueur qui se connecte pour la
+--     PREMIÈRE fois. C'est le cas de tout le monde au départ ;
+--   * « Magic Link » — celui d'un joueur qui revient.
+-- Le détail et un modèle prêt à coller sont dans comptes/LISEZMOI.md.
+--
+-- Et Authentication → Providers, DEUX PORTES :
+--   * Email — déjà actif par défaut. On veut un CODE et pas un lien, parce
+--     qu'un lien ouvre Safari : sur un iPhone où Yada est installé sur l'écran
+--     d'accueil, Safari serait connecté et l'app resterait dehors.
 --   * Google — coller l'identifiant et le secret OAuth. L'adresse de retour à
 --     déclarer côté Google est celle que Supabase affiche sur cette page. Si
 --     on ne le fait pas, le jeu s'en aperçoit au premier essai et cesse de
