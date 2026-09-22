@@ -372,10 +372,53 @@ function replierGabarits(t){
     const c = out[i];
     const haut = pile.length ? pile[pile.length - 1] : null;
     if(c === '\\'){ i += 2; continue; }
-    if(haut !== 'tpl' && (c === '"' || c === "'")){
-      const q = c; i++;
-      while(i < out.length && out[i] !== q){ if(out[i] === '\\') i++; i++; }
-      i++; continue;
+    /* ===== UNE APOSTROPHE FRANÇAISE N'OUVRE PAS UNE CHAÎNE (ici non plus) =====
+       La troisième porte le savait déjà ; le REPLIAGE, lui, l'ignorait. Il
+       ouvrait donc une chaîne sur le « l' » de « l'écran » et la refermait des
+       milliers de signes plus loin, sur une autre apostrophe — avalant au
+       passage un nombre impair d'accents graves. Tout ce qui suivait était
+       replié de travers : le banc a rapporté quarante-deux bouts de code comme
+       s'ils étaient du français le jour où une ligne de réglage a gagné un
+       T("L'erreur, et rien de toi."). Plus grave que le bruit : mal replié, il
+       pouvait aussi TAIRE une vraie phrase non traduite.
+       Deux règles, et le désaccord disparaît :
+         - une vraie ouverture n'est jamais collée à une lettre ou un chiffre ;
+         - une chaîne JS ne franchit pas la fin de ligne : si le guillemet ne
+           se referme pas avant, ce n'en était pas un. */
+    if(haut !== 'tpl' && (c === '"' || c === "'") &&
+       !(c === "'" && /[\p{L}\d]/u.test(out[i - 1] || ''))){
+      const q = c; let j = i + 1;
+      while(j < out.length && out[j] !== q && out[j] !== '\n'){ if(out[j] === '\\') j++; j++; }
+      if(out[j] === q){ i = j + 1; continue; }   /* une vraie chaîne : on la saute */
+      /* pas de fermeture avant la fin de ligne : ce n'était pas une chaîne */
+    }
+    /* ===== UNE EXPRESSION RÉGULIÈRE N'EST PAS DU TEXTE =====
+       « name.replace(/'/g, "\\'") » — une apostrophe DANS un motif, à deux pas
+       d'une autre dans une chaîne. Le replieur ouvrait une chaîne sur la
+       première, la refermait sur la seconde, avalait le guillemet qui les
+       séparait, et perdait le fil pour tout le reste du fichier : c'est de là
+       que venaient les quarante-deux fausses alertes.
+       On saute donc les motifs. Savoir si « / » ouvre un motif ou divise est le
+       vieux piège des analyseurs JavaScript ; la règle qui tranche sans se
+       tromper ici : un motif ne peut commencer qu'après un signe qui attend une
+       valeur — une parenthèse ouvrante, une virgule, un égal, deux-points, un
+       crochet, un opérateur — jamais après une valeur (« ) », « ] », un nom,
+       un chiffre), où « / » est forcément une division. */
+    if(haut !== 'tpl' && c === '/'){
+      let k = i - 1;
+      while(k >= 0 && (out[k] === ' ' || out[k] === '\t' || out[k] === '\n')) k--;
+      const avant = k >= 0 ? out[k] : '';
+      if(avant === '' || '(,=:[!&|?{};+-*%~^<>'.indexOf(avant) >= 0){
+        let j = i + 1, dedans = false;
+        while(j < out.length && out[j] !== '\n'){
+          if(out[j] === '\\'){ j += 2; continue; }
+          if(out[j] === '[') dedans = true;
+          else if(out[j] === ']') dedans = false;
+          else if(out[j] === '/' && !dedans) break;
+          j++;
+        }
+        if(out[j] === '/'){ i = j + 1; continue; }   /* motif sauté */
+      }
     }
     if(c === '`'){ if(haut === 'tpl') pile.pop(); else pile.push('tpl'); i++; continue; }
     if(haut === 'tpl'){
@@ -406,7 +449,15 @@ net.split('\n').forEach((ligne, n) => {
        plus loin de « l'hôte » ressemble à s'y méprendre à un littéral entre
        apostrophes : le banc annonçait alors une phrase coupée en son milieu.
        Une vraie ouverture n'est jamais collée à une lettre. */
-    if(m[1] === "'" && /[\p{L}\d]/u.test(ligne[m.index - 1] || '')) continue;
+    /* ON REPART JUSTE APRÈS L'APOSTROPHE, ON NE SAUTE PAS CE QU'ELLE A AVALÉ.
+       « continue » seul laissait lastIndex là où la fausse chaîne s'était
+       refermée — c'est-à-dire des centaines de signes plus loin, au milieu du
+       gabarit replié. Tout ce qui se trouvait dans cet intervalle échappait au
+       balayage, et la reprise tombait n'importe où : le banc rapportait alors
+       quarante-deux bouts de code comme s'ils étaient du français, et, plus
+       grave, il pouvait TAIRE une vraie phrase non traduite.
+       Trouvé en écrivant T("L'erreur, et rien de toi.") dans une feuille. */
+    if(m[1] === "'" && /[\p{L}\d]/u.test(ligne[m.index - 1] || '')){ RE.lastIndex = m.index + 1; continue; }
     if(dansT(base + m.index) || dansT(base + m.index + m[0].length - 1)) continue;
     const brut = m[2];
     /* UN GABARIT N'EST PAS UNE PHRASE. `<b>${T("Rappels")}</b>` contient du
