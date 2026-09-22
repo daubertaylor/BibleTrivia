@@ -7384,7 +7384,7 @@ const CREATOR_KEY = "TAYLOR";   // code secret pour débloquer le badge Créateu
    remontée d'un téléphone ne vaut rien si on ne sait pas QUELLE version
    tournait. Elle doit rester égale au CACHE de sw.js — c'est ce que vérifie
    banc-essai/version.js, qui refuse de laisser publier les deux en désaccord. */
-const VERSION_JEU = "v279";
+const VERSION_JEU = "v280";
 
 /* ===================== QUAND ÇA CASSE CHEZ UN JOUEUR =====================
    « Si quelque chose casse chez cinq d'entre eux sur un modèle de téléphone
@@ -8779,6 +8779,29 @@ const MUSIC_MIX = 0.8; // plafond de la musique par rapport aux effets
 /* Niveau réel de la nappe musicale : le curseur de volume ne pilote QUE la
    musique — les effets sonores gardent toujours leur niveau. */
 function musicLevel(){ return Math.max(MUSIC_MIX * volCurve(settings.volume), 0.0001); }
+/* ===== L'OREILLE DU GUETTEUR, ET OÙ ON PLACE LE SEUIL =====
+   Mesuré, pas estimé. La musique en marche, sur toute la plage de volume :
+       volume 1     pic 8,9e-3        volume 0,1    pic 1,2e-3
+       volume 0,4   pic 9,1e-3        volume 0,05   pic 5,8e-4
+       volume 0,2   pic 4,1e-3        volume 0,02   pic 1,7e-4   <- le plus faible
+   Et le silence, fil d'ordonnancement arrêté : 6,4e-8, puis 1,9e-15.
+   On tranche à 3e-6, au milieu géométrique des deux : quarante-sept fois
+   au-dessus du pire silence, cinquante-sept fois sous le plus faible vrai
+   signal. Aucune zone grise, dans aucun des deux sens.
+   Le volume à ZÉRO tombe à 5,8e-6, donc sous le seuil — c'est pour ça que le
+   guetteur ne juge jamais quand le joueur a lui-même coupé le son. Ce
+   silence-là est le sien, on ne le lui répare pas. */
+let sonMetre = null, sonEchantillon = null, sonSilences = 0;
+const SON_SEUIL = 3e-6, SON_SILENCES_AVANT = 3;   // trois tours de guet = six secondes
+function sortieMuette(){
+  if(!sonMetre || !sonEchantillon) return false;   // pas d'oreille : on ne juge pas
+  try{
+    sonMetre.getFloatTimeDomainData(sonEchantillon);
+    for(let i = 0; i < sonEchantillon.length; i++)
+      if(Math.abs(sonEchantillon[i]) > SON_SEUIL) return false;
+    return true;
+  }catch(e){ return false; }
+}
 function getCtx(){
   if(!actx){
     actx = new (window.AudioContext||window.webkitAudioContext)();
@@ -8791,6 +8814,26 @@ function getCtx(){
     masterGain.gain.value = 0.92;
     masterFilter.connect(masterGain);
     masterGain.connect(actx.destination);
+    /* ===== UNE OREILLE SUR LA SORTIE, ET VOICI POURQUOI IL EN FAUT UNE =====
+       Le guetteur surveillait des DRAPEAUX : contexte « running », musicPlaying
+       vrai, fil d'ordonnancement non nul. Mesuré au signal réel : quand le fil
+       s'arrête en laissant les drapeaux intacts, la sortie tombe à 1,2e-12 —
+       le silence complet — et le guetteur répond « tout va bien ». Le joueur
+       n'entend plus rien, pour toujours, et rien dans le jeu ne le sait.
+       C'est la même faute que trois de mes bancs faisaient ce matin : regarder
+       l'intention au lieu de la conséquence.
+       La prise est PASSIVE — une branche de plus sur masterGain, elle ne
+       traverse rien et ne modifie pas le son. Elle ne coûte qu'une lecture de
+       128 flottants toutes les deux secondes, sur le guetteur qui existe déjà :
+       aucun nouveau minuteur, rien à retirer aux appareils lents. */
+    try{
+      sonMetre = actx.createAnalyser();
+      sonMetre.fftSize = 256;
+      sonMetre.smoothingTimeConstant = 0;
+      masterGain.connect(sonMetre);
+      sonEchantillon = new Float32Array(sonMetre.fftSize);
+    }catch(e){ sonMetre = null; sonEchantillon = null; }
+    sonSilences = 0;
     /* iOS bascule le contexte en « suspended/interrupted » pendant un appel
        (même une simple bannière d'appel entrant, SANS mise en arrière-plan) ou
        une veille : on NOTE l'interruption, puis dès que le contexte repart on
@@ -9115,6 +9158,25 @@ function veillerLeSon(){
       if(!audioUnlocked || !audioActive()) return;      // pas encore autorisé, ou en arrière-plan
       if(!settings.music && !settings.sfx) return;      // le joueur a tout coupé : c'est son choix
       const mort = !actx || actx.state !== "running" || (settings.music && !musicPlaying);
+      /* ===== ET ON ÉCOUTE, PAS SEULEMENT ON DEMANDE =====
+         Tous les drapeaux peuvent être au vert pendant que la sortie est
+         muette. On ne le déclare qu'après TROIS tours de guet muets d'affilée —
+         six secondes — et jamais quand le joueur a lui-même mis le volume à
+         zéro : ce silence-là est le sien, on ne le lui répare pas. */
+      let sourd = false;
+      if(!mort && settings.music && musicPlaying && settings.volume > 0){
+        if(sortieMuette()){ sonSilences++; sourd = sonSilences >= SON_SILENCES_AVANT; }
+        else sonSilences = 0;
+      } else sonSilences = 0;
+      if(sourd){
+        sonSilences = 0;
+        /* D'abord le geste le moins brutal : refaire la nappe à neuf. Si la
+           sortie reste muette au tour suivant, le tour d'après rebâtira tout
+           le contexte par relancerSon -> reviveAudioHard. */
+        try{ restartMusicClean(); }catch(e){}
+        veilleSonDernier = Date.now();
+        return;
+      }
       if(!mort) return;
       const t = Date.now();
       if(t - veilleSonDernier < VEILLE_SON_REPOS) return;
