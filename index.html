@@ -4719,7 +4719,7 @@ const TEXTES = {
     "1 gel en réserve":"1 freeze in reserve",
     "{n} gels en réserve":"{n} freezes in reserve",
     "Signaler les problèmes":"Report problems",
-    "Le message d'erreur et le modèle du téléphone. Rien d'autre.":"The error message and the phone model. Nothing else.",
+    "L'erreur, et rien de toi.":"The error, and nothing of you.",
     "{n} h":"{n}h",
     "{n} min":"{n} min",
     "Fait pour aujourd'hui":"Done for today",
@@ -5082,7 +5082,7 @@ const TEXTES = {
     "1 gel en réserve":"1 congelación en reserva",
     "{n} gels en réserve":"{n} congelaciones en reserva",
     "Signaler les problèmes":"Informar de los problemas",
-    "Le message d'erreur et le modèle du téléphone. Rien d'autre.":"El mensaje de error y el modelo del teléfono. Nada más.",
+    "L'erreur, et rien de toi.":"El error, y nada de ti.",
     "{n} h":"{n} h",
     "{n} min":"{n} min",
     "Fait pour aujourd'hui":"Hecho por hoy",
@@ -7328,7 +7328,7 @@ const CREATOR_KEY = "TAYLOR";   // code secret pour débloquer le badge Créateu
    remontée d'un téléphone ne vaut rien si on ne sait pas QUELLE version
    tournait. Elle doit rester égale au CACHE de sw.js — c'est ce que vérifie
    banc-essai/version.js, qui refuse de laisser publier les deux en désaccord. */
-const VERSION_JEU = "v277";
+const VERSION_JEU = "v278";
 
 /* ===================== QUAND ÇA CASSE CHEZ UN JOUEUR =====================
    « Si quelque chose casse chez cinq d'entre eux sur un modèle de téléphone
@@ -9604,17 +9604,25 @@ function openSettings(){
         <span class="set-txt"><b>${T("Rappels")}</b>${notifEtat()==="denied" ? `<small id="notifTxt">${T("Bloquées dans les réglages du téléphone")}</small>` : ``}</span>
         <button class="switch${settings.notif && notifEtat()==="granted" ? " on" : ""}" id="swNotif" role="switch" aria-checked="${!!(settings.notif && notifEtat()==="granted")}" aria-label="Rappels" ${notifEtat()==="denied" ? "disabled" : ""} onclick="setNotif(!(settings.notif && notifEtat()==='granted'))"></button>
       </div>` : ""}
-      <!-- SIGNALER LES PROBLÈMES : la ligne dit ce qui part, pas « télémétrie ».
-           Un joueur a le droit de savoir en une phrase, et de l'éteindre. -->
-      <div class="set-row">
-        <span class="set-ico rap">${ICONS.bogue}</span>
-        <span class="set-txt"><b>${T("Signaler les problèmes")}</b><small>${T("Le message d'erreur et le modèle du téléphone. Rien d'autre.")}</small></span>
-        <button class="switch${settings.rapport?' on':''}" id="swRapport" role="switch" aria-checked="${!!settings.rapport}" aria-label="${T("Signaler les problèmes")}" onclick="setRapport(!settings.rapport)"></button>
-      </div>
       <div class="set-row">
         <span class="set-ico bib">${ICONS.bookOpen}</span>
         <span class="set-txt"><b>${T("Version de la Bible")}</b><small id="bibleNom">${bibleActive().court} ${bibleActive().annee}</small></span>
         <button class="set-go" id="bibleGo" onclick="openBibles()">${bibleActive().sigle}</button>
+      </div>
+      <!-- ===== SIGNALER LES PROBLÈMES : EN DERNIER, ET C'EST SA PLACE =====
+           Elle était au milieu des réglages de jeu, entre les Rappels et la
+           Bible, et son sous-titre la faisait déborder sur deux lignes : la
+           rangée la PLUS HAUTE de la feuille, pour la chose la moins
+           importante. Ce n'est pas un réglage de jeu, c'est un interrupteur
+           d'atelier — il descend donc sous tout ce qu'on vient vraiment
+           régler, et il tient sur une ligne.
+           ELLE RESTE VISIBLE, ET C'EST VOULU. Quelque chose quitte le
+           téléphone du joueur. Même sans rien de personnel, il doit pouvoir
+           dire non — et les stores demanderont cette case. -->
+      <div class="set-row">
+        <span class="set-ico rap">${ICONS.bogue}</span>
+        <span class="set-txt"><b>${T("Signaler les problèmes")}</b><small>${T("L'erreur, et rien de toi.")}</small></span>
+        <button class="switch${settings.rapport?' on':''}" id="swRapport" role="switch" aria-checked="${!!settings.rapport}" aria-label="${T("Signaler les problèmes")}" onclick="setRapport(!settings.rapport)"></button>
       </div>
       <button class="share-btn" onclick="shareGame()">
         <span class="share-ico">${ICONS.shareUp}</span>

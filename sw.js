@@ -1,6 +1,6 @@
 /* Yada — service worker : rend l'app jouable hors connexion.
    À déposer à côté de index.html (même dossier, nom exact "sw.js"). */
-const CACHE = "yada-v277";
+const CACHE = "yada-v278";
 /* ===== LES BANQUES DE QUESTIONS NE SONT PAS DANS LE SOCLE =====
    questions-en.js y était, et questions-es.js allait l'y rejoindre : six cent
    mille octets téléchargés à l'installation par TOUT LE MONDE, y compris les
