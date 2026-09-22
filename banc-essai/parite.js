@@ -63,6 +63,27 @@ const PREP = () => {
   localStorage.setItem('bt_errbook', JSON.stringify([{ q:'Q1', options:['a','b','c','d'], correct:'a', p:0 }]));
 };
 
+/* ===== ON ARRÊTE LE TEMPS AVANT DE PHOTOGRAPHIER =====
+   L'accueil ne se posait JAMAIS : quatorze photos d'affilée, toujours
+   différentes, et le banc concluait « l'écran n'est pas reproductible ».
+   Trois animations y tournent en permanence, toutes autour du logo —
+   heroShadow sur .hero-zone::after, heroSpin sur .hero-icon-wrap::before,
+   heroFloat sur .hero-icon. Le banc ignorait bien une zone, mais elle était
+   trop petite : querySelector('.hero-icon, .hero-zone') prend le PREMIER des
+   deux dans le document, donc l'icône (106 x 106) — alors que l'ombre qui
+   respire s'étend sur 338 x 160. Tout ce qui dépassait de l'angle mort
+   comptait comme une différence.
+   AGRANDIR L'ANGLE MORT AURAIT ÉTÉ LE MAUVAIS GESTE : c'est le logo, la
+   partie la plus visible de l'écran, qu'on aurait cessé de comparer. On
+   arrête plutôt les horloges et on les remet à zéro : les deux plateformes
+   sont alors photographiées au MÊME instant de la même animation, l'image
+   est reproductible, et on compare l'écran ENTIER — logo compris, ce que le
+   banc ne faisait plus depuis qu'il avait un angle mort.
+   On regèle avant chaque photo : un render() relance des animations. */
+const figer = (p) => p.evaluate(() => {
+  document.getAnimations().forEach(a => { try { a.pause(); a.currentTime = 0; } catch(e){} });
+});
+
 (async () => {
   const nav = await chromium.launch({ executablePath: '/opt/pw-browsers/chromium' });
   const prendre = async (ua, etiquette) => {
@@ -90,9 +111,11 @@ const PREP = () => {
       const g = f.replace('.png', '-prec.png');
       let pose = false;
       await p.waitForTimeout(700);
+      await figer(p);
       await p.screenshot({ path:g });
       for (let k = 0; k < 14; k++) {
         await p.waitForTimeout(320);
+        await figer(p);
         await p.screenshot({ path:f });
         const m = execSync('python3 -c "from PIL import Image,ImageChops;'
           + ' a=Image.open(\'' + g + '\').convert(\'RGB\'); b=Image.open(\'' + f + '\').convert(\'RGB\');'
@@ -173,7 +196,7 @@ print('%d %d %s' % (n, pire, (','.join(map(str, boite)) if boite else '-')))
 `;
   fs.writeFileSync(TMP + '/cmp.py', py);
   const ecart = (f1, f2) => {
-    const out = execSync('python3 ' + TMP + '/cmp.py ' + f1 + ' ' + f2 + ' ' + (a.logo || '-')).toString().trim();
+    const out = execSync('python3 ' + TMP + '/cmp.py ' + f1 + ' ' + f2 + ' -').toString().trim();
     if (out.startsWith('TAILLE')) return { taille: out };
     const [n, pire, boite] = out.split(' ');
     return { n: parseInt(n, 10), pire: parseInt(pire, 10), boite };
