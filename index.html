@@ -19724,11 +19724,37 @@ if("serviceWorker" in navigator){
   });
 }
 
-/* LE COMPTE SE RÉVEILLE APRÈS LE PREMIER ÉCRAN, JAMAIS PENDANT. Reprendre la
-   session, écouter le retour de Google, sonder la table : rien de tout ça ne
-   doit coûter une image au démarrage. Trois secondes, comme la remontée
-   d'erreurs, pour la même raison. */
-setTimeout(()=>{ try{ compteDemarrer(); }catch(e){} }, 3000);
+/* ===== ON N'OUVRE PAS DE LIEN POUR QUELQU'UN QUI N'EN A PAS DEMANDÉ =====
+   Premier jet : je réveillais le compte au bout de trois secondes, pour tout
+   le monde. banc-essai/notifs.js l'a refusé, et il avait raison — un joueur
+   qui ne fait que du solo et n'a jamais ouvert le mode en ligne ne doit pas
+   voir son téléphone ouvrir un lien vers le serveur. Ce n'est pas une
+   question de coût, c'est une question de principe : on ne se connecte à
+   rien tant que personne ne l'a demandé.
+   Deux cas, et deux seulement, justifient le réveil au démarrage :
+     — l'adresse porte un retour de connexion (Google vient de renvoyer ici) ;
+     — ce téléphone a DÉJÀ une session rangée par Supabase, c'est-à-dire que
+       quelqu'un s'est connecté un jour et attend que sa progression suive.
+   Sinon on ne fait rien : ouvrir le Profil réveille le compte au moment où le
+   joueur s'y intéresse, et c'est bien assez tôt. */
+function retourDeConnexion(){
+  try{
+    return /[#&](access_token|refresh_token)=/.test(location.hash || "")
+        || /[?&]code=/.test(location.search || "");
+  }catch(e){ return false; }
+}
+function sessionRangee(){
+  try{
+    for(let i = 0; i < localStorage.length; i++){
+      const k = localStorage.key(i);
+      if(k && /^sb-.+-auth-token$/.test(k)) return true;
+    }
+  }catch(e){}
+  return false;
+}
+if(retourDeConnexion() || sessionRangee()){
+  setTimeout(()=>{ try{ compteDemarrer(); }catch(e){} }, 3000);
+}
 
 const _savedGame = loadSavedGame();
 render();
