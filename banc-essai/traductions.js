@@ -327,6 +327,12 @@ const PAS_DU_TEXTE = new Map([
   ['<button class="sem-flamme', 'un début de balise'],
   [' data-langue=',         'le nom d\'un attribut, coupé par une interpolation'],
   ['" data-langue="',       'idem, guillemets compris : la balise ouvrante n\'est pas fermée sur la ligne'],
+  /* LA REMONTÉE D'ERREUR PARLE AU SERVEUR, PAS AU JOUEUR. Ces deux étiquettes
+     sont préfixées au message d'une erreur avant de l'envoyer ; personne ne les
+     lit à l'écran. Les traduire rendrait les rapports illisibles d'une langue à
+     l'autre — on veut pouvoir les regrouper. */
+  ['promesse rejetée :',    'une étiquette de rapport d\'erreur, jamais affichée'],
+  ['ressource absente :',   'idem'],
 ]);
 
 const trainent = new Map();
