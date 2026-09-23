@@ -7384,7 +7384,7 @@ const CREATOR_KEY = "TAYLOR";   // code secret pour débloquer le badge Créateu
    remontée d'un téléphone ne vaut rien si on ne sait pas QUELLE version
    tournait. Elle doit rester égale au CACHE de sw.js — c'est ce que vérifie
    banc-essai/version.js, qui refuse de laisser publier les deux en désaccord. */
-const VERSION_JEU = "v280";
+const VERSION_JEU = "v281";
 
 /* ===================== QUAND ÇA CASSE CHEZ UN JOUEUR =====================
    « Si quelque chose casse chez cinq d'entre eux sur un modèle de téléphone
@@ -16147,7 +16147,13 @@ function appliquerSauvegarde(recue){
    tout le monde : rien de ce qui se synchronise ne change une règle, une
    question ou un barème. */
 const CLE_SONDE = "bt_compte_ok";
-const SONDE_VALIDE = 86400000;              // une journée
+/* DEUX DURÉES, ET PAS UNE. « La table existe » est vrai pour toujours : on le
+   garde une journée. « Elle n'existe pas encore » est vrai jusqu'à la minute
+   où Taylor lance le SQL — le garder une journée, c'est laisser des joueurs
+   sans carte de sauvegarde pendant vingt-quatre heures après l'ouverture, sans
+   aucune raison. Une demi-heure suffit, et ça ne coûte qu'une requête minuscule
+   par passage au Profil. */
+const SONDE_VALIDE = 86400000, SONDE_VALIDE_NON = 1800000;
 const compte = {
   dispo: null,        // la table existe-t-elle ? null = pas encore su
   session: null,
@@ -16173,7 +16179,8 @@ function compteCourriel(){ return compteConnecte() ? (compte.session.user.email 
 function sondeMemorisee(){
   try{
     const b = JSON.parse(localStorage.getItem(CLE_SONDE) || "null");
-    if(b && typeof b.ok === "boolean" && Date.now() - (+b.quand || 0) < SONDE_VALIDE) return b.ok;
+    const age = Date.now() - (+b.quand || 0);
+    if(b && typeof b.ok === "boolean" && age < (b.ok ? SONDE_VALIDE : SONDE_VALIDE_NON)) return b.ok;
   }catch(e){}
   return null;
 }
