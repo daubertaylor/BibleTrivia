@@ -2005,7 +2005,24 @@
      écriture de variable, et les cinq avatars suivent.
      « color:transparent » plutôt que de retirer l'initiale du HTML : l'initiale
      reste là, sous la photo, et reparaît d'elle-même si l'image manque. */
-  .avatar.a-photo{ background-image:var(--photo, none); background-size:cover; background-position:50% 50%; background-repeat:no-repeat; color:transparent; text-shadow:none; }
+  /* « background-origin:border-box » — ET C'EST LA RÈGLE « JAMAIS DE BORDURE
+     DE COULEUR » QUI SE JOUE LÀ. Par défaut, une image de fond est POSÉE dans
+     la boîte de remboursage mais PEINTE jusqu'au bord de la bordure : sous les
+     2 px de rebord, l'image ne va pas, et c'est la couleur du joueur qui
+     reparaît — un anneau de sa couleur autour de son visage.
+     MESURÉ, PARCE QUE ÇA NE SE VOIT PAS SUR N'IMPORTE QUELLE PHOTO. Sur une
+     photo dont les bords sont eux-mêmes colorés, l'anneau se confond avec elle
+     (je m'y suis laissé prendre une fois, en criant au défaut sur mes propres
+     images d'essai). On pose donc une photo entièrement BLANCHE sur une couleur
+     de joueur ROUGE VIF, et on compte les pixels franchement rouges le long du
+     rebord, à quatre rayons :
+         posée dans le remboursage   0/120  0/120  5/120  21/120
+         posée dans la bordure       0/120  0/120  0/120   0/120
+     Vingt et un pixels de rouge franc sur le dernier anneau : c'est bien une
+     bordure de couleur, et elle n'a sa place nulle part dans ce jeu.
+     banc-essai/photo.js refait cette mesure à chaque passage. */
+  .avatar.a-photo{ background-image:var(--ph, none); background-origin:border-box; background-clip:border-box;
+    background-size:cover; background-position:50% 50%; background-repeat:no-repeat; color:transparent; text-shadow:none; }
   /* LE BADGE « CRÉATEUR » A ÉTÉ RETIRÉ (v287, demande de Taylor). Il occupait
      ici une pastille dorée sur l'avatar et une gélule dorée sous le nom, toutes
      deux débloquées par un code secret. Sa place — le tap sur l'avatar du
@@ -7376,7 +7393,7 @@ const SUPABASE_ANON_KEY = "sb_publishable_FDJ_R0foC7uIeHmxVrj6rA_2NeIgW2a";
    remontée d'un téléphone ne vaut rien si on ne sait pas QUELLE version
    tournait. Elle doit rester égale au CACHE de sw.js — c'est ce que vérifie
    banc-essai/version.js, qui refuse de laisser publier les deux en désaccord. */
-const VERSION_JEU = "v287";
+const VERSION_JEU = "v288";
 
 /* ===================== QUAND ÇA CASSE CHEZ UN JOUEUR =====================
    « Si quelque chose casse chez cinq d'entre eux sur un modèle de téléphone
@@ -7530,6 +7547,10 @@ function loadProfile(){
   if(!p || typeof p !== "object"){ p = {}; }
   if(typeof p.name !== "string") p.name = "";
   if(typeof p.color !== "string") p.color = TEAM_COLORS[Math.floor(Math.random()*TEAM_COLORS.length)];
+  /* QUAND la photo a été choisie. L'image elle-même vit sous sa propre clé
+     (bt_photo) pour ne pas alourdir la lecture du profil ; seul son horodatage
+     est ici, parce que c'est lui qui départage deux téléphones. */
+  if(typeof p.photoMaj !== "number" || !isFinite(p.photoMaj)) p.photoMaj = 0;
   return p;
 }
 let profile = loadProfile();
@@ -7597,6 +7618,7 @@ const net = {
   seed:null, lengthKey:"normale", timerKey:"30", themeKey:"tout", timedOut:false,
   deck:[], idx:0, score:0, correct:0, selected:null, revealed:false, myDone:false, missed:[],
   joueurs:{},                     // id -> { id, name, color, score, idx, done, gone, vu }
+  photos:{},                      // id -> photo reçue par diffusion (voir diffuserPhoto)
   duelHb:null, joinTimer:null, subTimer:null,
   lastOppId:null, autoMatch:false, matchGuard:null,
   status:"", error:"",
@@ -7773,7 +7795,7 @@ function majSalleListe(){
       ligne = document.createElement("div");
       ligne.className = "rank-row salle-ligne" + (j.moi ? " moi" : "");
       ligne.dataset.jid = k;
-      ligne.innerHTML = avatarHtml(j.name, j.color, 2.1, j.moi)
+      ligne.innerHTML = avatarHtml(j.name, j.color, 2.1, j.moi ? true : j.id)
         + '<span class="rank-name">' + escapeHtml(j.name || T("Joueur")) + '</span>'
         + '<span class="salle-tag">' + tag + '</span>';
       /* Elle entre comme l'adversaire entrait à deux : une arrivée se voit. */
@@ -7844,7 +7866,7 @@ function updateRoomOpponent(){
   if(!slot){ render(); return; }
   const arrived = net.oppPresent && slot.dataset.filled !== "1";
   slot.innerHTML = (net.oppPresent
-      ? avatarHtml(net.opp.name, net.opp.color, 3)
+      ? avatarHtml(net.opp.name, net.opp.color, 3, net.opp.id)
       : `<span class="avatar waiting" style="width:3rem;height:3rem;font-size:1.25rem;">?</span>`)
     + `<div class="vs-name">${net.oppPresent?escapeHtml(net.opp.name):T("En attente…")}</div>`
     + `<div class="vs-tag${net.isHost?'':' is-host'}">${net.isHost?T("Adversaire"):T("Hôte")}</div>`;
@@ -8026,7 +8048,12 @@ function bindRoom(ch){
     /* Un joueur qui a quitté EN COURS DE PARTIE reste dans la table, marqué
        parti : son score doit rester au tableau jusqu'au résultat. */
     autresJoueurs().forEach(j=>{ if(!vus[j.id] && net.deck.length){ vus[j.id] = Object.assign({}, j, { gone:true }); } });
+    /* QUELQU'UN VIENT D'ARRIVER : il n'a pas ma photo, personne ne la lui a
+       envoyée. Je la renvoie — et lui fera de même pour la sienne. Personne ne
+       demande rien, tout le monde se présente. */
+    const nouveau = Object.keys(vus).some(id => !net.joueurs[id]);
     net.joueurs = vus;
+    if(nouveau) diffuserPhotoBientot();
     /* SALLE PLEINE. Personne n'arbitre les arrivées : chacun trie les
        identifiants et regarde sa propre place. Au-delà de la huitième, on
        ressort — même règle pour tous, donc tout le monde tombe d'accord sans
@@ -8073,6 +8100,10 @@ function bindRoom(ch){
       }
       else { reRenderIfOnline(); }
     } else { reRenderIfOnline(); }
+  });
+  ch.on("broadcast", { event:"photo" }, ({ payload })=>{
+    if(!payload || !payload.id) return;
+    recevoirPhoto(payload.id, payload.u);
   });
   ch.on("broadcast", { event:"start" }, ({ payload })=>{
     if(!payload) return;
@@ -8166,6 +8197,7 @@ function createRoom(code, host, _retry){
       /* On trace la présence sans rien attendre : si ch.track() traîne ou
          échoue par intermittence, l'écran est là depuis longtemps. */
       try { await ch.track(meMeta()); } catch(e){}
+      diffuserPhoto();            // je suis là, et voici mon visage
       reRenderIfOnline();
       if(!host){
         net.joinTimer = setTimeout(()=>{
@@ -8358,6 +8390,8 @@ function cleanupRoom(){
   if(net.subTimer){ clearTimeout(net.subTimer); net.subTimer=null; }
   if(net.room){ try { net.room.untrack(); net.supa.removeChannel(net.room); } catch(e){} net.room=null; }
   net.code=null; net.isHost=false; net.opp=null; net.oppPresent=false; net.oppGone=false; videJoueurs();
+  oublierPhotos();
+  clearTimeout(photoTimer); photoTimer = null;
   net.deck=[]; net.idx=0; net.myDone=false; net.status="";
   net.iWantReplay=false; net.oppWantReplay=false; net.replayDeclined=false;
 }
@@ -16104,7 +16138,10 @@ function sauvegardeVide(){
 function sauvegardeIci(){
   const d = loadDaily();
   return { v:1,
-    profil:  { name:profile.name || "", color:profile.color || "" },
+    /* LA PHOTO MONTE DANS LE COMPTE (v288, demande de Taylor). Seize
+       kilo-octets pour une photo réelle, réduite à 256 px — mesuré. */
+    profil:  { name:profile.name || "", color:profile.color || "",
+               photo: photoProfil(), photoMaj: nEntier(profile.photoMaj) },
     progres: loadProgress(),
     stats:   loadStats(),
     flamme:  { last:d.last, streak:d.streak, score:d.score, total:d.total,
@@ -16255,8 +16292,23 @@ function fusionner(ici, ailleurs){
 
   return { v:1,
     /* Ce qu'on vient de choisir sur ce téléphone l'emporte ; à défaut, l'autre. */
-    profil: { name:  a.profil.name  || b.profil.name  || "",
-              color: a.profil.color || b.profil.color || "" },
+    /* LA PHOTO, ELLE, SE DÉPARTAGE PAR LA DATE — et c'est la seule entorse à la
+       règle « on ne perd jamais rien ». Il le faut : sans elle, retirer sa
+       photo sur un téléphone la verrait revenir au premier échange avec
+       l'autre, indéfiniment. Retirer sa photo est un acte explicite, fait sur
+       son propre compte ; la date dit lequel des deux gestes est le dernier.
+       On prend donc le contenu du plus récent TEL QUEL, vide compris — pas de
+       « à défaut, l'autre », qui ressusciterait justement ce qu'on efface.
+       Rien d'autre dans la sauvegarde ne marche ainsi : les compteurs, les
+       ensembles et le carnet restent monotones (banc-essai/fusion.js). */
+    profil: (function(){
+      const ta = nEntier(a.profil.photoMaj), tb = nEntier(b.profil.photoMaj);
+      const recent = (tb > ta) ? b.profil : a.profil;
+      return { name:  a.profil.name  || b.profil.name  || "",
+               color: a.profil.color || b.profil.color || "",
+               photo: typeof recent.photo === "string" ? recent.photo : "",
+               photoMaj: Math.max(ta, tb) };
+    })(),
     progres: progMergeMax(progNormalize(a.progres), progNormalize(b.progres)),
     stats: { bestScore: Math.max(nEntier(a.stats.bestScore), nEntier(b.stats.bestScore)),
              bestPct:   Math.max(nEntier(a.stats.bestPct),   nEntier(b.stats.bestPct)),
@@ -16296,6 +16348,7 @@ function appliquerSauvegarde(recue){
   const sur = fusionner(sauvegardeIci(), recue);
   if(sur.profil.name)  profile.name  = sur.profil.name;
   if(sur.profil.color) profile.color = sur.profil.color;
+  appliquerPhoto(sur.profil.photo, sur.profil.photoMaj);
   saveProfile();
   saveProgress(sur.progres);
   saveStats(sur.stats);
@@ -17595,10 +17648,10 @@ function entreeMs(){ return msPli(); }
 /* Le filet : largement après la fin de l'entrée. */
 function apresEntree(){ return msPli() + 40; }
 /* ===================== ÉCRANS PROFIL & EN LIGNE ===================== */
-/* Le quatrième paramètre dit « cet avatar est celui du joueur de ce
-   téléphone » — c'est le seul qui puisse porter une photo. Il portait avant le
+/* Le quatrième paramètre dit DE QUI est cet avatar : true pour le joueur de ce
+   téléphone, l'identifiant du joueur pour les autres. Il portait avant le
    drapeau du badge Créateur, retiré en v287. */
-function avatarHtml(name, color, size, moi){
+function avatarHtml(name, color, size, qui){
   const initial = escapeHtml((name||"?").charAt(0).toUpperCase());
   const s = size || 2.6;
   /* --av : la taille de l'avatar, transmise à ce qui se pose dessus pour que ça
@@ -17618,8 +17671,15 @@ function avatarHtml(name, color, size, moi){
      haut-gauche de la photo en taille réelle dans un rond de 67 px. En ne
      posant QUE la couleur, la règle .avatar.a-photo reprend la main sur les
      trois autres, comme elle le doit. */
-  const ph = (moi && photoProfil()) ? " a-photo" : "";
-  return `<span class="avatar${ph}" style="--av:${L};width:${L};height:${L};background-color:${color};font-size:calc(${L} * 0.42);">${initial}</span>`;
+  /* « qui » dit DE QUI est cet avatar : true pour le joueur de ce téléphone,
+     l'identifiant d'un joueur du salon pour les autres. L'image ne voyage pas
+     dans le HTML : l'avatar ne porte qu'un renvoi vers la variable de la
+     racine où elle est posée une seule fois. */
+  const v = photoDeVar(qui);
+  const ph = v ? " a-photo" : "";
+  const pid = qui ? ` data-pid="${qui === true ? "moi" : escapeHtml(String(qui))}"` : "";
+  const img = v ? `--ph:var(${v});` : "";
+  return `<span class="avatar${ph}"${pid} style="--av:${L};width:${L};height:${L};background-color:${color};${img}font-size:calc(${L} * 0.42);">${initial}</span>`;
 }
 
 /* ===================== LA PHOTO DE PROFIL =====================
@@ -17657,6 +17717,54 @@ function photoProfil(){
 function majPhotoRacine(){
   const p = photoProfil();
   try{ document.documentElement.style.setProperty("--photo", p ? 'url("' + p + '")' : "none"); }catch(e){}
+}
+/* ===== LA PHOTO DES AUTRES JOUEURS =====
+   ELLE NE PASSE PAS PAR LA PRÉSENCE, et c'est le point à ne pas rater. La
+   présence est re-diffusée à CHAQUE track() — donc à chaque changement de
+   score pendant un duel. Y glisser seize kilo-octets, c'est renvoyer la photo
+   de tout le monde à chaque bonne réponse. On passe donc par une diffusion
+   ponctuelle, sur le même canal que « start », « hb » et « progress » : une
+   fois en arrivant, et une fois de plus quand quelqu'un arrive après nous —
+   c'est ainsi que le dernier venu reçoit les photos de ceux qui étaient là,
+   sans que personne n'ait à les demander.
+   CHAQUE PHOTO REÇUE DEVIENT UNE VARIABLE CSS sur la racine, comme la mienne.
+   L'avatar ne porte qu'un renvoi (« --ph:var(--ph3) »), une vingtaine de
+   caractères : on ne recopie jamais l'image dans le HTML, même avec huit
+   joueurs à l'écran. */
+const PHOTO_MAX = 80000;          // au-delà, ce n'est pas une photo de ce jeu
+let photoVarN = 0;
+const photoVars = Object.create(null);
+function photoDeVar(qui){
+  if(qui === true) return photoProfil() ? "--photo" : "";
+  if(typeof qui === "string" && qui && net.photos[qui]) return "--ph" + photoVars[qui];
+  return "";
+}
+function recevoirPhoto(id, url){
+  if(!id || id === myId) return;
+  const u = (typeof url === "string" && url.indexOf("data:image/") === 0 && url.length <= PHOTO_MAX) ? url : "";
+  net.photos[id] = u;
+  let n = photoVars[id]; if(!n) n = photoVars[id] = ++photoVarN;
+  try{ document.documentElement.style.setProperty("--ph" + n, u ? 'url("' + u + '")' : "none"); }catch(e){}
+  majAvatarsPhoto();
+}
+function oublierPhotos(){
+  Object.keys(photoVars).forEach(id=>{
+    try{ document.documentElement.style.removeProperty("--ph" + photoVars[id]); }catch(e){}
+    delete photoVars[id];
+  });
+  net.photos = {};
+}
+function diffuserPhoto(){
+  if(!net.room) return;
+  const u = photoProfil();
+  if(u && u.length > PHOTO_MAX) return;
+  try{ net.room.send({ type:"broadcast", event:"photo", payload:{ id:myId, u: u || "" } }); }catch(e){}
+}
+/* Plusieurs arrivées d'affilée ne font qu'un envoi. */
+let photoTimer = null;
+function diffuserPhotoBientot(){
+  clearTimeout(photoTimer);
+  photoTimer = setTimeout(()=>{ photoTimer = null; diffuserPhoto(); }, 250);
 }
 /* UN SEUL SÉLECTEUR DE FICHIER, CRÉÉ UNE FOIS. En recréer un à chaque tap
    laisserait derrière lui autant d'éléments détachés, et sur iOS un <input
@@ -17714,6 +17822,7 @@ async function poserPhoto(fichier){
     if(!url || url.length < 64) throw new Error("export");
     localStorage.setItem(CLE_PHOTO, url);
     photoCache = url;
+    profile.photoMaj = Date.now(); saveProfile();
   }catch(e){
     /* Un échec silencieux serait pire que pas de photo du tout : le joueur
        recommencerait sans savoir pourquoi. */
@@ -17723,21 +17832,48 @@ async function poserPhoto(fichier){
     try{ if(img && img.close) img.close(); }catch(e){}
   }
   majPhotoRacine(); majAvatarsPhoto();
+  diffuserPhoto();                                   // les joueurs du salon la voient
+  try{ synchroniser(); }catch(e){}                   // et le compte la garde
   return true;
 }
 function retirerPhoto(){
   try{ localStorage.removeItem(CLE_PHOTO); }catch(e){}
   photoCache = "";
+  /* LE RETRAIT S'HORODATE AUSSI, ET C'EST TOUT L'ENJEU. Sans date, l'autre
+     téléphone rendrait la photo au premier échange — on retirerait sa photo et
+     elle reviendrait toute seule. */
+  profile.photoMaj = Date.now(); saveProfile();
   majPhotoRacine(); majAvatarsPhoto();
+  diffuserPhoto();
+  try{ synchroniser(); }catch(e){}
+}
+/* La photo qui revient du compte. On n'écrit que si elle a changé : réécrire
+   seize kilo-octets dans le stockage local à chaque synchronisation pour rien
+   serait cher, et ferait clignoter les avatars. */
+function appliquerPhoto(url, maj){
+  const u = (typeof url === "string" && url.indexOf("data:image/") === 0 && url.length <= PHOTO_MAX) ? url : "";
+  if(u !== photoProfil()){
+    try{ u ? localStorage.setItem(CLE_PHOTO, u) : localStorage.removeItem(CLE_PHOTO); }catch(e){}
+    photoCache = u;
+    majPhotoRacine(); majAvatarsPhoto(); diffuserPhoto();
+  }
+  profile.photoMaj = Math.max(nEntier(profile.photoMaj), nEntier(maj));
 }
 /* ON NE REDESSINE PAS L'ÉCRAN. Le Profil porte un champ de texte : un render()
    lui volerait son contenu en cours de frappe et le clavier avec. On pose la
    classe là où il faut et on réécrit la seule ligne de boutons qui change. */
 function majAvatarsPhoto(){
-  const p = !!photoProfil();
+  /* ON NE NOMME PLUS LES ENDROITS. La première version listait six sélecteurs
+     à la main ; il en manquait forcément un, et il en manquerait un de plus au
+     prochain écran. Chaque avatar dit lui-même de qui il est (data-pid), et on
+     relit la question pour tous d'un coup. */
   try{
-    document.querySelectorAll("[data-avatar-preview] .avatar, .me-row .avatar, .hero-profile .avatar, .rank-row.moi .avatar, .vs-player .avatar, .dr-side .avatar")
-      .forEach(a => a.classList.toggle("a-photo", p));
+    document.querySelectorAll(".avatar[data-pid]").forEach(a => {
+      const qui = a.dataset.pid === "moi" ? true : a.dataset.pid;
+      const v = photoDeVar(qui);
+      a.classList.toggle("a-photo", !!v);
+      if(v) a.style.setProperty("--ph", "var(" + v + ")"); else a.style.removeProperty("--ph");
+    });
   }catch(e){}
   const l = document.getElementById("photoLiens");
   if(l) l.innerHTML = photoLiensHtml();
@@ -18008,7 +18144,7 @@ function renderOnlineRoom(){
     <div class="salle-liste">
       ${classement().sort((a,b)=> (a.moi?0:1)-(b.moi?0:1)).map(j=>`
         <div class="rank-row salle-ligne${j.moi?' moi':''}" data-jid="${escapeHtml(String(j.moi ? 'moi' : (j.id||j.name||'')))}">
-          ${avatarHtml(j.name, j.color, 2.1, j.moi)}
+          ${avatarHtml(j.name, j.color, 2.1, j.moi ? true : j.id)}
           <span class="rank-name">${escapeHtml(j.name||T("Joueur"))}</span>
           <span class="salle-tag">${j.moi ? (net.isHost?T("Toi · Hôte"):T("Toi")) : T("Prêt")}</span>
         </div>`).join("")}
@@ -18017,7 +18153,7 @@ function renderOnlineRoom(){
     <div class="vs-row">
       <div class="vs-player">${avatarHtml(profile.name, profile.color, AV_SALON, true)}<div class="vs-name">${escapeHtml(profile.name)}</div><div class="vs-tag${net.isHost?' is-host':''}">${net.isHost?T("Toi · Hôte"):T("Toi")}</div></div>
       <div class="vs-mid">VS</div>
-      <div class="vs-player${oppNew?' reveal-in':''}" id="oppSlot">${net.oppPresent?avatarHtml(net.opp.name, net.opp.color, AV_SALON):`<span class="avatar waiting" style="width:${AV_SALON};height:${AV_SALON};font-size:calc(${AV_SALON} * 0.42);">?</span>`}<div class="vs-name">${net.oppPresent?escapeHtml(net.opp.name):T("En attente…")}</div><div class="vs-tag${net.isHost?'':' is-host'}">${net.isHost?T("Adversaire"):T("Hôte")}</div></div>
+      <div class="vs-player${oppNew?' reveal-in':''}" id="oppSlot">${net.oppPresent?avatarHtml(net.opp.name, net.opp.color, AV_SALON, net.opp.id):`<span class="avatar waiting" style="width:${AV_SALON};height:${AV_SALON};font-size:calc(${AV_SALON} * 0.42);">?</span>`}<div class="vs-name">${net.oppPresent?escapeHtml(net.opp.name):T("En attente…")}</div><div class="vs-tag${net.isHost?'':' is-host'}">${net.isHost?T("Adversaire"):T("Hôte")}</div></div>
     </div>`}
     <div class="host-note">${net.isHost?Tf("Tu es l'hôte : règle la partie, puis lance {mot}.", {mot:motSalon}):Tf("L'hôte paramètre la partie puis lance {mot}.", {mot:motSalon})}</div>
     <div class="flex-sp"></div>
@@ -18203,7 +18339,7 @@ function renderOnlineEnd(){
         return `
         <div class="rank-row${j.moi?' moi':''}${j.gone?' gone':''}">
           <span class="rank-badge ${g}">${j.rg}</span>
-          ${avatarHtml(j.name, j.color, 1.55, j.moi)}
+          ${avatarHtml(j.name, j.color, 1.55, j.moi ? true : j.id)}
           <span class="rank-name">${escapeHtml(j.name||T("Joueur"))}${j.gone?" \u00b7 "+T("parti"):""}</span>
           <span class="rank-score">${j.score|0} pts</span>
         </div>`;
@@ -18212,7 +18348,7 @@ function renderOnlineEnd(){
     <div class="duel-result">
       <div class="dr-side ${(win||net.oppGone)?'winner':''}">${avatarHtml(profile.name,profile.color,3,true)}<div class="dr-name">${escapeHtml(profile.name)}</div><div class="dr-score" data-count-me>0</div></div>
       <div class="dr-vs">VS</div>
-      <div class="dr-side ${(!win&&!tie&&!net.oppGone)?'winner':''}">${net.opp?avatarHtml(net.opp.name,net.opp.color,3):`<span class="avatar waiting" style="width:3rem;height:3rem;font-size:1.25rem;">?</span>`}<div class="dr-name">${escapeHtml(net.opp?net.opp.name:T("Adversaire"))}</div><div class="dr-score" data-count-opp>0</div></div>
+      <div class="dr-side ${(!win&&!tie&&!net.oppGone)?'winner':''}">${net.opp?avatarHtml(net.opp.name,net.opp.color,3,net.opp.id):`<span class="avatar waiting" style="width:3rem;height:3rem;font-size:1.25rem;">?</span>`}<div class="dr-name">${escapeHtml(net.opp?net.opp.name:T("Adversaire"))}</div><div class="dr-score" data-count-opp>0</div></div>
     </div>`}
     ${net.missed && net.missed.length ? `<button class="btn-review" onclick="openMissedReview(net.missed)"><span class="ico">${ICONS.bookOpen}</span>${net.missed.length>1?Tf("Revoir mes {n} erreurs",{n:net.missed.length}):T("Revoir mon erreur")}</button>` : ""}
     <div class="end-bottom">
