@@ -36,6 +36,18 @@ URL="${1:-http://127.0.0.1:8099/index.html}"
 NODE=/opt/node22/bin/node
 SORTIE="$(mktemp -d /tmp/bancs-XXXX)"
 PAS_DES_BANCS="shim hub extraire-questions"
+# CHANTIERS : des bancs commencés dont la MESURE n'est pas encore fiable. Ils
+# ne gardent rien tant qu'ils se trompent, et un banc qui crie à tort finit
+# par être ignoré — c'est exactement ce qui est arrivé à lisible et fondu.
+# On les tient donc hors de la porte, nommément, jusqu'à ce qu'ils tiennent
+# debout. Les laisser rouges dans la batterie reviendrait à s'habituer au
+# rouge ; les supprimer reviendrait à perdre le travail.
+#   acces : l'audit d'accessibilité. Ses mesures de CONTRASTE reposent sur une
+#   photo de l'écran sans son texte, et huit écrans « bougent pendant la
+#   photo » — le relevé et l'image ne décrivent alors pas le même instant.
+#   Ses deux autres relevés, eux, sont déjà sûrs (ils ne photographient rien) :
+#   voir DETTE.md point 6.
+CHANTIERS="acces"
 
 if ! curl -s -o /dev/null --max-time 5 "$URL"; then
   echo "Le serveur ne répond pas sur $URL"
@@ -48,6 +60,7 @@ liste=()
 for f in "$RACINE"/banc-essai/*.js; do
   n="$(basename "$f" .js)"
   case " $PAS_DES_BANCS " in *" $n "*) continue;; esac
+  case " $CHANTIERS " in *" $n "*) continue;; esac
   liste+=("$f")
 done
 total=${#liste[@]}
@@ -55,6 +68,7 @@ total=${#liste[@]}
 prend_url(){ grep -q "process\.argv\[2\][^;]*http" "$1"; }
 avec=0; for f in "${liste[@]}"; do prend_url "$f" && avec=$((avec+1)); done
 echo "$total bancs — $avec reçoivent $URL, $((total-avec)) tournent sur leurs propres valeurs"
+[ -n "$CHANTIERS" ] && echo "  (hors batterie, chantier en cours :$CHANTIERS — voir DETTE.md)"
 
 # Tout est passé en argument : $1 node, $2 banc, $3 url, $4 dossier de sortie.
 printf '%s\n' "${liste[@]}" | xargs -P 2 -I{} bash -c '
