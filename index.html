@@ -490,7 +490,7 @@
      déjà disponible (--dep, relevé en JS avant qu'elle existe) : la course
      gagne toujours exactement la hauteur du clavier, écran court ou long. */
   html.kb #app::after{ content:""; position:absolute; top:calc(100% + var(--dep, 0px)); left:0; width:1px; height:var(--kbh, 0px); pointer-events:none; }
-  /* Une modale à champ (le code Créateur) est CENTRÉE dans la fenêtre — donc
+  /* Une modale à champ (le code d'une partie) est CENTRÉE dans la fenêtre — donc
      centrée derrière le clavier dès qu'il monte : le champ frôlait le bord
      (9px d'air mesurés) et le bouton « Valider » finissait 100px SOUS le
      clavier, hors d'atteinte. On ramène le voile à la hauteur réellement
@@ -1847,8 +1847,42 @@
   .chip.remplit::after, .len-chip.remplit::after{ animation:remplitIn var(--tr-onde) forwards; }
   /* Celle qu'on quitte a perdu sa classe d'état : c'est la classe passagère
      qui tient son rouge le temps qu'il se retire. */
+  /* ===== LA COURBE DU DÉPART, RÉGLÉE SUR UN CLIGNOTEMENT MESURÉ =====
+     « Ça fait un effet bizarre au remplissage, comme un clignotement. »
+     (Taylor, vidéo d'écran à 60 images/seconde.)
+     CE QUI SE PASSAIT. Dans une rangée de trois puces, UNE SEULE doit être
+     rouge. On peut donc mesurer le défaut en un seul nombre : la quantité
+     TOTALE de rouge sur la rangée, qui doit rester constante pendant le
+     passage. Relevé image par image sur sa vidéo, puis reproduit ici :
+
+         au repos                          100 %
+         pendant le passage, au pire       144 %  (sa vidéo, iPhone)
+                                           133 %  (ici, même mesure)
+
+     La rangée s'éclairait donc de moitié en plus pendant un quart de seconde,
+     puis revenait. C'est ça, le clignotement : pendant ~150 ms, DEUX puces
+     sont rouges en même temps.
+     POURQUOI. La puce qui arrive grandit ET s'opacifie sur une courbe qui
+     démarre vite ; celle qui part s'effaçait sur une courbe qui démarre LENT
+     (cubic-bezier(0.4,0,1,1) : 9 % effacés au premier quart). L'une était déjà
+     là que l'autre n'avait pas bougé.
+     CE QU'ON A CHANGÉ, ET COMMENT ON L'A CHOISI. La puce qui ARRIVE n'est pas
+     touchée : sa courbe a été réglée pour la lisibilité de son libellé (voir
+     plus haut, les dix-sept instants photographiés). On a donc cherché, pour
+     le DÉPART seul, la courbe qui tient la somme au plus près de 100 %. Neuf
+     candidates essayées, quatre passages chacune :
+
+         0.24s cubic-bezier(0.4,0,1,1)      pire 133 %   creux 100 %  (avant)
+         0.24s linear                       pire 120 %   creux  92 %
+         0.24s cubic-bezier(0.5,0,0.4,1)    pire 110 %   creux 100 %
+         0.24s cubic-bezier(0.33,1,0.68,1)  pire 100 %   creux  66 %  (trou noir)
+         0.24s cubic-bezier(0.45,0.05,0.35,1) pire 102 % creux  99 %  <-- retenue
+
+     Celle qui gagne n'est ni la plus lente ni la plus rapide : c'est celle qui
+     ÉPOUSE la montée de l'autre. Trop rapide et la rangée s'éteint à moitié
+     (creux à 66 %) — l'autre défaut, symétrique, tout aussi visible. */
   .chip.devide::after, .len-chip.devide::after{ transform:scale(1); opacity:1;
-    animation:remplitOut var(--onde-duree) cubic-bezier(0.4,0,1,1) forwards; }
+    animation:remplitOut var(--onde-duree) cubic-bezier(0.45,0.05,0.35,1) forwards; }
   /* LA TEINTE DE VERRE ARRIVE QUAND LE REMPLISSAGE A FINI, ET REPART TOUT DE
      SUITE. Sinon elle ferait, sous la couche, le fondu uniforme qu'on vient
      justement d'enlever — on le verrait dépasser aux quatre coins. En partant,
@@ -1909,8 +1943,8 @@
      ils s'y fondent. Les boutons pleins sont sortis de cette liste : sur un
      corail saturé le même blanc devenait le trait que Taylor voyait, et leur
      arête est désormais une ombre de leur propre couleur (--rebord-plein). */
-  /* Le badge « Créateur » sort de cette liste : c'est une pastille ambrée
-     saturée, elle se détache de la photo par sa couleur et son ombre. Son
+  /* (Le badge « Créateur » sortait de cette liste ; il a été retiré du jeu en
+     v287. La règle reste vraie pour les pastilles qui restent.) Son
      anneau clair, mesuré à 14 unités au-dessus de son fond, était le
      dernier contour blanc du jeu. */
   .avatar, .podium-avatar, .team-token, .scn-thumb, .end-medal{ --bord:var(--bord-plein); --levre:var(--levre-pleine); }
@@ -2033,11 +2067,16 @@
   /* L'avatar du Profil est un BOUTON : on le touche pour choisir sa photo.
      Il ne porte ni fond ni rebord propre — c'est l'avatar qu'on voit, pas le
      bouton. Aucune bordure de couleur, ici comme partout. */
-  .avatar-tap{ display:block; margin:0 auto; padding:0; border:0; background:none; box-shadow:none; -webkit-appearance:none; appearance:none; cursor:pointer; }
+  /* L'ARRONDI N'EST PAS DÉCORATIF ICI : c'est lui qui donne sa forme à l'onde
+     d'appui. Tout bouton du jeu peint son onde dans un ::before en
+     « border-radius:inherit » ; un bouton sans arrondi peint donc une onde
+     CARRÉE — sur un avatar rond, ça se voit. banc-essai/forme.js l'a dit du
+     premier coup : « profil avatar-tap 69x69 arrondi 0 px <-- ONDE CARRÉE ». */
+  .avatar-tap{ display:block; margin:0 auto; padding:0; border:0; border-radius:50%; background:none; box-shadow:none; -webkit-appearance:none; appearance:none; cursor:pointer; }
   /* Les deux mots sous le nom. 44 px de haut : c'est la plus petite cible qu'un
      doigt attrape sans viser (voir DETTE.md, point 6). */
   .photo-liens{ display:flex; align-items:center; justify-content:center; gap:0.2rem; margin-top:0.35rem; }
-  .photo-lien{ min-height:44px; padding:0 0.7rem; border:0; background:none; box-shadow:none; color:#fff; text-shadow:0 1px 10px rgba(0,0,0,0.55); font-size:0.82rem; font-weight:600; -webkit-appearance:none; appearance:none; cursor:pointer; }
+  .photo-lien{ min-height:44px; padding:0 0.7rem; border:0; border-radius:var(--r-full); background:none; box-shadow:none; color:#fff; text-shadow:0 1px 10px rgba(0,0,0,0.55); font-size:0.82rem; font-weight:600; -webkit-appearance:none; appearance:none; cursor:pointer; }
   .profile-card{ text-align:center; padding:1.1rem 1rem 0.35rem; margin-bottom:var(--e-3); }
   .profile-card .avatar{ margin:0 auto; }
   .profile-name{ font-family:'Poppins',sans-serif; font-weight:700; font-size:1.15rem; margin-top:0.65rem; color:#fff; text-shadow:0 1px 12px rgba(0,0,0,0.5); }
@@ -2899,8 +2938,8 @@
   /* Le sous-titre d'une carte d'accueil ne se replie JAMAIS : six cartes de
      hauteurs différentes ne sont plus une colonne. */
   .daily-card .dc-txt small{ font-size:0.8rem; color:var(--ink-soft); display:block; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
-  /* Même correctif que le badge Créateur : le voile de verre pâle (brun sur
-     beige clair) restait fade à côté du .dc-ico (dégradé or plein, à côté).
+  /* Même correctif que l'ancien badge Créateur (retiré en v287) : le voile de
+     verre pâle (brun sur beige clair) restait fade à côté du .dc-ico.
      Teinte dorée saturée + texte blanc -> même impact visuel, cohérent avec
      l'icône flamme repalettée juste au-dessus. */
   .daily-card .dc-streak{ display:inline-flex; align-items:center; gap:0.22rem; font-weight:800; font-size:0.9rem; font-variant-numeric:tabular-nums; color:#fff; text-shadow:0 1px 2px rgba(122,78,4,0.35); --glass-tint: rgb(240,163,26); border:0; border-radius:var(--r-full); padding:calc(0.24rem + 1px) calc(0.6rem + 1px); flex-shrink:0; box-shadow:0 2px 8px rgba(196,144,32,0.24); }
@@ -7393,7 +7432,7 @@ const SUPABASE_ANON_KEY = "sb_publishable_FDJ_R0foC7uIeHmxVrj6rA_2NeIgW2a";
    remontée d'un téléphone ne vaut rien si on ne sait pas QUELLE version
    tournait. Elle doit rester égale au CACHE de sw.js — c'est ce que vérifie
    banc-essai/version.js, qui refuse de laisser publier les deux en désaccord. */
-const VERSION_JEU = "v288";
+const VERSION_JEU = "v289";
 
 /* ===================== QUAND ÇA CASSE CHEZ UN JOUEUR =====================
    « Si quelque chose casse chez cinq d'entre eux sur un modèle de téléphone
@@ -7551,6 +7590,15 @@ function loadProfile(){
      (bt_photo) pour ne pas alourdir la lecture du profil ; seul son horodatage
      est ici, parce que c'est lui qui départage deux téléphones. */
   if(typeof p.photoMaj !== "number" || !isFinite(p.photoMaj)) p.photoMaj = 0;
+  /* LE BADGE CRÉATEUR N'EXISTE PLUS (v287), Y COMPRIS DANS LE STOCKAGE.
+     Plus une ligne du jeu ne lit « isCreator » — Taylor ne le voit donc plus
+     sur son profil dès la v287 en ligne. Mais le drapeau reste écrit dans le
+     profil enregistré de ceux qui l'avaient, et il y resterait pour toujours :
+     une donnée morte, qui ne veut plus rien dire, dans le stockage de quelqu'un
+     d'autre. On l'efface au premier chargement ; le prochain saveProfile()
+     l'écrit sans lui. Rien d'autre du profil n'est touché — ni le nom, ni la
+     couleur, ni la photo. */
+  if("isCreator" in p){ try{ delete p.isCreator; }catch(e){} }
   return p;
 }
 let profile = loadProfile();
@@ -10356,7 +10404,7 @@ try{
     if(!el || !el.getBoundingClientRect) return;
     const app = glassAppEl;
     if(!app) return;
-    /* Champ d'une modale flottante (code Créateur) : elle est posée sur la
+    /* Champ d'une modale flottante (code d'une partie) : elle est posée sur la
        fenêtre, pas dans #app. Faire défiler #app ne la déplacerait pas d'un
        pixel — ça ne ferait que glisser le décor derrière, pour rien (18px
        mesurés). C'est la règle CSS html.kb .modal-veil qui s'en occupe. */

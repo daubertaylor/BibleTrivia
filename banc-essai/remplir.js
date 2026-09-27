@@ -147,6 +147,51 @@ function lire(rel){
     console.log('\n  %s remplissage de %d ms à %d ms selon la famille — écart %d ms (toléré %d)',
       vert?'OK   ':'ECHEC', mn, mx, ecart, S_ECART);
   }
+  /* ===== LE CLIGNOTEMENT : LA SOMME DE ROUGE DE LA RANGÉE =====
+     « Ça fait un effet bizarre au remplissage, comme un clignotement. »
+     Dans une rangée de trois puces, UNE SEULE doit être rouge : la quantité
+     TOTALE de rouge sur la rangée doit donc rester constante pendant le
+     passage de l'une à l'autre. C'est la mesure qui tient le défaut en un seul
+     nombre, et c'est celle qu'on peut faire aussi bien sur une vidéo d'iPhone
+     que dans un navigateur — c'est comme ça que celui-ci a été trouvé :
+         sur sa vidéo, 60 images/s      pire somme 144 %
+         ici, avant correction                     133 %
+         ici, après                                102 %
+     Deux bornes, parce que le défaut a deux faces : trop de rouge (les deux
+     puces allumées ensemble) et pas assez (la rangée qui s'éteint à moitié
+     parce que la puce quittée part trop vite — mesuré à 66 % avec une courbe
+     trop rapide, tout aussi visible). */
+  console.log('\n  la rangée garde-t-elle sa quantité de rouge ?');
+  const ROUGE = `(i)=>new Promise(res=>{
+    const q=[...document.querySelectorAll('.chip[data-group="theme"]')];
+    const n=(s)=>(String(s).match(/[-\\d.]+/g)||[0,0,0]).map(Number);
+    const ech=(t)=>{ const m=n(t); return (t==='none'||m.length<4)?1:m[0]; };
+    const rougeur=(el)=>{ const cs=getComputedStyle(el), ap=getComputedStyle(el,'::after');
+      const base=n(cs.getPropertyValue('--glass-tint')||'0,0,0'), lay=n(ap.backgroundColor);
+      const s=Math.max(0,Math.min(1,ech(ap.transform))); const couv=Math.min(1,s*s);
+      const o=(parseFloat(ap.opacity)||0)*couv;
+      const c=[0,1,2].map(k=>lay[k]*o+base[k]*(1-o));
+      return c[0]-(c[1]+c[2])/2; };
+    const rel=[]; const t0=performance.now();
+    const tic=()=>{ rel.push(q.map(rougeur).reduce((a,x)=>a+x,0));
+      if(performance.now()-t0<800) requestAnimationFrame(tic); else res(rel); };
+    requestAnimationFrame(tic);
+    setTimeout(()=>q[i].click(), 60);
+  })`;
+  for (const [nom, depart, cible] of [['Tout -> Ancien', 0, 1], ['Ancien -> Tout', 1, 0], ['Tout -> Nouveau', 0, 2]]){
+    await prepa();
+    await p.evaluate((d)=>{ const q=document.querySelectorAll('.chip[data-group="theme"]'); q[d].click(); }, depart);
+    await p.waitForTimeout(700);
+    const serie = await p.evaluate(eval('(' + ROUGE + ')'), cible);
+    const repos = serie[0] || 1;
+    const pc = serie.map(x => 100 * x / repos);
+    const haut = Math.max(...pc), bas = Math.min(...pc);
+    const vert = haut <= 112 && bas >= 88;
+    if(!vert) ko++;
+    console.log('    %s %s  de %s %% à %s %% du repos', vert ? 'OK   ' : 'ECHEC',
+      nom.padEnd(18), bas.toFixed(0).padStart(4), haut.toFixed(0).padStart(4));
+  }
+
   /* ===== L'AUTRE IDIOME : LA LISTE À COCHE ===== */
   await bibles();
   const lignes = await p.evaluate(()=> new Promise((res)=>{
