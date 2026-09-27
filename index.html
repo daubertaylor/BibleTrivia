@@ -19044,6 +19044,21 @@ function glassTrack(){ glassRelayout(); armGlass(950); try{ queueGlassSync(); }c
    La transition tourne alors en pur GPU (transform/opacité), sans le moindre
    recalcul par image -> fluide même sur Android. À la fin, on reprend. */
 function glassFreezeForTransition(){
+  /* ===== J'AI ESSAYÉ DE MESURER « OÙ L'ÉCRAN VA » : C'ÉTAIT PIRE =====
+     Taylor : « le décor se charge après l'animation, ça doit être direct en
+     même temps. » J'ai cru que la cause était ici — qu'on posait le verre
+     pendant que l'animation d'entrée tenait encore l'écran décalé, donc sur
+     une position fausse, gelée ensuite pour toute la durée du mouvement.
+     J'ai donc suspendu l'animation le temps de lire la mise en page finale.
+     MESURÉ, COUCHE PAR COUCHE, SUIVIE PAR IDENTITÉ :
+         sans ma correction   19 couches sur 19 à leur place dès 55 ms
+         avec ma correction   12 sur 19 à 43 ms, et 19 sur 19 seulement à 684 ms
+     Le remède était le défaut. Je l'ai retiré, et je laisse la trace : ce
+     chemin-là a été essayé et mesuré, il ne vaut pas la peine d'être repris.
+     (Mon premier relevé disait « 19 couches mal placées » dans les deux cas :
+     il comparait deux listes de tailles différentes — 28 couches pendant la
+     transition, 19 au repos — par INDEX. Il ne comparait donc pas les mêmes
+     couches. C'est en le corrigeant que le vrai résultat est apparu.) */
   glassRelayout();
   try{ queueGlassSync(true); }catch(e){}
   /* Le gel doit couvrir l'animation ENTIÈRE, quelle que soit sa durée : ces
