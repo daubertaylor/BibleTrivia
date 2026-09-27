@@ -5409,7 +5409,7 @@ function openLangues(){
   veil.classList.add("voile-second");
   attachSheetDrag(veil.querySelector(".settings-sheet"), closeLangues);
   veil.addEventListener("click", (e)=>{ if(e.target===veil){ closeLangues(); } });
-  glassTrack(680);
+  glassTrack();
   reculJusqu = performance.now() + msPli() + 200;
 }
 function closeLangues(){
@@ -7384,7 +7384,7 @@ const CREATOR_KEY = "TAYLOR";   // code secret pour débloquer le badge Créateu
    remontée d'un téléphone ne vaut rien si on ne sait pas QUELLE version
    tournait. Elle doit rester égale au CACHE de sw.js — c'est ce que vérifie
    banc-essai/version.js, qui refuse de laisser publier les deux en désaccord. */
-const VERSION_JEU = "v284";
+const VERSION_JEU = "v285";
 
 /* ===================== QUAND ÇA CASSE CHEZ UN JOUEUR =====================
    « Si quelque chose casse chez cinq d'entre eux sur un modèle de téléphone
@@ -8431,7 +8431,7 @@ function showModal(opts){
       </div>
     </div>`;
   document.body.appendChild(veil);
-  glassTrack(680);
+  glassTrack();
   const input = veil.querySelector("#modalInput");
   if(input){ setTimeout(()=>{ try{ input.focus(); }catch(e){} }, 80); }
   const cancelBtn = veil.querySelector("#modalCancel");
@@ -8893,7 +8893,7 @@ function openBibles(){
      coup, et mal calé. Ces deux lignes sont celles des Réglages, du guide et
      du carnet : le verre est là dès la première image, et reste solidaire de
      la feuille pendant qu'elle monte. */
-  glassTrack(680);
+  glassTrack();
   /* LE RECUL EST UN TRANSFORM : il ne déplace AUCUNE mise en page. Inutile de
      demander au moteur de relire toutes les positions (glassSuivre) — il n'y a
      rien de neuf à lire, et c'était trente parcours d'offsetParent par image
@@ -9770,7 +9770,7 @@ function openMissedReview(list){
   document.body.appendChild(veil);
   monterLaFeuille(veil);
   majVoilesErreurs();
-  glassTrack(680);
+  glassTrack();
   attachSheetDrag(veil.querySelector(".settings-sheet"), closeMissedReview);
 }
 /* LE FONDU DE LA LISTE DES ERREURS, ET LE RANG DE LA CARTE EN TÊTE.
@@ -9948,7 +9948,7 @@ function openSettings(){
     </div>`;
   document.body.appendChild(veil);
   monterLaFeuille(veil);
-  glassTrack(680);
+  glassTrack();
   attachSheetDrag(veil.querySelector(".settings-sheet"), closeSettings);
   veil.addEventListener("click", (e)=>{ if(e.target===veil){ closeSettings(); } });
 }
@@ -14798,7 +14798,7 @@ function openAchInfo(id){
       <button class="modal-btn ok" onclick="closeModal()">${T("Fermer")}</button>
     </div>`;
   document.body.appendChild(veil);
-  try{ glassTrack(680); }catch(e){}
+  try{ glassTrack(); }catch(e){}
   veil.addEventListener("click", (e)=>{ if(e.target===veil) closeModal(); });
 }
 /* Testaments repliables : pliés par défaut (fini le pavé), on déplie au tap. */
@@ -15509,7 +15509,7 @@ function ouvrirFlamme(){
      sa flamme sur juillet et doit défiler pour se voir. */
   try{ const l = veil.querySelector(".flam-list"); if(l) l.scrollTop = l.scrollHeight; }catch(e){}
   monterLaFeuille(veil);
-  glassTrack(680);
+  glassTrack();
   attachSheetDrag(veil.querySelector(".settings-sheet"), closeFlamme);
   veil.addEventListener("click", (e)=>{ if(e.target===veil){ closeFlamme(); } });
 }
@@ -18621,7 +18621,29 @@ function queueGlassXF(){
      feuille du dessous met un pli ENTIER à revenir : mesuré, 5,7 px de
      glissade sur la fin du retour quand on ne regardait que le voile. La
      fenêtre de recul, elle, couvre tout le mouvement. */
-  if(now < reculJusqu || document.getElementById("biblesVeil")){
+  /* ON NE NOMME PLUS UNE FEUILLE EN PARTICULIER. Cette ligne a cherché
+     « biblesVeil », et elle seule. Le catalogue des LANGUES fait pourtant
+     reculer la feuille des Réglages exactement de la même façon : la fenêtre
+     de compensation se refermait donc au bout de msPli()+200 et le contre-zoom
+     du verre disparaissait d'un coup, feuille toujours en retrait.
+     Mesuré (banc-essai/superpose.js) :
+         +600 ms   feuille 0,935   verre scale(1,06952)     juste
+         +780 ms   feuille 0,935   verre plus d'échelle     le décor saute
+     Un saut de 6,5 % sur le paysage, presque une seconde après le geste,
+     alors que plus rien ne bouge à l'écran. C'est le défaut que Taylor a
+     montré en capture, la feuille Langue posée sur les Réglages.
+     On demande donc ce qu'on veut vraiment savoir : « une feuille est-elle en
+     retrait ? ». La classe ne ment que pendant le RETOUR (retirée dès la
+     première ligne de closeLangues / closeBibles) — et tout ce retour est
+     couvert par reculJusqu, testé juste avant.
+     LE COÛT, MESURÉ, PARCE QUE CE BLOC EN FAIT TOUT UN PLAT PLUS HAUT :
+     getElementById 0,044 µs par appel, querySelector 2,1 µs — deux
+     microsecondes sur une image de 16 ms, soit un huit-millième du budget,
+     et six fois plus au bridage x6 : toujours rien. On garde la recherche
+     dans le DOM plutôt qu'un booléen tenu à la main, justement parce que ce
+     défaut-ci venait d'un fait tenu à part (le nom « biblesVeil ») qui avait
+     fini par ne plus correspondre à la réalité. */
+  if(now < reculJusqu || document.querySelector(".settings-sheet.feuille-recule")){
     if(now < reculJusqu || reculCacheGen !== glassGen){
       reculCache = null;
       const fs = document.querySelectorAll(".sheet-veil .settings-sheet");
