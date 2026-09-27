@@ -7384,7 +7384,7 @@ const CREATOR_KEY = "TAYLOR";   // code secret pour débloquer le badge Créateu
    remontée d'un téléphone ne vaut rien si on ne sait pas QUELLE version
    tournait. Elle doit rester égale au CACHE de sw.js — c'est ce que vérifie
    banc-essai/version.js, qui refuse de laisser publier les deux en désaccord. */
-const VERSION_JEU = "v282";
+const VERSION_JEU = "v283";
 
 /* ===================== QUAND ÇA CASSE CHEZ UN JOUEUR =====================
    « Si quelque chose casse chez cinq d'entre eux sur un modèle de téléphone
@@ -8759,7 +8759,34 @@ function monterLaFeuille(veil){
        glissade avec la vitre. On la réveille au moment exact où la feuille se
        met en marche, pas à son insertion — le temps d'attente aurait grignoté
        la réserve. */
-    try{ armGlass(msPli() + 300); }catch(e){}
+    /* ===== ARMER LE MOTEUR NE SUFFIT PAS : IL FAUT LUI DIRE DE RELIRE =====
+       Le commentaire ci-dessus promet qu'on relit « la position réelle de la
+       feuille À CHAQUE IMAGE ». armGlass() ne fait pas ça : il garde la boucle
+       ÉVEILLÉE, mais le moteur continue de se fier à son CACHE de positions,
+       qu'il ne relit que lorsqu'on l'invalide. C'est glassSuivre() qui demande
+       la relecture par image — et il était appelé pour le repli d'une carte et
+       l'ajout d'un joueur, mais PAS ici, c'est-à-dire sur aucune des cinq
+       feuilles du jeu, qui montent toutes par cette fonction.
+
+       CE QUE J'AI MESURÉ, ET CE QUE JE N'AI PAS PU MESURER. Taylor décrit un
+       décor qui « se charge après l'animation des réglages ». En sans-tête, la
+       feuille des Réglages garde son décor cloué à MOINS D'UN PIXEL pendant
+       toute la montée — avec ou sans cet appel, rigoureusement pareil. Je n'ai
+       donc pas reproduit le défaut, et cette ligne ne corrige rien de mesuré.
+       La note d'à côté dit pourquoi, et elle avait déjà buté dessus : « le
+       compositeur, lui, ne ralentit pas ». Freiner le processeur n'y change
+       rien — l'animation arrive toujours à l'heure en sans-tête, donc le cache
+       n'est jamais en retard, donc le défaut ne peut pas apparaître.
+
+       CE QUE ÇA RETIRE : la SUPPOSITION que le cache soit à jour pendant que
+       la vitre bouge. Sur un vrai téléphone chargé, cette supposition est
+       exactement celle qui tombe.
+       CE QUE ÇA COÛTE : rien de mesurable. Sur un processeur six fois plus
+       lent, ouverture des Réglages, soixante-dix images :
+           sans   médiane 16,8 ms   pire 100,9 ms   1 image au-dessus de 34 ms
+           avec   médiane 16,7 ms   pire 106,2 ms   1 image au-dessus de 34 ms
+       Quatre surfaces relues pendant huit dixièmes de seconde, ça ne se voit
+       nulle part. */
     f.classList.add("monte");
     /* ===== ET UN DERNIER RECALAGE À LA VRAIE FIN DU MOUVEMENT =====
        Le moteur est armé pour une DURÉE DEVINÉE (la montée plus 300 ms). Tant
