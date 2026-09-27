@@ -5409,7 +5409,7 @@ function openLangues(){
   veil.classList.add("voile-second");
   attachSheetDrag(veil.querySelector(".settings-sheet"), closeLangues);
   veil.addEventListener("click", (e)=>{ if(e.target===veil){ closeLangues(); } });
-  glassTrack(680);
+  glassTrack();
   reculJusqu = performance.now() + msPli() + 200;
 }
 function closeLangues(){
@@ -7384,7 +7384,7 @@ const CREATOR_KEY = "TAYLOR";   // code secret pour débloquer le badge Créateu
    remontée d'un téléphone ne vaut rien si on ne sait pas QUELLE version
    tournait. Elle doit rester égale au CACHE de sw.js — c'est ce que vérifie
    banc-essai/version.js, qui refuse de laisser publier les deux en désaccord. */
-const VERSION_JEU = "v282";
+const VERSION_JEU = "v285";
 
 /* ===================== QUAND ÇA CASSE CHEZ UN JOUEUR =====================
    « Si quelque chose casse chez cinq d'entre eux sur un modèle de téléphone
@@ -8431,7 +8431,7 @@ function showModal(opts){
       </div>
     </div>`;
   document.body.appendChild(veil);
-  glassTrack(680);
+  glassTrack();
   const input = veil.querySelector("#modalInput");
   if(input){ setTimeout(()=>{ try{ input.focus(); }catch(e){} }, 80); }
   const cancelBtn = veil.querySelector("#modalCancel");
@@ -8732,16 +8732,49 @@ function sonderOuverture(f){
       + "REDESCENTE max +" + bas.toFixed(2) + " px" + (bas > 0.3 ? "  @" + quandBas + " ms" : "") + "\n"
       + "BOUGE APRÈS LA FIN " + apres.toFixed(2) + " px" + (apres > 0.3 ? "  @" + quandApres + " ms" : "") + "\n"
       + "décor ±" + dec.toFixed(2) + " px" + (dec > 0.3 ? " @" + quandDec + " ms" : "")
-      + "   départ " + (debut < 0 ? "?" : debut + " ms") + "   " + l.length + " images";
+      + "   départ " + (debut < 0 ? "?" : debut + " ms") + "   " + l.length + " images"
+      + "\n" + (function(){
+          if(!ld.length) return "DESSOUS : aucune feuille sous celle-ci";
+          const ref = ld[ld.length - 1][1];
+          let d = 0, q = 0;
+          for(const e of ld){ const w = Math.abs(e[1] - ref); if(w > d){ d = w; q = e[0]; } }
+          return "DESSOUS décor ±" + d.toFixed(2) + " px" + (d > 0.3 ? " @" + q + " ms" : "")
+               + "   " + ld.length + " images";
+        })();
     box.addEventListener("click", ()=>{ try{ box.remove(); }catch(e){} });
     document.body.appendChild(box);
   };
+  /* ===== ET LA FEUILLE DU DESSOUS, CELLE QUI RECULE =====
+     « Lorsque je suis dans les réglages et que j'ouvre une page qui se
+     superpose, le décor derrière se décale d'un coup. » C'est un geste
+     DIFFÉRENT de l'ouverture d'une feuille sur l'écran nu : la feuille déjà
+     ouverte passe en second plan (feuille-recule, scale 0.935 + 10 px en
+     520 ms), et le décor vu à travers ELLE doit rester cloué pendant tout ce
+     recul. La sonde ne regardait que la feuille qui ARRIVE ; elle regarde
+     maintenant les deux. En sans-tête je mesure 0,9 px de dérive, processeur
+     normal comme six fois freiné — autrement dit rien. Si le téléphone, lui,
+     en annonce davantage, on saura enfin où regarder. */
+  const dessous = (function(){
+    try{
+      const veils = [...document.querySelectorAll(".sheet-veil")];
+      for(let i = veils.length - 1; i >= 0; i--){
+        const autre = veils[i].querySelector(".settings-sheet");
+        if(autre && autre !== f) return autre;
+      }
+    }catch(e){}
+    return null;
+  })();
+  const ld = [];
   const tic = ()=>{
     const t = performance.now() - t0;
     if(f.isConnected){
       const b = f.getBoundingClientRect();
       const gs = f.querySelector(":scope > .gs");
       l.push([Math.round(t), b.top, b.height, gs ? gs.getBoundingClientRect().top : null]);
+    }
+    if(dessous && dessous.isConnected){
+      const g2 = dessous.querySelector(":scope > .gs");
+      if(g2) ld.push([Math.round(t), g2.getBoundingClientRect().top]);
     }
     if(t < 1600) requestAnimationFrame(tic); else montrer();
   };
@@ -8759,7 +8792,34 @@ function monterLaFeuille(veil){
        glissade avec la vitre. On la réveille au moment exact où la feuille se
        met en marche, pas à son insertion — le temps d'attente aurait grignoté
        la réserve. */
-    try{ armGlass(msPli() + 300); }catch(e){}
+    /* ===== ARMER LE MOTEUR NE SUFFIT PAS : IL FAUT LUI DIRE DE RELIRE =====
+       Le commentaire ci-dessus promet qu'on relit « la position réelle de la
+       feuille À CHAQUE IMAGE ». armGlass() ne fait pas ça : il garde la boucle
+       ÉVEILLÉE, mais le moteur continue de se fier à son CACHE de positions,
+       qu'il ne relit que lorsqu'on l'invalide. C'est glassSuivre() qui demande
+       la relecture par image — et il était appelé pour le repli d'une carte et
+       l'ajout d'un joueur, mais PAS ici, c'est-à-dire sur aucune des cinq
+       feuilles du jeu, qui montent toutes par cette fonction.
+
+       CE QUE J'AI MESURÉ, ET CE QUE JE N'AI PAS PU MESURER. Taylor décrit un
+       décor qui « se charge après l'animation des réglages ». En sans-tête, la
+       feuille des Réglages garde son décor cloué à MOINS D'UN PIXEL pendant
+       toute la montée — avec ou sans cet appel, rigoureusement pareil. Je n'ai
+       donc pas reproduit le défaut, et cette ligne ne corrige rien de mesuré.
+       La note d'à côté dit pourquoi, et elle avait déjà buté dessus : « le
+       compositeur, lui, ne ralentit pas ». Freiner le processeur n'y change
+       rien — l'animation arrive toujours à l'heure en sans-tête, donc le cache
+       n'est jamais en retard, donc le défaut ne peut pas apparaître.
+
+       CE QUE ÇA RETIRE : la SUPPOSITION que le cache soit à jour pendant que
+       la vitre bouge. Sur un vrai téléphone chargé, cette supposition est
+       exactement celle qui tombe.
+       CE QUE ÇA COÛTE : rien de mesurable. Sur un processeur six fois plus
+       lent, ouverture des Réglages, soixante-dix images :
+           sans   médiane 16,8 ms   pire 100,9 ms   1 image au-dessus de 34 ms
+           avec   médiane 16,7 ms   pire 106,2 ms   1 image au-dessus de 34 ms
+       Quatre surfaces relues pendant huit dixièmes de seconde, ça ne se voit
+       nulle part. */
     f.classList.add("monte");
     /* ===== ET UN DERNIER RECALAGE À LA VRAIE FIN DU MOUVEMENT =====
        Le moteur est armé pour une DURÉE DEVINÉE (la montée plus 300 ms). Tant
@@ -8833,7 +8893,7 @@ function openBibles(){
      coup, et mal calé. Ces deux lignes sont celles des Réglages, du guide et
      du carnet : le verre est là dès la première image, et reste solidaire de
      la feuille pendant qu'elle monte. */
-  glassTrack(680);
+  glassTrack();
   /* LE RECUL EST UN TRANSFORM : il ne déplace AUCUNE mise en page. Inutile de
      demander au moteur de relire toutes les positions (glassSuivre) — il n'y a
      rien de neuf à lire, et c'était trente parcours d'offsetParent par image
@@ -9710,7 +9770,7 @@ function openMissedReview(list){
   document.body.appendChild(veil);
   monterLaFeuille(veil);
   majVoilesErreurs();
-  glassTrack(680);
+  glassTrack();
   attachSheetDrag(veil.querySelector(".settings-sheet"), closeMissedReview);
 }
 /* LE FONDU DE LA LISTE DES ERREURS, ET LE RANG DE LA CARTE EN TÊTE.
@@ -9888,7 +9948,7 @@ function openSettings(){
     </div>`;
   document.body.appendChild(veil);
   monterLaFeuille(veil);
-  glassTrack(680);
+  glassTrack();
   attachSheetDrag(veil.querySelector(".settings-sheet"), closeSettings);
   veil.addEventListener("click", (e)=>{ if(e.target===veil){ closeSettings(); } });
 }
@@ -14738,7 +14798,7 @@ function openAchInfo(id){
       <button class="modal-btn ok" onclick="closeModal()">${T("Fermer")}</button>
     </div>`;
   document.body.appendChild(veil);
-  try{ glassTrack(680); }catch(e){}
+  try{ glassTrack(); }catch(e){}
   veil.addEventListener("click", (e)=>{ if(e.target===veil) closeModal(); });
 }
 /* Testaments repliables : pliés par défaut (fini le pavé), on déplie au tap. */
@@ -15449,7 +15509,7 @@ function ouvrirFlamme(){
      sa flamme sur juillet et doit défiler pour se voir. */
   try{ const l = veil.querySelector(".flam-list"); if(l) l.scrollTop = l.scrollHeight; }catch(e){}
   monterLaFeuille(veil);
-  glassTrack(680);
+  glassTrack();
   attachSheetDrag(veil.querySelector(".settings-sheet"), closeFlamme);
   veil.addEventListener("click", (e)=>{ if(e.target===veil){ closeFlamme(); } });
 }
@@ -18561,7 +18621,29 @@ function queueGlassXF(){
      feuille du dessous met un pli ENTIER à revenir : mesuré, 5,7 px de
      glissade sur la fin du retour quand on ne regardait que le voile. La
      fenêtre de recul, elle, couvre tout le mouvement. */
-  if(now < reculJusqu || document.getElementById("biblesVeil")){
+  /* ON NE NOMME PLUS UNE FEUILLE EN PARTICULIER. Cette ligne a cherché
+     « biblesVeil », et elle seule. Le catalogue des LANGUES fait pourtant
+     reculer la feuille des Réglages exactement de la même façon : la fenêtre
+     de compensation se refermait donc au bout de msPli()+200 et le contre-zoom
+     du verre disparaissait d'un coup, feuille toujours en retrait.
+     Mesuré (banc-essai/superpose.js) :
+         +600 ms   feuille 0,935   verre scale(1,06952)     juste
+         +780 ms   feuille 0,935   verre plus d'échelle     le décor saute
+     Un saut de 6,5 % sur le paysage, presque une seconde après le geste,
+     alors que plus rien ne bouge à l'écran. C'est le défaut que Taylor a
+     montré en capture, la feuille Langue posée sur les Réglages.
+     On demande donc ce qu'on veut vraiment savoir : « une feuille est-elle en
+     retrait ? ». La classe ne ment que pendant le RETOUR (retirée dès la
+     première ligne de closeLangues / closeBibles) — et tout ce retour est
+     couvert par reculJusqu, testé juste avant.
+     LE COÛT, MESURÉ, PARCE QUE CE BLOC EN FAIT TOUT UN PLAT PLUS HAUT :
+     getElementById 0,044 µs par appel, querySelector 2,1 µs — deux
+     microsecondes sur une image de 16 ms, soit un huit-millième du budget,
+     et six fois plus au bridage x6 : toujours rien. On garde la recherche
+     dans le DOM plutôt qu'un booléen tenu à la main, justement parce que ce
+     défaut-ci venait d'un fait tenu à part (le nom « biblesVeil ») qui avait
+     fini par ne plus correspondre à la réalité. */
+  if(now < reculJusqu || document.querySelector(".settings-sheet.feuille-recule")){
     if(now < reculJusqu || reculCacheGen !== glassGen){
       reculCache = null;
       const fs = document.querySelectorAll(".sheet-veil .settings-sheet");
@@ -19044,6 +19126,21 @@ function glassTrack(){ glassRelayout(); armGlass(950); try{ queueGlassSync(); }c
    La transition tourne alors en pur GPU (transform/opacité), sans le moindre
    recalcul par image -> fluide même sur Android. À la fin, on reprend. */
 function glassFreezeForTransition(){
+  /* ===== J'AI ESSAYÉ DE MESURER « OÙ L'ÉCRAN VA » : C'ÉTAIT PIRE =====
+     Taylor : « le décor se charge après l'animation, ça doit être direct en
+     même temps. » J'ai cru que la cause était ici — qu'on posait le verre
+     pendant que l'animation d'entrée tenait encore l'écran décalé, donc sur
+     une position fausse, gelée ensuite pour toute la durée du mouvement.
+     J'ai donc suspendu l'animation le temps de lire la mise en page finale.
+     MESURÉ, COUCHE PAR COUCHE, SUIVIE PAR IDENTITÉ :
+         sans ma correction   19 couches sur 19 à leur place dès 55 ms
+         avec ma correction   12 sur 19 à 43 ms, et 19 sur 19 seulement à 684 ms
+     Le remède était le défaut. Je l'ai retiré, et je laisse la trace : ce
+     chemin-là a été essayé et mesuré, il ne vaut pas la peine d'être repris.
+     (Mon premier relevé disait « 19 couches mal placées » dans les deux cas :
+     il comparait deux listes de tailles différentes — 28 couches pendant la
+     transition, 19 au repos — par INDEX. Il ne comparait donc pas les mêmes
+     couches. C'est en le corrigeant que le vrai résultat est apparu.) */
   glassRelayout();
   try{ queueGlassSync(true); }catch(e){}
   /* Le gel doit couvrir l'animation ENTIÈRE, quelle que soit sa durée : ces
