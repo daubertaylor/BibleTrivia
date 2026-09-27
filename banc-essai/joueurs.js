@@ -51,15 +51,20 @@ const S_CHEVAU = 1.0;      // px : deux lignes qui se marchent dessus
    du mesuré. ON JUGE SUR LA MÉDIANE DE CINQ TOUCHERS, pas sur le pire : avec
    deux bancs en parallèle, un toucher isolé peut doubler parce qu'un autre
    navigateur démarre au même instant — mesuré 35,7 ms une fois sur neuf, sur
-   une médiane de 20. Le pire est affiché quand même, pour qu'on le voie. */
+   une médiane de 20. Le pire est affiché quand même, pour qu'on le voie.
    CE QUE CES DEUX SEUILS SONT, EXACTEMENT : des garde-fous contre une
    RÉGRESSION, pas la preuve du gain. La médiane bridée est passée de 23-33 à
-   23-25 ms selon l'écran : le gain se voit surtout sur le PIRE toucher (47 ->
-   27 ms), et un seuil calé au ras de la médiane serait rouge un jour sur trois
-   pour rien. Ils sont donc posés à environ 40 % au-dessus du mesuré : ils
-   attrapent un doublement, ils ne prétendent pas trancher un dixième. */
-const S_FIL      =  6.0;   // ms, processeur normal (médiane de cinq touchers)
-const S_FIL_LENT = 34.0;   // ms, processeur bridé x6 (médiane de cinq touchers)
+   18-25 ms selon l'écran, et le gain se voit surtout sur le PIRE toucher (47 ->
+   25 ms). Mais ce conteneur n'est pas un banc de mesure isolé : d'une exécution
+   à l'autre, la même médiane varie de 18 à 25 ms et un toucher isolé monte à 40.
+   Un seuil calé au ras du mesuré serait donc rouge un jour sur trois sans
+   qu'une seule ligne du jeu ait changé — et un banc qui crie pour rien, on
+   finit par ne plus le lire. Ils sont posés à environ le double de la médiane
+   observée : ils attrapent un doublement franc, ils ne prétendent pas trancher
+   un dixième. Les chiffres, eux, sont imprimés à chaque passage : c'est en les
+   relisant qu'on voit une dérive lente, pas en durcissant le seuil. */
+const S_FIL      = 10.0;   // ms, processeur normal (médiane de cinq touchers)
+const S_FIL_LENT = 45.0;   // ms, processeur bridé x6 (médiane de cinq touchers)
 
 const SUIVRE = function(ms){
   return new Promise((res)=>{

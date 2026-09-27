@@ -651,9 +651,12 @@ const ouvrirLaLangue = async (p, lg) => {
       state.screen='online-play'; render(); }],
     /* Le message d'erreur PAR DÉFAUT d'une fenêtre : celui que showModal écrit
        quand l'appelant n'en fournit pas. */
+    /* Le titre et le bouton n'ont plus d'importance ici (le badge Créateur est
+       parti en v287) : ce qui est mesuré, c'est le message que showModal écrit
+       LUI-MÊME quand l'appelant n'en fournit pas. On garde donc une fenêtre à
+       champ quelconque, avec un titre qui existe encore. */
     ['Fenêtre · réessaie', () => { __fermerTout();
-      showModal({ title:T('Badge Créateur'), input:true, okLabel:T('Valider'),
-        onOk:() => false });
+      showModal({ title:T('Nom affiché'), input:true, onOk:() => false });
       const b = document.getElementById('modalOk'); if(b) b.click(); }],
     /* Le lien du jeu copié faute de pouvoir partager : c'est copierLeLien()
        qui affiche le petit bandeau, pas shareScore(), qui ne fait qu'appeler
@@ -763,12 +766,6 @@ const ouvrirLaLangue = async (p, lg) => {
       showModal({ title:T('Recevoir les rappels\u00a0?'),
         message:T("Ta série sur le point de s'éteindre, tes erreurs à revoir, un verset le dimanche, et un mot si tu t'absentes. Au plus UN rappel par jour, et jamais si tu as déjà joué."),
         okLabel:T("D'accord"), cancelLabel:T('Non merci') }); }],
-    /* Le code créateur, et son refus : « Code incorrect. » ne s'écrit qu'après
-       une mauvaise saisie. */
-    ['Badge Créateur',     () => { __fermerTout(); profile.isCreator = false; promptCreator(); }],
-    ['Code incorrect',     () => { const i = document.getElementById('modalInput');
-      if(i) i.value = 'xxxx';
-      const b = document.getElementById('modalOk'); if(b) b.click(); }],
     ...FICHES,
     ...FLAMMES,
     ...GROUPE,
@@ -800,6 +797,23 @@ const ouvrirLaLangue = async (p, lg) => {
     ['Compte · il y a une heure', () => { compte.derniere = Date.now() - 3700000;
       compte.message = T("Pas de réseau. La sauvegarde reprendra toute seule."); majCarteCompte(); }],
     ['Compte · il y a dix minutes', () => { compte.derniere = Date.now() - 600000; compte.message = ''; majCarteCompte(); }],
+    /* ===== LA PHOTO DE PROFIL, DANS SES TROIS ÉTATS =====
+       « Ajouter une photo » se montre à l'étape Profil ordinaire. Mais
+       « Changer la photo » et « Retirer la photo » n'existent QUE si une photo
+       est posée, et « Cette image n'a pas pu être lue. » que si la lecture
+       échoue : sans ces deux étapes, trois phrases du dictionnaire ne seraient
+       JAMAIS vues — et une traduction qu'aucun écran ne montre est une
+       traduction qu'on ne peut pas relire.
+       On pose une vraie photo (un JPEG de 8x8, le plus petit qui soit un vrai
+       fichier) par la clé du jeu, puis on invalide le cache mémoire comme le
+       ferait un rechargement. */
+    ['Profil · avec photo', () => { __fermerTout();
+      localStorage.setItem('bt_photo', 'data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAAAQABAAD/2wBDABQODxIPDRQSEBIXFRQYHjIhHhwcHj0sLiQySUBMS0dARkVQWnNiUFVtVkVGZIhlbXd7gYKBTmCNl4x9lnN+gXz/2wBDARUXFx4aHjshITt8U0ZTfHx8fHx8fHx8fHx8fHx8fHx8fHx8fHx8fHx8fHx8fHx8fHx8fHx8fHx8fHx8fHx8fHz/wAARCAAIAAgDASIAAhEBAxEB/8QAHwAAAQUBAQEBAQEAAAAAAAAAAAECAwQFBgcICQoL/8QAtRAAAgEDAwIEAwUFBAQAAAF9AQIDAAQRBRIhMUEGE1FhByJxFDKBkaEII0KxwRVS0fAkM2JyggkKFhcYGRolJicoKSo0NTY3ODk6Q0RFRkdISUpTVFVWV1hZWmNkZWZnaGlqc3R1dnd4eXqDhIWGh4iJipKTlJWWl5iZmqKjpKWmp6ipqrKztLW2t7i5usLDxMXGx8jJytLT1NXW19jZ2uHi4+Tl5ufo6erx8vP09fb3+Pn6/8QAHwEAAwEBAQEBAQEBAQAAAAAAAAECAwQFBgcICQoL/8QAtREAAgECBAQDBAcFBAQAAQJ3AAECAxEEBSExBhJBUQdhcRMiMoEIFEKRobHBCSMzUvAVYnLRChYkNOEl8RcYGRomJygpKjU2Nzg5OkNERUZHSElKU1RVVldYWVpjZGVmZ2hpanN0dXZ3eHl6goOEhYaHiImKkpOUlZaXmJmaoqOkpaanqKmqsrO0tba3uLm6wsPExcbHyMnK0tPU1dbX2Nna4uPk5ebn6Onq8vP09fb3+Pn6/9oADAMBAAIRAxEAPwClRRRXObH/2Q==');
+      photoCache = null; majPhotoRacine();
+      state.screen = 'profile'; render(); }],
+    /* Un fichier qui n'est pas une image : la modale doit le DIRE. On passe par
+       poserPhoto, le chemin du jeu — pas par showModal à la main. */
+    ['Profil · photo illisible', () => poserPhoto(new Blob(['ceci n\'est pas une image'], { type:'image/jpeg' }))],
   ];
 
     const releve = new Map();
