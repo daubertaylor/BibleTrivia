@@ -132,6 +132,50 @@ pour le verre. Le reste est automatique.
 
 ---
 
+## 6b. Le toucher sur la croix tient encore le fil vingt millisecondes
+
+**Le fait.** Retirer un joueur du mode Groupe bloque le fil principal 2 à 4 ms
+sur un appareil rapide, et **17 à 27 ms avec le processeur bridé six fois** —
+soit un à deux téléphones Android d'entrée de gamme. Pendant ce temps l'écran
+est figé : rien ne bondit, mais l'animation part en retard, et l'oeil lit « un
+cran ». C'est le défaut que Taylor décrit, et la v286 en a retiré la plus
+grosse part (le recalage du verre, 15 ms, sorti du gestionnaire de clic ; pire
+toucher de 47 à 27 ms).
+
+**Ce qui reste, mesuré jalon par jalon dans `removeTeam`, bridage x6 :**
+
+| segment | ms | |
+|---|---|---|
+| entrée du gestionnaire | 4 | dispatch, onde d'appui, son |
+| `syncTeamRows` + bouton | 4 | |
+| relevés de style | 11 | `getComputedStyle` x3 + `offsetHeight` |
+| les trois essais muets | 8 | la mesure du résidu |
+| pose du pli | 10 | `poser` + relevé du défilement |
+
+**Pourquoi je n'ai pas touché aux essais muets.** Ils mesurent, dans l'état
+exact où la ligne va s'animer, les quelques pixels qu'une ligne « à zéro »
+occupe encore. J'ai vérifié que ce résidu vaut **0 pour toutes les lignes sauf
+la dernière quand « Ajouter » est visible**, où il vaut exactement la marge du
+bas (5,83 px à 360, 6,56 à 393, 6,80 à 412) — donc il est prévisible. Mais le
+prédire, c'est remettre à côté du DOM un fait qui doit en sortir : c'est
+EXACTEMENT la faute qui a produit le saut de verre corrigé en v285 (un nom de
+feuille tenu à part qui avait cessé de correspondre). Le mettre en cache
+demande de connaître, sans le mesurer, la position de la ligne dans le flux au
+moment du repli — avec le bouton « Ajouter » qui renaît replié à zéro dans la
+même image. Huit millisecondes ne paient pas ce risque-là aujourd'hui.
+
+**Et le contexte audio.** `getCtx()` construit l'AudioContext à la première
+note : **27 ms**, dans le doigt. Ça n'arrive qu'une fois par session, et
+presque jamais dans le mode Groupe (les touchers d'avant l'ont déjà créé), mais
+c'est le plus gros temps d'arrêt unique du jeu. Le déplacer sur le premier
+`pointerdown` le rendrait invisible — à faire, avec la prudence que demande
+tout ce qui touche au son sur iOS (point 56 des tâches).
+
+**Le banc :** `banc-essai/joueurs.js` — douze situations, trois écrans, la
+géométrie ET le temps d'arrêt.
+
+---
+
 ## 6. Aucun audit d'accessibilité
 
 **Le fait.** Contrastes, lecteurs d'écran, taille de texte dynamique : jamais

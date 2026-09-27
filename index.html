@@ -7384,7 +7384,7 @@ const CREATOR_KEY = "TAYLOR";   // code secret pour débloquer le badge Créateu
    remontée d'un téléphone ne vaut rien si on ne sait pas QUELLE version
    tournait. Elle doit rester égale au CACHE de sw.js — c'est ce que vérifie
    banc-essai/version.js, qui refuse de laisser publier les deux en désaccord. */
-const VERSION_JEU = "v285";
+const VERSION_JEU = "v286";
 
 /* ===================== QUAND ÇA CASSE CHEZ UN JOUEUR =====================
    « Si quelque chose casse chez cinq d'entre eux sur un modèle de téléphone
@@ -14350,7 +14350,31 @@ function removeTeam(btn){
   /* le verre suit le réajustement du défilement — ET la mise en page qui bouge :
      sans glassSuivre, la texture de décor des cartes situées SOUS la liste reste
      figée pendant tout le repli et le flou glisse à l'intérieur d'elles. */
-  try{ glassTrack(); glassSuivre(filetPli()); }catch(e){}
+  /* ===== LE RECALAGE DU VERRE NE SE FAIT PLUS DANS LE DOIGT =====
+     Il y avait ici glassTrack(), qui appelle queueGlassSync() de façon
+     SYNCHRONE — c'est-à-dire un parcours d'offsetParent sur chacune des
+     trente surfaces de verre de l'écran, au beau milieu du gestionnaire de
+     clic. Mesuré, jalons posés le long de removeTeam, processeur bridé six
+     fois (banc-essai/joueurs.js) :
+         entrée du gestionnaire            4 ms
+         syncTeamRows + bouton             4 ms
+         relevés de style                 11 ms
+         les trois essais muets            8 ms
+         pose du pli                      10 ms
+         >>> glassTrack + glassSuivre     15 ms  <<<
+         ------------------------------------------
+         le doigt tient le fil            52 ms  = trois images perdues
+     Quinze millisecondes sur cinquante, pour un travail que l'image SUIVANTE
+     refait de toute façon : glassSuivre ouvre une fenêtre pendant laquelle la
+     boucle relit la position de chaque surface à CHAQUE image (le drapeau
+     « suivre » dans queueGlassXF), et la boucle, elle, tourne à toutes les
+     images — armGlass ne fait qu'ouvrir sa fenêtre de travail. On garde donc
+     l'invalidation du cache et l'éveil de la boucle, et on laisse la première
+     image faire la lecture. Elle tombe alors sur la même image que le premier
+     pas de l'animation : le verre et la mise en page bougent ensemble, ce qui
+     est exactement ce qu'on veut. Rien ne bouge d'un pixel de plus ou de moins
+     — c'est le banc des lignes et celui des joueurs qui le disent. */
+  try{ glassRelayout(); armGlass(950); glassSuivre(filetPli()); }catch(e){}
   /* LE MÉNAGE ATTEND QUE PLUS RIEN NE BOUGE.
      Deux défauts se cachaient ici, et c'est ce qui rendait la fermeture moins
      nette que l'ouverture.
