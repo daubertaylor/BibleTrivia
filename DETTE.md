@@ -147,6 +147,34 @@ Et l'App Store comme le Play Store regardent ce point.
 **Fait quand.** Un banc mesure les contrastes réels sur chaque écran, et un
 passage au lecteur d'écran a été fait de bout en bout sur un vrai téléphone.
 
+### Où ça en est (27/09/2026)
+
+`banc-essai/acces.js` est écrit et relève trois choses. **Deux sont déjà
+sûres** — elles ne photographient rien, elles lisent le DOM :
+
+- **118 cibles tactiles sous 44 x 44 points** (le minimum d'Apple ; Material
+  demande 48). Les plus nombreuses sont les deux boutons d'en-tête, **Retour et
+  Réglages, à 39 x 39 sur presque tous les écrans** — 5 points de trop peu, sur
+  les deux boutons qu'on touche le plus souvent. Viennent ensuite la poignée de
+  fermeture des feuilles (56 x 25) et le bouton de langue (58 x 26).
+  *Ce n'est pas corrigé* : agrandir ces boutons déplace la composition de tous
+  les écrans, et c'est une décision de dessin, pas une réparation mécanique.
+- **3 champs sans nom accessible** : les deux champs de nom d'équipe du Mode
+  Groupe, et le champ de nom du Profil. Un lecteur d'écran annonce « champ de
+  texte » sans dire lequel. Celui-là est petit et sans risque.
+
+**La troisième — les contrastes — n'est PAS fiable, et le banc le dit.** Il
+photographie chaque écran avec tout le texte rendu transparent pour lire le
+fond réel sous chaque mot (le verre rend tout calcul théorique faux). Mais huit
+écrans « bougent pendant la photo » : le relevé des boîtes et l'image ne
+décrivent alors pas le même instant, et les 195 « défauts » annoncés
+contiennent des rectangles tombés entre deux cartes, sur le décor. J'ai cru
+trois fois tenir la cause et je me suis trompé trois fois.
+
+Le banc est donc **hors de la batterie** (`CHANTIERS` dans `banc-essai/tous.sh`)
+tant qu'il n'est pas sûr. Un banc qui crie à tort finit par être ignoré : c'est
+exactement ce qui était arrivé à `lisible` et `fondu`.
+
 ---
 
 ## 7. Les règles d'accès du mode en ligne n'ont pas été auditées

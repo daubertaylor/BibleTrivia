@@ -7384,7 +7384,7 @@ const CREATOR_KEY = "TAYLOR";   // code secret pour débloquer le badge Créateu
    remontée d'un téléphone ne vaut rien si on ne sait pas QUELLE version
    tournait. Elle doit rester égale au CACHE de sw.js — c'est ce que vérifie
    banc-essai/version.js, qui refuse de laisser publier les deux en désaccord. */
-const VERSION_JEU = "v281";
+const VERSION_JEU = "v282";
 
 /* ===================== QUAND ÇA CASSE CHEZ UN JOUEUR =====================
    « Si quelque chose casse chez cinq d'entre eux sur un modèle de téléphone
@@ -7718,6 +7718,10 @@ function reRenderIfOnline(){
      que le salon vide affiche lui aussi la liste, la condition est EXACTEMENT
      deux : à un, le même piège reviendrait quand l'invité s'en va. */
   if(sc === "online-room" && document.getElementById("oppSlot") && nbJoueurs() === 2){ updateRoomOpponent(); return; }
+  /* À trois et plus, la liste se met à jour en place — voir majSalleListe().
+     Elle rend la main (false) quand la FORME de l'écran change, et là
+     seulement on reconstruit. */
+  if(sc === "online-room" && majSalleListe()) return;
   render();
 }
 function updateOnlineLobby(){
@@ -7732,6 +7736,117 @@ function updateOnlineLobby(){
   if(lbl && lbl.textContent !== plbl) lbl.textContent = plbl;
   const op = document.querySelector(".searching-card .opp-progress");
   if(op){ const f = freshLookers(); op.textContent = f>0 ? Tf(f>1?"{n} autres en recherche…":"{n} autre en recherche…", {n:f}) : T("Dès qu'un autre joueur cherche, la partie démarre."); }
+}
+/* ===== À TROIS ET PLUS, LE SALON SE METTAIT À JOUR EN RECONSTRUISANT TOUT =====
+   « Lorsque les autres joueurs, plus de 2, doivent être plus rapides à
+   s'afficher et de la bonne manière » — et, sur la même capture, « derrière,
+   le décor se décale d'un coup ». Les deux n'en font qu'un.
+
+   CE QUI SE PASSAIT. À DEUX, reRenderIfOnline() retouche la seule case de
+   l'adversaire (updateRoomOpponent) : instantané, rien ne bouge autour. À
+   TROIS ET PLUS, il tombait sur render(), qui reconstruit l'écran ENTIER —
+   en-tête, code, liste, réglages, bouton — et repose toutes ses couches de
+   verre. Mesuré : 20 à 30 ms de fil principal à chaque arrivée, contre une
+   retouche invisible à deux. D'où le retard à l'affichage.
+   Et le décor : une couche de verre garde en cache la position de sa surface
+   dans la page. Reconstruire l'écran la lui fait relire D'UN COUP, à la fin —
+   c'est exactement le défaut que le moteur documente déjà pour le repli d'une
+   carte (« le flou glisse dans la carte, puis se remet d'un coup »), et que
+   glassSuivre() corrige en lui demandant de relire À CHAQUE IMAGE le temps du
+   mouvement. Il n'était appelé nulle part sur ce chemin.
+
+   CE QU'ON FAIT. La liste se réconcilie ligne par ligne, sur l'identité du
+   joueur : on ajoute ce qui arrive, on retire ce qui part, on retouche le
+   reste. Aucun autre morceau de l'écran n'est touché, donc aucune couche de
+   verre n'est reposée — et glassSuivre() accompagne le seul mouvement qui
+   reste, celui de la liste qui s'allonge.
+   ON REND LA MAIN QUAND ON NE PEUT PAS. Passer de deux à trois change la FORME
+   de l'écran (le face-à-face devient une liste) : là, il faut bien un rendu
+   complet. La fonction dit non, et l'appelant redessine. */
+function majSalleListe(){
+  const liste = document.querySelector(".salle-liste");
+  if(!liste) return false;                 // face-à-face ou autre écran
+  if(nbJoueurs() === 2) return false;      // on bascule en face-à-face : rendu complet
+  const rangs = classement().sort((a,b)=> (a.moi?0:1)-(b.moi?0:1));
+  const cle = (j)=> String(j.moi ? "moi" : (j.id || j.name || ""));
+  const avait = liste.querySelectorAll(".salle-ligne:not(.vide)").length;
+
+  const vues = Object.create(null);
+  let ancre = null;
+  for(const j of rangs){
+    const k = cle(j);
+    vues[k] = 1;
+    let ligne = liste.querySelector('.salle-ligne[data-jid="' + CSS.escape(k) + '"]');
+    const tag = j.moi ? (net.isHost ? T("Toi · Hôte") : T("Toi")) : T("Prêt");
+    if(!ligne){
+      ligne = document.createElement("div");
+      ligne.className = "rank-row salle-ligne" + (j.moi ? " moi" : "");
+      ligne.dataset.jid = k;
+      ligne.innerHTML = avatarHtml(j.name, j.color, 2.1, j.isCreator)
+        + '<span class="rank-name">' + escapeHtml(j.name || T("Joueur")) + '</span>'
+        + '<span class="salle-tag">' + tag + '</span>';
+      /* Elle entre comme l'adversaire entrait à deux : une arrivée se voit. */
+      ligne.style.animation = "oppIn 0.42s cubic-bezier(0.2,1.3,0.35,1)";
+      if(ancre && ancre.nextSibling) liste.insertBefore(ligne, ancre.nextSibling);
+      else if(ancre) liste.appendChild(ligne);
+      else liste.insertBefore(ligne, liste.firstChild);
+    } else {
+      const nom = ligne.querySelector(".rank-name");
+      if(nom && nom.textContent !== (j.name || T("Joueur"))) nom.textContent = j.name || T("Joueur");
+      const et = ligne.querySelector(".salle-tag");
+      if(et && et.textContent !== tag) et.textContent = tag;
+      if(ancre ? ancre.nextSibling !== ligne : liste.firstChild !== ligne){
+        if(ancre && ancre.nextSibling) liste.insertBefore(ligne, ancre.nextSibling);
+        else if(ancre) liste.appendChild(ligne);
+        else liste.insertBefore(ligne, liste.firstChild);
+      }
+    }
+    ancre = ligne;
+  }
+  liste.querySelectorAll(".salle-ligne:not(.vide)").forEach(l=>{ if(!vues[l.dataset.jid]) l.remove(); });
+
+  /* La ligne des places restantes : elle existe tant que le salon n'est pas
+     plein, et elle annonce le bon compte. */
+  const reste = MAX_JOUEURS - nbJoueurs();
+  let vide = liste.querySelector(".salle-ligne.vide");
+  if(reste > 0){
+    if(!vide){
+      vide = document.createElement("div");
+      vide.className = "rank-row salle-ligne vide";
+      vide.innerHTML = '<span class="avatar waiting" style="width:2.1rem;height:2.1rem;font-size:0.95rem;">?</span>'
+        + '<span class="rank-name">' + T("En attente…") + '</span><span class="salle-tag"></span>';
+      liste.appendChild(vide);
+    }
+    if(vide !== liste.lastElementChild) liste.appendChild(vide);
+    const t = Tf(reste > 1 ? "{n} places" : "{n} place", { n:reste });
+    const et = vide.querySelector(".salle-tag");
+    if(et && et.textContent !== t) et.textContent = t;
+  } else if(vide) vide.remove();
+
+  /* Ce qui, ailleurs sur l'écran, dépend du nombre : la phrase du code et le
+     bouton d'invitation. On les retouche, on ne reconstruit rien. */
+  const hint = document.querySelector(".code-hint");
+  if(hint && net.isHost){
+    const t = reste > 0 ? Tf("Partage ce code · jusqu'à {n} joueurs", { n:MAX_JOUEURS })
+                        : Tf("Le salon est complet · {n} joueurs", { n:MAX_JOUEURS });
+    if(hint.textContent !== t) hint.textContent = t;
+  }
+  const inviter = document.querySelector(".btn-invite");
+  if(inviter) inviter.style.display = (net.isHost && reste > 0) ? "" : "none";
+
+  const btn = document.getElementById("roomStartBtn");
+  if(btn && net.isHost){
+    const peut = net.oppPresent;
+    btn.classList.toggle("is-waiting", !peut);
+    const t = peut ? Tf("Commencer {mot}", { mot:T("la partie") }) : T("En attente des joueurs…");
+    if(btn.textContent !== t) btn.textContent = t;
+  }
+
+  /* LE VERRE SUIT LA LISTE QUI S'ALLONGE, AU LIEU DE SE REMETTRE À LA FIN. */
+  if(liste.querySelectorAll(".salle-ligne").length !== avait + (reste > 0 ? 1 : 0)){
+    try{ glassSuivre(620); }catch(e){}
+  } else { try{ glassSuivre(260); }catch(e){} }
+  return true;
 }
 function updateRoomOpponent(){
   const slot = document.getElementById("oppSlot");
@@ -8095,6 +8210,7 @@ function beginDuel(seed, lengthKey, timerKey, theme){
   net.timedOut = false;
   net.deck = seededDeck(seed, lengthKey, net.themeKey);
   net.idx = 0; net.score = 0; net.correct = 0; net.selected=null; net.revealed=false; net.myDone=false; net.missed=[];
+  net.streak = 0; net.bestStreak = 0;   // la série de bonnes réponses DE CETTE MANCHE
   net.oppScore = 0; net.oppIndex = 0; net.oppDone=false; net.oppGone=false; net.status=""; net.confettiShown = false;
   /* Tout le monde repart de zéro, y compris ceux qui étaient partis : une
      nouvelle manche efface les scores, pas la table. */
@@ -8115,8 +8231,29 @@ function onlineAnswer(i){
   const q = net.deck[net.idx];
   const opt = q.shuffledOptions[i];
   net.selected = opt; net.revealed = true; net.justRevealed = true;
-  if(opt === q.correct){ net.score += TIER_INFO[q.tier].pts; net.correct += 1; errbookRemove(q); playCorrect(); }
-  else { net.missed.push({ q:q.q, options:q.options, correct:q.correct, chosen:opt, fact:q.fact }); errbookAdd(q); playIncorrect(); }
+  if(opt === q.correct){
+    net.score += TIER_INFO[q.tier].pts; net.correct += 1;
+    net.streak = (net.streak | 0) + 1;
+    if(net.streak > (net.bestStreak | 0)) net.bestStreak = net.streak;
+    errbookRemove(q);
+    /* ===== UNE BONNE RÉPONSE EN LIGNE COMPTE COMME LES AUTRES =====
+       « Pour les joueurs qui jouent en mode en ligne, leur réponse doit
+       s'enregistrer dans la progression, vu que le reste se compte. » Il avait
+       raison, et c'était une omission franche : le duel créditait le score, le
+       carnet d'erreurs et la flamme (marquerJoue, compterPartie) — mais JAMAIS
+       la Progression. Un joueur pouvait enchaîner vingt parties en ligne et
+       voir « 0/66 livres · 0 bonne réponse ». La réponse est la même, la
+       question vient de la même banque, le livre est le même : elle crédite
+       donc le livre, le total, la meilleure série et les objectifs, exactement
+       comme en solo. */
+    progressCredit(q, net.streak);
+    playCorrect();
+  }
+  else {
+    net.streak = 0;
+    net.missed.push({ q:q.q, options:q.options, correct:q.correct, chosen:opt, fact:q.fact });
+    errbookAdd(q); playIncorrect();
+  }
   broadcastProgress(false);
   render();
 }
@@ -8127,6 +8264,8 @@ function onlineNext(){
     net.myDone = true;
     retenirToasts();   // les félicitations attendent les résultats
     compterPartie();   // en ligne : le joueur a fini SES questions
+    /* Un sans-faute est un sans-faute, quel que soit le mode. */
+    if(net.deck.length > 0 && net.correct === net.deck.length) progressFlawless();
     broadcastProgress(true);
     /* On attend que TOUT LE MONDE ait fini — un joueur comme sept. Ceux qui
        sont partis ne retiennent personne. */
@@ -17671,7 +17810,7 @@ function renderOnlineRoom(){
     ${aPlusieurs ? `
     <div class="salle-liste">
       ${classement().sort((a,b)=> (a.moi?0:1)-(b.moi?0:1)).map(j=>`
-        <div class="rank-row salle-ligne${j.moi?' moi':''}">
+        <div class="rank-row salle-ligne${j.moi?' moi':''}" data-jid="${escapeHtml(String(j.moi ? 'moi' : (j.id||j.name||'')))}">
           ${avatarHtml(j.name, j.color, 2.1, j.isCreator)}
           <span class="rank-name">${escapeHtml(j.name||T("Joueur"))}</span>
           <span class="salle-tag">${j.moi ? (net.isHost?T("Toi · Hôte"):T("Toi")) : T("Prêt")}</span>
@@ -19831,7 +19970,16 @@ if(_savedGame){
   // Reprise automatique : le jeu ne repart plus à zéro après une mise en arrière-plan
   setTimeout(()=>{ Object.assign(state, _savedGame); if(!(state.timerKey in TIMER_OPTS)) state.timerKey = "30"; render(); }, 900);
 } else if(state.screen==="splash"){
-  setTimeout(()=>{ state.screen="mode"; render(); }, 4000);
+  /* ON NE QUITTE LE SPLASH QUE SI ON Y EST ENCORE. Le garde-fou était posé à
+     l'ARMEMENT du minuteur, pas à son DÉCLENCHEMENT : quatre secondes plus
+     tard, il écrivait state.screen="mode" où que le joueur soit rendu. Le
+     splash n'étant pas traversable, personne ne peut le rencontrer
+     aujourd'hui — mais un minuteur qui écrase l'écran sans regarder où l'on
+     est finira par le faire le jour où un chemin le permettra. C'est
+     exactement ce qui a faussé ma propre mesure du salon pendant une heure :
+     ma sonde naviguait dans cette fenêtre, et l'écran lui sautait des mains.
+     Une ligne, et le piège n'existe plus. */
+  setTimeout(()=>{ if(state.screen !== "splash") return; state.screen="mode"; render(); }, 4000);
 }
 </script>
 </body>
