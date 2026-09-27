@@ -88,8 +88,11 @@ const URL = process.argv[2] || 'http://127.0.0.1:8099/index.html';
              gauche: lis(Math.floor(im.width*0.15)), droite: lis(Math.floor(im.width*0.85)) };
   });
   dire(pose.ok === true, 'poser une photo réussit', '');
-  dire(pose.jpeg && pose.cote === '256x256', 'elle est réduite à 256x256 en JPEG', pose.cote);
-  dire(pose.taille > 0 && pose.taille < 60000, 'elle pèse moins de 60 000 caractères', pose.taille + ' car.');
+  dire(pose.jpeg && pose.cote === '512x512', 'elle est réduite à 512x512 en JPEG', pose.cote);
+  /* 512 px d'un vrai visage pèsent ~45 Ko de texte ; on laisse de la marge
+     pour une image très détaillée, et on refuse tout ce qui dépasserait
+     franchement — ce serait le signe qu'on a cessé de réduire. */
+  dire(pose.taille > 0 && pose.taille < 120000, 'elle pèse moins de 120 000 caractères', (pose.taille/1024).toFixed(1) + ' Ko');
   const rouge = pose.gauche[0] > 150 && pose.gauche[2] < 110;
   const bleu  = pose.droite[2] > 150 && pose.droite[0] < 110;
   dire(rouge && bleu, 'elle est recadrée au CARRÉ par le centre',
@@ -286,6 +289,47 @@ const URL = process.argv[2] || 'http://127.0.0.1:8099/index.html';
   dire(cr>170 && cg>170 && cb<90, 'zoomé dans un coin, c\'est CE coin qui est gardé', cadre.coin.join(',') + ' (jaune attendu)');
   dire(cadre.couvre, 'l\'image couvre toujours le rond, même poussée à bout', '');
   dire(!cadre.reste, 'la scène se referme après validation', '');
+
+  /* ===== TOUCHER UN AVATAR POUR LA VOIR EN GRAND (v291) =====
+     Le sien ET celui d'un autre joueur. On vérifie aussi ce qui fait la
+     différence entre « ça marche » et « ça marche partout » : un avatar SANS
+     photo ne doit rien ouvrir, et l'avatar de la ligne « moi » — qui vit dans
+     un bouton — ne doit pas ouvrir la visionneuse ET le profil à la fois. */
+  const grand = await p.evaluate(async()=>{
+    const vert = 'data:image/jpeg;base64,' + 'A'.repeat(300);
+    recevoirPhoto('joueur-g', vert);
+    const j = (id,n,c)=>({ id, name:n, color:c, score:0, idx:0, done:false, gone:false, vu:Date.now(), arrive:1 });
+    net.room = { id:'E' }; net.isHost = true; net.code = 'E';
+    net.joueurs = { 'joueur-g': j('joueur-g','Alex','#E0526B'), 'joueur-h': j('joueur-h','Sam','#39B98A') };
+    state.screen = 'online-room'; render();
+    await new Promise(r=>setTimeout(r,300));
+    const tap = (sel)=>{ const el = document.querySelector(sel); if(el) el.click(); return !!el; };
+    const ferme = ()=>{ const v = document.getElementById('photoGrandVeil'); if(v) v.click(); };
+
+    const aLui = tap('.avatar[data-pid="joueur-g"]');
+    const ouvertLui = !!document.getElementById('photoGrandVeil');
+    const nomLui = ouvertLui ? (document.querySelector('#photoGrandVeil .pv-nom').textContent||'') : '';
+    ferme();
+    const sansPhoto = tap('.avatar[data-pid="joueur-h"]');
+    const ouvertSans = !!document.getElementById('photoGrandVeil');
+    ferme();
+
+    /* la mienne, depuis le profil */
+    state.screen = 'profile'; render();
+    await new Promise(r=>setTimeout(r,250));
+    const avantEcran = state.screen;
+    tap('[data-avatar-preview] .avatar');
+    const ouvertMoi = !!document.getElementById('photoGrandVeil');
+    const pasDeSelecteur = (state.screen === avantEcran);
+    ferme();
+    const referme = !document.getElementById('photoGrandVeil');
+    return { aLui, ouvertLui, nomLui, sansPhoto, ouvertSans, ouvertMoi, pasDeSelecteur, referme };
+  });
+  dire(grand.aLui && grand.ouvertLui, 'toucher l\'avatar d\'un autre joueur ouvre sa photo en grand', '');
+  dire(grand.nomLui.indexOf('Alex') >= 0, 'son nom est écrit dessous', grand.nomLui);
+  dire(grand.sansPhoto && !grand.ouvertSans, 'un avatar SANS photo n\'ouvre rien', '');
+  dire(grand.ouvertMoi && grand.pasDeSelecteur, 'la mienne s\'ouvre aussi, sans déclencher autre chose', '');
+  dire(grand.referme, 'on touche n\'importe où et ça se referme', '');
 
   /* ---- un fichier illisible, puis le retrait ---- */
   const mauvais = await p.evaluate(async()=>{

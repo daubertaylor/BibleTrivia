@@ -2077,6 +2077,17 @@
      doigt attrape sans viser (voir DETTE.md, point 6). */
   .photo-liens{ display:flex; align-items:center; justify-content:center; gap:0.2rem; margin-top:0.35rem; }
   .photo-lien{ min-height:44px; padding:0 0.7rem; border:0; border-radius:var(--r-full); background:none; box-shadow:none; color:#fff; text-shadow:0 1px 10px rgba(0,0,0,0.55); font-size:0.82rem; font-weight:600; -webkit-appearance:none; appearance:none; cursor:pointer; }
+  /* ===== LA PHOTO EN GRAND =====
+     On touche un avatar qui porte une photo — le sien ou celui d'un autre
+     joueur — et elle s'ouvre en grand. Rien de plus : un fond sombre, l'image,
+     le nom, et on touche n'importe où pour refermer. Pas de bouton : tout
+     l'écran est la sortie, c'est le geste que tout le monde connaît. */
+  .photo-veil{ position:fixed; inset:0; z-index:95; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:0.9rem;
+    background:rgba(12,9,6,0.82); animation:veilIn var(--tr-voile-in); padding:1.2rem; }
+  .photo-veil .pv-img{ width:min(84vw, 84 * var(--hu, 8px)); aspect-ratio:1 / 1; border-radius:50%;
+    background-size:cover; background-position:50% 50%; background-repeat:no-repeat;
+    box-shadow:0 18px 60px rgba(0,0,0,0.55); }
+  .photo-veil .pv-nom{ color:#fff; font-family:'Poppins',sans-serif; font-weight:700; font-size:1.1rem; text-shadow:0 1px 12px rgba(0,0,0,0.6); }
   /* ===== AJUSTER SA PHOTO =====
      UN CARRÉ, ET UN TROU ROND DEDANS. On voit EXACTEMENT ce qui sera gardé —
      le disque clair — et ce qu'on perd reste visible en plus sombre autour.
@@ -7451,7 +7462,7 @@ const SUPABASE_ANON_KEY = "sb_publishable_FDJ_R0foC7uIeHmxVrj6rA_2NeIgW2a";
    remontée d'un téléphone ne vaut rien si on ne sait pas QUELLE version
    tournait. Elle doit rester égale au CACHE de sw.js — c'est ce que vérifie
    banc-essai/version.js, qui refuse de laisser publier les deux en désaccord. */
-const VERSION_JEU = "v290";
+const VERSION_JEU = "v291";
 
 /* ===================== QUAND ÇA CASSE CHEZ UN JOUEUR =====================
    « Si quelque chose casse chez cinq d'entre eux sur un modèle de téléphone
@@ -14267,8 +14278,58 @@ function ouvreLigne(row){
    en 170ms : la page se réajuste en glissant, exactement comme elle le ferait
    sous le doigt. La couche de verre de la carte n'a rien à recalculer pendant
    ce temps (taille fixe, même position) ; on garde juste le moteur en éveil. */
+/* ===== LA SONDE DU RETRAIT, POUR MESURER SUR SON TÉLÉPHONE =====
+   « Au moment où je retire le quatrième joueur, ça fait un petit blocage lors
+   de la fermeture. » Je ne le reproduis pas : ici, les quatre retraits sont
+   identiques — même durée dans le doigt (2,7 à 3,1 ms, 17 à 19 avec le
+   processeur bridé six fois), même profil image par image, et les croix qui
+   restent s'éteignent en quatorze valeurs, pas d'un coup. Le défaut est donc
+   SUR L'APPAREIL, et mon instrument ne sait pas le voir — exactement comme le
+   saut du verre, dont la réponse est venue de son téléphone et pas du banc.
+   Alors on mesure là-bas. Elle ne s'allume qu'avec « ?sonde=1 », ne touche à
+   rien, et affiche à la fin du repli ce qu'un blocage laisserait forcément
+   derrière lui : une image beaucoup plus longue que les autres. */
+function sonderRetrait(c, combien){
+  if(!SONDE || !c) return function(){};
+  const t0 = performance.now(); const l = [];
+  let fil = 0;
+  const tic = ()=>{
+    const t = performance.now() - t0;
+    const b = c.getBoundingClientRect();
+    l.push([t, b.top, b.height]);
+    if(t < 1200) requestAnimationFrame(tic); else montrer();
+  };
+  const montrer = ()=>{
+    if(!l.length) return;
+    let pireImage = 0, quandImage = 0, pirePas = 0, quandPas = 0, demiTours = 0, sens = 0;
+    for(let i = 1; i < l.length; i++){
+      const dt = l[i][0] - l[i-1][0];
+      if(dt > pireImage){ pireImage = dt; quandImage = l[i][0]; }
+      const d = l[i][1] - l[i-1][1];
+      if(Math.abs(d) > pirePas){ pirePas = Math.abs(d); quandPas = l[i][0]; }
+      if(Math.abs(d) >= 0.5){ const sg = d > 0 ? 1 : -1; if(sens && sg !== sens) demiTours++; sens = sg; }
+    }
+    const box = document.createElement("div");
+    box.style.cssText = "position:fixed;z-index:99999;left:8px;right:8px;top:8px;background:#120E0A;color:#FFE9B8;"
+      + "font:600 11px/1.5 ui-monospace,SFMono-Regular,Menlo,monospace;padding:10px 12px;border-radius:12px;"
+      + "white-space:pre-wrap;box-shadow:0 8px 30px rgba(0,0,0,0.6)";
+    box.textContent = "SONDE RETRAIT — touche pour fermer\n"
+      + "retrait " + combien + " -> " + (combien - 1) + "   " + l.length + " images en "
+      + Math.round(l[l.length-1][0]) + " ms\n"
+      + "LE DOIGT TIENT LE FIL " + fil.toFixed(1) + " ms\n"
+      + "PIRE IMAGE " + pireImage.toFixed(0) + " ms @" + Math.round(quandImage) + " ms\n"
+      + "plus grand pas " + pirePas.toFixed(1) + " px @" + Math.round(quandPas) + " ms\n"
+      + "demi-tours " + demiTours + "   carte " + Math.round(l[0][2]) + " -> " + Math.round(l[l.length-1][2]) + " px";
+    box.addEventListener("click", ()=>{ try{ box.remove(); }catch(e){} });
+    document.body.appendChild(box);
+  };
+  requestAnimationFrame(tic);
+  return function(ms){ fil = ms || 0; };
+}
 function removeTeam(btn){
   if(state.teams.length <= 2) return;
+  const sondeDebut = SONDE ? performance.now() : 0;
+  const sondeFin = sonderRetrait(document.getElementById("teamCard"), state.teams.length);
   const i = teamIndexOf(btn);
   const row = btn && btn.closest ? btn.closest(".team-row") : null;
   if(i < 0 || !row || row.dataset.partie) return;
@@ -14510,6 +14571,7 @@ function removeTeam(btn){
   };
   row.addEventListener("transitionend", (e)=>{ if(e.propertyName === "height") finir(); });
   setTimeout(finir, filetPli());       // filet, largement APRÈS la fin du mouvement
+  try{ sondeFin(performance.now() - sondeDebut); }catch(e){}
 }
 /* Renommage : mise à jour du jeton (1re lettre) EN DIRECT, sans aucun rendu —
    plus de render() au blur (qui reconstruisait tout l'écran = saccade). */
@@ -17771,16 +17833,23 @@ function avatarHtml(name, color, size, qui){
    joueur et par changement de présence, sur un canal temps réel, c'est une
    autre affaire. Les adversaires gardent donc leur initiale.
 
-   POURQUOI 256 PIXELS ET DU JPEG. Le plus grand endroit où elle s'affiche fait
-   4,2 rem, soit environ 67 px de côté — 200 px sur un écran à trois fois la
-   densité. 256 couvre tout le monde avec de la marge, et un visage à cette
-   taille en JPEG de qualité 0,82 pèse une vingtaine de kilo-octets : de quoi
-   tenir sans effort dans le stockage local, là où l'image d'origine d'un
-   appareil photo de téléphone (quatre à douze méga-octets) le ferait déborder
-   au premier essai. On recadre au CARRÉ par le centre avant de réduire : un
-   avatar est un rond, une photo déformée pour y entrer se voit tout de suite. */
+   POURQUOI 512 PIXELS ET DU JPEG. Tant qu'elle ne servait qu'aux avatars, 256
+   suffisait largement : le plus grand fait 4,2 rem, soit 200 px sur un écran à
+   trois fois la densité. Depuis la v291 on peut TOUCHER un avatar pour voir la
+   photo en grand — et à 256 px étalés sur les trois quarts de l'écran, ça se
+   voyait. Mesuré sur une image photographique, en texte enregistré :
+       256 px q0,82   16,2 Ko      384 px q0,80   29,0 Ko
+       448 px q0,80   36,7 Ko      512 px q0,80   44,7 Ko
+       640 px q0,78   59,1 Ko
+   On prend 512. Quarante-cinq kilo-octets, c'est ce que pèse une seule image
+   d'une page web ordinaire : rien pour le stockage local (5 Mo), rien pour une
+   sauvegarde de compte, et une diffusion de salon les envoie UNE fois à
+   l'arrivée, pas à chaque changement de score. Au-delà, on paie le triple pour
+   une netteté qu'on ne voit plus.
+   On recadre au CARRÉ avant de réduire : un avatar est un rond, une photo
+   déformée pour y entrer se voit tout de suite. */
 const CLE_PHOTO = "bt_photo";
-const PHOTO_COTE = 256;
+const PHOTO_COTE = 512;
 let photoCache = null;            // "" = lu, et il n'y en a pas
 function photoProfil(){
   if(photoCache === null){
@@ -17806,7 +17875,7 @@ function majPhotoRacine(){
    L'avatar ne porte qu'un renvoi (« --ph:var(--ph3) »), une vingtaine de
    caractères : on ne recopie jamais l'image dans le HTML, même avec huit
    joueurs à l'écran. */
-const PHOTO_MAX = 80000;          // au-delà, ce n'est pas une photo de ce jeu
+const PHOTO_MAX = 200000;         // au-delà, ce n'est pas une photo de ce jeu
 let photoVarN = 0;
 const photoVars = Object.create(null);
 function photoDeVar(qui){
@@ -17892,7 +17961,7 @@ function carrePhoto(src, sx, sy, cote){
   if(!g) return "";
   try{ g.imageSmoothingQuality = "high"; }catch(e){}
   g.drawImage(src, sx, sy, cote, cote, 0, 0, PHOTO_COTE, PHOTO_COTE);
-  return c.toDataURL("image/jpeg", 0.82);
+  return c.toDataURL("image/jpeg", 0.80);
 }
 /* Poser une photo déjà découpée : enregistrer, dater, montrer, partager. */
 function enregistrerPhoto(url){
@@ -17931,6 +18000,52 @@ async function poserPhoto(fichier){
   return true;
 }
 
+/* ===== TOUCHER UN AVATAR POUR VOIR LA PHOTO EN GRAND =====
+   « Lorsque les autres joueurs voient notre photo, ça serait bien qu'ils
+   puissent cliquer dessus pour la voir en grand. Et nous aussi. » (Taylor)
+
+   UN SEUL ÉCOUTEUR POUR TOUT LE JEU, et il est posé sur le document. Les
+   avatars apparaissent à huit endroits — profil, en-tête, ligne « moi », salon
+   à deux, salon à plusieurs, classement, fin de duel — et certains vivent
+   DANS un bouton (la ligne « moi » en est un). Accrocher un bouton dans un
+   bouton serait faux ; poser un écouteur sur chacun serait un de plus à
+   oublier au prochain écran. On écoute donc une fois, à la CAPTURE, et on
+   arrête le geste avant qu'il n'atteigne le bouton qui l'entoure — sans quoi
+   toucher son avatar dans la ligne « moi » ouvrirait AUSSI le profil.
+   ET SEULEMENT S'IL Y A UNE PHOTO : sans elle, la classe n'est pas là, le
+   geste passe son chemin et le bouton du dessous fait son travail habituel
+   (dans le profil, ouvrir le sélecteur de fichier). */
+function nomDuPid(pid){
+  if(pid === "moi") return profile.name || T("Invité");
+  try{ const j = net.joueurs[pid]; if(j && j.name) return j.name; }catch(e){}
+  try{ if(net.opp && net.opp.id === pid && net.opp.name) return net.opp.name; }catch(e){}
+  return T("Joueur");
+}
+function ouvrirPhotoGrand(pid){
+  if(document.getElementById("photoGrandVeil")) return;
+  const v = photoDeVar(pid === "moi" ? true : pid);
+  if(!v) return;
+  const veil = document.createElement("div");
+  veil.className = "photo-veil"; veil.id = "photoGrandVeil";
+  veil.setAttribute("role", "dialog");
+  veil.setAttribute("aria-label", T("Photo de profil"));
+  veil.innerHTML = '<div class="pv-img" style="background-image:var(' + v + ')"></div>'
+                 + '<div class="pv-nom">' + escapeHtml(nomDuPid(pid)) + '</div>';
+  const fermer = ()=>{ try{ veil.remove(); }catch(e){} };
+  veil.addEventListener("click", fermer);
+  document.body.appendChild(veil);
+  try{ glassTrack(); }catch(e){}
+}
+document.addEventListener("click", (e)=>{
+  try{
+    const a = e.target && e.target.closest ? e.target.closest(".avatar.a-photo[data-pid]") : null;
+    if(!a) return;
+    if(document.getElementById("photoGrandVeil")) return;
+    e.preventDefault(); e.stopPropagation();
+    ouvrirPhotoGrand(a.dataset.pid);
+  }catch(err){}
+}, true);
+
 /* ===================== CADRER SA PHOTO =====================
    « Il serait bien d'avoir un truc qui permet d'ajuster la photo : la mettre
    telle quelle, ou zoomer sur une partie précise. Comme ceux qui veulent
@@ -17953,7 +18068,7 @@ async function poserPhoto(fichier){
    voir un pixel, et ce n'est qu'après qu'on la manipule.
    ET ON NE REDESSINE RIEN PENDANT LE GESTE : le cadrage est un transform sur
    la toile, donc du compositeur pur. Le seul dessin a lieu à la validation. */
-const PHOTO_TRAVAIL = 1200;      // côté maximal de l'image de travail
+const PHOTO_TRAVAIL = 1600;      // côté maximal de l'image de travail
 const ZOOM_MAX = 6;
 let cadrage = null;
 function cadreBorner(){
