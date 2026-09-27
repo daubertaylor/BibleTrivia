@@ -2077,6 +2077,19 @@
      doigt attrape sans viser (voir DETTE.md, point 6). */
   .photo-liens{ display:flex; align-items:center; justify-content:center; gap:0.2rem; margin-top:0.35rem; }
   .photo-lien{ min-height:44px; padding:0 0.7rem; border:0; border-radius:var(--r-full); background:none; box-shadow:none; color:#fff; text-shadow:0 1px 10px rgba(0,0,0,0.55); font-size:0.82rem; font-weight:600; -webkit-appearance:none; appearance:none; cursor:pointer; }
+  /* ===== AJUSTER SA PHOTO =====
+     UN CARRÉ, ET UN TROU ROND DEDANS. On voit EXACTEMENT ce qui sera gardé —
+     le disque clair — et ce qu'on perd reste visible en plus sombre autour.
+     Cadrer à l'aveugle, sans voir ce qu'on coupe, c'est recommencer trois fois.
+     touch-action:none : le doigt appartient au cadrage, pas au défilement de
+     la feuille. Sans ça, glisser l'image ferait descendre la feuille. */
+  .cadre{ position:relative; width:100%; aspect-ratio:1 / 1; margin:0.15rem auto 0; border-radius:var(--r-m); overflow:hidden; overflow:clip; touch-action:none; background:rgba(28,22,16,0.4); }
+  .cadre canvas{ position:absolute; top:0; left:0; transform-origin:0 0; will-change:transform; }
+  .cadre-trou{ position:absolute; inset:0; border-radius:50%; box-shadow:0 0 0 2000px rgba(18,12,6,0.55); pointer-events:none; }
+  .cadre-aide{ text-align:center; color:var(--ink-soft); font-size:0.8rem; margin:0.6rem 0 0.35rem; }
+  .cadre-zoom{ display:flex; align-items:center; gap:0.55rem; padding:0 0.15rem; }
+  .cadre-zoom .cz-ico{ width:1rem; height:1rem; color:var(--ink-soft); flex-shrink:0; }
+  .cadre-zoom .cz-ico.gros{ width:1.5rem; height:1.5rem; }
   .profile-card{ text-align:center; padding:1.1rem 1rem 0.35rem; margin-bottom:var(--e-3); }
   .profile-card .avatar{ margin:0 auto; }
   .profile-name{ font-family:'Poppins',sans-serif; font-weight:700; font-size:1.15rem; margin-top:0.65rem; color:#fff; text-shadow:0 1px 12px rgba(0,0,0,0.5); }
@@ -4595,6 +4608,9 @@ const TEXTES = {
     "Il sera visible par tes amis pendant les duels.":"Your friends will see it during duels.",
     "Inviter des amis":"Invite friends",
     "Mode en ligne":"Online mode",
+    "Ajuster la photo":"Adjust photo",
+    "Pince pour zoomer, glisse pour cadrer":"Pinch to zoom, drag to frame",
+    "Zoom":"Zoom",
     "Photo de profil":"Profile photo",
     "Ajouter une photo":"Add a photo",
     "Changer la photo":"Change photo",
@@ -4985,6 +5001,9 @@ const TEXTES = {
     "Il sera visible par tes amis pendant les duels.":"Tus amigos lo verán durante los duelos.",
     "Inviter des amis":"Invitar amigos",
     "Mode en ligne":"Modo en línea",
+    "Ajuster la photo":"Ajustar la foto",
+    "Pince pour zoomer, glisse pour cadrer":"Pellizca para ampliar, arrastra para encuadrar",
+    "Zoom":"Zoom",
     "Photo de profil":"Foto de perfil",
     "Ajouter une photo":"Añadir una foto",
     "Changer la photo":"Cambiar la foto",
@@ -7432,7 +7451,7 @@ const SUPABASE_ANON_KEY = "sb_publishable_FDJ_R0foC7uIeHmxVrj6rA_2NeIgW2a";
    remontée d'un téléphone ne vaut rien si on ne sait pas QUELLE version
    tournait. Elle doit rester égale au CACHE de sw.js — c'est ce que vérifie
    banc-essai/version.js, qui refuse de laisser publier les deux en désaccord. */
-const VERSION_JEU = "v289";
+const VERSION_JEU = "v290";
 
 /* ===================== QUAND ÇA CASSE CHEZ UN JOUEUR =====================
    « Si quelque chose casse chez cinq d'entre eux sur un modèle de téléphone
@@ -17836,7 +17855,9 @@ function ouvrirPhoto(){
     champPhoto.addEventListener("change", ()=>{
       const f = champPhoto.files && champPhoto.files[0];
       champPhoto.value = "";            // même photo deux fois de suite : l'événement doit repartir
-      if(f) poserPhoto(f);
+      /* On passe par la scène de cadrage ; elle s'ouvre sur le carré du
+         centre, donc « telle quelle » ne demande qu'un tap sur Enregistrer. */
+      if(f) ouvrirCadrage(f);
     });
     document.body.appendChild(champPhoto);
   }
@@ -17861,6 +17882,34 @@ async function imagePhoto(fichier){
     try{ u = URL.createObjectURL(fichier); im.src = u; }catch(e){ rej(e); }
   });
 }
+/* Découper un carré de la source et le rendre en 256 px. Le seul endroit du
+   jeu qui fabrique une photo de profil — que le carré vienne du centre (par
+   défaut) ou du cadrage choisi au doigt. */
+function carrePhoto(src, sx, sy, cote){
+  const c = document.createElement("canvas");
+  c.width = c.height = PHOTO_COTE;
+  const g = c.getContext("2d");
+  if(!g) return "";
+  try{ g.imageSmoothingQuality = "high"; }catch(e){}
+  g.drawImage(src, sx, sy, cote, cote, 0, 0, PHOTO_COTE, PHOTO_COTE);
+  return c.toDataURL("image/jpeg", 0.82);
+}
+/* Poser une photo déjà découpée : enregistrer, dater, montrer, partager. */
+function enregistrerPhoto(url){
+  if(!url || url.length < 64) return false;
+  try{
+    localStorage.setItem(CLE_PHOTO, url);
+    photoCache = url;
+    profile.photoMaj = Date.now(); saveProfile();
+  }catch(e){ return false; }
+  majPhotoRacine(); majAvatarsPhoto();
+  diffuserPhoto();                                   // les joueurs du salon la voient
+  try{ synchroniser(); }catch(e){}                   // et le compte la garde
+  return true;
+}
+/* Le chemin SANS cadrage : carré pris au centre. C'est ce que faisait tout le
+   jeu avant la v290, et ça reste le repli si la scène de cadrage ne peut pas
+   s'ouvrir. */
 async function poserPhoto(fichier){
   let img = null;
   try{
@@ -17868,17 +17917,9 @@ async function poserPhoto(fichier){
     const w = img.width || img.naturalWidth, h = img.height || img.naturalHeight;
     if(!w || !h) throw new Error("vide");
     const cote = Math.min(w, h);
-    const c = document.createElement("canvas");
-    c.width = c.height = PHOTO_COTE;
-    const g = c.getContext("2d");
-    if(!g) throw new Error("canvas");
-    try{ g.imageSmoothingQuality = "high"; }catch(e){}
-    g.drawImage(img, (w - cote) / 2, (h - cote) / 2, cote, cote, 0, 0, PHOTO_COTE, PHOTO_COTE);
-    const url = c.toDataURL("image/jpeg", 0.82);
-    if(!url || url.length < 64) throw new Error("export");
-    localStorage.setItem(CLE_PHOTO, url);
-    photoCache = url;
-    profile.photoMaj = Date.now(); saveProfile();
+    const url = carrePhoto(img, (w - cote) / 2, (h - cote) / 2, cote);
+    if(!url) throw new Error("export");
+    if(!enregistrerPhoto(url)) throw new Error("stockage");
   }catch(e){
     /* Un échec silencieux serait pire que pas de photo du tout : le joueur
        recommencerait sans savoir pourquoi. */
@@ -17887,10 +17928,190 @@ async function poserPhoto(fichier){
   }finally{
     try{ if(img && img.close) img.close(); }catch(e){}
   }
-  majPhotoRacine(); majAvatarsPhoto();
-  diffuserPhoto();                                   // les joueurs du salon la voient
-  try{ synchroniser(); }catch(e){}                   // et le compte la garde
   return true;
+}
+
+/* ===================== CADRER SA PHOTO =====================
+   « Il serait bien d'avoir un truc qui permet d'ajuster la photo : la mettre
+   telle quelle, ou zoomer sur une partie précise. Comme ceux qui veulent
+   montrer du texte. » (Taylor, v290.)
+
+   CE QUI EST MONTRÉ. Un carré, et dedans un trou ROND : le disque clair est
+   exactement ce qui sera gardé, et ce qu'on perd reste visible en plus sombre
+   autour. Cadrer sans voir ce qu'on coupe, c'est recommencer trois fois.
+
+   « TELLE QUELLE » EST LE DÉPART. À l'ouverture, l'image est posée au carré du
+   centre, à sa plus petite taille utile — c'est-à-dire exactement le cadrage
+   que le jeu faisait tout seul avant. Valider sans rien toucher donne donc le
+   même résultat qu'avant : on n'a rien retiré à personne, on a ajouté un cran.
+
+   L'IMAGE DE TRAVAIL EST RÉDUITE UNE FOIS, AU DÉPART. La photo d'un appareil
+   de téléphone fait quatre à douze méga-octets et plusieurs milliers de pixels
+   de côté ; la garder telle quelle sous le doigt, c'est un téléphone d'entrée
+   de gamme qui rame à chaque geste. On la réduit donc une fois à 1200 px —
+   quatre fois et demie la taille finale, de quoi zoomer jusqu'à 6x sans jamais
+   voir un pixel, et ce n'est qu'après qu'on la manipule.
+   ET ON NE REDESSINE RIEN PENDANT LE GESTE : le cadrage est un transform sur
+   la toile, donc du compositeur pur. Le seul dessin a lieu à la validation. */
+const PHOTO_TRAVAIL = 1200;      // côté maximal de l'image de travail
+const ZOOM_MAX = 6;
+let cadrage = null;
+function cadreBorner(){
+  const c = cadrage; if(!c) return;
+  const mini = c.F / Math.min(c.w, c.h);              // l'image couvre toujours le cadre
+  c.s = Math.max(mini, Math.min(mini * ZOOM_MAX, c.s));
+  c.tx = Math.min(0, Math.max(c.F - c.w * c.s, c.tx));
+  c.ty = Math.min(0, Math.max(c.F - c.h * c.s, c.ty));
+}
+function cadreAppliquer(){
+  const c = cadrage; if(!c || !c.el) return;
+  c.el.style.transform = "translate(" + c.tx.toFixed(2) + "px," + c.ty.toFixed(2) + "px) scale(" + c.s.toFixed(4) + ")";
+  const gl = document.getElementById("cadreZoom");
+  if(gl){
+    const mini = c.F / Math.min(c.w, c.h);
+    const v = Math.max(1, Math.min(ZOOM_MAX, c.s / mini));
+    if(document.activeElement !== gl) gl.value = String(v);
+    gl.style.setProperty("--vol", Math.round(100 * (v - 1) / (ZOOM_MAX - 1)) + "%");
+  }
+}
+/* Zoomer AUTOUR D'UN POINT, pas autour du coin : sans ça, pincer sur un visage
+   le fait fuir hors du cadre et on passe son temps à le rattraper. */
+function cadreZoomVers(ns, ax, ay){
+  const c = cadrage; if(!c) return;
+  const k = ns / c.s;
+  c.tx = ax - (ax - c.tx) * k;
+  c.ty = ay - (ay - c.ty) * k;
+  c.s = ns;
+  cadreBorner(); cadreAppliquer();
+}
+function cadreGlisseur(v){
+  const c = cadrage; if(!c) return;
+  const mini = c.F / Math.min(c.w, c.h);
+  cadreZoomVers(mini * Math.max(1, Math.min(ZOOM_MAX, +v || 1)), c.F / 2, c.F / 2);
+}
+async function ouvrirCadrage(fichier){
+  let img = null;
+  try{
+    img = await imagePhoto(fichier);
+    const w0 = img.width || img.naturalWidth, h0 = img.height || img.naturalHeight;
+    if(!w0 || !h0) throw new Error("vide");
+    const k = Math.min(1, PHOTO_TRAVAIL / Math.max(w0, h0));
+    const w = Math.max(1, Math.round(w0 * k)), h = Math.max(1, Math.round(h0 * k));
+    const toile = document.createElement("canvas");
+    toile.width = w; toile.height = h;
+    const g = toile.getContext("2d");
+    if(!g) throw new Error("canvas");
+    try{ g.imageSmoothingQuality = "high"; }catch(e){}
+    g.drawImage(img, 0, 0, w0, h0, 0, 0, w, h);
+    monterCadrage(toile, w, h);
+    return true;
+  }catch(e){
+    try{ showModal({ title:T("Photo de profil"), message:T("Cette image n'a pas pu être lue.") }); }catch(err){}
+    return false;
+  }finally{
+    try{ if(img && img.close) img.close(); }catch(e){}
+  }
+}
+function monterCadrage(toile, w, h){
+  if(document.getElementById("cadrageVeil")) return;
+  const veil = document.createElement("div");
+  veil.className = "sheet-veil"; veil.id = "cadrageVeil";
+  veil.innerHTML = `
+    <div class="settings-sheet cadrage-sheet" role="dialog" aria-label="${T("Ajuster la photo")}">
+      <button class="sheet-grab" aria-label="${T('Fermer')}" onclick="fermerCadrage()"></button>
+      <div class="sheet-title"><span class="st-ico">${ICONS.user}</span>${T("Ajuster la photo")}</div>
+      <div class="cadre" id="cadreScene"><div class="cadre-trou"></div></div>
+      <div class="cadre-aide">${T("Pince pour zoomer, glisse pour cadrer")}</div>
+      <div class="cadre-zoom">
+        <span class="cz-ico">${ICONS.user}</span>
+        <input type="range" class="vol" id="cadreZoom" min="1" max="${ZOOM_MAX}" step="0.01" value="1" aria-label="${T("Zoom")}" oninput="cadreGlisseur(this.value)">
+        <span class="cz-ico gros">${ICONS.user}</span>
+      </div>
+      <button class="sheet-done" onclick="validerCadrage()">${T("Enregistrer")}</button>
+    </div>`;
+  document.body.appendChild(veil);
+  const scene = veil.querySelector("#cadreScene");
+  scene.insertBefore(toile, scene.firstChild);
+  monterLaFeuille(veil);
+  glassTrack();
+  veil.addEventListener("click", (e)=>{ if(e.target === veil){ fermerCadrage(); } });
+  /* LA TAILLE DU CADRE SE LIT APRÈS LA MISE EN PAGE, pas avant : la feuille
+     vient d'entrer, sa largeur dépend de l'écran et des marges de sécurité. */
+  const poser = ()=>{
+    const F = scene.clientWidth || scene.getBoundingClientRect().width;
+    if(!F){ requestAnimationFrame(poser); return; }
+    const mini = F / Math.min(w, h);
+    cadrage = { el:toile, img:toile, w, h, F, s:mini, tx:(F - w * mini) / 2, ty:(F - h * mini) / 2 };
+    cadreBorner(); cadreAppliquer();
+  };
+  requestAnimationFrame(poser);
+  brancherCadrage(scene);
+}
+/* UN DOIGT GLISSE, DEUX DOIGTS PINCENT. Les événements « pointer » couvrent le
+   doigt, le stylet et la souris du même code — et setPointerCapture garde le
+   geste même si le doigt sort du cadre en route. */
+function brancherCadrage(scene){
+  const doigts = new Map();
+  let dist0 = 0, s0 = 0, mid0 = null;
+  const pos = (e)=>{ const r = scene.getBoundingClientRect(); return { x:e.clientX - r.left, y:e.clientY - r.top }; };
+  scene.addEventListener("pointerdown", (e)=>{
+    if(!cadrage) return;
+    scene.setPointerCapture(e.pointerId);
+    doigts.set(e.pointerId, pos(e));
+    if(doigts.size === 2){
+      const [a, b] = [...doigts.values()];
+      dist0 = Math.hypot(a.x - b.x, a.y - b.y) || 1;
+      s0 = cadrage.s; mid0 = { x:(a.x + b.x) / 2, y:(a.y + b.y) / 2 };
+    }
+  });
+  scene.addEventListener("pointermove", (e)=>{
+    if(!cadrage || !doigts.has(e.pointerId)) return;
+    const avant = doigts.get(e.pointerId), maintenant = pos(e);
+    doigts.set(e.pointerId, maintenant);
+    if(doigts.size >= 2){
+      const [a, b] = [...doigts.values()];
+      const d = Math.hypot(a.x - b.x, a.y - b.y) || 1;
+      const mid = { x:(a.x + b.x) / 2, y:(a.y + b.y) / 2 };
+      if(mid0){ cadrage.tx += mid.x - mid0.x; cadrage.ty += mid.y - mid0.y; mid0 = mid; }
+      cadreZoomVers(s0 * (d / dist0), mid.x, mid.y);
+    } else {
+      cadrage.tx += maintenant.x - avant.x;
+      cadrage.ty += maintenant.y - avant.y;
+      cadreBorner(); cadreAppliquer();
+    }
+  });
+  const lacher = (e)=>{
+    doigts.delete(e.pointerId);
+    if(doigts.size < 2){ mid0 = null; }
+    if(doigts.size === 1 && cadrage){ s0 = cadrage.s; }
+  };
+  scene.addEventListener("pointerup", lacher);
+  scene.addEventListener("pointercancel", lacher);
+  /* La molette, pour qui cadre sur un ordinateur. */
+  scene.addEventListener("wheel", (e)=>{
+    if(!cadrage) return;
+    e.preventDefault();
+    const p = pos(e);
+    cadreZoomVers(cadrage.s * (e.deltaY < 0 ? 1.12 : 1 / 1.12), p.x, p.y);
+  }, { passive:false });
+}
+function fermerCadrage(){
+  const v = document.getElementById("cadrageVeil");
+  cadrage = null;
+  if(!v || v.classList.contains("closing")) return;
+  v.classList.add("closing");
+  setTimeout(()=>{ if(v.parentNode) v.remove(); }, msFerme() + 20);
+}
+function validerCadrage(){
+  const c = cadrage;
+  if(!c){ fermerCadrage(); return false; }
+  /* Ce que le trou rond montre, en pixels de l'image de travail. */
+  const x0 = -c.tx / c.s, y0 = -c.ty / c.s, cote = c.F / c.s;
+  const url = carrePhoto(c.img, x0, y0, cote);
+  const ok = enregistrerPhoto(url);
+  if(!ok){ try{ showModal({ title:T("Photo de profil"), message:T("Cette image n'a pas pu être lue.") }); }catch(e){} }
+  fermerCadrage();
+  return ok;
 }
 function retirerPhoto(){
   try{ localStorage.removeItem(CLE_PHOTO); }catch(e){}

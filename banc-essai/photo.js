@@ -223,6 +223,70 @@ const URL = process.argv[2] || 'http://127.0.0.1:8099/index.html';
   dire(rebord.origine === 'border-box' && rebord.image.indexOf('url(') === 0,
        'le fond de la photo est posé dans la boîte de BORDURE', rebord.origine);
 
+  /* ===== CADRER : CE QUE LE ROND MONTRE EST CE QUI EST GARDÉ (v290) =====
+     « Il serait bien d'avoir un truc qui permet d'ajuster la photo : la mettre
+     telle quelle, ou zoomer sur une partie précise. »
+     On fabrique une image à quatre quartiers de couleurs franches, on zoome sur
+     UN quartier, on valide, et on relit les pixels de la photo enregistrée. Si
+     le cadrage ment, la couleur ne sera pas la bonne — il n'y a pas de demi-
+     mesure possible sur ce test.
+     Et on vérifie les deux promesses qui vont avec : « telle quelle » donne
+     exactement ce que le jeu faisait avant (le carré du centre), et l'image
+     couvre TOUJOURS le rond, quoi qu'on fasse glisser. */
+  const cadre = await p.evaluate(async()=>{
+    const src = document.createElement('canvas'); src.width = src.height = 800;
+    const g = src.getContext('2d');
+    g.fillStyle='#FF0000'; g.fillRect(0,0,400,400);      // haut-gauche  rouge
+    g.fillStyle='#00FF00'; g.fillRect(400,0,400,400);    // haut-droit   vert
+    g.fillStyle='#0000FF'; g.fillRect(0,400,400,400);    // bas-gauche   bleu
+    g.fillStyle='#FFFF00'; g.fillRect(400,400,400,400);  // bas-droit    jaune
+    const blob = await new Promise(r=>src.toBlob(r,'image/png'));
+
+    const lire = async ()=>{
+      const url = localStorage.getItem('bt_photo') || '';
+      const im = new Image(); im.src = url;
+      await new Promise(r=>{ im.onload=r; im.onerror=r; });
+      const c = document.createElement('canvas'); c.width=im.width; c.height=im.height;
+      c.getContext('2d').drawImage(im,0,0);
+      const d = c.getContext('2d').getImageData(Math.floor(im.width/2), Math.floor(im.height/2), 1, 1).data;
+      return [d[0],d[1],d[2]];
+    };
+
+    /* 1) TELLE QUELLE : on ouvre et on valide sans rien toucher. */
+    await ouvrirCadrage(blob);
+    await new Promise(r=>setTimeout(r,400));
+    const ouvert = !!document.getElementById('cadrageVeil') && !!cadrage;
+    validerCadrage();
+    await new Promise(r=>setTimeout(r,300));
+    const telle = await lire();
+
+    /* 2) ZOOM SUR LE QUARTIER JAUNE (bas-droit). */
+    await ouvrirCadrage(blob);
+    await new Promise(r=>setTimeout(r,400));
+    cadreGlisseur(3);
+    cadrage.tx = -1e6; cadrage.ty = -1e6;    // on pousse à fond vers le bas-droit
+    cadreBorner(); cadreAppliquer();
+    /* l'image couvre-t-elle encore le rond ? */
+    const couvre = (cadrage.tx <= 0.01 && cadrage.ty <= 0.01
+                 && cadrage.tx >= cadrage.F - cadrage.w * cadrage.s - 0.01
+                 && cadrage.ty >= cadrage.F - cadrage.h * cadrage.s - 0.01);
+    validerCadrage();
+    await new Promise(r=>setTimeout(r,300));
+    const coin = await lire();
+    const reste = !!document.getElementById('cadrageVeil');
+    return { ouvert, telle, coin, couvre, reste };
+  });
+  dire(cadre.ouvert, 'la scène de cadrage s\'ouvre sur l\'image choisie', '');
+  /* Au centre d'une image à quatre quartiers, « telle quelle » tombe pile sur
+     la jonction : la couleur lue est un mélange, ce qu'on vérifie c'est
+     qu'elle n'est PAS franchement jaune (donc qu'on n'a pas déjà zoomé). */
+  const [tr,tg,tb] = cadre.telle;
+  dire(!(tr>180 && tg>180 && tb<90), 'sans rien toucher, le cadrage reste celui du centre', cadre.telle.join(','));
+  const [cr,cg,cb] = cadre.coin;
+  dire(cr>170 && cg>170 && cb<90, 'zoomé dans un coin, c\'est CE coin qui est gardé', cadre.coin.join(',') + ' (jaune attendu)');
+  dire(cadre.couvre, 'l\'image couvre toujours le rond, même poussée à bout', '');
+  dire(!cadre.reste, 'la scène se referme après validation', '');
+
   /* ---- un fichier illisible, puis le retrait ---- */
   const mauvais = await p.evaluate(async()=>{
     const avant = localStorage.getItem('bt_photo') || '';
