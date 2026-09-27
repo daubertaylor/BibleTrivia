@@ -7,7 +7,14 @@
    charge la version d'aujourd'hui, on force une écriture de CHAQUE magasin
    (c'est ce que fait une partie), et on recompte tout.
    Toute valeur qui baisse est un défaut. Y compris celles qui ne se voient pas
-   tout de suite : le volume du son, la traduction choisie, le badge créateur.
+   tout de suite : le volume du son, la traduction choisie, la photo de profil.
+
+   UNE SEULE CHOSE DOIT DISPARAÎTRE, ET ON LE VÉRIFIE AUSSI. Le drapeau du
+   badge Créateur (isCreator), retiré du jeu en v287 à la demande de Taylor,
+   reste écrit dans le profil enregistré de ceux qui l'avaient. Plus rien ne le
+   lit — mais on ne laisse pas une donnée morte dans le stockage de quelqu'un.
+   Le banc sème donc un profil qui le porte et exige qu'il ne soit PLUS LÀ
+   après la mise à jour, pendant que le nom et la couleur, eux, survivent.
    Usage : node banc-essai/migration.js [url] */
 const { chromium } = require('/opt/node22/lib/node_modules/playwright');
 (async()=>{
@@ -18,6 +25,8 @@ const { chromium } = require('/opt/node22/lib/node_modules/playwright');
     const j=(n)=>{const d=new Date(Date.now()-n*86400000),z=x=>String(x).padStart(2,'0');return d.getFullYear()+'-'+z(d.getMonth()+1)+'-'+z(d.getDate());};
     localStorage.setItem('bt_profile', JSON.stringify({name:'Taylor',color:'#4C86E8',isCreator:true}));
     localStorage.setItem('bt_fs_hint','1');
+    /* Une photo posée avant la mise à jour doit la traverser intacte. */
+    localStorage.setItem('bt_photo','data:image/jpeg;base64,' + 'Q'.repeat(400));
     localStorage.setItem('bt_progress', JSON.stringify({ books:{'Genèse':14,'Exode':0,'Jean':9,'Psaumes':22}, totalCorrect:505, bestStreak:22, flawless:3, ach:{premier:1,torah:1,fidele:1} }));
     localStorage.setItem('bt_stats', JSON.stringify({ bestScore:980, bestPct:92, games:61 }));
     /* série de 120 jours : plus longue que la mémoire de 90 jours */
@@ -41,10 +50,15 @@ const { chromium } = require('/opt/node22/lib/node_modules/playwright');
       total:pr.totalCorrect, meilleure:pr.bestStreak, parfaites:pr.flawless, succes:Object.keys(pr.ach).length,
       score:st.bestScore, parties:st.games, serie:d.streak, gels:d.gels, jours:(d.jours||[]).length, geles:(d.geles||[]).length,
       carnet:errbookCount(), vues:loadSeen().size, sfx:settings.sfx, volume:settings.volume, bible:settings.bible,
-      nom:profile.name, createur:profile.isCreator, joursLus:joursFaits().size };
+      nom:profile.name, couleur:profile.color,
+      photo:(localStorage.getItem('bt_photo')||'').length,
+      /* le drapeau mort : on le cherche LÀ OÙ IL ÉTAIT ÉCRIT, pas en mémoire */
+      badgeEfface: !('isCreator' in JSON.parse(localStorage.getItem('bt_profile')||'{}')),
+      joursLus:joursFaits().size };
   });
   const attendu = { genese:14, jean:9, psaumes:22, total:505, meilleure:22, parfaites:3, succes:3, score:980, parties:61,
-    serie:120, gels:2, carnet:200, vues:300, sfx:false, volume:0.7, bible:'darby', nom:'Taylor', createur:true };
+    serie:120, gels:2, carnet:200, vues:300, sfx:false, volume:0.7, bible:'darby',
+    nom:'Taylor', couleur:'#4C86E8', photo:423, badgeEfface:true };
   let ko=0;
   for(const k in attendu){ const bon = r[k] === attendu[k]; if(!bon) ko++;
     console.log('  ' + (bon?'OK ':'KO ') + k.padEnd(12) + String(r[k]).padEnd(10) + (bon?'':'  attendu ' + attendu[k])); }

@@ -7598,7 +7598,15 @@ function loadProfile(){
      d'autre. On l'efface au premier chargement ; le prochain saveProfile()
      l'écrit sans lui. Rien d'autre du profil n'est touché — ni le nom, ni la
      couleur, ni la photo. */
-  if("isCreator" in p){ try{ delete p.isCreator; }catch(e){} }
+  if("isCreator" in p){
+    /* ON RÉÉCRIT TOUT DE SUITE, ET C'EST LE POINT. L'effacer de l'objet ne
+       l'efface pas du STOCKAGE : il y resterait jusqu'au jour où le joueur
+       touche son profil — c'est-à-dire, pour la plupart, jamais. Le banc de
+       migration l'a dit : « badgeEfface false, attendu true ». On repose donc
+       le profil nettoyé dans la foulée. Une seule écriture, une seule fois :
+       au chargement suivant la clé n'est plus là. */
+    try{ delete p.isCreator; localStorage.setItem("bt_profile", JSON.stringify(p)); }catch(e){}
+  }
   return p;
 }
 let profile = loadProfile();
