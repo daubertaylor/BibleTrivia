@@ -194,7 +194,7 @@ const JAMAIS_A_L_ECRAN = [
 const MEME_DANS_LES_DEUX = [
   { quoi:/^(Yada|Taylor|Sam|Lee|Kim)$/,        car:'un nom propre' },
   { quoi:/^(Job|Daniel|Esther|Ruth|Jude|Amos|Nahum|Joel|Amen|Hosanna)$/i, car:'même mot dans les deux langues' },
-  { quoi:/^(Duel|Options|Score|Records|Contact|Version|Format|Instagram|Notifications?|Guide|Volume|Testament|Solo|Installation|Modes?|Messages?|Info|Centurion|Bibliophile)$/i, car:'même mot dans les deux langues' },
+  { quoi:/^(Duel|Options|Score|Records|Contact|Version|Format|Instagram|Notifications?|Guide|Volume|Testament|Solo|Installation|Modes?|Messages?|Info|Centurion|Bibliophile|Zoom)$/i, car:'même mot dans les deux langues' },
   { quoi:/^\d+\s*(questions?|pts|points?|s|min)$/i, car:'un nombre et un mot écrit pareil' },
   { quoi:/^[^\p{L}]*$/u,                       car:'aucune lettre — chiffres, ponctuation, icône' },
   { quoi:/^(Français|English|Español|Português|Deutsch|Italiano)$/, car:'une langue s\'écrit dans sa langue' },
@@ -814,6 +814,15 @@ const ouvrirLaLangue = async (p, lg) => {
     /* Un fichier qui n'est pas une image : la modale doit le DIRE. On passe par
        poserPhoto, le chemin du jeu — pas par showModal à la main. */
     ['Profil · photo illisible', () => poserPhoto(new Blob(['ceci n\'est pas une image'], { type:'image/jpeg' }))],
+    /* La scène de cadrage (v290) : son titre, son aide et le nom du glisseur
+       ne se montrent que là. */
+    ['Ajuster la photo', async () => {
+      __fermerTout();
+      const c = document.createElement('canvas'); c.width = 600; c.height = 400;
+      const g = c.getContext('2d'); g.fillStyle = '#7a5a3a'; g.fillRect(0,0,600,400);
+      const blob = await new Promise(r=>c.toBlob(r,'image/png'));
+      await ouvrirCadrage(blob);
+    }],
   ];
 
     const releve = new Map();

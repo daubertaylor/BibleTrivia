@@ -252,6 +252,11 @@ for(const [a, b] of [['const TEXTES = {', '\n};'], ['const BANK = {', '\n  ]\n};
                      /* La sonde d'ouverture : un panneau de mesure pour moi,
                         jamais montré à un joueur. Rien à y traduire. */
                      ['const SONDE = (function(){', 'document.body.appendChild(box);'],
+                     /* La sonde du RETRAIT (v291) : même nature, même raison.
+                        Elle ne s'allume qu'avec « ?sonde=1 » et n'affiche ses
+                        millisecondes qu'à celui qui mesure. Elle vit trop loin
+                        de la première pour tenir dans la même zone. */
+                     ['function sonderRetrait(', 'document.body.appendChild(box);'],
                      /* ACCUEIL_DEF n'est pas de l'interface : c'est le repli
                         du verset d'accueil, qui passe par texteVerset(). */
                      ['const ACCUEIL_REF', 'function texteAccueil']])
