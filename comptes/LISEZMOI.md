@@ -113,9 +113,26 @@ indiscernables, et le téléphone croyait avoir sauvegardé sans rien avoir pos�
 
 ## Ce qui monte dans le compte, et ce qui n'y monte pas
 
-**Monte** : le nom et la couleur choisis, la progression par livre, les
-compteurs, la flamme et ses jours, les questions déjà vues, le carnet
-d'erreurs, les succès, le goût (traduction, décor).
+**Monte** : le nom, la couleur et la **photo de profil**, la progression par
+livre, les compteurs, la flamme et ses jours, les questions déjà vues, le
+carnet d'erreurs, les succès, le goût (traduction, décor).
+
+La photo pèse une **seizaine de kilo-octets** : elle est recadrée au carré et
+réduite à 256 pixels avant d'être enregistrée, jamais gardée telle que
+l'appareil photo l'a produite (quatre à douze méga-octets). Elle se départage
+entre deux téléphones **par la date**, et c'est la seule chose de la sauvegarde
+qui marche ainsi : sans ça, retirer sa photo sur un téléphone la verrait
+revenir au premier échange avec l'autre, indéfiniment. Retirer sa photo est un
+acte explicite, fait sur son propre compte — la date dit lequel des deux gestes
+est le dernier. Tout le reste (compteurs, ensembles, carnet) reste monotone :
+la fusion ne peut rien retirer.
+
+**Les autres joueurs la voient**, en partie en ligne. Elle ne passe PAS par la
+présence — celle-ci est re-diffusée à chaque changement de score, et y glisser
+seize kilo-octets les renverrait à chaque bonne réponse. Elle part par une
+diffusion ponctuelle sur le canal du salon : une fois en arrivant, une fois de
+plus quand quelqu'un arrive après nous. Personne ne demande rien, tout le monde
+se présente.
 
 **Ne monte pas** : le son, la musique, le volume, les notifications. Ils
 appartiennent à l'**appareil**, pas au joueur — un volume réglé sur une

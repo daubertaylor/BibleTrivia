@@ -490,7 +490,7 @@
      déjà disponible (--dep, relevé en JS avant qu'elle existe) : la course
      gagne toujours exactement la hauteur du clavier, écran court ou long. */
   html.kb #app::after{ content:""; position:absolute; top:calc(100% + var(--dep, 0px)); left:0; width:1px; height:var(--kbh, 0px); pointer-events:none; }
-  /* Une modale à champ (le code Créateur) est CENTRÉE dans la fenêtre — donc
+  /* Une modale à champ (le code d'une partie) est CENTRÉE dans la fenêtre — donc
      centrée derrière le clavier dès qu'il monte : le champ frôlait le bord
      (9px d'air mesurés) et le bouton « Valider » finissait 100px SOUS le
      clavier, hors d'atteinte. On ramène le voile à la hauteur réellement
@@ -510,7 +510,7 @@
   .chip, .icon-btn, .btn-reveal, .btn-newgame, .award-btn, .presence-card, .me-row, .online-action,
   .searching-card, .waiting-card, .info-card, .vs-row, .len-chip, .duel-scorebar, .timer-chip, .dr-side,
   .rank-row, .text-input, .code-input, .fs-hint, .modal-card, .add-team, .btn-ghost, .fsh-close, .settings-sheet, .hero-verse-card, .end-medal, .modal-btn, .leave-banner, .adj-btn, .waiting-note,
-  .rules, .btn-review, .daily-card, .dc-streak, .sem-flamme, .btn-invite, .creator-badge, .sheet-done, .set-go,
+  .rules, .btn-review, .daily-card, .dc-streak, .sem-flamme, .btn-invite, .sheet-done, .set-go,
   .share-btn, .rev-item, .parcours-card, .parcours-sum, .tst-head, .team-row, .bk{
     --rim-cast:0 5px 14px rgba(34,26,16,0.12);
   }
@@ -1847,8 +1847,42 @@
   .chip.remplit::after, .len-chip.remplit::after{ animation:remplitIn var(--tr-onde) forwards; }
   /* Celle qu'on quitte a perdu sa classe d'état : c'est la classe passagère
      qui tient son rouge le temps qu'il se retire. */
+  /* ===== LA COURBE DU DÉPART, RÉGLÉE SUR UN CLIGNOTEMENT MESURÉ =====
+     « Ça fait un effet bizarre au remplissage, comme un clignotement. »
+     (Taylor, vidéo d'écran à 60 images/seconde.)
+     CE QUI SE PASSAIT. Dans une rangée de trois puces, UNE SEULE doit être
+     rouge. On peut donc mesurer le défaut en un seul nombre : la quantité
+     TOTALE de rouge sur la rangée, qui doit rester constante pendant le
+     passage. Relevé image par image sur sa vidéo, puis reproduit ici :
+
+         au repos                          100 %
+         pendant le passage, au pire       144 %  (sa vidéo, iPhone)
+                                           133 %  (ici, même mesure)
+
+     La rangée s'éclairait donc de moitié en plus pendant un quart de seconde,
+     puis revenait. C'est ça, le clignotement : pendant ~150 ms, DEUX puces
+     sont rouges en même temps.
+     POURQUOI. La puce qui arrive grandit ET s'opacifie sur une courbe qui
+     démarre vite ; celle qui part s'effaçait sur une courbe qui démarre LENT
+     (cubic-bezier(0.4,0,1,1) : 9 % effacés au premier quart). L'une était déjà
+     là que l'autre n'avait pas bougé.
+     CE QU'ON A CHANGÉ, ET COMMENT ON L'A CHOISI. La puce qui ARRIVE n'est pas
+     touchée : sa courbe a été réglée pour la lisibilité de son libellé (voir
+     plus haut, les dix-sept instants photographiés). On a donc cherché, pour
+     le DÉPART seul, la courbe qui tient la somme au plus près de 100 %. Neuf
+     candidates essayées, quatre passages chacune :
+
+         0.24s cubic-bezier(0.4,0,1,1)      pire 133 %   creux 100 %  (avant)
+         0.24s linear                       pire 120 %   creux  92 %
+         0.24s cubic-bezier(0.5,0,0.4,1)    pire 110 %   creux 100 %
+         0.24s cubic-bezier(0.33,1,0.68,1)  pire 100 %   creux  66 %  (trou noir)
+         0.24s cubic-bezier(0.45,0.05,0.35,1) pire 102 % creux  99 %  <-- retenue
+
+     Celle qui gagne n'est ni la plus lente ni la plus rapide : c'est celle qui
+     ÉPOUSE la montée de l'autre. Trop rapide et la rangée s'éteint à moitié
+     (creux à 66 %) — l'autre défaut, symétrique, tout aussi visible. */
   .chip.devide::after, .len-chip.devide::after{ transform:scale(1); opacity:1;
-    animation:remplitOut var(--onde-duree) cubic-bezier(0.4,0,1,1) forwards; }
+    animation:remplitOut var(--onde-duree) cubic-bezier(0.45,0.05,0.35,1) forwards; }
   /* LA TEINTE DE VERRE ARRIVE QUAND LE REMPLISSAGE A FINI, ET REPART TOUT DE
      SUITE. Sinon elle ferait, sous la couche, le fondu uniforme qu'on vient
      justement d'enlever — on le verrait dépasser aux quatre coins. En partant,
@@ -1909,8 +1943,8 @@
      ils s'y fondent. Les boutons pleins sont sortis de cette liste : sur un
      corail saturé le même blanc devenait le trait que Taylor voyait, et leur
      arête est désormais une ombre de leur propre couleur (--rebord-plein). */
-  /* Le badge « Créateur » sort de cette liste : c'est une pastille ambrée
-     saturée, elle se détache de la photo par sa couleur et son ombre. Son
+  /* (Le badge « Créateur » sortait de cette liste ; il a été retiré du jeu en
+     v287. La règle reste vraie pour les pastilles qui restent.) Son
      anneau clair, mesuré à 14 unités au-dessus de son fond, était le
      dernier contour blanc du jeu. */
   .avatar, .podium-avatar, .team-token, .scn-thumb, .end-medal{ --bord:var(--bord-plein); --levre:var(--levre-pleine); }
@@ -1996,49 +2030,53 @@
      matière, et c'est celle que Taylor a montrée. */
   .avatar{ position:relative; border-radius:50%; color:#fff; display:inline-flex; align-items:center; justify-content:center; font-family:'Poppins',sans-serif; font-weight:700; border:2px solid var(--bord); --rim-edge:0 0 0 1px transparent; --rim-cast:0 4px 12px rgba(15,12,10,0.18); flex-shrink:0; }
   .avatar.waiting{ background:rgba(255,255,255,0.5); color:var(--ink-soft); border-style:dashed; }
-  /* Même teinte dorée saturée que le badge « Créateur » (au lieu du dégradé
-     pâle d'origine) : le petit C du profil et le badge du profil forment
-     désormais un seul et même « look » doré vif, cohérent partout. */
-  /* translateZ(0) : le badge vit sur SA PROPRE couche, rastérisée à la
-     résolution de l'écran. Sans ça, pendant le glissement d'entrée du profil il
-     était re-rastérisé sur la couche d'animation (légèrement flou) puis « sautait »
-     net à la fin -> le petit C semblait changer. Là il reste identique avant,
-     pendant et après la transition. */
-  /* LE BADGE SUIT LA TAILLE DE SON AVATAR. Il était figé à 1,2 rem pendant que
-     les avatars vont de 1,55 rem (lignes de classement) à 4,2 rem (profil) :
-     il occupait donc 77 % du plus petit et 29 % du plus grand — près de trois
-     fois plus gros ici que là, et sur l'avatar d'accueil (2,4 rem) il en
-     couvrait la moitié. Il se mesure maintenant en fraction de l'avatar
-     (--av, posé par avatarHtml), bornée aux deux bouts pour rester lisible sur
-     les plus petits sans jamais grossir sur les plus grands. Écart ramené de
-     77-29 % à 44-29 %, et il ne mange plus le visage nulle part.
-     (La lèvre blanche interne a sauté ici comme partout : son arête est
-     l'ombre dorée qu'elle porte déjà.) */
-  .crown-badge{ position:absolute;
-    bottom:calc(var(--av, 2.6rem) * -0.05); right:calc(var(--av, 2.6rem) * -0.05);
-    width:clamp(0.68rem, calc(var(--av, 2.6rem) * 0.34), 1.2rem);
-    height:clamp(0.68rem, calc(var(--av, 2.6rem) * 0.34), 1.2rem);
-    padding:clamp(0.09rem, calc(var(--av, 2.6rem) * 0.045), 0.16rem);
-    background:linear-gradient(150deg,#FFC65C,#E8952A); border-radius:50%; display:flex; align-items:center; justify-content:center; color:#fff; text-shadow:0 1px 2px rgba(122,78,4,0.35); border:0;  box-shadow:0 2px 6px rgba(196,120,20,0.55); transform:translateZ(0); backface-visibility:hidden; }
-  /* Le brun sur verre clair (comme la pastille flamme du défi) restait fade à
-     côté du badge rond du profil (dégradé or plein, opaque). Même recette
-     que .streak-chip.hot : teinte dorée SATURÉE (au lieu du voile pâle) +
-     texte blanc -> même impact visuel que le badge rond, un seul « look »
-     doré vif « Créateur » dans toute l'appli. */
-  /* translateZ(0) : la pastille « Créateur » vit sur SA PROPRE couche (comme le
-     petit badge de l'avatar). Sans ça, son rebord de verre était re-rastérisé
-     sur la couche d'animation pendant le glissement d'entrée du profil -> le
-     « bord » changeait une fraction de seconde avant de se figer net. Là il est
-     identique du 1er au dernier instant de la transition. */
-  .creator-badge{ display:inline-flex; align-items:center; gap:0.3rem; --glass-tint: rgb(240,163,26); color:#fff; text-shadow:0 1px 2px rgba(122,78,4,0.35); font-size:0.78rem; font-weight:800; letter-spacing:0.02em; padding:0.24rem 0.62rem 0.24rem 0.46rem; border-radius:var(--r-full); border:1px solid var(--bord); --rim-cast:0 3px 12px rgba(214,148,20,0.45); transform:translateZ(0); backface-visibility:hidden; }
-  .creator-badge svg{ width:0.85rem; height:0.85rem; }
-  /* Vrai « C » majuscule (Poppins), pas un anneau ouvert. */
-  /* Le « C » créateur : une VRAIE capitale dessinée en vectoriel (silhouette
-     de C géométrique gras, ouverture à droite) — même forme sur tous les
-     appareils, aucune dépendance au chargement des polices. */
-  .c-mono{ display:block; }
-  .crown-badge .c-mono{ width:100%; height:100%; }
+  /* ===== LA PHOTO DE PROFIL, POSÉE UNE SEULE FOIS =====
+     Elle pèse une vingtaine de kilo-octets. La recopier dans les cinq endroits
+     où l'avatar du joueur apparaît sur un même écran gonflerait le HTML
+     d'autant, à CHAQUE rendu. Elle est donc posée une fois en variable CSS sur
+     la racine (--photo, voir majPhotoRacine) et la classe ne fait que la
+     réclamer. Changer de photo ne redessine alors aucun écran : une seule
+     écriture de variable, et les cinq avatars suivent.
+     « color:transparent » plutôt que de retirer l'initiale du HTML : l'initiale
+     reste là, sous la photo, et reparaît d'elle-même si l'image manque. */
+  /* « background-origin:border-box » — ET C'EST LA RÈGLE « JAMAIS DE BORDURE
+     DE COULEUR » QUI SE JOUE LÀ. Par défaut, une image de fond est POSÉE dans
+     la boîte de remboursage mais PEINTE jusqu'au bord de la bordure : sous les
+     2 px de rebord, l'image ne va pas, et c'est la couleur du joueur qui
+     reparaît — un anneau de sa couleur autour de son visage.
+     MESURÉ, PARCE QUE ÇA NE SE VOIT PAS SUR N'IMPORTE QUELLE PHOTO. Sur une
+     photo dont les bords sont eux-mêmes colorés, l'anneau se confond avec elle
+     (je m'y suis laissé prendre une fois, en criant au défaut sur mes propres
+     images d'essai). On pose donc une photo entièrement BLANCHE sur une couleur
+     de joueur ROUGE VIF, et on compte les pixels franchement rouges le long du
+     rebord, à quatre rayons :
+         posée dans le remboursage   0/120  0/120  5/120  21/120
+         posée dans la bordure       0/120  0/120  0/120   0/120
+     Vingt et un pixels de rouge franc sur le dernier anneau : c'est bien une
+     bordure de couleur, et elle n'a sa place nulle part dans ce jeu.
+     banc-essai/photo.js refait cette mesure à chaque passage. */
+  .avatar.a-photo{ background-image:var(--ph, none); background-origin:border-box; background-clip:border-box;
+    background-size:cover; background-position:50% 50%; background-repeat:no-repeat; color:transparent; text-shadow:none; }
+  /* LE BADGE « CRÉATEUR » A ÉTÉ RETIRÉ (v287, demande de Taylor). Il occupait
+     ici une pastille dorée sur l'avatar et une gélule dorée sous le nom, toutes
+     deux débloquées par un code secret. Sa place — le tap sur l'avatar du
+     Profil — sert maintenant à choisir une photo. Rien d'autre ne s'y
+     référait ; les deux règles qui empruntaient sa teinte dorée (.streak-chip
+     chaude, la pastille de la flamme) la déclarent elles-mêmes. */
 
+  /* L'avatar du Profil est un BOUTON : on le touche pour choisir sa photo.
+     Il ne porte ni fond ni rebord propre — c'est l'avatar qu'on voit, pas le
+     bouton. Aucune bordure de couleur, ici comme partout. */
+  /* L'ARRONDI N'EST PAS DÉCORATIF ICI : c'est lui qui donne sa forme à l'onde
+     d'appui. Tout bouton du jeu peint son onde dans un ::before en
+     « border-radius:inherit » ; un bouton sans arrondi peint donc une onde
+     CARRÉE — sur un avatar rond, ça se voit. banc-essai/forme.js l'a dit du
+     premier coup : « profil avatar-tap 69x69 arrondi 0 px <-- ONDE CARRÉE ». */
+  .avatar-tap{ display:block; margin:0 auto; padding:0; border:0; border-radius:50%; background:none; box-shadow:none; -webkit-appearance:none; appearance:none; cursor:pointer; }
+  /* Les deux mots sous le nom. 44 px de haut : c'est la plus petite cible qu'un
+     doigt attrape sans viser (voir DETTE.md, point 6). */
+  .photo-liens{ display:flex; align-items:center; justify-content:center; gap:0.2rem; margin-top:0.35rem; }
+  .photo-lien{ min-height:44px; padding:0 0.7rem; border:0; border-radius:var(--r-full); background:none; box-shadow:none; color:#fff; text-shadow:0 1px 10px rgba(0,0,0,0.55); font-size:0.82rem; font-weight:600; -webkit-appearance:none; appearance:none; cursor:pointer; }
   .profile-card{ text-align:center; padding:1.1rem 1rem 0.35rem; margin-bottom:var(--e-3); }
   .profile-card .avatar{ margin:0 auto; }
   .profile-name{ font-family:'Poppins',sans-serif; font-weight:700; font-size:1.15rem; margin-top:0.65rem; color:#fff; text-shadow:0 1px 12px rgba(0,0,0,0.5); }
@@ -2166,7 +2204,6 @@
   .me-row{ display:flex; align-items:center; gap:0.6rem; width:100%; background:rgba(255,255,255,0.5); backdrop-filter:blur(16px) saturate(180%); -webkit-backdrop-filter:blur(16px) saturate(180%); border:0; border-radius:var(--r-m); padding:calc(0.5rem + 1px) calc(0.75rem + 1px); margin-bottom:0.85rem; }
   .me-name{ font-weight:600; font-size:0.9rem; color:var(--ink); }
   .me-edit{ margin-left:auto; font-size:0.82rem; color:var(--primary); font-weight:600; }
-  .me-row .creator-badge{ margin-left:auto; }
 
   .online-action{ display:flex; align-items:center; gap:0.7rem; width:100%; background:rgba(255,255,255,0.55); backdrop-filter:blur(18px) saturate(180%); -webkit-backdrop-filter:blur(18px) saturate(180%); border:0; border-radius:var(--r-l); padding:calc(0.72rem + 1px) calc(0.85rem + 1px); margin-bottom:0.55rem; text-align:left; }
   .online-action.primary{ --glass-tint: rgb(236,60,26); border-color:transparent; }
@@ -2560,7 +2597,7 @@
   .option-btn, .btn-primary, .btn-next, .btn-replay, .fact-card, .tier-chip, .q-counter, .streak-chip, .chip, .icon-btn, .btn-reveal,
   .btn-newgame, .award-btn, .presence-card, .me-row, .online-action, .searching-card,
   .waiting-card, .info-card, .vs-row, .len-chip, .duel-scorebar, .timer-chip, .dr-side, .rank-row,
-  .text-input, .code-input, .fs-hint, .modal-card, .btn-ghost, .fsh-close, .settings-sheet, .hero-verse-card, .end-medal, .modal-btn.ok, .modal-btn.cancel, .leave-banner, .adj-btn, .waiting-note, .rules, .btn-review, .daily-card, .dc-streak, .sem-flamme, .btn-invite, .creator-badge, .sheet-done, .set-go, .share-btn, .rev-item, .parcours-card, .tst-head{
+  .text-input, .code-input, .fs-hint, .modal-card, .btn-ghost, .fsh-close, .settings-sheet, .hero-verse-card, .end-medal, .modal-btn.ok, .modal-btn.cancel, .leave-banner, .adj-btn, .waiting-note, .rules, .btn-review, .daily-card, .dc-streak, .sem-flamme, .btn-invite, .sheet-done, .set-go, .share-btn, .rev-item, .parcours-card, .tst-head{
     background-color:transparent;
     /* Deux voies pour le verre :
        - par DÉFAUT (iOS) : photo pré-floutée peinte (var(--blur-url)),
@@ -2635,7 +2672,7 @@
     .searching-card, .waiting-card, .info-card, .vs-row, .len-chip, .duel-scorebar, .timer-chip, .dr-side,
     .rank-row, .fs-hint, .modal-card, .btn-ghost, .fsh-close, .settings-sheet,
     .hero-verse-card, .end-medal, .modal-btn.ok, .modal-btn.cancel, .leave-banner, .adj-btn, .waiting-note,
-    .rules, .btn-review, .daily-card, .dc-streak, .sem-flamme, .btn-invite, .creator-badge, .sheet-done, .set-go,
+    .rules, .btn-review, .daily-card, .dc-streak, .sem-flamme, .btn-invite, .sheet-done, .set-go,
     .share-btn, .rev-item, .parcours-card, .parcours-sum, .tst-head):not(.has-gs){
     /* Le MÊME rebord que la règle finale, au pixel près : la surface ne doit
        pas changer d'aspect à la seconde où sa couche de verre s'attache. */
@@ -2657,7 +2694,7 @@
     .option-btn, .btn-primary, .btn-next, .btn-replay, .fact-card, .tier-chip, .q-counter, .streak-chip, .chip, .icon-btn, .btn-reveal,
     .btn-newgame, .award-btn, .presence-card, .me-row, .online-action, .searching-card,
     .waiting-card, .info-card, .vs-row, .len-chip, .duel-scorebar, .timer-chip, .dr-side, .rank-row,
-    .text-input, .code-input, .fs-hint, .modal-card, .btn-ghost, .fsh-close, .settings-sheet, .hero-verse-card, .end-medal, .modal-btn.ok, .modal-btn.cancel, .leave-banner, .adj-btn, .waiting-note, .rules, .btn-review, .daily-card, .dc-streak, .sem-flamme, .btn-invite, .creator-badge, .sheet-done, .set-go, .share-btn, .rev-item, .parcours-card, .parcours-sum, .tst-head){
+    .text-input, .code-input, .fs-hint, .modal-card, .btn-ghost, .fsh-close, .settings-sheet, .hero-verse-card, .end-medal, .modal-btn.ok, .modal-btn.cancel, .leave-banner, .adj-btn, .waiting-note, .rules, .btn-review, .daily-card, .dc-streak, .sem-flamme, .btn-invite, .sheet-done, .set-go, .share-btn, .rev-item, .parcours-card, .parcours-sum, .tst-head){
     --glass-photo: none;
     --glass-bf: blur(26px) saturate(1.35);
     /* La couleur de fond de base des surfaces (souvent blanc ~0,5) est
@@ -2901,8 +2938,8 @@
   /* Le sous-titre d'une carte d'accueil ne se replie JAMAIS : six cartes de
      hauteurs différentes ne sont plus une colonne. */
   .daily-card .dc-txt small{ font-size:0.8rem; color:var(--ink-soft); display:block; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
-  /* Même correctif que le badge Créateur : le voile de verre pâle (brun sur
-     beige clair) restait fade à côté du .dc-ico (dégradé or plein, à côté).
+  /* Même correctif que l'ancien badge Créateur (retiré en v287) : le voile de
+     verre pâle (brun sur beige clair) restait fade à côté du .dc-ico.
      Teinte dorée saturée + texte blanc -> même impact visuel, cohérent avec
      l'icône flamme repalettée juste au-dessus. */
   .daily-card .dc-streak{ display:inline-flex; align-items:center; gap:0.22rem; font-weight:800; font-size:0.9rem; font-variant-numeric:tabular-nums; color:#fff; text-shadow:0 1px 2px rgba(122,78,4,0.35); --glass-tint: rgb(240,163,26); border:0; border-radius:var(--r-full); padding:calc(0.24rem + 1px) calc(0.6rem + 1px); flex-shrink:0; box-shadow:0 2px 8px rgba(196,144,32,0.24); }
@@ -3772,6 +3809,20 @@
   .bible-item.sel .bible-ck{ opacity:1; transform:scale(1); }
   .bible-item.sel{ background:rgb(255,244,238); }
   .bible-item.sel .bible-txt b{ color:var(--primary); }
+  /* ===== LE TITRE CHANGE AU MÊME RYTHME QUE SA LIGNE =====
+     Cette liste n'est pas une rangée de puces : rien ne s'y remplit de rouge,
+     la retenue se montre par la coche et par une ligne qui se teinte. Mais les
+     morceaux de la ligne ne changeaient pas ensemble. Mesuré, en comptant les
+     valeurs distinctes traversées et l'instant où elles se posent :
+         fond de la ligne      5 étapes, fini à 172 ms
+         fond du sigle        15 étapes, fini à 272 ms
+         opacité de la coche  12 étapes, fini à 222 ms
+         couleur du titre      2 étapes, fini à  46 ms   <-- seul à claquer
+     Le titre basculait donc d'un coup pendant que tout le reste glissait. On
+     lui donne l'horloge commune. Aucun risque de creux de lisibilité à
+     franchir d'un coup, contrairement aux puces : ici les deux couleurs du
+     titre sont sombres sur un fond clair, du premier au dernier instant. */
+  .bible-item .bible-txt b{ transition:color var(--tr-onde); }
   .bible-ck svg{ width:100%; height:100%; }
   /* Catalogue de fonds d'écran : vignettes photo. La retenue portait un liseré
      or DE PLUS que sa coche — deux fois la même information, dont une en
@@ -4287,7 +4338,7 @@
   .chip, .len-chip, .add-team, .btn-ghost, .btn-invite, .btn-review, .adj-btn,
   .fsh-close, .share-btn, .tst-head, .option-btn, .modal-btn, .btn-quit, .btn-newgame,
   .question-card, .solo-score-bar, .duel-scorebar, .btn-primary, .btn-next, .btn-replay,
-  .sheet-done, .set-go, .streak-chip, .creator-badge, .dc-streak, .btn-reveal,
+  .sheet-done, .set-go, .streak-chip, .dc-streak, .btn-reveal,
   .leave-banner, .fact-card, .text-input, .code-input, .award-btn, .score-pane,
   .rev-item{
     background-color: var(--glass-tint);
@@ -4544,6 +4595,11 @@ const TEXTES = {
     "Il sera visible par tes amis pendant les duels.":"Your friends will see it during duels.",
     "Inviter des amis":"Invite friends",
     "Mode en ligne":"Online mode",
+    "Photo de profil":"Profile photo",
+    "Ajouter une photo":"Add a photo",
+    "Changer la photo":"Change photo",
+    "Retirer la photo":"Remove photo",
+    "Cette image n'a pas pu être lue.":"This image could not be read.",
     "Modifier":"Edit",
     "Partie aléatoire":"Random game",
     "Recherche d'un adversaire…":"Looking for an opponent…",
@@ -4792,7 +4848,6 @@ const TEXTES = {
     "Recevoir les rappels\u00a0?":"Turn on reminders?",
     "D'accord":"Yes, please",
     "Non merci":"No thanks",
-    "Code incorrect.":"Wrong code.",
     "Installer":"Install",
     "Retirer 10 points":"Remove 10 points",
     "Ajouter 10 points":"Add 10 points",
@@ -4812,11 +4867,6 @@ const TEXTES = {
     "Revoir mes {n} erreurs":"Review my {n} mistakes",
     "Revoir mon erreur":"Review my mistake",
     /* le profil */
-    "Créateur":"Creator",
-    "Badge Créateur":"Creator badge",
-    "Entre ton code secret pour débloquer le badge.":"Enter your secret code to unlock the badge.",
-    "Code créateur":"Creator code",
-    "Valider":"Confirm",
     "Nom affiché":"Display name",
     /* installer le jeu */
     "{jeu} s'ajoute à ton écran d'accueil et démarre en plein écran. Un seul geste.":"{jeu} adds itself to your home screen and starts full screen. Just one gesture.",
@@ -4935,6 +4985,11 @@ const TEXTES = {
     "Il sera visible par tes amis pendant les duels.":"Tus amigos lo verán durante los duelos.",
     "Inviter des amis":"Invitar amigos",
     "Mode en ligne":"Modo en línea",
+    "Photo de profil":"Foto de perfil",
+    "Ajouter une photo":"Añadir una foto",
+    "Changer la photo":"Cambiar la foto",
+    "Retirer la photo":"Quitar la foto",
+    "Cette image n'a pas pu être lue.":"No se ha podido leer esta imagen.",
     "Modifier":"Editar",
     "Partie aléatoire":"Partida al azar",
     "Recherche d'un adversaire…":"Buscando un rival…",
@@ -5174,7 +5229,6 @@ const TEXTES = {
     "Recevoir les rappels\u00a0?":"¿Activar los recordatorios?",
     "D'accord":"Sí, claro",
     "Non merci":"No, gracias",
-    "Code incorrect.":"Código incorrecto.",
     "Installer":"Instalar",
     "Retirer 10 points":"Quitar 10 puntos",
     "Ajouter 10 points":"Añadir 10 puntos",
@@ -5193,11 +5247,6 @@ const TEXTES = {
     "Meilleure série":"Mejor racha",
     "Revoir mes {n} erreurs":"Repasar mis {n} errores",
     "Revoir mon erreur":"Repasar mi error",
-    "Créateur":"Creador",
-    "Badge Créateur":"Insignia de Creador",
-    "Entre ton code secret pour débloquer le badge.":"Escribe tu código secreto para desbloquear la insignia.",
-    "Code créateur":"Código de creador",
-    "Valider":"Confirmar",
     "Nom affiché":"Nombre visible",
     "{jeu} s'ajoute à ton écran d'accueil et démarre en plein écran. Un seul geste.":"{jeu} se añade a tu pantalla de inicio y arranca a pantalla completa. Un solo gesto.",
     "Il faut ajouter {jeu} à ton écran d'accueil. Trois gestes, une seule fois.":"Hay que añadir {jeu} a tu pantalla de inicio. Tres gestos, una sola vez.",
@@ -7377,14 +7426,13 @@ function selectRoomOpt(g, k){
    uniquement le Realtime (présence + messages). Change aussi ton code créateur. */
 const SUPABASE_URL = "https://chyuckryusxzssezesuw.supabase.co";
 const SUPABASE_ANON_KEY = "sb_publishable_FDJ_R0foC7uIeHmxVrj6rA_2NeIgW2a";
-const CREATOR_KEY = "TAYLOR";   // code secret pour débloquer le badge Créateur
 
 /* ===================== LA VERSION DU JEU =====================
    Elle sert à une seule chose, mais elle y est indispensable : une erreur
    remontée d'un téléphone ne vaut rien si on ne sait pas QUELLE version
    tournait. Elle doit rester égale au CACHE de sw.js — c'est ce que vérifie
    banc-essai/version.js, qui refuse de laisser publier les deux en désaccord. */
-const VERSION_JEU = "v285";
+const VERSION_JEU = "v289";
 
 /* ===================== QUAND ÇA CASSE CHEZ UN JOUEUR =====================
    « Si quelque chose casse chez cinq d'entre eux sur un modèle de téléphone
@@ -7538,7 +7586,27 @@ function loadProfile(){
   if(!p || typeof p !== "object"){ p = {}; }
   if(typeof p.name !== "string") p.name = "";
   if(typeof p.color !== "string") p.color = TEAM_COLORS[Math.floor(Math.random()*TEAM_COLORS.length)];
-  if(typeof p.isCreator !== "boolean") p.isCreator = false;
+  /* QUAND la photo a été choisie. L'image elle-même vit sous sa propre clé
+     (bt_photo) pour ne pas alourdir la lecture du profil ; seul son horodatage
+     est ici, parce que c'est lui qui départage deux téléphones. */
+  if(typeof p.photoMaj !== "number" || !isFinite(p.photoMaj)) p.photoMaj = 0;
+  /* LE BADGE CRÉATEUR N'EXISTE PLUS (v287), Y COMPRIS DANS LE STOCKAGE.
+     Plus une ligne du jeu ne lit « isCreator » — Taylor ne le voit donc plus
+     sur son profil dès la v287 en ligne. Mais le drapeau reste écrit dans le
+     profil enregistré de ceux qui l'avaient, et il y resterait pour toujours :
+     une donnée morte, qui ne veut plus rien dire, dans le stockage de quelqu'un
+     d'autre. On l'efface au premier chargement ; le prochain saveProfile()
+     l'écrit sans lui. Rien d'autre du profil n'est touché — ni le nom, ni la
+     couleur, ni la photo. */
+  if("isCreator" in p){
+    /* ON RÉÉCRIT TOUT DE SUITE, ET C'EST LE POINT. L'effacer de l'objet ne
+       l'efface pas du STOCKAGE : il y resterait jusqu'au jour où le joueur
+       touche son profil — c'est-à-dire, pour la plupart, jamais. Le banc de
+       migration l'a dit : « badgeEfface false, attendu true ». On repose donc
+       le profil nettoyé dans la foulée. Une seule écriture, une seule fois :
+       au chargement suivant la clé n'est plus là. */
+    try{ delete p.isCreator; localStorage.setItem("bt_profile", JSON.stringify(p)); }catch(e){}
+  }
   return p;
 }
 let profile = loadProfile();
@@ -7547,7 +7615,7 @@ function saveProfile(){ try { localStorage.setItem("bt_profile", JSON.stringify(
    salle déborde — c'est le DERNIER arrivé qui ressort, pas un joueur tiré au
    sort par son identifiant. */
 let monArrivee = 0;
-function meMeta(extra){ return Object.assign({ id:myId, name: profile.name || T("Invité"), color: profile.color, isCreator: profile.isCreator, arrive: monArrivee || (monArrivee = Date.now()) }, extra||{}); }
+function meMeta(extra){ return Object.assign({ id:myId, name: profile.name || T("Invité"), color: profile.color, arrive: monArrivee || (monArrivee = Date.now()) }, extra||{}); }
 
 /* ===================== LES JOUEURS DU SALON =====================
    Le mode en ligne ne savait compter que jusqu'à deux : un seul adversaire,
@@ -7565,7 +7633,7 @@ function autresJoueurs(){
 }
 function joueursPresents(){ return autresJoueurs().filter(j=>!j.gone); }
 function moiJoueur(){
-  return { id:myId, name:profile.name||T("Invité"), color:profile.color, isCreator:profile.isCreator,
+  return { id:myId, name:profile.name||T("Invité"), color:profile.color,
            score:net.score|0, idx:net.idx|0, done:!!net.myDone, gone:false, moi:true };
 }
 /* Tout le monde, moi compris, classé : score décroissant, puis avancement,
@@ -7605,7 +7673,8 @@ const net = {
   opp:null, oppScore:0, oppIndex:0, oppDone:false, oppGone:false, oppPresent:false, oppLastSeen:0,
   seed:null, lengthKey:"normale", timerKey:"30", themeKey:"tout", timedOut:false,
   deck:[], idx:0, score:0, correct:0, selected:null, revealed:false, myDone:false, missed:[],
-  joueurs:{},                     // id -> { id, name, color, isCreator, score, idx, done, gone, vu }
+  joueurs:{},                     // id -> { id, name, color, score, idx, done, gone, vu }
+  photos:{},                      // id -> photo reçue par diffusion (voir diffuserPhoto)
   duelHb:null, joinTimer:null, subTimer:null,
   lastOppId:null, autoMatch:false, matchGuard:null,
   status:"", error:"",
@@ -7676,7 +7745,7 @@ function signaturePresence(){
   try{
     j = Object.keys(net.joueurs || {}).sort().map((k)=>{
       const o = net.joueurs[k] || {};
-      return k + ":" + (o.name||"") + ":" + (o.color||"") + ":" + (o.isCreator?1:0) +
+      return k + ":" + (o.name||"") + ":" + (o.color||"") +
              ":" + (o.score|0) + ":" + (o.idx|0) + ":" + (o.done?1:0) + ":" + (o.gone?1:0);
     }).join("|");
   }catch(e){}
@@ -7782,7 +7851,7 @@ function majSalleListe(){
       ligne = document.createElement("div");
       ligne.className = "rank-row salle-ligne" + (j.moi ? " moi" : "");
       ligne.dataset.jid = k;
-      ligne.innerHTML = avatarHtml(j.name, j.color, 2.1, j.isCreator)
+      ligne.innerHTML = avatarHtml(j.name, j.color, 2.1, j.moi ? true : j.id)
         + '<span class="rank-name">' + escapeHtml(j.name || T("Joueur")) + '</span>'
         + '<span class="salle-tag">' + tag + '</span>';
       /* Elle entre comme l'adversaire entrait à deux : une arrivée se voit. */
@@ -7853,7 +7922,7 @@ function updateRoomOpponent(){
   if(!slot){ render(); return; }
   const arrived = net.oppPresent && slot.dataset.filled !== "1";
   slot.innerHTML = (net.oppPresent
-      ? avatarHtml(net.opp.name, net.opp.color, 3, net.opp.isCreator)
+      ? avatarHtml(net.opp.name, net.opp.color, 3, net.opp.id)
       : `<span class="avatar waiting" style="width:3rem;height:3rem;font-size:1.25rem;">?</span>`)
     + `<div class="vs-name">${net.oppPresent?escapeHtml(net.opp.name):T("En attente…")}</div>`
     + `<div class="vs-tag${net.isHost?'':' is-host'}">${net.isHost?T("Adversaire"):T("Hôte")}</div>`;
@@ -8027,7 +8096,7 @@ function bindRoom(ch){
       if(k===myId || !st[k] || !st[k][0]) return;
       const m = st[k][0], id = m.id || k;
       const avant = net.joueurs[id] || {};
-      vus[id] = { id, name:m.name, color:m.color, isCreator:m.isCreator,
+      vus[id] = { id, name:m.name, color:m.color,
                   arrive: m.arrive || avant.arrive || 0,
                   score:avant.score|0, idx:avant.idx|0, done:!!avant.done,
                   gone:false, vu:Date.now() };
@@ -8035,7 +8104,12 @@ function bindRoom(ch){
     /* Un joueur qui a quitté EN COURS DE PARTIE reste dans la table, marqué
        parti : son score doit rester au tableau jusqu'au résultat. */
     autresJoueurs().forEach(j=>{ if(!vus[j.id] && net.deck.length){ vus[j.id] = Object.assign({}, j, { gone:true }); } });
+    /* QUELQU'UN VIENT D'ARRIVER : il n'a pas ma photo, personne ne la lui a
+       envoyée. Je la renvoie — et lui fera de même pour la sienne. Personne ne
+       demande rien, tout le monde se présente. */
+    const nouveau = Object.keys(vus).some(id => !net.joueurs[id]);
     net.joueurs = vus;
+    if(nouveau) diffuserPhotoBientot();
     /* SALLE PLEINE. Personne n'arbitre les arrivées : chacun trie les
        identifiants et regarde sa propre place. Au-delà de la huitième, on
        ressort — même règle pour tous, donc tout le monde tombe d'accord sans
@@ -8082,6 +8156,10 @@ function bindRoom(ch){
       }
       else { reRenderIfOnline(); }
     } else { reRenderIfOnline(); }
+  });
+  ch.on("broadcast", { event:"photo" }, ({ payload })=>{
+    if(!payload || !payload.id) return;
+    recevoirPhoto(payload.id, payload.u);
   });
   ch.on("broadcast", { event:"start" }, ({ payload })=>{
     if(!payload) return;
@@ -8175,6 +8253,7 @@ function createRoom(code, host, _retry){
       /* On trace la présence sans rien attendre : si ch.track() traîne ou
          échoue par intermittence, l'écran est là depuis longtemps. */
       try { await ch.track(meMeta()); } catch(e){}
+      diffuserPhoto();            // je suis là, et voici mon visage
       reRenderIfOnline();
       if(!host){
         net.joinTimer = setTimeout(()=>{
@@ -8367,6 +8446,8 @@ function cleanupRoom(){
   if(net.subTimer){ clearTimeout(net.subTimer); net.subTimer=null; }
   if(net.room){ try { net.room.untrack(); net.supa.removeChannel(net.room); } catch(e){} net.room=null; }
   net.code=null; net.isHost=false; net.opp=null; net.oppPresent=false; net.oppGone=false; videJoueurs();
+  oublierPhotos();
+  clearTimeout(photoTimer); photoTimer = null;
   net.deck=[]; net.idx=0; net.myDone=false; net.status="";
   net.iWantReplay=false; net.oppWantReplay=false; net.replayDeclined=false;
 }
@@ -8399,10 +8480,6 @@ function saveName(v){
   if(!n) return;
   profile.name = n; saveProfile();
   openOnline();
-}
-function claimCreator(v){
-  if((v||"").trim() === CREATOR_KEY){ profile.isCreator = true; saveProfile(); if(net.lobby) net.lobby.track(meMeta({searching:net.searching})); if(net.room) net.room.track(meMeta()); render(); return true; }
-  return false;
 }
 
 /* ===================== MODAL MAISON (remplace confirm/prompt natifs) ===================== */
@@ -10335,7 +10412,7 @@ try{
     if(!el || !el.getBoundingClientRect) return;
     const app = glassAppEl;
     if(!app) return;
-    /* Champ d'une modale flottante (code Créateur) : elle est posée sur la
+    /* Champ d'une modale flottante (code d'une partie) : elle est posée sur la
        fenêtre, pas dans #app. Faire défiler #app ne la déplacerait pas d'un
        pixel — ça ne ferait que glisser le décor derrière, pour rien (18px
        mesurés). C'est la règle CSS html.kb .modal-veil qui s'en occupe. */
@@ -14350,7 +14427,31 @@ function removeTeam(btn){
   /* le verre suit le réajustement du défilement — ET la mise en page qui bouge :
      sans glassSuivre, la texture de décor des cartes situées SOUS la liste reste
      figée pendant tout le repli et le flou glisse à l'intérieur d'elles. */
-  try{ glassTrack(); glassSuivre(filetPli()); }catch(e){}
+  /* ===== LE RECALAGE DU VERRE NE SE FAIT PLUS DANS LE DOIGT =====
+     Il y avait ici glassTrack(), qui appelle queueGlassSync() de façon
+     SYNCHRONE — c'est-à-dire un parcours d'offsetParent sur chacune des
+     trente surfaces de verre de l'écran, au beau milieu du gestionnaire de
+     clic. Mesuré, jalons posés le long de removeTeam, processeur bridé six
+     fois (banc-essai/joueurs.js) :
+         entrée du gestionnaire            4 ms
+         syncTeamRows + bouton             4 ms
+         relevés de style                 11 ms
+         les trois essais muets            8 ms
+         pose du pli                      10 ms
+         >>> glassTrack + glassSuivre     15 ms  <<<
+         ------------------------------------------
+         le doigt tient le fil            52 ms  = trois images perdues
+     Quinze millisecondes sur cinquante, pour un travail que l'image SUIVANTE
+     refait de toute façon : glassSuivre ouvre une fenêtre pendant laquelle la
+     boucle relit la position de chaque surface à CHAQUE image (le drapeau
+     « suivre » dans queueGlassXF), et la boucle, elle, tourne à toutes les
+     images — armGlass ne fait qu'ouvrir sa fenêtre de travail. On garde donc
+     l'invalidation du cache et l'éveil de la boucle, et on laisse la première
+     image faire la lecture. Elle tombe alors sur la même image que le premier
+     pas de l'animation : le verre et la mise en page bougent ensemble, ce qui
+     est exactement ce qu'on veut. Rien ne bouge d'un pixel de plus ou de moins
+     — c'est le banc des lignes et celui des joueurs qui le disent. */
+  try{ glassRelayout(); armGlass(950); glassSuivre(filetPli()); }catch(e){}
   /* LE MÉNAGE ATTEND QUE PLUS RIEN NE BOUGE.
      Deux défauts se cachaient ici, et c'est ce qui rendait la fermeture moins
      nette que l'ouverture.
@@ -16093,7 +16194,10 @@ function sauvegardeVide(){
 function sauvegardeIci(){
   const d = loadDaily();
   return { v:1,
-    profil:  { name:profile.name || "", color:profile.color || "" },
+    /* LA PHOTO MONTE DANS LE COMPTE (v288, demande de Taylor). Seize
+       kilo-octets pour une photo réelle, réduite à 256 px — mesuré. */
+    profil:  { name:profile.name || "", color:profile.color || "",
+               photo: photoProfil(), photoMaj: nEntier(profile.photoMaj) },
     progres: loadProgress(),
     stats:   loadStats(),
     flamme:  { last:d.last, streak:d.streak, score:d.score, total:d.total,
@@ -16244,8 +16348,23 @@ function fusionner(ici, ailleurs){
 
   return { v:1,
     /* Ce qu'on vient de choisir sur ce téléphone l'emporte ; à défaut, l'autre. */
-    profil: { name:  a.profil.name  || b.profil.name  || "",
-              color: a.profil.color || b.profil.color || "" },
+    /* LA PHOTO, ELLE, SE DÉPARTAGE PAR LA DATE — et c'est la seule entorse à la
+       règle « on ne perd jamais rien ». Il le faut : sans elle, retirer sa
+       photo sur un téléphone la verrait revenir au premier échange avec
+       l'autre, indéfiniment. Retirer sa photo est un acte explicite, fait sur
+       son propre compte ; la date dit lequel des deux gestes est le dernier.
+       On prend donc le contenu du plus récent TEL QUEL, vide compris — pas de
+       « à défaut, l'autre », qui ressusciterait justement ce qu'on efface.
+       Rien d'autre dans la sauvegarde ne marche ainsi : les compteurs, les
+       ensembles et le carnet restent monotones (banc-essai/fusion.js). */
+    profil: (function(){
+      const ta = nEntier(a.profil.photoMaj), tb = nEntier(b.profil.photoMaj);
+      const recent = (tb > ta) ? b.profil : a.profil;
+      return { name:  a.profil.name  || b.profil.name  || "",
+               color: a.profil.color || b.profil.color || "",
+               photo: typeof recent.photo === "string" ? recent.photo : "",
+               photoMaj: Math.max(ta, tb) };
+    })(),
     progres: progMergeMax(progNormalize(a.progres), progNormalize(b.progres)),
     stats: { bestScore: Math.max(nEntier(a.stats.bestScore), nEntier(b.stats.bestScore)),
              bestPct:   Math.max(nEntier(a.stats.bestPct),   nEntier(b.stats.bestPct)),
@@ -16285,6 +16404,7 @@ function appliquerSauvegarde(recue){
   const sur = fusionner(sauvegardeIci(), recue);
   if(sur.profil.name)  profile.name  = sur.profil.name;
   if(sur.profil.color) profile.color = sur.profil.color;
+  appliquerPhoto(sur.profil.photo, sur.profil.photoMaj);
   saveProfile();
   saveProgress(sur.progres);
   saveStats(sur.stats);
@@ -17120,7 +17240,7 @@ function renderModeSelect(){
   el.className = "screen accueil";
   el.innerHTML = `
     <div class="hero">
-      <button class="icon-btn hero-profile" onclick="openProfile()" aria-label="${T('Profil')}">${avatarHtml(profile.name||"?", profile.color, 2.4, profile.isCreator)}</button>
+      <button class="icon-btn hero-profile" onclick="openProfile()" aria-label="${T('Profil')}">${avatarHtml(profile.name||"?", profile.color, 2.4, true)}</button>
       <button class="icon-btn hero-settings" onclick="openSettings()" aria-label="${T("Réglages")}"><span class="ico" style="width:1.22rem;height:1.22rem;">${ICONS.gear}</span></button>
       <div class="hero-zone" id="heroZone">
         <button class="hero-icon-btn" onclick="heroIconTap()" onpointerdown="heroIconPress(event)" onpointerup="heroIconRelease()" onpointerleave="heroIconRelease()" onpointercancel="heroIconRelease()" aria-label="${NOM_DU_JEU}">
@@ -17584,24 +17704,241 @@ function entreeMs(){ return msPli(); }
 /* Le filet : largement après la fin de l'entrée. */
 function apresEntree(){ return msPli() + 40; }
 /* ===================== ÉCRANS PROFIL & EN LIGNE ===================== */
-function avatarHtml(name, color, size, creator){
+/* Le quatrième paramètre dit DE QUI est cet avatar : true pour le joueur de ce
+   téléphone, l'identifiant du joueur pour les autres. Il portait avant le
+   drapeau du badge Créateur, retiré en v287. */
+function avatarHtml(name, color, size, qui){
   const initial = escapeHtml((name||"?").charAt(0).toUpperCase());
   const s = size || 2.6;
-  /* --av : la taille de l'avatar, transmise au badge « Créateur » pour qu'il
+  /* --av : la taille de l'avatar, transmise à ce qui se pose dessus pour que ça
      reste à la même fraction quelle que soit la place où on l'affiche.
      ELLE PEUT ÊTRE UNE LONGUEUR CSS ENTIÈRE, pas seulement un nombre de rem :
      le salon a besoin d'un avatar qui RÉTRÉCIT sur un écran court, et une
      taille posée en style direct ne peut pas être reprise par une feuille.
      On accepte donc « clamp(...) » tel quel. */
   const L = (typeof s === "string") ? s : s + "rem";
-  return `<span class="avatar" style="--av:${L};width:${L};height:${L};background:${color};font-size:calc(${L} * 0.42);">${initial}${creator?`<span class="crown-badge">${C_MONO_SVG}</span>`:""}</span>`;
+  /* « background-color », PAS LE RACCOURCI « background ». La nuance a coûté
+     deux captures. Le raccourci écrit dans l'attribut style ne pose pas que la
+     couleur : il remet AUSSI background-image, background-size et
+     background-position à leur valeur initiale — et un attribut style passe
+     devant n'importe quelle feuille. Résultat de l'essai : la photo était bien
+     enregistrée, la classe bien posée, et l'avatar restait un rond de couleur ;
+     puis, en forçant l'image en direct mais pas la taille, on voyait le coin
+     haut-gauche de la photo en taille réelle dans un rond de 67 px. En ne
+     posant QUE la couleur, la règle .avatar.a-photo reprend la main sur les
+     trois autres, comme elle le doit. */
+  /* « qui » dit DE QUI est cet avatar : true pour le joueur de ce téléphone,
+     l'identifiant d'un joueur du salon pour les autres. L'image ne voyage pas
+     dans le HTML : l'avatar ne porte qu'un renvoi vers la variable de la
+     racine où elle est posée une seule fois. */
+  const v = photoDeVar(qui);
+  const ph = v ? " a-photo" : "";
+  const pid = qui ? ` data-pid="${qui === true ? "moi" : escapeHtml(String(qui))}"` : "";
+  const img = v ? `--ph:var(${v});` : "";
+  return `<span class="avatar${ph}"${pid} style="--av:${L};width:${L};height:${L};background-color:${color};${img}font-size:calc(${L} * 0.42);">${initial}</span>`;
 }
-/* Capitale C de linéale classique, tracée à la main : dos gauche droit entre
-   deux coins arrondis, et COUPES QUASI VERTICALES aux extrémités — les
-   pointes intérieures s'avancent loin à droite, l'ouverture est une fente
-   horizontale (anatomie d'un C de labeur gras, pas un anneau entaillé). */
-const C_MONO_SVG = `<svg class="c-mono" viewBox="0 0 24 24" aria-hidden="true"><path d="M20.8 6.7C19.2 3.8 16.2 2 12.4 2C6.9 2 2.6 4.5 2.6 8.1L2.6 15.9C2.6 19.5 6.9 22 12.4 22C16.2 22 19.2 20.2 20.8 17.3L20 14.6C18.6 16.6 16.1 17.9 12.9 17.9C9.2 17.9 6.9 16.4 6.9 14.1L6.9 9.9C6.9 7.6 9.2 6.1 12.9 6.1C16.1 6.1 18.6 7.4 20 9.4Z" fill="currentColor"/></svg>`;
-function creatorBadge(){ return `<span class="creator-badge">${C_MONO_SVG} ${T("Créateur")}</span>`; }
+
+/* ===================== LA PHOTO DE PROFIL =====================
+   ELLE NE QUITTE PAS LE TÉLÉPHONE. Un visage est une donnée personnelle d'une
+   autre nature qu'un pseudo ou une couleur : la mettre sur un serveur demande
+   une décision et une politique, pas une ligne de code glissée dans une mise à
+   jour. Elle vit donc sous sa propre clé locale, et sauvegardeIci() — qui
+   énumère champ par champ ce qui monte dans le compte — ne la connaît pas.
+   Conséquence à assumer et à dire : elle ne suit pas un changement de
+   téléphone. Le jour où on voudra qu'elle suive, ce sera un choix explicite.
+
+   ELLE N'EST PAS ENVOYÉE AUX AUTRES JOUEURS non plus. Le mode en ligne fait
+   voyager le nom, la couleur et le score ; vingt kilo-octets d'image par
+   joueur et par changement de présence, sur un canal temps réel, c'est une
+   autre affaire. Les adversaires gardent donc leur initiale.
+
+   POURQUOI 256 PIXELS ET DU JPEG. Le plus grand endroit où elle s'affiche fait
+   4,2 rem, soit environ 67 px de côté — 200 px sur un écran à trois fois la
+   densité. 256 couvre tout le monde avec de la marge, et un visage à cette
+   taille en JPEG de qualité 0,82 pèse une vingtaine de kilo-octets : de quoi
+   tenir sans effort dans le stockage local, là où l'image d'origine d'un
+   appareil photo de téléphone (quatre à douze méga-octets) le ferait déborder
+   au premier essai. On recadre au CARRÉ par le centre avant de réduire : un
+   avatar est un rond, une photo déformée pour y entrer se voit tout de suite. */
+const CLE_PHOTO = "bt_photo";
+const PHOTO_COTE = 256;
+let photoCache = null;            // "" = lu, et il n'y en a pas
+function photoProfil(){
+  if(photoCache === null){
+    try{ photoCache = localStorage.getItem(CLE_PHOTO) || ""; }catch(e){ photoCache = ""; }
+  }
+  return photoCache;
+}
+/* La variable de racine est la SEULE copie de l'image dans la page. */
+function majPhotoRacine(){
+  const p = photoProfil();
+  try{ document.documentElement.style.setProperty("--photo", p ? 'url("' + p + '")' : "none"); }catch(e){}
+}
+/* ===== LA PHOTO DES AUTRES JOUEURS =====
+   ELLE NE PASSE PAS PAR LA PRÉSENCE, et c'est le point à ne pas rater. La
+   présence est re-diffusée à CHAQUE track() — donc à chaque changement de
+   score pendant un duel. Y glisser seize kilo-octets, c'est renvoyer la photo
+   de tout le monde à chaque bonne réponse. On passe donc par une diffusion
+   ponctuelle, sur le même canal que « start », « hb » et « progress » : une
+   fois en arrivant, et une fois de plus quand quelqu'un arrive après nous —
+   c'est ainsi que le dernier venu reçoit les photos de ceux qui étaient là,
+   sans que personne n'ait à les demander.
+   CHAQUE PHOTO REÇUE DEVIENT UNE VARIABLE CSS sur la racine, comme la mienne.
+   L'avatar ne porte qu'un renvoi (« --ph:var(--ph3) »), une vingtaine de
+   caractères : on ne recopie jamais l'image dans le HTML, même avec huit
+   joueurs à l'écran. */
+const PHOTO_MAX = 80000;          // au-delà, ce n'est pas une photo de ce jeu
+let photoVarN = 0;
+const photoVars = Object.create(null);
+function photoDeVar(qui){
+  if(qui === true) return photoProfil() ? "--photo" : "";
+  if(typeof qui === "string" && qui && net.photos[qui]) return "--ph" + photoVars[qui];
+  return "";
+}
+function recevoirPhoto(id, url){
+  if(!id || id === myId) return;
+  const u = (typeof url === "string" && url.indexOf("data:image/") === 0 && url.length <= PHOTO_MAX) ? url : "";
+  net.photos[id] = u;
+  let n = photoVars[id]; if(!n) n = photoVars[id] = ++photoVarN;
+  try{ document.documentElement.style.setProperty("--ph" + n, u ? 'url("' + u + '")' : "none"); }catch(e){}
+  majAvatarsPhoto();
+}
+function oublierPhotos(){
+  Object.keys(photoVars).forEach(id=>{
+    try{ document.documentElement.style.removeProperty("--ph" + photoVars[id]); }catch(e){}
+    delete photoVars[id];
+  });
+  net.photos = {};
+}
+function diffuserPhoto(){
+  if(!net.room) return;
+  const u = photoProfil();
+  if(u && u.length > PHOTO_MAX) return;
+  try{ net.room.send({ type:"broadcast", event:"photo", payload:{ id:myId, u: u || "" } }); }catch(e){}
+}
+/* Plusieurs arrivées d'affilée ne font qu'un envoi. */
+let photoTimer = null;
+function diffuserPhotoBientot(){
+  clearTimeout(photoTimer);
+  photoTimer = setTimeout(()=>{ photoTimer = null; diffuserPhoto(); }, 250);
+}
+/* UN SEUL SÉLECTEUR DE FICHIER, CRÉÉ UNE FOIS. En recréer un à chaque tap
+   laisserait derrière lui autant d'éléments détachés, et sur iOS un <input
+   type=file> tout juste inséré n'ouvre pas toujours le sélecteur au premier
+   clic — il lui faut d'abord être dans le document. */
+let champPhoto = null;
+function ouvrirPhoto(){
+  if(!champPhoto){
+    champPhoto = document.createElement("input");
+    champPhoto.type = "file";
+    champPhoto.accept = "image/*";
+    champPhoto.style.cssText = "position:fixed;left:-9999px;width:1px;height:1px;opacity:0";
+    champPhoto.addEventListener("change", ()=>{
+      const f = champPhoto.files && champPhoto.files[0];
+      champPhoto.value = "";            // même photo deux fois de suite : l'événement doit repartir
+      if(f) poserPhoto(f);
+    });
+    document.body.appendChild(champPhoto);
+  }
+  try{ champPhoto.click(); }catch(e){}
+}
+/* L'ORIENTATION EXIF N'EST PAS UN DÉTAIL : une photo prise en portrait sur un
+   iPhone est enregistrée couchée, avec une étiquette qui dit de la redresser.
+   createImageBitmap ne la lit QUE si on le demande (imageOrientation), et la
+   forme à options n'existe pas partout — un vieux navigateur lève. On repasse
+   alors par <img>, qui redresse d'office (image-orientation:from-image est la
+   valeur par défaut). C'est pour ça que le repli est <img> et non
+   createImageBitmap sans option : sans option, la photo sortirait couchée. */
+async function imagePhoto(fichier){
+  if(typeof createImageBitmap === "function"){
+    try{ return await createImageBitmap(fichier, { imageOrientation:"from-image" }); }catch(e){}
+  }
+  return await new Promise((res, rej)=>{
+    let u = "";
+    const im = new Image();
+    im.onload = ()=>{ try{ URL.revokeObjectURL(u); }catch(e){} res(im); };
+    im.onerror = ()=>{ try{ URL.revokeObjectURL(u); }catch(e){} rej(new Error("image")); };
+    try{ u = URL.createObjectURL(fichier); im.src = u; }catch(e){ rej(e); }
+  });
+}
+async function poserPhoto(fichier){
+  let img = null;
+  try{
+    img = await imagePhoto(fichier);
+    const w = img.width || img.naturalWidth, h = img.height || img.naturalHeight;
+    if(!w || !h) throw new Error("vide");
+    const cote = Math.min(w, h);
+    const c = document.createElement("canvas");
+    c.width = c.height = PHOTO_COTE;
+    const g = c.getContext("2d");
+    if(!g) throw new Error("canvas");
+    try{ g.imageSmoothingQuality = "high"; }catch(e){}
+    g.drawImage(img, (w - cote) / 2, (h - cote) / 2, cote, cote, 0, 0, PHOTO_COTE, PHOTO_COTE);
+    const url = c.toDataURL("image/jpeg", 0.82);
+    if(!url || url.length < 64) throw new Error("export");
+    localStorage.setItem(CLE_PHOTO, url);
+    photoCache = url;
+    profile.photoMaj = Date.now(); saveProfile();
+  }catch(e){
+    /* Un échec silencieux serait pire que pas de photo du tout : le joueur
+       recommencerait sans savoir pourquoi. */
+    try{ showModal({ title:T("Photo de profil"), message:T("Cette image n'a pas pu être lue.") }); }catch(err){}
+    return false;
+  }finally{
+    try{ if(img && img.close) img.close(); }catch(e){}
+  }
+  majPhotoRacine(); majAvatarsPhoto();
+  diffuserPhoto();                                   // les joueurs du salon la voient
+  try{ synchroniser(); }catch(e){}                   // et le compte la garde
+  return true;
+}
+function retirerPhoto(){
+  try{ localStorage.removeItem(CLE_PHOTO); }catch(e){}
+  photoCache = "";
+  /* LE RETRAIT S'HORODATE AUSSI, ET C'EST TOUT L'ENJEU. Sans date, l'autre
+     téléphone rendrait la photo au premier échange — on retirerait sa photo et
+     elle reviendrait toute seule. */
+  profile.photoMaj = Date.now(); saveProfile();
+  majPhotoRacine(); majAvatarsPhoto();
+  diffuserPhoto();
+  try{ synchroniser(); }catch(e){}
+}
+/* La photo qui revient du compte. On n'écrit que si elle a changé : réécrire
+   seize kilo-octets dans le stockage local à chaque synchronisation pour rien
+   serait cher, et ferait clignoter les avatars. */
+function appliquerPhoto(url, maj){
+  const u = (typeof url === "string" && url.indexOf("data:image/") === 0 && url.length <= PHOTO_MAX) ? url : "";
+  if(u !== photoProfil()){
+    try{ u ? localStorage.setItem(CLE_PHOTO, u) : localStorage.removeItem(CLE_PHOTO); }catch(e){}
+    photoCache = u;
+    majPhotoRacine(); majAvatarsPhoto(); diffuserPhoto();
+  }
+  profile.photoMaj = Math.max(nEntier(profile.photoMaj), nEntier(maj));
+}
+/* ON NE REDESSINE PAS L'ÉCRAN. Le Profil porte un champ de texte : un render()
+   lui volerait son contenu en cours de frappe et le clavier avec. On pose la
+   classe là où il faut et on réécrit la seule ligne de boutons qui change. */
+function majAvatarsPhoto(){
+  /* ON NE NOMME PLUS LES ENDROITS. La première version listait six sélecteurs
+     à la main ; il en manquait forcément un, et il en manquerait un de plus au
+     prochain écran. Chaque avatar dit lui-même de qui il est (data-pid), et on
+     relit la question pour tous d'un coup. */
+  try{
+    document.querySelectorAll(".avatar[data-pid]").forEach(a => {
+      const qui = a.dataset.pid === "moi" ? true : a.dataset.pid;
+      const v = photoDeVar(qui);
+      a.classList.toggle("a-photo", !!v);
+      if(v) a.style.setProperty("--ph", "var(" + v + ")"); else a.style.removeProperty("--ph");
+    });
+  }catch(e){}
+  const l = document.getElementById("photoLiens");
+  if(l) l.innerHTML = photoLiensHtml();
+}
+function photoLiensHtml(){
+  const p = !!photoProfil();
+  return `<button type="button" class="photo-lien" onclick="ouvrirPhoto()">${p ? T("Changer la photo") : T("Ajouter une photo")}</button>`
+       + (p ? `<button type="button" class="photo-lien" onclick="retirerPhoto()">${T("Retirer la photo")}</button>` : "");
+}
 let profileReturn = "mode";
 function openProfile(){ if(state.screen !== "profile"){ profileReturn = state.screen; } state.screen="profile"; render(); }
 /* Le pseudo tapé n'est jamais perdu : on le relit avant toute mise à jour. */
@@ -17623,7 +17960,9 @@ function setProfileColor(c){
   if(net.room) net.room.track(meMeta());
   /* Mise à jour en place, sans re-rendu : le champ garde son texte et son focus. */
   document.querySelectorAll(".color-dot").forEach(d=>d.classList.toggle("sel", d.dataset.c===c));
-  document.querySelectorAll("[data-avatar-preview] .avatar").forEach(av=>{ av.style.background = c; });
+  /* background-COLOR : le raccourci effacerait la photo posée par-dessus
+     (voir avatarHtml). */
+  document.querySelectorAll("[data-avatar-preview] .avatar").forEach(av=>{ av.style.backgroundColor = c; });
 }
 function saveProfileAndBack(){
   syncProfileDraft();
@@ -17634,16 +17973,6 @@ function saveProfileAndBack(){
   state.screen = (profileReturn && profileReturn !== "profile") ? profileReturn : "mode";
   render();
 }
-function promptCreator(){
-  if(profile.isCreator) return;
-  showModal({
-    title:T("Badge Créateur"),
-    message:T("Entre ton code secret pour débloquer le badge."),
-    input:true, placeholder:T("Code créateur"), okLabel:T("Valider"),
-    errorText:T("Code incorrect."),
-    onOk:(v)=>claimCreator(v)
-  });
-}
 
 function renderProfile(){
   const el=document.createElement("div"); el.className="screen";
@@ -17651,9 +17980,9 @@ function renderProfile(){
     ${renderHeader(T("Profil"), true, "saveProfileAndBack()")}
     <div class="flex-sp" style="flex-grow:0.8"></div>
     <div class="profile-card">
-      <div onclick="promptCreator()" style="cursor:pointer" title="${T("Code créateur")}" data-avatar-preview>${avatarHtml(profile.name||T("Invité"), profile.color, 4.2, profile.isCreator)}</div>
+      <button type="button" class="avatar-tap" onclick="ouvrirPhoto()" aria-label="${T("Photo de profil")}" data-avatar-preview>${avatarHtml(profile.name||T("Invité"), profile.color, 4.2, true)}</button>
       <div class="profile-name" id="profileNameLabel">${escapeHtml(profile.name||T("Invité"))}</div>
-      ${profile.isCreator?`<div style="margin-top:0.4rem">${creatorBadge()}</div>`:""}
+      <div class="photo-liens" id="photoLiens">${photoLiensHtml()}</div>
     </div>
     <label class="field-label">${T("Nom affiché")}</label>
     <input class="text-input" id="profileName" maxlength="18" value="${escapeHtml(profile.name)}" placeholder="${T("Ton prénom")}" autocomplete="off" enterkeyhint="done" oninput="onProfileNameInput(this)" onkeydown="if(event.key==='Enter'){event.preventDefault();this.blur();}">
@@ -17745,9 +18074,9 @@ function renderOnline(){
       <span class="presence-lbl">${n>1?T("connectés"):T("connecté")}</span>
     </div>
     <button class="me-row" onclick="openProfile()">
-      ${avatarHtml(profile.name, profile.color, 2.05, profile.isCreator)}
+      ${avatarHtml(profile.name, profile.color, 2.05, true)}
       <span class="me-name">${escapeHtml(profile.name)}</span>
-      ${profile.isCreator?creatorBadge():`<span class="me-edit">${T("Modifier")}</span>`}
+      <span class="me-edit">${T("Modifier")}</span>
     </button>
     <div class="err-place">${net.error?`<div class="err-flot" role="status">${escapeHtml(net.error)}</div>`:""}</div>
     <div class="flex-sp"></div>
@@ -17871,16 +18200,16 @@ function renderOnlineRoom(){
     <div class="salle-liste">
       ${classement().sort((a,b)=> (a.moi?0:1)-(b.moi?0:1)).map(j=>`
         <div class="rank-row salle-ligne${j.moi?' moi':''}" data-jid="${escapeHtml(String(j.moi ? 'moi' : (j.id||j.name||'')))}">
-          ${avatarHtml(j.name, j.color, 2.1, j.isCreator)}
+          ${avatarHtml(j.name, j.color, 2.1, j.moi ? true : j.id)}
           <span class="rank-name">${escapeHtml(j.name||T("Joueur"))}</span>
           <span class="salle-tag">${j.moi ? (net.isHost?T("Toi · Hôte"):T("Toi")) : T("Prêt")}</span>
         </div>`).join("")}
       ${nbJoueurs() < MAX_JOUEURS ? `<div class="rank-row salle-ligne vide"><span class="avatar waiting" style="width:2.1rem;height:2.1rem;font-size:0.95rem;">?</span><span class="rank-name">${T("En attente…")}</span><span class="salle-tag">${Tf(MAX_JOUEURS-nbJoueurs()>1?"{n} places":"{n} place", {n:MAX_JOUEURS-nbJoueurs()})}</span></div>` : ""}
     </div>` : `
     <div class="vs-row">
-      <div class="vs-player">${avatarHtml(profile.name, profile.color, AV_SALON, profile.isCreator)}<div class="vs-name">${escapeHtml(profile.name)}</div><div class="vs-tag${net.isHost?' is-host':''}">${net.isHost?T("Toi · Hôte"):T("Toi")}</div></div>
+      <div class="vs-player">${avatarHtml(profile.name, profile.color, AV_SALON, true)}<div class="vs-name">${escapeHtml(profile.name)}</div><div class="vs-tag${net.isHost?' is-host':''}">${net.isHost?T("Toi · Hôte"):T("Toi")}</div></div>
       <div class="vs-mid">VS</div>
-      <div class="vs-player${oppNew?' reveal-in':''}" id="oppSlot">${net.oppPresent?avatarHtml(net.opp.name, net.opp.color, AV_SALON, net.opp.isCreator):`<span class="avatar waiting" style="width:${AV_SALON};height:${AV_SALON};font-size:calc(${AV_SALON} * 0.42);">?</span>`}<div class="vs-name">${net.oppPresent?escapeHtml(net.opp.name):T("En attente…")}</div><div class="vs-tag${net.isHost?'':' is-host'}">${net.isHost?T("Adversaire"):T("Hôte")}</div></div>
+      <div class="vs-player${oppNew?' reveal-in':''}" id="oppSlot">${net.oppPresent?avatarHtml(net.opp.name, net.opp.color, AV_SALON, net.opp.id):`<span class="avatar waiting" style="width:${AV_SALON};height:${AV_SALON};font-size:calc(${AV_SALON} * 0.42);">?</span>`}<div class="vs-name">${net.oppPresent?escapeHtml(net.opp.name):T("En attente…")}</div><div class="vs-tag${net.isHost?'':' is-host'}">${net.isHost?T("Adversaire"):T("Hôte")}</div></div>
     </div>`}
     <div class="host-note">${net.isHost?Tf("Tu es l'hôte : règle la partie, puis lance {mot}.", {mot:motSalon}):Tf("L'hôte paramètre la partie puis lance {mot}.", {mot:motSalon})}</div>
     <div class="flex-sp"></div>
@@ -18066,16 +18395,16 @@ function renderOnlineEnd(){
         return `
         <div class="rank-row${j.moi?' moi':''}${j.gone?' gone':''}">
           <span class="rank-badge ${g}">${j.rg}</span>
-          ${avatarHtml(j.name, j.color, 1.55, j.isCreator)}
+          ${avatarHtml(j.name, j.color, 1.55, j.moi ? true : j.id)}
           <span class="rank-name">${escapeHtml(j.name||T("Joueur"))}${j.gone?" \u00b7 "+T("parti"):""}</span>
           <span class="rank-score">${j.score|0} pts</span>
         </div>`;
       }).join("")}
     </div>` : `
     <div class="duel-result">
-      <div class="dr-side ${(win||net.oppGone)?'winner':''}">${avatarHtml(profile.name,profile.color,3,profile.isCreator)}<div class="dr-name">${escapeHtml(profile.name)}</div><div class="dr-score" data-count-me>0</div></div>
+      <div class="dr-side ${(win||net.oppGone)?'winner':''}">${avatarHtml(profile.name,profile.color,3,true)}<div class="dr-name">${escapeHtml(profile.name)}</div><div class="dr-score" data-count-me>0</div></div>
       <div class="dr-vs">VS</div>
-      <div class="dr-side ${(!win&&!tie&&!net.oppGone)?'winner':''}">${net.opp?avatarHtml(net.opp.name,net.opp.color,3,net.opp.isCreator):`<span class="avatar waiting" style="width:3rem;height:3rem;font-size:1.25rem;">?</span>`}<div class="dr-name">${escapeHtml(net.opp?net.opp.name:T("Adversaire"))}</div><div class="dr-score" data-count-opp>0</div></div>
+      <div class="dr-side ${(!win&&!tie&&!net.oppGone)?'winner':''}">${net.opp?avatarHtml(net.opp.name,net.opp.color,3,net.opp.id):`<span class="avatar waiting" style="width:3rem;height:3rem;font-size:1.25rem;">?</span>`}<div class="dr-name">${escapeHtml(net.opp?net.opp.name:T("Adversaire"))}</div><div class="dr-score" data-count-opp>0</div></div>
     </div>`}
     ${net.missed && net.missed.length ? `<button class="btn-review" onclick="openMissedReview(net.missed)"><span class="ico">${ICONS.bookOpen}</span>${net.missed.length>1?Tf("Revoir mes {n} erreurs",{n:net.missed.length}):T("Revoir mon erreur")}</button>` : ""}
     <div class="end-bottom">
@@ -18343,7 +18672,7 @@ document.addEventListener("click", (e)=>{
    transforms compris) : la photo peinte reste donc collée au décor même pendant
    qu'une carte glisse — ce qui autorise de vraies transitions animées « à la
    Apple » sans le moindre décalage du verre. */
-const GLASS_SEL = ".app-header,.card,.mode-card,.question-card,.solo-summary,.solo-score-bar,.score-pane,.option-btn,.btn-primary,.btn-next,.btn-replay,.fact-card,.tier-chip,.q-counter,.streak-chip,.chip,.icon-btn,.btn-reveal,.btn-newgame,.award-btn,.presence-card,.me-row,.online-action,.searching-card,.waiting-card,.info-card,.vs-row,.len-chip,.duel-scorebar,.timer-chip,.dr-side,.rank-row,.text-input,.code-input,.fs-hint,.modal-card,.btn-ghost,.fsh-close,.settings-sheet,.hero-verse-card,.modal-btn.ok,.modal-btn.cancel,.leave-banner,.end-medal,.adj-btn,.waiting-note,.rules,.btn-review,.daily-card,.dc-streak,.sem-flamme,.btn-invite,.creator-badge,.sheet-done,.set-go,.share-btn,.rev-item,.parcours-card,.parcours-sum,.tst-head";
+const GLASS_SEL = ".app-header,.card,.mode-card,.question-card,.solo-summary,.solo-score-bar,.score-pane,.option-btn,.btn-primary,.btn-next,.btn-replay,.fact-card,.tier-chip,.q-counter,.streak-chip,.chip,.icon-btn,.btn-reveal,.btn-newgame,.award-btn,.presence-card,.me-row,.online-action,.searching-card,.waiting-card,.info-card,.vs-row,.len-chip,.duel-scorebar,.timer-chip,.dr-side,.rank-row,.text-input,.code-input,.fs-hint,.modal-card,.btn-ghost,.fsh-close,.settings-sheet,.hero-verse-card,.modal-btn.ok,.modal-btn.cancel,.leave-banner,.end-medal,.adj-btn,.waiting-note,.rules,.btn-review,.daily-card,.dc-streak,.sem-flamme,.btn-invite,.sheet-done,.set-go,.share-btn,.rev-item,.parcours-card,.parcours-sum,.tst-head";
 const GLASS_SKIP = ".timer-chip.low,.btn-primary:disabled,.btn-next:disabled";
 /* RÉFRACTION VIVANTE : le verre est calé sur la position RÉELLE à l'écran et
    ré-aligné image par image pendant les mouvements -> quand une carte glisse
@@ -19511,6 +19840,10 @@ function mesurerHauteurUtile(){
 }
 try{
   figerColonne(); majCouche();
+  /* La photo est posée en variable CSS AVANT tout affichage : sinon le premier
+     avatar peint sa couleur, puis l'image arriverait dessus une image plus
+     tard — un clignotement pour rien. */
+  majPhotoRacine();
   mesurerHauteurUtile();
   requestAnimationFrame(()=>{ figerColonne(); majCouche(); mesurerHauteurUtile(); });
   [120, 400, 1200].forEach(d => setTimeout(()=>{ figerColonne(); majCouche(); mesurerHauteurUtile(); }, d));
