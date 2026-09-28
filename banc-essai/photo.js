@@ -290,6 +290,55 @@ const URL = process.argv[2] || 'http://127.0.0.1:8099/index.html';
   dire(cadre.couvre, 'l\'image couvre toujours le rond, même poussée à bout', '');
   dire(!cadre.reste, 'la scène se referme après validation', '');
 
+  /* ===== ON LA FERME AU DOIGT, COMME TOUTES LES AUTRES FEUILLES =====
+     « Au-dessus il y a un petit bouton qui permet de retirer la page, et je
+     veux que je puisse glisser le doigt vers le bas pour fermer la page et
+     pas simplement appuyer sur le bouton. »
+     DEUX GESTES QUI SE RESSEMBLENT ET QUI NE DOIVENT PAS SE CONFONDRE. À
+     l'intérieur du cadre, le doigt appartient à l'IMAGE : il la déplace, il
+     la pince. Partout ailleurs sur la feuille — la poignée, le titre, le
+     pourtour — il appartient à la FEUILLE. On vérifie donc les deux : glisser
+     sur le titre ferme, glisser dans le cadre ne ferme pas et déplace bien
+     l'image. */
+  await p.evaluate(async()=>{
+    const src = document.createElement('canvas'); src.width = src.height = 800;
+    const g = src.getContext('2d'); g.fillStyle='#4C86E8'; g.fillRect(0,0,800,800);
+    g.fillStyle='#FFFFFF'; g.fillRect(300,300,200,200);
+    await ouvrirCadrage(await new Promise(r=>src.toBlob(r,'image/png')));
+  });
+  await p.waitForTimeout(900);
+  const laScene = ()=> p.evaluate(()=>!!document.querySelector('#cadrageVeil:not(.closing) .settings-sheet'));
+
+  /* 1. le doigt DANS le cadre déplace l'image, il ne ferme rien.
+     ON ZOOME D'ABORD, ET C'EST INDISPENSABLE : à l'échelle d'arrivée l'image
+     remplit le cadre au pixel près, donc cadreBorner n'a plus aucun jeu à lui
+     donner — elle ne PEUT pas bouger, et c'est voulu. Ma première version
+     tirait sans zoomer et concluait « le doigt ne déplace rien » : le banc
+     avait tort, pas le jeu. */
+  await p.evaluate(()=>{ cadreGlisseur(2); });
+  await p.waitForTimeout(200);
+  let z = await p.evaluate(()=>{ const c=document.querySelector('.cadre').getBoundingClientRect();
+    return { x:c.left+c.width/2, y:c.top+c.height/2, tx:cadrage.tx, ty:cadrage.ty }; });
+  await p.mouse.move(z.x, z.y); await p.mouse.down();
+  for(let i=1;i<=6;i++){ await p.mouse.move(z.x, z.y + i*18); await p.waitForTimeout(16); }
+  await p.mouse.up(); await p.waitForTimeout(500);
+  const apres = await p.evaluate(()=> cadrage ? { ty:cadrage.ty, ouvert:!!document.getElementById('cadrageVeil') } : { ty:null, ouvert:false });
+  dire(apres.ouvert, 'glisser DANS le cadre ne ferme pas la scène', '');
+  dire(apres.ty !== null && Math.abs(apres.ty - z.ty) > 1, '  et le doigt y déplace bien l\'image',
+       apres.ty === null ? 'scène fermée' : ('ty ' + z.ty.toFixed(0) + ' -> ' + apres.ty.toFixed(0)));
+
+  /* 2. le doigt sur le TITRE ferme */
+  if(apres.ouvert){
+    const t = await p.evaluate(()=>{ const e=document.querySelector('#cadrageVeil .sheet-title').getBoundingClientRect();
+      return { x:e.left+e.width/2, y:e.top+e.height/2 }; });
+    await p.mouse.move(t.x, t.y); await p.mouse.down();
+    for(let i=1;i<=8;i++){ await p.mouse.move(t.x, t.y + i*20); await p.waitForTimeout(16); }
+    await p.mouse.up(); await p.waitForTimeout(800);
+    dire(!(await laScene()), 'glisser le doigt vers le bas ferme la scène de cadrage', '');
+  }
+  await p.evaluate(()=>{ try{ fermerCadrage(); }catch(e){} });
+  await p.waitForTimeout(600);
+
   /* ===== TOUCHER UN AVATAR POUR LA VOIR EN GRAND (v291) =====
      Le sien ET celui d'un autre joueur. On vérifie aussi ce qui fait la
      différence entre « ça marche » et « ça marche partout » : un avatar SANS

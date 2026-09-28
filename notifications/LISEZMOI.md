@@ -1,5 +1,28 @@
 # Les rappels
 
+> ## 🔴 RELEVÉ À NOUVEAU LE 28/09/2026 : RIEN N'A BOUGÉ
+>
+> « Et les rappels aussi ne marchent pas je crois. » Vérifié le jour même sur
+> la vraie table, avec la seule clé publique — celle qui est écrite en clair
+> dans `index.html`, donc celle que n'importe qui possède :
+>
+> | ce qu'on a mesuré | résultat | ce que ça veut dire |
+> |---|---|---|
+> | `GET push_subs` en anonyme | **200**, les lignes sortent | `verrouiller.sql` n'a **pas** été appliqué : la table est toujours ouverte à tous |
+> | `GET push_subs?select=revoir` | **400** | la colonne `revoir` n'existe toujours pas |
+> | les 8 abonnements | `dernier` null 8/8, `serie` 0 8/8, `vu` null 8/8 | les cinq motifs lisent chacun un de ces champs : **aucun rappel ne peut partir** |
+>
+> Le côté JEU est en ordre et sous banc (`banc-essai/rappels-ecriture.js`,
+> `notifs.js`, `mots-rappels.js`, tous verts). Ce qui manque est **entièrement
+> côté serveur**, et je ne peux pas le faire d'ici : il faut la console
+> Supabase et la clé `service_role`, qui ne doit jamais arriver jusqu'ici.
+> Les trois étapes sont ci-dessous, inchangées depuis le 20/09.
+>
+> **Et la fuite est toujours ouverte.** N'importe qui peut lire les huit
+> abonnements, `keys.p256dh` et `keys.auth` compris — de quoi envoyer une
+> notification sur le téléphone d'un joueur sous le nom de Yada — en insérer,
+> et tous les supprimer. C'est l'étape 1, et c'est la plus urgente des trois.
+
 > ## ⚠️ POURQUOI AUCUN RAPPEL N'EST JAMAIS ARRIVÉ (relevé le 20/09/2026)
 >
 > « Je les ai activées et je n'ai jamais rien reçu depuis. » C'était vrai, et

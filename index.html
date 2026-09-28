@@ -246,6 +246,23 @@
     --primary-soft:#FFE7DE;
     --gold:#EFAD26;
     --gold-deep:#A87A1F;
+    /* ===== LE FEU N'EST PAS L'OR =====
+       « Les flammes ont exactement la même couleur que les sept derniers
+       jours, une fois qu'ils sont allumés. » Mesuré au pixel, texte masqué :
+       la pastille peignait rgb(240, 163, 26), un jour allumé rgb(247, 176,
+       51) — écart perçu 3,3 (CIEDE2000), c'est-à-dire RIEN : en dessous de
+       2,3 l'œil ne distingue plus, et à 3,3 deux pastilles voisines forment
+       une seule bande dorée.
+       J'avais déjà essayé d'en détacher une par un violet : « les couleurs
+       que tu veux rajouter, je n'aime pas du tout, il faut que ça reste
+       cohérent. » La leçon tient : on n'invente aucune teinte. Celle-ci est
+       PRISE ENTRE LES DEUX QU'ON A DÉJÀ, à mi-chemin de l'or et du corail du
+       jeu — exactement la couleur d'une flamme, entre le jaune de sa base et
+       le rouge de sa pointe. Les sept jours gardent l'or ; le feu, lui,
+       chauffe. */
+    --feu:#ED6F1F;
+    --feu-ombre:rgba(190,85,20,0.26);
+    --feu-encre:rgba(120,44,6,0.38);
     --gold-soft:#FFF2D6;
     --green:#2FA96E;
     --green-soft:#DFF5E9;
@@ -508,7 +525,7 @@
   .app-header, .card, .mode-card, .question-card, .solo-summary, .solo-score-bar, .score-pane,
   .option-btn, .btn-primary, .btn-next, .btn-replay, .fact-card, .tier-chip, .q-counter, .streak-chip,
   .chip, .icon-btn, .btn-reveal, .btn-newgame, .award-btn, .presence-card, .me-row, .online-action,
-  .searching-card, .waiting-card, .info-card, .vs-row, .len-chip, .duel-scorebar, .timer-chip, .dr-side,
+  .searching-card, .waiting-card, .info-card, .len-chip, .duel-scorebar, .timer-chip, .dr-side,
   .rank-row, .text-input, .code-input, .fs-hint, .modal-card, .add-team, .btn-ghost, .fsh-close, .settings-sheet, .hero-verse-card, .end-medal, .modal-btn, .leave-banner, .adj-btn, .waiting-note,
   .rules, .btn-review, .daily-card, .dc-streak, .sem-flamme, .btn-invite, .sheet-done, .set-go,
   .share-btn, .rev-item, .parcours-card, .parcours-sum, .tst-head, .team-row, .bk{
@@ -653,7 +670,7 @@
      c'est le prix de la zone tactile, et on le paie. Mais une pilule de 44 px
      de haut pour 60 de large est un pavé, pas une pilule — on l'allonge pour
      que la forme reste lisible comme une pastille de compteur. */
-  .sem-flamme{ display:inline-flex; align-items:center; justify-content:center; gap:0.3rem; font-family:inherit; font-weight:800; font-size:1rem; font-variant-numeric:tabular-nums; color:#fff; text-shadow:0 1px 2px rgba(122,78,4,0.35); --glass-tint: rgb(240,163,26); border:0; border-radius:var(--r-full); min-height:2.75rem; padding:0 calc(1.1rem + 1px); flex-shrink:0; box-shadow:0 2px 8px rgba(196,144,32,0.24); cursor:pointer; -webkit-tap-highlight-color:transparent; position:relative; }
+  .sem-flamme{ display:inline-flex; align-items:center; justify-content:center; gap:0.3rem; font-family:inherit; font-weight:800; font-size:1rem; font-variant-numeric:tabular-nums; color:#fff; text-shadow:0 1px 2px var(--feu-encre); --glass-tint: var(--feu); border:0; border-radius:var(--r-full); min-height:2.75rem; padding:0 calc(1.1rem + 1px); flex-shrink:0; box-shadow:0 2px 8px var(--feu-ombre); cursor:pointer; -webkit-tap-highlight-color:transparent; position:relative; }
   .sem-flamme svg{ width:1.05rem; height:1.05rem; display:block; }
   .sem-flamme b{ font-weight:800; }
   /* Flamme éteinte : on ne crie pas un zéro en or. Le même objet, en sourdine,
@@ -1162,7 +1179,29 @@
      Groupe (.rank-row), la pastille de score reprend la puce du bandeau de
      duel. Ce qui s'ajoute ici, c'est seulement ce qui distingue MA ligne des
      autres, et celle d'un joueur parti. */
+  /* ===== HUIT JOUEURS NE TIENNENT PAS SUR UN ÉCRAN DE 4,7 POUCES =====
+     Mesuré, salon plein : la page déborde de 277 px sur un iPhone SE, 298 sur
+     un 13 mini dans Safari, 283 sur un 15. Le bouton « Commencer la partie »
+     tombait à 932 px d'un écran qui en fait 667 — invisible, et toute la page
+     glissait sous le doigt (« il faut que ça ne bouge pas lorsque je déplace
+     mon doigt sur l'écran »). Aucun réarrangement n'y change rien : le coût
+     fixe de l'écran est de 484 px, il reste 183 px, et huit rangées en font
+     460. C'est donc la LISTE qui défile, dans sa propre fenêtre, pendant que
+     le code reste en haut et le bouton en bas — là où le pouce les trouve.
+     flex:0 1 auto + min-height:0 : elle prend ce qu'elle a, et pas un pixel de
+     plus que ce qui reste. (Le verre des rangées suit ce défilement-là : voir
+     glassRevEl, qui accueille désormais un second conteneur imbriqué.) */
   .salle-liste{ margin:0.2rem 0 0.1rem; }
+  .ecran-salon{ min-height:0; }
+  .ecran-salon .salle-liste{ flex:0 1 auto; min-height:0; overflow-y:auto; overscroll-behavior:contain;
+    -webkit-overflow-scrolling:touch; scrollbar-width:none;
+    /* La rangée coupée en deux au bord de la fenêtre disait « il y en a
+       d'autres », mais au couteau. Le même fondu que la liste des erreurs le
+       dit en douceur, et il DISPARAÎT quand il n'y a plus rien au-delà :
+       c'est comme ça qu'on sait qu'on a vu tout le monde. 26 px — la moitié
+       d'une rangée. */
+    --voile-max:26px; }
+  .ecran-salon .salle-liste::-webkit-scrollbar{ display:none; }
   .salle-ligne{ margin-bottom:0.45rem; }
   .salle-ligne.moi{ --rim-edge:0 0 0 1px rgba(150,30,14,0.28); --rim-cast:0 4px 12px rgba(241,80,47,0.24); }
   .salle-ligne.vide{ opacity:0.55; }
@@ -1305,6 +1344,17 @@
     scroll-snap-type:y proximity;
     --voile-max:46px;
     scroll-padding-top:var(--voile-max);
+}
+  /* ===== UN SEUL VOILE, POUR TOUTE LISTE QUI DÉFILE DANS SA FENÊTRE =====
+     La liste des erreurs l'avait pour elle seule ; la liste des joueurs du
+     salon en a besoin pour la même raison, et un dégradé écrit deux fois
+     finit toujours par diverger. Le seul nombre propre à chacune est la
+     LONGUEUR du fondu (--voile-max), posée par sa propre règle : 46 px pour
+     des cartes d'erreur de 143 px de haut, 26 pour des rangées de 51.
+     Le dégradé vit sur la surface elle-même, à côté des longueurs qu'il
+     consomme — pas sur :root, où --voile-h n'existe pas (voir le piège des
+     variables qui en contiennent d'autres, plus haut). */
+  .review-sheet .rev-list, .ecran-salon .salle-liste{
     --voile-h:0px; --voile-b:0px;
     --masque:linear-gradient(to bottom,
       rgba(0,0,0,0) 0,
@@ -1413,13 +1463,35 @@
      n'est inventé pour un écran qui fait exactement ce que font les autres.
      La seule addition est le NOMBRE à droite : ici il ne décore pas, il décide
      — c'est lui qui dit si la porte mène quelque part. */
-  .oa-ico.v{ background:linear-gradient(150deg,#A78BFA,#7C5CE0); box-shadow:inset 0 1px 0 rgba(255,255,255,0.26), 0 2px 7px rgba(110,80,200,0.26); }
-  .rv-choix{ margin-bottom:0.5rem; }
-  .rv-cnt{ flex-shrink:0; font-family:'Poppins',sans-serif; font-weight:700; font-size:1rem;
-    font-variant-numeric:tabular-nums; color:var(--ink-soft); min-width:1.5rem; text-align:right; }
-  /* Une porte fermée le dit en s'éteignant, pas en disparaissant : on garde la
-     ligne pour que la feuille ait toujours la même forme. */
-  .rv-choix.rv-off{ opacity:0.42; }
+  /* ===== UNE CARTE, UN NOMBRE, UN BOUTON =====
+     « Le mode à revoir doit être simple, efficace, comme le reste. »
+     Il n'y a plus de portes à comparer, donc plus de rangées, plus de
+     pastilles de compte, plus de grille de livres. Ce qui reste à l'écran est
+     ce qu'on vient y chercher : combien, où j'en suis, et on y va.
+     Le violet est celui de la carte « À revoir » de l'accueil : on arrive sur
+     la même couleur qu'on vient de toucher. */
+  .rv-carte{ display:flex; flex-direction:column; align-items:center; text-align:center;
+    padding:calc(1.5rem + 1px) calc(1.25rem + 1px) calc(1.6rem + 1px); }
+  .rv-grand{ width:3.1rem; height:3.1rem; border-radius:var(--r-m); padding:0.7rem; color:#fff;
+    display:flex; align-items:center; justify-content:center; margin-bottom:0.85rem;
+    background:linear-gradient(150deg,#A78BFA,#7C5CE0);
+    box-shadow:inset 0 1px 0 rgba(255,255,255,0.26), 0 3px 10px rgba(110,80,200,0.26); }
+  .rv-grand svg{ width:100%; height:100%; display:block; }
+  .rv-nb{ font-family:'Poppins',sans-serif; font-weight:800; font-size:3rem; line-height:1;
+    color:var(--ink); font-variant-numeric:tabular-nums; }
+  .rv-sous{ font-size:0.92rem; color:var(--ink-soft); margin-top:0.3rem; }
+  .rv-carte .rv-prog{ width:100%; max-width:13rem; margin-top:1rem; }
+  /* Les quatre mires. Ce sont les PUCES DU JEU, celles des réglages de partie :
+     même matière, même remplissage rouge, même horloge. Elles passent à la
+     ligne d'elles-mêmes sur un petit écran — deux et deux — plutôt que de
+     rétrécir jusqu'à tronquer un mot. */
+  /* DEUX ET DEUX, PAS TROIS ET UN. En rangée souple, « Aujourd'hui » prend à
+     lui seul cent vingt pixels : les quatre ne tiennent sur aucun téléphone, et
+     le retour à la ligne laissait trois puces en haut et une esseulée en bas.
+     Une grille de deux colonnes donne la même chose à tout le monde, sur
+     n'importe quelle largeur, et fait un bloc au lieu d'une liste. */
+  .len-row.rv-mires{ display:grid; grid-template-columns:1fr 1fr; gap:0.5rem; margin-top:0.9rem; }
+  .rv-go{ margin-top:0.1rem; }
   /* LA JAUGE DU CARNET. Elle ne remplace pas le nombre — la porte doit
      continuer d'annoncer ce qu'elle jouera — elle montre le CHEMIN : les
      paliers franchis sur les paliers à franchir. C'est la seule grandeur qui
@@ -1436,40 +1508,10 @@
     transition:transform var(--tr-plie); will-change:transform; }
   .rv-pct{ flex-shrink:0; font-family:'Poppins',sans-serif; font-weight:700; font-size:0.72rem;
     font-variant-numeric:tabular-nums; color:var(--ink-soft); }
-  .rv-choix.rv-off .rv-cnt{ color:var(--ink-soft); }
-  /* ===== LA GRILLE DES LIVRES A QUITTÉ LA FEUILLE (v221) =====
-     Elle y était enfermée dans une fenêtre de trois rangées, avec son propre
-     défilement, son cran et son voile — toute une mécanique pour compenser le
-     fait qu'elle n'avait pas la place. Sur son écran, elle n'a plus besoin de
-     rien de tout ça : elle défile avec la page, comme les 66 livres de la
-     Progression, et aucune rangée n'est jamais coupée puisque rien ne la
-     rogne. Moins de code, et le problème ne se pose plus au lieu d'être
-     contenu. La fonction majVoilesListe reste : la liste des erreurs s'en sert. */
-  .rv-bk{ display:flex; align-items:center; justify-content:center; gap:0.32rem; }
-  .rv-bk .bk-nm{ display:inline; }
-  /* Le titre de section, entre les trois portes et la grille des livres. */
-  .rvl-t{ font-family:'Poppins',sans-serif; font-size:0.72rem; font-weight:700; letter-spacing:0.07em;
-    text-transform:uppercase; color:rgba(255,255,255,0.8); text-shadow:0 1px 8px rgba(0,0,0,0.5);
-    margin:1rem 0.2rem 0.5rem; }
-  .rvl-regle{ margin:0.8rem 0.2rem 0; color:rgba(255,255,255,0.82); text-shadow:0 1px 8px rgba(0,0,0,0.5); }
-  /* ===== L'ÉCRAN DES LIVRES À REVOIR =====
-     La grille de la Progression est faite pour tenir SOUS un testament, entre
-     deux autres blocs : quatre colonnes serrées, des noms coupés, des pastilles
-     de 0,7 rem. Ici elle est seule sur l'écran — la recopier telle quelle
-     laissait les deux tiers de la page vides ET les noms tronqués, ce qui est
-     le pire des deux mondes : ni compact, ni lisible.
-     Trois colonnes au lieu de quatre (les noms tiennent, abréviations
-     comprises), des pastilles plus hautes et un texte plus grand : la liste
-     occupe la page parce qu'elle EST la page. */
-  .rvl-card{ padding:calc(0.9rem + 1px); }
-  .rvl-card .bk-mode{ margin-bottom:0.85rem; font-size:0.84rem; }
-  .rvl-card .bk-grid{ grid-template-columns:repeat(auto-fill, minmax(6.2rem, 1fr)); gap:0.5rem; }
-  .rvl-card .bk{ padding:calc(0.62rem + 1px) calc(0.5rem + 1px); border-radius:12px; }
-  .rvl-card .bk-nm{ font-size:0.82rem; }
-  .rvl-card .rv-bkn{ font-size:0.68rem; padding:0.1rem 0.4rem; }
-  .rv-bkn{ font-family:'Poppins',sans-serif; font-weight:700; font-size:0.62rem; color:#fff;
-    background:linear-gradient(150deg,#A78BFA,#7C5CE0); border-radius:var(--r-full);
-    padding:0.05rem 0.34rem; flex-shrink:0; font-variant-numeric:tabular-nums; }
+  /* (La grille des livres de l'écran « À revoir », et les quatre portes
+     au-dessus d'elle, ont été retirées : le jeu choisit désormais quoi
+     réviser. Les 66 livres de la Progression, eux, n'ont pas bougé.) */
+  .rvl-regle{ margin:0.8rem 0.2rem 0; color:rgba(255,255,255,0.82); text-shadow:0 1px 8px rgba(0,0,0,0.5); text-align:center; }
   .flam-sheet .sheet-title{ display:flex; align-items:baseline; }
   .flam-sheet .sheet-title small{ margin-left:auto; font-family:'Poppins',sans-serif; font-size:0.85rem; font-weight:700; color:var(--ink-soft); font-variant-numeric:tabular-nums; }
   .rev-q{ font-weight:700; color:var(--ink); font-size:0.92rem; margin-bottom:0.5rem; line-height:1.35; }
@@ -1602,7 +1644,25 @@
        se remplit de blanc à l'appui et surtout au relâchement (0,4 s).
      L'ombre change donc INSTANTANÉMENT ; le ressenti vient du ressort du
      transform, qui garde toute sa fluidité. */
-  button, .mode-card{ position:relative; -webkit-user-select:none; user-select:none; touch-action:manipulation; transition:transform 0.44s cubic-bezier(0.2,1,0.3,1), background-color 0.22s ease, border-color 0.22s ease, color 0.2s ease, opacity 0.22s ease, --glass-tint 0.2s ease; }
+  /* ===== UNE SEULE HORLOGE POUR TOUT CE QUI CHANGE DE COULEUR =====
+     « Je veux que le remplissage des boutons se fasse de manière cohérente au
+     niveau de la vitesse avec le reste des animations. »
+     Il y avait ici QUATRE durées pour une même famille de changements : 0,22 s
+     pour le fond et le rebord, 0,2 s pour l'encre et pour la teinte de verre,
+     et trois courbes différentes en comptant celle des puces. Mesuré à
+     l'image sur une seule ligne de la liste des versions — le pire cas, parce
+     qu'on y voit quatre morceaux bouger côte à côte :
+         fond de la ligne   176 ms      coche   226 ms
+         titre              259 ms      sigle   276 ms
+     Cent millisecondes entre le premier morceau posé et le dernier : la ligne
+     ne change pas, elle se décompose.
+     TOUT CE QUI EST UNE COULEUR PREND DONC --tr-onde, la durée de l'onde
+     d'appui et du remplissage des puces (0,24 s) — une valeur qui existait
+     déjà, pas une de plus. Ce qui reste à part, et pour une raison : le
+     TRANSFORM, qui n'est pas une couleur mais un ressort, garde ses 0,44 s ;
+     et les puces gardent leur retard calculé sur l'encre (voir .chip.remplit),
+     qui sert à ne pas lire un mot sombre sur du rouge. */
+  button, .mode-card{ position:relative; -webkit-user-select:none; user-select:none; touch-action:manipulation; transition:transform 0.44s cubic-bezier(0.2,1,0.3,1), background-color var(--tr-onde), border-color var(--tr-onde), color var(--tr-onde), opacity var(--tr-onde), --glass-tint var(--tr-onde); }
   /* Toucher « qui se remplit » : une onde AUX COULEURS DE L'APP (rouge-
      orangé) naît au centre du bouton et s'étend jusqu'aux bords, puis
      s'estompe sur place au relâchement. Sur les chips (chrono, durée…),
@@ -2271,11 +2331,6 @@
   .code-big{ font-family:'Poppins',sans-serif; font-weight:700; font-size:clamp(1.62rem, calc(8 * var(--hu) - 23px), 2.55rem); letter-spacing:0.38rem; color:#fff; margin:clamp(0.02rem, calc(0.51 * var(--hu)), 0.25rem) 0 clamp(0.01rem, calc(1.1 * var(--hu) - 5px), 0.25rem) 0.38rem; text-shadow:0 2px 18px rgba(0,0,0,0.45); }
   .code-hint{ font-size:clamp(0.75rem, calc(1.7 * var(--hu)), 0.83rem); color:rgba(255,255,255,0.88); text-shadow:0 1px 6px rgba(0,0,0,0.35); }
 
-  .vs-row{ display:flex; align-items:center; justify-content:center; gap:0.7rem; background:rgba(255,255,255,0.52); backdrop-filter:blur(16px) saturate(180%); -webkit-backdrop-filter:blur(16px) saturate(180%); border:1px solid var(--bord); border-radius:var(--r-l); padding:clamp(0.42rem, calc(4.3 * var(--hu) - 19.1px), 1rem) 0.85rem; margin-bottom:clamp(0.1rem, calc(0.51 * var(--hu)), 0.25rem); }
-  .vs-player{ display:flex; flex-direction:column; align-items:center; gap:clamp(0.15rem, calc(0.82 * var(--hu)), 0.4rem); flex:1; }
-  .vs-name{ font-weight:600; font-size:0.87rem; color:var(--ink); text-align:center; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; max-width:100%; }
-  .vs-tag{ font-size:0.82rem; color:var(--ink-soft); }
-  .vs-mid{ font-family:'Poppins',sans-serif; font-weight:700; color:var(--primary); font-size:0.98rem; }
 
   .len-label{ font-size:clamp(0.75rem, calc(1.68 * var(--hu)), 0.82rem); font-weight:600; color:rgba(255,255,255,0.9); margin:clamp(0.28rem, calc(3.8 * var(--hu) - 14.9px), 0.95rem) 0 clamp(0.13rem, calc(1.9 * var(--hu) - 8.5px), 0.45rem) 0.2rem; text-shadow:0 1px 6px rgba(0,0,0,0.4); }
   .len-row{ display:flex; gap:0.5rem; }
@@ -2321,7 +2376,7 @@
   .option-btn, .btn-primary, .btn-next, .btn-replay, .fact-card, .tier-chip, .q-counter, .streak-chip, .timer-chip,
   .icon-btn, .btn-reveal, .btn-newgame, .award-btn, .progress-track,
   .presence-card, .me-row, .online-action, .searching-card, .waiting-card,
-  .info-card, .vs-row, .len-chip, .duel-scorebar, .dr-side,
+  .info-card, .len-chip, .duel-scorebar, .dr-side,
   .rank-row, .text-input, .code-input, .leave-banner, .fs-hint, .modal-card{
     transform: translateZ(0);
     -webkit-transform: translateZ(0);
@@ -2464,7 +2519,6 @@
   /* ---------- Bannière adversaire parti + hôte ---------- */
   .leave-banner{ display:flex; align-items:flex-start; gap:0.6rem; --glass-tint: rgb(255,244,222); border:1px solid transparent; border-radius:var(--r-m); padding:0.75rem 0.95rem; margin-bottom:0.7rem; font-size:0.85rem; line-height:1.45; color:#5f4310; }
   .leave-banner .lb-ico{ width:1.2rem; height:1.2rem; flex-shrink:0; color:var(--gold); margin-top:0.1rem; }
-  .vs-tag.is-host{ color:var(--gold-deep); font-weight:800; text-transform:uppercase; letter-spacing:0.06em; font-size:0.78rem; }
   .host-note{ text-align:center; font-size:clamp(0.76rem, calc(1.72 * var(--hu)), 0.84rem); color:rgba(255,255,255,0.92); margin:clamp(0.15rem, calc(1.23 * var(--hu)), 0.6rem) auto 0.15rem; max-width:20rem; text-shadow:0 1px 8px rgba(0,0,0,0.4); }
 
   /* ---------- Verrou portrait : le téléphone tourne dans le bon sens ---------- */
@@ -2620,7 +2674,7 @@
   .app-header, .card, .mode-card, .question-card, .solo-summary, .solo-score-bar, .score-pane,
   .option-btn, .btn-primary, .btn-next, .btn-replay, .fact-card, .tier-chip, .q-counter, .streak-chip, .chip, .icon-btn, .btn-reveal,
   .btn-newgame, .award-btn, .presence-card, .me-row, .online-action, .searching-card,
-  .waiting-card, .info-card, .vs-row, .len-chip, .duel-scorebar, .timer-chip, .dr-side, .rank-row,
+  .waiting-card, .info-card, .len-chip, .duel-scorebar, .timer-chip, .dr-side, .rank-row,
   .text-input, .code-input, .fs-hint, .modal-card, .btn-ghost, .fsh-close, .settings-sheet, .hero-verse-card, .end-medal, .modal-btn.ok, .modal-btn.cancel, .leave-banner, .adj-btn, .waiting-note, .rules, .btn-review, .daily-card, .dc-streak, .sem-flamme, .btn-invite, .sheet-done, .set-go, .share-btn, .rev-item, .parcours-card, .tst-head{
     background-color:transparent;
     /* Deux voies pour le verre :
@@ -2693,7 +2747,7 @@
   :is(.app-header, .card, .mode-card, .question-card, .solo-summary, .solo-score-bar, .score-pane,
     .option-btn, .btn-primary, .btn-next, .btn-replay, .fact-card, .tier-chip, .q-counter, .streak-chip,
     .chip, .icon-btn, .btn-reveal, .btn-newgame, .award-btn, .presence-card, .me-row, .online-action,
-    .searching-card, .waiting-card, .info-card, .vs-row, .len-chip, .duel-scorebar, .timer-chip, .dr-side,
+    .searching-card, .waiting-card, .info-card, .len-chip, .duel-scorebar, .timer-chip, .dr-side,
     .rank-row, .fs-hint, .modal-card, .btn-ghost, .fsh-close, .settings-sheet,
     .hero-verse-card, .end-medal, .modal-btn.ok, .modal-btn.cancel, .leave-banner, .adj-btn, .waiting-note,
     .rules, .btn-review, .daily-card, .dc-streak, .sem-flamme, .btn-invite, .sheet-done, .set-go,
@@ -2717,7 +2771,7 @@
   html.gl-native :is(.app-header, .card, .mode-card, .question-card, .solo-summary, .solo-score-bar, .score-pane,
     .option-btn, .btn-primary, .btn-next, .btn-replay, .fact-card, .tier-chip, .q-counter, .streak-chip, .chip, .icon-btn, .btn-reveal,
     .btn-newgame, .award-btn, .presence-card, .me-row, .online-action, .searching-card,
-    .waiting-card, .info-card, .vs-row, .len-chip, .duel-scorebar, .timer-chip, .dr-side, .rank-row,
+    .waiting-card, .info-card, .len-chip, .duel-scorebar, .timer-chip, .dr-side, .rank-row,
     .text-input, .code-input, .fs-hint, .modal-card, .btn-ghost, .fsh-close, .settings-sheet, .hero-verse-card, .end-medal, .modal-btn.ok, .modal-btn.cancel, .leave-banner, .adj-btn, .waiting-note, .rules, .btn-review, .daily-card, .dc-streak, .sem-flamme, .btn-invite, .sheet-done, .set-go, .share-btn, .rev-item, .parcours-card, .parcours-sum, .tst-head){
     --glass-photo: none;
     --glass-bf: blur(26px) saturate(1.35);
@@ -2866,7 +2920,7 @@
      .55, flou 28, ombre 4 couches). Les panneaux du multijoueur étaient plus
      plats (flou 16-18, aucune ombre de profondeur) -> le mode en ligne
      « détonnait ». On aligne le contour ; chaque panneau garde sa teinte. */
-  .presence-card, .vs-row, .searching-card, .waiting-card, .info-card{
+  .presence-card, .searching-card, .waiting-card, .info-card{
     border:1px solid var(--bord);
     backdrop-filter:blur(28px) saturate(185%); -webkit-backdrop-filter:blur(28px) saturate(185%);
     --rim-cast:0 10px 34px rgba(15,12,10,0.2), 0 2px 8px rgba(15,12,10,0.08); box-shadow:none;
@@ -3815,7 +3869,13 @@
     display:flex; align-items:center; justify-content:center;
     font-family:'Poppins',sans-serif; font-weight:700; font-size:0.68rem; letter-spacing:0.045em;
     color:var(--ink-soft); background:rgba(42,36,30,0.08); flex-shrink:0;
-    transition:background-color 0.22s ease, color 0.22s ease; }
+    /* L'HORLOGE COMMUNE, ICI AUSSI. Mesuré à l'image, sur une même ligne :
+       fond 176 ms, coche 226, titre 259, sigle 276 — cent millisecondes
+       d'écart entre le premier morceau posé et le dernier. « Je veux que le
+       remplissage se fasse de manière cohérente au niveau de la vitesse avec
+       le reste des animations. » Tout ce qui CHANGE DE COULEUR dans la ligne
+       prend donc --tr-onde, la durée des puces et de l'onde d'appui. */
+    transition:background-color var(--tr-onde), color var(--tr-onde); }
   .bible-item.sel .bible-sig{ color:#fff; background:var(--primary); }
   .bible-txt{ flex:1; min-width:0; }
   .bible-txt b{ font-family:'Poppins',sans-serif; font-weight:600; font-size:0.95rem; }
@@ -3829,7 +3889,11 @@
      autocollant. La ligne retenue prend maintenant la teinte d'action du jeu,
      son nom passe en gras, et une simple coche corail confirme : le même
      langage que partout ailleurs, et rien de collé. */
-  .bible-ck{ width:1.15rem; height:1.15rem; color:var(--primary); flex-shrink:0; display:inline-flex; opacity:0; transform:scale(0.7); transition:opacity 0.18s ease-out, transform var(--tr-ouvre); }
+  /* La coche PARAÎT sur l'horloge commune, et elle GRANDIT sur la courbe de
+     tout ce qui s'ouvre dans le jeu : une apparition n'est pas un
+     remplissage, et c'est la seule chose de la ligne à garder sa propre
+     courbe — pas sa propre durée. */
+  .bible-ck{ width:1.15rem; height:1.15rem; color:var(--primary); flex-shrink:0; display:inline-flex; opacity:0; transform:scale(0.7); transition:opacity var(--tr-onde), transform var(--tr-ouvre); }
   .bible-item.sel .bible-ck{ opacity:1; transform:scale(1); }
   .bible-item.sel{ background:rgb(255,244,238); }
   .bible-item.sel .bible-txt b{ color:var(--primary); }
@@ -4295,7 +4359,7 @@
      (.chip.active, .len-chip.sel, .online-action.primary, .tst.open .tst-head…). */
   .app-header, .card, .mode-card, .question-card, .solo-summary, .solo-score-bar, .score-pane,
   .daily-card, .parcours-card, .parcours-sum, .chip, .tier-chip, .q-counter,
-  .presence-card, .me-row, .online-action, .vs-row, .searching-card, .waiting-card, .info-card,
+  .presence-card, .me-row, .online-action, .searching-card, .waiting-card, .info-card,
   .len-chip, .duel-scorebar, .rank-row, .team-row, .add-team, .btn-ghost, .fsh-close,
   .settings-sheet, .modal-card, .hero-verse-card, .end-medal, .waiting-note, .rules,
   .btn-review, .btn-invite, .rev-item, .tst-head, .icon-btn, .modal-btn.cancel,
@@ -4437,7 +4501,7 @@
   .online-action, .btn-newgame, .btn-invite,
   .award-btn, .leave-banner{ --mon-rebord:var(--rebord-pose); }
   .chip, .len-chip, .q-counter, .timer-chip, .tier-chip, .streak-chip,
-  .rev-item, .bible-item, .me-row, .vs-row, .rank-row, .team-row, .add-team,
+  .rev-item, .bible-item, .me-row, .rank-row, .team-row, .add-team,
   .text-input, .code-input, .bk, .dc-streak, .adj-btn, .sj,
   .share-btn, .btn-ghost, .modal-btn.cancel{ --mon-rebord:var(--rebord); }
   /* ===== UNE PUCE CHOISIE EST « PLATE », PAS « PLEINE » =====
@@ -4476,7 +4540,7 @@
   .online-action, .btn-ghost, .btn-newgame, .share-btn, .btn-invite,
   .award-btn, .leave-banner, .modal-btn.cancel,
   .chip, .len-chip, .q-counter, .timer-chip, .tier-chip, .streak-chip,
-  .rev-item, .bible-item, .me-row, .vs-row, .rank-row, .team-row, .add-team,
+  .rev-item, .bible-item, .me-row, .rank-row, .team-row, .add-team,
   .text-input, .code-input, .bk, .dc-streak, .adj-btn, .sj,
   .btn-primary, .btn-next, .btn-replay, .btn-reveal, .sheet-done, .set-go,
   .chip.active, .len-chip.sel, .streak-chip.hot, .online-action.primary,
@@ -4685,16 +4749,21 @@ const TEXTES = {
     "prenez votre temps":"take your time",
     /* --- à revoir --- */
     "À revoir":"To review",
-    "Celles qui me résistent":"The ones I keep getting wrong",
-    "Ratées au moins deux fois":"Missed at least twice",
-    "Les échéances du jour":"Due today",
-    "Ce que la mémoire réclame":"What your memory is asking for",
-    "Tout mon carnet":"My whole notebook",
-    "Sans attendre leur tour":"Without waiting for their turn",
-    "Ma dernière partie":"My last game",
-    "Ce que je viens de rater":"What I just missed",
+    "à revoir maintenant":"to review right now",
+    "Aujourd'hui":"Today",
+    "Tenaces":"Stubborn",
+    "Un livre":"One book",
+    "Ma partie":"My game",
+    "qui te résistent le plus":"that resist you the most",
+    "Rien ne te résiste en ce moment":"Nothing is resisting you right now",
+    "à revoir dans {livre}":"to review in {livre}",
+    "Aucun livre à revoir":"No book to review",
+    "de ta dernière partie":"from your last game",
+    "Rien de raté à ta dernière partie":"Nothing missed in your last game",
+    "Rien à revoir pour l'instant":"Nothing to review right now",
+    "Commencer":"Start",
+    "Les plus tenaces d'abord. Une erreur revient jusqu'à ce que tu l'aies sue quatre fois.":"The most stubborn first. A mistake keeps coming back until you have got it right four times.",
     "À réviser aujourd'hui":"To review today",
-    "Ou un livre en particulier":"Or one book in particular",
     "Mode Groupe":"Group Mode",
     "En équipes, sur un seul écran":"In teams, on one screen",
     "Mode Solo":"Solo Mode",
@@ -4715,9 +4784,6 @@ const TEXTES = {
     "Déroulé :":"How it works:",
     "réponds à chaque question avant la fin du chrono — tous niveaux mélangés. Enchaîne les bonnes réponses pour faire grimper ta série.":"answer each question before the timer runs out — all levels mixed. String correct answers together to grow your streak.",
     "lisez la question à voix haute → révélez la réponse → attribuez les points au bon joueur (ou à la bonne équipe). Avec le chrono, la réponse se révèle toute seule à la fin du temps. Une erreur ? Les boutons −/+ corrigent à tout moment.":"read the question aloud → reveal the answer → award the points to the right player (or team). With the timer on, the answer reveals itself when time runs out. A mistake? The −/+ buttons fix it at any time.",
-    "Une erreur revient demain, puis dans 3, 7 et 16\u00a0jours. Il faut":"A mistake comes back tomorrow, then in 3, 7 and 16\u00a0days. It takes",
-    "4 bonnes réponses":"4 correct answers",
-    "pour qu'une question quitte le carnet\u00a0: c'est ce que montre la barre. Se tromper la ramène à demain.":"for a question to leave the notebook — that's what the bar shows. Getting it wrong brings it back to tomorrow.",
     "Résultats":"Results",
     "Égalité":"Tie",
     "Ex æquo en tête !":"Tied for the lead!",
@@ -4736,7 +4802,6 @@ const TEXTES = {
     "mon adversaire":"my opponent",
     "{nom} aimerait rejouer. Tu acceptes\u00a0?":"{nom} would like a rematch. Do you accept?",
     "Rejoins-moi sur {jeu}\u00a0! Code du salon\u00a0: {code}":"Join me on {jeu}! Room code: {code}",
-    "Hôte":"Host",
     "Prêt\u00a0! En attente du lancement par l'hôte…":"Ready! Waiting for the host to start…",
     "Connexion au salon…":"Connecting to the room…",
     "L'hôte a quitté le salon.":"The host has left the room.",
@@ -4760,7 +4825,7 @@ const TEXTES = {
     "Toi · Hôte":"You · Host",
     "Toi":"You",
     "Prêt":"Ready",
-    "Tu es l'hôte\u00a0: règle la partie, puis lance {mot}.":"You are the host: set up the game, then start {mot}.",
+    "Tu es l'hôte\u00a0: règle les options, puis lance {mot}.":"You are the host: set the options, then start {mot}.",
     "L'hôte paramètre la partie puis lance {mot}.":"The host sets up the game then starts {mot}.",
     "Longueur de la partie":"Game length",
     "Longueur du duel":"Duel length",
@@ -5075,16 +5140,21 @@ const TEXTES = {
     "Sans":"Sin",
     "prenez votre temps":"tómense su tiempo",
     "À revoir":"Por repasar",
-    "Celles qui me résistent":"Las que siempre fallo",
-    "Ratées au moins deux fois":"Falladas al menos dos veces",
-    "Les échéances du jour":"Para hoy",
-    "Ce que la mémoire réclame":"Lo que tu memoria pide",
-    "Tout mon carnet":"Todo mi cuaderno",
-    "Sans attendre leur tour":"Sin esperar su turno",
-    "Ma dernière partie":"Mi última partida",
-    "Ce que je viens de rater":"Lo que acabo de fallar",
+    "à revoir maintenant":"para repasar ahora",
+    "Aujourd'hui":"Hoy",
+    "Tenaces":"Tercas",
+    "Un livre":"Un libro",
+    "Ma partie":"Mi partida",
+    "qui te résistent le plus":"las que más se te resisten",
+    "Rien ne te résiste en ce moment":"Nada se te resiste ahora mismo",
+    "à revoir dans {livre}":"para repasar en {livre}",
+    "Aucun livre à revoir":"Ningún libro que repasar",
+    "de ta dernière partie":"de tu última partida",
+    "Rien de raté à ta dernière partie":"Nada fallado en tu última partida",
+    "Rien à revoir pour l'instant":"Nada que repasar por ahora",
+    "Commencer":"Empezar",
+    "Les plus tenaces d'abord. Une erreur revient jusqu'à ce que tu l'aies sue quatre fois.":"Primero las más tercas. Un error vuelve hasta que lo aciertes cuatro veces.",
     "À réviser aujourd'hui":"Para repasar hoy",
-    "Ou un livre en particulier":"O un libro en particular",
     "Mode Groupe":"Modo Grupo",
     "En équipes, sur un seul écran":"En equipos, en una sola pantalla",
     "Mode Solo":"Modo Solo",
@@ -5105,9 +5175,6 @@ const TEXTES = {
     "Déroulé\u00a0:":"Cómo funciona:",
     "réponds à chaque question avant la fin du chrono — tous niveaux mélangés. Enchaîne les bonnes réponses pour faire grimper ta série.":"responde cada pregunta antes de que se acabe el tiempo — todos los niveles mezclados. Encadena respuestas correctas para subir tu racha.",
     "lisez la question à voix haute → révélez la réponse → attribuez les points au bon joueur (ou à la bonne équipe). Avec le chrono, la réponse se révèle toute seule à la fin du temps. Une erreur\u00a0? Les boutons −/+ corrigent à tout moment.":"lean la pregunta en voz alta → revelen la respuesta → den los puntos al jugador (o al equipo) correcto. Con el tiempo activado, la respuesta se revela sola al acabarse. ¿Un error? Los botones −/+ lo corrigen en cualquier momento.",
-    "Une erreur revient demain, puis dans 3, 7 et 16\u00a0jours. Il faut":"Un error vuelve mañana, luego a los 3, 7 y 16 días. Hacen falta",
-    "4 bonnes réponses":"4 respuestas correctas",
-    "pour qu'une question quitte le carnet\u00a0: c'est ce que montre la barre. Se tromper la ramène à demain.":"para que una pregunta salga del cuaderno — eso es lo que muestra la barra. Fallar la devuelve a mañana.",
     "Résultats":"Resultados",
     "Égalité":"Empate",
     "Ex æquo en tête\u00a0!":"¡Empate en el primer puesto!",
@@ -5125,7 +5192,6 @@ const TEXTES = {
     "mon adversaire":"mi rival",
     "{nom} aimerait rejouer. Tu acceptes\u00a0?":"{nom} quiere la revancha. ¿Aceptas?",
     "Rejoins-moi sur {jeu}\u00a0! Code du salon\u00a0: {code}":"¡Únete a mí en {jeu}! Código de la sala: {code}",
-    "Hôte":"Anfitrión",
     "Prêt\u00a0! En attente du lancement par l'hôte…":"¡Listo! Esperando a que el anfitrión empiece…",
     "Connexion au salon…":"Conectando a la sala…",
     "L'hôte a quitté le salon.":"El anfitrión salió de la sala.",
@@ -5149,7 +5215,7 @@ const TEXTES = {
     "Toi · Hôte":"Tú · Anfitrión",
     "Toi":"Tú",
     "Prêt":"Listo",
-    "Tu es l'hôte\u00a0: règle la partie, puis lance {mot}.":"Eres el anfitrión: configura la partida y luego empieza {mot}.",
+    "Tu es l'hôte\u00a0: règle les options, puis lance {mot}.":"Eres el anfitrión: ajusta las opciones y luego empieza {mot}.",
     "L'hôte paramètre la partie puis lance {mot}.":"El anfitrión configura la partida y luego empieza {mot}.",
     "Longueur de la partie":"Duración de la partida",
     "Longueur du duel":"Duración del duelo",
@@ -5689,7 +5755,20 @@ const ICONS = {
   /* Une bulle et un point d'exclamation : « dis-nous ce qui a cassé ». */
   bogue: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 14.2a2.4 2.4 0 0 1-2.4 2.4H7.6L3.4 20.4V5.4A2.4 2.4 0 0 1 5.8 3h12.8A2.4 2.4 0 0 1 21 5.4z"/><path d="M12 7.2v4.1"/><path d="M12 13.9v0.1"/></svg>`,
   gear: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3.2"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 1 1-4 0v-.09a1.65 1.65 0 0 0-1.08-1.51 1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 1 1 0-4h.09a1.65 1.65 0 0 0 1.51-1.08 1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33h.08a1.65 1.65 0 0 0 1-1.51V3a2 2 0 1 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82v.08a1.65 1.65 0 0 0 1.51 1H21a2 2 0 1 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1Z"/></svg>`,
-  music: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M9 18.2V5.9l11-2.4v12.3"/><circle cx="6.2" cy="18.2" r="2.8"/><circle cx="17.2" cy="15.8" r="2.8"/></svg>`,
+  /* ===== UNE NOTE, PAS DEUX =====
+     « Cette icône-là, je trouve que le dessin est trop vieillot, pas assez au
+     goût d'aujourd'hui, minimaliste. » C'était la double croche barrée (♫) :
+     deux têtes, une barre, la même silhouette que les lecteurs de fichiers
+     MIDI des années 1990. Elle porte trois formes là où il en faut une.
+     Une seule note : une tête, une hampe, un drapeau court. La tête reste un
+     ANNEAU et non un disque plein, parce que toutes les autres icônes de la
+     feuille sont des traits — la cloche, le livre, l'enveloppe. Une tête
+     pleine aurait fait une tâche noire au milieu d'une famille de contours.
+     (J'ai aussi essayé les barres d'égaliseur, plus modernes encore : elles
+     disent « du son sort », pas « de la musique », et la rangée juste en
+     dessous porte déjà un haut-parleur. Deux fois le même dessin pour deux
+     réglages différents, c'est pire qu'une icône démodée.) */
+  music: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M10.2 17.4V5.2l7.8-1.7v3.9"/><circle cx="7.1" cy="17.4" r="3.1"/></svg>`,
   share: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 14.5V3.2"/><polyline points="8.2 6.7 12 3 15.8 6.7"/><path d="M7.2 10.4H6a2 2 0 0 0-2 2V19a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-6.6a2 2 0 0 0-2-2h-1.2"/></svg>`,
   /* La flèche des DEUX boutons « Partager » (réglages et fin de partie). Trait
      plus franc que l'icône ci-dessus : elle est posée en blanc sur la pastille
@@ -7462,7 +7541,7 @@ const SUPABASE_ANON_KEY = "sb_publishable_FDJ_R0foC7uIeHmxVrj6rA_2NeIgW2a";
    remontée d'un téléphone ne vaut rien si on ne sait pas QUELLE version
    tournait. Elle doit rester égale au CACHE de sw.js — c'est ce que vérifie
    banc-essai/version.js, qui refuse de laisser publier les deux en désaccord. */
-const VERSION_JEU = "v291";
+const VERSION_JEU = "v292";
 
 /* ===================== QUAND ÇA CASSE CHEZ UN JOUEUR =====================
    « Si quelque chose casse chez cinq d'entre eux sur un modèle de téléphone
@@ -7810,16 +7889,14 @@ function reRenderIfOnline(){
      tout de suite. */
   if(resteEntree() > 0 && signaturePresence() === derniereSignature) return;
   if(sc === "online" && document.querySelector(".presence-card")){ updateOnlineLobby(); return; }
-  /* LE RACCOURCI NE VAUT QU'À DEUX. Il retouche la seule case de l'adversaire
-     sans redessiner l'écran — parfait pour un face-à-face, mais il empêchait
-     le salon de BASCULER en liste quand un troisième joueur arrivait : la
-     case existait, donc on ne repassait jamais par un rendu complet. Depuis
-     que le salon vide affiche lui aussi la liste, la condition est EXACTEMENT
-     deux : à un, le même piège reviendrait quand l'invité s'en va. */
-  if(sc === "online-room" && document.getElementById("oppSlot") && nbJoueurs() === 2){ updateRoomOpponent(); return; }
-  /* À trois et plus, la liste se met à jour en place — voir majSalleListe().
-     Elle rend la main (false) quand la FORME de l'écran change, et là
-     seulement on reconstruit. */
+  /* LE SALON A UNE SEULE FORME, DONC UN SEUL CHEMIN. Il y avait ici un
+     raccourci réservé au face-à-face — retoucher la case de l'adversaire sans
+     redessiner — et il a coûté cher : la case existait, donc on ne repassait
+     jamais par un rendu complet, et le salon restait bloqué à deux quand un
+     troisième arrivait. Maintenant que la liste sert de deux à huit, elle se
+     met à jour en place à tous les nombres, et il n'y a plus de bascule à
+     rattraper. majSalleListe() rend la main (false) si elle ne trouve pas la
+     liste — autre écran — et là seulement on reconstruit. */
   if(sc === "online-room" && majSalleListe()) return;
   render();
 }
@@ -7841,8 +7918,8 @@ function updateOnlineLobby(){
    s'afficher et de la bonne manière » — et, sur la même capture, « derrière,
    le décor se décale d'un coup ». Les deux n'en font qu'un.
 
-   CE QUI SE PASSAIT. À DEUX, reRenderIfOnline() retouche la seule case de
-   l'adversaire (updateRoomOpponent) : instantané, rien ne bouge autour. À
+   CE QUI SE PASSAIT. À DEUX, reRenderIfOnline() retouchait la seule case de
+   l'adversaire du face-à-face : instantané, rien ne bougeait autour. À
    TROIS ET PLUS, il tombait sur render(), qui reconstruit l'écran ENTIER —
    en-tête, code, liste, réglages, bouton — et repose toutes ses couches de
    verre. Mesuré : 20 à 30 ms de fil principal à chaque arrivée, contre une
@@ -7859,13 +7936,12 @@ function updateOnlineLobby(){
    reste. Aucun autre morceau de l'écran n'est touché, donc aucune couche de
    verre n'est reposée — et glassSuivre() accompagne le seul mouvement qui
    reste, celui de la liste qui s'allonge.
-   ON REND LA MAIN QUAND ON NE PEUT PAS. Passer de deux à trois change la FORME
-   de l'écran (le face-à-face devient une liste) : là, il faut bien un rendu
-   complet. La fonction dit non, et l'appelant redessine. */
+   ON REND LA MAIN QUAND ON NE PEUT PAS — c'est-à-dire quand la liste n'est pas
+   là. Elle l'est désormais de deux joueurs à huit : le face-à-face a disparu,
+   donc la bascule de forme qu'il fallait rattraper aussi. */
 function majSalleListe(){
   const liste = document.querySelector(".salle-liste");
-  if(!liste) return false;                 // face-à-face ou autre écran
-  if(nbJoueurs() === 2) return false;      // on bascule en face-à-face : rendu complet
+  if(!liste) return false;                 // autre écran
   const rangs = classement().sort((a,b)=> (a.moi?0:1)-(b.moi?0:1));
   const cle = (j)=> String(j.moi ? "moi" : (j.id || j.name || ""));
   const avait = liste.querySelectorAll(".salle-ligne:not(.vide)").length;
@@ -7904,11 +7980,13 @@ function majSalleListe(){
   }
   liste.querySelectorAll(".salle-ligne:not(.vide)").forEach(l=>{ if(!vues[l.dataset.jid]) l.remove(); });
 
-  /* La ligne des places restantes : elle existe tant que le salon n'est pas
-     plein, et elle annonce le bon compte. */
+  /* La ligne des places restantes. ELLE N'INVITE QUE TANT QU'ON EST SEUL —
+     exactement comme au rendu complet, et c'est tout l'enjeu : ces deux
+     chemins dessinent la MÊME liste, sinon le salon change de forme selon
+     qu'on vient d'y entrer ou qu'on y était déjà. */
   const reste = MAX_JOUEURS - nbJoueurs();
   let vide = liste.querySelector(".salle-ligne.vide");
-  if(reste > 0){
+  if(nbJoueurs() === 1){
     if(!vide){
       vide = document.createElement("div");
       vide.className = "rank-row salle-ligne vide";
@@ -7937,37 +8015,39 @@ function majSalleListe(){
   if(btn && net.isHost){
     const peut = net.oppPresent;
     btn.classList.toggle("is-waiting", !peut);
-    const t = peut ? Tf("Commencer {mot}", { mot:T("la partie") }) : T("En attente des joueurs…");
+    /* À deux, le salon dit toujours « le duel » : la FORME ne change plus, les
+       MOTS si. Une seule source pour tout l'écran. */
+    const t = peut ? Tf("Commencer {mot}", { mot:motPartie() }) : T("En attente des joueurs…");
     if(btn.textContent !== t) btn.textContent = t;
   }
+  /* La note de l'invité — elle était mise à jour par le raccourci du
+     face-à-face, qui n'existe plus. */
+  const wait = document.getElementById("waitNote");
+  if(wait){
+    const t = net.oppPresent ? T("Prêt ! En attente du lancement par l'hôte…") : T("Connexion au salon…");
+    if(wait.textContent !== t) wait.textContent = t;
+  }
+  /* Et la longueur, qui se dit « du duel » à deux et « de la partie » au-delà. */
+  const lbl = document.querySelector(".len-label");
+  if(lbl){
+    const t = nbJoueurs() === 2 ? T("Longueur du duel") : T("Longueur de la partie");
+    if(lbl.textContent !== t) lbl.textContent = t;
+  }
+  const note = document.querySelector(".host-note");
+  if(note){
+    const t = net.isHost ? Tf("Tu es l'hôte : règle les options, puis lance {mot}.", {mot:motPartie()})
+                         : Tf("L'hôte paramètre la partie puis lance {mot}.", {mot:motPartie()});
+    if(note.textContent !== t) note.textContent = t;
+  }
 
+  /* Une rangée de plus ou de moins change ce qu'il reste à voir au-delà des
+     deux bords : le fondu se recalcule avec la liste. */
+  majVoilesListe(liste);
   /* LE VERRE SUIT LA LISTE QUI S'ALLONGE, AU LIEU DE SE REMETTRE À LA FIN. */
   if(liste.querySelectorAll(".salle-ligne").length !== avait + (reste > 0 ? 1 : 0)){
     try{ glassSuivre(620); }catch(e){}
   } else { try{ glassSuivre(260); }catch(e){} }
   return true;
-}
-function updateRoomOpponent(){
-  const slot = document.getElementById("oppSlot");
-  if(!slot){ render(); return; }
-  const arrived = net.oppPresent && slot.dataset.filled !== "1";
-  slot.innerHTML = (net.oppPresent
-      ? avatarHtml(net.opp.name, net.opp.color, 3, net.opp.id)
-      : `<span class="avatar waiting" style="width:3rem;height:3rem;font-size:1.25rem;">?</span>`)
-    + `<div class="vs-name">${net.oppPresent?escapeHtml(net.opp.name):T("En attente…")}</div>`
-    + `<div class="vs-tag${net.isHost?'':' is-host'}">${net.isHost?T("Adversaire"):T("Hôte")}</div>`;
-  slot.dataset.filled = net.oppPresent ? "1" : "0";
-  if(arrived){ slot.style.animation = "none"; void slot.offsetWidth; slot.style.animation = "oppIn 0.5s cubic-bezier(0.2,1.3,0.35,1)"; }
-  const btn = document.getElementById("roomStartBtn");
-  /* Le premier rendu écrit « En attente des joueurs… » et « Commencer <la
-     partie|le duel> » ; cette mise à jour en direct écrivait « En attente de
-     l'adversaire… » et « Commencer le duel » en dur. Le même bouton changeait
-     donc de mot tout seul, à la seconde où un joueur arrivait ou partait. Une
-     seule source pour les deux. */
-  if(btn){ const can = net.isHost && net.oppPresent; btn.classList.toggle("is-waiting", !can); btn.textContent = can ? Tf("Commencer {mot}", {mot:motPartie()}) : T("En attente des joueurs…"); }
-  const wait = document.getElementById("waitNote");
-  if(wait) wait.textContent = net.oppPresent ? T("Prêt ! En attente du lancement par l'hôte…") : T("Connexion au salon…");
-  queueGlassSync();
 }
 function joinLobby(){
   const supa = initSupa();
@@ -9166,11 +9246,22 @@ function getCtx(){
   }
   return actx;
 }
+/* ===== UN CONTEXTE QUI NE TOURNE PAS NE TOURNE PAS, QUEL QUE SOIT LE MOT =====
+   Trois endroits demandaient la reprise à la condition que l'état soit
+   « suspended », mot à mot. iOS en a un autre, « interrupted », qu'il pose
+   quand une AUTRE application a pris la session audio du téléphone —
+   typiquement une application qui ENREGISTRE (elle passe la session en
+   playAndRecord, ce qu'une application qui lit ne fait pas). Dans cet état-là,
+   un effet touché par le joueur ne demandait même pas la reprise : il
+   fabriquait ses nœuds dans un contexte mort, en silence.
+   On ne teste donc plus un mot, on teste la seule chose qui compte. */
+function ctxEndormi(c){ return !c || c.state !== "running"; }
+function reveiller(c){ if(ctxEndormi(c)){ try{ const p = c.resume(); if(p && p.catch) p.catch(()=>{}); }catch(e){} } }
 const SFX_GAIN = 2.6; // les effets passent nettement au-dessus de la musique
 // une voix "cloche" : montée sans clic, extinction douce
 function blip(freq, start, dur, vol, type){
   const ctx = getCtx();
-  if(ctx.state==="suspended"){ ctx.resume(); }
+  reveiller(ctx);
   const osc = ctx.createOscillator();
   const gain = ctx.createGain();
   osc.type = type || "sine";
@@ -9196,7 +9287,7 @@ function blip(freq, start, dur, vol, type){
    la musique. Seul le « toc » du toucher (tock) reste à part, intact. */
 function chime(freq, start, dur, vol){
   const ctx = getCtx();
-  if(ctx.state==="suspended"){ ctx.resume(); }
+  reveiller(ctx);
   const t0 = ctx.currentTime + start + Math.random()*0.008;
   const v = vol * SFX_GAIN * (0.92 + Math.random()*0.16);
   // VOIX PURE FACON iOS : une sinusoide ronde et lisse. Aucune onde triangle,
@@ -9226,7 +9317,7 @@ function chime(freq, start, dur, vol){
    comme une touche qui se pose — plus rien d'électronique. */
 function tock(freq, start, vol){
   const ctx = getCtx();
-  if(ctx.state==="suspended"){ ctx.resume(); }
+  reveiller(ctx);
   const t0 = ctx.currentTime + start;
   const v = vol * SFX_GAIN * (0.85 + Math.random()*0.3);
   const b = ctx.createOscillator(), bg = ctx.createGain();
@@ -9270,7 +9361,7 @@ function playVerse(){
   chime(659.25, 0.26, 1.9, 0.009);  // Mi5
   chime(1046.50, 0.46, 2.4, 0.006); // Do6 — scintillement paisible
 }
-function ensureAudioAwake(){ if(actx && actx.state==="suspended"){ actx.resume().catch(()=>{}); } }
+function ensureAudioAwake(){ if(actx) reveiller(actx); }
 /* Verrou : on ne ranime JAMAIS l'audio si l'app n'est pas au premier plan.
    Sinon, en fermant l'app (blur/statechange déclenchés pendant la mise en
    veille), on relançait le son au pire moment -> « bruit bizarre ». */
@@ -9319,6 +9410,7 @@ function reviveAudioHard(){
   if(musicTimer){ clearInterval(musicTimer); musicTimer = null; }
   musicBusNode = null; musicDelayIn = null; musicFb = null; qNoiseBuf = null; musicPlaying = false;
   audioWasHidden = false; audioInterrupted = false; // contexte neuf : plus rien de gelé
+  sonHorloge = -1; sonGel = 0;                     // et son horloge repart de zéro
   const rebatir = ()=>{
     audioReviving = false;
     if(!audioActive()) return;
@@ -9403,15 +9495,19 @@ function wakeAudio(){
     }
   };
   if(actx.state === "running"){ finishResume(); return; }
-  let ok = false;
   try {
     const p = actx.resume();
-    if(p && p.then){
-      p.then(()=>{ ok = true; finishResume(); }).catch(()=>{});
-    } else { ok = true; finishResume(); }
+    if(p && p.then){ p.then(()=>{ finishResume(); }).catch(()=>{}); }
+    else finishResume();
   } catch(e){}
-  // si resume() n'a pas ramené le contexte à « running », on le recrée
-  setTimeout(()=>{ if(!ok && actx && actx.state !== "running"){ reviveAudioHard(); } }, 400);
+  /* ON REGARDE L'ÉTAT, PAS LA RÉPONSE. La version précédente ne reconstruisait
+     que si resume() avait ÉCHOUÉ — et c'est exactement le cas qu'iOS ne
+     produit pas après une application de micro : resume() répond OUI, très
+     poliment, et le contexte reste « interrupted ». La promesse tenue servait
+     alors de preuve que tout allait bien, et plus personne ne reconstruisait :
+     le jeu restait muet jusqu'à ce qu'on le ferme. On ne lui demande donc plus
+     son avis, on relit son état. */
+  setTimeout(()=>{ if(actx && actx.state !== "running"){ reviveAudioHard(); } }, 400);
 }
 /* LE SON DOIT REVENIR, QUOI QU'IL SE SOIT PASSÉ AVANT.
    Un seul essai au retour au premier plan ne suffit pas : quand une autre app
@@ -9457,12 +9553,47 @@ function relancerSon(){
    batterie du joueur à essayer en boucle. */
 const VEILLE_SON_MS = 2000, VEILLE_SON_REPOS = 6000;
 let veilleSonT = 0, veilleSonDernier = 0;
+/* ===== L'HORLOGE DU CONTEXTE, LE SEUL TÉMOIN QUI NE MENT PAS =====
+   « Le problème du son vient uniquement des applications que j'ai ouvertes
+   avant : quand j'ouvre Claude et que le jeu est en arrière-plan, quand je
+   retourne sur le jeu le son se coupe. »
+   CE QUI REND CE CAS DIFFÉRENT DE TOUS LES AUTRES. Une application qui LIT du
+   son prend la sortie et la rend. Une application qui ENREGISTRE change la
+   catégorie de la session audio du téléphone entier. Au retour, WebKit rend un
+   contexte qui ANNONCE « running » et dont l'horloge ne tourne plus : tout ce
+   qu'on programme « dans 0,1 s » n'arrivera jamais. Tous les drapeaux sont au
+   vert, resume() répond oui, et il ne sort plus rien.
+   L'oreille du guetteur ne pouvait pas le voir : elle n'écoute que si la
+   MUSIQUE est allumée (il lui faut un son continu pour juger). Un joueur qui a
+   coupé la musique et gardé les effets n'avait donc AUCUN instrument au-dessus
+   de lui.
+   currentTime, lui, est le temps du matériel : il avance de deux secondes à
+   chaque tour de guet, ou le contexte est mort. Deux tours immobiles d'affilée
+   — quatre secondes — et on reconstruit. Ça ne coûte qu'une soustraction, et
+   ça marche avec ou sans musique. */
+let sonHorloge = -1, sonGel = 0;
+const SON_GELS_AVANT = 2;
 function veillerLeSon(){
   clearInterval(veilleSonT);
   veilleSonT = setInterval(()=>{
     try{
       if(!audioUnlocked || !audioActive()) return;      // pas encore autorisé, ou en arrière-plan
       if(!settings.music && !settings.sfx) return;      // le joueur a tout coupé : c'est son choix
+      /* L'HORLOGE D'ABORD, AVANT TOUT AUTRE JUGEMENT. Elle est le seul témoin
+         qui survit à un contexte qui ment sur son état, et le seul qui vaille
+         quand la musique est coupée. On ne la consulte que sur un contexte qui
+         se DIT vivant : ailleurs, les autres chemins font déjà leur travail. */
+      if(actx && actx.state === "running" && !audioReviving){
+        const t = actx.currentTime;
+        if(sonHorloge >= 0 && t <= sonHorloge + 0.001) sonGel++; else sonGel = 0;
+        sonHorloge = t;
+        if(sonGel >= SON_GELS_AVANT){
+          sonGel = 0; sonHorloge = -1;
+          veilleSonDernier = Date.now();
+          try{ reviveAudioHard(); }catch(e){}
+          return;
+        }
+      } else { sonGel = 0; sonHorloge = actx ? actx.currentTime : -1; }
       const mort = !actx || actx.state !== "running" || (settings.music && !musicPlaying);
       /* ===== ET ON ÉCOUTE, PAS SEULEMENT ON DEMANDE =====
          Tous les drapeaux peuvent être au vert pendant que la sortie est
@@ -9733,7 +9864,13 @@ function attachSheetDrag(feuille, fermer){
      style — les deux nomment les mêmes listes. Une liste absente ici se
      met à tirer la feuille au lieu de défiler ; absente là-bas, elle ne défile
      pas du tout. */
-  const neutre = (t)=> !(t && t.closest && t.closest("input, button:not(.sheet-grab), .scn-thumb, .rev-list, .flam-list, .vol-row, .switch"));
+  /* « .cadre » (la scène où l'on cadre sa photo) entre dans cette liste pour
+     la MÊME raison que les listes qui défilent : à l'intérieur, le doigt
+     appartient à l'image — il la fait glisser et la pince. Sans ça, tirer sa
+     photo vers le bas fermerait la fenêtre au lieu de cadrer. Elle déclare
+     « touch-action:none » de son côté, comme les listes déclarent
+     « touch-action:pan-y » : les deux endroits nomment les mêmes éléments. */
+  const neutre = (t)=> !(t && t.closest && t.closest("input, button:not(.sheet-grab), .scn-thumb, .rev-list, .flam-list, .vol-row, .switch, .cadre"));
   /* PENDANT LE GESTE, LE VERRE RESTE ACCROCHÉ À L'ÉCRAN, pas à la feuille :
      c'est tout l'effet de décalage — on tire le panneau et le décor glisse
      derrière, comme une vitre qu'on déplace devant un paysage. Il suffit de
@@ -16185,8 +16322,82 @@ function errbookCount(){ return loadErrbook().length; }
    qu'on ne sait pas. Deux choses changent donc, et elles vont ensemble :
    une PORTE qui ne joue que ce qui a résisté au moins deux fois, et un ORDRE
    — partout — qui fait passer devant ce qui résiste le plus. */
-const TETUE_SEUIL = 2;
-function errbookTetues(){ return loadErrbook().filter(x => (x.n | 0) >= TETUE_SEUIL); }
+/* ===== UNE SEULE FILE, ET C'EST LE JEU QUI LA FAIT =====
+   « Je veux qu'il revoie de manière beaucoup plus simple. En gros, je veux
+   vraiment les erreurs qui persistent et pas si compliqué que ça. »
+   L'écran offrait QUATRE portes — ce qui résiste, les échéances du jour, tout
+   le carnet, la dernière partie — plus une grille de livres et un paragraphe
+   de règles. Six décisions avant de réviser une seule question, pour un choix
+   dont la bonne réponse était toujours la même — et le jeu la connaissait :
+   ce qui est dû aujourd'hui, le plus tenace devant. On le fait à sa place.
+   LE LOT DE DIX, ET POURQUOI IL NE MENT PAS. « Tout mon carnet » annonçait 209
+   et devait donc en jouer 209 : une porte qui affiche un nombre doit le tenir.
+   Ici il n'y a plus de porte qui promette un catalogue — le nombre affiché EST
+   ce que le bouton va jouer. Dix, parce qu'une révision qui ne finit jamais ne
+   se commence pas. Le reste attend demain, ce qui est exactement ce que
+   l'échelle demande. */
+const REVISION_LOT = 10;
+/* ===== QUATRE FAÇONS DE RÉVISER, ET PAS UNE DE PLUS =====
+   « Tu peux ajouter trois quatre modes au total si tu penses que c'est bien,
+   mais pas trop non plus, avec des modes vraiment intéressants — et il ne
+   faut pas donner un énorme pavé au joueur, mais plutôt le travail ciblé. »
+   LA DIFFÉRENCE AVEC LES QUATRE PORTES D'AVANT, qui avaient été refusées.
+   Celles-là étaient quatre rangées pleines — icône, titre, sous-titre,
+   compte — plus une grille de soixante livres : il fallait LIRE avant de
+   choisir. Ici, quatre puces courtes, celles du jeu, et l'écran ne change pas
+   de forme : le grand nombre et la phrase se contentent de dire ce que la
+   puce choisie va jouer. On ne décide pas entre quatre catalogues, on règle
+   une mire.
+   ET CHACUNE TRAVAILLE VRAIMENT AUTRE CHOSE :
+     aujourd'hui  ce que la mémoire réclame — l'échelle 1/3/7/16 fait son
+                  travail, c'est le mode par défaut et le seul qui fasse
+                  AVANCER les paliers au bon moment ;
+     tenaces      ce qui résiste depuis longtemps, sans attendre son tour ;
+     un livre     le livre où l'on se trompe le plus, choisi PAR LE JEU — on
+                  garde le travail ciblé de l'ancienne grille sans ses
+                  soixante tuiles ;
+     ma partie    ce qu'on vient de rater, tant que c'est chaud.
+   Toutes bornes au même lot de dix : le nombre affiché est ce qui sera joué. */
+const REVOIR_MODES = ["auj", "tenaces", "livre", "partie"];
+let modeRevoir = "auj";
+/* Le livre qui résiste le plus. C'est tout ce qui reste de la grille des
+   soixante tuiles : le jeu regarde où l'on se trompe le plus et va droit là. */
+function livreLePlusDur(){
+  const par = new Map();
+  loadErrbook().forEach(x=>{ const l = bookOf(x); if(l) par.set(l, (par.get(l)||0) + 1); });
+  let nom = null, n = 0;
+  par.forEach((v, k)=>{ if(v > n || (v === n && nom && k.localeCompare(nom, "fr") < 0)){ nom = k; n = v; } });
+  return nom;
+}
+function fileDeRevision(mode){
+  const quoi = mode || modeRevoir;
+  let source;
+  if(quoi === "tenaces") source = loadErrbook().filter(x => (x.n | 0) >= 2);
+  else if(quoi === "livre"){
+    const l = livreLePlusDur();
+    source = l ? loadErrbook().filter(x => bookOf(x) === l) : [];
+  }
+  else if(quoi === "partie") source = lastMissEntries();
+  else {
+    /* Ce dont le jour est venu. Si rien n'est dû, on ne laisse pas le joueur
+       devant un bouton mort : on lui donne ce qui résiste le plus, et répondre
+       juste continue de faire monter la question d'un palier. Réviser en
+       avance n'a jamais fait de mal à personne. */
+    const dus = aRevoir();
+    source = dus.length ? dus : loadErrbook();
+  }
+  return parEntetement(source).slice(0, REVISION_LOT);
+}
+/* Ce que dit la petite ligne sous le grand nombre : courte, et différente
+   selon la mire — sinon les quatre puces auraient l'air de faire la même
+   chose. */
+function sousRevoir(quoi, n){
+  if(quoi === "tenaces") return n ? T("qui te résistent le plus") : T("Rien ne te résiste en ce moment");
+  if(quoi === "livre"){ const l = livreLePlusDur();
+    return (n && l) ? Tf("à revoir dans {livre}", { livre: livreCourt(l) }) : T("Aucun livre à revoir"); }
+  if(quoi === "partie") return n ? T("de ta dernière partie") : T("Rien de raté à ta dernière partie");
+  return n ? T("à revoir maintenant") : T("Rien à revoir pour l'instant");
+}
 /* L'ORDRE DE RÉVISION. On trie par entêtement décroissant, et À ÉGALITÉ on
    mélange : sans ce mélange, les mêmes questions reviendraient toujours dans
    le même ordre, et une liste apprise par cœur n'apprend plus rien. */
@@ -16849,32 +17060,18 @@ function jouerLivre(nom){
   marquerJoue();
   render();
 }
-/* ===== ON CHOISIT CE QU'ON RÉVISE =====
+/* ===== ON A DEMANDÉ CE QU'ON VOULAIT RÉVISER, PUIS ON A ARRÊTÉ DE DEMANDER =====
    « J'aimerais vraiment un truc où en gros ça te demande ce que tu veux
-   réviser, pas juste lancer les questions direct. »
-   La carte lançait la révision du jour sans rien demander. C'est commode le
-   jour où l'on veut exactement ça, et frustrant tous les autres : on peut
-   vouloir reprendre TOUT son carnet avant un dimanche, ou seulement les
-   Psaumes, ou seulement ce qu'on vient de rater. Le carnet sait déjà tout ça,
-   il ne le proposait simplement pas.
-   Quatre entrées, jamais plus, et chacune dit son nombre — une porte fermée
-   qui annonce « 0 » est plus honnête qu'une porte absente. */
-function livresDuCarnet(){
-  const par = new Map();
-  loadErrbook().forEach(x=>{
-    /* ===== « AUTRES » N'EST PAS UN LIVRE =====
-       Une poignée de questions ne nomment aucun livre (culture générale,
-       chiffres du canon). Elles se retrouvaient groupées sous une tuile
-       « Autres » posée au milieu de la Genèse et de Jean, comme s'il existait
-       un livre de ce nom. On ne les perd pas — elles restent dans « les
-       échéances du jour » et dans « tout mon carnet » — mais elles n'ont pas
-       de tuile, parce qu'elles n'ont pas de livre. */
-    const l = bookOf(x);
-    if(!l) return;
-    par.set(l, (par.get(l) || 0) + 1);
-  });
-  return [...par.entries()].sort((a,b)=> b[1] - a[1] || a[0].localeCompare(b[0], "fr"));
-}
+   réviser, pas juste lancer les questions direct. » (v221) L'écran a donc
+   proposé quatre portes et une grille de soixante livres.
+   « Je veux qu'il revoie de manière beaucoup plus simple. En gros, je veux
+   vraiment les erreurs qui persistent et pas si compliqué que ça. » Les deux
+   demandes ne se contredisent pas : la première refusait qu'on LANCE sans
+   rien montrer, la seconde refuse qu'on fasse CHOISIR. L'écran montre donc
+   toujours ce qui attend — combien, et où en est le carnet — mais il ne
+   demande plus rien, parce que le bon choix était toujours le même.
+   (livresDuCarnet est partie avec la grille : plus personne ne demandait le
+   carnet livre par livre.) */
 /* ===== UNE SEULE PAGE, PAS UNE FEUILLE ET UNE PAGE =====
    « Oui, mais je parle de toute la page entière qui doit être ici. »
    J'avais coupé en deux : une feuille pour les trois décisions, un écran pour
@@ -16892,74 +17089,79 @@ function livresDuCarnet(){
    refermer — et la feuille glissante, avec son voile, son glissement au
    doigt et son verre, disparaît entièrement de ce chemin. */
 function ouvrirRevoir(){ state.screen = "revoir"; render(); }
+/* ===== UN ÉCRAN QUI NE POSE PLUS DE QUESTION =====
+   Un grand nombre — celui que le bouton va jouer —, la jauge qui dit qu'on
+   avance, un bouton, une phrase. Rien à choisir, rien à comprendre avant de
+   commencer.
+   LA JAUGE RESTE, parce qu'elle répond à la seule inquiétude qui vaille
+   (« ça ne descend pas même si je m'entraîne ») : elle compte les paliers
+   franchis sur les paliers à franchir, et elle bouge à CHAQUE bonne réponse,
+   là où le nombre d'erreurs met des semaines à bouger d'un cran. Elle part de
+   zéro et se remplit à l'ouverture de l'écran, comme la barre de partie. */
 function renderRevoir(){
   const el = document.createElement("div"); el.className = "screen";
-  const dus = aRevoir().length, tout = errbookCount(), derniere = lastMissEntries().length;
-  const tetues = errbookTetues();
-  const livres = livresDuCarnet();
+  if(REVOIR_MODES.indexOf(modeRevoir) < 0) modeRevoir = "auj";
+  const n = fileDeRevision().length;
   const m = maitriseCarnet();
-  /* La jauge part de zéro et se remplit à l'ouverture de l'écran : le joueur
-     VOIT son avance au lieu de la déduire. Même procédé que la barre de
-     partie — on pose la valeur à l'image suivante. */
-  const jauge = (part) => `<span class="rv-prog">
-       <span class="rv-jauge"><i data-m="${part.toFixed(4)}" style="--m:0"></i></span>
-       <span class="rv-pct">${Math.round(part*100)}&nbsp;%</span>
-     </span>`;
-  const ligne = (cls, ico, titre, sous, n, action, extra) =>
-    `<button class="online-action rv-choix${n ? "" : " rv-off"}" ${n ? 'onclick="' + action + '"' : "disabled"}>
-       <span class="oa-ico ${cls}">${ico}</span>
-       <span class="oa-txt"><b>${T(titre)}</b><small>${T(sous)}</small>${extra || ""}</span>
-       <span class="rv-cnt">${n}</span>
-     </button>`;
+  const carnet = errbookCount();
   el.innerHTML = renderHeader(T("À revoir"), true, "state.screen='mode'; render()")
-    + ligne("", ICONS.target, "Celles qui me résistent", "Ratées au moins deux fois", tetues.length, "startRevision('tetues')")
-    + ligne("v", ICONS.clock, "Les échéances du jour", "Ce que la mémoire réclame", dus, "startRevision('dus')")
-    + ligne("g", ICONS.book, "Tout mon carnet", "Sans attendre leur tour", tout, "startRevision('tout')", tout ? jauge(m.part) : "")
-    + ligne("b", ICONS.target, "Ma dernière partie", "Ce que je viens de rater", derniere, "startRevision('derniere')")
-    + (livres.length ? `<div class="rvl-t">${T("Ou un livre en particulier")}</div>
-      <div class="card bk-card rvl-card">
-        <div class="bk-grid">${livres.map(([nom,n])=>
-          `<button class="bk rv-bk" data-livre="${escapeHtml(nom)}" onclick="lancerRevoirLivre(this.dataset.livre)"><span class="bk-nm">${escapeHtml(livreCourt(nom))}</span><span class="rv-bkn">${n}</span></button>`
-        ).join("")}</div>
-      </div>` : "")
-    /* Les espaces insécables sont DANS le texte, pas recollées après coup :
-       chaque langue pose les siennes où sa typographie les demande — le
-       français avant le deux-points, l'anglais jamais. */
-    + `<div class="flam-regle rvl-regle">${T("Une erreur revient demain, puis dans 3, 7 et 16\u00a0jours. Il faut")} <b>${T("4 bonnes réponses")}</b> ${T("pour qu'une question quitte le carnet\u00a0: c'est ce que montre la barre. Se tromper la ramène à demain.")}</div>`;
+    + `<div class="flex-sp"></div>
+       <div class="card rv-carte">
+         <span class="rv-grand">${ICONS.target}</span>
+         <div class="rv-nb">${n}</div>
+         <div class="rv-sous">${sousRevoir(modeRevoir, n)}</div>
+         ${carnet ? `<span class="rv-prog">
+           <span class="rv-jauge"><i data-m="${m.part.toFixed(4)}" style="--m:0"></i></span>
+           <span class="rv-pct">${Math.round(m.part*100)}&nbsp;%</span>
+         </span>` : ""}
+       </div>
+       <div class="len-row rv-mires">
+         ${[["auj", T("Aujourd'hui")], ["tenaces", T("Tenaces")], ["livre", T("Un livre")], ["partie", T("Ma partie")]]
+            .map(([k, mot])=>`<button class="len-chip${modeRevoir===k?' sel':''}" data-rgroup="rv" data-k="${k}" onclick="choisirRevoir('${k}')">${mot}</button>`).join("")}
+       </div>
+       <div class="flex-sp"></div>
+       <button class="btn-primary rv-go"${n ? ` onclick="lancerRevision()"` : " disabled"}>${T("Commencer")}</button>
+       <div class="flam-regle rvl-regle">${T("Les plus tenaces d'abord. Une erreur revient jusqu'à ce que tu l'aies sue quatre fois.")}</div>`;
   return el;
 }
-function lancerRevoirLivre(nom){ startRevision("livre:" + nom); }
+/* ON CHANGE DE MIRE SANS REDESSINER L'ÉCRAN. Un rendu complet couperait le
+   remplissage de la puce à l'instant même où il commence — et reposerait
+   toutes les couches de verre pour trois caractères. On retouche donc les
+   trois choses qui changent, exactement comme le salon retouche sa liste. */
+/* Le bouton de l'écran a son propre nom, et il ne porte aucun mot dans son
+   attribut : « carnet » est un mot français, et une clé interne écrite dans
+   du balisage est exactement la forme où une vraie phrase se cacherait sans
+   être vue par le banc des traductions. */
+function lancerRevision(){ startRevision("carnet"); }
+function choisirRevoir(k){
+  if(REVOIR_MODES.indexOf(k) < 0 || k === modeRevoir) return;
+  modeRevoir = k;
+  try{ basculerChoix('[data-rgroup="rv"]', "sel", k); }catch(e){}
+  const n = fileDeRevision().length;
+  const nb = document.querySelector(".rv-nb");
+  if(nb && nb.textContent !== String(n)) nb.textContent = String(n);
+  const sous = document.querySelector(".rv-sous");
+  if(sous){ const t = sousRevoir(k, n); if(sous.textContent !== t) sous.textContent = t; }
+  const go = document.querySelector(".rv-go");
+  /* On pose une FONCTION, pas une chaîne d'attribut : un attribut onclick
+     écrit en JavaScript est du code dans du texte, et le banc des traductions
+     a raison de s'en méfier — c'est exactement la forme où une phrase
+     française se cacherait sans être vue. */
+  if(go){ go.disabled = !n; go.onclick = n ? lancerRevision : null; }
+  try{ queueGlassSync(); }catch(e){}
+}
 
 function startRevision(quoi){
-  /* « dus »      les échéances du jour, toutes parties confondues
-     « tout »     l'intégralité du carnet
-     « livre:X »  ce qui reste à revoir dans un livre
-     sans argument, les erreurs de la dernière partie (comportement d'origine,
-     encore utilisé par le bouton de l'écran des résultats). */
-  let source;
-  if(quoi === "dus") source = aRevoir();
-  else if(quoi === "tetues") source = errbookTetues();
-  else if(quoi === "tout") source = loadErrbook();
-  else if(typeof quoi === "string" && quoi.indexOf("livre:") === 0){
-    const nom = quoi.slice(6);
-    source = loadErrbook().filter(x => (bookOf(x) || "Autres") === nom);
-  }
-  else source = lastMissEntries();
-  /* ===== « TOUT MON CARNET » VEUT DIRE TOUT =====
-     Les trois portes annoncent chacune leur compte — 143, 200, 5 — et toutes
-     lançaient neuf questions puis rendaient la main. « Ça lance juste une
-     série de 9 questions puis ça me ramène au menu alors que c'est écrit tout
-     mon carnet. » Une porte qui annonce un nombre doit tenir ce nombre.
-     Les deux portes qui comptent (les échéances du jour, le carnet entier)
-     jouent donc tout ce qu'elles ont annoncé. Le raccourci de neuf ne reste
-     que là où il n'a jamais menti : l'appel SANS argument, celui du bouton
-     « Revoir mes erreurs » de l'écran de fin, qui ne promet aucun compte. */
-  const tout = (quoi === "dus" || quoi === "tout" || quoi === "tetues" || (typeof quoi === "string" && quoi.indexOf("livre:") === 0));
-  /* Ce qui résiste passe devant, dans TOUTES les portes — pas seulement dans
-     la sienne. Et quand on n'en joue que neuf (le bouton de l'écran de fin,
-     qui ne promet aucun compte), ce sont les neuf qui résistent le plus, pas
-     neuf au hasard. */
-  const b = tout ? parEntetement(source) : parEntetement(source).slice(0, 9);
+  /* « carnet »   la file du jour, déjà triée et bornée (voir fileDeRevision)
+     sans argument, les erreurs de la DERNIÈRE PARTIE — c'est le bouton
+     « Revoir mes erreurs » de l'écran des résultats, et lui seul. */
+  const source = (quoi === "carnet") ? fileDeRevision() : lastMissEntries();
+  /* UNE PORTE QUI ANNONCE UN NOMBRE DOIT TENIR CE NOMBRE. C'était la leçon du
+     jour où l'écran affichait 209 et n'en jouait que neuf ; elle vaut
+     toujours. fileDeRevision a déjà trié et borné à ce qui est affiché : on
+     n'y retouche rien. L'autre chemin, lui, ne promet aucun compte — il prend
+     les neuf qui résistent le plus parmi les erreurs de la partie. */
+  const b = (quoi === "carnet") ? source : parEntetement(source).slice(0, 9);
   if(!b.length) return;
   state.mode = "solo"; state.revision = true;
   state.soloScore = 0; state.soloStreak = 0; state.soloBestStreak = 0; state.soloCorrect = 0; displayedSoloScore = 0; state.soloMissed = []; state.soloIsRecord = false;
@@ -18149,6 +18351,10 @@ function monterCadrage(toile, w, h){
   scene.insertBefore(toile, scene.firstChild);
   monterLaFeuille(veil);
   glassTrack();
+  /* ON LA FERME AU DOIGT, comme toutes les autres feuilles du jeu. Le geste
+     part de la poignée, du titre ou du pourtour ; à l'intérieur du cadre, le
+     doigt appartient à l'image (voir la liste « neutre » d'attachSheetDrag). */
+  attachSheetDrag(veil.querySelector(".settings-sheet"), fermerCadrage);
   veil.addEventListener("click", (e)=>{ if(e.target === veil){ fermerCadrage(); } });
   /* LA TAILLE DU CADRE SE LIT APRÈS LA MISE EN PAGE, pas avant : la feuille
      vient d'entrer, sa largeur dépend de l'écran et des marges de sécurité. */
@@ -18485,35 +18691,32 @@ function renderOnlineJoin(){
 }
 
 /* « Le duel » ne veut plus rien dire à cinq. Un seul endroit décide du mot,
-   pour que l'écran entier parle d'une seule voix. */
-function motPartie(){ return nbJoueurs() > 2 ? T("la partie") : T("le duel"); }
-function titrePartie(){ return nbJoueurs() > 2 ? T("Partie") : T("Duel"); }
-/* La taille des deux avatars du face-à-face. Écrite en clamp sur la hauteur
-   UTILE (--hu tient déjà compte de l'encoche et de la barre d'accueil) : 3 rem
-   sur un grand écran comme avant, jusqu'à 2,1 sur un iPhone SE posé sur
-   l'écran d'accueil, où chaque pixel compte pour que le salon tienne entier. */
-const AV_SALON = "clamp(1.95rem, calc(6.2 * var(--hu) - 5px), 3rem)";
+   pour que l'écran entier parle d'une seule voix.
+   ET « DUEL » NE VEUT RIEN DIRE NON PLUS QUAND ON EST SEUL. La règle disait
+   « plus de deux », donc tout ce qui n'était pas trois ou plus était un duel —
+   y compris le salon vide, où l'on vient justement d'inviter jusqu'à huit
+   personnes. Le jeu annonçait « règle les options, puis lance le duel » à
+   quelqu'un qui n'a encore invité personne. Un duel, c'est EXACTEMENT deux. */
+function motPartie(){ return nbJoueurs() === 2 ? T("le duel") : T("la partie"); }
+function titrePartie(){ return nbJoueurs() === 2 ? T("Duel") : T("Partie"); }
 function renderOnlineRoom(){
-  const el=document.createElement("div"); el.className="screen";
+  const el=document.createElement("div"); el.className="screen ecran-salon";
   const canStart = net.isHost && net.oppPresent;
-  const oppNew = net.oppPresent && !net._oppShown;
-  net._oppShown = net.oppPresent;
-  /* À DEUX, RIEN NE CHANGE : le face-à-face VS reste ce qu'il était, au pixel
-     près. Au-dessus de deux, la liste des joueurs prend le relais — avec la
-     même rangée de classement que le mode Groupe, donc la même matière et le
-     même rebord que partout ailleurs.
-
-     ET TANT QUE LE SALON EST VIDE, ON NE PRÉSUME PLUS. Seul, l'hôte voyait un
-     face-à-face « Taylor VS ? · Adversaire », « Longueur du duel » et « puis
-     lance le duel » — trois promesses de duel posées juste sous la ligne qui
-     annonce jusqu'à huit joueurs, et affichées précisément pendant qu'il
-     décide combien de personnes inviter. Or à ce moment-là personne ne sait
-     encore : le face-à-face n'apparaît donc qu'à DEUX, quand c'en est
-     vraiment un. Seul, c'est la même liste qu'à plusieurs, avec les places
-     restantes — elle dit ce qu'on sait, et rien de plus. */
-  const duel = nbJoueurs() === 2;
-  const aPlusieurs = !duel;
-  const motSalon = duel ? T("le duel") : T("la partie");
+  /* ===== UNE SEULE DISPOSITION, DE DEUX JOUEURS À HUIT =====
+     « Le mode multijoueur, les joueurs arrivent de haut en bas. Je veux que
+     même s'il n'y en a que deux, ça reste pareil, de haut en bas, et pas sur
+     les côtés. De cette façon-là, ça crée une cohérence. Là, s'il y a deux
+     joueurs, ça passe en version horizontale, l'un à côté de l'autre, et
+     ensuite ça change d'écran pour revenir en vertical. Et ça, j'aime pas. »
+     Le salon montrait donc DEUX choses différentes selon le nombre : un
+     face-à-face « Toi VS Adversaire » à deux, une liste au-dessus. Arriver à
+     trois faisait donc basculer la page entière sous les yeux du joueur.
+     La liste est la seule disposition qui tienne de deux à huit sans changer
+     de forme, et c'est la même rangée de classement que le mode Groupe —
+     même matière, même rebord, même place que partout ailleurs. Les mots,
+     eux, continuent de dire la vérité : à deux, c'est un duel. */
+  const aPlusieurs = nbJoueurs() !== 2;   // ce qu'on DIT, plus ce qu'on DESSINE
+  const motSalon = motPartie();         // « le duel » à deux, « la partie » au-delà
   el.innerHTML = `
     ${renderHeader(T("Salon"), true, "leaveRoomToOnline()")}
     <div class="code-hero">
@@ -18532,22 +18735,22 @@ function renderOnlineRoom(){
         : T("Tu as rejoint la partie")}</div>
       ${net.isHost && nbJoueurs() < MAX_JOUEURS && (navigator.share || (navigator.clipboard&&navigator.clipboard.writeText)) ? `<button class="btn-invite" onclick="shareRoomCode()"><span class="ico">${ICONS.share}</span><span>${T("Inviter des amis")}</span></button>` : ""}
     </div>
-    ${aPlusieurs ? `
-    <div class="salle-liste">
+    <div class="salle-liste" onscroll="majVoilesListe(this)">
       ${classement().sort((a,b)=> (a.moi?0:1)-(b.moi?0:1)).map(j=>`
         <div class="rank-row salle-ligne${j.moi?' moi':''}" data-jid="${escapeHtml(String(j.moi ? 'moi' : (j.id||j.name||'')))}">
           ${avatarHtml(j.name, j.color, 2.1, j.moi ? true : j.id)}
           <span class="rank-name">${escapeHtml(j.name||T("Joueur"))}</span>
           <span class="salle-tag">${j.moi ? (net.isHost?T("Toi · Hôte"):T("Toi")) : T("Prêt")}</span>
         </div>`).join("")}
-      ${nbJoueurs() < MAX_JOUEURS ? `<div class="rank-row salle-ligne vide"><span class="avatar waiting" style="width:2.1rem;height:2.1rem;font-size:0.95rem;">?</span><span class="rank-name">${T("En attente…")}</span><span class="salle-tag">${Tf(MAX_JOUEURS-nbJoueurs()>1?"{n} places":"{n} place", {n:MAX_JOUEURS-nbJoueurs()})}</span></div>` : ""}
-    </div>` : `
-    <div class="vs-row">
-      <div class="vs-player">${avatarHtml(profile.name, profile.color, AV_SALON, true)}<div class="vs-name">${escapeHtml(profile.name)}</div><div class="vs-tag${net.isHost?' is-host':''}">${net.isHost?T("Toi · Hôte"):T("Toi")}</div></div>
-      <div class="vs-mid">VS</div>
-      <div class="vs-player${oppNew?' reveal-in':''}" id="oppSlot">${net.oppPresent?avatarHtml(net.opp.name, net.opp.color, AV_SALON, net.opp.id):`<span class="avatar waiting" style="width:${AV_SALON};height:${AV_SALON};font-size:calc(${AV_SALON} * 0.42);">?</span>`}<div class="vs-name">${net.oppPresent?escapeHtml(net.opp.name):T("En attente…")}</div><div class="vs-tag${net.isHost?'':' is-host'}">${net.isHost?T("Adversaire"):T("Hôte")}</div></div>
-    </div>`}
-    <div class="host-note">${net.isHost?Tf("Tu es l'hôte : règle la partie, puis lance {mot}.", {mot:motSalon}):Tf("L'hôte paramètre la partie puis lance {mot}.", {mot:motSalon})}</div>
+      <!-- LA PLACE VIDE N'INVITE QUE TANT QUE JE SUIS SEUL. Elle disait
+           « 6 places » avec deux joueurs dedans : une rangée entière — 58 px
+           mesurés sur un iPhone SE — pour répéter ce que la phrase du code dit
+           déjà juste au-dessus (« Partage ce code · jusqu'à 8 joueurs »). Seul,
+           elle a un sens : elle montre que la liste attend quelqu'un. À deux,
+           elle ne fait plus que pousser le bouton hors de l'écran. -->
+      ${nbJoueurs() === 1 ? `<div class="rank-row salle-ligne vide"><span class="avatar waiting" style="width:2.1rem;height:2.1rem;font-size:0.95rem;">?</span><span class="rank-name">${T("En attente…")}</span><span class="salle-tag">${Tf(MAX_JOUEURS-nbJoueurs()>1?"{n} places":"{n} place", {n:MAX_JOUEURS-nbJoueurs()})}</span></div>` : ""}
+    </div>
+    <div class="host-note">${net.isHost?Tf("Tu es l'hôte : règle les options, puis lance {mot}.", {mot:motSalon}):Tf("L'hôte paramètre la partie puis lance {mot}.", {mot:motSalon})}</div>
     <div class="flex-sp"></div>
     ${net.isHost ? `
       <div class="len-label">${aPlusieurs?T("Longueur de la partie"):T("Longueur du duel")}</div>
@@ -18899,6 +19102,7 @@ function render(){
   requestAnimationFrame(fitScroll);
   syncSpinners();
   majVoilesScores();
+  majVoilesListe(node.querySelector(".salle-liste"));
 
   if(state.screen!=="play" && state.screen!=="online-play"){ stopQTimer(); }
   if(state.screen==="play") saveState();
@@ -19008,7 +19212,7 @@ document.addEventListener("click", (e)=>{
    transforms compris) : la photo peinte reste donc collée au décor même pendant
    qu'une carte glisse — ce qui autorise de vraies transitions animées « à la
    Apple » sans le moindre décalage du verre. */
-const GLASS_SEL = ".app-header,.card,.mode-card,.question-card,.solo-summary,.solo-score-bar,.score-pane,.option-btn,.btn-primary,.btn-next,.btn-replay,.fact-card,.tier-chip,.q-counter,.streak-chip,.chip,.icon-btn,.btn-reveal,.btn-newgame,.award-btn,.presence-card,.me-row,.online-action,.searching-card,.waiting-card,.info-card,.vs-row,.len-chip,.duel-scorebar,.timer-chip,.dr-side,.rank-row,.text-input,.code-input,.fs-hint,.modal-card,.btn-ghost,.fsh-close,.settings-sheet,.hero-verse-card,.modal-btn.ok,.modal-btn.cancel,.leave-banner,.end-medal,.adj-btn,.waiting-note,.rules,.btn-review,.daily-card,.dc-streak,.sem-flamme,.btn-invite,.sheet-done,.set-go,.share-btn,.rev-item,.parcours-card,.parcours-sum,.tst-head";
+const GLASS_SEL = ".app-header,.card,.mode-card,.question-card,.solo-summary,.solo-score-bar,.score-pane,.option-btn,.btn-primary,.btn-next,.btn-replay,.fact-card,.tier-chip,.q-counter,.streak-chip,.chip,.icon-btn,.btn-reveal,.btn-newgame,.award-btn,.presence-card,.me-row,.online-action,.searching-card,.waiting-card,.info-card,.len-chip,.duel-scorebar,.timer-chip,.dr-side,.rank-row,.text-input,.code-input,.fs-hint,.modal-card,.btn-ghost,.fsh-close,.settings-sheet,.hero-verse-card,.modal-btn.ok,.modal-btn.cancel,.leave-banner,.end-medal,.adj-btn,.waiting-note,.rules,.btn-review,.daily-card,.dc-streak,.sem-flamme,.btn-invite,.sheet-done,.set-go,.share-btn,.rev-item,.parcours-card,.parcours-sum,.tst-head";
 const GLASS_SKIP = ".timer-chip.low,.btn-primary:disabled,.btn-next:disabled";
 /* RÉFRACTION VIVANTE : le verre est calé sur la position RÉELLE à l'écran et
    ré-aligné image par image pendant les mouvements -> quand une carte glisse
@@ -19156,14 +19360,22 @@ const GLASS_PRED_MAX = 26;   // avance plafonnée : jamais de dépassement visib
    (lagX/lagY, ci-dessous dans queueGlassSyncPainted) est ce qui donne au
    reflet cette sensation de verre PHYSIQUE qu'on déplace. */
 let glassScrollSX = 0, glassScrollSY = 0;
-/* Défilement IMBRIQUÉ (ex. .rev-list dans la feuille « Revoir mes erreurs ») :
-   cette liste a son PROPRE overflow-y:auto, indépendant de #app (la feuille
-   est ajoutée à <body>, pas à #app) -> ses éléments ont besoin de LEUR
-   PROPRE retard lissé, sur LEUR PROPRE scrollTop, exactement comme #app.
-   Sans ça, leur fond peint restait figé à sa position initiale pendant
-   qu'on fait défiler la liste (seul #app était pris en compte), et le
-   reflet ne réagissait pas non plus -> aucun effet de verre décalé à
-   l'intérieur d'une feuille, contrairement au reste de l'appli. */
+/* Défilement IMBRIQUÉ — deux listes aujourd'hui : .rev-list, dans la feuille
+   « Revoir mes erreurs », et .salle-liste, celle des joueurs du salon. Chacune
+   a son PROPRE overflow-y:auto -> ses éléments ont besoin de LEUR PROPRE
+   retard lissé, sur LEUR PROPRE scrollTop, exactement comme #app. Sans ça,
+   leur fond peint reste figé à sa position initiale pendant qu'on fait
+   défiler la liste (seul #app était pris en compte), et le reflet ne réagit
+   pas non plus -> la rangée glisse SUR son verre au lieu de l'emporter.
+   Mesuré avant correction, salon plein : la rangée monte de 140 px, son fond
+   peint de 0.
+   LES DEUX NE SONT PAS LOGÉES PAREIL, ET C'EST TOUTE LA DIFFICULTÉ. La feuille
+   est ajoutée à <body>, donc HORS de #app : le défilement de la page ne la
+   concerne pas. La liste du salon, elle, est DANS #app : ses rangées subissent
+   les DEUX défilements à la fois. Les contributions s'additionnent donc au
+   lieu de s'exclure — zéro pour celui qui ne s'applique pas. Le code disait
+   « l'un OU l'autre » ; il dit maintenant « l'un PLUS l'autre », ce qui
+   redonne exactement l'ancien résultat quand un seul est actif. */
 let glassRevEl = null, glassRevScrollSX = 0, glassRevScrollSY = 0, glassRevLastSL = 0, glassRevLastST = 0;
 /* MÊME VERRE PARTOUT (iOS = Android, rendu RIGOUREUSEMENT identique) : on peint
    la photo pré-floutée et on la recale par JS sur TOUTES les plateformes. Le
@@ -19257,8 +19469,15 @@ function queueGlassXF(){
   const ox = Math.round((iw - w) / 2), oy = Math.round((ih - h) / 2);
   const bgSize = "auto, " + iw + "px " + ih + "px";
   const sl = glassAppEl.scrollLeft, st = glassAppEl.scrollTop;
-  const revEl = document.querySelector(".rev-list");
-  const revSl = revEl ? revEl.scrollLeft : 0, revSt = revEl ? revEl.scrollTop : 0;
+  /* ===== LES LISTES QUI DÉFILENT DANS LEUR PROPRE FENÊTRE =====
+     Deux aujourd'hui : .rev-list (feuille « Revoir mes erreurs ») et
+     .salle-liste (les joueurs du salon). Elles ne coexistent jamais.
+     Le scrollLeft/scrollTop lus ici ne servaient à rien depuis le passage au
+     moteur GPU — ce moteur ne CALCULE pas la position d'une surface imbriquée,
+     il la LIT (getBoundingClientRect), ce qui donne le bon résultat quel que
+     soit le nombre de défilements empilés au-dessus d'elle. On ne garde donc
+     que la liste elle-même, pour savoir à QUI appliquer cette lecture. */
+  const revEl = document.querySelector(".rev-list, .ecran-salon .salle-liste");
   if(glassElsGen !== glassGen){ glassEls = document.querySelectorAll(GLASS_SEL); glassElsGen = glassGen; }
   const els = glassEls, vh = h;
   const suivre = now < glassSuivreJusqu;   // une mise en page bouge : on relit tout
@@ -19356,7 +19575,14 @@ function queueGlassXF(){
     if(gs.style.display === "none") gs.style.display = "";
     if(!el.classList.contains("has-gs")) el.classList.add("has-gs");
     if(el._gsSize !== bgSize){ el._gsSize = bgSize; gs.style.width = iw + "px"; gs.style.height = ih + "px"; gs.style.backgroundSize = bgSize; }
-    const inApp = glassAppEl.contains(el);
+    /* DANS #app, MAIS PAS DANS UNE LISTE QUI DÉFILE TOUTE SEULE. Le raccourci
+       ci-dessous déduit la position d'une surface de son offset en page moins
+       le défilement de #app. Il est exact — et faux dès qu'un SECOND
+       défilement s'intercale : la liste des joueurs du salon est dans #app, et
+       ses rangées montaient de 140 px pendant que leur verre restait à 0.
+       Elles passent donc par la lecture réelle, comme les surfaces des
+       feuilles. Huit rangées au plus, un transform écrit et rien d'autre. */
+    const inApp = glassAppEl.contains(el) && !(revEl && revEl.contains(el));
     let tx, ty;
     if(inApp){
       // #app : position depuis le cache d'offsets -> défilement continu gratuit
@@ -19507,10 +19733,12 @@ function queueGlassSyncPainted(freeze){
     if(px > GLASS_PRED_MAX) px = GLASS_PRED_MAX; else if(px < -GLASS_PRED_MAX) px = -GLASS_PRED_MAX;
     pSt = st + py; pSl = sl + px;
   }
-  /* Même retard lissé, mais pour .rev-list (voir déclaration de glassRevEl).
-     Si la feuille vient d'apparaître/disparaître ou de changer, on resynchronise
-     SANS transition (pas de faux « retard » qui daterait d'avant l'ouverture). */
-  const revEl = document.querySelector(".rev-list");
+  /* Même retard lissé, mais pour la liste imbriquée (voir déclaration de
+     glassRevEl). Les deux ne coexistent jamais — l'une est une feuille, l'autre
+     un écran — donc un seul sélecteur suffit. Si elle vient d'apparaître, de
+     disparaître ou de changer, on resynchronise SANS transition (pas de faux
+     « retard » qui daterait d'avant l'ouverture). */
+  const revEl = document.querySelector(".rev-list, .ecran-salon .salle-liste");
   if(revEl !== glassRevEl){
     glassRevEl = revEl;
     glassRevScrollSX = revEl ? revEl.scrollLeft : 0;
@@ -19587,15 +19815,15 @@ function queueGlassSyncPainted(freeze){
       el._lx0 = lx; el._ly0 = ly; el._ow0 = el.offsetWidth; el._oh0 = el.offsetHeight; el._ggen = glassGen;
     }
     const inApp = glassAppEl.contains(el);
-    // Pas dans #app (une feuille est ajoutée à <body>, pas à #app) : peut
-    // quand même être dans .rev-list, un conteneur imbriqué à défilement
-    // propre (voir glassRevEl ci-dessus).
-    const inRev = !inApp && glassRevEl && glassRevEl.contains(el);
-    const elSl = inApp ? sl : (inRev ? revSl : 0);
-    const elSt = inApp ? st : (inRev ? revSt : 0);
+    // Conteneur imbriqué à défilement propre (voir glassRevEl ci-dessus) : la
+    // feuille est HORS #app, la liste du salon est DEDANS. On ne présume donc
+    // plus de l'un à partir de l'autre — on additionne.
+    const inRev = !!(glassRevEl && glassRevEl.contains(el));
+    const elSl = (inApp ? sl : 0) + (inRev ? revSl : 0);
+    const elSt = (inApp ? st : 0) + (inRev ? revSt : 0);
     // Défilement pour le FOND PEINT : lissé sur Android (voir pSl/pSt), brut ailleurs.
-    const elSlP = inApp ? pSl : (inRev ? pRevSl : 0);
-    const elStP = inApp ? pSt : (inRev ? pRevSt : 0);
+    const elSlP = (inApp ? pSl : 0) + (inRev ? pRevSl : 0);
+    const elStP = (inApp ? pSt : 0) + (inRev ? pRevSt : 0);
     const restTop = el._ly0 - elSt; // position écran approx (sans transform) — brut (culling/reflet)
     // Pré-culling depuis le cache : hors écran -> ni rect, ni peinture.
     if(restTop > vh + 60 || restTop + el._oh0 < -60){ jobs.push({ el: el, culled: true }); continue; }
@@ -19705,7 +19933,10 @@ function queueGlassSyncPainted(freeze){
     if(ey > GLASS_MAXD) ey = GLASS_MAXD; else if(ey < -GLASS_MAXD) ey = -GLASS_MAXD;
     let sx = 0, sy = 0;
     if(j.inApp || j.inRev){
-      sx = j.inApp ? lagX : revLagX; sy = j.inApp ? lagY : revLagY;
+      // Même addition que pour le calage : une rangée du salon est à la fois
+      // dans #app et dans sa liste, et traîne le retard des deux.
+      sx = (j.inApp ? lagX : 0) + (j.inRev ? revLagX : 0);
+      sy = (j.inApp ? lagY : 0) + (j.inRev ? revLagY : 0);
       if(sx > GLASS_SCRMAX) sx = GLASS_SCRMAX; else if(sx < -GLASS_SCRMAX) sx = -GLASS_SCRMAX;
       if(sy > GLASS_SCRMAX) sy = GLASS_SCRMAX; else if(sy < -GLASS_SCRMAX) sy = -GLASS_SCRMAX;
     }
@@ -19876,11 +20107,11 @@ let perfDerniere = 0;
   const sl0 = glassAppEl.scrollLeft, st0 = CUSTOM_SCROLL ? customScrollY : glassAppEl.scrollTop;
   let justMoved = (sl0 !== glassLastSL || st0 !== glassLastST);
   glassLastSL = sl0; glassLastST = st0;
-  // Même détection par image pour .rev-list (voir glassRevEl) : sinon
-  // défiler DANS une feuille n'armait jamais la fenêtre d'activité (#app,
-  // lui, ne bouge pas) -> le fond peint de la feuille ne se recalait qu'au
-  // battement de repli (~0,5s), saccadé au lieu de suivre le doigt.
-  const revEl0 = document.querySelector(".rev-list");
+  // Même détection par image pour la liste imbriquée (voir glassRevEl) : sinon
+  // défiler DEDANS n'arme jamais la fenêtre d'activité (#app, lui, ne bouge
+  // pas) -> le fond peint ne se recalerait qu'au battement de repli (~0,5s),
+  // saccadé au lieu de suivre le doigt.
+  const revEl0 = document.querySelector(".rev-list, .ecran-salon .salle-liste");
   if(revEl0){
     const rsl0 = revEl0.scrollLeft, rst0 = revEl0.scrollTop;
     if(rsl0 !== glassRevLastSL || rst0 !== glassRevLastST) justMoved = true;

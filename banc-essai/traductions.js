@@ -322,10 +322,12 @@ const PAS_DU_TEXTE = new Map([
   ['Joueur 2',              'idem'],
   ['--verset-max',          'le nom d\'une propriété CSS'],
   ['plafond du verset :',   'un console.warn pour moi, jamais montré'],
-  ["startRevision('tout')", 'un morceau d\'attribut onclick'],
-  ['livre:',                'le préfixe d\'une clé passée à startRevision'],
-  ['Autres',                'une clé de comparaison ; livresDuCarnet ne fait jamais cette tuile'],
+  /* (Trois exemptions sont parties avec les quatre portes de l'écran
+     « À revoir » : startRevision('tout'), le préfixe « livre: » et la clé de
+     comparaison « Autres ». Il n'y a plus qu'une file, et elle n'a pas de nom
+     à écrire dans un attribut.) */
   ['screen accueil',        'deux classes CSS'],
+  ['screen ecran-salon',    'deux classes CSS'],
   ['ds-side me',            'deux classes CSS'],
   ['fj fait',               'deux classes CSS'],
   ['[data-count-me]',       'un sélecteur CSS'],
