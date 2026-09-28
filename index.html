@@ -7592,7 +7592,7 @@ const SUPABASE_ANON_KEY = "sb_publishable_FDJ_R0foC7uIeHmxVrj6rA_2NeIgW2a";
    remontée d'un téléphone ne vaut rien si on ne sait pas QUELLE version
    tournait. Elle doit rester égale au CACHE de sw.js — c'est ce que vérifie
    banc-essai/version.js, qui refuse de laisser publier les deux en désaccord. */
-const VERSION_JEU = "v293";
+const VERSION_JEU = "v294";
 
 /* ===================== QUAND ÇA CASSE CHEZ UN JOUEUR =====================
    « Si quelque chose casse chez cinq d'entre eux sur un modèle de téléphone
@@ -17307,18 +17307,78 @@ function shareRoomCode(){
     }).catch(()=>{});
   }
 }
+/* ===== LE CARNET SE VIDE EN JOUANT, PAS SEULEMENT EN RÉVISANT =====
+   « Oui d'accord, mais il ne faut pas accumuler les questions à l'infini comme
+   ça. » Il a raison, et la fuite était structurelle, pas cosmétique.
+   CE QUI SE PASSAIT. Une erreur monte d'une marche quand on redonne la bonne
+   réponse À CETTE QUESTION-LÀ. Or une partie ordinaire tire en priorité les
+   questions JAMAIS VUES — c'est voulu, pour ne pas radoter. Une question du
+   carnet a forcément déjà été vue : elle passait donc en dernier dans le
+   tirage, et sur mille cinq cent quarante-cinq questions on ne la recroisait
+   pratiquement jamais. L'échelle ne montait donc QUE dans « À revoir »,
+   pendant que chaque partie ajoutait de nouvelles erreurs. Relevé sur le
+   carnet de Taylor : 391 entrées, dont 296 encore sur la première marche.
+   Un seau qu'on remplit plus vite qu'il ne fuit finit par déborder, et c'est
+   exactement ce que le plafond de six cents faisait — en jetant du travail.
+   CE QU'ON FAIT. Une partie SOLO réserve un cinquième de ses questions à ce
+   qui est dû au carnet, les plus tenaces d'abord. Trois questions sur quinze :
+   assez pour que le carnet descende tout seul, trop peu pour transformer une
+   partie en séance de révision. Le joueur n'a rien à faire et ne voit aucune
+   différence — sinon que les questions qu'il rate reviennent, ce qui est tout
+   l'objet du carnet.
+   SOLO SEULEMENT, ET C'EST DÉLIBÉRÉ. En GROUPE, les questions sont pour des
+   équipes : glisser les erreurs du propriétaire du téléphone ferait jouer tout
+   le monde sur son carnet à lui. EN LIGNE, le paquet est TIRÉ D'UNE GRAINE
+   PARTAGÉE (voir seededDeck) : tout le monde doit voir exactement les mêmes
+   questions, et une injection personnelle casserait le duel. */
+/* En « let » et non en « const » : c'est la seule valeur de ce mécanisme
+   qu'on ait besoin de faire varier pour MESURER (voir
+   banc-essai/carnet-courbe.js, qui simule des centaines de parties à
+   plusieurs parts pour voir laquelle fait vraiment descendre le carnet). */
+let PART_REVOIR = 0.2;
+function questionsDuCarnet(combien, theme){
+  if(combien < 1) return [];
+  let dus;
+  try{ dus = parEntetement(aRevoir()); }catch(e){ return []; }
+  if(!dus.length) return [];
+  /* Le carnet ne garde que du texte ; on retrouve la question d'origine dans
+     la banque, avec son palier de difficulté et son « Le savais-tu ? » à
+     jour. Une entrée dont la question n'existe plus (banque réécrite) est
+     simplement ignorée. */
+  const parCle = {};
+  ["facile","moyen","difficile"].forEach(tier=>{
+    (BANK[tier] || []).forEach(q=>{ parCle[qKey(q)] = { q, tier }; });
+  });
+  const out = [];
+  for(const e of dus){
+    const t = parCle[e.k];
+    if(!t) continue;
+    if(theme !== "tout" && qTestament(t.q) !== theme) continue;
+    out.push({ ...t.q, tier:t.tier, shuffledOptions: shuffle(t.q.options) });
+    if(out.length >= combien) break;
+  }
+  return out;
+}
 function buildQuestions(){
   const n = LENGTHS[state.lengthKey];
   const seen = loadSeen();
   const theme = state.themeKey || "tout";
-  let list = [];
+  const revoir = (state.mode === "solo") ? questionsDuCarnet(Math.round(n * 3 * PART_REVOIR), theme) : [];
+  const dejaPris = new Set(revoir.map(q=>qKey(q)));
+  let list = revoir.slice();
   ["facile","moyen","difficile"].forEach(tier=>{
     let pool = BANK[tier];
     if(theme !== "tout"){ const f = pool.filter(q=>qTestament(q)===theme); if(f.length) pool = f; }
+    /* Ce qui vient du carnet occupe déjà sa place : on retire autant de
+       questions neuves, tier par tier, pour que la partie garde EXACTEMENT sa
+       longueur. Sans ça, une partie de quinze en ferait dix-huit. */
+    const aPrendre = n - revoir.filter(q=>q.tier === tier).length;
+    if(aPrendre < 1) return;
     // On privilégie les questions jamais vues, pour éviter les répétitions.
-    const unseen = shuffle(pool.filter(q=>!seen.has(qKey(q))));
-    const already = shuffle(pool.filter(q=>seen.has(qKey(q))));
-    unseen.concat(already).slice(0, n).forEach(q=>{
+    const libre = pool.filter(q=>!dejaPris.has(qKey(q)));
+    const unseen = shuffle(libre.filter(q=>!seen.has(qKey(q))));
+    const already = shuffle(libre.filter(q=>seen.has(qKey(q))));
+    unseen.concat(already).slice(0, aPrendre).forEach(q=>{
       list.push({ ...q, tier, shuffledOptions: shuffle(q.options) });
       seen.add(qKey(q));
     });
@@ -19619,8 +19679,11 @@ function queueGlassXF(){
      moteur GPU — ce moteur ne CALCULE pas la position d'une surface imbriquée,
      il la LIT (getBoundingClientRect), ce qui donne le bon résultat quel que
      soit le nombre de défilements empilés au-dessus d'elle. On ne garde donc
-     que la liste elle-même, pour savoir à QUI appliquer cette lecture. */
+     que la liste elle-même, pour savoir à QUI appliquer cette lecture.
+     CORRECTION (v294) : la LECTURE RÉELLE était une mauvaise réponse pour une
+     liste qui vit DANS #app. Voir plus bas, au calcul de tx/ty. */
   const revEl = document.querySelector(".rev-list, .ecran-salon .salle-liste");
+  const revSl = revEl ? revEl.scrollLeft : 0, revSt = revEl ? revEl.scrollTop : 0;
   if(glassElsGen !== glassGen){ glassEls = document.querySelectorAll(GLASS_SEL); glassElsGen = glassGen; }
   const els = glassEls, vh = h;
   const suivre = now < glassSuivreJusqu;   // une mise en page bouge : on relit tout
@@ -19718,21 +19781,37 @@ function queueGlassXF(){
     if(gs.style.display === "none") gs.style.display = "";
     if(!el.classList.contains("has-gs")) el.classList.add("has-gs");
     if(el._gsSize !== bgSize){ el._gsSize = bgSize; gs.style.width = iw + "px"; gs.style.height = ih + "px"; gs.style.backgroundSize = bgSize; }
-    /* DANS #app, MAIS PAS DANS UNE LISTE QUI DÉFILE TOUTE SEULE. Le raccourci
-       ci-dessous déduit la position d'une surface de son offset en page moins
-       le défilement de #app. Il est exact — et faux dès qu'un SECOND
-       défilement s'intercale : la liste des joueurs du salon est dans #app, et
-       ses rangées montaient de 140 px pendant que leur verre restait à 0.
-       Elles passent donc par la lecture réelle, comme les surfaces des
-       feuilles. Huit rangées au plus, un transform écrit et rien d'autre. */
-    const inApp = glassAppEl.contains(el) && !(revEl && revEl.contains(el));
+    /* ===== DEUX DÉFILEMENTS EMPILÉS, ET UN SEUL CALCUL =====
+       Le raccourci ci-dessous déduit la position d'une surface de son offset en
+       page moins le défilement de #app. Il est exact — et faux dès qu'un
+       SECOND défilement s'intercale : la liste des joueurs du salon est dans
+       #app et défile toute seule, et ses rangées montaient de 140 px pendant
+       que leur verre restait à 0.
+       MA PREMIÈRE RÉPONSE ÉTAIT DE LES FAIRE LIRE LEUR POSITION RÉELLE, comme
+       les surfaces d'une feuille. Ça marchait pour le défilement et ça a cassé
+       l'ARRIVÉE : « lors de l'ouverture de ce menu, au niveau de l'affichage
+       des joueurs, l'effet de verre change brusquement ». Mesuré à l'image,
+       120 px de saut à 641 ms sur un iPhone 15, 94 sur un SE — c'est-à-dire
+       pile à la fin de la transition d'écran. La raison : pendant la
+       transition, le moteur est GELÉ (tout se joue sur le compositeur) ; une
+       surface qui se cale sur des offsets fixes traverse ce gel sans rien
+       apprendre, mais une surface qui LIT sa position à l'écran découvre d'un
+       coup, au dégel, qu'elle a voyagé.
+       LA BONNE RÉPONSE EST ARITHMÉTIQUE, PAS SENSORIELLE : l'offset en page ne
+       bouge pas quand une liste défile, donc la position écran vaut offset
+       moins la SOMME des deux défilements. On garde le cache, on garde le
+       rognage, et il n'y a plus rien à découvrir au dégel. */
+    const inApp = glassAppEl.contains(el);
+    const dansListe = inApp && !!(revEl && revEl.contains(el));
     let tx, ty;
     if(inApp){
       // #app : position depuis le cache d'offsets -> défilement continu gratuit
       // (aucune lecture de mise en page).
-      const restTop = el._ly0 - st;
+      const aSt = dansListe ? st + revSt : st;
+      const aSl = dansListe ? sl + revSl : sl;
+      const restTop = el._ly0 - aSt;
       if(restTop > vh + 200 || restTop + el._oh0 < -200) continue; // hors écran
-      tx = sl - el._lx0 - ox; ty = st - el._ly0 - oy;
+      tx = aSl - el._lx0 - ox; ty = aSt - el._ly0 - oy;
     } else {
       /* ===== LE VERRE EST UNE FENÊTRE, PAS UNE PEINTURE =====
          Il y avait ici une exception : pendant l'ouverture d'une feuille, le

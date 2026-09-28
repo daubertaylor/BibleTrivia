@@ -99,6 +99,57 @@ const soucis = [];
     if (!(Math.abs(dDecor) < 2)) soucis.push(nom + ' : le décor voyage avec la rangée (' + dDecor.toFixed(1) + ' px) — le verre n\'est plus une fenêtre');
     if (!(parseFloat(b.voileH) > 0)) soucis.push(nom + ' : pas de fondu en haut alors qu\'il reste des joueurs au-dessus');
     if (!(parseFloat(a.voileB) > 0)) soucis.push(nom + ' : pas de fondu en bas alors qu\'il reste des joueurs en dessous');
+    /* ===== ET IL NE DOIT RIEN DÉCOUVRIR AU DÉGEL =====
+       « Lors de l'ouverture de ce menu, au niveau de l'affichage des joueurs,
+       l'effet de verre change brusquement. » Ma première façon de faire suivre
+       le défilement à ces rangées était de leur faire LIRE leur position réelle,
+       comme les surfaces d'une feuille. Ça marchait pour le défilement et ça
+       cassait l'ARRIVÉE : pendant une transition d'écran le moteur est gelé,
+       tout glisse sur le compositeur, et une surface qui lit sa position
+       découvre d'un coup au dégel qu'elle a voyagé. Mesuré : 120 px de saut à
+       641 ms sur un iPhone 15, 94 sur un SE — pile à la fin de la transition.
+       ON COMPARE À UN TÉMOIN, et c'est indispensable : pendant l'entrée, TOUTES
+       les surfaces de l'écran voyagent avec lui, c'est l'animation. Ce qu'on
+       refuse, c'est que la rangée bouge PLUS que le reste de son écran. */
+    await p.evaluate(() => { state.screen = 'online'; render(); });
+    await p.waitForTimeout(900);
+    const entree = await p.evaluate(() => new Promise((res) => {
+      state.screen = 'online-room'; render();
+      const im = []; const t0 = performance.now();
+      const tic = () => {
+        const l = document.querySelector('.salle-ligne');
+        const gs = l ? l.querySelector('.gs') : null;
+        /* UN VRAI TÉMOIN EST UNE SURFACE DE VERRE. Ma première version prenait
+           .code-hero, qui n'est pas dans GLASS_SEL : il n'a pas de couche, le
+           témoin lisait 0, et le banc accusait la rangée de sauter toute seule
+           alors que c'est tout l'écran qui glisse. Le bouton de lancement, lui,
+           est du verre et il est toujours là pour l'hôte. */
+        const tem = document.querySelector('.btn-primary, .len-chip');
+        const tgs = tem ? tem.querySelector('.gs') : null;
+        const t = performance.now() - t0;
+        if (gs) im.push([t, gs.getBoundingClientRect().top, tgs ? tgs.getBoundingClientRect().top : null]);
+        if (t < 1400) requestAnimationFrame(tic);
+        else {
+          let pire = 0, quand = 0, pireT = 0;
+          for (let i = 1; i < im.length; i++) {
+            const d = Math.abs(im[i][1] - im[i - 1][1]);
+            if (d > pire) { pire = d; quand = im[i][0]; }
+            if (im[i][2] !== null && im[i - 1][2] !== null) {
+              const dt = Math.abs(im[i][2] - im[i - 1][2]); if (dt > pireT) pireT = dt;
+            }
+          }
+          res({ pire: +pire.toFixed(1), quand: Math.round(quand), temoin: +pireT.toFixed(1), images: im.length });
+        }
+      };
+      requestAnimationFrame(tic);
+    }));
+    const enFamille = entree.pire <= entree.temoin + 1.5;
+    console.log('  ' + ''.padEnd(11) + 'à l\'ouverture : rangée ' + String(entree.pire).padStart(6)
+      + ' px @' + String(entree.quand).padStart(4) + ' ms, témoin ' + String(entree.temoin).padStart(6) + ' px  '
+      + (enFamille ? 'même famille' : 'LA RANGÉE SAUTE PLUS QUE SON ÉCRAN'));
+    if (!enFamille) soucis.push(nom + ' : à l\'ouverture, la rangée saute de ' + entree.pire
+      + ' px quand son écran n\'en fait que ' + entree.temoin);
+
     if (errs.length) soucis.push(nom + ' : erreurs JS — ' + [...new Set(errs)].slice(0, 2).join(' | '));
     await ctx.close();
   }
