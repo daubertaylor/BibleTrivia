@@ -40,7 +40,16 @@ function v(nom, a, b){ const bon=JSON.stringify(a)===JSON.stringify(b); if(!bon)
   await ev(()=>{ state.screen='mode'; render(); });
   await p.waitForTimeout(600);
   v("la carte « À revoir » apparaît", await ev(()=>!!document.querySelector('.revoir-card')), true);
-  v("et elle dit combien", await ev(()=>{ const e=document.querySelector('.rv-n'); return e?e.textContent:''; }), "1");
+  /* LA PASTILLE DIT LA SÉANCE, jamais la dette : dix au plus, et exactement le
+     nombre que l'écran suivant affichera. */
+  v("et elle dit la séance qui attend", await ev(()=>{ const e=document.querySelector('.rv-n'); return e?e.textContent:''; }), "1");
+  v("  jamais plus que le lot", await ev(()=>{
+    const d = seededDeck(777, '9', null); d.forEach(q=>errbookAdd(q));
+    const a = loadErrbook(); a.forEach(x=>{ x.du = dayKey(0); }); saveErrbook(a);
+    state.screen='mode'; render();
+    const e = document.querySelector('.rv-n');
+    return [loadErrbook().length > REVISION_LOT, e ? +e.textContent : -1];
+  }), [true, 10]);
   /* ===== LA CARTE NE PART PLUS, MÊME À VIDE (v219) =====
      Le banc exigeait ici l'inverse : « rien à revoir, pas de carte ». C'était
      la règle jusqu'à ce que Taylor demande le contraire, et pour une raison de
@@ -63,11 +72,14 @@ function v(nom, a, b){ const bon=JSON.stringify(a)===JSON.stringify(b); if(!bon)
     state.screen='mode'; render(); });
   await p.waitForTimeout(500);
   v("rien pour aujourd'hui, mais le carnet n'est pas vide", await ev(()=>{ const e=document.querySelector('.revoir-card .dc-txt small'); return e?e.textContent:''; }), "Rien pour aujourd'hui");
-  /* LE COMPTE A QUITTÉ LA PHRASE POUR LA PASTILLE. « Rien aujourd'hui · 143 en
-     attente » demandait 193 px de large pour 155 disponibles sur un petit
-     Android : la phrase était rognée. Le nombre est sur la pastille calme, à
-     trente pixels — le répéter, c'était le dire deux fois ET déborder. */
-  v("  la pastille est calme", await ev(()=>{ const e=document.querySelector('.revoir-card .rv-n'); return e ? e.classList.contains('calme') : false; }), true);
+  /* ET PLUS AUCUNE PASTILLE CE JOUR-LÀ. Il y avait ici une pastille grise qui
+     disait la taille du carnet les jours sans échéance — 143, 209, 356.
+     « Il ne faut pas submerger le joueur avec un tas énorme de choses à
+     revoir. » Un grand nombre sur une carte d'accueil n'est pas une
+     information, c'est un verdict. Le sous-titre suffit à dire qu'il n'y a
+     rien pour aujourd'hui, et la dette vit désormais dans la jauge de l'écran,
+     en part franchie, là où elle encourage au lieu d'écraser. */
+  v("  et aucune pastille : on ne montre pas la dette", await ev(()=>!!document.querySelector('.revoir-card .rv-n')), false);
   /* ===== ET L'ÉCRAN S'OUVRE DANS TOUS LES CAS =====
      La v221 a remplacé la feuille glissante par un ÉCRAN — « je parle de toute
      la page entière qui doit être ici ». Carnet vide, on doit quand même

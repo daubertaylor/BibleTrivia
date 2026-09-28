@@ -732,6 +732,19 @@ const ouvrirLaLangue = async (p, lg) => {
         correct:'66', fact:'', tier:'facile' }]));
       modeRevoir='livre'; state.screen='revoir'; render(); }],
     ['À revoir · vide',    () => { localStorage.setItem('bt_errbook','[]');
+      localStorage.removeItem('bt_acquises');
+      modeRevoir='auj'; state.screen='revoir'; render(); }],
+    /* LA CARTE DES MARCHES N'EXISTE QUE S'IL Y A QUELQUE CHOSE À MONTRER : un
+       carnet, ou des questions déjà acquises. Ses sept intitulés ne se peignent
+       donc jamais sur un carnet vide. */
+    ['À revoir · les marches', () => {
+      const d = seededDeck(4242, '9', null);
+      localStorage.removeItem('bt_errbook');
+      d.forEach(q => errbookAdd(q));
+      const a = loadErrbook();
+      a.forEach((x, i) => { x.p = i % 4; x.du = dayKey(0); });
+      saveErrbook(a);
+      marquerAcquise('essai-acquise-1'); marquerAcquise('essai-acquise-2');
       modeRevoir='auj'; state.screen='revoir'; render(); }],
     /* ON REMET LE CARNET COMME ON L'A TROUVÉ. Les sept scénarios ci-dessus
        vident le carnet et effacent les erreurs de la dernière partie — et les

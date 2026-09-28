@@ -60,14 +60,24 @@ const CARNET = Array.from({ length: 20 }, (_, i) => ({
     aChoisir: document.querySelectorAll('.rv-choix, .rvl-card .bk').length,
     lot: (typeof REVISION_LOT !== 'undefined') ? REVISION_LOT : -1,
     dus: aRevoir().length,
+    /* Ce que le BOUTON annonce, et qui n'est pas le même nombre. */
+    libelle: (document.querySelector('.rv-go') || {}).textContent,
   }));
   /* Ni les quatre portes d'avant, ni la grille des soixante livres : ce qui
      reste à régler tient dans quatre puces, et le reste de l'écran ne demande
      rien. */
   v('ni portes ni grille de livres', ecran.aChoisir === 0, ecran.aChoisir + ' rangée(s) à lire avant de choisir');
-  v('l\'écran annonce le lot, pas le catalogue',
+  /* ===== ON NE MONTRE JAMAIS LA DETTE, NULLE PART =====
+     « Ici on peut voir que j'ai toujours 356, je sais pas si c'est normal. »
+     Puis : « Oui, mais il ne faut pas submerger le joueur avec un tas énorme
+     de choses à revoir. » J'avais d'abord mis la dette PARTOUT pour que la
+     carte de l'accueil et cet écran s'accordent ; c'était cohérent et c'était
+     décourageant. Le seul nombre montré, ici comme sur la carte, est celui
+     qu'on peut faire MAINTENANT — et les deux s'accordent quand même,
+     puisqu'ils sont bornés pareil. */
+  v('le grand nombre est la séance, pas la dette',
     ecran.annonce === Math.min(ecran.lot, ecran.dus),
-    ecran.annonce + ' annoncé, ' + ecran.dus + ' dues, lot de ' + ecran.lot);
+    ecran.annonce + ' affiché, ' + ecran.dus + ' dues, lot de ' + ecran.lot);
   v('et le bouton est vivant', ecran.bouton, ecran.bouton ? 'oui' : 'éteint alors qu\'il y a à réviser');
 
   /* 2. LE BOUTON JOUE EXACTEMENT CE QUI EST ANNONCÉ.
@@ -81,7 +91,8 @@ const CARNET = Array.from({ length: 20 }, (_, i) => ({
              ent: state.questions.map(q => par[q.q].n),
              pasDues: state.questions.filter(q => par[q.q].du > '2100-01-01').length };
   }, CARNET);
-  v('le bouton joue ce qui est annoncé', joue.n === ecran.annonce, joue.n + ' jouées pour ' + ecran.annonce + ' annoncées');
+  v('le bouton joue ce qui est annoncé', joue.n === ecran.annonce,
+    joue.n + ' jouées pour ' + ecran.annonce + ' annoncées');
   v('c\'est bien une révision', joue.rev === true, String(joue.rev));
 
   /* 3. L'ORDRE — ce qui résiste le plus passe devant, sans que personne l'ait demandé. */
@@ -186,7 +197,7 @@ const CARNET = Array.from({ length: 20 }, (_, i) => ({
     nb:+(document.querySelector('.rv-nb')||{}).textContent,
     sous:(document.querySelector('.rv-sous')||{}).textContent }));
   v('le jeu choisit le livre où l\'on se trompe le plus',
-    livre.choisi === 'Genèse' && vuLivre.nb === livre.attendu,
+    livre.choisi === 'Genèse' && vuLivre.nb === Math.min(livre.attendu, 10),
     livre.choisi + ', ' + vuLivre.nb + ' question(s) — « ' + vuLivre.sous + ' »');
 
   /* 8. ET ÇA TIENT SUR LE PLUS PETIT ÉCRAN.
