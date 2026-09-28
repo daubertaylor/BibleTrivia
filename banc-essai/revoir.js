@@ -70,28 +70,25 @@ function v(nom, a, b){ const bon=JSON.stringify(a)===JSON.stringify(b); if(!bon)
   v("  la pastille est calme", await ev(()=>{ const e=document.querySelector('.revoir-card .rv-n'); return e ? e.classList.contains('calme') : false; }), true);
   /* ===== ET L'ÉCRAN S'OUVRE DANS TOUS LES CAS =====
      La v221 a remplacé la feuille glissante par un ÉCRAN — « je parle de toute
-     la page entière qui doit être ici ». Réviser n'est pas une question courte
-     à laquelle on répond dans une parenthèse : on arrive avec une intention
-     vague, on regarde ce qu'on a, on choisit. C'est un lieu.
-     Carnet vide, on doit quand même pouvoir y aller : les trois portes s'y
-     trouvent, ÉTEINTES et non absentes — une porte fermée qui annonce « 0 »
-     est plus honnête qu'une porte qui a disparu. */
+     la page entière qui doit être ici ». Carnet vide, on doit quand même
+     pouvoir y aller : le joueur doit LIRE qu'il n'a rien à réviser, pas tomber
+     sur une page qui a l'air cassée. */
   await ev(()=>{ localStorage.setItem('bt_errbook','[]'); state.screen='mode'; render(); });
   await p.waitForTimeout(400);
   await ev(()=>document.querySelector('.revoir-card').click());
   await p.waitForTimeout(900);
   v("carnet vide : l'écran « À revoir » s'ouvre quand même", await ev(()=>state.screen), "revoir");
   v("  aucune feuille glissante sur ce chemin", await ev(()=>!!document.querySelector('.sheet-veil')), false);
-  /* CE QUI COMPTE N'EST PAS COMBIEN, C'EST QU'ELLES SOIENT LÀ ET ÉTEINTES.
-     Le banc exigeait « exactement trois » et il a refusé le jour où une
-     quatrième porte est arrivée (« Celles qui me résistent »). Il avait raison
-     de voir le changement — mais la propriété qu'il protège, c'est qu'un
-     carnet vide n'efface pas les portes : elles restent visibles, grisées, et
-     le joueur comprend qu'il n'a rien à réviser au lieu de croire que l'écran
-     est cassé. On vérifie donc ça, et on ne fige plus un nombre. */
-  v("  et toutes ses portes sont éteintes, pas absentes", await ev(()=>{
-    const l=[...document.querySelectorAll('.rv-choix')]; return l.length>=3 && l.every(b=>b.disabled); }), true);
-  v("  pas de grille de livres quand le carnet est vide", await ev(()=>document.querySelectorAll('.rvl-card .bk').length), 0);
+  /* CE QUE CE BANC A EXIGÉ TROIS FOIS DE SUITE, ET POURQUOI IL CHANGE ENCORE.
+     D'abord « exactement trois portes ». Puis « au moins trois, toutes
+     éteintes ». Les deux nommaient un DESSIN, et les deux ont refusé le jour
+     où le dessin a changé. La propriété de fond n'a jamais bougé : un carnet
+     vide ne casse pas l'écran, il le DIT. On la nomme donc enfin pour ce
+     qu'elle est — un zéro qu'on peut lire, un bouton qui refuse de partir pour
+     rien — et plus par le nombre de rangées qui l'entourent. */
+  v("  carnet vide : l'écran affiche zéro", await ev(()=>{ const e=document.querySelector('.rv-nb'); return e?e.textContent:''; }), "0");
+  v("  et le bouton ne part pas pour rien", await ev(()=>!!document.querySelector('.rv-go[disabled]')), true);
+  v("  rien à choisir : le jeu choisit", await ev(()=>document.querySelectorAll('.rv-choix, .rvl-card .bk').length), 0);
   await ev(()=>{ state.screen='mode'; render(); });
   await p.waitForTimeout(500);
 

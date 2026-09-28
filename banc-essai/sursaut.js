@@ -22,7 +22,7 @@ const suivre = (ms) => new Promise((res) => {
     const f = document.querySelector('.sheet-veil:not(.closing) .settings-sheet');
     if (f) {
       const b = f.getBoundingClientRect();
-      const ti = f.querySelector('.sheet-title, .set-row, .rv-choix, .fs-row');
+      const ti = f.querySelector('.sheet-title, .set-row, .rv-carte, .fs-row');
       const bt = ti ? ti.getBoundingClientRect() : null;
       const gs = f.querySelector(':scope > .gs');
       const bg = gs ? gs.getBoundingClientRect() : null;
