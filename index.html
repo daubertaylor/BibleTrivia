@@ -4749,7 +4749,9 @@ const TEXTES = {
     "prenez votre temps":"take your time",
     /* --- à revoir --- */
     "À revoir":"To review",
-    "à revoir maintenant":"to review right now",
+    "à revoir":"to review",
+    "Commencer · {n} questions":"Start · {n} questions",
+    "Commencer · {n} question":"Start · {n} question",
     "Aujourd'hui":"Today",
     "Tenaces":"Stubborn",
     "Un livre":"One book",
@@ -5140,7 +5142,9 @@ const TEXTES = {
     "Sans":"Sin",
     "prenez votre temps":"tómense su tiempo",
     "À revoir":"Por repasar",
-    "à revoir maintenant":"para repasar ahora",
+    "à revoir":"para repasar",
+    "Commencer · {n} questions":"Empezar · {n} preguntas",
+    "Commencer · {n} question":"Empezar · {n} pregunta",
     "Aujourd'hui":"Hoy",
     "Tenaces":"Tercas",
     "Un livre":"Un libro",
@@ -7541,7 +7545,7 @@ const SUPABASE_ANON_KEY = "sb_publishable_FDJ_R0foC7uIeHmxVrj6rA_2NeIgW2a";
    remontée d'un téléphone ne vaut rien si on ne sait pas QUELLE version
    tournait. Elle doit rester égale au CACHE de sw.js — c'est ce que vérifie
    banc-essai/version.js, qui refuse de laisser publier les deux en désaccord. */
-const VERSION_JEU = "v292";
+const VERSION_JEU = "v293";
 
 /* ===================== QUAND ÇA CASSE CHEZ UN JOUEUR =====================
    « Si quelque chose casse chez cinq d'entre eux sur un modèle de téléphone
@@ -16369,7 +16373,11 @@ function livreLePlusDur(){
   par.forEach((v, k)=>{ if(v > n || (v === n && nom && k.localeCompare(nom, "fr") < 0)){ nom = k; n = v; } });
   return nom;
 }
-function fileDeRevision(mode){
+/* TOUT CE QUI ATTEND, et, séparément, CE QU'ON EN JOUE MAINTENANT. Les deux
+   nombres sont vrais et ne disent pas la même chose : l'un est la dette,
+   l'autre la séance. Les confondre, c'est ce qui a fait écrire 356 sur la
+   carte de l'accueil et 10 sur l'écran juste derrière. */
+function sourceRevoir(mode){
   const quoi = mode || modeRevoir;
   let source;
   if(quoi === "tenaces") source = loadErrbook().filter(x => (x.n | 0) >= 2);
@@ -16386,8 +16394,9 @@ function fileDeRevision(mode){
     const dus = aRevoir();
     source = dus.length ? dus : loadErrbook();
   }
-  return parEntetement(source).slice(0, REVISION_LOT);
+  return parEntetement(source);
 }
+function fileDeRevision(mode){ return sourceRevoir(mode).slice(0, REVISION_LOT); }
 /* Ce que dit la petite ligne sous le grand nombre : courte, et différente
    selon la mire — sinon les quatre puces auraient l'air de faire la même
    chose. */
@@ -16396,7 +16405,7 @@ function sousRevoir(quoi, n){
   if(quoi === "livre"){ const l = livreLePlusDur();
     return (n && l) ? Tf("à revoir dans {livre}", { livre: livreCourt(l) }) : T("Aucun livre à revoir"); }
   if(quoi === "partie") return n ? T("de ta dernière partie") : T("Rien de raté à ta dernière partie");
-  return n ? T("à revoir maintenant") : T("Rien à revoir pour l'instant");
+  return n ? T("à revoir") : T("Rien à revoir pour l'instant");
 }
 /* L'ORDRE DE RÉVISION. On trie par entêtement décroissant, et À ÉGALITÉ on
    mélange : sans ce mélange, les mêmes questions reviendraient toujours dans
@@ -17101,7 +17110,17 @@ function ouvrirRevoir(){ state.screen = "revoir"; render(); }
 function renderRevoir(){
   const el = document.createElement("div"); el.className = "screen";
   if(REVOIR_MODES.indexOf(modeRevoir) < 0) modeRevoir = "auj";
-  const n = fileDeRevision().length;
+  /* ===== DEUX NOMBRES, ET CHACUN À SA PLACE =====
+     « Ici on peut voir que j'ai toujours 356, je sais pas si c'est normal. »
+     C'était normal et c'était mal dit : la carte de l'accueil annonçait 356 —
+     ce qui attend vraiment — et l'écran juste derrière affichait 10, la
+     séance. Deux nombres vrais qui se contredisent à l'œil.
+     LE GRAND NOMBRE EST DONC LA DETTE, celui de la carte, celui qu'on vient
+     chercher. Et LE BOUTON PORTE SA PROPRE TAILLE : « Commencer · 10
+     questions ». Plus rien à deviner, et la règle tient toujours — ce qui
+     annonce un nombre le joue, sauf que c'est le bouton qui l'annonce. */
+  const n = sourceRevoir().length;
+  const lot = Math.min(n, REVISION_LOT);
   const m = maitriseCarnet();
   const carnet = errbookCount();
   el.innerHTML = renderHeader(T("À revoir"), true, "state.screen='mode'; render()")
@@ -17120,7 +17139,7 @@ function renderRevoir(){
             .map(([k, mot])=>`<button class="len-chip${modeRevoir===k?' sel':''}" data-rgroup="rv" data-k="${k}" onclick="choisirRevoir('${k}')">${mot}</button>`).join("")}
        </div>
        <div class="flex-sp"></div>
-       <button class="btn-primary rv-go"${n ? ` onclick="lancerRevision()"` : " disabled"}>${T("Commencer")}</button>
+       <button class="btn-primary rv-go"${n ? ` onclick="lancerRevision()"` : " disabled"}>${motCommencer(lot)}</button>
        <div class="flam-regle rvl-regle">${T("Les plus tenaces d'abord. Une erreur revient jusqu'à ce que tu l'aies sue quatre fois.")}</div>`;
   return el;
 }
@@ -17133,11 +17152,18 @@ function renderRevoir(){
    du balisage est exactement la forme où une vraie phrase se cacherait sans
    être vue par le banc des traductions. */
 function lancerRevision(){ startRevision("carnet"); }
+/* Le bouton dit combien il en jouera. Au singulier aussi : « 1 questions »
+   est le genre de détail qui fait paraître un jeu bâclé. */
+function motCommencer(lot){
+  if(!lot) return T("Commencer");
+  return lot > 1 ? Tf("Commencer · {n} questions", { n:lot })
+                 : Tf("Commencer · {n} question", { n:lot });
+}
 function choisirRevoir(k){
   if(REVOIR_MODES.indexOf(k) < 0 || k === modeRevoir) return;
   modeRevoir = k;
   try{ basculerChoix('[data-rgroup="rv"]', "sel", k); }catch(e){}
-  const n = fileDeRevision().length;
+  const n = sourceRevoir().length;
   const nb = document.querySelector(".rv-nb");
   if(nb && nb.textContent !== String(n)) nb.textContent = String(n);
   const sous = document.querySelector(".rv-sous");
@@ -17147,7 +17173,11 @@ function choisirRevoir(k){
      écrit en JavaScript est du code dans du texte, et le banc des traductions
      a raison de s'en méfier — c'est exactement la forme où une phrase
      française se cacherait sans être vue. */
-  if(go){ go.disabled = !n; go.onclick = n ? lancerRevision : null; }
+  if(go){
+    go.disabled = !n; go.onclick = n ? lancerRevision : null;
+    const t = motCommencer(Math.min(n, REVISION_LOT));
+    if(go.textContent !== t) go.textContent = t;
+  }
   try{ queueGlassSync(); }catch(e){}
 }
 
