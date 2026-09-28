@@ -710,7 +710,48 @@ const ouvrirLaLangue = async (p, lg) => {
       if(a[4]) a[4].p = 2;
       saveErrbook(a);
       localStorage.setItem('bt_lastmiss', JSON.stringify([qKey(d[0]), qKey(d[1])]));
-      state.screen='revoir'; render(); }],
+      modeRevoir = 'auj'; state.screen='revoir'; render(); }],
+    /* LES QUATRE MIRES ONT CHACUNE LEUR PHRASE, ET DEUX CHACUNE : celle qui
+       compte, et celle qui dit qu'il n'y a rien. L'écran n'en peint qu'une à
+       la fois — huit intitulés que le banc ne verrait jamais s'il se contentait
+       de la mire par défaut sur un carnet rempli. On les visite donc toutes,
+       pleines PUIS vides. */
+    ['À revoir · tenaces',  () => { modeRevoir='tenaces'; state.screen='revoir'; render(); }],
+    ['À revoir · un livre', () => { modeRevoir='livre';   state.screen='revoir'; render(); }],
+    ['À revoir · ma partie',() => { modeRevoir='partie';  state.screen='revoir'; render(); }],
+    ['À revoir · rien de raté', () => { localStorage.removeItem('bt_lastmiss');
+      modeRevoir='partie'; state.screen='revoir'; render(); }],
+    ['À revoir · rien ne résiste', () => {
+      const a = loadErrbook(); a.forEach(x=>{ x.n = 1; }); saveErrbook(a);
+      modeRevoir='tenaces'; state.screen='revoir'; render(); }],
+    ['À revoir · aucun livre', () => {
+      /* Un carnet dont aucune question ne nomme un livre : c'est le seul cas
+         où la mire du livre n'a rien à montrer. */
+      localStorage.setItem('bt_errbook', JSON.stringify([{ k:'sansLivre', n:1, p:0, du:dayKey(0),
+        q:'Combien de livres compte la Bible protestante\u00a0?', options:['66','73','39','27'],
+        correct:'66', fact:'', tier:'facile' }]));
+      modeRevoir='livre'; state.screen='revoir'; render(); }],
+    ['À revoir · vide',    () => { localStorage.setItem('bt_errbook','[]');
+      modeRevoir='auj'; state.screen='revoir'; render(); }],
+    /* ON REMET LE CARNET COMME ON L'A TROUVÉ. Les sept scénarios ci-dessus
+       vident le carnet et effacent les erreurs de la dernière partie — et les
+       écrans qui viennent APRÈS en dépendent : la carte de l'accueil ne dit
+       « À réviser aujourd'hui » que s'il y a une échéance, et le bouton
+       « Réviser la dernière partie » n'existe que s'il reste des ratées. Un
+       scénario qui laisse l'état sale rend AVEUGLE tout ce qui le suit, et le
+       banc accuse alors le jeu de ne pas traduire des phrases qu'il n'a
+       simplement pas peintes. */
+    ['Carnet remis à l\'état rempli', () => {
+      localStorage.removeItem('bt_errbook');
+      const d = seededDeck(4242, '9', null);
+      d.forEach(q => errbookAdd(q));
+      errbookAdd(d[0]); errbookAdd(d[1]);
+      const a = loadErrbook();
+      if(a[2]) a[2].du = dayKey(0);
+      if(a[3]) a[3].du = dayKey(0);
+      saveErrbook(a);
+      localStorage.setItem('bt_lastmiss', JSON.stringify([qKey(d[0]), qKey(d[1])]));
+      modeRevoir='auj'; state.screen='mode'; render(); }],
     ['Réglages Groupe',   () => { state.mode='group'; state.screen='setup'; render(); }],
     ['Réglages Solo',     () => { state.mode='solo'; state.screen='setup'; render(); }],
     ['Partie Solo',       () => { state.mode='solo'; startGame(); }],
