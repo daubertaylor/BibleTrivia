@@ -1470,17 +1470,52 @@
      ce qu'on vient y chercher : combien, où j'en suis, et on y va.
      Le violet est celui de la carte « À revoir » de l'accueil : on arrive sur
      la même couleur qu'on vient de toucher. */
-  .rv-carte{ display:flex; flex-direction:column; align-items:center; text-align:center;
-    padding:calc(1.5rem + 1px) calc(1.25rem + 1px) calc(1.6rem + 1px); }
-  .rv-grand{ width:3.1rem; height:3.1rem; border-radius:var(--r-m); padding:0.7rem; color:#fff;
-    display:flex; align-items:center; justify-content:center; margin-bottom:0.85rem;
+  /* La carte porte TOUT ce qui sert à décider : le compte, l'avance, et les
+     quatre mires. Rien ne flotte plus à côté d'elle. */
+  .rv-carte{ padding:calc(1.15rem + 1px) calc(1.15rem + 1px) calc(1.25rem + 1px); }
+  /* Le chiffre à côté de l'icône, pas dessous : deux éléments centrés l'un
+     au-dessus de l'autre font une colonne étroite au milieu d'une carte
+     large, et c'est ça qui donnait l'impression de vide. */
+  .rv-tete{ display:flex; align-items:center; gap:0.9rem; }
+  .rv-grand{ width:3.4rem; height:3.4rem; border-radius:var(--r-m); padding:0.78rem; color:#fff;
+    display:flex; align-items:center; justify-content:center; flex-shrink:0;
     background:linear-gradient(150deg,#A78BFA,#7C5CE0);
     box-shadow:inset 0 1px 0 rgba(255,255,255,0.26), 0 3px 10px rgba(110,80,200,0.26); }
   .rv-grand svg{ width:100%; height:100%; display:block; }
-  .rv-nb{ font-family:'Poppins',sans-serif; font-weight:800; font-size:3rem; line-height:1;
+  .rv-chiffres{ display:flex; flex-direction:column; min-width:0; }
+  .rv-nb{ font-family:'Poppins',sans-serif; font-weight:800; font-size:2.5rem; line-height:1;
     color:var(--ink); font-variant-numeric:tabular-nums; }
-  .rv-sous{ font-size:0.92rem; color:var(--ink-soft); margin-top:0.3rem; }
-  .rv-carte .rv-prog{ width:100%; max-width:13rem; margin-top:1rem; }
+  .rv-sous{ font-size:0.92rem; color:var(--ink-soft); margin-top:0.15rem; }
+  /* « 7 % » tout seul ne veut rien dire. La jauge se présente : un nom à
+     gauche, la part à droite, le trait dessous sur toute la largeur. */
+  .rv-carte .rv-prog{ display:grid; grid-template-columns:1fr auto; align-items:baseline;
+    gap:0.2rem 0.5rem; margin-top:1.05rem; }
+  .rv-lbl{ font-size:0.82rem; color:var(--ink-soft); }
+  /* ===== LES CINQ MARCHES =====
+     Cinq colonnes, une barre par colonne, hautes en proportion de la plus
+     grande. Aucune couleur inventée : le corail du jeu, qui pâlit à mesure
+     qu'on monte — ce qui reste à apprendre est le plus « chaud », ce qui est
+     acquis se calme. La dernière colonne, elle, prend le vert de la
+     Progression : c'est le seul nombre de l'écran qui ne peut que grandir. */
+  .rv-marches{ padding:calc(1rem + 1px) calc(1.05rem + 1px) calc(1.1rem + 1px); margin-top:0.7rem; }
+  .rv-t{ font-family:'Poppins',sans-serif; font-size:0.74rem; font-weight:700; letter-spacing:0.06em;
+    text-transform:uppercase; color:var(--ink-soft); margin-bottom:0.75rem; }
+  .mr-grille{ display:grid; grid-template-columns:repeat(5, 1fr); gap:0.45rem; align-items:end; }
+  .mr-col{ display:flex; flex-direction:column; align-items:center; gap:0.22rem; min-width:0; }
+  .mr-bar{ width:100%; height:2.7rem; border-radius:var(--r-s); background:rgba(92,72,56,0.1);
+    display:flex; align-items:flex-end; overflow:hidden; }
+  .mr-bar i{ display:block; width:100%; border-radius:inherit; background:var(--mr-c, #F0723A);
+    height:calc(max(var(--h, 0), 0.06) * 100%); transition:height var(--tr-plie); }
+  .mr-col:nth-child(1){ --mr-c:#EC3C1A; }
+  .mr-col:nth-child(2){ --mr-c:#F2712C; }
+  .mr-col:nth-child(3){ --mr-c:#F2A62C; }
+  .mr-col:nth-child(4){ --mr-c:#E8C84C; }
+  .mr-col:nth-child(5){ --mr-c:#3FA96E; }
+  .mr-col b{ font-family:'Poppins',sans-serif; font-weight:800; font-size:1rem; color:var(--ink);
+    font-variant-numeric:tabular-nums; line-height:1; }
+  .mr-col small{ font-size:0.62rem; color:var(--ink-soft); text-align:center; line-height:1.15; }
+  .mr-note{ font-size:0.78rem; color:var(--ink-soft); margin-top:0.8rem; line-height:1.35; }
+  .rv-carte .rv-jauge{ grid-column:1 / -1; height:6px; }
   /* Les quatre mires. Ce sont les PUCES DU JEU, celles des réglages de partie :
      même matière, même remplissage rouge, même horloge. Elles passent à la
      ligne d'elles-mêmes sur un petit écran — deux et deux — plutôt que de
@@ -4750,6 +4785,14 @@ const TEXTES = {
     /* --- à revoir --- */
     "À revoir":"To review",
     "à revoir maintenant":"to review right now",
+    "Carnet maîtrisé":"Notebook mastered",
+    "Où en sont tes erreurs":"Where your mistakes stand",
+    "à apprendre":"to learn",
+    "vues 1 fois":"seen once",
+    "vues 2 fois":"seen twice",
+    "presque":"almost there",
+    "acquises":"learned",
+    "Une erreur monte d'une marche à chaque bonne réponse, et quitte le carnet à la quatrième.":"A mistake climbs one step with every correct answer, and leaves the notebook on the fourth.",
     "Aujourd'hui":"Today",
     "Tenaces":"Stubborn",
     "Un livre":"One book",
@@ -5141,6 +5184,14 @@ const TEXTES = {
     "prenez votre temps":"tómense su tiempo",
     "À revoir":"Por repasar",
     "à revoir maintenant":"para repasar ahora",
+    "Carnet maîtrisé":"Cuaderno dominado",
+    "Où en sont tes erreurs":"Dónde están tus errores",
+    "à apprendre":"por aprender",
+    "vues 1 fois":"vistas 1 vez",
+    "vues 2 fois":"vistas 2 veces",
+    "presque":"casi",
+    "acquises":"aprendidas",
+    "Une erreur monte d'une marche à chaque bonne réponse, et quitte le carnet à la quatrième.":"Un error sube un escalón con cada respuesta correcta, y sale del cuaderno en el cuarto.",
     "Aujourd'hui":"Hoy",
     "Tenaces":"Tercas",
     "Un livre":"Un libro",
@@ -16429,6 +16480,26 @@ function parEntetement(liste){
    n'était pas un autre nombre, c'était la VUE DU CHEMIN : chaque bonne réponse
    fait monter une question d'un palier sur quatre, et ça, ça bouge à chaque
    fois. La jauge compte les paliers franchis sur les paliers à franchir. */
+/* ===== OU EN SONT TES ERREURS, MARCHE PAR MARCHE =====
+   « Ici je trouve le visuel assez simple, fais mieux, là c'est vide. »
+   Le vide n'était pas un problème d'espacement : il n'y avait rien à regarder.
+   Et le carnet savait déjà quelque chose qu'il ne disait nulle part — la
+   RÉPARTITION. Une erreur monte quatre marches avant de quitter le carnet ; à
+   tout instant, chacune est sur l'une d'elles. Cette forme-là bouge à chaque
+   bonne réponse, elle raconte le travail fait, et elle ne décourage pas :
+   c'est une montée, pas une dette.
+   La dernière colonne est celle qui compte vraiment : les questions SORTIES du
+   carnet. Elle ne fait que grandir. */
+function marchesCarnet(){
+  const par = [0, 0, 0, 0];
+  loadErrbook().forEach(x=>{
+    const p = Math.max(0, Math.min(REVOIR_ECHELLE.length - 1, x.p | 0));
+    par[p]++;
+  });
+  let acquises = 0;
+  try{ acquises = Object.keys(loadAcquises()).length; }catch(e){}
+  return { par, acquises, haut: Math.max(1, Math.max.apply(null, par.concat([acquises]))) };
+}
 function maitriseCarnet(){
   const a = loadErrbook();
   if(!a.length) return { part:0, faits:0, total:0 };
@@ -17124,21 +17195,51 @@ function renderRevoir(){
   const n = fileDeRevision().length;
   const m = maitriseCarnet();
   const carnet = errbookCount();
+  /* ===== UN SEUL BLOC, PAS UNE ÎLE AU MILIEU DU VIDE =====
+     « Ici je trouve le visuel assez simple, fais mieux, là c'est vide. »
+     Il avait raison, et le défaut était de composition, pas de contenu : une
+     petite carte flottait au milieu, les quatre mires flottaient en dessous,
+     et le bouton tout en bas — trois îlots séparés par du décor, dont un
+     grand trou de deux cents pixels entre les mires et le bouton.
+     Les mires entrent DANS la carte : elles font partie de la même décision
+     (quoi réviser), elles n'ont aucune raison de vivre à part. Le bloc devient
+     alors assez haut pour tenir l'écran, et le bouton se pose juste dessous.
+     ET LA JAUGE DIT ENFIN SON NOM. « 7 % » tout seul ne veut rien dire — sept
+     pour cent de quoi ? C'est la part du carnet déjà franchie, et c'est
+     précisément le chiffre qui répond à « ça ne descend pas même si je
+     m'entraîne » : il bouge à chaque bonne réponse. Un nombre qui encourage
+     doit se présenter. */
   el.innerHTML = renderHeader(T("À revoir"), true, "state.screen='mode'; render()")
-    + `<div class="flex-sp"></div>
-       <div class="card rv-carte">
-         <span class="rv-grand">${ICONS.target}</span>
-         <div class="rv-nb">${n}</div>
-         <div class="rv-sous">${sousRevoir(modeRevoir, n)}</div>
-         ${carnet ? `<span class="rv-prog">
-           <span class="rv-jauge"><i data-m="${m.part.toFixed(4)}" style="--m:0"></i></span>
+    + `<div class="card rv-carte">
+         <div class="rv-tete">
+           <span class="rv-grand">${ICONS.target}</span>
+           <span class="rv-chiffres"><span class="rv-nb">${n}</span><span class="rv-sous">${sousRevoir(modeRevoir, n)}</span></span>
+         </div>
+         ${carnet ? `<div class="rv-prog">
+           <span class="rv-lbl">${T("Carnet maîtrisé")}</span>
            <span class="rv-pct">${Math.round(m.part*100)}&nbsp;%</span>
-         </span>` : ""}
+           <span class="rv-jauge"><i data-m="${m.part.toFixed(4)}" style="--m:0"></i></span>
+         </div>` : ""}
+         <div class="len-row rv-mires">
+           ${[["auj", T("Aujourd'hui")], ["tenaces", T("Tenaces")], ["livre", T("Un livre")], ["partie", T("Ma partie")]]
+              .map(([k, mot])=>`<button class="len-chip${modeRevoir===k?' sel':''}" data-rgroup="rv" data-k="${k}" onclick="choisirRevoir('${k}')">${mot}</button>`).join("")}
+         </div>
        </div>
-       <div class="len-row rv-mires">
-         ${[["auj", T("Aujourd'hui")], ["tenaces", T("Tenaces")], ["livre", T("Un livre")], ["partie", T("Ma partie")]]
-            .map(([k, mot])=>`<button class="len-chip${modeRevoir===k?' sel':''}" data-rgroup="rv" data-k="${k}" onclick="choisirRevoir('${k}')">${mot}</button>`).join("")}
-       </div>
+       ${carnet || (function(){ try{ return Object.keys(loadAcquises()).length; }catch(e){ return 0; } })()
+         ? (function(){ const M = marchesCarnet();
+             const col = (n, mot) => `<span class="mr-col"><span class="mr-bar"><i style="--h:${(n / M.haut).toFixed(4)}"></i></span><b>${n}</b><small>${mot}</small></span>`;
+             return `<div class="card rv-marches">
+               <div class="rv-t">${T("Où en sont tes erreurs")}</div>
+               <div class="mr-grille">
+                 ${col(M.par[0], T("à apprendre"))}
+                 ${col(M.par[1], T("vues 1 fois"))}
+                 ${col(M.par[2], T("vues 2 fois"))}
+                 ${col(M.par[3], T("presque"))}
+                 ${col(M.acquises, T("acquises"))}
+               </div>
+               <div class="mr-note">${T("Une erreur monte d'une marche à chaque bonne réponse, et quitte le carnet à la quatrième.")}</div>
+             </div>`; })()
+         : ""}
        <div class="flex-sp"></div>
        <button class="btn-primary rv-go"${n ? ` onclick="lancerRevision()"` : " disabled"}>${T("Commencer")}</button>
        <div class="flam-regle rvl-regle">${T("Les plus tenaces d'abord. Une erreur revient jusqu'à ce que tu l'aies sue quatre fois.")}</div>`;
