@@ -88,7 +88,7 @@ function v(nom, a, b){ const bon=JSON.stringify(a)===JSON.stringify(b); if(!bon)
      rien — et plus par le nombre de rangées qui l'entourent. */
   v("  carnet vide : l'écran affiche zéro", await ev(()=>{ const e=document.querySelector('.rv-nb'); return e?e.textContent:''; }), "0");
   v("  et le bouton ne part pas pour rien", await ev(()=>!!document.querySelector('.rv-go[disabled]')), true);
-  v("  rien à choisir : le jeu choisit", await ev(()=>document.querySelectorAll('.rv-choix, .rvl-card .bk').length), 0);
+  v("  ni portes ni grille de livres", await ev(()=>document.querySelectorAll('.rv-choix, .rvl-card .bk').length), 0);
   await ev(()=>{ state.screen='mode'; render(); });
   await p.waitForTimeout(500);
 

@@ -1481,6 +1481,16 @@
     color:var(--ink); font-variant-numeric:tabular-nums; }
   .rv-sous{ font-size:0.92rem; color:var(--ink-soft); margin-top:0.3rem; }
   .rv-carte .rv-prog{ width:100%; max-width:13rem; margin-top:1rem; }
+  /* Les quatre mires. Ce sont les PUCES DU JEU, celles des réglages de partie :
+     même matière, même remplissage rouge, même horloge. Elles passent à la
+     ligne d'elles-mêmes sur un petit écran — deux et deux — plutôt que de
+     rétrécir jusqu'à tronquer un mot. */
+  /* DEUX ET DEUX, PAS TROIS ET UN. En rangée souple, « Aujourd'hui » prend à
+     lui seul cent vingt pixels : les quatre ne tiennent sur aucun téléphone, et
+     le retour à la ligne laissait trois puces en haut et une esseulée en bas.
+     Une grille de deux colonnes donne la même chose à tout le monde, sur
+     n'importe quelle largeur, et fait un bloc au lieu d'une liste. */
+  .len-row.rv-mires{ display:grid; grid-template-columns:1fr 1fr; gap:0.5rem; margin-top:0.9rem; }
   .rv-go{ margin-top:0.1rem; }
   /* LA JAUGE DU CARNET. Elle ne remplace pas le nombre — la porte doit
      continuer d'annoncer ce qu'elle jouera — elle montre le CHEMIN : les
@@ -4740,6 +4750,16 @@ const TEXTES = {
     /* --- à revoir --- */
     "À revoir":"To review",
     "à revoir maintenant":"to review right now",
+    "Aujourd'hui":"Today",
+    "Tenaces":"Stubborn",
+    "Un livre":"One book",
+    "Ma partie":"My game",
+    "qui te résistent le plus":"that resist you the most",
+    "Rien ne te résiste en ce moment":"Nothing is resisting you right now",
+    "à revoir dans {livre}":"to review in {livre}",
+    "Aucun livre à revoir":"No book to review",
+    "de ta dernière partie":"from your last game",
+    "Rien de raté à ta dernière partie":"Nothing missed in your last game",
     "Rien à revoir pour l'instant":"Nothing to review right now",
     "Commencer":"Start",
     "Les plus tenaces d'abord. Une erreur revient jusqu'à ce que tu l'aies sue quatre fois.":"The most stubborn first. A mistake keeps coming back until you have got it right four times.",
@@ -5121,6 +5141,16 @@ const TEXTES = {
     "prenez votre temps":"tómense su tiempo",
     "À revoir":"Por repasar",
     "à revoir maintenant":"para repasar ahora",
+    "Aujourd'hui":"Hoy",
+    "Tenaces":"Tercas",
+    "Un livre":"Un libro",
+    "Ma partie":"Mi partida",
+    "qui te résistent le plus":"las que más se te resisten",
+    "Rien ne te résiste en ce moment":"Nada se te resiste ahora mismo",
+    "à revoir dans {livre}":"para repasar en {livre}",
+    "Aucun livre à revoir":"Ningún libro que repasar",
+    "de ta dernière partie":"de tu última partida",
+    "Rien de raté à ta dernière partie":"Nada fallado en tu última partida",
     "Rien à revoir pour l'instant":"Nada que repasar por ahora",
     "Commencer":"Empezar",
     "Les plus tenaces d'abord. Une erreur revient jusqu'à ce que tu l'aies sue quatre fois.":"Primero las más tercas. Un error vuelve hasta que lo aciertes cuatro veces.",
@@ -5725,7 +5755,20 @@ const ICONS = {
   /* Une bulle et un point d'exclamation : « dis-nous ce qui a cassé ». */
   bogue: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 14.2a2.4 2.4 0 0 1-2.4 2.4H7.6L3.4 20.4V5.4A2.4 2.4 0 0 1 5.8 3h12.8A2.4 2.4 0 0 1 21 5.4z"/><path d="M12 7.2v4.1"/><path d="M12 13.9v0.1"/></svg>`,
   gear: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3.2"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 1 1-4 0v-.09a1.65 1.65 0 0 0-1.08-1.51 1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 1 1 0-4h.09a1.65 1.65 0 0 0 1.51-1.08 1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33h.08a1.65 1.65 0 0 0 1-1.51V3a2 2 0 1 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82v.08a1.65 1.65 0 0 0 1.51 1H21a2 2 0 1 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1Z"/></svg>`,
-  music: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M9 18.2V5.9l11-2.4v12.3"/><circle cx="6.2" cy="18.2" r="2.8"/><circle cx="17.2" cy="15.8" r="2.8"/></svg>`,
+  /* ===== UNE NOTE, PAS DEUX =====
+     « Cette icône-là, je trouve que le dessin est trop vieillot, pas assez au
+     goût d'aujourd'hui, minimaliste. » C'était la double croche barrée (♫) :
+     deux têtes, une barre, la même silhouette que les lecteurs de fichiers
+     MIDI des années 1990. Elle porte trois formes là où il en faut une.
+     Une seule note : une tête, une hampe, un drapeau court. La tête reste un
+     ANNEAU et non un disque plein, parce que toutes les autres icônes de la
+     feuille sont des traits — la cloche, le livre, l'enveloppe. Une tête
+     pleine aurait fait une tâche noire au milieu d'une famille de contours.
+     (J'ai aussi essayé les barres d'égaliseur, plus modernes encore : elles
+     disent « du son sort », pas « de la musique », et la rangée juste en
+     dessous porte déjà un haut-parleur. Deux fois le même dessin pour deux
+     réglages différents, c'est pire qu'une icône démodée.) */
+  music: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M10.2 17.4V5.2l7.8-1.7v3.9"/><circle cx="7.1" cy="17.4" r="3.1"/></svg>`,
   share: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 14.5V3.2"/><polyline points="8.2 6.7 12 3 15.8 6.7"/><path d="M7.2 10.4H6a2 2 0 0 0-2 2V19a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-6.6a2 2 0 0 0-2-2h-1.2"/></svg>`,
   /* La flèche des DEUX boutons « Partager » (réglages et fin de partie). Trait
      plus franc que l'icône ci-dessus : elle est posée en blanc sur la pastille
@@ -7987,7 +8030,7 @@ function majSalleListe(){
   /* Et la longueur, qui se dit « du duel » à deux et « de la partie » au-delà. */
   const lbl = document.querySelector(".len-label");
   if(lbl){
-    const t = nbJoueurs() > 2 ? T("Longueur de la partie") : T("Longueur du duel");
+    const t = nbJoueurs() === 2 ? T("Longueur du duel") : T("Longueur de la partie");
     if(lbl.textContent !== t) lbl.textContent = t;
   }
   const note = document.querySelector(".host-note");
@@ -9203,11 +9246,22 @@ function getCtx(){
   }
   return actx;
 }
+/* ===== UN CONTEXTE QUI NE TOURNE PAS NE TOURNE PAS, QUEL QUE SOIT LE MOT =====
+   Trois endroits demandaient la reprise à la condition que l'état soit
+   « suspended », mot à mot. iOS en a un autre, « interrupted », qu'il pose
+   quand une AUTRE application a pris la session audio du téléphone —
+   typiquement une application qui ENREGISTRE (elle passe la session en
+   playAndRecord, ce qu'une application qui lit ne fait pas). Dans cet état-là,
+   un effet touché par le joueur ne demandait même pas la reprise : il
+   fabriquait ses nœuds dans un contexte mort, en silence.
+   On ne teste donc plus un mot, on teste la seule chose qui compte. */
+function ctxEndormi(c){ return !c || c.state !== "running"; }
+function reveiller(c){ if(ctxEndormi(c)){ try{ const p = c.resume(); if(p && p.catch) p.catch(()=>{}); }catch(e){} } }
 const SFX_GAIN = 2.6; // les effets passent nettement au-dessus de la musique
 // une voix "cloche" : montée sans clic, extinction douce
 function blip(freq, start, dur, vol, type){
   const ctx = getCtx();
-  if(ctx.state==="suspended"){ ctx.resume(); }
+  reveiller(ctx);
   const osc = ctx.createOscillator();
   const gain = ctx.createGain();
   osc.type = type || "sine";
@@ -9233,7 +9287,7 @@ function blip(freq, start, dur, vol, type){
    la musique. Seul le « toc » du toucher (tock) reste à part, intact. */
 function chime(freq, start, dur, vol){
   const ctx = getCtx();
-  if(ctx.state==="suspended"){ ctx.resume(); }
+  reveiller(ctx);
   const t0 = ctx.currentTime + start + Math.random()*0.008;
   const v = vol * SFX_GAIN * (0.92 + Math.random()*0.16);
   // VOIX PURE FACON iOS : une sinusoide ronde et lisse. Aucune onde triangle,
@@ -9263,7 +9317,7 @@ function chime(freq, start, dur, vol){
    comme une touche qui se pose — plus rien d'électronique. */
 function tock(freq, start, vol){
   const ctx = getCtx();
-  if(ctx.state==="suspended"){ ctx.resume(); }
+  reveiller(ctx);
   const t0 = ctx.currentTime + start;
   const v = vol * SFX_GAIN * (0.85 + Math.random()*0.3);
   const b = ctx.createOscillator(), bg = ctx.createGain();
@@ -9307,7 +9361,7 @@ function playVerse(){
   chime(659.25, 0.26, 1.9, 0.009);  // Mi5
   chime(1046.50, 0.46, 2.4, 0.006); // Do6 — scintillement paisible
 }
-function ensureAudioAwake(){ if(actx && actx.state==="suspended"){ actx.resume().catch(()=>{}); } }
+function ensureAudioAwake(){ if(actx) reveiller(actx); }
 /* Verrou : on ne ranime JAMAIS l'audio si l'app n'est pas au premier plan.
    Sinon, en fermant l'app (blur/statechange déclenchés pendant la mise en
    veille), on relançait le son au pire moment -> « bruit bizarre ». */
@@ -9356,6 +9410,7 @@ function reviveAudioHard(){
   if(musicTimer){ clearInterval(musicTimer); musicTimer = null; }
   musicBusNode = null; musicDelayIn = null; musicFb = null; qNoiseBuf = null; musicPlaying = false;
   audioWasHidden = false; audioInterrupted = false; // contexte neuf : plus rien de gelé
+  sonHorloge = -1; sonGel = 0;                     // et son horloge repart de zéro
   const rebatir = ()=>{
     audioReviving = false;
     if(!audioActive()) return;
@@ -9440,15 +9495,19 @@ function wakeAudio(){
     }
   };
   if(actx.state === "running"){ finishResume(); return; }
-  let ok = false;
   try {
     const p = actx.resume();
-    if(p && p.then){
-      p.then(()=>{ ok = true; finishResume(); }).catch(()=>{});
-    } else { ok = true; finishResume(); }
+    if(p && p.then){ p.then(()=>{ finishResume(); }).catch(()=>{}); }
+    else finishResume();
   } catch(e){}
-  // si resume() n'a pas ramené le contexte à « running », on le recrée
-  setTimeout(()=>{ if(!ok && actx && actx.state !== "running"){ reviveAudioHard(); } }, 400);
+  /* ON REGARDE L'ÉTAT, PAS LA RÉPONSE. La version précédente ne reconstruisait
+     que si resume() avait ÉCHOUÉ — et c'est exactement le cas qu'iOS ne
+     produit pas après une application de micro : resume() répond OUI, très
+     poliment, et le contexte reste « interrupted ». La promesse tenue servait
+     alors de preuve que tout allait bien, et plus personne ne reconstruisait :
+     le jeu restait muet jusqu'à ce qu'on le ferme. On ne lui demande donc plus
+     son avis, on relit son état. */
+  setTimeout(()=>{ if(actx && actx.state !== "running"){ reviveAudioHard(); } }, 400);
 }
 /* LE SON DOIT REVENIR, QUOI QU'IL SE SOIT PASSÉ AVANT.
    Un seul essai au retour au premier plan ne suffit pas : quand une autre app
@@ -9494,12 +9553,47 @@ function relancerSon(){
    batterie du joueur à essayer en boucle. */
 const VEILLE_SON_MS = 2000, VEILLE_SON_REPOS = 6000;
 let veilleSonT = 0, veilleSonDernier = 0;
+/* ===== L'HORLOGE DU CONTEXTE, LE SEUL TÉMOIN QUI NE MENT PAS =====
+   « Le problème du son vient uniquement des applications que j'ai ouvertes
+   avant : quand j'ouvre Claude et que le jeu est en arrière-plan, quand je
+   retourne sur le jeu le son se coupe. »
+   CE QUI REND CE CAS DIFFÉRENT DE TOUS LES AUTRES. Une application qui LIT du
+   son prend la sortie et la rend. Une application qui ENREGISTRE change la
+   catégorie de la session audio du téléphone entier. Au retour, WebKit rend un
+   contexte qui ANNONCE « running » et dont l'horloge ne tourne plus : tout ce
+   qu'on programme « dans 0,1 s » n'arrivera jamais. Tous les drapeaux sont au
+   vert, resume() répond oui, et il ne sort plus rien.
+   L'oreille du guetteur ne pouvait pas le voir : elle n'écoute que si la
+   MUSIQUE est allumée (il lui faut un son continu pour juger). Un joueur qui a
+   coupé la musique et gardé les effets n'avait donc AUCUN instrument au-dessus
+   de lui.
+   currentTime, lui, est le temps du matériel : il avance de deux secondes à
+   chaque tour de guet, ou le contexte est mort. Deux tours immobiles d'affilée
+   — quatre secondes — et on reconstruit. Ça ne coûte qu'une soustraction, et
+   ça marche avec ou sans musique. */
+let sonHorloge = -1, sonGel = 0;
+const SON_GELS_AVANT = 2;
 function veillerLeSon(){
   clearInterval(veilleSonT);
   veilleSonT = setInterval(()=>{
     try{
       if(!audioUnlocked || !audioActive()) return;      // pas encore autorisé, ou en arrière-plan
       if(!settings.music && !settings.sfx) return;      // le joueur a tout coupé : c'est son choix
+      /* L'HORLOGE D'ABORD, AVANT TOUT AUTRE JUGEMENT. Elle est le seul témoin
+         qui survit à un contexte qui ment sur son état, et le seul qui vaille
+         quand la musique est coupée. On ne la consulte que sur un contexte qui
+         se DIT vivant : ailleurs, les autres chemins font déjà leur travail. */
+      if(actx && actx.state === "running" && !audioReviving){
+        const t = actx.currentTime;
+        if(sonHorloge >= 0 && t <= sonHorloge + 0.001) sonGel++; else sonGel = 0;
+        sonHorloge = t;
+        if(sonGel >= SON_GELS_AVANT){
+          sonGel = 0; sonHorloge = -1;
+          veilleSonDernier = Date.now();
+          try{ reviveAudioHard(); }catch(e){}
+          return;
+        }
+      } else { sonGel = 0; sonHorloge = actx ? actx.currentTime : -1; }
       const mort = !actx || actx.state !== "running" || (settings.music && !musicPlaying);
       /* ===== ET ON ÉCOUTE, PAS SEULEMENT ON DEMANDE =====
          Tous les drapeaux peuvent être au vert pendant que la sortie est
@@ -16243,14 +16337,66 @@ function errbookCount(){ return loadErrbook().length; }
    se commence pas. Le reste attend demain, ce qui est exactement ce que
    l'échelle demande. */
 const REVISION_LOT = 10;
-function fileDeRevision(){
-  /* Ce dont le jour est venu. Si rien n'est dû, on ne laisse pas le joueur
-     devant un bouton mort : on lui donne ce qui résiste le plus, et répondre
-     juste continue de faire monter la question d'un palier. Réviser en avance
-     n'a jamais fait de mal à personne. */
-  const dus = aRevoir();
-  const source = dus.length ? dus : loadErrbook();
+/* ===== QUATRE FAÇONS DE RÉVISER, ET PAS UNE DE PLUS =====
+   « Tu peux ajouter trois quatre modes au total si tu penses que c'est bien,
+   mais pas trop non plus, avec des modes vraiment intéressants — et il ne
+   faut pas donner un énorme pavé au joueur, mais plutôt le travail ciblé. »
+   LA DIFFÉRENCE AVEC LES QUATRE PORTES D'AVANT, qui avaient été refusées.
+   Celles-là étaient quatre rangées pleines — icône, titre, sous-titre,
+   compte — plus une grille de soixante livres : il fallait LIRE avant de
+   choisir. Ici, quatre puces courtes, celles du jeu, et l'écran ne change pas
+   de forme : le grand nombre et la phrase se contentent de dire ce que la
+   puce choisie va jouer. On ne décide pas entre quatre catalogues, on règle
+   une mire.
+   ET CHACUNE TRAVAILLE VRAIMENT AUTRE CHOSE :
+     aujourd'hui  ce que la mémoire réclame — l'échelle 1/3/7/16 fait son
+                  travail, c'est le mode par défaut et le seul qui fasse
+                  AVANCER les paliers au bon moment ;
+     tenaces      ce qui résiste depuis longtemps, sans attendre son tour ;
+     un livre     le livre où l'on se trompe le plus, choisi PAR LE JEU — on
+                  garde le travail ciblé de l'ancienne grille sans ses
+                  soixante tuiles ;
+     ma partie    ce qu'on vient de rater, tant que c'est chaud.
+   Toutes bornes au même lot de dix : le nombre affiché est ce qui sera joué. */
+const REVOIR_MODES = ["auj", "tenaces", "livre", "partie"];
+let modeRevoir = "auj";
+/* Le livre qui résiste le plus. C'est tout ce qui reste de la grille des
+   soixante tuiles : le jeu regarde où l'on se trompe le plus et va droit là. */
+function livreLePlusDur(){
+  const par = new Map();
+  loadErrbook().forEach(x=>{ const l = bookOf(x); if(l) par.set(l, (par.get(l)||0) + 1); });
+  let nom = null, n = 0;
+  par.forEach((v, k)=>{ if(v > n || (v === n && nom && k.localeCompare(nom, "fr") < 0)){ nom = k; n = v; } });
+  return nom;
+}
+function fileDeRevision(mode){
+  const quoi = mode || modeRevoir;
+  let source;
+  if(quoi === "tenaces") source = loadErrbook().filter(x => (x.n | 0) >= 2);
+  else if(quoi === "livre"){
+    const l = livreLePlusDur();
+    source = l ? loadErrbook().filter(x => bookOf(x) === l) : [];
+  }
+  else if(quoi === "partie") source = lastMissEntries();
+  else {
+    /* Ce dont le jour est venu. Si rien n'est dû, on ne laisse pas le joueur
+       devant un bouton mort : on lui donne ce qui résiste le plus, et répondre
+       juste continue de faire monter la question d'un palier. Réviser en
+       avance n'a jamais fait de mal à personne. */
+    const dus = aRevoir();
+    source = dus.length ? dus : loadErrbook();
+  }
   return parEntetement(source).slice(0, REVISION_LOT);
+}
+/* Ce que dit la petite ligne sous le grand nombre : courte, et différente
+   selon la mire — sinon les quatre puces auraient l'air de faire la même
+   chose. */
+function sousRevoir(quoi, n){
+  if(quoi === "tenaces") return n ? T("qui te résistent le plus") : T("Rien ne te résiste en ce moment");
+  if(quoi === "livre"){ const l = livreLePlusDur();
+    return (n && l) ? Tf("à revoir dans {livre}", { livre: livreCourt(l) }) : T("Aucun livre à revoir"); }
+  if(quoi === "partie") return n ? T("de ta dernière partie") : T("Rien de raté à ta dernière partie");
+  return n ? T("à revoir maintenant") : T("Rien à revoir pour l'instant");
 }
 /* L'ORDRE DE RÉVISION. On trie par entêtement décroissant, et À ÉGALITÉ on
    mélange : sans ce mélange, les mêmes questions reviendraient toujours dans
@@ -16954,8 +17100,8 @@ function ouvrirRevoir(){ state.screen = "revoir"; render(); }
    zéro et se remplit à l'ouverture de l'écran, comme la barre de partie. */
 function renderRevoir(){
   const el = document.createElement("div"); el.className = "screen";
-  const file = fileDeRevision();
-  const n = file.length;
+  if(REVOIR_MODES.indexOf(modeRevoir) < 0) modeRevoir = "auj";
+  const n = fileDeRevision().length;
   const m = maitriseCarnet();
   const carnet = errbookCount();
   el.innerHTML = renderHeader(T("À revoir"), true, "state.screen='mode'; render()")
@@ -16963,16 +17109,46 @@ function renderRevoir(){
        <div class="card rv-carte">
          <span class="rv-grand">${ICONS.target}</span>
          <div class="rv-nb">${n}</div>
-         <div class="rv-sous">${n ? T("à revoir maintenant") : T("Rien à revoir pour l'instant")}</div>
+         <div class="rv-sous">${sousRevoir(modeRevoir, n)}</div>
          ${carnet ? `<span class="rv-prog">
            <span class="rv-jauge"><i data-m="${m.part.toFixed(4)}" style="--m:0"></i></span>
            <span class="rv-pct">${Math.round(m.part*100)}&nbsp;%</span>
          </span>` : ""}
        </div>
+       <div class="len-row rv-mires">
+         ${[["auj", T("Aujourd'hui")], ["tenaces", T("Tenaces")], ["livre", T("Un livre")], ["partie", T("Ma partie")]]
+            .map(([k, mot])=>`<button class="len-chip${modeRevoir===k?' sel':''}" data-rgroup="rv" data-k="${k}" onclick="choisirRevoir('${k}')">${mot}</button>`).join("")}
+       </div>
        <div class="flex-sp"></div>
-       <button class="btn-primary rv-go"${n ? ` onclick="startRevision('carnet')"` : " disabled"}>${T("Commencer")}</button>
+       <button class="btn-primary rv-go"${n ? ` onclick="lancerRevision()"` : " disabled"}>${T("Commencer")}</button>
        <div class="flam-regle rvl-regle">${T("Les plus tenaces d'abord. Une erreur revient jusqu'à ce que tu l'aies sue quatre fois.")}</div>`;
   return el;
+}
+/* ON CHANGE DE MIRE SANS REDESSINER L'ÉCRAN. Un rendu complet couperait le
+   remplissage de la puce à l'instant même où il commence — et reposerait
+   toutes les couches de verre pour trois caractères. On retouche donc les
+   trois choses qui changent, exactement comme le salon retouche sa liste. */
+/* Le bouton de l'écran a son propre nom, et il ne porte aucun mot dans son
+   attribut : « carnet » est un mot français, et une clé interne écrite dans
+   du balisage est exactement la forme où une vraie phrase se cacherait sans
+   être vue par le banc des traductions. */
+function lancerRevision(){ startRevision("carnet"); }
+function choisirRevoir(k){
+  if(REVOIR_MODES.indexOf(k) < 0 || k === modeRevoir) return;
+  modeRevoir = k;
+  try{ basculerChoix('[data-rgroup="rv"]', "sel", k); }catch(e){}
+  const n = fileDeRevision().length;
+  const nb = document.querySelector(".rv-nb");
+  if(nb && nb.textContent !== String(n)) nb.textContent = String(n);
+  const sous = document.querySelector(".rv-sous");
+  if(sous){ const t = sousRevoir(k, n); if(sous.textContent !== t) sous.textContent = t; }
+  const go = document.querySelector(".rv-go");
+  /* On pose une FONCTION, pas une chaîne d'attribut : un attribut onclick
+     écrit en JavaScript est du code dans du texte, et le banc des traductions
+     a raison de s'en méfier — c'est exactement la forme où une phrase
+     française se cacherait sans être vue. */
+  if(go){ go.disabled = !n; go.onclick = n ? lancerRevision : null; }
+  try{ queueGlassSync(); }catch(e){}
 }
 
 function startRevision(quoi){
@@ -18515,9 +18691,14 @@ function renderOnlineJoin(){
 }
 
 /* « Le duel » ne veut plus rien dire à cinq. Un seul endroit décide du mot,
-   pour que l'écran entier parle d'une seule voix. */
-function motPartie(){ return nbJoueurs() > 2 ? T("la partie") : T("le duel"); }
-function titrePartie(){ return nbJoueurs() > 2 ? T("Partie") : T("Duel"); }
+   pour que l'écran entier parle d'une seule voix.
+   ET « DUEL » NE VEUT RIEN DIRE NON PLUS QUAND ON EST SEUL. La règle disait
+   « plus de deux », donc tout ce qui n'était pas trois ou plus était un duel —
+   y compris le salon vide, où l'on vient justement d'inviter jusqu'à huit
+   personnes. Le jeu annonçait « règle les options, puis lance le duel » à
+   quelqu'un qui n'a encore invité personne. Un duel, c'est EXACTEMENT deux. */
+function motPartie(){ return nbJoueurs() === 2 ? T("le duel") : T("la partie"); }
+function titrePartie(){ return nbJoueurs() === 2 ? T("Duel") : T("Partie"); }
 function renderOnlineRoom(){
   const el=document.createElement("div"); el.className="screen ecran-salon";
   const canStart = net.isHost && net.oppPresent;
@@ -18534,7 +18715,7 @@ function renderOnlineRoom(){
      de forme, et c'est la même rangée de classement que le mode Groupe —
      même matière, même rebord, même place que partout ailleurs. Les mots,
      eux, continuent de dire la vérité : à deux, c'est un duel. */
-  const aPlusieurs = nbJoueurs() > 2;   // ce qu'on DIT, plus ce qu'on DESSINE
+  const aPlusieurs = nbJoueurs() !== 2;   // ce qu'on DIT, plus ce qu'on DESSINE
   const motSalon = motPartie();         // « le duel » à deux, « la partie » au-delà
   el.innerHTML = `
     ${renderHeader(T("Salon"), true, "leaveRoomToOnline()")}

@@ -517,12 +517,19 @@ const ouvrirLaLangue = async (p, lg) => {
     ['Hôte parti',         () => { net.error = T("L'hôte a quitté le salon."); render(); }],
     /* Le salon vu par un invité, et la ligne d'attente que le jeu écrit à la
        main (hors rendu) quand l'adversaire arrive ou non. */
+    /* LA NOTE DE L'INVITÉ EST ÉCRITE PAR LA RETOUCHE EN PLACE, pas par le
+       rendu : c'est majSalleListe qui la met à jour quand l'hôte arrive. Le
+       banc passait par updateRoomOpponent, qui n'existe plus depuis que le
+       face-à-face a disparu — et comme il était appelé sous un
+       « typeof === function », le banc ne plantait pas : il ne voyait
+       simplement plus jamais la phrase « Prêt ! En attente du lancement... »,
+       et la signalait comme jamais traduite. Un garde-fou qui avale son
+       propre échec est pire qu'une erreur. */
     ['Salon · invité',     () => { __fermerTout(); net.error=''; net.code='ABCD'; net.isHost=false;
-      net.joueurs={ b:{ id:'b', name:'Sam', color:'#E8574C' } }; net.oppPresent=false;
-      state.screen='online-room'; render();
-      if(typeof updateRoomOpponent === 'function') updateRoomOpponent(); }],
-    ['Salon · prêt',       () => { net.oppPresent=true; net.opp=net.joueurs.b;
-      if(typeof updateRoomOpponent === 'function') updateRoomOpponent(); }],
+      net.joueurs={}; majAdversaire();
+      state.screen='online-room'; render(); majSalleListe(); }],
+    ['Salon · prêt',       () => { net.joueurs={ b:{ id:'b', name:'Sam', color:'#E8574C', vu:Date.now() } };
+      majAdversaire(); majSalleListe(); }],
     /* Le duel fini de mon côté seulement. */
     ['Duel · j\'ai fini',   () => { __fermerTout();
       net.oppPresent=true; net.opp={ id:'b', name:'Sam', color:'#E8574C' };

@@ -61,7 +61,10 @@ const CARNET = Array.from({ length: 20 }, (_, i) => ({
     lot: (typeof REVISION_LOT !== 'undefined') ? REVISION_LOT : -1,
     dus: aRevoir().length,
   }));
-  v('rien à choisir : le jeu choisit', ecran.aChoisir === 0, ecran.aChoisir + ' chose(s) à décider');
+  /* Ni les quatre portes d'avant, ni la grille des soixante livres : ce qui
+     reste à régler tient dans quatre puces, et le reste de l'écran ne demande
+     rien. */
+  v('ni portes ni grille de livres', ecran.aChoisir === 0, ecran.aChoisir + ' rangée(s) à lire avant de choisir');
   v('l\'écran annonce le lot, pas le catalogue',
     ecran.annonce === Math.min(ecran.lot, ecran.dus),
     ecran.annonce + ' annoncé, ' + ecran.dus + ' dues, lot de ' + ecran.lot);
@@ -121,7 +124,72 @@ const CARNET = Array.from({ length: 20 }, (_, i) => ({
     vide.annonce === '0' && vide.eteint && vide.ecran === 'revoir',
     vide.annonce + ' / ' + (vide.eteint ? 'éteint' : 'ALLUMÉ') + ' / ' + vide.ecran);
 
-  /* 7. ET ÇA TIENT SUR LE PLUS PETIT ÉCRAN.
+  /* 7. LES QUATRE MIRES — chacune vise autre chose, et le nombre affiché est
+     toujours ce que le bouton va jouer.
+     « Tu peux ajouter trois quatre modes, mais pas trop non plus, avec des
+     modes vraiment intéressants, et pas un énorme pavé : plutôt le travail
+     ciblé. » Ce qu'on vérifie ici, c'est justement qu'elles ne font pas toutes
+     la même chose : quatre puces qui donneraient la même file seraient quatre
+     fois le même bouton. */
+  await p.evaluate((c) => { localStorage.setItem('bt_errbook', JSON.stringify(c));
+    localStorage.setItem('bt_lastmiss', JSON.stringify([c[3].k, c[7].k]));
+    modeRevoir = 'auj'; ouvrirRevoir(); }, CARNET);
+  await p.waitForTimeout(900);
+  const puces = await p.evaluate(() => [...document.querySelectorAll('.rv-mires .len-chip')].map(b => b.dataset.k));
+  v('quatre mires, pas une de plus', puces.length === 4, puces.join(' '));
+  const vus = {};
+  for (const k of puces) {
+    await p.evaluate((k) => { choisirRevoir(k); }, k);
+    await p.waitForTimeout(450);
+    const m = await p.evaluate(() => ({
+      nb: +(document.querySelector('.rv-nb') || {}).textContent,
+      sous: (document.querySelector('.rv-sous') || {}).textContent,
+      mort: !!document.querySelector('.rv-go[disabled]'),
+      sel: (document.querySelector('.rv-mires .len-chip.sel') || {}).dataset,
+    }));
+    vus[k] = m;
+    v('  « ' + k + ' » : la puce prise, le nombre et la phrase suivent',
+      m.sel && m.sel.k === k && m.nb >= 0 && !!m.sous,
+      m.nb + ' — ' + m.sous);
+  }
+  /* Deux mires au moins doivent donner des comptes DIFFÉRENTS sur ce carnet :
+     douze dues, huit non dues, des entêtements de 1 à 5, deux erreurs à la
+     dernière partie. Si tout se valait, le choix ne servirait à rien. */
+  const comptes = puces.map(k => vus[k].nb);
+  v('les mires ne donnent pas toutes la même chose', new Set(comptes).size >= 3, comptes.join(' / '));
+  /* Et la dernière mire choisie est bien celle que le bouton joue. */
+  const dernier = puces[puces.length - 1];
+  if (!vus[dernier].mort) {
+    await p.evaluate(() => { document.querySelector('.rv-go').click(); });
+    await p.waitForTimeout(700);
+    const joue = await p.evaluate(() => state.questions.length);
+    v('  et le bouton joue la mire choisie, pas une autre',
+      joue === vus[dernier].nb, joue + ' jouées pour ' + vus[dernier].nb + ' annoncées');
+  }
+
+  /* 7 bis. LE LIVRE QUI RÉSISTE, sur de VRAIES questions — le carnet témoin
+     ci-dessus est fabriqué de toutes pièces, donc aucune de ses questions ne
+     nomme un livre. C'est tout ce qui reste de l'ancienne grille : le jeu
+     regarde où l'on se trompe le plus et y va, sans faire lire soixante
+     tuiles. */
+  const livre = await p.evaluate(()=>{
+    const t=[]; ['facile','moyen','difficile'].forEach(k=>(BANK[k]||[]).forEach(q=>t.push(Object.assign({},q,{tier:k}))));
+    const gen = t.filter(q=>bookOf(q)==='Genèse').slice(0,6);
+    const aut = t.filter(q=>bookOf(q) && bookOf(q)!=='Genèse').slice(0,3);
+    localStorage.setItem('bt_errbook', JSON.stringify(gen.concat(aut).map((q,i)=>({
+      k:qKey(q), n:1, p:0, du:'2000-01-01', q:q.q, options:q.options, correct:q.correct, fact:q.fact, tier:q.tier }))));
+    modeRevoir='livre'; ouvrirRevoir();
+    return { attendu: gen.length, choisi: livreLePlusDur() };
+  });
+  await p.waitForTimeout(800);
+  const vuLivre = await p.evaluate(()=>({
+    nb:+(document.querySelector('.rv-nb')||{}).textContent,
+    sous:(document.querySelector('.rv-sous')||{}).textContent }));
+  v('le jeu choisit le livre où l\'on se trompe le plus',
+    livre.choisi === 'Genèse' && vuLivre.nb === livre.attendu,
+    livre.choisi + ', ' + vuLivre.nb + ' question(s) — « ' + vuLivre.sous + ' »');
+
+  /* 8. ET ÇA TIENT SUR LE PLUS PETIT ÉCRAN.
      C'est l'héritage de banc-essai/grille-livres.js, qui surveillait la grille
      des livres : sur la capture de Taylor elle s'arrêtait en plein milieu
      d'une rangée, « ce n'est pas il y en a plus au-dessus, c'est c'est cassé ».
