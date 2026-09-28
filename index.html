@@ -4749,9 +4749,7 @@ const TEXTES = {
     "prenez votre temps":"take your time",
     /* --- à revoir --- */
     "À revoir":"To review",
-    "à revoir":"to review",
-    "Commencer · {n} questions":"Start · {n} questions",
-    "Commencer · {n} question":"Start · {n} question",
+    "à revoir maintenant":"to review right now",
     "Aujourd'hui":"Today",
     "Tenaces":"Stubborn",
     "Un livre":"One book",
@@ -5142,9 +5140,7 @@ const TEXTES = {
     "Sans":"Sin",
     "prenez votre temps":"tómense su tiempo",
     "À revoir":"Por repasar",
-    "à revoir":"para repasar",
-    "Commencer · {n} questions":"Empezar · {n} preguntas",
-    "Commencer · {n} question":"Empezar · {n} pregunta",
+    "à revoir maintenant":"para repasar ahora",
     "Aujourd'hui":"Hoy",
     "Tenaces":"Tercas",
     "Un livre":"Un libro",
@@ -16405,7 +16401,7 @@ function sousRevoir(quoi, n){
   if(quoi === "livre"){ const l = livreLePlusDur();
     return (n && l) ? Tf("à revoir dans {livre}", { livre: livreCourt(l) }) : T("Aucun livre à revoir"); }
   if(quoi === "partie") return n ? T("de ta dernière partie") : T("Rien de raté à ta dernière partie");
-  return n ? T("à revoir") : T("Rien à revoir pour l'instant");
+  return n ? T("à revoir maintenant") : T("Rien à revoir pour l'instant");
 }
 /* L'ORDRE DE RÉVISION. On trie par entêtement décroissant, et À ÉGALITÉ on
    mélange : sans ce mélange, les mêmes questions reviendraient toujours dans
@@ -17110,17 +17106,22 @@ function ouvrirRevoir(){ state.screen = "revoir"; render(); }
 function renderRevoir(){
   const el = document.createElement("div"); el.className = "screen";
   if(REVOIR_MODES.indexOf(modeRevoir) < 0) modeRevoir = "auj";
-  /* ===== DEUX NOMBRES, ET CHACUN À SA PLACE =====
+  /* ===== ON NE MONTRE JAMAIS LA DETTE =====
      « Ici on peut voir que j'ai toujours 356, je sais pas si c'est normal. »
-     C'était normal et c'était mal dit : la carte de l'accueil annonçait 356 —
-     ce qui attend vraiment — et l'écran juste derrière affichait 10, la
-     séance. Deux nombres vrais qui se contredisent à l'œil.
-     LE GRAND NOMBRE EST DONC LA DETTE, celui de la carte, celui qu'on vient
-     chercher. Et LE BOUTON PORTE SA PROPRE TAILLE : « Commencer · 10
-     questions ». Plus rien à deviner, et la règle tient toujours — ce qui
-     annonce un nombre le joue, sauf que c'est le bouton qui l'annonce. */
-  const n = sourceRevoir().length;
-  const lot = Math.min(n, REVISION_LOT);
+     C'était normal : une question ne quitte le carnet qu'après quatre bonnes
+     réponses, et un joueur qui joue beaucoup et révise peu accumule.
+     J'ai d'abord corrigé ça en montrant la dette PARTOUT, pour que la carte de
+     l'accueil et cet écran disent enfin la même chose. « Oui, mais il ne faut
+     pas submerger le joueur avec un tas énorme de choses à revoir. » Il a
+     raison, et ça passe avant la cohérence des nombres : personne ne révise
+     356 questions, et un grand 356 ne dit pas « au travail », il dit
+     « abandonne ».
+     LE SEUL NOMBRE MONTRÉ EST DONC CELUI QU'ON PEUT FAIRE MAINTENANT — ici
+     comme sur la carte, qui a été bornée elle aussi. La dette n'a pas
+     disparu du jeu : elle est toujours là, elle descend de dix par jour, et
+     la jauge en dit la part franchie. Elle n'a simplement plus de raison
+     d'être affichée en grand. */
+  const n = fileDeRevision().length;
   const m = maitriseCarnet();
   const carnet = errbookCount();
   el.innerHTML = renderHeader(T("À revoir"), true, "state.screen='mode'; render()")
@@ -17139,7 +17140,7 @@ function renderRevoir(){
             .map(([k, mot])=>`<button class="len-chip${modeRevoir===k?' sel':''}" data-rgroup="rv" data-k="${k}" onclick="choisirRevoir('${k}')">${mot}</button>`).join("")}
        </div>
        <div class="flex-sp"></div>
-       <button class="btn-primary rv-go"${n ? ` onclick="lancerRevision()"` : " disabled"}>${motCommencer(lot)}</button>
+       <button class="btn-primary rv-go"${n ? ` onclick="lancerRevision()"` : " disabled"}>${T("Commencer")}</button>
        <div class="flam-regle rvl-regle">${T("Les plus tenaces d'abord. Une erreur revient jusqu'à ce que tu l'aies sue quatre fois.")}</div>`;
   return el;
 }
@@ -17152,18 +17153,11 @@ function renderRevoir(){
    du balisage est exactement la forme où une vraie phrase se cacherait sans
    être vue par le banc des traductions. */
 function lancerRevision(){ startRevision("carnet"); }
-/* Le bouton dit combien il en jouera. Au singulier aussi : « 1 questions »
-   est le genre de détail qui fait paraître un jeu bâclé. */
-function motCommencer(lot){
-  if(!lot) return T("Commencer");
-  return lot > 1 ? Tf("Commencer · {n} questions", { n:lot })
-                 : Tf("Commencer · {n} question", { n:lot });
-}
 function choisirRevoir(k){
   if(REVOIR_MODES.indexOf(k) < 0 || k === modeRevoir) return;
   modeRevoir = k;
   try{ basculerChoix('[data-rgroup="rv"]', "sel", k); }catch(e){}
-  const n = sourceRevoir().length;
+  const n = fileDeRevision().length;
   const nb = document.querySelector(".rv-nb");
   if(nb && nb.textContent !== String(n)) nb.textContent = String(n);
   const sous = document.querySelector(".rv-sous");
@@ -17173,11 +17167,7 @@ function choisirRevoir(k){
      écrit en JavaScript est du code dans du texte, et le banc des traductions
      a raison de s'en méfier — c'est exactement la forme où une phrase
      française se cacherait sans être vue. */
-  if(go){
-    go.disabled = !n; go.onclick = n ? lancerRevision : null;
-    const t = motCommencer(Math.min(n, REVISION_LOT));
-    if(go.textContent !== t) go.textContent = t;
-  }
+  if(go){ go.disabled = !n; go.onclick = n ? lancerRevision : null; }
   try{ queueGlassSync(); }catch(e){}
 }
 
@@ -17633,8 +17623,25 @@ function renderModeSelect(){
            « Rien aujourd'hui · 143 en attente » demandait 193 px pour 155. */
         : (nCarnet > 0 ? T("Rien pour aujourd'hui")
                        : T("Tes erreurs reviendront ici"));
-      const revPast = nRev > 0 ? `<span class="dc-streak rv-n">${nRev}</span>`
-        : (nCarnet > 0 ? `<span class="dc-streak rv-n calme">${nCarnet}</span>` : "");
+      /* ===== LA PASTILLE NE MONTRE PLUS LA DETTE =====
+         « Ici on peut voir que j'ai toujours 356, je sais pas si c'est
+         normal. » Elle affichait tout ce dont le jour était venu — 356 pour
+         Taylor — et la pastille grise affichait le carnet entier les jours où
+         rien n'était dû. « Oui, mais il ne faut pas submerger le joueur avec
+         un tas énorme de choses à revoir. »
+         Un grand nombre sur une carte d'accueil n'est pas une information,
+         c'est un verdict : personne ne révise 356 questions, et le chiffre ne
+         dit pas « au travail », il dit « abandonne ». La pastille annonce
+         donc LA SÉANCE — ce que le bouton de l'écran suivant va jouer, dix au
+         plus — et les deux écrans disent enfin le même nombre.
+         ET PLUS DE PASTILLE GRISE. Les jours sans échéance, elle n'était là
+         que pour dire la taille du carnet : c'est exactement ce qu'on vient de
+         retirer. Le sous-titre suffit à dire qu'il n'y a rien pour
+         aujourd'hui. La dette n'a pas disparu du jeu pour autant — elle
+         descend de dix par jour, et la jauge de l'écran en dit la part
+         franchie. */
+      const revPast = nRev > 0
+        ? `<span class="dc-streak rv-n">${Math.min(nRev, REVISION_LOT)}</span>` : "";
       const revoir = `<button class="daily-card revoir-card" onclick="ouvrirRevoir()"><span class="dc-ico rv-ico">${ICONS.bookOpen}</span><span class="dc-txt"><b>${T("À revoir")}</b><small>${revTxt}</small></span>${revPast}<span class="chev">${ICONS.chevronRight}</span></button>`;
       /* ===== LE DÉFI DU JOUR N'EST PLUS UNE CARTE =====
          « Le défi du jour ne sert à rien si ce n'est activer les flammes. Fais
