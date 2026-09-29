@@ -15168,6 +15168,25 @@ function bookTarget(name){ return Math.max(1, Math.min(9, Math.round((BOOK_TOTAL
         objectifs débloqués.
      3. REFUS DU VIDE : une progression vide n'écrase jamais une progression
         existante. */
+/* ===== UN LIVRE MAÎTRISÉ LE RESTE, MÊME QUAND LA BANQUE GRANDIT =====
+   « Fais attention de ne jamais restaurer à zéro la progression des joueurs,
+   jamais. » La maîtrise d'un livre n'était PAS enregistrée : elle était
+   recalculée à chaque affichage, « bonnes réponses du livre >= sa cible », et
+   la cible se déduit du nombre de questions du livre (bookTarget). Ajouter six
+   questions au Deutéronome faisait donc passer sa cible de 3 à 5 — et un
+   joueur qui l'avait maîtrisé à 3 le voyait redevenir « commencé », 3 sur 5.
+   Rien n'était effacé, et pourtant la progression reculait sous ses yeux.
+   DEUX SOLUTIONS, ET ON A PRIS LA PLUS JUSTE. Figer les cibles aurait suffi,
+   mais un livre enrichi de vingt questions se serait maîtrisé pour toujours en
+   trois bonnes réponses. On ENREGISTRE donc la maîtrise (progres.maitrises) :
+   ce qu'un joueur a atteint reste atteint, et ce qu'il n'a pas encore atteint
+   suit la banque, aussi riche soit-elle.
+   LA TRANSITION, UNE SEULE FOIS. Une progression qui ne porte pas la marque
+   « cibles » date d'avant cet enregistrement : ses livres maîtrisés l'ont été
+   sous les cibles de v296, figées ci-dessous. On les reconnaît avec CES
+   cibles-là, puis la marque est posée et la table ne sert plus jamais à ce
+   joueur. Elle ne sert qu'à ça : ce n'est pas la cible d'aujourd'hui. */
+const CIBLES_V296 = {"Genèse":9, "Exode":9, "Lévitique":3, "Nombres":8, "Deutéronome":3, "Josué":5, "Juges":9, "Ruth":3, "1 Samuel":9, "2 Samuel":9, "1 Rois":9, "2 Rois":9, "1 Chroniques":3, "2 Chroniques":3, "Esdras":4, "Néhémie":3, "Esther":5, "Job":4, "Psaumes":9, "Proverbes":9, "Ecclésiaste":3, "Cantique des cantiques":3, "Ésaïe":8, "Jérémie":8, "Lamentations":3, "Ézéchiel":5, "Daniel":9, "Osée":2, "Joël":2, "Amos":3, "Abdias":2, "Jonas":7, "Michée":3, "Nahum":2, "Habacuc":2, "Sophonie":2, "Aggée":2, "Zacharie":3, "Malachie":2, "Matthieu":9, "Marc":9, "Luc":9, "Jean":9, "Actes":9, "Romains":5, "1 Corinthiens":6, "2 Corinthiens":4, "Galates":3, "Éphésiens":4, "Philippiens":3, "Colossiens":3, "1 Thessaloniciens":3, "2 Thessaloniciens":3, "1 Timothée":3, "2 Timothée":2, "Tite":2, "Philémon":2, "Hébreux":3, "Jacques":3, "1 Pierre":4, "2 Pierre":2, "1 Jean":2, "2 Jean":2, "3 Jean":2, "Jude":2, "Apocalypse":9};
 const PROG_KEY = "bt_progress", PROG_BAK = "bt_progress_bak";
 /* Un entier positif, ou zéro. Sert partout où une donnée peut venir d'ailleurs
    que de ce téléphone. */
@@ -15181,11 +15200,17 @@ function nEntier(x){ const n = Math.floor(+x); return (isFinite(n) && n > 0) ? n
 function progNormalize(p){
   const livres = {}, src = (p && p.books) || {};
   for(const k in src){ const n = nEntier(src[k]); if(n) livres[k] = n; }
+  const maitrises = {}, m = (p && p.maitrises) || {};
+  for(const k in m) if(m[k]) maitrises[k] = 1;
+  if(!(p && p.cibles)){                       // la transition : voir CIBLES_V296
+    for(const k in livres) if(CIBLES_V296[k] && livres[k] >= CIBLES_V296[k]) maitrises[k] = 1;
+  }
   return { books:livres, totalCorrect:nEntier(p && p.totalCorrect), bestStreak:nEntier(p && p.bestStreak),
-           flawless:nEntier(p && p.flawless), ach:(p && p.ach) || {} };
+           flawless:nEntier(p && p.flawless), ach:(p && p.ach) || {}, maitrises, cibles:1 };
 }
 function progIsEmpty(p){
-  return !p || (!p.totalCorrect && !p.bestStreak && !p.flawless && !Object.keys(p.books||{}).length && !Object.keys(p.ach||{}).length);
+  return !p || (!p.totalCorrect && !p.bestStreak && !p.flawless && !Object.keys(p.books||{}).length && !Object.keys(p.ach||{}).length
+                && !Object.keys(p.maitrises||{}).length);
 }
 function progRead(key){
   try{
@@ -15207,6 +15232,8 @@ function progMergeMax(a, b){
   for(const k in noms) out.books[k] = Math.max(+a.books[k]||0, +b.books[k]||0);
   for(const k in a.ach) if(a.ach[k]) out.ach[k] = a.ach[k];   // union : un objectif
   for(const k in b.ach) if(b.ach[k]) out.ach[k] = out.ach[k] || b.ach[k]; // débloqué le reste
+  for(const k in (a.maitrises||{})) if(a.maitrises[k]) out.maitrises[k] = 1;  // un livre maîtrisé
+  for(const k in (b.maitrises||{})) if(b.maitrises[k]) out.maitrises[k] = 1;  // le reste aussi
   return out;
 }
 function loadProgress(){
@@ -15224,14 +15251,18 @@ function saveProgress(p){
   if(!p || typeof p !== "object") return;
   const existant = loadProgress();
   const sur = progMergeMax(progNormalize(p), existant); // jamais moins qu'avant
+  // ce qui est atteint aujourd'hui est ENREGISTRÉ : si la cible grandit
+  // demain, le livre reste maîtrisé.
+  for(const k in sur.books) if(sur.books[k] >= bookTarget(k)) sur.maitrises[k] = 1;
   if(progIsEmpty(sur) && !progIsEmpty(existant)) return; // ne jamais écraser par du vide
   const json = JSON.stringify(sur);
   try{ localStorage.setItem(PROG_KEY, json); }catch(e){}
   try{ localStorage.setItem(PROG_BAK, json); }catch(e){}
 }
+function livreMaitrise(p, b){ return (p.books[b]||0) >= bookTarget(b) || !!(p.maitrises && p.maitrises[b]); }
 function progressDerived(p){
   let mastered=0, touched=0; const set={};
-  for(let i=0;i<BIBLE_BOOKS.length;i++){ const b=BIBLE_BOOKS[i], c=p.books[b]||0; if(c>0) touched++; if(c>=bookTarget(b)){ mastered++; set[b]=1; } }
+  for(let i=0;i<BIBLE_BOOKS.length;i++){ const b=BIBLE_BOOKS[i], c=p.books[b]||0; if(c>0) touched++; if(livreMaitrise(p, b)){ mastered++; set[b]=1; } }
   return { mastered, touched, set };
 }
 function nMastered(list, d){ let n=0; for(let i=0;i<list.length;i++){ if(d.set[list[i]]) n++; } return n; }
@@ -15609,9 +15640,12 @@ function renderParcours(){
      Un livre sans question reste inerte — il y en a, la banque ne couvre pas
      encore les 66 — et il le DIT (title), au lieu de ne rien faire. */
   const bookTile = (name)=>{
-    const c = p.books[name]||0, tgt = bookTarget(name);
+    const c = p.books[name]||0, acquis = livreMaitrise(p, name);
+    /* Un livre maîtrisé ne se lit jamais « 3 sur 5 » : sa cible a pu grandir
+       depuis, pas ce que le joueur a atteint. */
+    const tgt = acquis ? Math.min(bookTarget(name), Math.max(c, 1)) : bookTarget(name);
     const dispo = (BOOK_TOTALS[name]||0) > 0;
-    const cls = (c>=tgt ? "mastered" : (c>0 ? "started" : "")) + (dispo ? " jouable" : " vide");
+    const cls = (acquis ? "mastered" : (c>0 ? "started" : "")) + (dispo ? " jouable" : " vide");
     const dit = dispo ? Tf("S'entraîner sur {livre} · {c} sur {t}", {livre:nomLivre(name), c:c, t:tgt})
                       : Tf("{livre} — pas encore de question", {livre:nomLivre(name)});
     return `<button class="bk ${cls}" ${dispo ? `onclick="jouerLivre('${name.replace(/'/g,"\\'")}')"` : "disabled"}`
