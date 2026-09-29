@@ -37,6 +37,7 @@ const ACCENTS_FR = /[àâäèêëîïôöùûÿçœæÀÂÄÈÊËÎÏÔÖÙÛŸ�
 (async () => {
   const nav = await chromium.launch({ executablePath: '/opt/pw-browsers/chromium' });
   const soucis = [];
+  let nVerifiees = 0;   // le message final dit le nombre VÉRIFIÉ, pas un nombre écrit en dur
   for (const lg of LANGUES) {
     const nom = GLOBAL[lg];
     if (!nom) { soucis.push('langue inconnue : ' + lg); continue; }
@@ -75,6 +76,7 @@ const ACCENTS_FR = /[àâäèêëîïôöùûÿçœæÀÂÄÈÊËÎÏÔÖÙÛŸ�
       if (r.desalignees.length) soucis.push(lg + ' : ' + r.desalignees.length + ' entrée(s) DÉSALIGNÉE(S) — la traduction ne correspond pas à la question (ex. ' + r.desalignees.slice(0,5).join(', ') + ')');
       if (r.vides.length) soucis.push(lg + ' : ' + r.vides.length + ' entrée(s) à l\'énoncé ou au fait vide');
       console.log('  banque : ' + r.nTr + ' entrées pour ' + r.nFr + ' questions françaises');
+      nVerifiees = r.nFr;
       console.log('  alignement de la bonne réponse : ' + (r.desalignees.length ? r.desalignees.length + ' EN DÉFAUT' : 'les ' + r.nFr + ' vérifiées, aucune erreur'));
 
       /* Rien qui soit resté en français — dans l'énoncé, dans les options ET
@@ -129,5 +131,5 @@ const ACCENTS_FR = /[àâäèêëîïôöùûÿçœæÀÂÄÈÊËÎÏÔÖÙÛŸ�
   }
   await nav.close();
   if (soucis.length) { console.log('\n  DÉFAUTS :'); soucis.forEach(s => console.log('   ' + s)); process.exit(1); }
-  console.log('\n  OK — les 1545 questions sont traduites, alignées, et répondre marche encore\n');
+  console.log('\n  OK — les ' + nVerifiees + ' questions sont traduites, alignées, et répondre marche encore\n');
 })();
