@@ -838,7 +838,30 @@
      Il sort donc du moteur (aucune couche de verre à calculer pour lui) et
      reprend le rayon des lignes. Ce qui le distingue reste ce qui doit le
      distinguer : le corail de son texte et son ⊕ — il agit, il ne liste pas. */
-  .add-team{ width:100%; display:flex; align-items:center; justify-content:center; gap:0.5rem; margin-top:0.4rem; color:var(--primary); border:0; border-radius:var(--r-s); padding:calc(0.6rem + 1px); font-size:0.85rem; font-weight:600; }
+  /* ===== PAS DE MARGE HAUTE ICI, ET C'EST LA CORRECTION D'UN CRAN =====
+     « Le cran se produit uniquement lorsque je retire les joueurs rapidement. »
+     Ce bouton portait margin-top:0.4rem — 6,4 px qui NE SE VOYAIENT JAMAIS :
+     la carte est un bloc, la ligne au-dessus porte 0,6rem de marge basse, et
+     deux marges voisines se fondent en une seule (9,6 > 6,4). Cette marge
+     n'existait donc que dans UN cas : quand une ligne en train de se replier
+     s'intercale entre les deux. Une ligne qui se replie porte overflow:hidden,
+     ce qui l'empêche de fondre les marges — les 6,4 px réapparaissaient d'un
+     coup, et removeTeam les annulait par une marge NÉGATIVE posée sur la ligne
+     mourante.
+     CETTE ANNULATION ÉTAIT JUSTE, PUIS CESSAIT DE L'ÊTRE. Elle est calculée à
+     l'instant du toucher, pour la mise en page de cet instant-là, et elle reste
+     en place jusqu'au départ de la ligne. Retirez un deuxième joueur pendant ce
+     temps : la ligne du dessus devient à son tour un bloc replié, la fusion sur
+     laquelle l'annulation reposait n'a plus lieu, et les −6,4 px tirent la
+     carte vers le haut sans plus rien annuler — puis la lâchent EN UNE IMAGE au
+     moment où la ligne quitte le DOM. Mesuré image par image : +5,54 px d'un
+     coup, et deux demi-tours dans le mouvement de la carte.
+     ON RETIRE DONC LA CAUSE, PAS LE SYMPTÔME. Sans cette marge, l'écart entre
+     la dernière ligne et le bouton reste exactement le même (9,6 px, celui de
+     la ligne), le résidu à corriger vaut zéro, et la marge négative ne se pose
+     plus jamais. Une déclaration invisible quand elle est juste et nuisible
+     quand elle ne l'est plus n'avait pas lieu d'être. */
+  .add-team{ width:100%; display:flex; align-items:center; justify-content:center; gap:0.5rem; color:var(--primary); border:0; border-radius:var(--r-s); padding:calc(0.6rem + 1px); font-size:0.85rem; font-weight:600; }
   .add-team .ico{ width:1.12rem; height:1.12rem; }
   /* CARTE PLEINE = SIX CASES, PAS SEPT. « Ajouter un joueur » restait affiché,
      simplement grisé, une fois les six joueurs inscrits : la carte comptait

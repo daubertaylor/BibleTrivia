@@ -40,8 +40,14 @@ const { chromium } = require('/opt/node22/lib/node_modules/playwright');
 const URL = process.argv[2] || 'http://127.0.0.1:8099/index.html';
 const UA_IOS = 'Mozilla/5.0 (iPhone; CPU iPhone OS 17_5 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.5 Mobile/15E148 Safari/604.1';
 const UA_AND = 'Mozilla/5.0 (Linux; Android 13; Redmi Note 12) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Mobile Safari/537.36';
-const S_FINALE = 1.2;      // px : ce que change le départ du noeud
-const S_PAS    = 14.0;     // px en une image
+/* LES DEUX SEUILS, ET D'OÙ ILS VIENNENT. Avant la correction (la marge haute
+   d'« Ajouter un joueur », voir index.html) : saut 6,6 px et deux demi-tours
+   dès le DEUXIÈME retrait, sur les trois appareils. Après : saut 0,05 à
+   0,55 px, secousse 0,10 à 0,50 px, dans les vingt situations. Les seuils sont
+   posés à environ deux fois le mesuré — ils attrapent un doublement franc, ils
+   ne prétendent pas trancher un dixième. */
+const S_SAUT     = 1.2;    // px : écart à la tendance à l'image où la ligne s'en va
+const S_SECOUSSE = 1.5;    // px : plus grand écart à la tendance, hors démarrages
 const S_CHEVAU = 1.0;      // px : deux lignes qui se marchent dessus
 /* LE SEUIL DU TEMPS D'ARRÊT, ET D'OÙ IL VIENT. Avant la correction de la v286,
    le clic sur la croix tenait le fil 3 à 6 ms à vitesse normale et 22 à 47 ms
@@ -69,6 +75,7 @@ const S_FIL_LENT = 45.0;   // ms, processeur bridé x6 (médiane de cinq toucher
 const SUIVRE = function(ms){
   return new Promise((res)=>{
     const t0 = performance.now(); const rel = [];
+    window.__t0 = t0; window.__clics = [];
     const tic = ()=>{
       const t = performance.now() - t0;
       const c = document.getElementById('teamCard');
@@ -88,7 +95,7 @@ const SUIVRE = function(ms){
         tops: rows.map(x => r(x.getBoundingClientRect().top - y0)),
         bots: rows.map(x => r(x.getBoundingClientRect().bottom - y0)),
         addTop: add ? r(add.getBoundingClientRect().top - y0) : null });
-      if(t < ms) requestAnimationFrame(tic); else res(rel);
+      if(t < ms) requestAnimationFrame(tic); else res({ rel, clics: window.__clics.slice() });
     };
     requestAnimationFrame(tic);
   });
@@ -125,18 +132,46 @@ function demiTours(rel, cle){
   }
   return Math.max(0, gardees.length - 1);
 }
-function plusGrandPas(rel, cle){
-  const v = serie(rel, cle); let pire = 0;
-  for(let i = 1; i < v.length; i++) pire = Math.max(pire, Math.abs(v[i] - v[i-1]));
+/* ===== MESURER UNE MARCHE QUAND TOUT BOUGE DÉJÀ =====
+   marcheFinale lisait le PAS de l'image où la ligne quitte le DOM. C'est juste
+   tant qu'un seul repli court : il finit à l'arrêt, donc tout pas est une
+   marche. Avec quatre replis qui se chevauchent, la carte descend
+   légitimement de 3,5 px par image au moment où la première ligne s'en va —
+   et l'ancienne mesure criait « marche de 3,5 px » sur un mouvement parfait.
+   ON MESURE DONC L'ÉCART À LA TENDANCE, pas le pas : un pas qui vaut la
+   moyenne de ses deux voisins est la continuation du mouvement ; un pas qui
+   s'en écarte est une marche. Sur le défaut corrigé, l'écart valait 6,3 px ;
+   sur le mouvement d'après, 0,12. */
+function ecartTendance(v, i){
+  if(i < 1 || i + 1 >= v.length) return 0;
+  const d0 = v[i] - v[i-1], dm = v[i-1] - v[i-2 < 0 ? 0 : i-2], dp = v[i+1] - v[i];
+  return Math.abs(d0 - (dm + dp) / 2);
+}
+function saut(rel){
+  const v = serie(rel, 'h');
+  let pire = 0;
+  for(let i = 1; i < rel.length; i++) if(rel[i].n < rel[i-1].n) pire = Math.max(pire, ecartTendance(v, i));
   return pire;
 }
-function marcheFinale(rel){
+/* LA SECOUSSE : le plus grand écart à la tendance de toute l'animation. Elle
+   remplace « plus grand pas », qui punissait la VITESSE : quatre replis
+   simultanés font légitimement quatre fois le chemin par image (mesuré 6,7 px
+   seul, 16,9 px à quatre) sans que rien ne saute. Un ressort n'a pas de
+   secousse, quel que soit leur nombre.
+   ON NE COMPTE PAS LE DÉMARRAGE, ET C'EST UNE CORRECTION DU BANC. Une
+   animation qui part du repos change forcément de vitesse d'un coup : c'est ce
+   que « démarrer » veut dire. Localisé image par image, le pire écart tombe
+   exactement sur l'image du toucher — 1,25 px pour un repli seul, 3,20 px
+   quand un second repli s'ajoute à un premier qui court déjà. Compter ça comme
+   un cran reviendrait à interdire au jeu de réagir au doigt. On ignore donc
+   les trois images qui suivent chaque toucher, et on mesure tout le reste. */
+const AVEUGLE = 50;            // ms ignorés après chaque toucher (trois images)
+function secousse(rel, clics){
+  const v = serie(rel, 'h');
   let pire = 0;
-  for(let i = 1; i < rel.length; i++){
-    if(rel[i].n < rel[i-1].n){
-      for(const k of ['h','addTop'])
-        if(rel[i][k] !== null && rel[i-1][k] !== null) pire = Math.max(pire, Math.abs(rel[i][k] - rel[i-1][k]));
-    }
+  for(let i = 2; i + 1 < v.length; i++){
+    if((clics || []).some(c => rel[i].t >= c - 17 && rel[i].t <= c + AVEUGLE)) continue;
+    pire = Math.max(pire, ecartTendance(v, i));
   }
   return pire;
 }
@@ -171,7 +206,7 @@ function pireImage(rel){
     await p.waitForTimeout(400);
     await p.evaluate((src)=>{ window.__suivre = eval('(' + src + ')'); }, SUIVRE.toString());
     console.log('\n  ' + appareil + '   ' + vp.width + 'x' + vp.height);
-    console.log('  situation                      demi-tours  marche finale  plus grand pas  chevauch.');
+    console.log('  situation                        demi-tours       saut     secousse  chevauch.  gestes');
 
     const poser = async (n, bas)=>{
       await p.evaluate((nn)=>{
@@ -183,43 +218,82 @@ function pireImage(rel){
       if(bas) await p.evaluate(()=>{ const a=document.getElementById('app'); a.scrollTop = a.scrollHeight; });
       await p.waitForTimeout(250);
     };
+    /* ===== UNE LIGNE QUI MEURT N'EST PLUS UNE LIGNE =====
+       Ma première version prenait document.querySelectorAll('.team-row'). Or une
+       ligne retirée RESTE dans le DOM pendant les 0,34 s de son repli, marquée
+       data-partie — et removeTeam refuse aussitôt un clic sur elle. « Deux
+       retraits coup sur coup » recliquait donc sur la MÊME ligne mourante : le
+       deuxième retrait n'avait jamais lieu. Le banc était vert parce qu'il ne
+       faisait qu'un seul retrait, pendant que Taylor voyait le cran sur deux.
+       LE RELEVÉ LE DISAIT, ET JE NE L'AVAIS PAS LU : « plus grand pas » valait
+       6,7 px à toutes les cadences, exactement comme le contrôle à un seul
+       retrait. Un banc qui donne le même nombre pour un retrait et pour quatre
+       ne mesure pas quatre retraits. On compte donc désormais les retraits
+       RÉELLEMENT obtenus, et on les imprime : un banc doit dire ce qu'il a
+       fait, pas seulement ce qu'on lui a demandé. */
     const croix = (k)=> p.evaluate((kk)=>{
-      const r = document.querySelectorAll('.team-row');
-      const row = kk < 0 ? r[r.length + kk] : r[kk];
-      row.querySelector('.team-remove').click();
+      try{ window.__clics.push(performance.now() - window.__t0); }catch(e){}
+      const r = document.querySelectorAll('.team-row:not([data-partie])');
+      if(!r.length) return 0;
+      const row = kk < 0 ? r[r.length + kk] : r[Math.min(kk, r.length - 1)];
+      const b = row.querySelector('.team-remove');
+      if(!b || b.disabled) return 0;
+      b.click(); return 1;
     }, k);
+
+    /* ===== LE MARTELAGE =====
+       « Le cran se produit uniquement lorsque je retire les joueurs
+       RAPIDEMENT. » Le repli d'une ligne dure 0,34 s : à 90 ms d'intervalle,
+       quatre replis se chevauchent, et chacun repose sur une mise en page que
+       le suivant modifie sous lui. Le banc ne dépassait pas deux retraits à
+       140 ms — et ces deux-là n'en faisaient qu'un (voir croix). */
+    let faits = 0;
+    const martele = (n, pause)=> async ()=>{
+      faits = 0;
+      for(let k = 0; k < n; k++){ faits += await croix(-1); if(k < n - 1) await p.waitForTimeout(pause); }
+    };
+    const un = (g)=> async ()=>{ faits = 1; await g(); };
 
     /* [nom, joueurs, page en bas, demi-tours permis, geste] */
     const cas = [
-      ['retirer la dernière (4)',        4, false, 0, ()=>croix(-1)],
-      ['retirer la première (4)',        4, false, 0, ()=>croix(0)],
-      ['retirer au milieu (5)',          5, false, 0, ()=>croix(2)],
-      ['retirer le 6e (bouton renaît)',  6, false, 0, ()=>croix(-1)],
-      ['6 joueurs, page en bas',         6, true,  1, ()=>croix(-1)],
-      ['5 joueurs, page en bas',         5, true,  1, ()=>croix(-1)],
-      ['retirer 120 ms après ajout',     4, false, 1, async()=>{ await p.evaluate(()=>addTeam()); await p.waitForTimeout(120); await croix(-1); }],
-      ['retirer 300 ms après ajout',     4, false, 1, async()=>{ await p.evaluate(()=>addTeam()); await p.waitForTimeout(300); await croix(-1); }],
-      ['ajout au 6e puis retrait',       5, false, 1, async()=>{ await p.evaluate(()=>addTeam()); await p.waitForTimeout(160); await croix(-1); }],
-      ['deux retraits coup sur coup',    6, false, 0, async()=>{ await croix(-1); await p.waitForTimeout(140); await croix(-1); }],
-      ['retirer, clavier ouvert',        5, false, 0, async()=>{ await p.evaluate(()=>{ document.querySelector('.team-row input').focus(); }); await p.waitForTimeout(260); await croix(-1); }],
-      ['ajouter (contrôle)',             3, false, 0, ()=>p.evaluate(()=>addTeam())],
+      ['retirer la dernière (4)',        4, false, 0, un(()=>croix(-1))],
+      ['retirer la première (4)',        4, false, 0, un(()=>croix(0))],
+      ['retirer au milieu (5)',          5, false, 0, un(()=>croix(2))],
+      ['retirer le 6e (bouton renaît)',  6, false, 0, un(()=>croix(-1))],
+      ['6 joueurs, page en bas',         6, true,  1, un(()=>croix(-1))],
+      ['5 joueurs, page en bas',         5, true,  1, un(()=>croix(-1))],
+      ['retirer 120 ms après ajout',     4, false, 1, un(async()=>{ await p.evaluate(()=>{ try{ window.__clics.push(performance.now() - window.__t0); }catch(e){} addTeam(); }); await p.waitForTimeout(120); await croix(-1); })],
+      ['retirer 300 ms après ajout',     4, false, 1, un(async()=>{ await p.evaluate(()=>{ try{ window.__clics.push(performance.now() - window.__t0); }catch(e){} addTeam(); }); await p.waitForTimeout(300); await croix(-1); })],
+      ['ajout au 6e puis retrait',       5, false, 1, un(async()=>{ await p.evaluate(()=>{ try{ window.__clics.push(performance.now() - window.__t0); }catch(e){} addTeam(); }); await p.waitForTimeout(160); await croix(-1); })],
+      ['retirer, clavier ouvert',        5, false, 0, un(async()=>{ await p.evaluate(()=>{ document.querySelector('.team-row input').focus(); }); await p.waitForTimeout(260); await croix(-1); })],
+      ['ajouter (contrôle)',             3, false, 0, un(()=>p.evaluate(()=>{ try{ window.__clics.push(performance.now() - window.__t0); }catch(e){} addTeam(); }))],
+      ['2 retraits à 140 ms',            6, false, 0, martele(2, 140)],
+      ['3 retraits à 120 ms',            6, false, 0, martele(3, 120)],
+      ['3 retraits à 90 ms',             6, false, 0, martele(3,  90)],
+      ['4 retraits à 90 ms',             6, false, 0, martele(4,  90)],
+      ['4 retraits à 70 ms',             6, false, 0, martele(4,  70)],
+      ['4 retraits à 50 ms',             6, false, 0, martele(4,  50)],
+      ['4 retraits à 90 ms, page en bas',6, true,  1, martele(4,  90)],
+      ['4 fois la PREMIÈRE à 90 ms',     6, false, 0, async()=>{ faits = 0; for(let k=0;k<4;k++){ faits += await croix(0); if(k<3) await p.waitForTimeout(90); } }],
+      ['ajout puis 3 retraits à 90 ms',  5, false, 1, async()=>{ faits = 0; await p.evaluate(()=>{ try{ window.__clics.push(performance.now() - window.__t0); }catch(e){} addTeam(); }); await p.waitForTimeout(90); for(let k=0;k<3;k++){ faits += await croix(-1); if(k<2) await p.waitForTimeout(90); } }],
     ];
 
     for (const [nom, n, bas, dtOK, geste] of cas){
       await poser(n, bas);
-      const suivi = p.evaluate(()=>window.__suivre(1400));
+      const suivi = p.evaluate(()=>window.__suivre(2200));
       await geste();
-      const rel = await suivi;
+      const { rel, clics } = await suivi;
       const dt = Math.max(demiTours(rel,'h'), demiTours(rel,'addTop'));
-      const mf = marcheFinale(rel);
-      const pas = Math.max(plusGrandPas(rel,'h'), plusGrandPas(rel,'addTop'));
+      const sa = saut(rel);
+      const sec = secousse(rel, clics);
       const ch = chevauchement(rel);
-      const vert = dt <= dtOK && mf <= S_FINALE && pas <= S_PAS && ch <= S_CHEVAU;
+      const vert = dt <= dtOK && sa <= S_SAUT && sec <= S_SECOUSSE && ch <= S_CHEVAU;
       if(!vert) ko++;
-      console.log('  %s %s %s %s %s %s',
-        (vert?'OK  ':'CRAN').padEnd(5), nom.padEnd(29),
-        (dt + '/' + dtOK).padStart(8), (mf.toFixed(1)+' px').padStart(13),
-        (pas.toFixed(1)+' px').padStart(14), (ch.toFixed(1)+' px').padStart(10));
+      console.log('  %s %s %s %s %s %s  %s',
+        (vert?'OK  ':'CRAN').padEnd(5), nom.padEnd(32),
+        (dt + '/' + dtOK).padStart(8), (sa.toFixed(2)+' px').padStart(11),
+        (sec.toFixed(2)+' px').padStart(12), (ch.toFixed(1)+' px').padStart(10),
+        faits + ' retrait' + (faits > 1 ? 's' : ''));
     }
 
     /* ===== LE TEMPS D'ARRÊT ===== */
