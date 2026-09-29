@@ -150,6 +150,56 @@ const soucis = [];
     if (!enFamille) soucis.push(nom + ' : à l\'ouverture, la rangée saute de ' + entree.pire
       + ' px quand son écran n\'en fait que ' + entree.temoin);
 
+    /* ===== ET CHAQUE RANGÉE DOIT AVOIR SON VERRE, QUEL QUE SOIT SON CHEMIN =====
+       « Au niveau des joueurs, l'effet de verre se décale certaines fois à
+       l'ouverture. » Le « certaines fois » disait tout : une rangée dessinée
+       par le rendu complet avait sa couche de décor, une rangée créée par
+       majSalleListe (l'arrivée d'un joueur, qui tombe quand le réseau répond)
+       n'en avait AUCUNE. Le moteur garde ses surfaces en cache et ne les
+       recompte qu'au changement de génération ; ce chemin-là n'en changeait
+       pas.
+       LA MESURE EST ABSOLUE, SANS TÉMOIN. Une couche .gs porte le paysage à la
+       taille de l'écran, posée en haut à gauche de sa surface puis décalée :
+       si le moteur est juste, TOUTES les couches de l'écran ont leur origine
+       au même endroit — celle du fond. Une rangée qui s'en écarte montre un
+       autre morceau de paysage que sa voisine. */
+    const verres = await p.evaluate(async () => {
+      const N = [['Stany','#2FA36B'],['Myriam','#9B5DE5'],['Jonathan','#F1B24A'],['Élisabeth','#E8734C']];
+      net.joueurs = {}; majAdversaire(); state.screen = 'online-room'; render();
+      await new Promise(r => setTimeout(r, 900));
+      const vus = [];
+      const releve = (quand) => {
+        const t = document.querySelector('.len-chip .gs, .btn-primary .gs');
+        const ref = t ? t.getBoundingClientRect().top : null;
+        document.querySelectorAll('.salle-ligne').forEach((r, i) => {
+          const gs = r.querySelector('.gs');
+          vus.push({ quand, i, sans: !gs,
+            ecart: (gs && ref !== null) ? +(gs.getBoundingClientRect().top - ref).toFixed(1) : null });
+        });
+      };
+      releve('ouverture');
+      for (let k = 0; k < N.length; k++) {
+        const [a, c] = N[k];
+        net.joueurs['j' + k] = { id:'j'+k, name:a, color:c, score:0, idx:0, done:false, gone:false, vu:Date.now() };
+        majAdversaire(); majSalleListe();
+        await new Promise(r => setTimeout(r, 420));
+        releve(a + ' arrive');
+      }
+      delete net.joueurs['j1']; majAdversaire(); majSalleListe();
+      await new Promise(r => setTimeout(r, 420));
+      releve('un joueur part');
+      return vus;
+    });
+    const sans = verres.filter(v => v.sans);
+    const loin = verres.filter(v => !v.sans && Math.abs(v.ecart) > 2);
+    console.log('  ' + ''.padEnd(11) + 'rangées mesurées : ' + verres.length
+      + '   sans couche : ' + sans.length + '   décalées : ' + loin.length
+      + '   pire écart : ' + Math.max(0, ...verres.filter(v => !v.sans).map(v => Math.abs(v.ecart))).toFixed(1) + ' px');
+    if (sans.length) soucis.push(nom + ' : ' + sans.length + ' rangée(s) sans couche de verre ('
+      + [...new Set(sans.map(v => v.quand))].join(', ') + ')');
+    if (loin.length) soucis.push(nom + ' : ' + loin.length + ' rangée(s) dont le verre montre un autre morceau de paysage ('
+      + loin.map(v => v.quand + ' ' + v.ecart + ' px').slice(0, 3).join(', ') + ')');
+
     if (errs.length) soucis.push(nom + ' : erreurs JS — ' + [...new Set(errs)].slice(0, 2).join(' | '));
     await ctx.close();
   }

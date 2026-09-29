@@ -7629,7 +7629,7 @@ const SUPABASE_ANON_KEY = "sb_publishable_FDJ_R0foC7uIeHmxVrj6rA_2NeIgW2a";
    remontée d'un téléphone ne vaut rien si on ne sait pas QUELLE version
    tournait. Elle doit rester égale au CACHE de sw.js — c'est ce que vérifie
    banc-essai/version.js, qui refuse de laisser publier les deux en désaccord. */
-const VERSION_JEU = "v294";
+const VERSION_JEU = "v295";
 
 /* ===================== QUAND ÇA CASSE CHEZ UN JOUEUR =====================
    « Si quelque chose casse chez cinq d'entre eux sur un modèle de téléphone
@@ -8032,6 +8032,18 @@ function majSalleListe(){
   if(!liste) return false;                 // autre écran
   const rangs = classement().sort((a,b)=> (a.moi?0:1)-(b.moi?0:1));
   const cle = (j)=> String(j.moi ? "moi" : (j.id || j.name || ""));
+  /* ===== LE MOTEUR DE VERRE NE DEVINE PAS QU'UNE RANGÉE EST NÉE =====
+     « Au niveau des joueurs, l'effet de verre se décale certaines fois à
+     l'ouverture. » Mesuré : la rangée de l'hôte a sa couche de décor, et
+     TOUTES celles créées ici n'en ont AUCUNE. Le moteur garde la liste de ses
+     surfaces en cache (glassEls) et ne la refait qu'au changement de
+     génération ; ce chemin-ci n'en changeait pas. Une rangée née après le
+     rendu n'était donc jamais servie : elle retombait sur l'ancien effet, pas
+     sur la couche pré-floutée de ses voisines — d'où le décalage, et d'où le
+     « certaines fois » (selon qu'on arrive avant ou après la présence).
+     glassSuivre, qui était seul ici, ne sert à rien pour ça : il fait RELIRE
+     les surfaces connues, il n'en découvre aucune. */
+  let bouge = false;                       // une rangée est née ou partie
   const avait = liste.querySelectorAll(".salle-ligne:not(.vide)").length;
 
   const vues = Object.create(null);
@@ -8050,6 +8062,7 @@ function majSalleListe(){
         + '<span class="salle-tag">' + tag + '</span>';
       /* Elle entre comme l'adversaire entrait à deux : une arrivée se voit. */
       ligne.style.animation = "oppIn 0.42s cubic-bezier(0.2,1.3,0.35,1)";
+      bouge = true;
       if(ancre && ancre.nextSibling) liste.insertBefore(ligne, ancre.nextSibling);
       else if(ancre) liste.appendChild(ligne);
       else liste.insertBefore(ligne, liste.firstChild);
@@ -8066,7 +8079,7 @@ function majSalleListe(){
     }
     ancre = ligne;
   }
-  liste.querySelectorAll(".salle-ligne:not(.vide)").forEach(l=>{ if(!vues[l.dataset.jid]) l.remove(); });
+  liste.querySelectorAll(".salle-ligne:not(.vide)").forEach(l=>{ if(!vues[l.dataset.jid]){ l.remove(); bouge = true; } });
 
   /* La ligne des places restantes. ELLE N'INVITE QUE TANT QU'ON EST SEUL —
      exactement comme au rendu complet, et c'est tout l'enjeu : ces deux
@@ -8081,12 +8094,13 @@ function majSalleListe(){
       vide.innerHTML = '<span class="avatar waiting" style="width:2.1rem;height:2.1rem;font-size:0.95rem;">?</span>'
         + '<span class="rank-name">' + T("En attente…") + '</span><span class="salle-tag"></span>';
       liste.appendChild(vide);
+      bouge = true;
     }
     if(vide !== liste.lastElementChild) liste.appendChild(vide);
     const t = Tf(reste > 1 ? "{n} places" : "{n} place", { n:reste });
     const et = vide.querySelector(".salle-tag");
     if(et && et.textContent !== t) et.textContent = t;
-  } else if(vide) vide.remove();
+  } else if(vide){ vide.remove(); bouge = true; }
 
   /* Ce qui, ailleurs sur l'écran, dépend du nombre : la phrase du code et le
      bouton d'invitation. On les retouche, on ne reconstruit rien. */
@@ -8131,10 +8145,17 @@ function majSalleListe(){
   /* Une rangée de plus ou de moins change ce qu'il reste à voir au-delà des
      deux bords : le fondu se recalcule avec la liste. */
   majVoilesListe(liste);
-  /* LE VERRE SUIT LA LISTE QUI S'ALLONGE, AU LIEU DE SE REMETTRE À LA FIN. */
-  if(liste.querySelectorAll(".salle-ligne").length !== avait + (reste > 0 ? 1 : 0)){
-    try{ glassSuivre(620); }catch(e){}
-  } else { try{ glassSuivre(260); }catch(e){} }
+  /* LE VERRE APPREND LA NOUVELLE LISTE, PUIS LA SUIT.
+     glassRelayout fait repartir la génération : à l'image suivante, le moteur
+     refait son querySelectorAll et sert les rangées neuves — c'est ce qui leur
+     donne leur couche. glassSuivre, lui, ouvre la fenêtre pendant laquelle il
+     relit les positions, le temps que la liste finisse de s'allonger.
+     On se fie au DRAPEAU et non à une comparaison de longueurs : un joueur qui
+     part pendant qu'un autre arrive laisse le compte identique alors que deux
+     rangées ont changé de main. */
+  if(bouge){ try{ glassRelayout(); }catch(e){} }
+  try{ glassSuivre(bouge ? 620 : 260); }catch(e){}
+  void avait;
   return true;
 }
 function joinLobby(){
