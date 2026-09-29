@@ -321,6 +321,7 @@ const PAS_DU_TEXTE = new Map([
   ['Joueur 1',              'le nom ENREGISTRÉ d\'une équipe sans nom ; nomEquipe() le traduit à l\'affichage'],
   ['Joueur 2',              'idem'],
   ['--verset-max',          'le nom d\'une propriété CSS'],
+  ['Cantique des cantiques', 'une CLÉ de LIVRES_ALIAS : refLivre la passe aux tables LIVRES_EN/ES, elle n\'est jamais affichée telle quelle'],
   ['plafond du verset :',   'un console.warn pour moi, jamais montré'],
   /* (Trois exemptions sont parties avec les quatre portes de l'écran
      « À revoir » : startRevision('tout'), le préfixe « livre: » et la clé de

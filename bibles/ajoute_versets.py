@@ -257,6 +257,24 @@ def temoin(M):
 
 ORDRE = ["lsg1910", "darby", "ostervald", "ba", "martin1744", "kjv1769", "asv1901", "web", "rv1909", "rv1865"]
 
+# ---- LA RÉFÉRENCE ANGLAISE --------------------------------------------------------
+# banc-essai/references.js compare ce que le jeu AFFICHE en anglais à
+# bibles/refs_en.json. Le premier lot l'avait oublié : dix-huit rouges. Le nom
+# vient de LIVRES_EN (lu dans le jeu, jamais recopié) ; les numéros viennent des
+# coordonnées anglaises réellement lues, pas de la référence française.
+LIVRES_ALIAS = {"Cantique": "Cantique des cantiques"}
+def livres_en():
+    s = io.open(JEU, encoding="utf-8").read()
+    m = re.search(r"const LIVRES_EN = (\{.*?\});", s)
+    return json.loads(m.group(1))
+
+def ref_anglaise(ref, ec, noms):
+    m = re.match(r"^(.*?)\s+(\d.*)$", ref)
+    livre = m.group(1).strip(); nom = noms.get(LIVRES_ALIAS.get(livre, livre), livre)
+    code, ch, vs = ec
+    num = ("%d-%d" % (vs[0], vs[-1])) if len(vs) > 1 else str(vs[0])
+    return "%s %s" % (nom, num) if ":" not in m.group(2) else "%s %d:%s" % (nom, ch, num)
+
 def js(t):
     return json.dumps(t, ensure_ascii=False)
 
@@ -314,6 +332,10 @@ if __name__ == "__main__":
     co = json.load(io.open(chemin, encoding="utf-8"))
     for r, o, ec in retenus: co[r] = ec
     json.dump(co, io.open(chemin, "w", encoding="utf-8"), ensure_ascii=False, indent=0)
+    chemin = os.path.join(ICI, "refs_en.json")
+    re_en = json.load(io.open(chemin, encoding="utf-8")); noms = livres_en()
+    for r, o, ec in retenus: re_en[r] = ref_anglaise(r, ec, noms)
+    json.dump(re_en, io.open(chemin, "w", encoding="utf-8"), ensure_ascii=False, indent=1)
     chemin = os.path.join(ICI, "textes.json")
     tx = json.load(io.open(chemin, encoding="utf-8"))
     for r, o, _ in retenus:

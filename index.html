@@ -15311,14 +15311,27 @@ const REFS_ES = {
   "Ésaïe 64:8":"Isaías 64:9"
 };
 const REFS_TRAD = { en:REFS_EN, es:REFS_ES };
+/* ===== « CANTIQUE 8:7 » RESTAIT EN FRANÇAIS, EN ANGLAIS COMME EN ESPAGNOL =====
+   Le recueil écrit « Cantique 8:7 », la forme courte que tout lecteur français
+   emploie ; les tables de noms, elles, ne connaissent que « Cantique des
+   cantiques ». La recherche échouait donc en silence et rendait le nom tel
+   quel : un mot français au milieu de l'interface anglaise. Trouvé en
+   complétant bibles/refs_en.json pour les nouveaux versets — la table de
+   référence du banc avait ENREGISTRÉ « Cantique 8:7 » comme la bonne forme
+   anglaise. Un banc qui compare à une valeur fausse la protège.
+   On nomme les formes courtes ici, une fois, plutôt que d'ajouter des clés
+   aux tables de livres : ces tables servent aussi de LISTE des soixante-six
+   livres, et une clé de plus y serait un livre fantôme. */
+const LIVRES_ALIAS = { "Cantique":"Cantique des cantiques" };
 function refLivre(ref){
   if(LANGUE === "fr") return ref;
   const table = REFS_TRAD[LANGUE];
   const exact = table && table[ref];
   if(exact) return exact;
   const m = String(ref).match(/^(.*?)(\s+\d.*)$/);
-  if(!m) return nomLivre(ref);
-  return nomLivre(m[1].trim()) + m[2];
+  if(!m) return nomLivre(LIVRES_ALIAS[ref] || ref);
+  const livre = m[1].trim();
+  return nomLivre(LIVRES_ALIAS[livre] || livre) + m[2];
 }
 const LIVRES_COURTS = {
   "Deutéronome":"Deutér.", "Cantique des cantiques":"Cantiques",
