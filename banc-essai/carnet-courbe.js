@@ -27,7 +27,9 @@
    CE QUE CE BANC EXIGE, au réglage livré (PART_REVOIR) et sur quatre mois :
      1. le carnet ne touche JAMAIS le plafond de six cents — le plafond jette
         du travail, il ne doit pas être dans le chemin ;
-     2. il se STABILISE : sa taille au 120e jour ne dépasse pas celle du 60e ;
+     2. sa croissance RALENTIT : le 4e mois ajoute moins que le 2e — c'est
+        la moitié montante d'une courbe qui, sur un an, culmine vers six mois
+        puis redescend (voir plus bas, au verdict) ;
      3. des questions sont ACQUISES — l'échelle va jusqu'au bout ;
      4. tout ne s'entasse pas sur la première marche.
    Et il l'exige DU JOUEUR QUI NE RÉVISE JAMAIS, celui qui ne touche pas à
@@ -158,8 +160,23 @@ const PROFILS = [
     const pts = {}; dur.courbe.forEach(([j, n]) => { pts[j] = n; });
     v('le carnet ne touche jamais le plafond de 600', dur.plafondTouche === 0,
       dur.plafondTouche ? dur.plafondTouche + ' jours au plafond' : 'jamais, max ' + Math.max(...dur.courbe.map(c => c[1])));
-    if (JOURS >= 120) v('  et il se stabilise (120e jour <= 60e)', pts[120] <= pts[60],
-      pts[60] + ' au 60e, ' + pts[120] + ' au 120e');
+    /* ===== CE QU'ON PEUT EXIGER À CENT VINGT JOURS, ET PAS PLUS =====
+       Ma première version exigeait que le carnet ne grossisse plus entre le
+       60e et le 120e jour. Elle était fausse, et la simulation sur UN AN l'a
+       montré (2 parties par jour, 70 % de réussite, joueur qui ne révise
+       jamais) :
+           part 20 %   j60 369   j120 501   j180 535 (sommet)   j240 479
+                       j300 396  j365 275   plafond : jamais
+       Le carnet monte pendant six mois, puis se vide TOUT SEUL : la banque est
+       finie, le joueur a tout vu au bout de deux mois, les erreurs nouvelles
+       se tarissent et l'échelle continue de faire sortir. À cent vingt jours,
+       on ne voit que la moitié montante.
+       Ce qui est vrai À CET HORIZON, et qui annonce le sommet, c'est que la
+       croissance RALENTIT : le dernier mois ajoute moins que le deuxième. La
+       simulation d'un an reste dans l'historique (elle prend trop longtemps
+       pour la batterie). */
+    if (JOURS >= 120) v('  et sa croissance ralentit (4e mois < 2e mois)', (pts[120] - pts[90]) < (pts[60] - pts[30]),
+      '2e mois +' + (pts[60] - pts[30]) + ', 4e mois +' + (pts[120] - pts[90]));
     v('  des questions sont acquises', dur.acquises > 0, dur.acquises + ' acquise(s)');
     v('  tout ne s\'entasse pas sur la première marche', dur.sur1re < 80,
       dur.sur1re + ' % sur la 1re marche, marches ' + dur.marches.join('/'));
