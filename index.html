@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="fr" style="background:#15100B">
+<html lang="fr" translate="no" class="notranslate" style="background:#15100B">
 <head>
 <meta charset="UTF-8">
 <!-- « interactive-widget=overlays-content » : LE CLAVIER SE POSE PAR-DESSUS,
@@ -13,6 +13,28 @@
      successifs. C'est ça, « ça saute, l'écran clignote ».
      Un seul mot, et les deux systèmes font enfin la même chose. -->
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1, viewport-fit=cover, interactive-widget=overlays-content">
+<!-- ===== AUCUNE PROPOSITION DE TRADUCTION, NULLE PART =====
+     « Lorsque tu changes de langue sur un Android, il y a un truc de Google
+     Traduction qui s'affiche au-dessus et qui demande de traduire les pages.
+     Retire-le, je veux plus que ça soit disponible. »
+     Chrome propose de traduire dès que la langue DÉCLARÉE de la page diffère
+     de celle du téléphone. Le jeu déclare honnêtement la sienne (l'attribut
+     lang suit le choix du joueur, et c'est ce qui fait qu'un lecteur d'écran
+     prononce juste) : sur un téléphone en français, passer le jeu en anglais
+     déclenchait donc la barre à tous les coups.
+     TRADUIRE YADA N'A AUCUN SENS. Le jeu est DÉJÀ traduit, phrase par phrase,
+     et ses questions portent des citations bibliques d'éditions précises,
+     choisies pour leur exactitude. Les repasser à la machine, c'est réécrire
+     l'Écriture au hasard par-dessus un texte vérifié.
+     TROIS DÉCLARATIONS, ET PAS UNE SEULE : elles ne sont pas redondantes.
+     La balise meta « google » coupe la PROPOSITION (la barre) ; l'attribut
+     translate="no", qui est la norme HTML, interdit la traduction du contenu ;
+     la classe notranslate est la forme historique, celle que comprennent les
+     versions plus anciennes. On met les trois parce qu'aucune n'est reconnue
+     partout, et qu'aucune ne coûte quoi que ce soit.
+     ELLES SURVIVENT AU CHANGEMENT DE LANGUE : le jeu ne touche qu'à l'attribut
+     lang, et ne réécrit jamais la classe ni les autres attributs. -->
+<meta name="google" content="notranslate">
 <meta name="theme-color" content="#15100B">
 <meta name="color-scheme" content="dark">
 <meta name="mobile-web-app-capable" content="yes">
@@ -7629,7 +7651,7 @@ const SUPABASE_ANON_KEY = "sb_publishable_FDJ_R0foC7uIeHmxVrj6rA_2NeIgW2a";
    remontée d'un téléphone ne vaut rien si on ne sait pas QUELLE version
    tournait. Elle doit rester égale au CACHE de sw.js — c'est ce que vérifie
    banc-essai/version.js, qui refuse de laisser publier les deux en désaccord. */
-const VERSION_JEU = "v294";
+const VERSION_JEU = "v295";
 
 /* ===================== QUAND ÇA CASSE CHEZ UN JOUEUR =====================
    « Si quelque chose casse chez cinq d'entre eux sur un modèle de téléphone
@@ -8032,6 +8054,18 @@ function majSalleListe(){
   if(!liste) return false;                 // autre écran
   const rangs = classement().sort((a,b)=> (a.moi?0:1)-(b.moi?0:1));
   const cle = (j)=> String(j.moi ? "moi" : (j.id || j.name || ""));
+  /* ===== LE MOTEUR DE VERRE NE DEVINE PAS QU'UNE RANGÉE EST NÉE =====
+     « Au niveau des joueurs, l'effet de verre se décale certaines fois à
+     l'ouverture. » Mesuré : la rangée de l'hôte a sa couche de décor, et
+     TOUTES celles créées ici n'en ont AUCUNE. Le moteur garde la liste de ses
+     surfaces en cache (glassEls) et ne la refait qu'au changement de
+     génération ; ce chemin-ci n'en changeait pas. Une rangée née après le
+     rendu n'était donc jamais servie : elle retombait sur l'ancien effet, pas
+     sur la couche pré-floutée de ses voisines — d'où le décalage, et d'où le
+     « certaines fois » (selon qu'on arrive avant ou après la présence).
+     glassSuivre, qui était seul ici, ne sert à rien pour ça : il fait RELIRE
+     les surfaces connues, il n'en découvre aucune. */
+  let bouge = false;                       // une rangée est née ou partie
   const avait = liste.querySelectorAll(".salle-ligne:not(.vide)").length;
 
   const vues = Object.create(null);
@@ -8050,6 +8084,7 @@ function majSalleListe(){
         + '<span class="salle-tag">' + tag + '</span>';
       /* Elle entre comme l'adversaire entrait à deux : une arrivée se voit. */
       ligne.style.animation = "oppIn 0.42s cubic-bezier(0.2,1.3,0.35,1)";
+      bouge = true;
       if(ancre && ancre.nextSibling) liste.insertBefore(ligne, ancre.nextSibling);
       else if(ancre) liste.appendChild(ligne);
       else liste.insertBefore(ligne, liste.firstChild);
@@ -8066,7 +8101,7 @@ function majSalleListe(){
     }
     ancre = ligne;
   }
-  liste.querySelectorAll(".salle-ligne:not(.vide)").forEach(l=>{ if(!vues[l.dataset.jid]) l.remove(); });
+  liste.querySelectorAll(".salle-ligne:not(.vide)").forEach(l=>{ if(!vues[l.dataset.jid]){ l.remove(); bouge = true; } });
 
   /* La ligne des places restantes. ELLE N'INVITE QUE TANT QU'ON EST SEUL —
      exactement comme au rendu complet, et c'est tout l'enjeu : ces deux
@@ -8081,12 +8116,13 @@ function majSalleListe(){
       vide.innerHTML = '<span class="avatar waiting" style="width:2.1rem;height:2.1rem;font-size:0.95rem;">?</span>'
         + '<span class="rank-name">' + T("En attente…") + '</span><span class="salle-tag"></span>';
       liste.appendChild(vide);
+      bouge = true;
     }
     if(vide !== liste.lastElementChild) liste.appendChild(vide);
     const t = Tf(reste > 1 ? "{n} places" : "{n} place", { n:reste });
     const et = vide.querySelector(".salle-tag");
     if(et && et.textContent !== t) et.textContent = t;
-  } else if(vide) vide.remove();
+  } else if(vide){ vide.remove(); bouge = true; }
 
   /* Ce qui, ailleurs sur l'écran, dépend du nombre : la phrase du code et le
      bouton d'invitation. On les retouche, on ne reconstruit rien. */
@@ -8131,10 +8167,17 @@ function majSalleListe(){
   /* Une rangée de plus ou de moins change ce qu'il reste à voir au-delà des
      deux bords : le fondu se recalcule avec la liste. */
   majVoilesListe(liste);
-  /* LE VERRE SUIT LA LISTE QUI S'ALLONGE, AU LIEU DE SE REMETTRE À LA FIN. */
-  if(liste.querySelectorAll(".salle-ligne").length !== avait + (reste > 0 ? 1 : 0)){
-    try{ glassSuivre(620); }catch(e){}
-  } else { try{ glassSuivre(260); }catch(e){} }
+  /* LE VERRE APPREND LA NOUVELLE LISTE, PUIS LA SUIT.
+     glassRelayout fait repartir la génération : à l'image suivante, le moteur
+     refait son querySelectorAll et sert les rangées neuves — c'est ce qui leur
+     donne leur couche. glassSuivre, lui, ouvre la fenêtre pendant laquelle il
+     relit les positions, le temps que la liste finisse de s'allonger.
+     On se fie au DRAPEAU et non à une comparaison de longueurs : un joueur qui
+     part pendant qu'un autre arrive laisse le compte identique alors que deux
+     rangées ont changé de main. */
+  if(bouge){ try{ glassRelayout(); }catch(e){} }
+  try{ glassSuivre(bouge ? 620 : 260); }catch(e){}
+  void avait;
   return true;
 }
 function joinLobby(){

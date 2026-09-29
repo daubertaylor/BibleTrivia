@@ -165,12 +165,32 @@ function saut(rel){
    quand un second repli s'ajoute à un premier qui court déjà. Compter ça comme
    un cran reviendrait à interdire au jeu de réagir au doigt. On ignore donc
    les trois images qui suivent chaque toucher, et on mesure tout le reste. */
-const AVEUGLE = 50;            // ms ignorés après chaque toucher (trois images)
+/* EN IMAGES, PAS EN MILLISECONDES — ET C'EST UNE CORRECTION DU BANC.
+   La première version ignorait 50 ms après chaque toucher, en pensant « trois
+   images ». C'est vrai à 60 images par seconde, et faux dès qu'une image dure :
+   rejoué seul, « 4 fois la PREMIÈRE à 90 ms » sur Android petit est à 0,12 -
+   0,17 px neuf fois sur dix, et la dixième montre pourquoi elle crie :
+       t=211  image de 32 ms   pas  -4,59 px   (la carte avance à peine)
+       t=251  image de 20 ms   pas -13,45 px   (et rattrape d'un coup)
+   C'est le DÉMARRAGE du troisième repli, touché à 191 ms, repoussé par une
+   image longue du conteneur hors de la fenêtre de 50 ms. Ramené en vitesse,
+   cet essai est dans la norme des neuf autres. On compte donc des IMAGES :
+   l'écart à la tendance d'un démarrage à l'image k touche les indices k-1, k
+   et k+1 (il lit le pas d'avant et celui d'après) ; on laisse deux images de
+   plus pour un démarrage retardé. Le reste de l'animation est mesuré comme
+   avant, et le saut au départ de la ligne n'est concerné par rien de tout ça. */
+const AVANT = 1, APRES = 3;       // images ignorées autour de chaque toucher
 function secousse(rel, clics){
   const v = serie(rel, 'h');
+  const muets = new Set();
+  for(const c of (clics || [])){
+    const k = rel.findIndex(f => f.t >= c);
+    if(k < 0) continue;
+    for(let j = k - AVANT; j <= k + APRES; j++) muets.add(j);
+  }
   let pire = 0;
   for(let i = 2; i + 1 < v.length; i++){
-    if((clics || []).some(c => rel[i].t >= c - 17 && rel[i].t <= c + AVEUGLE)) continue;
+    if(muets.has(i)) continue;
     pire = Math.max(pire, ecartTendance(v, i));
   }
   return pire;
@@ -278,23 +298,50 @@ function pireImage(rel){
       ['ajout puis 3 retraits à 90 ms',  5, false, 1, async()=>{ faits = 0; await p.evaluate(()=>{ try{ window.__clics.push(performance.now() - window.__t0); }catch(e){} addTeam(); }); await p.waitForTimeout(90); for(let k=0;k<3;k++){ faits += await croix(-1); if(k<2) await p.waitForTimeout(90); } }],
     ];
 
-    for (const [nom, n, bas, dtOK, geste] of cas){
+    /* ===== UN CAS ROUGE EST REJOUÉ UNE FOIS AVANT D'ÊTRE CRU =====
+       C'est la règle de la batterie entière (tous.sh rejoue seul tout banc
+       tombé), appliquée ici cas par cas, et pour la même raison.
+       Rejouée seule, cette batterie tombait à chaque passage sur un cas
+       DIFFÉRENT : secousse 18,85 px sur « 4 fois la PREMIÈRE » un jour, saut
+       14,4 px sur « 3 retraits à 120 ms » le lendemain. Isolés et rejoués dix
+       fois, ces mêmes cas donnaient 0,10 à 0,17 px, dix fois sur dix, sans une
+       seule image longue. Ce qui les faisait crier : une image de 30 ou 50 ms
+       au mauvais moment — un ramasse-miettes, un conteneur partagé — pendant
+       laquelle la carte parcourt deux ou trois fois son chemin habituel.
+       UN CRAN DU JEU EST DÉTERMINISTE. Celui qu'avait signalé Taylor sortait à
+       6,5 - 6,65 px dans TOUS les retraits multiples, à CHAQUE passage : il
+       ressortirait aussi au rejeu. On rejoue donc une fois tout cas rouge ; il
+       n'est compté que s'il retombe, et la première mesure est imprimée quand
+       même — pour qu'on voie si les hoquets deviennent fréquents. */
+    const mesurer = async (n, bas, geste)=>{
       await poser(n, bas);
       const suivi = p.evaluate(()=>window.__suivre(2200));
       await geste();
       const { rel, clics } = await suivi;
-      const dt = Math.max(demiTours(rel,'h'), demiTours(rel,'addTop'));
-      const sa = saut(rel);
-      const sec = secousse(rel, clics);
-      const ch = chevauchement(rel);
-      const vert = dt <= dtOK && sa <= S_SAUT && sec <= S_SECOUSSE && ch <= S_CHEVAU;
+      return { dt: Math.max(demiTours(rel,'h'), demiTours(rel,'addTop')),
+               sa: saut(rel), sec: secousse(rel, clics), ch: chevauchement(rel), faits };
+    };
+    let hoquets = 0;
+    for (const [nom, n, bas, dtOK, geste] of cas){
+      const juge = (m)=> m.dt <= dtOK && m.sa <= S_SAUT && m.sec <= S_SECOUSSE && m.ch <= S_CHEVAU;
+      let m = await mesurer(n, bas, geste);
+      let note = '';
+      if(!juge(m)){
+        const premier = m;
+        m = await mesurer(n, bas, geste);
+        if(juge(m)){ hoquets++; note = '  (hoquet au 1er passage : saut ' + premier.sa.toFixed(2)
+          + ', secousse ' + premier.sec.toFixed(2) + ', demi-tours ' + premier.dt + ')'; }
+        else note = '  (rejoué : retombe)';
+      }
+      const vert = juge(m);
       if(!vert) ko++;
-      console.log('  %s %s %s %s %s %s  %s',
+      console.log('  %s %s %s %s %s %s  %s%s',
         (vert?'OK  ':'CRAN').padEnd(5), nom.padEnd(32),
-        (dt + '/' + dtOK).padStart(8), (sa.toFixed(2)+' px').padStart(11),
-        (sec.toFixed(2)+' px').padStart(12), (ch.toFixed(1)+' px').padStart(10),
-        faits + ' retrait' + (faits > 1 ? 's' : ''));
+        (m.dt + '/' + dtOK).padStart(8), (m.sa.toFixed(2)+' px').padStart(11),
+        (m.sec.toFixed(2)+' px').padStart(12), (m.ch.toFixed(1)+' px').padStart(10),
+        m.faits + ' retrait' + (m.faits > 1 ? 's' : ''), note);
     }
+    if(hoquets) console.log('  ' + hoquets + ' hoquet(s) du conteneur, non reproduit(s) au rejeu');
 
     /* ===== LE TEMPS D'ARRÊT ===== */
     const cdp = await ctx.newCDPSession(p);
