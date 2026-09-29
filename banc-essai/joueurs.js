@@ -165,12 +165,32 @@ function saut(rel){
    quand un second repli s'ajoute à un premier qui court déjà. Compter ça comme
    un cran reviendrait à interdire au jeu de réagir au doigt. On ignore donc
    les trois images qui suivent chaque toucher, et on mesure tout le reste. */
-const AVEUGLE = 50;            // ms ignorés après chaque toucher (trois images)
+/* EN IMAGES, PAS EN MILLISECONDES — ET C'EST UNE CORRECTION DU BANC.
+   La première version ignorait 50 ms après chaque toucher, en pensant « trois
+   images ». C'est vrai à 60 images par seconde, et faux dès qu'une image dure :
+   rejoué seul, « 4 fois la PREMIÈRE à 90 ms » sur Android petit est à 0,12 -
+   0,17 px neuf fois sur dix, et la dixième montre pourquoi elle crie :
+       t=211  image de 32 ms   pas  -4,59 px   (la carte avance à peine)
+       t=251  image de 20 ms   pas -13,45 px   (et rattrape d'un coup)
+   C'est le DÉMARRAGE du troisième repli, touché à 191 ms, repoussé par une
+   image longue du conteneur hors de la fenêtre de 50 ms. Ramené en vitesse,
+   cet essai est dans la norme des neuf autres. On compte donc des IMAGES :
+   l'écart à la tendance d'un démarrage à l'image k touche les indices k-1, k
+   et k+1 (il lit le pas d'avant et celui d'après) ; on laisse deux images de
+   plus pour un démarrage retardé. Le reste de l'animation est mesuré comme
+   avant, et le saut au départ de la ligne n'est concerné par rien de tout ça. */
+const AVANT = 1, APRES = 3;       // images ignorées autour de chaque toucher
 function secousse(rel, clics){
   const v = serie(rel, 'h');
+  const muets = new Set();
+  for(const c of (clics || [])){
+    const k = rel.findIndex(f => f.t >= c);
+    if(k < 0) continue;
+    for(let j = k - AVANT; j <= k + APRES; j++) muets.add(j);
+  }
   let pire = 0;
   for(let i = 2; i + 1 < v.length; i++){
-    if((clics || []).some(c => rel[i].t >= c - 17 && rel[i].t <= c + AVEUGLE)) continue;
+    if(muets.has(i)) continue;
     pire = Math.max(pire, ecartTendance(v, i));
   }
   return pire;
