@@ -1,6 +1,6 @@
 /* Yada — service worker : rend l'app jouable hors connexion.
    À déposer à côté de index.html (même dossier, nom exact "sw.js"). */
-const CACHE = "yada-v299";
+const CACHE = "yada-v300";
 /* ===== LES BANQUES DE QUESTIONS NE SONT PAS DANS LE SOCLE =====
    questions-en.js y était, et questions-es.js allait l'y rejoindre : six cent
    mille octets téléchargés à l'installation par TOUT LE MONDE, y compris les
@@ -13,8 +13,20 @@ const CACHE = "yada-v299";
    espagnol qui a ouvert le jeu une fois en ligne l'a hors ligne ensuite,
    exactement comme avant. */
 const CORE = ["./", "./index.html", "./manifest.json", "./apple-touch-icon.png", "./icon-192.png", "./icon-512.png", "./fonts/inter-latin.woff2", "./fonts/inter-latinext.woff2", "./fonts/fraunces-italic-latin.woff2", "./fonts/fraunces-italic-latinext.woff2", "./fonts/poppins-500-latin.woff2", "./fonts/poppins-500-latinext.woff2", "./fonts/poppins-600-latin.woff2", "./fonts/poppins-600-latinext.woff2", "./fonts/poppins-700-latin.woff2", "./fonts/poppins-700-latinext.woff2"];
+/* ===== UNE VERSION NE S'INSTALLE QU'ENTIÈRE, ET AVEC DU FRAIS =====
+   Deux défauts, trouvés en même temps que celui du lancement (voir plus bas) :
+   1. LE CACHE HTTP. GitHub Pages dit « garde dix minutes ». Un joueur qui
+      avait ouvert le jeu dans ces dix minutes recevait le NOUVEAU service
+      worker… qui rangeait l'ANCIENNE page, prise dans ce cache-là. D'où
+      « cache: reload » : à l'installation, on redemande tout au serveur.
+   2. UNE INSTALLATION RATÉE ÉTAIT AVALÉE EN SILENCE (le .catch vide). Sur un
+      mauvais réseau, la page de 2,8 Mo n'arrivait pas, l'installation se
+      disait réussie quand même, la version s'activait et EFFAÇAIT l'ancien
+      cache : le jeu perdait sa copie hors ligne au pire moment. Désormais
+      l'installation échoue franchement, l'ancienne version reste en place
+      avec son cache entier, et le navigateur réessaiera plus tard. */
 self.addEventListener("install", (e) => {
-  e.waitUntil(caches.open(CACHE).then((c) => c.addAll(CORE)).catch(() => {}));
+  e.waitUntil(caches.open(CACHE).then((c) => c.addAll(CORE.map((u) => new Request(u, { cache: "reload" })))));
   self.skipWaiting();
 });
 /* ===== « GARDE-MOI ÇA » : LA PAGE DEMANDE, LE SERVICE WORKER RANGE =====
@@ -30,6 +42,12 @@ self.addEventListener("install", (e) => {
    monde. Si le réseau tombe entre-temps, cache.add() échoue sans bruit et la
    demande sera refaite à la prochaine ouverture. */
 self.addEventListener("message", (e) => {
+  /* « QUELLE VERSION ES-TU ? » La page compare la réponse à la sienne : si le
+     service worker qui la sert est plus récent qu'elle, elle se recharge au
+     premier moment invisible (voir verifierVersion dans index.html). Deviner
+     d'après les caches ne marchait pas : la prise de main arrive au DÉBUT de
+     l'activation, quand l'ancien cache n'est pas encore effacé. */
+  if (e.data && e.data.quelleVersion && e.ports && e.ports[0]) { e.ports[0].postMessage({ version: CACHE }); return; }
   const u = e.data && e.data.garder;
   if (typeof u !== "string" || !/^questions-[a-z]{2}\.js$/.test(u)) return;
   e.waitUntil(caches.open(CACHE).then((c) => c.match(u).then((hit) => hit || c.add(u))).catch(() => {}));
@@ -52,12 +70,48 @@ function secours(req, res) {
     .then((hit) => hit || caches.match("./"))
     .then((hit) => hit || res || new Response("", { status: 504, statusText: "hors ligne" }));
 }
+/* ===== LE JEU SE LANCE DEPUIS SON CACHE, TOUT DE SUITE =====
+   « Lorsque j'ai pas une bonne connexion, le jeu ne se lance pas. Je suis
+   obligé de mettre le mode avion. » (Taylor.)
+   Le mode avion était le bon indice. La page était demandée au réseau
+   D'ABORD, et sans limite de temps. Réseau coupé : la requête échoue aussitôt
+   et le cache prend le relais — le jeu s'ouvre. Réseau qui répond à peine :
+   la requête n'échoue pas, elle ATTEND, et le jeu attendait avec elle. Et un
+   réseau lent mais vivant ne valait guère mieux : 2,8 Mo à livrer avant la
+   première image. banc-essai/reseau-faible.js le reproduit (serveur pendu,
+   serveur à 40 Ko/s) : rien à l'écran après douze secondes.
+   LA PAGE DU JEU sort donc du cache, sans jamais attendre le réseau. Les
+   mises à jour n'y perdent rien : elles ne passent pas par cette requête mais
+   par sw.js, que le navigateur revérifie à chaque ouverture. Le nouveau
+   service worker range la nouvelle page (du frais, voir l'installation),
+   prend la main, et la page se recharge au premier moment invisible — la
+   mécanique existait déjà (tenterMaj, dans index.html).
+   Seulement la page du jeu : la page d'essai (essai/) vit sous le même
+   service worker et garde l'ancienne règle. Et sans copie en cache (tout
+   premier lancement), c'est le réseau, comme avant. */
+const PAGE = new URL("./", self.registration.scope).href;
+function estLaPage(url) {
+  const u = new URL(url); u.search = ""; u.hash = "";
+  return u.href === PAGE || u.href === PAGE + "index.html";
+}
 self.addEventListener("fetch", (e) => {
   if (e.request.method !== "GET") return;
   const req = e.request;
-  /* Pages (navigation) : réseau d'abord pour recevoir les mises à jour, sinon
-     l'app EN CACHE — garantie que le jeu démarre TOUJOURS, même hors ligne
-     (plus de page blanche). On retombe sur index.html puis "./". */
+  /* LA SONDE DE RÉSEAU (voir sonderReseau dans index.html) : elle mesure le
+     réseau, elle ne doit donc JAMAIS être servie par le cache — ni y entrer,
+     sans quoi chaque mesure y laisserait une copie sous une adresse neuve. */
+  if (new URL(req.url).searchParams.has("sonde")) return;
+  if (req.mode === "navigate" && estLaPage(req.url)) {
+    e.respondWith(
+      caches.open(CACHE)
+        .then((c) => c.match("./index.html").then((hit) => hit || c.match("./")))
+        .then((hit) => hit || caches.match("./index.html"))
+        .then((hit) => hit || fetch(req).then((res) => (res && res.ok) ? res : secours(req, res)).catch(() => secours(req, null)))
+    );
+    return;
+  }
+  /* Les autres pages (la page d'essai) : réseau d'abord pour recevoir les
+     mises à jour, sinon la copie EN CACHE — jamais une page d'erreur. */
   if (req.mode === "navigate") {
     e.respondWith(
       fetch(req)
