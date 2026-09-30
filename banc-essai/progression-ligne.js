@@ -33,10 +33,16 @@ const v = (nom, bon, det)=>{ if(!bon) ko++; console.log('  ' + (bon?'ok   ':'KO 
 
   /* On pose un duel sans réseau : la donne est celle du jeu, le salon n'a pas
      besoin d'exister pour que les réponses comptent. */
+  /* TOUTE QUESTION N'A PAS DE LIVRE. Une question de culture générale (« quelle
+     mer très salée borde Israël ? ») crédite le total, pas un livre. Ce banc a
+     tenu tant que la donne de la graine 12345 n'en contenait aucune ; le jour où
+     la banque a grandi, la donne a changé, et une orpheline s'y est glissée :
+     total +9, livres +8, « KO ». Le jeu avait raison. On compte donc, dans la
+     donne, les questions qui ONT un livre : c'est ce que la somme doit suivre. */
   const poser = ()=> p.evaluate(()=>{
     net.room = null;                       // aucun envoi : on ne teste pas le transport
     beginDuel(12345, 'courte', 'sans', 'tout');
-    return net.deck.length;
+    return { n: net.deck.length, avecLivre: net.deck.filter(q => bookOf(q)).length };
   });
   const photo = ()=> p.evaluate(()=>{
     const pr = loadProgress();
@@ -45,8 +51,8 @@ const v = (nom, bon, det)=>{ if(!bon) ko++; console.log('  ' + (bon?'ok   ':'KO 
              somme: Object.keys(pr.books||{}).reduce((a,k)=>a+pr.books[k],0) };
   });
 
-  const n = await poser();
-  v("un duel est posé", n > 0, n + ' questions');
+  const donne = await poser(); const n = donne.n;
+  v("un duel est posé", n > 0, n + ' questions, dont ' + donne.avecLivre + ' rattachées à un livre');
   const avant = await photo();
 
   /* ---------- TOUTES BONNES : tout doit monter ---------- */
@@ -62,7 +68,8 @@ const v = (nom, bon, det)=>{ if(!bon) ko++; console.log('  ' + (bon?'ok   ':'KO 
   const apres = await photo();
   v("le total des bonnes réponses a monté", apres.total === avant.total + n, avant.total + ' -> ' + apres.total + ' (attendu +' + n + ')');
   v("des livres ont été crédités", apres.livres > avant.livres, avant.livres + ' -> ' + apres.livres + ' livre(s)');
-  v("la somme par livre suit le total", apres.somme === avant.somme + n, avant.somme + ' -> ' + apres.somme);
+  v("chaque livre reçoit ses bonnes réponses", apres.somme === avant.somme + donne.avecLivre,
+    avant.somme + ' -> ' + apres.somme + ' (attendu +' + donne.avecLivre + ')');
   v("la meilleure série a monté", apres.serie >= n, 'série ' + apres.serie + ' pour ' + n + ' bonnes d\'affilée');
   v("le sans-faute est acquis", apres.sansFaute === 1);
 
