@@ -813,11 +813,29 @@ const ouvrirLaLangue = async (p, lg) => {
        La première version de cette étape passait « titre / texte / ok » là où
        showModal attend « title / message / okLabel » : la fenêtre s'ouvrait
        VIDE, le banc n'y lisait rien, et il en déduisait que tout allait bien. */
+    /* ===== LE HORS-LIGNE DOIT S'EN ALLER AVEC L'ÉTAPE =====
+       Le faux « hors ligne » est posé sur l'OBJET navigator, et l'étape
+       croyait le retirer en reposant le descripteur du PROTOTYPE — qu'elle
+       n'avait jamais touché. La propriété de l'objet restait donc là, et
+       masquait la vraie : navigator.onLine valait false pour tout le reste de
+       la passe. Sans conséquence tant que rien ne le relisait ; depuis que le
+       jeu surveille le réseau (v300), c'est une fausse coupure. On retire
+       donc exactement ce qu'on a posé. */
     ['Hors connexion',     () => { __fermerTout();
-      const ol = Object.getOwnPropertyDescriptor(Navigator.prototype, 'onLine');
       Object.defineProperty(navigator, 'onLine', { configurable:true, get:()=>false });
-      openOnline();
-      if(ol) Object.defineProperty(Navigator.prototype, 'onLine', ol); }],
+      try { openOnline(); } finally { delete navigator.onLine; } }],
+    /* ===== L'ICÔNE DU RÉSEAU, ET CE QU'ELLE DIT (v300) =====
+       Elle n'apparaît que sur un mauvais réseau : sans ces étapes, ses quatre
+       phrases ne s'affichaient jamais ici, et le banc les déclarait — à
+       raison — « jamais vues ». On pose l'état par la fonction du jeu
+       (poserReseau) et on ouvre la fenêtre par celle qui l'ouvre
+       (expliquerReseau). La sonde que cette dernière relance est tenue à
+       l'écart le temps des deux étapes : c'est un relevé de textes, pas une
+       mesure du réseau. */
+    ['Réseau faible',      () => { __fermerTout(); state.screen='mode'; render();
+      RESEAU.enCours = true; poserReseau('faible'); expliquerReseau(); }],
+    ['Réseau coupé',       () => { __fermerTout(); poserReseau('coupe'); expliquerReseau(); }],
+    ['Réseau revenu',      () => { __fermerTout(); RESEAU.enCours = false; poserReseau('bon'); }],
     ['Quitter la partie',  () => { __fermerTout(); confirmLeaveGame(); }],
     ['Quitter le duel',    () => { __fermerTout();
       net.myDone = false; net.oppGone = false;

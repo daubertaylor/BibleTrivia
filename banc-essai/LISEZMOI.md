@@ -70,6 +70,8 @@ notre code, et il est éprouvé. Tout le reste l'est.
     node paysage.js     # couché, on ne voit rien de l'app sous le voile
     node typo.js        # typographie française sur les 1545 questions et 12 écrans
     node doigt.js       # tout ce qui se touche fait-il 44 px, mesuré au doigt ?
+    node premiere-ouverture.js  # la 1re ouverture des Réglages refait-elle le travail des premières fois ?
+    node reseau-faible.js       # un réseau qui pend ou qui traîne : le jeu se lance quand même, et le dit
     node fuite.js sansmarge "html.gl-xf .has-gs{ overflow-clip-margin:0px !important; }"
     python3 fuite.py sansmarge     # aucun trou d'un pixel au bord des feuilles
     node matiere.js /tmp/m mat && python3 matiere.py /tmp/m mat   # la matière suffit-elle ?

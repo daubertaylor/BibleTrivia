@@ -596,6 +596,18 @@
      gagnerait, et les deux boutons tomberaient en pile à gauche en poussant
      tout l'écran vers le bas. */
   .icon-btn.hero-settings{ position:absolute; top:0.15rem; right:0.5rem; color:var(--ink); }
+  /* LE RÉSEAU (voir sonderReseau) : un rond du même verre que les Réglages,
+     juste à sa gauche, et seulement quand le réseau va mal. La couleur est
+     celle du SIGNE, jamais d'un bord : ambre pour « faible », brique pour
+     « coupé » — assez sombres pour se lire sur le verre clair. */
+  .icon-btn.hero-reseau{ position:absolute; top:0.15rem; right:calc(0.5rem + 2.4rem + 0.55rem); }
+  .icon-btn.hero-reseau[data-reseau="faible"]{ color:#A8680F; }
+  .icon-btn.hero-reseau[data-reseau="coupe"]{ color:#B23A2A; }
+  .icon-btn.hero-reseau.arrive{ animation:reseauArrive 0.42s cubic-bezier(0.2,0.8,0.2,1) both; }
+  .icon-btn.hero-reseau.part{ animation:reseauPart 0.26s ease-in both; pointer-events:none; }
+  @keyframes reseauArrive{ from{ opacity:0; transform:scale(0.6); } to{ opacity:1; transform:none; } }
+  @keyframes reseauPart{ to{ opacity:0; transform:scale(0.6); } }
+  @media (prefers-reduced-motion: reduce){ .icon-btn.hero-reseau.arrive, .icon-btn.hero-reseau.part{ animation-duration:0.01s; } }
   .icon-btn.hero-profile{ position:absolute; top:0.15rem; left:0.5rem; padding:0; overflow:visible; background:transparent; border:none; box-shadow:none; }
   .hero-icon{ width:clamp(4.2rem, min(calc(27 * var(--lw)), calc(14.2 * var(--hu))), 7.4rem); height:auto; aspect-ratio:1; margin:0 auto 0.5rem; border-radius:23%; box-shadow:0 12px 30px rgba(10,8,6,0.44), 0 0 8px rgba(255,250,238,0.48), 0 0 24px rgba(255,247,228,0.34), 0 0 52px rgba(255,247,231,0.18), inset 0 0 9px rgba(255,252,245,0.4), inset 0 1.5px 4px rgba(255,255,255,0.28); display:block; object-fit:cover; animation:heroFloat 5s ease-in-out infinite; -webkit-user-drag:none; user-drag:none; -webkit-touch-callout:none; -webkit-user-select:none; user-select:none; pointer-events:none; }
   @keyframes heroFloat{ 0%,100%{ transform:translateY(0); } 50%{ transform:translateY(-6px); } }
@@ -4370,7 +4382,8 @@
   /* Profil et Réglages s'effacent TOUJOURS : ils sont dans les coins hauts, et
      la carte, large de presque tout l'écran, passe par-dessus. */
   .hero:has(.hero-zone.show-verse) .hero-profile,
-  .hero:has(.hero-zone.show-verse) .hero-settings{ opacity:0; pointer-events:none; }
+  .hero:has(.hero-zone.show-verse) .hero-settings,
+  .hero:has(.hero-zone.show-verse) .hero-reseau{ opacity:0; pointer-events:none; }
   /* LE NOM DU JEU RESTE. Il s'effaçait avec eux, systématiquement — alors que
      la carte ne descend jusqu'à lui que si le verset est assez long pour la
      faire grandir au-delà de la zone du héros. Mesuré sur les 992 affichages
@@ -4955,6 +4968,11 @@ const TEXTES = {
     "Duel terminé":"Duel over",
     "Connexion perdue":"Connection lost",
     "Le mode en ligne a été interrompu. Tu peux continuer en Solo ou en Groupe.":"Online mode was interrupted. You can carry on in Solo or Group mode.",
+    /* l'indicateur de réseau, sur l'accueil */
+    "Connexion faible":"Weak connection",
+    "Pas de connexion":"No connection",
+    "Le réseau répond mal en ce moment. Le jeu fonctionne sans lui : tes parties et ta progression restent enregistrées sur ton téléphone. Le mode en ligne et la sauvegarde du compte reprendront dès que la connexion ira mieux.":"The network is responding poorly right now. The game works without it: your games and progress stay saved on your phone. Online mode and account saving will resume as soon as the connection improves.",
+    "Ton téléphone n'arrive pas à joindre Internet. Le jeu fonctionne sans : tes parties et ta progression restent enregistrées sur ton téléphone. Le mode en ligne et la sauvegarde du compte reprendront dès que la connexion reviendra.":"Your phone can't reach the Internet. The game works without it: your games and progress stay saved on your phone. Online mode and account saving will resume as soon as the connection comes back.",
     "Le multijoueur a besoin d'un petit serveur temps réel gratuit (Supabase).":"Multiplayer needs a small free real-time server (Supabase).",
     "Ouvre le fichier, trouve le bloc":"Open the file, find the block",
     "tout en haut du script, et colle l'URL + la clé « anon » de ton projet Supabase. Aucune table à créer. Les instructions détaillées sont dans le message.":"at the very top of the script, and paste the URL + the “anon” key of your Supabase project. No table to create. The detailed instructions are in the message.",
@@ -5353,6 +5371,11 @@ const TEXTES = {
     "Duel terminé":"Duelo terminado",
     "Connexion perdue":"Conexión perdida",
     "Le mode en ligne a été interrompu. Tu peux continuer en Solo ou en Groupe.":"El modo en línea se interrumpió. Puedes seguir en Solo o en Grupo.",
+    /* el indicador de red, en la portada */
+    "Connexion faible":"Conexión débil",
+    "Pas de connexion":"Sin conexión",
+    "Le réseau répond mal en ce moment. Le jeu fonctionne sans lui : tes parties et ta progression restent enregistrées sur ton téléphone. Le mode en ligne et la sauvegarde du compte reprendront dès que la connexion ira mieux.":"La red responde mal en este momento. El juego funciona sin ella: tus partidas y tu progreso quedan guardados en tu teléfono. El modo en línea y el guardado de la cuenta se reanudarán en cuanto mejore la conexión.",
+    "Ton téléphone n'arrive pas à joindre Internet. Le jeu fonctionne sans : tes parties et ta progression restent enregistrées sur ton téléphone. Le mode en ligne et la sauvegarde du compte reprendront dès que la connexion reviendra.":"Tu teléfono no logra conectarse a Internet. El juego funciona sin conexión: tus partidas y tu progreso quedan guardados en tu teléfono. El modo en línea y el guardado de la cuenta se reanudarán en cuanto vuelva la conexión.",
     "Le multijoueur a besoin d'un petit serveur temps réel gratuit (Supabase).":"El multijugador necesita un pequeño servidor en tiempo real gratuito (Supabase).",
     "Ouvre le fichier, trouve le bloc":"Abre el archivo, busca el bloque",
     "tout en haut du script, et colle l'URL + la clé «\u00a0anon\u00a0» de ton projet Supabase. Aucune table à créer. Les instructions détaillées sont dans le message.":"al principio del script, y pega la URL y la clave “anon” de tu proyecto Supabase. No hay que crear ninguna tabla. Las instrucciones detalladas están en el mensaje.",
@@ -5886,6 +5909,11 @@ const ICONS = {
      peuvent pas diverger. */
   shareUp: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.1" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v12"/><path d="M8 7l4-4 4 4"/><path d="M5 12v6a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2v-6"/></svg>`,
   bookOpen: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M12 6.6C10.4 5.4 8.4 4.8 6 4.8H3.6v13.2H6c2.4 0 4.4 0.6 6 1.8"/><path d="M12 6.6c1.6-1.2 3.6-1.8 6-1.8h2.4v13.2H18c-2.4 0-4.4 0.6-6 1.8"/><path d="M12 6.6v13.2"/></svg>`,
+  /* LE RÉSEAU : trois arcs concentriques (centre sous le point, à y≈18,9) et
+     un point. Faible : seul l'arc du bas reste plein — le dessin que tout le
+     monde lit comme « une barre ». Coupé : tout s'estompe, une barre en travers. */
+  reseauFaible: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M2.2 8.6a14.2 14.2 0 0 1 19.6 0" opacity="0.36"/><path d="M5.4 12a9.6 9.6 0 0 1 13.2 0" opacity="0.36"/><path d="M8.7 15.3a4.9 4.9 0 0 1 6.6 0"/><circle cx="12" cy="18.7" r="1.5" fill="currentColor" stroke="none"/></svg>`,
+  reseauCoupe: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M2.2 8.6a14.2 14.2 0 0 1 19.6 0" opacity="0.36"/><path d="M5.4 12a9.6 9.6 0 0 1 13.2 0" opacity="0.36"/><path d="M8.7 15.3a4.9 4.9 0 0 1 6.6 0" opacity="0.36"/><circle cx="12" cy="18.7" r="1.5" fill="currentColor" stroke="none" opacity="0.36"/><path d="M4.2 3.8l15.6 16.2"/></svg>`,
 };
 
 /* ===================== DATA ===================== */
@@ -7624,6 +7652,11 @@ let state = {
   revealed:false,
   awarded:[]
 };
+/* L'état du réseau (voir sonderReseau) : déclaré ICI, avec l'état du jeu,
+   parce que l'accueil le lit à chaque rendu — et un rendu peut venir avant
+   la section du réseau, plus bas dans le script. */
+const RESEAU = { etat:"bon", enCours:false, minuteur:0 };
+const RESEAU_LENT = 2000, RESEAU_REPRISE = 1200, RESEAU_LIMITE = 6000;
 
 /* ===================== CHRONO PAR QUESTION ===================== */
 let qTimerId = null, qTimerLeft = 0;
@@ -7709,7 +7742,7 @@ const SUPABASE_ANON_KEY = "sb_publishable_FDJ_R0foC7uIeHmxVrj6rA_2NeIgW2a";
    remontée d'un téléphone ne vaut rien si on ne sait pas QUELLE version
    tournait. Elle doit rester égale au CACHE de sw.js — c'est ce que vérifie
    banc-essai/version.js, qui refuse de laisser publier les deux en désaccord. */
-const VERSION_JEU = "v299";
+const VERSION_JEU = "v300";
 
 /* ===================== QUAND ÇA CASSE CHEZ UN JOUEUR =====================
    « Si quelque chose casse chez cinq d'entre eux sur un modèle de téléphone
@@ -10295,12 +10328,51 @@ function closeMissedReview(){
    peut pas lire ailleurs : la version active (« Louis Segond 1910 ») et l'état
    des rappels — allumés, éteints, ou bloqués dans les réglages du téléphone,
    le seul cas où l'interrupteur ne répond pas et où il faut bien le dire. */
-function openSettings(){
-  if(document.getElementById("settingsVeil")) return;
-  const veil = document.createElement("div");
-  veil.className = "sheet-veil"; veil.id = "settingsVeil";
+/* ===== LA PREMIÈRE OUVERTURE DOIT ÊTRE UNE OUVERTURE COMME LES AUTRES =====
+   « Vérifie l'ouverture des réglages, la première ouverture lors d'une
+   session : je la trouve bizarre. » Mesuré dans une même session, mêmes
+   gestes, processeur bridé quatre fois : la PREMIÈRE ouverture fait un
+   travail que les suivantes ne refont jamais. Sa mise en page coûte 33 à
+   45 ms, celle des suivantes 4 à 12 ; au toucher, la feuille n'apparaissait
+   qu'au bout de 464 ms, contre 236 pour la deuxième.
+   Ce n'est pas la feuille qui est lente, c'est la PREMIÈRE FOIS : le
+   navigateur découvre ces règles de style, met en forme ces mots-là à ces
+   tailles-là, et garde tout en cache. La deuxième ouverture profite de la
+   première — le joueur, lui, payait la première.
+   On la fait donc AVANT lui, à un moment où rien ne bouge (voir la fin du
+   script) : la feuille est construite une fois, mise en page, puis retirée,
+   le tout dans la même tâche. Aucune image ne peut être peinte entre les
+   deux : personne ne la voit, personne ne peut la toucher, et aucun code du
+   jeu ne tourne pendant qu'elle existe. Mesuré ensuite (banc-essai/
+   premiere-ouverture.js) : la première ouverture met en page en 5 à 9 ms,
+   comme les autres.
+   Elle ne porte PAS l'identifiant « settingsVeil » (openSettings refuse de
+   s'ouvrir tant qu'il existe), elle ne passe pas par le moteur de verre, et
+   elle n'a lieu qu'une fois par session — jamais si le joueur a déjà ouvert
+   les Réglages lui-même, puisque c'est déjà fait.
+   CE QU'ELLE NE CHANGE PAS : le tout premier toucher d'une session réveille
+   aussi le son (voir getCtx). Si ce toucher est celui des Réglages, les deux
+   tombent ensemble. On n'y touche pas ici : iOS n'accorde le son qu'à
+   l'intérieur d'un geste, et le déplacer, c'est risquer le silence. */
+let reglagesChauds = false;
+function prechaufferReglages(){
+  if(reglagesChauds || document.getElementById("settingsVeil")) return;
+  reglagesChauds = true;
+  const v = document.createElement("div");
+  v.className = "sheet-veil";
+  v.setAttribute("aria-hidden", "true");
+  try{
+    v.innerHTML = reglagesHtml();
+    document.body.appendChild(v);
+    void v.offsetHeight;          // style + mise en page + mise en forme du texte
+  }catch(e){}
+  finally{ try{ v.remove(); }catch(e){} }
+}
+/* Le contenu de la feuille, à part pour une seule raison : le préchauffage
+   doit construire EXACTEMENT la feuille que le joueur ouvrira. */
+function reglagesHtml(){
   const pct = Math.round(settings.volume*100);
-  veil.innerHTML = `
+  return `
     <div class="settings-sheet" role="dialog" aria-label="${T("Réglages")}">
       <button class="sheet-grab" aria-label="${T("Fermer")}" onclick="closeSettings()"></button>
       <div class="sheet-title"><span class="st-ico">${ICONS.gear}</span>${T("Réglages")}${boutonLangue()}</div>
@@ -10379,6 +10451,13 @@ function openSettings(){
         <span class="share-lbl">${T("Partager le jeu")}</span>
       </button>
     </div>`;
+}
+function openSettings(){
+  if(document.getElementById("settingsVeil")) return;
+  reglagesChauds = true;          // la vraie ouverture chauffe tout autant
+  const veil = document.createElement("div");
+  veil.className = "sheet-veil"; veil.id = "settingsVeil";
+  veil.innerHTML = reglagesHtml();
   document.body.appendChild(veil);
   monterLaFeuille(veil);
   glassTrack();
@@ -18484,6 +18563,7 @@ function renderModeSelect(){
     <div class="hero">
       <button class="icon-btn hero-profile" onclick="openProfile()" aria-label="${T('Profil')}">${avatarHtml(profile.name||"?", profile.color, 2.4, true)}</button>
       <button class="icon-btn hero-settings" onclick="openSettings()" aria-label="${T("Réglages")}"><span class="ico" style="width:1.22rem;height:1.22rem;">${ICONS.gear}</span></button>
+      ${indicateurReseauHtml()}
       <div class="hero-zone" id="heroZone">
         <button class="hero-icon-btn" onclick="heroIconTap()" onpointerdown="heroIconPress(event)" onpointerup="heroIconRelease()" onpointerleave="heroIconRelease()" onpointercancel="heroIconRelease()" aria-label="${NOM_DU_JEU}">
           <span class="hero-icon-wrap"><img class="hero-icon" src="${DOVE_ICON}" alt="${NOM_DU_JEU}" draggable="false"></span>
@@ -21642,6 +21722,128 @@ function onFsChange(){
 }
 document.addEventListener("fullscreenchange", onFsChange);
 document.addEventListener("webkitfullscreenchange", onFsChange);
+/* ===== LE RÉSEAU, TEL QU'IL EST VRAIMENT =====
+   « Que tu notifies via une petite icône lorsque le réseau est mauvais. »
+   (Taylor, avec le lancement qui bloquait — voir sw.js.)
+   navigator.onLine ne dit qu'une chose : une interface réseau existe. Une
+   barre de Wi-Fi sans Internet, un réseau qui répond à peine : « en ligne »
+   dans les deux cas. On MESURE donc — une petite requête (manifest.json, moins
+   d'un kilo-octet), que le service worker laisse passer sans jamais la servir
+   ni la ranger (voir « sonde » dans sw.js), avec une limite de temps :
+     · elle revient vite                      -> bon, aucune icône ;
+     · elle revient lentement, ou pas à temps -> faible ;
+     · elle échoue, ou le système dit « hors ligne » -> coupé.
+   Quand mesurer : après l'écran de chargement (jamais pendant), au retour sur
+   l'app, quand le système signale un changement de réseau — et, tant que ça
+   va mal, toutes les quinze secondes pour voir revenir le bon. Quand tout va
+   bien, on ne mesure plus rien : interroger le réseau sans raison coûterait
+   des données et de la batterie à tout le monde. (RESEAU est déclaré avec
+   l'état du jeu, tout en haut.) */
+function poserReseau(e){
+  if(RESEAU.etat === e) return;
+  RESEAU.etat = e;
+  majIndicateurReseau();
+}
+function planifierSonde(){
+  clearTimeout(RESEAU.minuteur);
+  if(RESEAU.etat !== "bon" && document.visibilityState === "visible") RESEAU.minuteur = setTimeout(sonderReseau, 15000);
+}
+/* ===== LE TEMPS DU RÉSEAU, PAS CELUI DU TÉLÉPHONE =====
+   La sonde prenait l'heure au départ, puis à l'arrivée de la réponse. Mais
+   « l'arrivée », pour du JavaScript, c'est le moment où le fil principal
+   trouve le temps de LIRE la réponse : un téléphone occupé ailleurs (un écran
+   lourd, une animation, une appli qui démarre) la lit plus tard, et la sonde
+   mettait ce retard sur le compte du réseau. Sur un réseau parfait, elle
+   pouvait donc annoncer une connexion faible.
+   Le navigateur, lui, note l'heure exacte à laquelle le dernier octet est
+   arrivé, sans attendre personne (Resource Timing) : c'est ce chiffre-là
+   qu'on juge. On ne retombe sur l'horloge du fil que s'il manque — navigateur
+   trop ancien, ou relevé déjà plein. Chaque relevé est effacé une fois lu :
+   la sonde revient toutes les quinze secondes quand le réseau va mal, et
+   personne d'autre ne s'en sert. */
+function dureeReseau(adresse, repli){
+  try{
+    const url = new URL(adresse, location.href).href;
+    const l = performance.getEntriesByName(url);
+    const e = l && l[l.length - 1];
+    try{ performance.clearResourceTimings(); }catch(err){}
+    if(e && e.responseEnd > 0 && e.responseEnd >= e.startTime) return e.responseEnd - e.startTime;
+  }catch(err){}
+  return repli;
+}
+function sonderReseau(){
+  clearTimeout(RESEAU.minuteur);
+  if(location.protocol === "file:") return;          // un fichier ouvert en local : pas de réseau à mesurer
+  if(navigator.onLine === false){ poserReseau("coupe"); planifierSonde(); return; }
+  if(RESEAU.enCours) return;
+  RESEAU.enCours = true;
+  const ctrl = (typeof AbortController === "function") ? new AbortController() : null;
+  let depasse = false;
+  const garde = setTimeout(()=>{ depasse = true; try{ if(ctrl) ctrl.abort(); }catch(e){} }, RESEAU_LIMITE);
+  const t0 = Date.now();
+  const adresse = "manifest.json?sonde=" + t0;
+  /* Le CORPS compte, pas seulement les en-têtes : un réseau lent se voit au
+     transfert. Et deux seuils — entrer dans « faible » au-delà de deux
+     secondes, n'en sortir qu'en dessous d'une seconde deux dixièmes : sans cet
+     écart, une connexion à la limite ferait clignoter l'icône. */
+  fetch(adresse, { cache:"no-store", signal: ctrl ? ctrl.signal : undefined })
+    .then(r => r.text().then(()=>{
+      const ms = dureeReseau(adresse, Date.now() - t0);
+      if(!r.ok) poserReseau("faible");
+      else poserReseau(ms > (RESEAU.etat === "bon" ? RESEAU_LENT : RESEAU_REPRISE) ? "faible" : "bon");
+    }))
+    .catch(()=>{ poserReseau(depasse ? "faible" : "coupe"); })
+    .then(()=>{ clearTimeout(garde); RESEAU.enCours = false; planifierSonde(); });
+}
+function indicateurReseauHtml(){
+  const e = RESEAU.etat;
+  if(e === "bon") return "";
+  const nom = e === "coupe" ? T("Pas de connexion") : T("Connexion faible");
+  return `<button class="icon-btn hero-reseau" data-reseau="${e}" onclick="expliquerReseau()" aria-label="${nom}"><span class="ico" style="width:1.22rem;height:1.22rem;">${e === "coupe" ? ICONS.reseauCoupe : ICONS.reseauFaible}</span></button>`;
+}
+/* L'ACCUEIL NE SE REPEINT PAS POUR UNE ICÔNE. On la pose, on la change ou on
+   la retire à sa place, et on prévient le moteur de verre (glassTrack) qu'une
+   surface est apparue — un rendu complet de l'écran pour un rond de 38 px,
+   c'est tout l'accueil qui clignote. Elle n'entre en scène (« arrive ») que
+   lorsqu'elle APPARAÎT : revenir à l'accueil ne la fait pas sauter à chaque
+   fois. */
+function majIndicateurReseau(){
+  document.querySelectorAll(".screen.accueil .hero").forEach(hero=>{
+    const ancien = hero.querySelector(".hero-reseau");
+    const html = indicateurReseauHtml();
+    if(!html){
+      if(ancien && !ancien.classList.contains("part")){
+        ancien.classList.remove("arrive"); ancien.classList.add("part");
+        setTimeout(()=>{ ancien.remove(); try{ glassTrack(); }catch(e){} }, 280);
+      }
+      return;
+    }
+    if(ancien && ancien.getAttribute("data-reseau") === RESEAU.etat && !ancien.classList.contains("part")) return;
+    const tmp = document.createElement("div"); tmp.innerHTML = html;
+    const neuf = tmp.firstElementChild;
+    neuf.classList.add("arrive");
+    if(ancien) ancien.replaceWith(neuf);
+    else { const reg = hero.querySelector(".hero-settings"); if(reg) reg.insertAdjacentElement("afterend", neuf); else hero.appendChild(neuf); }
+    try{ glassTrack(); }catch(e){}
+  });
+}
+function expliquerReseau(){
+  const coupe = RESEAU.etat === "coupe";
+  showModal({ title: coupe ? T("Pas de connexion") : T("Connexion faible"),
+    message: coupe ? T("Ton téléphone n'arrive pas à joindre Internet. Le jeu fonctionne sans : tes parties et ta progression restent enregistrées sur ton téléphone. Le mode en ligne et la sauvegarde du compte reprendront dès que la connexion reviendra.")
+                   : T("Le réseau répond mal en ce moment. Le jeu fonctionne sans lui : tes parties et ta progression restent enregistrées sur ton téléphone. Le mode en ligne et la sauvegarde du compte reprendront dès que la connexion ira mieux."),
+    okLabel: T("Compris"), hideCancel: true });
+  sonderReseau();
+}
+window.addEventListener("online", ()=>{ sonderReseau(); });
+window.addEventListener("offline", ()=>{ poserReseau("coupe"); planifierSonde(); });
+document.addEventListener("visibilitychange", ()=>{
+  if(document.visibilityState === "visible") setTimeout(sonderReseau, 800);
+  else clearTimeout(RESEAU.minuteur);
+});
+try{ const cx = navigator.connection; if(cx && cx.addEventListener) cx.addEventListener("change", ()=>{ sonderReseau(); }); }catch(e){}
+setTimeout(sonderReseau, 5000);
+
 window.addEventListener("offline", ()=>{
   if(String(state.screen).indexOf("online") === 0){
     leaveOnline();
@@ -21866,6 +22068,89 @@ document.addEventListener("animationend", (e)=>{
   else if(n === "wrongFlash"){ t.classList.remove("reveal-shake"); t.classList.remove("shake"); }
 });
 
+/* ===== LE RECHARGEMENT DE MISE À JOUR (voir le bloc service worker plus bas) =====
+   Déclaré ici, hors du bloc, parce que le minuteur de l'écran de chargement
+   (tout en bas du script) le consulte : si une version attend quand le
+   chargement s'achève, on recharge à la place d'afficher l'accueil. */
+let majEnAttente = false, majFaite = false, derniereTouche = 0;
+try{ document.addEventListener("pointerdown", ()=>{ derniereTouche = Date.now(); }, { capture:true, passive:true }); }catch(e){}
+function momentPropice(){
+  if(majFaite || !majEnAttente) return false;
+  try{
+    if(typeof state === "undefined" || state.screen !== "mode") return false;
+    if(document.visibilityState !== "visible") return false;
+    if(Date.now() - derniereTouche < 2000) return false;
+    if(document.querySelector(".sheet-veil, .modal-veil")) return false;
+    if(document.getElementById("heroZone") && document.getElementById("heroZone").classList.contains("show-verse")) return false;
+  }catch(e){ return false; }
+  return true;
+}
+function rechargerPourMaj(){
+  if(majFaite) return;
+  majFaite = true;
+  /* On note que le son VIVAIT avant de recharger. Sans ça, la nouvelle page
+     repart avec audioUnlocked à faux : sur iOS, la musique ne peut alors
+     redémarrer qu'au prochain toucher, et une mise à jour silencieuse
+     laissait le jeu muet sans que rien ne l'explique. */
+  try{ if(settings.music) sessionStorage.setItem("bt_son_vif", "1"); }catch(e){}
+  /* Et que c'est une MISE À JOUR : la nouvelle page s'ouvrira directement
+     sur l'accueil, sans rejouer l'écran de chargement. */
+  try{ sessionStorage.setItem("bt_maj", String(Date.now())); }catch(e){}
+  try{ location.reload(); }catch(e){}
+}
+function tenterMaj(){
+  if(majFaite || !majEnAttente) return;
+  if(momentPropice()){ rechargerPourMaj(); return; }
+  clearTimeout(tenterMaj.t);
+  if(document.visibilityState === "visible") tenterMaj.t = setTimeout(tenterMaj, 1500);
+}
+/* Une page rechargée POUR une mise à jour s'ouvre sur l'accueil. Le repère
+   ne vaut que quelques secondes : un rechargement manuel plus tard, ou une
+   autre page, retrouve l'écran de chargement normal. Il est lu UNE fois, ici :
+   il sert aussi de garde-fou — une page qui vient d'être rechargée pour une
+   mise à jour ne se recharge plus d'elle-même (jamais de boucle). */
+const OUVERT_APRES_MAJ = (function(){
+  try{
+    const t = +sessionStorage.getItem("bt_maj");
+    sessionStorage.removeItem("bt_maj");
+    return !!t && Date.now() - t < 20000;
+  }catch(e){ return false; }
+})();
+/* LA PAGE EST-ELLE EN RETARD SUR LE SERVICE WORKER QUI LA SERT ? On le lui
+   DEMANDE (« quelleVersion », voir sw.js) et on compare à VERSION_JEU.
+   Première idée, écartée au banc : regarder si le cache de la page existe
+   encore. Mais la prise de main arrive au DÉBUT de l'activation du nouveau
+   service worker, quand l'ancien cache n'est pas encore effacé — mesuré :
+   « controllerchange » à 628 ms, les deux caches encore là. La page se
+   croyait à jour et le restait.
+   Sans service worker, ou s'il ne répond pas (une version d'avant ce
+   message, ou aucune réponse en trois secondes), la page n'est en retard sur
+   rien : dans le doute, on ne recharge JAMAIS. */
+function versionDuServiceWorker(){
+  return new Promise((res)=>{
+    try{
+      const c = ("serviceWorker" in navigator) && navigator.serviceWorker.controller;
+      if(!c || typeof MessageChannel !== "function") return res(null);
+      const ch = new MessageChannel();
+      const t = setTimeout(()=>res(null), 3000);
+      ch.port1.onmessage = (e)=>{ clearTimeout(t); res((e.data && e.data.version) || null); };
+      c.postMessage({ quelleVersion:1 }, [ch.port2]);
+    }catch(e){ res(null); }
+  });
+}
+function pageEnRetard(){
+  return versionDuServiceWorker().then(v => !!v && v !== "yada-" + VERSION_JEU);
+}
+/* On vérifie à la prise de main d'un service worker, au démarrage et à chaque
+   retour sur l'app. Le démarrage compte : mesuré au banc, la nouvelle version
+   peut s'installer et prendre la main PENDANT que la page se charge encore —
+   avant que quiconque écoute « controllerchange ». Le signal était perdu, et
+   la page restait sur l'ancienne version jusqu'à la reprise suivante. */
+function verifierVersion(){
+  if(majFaite || majEnAttente || OUVERT_APRES_MAJ) return;
+  pageEnRetard().then(r => { if(r && !majEnAttente){ majEnAttente = true; tenterMaj(); } });
+}
+
 /* Hors connexion : si le fichier sw.js (fourni) est déployé à côté de cette page,
    l'app se met en cache et reste jouable sans Internet. Sans lui, rien ne change. */
 if("serviceWorker" in navigator){
@@ -21885,41 +22170,50 @@ if("serviceWorker" in navigator){
        - une seule fois.
      Si l'instant n'est pas propice, on retient le rechargement et on réessaie
      au retour d'arrière-plan suivant — jamais au milieu de quoi que ce soit. */
-  let majEnAttente = false, majFaite = false;
-  const lancementT0 = Date.now();
-  function momentPropice(){
-    if(majFaite || !majEnAttente) return false;
-    if(Date.now() - lancementT0 < 6000) return false;
-    try{
-      if(typeof state === "undefined" || state.screen !== "mode") return false;
-      if(document.querySelector(".sheet-veil, .modal-veil")) return false;
-      if(document.getElementById("heroZone") && document.getElementById("heroZone").classList.contains("show-verse")) return false;
-    }catch(e){ return false; }
-    return true;
-  }
-  function tenterMaj(){
-    if(!momentPropice()) return;
-    majFaite = true;
-    /* On note que le son VIVAIT avant de recharger. Sans ça, la nouvelle page
-       repart avec audioUnlocked à faux : sur iOS, la musique ne peut alors
-       redémarrer qu'au prochain toucher, et une mise à jour silencieuse
-       laissait le jeu muet sans que rien ne l'explique. */
-    try{ if(settings.music) sessionStorage.setItem("bt_son_vif", "1"); }catch(e){}
-    try{ location.reload(); }catch(e){}
-  }
-  try{
-    navigator.serviceWorker.addEventListener("controllerchange", ()=>{ majEnAttente = true; setTimeout(tenterMaj, 400); });
-  }catch(e){}
-  window.addEventListener("load", ()=>{
+  /* ===== DEPUIS QUE LE JEU SE LANCE DEPUIS SON CACHE (voir sw.js) =====
+     la page ouverte est celle de la version INSTALLÉE ; la nouvelle arrive
+     pendant qu'on joue déjà : le navigateur revérifie sw.js, le nouveau
+     service worker range la nouvelle page et prend la main. Il faut donc
+     recharger — et le faire bien. Trois changements, mesurés au banc
+     (banc-essai/reseau-faible.js, étapes 4 et 5) :
+       1. ON NE RECHARGE QUE SI C'EST UTILE. La page sait sa version ; elle
+          demande la sienne au service worker qui la sert (pageEnRetard).
+          Avant, chaque arrivée d'un service worker déclenchait un
+          rechargement, même d'une page déjà neuve — et même au tout premier
+          lancement.
+       2. ON RÉESSAIE. Le nouveau service worker s'installe en une ou deux
+          secondes, donc PENDANT l'écran de chargement : la règle « pas avant
+          six secondes » refusait le rechargement, et plus rien ne le
+          redemandait avant la reprise suivante. On retente toutes les
+          secondes et demie, tant que la page est visible.
+       3. PAS DE DEUXIÈME ÉCRAN DE CHARGEMENT. Si la nouvelle version est prête
+          quand le chargement s'achève, on recharge À LA PLACE d'afficher
+          l'accueil, et la nouvelle page s'ouvre directement sur l'accueil
+          (bt_maj) : le joueur voit son écran de chargement habituel, puis la
+          nouvelle version. Sinon, on attend l'accueil au repos — ni feuille,
+          ni fenêtre, ni verset ouvert, et aucun toucher depuis deux secondes
+          (un rechargement ne doit jamais avaler un geste). */
+  try{ navigator.serviceWorker.addEventListener("controllerchange", verifierVersion); }catch(e){}
+  verifierVersion();
+  /* ON ENREGISTRE AU « load »… OU AU PLUS TARD APRÈS CINQ SECONDES. Le script
+     Supabase vient d'un CDN : sur un réseau pendu, il ne répond jamais, et
+     « load » ne vient jamais non plus — le jeu n'aurait alors plus demandé
+     ses mises à jour. */
+  let swDemande = false;
+  const enregistrerSw = ()=>{
+    if(swDemande) return; swDemande = true;
     navigator.serviceWorker.register("sw.js")
       .then((reg)=>{ try { reg.update(); } catch(e){} })
       .catch(()=>{});
-  });
+  };
+  window.addEventListener("load", enregistrerSw);
+  setTimeout(enregistrerSw, 5000);
   /* Reprise depuis le sélecteur : c'est LE moment où une app iOS revient sans
      recharger. On redemande une mise à jour, et on pose celle qui attend. */
   document.addEventListener("visibilitychange", ()=>{
     if(document.visibilityState !== "visible") return;
     try{ navigator.serviceWorker.getRegistration().then(reg=>{ if(reg) reg.update(); }).catch(()=>{}); }catch(e){}
+    verifierVersion();
     setTimeout(tenterMaj, 600);
   });
 }
@@ -21957,6 +22251,7 @@ if(retourDeConnexion() || sessionRangee()){
 }
 
 const _savedGame = loadSavedGame();
+if(OUVERT_APRES_MAJ && state.screen === "splash") state.screen = "mode";
 render();
 if(_savedGame){
   // Reprise automatique : le jeu ne repart plus à zéro après une mise en arrière-plan
@@ -21971,8 +22266,34 @@ if(_savedGame){
      exactement ce qui a faussé ma propre mesure du salon pendant une heure :
      ma sonde naviguait dans cette fenêtre, et l'écran lui sautait des mains.
      Une ligne, et le piège n'existe plus. */
-  setTimeout(()=>{ if(state.screen !== "splash") return; state.screen="mode"; render(); }, 4000);
+  setTimeout(()=>{
+    if(state.screen !== "splash") return;
+    /* Une nouvelle version est déjà prête : on y va maintenant, plutôt que
+       d'afficher l'accueil de l'ancienne et de recharger sous les yeux. */
+    if(majEnAttente && !majFaite){ rechargerPourMaj(); return; }
+    state.screen="mode"; render();
+  }, 4000);
 }
+/* LE PRÉCHAUFFAGE DES RÉGLAGES (voir prechaufferReglages) : une fois
+   l'accueil posé, quand le doigt est au repos depuis un moment et qu'aucune
+   feuille n'est ouverte. Jamais pendant le splash, jamais sous un geste : la
+   tâche est courte, mais elle doit tomber là où il n'y a rien à rater. */
+(function(){
+  let essais = 0;
+  const tenter = ()=>{
+    if(reglagesChauds) return;
+    let calme = false;
+    try{
+      calme = document.visibilityState === "visible"
+        && state.screen !== "splash"
+        && Date.now() - derniereTouche > 1500
+        && !document.querySelector(".sheet-veil, .modal-veil");
+    }catch(e){}
+    if(calme){ prechaufferReglages(); return; }
+    if(++essais < 40) setTimeout(tenter, 1500);
+  };
+  setTimeout(tenter, OUVERT_APRES_MAJ ? 1800 : 5600);
+})();
 </script>
 </body>
 </html>
