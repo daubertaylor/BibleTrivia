@@ -103,7 +103,7 @@ def martin_de(M, ref, segond):
     # EClilacsbanner.gif ===== ». Une bannière d'hébergeur, présentée comme de
     # l'Écriture. On coupe donc TOUT à partir du lien, pas seulement les « = ».
     txt = re.sub(r"\s*Retournez au D[ée]but.*$", "", txt, flags=re.S).strip()
-    if re.search(r"Retournez|===|https?:|www\.|\.gif|Hosted", txt):
+    if re.search(r"Retournez au D[ée]but|===|https?:|www\.|\.gif|Hosted", txt):
         return None, "débris de navigation dans le module"
     # Les crochets des mots suppléés : même règle que pour le Darby et la Bible
     # Annotée — on garde les mots, on retire les crochets (2 Pierre 3:9).
