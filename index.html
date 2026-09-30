@@ -10328,12 +10328,51 @@ function closeMissedReview(){
    peut pas lire ailleurs : la version active (« Louis Segond 1910 ») et l'état
    des rappels — allumés, éteints, ou bloqués dans les réglages du téléphone,
    le seul cas où l'interrupteur ne répond pas et où il faut bien le dire. */
-function openSettings(){
-  if(document.getElementById("settingsVeil")) return;
-  const veil = document.createElement("div");
-  veil.className = "sheet-veil"; veil.id = "settingsVeil";
+/* ===== LA PREMIÈRE OUVERTURE DOIT ÊTRE UNE OUVERTURE COMME LES AUTRES =====
+   « Vérifie l'ouverture des réglages, la première ouverture lors d'une
+   session : je la trouve bizarre. » Mesuré dans une même session, mêmes
+   gestes, processeur bridé quatre fois : la PREMIÈRE ouverture fait un
+   travail que les suivantes ne refont jamais. Sa mise en page coûte 33 à
+   45 ms, celle des suivantes 4 à 12 ; au toucher, la feuille n'apparaissait
+   qu'au bout de 464 ms, contre 236 pour la deuxième.
+   Ce n'est pas la feuille qui est lente, c'est la PREMIÈRE FOIS : le
+   navigateur découvre ces règles de style, met en forme ces mots-là à ces
+   tailles-là, et garde tout en cache. La deuxième ouverture profite de la
+   première — le joueur, lui, payait la première.
+   On la fait donc AVANT lui, à un moment où rien ne bouge (voir la fin du
+   script) : la feuille est construite une fois, mise en page, puis retirée,
+   le tout dans la même tâche. Aucune image ne peut être peinte entre les
+   deux : personne ne la voit, personne ne peut la toucher, et aucun code du
+   jeu ne tourne pendant qu'elle existe. Mesuré ensuite (banc-essai/
+   premiere-ouverture.js) : la première ouverture met en page en 5 à 9 ms,
+   comme les autres.
+   Elle ne porte PAS l'identifiant « settingsVeil » (openSettings refuse de
+   s'ouvrir tant qu'il existe), elle ne passe pas par le moteur de verre, et
+   elle n'a lieu qu'une fois par session — jamais si le joueur a déjà ouvert
+   les Réglages lui-même, puisque c'est déjà fait.
+   CE QU'ELLE NE CHANGE PAS : le tout premier toucher d'une session réveille
+   aussi le son (voir getCtx). Si ce toucher est celui des Réglages, les deux
+   tombent ensemble. On n'y touche pas ici : iOS n'accorde le son qu'à
+   l'intérieur d'un geste, et le déplacer, c'est risquer le silence. */
+let reglagesChauds = false;
+function prechaufferReglages(){
+  if(reglagesChauds || document.getElementById("settingsVeil")) return;
+  reglagesChauds = true;
+  const v = document.createElement("div");
+  v.className = "sheet-veil";
+  v.setAttribute("aria-hidden", "true");
+  try{
+    v.innerHTML = reglagesHtml();
+    document.body.appendChild(v);
+    void v.offsetHeight;          // style + mise en page + mise en forme du texte
+  }catch(e){}
+  finally{ try{ v.remove(); }catch(e){} }
+}
+/* Le contenu de la feuille, à part pour une seule raison : le préchauffage
+   doit construire EXACTEMENT la feuille que le joueur ouvrira. */
+function reglagesHtml(){
   const pct = Math.round(settings.volume*100);
-  veil.innerHTML = `
+  return `
     <div class="settings-sheet" role="dialog" aria-label="${T("Réglages")}">
       <button class="sheet-grab" aria-label="${T("Fermer")}" onclick="closeSettings()"></button>
       <div class="sheet-title"><span class="st-ico">${ICONS.gear}</span>${T("Réglages")}${boutonLangue()}</div>
@@ -10412,6 +10451,13 @@ function openSettings(){
         <span class="share-lbl">${T("Partager le jeu")}</span>
       </button>
     </div>`;
+}
+function openSettings(){
+  if(document.getElementById("settingsVeil")) return;
+  reglagesChauds = true;          // la vraie ouverture chauffe tout autant
+  const veil = document.createElement("div");
+  veil.className = "sheet-veil"; veil.id = "settingsVeil";
+  veil.innerHTML = reglagesHtml();
   document.body.appendChild(veil);
   monterLaFeuille(veil);
   glassTrack();
@@ -21702,6 +21748,29 @@ function planifierSonde(){
   clearTimeout(RESEAU.minuteur);
   if(RESEAU.etat !== "bon" && document.visibilityState === "visible") RESEAU.minuteur = setTimeout(sonderReseau, 15000);
 }
+/* ===== LE TEMPS DU RÉSEAU, PAS CELUI DU TÉLÉPHONE =====
+   La sonde prenait l'heure au départ, puis à l'arrivée de la réponse. Mais
+   « l'arrivée », pour du JavaScript, c'est le moment où le fil principal
+   trouve le temps de LIRE la réponse : un téléphone occupé ailleurs (un écran
+   lourd, une animation, une appli qui démarre) la lit plus tard, et la sonde
+   mettait ce retard sur le compte du réseau. Sur un réseau parfait, elle
+   pouvait donc annoncer une connexion faible.
+   Le navigateur, lui, note l'heure exacte à laquelle le dernier octet est
+   arrivé, sans attendre personne (Resource Timing) : c'est ce chiffre-là
+   qu'on juge. On ne retombe sur l'horloge du fil que s'il manque — navigateur
+   trop ancien, ou relevé déjà plein. Chaque relevé est effacé une fois lu :
+   la sonde revient toutes les quinze secondes quand le réseau va mal, et
+   personne d'autre ne s'en sert. */
+function dureeReseau(adresse, repli){
+  try{
+    const url = new URL(adresse, location.href).href;
+    const l = performance.getEntriesByName(url);
+    const e = l && l[l.length - 1];
+    try{ performance.clearResourceTimings(); }catch(err){}
+    if(e && e.responseEnd > 0 && e.responseEnd >= e.startTime) return e.responseEnd - e.startTime;
+  }catch(err){}
+  return repli;
+}
 function sonderReseau(){
   clearTimeout(RESEAU.minuteur);
   if(location.protocol === "file:") return;          // un fichier ouvert en local : pas de réseau à mesurer
@@ -21712,13 +21781,14 @@ function sonderReseau(){
   let depasse = false;
   const garde = setTimeout(()=>{ depasse = true; try{ if(ctrl) ctrl.abort(); }catch(e){} }, RESEAU_LIMITE);
   const t0 = Date.now();
+  const adresse = "manifest.json?sonde=" + t0;
   /* Le CORPS compte, pas seulement les en-têtes : un réseau lent se voit au
      transfert. Et deux seuils — entrer dans « faible » au-delà de deux
      secondes, n'en sortir qu'en dessous d'une seconde deux dixièmes : sans cet
      écart, une connexion à la limite ferait clignoter l'icône. */
-  fetch("manifest.json?sonde=" + t0, { cache:"no-store", signal: ctrl ? ctrl.signal : undefined })
+  fetch(adresse, { cache:"no-store", signal: ctrl ? ctrl.signal : undefined })
     .then(r => r.text().then(()=>{
-      const ms = Date.now() - t0;
+      const ms = dureeReseau(adresse, Date.now() - t0);
       if(!r.ok) poserReseau("faible");
       else poserReseau(ms > (RESEAU.etat === "bon" ? RESEAU_LENT : RESEAU_REPRISE) ? "faible" : "bon");
     }))
@@ -22204,6 +22274,26 @@ if(_savedGame){
     state.screen="mode"; render();
   }, 4000);
 }
+/* LE PRÉCHAUFFAGE DES RÉGLAGES (voir prechaufferReglages) : une fois
+   l'accueil posé, quand le doigt est au repos depuis un moment et qu'aucune
+   feuille n'est ouverte. Jamais pendant le splash, jamais sous un geste : la
+   tâche est courte, mais elle doit tomber là où il n'y a rien à rater. */
+(function(){
+  let essais = 0;
+  const tenter = ()=>{
+    if(reglagesChauds) return;
+    let calme = false;
+    try{
+      calme = document.visibilityState === "visible"
+        && state.screen !== "splash"
+        && Date.now() - derniereTouche > 1500
+        && !document.querySelector(".sheet-veil, .modal-veil");
+    }catch(e){}
+    if(calme){ prechaufferReglages(); return; }
+    if(++essais < 40) setTimeout(tenter, 1500);
+  };
+  setTimeout(tenter, OUVERT_APRES_MAJ ? 1800 : 5600);
+})();
 </script>
 </body>
 </html>

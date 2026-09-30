@@ -194,6 +194,28 @@ const cdn = net.createServer((s) => { if (etat.mode === 'normal') s.destroy(); e
     await p.close().catch(() => {});
   }
 
+  /* 7. UN TÉLÉPHONE OCCUPÉ N'EST PAS UN RÉSEAU LENT. La sonde prenait l'heure
+     d'arrivée au moment où le JavaScript LISAIT la réponse : un fil principal
+     pris ailleurs pendant deux secondes et demie lui faisait conclure
+     « faible » sur un réseau parfait — l'icône s'allumait pour rien. On lance
+     une mesure, on occupe le fil pendant qu'elle court, et on regarde ce
+     qu'elle en conclut. Le témoin, c'est l'horloge du fil : elle DOIT avoir
+     vu plus de deux secondes, sinon l'épreuve n'a rien éprouvé. */
+  {
+    const { p } = await lancer('occupé');
+    await p.waitForTimeout(6500);                                    // la première mesure est passée
+    const r = await p.evaluate(async () => {
+      const avant = RESEAU.etat, t0 = Date.now();
+      sonderReseau();
+      const fin = Date.now() + 2500; while (Date.now() < fin) {}     // le fil est pris
+      await new Promise(res => { const t = setInterval(() => { if (!RESEAU.enCours) { clearInterval(t); res(); } }, 50); });
+      return { avant, apres: RESEAU.etat, fil: Date.now() - t0 };
+    });
+    v('téléphone occupé pendant la mesure : réseau toujours bon', r.avant === 'bon' && r.apres === 'bon' && r.fil > 2000,
+      'horloge du fil ' + r.fil + ' ms, verdict ' + r.apres);
+    await p.close().catch(() => {});
+  }
+
   await nav.close();
   serveur.close(); cdn.close();
   console.log(ko ? '\n  ' + ko + ' KO' : '\n  OK — le jeu se lance quel que soit le réseau, et les mises à jour passent');
