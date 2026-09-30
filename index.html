@@ -6230,7 +6230,7 @@ const BANK = {
     { q:"Qui a hébergé les deux anges venus à Sodome ?", options:["Loth","Abraham","Melchisédek","Abimélec"], correct:"Loth", fact:"Il insista pour qu'ils passent la nuit chez lui plutôt que sur la place (Genèse 19:1-3)." },
     { q:"Avec quelle autre ville Sodome a-t-elle été détruite à cause de sa méchanceté ?", options:["Ninive","Babylone","Gomorrhe","Jéricho"], correct:"Gomorrhe", fact:"Dieu a fait pleuvoir du feu et du soufre sur ces deux villes (Genèse 19)." },
     { q:"Quel disciple a douté de la résurrection de Jésus jusqu'à voir ses blessures ?", options:["Pierre","Thomas","Jean","Philippe"], correct:"Thomas", fact:"D'où l'expression familière d'un « Thomas incrédule » (Jean 20:24-29)." },
-    { q:"Combien de personnes ont été sauvées dans l'arche de Noé, selon 2 Pierre 3:20 ?", options:["4","6","8","10"], correct:"8", fact:"Noé, sa femme, ses trois fils et leurs femmes." },
+    { q:"Combien de personnes ont été sauvées dans l'arche de Noé, selon 1 Pierre 3:20 ?", options:["4","6","8","10"], correct:"8", fact:"Noé, sa femme, ses trois fils et leurs femmes." },
     { q:"Quel est le nom du roi réputé pour sa grande sagesse, fils de David ?", options:["Saül","Salomon","Roboam","Achab"], correct:"Salomon", fact:"Dieu lui a accordé un cœur sage et intelligent après qu'il le lui ait demandé (1 Rois 3)." },
     { q:"Avec combien de pains et de poissons Jésus a-t-il nourri une foule de 5000 personnes ?", options:["2 pains et 5 poissons","5 pains et 2 poissons","7 pains et 2 poissons","5 pains et 5 poissons"], correct:"5 pains et 2 poissons", fact:"Il restait douze paniers de morceaux après que tous eurent mangé (Matthieu 14:13-21)." },
     { q:"Quels trois disciples ont été témoins de la transfiguration de Jésus sur la montagne ?", options:["Pierre, Jacques et Jean","André, Philippe et Thomas","Pierre, André et Matthieu","Jacques, Jean et Thomas"], correct:"Pierre, Jacques et Jean", fact:"Jésus est apparu resplendissant, avec Moïse et Élie à ses côtés (Matthieu 17:1-8)." },
@@ -7525,6 +7525,21 @@ function chargerBanque(){
    COPIES (« {...q, shuffledOptions} »), l'identité est perdue dès le tirage.
    L'énoncé français, lui, est unique — vérifié sur les 1545. */
 let rangParEnonce = null;
+/* UN ÉNONCÉ CORRIGÉ GARDE SON ADRESSE. Le carnet d'erreurs recopie la question
+   telle qu'elle était le jour de l'erreur : corriger un énoncé dans BANK
+   laisserait cette copie orpheline — plus de version anglaise ni espagnole,
+   plus de livre, et l'ancien texte fautif toujours sous les yeux du joueur.
+   Chaque correction laisse donc ici son ancien texte, qui renvoie au nouveau.
+   « 2 Pierre 3:20 » n'existe pas (le chapitre s'arrête au verset 18) : les
+   huit personnes de l'arche sont en 1 Pierre 3:20, comme le disait déjà la
+   version anglaise. */
+const ENONCES_CORRIGES = {
+  "Combien de personnes ont été sauvées dans l'arche de Noé, selon 2 Pierre 3:20 ?":
+    "Combien de personnes ont été sauvées dans l'arche de Noé, selon 1 Pierre 3:20 ?"
+};
+function enonceActuel(e){
+  return (typeof e === "string" && Object.prototype.hasOwnProperty.call(ENONCES_CORRIGES, e)) ? ENONCES_CORRIGES[e] : e;
+}
 function rangDeQuestion(q){
   if(!rangParEnonce){
     rangParEnonce = new Map();
@@ -7534,7 +7549,7 @@ function rangDeQuestion(q){
       for(let i = 0; i < l.length; i++) rangParEnonce.set(l[i].q, n++);
     }
   }
-  const r = rangParEnonce.get(q && q.q);
+  const r = rangParEnonce.get(q && enonceActuel(q.q));
   return r === undefined ? -1 : r;
 }
 function versionLangue(q){
@@ -7543,7 +7558,7 @@ function versionLangue(q){
   const r = rangDeQuestion(q);
   return r >= 0 ? (self[nom][r] || null) : null;
 }
-function texteQuestion(q){ const e = versionLangue(q); return (e && e[0]) || (q ? q.q : ""); }
+function texteQuestion(q){ const e = versionLangue(q); return (e && e[0]) || (q ? enonceActuel(q.q) : ""); }
 function texteFait(q){ const e = versionLangue(q); return (e && e[2]) || (q ? (q.fact || "") : ""); }
 /* Une option s'affiche traduite, mais c'est TOUJOURS la chaîne française qui
    circule dans le code : on ne fait que remplacer l'étiquette, à sa place. */
@@ -7669,7 +7684,7 @@ const SUPABASE_ANON_KEY = "sb_publishable_FDJ_R0foC7uIeHmxVrj6rA_2NeIgW2a";
    remontée d'un téléphone ne vaut rien si on ne sait pas QUELLE version
    tournait. Elle doit rester égale au CACHE de sw.js — c'est ce que vérifie
    banc-essai/version.js, qui refuse de laisser publier les deux en désaccord. */
-const VERSION_JEU = "v297";
+const VERSION_JEU = "v298";
 
 /* ===================== QUAND ÇA CASSE CHEZ UN JOUEUR =====================
    « Si quelque chose casse chez cinq d'entre eux sur un modèle de téléphone
@@ -15110,10 +15125,25 @@ function bumpModeUse(m){ try { const u = loadModeUse(); u[m] = (u[m]||0) + 1; lo
 function qKey(q){ return (q.q||"").toLowerCase().replace(/\s+/g," ").trim(); }
 function loadSeen(){ try { return new Set(JSON.parse(localStorage.getItem("bt_seen")||"[]")); } catch(e){ return new Set(); } }
 function saveSeen(set){ try { localStorage.setItem("bt_seen", JSON.stringify([...set].slice(-500))); } catch(e){} }
-/* Testament déduit de la référence entre parenthèses du « Le savais-tu ? ». */
+/* LE THÈME « ANCIEN » OU « NOUVEAU TESTAMENT » EST CELUI DU LIVRE. Ce tri
+   avait sa propre lecture : la référence finale, sinon TOUT le texte, et
+   « Ancien » dès qu'il n'y trouvait aucun nom du Nouveau. « Où Jésus
+   changea-t-il l'eau en vin ? » (« Ce fut, aux noces de Cana, son tout premier
+   miracle. ») tombait donc dans l'Ancien Testament, avec dix-neuf autres —
+   « Dans quelle ville Jésus est-il né ? », « Quel livre ouvre le Nouveau
+   Testament ? ». Et la pastille AT/NT de la même carte, qui lit bookOf, disait
+   l'inverse. Une seule lecture désormais : le livre de la question. Les seize
+   questions sans livre déclarent leur testament (SANS_LIVRE) ; « tout »
+   n'entre dans aucun des deux thèmes — combien de livres compte la Bible
+   entière n'est ni l'un ni l'autre. L'ancienne lecture ne reste que pour une
+   question inconnue de la banque. */
 const NT_BOOKS = /Matthieu|Marc|Luc|Jean|Actes|Romains|Corinthiens|Galates|Éphésiens|Philippiens|Colossiens|Thessalonic|Timothée|Tite|Philémon|Hébreux|Jacques|Pierre|Jude|Apocalypse/;
 function qTestament(q){
-  const f = q.fact || "";
+  const b = bookOf(q);
+  if(b) return BIBLE_BOOKS.indexOf(b) < BIBLE_AT_COUNT ? "at" : "nt";
+  const e = enonceActuel(q && q.q);
+  if(typeof e === "string" && Object.prototype.hasOwnProperty.call(SANS_LIVRE, e)) return SANS_LIVRE[e];
+  const f = (q && q.fact) || "";
   const m = f.match(/\(([^()]*)\)\s*\.?\s*$/);
   const ref = m ? m[1] : f;
   return NT_BOOKS.test(ref) ? "nt" : "at";
@@ -15157,20 +15187,173 @@ function bookPattern(name){
 }
 const BOOK_MATCH = BIBLE_BOOKS.map((name)=>({ name, re:bookPattern(name), num:/[123]/.test(name)?1:0 }))
   .sort((a,b)=> (b.num-a.num) || (b.name.length-a.name.length));
-function bookOf(q){
-  const f = (q && q.fact) || "";
-  const m = f.match(/\(([^()]*)\)\s*\.?\s*$/);
-  const ref = m ? m[1] : "";
+/* ===== UNE RÉFÉRENCE MAL PLACÉE NE PRIVE PLUS UNE QUESTION DE SON LIVRE =====
+   bookOf ne savait lire qu'UNE forme : la référence entre parenthèses, tout à
+   la fin du « Le savais-tu ? ». Deux cent cinquante questions sur 1 563
+   l'écrivent autrement — « Néhémie 8:10, le jour où la loi fut lue… », « Ce
+   premier meurtre est raconté en Genèse 4. » — ou pas du tout. Y répondre juste
+   ne créditait AUCUN livre : la bonne réponse comptait au total, jamais dans la
+   Progression, et le livre n'avançait pas.
+   ON NE TOUCHE PAS AU TEXTE. Récrire ces anecdotes aurait changé ce que le
+   joueur lit, et dans une seule des trois langues. C'est la LECTURE qui
+   s'élargit, en deux temps, et seulement là où l'ancienne ne trouvait rien :
+   une question déjà rattachée garde son livre, par construction.
+     1. La PREMIÈRE référence écrite dans le texte : un livre suivi d'un
+        chapitre (« Genèse 4 », « Luc 1:26 », « Jude 9 »). La première, parce
+        que c'est la source ; la suivante est une citation (« Habacuc 2:4, cité
+        en Romains 1:17 »). 173 questions.
+     2. Celles qui n'écrivent aucune référence mais portent sur un livre précis
+        — l'arc-en-ciel de Noé, la harpe de David — sont dans la table
+        ci-dessous. Chaque référence y a été relue dans la Segond : le verset
+        dit bien ce que la question demande. 61 questions.
+   Seize restent sans livre, et c'est voulu : combien de livres compte la
+   Bible, la mer Morte, la langue de l'Ancien Testament, une tradition sur
+   Pierre. Elles comptent au total, comme avant.
+   Le carnet d'erreurs lit le livre de la même façon (bookOf sur sa copie) : la
+   révision « un livre » voit donc les mêmes rattachements que la Progression. */
+/* Une seule expression pour les soixante-six livres : la recherche s'arrête à
+   la PREMIÈRE référence du texte, et c'est la bonne (voir plus haut). Le motif
+   de chaque livre est celui de BOOK_MATCH, dans son ordre — « 1 Jean » avant
+   « Jean » —, suivi d'un numéro de chapitre ; un mot n'est pris que s'il
+   commence un mot (« Jean-Marc les accompagnait » n'est pas une référence). */
+const REF_DANS_TEXTE = new RegExp("(?:^|[^0-9A-Za-z\\u00C0-\\u00D6\\u00D8-\\u00F6\\u00F8-\\u00FF])((?:" +
+  BOOK_MATCH.map(b => b.re.source + (b.name === "Psaumes" ? "s?" : "")).join("|") + ")\\s+\\d)");
+const LIVRE_SANS_REFERENCE = {
+  "Quel signe Dieu donna-t-il à Noé après le déluge ?": "Genèse 9:13",
+  "Quel arbre était interdit dans le jardin d'Éden ?": "Genèse 2:17",
+  "Quelle nourriture Dieu envoyait-il chaque matin dans le désert ?": "Exode 16:31",
+  "Quel instrument David jouait-il pour apaiser le roi Saül ?": "1 Samuel 16:23",
+  "Quel est le premier livre de la Bible ?": "Genèse",
+  "Quel est le dernier livre de la Bible ?": "Apocalypse",
+  "Où Jésus changea-t-il l'eau en vin ?": "Jean 2:1",
+  "Quel métier exerçait Joseph, le père adoptif de Jésus ?": "Matthieu 13:55",
+  "Que guidait Israël la nuit pendant la traversée du désert ?": "Exode 13:21",
+  "Combien de fois Israël fit-il le tour de Jéricho le septième jour ?": "Josué 6:15",
+  "Quel évangile est le plus court ?": "Marc",
+  "Sur quelle montagne Moïse reçut-il les tables de la Loi ?": "Exode 31:18",
+  "Quel disciple marcha un instant sur l'eau vers Jésus ?": "Matthieu 14:29",
+  "Quelle première femme fut créée selon la Genèse ?": "Genèse 3:20",
+  "Qui a écrit le plus de Psaumes ?": "Psaumes",
+  "Quel psaume commence par « L'Éternel est mon berger » ?": "Psaume 23:1",
+  "Dans quelle ville Jésus est-il né ?": "Matthieu 2:1",
+  "Qui était le père terrestre (adoptif) de Jésus ?": "Matthieu 1:16",
+  "Combien de frères Joseph avait-il, selon la Genèse ?": "Genèse 35:22",
+  "Dans quelle ville Jésus a-t-il grandi avec ses parents ?": "Luc 2:51",
+  "Combien de personnes ont été sauvées dans l'arche de Noé, selon 1 Pierre 3:20 ?": "1 Pierre 3:20",
+  "Quel est le nom du livre qui suit immédiatement les quatre évangiles dans le Nouveau Testament ?": "Actes",
+  "À qui attribue-t-on la rédaction de la plupart des Psaumes ?": "Psaumes",
+  "Quel livre ouvre le Nouveau Testament ?": "Matthieu",
+  "Quel livre raconte la sortie d'Égypte ?": "Exode",
+  "Combien de jours Jésus resta-t-il au tombeau avant sa résurrection ?": "Matthieu 12:40",
+  "Sur quelle île l'apôtre Jean reçut-il l'Apocalypse ?": "Apocalypse 1:9",
+  "Sur quel chemin Saul fut-il aveuglé puis converti ?": "Actes 9:3",
+  "Qui, proche parent, racheta et épousa Ruth ?": "Ruth 4:13",
+  "Quel couple, fabricant de tentes, instruisit Apollos ?": "Actes 18:26",
+  "Quel juge vainquit les Madianites avec seulement 300 hommes ?": "Juges 7:7",
+  "Qui reconstruisit les murailles de Jérusalem après l'exil ?": "Néhémie 6:15",
+  "Que renfermait l'arche de l'alliance ?": "Deutéronome 10:5",
+  "Pourquoi Jonas fuyait-il vers Tarsis ?": "Jonas 4:2",
+  "Quel prophète est appelé « le prophète des larmes » ?": "Jérémie 9:1",
+  "Quel est le nom de la femme moabite qui a épousé Booz ?": "Ruth 4:13",
+  "Quel est le nom du frère jumeau d'Ésaü ?": "Genèse 25:26",
+  "Quel est le nom du frère de Moïse qui parlait à sa place devant Pharaon ?": "Exode 4:14",
+  "Quelle ville est connue comme la ville natale du roi David ?": "1 Samuel 17:12",
+  "Environ combien d'années a duré le règne du roi Salomon sur Israël ?": "1 Rois 11:42",
+  "Quelle épître Paul écrit-il au sujet d'un esclave fugitif ?": "Philémon 10",
+  "Qui gardait les vêtements de ceux qui lapidèrent Étienne ?": "Actes 7:58",
+  "Quelle prophétesse jugea Israël et chanta sa victoire ?": "Juges 4:4",
+  "Quel prophète mineur ne contient qu'un seul chapitre et vise Édom ?": "Abdias 1",
+  "Quel prophète mineur annonça la ruine de Ninive ?": "Nahum 1:1",
+  "Quelle est la plus courte épître de Paul ?": "Philémon",
+  "À qui Paul renvoie-t-il l'esclave Onésime ?": "Philémon 12",
+  "Quel est le plus long livre de la Bible (en chapitres) ?": "Psaumes",
+  "Que célèbre, presque à chaque verset, le plus long psaume de la Bible ?": "Psaume 119:1",
+  "Quelle est la plus longue épître de Paul ?": "Romains",
+  "Quel est le livre le plus court de l'Ancien Testament ?": "Abdias",
+  "Combien de chapitres compte l'évangile de Marc ?": "Marc",
+  "Combien de chapitres compte le livre des Psaumes ?": "Psaumes",
+  "Qui se présente simplement comme « l'ancien » au début de 2 et 3 Jean ?": "2 Jean 1",
+  "Qui a succédé à Moïse pour conduire le peuple en Terre promise ?": "Josué 1:2",
+  "Combien de fruits de l'Esprit l'apôtre Paul énumère-t-il en Galates 5 ?": "Galates 5:22",
+  "Quel est le nom du deuxième livre de la Bible ?": "Exode",
+  "Quel livre du Nouveau Testament, adressé à des chrétiens d'origine juive, traite longuement du sacerdoce de Jésus ?": "Hébreux",
+  "Quel homme riche et intègre a tout perdu, puis fut éprouvé par Satan avec la permission de Dieu ?": "Job 1:1",
+  "Quel prophète annonce la ruine d'Édom en un seul chapitre ?": "Abdias 1",
+  "Quel livre de la Bible ne mentionne jamais le nom de Dieu ?": "Esther"
+};
+/* Les seize qui n'ont pas de livre, et c'est voulu. Chacune dit son testament
+   pour le tri par thème (qTestament) ; « tout » : ni l'un ni l'autre. */
+const SANS_LIVRE = {
+  "Quelle mer très salée borde Israël à l'est ?": "at",
+  "Dans quelle langue principale l'Ancien Testament fut-il écrit ?": "at",
+  "Combien de livres composent les évangiles ?": "nt",
+  "Quel apôtre écrivit le plus d'épîtres ?": "nt",
+  "Combien d'évangiles compte le Nouveau Testament ?": "nt",
+  "Combien de « petits prophètes » clôturent l'Ancien Testament ?": "at",
+  "Quel apôtre a été crucifié, selon la tradition, la tête en bas ?": "nt",
+  "Quel apôtre a écrit à Timothée et Tite ?": "nt",
+  "Combien de livres compte l'Ancien Testament protestant ?": "at",
+  "Combien de livres compte le Nouveau Testament ?": "nt",
+  "Quel apôtre a écrit la majorité des épîtres du Nouveau Testament ?": "nt",
+  "Quels sont les quatre évangiles, dans l'ordre où ils apparaissent dans le Nouveau Testament ?": "nt",
+  "Combien de livres compte toute la Bible protestante ?": "tout",
+  "Combien de livres composent le Pentateuque (la Torah) ?": "at",
+  "Comment appelle-t-on l'ensemble des douze petits prophètes, souvent regroupés en un seul rouleau dans la tradition juive ?": "at",
+  "Quels sont les trois grands prophètes dits « majeurs », outre Ésaïe et Jérémie ?": "at"
+};
+function livreDeReference(ref){
   if(!ref) return null;
   for(let i=0;i<BOOK_MATCH.length;i++){ if(BOOK_MATCH[i].re.test(ref)) return BOOK_MATCH[i].name; }
   return null;
 }
+/* Chaque question de la banque est lue UNE fois, au démarrage (BOOK_TOTALS) :
+   le tri par thème appelle bookOf sur toute la banque à chaque tirage. Une
+   copie (une partie en cours, une entrée du carnet) n'est pas dans la
+   mémoire : elle est lue. */
+const LIVRE_LU = new WeakMap();
+function bookOf(q){
+  if(q && typeof q === "object"){ const v = LIVRE_LU.get(q); if(v !== undefined) return v; }
+  return lireLivre(q);
+}
+/* La forme d'origine : la référence entre parenthèses, en toute fin. */
+function livreDeLaFin(f){
+  const m = (f || "").match(/\(([^()]*)\)\s*\.?\s*$/);
+  return m ? livreDeReference(m[1]) : null;
+}
+function lireLivre(q){
+  const f = (q && q.fact) || "";
+  const b = livreDeLaFin(f);
+  if(b) return b;
+  const r = REF_DANS_TEXTE.exec(f);
+  if(r) return livreDeReference(r[1]);
+  const e = enonceActuel(q && q.q);
+  return (typeof e === "string" && Object.prototype.hasOwnProperty.call(LIVRE_SANS_REFERENCE, e))
+    ? livreDeReference(LIVRE_SANS_REFERENCE[e]) : null;
+}
+/* LA CIBLE NE BOUGE PAS QUAND ON RATTACHE. Compter les 234 questions
+   rattachées dans la cible l'aurait fait monter pour 33 livres — Josué de 5 à
+   8 — et la barre d'un joueur à 4 sur 5 serait retombée à 4 sur 8 : c'est
+   exactement le recul qu'on s'interdit (« fais attention de ne jamais
+   restaurer à zéro la progression des joueurs »). Ces questions existaient
+   déjà, les joueurs les croisaient sans qu'elles comptent : les rattacher doit
+   faire AVANCER les livres, pas reculer les barres.
+   La cible se calcule donc sur les questions à référence finale, la forme de
+   toute question ajoutée depuis (ajoute_questions.py l'exige) : elle grandit
+   avec la banque comme avant — et un livre maîtrisé le reste, voir
+   CIBLES_V296 — tandis que les rattachées aident à l'atteindre.
+   BOOK_TOTALS, lui, compte TOUTES les questions d'un livre : c'est ce qu'on
+   peut jouer. */
+let BOOK_BASE_CIBLE = {};
 const BOOK_TOTALS = (function(){
-  const t = {};
-  try { ["facile","moyen","difficile"].forEach(tier=>BANK[tier].forEach(q=>{ const b=bookOf(q); if(b) t[b]=(t[b]||0)+1; })); } catch(e){}
+  const t = {}, c = {};
+  try { ["facile","moyen","difficile"].forEach(tier=>BANK[tier].forEach(q=>{
+    const b = lireLivre(q); LIVRE_LU.set(q, b);
+    if(b){ t[b] = (t[b]||0) + 1; if(livreDeLaFin(q.fact) === b) c[b] = (c[b]||0) + 1; }
+  })); } catch(e){}
+  BOOK_BASE_CIBLE = c;
   return t;
 })();
-function bookTarget(name){ return Math.max(1, Math.min(9, Math.round((BOOK_TOTALS[name]||1)*0.45))); }
+function bookTarget(name){ return Math.max(1, Math.min(9, Math.round((BOOK_BASE_CIBLE[name]||1)*0.45))); }
 /* ===== PROGRESSION : ÉCRITURE PROTÉGÉE — JAMAIS DE RETOUR À ZÉRO =====
    La progression ne fait que MONTER : elle ne doit jamais être perdue, quoi
    qu'il arrive. Le danger n'était pas un effacement volontaire (il n'y en a

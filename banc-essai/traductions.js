@@ -245,6 +245,11 @@ for(const [a, b] of [['const TEXTES = {', '\n};'], ['const BANK = {', '\n  ]\n};
                      ['const LIVRES_COURTS_EN = {', '\n};'], ['const LIVRES_COURTS_ES = {', '\n};'],
                      ['const REFS_ES = {', '\n};'], ['const BIBLES = [', '\n];'],
                      ['const CIBLES_V296 = {', '};'],   /* des clés de livres et des nombres : la transition des maîtrises */
+                     /* Des énoncés de BANK en clé (la donnée, traduite par rang
+                        dans questions-en.js et questions-es.js) et des
+                        références : rien que le joueur lise tel quel. */
+                     ['const ENONCES_CORRIGES = {', '\n};'], ['const LIVRE_SANS_REFERENCE = {', '\n};'],
+                     ['const SANS_LIVRE = {', '\n};'],
                      ['const DRAPEAUX = {', '\n};'], ['const LANGUES = [', '\n];'],
                      ['const SCENES = [', '\n];'], ['const BIBLE_BOOKS = [', '\n];'],
                      ['const MINOR_PROPHETS = [', '];'], ['const TORAH = [', '];'],
