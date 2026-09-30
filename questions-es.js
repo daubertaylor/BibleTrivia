@@ -355,7 +355,7 @@ self.BANQUE_ES = [
 ["¿Quién hospedó a los dos ángeles que llegaron a Sodoma?", ["Lot", "Abraham", "Melquisedec", "Abimelec"], "Insistió en que pasaran la noche en su casa y no en la plaza (Génesis 19:1-3).", 0],
 ["¿Junto a qué otra ciudad fue destruida Sodoma por su maldad?", ["Nínive", "Babilonia", "Gomorra", "Jericó"], "Dios hizo llover fuego y azufre sobre esas dos ciudades (Génesis 19).", 2],
 ["¿Qué discípulo dudó de la resurrección de Jesús hasta ver sus heridas?", ["Pedro", "Tomás", "Juan", "Felipe"], "De ahí la expresión de un “Tomás incrédulo” (Juan 20:24-29).", 1],
-["Según 2 Pedro, ¿cuántas personas se salvaron en el arca de Noé?", ["4", "6", "8", "10"], "Noé, su mujer, sus tres hijos y las mujeres de ellos.", 2],
+["Según 1 Pedro 3:20, ¿cuántas personas se salvaron en el arca de Noé?", ["4", "6", "8", "10"], "Noé, su mujer, sus tres hijos y las mujeres de ellos.", 2],
 ["¿Cómo se llama el rey famoso por su gran sabiduría, hijo de David?", ["Saúl", "Salomón", "Roboam", "Acab"], "Dios le concedió un corazón sabio y entendido después de que él se lo pidiera (1 Reyes 3).", 1],
 ["¿Con cuántos panes y peces alimentó Jesús a una multitud de 5000 personas?", ["2 panes y 5 peces", "5 panes y 2 peces", "7 panes y 2 peces", "5 panes y 5 peces"], "Quedaron doce cestas de pedazos después de que todos comieron (Mateo 14:13-21).", 1],
 ["¿Qué tres discípulos presenciaron la transfiguración de Jesús en el monte?", ["Pedro, Jacobo y Juan", "Andrés, Felipe y Tomás", "Pedro, Andrés y Mateo", "Jacobo, Juan y Tomás"], "Jesús apareció resplandeciente, con Moisés y Elías a su lado (Mateo 17:1-8).", 0],
