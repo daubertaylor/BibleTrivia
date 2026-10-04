@@ -184,7 +184,7 @@ changer en même temps.
 ## Vérifier sans le jeu
 
 ```bash
-bash groupes/essai.sh      # près de 150 vérifications sur un vrai PostgreSQL 16
+bash groupes/essai.sh      # 155 vérifications sur un vrai PostgreSQL 16
 bash comptes/essai.sh      # les comptes, la sauvegarde, la suppression
 node banc-essai/groupes.js # le jeu de bout en bout, à deux téléphones, sur le vrai SQL
 ```

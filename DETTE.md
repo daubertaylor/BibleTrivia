@@ -289,7 +289,7 @@ ses groupes, et ne reçoit plus rien d'une personne bloquée. Le direct de
 Supabase applique ces règles à chaque abonné, SAUF pour une suppression : seule
 la table `messages` est diffusée, et un message n'est jamais effacé en direct
 — il est masqué, ce qui est une modification, donc filtrée. `groupes/essai.sh`
-le vérifie sur un vrai PostgreSQL 16 (près de 150 vérifications, dont les
+le vérifie sur un vrai PostgreSQL 16 (155 vérifications, dont les
 tentatives de contournement : écrire directement, lire le groupe d'un autre,
 promouvoir le propriétaire, se débannir), et `banc-essai/groupes.js` joue deux
 téléphones de bout en bout sur ce même SQL.
