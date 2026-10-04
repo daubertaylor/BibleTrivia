@@ -37,6 +37,37 @@ const TOLERE = {
                '                          découpe : ni pseudo-élément ni bordure transparente ne peuvent agrandir\n' +
                '                          la zone sans grossir le dessin ou détacher son ombre. Le dessin gagne.',
 };
+/* Le décor des groupes : un compte connecté, modérateur, deux groupes à
+   soi et un à découvrir, une discussion qui contient chaque sorte de bulle
+   (un mot du jeu, un message, une partie, le sien). Défini une fois dans la
+   page, rappelé avant chaque écran pour repartir propre. */
+const GRP_DECOR = `window.__grpDecor = () => {
+  const il = (h) => new Date(Date.now() - h * 3600000).toISOString();
+  compte.dispo = true;
+  compte.session = { user:{ id:'moi-0', email:'joueur@exemple.net' } }; compte.etape = 'connecte';
+  grp.installe = true; grp.ouverts = true; grp.message = '';
+  grp.etat = { participe:'ok', moderateur:true, ouverts:true, a_traiter:2 };
+  grp.profils = { 'moi-0':{ nom:'Taylor', couleur:'#4C86E8' }, 'u-2':{ nom:'Sam', couleur:'#E8574C' },
+                  'u-3':{ nom:'Lee', couleur:'#4CE88A' }, 'u-4':{ nom:'Kim', couleur:'#E8C84C' } };
+  grp.liste = [
+    { id:'g-1', nom:'Lee', teinte:2, ouvert:false, code:'ABC234', nb_membres:4, non_lus:2, dernier_message:il(1),
+      apercu:{ id:9, auteur:'u-2', genre:'texte', texte:'Amen', nom:'Sam', le:il(1) } },
+    { id:'g-2', nom:'Sam', teinte:0, ouvert:true, code:'DEF567', nb_membres:2, non_lus:0, dernier_message:il(26),
+      apercu:{ id:7, auteur:'moi-0', genre:'texte', texte:'Amen', nom:'Taylor', le:il(26) } } ];
+  grp.publics = [ { id:'g-2', nom:'Sam', description:'', nb_membres:2, teinte:0, membre:true },
+                  { id:'g-5', nom:'Ruth', description:'', nb_membres:1, teinte:3, membre:false } ];
+  grp.membres = { 'g-1':[ { membre:'moi-0', role:'proprietaire', muet_jusqu:null },
+                          { membre:'u-2', role:'admin', muet_jusqu:null },
+                          { membre:'u-4', role:'membre', muet_jusqu:null } ] };
+  const m = (id, auteur, genre, texte, extra) => Object.assign({ id, groupe:'g-1', auteur, genre, texte, donnees:{},
+    cree_le:il(0.5), masque:false, supprime_le:null }, extra || {});
+  grp.fils = { 'g-1':{ charge:true, tout:false, messages:[
+    m(1, null, 'systeme', 'cree', { donnees:{ nom:'Taylor' } }),
+    m(7, 'u-2', 'texte', 'Amen'),
+    m(10, 'u-2', 'partie', '', { donnees:{ code:'ABCD' } }),
+    m(12, 'moi-0', 'texte', 'Amen') ] } };
+  grp.courant = null; grp.nonLus = 2; moderation = null;
+};`;
 const ECRANS = [
   ['accueil',      "state.screen='mode'; render();"],
   ['solo',         "state.mode='solo'; state.screen='setup'; render();"],
@@ -50,6 +81,26 @@ const ECRANS = [
   ['versions',     "openBibles();"],
   ['en ligne',     "closeBibles(); closeSettings(); state.screen='online'; render();"],
   ['salon',        "net.isHost=true; net.code='42CJ'; net.joueurs={}; majAdversaire(); state.screen='online-room'; render();"],
+  /* LES GROUPES. Sans serveur : un décor posé à la main (le même que celui
+     de langues-ecrans.js), puis chaque écran ouvert par la fonction du jeu
+     qui l'ouvre. On mesure ce que le doigt touche, pas ce que le serveur dit. */
+  ['groupes · barre', GRP_DECOR + "try{ leaveRoomToOnline(); }catch(e){} __grpDecor(); state.screen='mode'; render(); majBarre();"],
+  ['groupes',          "__grpDecor(); state.screen='groupes'; render(); majBarre();"],
+  ['groupes · sans compte', "__grpDecor(); compte.session=null; compte.etape='repos'; grp.etat=null; state.screen='groupes'; render();"],
+  ['groupes · bienvenue', "__grpDecor(); grp.etat={ participe:'regles', moderateur:false }; state.screen='groupes'; render();"],
+  ['discussion',       "__grpDecor(); grp.courant='g-1'; state.screen='groupe'; render(); majCompo();"],
+  ['infos du groupe',  "ouvrirInfosGroupe(true);"],
+  ['un membre',        "fermerFeuilleGroupe('grpInfosVeil'); ouvrirMembre('u-4');"],
+  ['un message',       "fermerFeuilleGroupe('grpMembreVeil'); actionsMessage('7');"],
+  ['signaler',         "fermerFeuilleGroupe('grpActionsVeil'); signalerMessage('7');"],
+  ['créer un groupe',  "fermerFeuilleGroupe('grpSignalerVeil'); __grpDecor(); state.screen='groupes'; render(); ouvrirCreation();"],
+  ['j\'ai un code',    "fermerFeuilleGroupe('grpCreerVeil'); ouvrirCode();"],
+  /* La file vient du serveur : on répond à sa place, pour que la carte soit
+     posée par le chemin du jeu (chargerModeration), pas écrite par le banc. */
+  ['modération',       "fermerFeuilleGroupe('grpCodeVeil'); __grpDecor(); window.__lg = window.__lg || listeGroupe;" +
+                       " listeGroupe = async (n, a) => n === 'moderation_ouverte' ? [{ id:1, raison:'harcelement', details:'', le:new Date().toISOString()," +
+                       " groupe:'g-1', groupe_nom:'Lee', message:7, texte:'Amen', cible:'u-2', cible_nom:'Sam', par_nom:'Lee', nb:2 }] : __lg(n, a);" +
+                       " state.screen='groupes'; render(); ouvrirModeration();"],
 ];
 (async () => {
   const b = await chromium.launch({ executablePath: '/opt/pw-browsers/chromium' });

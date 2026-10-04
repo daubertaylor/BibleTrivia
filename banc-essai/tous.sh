@@ -9,7 +9,10 @@
 #      que d'autres bancs démarrent eux-mêmes. Lancés en ligne de commande :
 #      « ReferenceError: window is not defined » et un délai dépassé. Même
 #      chose pour leurs cousins des groupes, shim-groupes.js (le client) et
-#      faux-serveur-groupes.js (un vrai PostgreSQL derrière un faux Supabase).
+#      faux-serveur-groupes.js (un vrai PostgreSQL derrière un faux Supabase),
+#      et brouillon.js, qui dit seulement aux autres où poser leurs fichiers.
+#      faux-supabase.js non plus : c'est le faux serveur des comptes, un TEXTE
+#      que comptes.js injecte dans la page — lancé seul, il ne vérifiait rien.
 #
 #   2. LE PARALLÉLISME FAUSSE LES BANCS DE TEMPS. À trois de front, parite.js
 #      annonçait 8 982 pixels d'écart entre Android et iOS ; seul, il est vert
@@ -37,7 +40,7 @@ RACINE="$(cd "$(dirname "$0")/.." && pwd)"
 URL="${1:-http://127.0.0.1:8099/index.html}"
 NODE=/opt/node22/bin/node
 SORTIE="$(mktemp -d /tmp/bancs-XXXX)"
-PAS_DES_BANCS="shim hub extraire-questions faux-serveur-groupes shim-groupes"
+PAS_DES_BANCS="shim hub extraire-questions faux-serveur-groupes shim-groupes brouillon faux-supabase"
 # CHANTIERS : des bancs commencés dont la MESURE n'est pas encore fiable. Ils
 # ne gardent rien tant qu'ils se trompent, et un banc qui crie à tort finit
 # par être ignoré — c'est exactement ce qui est arrivé à lisible et fondu.
@@ -50,6 +53,23 @@ PAS_DES_BANCS="shim hub extraire-questions faux-serveur-groupes shim-groupes"
 #   Ses deux autres relevés, eux, sont déjà sûrs (ils ne photographient rien) :
 #   voir DETTE.md point 6.
 CHANTIERS="acces"
+
+# OÙ LES BANCS POSENT CE QU'ILS FABRIQUENT (banc-essai/brouillon.js) : le
+# même dossier pour tous, BANC_TMP s'il est donné, sinon un dossier à eux
+# dans le temporaire de la machine.
+export BANC_TMP="${BANC_TMP:-${TMPDIR:-/tmp}/yada-bancs}"
+mkdir -p "$BANC_TMP"
+
+# CINQ BANCS SERVENT UNE COPIE DE supabase-js (leur constante SUPA). Sans
+# elle, le mode en ligne se croit « non configuré », et une trentaine de
+# phrases ne s'affichent plus — des rouges qui n'ont rien à voir avec le jeu.
+# On la reprend si elle manque (un dossier temporaire se vide).
+SUPA="${SUPA_UMD:-$BANC_TMP/supabase.js}"
+if [ ! -s "$SUPA" ]; then
+  mkdir -p "$(dirname "$SUPA")"
+  curl -sSL --max-time 60 "https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2" -o "$SUPA" \
+    || echo "supabase.js introuvable ($SUPA) : cinq bancs vont échouer"
+fi
 
 if ! curl -s -o /dev/null --max-time 5 "$URL"; then
   echo "Le serveur ne répond pas sur $URL"

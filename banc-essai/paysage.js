@@ -18,7 +18,7 @@ const { execSync } = require('child_process');
 const fs = require('fs');
 
 const URL = process.argv[2] || 'http://127.0.0.1:8099/index.html';
-const D = '/tmp/claude-0/-home-user-BibleTrivia/fb9bf869-826b-5523-9825-ea1b24c294d0/scratchpad/';
+const D = require('./brouillon.js') + '/';
 const S = 2;                       /* échelle : 2 px physiques par px CSS */
 
 const TELS = [

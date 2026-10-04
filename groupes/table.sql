@@ -366,7 +366,14 @@ begin
     'moderateur', public._moderateur(moi),
     'participe', public._peut_participer(moi),
     'regles_version', r.regles_version,
-    'profil', (select to_jsonb(p) - 'banni_le' from public.profils p where p.id = moi)
+    'profil', (select to_jsonb(p) - 'banni_le' from public.profils p where p.id = moi),
+    -- Pour un modérateur : combien de choses attendent une décision (une par
+    -- objet signalé, comme dans la file). Le jeu en fait une pastille : c'est
+    -- ainsi qu'un signalement arrive jusqu'à lui sans qu'il aille le chercher.
+    'a_traiter', case when public._moderateur(moi) then
+       (select count(*) from (select distinct s.message, s.cible, s.groupe
+                                from public.signalements s where s.traite_le is null) d)
+     else 0 end
   );
 end $$;
 
@@ -756,22 +763,40 @@ $$;
 -- ============================================================================
 -- 5. LA MODÉRATION DU JEU (Taylor)
 -- ============================================================================
+-- UNE CARTE PAR CHOSE À DÉCIDER. Trois personnes qui signalent le même
+-- message faisaient trois cartes identiques ; la décision, elle, les règle
+-- toutes d'un coup (voir traiter_signalement, qui regroupe par le même
+-- triplet message · personne · groupe). On montre donc le premier
+-- signalement de chaque objet, le nombre de personnes qui l'ont fait, et
+-- leurs précisions (trois au plus).
 create or replace function public.moderation_ouverte() returns setof jsonb
 language sql stable security definer set search_path = '' as $$
-  select jsonb_build_object(
-           'id', s.id, 'raison', s.raison, 'details', s.details, 'le', s.cree_le,
+  select x.j from (
+    select distinct on (s.message, s.cible, s.groupe) s.cree_le as le,
+           jsonb_build_object(
+           'id', s.id, 'raison', s.raison, 'le', s.cree_le,
+           'details', coalesce((select string_agg(d.details, ' · ') from (
+                         select distinct t.details from public.signalements t
+                          where t.traite_le is null and t.details <> ''
+                            and t.message is not distinct from s.message
+                            and t.cible is not distinct from s.cible
+                            and t.groupe is not distinct from s.groupe
+                          limit 3) d), ''),
            'groupe', s.groupe, 'groupe_nom', (select nom from public.groupes where id = s.groupe),
            'message', s.message,
            'texte', coalesce((select texte from public.messages_caches where message = s.message),
                              (select texte from public.messages where id = s.message)),
            'cible', s.cible, 'cible_nom', (select nom from public.profils where id = s.cible),
            'par_nom', (select nom from public.profils where id = s.par),
-           'nb', (select count(distinct par) from public.signalements t
-                   where t.traite_le is null and t.message is not distinct from s.message and t.cible is not distinct from s.cible))
-    from public.signalements s
-   where s.traite_le is null and public._moderateur(auth.uid())
-   order by s.cree_le asc
-   limit 100
+           'nb', (select count(distinct t.par) from public.signalements t
+                   where t.traite_le is null and t.message is not distinct from s.message
+                     and t.cible is not distinct from s.cible and t.groupe is not distinct from s.groupe)) as j
+      from public.signalements s
+     where s.traite_le is null and public._moderateur(auth.uid())
+     order by s.message, s.cible, s.groupe, s.cree_le asc, s.id asc
+  ) x
+  order by x.le asc
+  limit 100
 $$;
 
 create or replace function public.traiter_signalement(p_id bigint, p_decision text) returns jsonb

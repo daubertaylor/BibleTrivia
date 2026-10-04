@@ -39,7 +39,7 @@ const fs = require('fs');
 
 const URL = process.argv[2] || process.env.URL_ESSAI || 'http://127.0.0.1:8099/index.html';
 const SUPA = process.env.SUPA_UMD
-  || '/tmp/claude-0/-home-user-BibleTrivia/fb9bf869-826b-5523-9825-ea1b24c294d0/scratchpad/supabase.js';
+  || require('./brouillon.js') + '/supabase.js';
 
 /* Le faux serveur répond comme le vrai : toute écriture qui mentionne
    « revoir » est refusée (42703), parce que la colonne n'existe pas en ligne. */
@@ -141,6 +141,11 @@ const dire = (nom, v) => {
       if (r.method() === 'OPTIONS') return route.fulfill({ status: 204, headers: cors });
       if (!r.url().includes('/rest/')) return route.fulfill({ status: 204, headers: cors });
       const rpc = r.url().includes('/rpc/');
+      /* SEULS LES RAPPELS COMPTENT : la table push_subs et la fonction push_….
+         Depuis la v302, la sonde des groupes lit reglages_jeu 2,5 s après le
+         lancement — pile dans la fenêtre du banc, qui la comptait comme « la
+         table encore touchée » alors qu'elle n'a rien à voir avec les rappels. */
+      if (rpc ? !/\/rpc\/push_/.test(r.url()) : !/\/push_subs/.test(r.url())) return route.fulfill({ status: 204, headers: cors });
       vues.push({ methode: rpc ? 'RPC' : r.method(), url: r.url(), corps });
       if (rpc) {
         if (rpcExiste) return route.fulfill({ status: 204, headers: cors });

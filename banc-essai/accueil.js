@@ -27,6 +27,12 @@
    « --neuf » refait le balayage en rechargeant, pour revérifier l'équivalence
    le jour où l'accueil se mettrait à dépendre de l'état de chargement.
 
+   AVEC LA BARRE DES GROUPES, UN SECOND BALAYAGE. Quand les groupes sont là,
+   la barre flottante prend le bas de l'écran et la rangée des sept jours part
+   dans Progression. Mêmes hauteurs, d'autres règles : plus de rangée sur
+   l'accueil, la dernière carte au moins 6 px AU-DESSUS de la barre (jamais
+   dessous), et la barre entière dans l'écran.
+
    Usage : node banc-essai/accueil.js [url] [--neuf]
 */
 const { chromium } = require('/opt/node22/lib/node_modules/playwright');
@@ -59,9 +65,14 @@ const RELEVE = () => {
   const app = document.getElementById('app');
   const s = document.querySelector('.semaine');
   const vue = s && getComputedStyle(s).display !== 'none';
-  const cartes = document.querySelectorAll('.mode-card, .daily-card, .parcours-card').length;
-  return { deb: app.scrollHeight - app.clientHeight, semVue: !!vue, cartes,
-    semBas: s ? Math.round(s.getBoundingClientRect().bottom) : null, ih: innerHeight };
+  const l = [...document.querySelectorAll('.accueil .mode-card, .accueil .daily-card, .accueil .parcours-card')];
+  const b = document.getElementById('barreBas');
+  const barre = !!b && !b.classList.contains('cachee');
+  const bb = barre ? b.getBoundingClientRect() : null;
+  return { deb: app.scrollHeight - app.clientHeight, semVue: !!vue, cartes: l.length,
+    semBas: s ? Math.round(s.getBoundingClientRect().bottom) : null, ih: innerHeight,
+    derniere: l.length ? Math.round(l[l.length - 1].getBoundingClientRect().bottom) : null,
+    barre, barreHaut: bb ? Math.round(bb.top) : null, barreBas: bb ? Math.round(bb.bottom) : null };
 };
 
 (async () => {
@@ -102,26 +113,43 @@ const RELEVE = () => {
   await p.waitForTimeout(900);
 
   const pires = [];
-  for (const h of HAUTEURS) {
-    if (NEUF) {
-      await p.goto(URL);
-      await p.waitForFunction(pret, null, { timeout:20000 });
+  for (const avecBarre of [false, true]) {
+    if (avecBarre) {
+      /* Les groupes installés et ouverts, comme le jeu les apprend de sa
+         sonde : la barre arrive, on la laisse finir d'entrer. */
+      await p.setViewportSize({ width:393, height:844 });
+      await p.evaluate(() => { grp.installe = true; grp.ouverts = true; state.screen = 'mode'; render(); majBarre(); });
+      await p.waitForTimeout(900);
     }
-    await p.setViewportSize({ width:393, height:h });
-    await p.evaluate(() => { state.screen = 'mode'; render(); });
-    await p.waitForTimeout(NEUF ? 320 : 200);
-    const r = await p.evaluate(RELEVE);
-    /* CINQ, ET NON PLUS SIX. La carte du Défi du jour a été retirée : elle
-       n'existait que pour allumer la flamme, et la flamme s'allume désormais
-       en jouant, quel que soit le mode. Restent cinq vraies destinations —
-       Groupe, Solo, En ligne, À revoir, Progression. */
-    if (r.cartes !== 5) pires.push(h + ' px : ' + r.cartes + ' cartes au lieu de 5');
-    else if (r.deb > 0) pires.push(h + ' px : débord ' + r.deb + (r.semVue ? '' : ' (bande masquée)'));
-    else if (r.semVue && r.semBas > r.ih) pires.push(h + ' px : bande sous le pli (' + r.semBas + ' > ' + r.ih + ')');
+    for (const h of HAUTEURS) {
+      if (NEUF) {
+        await p.goto(URL);
+        await p.waitForFunction(pret, null, { timeout:20000 });
+        if (avecBarre) await p.evaluate(() => { grp.installe = true; grp.ouverts = true; majBarre(); });
+      }
+      await p.setViewportSize({ width:393, height:h });
+      await p.evaluate(() => { state.screen = 'mode'; render(); });
+      await p.waitForTimeout(NEUF ? 320 : 200);
+      const r = await p.evaluate(RELEVE);
+      const ou = h + ' px' + (avecBarre ? ' (barre)' : '') + ' : ';
+      /* CINQ, ET NON PLUS SIX. La carte du Défi du jour a été retirée : elle
+         n'existait que pour allumer la flamme, et la flamme s'allume désormais
+         en jouant, quel que soit le mode. Restent cinq vraies destinations —
+         Groupe, Solo, En ligne, À revoir, Progression. */
+      if (r.cartes !== 5) pires.push(ou + r.cartes + ' cartes au lieu de 5');
+      else if (r.deb > 0) pires.push(ou + 'débord ' + r.deb + (r.semVue ? '' : ' (bande masquée)'));
+      else if (!avecBarre && !r.semVue) pires.push(ou + 'la bande des sept jours a disparu sans barre');
+      else if (!avecBarre && r.semBas > r.ih) pires.push(ou + 'bande sous le pli (' + r.semBas + ' > ' + r.ih + ')');
+      else if (avecBarre && !r.barre) pires.push(ou + 'la barre ne s\'affiche pas');
+      else if (avecBarre && r.semVue) pires.push(ou + 'la bande des sept jours est restée sur l\'accueil');
+      else if (avecBarre && r.derniere > r.barreHaut - 6) pires.push(ou + 'la dernière carte touche la barre (' + r.derniere + ' > ' + (r.barreHaut - 6) + ')');
+      else if (avecBarre && r.barreBas > r.ih) pires.push(ou + 'la barre sort de l\'écran (' + r.barreBas + ' > ' + r.ih + ')');
+    }
   }
   if (errs.length) pires.push('erreurs JS : ' + [...new Set(errs)].slice(0,3).join(' | '));
   await nav.close();
   if (pires.length) { console.log('  HAUTEURS EN DÉFAUT :'); pires.forEach(x => console.log('   ' + x)); process.exit(1); }
   console.log('  OK — ' + HAUTEURS.length + ' hauteurs de ' + HAUTEURS[0] + ' à ' + HAUTEURS[HAUTEURS.length-1]
-    + ' px : cinq cartes, aucun débord, la bande des sept jours au-dessus du pli');
+    + ' px, sans et avec la barre : cinq cartes, aucun débord, la bande des sept jours au-dessus du pli,'
+    + ' et la dernière carte au-dessus de la barre');
 })();

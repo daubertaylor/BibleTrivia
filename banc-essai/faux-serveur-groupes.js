@@ -73,6 +73,17 @@ async function demarrerPG(port){
     from pg_proc p join pg_namespace n on n.oid = p.pronamespace where n.nspname = 'public'`);
   const fonctions = {};
   for (const f of JSON.parse(sig.out.trim())) fonctions[f.nom] = f;
+  /* UN POSTGRESQL NE DOIT PAS SURVIVRE AU BANC. Un banc tué en route (le
+     « timeout » de tous.sh, un Ctrl-C) laissait sa base tourner, son port
+     pris : le banc suivant ne démarrait plus. On l'arrête à la sortie du
+     processus, quelle qu'elle soit — en synchrone, puisqu'à cet instant plus
+     aucune promesse ne s'exécutera. */
+  const arretSync = () => {
+    try { execFileSync('runuser', ['-u', 'postgres', '--', BIN + '/pg_ctl', '-D', D + '/data', '-m', 'immediate', 'stop'], { stdio: 'ignore' }); } catch (e) {}
+    try { fs.rmSync(D, { recursive: true, force: true }); } catch (e) {}
+  };
+  process.once('exit', arretSync);
+  for (const sig of ['SIGINT', 'SIGTERM']) process.once(sig, () => { arretSync(); process.exit(1); });
   return {
     D, port, psql, fonctions,
     arreter: async () => {
@@ -103,8 +114,8 @@ function erreurPG(e){
 }
 
 function creerServeur(base){
-  const abonnes = new Set();   // { moi, table, filtre, events, rs }
-  let dernier = 0, relecture = null;
+  const abonnes = new Set();   // { moi, table, filtre, events, rs, depuis }
+  let dernier = 0, relecture = null, enCours = false;
 
   async function rpc(moi, nom, args){
     const f = base.fonctions[nom];
@@ -162,8 +173,18 @@ function creerServeur(base){
 
   /* LE DIRECT : on relit le journal, et chaque changement est relu AU NOM DE
      CHAQUE ABONNÉ — c'est ce que fait Supabase avec les règles d'accès. */
+  /* DEUX DISTRIBUTIONS NE SE CROISENT JAMAIS. La relecture tombe toutes les
+     120 ms et dure parfois plus : deux passes lisaient alors le même morceau
+     du journal, et chaque message arrivait deux fois — un non-lu de trop à
+     chaque fois. Et le journal avance même sans abonné : un téléphone qui
+     s'abonne ne reçoit que ce qui arrive APRÈS lui (a.depuis), pas tout
+     l'historique rejoué comme s'il était neuf. */
   async function distribuer(){
-    if (!abonnes.size) return;
+    if (enCours) return;
+    enCours = true;
+    try { await distribuerUneFois(); } finally { enCours = false; }
+  }
+  async function distribuerUneFois(){
     let lignes;
     try {
       const r = await base.psql('select coalesce(jsonb_agg(j order by n), \'[]\'::jsonb) from (select n, op, id from public.essai_journal where n > ' + dernier + ') j');
@@ -172,6 +193,7 @@ function creerServeur(base){
     for (const j of lignes) {
       dernier = Math.max(dernier, j.n);
       for (const a of abonnes) {
+        if (j.n <= a.depuis) continue;
         if (a.table !== 'messages' || !a.events.includes(j.op === 'INSERT' ? 'INSERT' : 'UPDATE') && !a.events.includes('*')) continue;
         try {
           const r = await base.psql(enTantQue(a.moi, 'select to_jsonb(m) from public.messages m where id = ' + (j.id | 0)));
@@ -206,7 +228,7 @@ function creerServeur(base){
         rs.writeHead(200, { 'content-type': 'text/event-stream', 'cache-control': 'no-cache', connection: 'keep-alive' });
         rs.write('retry: 500\n\n');
         const a = { moi, table: u.searchParams.get('table'), filtre: u.searchParams.get('filtre') || '',
-                    events: String(u.searchParams.get('events') || '*').split(','), rs };
+                    events: String(u.searchParams.get('events') || '*').split(','), rs, depuis: dernier };
         abonnes.add(a);
         rq.on('close', () => abonnes.delete(a));
         return;

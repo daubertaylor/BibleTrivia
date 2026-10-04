@@ -63,6 +63,18 @@ fournisseurs. Tout est écrit dans `comptes/LISEZMOI.md`. Le jeu sonde la table
 et n'affiche la carte que si elle existe — donc rien à rebasculer le jour où
 c'est fait, et personne ne voit d'ici là un bouton qui échoue.
 
+**Depuis la v302 (4/10/2026), le compte se supprime depuis le jeu** : Profil →
+« Supprimer mon compte ». Apple l'exige (5.1.1(v)) pour toute app où l'on crée
+un compte. Partent : le compte, la sauvegarde en ligne, les messages, les
+groupes (un groupe dont ce compte était propriétaire passe à son plus ancien
+admin, à défaut à son plus ancien membre ; un groupe resté vide s'éteint).
+Reste : la
+progression sur le téléphone — aucune ligne du stockage local n'est touchée, et
+la fenêtre de confirmation le dit. La fonction est dans `comptes/table.sql` :
+**si la table a été collée avant la v302, il faut la recoller une fois** (elle
+se recolle sans risque), sinon le bouton répond « La suppression n'a pas
+abouti ». `comptes/essai.sh` vérifie la suppression sur un vrai PostgreSQL.
+
 **Ce point ne descendra dans « Réglés » que le jour où un vrai joueur aura
 retrouvé sa progression sur un deuxième téléphone.** Tant que la table n'existe
 pas, le risque de perte est intact — du code prêt ne sauve personne.
@@ -269,6 +281,19 @@ les sept propriétés qui comptent — dont « deux téléphones écrivent en m�
 temps, le retardataire n'efface rien » et « l'écriture directe est refusée,
 même à son propriétaire ».
 
+**Les groupes (v302) sont partis de ces deux leçons.** Aucune table des
+groupes n'a de politique d'écriture, et les droits `insert/update/delete` sont
+retirés : tout passe par des fonctions `security definer` à `search_path = ''`
+qui vérifient avant d'écrire. Les règles de lecture font qu'un membre ne lit que
+ses groupes, et ne reçoit plus rien d'une personne bloquée. Le direct de
+Supabase applique ces règles à chaque abonné, SAUF pour une suppression : seule
+la table `messages` est diffusée, et un message n'est jamais effacé en direct
+— il est masqué, ce qui est une modification, donc filtrée. `groupes/essai.sh`
+le vérifie sur un vrai PostgreSQL 16 (155 vérifications, dont les
+tentatives de contournement : écrire directement, lire le groupe d'un autre,
+promouvoir le propriétaire, se débannir), et `banc-essai/groupes.js` joue deux
+téléphones de bout en bout sur ce même SQL.
+
 **Quand.** En même temps que la table des comptes (#37), pas après.
 
 ---
@@ -283,7 +308,56 @@ web : il exige un apport natif réel. On en a deux — les notifications et le
 fonctionnement hors ligne — donc c'est jouable, mais ça se prépare, ça ne
 s'improvise pas la veille.
 
+**Ce qui est en place depuis la v302** (ce que les deux stores exigent d'une
+app où les gens écrivent) : un filtre avant publication, signaler un message,
+un membre ou un groupe, bloquer quelqu'un, des règles acceptées avant
+d'écrire, une file de modération, la suppression du compte dans l'app, une
+page de confidentialité, un âge minimum déclaré (13 ans). Le détail, et où
+c'est dans le jeu : `groupes/LISEZMOI.md`.
+
+**Ce qui manque encore pour une fiche de store.**
+
+- **Un moyen de contact publié** (une adresse e-mail de support). Il me faut
+  celle que Taylor veut afficher.
+- **La politique de confidentialité à une adresse web** : les deux stores
+  demandent un lien, pas une page dans l'app. Une page `confidentialite.html`
+  sur le même site suffira, avec le même texte.
+- **L'habillage lui-même** (TWA pour Android, enveloppe native pour iOS), les
+  captures, la fiche. Rien de tout ça n'est commencé.
+
 **Quand.** Après les points 1, 2 et 6.
+
+---
+
+## 10. Les groupes reposent sur une personne qui modère
+
+**Le fait.** Le serveur filtre seul ce qui peut l'être (mots, coordonnées
+dans les groupes publics, débit) et masque seul un message signalé par trois
+personnes. Tout le reste attend un modérateur : aujourd'hui, Taylor seul.
+
+**Pourquoi ça compte.** Un message blessant signalé une fois reste visible
+jusqu'à ce que quelqu'un ouvre la file. Les groupes publics mettent en
+présence des inconnus, et des mineurs. Apple (1.2) et Google demandent d'agir
+vite sur un signalement. Depuis la v302, un modérateur le voit en ouvrant le
+jeu (une pastille sur le bouclier, et dans l'onglet Groupes de l'accueil) — mais
+rien ne le prévient tant que le jeu reste fermé.
+
+**Une limite connue.** Un bannissement tient à un compte, pas à une
+personne : un banni peut revenir avec une autre adresse e-mail, comme sur tout
+service qui ne demande pas de pièce d'identité. Il peut aussi supprimer son
+compte et le recréer avec la MÊME adresse, puisque la suppression efface tout,
+bannissement compris. Ce second chemin se fermerait en gardant, à la
+suppression d'un compte banni, une empreinte de son adresse (pas l'adresse)
+qui rebannit à l'inscription — et en le disant dans la page de
+confidentialité. Le premier reste ouvert quoi qu'on fasse.
+
+**Quand.** Avant `groupes_ouverts = true` : au moins deux modérateurs. Une
+alerte hors du jeu (notification ou e-mail) quand un signalement arrive, dès
+que les groupes publics comptent des inconnus. L'empreinte des bannis, le jour
+où un banni revient.
+
+**Ce qui comptera comme « fait ».** Un signalement fait sur un vrai téléphone
+arrive chez un modérateur même quand son jeu est fermé.
 
 ---
 

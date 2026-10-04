@@ -230,14 +230,20 @@ dit "trois personnes : masqué tout de suite" "$(R $C "select masque from messag
 dit "  ... et son texte n'est plus dans la table lue" "$(R $E "select texte from messages where id = $MC")" ""
 dit "  ... un membre ne lit pas le texte caché" "$(R $E "select count(*) from messages_caches")" "0"
 dit "  ... le modérateur, si" "$(R $A "select texte from messages_caches where message = $MC")" "message pénible"
-dit "la file de modération : 3 signalements" "$(R $A "select count(*) from moderation_ouverte()")" "3"
+dit "la file : UNE carte pour les trois signalements" "$(R $A "select count(*) from moderation_ouverte()")" "1"
+dit "  ... qui compte les trois personnes" "$(R $A "select x->>'nb' from moderation_ouverte() x")" "3"
+dit "  ... et garde leurs précisions" "$(R $A "select x->>'details' from moderation_ouverte() x")" "insulte"
 dit "  ... qu'un membre ne voit pas" "$(R $E "select count(*) from moderation_ouverte()")" "0"
+dit "le modérateur sait qu'une chose attend" "$(R $A "select mon_etat_groupes()->>'a_traiter'")" "1"
+dit "  ... un membre n'en sait rien" "$(R $E "select mon_etat_groupes()->>'a_traiter'")" "0"
 dit "  ... ni ne traite" "$(F_ $E "traiter_signalement(1, 'rejeter')")" "interdit"
 SID=$(R $A "select (x->>'id') from moderation_ouverte() x limit 1")
 dit "le modérateur rejette : rien de mal" "$(F_ $A "traiter_signalement($SID, 'rejeter')")" "ok"
 dit "  ... le message revient" "$(R $E "select masque::text || '|' || texte from messages where id = $MC")" "false|message pénible"
 dit "  ... les 3 signalements sont réglés d'un coup" "$(R $A "select count(*) from moderation_ouverte()")" "0"
+dit "  ... et plus rien n'attend" "$(R $A "select mon_etat_groupes()->>'a_traiter'")" "0"
 dit "signaler une personne" "$(F_ $E "signaler(null, '$C', '$GO', 'spam', 'pub')")" "ok"
+dit "  ... une chose attend de nouveau" "$(R $A "select mon_etat_groupes()->>'a_traiter'")" "1"
 
 # ---- 8. les rôles ------------------------------------------------------------
 titre "propriétaire, admins, membres"

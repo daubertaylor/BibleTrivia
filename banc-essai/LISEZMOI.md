@@ -73,9 +73,19 @@ notre code, et il est éprouvé. Tout le reste l'est.
     node premiere-ouverture.js  # la 1re ouverture des Réglages refait-elle le travail des premières fois ?
     node reseau-faible.js       # un réseau qui pend ou qui traîne : le jeu se lance quand même, et le dit
     node decor-tenu.js          # le décor vu à travers une feuille tient pendant la montée, même page en retard
+    node groupes.js             # les groupes de bout en bout, à deux téléphones, sur le vrai SQL (PostgreSQL 16)
     node fuite.js sansmarge "html.gl-xf .has-gs{ overflow-clip-margin:0px !important; }"
     python3 fuite.py sansmarge     # aucun trou d'un pixel au bord des feuilles
     node matiere.js /tmp/m mat && python3 matiere.py /tmp/m mat   # la matière suffit-elle ?
+
+Toute la batterie d'un coup : `banc-essai/tous.sh` (deux bancs de front, et ce
+qui tombe est rejoué SEUL avant d'être cru). Le serveur doit tourner :
+`python3 -m http.server 8099 --bind 127.0.0.1` depuis la racine. Pillow
+(`pip install pillow`) sert aux bancs qui lisent des captures.
+
+Les captures et les fichiers de passage (mesures, copie de supabase-js) vont
+dans `$BANC_TMP`, sinon dans `/tmp/yada-bancs` : `brouillon.js` le dit à tous
+les bancs, et aucun n'écrit plus en dur le dossier d'une session de travail.
 
 ## Un avertissement, payé cher
 

@@ -16,7 +16,10 @@
 #   la disparition pure et simple du masque : amplitude nulle = plus de fondu.
 import json, sys
 from PIL import Image
-D = '/tmp/claude-0/-home-user-BibleTrivia/fb9bf869-826b-5523-9825-ea1b24c294d0/scratchpad/'
+import os, tempfile
+# Le même dossier que brouillon.js : BANC_TMP, sinon <temporaire>/yada-bancs.
+D = os.path.join(os.environ.get('BANC_TMP') or os.path.join(tempfile.gettempdir(), 'yada-bancs'), '')
+os.makedirs(D, exist_ok=True)
 mode = sys.argv[1] if len(sys.argv) > 1 else 'bord'
 r = json.load(open(D + 'englouti-' + mode + '.json'))
 im = Image.open(D + 'englouti-' + mode + '.png').convert('RGB')

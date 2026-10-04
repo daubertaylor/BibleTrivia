@@ -34,7 +34,7 @@
 const { chromium } = require('/opt/node22/lib/node_modules/playwright');
 const fs = require('fs');
 const path = require('path');
-const SUPA = '/tmp/claude-0/-home-user-BibleTrivia/fb9bf869-826b-5523-9825-ea1b24c294d0/scratchpad/supabase.js';
+const SUPA = process.env.SUPA_UMD || require('./brouillon.js') + '/supabase.js';
 const IOS = 'Mozilla/5.0 (iPhone; CPU iPhone OS 17_5 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.5 Mobile/15E148 Safari/604.1';
 const ANDROID = 'Mozilla/5.0 (Linux; Android 14; Pixel 8) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/126.0.0.0 Mobile Safari/537.36';
 const URL = process.argv[2] || process.env.URL_ESSAI || 'http://127.0.0.1:8099/index.html';
@@ -165,9 +165,7 @@ const JAMAIS_A_L_ECRAN = [
   { lg:'en', quoi:'Good duel', car:"n'existe que dans le texte PARTAGÉ d'un duel serré, jamais sur un écran" },
   { lg:'en', quoi:'Win', car:"idem : « Victoire » sans point d'exclamation ne sert qu'au texte partagé" },
   { lg:'en', quoi:'Background', car:"la rangée des décors ne se peint que si SCENES en compte plus d'un ; il n'y en a qu'un" },
-  { lg:'en', quoi:'Home', car:"« Accueil » est au dictionnaire mais aucun T() ne l'appelle — clé dormante" },
   /* ===== L'ESPAGNOL, MÊME EXAMEN ===== */
-  { lg:'es', quoi:'Inicio', car:"« Accueil » est au dictionnaire mais aucun T() ne l'appelle — clé dormante" },
   { lg:'es', quoi:'Fondo',  car:"la rangée des décors ne se peint que si SCENES en compte plus d'un ; il n'y en a qu'un" },
   /* « bientôt » ne s'écrit qu'à CÔTÉ D'UNE LANGUE NON OUVERTE. Depuis que
      l'espagnol l'est, les trois langues du jeu sont ouvertes : le mot n'a plus
@@ -194,7 +192,10 @@ const JAMAIS_A_L_ECRAN = [
 const MEME_DANS_LES_DEUX = [
   { quoi:/^(Yada|Taylor|Sam|Lee|Kim)$/,        car:'un nom propre' },
   { quoi:/^(Job|Daniel|Esther|Ruth|Jude|Amos|Nahum|Joel|Amen|Hosanna)$/i, car:'même mot dans les deux langues' },
-  { quoi:/^(Duel|Options|Score|Records|Contact|Version|Format|Instagram|Notifications?|Guide|Volume|Testament|Solo|Installation|Modes?|Messages?|Info|Centurion|Bibliophile|Zoom)$/i, car:'même mot dans les deux langues' },
+  { quoi:/^(Duel|Options|Score|Records|Contact|Version|Format|Instagram|Notifications?|Guide|Volume|Testament|Solo|Installation|Modes?|Messages?|Info|Centurion|Bibliophile|Zoom|Navigation|Public|Admin)$/i, car:'même mot dans les deux langues' },
+  /* Le code d'un salon annoncé dans un groupe : « Code EFGH » s'écrit pareil
+     en anglais (l'espagnol dit « Código »). */
+  { quoi:/^Code [A-Z0-9]{4,8}$/,               car:'le mot « code » et un code de salon' },
   { quoi:/^\d+\s*(questions?|pts|points?|s|min)$/i, car:'un nombre et un mot écrit pareil' },
   { quoi:/^[^\p{L}]*$/u,                       car:'aucune lettre — chiffres, ponctuation, icône' },
   { quoi:/^(Français|English|Español|Português|Deutsch|Italiano)$/, car:'une langue s\'écrit dans sa langue' },
@@ -245,7 +246,7 @@ const MEME_DANS_LES_DEUX = [
    temps où il portait une légende fixe. Il porte maintenant l'échéance du jour
    — « Plus que 6 h », « Fait pour aujourd'hui » —, une vraie phrase qui doit
    se traduire comme les autres : on la surveille. */
-const LIEUX_LIBRES = /avatar|code-big|rank-pts|scorebar|q-counter|timer|logo|st-ico|ficon|ico\b|opt-text|q-text|rev-q|rev-a|rev-fact|ftext|fact-|hero-verse/;
+const LIEUX_LIBRES = /avatar|grp-av|code-big|rank-pts|scorebar|q-counter|timer|logo|st-ico|ficon|ico\b|opt-text|q-text|rev-q|rev-a|rev-fact|ftext|fact-|hero-verse/;
 
 /* ===== UNE LANGUE PAS ENCORE OUVERTE SE RELIT QUAND MÊME =====
    Le jeu refuse une langue déclarée « dispo:false » : elle s'affiche grisée
@@ -675,6 +676,162 @@ const ouvrirLaLangue = async (p, lg) => {
       try { copierLeLien(); } catch(e){} }],
   ];
 
+  /* ===== LES GROUPES =====
+     Une soixantaine d'écrans et de fenêtres, sans serveur : un décor posé à la
+     main (__grpDecor), puis CHAQUE fenêtre par la fonction du jeu qui l'ouvre.
+     Les réponses du serveur (« c'est fait ») sont imitées en remplaçant
+     appelGroupe le temps d'une étape : ce qu'on relit, c'est ce que le jeu
+     affiche ENSUITE. */
+  const GROUPES_SOCIAUX = [
+    ['Groupes · barre',    () => { __fermerTout();
+      window.__grpDecor = () => {
+        const il = (h) => new Date(Date.now() - h * 3600000).toISOString();
+        /* « Hier » à coup sûr : vingt-six heures en arrière tombaient AVANT-HIER
+           passé deux heures du matin. Hier à midi, c'est hier à toute heure. */
+        const hier = () => { const d = new Date(); d.setDate(d.getDate() - 1); d.setHours(12, 0, 0, 0); return d.toISOString(); };
+        compte.dispo = true; profile.name = 'Taylor';
+        compte.session = { user:{ id:'moi-0', email:'joueur@exemple.net' } }; compte.etape = 'connecte';
+        grp.installe = true; grp.ouverts = true; grp.message = '';
+        grp.etat = { participe:'ok', moderateur:true, ouverts:true };
+        grp.profils = { 'moi-0':{ nom:'Taylor', couleur:'#4C86E8' }, 'u-2':{ nom:'Sam', couleur:'#E8574C' },
+                        'u-3':{ nom:'Lee', couleur:'#4CE88A' }, 'u-4':{ nom:'Kim', couleur:'#E8C84C' } };
+        grp.liste = [
+          { id:'g-1', nom:'Lee', teinte:2, ouvert:false, code:'ABC234', nb_membres:4, non_lus:2, dernier_message:il(1),
+            apercu:{ id:9, auteur:'u-2', genre:'texte', texte:'Amen', nom:'Sam', le:il(1) } },
+          { id:'g-2', nom:'Sam', teinte:0, ouvert:true, code:'DEF567', nb_membres:2, non_lus:0, dernier_message:hier(),
+            apercu:{ id:7, auteur:'moi-0', genre:'texte', texte:'Amen', nom:'Taylor', le:il(26) } },
+          { id:'g-3', nom:'Kim', teinte:4, ouvert:false, code:'GHJ892', nb_membres:3, non_lus:0, dernier_message:il(30), apercu:null },
+          { id:'g-6', nom:'Amos', teinte:6, ouvert:true, code:'NPQ456', nb_membres:5, non_lus:0, dernier_message:il(40), apercu:null },
+          { id:'g-4', nom:'Job', teinte:5, ouvert:false, code:'KLM345', nb_membres:3, non_lus:1, dernier_message:il(2),
+            apercu:{ id:5, auteur:null, genre:'texte', texte:'Amen', nom:null, le:il(2) } },
+        ];
+        grp.publics = [ { id:'g-2', nom:'Sam', description:'', nb_membres:2, teinte:0, membre:true },
+                        { id:'g-5', nom:'Ruth', description:'', nb_membres:1, teinte:3, membre:false } ];
+        grp.membres = { 'g-1':[ { membre:'moi-0', role:'proprietaire', muet_jusqu:null },
+                                { membre:'u-2', role:'admin', muet_jusqu:null },
+                                { membre:'u-3', role:'membre', muet_jusqu:new Date(Date.now() + 3600000).toISOString() },
+                                { membre:'u-4', role:'membre', muet_jusqu:null } ] };
+        const m = (id, auteur, genre, texte, extra) => Object.assign({ id, groupe:'g-1', auteur, genre, texte, donnees:{},
+          cree_le:il(0.5), masque:false, supprime_le:null }, extra || {});
+        grp.fils = { 'g-1':{ charge:true, tout:false, messages:[
+          m(1, null, 'systeme', 'cree',   { donnees:{ nom:'Taylor' } }),
+          m(2, null, 'systeme', 'rejoint',{ donnees:{ nom:'Sam' } }),
+          m(3, null, 'systeme', 'parti',  { donnees:{ nom:'Kim' } }),
+          m(4, null, 'systeme', 'exclu',  { donnees:{ nom:'Kim' } }),
+          m(5, null, 'systeme', 'banni',  { donnees:{ nom:'Kim' } }),
+          m(6, null, 'systeme', 'admin',  { donnees:{ nom:'Sam' } }),
+          m(7, 'u-2', 'texte', 'Amen'),
+          m(8, 'u-3', 'texte', '', { masque:true }),
+          m(9, 'u-3', 'texte', '', { supprime_le:il(0.2) }),
+          m(10, 'u-2', 'partie', '', { donnees:{ code:'ABCD' } }),
+          m(11, 'moi-0', 'partie', '', { donnees:{ code:'EFGH' } }),
+          m(12, 'moi-0', 'texte', 'Amen') ] } };
+        grp.courant = null; grp.nonLus = 3;
+        moderation = null;
+      };
+      __grpDecor(); grp.etat = { participe:'ok', moderateur:false }; state.screen='mode'; render(); majBarre(); }],
+    ['Groupes · sans compte', () => { __fermerTout(); __grpDecor(); compte.session = null; compte.etape = 'repos'; grp.etat = null;
+      state.screen='groupes'; render(); }],
+    ['Groupes · suspendu', () => { __fermerTout(); __grpDecor(); grp.etat = { participe:'banni' }; state.screen='groupes'; render(); }],
+    ['Groupes · bientôt',  () => { __fermerTout(); __grpDecor(); grp.etat = { participe:'ferme' }; state.screen='groupes'; render(); }],
+    /* Sans réseau à l'entrée : l'écran le dit, et propose de réessayer. */
+    ['Groupes · pas de réseau', () => { __fermerTout(); __grpDecor(); grp.etat = null; grp.etatEchec = true; state.screen='groupes'; render(); }],
+    ['Groupes · bienvenue', () => { __fermerTout(); __grpDecor(); grp.etat = { participe:'regles' };
+      grp.message = T("Il faut confirmer les deux pour entrer."); state.screen='groupes'; render(); }],
+    ['Groupes · nom refusé', () => { grp.message = T("Ce nom ne peut pas être utilisé dans les groupes. Change-le dans ton profil."); render(); }],
+    ['Groupes · sans nom', () => { const n = profile.name; profile.name = ''; grp.message = T("Choisis d'abord un nom."); render(); profile.name = n; }],
+    ['Groupes · liste',    () => { __fermerTout(); __grpDecor(); state.screen='groupes'; render(); }],
+    /* Le modérateur : des signalements attendent. Le bouclier et l'onglet
+       le disent aussi au lecteur d'écran — dans la langue du joueur. */
+    ['Groupes · signalements en attente', () => { grp.etat = { participe:'ok', moderateur:true, ouverts:true, a_traiter:2 }; render(); majBarre(); }],
+    ['Groupes · rien que des signalements', () => { grp.nonLus = 0; grp.etat.a_traiter = 1; render(); majBarre(); }],
+    ['Groupes · listes vides', () => { grp.liste = []; grp.publics = []; grp.recherche = ''; render(); }],
+    ['Groupes · recherche vaine', () => { grp.recherche = 'Zzz'; render(); grp.recherche = ''; }],
+    ['Groupes · créer',    () => { __fermerTout(); __grpDecor(); state.screen='groupes'; render(); ouvrirCreation(); }],
+    ['Groupes · créer public', () => { choisirTypeGroupe('public'); }],
+    ['Groupes · code',     () => { __fermerTout(); ouvrirCode(); }],
+    ['Groupes · règles',   () => { __fermerTout(); ouvrirRegles(); }],
+    /* La pastille « Nouveaux messages » : le fil descend tout seul au bas
+       juste après le rendu (et la cache) — on la montre après lui. */
+    ['Groupes · discussion', async () => { __fermerTout(); __grpDecor(); grp.courant = 'g-1'; state.screen='groupe'; render();
+      await new Promise(r => setTimeout(r, 60));
+      const b = document.getElementById('filBas'); if(b) b.hidden = false; }],
+    ['Groupes · sourdine', () => { grp.membres['g-1'][0].muet_jusqu = new Date(Date.now() + 3600000).toISOString(); majCompo(); }],
+    ['Groupes · fil vide', () => { __fermerTout(); __grpDecor(); grp.fils['g-1'] = { charge:true, tout:true, messages:[] }; grp.courant = 'g-1';
+      state.screen='groupe'; render(); }],
+    ['Groupes · infos',    () => { __fermerTout(); __grpDecor(); grp.courant = 'g-1'; state.screen='groupe'; render(); ouvrirInfosGroupe(true); }],
+    ['Groupes · membre',   () => { __fermerTout(); ouvrirMembre('u-4'); }],
+    ['Groupes · admin',    () => { __fermerTout(); ouvrirMembre('u-2'); }],
+    ['Groupes · en sourdine', () => { __fermerTout(); ouvrirMembre('u-3'); }],
+    ['Groupes · un message', () => { __fermerTout(); actionsMessage('7'); }],
+    ['Groupes · signaler', () => { __fermerTout(); signalerMessage(null, null, null); signalerMessage('7'); }],
+    ['Groupes · signaler quelqu\'un', () => { __fermerTout(); signalerMessage(null, 'u-2', 'g-1'); }],
+    ['Groupes · signaler le groupe', () => { __fermerTout(); signalerMessage(null, null, 'g-1'); }],
+    ['Groupes · merci',    async () => { __fermerTout(); const a = appelGroupe; appelGroupe = async () => ({ ok:true });
+      signalerMessage('7'); await new Promise(r => setTimeout(r, 60)); await envoyerSignalement('spam'); appelGroupe = a; }],
+    ['Groupes · merci (groupe)', async () => { __fermerTout(); const a = appelGroupe; appelGroupe = async () => ({ ok:true });
+      signalerMessage(null, null, 'g-1'); await new Promise(r => setTimeout(r, 60)); await envoyerSignalement('autre'); appelGroupe = a; }],
+    ['Groupes · bloquer',  () => { __fermerTout(); bloquerQuelquUn('u-2'); }],
+    ['Groupes · bloqué',   async () => { __fermerTout(); const a = appelGroupe, m = showModal, l = chargerListes;
+      appelGroupe = async () => ({ ok:true }); showModal = (o) => { o.onOk && o.onOk(); }; chargerListes = async () => {};
+      bloquerQuelquUn('u-4'); await new Promise(r => setTimeout(r, 60)); appelGroupe = a; showModal = m; chargerListes = l; }],
+    ['Groupes · retirer',  () => { __fermerTout(); __grpDecor(); grp.courant = 'g-1'; state.screen='groupe'; render(); modererMembre('u-4', 'exclure'); }],
+    ['Groupes · bannir',   () => { __fermerTout(); modererMembre('u-4', 'bannir'); }],
+    ...['muet', 'parler', 'promouvoir', 'retrograder', 'exclure', 'bannir'].map(action =>
+      ['Groupes · ' + action + ' (fait)', async (a) => { __fermerTout(); __grpDecor(); grp.courant = 'g-1'; state.screen='groupe'; render();
+        const x = appelGroupe, m = showModal, c = chargerMembres;
+        appelGroupe = async () => ({ ok:true }); showModal = (o) => { o.onOk && o.onOk(); }; chargerMembres = async () => {};
+        await modererMembre('u-4', a); await new Promise(r => setTimeout(r, 60));
+        appelGroupe = x; showModal = m; chargerMembres = c; }, action]),
+    ['Groupes · quitter (propriétaire)', () => { __fermerTout(); __grpDecor(); grp.courant = 'g-1'; state.screen='groupe'; render(); quitterGroupeCourant(); }],
+    ['Groupes · quitter (public)', () => { __fermerTout(); grp.membres['g-1'][0].role = 'membre'; groupeCourant().ouvert = true; quitterGroupeCourant(); }],
+    ['Groupes · quitter (privé)',  () => { __fermerTout(); groupeCourant().ouvert = false; quitterGroupeCourant(); }],
+    ['Groupes · supprimer', () => { __fermerTout(); __grpDecor(); grp.courant = 'g-1'; state.screen='groupe'; render(); supprimerGroupeCourant(); }],
+    ['Groupes · supprimer un message', () => { __fermerTout(); supprimerMessageGroupe('7'); }],
+    ['Groupes · modifier', () => { __fermerTout(); ouvrirModifGroupe(); }],
+    ['Groupes · groupe modifié', async () => { __fermerTout(); const a = appelGroupe; appelGroupe = async () => ({ ok:true });
+      ouvrirModifGroupe(); await new Promise(r => setTimeout(r, 60)); await enregistrerGroupe(); appelGroupe = a; }],
+    ['Groupes · nom trop court', () => { __fermerTout(); ouvrirCreation(); creerGroupe(); }],
+    ['Groupes · code copié', () => { __fermerTout();
+      try { Object.defineProperty(navigator, 'clipboard', { configurable:true, get:() => ({ writeText:() => Promise.resolve() }) }); } catch(e){}
+      copierCode(); }],
+    ['Groupes · invitation copiée', () => { __fermerTout();
+      try { Object.defineProperty(navigator, 'share', { configurable:true, get:() => undefined }); } catch(e){}
+      partagerGroupe(); }],
+    ['Groupes · message copié', () => { __fermerTout(); copierMessage('7'); }],
+    ['Groupes · nouveau code', async () => { __fermerTout(); const a = appelGroupe; appelGroupe = async () => ({ ok:true, code:'XYZ789' });
+      ouvrirInfosGroupe(); await new Promise(r => setTimeout(r, 60)); await nouveauCodeGroupe(); appelGroupe = a; }],
+    ['Groupes · envoi en cours', () => { __fermerTout(); __grpDecor(); grp.courant = 'g-1'; state.screen='groupe'; render();
+      grp.fils['g-1'].messages.push({ id:-1, groupe:'g-1', auteur:'moi-0', genre:'texte', texte:'Amen', donnees:{}, cree_le:new Date().toISOString(), masque:false, supprime_le:null });
+      majFil(); }],
+    /* LA MODÉRATION DU JEU : la file vide, une carte, et ses deux décisions
+       qui demandent confirmation. La file vient du serveur : on répond à sa
+       place, pour que les cartes soient posées par le chemin du jeu. */
+    ['Modération · rien',  async () => { __fermerTout(); __grpDecor(); const l = listeGroupe; listeGroupe = async () => [];
+      ouvrirModeration(); await new Promise(r => setTimeout(r, 60)); listeGroupe = l; }],
+    ['Modération · signalements', async () => { __fermerTout(); __grpDecor(); const l = listeGroupe;
+      listeGroupe = async () => [{ id:1, raison:'harcelement', details:'Amen', le:new Date().toISOString(), groupe:'g-1', groupe_nom:'Lee',
+                                   message:7, texte:'Amen', cible:'u-2', cible_nom:'Sam', par_nom:'Kim', nb:2 }];
+      ouvrirModeration(); await new Promise(r => setTimeout(r, 60)); listeGroupe = l; }],
+    ['Modération · bannir', () => { traiterSignalement(1, 'bannir'); }],
+    ['Modération · fermer', () => { __fermerTout(); traiterSignalement(1, 'fermer_groupe'); }],
+    /* LES PAGES QUE LES STORES DEMANDENT */
+    ['Confidentialité',    () => { __fermerTout(); state.screen='mode'; render(); ouvrirConfidentialite(); }],
+    ['Compte · supprimer', () => { __fermerTout(); __grpDecor(); state.screen='profile'; render(); demanderSuppressionCompte(); }],
+    ['Compte · suppression ratée', async () => { __fermerTout(); __grpDecor(); state.screen='profile'; render();
+      const a = appelGroupe; appelGroupe = async () => ({ ok:false, erreur:'reseau' }); await supprimerMonCompte(); appelGroupe = a; }],
+    ['Compte · supprimé',  async () => { __fermerTout(); __grpDecor(); compte.dispo = true; state.screen='profile'; render();
+      const a = appelGroupe; appelGroupe = async () => ({ ok:true }); await supprimerMonCompte(); appelGroupe = a; }],
+    /* CE QUE DIT LE SERVEUR, code par code : chaque phrase de motErreurGroupe
+       s'affiche là où le joueur la lirait (le mot sous les boutons). */
+    ...['non_connecte', 'ferme', 'sans_profil', 'banni', 'age', 'nom_longueur', 'description_longueur', 'mot_interdit',
+        'coordonnees', 'trop_de_groupes', 'code_inconnu', 'banni_du_groupe', 'groupe_plein', 'pas_membre', 'groupe_ferme',
+        'trop_vite', 'vide', 'trop_long', 'interdit', 'introuvable', 'soi_meme', 'partie_invalide', 'reseau'].map(code =>
+      ['Groupes · erreur ' + code, (c) => { __fermerTout(); __grpDecor(); grp.message = motErreurGroupe({ erreur:c }); state.screen='groupes'; render(); }, code]),
+    ['Groupes · erreur muet', () => { __fermerTout(); __grpDecor();
+      grp.message = motErreurGroupe({ erreur:'muet', jusqu:new Date(Date.now() + 3600000).toISOString() }); state.screen='groupes'; render(); }],
+  ];
+
   const ETAPES = [
     ['Accueil',           () => { state.screen='mode'; render(); }],
     ['Réglages',          () => { openSettings(); }],
@@ -902,6 +1059,7 @@ const ouvrirLaLangue = async (p, lg) => {
       const blob = await new Promise(r=>c.toBlob(r,'image/png'));
       await ouvrirCadrage(blob);
     }],
+    ...GROUPES_SOCIAUX,
   ];
 
     const releve = new Map();

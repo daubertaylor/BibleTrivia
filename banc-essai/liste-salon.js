@@ -25,7 +25,7 @@ const IOS = 'Mozilla/5.0 (iPhone; CPU iPhone OS 17_5 like Mac OS X) AppleWebKit/
 const AND = 'Mozilla/5.0 (Linux; Android 14; Pixel 8) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/126 Mobile Safari/537.36';
 const URL = process.argv[2] || process.env.URL_ESSAI || 'http://127.0.0.1:8099/index.html';
 const SUPA = process.env.SUPA_UMD
-  || '/tmp/claude-0/-home-user-BibleTrivia/fb9bf869-826b-5523-9825-ea1b24c294d0/scratchpad/supabase.js';
+  || require('./brouillon.js') + '/supabase.js';
 /* nom, UA, largeur, hauteur, marge haute, marge basse */
 const CAS = [
   ['iPhone SE',  IOS, 375, 667, 20, 0],

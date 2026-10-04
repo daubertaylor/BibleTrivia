@@ -13,6 +13,36 @@
 const { chromium } = require('/opt/node22/lib/node_modules/playwright');
 const URL = process.argv[2] || 'http://127.0.0.1:8099/index.html';
 
+/* LES GROUPES (v302), sans serveur : le décor de doigt.js, copié tel quel.
+   Le premier passage n'en visitait aucun — et le lien « Confidentialité »,
+   seul nouveau bouton qu'il voyait, peignait déjà son onde en carré. */
+const GRP_DECOR = `window.__grpDecor = () => {
+  const il = (h) => new Date(Date.now() - h * 3600000).toISOString();
+  compte.dispo = true;
+  compte.session = { user:{ id:'moi-0', email:'joueur@exemple.net' } }; compte.etape = 'connecte';
+  grp.installe = true; grp.ouverts = true; grp.message = '';
+  grp.etat = { participe:'ok', moderateur:true, ouverts:true, a_traiter:2 };
+  grp.profils = { 'moi-0':{ nom:'Taylor', couleur:'#4C86E8' }, 'u-2':{ nom:'Sam', couleur:'#E8574C' },
+                  'u-3':{ nom:'Lee', couleur:'#4CE88A' }, 'u-4':{ nom:'Kim', couleur:'#E8C84C' } };
+  grp.liste = [
+    { id:'g-1', nom:'Lee', teinte:2, ouvert:false, code:'ABC234', nb_membres:4, non_lus:2, dernier_message:il(1),
+      apercu:{ id:9, auteur:'u-2', genre:'texte', texte:'Amen', nom:'Sam', le:il(1) } },
+    { id:'g-2', nom:'Sam', teinte:0, ouvert:true, code:'DEF567', nb_membres:2, non_lus:0, dernier_message:il(26),
+      apercu:{ id:7, auteur:'moi-0', genre:'texte', texte:'Amen', nom:'Taylor', le:il(26) } } ];
+  grp.publics = [ { id:'g-2', nom:'Sam', description:'', nb_membres:2, teinte:0, membre:true },
+                  { id:'g-5', nom:'Ruth', description:'', nb_membres:1, teinte:3, membre:false } ];
+  grp.membres = { 'g-1':[ { membre:'moi-0', role:'proprietaire', muet_jusqu:null },
+                          { membre:'u-2', role:'admin', muet_jusqu:null },
+                          { membre:'u-4', role:'membre', muet_jusqu:null } ] };
+  const m = (id, auteur, genre, texte, extra) => Object.assign({ id, groupe:'g-1', auteur, genre, texte, donnees:{},
+    cree_le:il(0.5), masque:false, supprime_le:null }, extra || {});
+  grp.fils = { 'g-1':{ charge:true, tout:false, messages:[
+    m(1, null, 'systeme', 'cree', { donnees:{ nom:'Taylor' } }),
+    m(7, 'u-2', 'texte', 'Amen'),
+    m(10, 'u-2', 'partie', '', { donnees:{ code:'ABCD' } }),
+    m(12, 'moi-0', 'texte', 'Amen') ] } };
+  grp.courant = null; grp.nonLus = 2; moderation = null;
+};`;
 const ECRANS = [
   ['accueil',     "state.screen='mode'; render();"],
   ['groupe',      "state.mode='group'; state.teams=[{name:'Taylor'},{name:'B'},{name:'C'},{name:'D'}]; state.screen='setup'; render();"],
@@ -22,6 +52,23 @@ const ECRANS = [
   ['réglages',    "state.screen='mode'; render(); openSettings();"],
   ['en ligne',    "closeSettings(); state.screen='online'; render();"],
   ['résultats',   "state.mode='group'; state.teams=[{name:'Taylor',score:20},{name:'B',score:5},{name:'C',score:0}]; state.screen='results'; render();"],
+  ['barre',       GRP_DECOR + "__grpDecor(); state.screen='mode'; render(); majBarre();"],
+  ['groupes',     "__grpDecor(); state.screen='groupes'; render(); majBarre();"],
+  ['grp·dehors',  "__grpDecor(); compte.session=null; compte.etape='repos'; grp.etat=null; state.screen='groupes'; render();"],
+  ['grp·entrée',  "__grpDecor(); grp.etat={ participe:'regles', moderateur:false }; state.screen='groupes'; render();"],
+  ['discussion',  "__grpDecor(); grp.courant='g-1'; state.screen='groupe'; render(); majCompo();"],
+  ['grp·infos',   "ouvrirInfosGroupe(true);"],
+  ['grp·membre',  "fermerFeuilleGroupe('grpInfosVeil'); ouvrirMembre('u-4');"],
+  ['grp·message', "fermerFeuilleGroupe('grpMembreVeil'); actionsMessage('7');"],
+  ['grp·signaler',"fermerFeuilleGroupe('grpActionsVeil'); signalerMessage('7');"],
+  ['grp·créer',   "fermerFeuilleGroupe('grpSignalerVeil'); __grpDecor(); state.screen='groupes'; render(); ouvrirCreation();"],
+  ['grp·code',    "fermerFeuilleGroupe('grpCreerVeil'); ouvrirCode();"],
+  ['grp·règles',  "fermerFeuilleGroupe('grpCodeVeil'); ouvrirRegles();"],
+  ['modération',  "fermerFeuilleGroupe('grpReglesVeil'); __grpDecor(); window.__lg = window.__lg || listeGroupe;" +
+                  " listeGroupe = async (n, a) => n === 'moderation_ouverte' ? [{ id:1, raison:'harcelement', details:'', le:new Date().toISOString()," +
+                  " groupe:'g-1', groupe_nom:'Lee', message:7, texte:'Amen', cible:'u-2', cible_nom:'Sam', par_nom:'Lee', nb:2 }] : __lg(n, a);" +
+                  " state.screen='groupes'; render(); ouvrirModeration();"],
+  ['compte',      "__grpDecor(); state.screen='profile'; render();"],
 ];
 
 (async () => {

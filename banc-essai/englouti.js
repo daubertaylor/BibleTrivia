@@ -34,7 +34,7 @@
    > 40, coude <= 0.0025, compteur = nombre d'erreurs et immobile. */
 const { chromium } = require('/opt/node22/lib/node_modules/playwright');
 const { execSync } = require('child_process');
-const D = '/tmp/claude-0/-home-user-BibleTrivia/fb9bf869-826b-5523-9825-ea1b24c294d0/scratchpad/';
+const D = require('./brouillon.js') + '/';
 const CSS = process.argv[2] || '';
 const IOS = 'Mozilla/5.0 (iPhone; CPU iPhone OS 17_5 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.5 Mobile/15E148 Safari/604.1';
 const FAUX = [

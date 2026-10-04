@@ -53,6 +53,13 @@ async function lire(b, ua, android) {
   const ctx = await b.newContext({ viewport:{width:393,height:852}, deviceScaleFactor:2,
     userAgent:ua, hasTouch:true, serviceWorkers:'block' });
   const p = await ctx.newPage();
+  /* MIDI PILE POUR LES DEUX TÉLÉPHONES. La rangée de la semaine compte les
+     heures puis les minutes qui restent (« Plus que 1 h », « Plus que 59 min ») :
+     lancé vers 23 h, le passage iPhone et le passage Android ne lisaient pas la
+     même phrase, et le banc criait « pas le même jeu » pour une minute d'écart.
+     L'horloge part de midi, aujourd'hui, et s'écoule ensuite normalement. */
+  const midi = new Date(); midi.setHours(12, 0, 0, 0);
+  await p.clock.install({ time:midi });
   await p.addInitScript(() => {
     localStorage.setItem('bt_profile', JSON.stringify({ name:'Taylor', color:'#4C86E8' }));
     localStorage.setItem('bt_fs_hint', '1');
