@@ -4897,12 +4897,16 @@
   .b-moi{ align-self:flex-end; justify-content:flex-end; padding-left:3.2rem; }
   .b-av{ width:2.05rem; flex-shrink:0; align-self:flex-end; margin-bottom:1.25rem; }
   .b-av .avatar{ font-size:0.8rem; }
-  .b-pile{ display:flex; flex-direction:column; gap:0.25rem; min-width:0; }
+  .b-pile{ display:flex; flex-direction:column; align-items:flex-start; gap:0.25rem; min-width:0; }
   .b-moi .b-pile{ align-items:flex-end; }
   .b-nom{ font-family:'Poppins',sans-serif; font-size:0.8rem; font-weight:700; margin:0.45rem 0 0.05rem 0.85rem; }
   .b-bulle{ position:relative; max-width:100%; padding:0.6rem 0.85rem; border-radius:20px; border:0; font:inherit; font-size:0.95rem; line-height:1.4;
     text-align:left; white-space:pre-wrap; overflow-wrap:anywhere; word-break:normal; color:var(--ink); background:rgb(252,248,241);
     box-shadow:0 1px 2px rgba(34,26,16,0.08), 0 3px 10px rgba(34,26,16,0.06); -webkit-tap-highlight-color:transparent; -webkit-user-select:text; user-select:text; }
+  /* 44 px au doigt, même pour une bulle d'un mot : c'est elle qu'on touche
+     pour copier, signaler ou bloquer. En pixels, pas en rem (voir les liens). */
+  .b-bulle{ min-height:44px; }
+  span.b-bulle{ display:inline-flex; align-items:center; }
   .b-moi .b-bulle{ background:var(--primary); color:#fff; box-shadow:0 1px 2px rgba(120,30,14,0.16), 0 4px 12px rgba(214,60,34,0.22); }
   .b-bulle.envoi{ opacity:0.62; }
   .b-heure{ font-size:0.72rem; color:var(--ink-soft); margin:0.05rem 0.85rem 0.35rem; }
@@ -18821,6 +18825,10 @@ function quandSauvegarde(){
   return Tf("Sauvegardé il y a {n} h", { n:Math.floor(min/60) });
 }
 function carteCompteHtml(){
+  /* LE BOUCLIER, PAS « shield ». La carte appelait ICONS.shield, qui n'a
+     jamais existé (il vit dans ACH_ICONS, la table des succès) : elle
+     affichait « undefined » à la place de l'icône. Personne ne l'avait vu —
+     la carte n'apparaît qu'une fois la table des comptes installée. */
   /* TANT QU'ON NE SAIT PAS, ON NE PROPOSE RIEN. Le premier jet affichait la
      carte pendant que le sondage courait encore : si la table n'existait pas,
      le joueur voyait un bouton apparaître puis rester là, parce que rien ne
@@ -18843,7 +18851,7 @@ function carteCompteHtml(){
   }
   if(compte.etape === "code"){
     return `<div class="info-card compte-carte" id="compteCarte">
-      <div class="compte-tete"><span class="compte-ico">${ICONS.shield}</span><b>${T("Entre le code reçu")}</b></div>
+      <div class="compte-tete"><span class="compte-ico">${ICONS.bouclier}</span><b>${T("Entre le code reçu")}</b></div>
       <div class="compte-sous">${escapeHtml(compte.courriel)}</div>
       <input class="code-input compte-code" id="compteCode" inputmode="numeric" maxlength="6" placeholder="000000" autocomplete="one-time-code" enterkeyhint="go" onkeydown="if(event.key==='Enter'){event.preventDefault();verifierCode();}">
       ${msg}
@@ -18853,7 +18861,7 @@ function carteCompteHtml(){
   }
   if(compte.etape === "choix"){
     return `<div class="info-card compte-carte" id="compteCarte">
-      <div class="compte-tete"><span class="compte-ico">${ICONS.shield}</span><b>${T("Sauvegarder ma progression")}</b></div>
+      <div class="compte-tete"><span class="compte-ico">${ICONS.bouclier}</span><b>${T("Sauvegarder ma progression")}</b></div>
       <div class="compte-sous">${T("Changer de téléphone ne te fera alors rien perdre.")}</div>
       ${googleUtile() ? `<button class="btn-ghost compte-google" onclick="connexionGoogle()"${compte.occupe?" disabled":""}>${T("Continuer avec Google")}</button>` : ""}
       <input class="text-input" id="compteMail" type="email" inputmode="email" autocomplete="email" placeholder="${T("Ton adresse e-mail")}" enterkeyhint="go" onkeydown="if(event.key==='Enter'){event.preventDefault();envoyerCode();}">
@@ -18865,7 +18873,7 @@ function carteCompteHtml(){
   /* Le mot reste visible ici aussi : c'est là qu'on atterrit après avoir
      supprimé son compte, et il faut le DIRE — la progression, elle, est là. */
   return `<div class="info-card compte-carte" id="compteCarte">
-    <div class="compte-tete"><span class="compte-ico">${ICONS.shield}</span><b>${T("Ta progression n'existe que sur ce téléphone.")}</b></div>
+    <div class="compte-tete"><span class="compte-ico">${ICONS.bouclier}</span><b>${T("Ta progression n'existe que sur ce téléphone.")}</b></div>
     ${msg}
     <button class="btn-primary" onclick="compteOuvrir()">${T("Sauvegarder ma progression")}</button>
   </div>`;
@@ -19299,7 +19307,8 @@ function apercuGroupe(g){
   if(a.masque) return T("Message masqué");
   const nom = a.nom || ((grp.profils[a.auteur] || {}).nom) || T("Quelqu'un");
   if(a.genre === "partie") return moi ? T("Tu lances une partie") : Tf("{nom} lance une partie", { nom });
-  return moi ? Tf("Toi : {texte}", { texte:a.texte || "" }) : Tf("{nom} : {texte}", { nom, texte:a.texte || "" });
+  const texte = a.texte || "";
+  return moi ? Tf("Toi : {texte}", { texte }) : Tf("{nom} : {texte}", { nom, texte });
 }
 function ligneGroupe(g){
   const n = +g.non_lus || 0;
