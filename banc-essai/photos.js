@@ -19,7 +19,7 @@ const NOMS=[['Taylor','#4C86E8'],['Sarah','#E8734C'],['Jonas','#2FA36B'],['Myria
   const code=await J[0].p.evaluate(()=>{createRoomFlow();return new Promise(r=>setTimeout(()=>r(net.code),1600));});
   for(const c of J.slice(1)){ await c.p.evaluate(k=>{joinRoom(k,false);},code); await attends(800); }
   await attends(2200);
-  await J[0].p.screenshot({path:'/tmp/claude-0/-home-user-BibleTrivia/fb9bf869-826b-5523-9825-ea1b24c294d0/scratchpad/multi-salon.png'});
+  await J[0].p.screenshot({path:require('./brouillon.js') + '/multi-salon.png'});
   await J[0].p.evaluate(()=>hostStart()); await attends(2200);
   // quelques reponses pour que les scores different
   for(let i=0;i<J.length;i++){ await J[i].p.evaluate(async(n)=>{const d=m=>new Promise(r=>setTimeout(r,m));
@@ -27,13 +27,13 @@ const NOMS=[['Taylor','#4C86E8'],['Sarah','#E8734C'],['Jonas','#2FA36B'],['Myria
         onlineAnswer(q.shuffledOptions.indexOf(t<n-1?q.correct:(q.shuffledOptions.find(o=>o!==q.correct)||q.correct)));
         await d(40); onlineNext(); await d(40);} },5-i>0?6-i:2); await attends(400); }
   await attends(1500);
-  await J[0].p.screenshot({path:'/tmp/claude-0/-home-user-BibleTrivia/fb9bf869-826b-5523-9825-ea1b24c294d0/scratchpad/multi-jeu.png'});
+  await J[0].p.screenshot({path:require('./brouillon.js') + '/multi-jeu.png'});
   // tout le monde finit
   for(const c of J){ await c.p.evaluate(async()=>{const d=m=>new Promise(r=>setTimeout(r,m));
       for(let t=0;t<40&&!net.myDone;t++){const q=net.deck[net.idx];if(!q)break;
         onlineAnswer(q.shuffledOptions.indexOf(q.correct)); await d(35); onlineNext(); await d(35);} }); await attends(400); }
   await attends(2500);
-  await J[0].p.screenshot({path:'/tmp/claude-0/-home-user-BibleTrivia/fb9bf869-826b-5523-9825-ea1b24c294d0/scratchpad/multi-fin.png'});
+  await J[0].p.screenshot({path:require('./brouillon.js') + '/multi-fin.png'});
   console.log('multi-salon.png / multi-jeu.png / multi-fin.png');
   await b.close(); serveur.close(); process.exit(0);
 })();

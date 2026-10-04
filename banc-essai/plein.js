@@ -15,7 +15,7 @@
 */
 const { chromium } = require('/opt/node22/lib/node_modules/playwright');
 const { execSync } = require('child_process');
-const SC = '/tmp/claude-0/-home-user-BibleTrivia/fb9bf869-826b-5523-9825-ea1b24c294d0/scratchpad';
+const SC = require('./brouillon.js');
 const URL = process.argv[2] || 'http://127.0.0.1:8099/index.html';
 const S = 3;
 const OUVRE_BIBLES = "state.screen='mode'; render(); openSettings(); setTimeout(()=>openBibles(), 60);";

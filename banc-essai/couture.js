@@ -25,7 +25,7 @@
 */
 const { chromium } = require('/opt/node22/lib/node_modules/playwright');
 const { execSync } = require('child_process');
-const SC = '/tmp/claude-0/-home-user-BibleTrivia/fb9bf869-826b-5523-9825-ea1b24c294d0/scratchpad';
+const SC = require('./brouillon.js');
 const URL = process.argv[2] || process.env.URL_ESSAI || 'http://127.0.0.1:8099/index.html';
 const S = 3;
 /* Au-delà de 1,5, la couture se voit : celle que Taylor a entourée mesurait

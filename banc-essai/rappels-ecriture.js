@@ -39,7 +39,7 @@ const fs = require('fs');
 
 const URL = process.argv[2] || process.env.URL_ESSAI || 'http://127.0.0.1:8099/index.html';
 const SUPA = process.env.SUPA_UMD
-  || '/tmp/claude-0/-home-user-BibleTrivia/fb9bf869-826b-5523-9825-ea1b24c294d0/scratchpad/supabase.js';
+  || require('./brouillon.js') + '/supabase.js';
 
 /* Le faux serveur répond comme le vrai : toute écriture qui mentionne
    « revoir » est refusée (42703), parce que la colonne n'existe pas en ligne. */
