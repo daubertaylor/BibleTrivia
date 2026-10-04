@@ -85,4 +85,8 @@ const ECRANS = [
   console.log('\n  ' + l.length + ' familles de boutons — onde invisible (<6) : ' + l.filter(x=>x.ecart<6).length);
   console.log('  erreurs : ' + (errs.length?JSON.stringify([...new Set(errs)]):'aucune'));
   await ctx.close(); await b.close();
+  /* Il donnait son compte et sortait toujours en vert : une onde redevenue
+     invisible n'aurait fait rougir aucune suite. */
+  const invisibles = l.filter(x=>x.ecart<6).length;
+  process.exit(invisibles || errs.length ? 1 : 0);
 })();
