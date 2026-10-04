@@ -141,6 +141,11 @@ const dire = (nom, v) => {
       if (r.method() === 'OPTIONS') return route.fulfill({ status: 204, headers: cors });
       if (!r.url().includes('/rest/')) return route.fulfill({ status: 204, headers: cors });
       const rpc = r.url().includes('/rpc/');
+      /* SEULS LES RAPPELS COMPTENT : la table push_subs et la fonction push_….
+         Depuis la v302, la sonde des groupes lit reglages_jeu 2,5 s après le
+         lancement — pile dans la fenêtre du banc, qui la comptait comme « la
+         table encore touchée » alors qu'elle n'a rien à voir avec les rappels. */
+      if (rpc ? !/\/rpc\/push_/.test(r.url()) : !/\/push_subs/.test(r.url())) return route.fulfill({ status: 204, headers: cors });
       vues.push({ methode: rpc ? 'RPC' : r.method(), url: r.url(), corps });
       if (rpc) {
         if (rpcExiste) return route.fulfill({ status: 204, headers: cors });
