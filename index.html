@@ -4702,6 +4702,9 @@
     --rim-cast:0 10px 34px rgba(15,12,10,0.24), 0 2px 8px rgba(15,12,10,0.1); box-shadow:none;
     transition:transform var(--tr-ouvre), opacity 0.22s ease; }
   .barre-bas.cachee{ transform:translate3d(-50%, calc(100% + var(--bb-bas) + 1rem), 0); pointer-events:none; }
+  /* Le clavier monte (une recherche, une adresse) : la barre s'efface. Sur
+     Android elle remonterait avec la page et se poserait sur le champ. */
+  html.kb .barre-bas{ transform:translate3d(-50%, calc(100% + var(--bb-bas) + 1rem), 0); pointer-events:none; }
   .bb-curseur{ position:absolute; top:0.3rem; bottom:0.3rem; left:0.3rem; width:calc((100% - 0.6rem) / 2);
     border-radius:var(--r-full); background:var(--primary);
     box-shadow:0 1px 2px rgba(120,30,14,0.16), 0 6px 16px rgba(214,60,34,0.32);
@@ -5501,6 +5504,7 @@ const TEXTES = {
     "Tu ne peux pas faire ça sur toi-même.":"You can't do that to yourself.",
     "Cette partie n'a pas pu être annoncée.":"This game couldn't be announced.",
     "Pas de réseau. Réessaie dans un instant.":"No connection. Try again in a moment.",
+    "Réessayer":"Try again",
     "Tu es en sourdine jusqu'à {h}.":"You're muted until {h}.",
     "Hier":"Yesterday",
     "Mes groupes":"My groups",
@@ -6104,6 +6108,7 @@ const TEXTES = {
     "Tu ne peux pas faire ça sur toi-même.":"No puedes hacer eso contigo.",
     "Cette partie n'a pas pu être annoncée.":"No se pudo anunciar esta partida.",
     "Pas de réseau. Réessaie dans un instant.":"Sin conexión. Inténtalo de nuevo en un momento.",
+    "Réessayer":"Reintentar",
     "Tu es en sourdine jusqu'à {h}.":"No puedes escribir hasta las {h}.",
     "Hier":"Ayer",
     "Mes groupes":"Mis grupos",
@@ -19085,13 +19090,17 @@ function sonderGroupes(force){
 async function chargerEtatGroupes(){
   if(!compteConnecte() || grp.installe !== true) return null;
   const r = await appelGroupe("mon_etat_groupes");
+  /* Sans réseau, l'écran le DIT au lieu de tourner sans fin. */
+  grp.etatEchec = !(r && r.participe);
   if(r && r.participe){
     grp.etat = r; grp.etatLu = Date.now();
     grp.modoMemo = !!r.moderateur;
     if(typeof r.ouverts === "boolean") grp.ouverts = r.ouverts;
     if(r.regles_version) grp.version = +r.regles_version || grp.version;
     memoriserGroupes();
-    if(r.participe === "ok"){ abonnerGroupes(); suivreNomGroupes(); if(invitationEnAttente) setTimeout(servirInvitation, 300); }
+    /* La liste se lit dès qu'on participe, pas seulement à l'ouverture de
+       l'onglet : c'est elle qui donne les non-lus de la pastille de l'accueil. */
+    if(r.participe === "ok"){ abonnerGroupes(); suivreNomGroupes(); if(!grp.liste) chargerListes(); if(invitationEnAttente) setTimeout(servirInvitation, 300); }
     else desabonnerGroupes();
   }
   majBarre(); majBouclier();
@@ -19388,7 +19397,11 @@ function corpsGroupes(){
       ${carteCompteHtml()}`;
   }
   const e = grp.etat;
-  if(!e) return `<div class="card grp-vide"><span class="spinner"></span></div>`;
+  if(!e){
+    return grp.etatEchec
+      ? `<div class="card grp-intro"><b>${T("Pas de réseau. Réessaie dans un instant.")}</b><button class="grp-pill calme" onclick="ouvrirGroupes()">${T("Réessayer")}</button></div>`
+      : `<div class="card grp-vide"><span class="spinner"></span></div>`;
+  }
   if(e.participe === "banni"){
     return `<div class="card grp-intro">
         <span class="gi-ico calme">${ICONS.bouclier}</span>
@@ -19757,6 +19770,7 @@ const FIL_PAGE = 50;
 const COLONNES_FIL = "id,groupe,auteur,genre,texte,donnees,cree_le,masque,supprime_le";
 async function chargerFil(id){
   const supa = initSupa(); if(!supa || !supa.from) return;
+  const premiere = !(grp.fils[id] && grp.fils[id].charge);
   let l;
   try{
     const r = await supa.from("messages").select(COLONNES_FIL).eq("groupe", id).order("id", { ascending:false }).limit(FIL_PAGE);
@@ -19776,7 +19790,10 @@ async function chargerFil(id){
   }catch(e){ return; }
   if(grp.courant === id && state.screen === "groupe"){
     const z = document.getElementById("fil");
-    if(z){ z.innerHTML = filHtml(id); descendreFil(false); }
+    /* La première lecture pose le fil au bas ; une relecture (retour sur
+       l'app, réouverture) ne bouge pas qui lisait plus haut. */
+    if(z && premiere){ z.innerHTML = filHtml(id); descendreFil(false); }
+    else if(z) majFil();
   }
   marquerLu(id);
 }
@@ -20038,6 +20055,15 @@ function desabonnerGroupes(){
   try{ initSupa().removeChannel(grp.canal); }catch(e){}
   grp.canal = null;
 }
+/* AU RETOUR SUR L'APP. Le direct ne rattrape pas ce qui est arrivé pendant
+   que le téléphone dormait : on relit la liste (les non-lus de la pastille)
+   et, si une discussion est ouverte, ses derniers messages — sans arracher
+   le joueur à ce qu'il lisait (voir chargerFil). */
+document.addEventListener("visibilitychange", ()=>{
+  if(document.hidden || !participeGroupes()) return;
+  if(state.screen === "groupe" && grp.courant) chargerFil(grp.courant);
+  chargerListes();
+});
 /* UN MESSAGE NE COMPTE QU'UNE FOIS. Le direct peut rejouer un événement —
    une reconnexion, un rattrapage qui croise le direct — et chaque doublon
    ajoutait un non-lu de plus. On retient les identifiants déjà comptés. */

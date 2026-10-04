@@ -734,6 +734,8 @@ const ouvrirLaLangue = async (p, lg) => {
       state.screen='groupes'; render(); }],
     ['Groupes · suspendu', () => { __fermerTout(); __grpDecor(); grp.etat = { participe:'banni' }; state.screen='groupes'; render(); }],
     ['Groupes · bientôt',  () => { __fermerTout(); __grpDecor(); grp.etat = { participe:'ferme' }; state.screen='groupes'; render(); }],
+    /* Sans réseau à l'entrée : l'écran le dit, et propose de réessayer. */
+    ['Groupes · pas de réseau', () => { __fermerTout(); __grpDecor(); grp.etat = null; grp.etatEchec = true; state.screen='groupes'; render(); }],
     ['Groupes · bienvenue', () => { __fermerTout(); __grpDecor(); grp.etat = { participe:'regles' };
       grp.message = T("Il faut confirmer les deux pour entrer."); state.screen='groupes'; render(); }],
     ['Groupes · nom refusé', () => { grp.message = T("Ce nom ne peut pas être utilisé dans les groupes. Change-le dans ton profil."); render(); }],

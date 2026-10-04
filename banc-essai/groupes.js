@@ -123,6 +123,11 @@ const dit = (quoi, bon, detail) => { console.log('  ' + (bon ? 'OK  ' : 'KO  ') 
     await pb.evaluate(() => envoyerMessageGroupe());
     dit('sur l\'accueil de Taylor, la pastille compte le message', await attendre(pa, () => {
       const p = document.querySelector('#barreBas .bb-pastille'); return !!p && !p.hidden && +p.textContent >= 1; }, null, 8000));
+    /* Et au lancement suivant, sans rien ouvrir : la liste se lit dès qu'on
+       participe, c'est elle qui donne les non-lus. */
+    await pa.reload(); await accueil(pa);
+    dit('… et la retrouve au lancement suivant', await attendre(pa, () => {
+      const p = document.querySelector('#barreBas .bb-pastille'); return !!p && !p.hidden && +p.textContent >= 1; }, null, 9000));
 
     /* ---- 7. un mot interdit ne part pas, et le texte revient ---- */
     await pb.waitForTimeout(1100);
