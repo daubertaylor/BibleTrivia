@@ -51,6 +51,18 @@ PAS_DES_BANCS="shim hub extraire-questions faux-serveur-groupes shim-groupes"
 #   voir DETTE.md point 6.
 CHANTIERS="acces"
 
+# CINQ BANCS SERVENT UNE COPIE DE supabase-js gardée dans le brouillon de la
+# session (leur constante SUPA). Un redémarrage du conteneur vide le
+# brouillon : sans elle, le mode en ligne se croit « non configuré », et une
+# trentaine de phrases ne s'affichent plus — des rouges qui n'ont rien à voir
+# avec le jeu. On la reprend si elle manque.
+SUPA="$(grep -ho "/tmp/[^'\"]*supabase\.js" "$RACINE"/banc-essai/langues-ecrans.js | head -1)"
+if [ -n "$SUPA" ] && [ ! -s "$SUPA" ]; then
+  mkdir -p "$(dirname "$SUPA")"
+  curl -sSL --max-time 60 "https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2" -o "$SUPA" \
+    || echo "supabase.js introuvable ($SUPA) : cinq bancs vont échouer"
+fi
+
 if ! curl -s -o /dev/null --max-time 5 "$URL"; then
   echo "Le serveur ne répond pas sur $URL"
   echo "  (nohup python3 -m http.server 8099 --bind 127.0.0.1 &)   depuis $RACINE"
