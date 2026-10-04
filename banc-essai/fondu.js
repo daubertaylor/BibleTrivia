@@ -39,11 +39,23 @@
    Si un jour la couche perd son animation, ou la teinte sa déclaration
    @property, ou qu'un composant oublie sa transition, le compte s'effondre à
    deux et le banc le dit.
+   ===== ET RÉÉCRIT UNE SECONDE FOIS : LE ROUGE NE PÂLIT PLUS, IL SE RETIRE =====
+   Depuis l'encre (index.html, « L'ENCRE »), la couleur de la puce quittée ne
+   s'efface plus par l'opacité d'une couche pleine : elle se RETIRE vers la
+   nouvelle puce, en rétrécissant depuis le bord qui lui fait face. Le modèle
+   « teinte + couche à son opacité » ne voyait plus rien bouger (une couche
+   qui rétrécit n'est plus « pleine ») et criait au claquement.
+   ON COMPTE DONC CE QUE L'ŒIL REÇOIT : la part de la puce quittée qui est
+   encore rouge, mesurée en PIXELS sur des captures, mouvement ralenti. Un
+   départ qui claque passe de 1 à 0 en une ou deux images ; un vrai retrait
+   descend par paliers. On exige au moins six paliers, une descente sans
+   remontée, et une puce entièrement rendue à son crème à la fin.
    Usage : node banc-essai/fondu.js [url]
 */
 const { chromium } = require('/opt/node22/lib/node_modules/playwright');
 const URL = process.argv[2] || 'http://127.0.0.1:8099/index.html';
-const S_ETAPES = 6;     // sous six valeurs distinctes, ce n'est pas un fondu
+const S_ETAPES = 6;     // sous six paliers distincts, ce n'est pas un retrait
+const LENT = 5;
 (async()=>{
   const b = await chromium.launch({ executablePath:'/opt/pw-browsers/chromium' });
   const ctx = await b.newContext({ viewport:{width:393,height:852}, deviceScaleFactor:2, isMobile:true, hasTouch:true, serviceWorkers:'block' });
@@ -51,6 +63,14 @@ const S_ETAPES = 6;     // sous six valeurs distinctes, ce n'est pas un fondu
   await p.addInitScript(()=>{ localStorage.setItem('bt_profile',JSON.stringify({name:'T',color:'#4C86E8'})); localStorage.setItem('bt_fs_hint','1'); });
   await p.goto(URL);
   await p.waitForFunction(()=>{ try{ return state.screen==='mode'; }catch(e){ return false; } }, null, {timeout:20000});
+  await p.addStyleTag({ content:`.chip, .len-chip{ --encre-duree:${0.5*LENT}s !important; --encre-sortie:${0.3*LENT}s !important; }
+    :root{ --onde-duree:${0.24*LENT}s !important; --tr-onde:${0.24*LENT}s cubic-bezier(0.33,1,0.68,1) !important; }` });
+  const cdp = await ctx.newCDPSession(p);
+  const toucher = async (x, y) => {
+    await cdp.send('Input.dispatchTouchEvent', { type:'touchStart', touchPoints:[{ x, y }] });
+    await p.waitForTimeout(60);
+    await cdp.send('Input.dispatchTouchEvent', { type:'touchEnd', touchPoints:[] });
+  };
   let ko = 0;
   for (const [nom, groupe] of [['durée de la partie','len'], ['chrono','tmr'], ['testament','theme']]) {
     await p.evaluate(()=>{ state.mode='group'; state.teams=[{name:'A'},{name:'B'}]; state.screen='setup'; render(); });
@@ -58,49 +78,49 @@ const S_ETAPES = 6;     // sous six valeurs distinctes, ce n'est pas un fondu
     const pos = await p.evaluate((g)=>{
       const q=[...document.querySelectorAll('.chip[data-group="'+g+'"]')];
       if(q.length < 2) return null;
-      const c=(x)=>{ const r=x.getBoundingClientRect(); return {x:r.x+r.width/2, y:r.y+r.height/2}; };
+      const c=(x)=>{ const r=x.getBoundingClientRect(); return {x:r.x, y:r.y, w:r.width, h:r.height}; };
       return { a:c(q[0]), b:c(q[1]) };
     }, groupe);
     if(!pos){ console.log('  ' + nom + ' : moins de deux puces'); ko++; continue; }
     // on sélectionne la première, puis on la QUITTE pour la seconde
-    await p.mouse.move(pos.a.x, pos.a.y); await p.mouse.down(); await p.waitForTimeout(70); await p.mouse.up();
-    await p.waitForTimeout(900);
-    const cap = p.evaluate((g)=> new Promise(res=>{
+    await toucher(pos.a.x + pos.a.w/2, pos.a.y + pos.a.h/2);
+    await p.waitForTimeout(0.5*LENT*1000 + 600);
+    const textes = p.evaluate((g)=> new Promise(res=>{
+      const q=[...document.querySelectorAll('.chip[data-group="'+g+'"]')][0];
       const rel=[]; const t0=performance.now();
-      const q=[...document.querySelectorAll('.chip[data-group="'+g+'"]')];
-      const tic=()=>{ const cs=getComputedStyle(q[0]), ap=getComputedStyle(q[0],'::after');
-        rel.push([+(performance.now()-t0).toFixed(0),
-                  (cs.getPropertyValue('--glass-tint')||'').trim(), cs.color,
-                  ap.opacity, ap.backgroundColor, ap.transform]);
-        if(performance.now()-t0<800) requestAnimationFrame(tic); else res(rel); };
+      const tic=()=>{ rel.push(getComputedStyle(q).color); if(performance.now()-t0 < 0.3*5*1000+300) requestAnimationFrame(tic); else res(rel); };
       requestAnimationFrame(tic); }), groupe);
-    await p.mouse.move(pos.b.x, pos.b.y); await p.mouse.down(); await p.waitForTimeout(70); await p.mouse.up();
-    const rel = await cap;
-
-    /* LA COULEUR QUE L'ŒIL REÇOIT = teinte de verre, puis couche rouge dessus.
-       La couche n'est comptée que si elle couvre vraiment le point observé :
-       en partant elle garde scale(1) — elle se fond, elle ne rétrécit pas. */
-    const n=(s)=>(s.match(/[\d.]+/g)||[0,0,0]).map(Number);
-    const echelle=(t)=>{ const m=n(t); return (t==='none'||m.length<4) ? 1 : m[0]; };
-    const compose=(r)=>{ const base=n(r[1]), lay=n(r[4]);
-      const o = (echelle(r[5]) >= 0.99) ? (parseFloat(r[3])||0) : 0;
-      return [0,1,2].map(i=>Math.round(lay[i]*o + base[i]*(1-o))).join(','); };
-
-    const vus = rel.map(compose);
-    const eF = new Set(vus).size;
-    const eT = new Set(rel.map(r=>r[2])).size;
-    const finit = (t)=>{ const der=t[t.length-1]; for(let k=t.length-1;k>=0;k--) if(t[k]!==der) return rel[k+1][0]; return 0; };
-    const tF = finit(vus), tT = finit(rel.map(r=>r[2]));
-    const mauvais = eF < S_ETAPES;
+    await toucher(pos.b.x + pos.b.w/2, pos.b.y + pos.b.h/2);
+    const parts = [];
+    const t0 = Date.now();
+    while(Date.now() - t0 < 0.3*LENT*1000 + 300){
+      const png = await p.screenshot({ clip:{ x:pos.a.x, y:pos.a.y, width:pos.a.w, height:pos.a.h } });
+      parts.push(await p.evaluate(async (b64)=>{
+        const img = new Image(); img.src = 'data:image/png;base64,' + b64; await img.decode();
+        const cv = document.createElement('canvas'); cv.width = img.width; cv.height = img.height;
+        const g = cv.getContext('2d'); g.drawImage(img, 0, 0);
+        const d = g.getImageData(8, 8, img.width - 16, img.height - 16).data;
+        let s = 0, n = 0;
+        for(let i = 0; i < d.length; i += 4){ if(d[i] < 170) continue; s += Math.max(0, Math.min(1, (246 - d[i+1]) / (246 - 62))); n++; }
+        return n ? s / n : 0;
+      }, png.toString('base64')));
+    }
+    const coul = await textes;
+    const paliers = new Set(parts.map(v => Math.round(v * 50) / 50)).size;
+    const descend = parts.every((v, i) => i === 0 || v <= parts[i-1] + 0.03);
+    const finale = parts[parts.length - 1];
+    const eT = new Set(coul).size;
+    const mauvais = paliers < S_ETAPES || !descend || finale > 0.04;
     if(mauvais) ko++;
-    console.log('  ' + (mauvais?'KO ':'OK ') + nom.padEnd(20)
-      + 'fond vu ' + String(eF).padStart(2) + ' étapes (fini à ' + String(tF).padStart(3) + ' ms)   '
-      + 'texte ' + String(eT).padStart(2) + ' étapes (fini à ' + String(tT).padStart(3) + ' ms)');
-    if(mauvais) console.log('           ↳ le fond CLAQUE : ' + eF + ' valeur(s) distincte(s), il ne se fond pas');
+    console.log('  ' + (mauvais?'KO ':'OK ') + nom.padEnd(20) + 'rouge quitté ' + String(paliers).padStart(2) + ' paliers ('
+      + parts[0].toFixed(2) + ' -> ' + finale.toFixed(2) + ')   texte ' + eT + ' couleur(s)');
+    if(paliers < S_ETAPES) console.log('           ↳ le rouge CLAQUE : ' + paliers + ' palier(s), il ne se retire pas');
+    if(!descend) console.log('           ↳ le rouge remonte en partant');
+    if(finale > 0.04) console.log('           ↳ il reste du rouge sur la puce quittée (' + finale.toFixed(2) + ')');
     await p.waitForTimeout(300);
   }
   if(errs.length){ ko++; console.log('  erreurs : ' + [...new Set(errs)].slice(0,2).join(' | ')); }
   await b.close();
-  console.log(ko === 0 ? '\n  OK — le fond quitté se fond, le texte franchit d\'un coup' : '\n  ' + ko + ' défaut(s)');
+  console.log(ko === 0 ? '\n  OK — la puce quittée se vide par paliers, le texte franchit d\'un coup' : '\n  ' + ko + ' défaut(s)');
   process.exit(ko === 0 ? 0 : 1);
 })();

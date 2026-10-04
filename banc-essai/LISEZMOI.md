@@ -72,6 +72,7 @@ notre code, et il est éprouvé. Tout le reste l'est.
     node doigt.js       # tout ce qui se touche fait-il 44 px, mesuré au doigt ?
     node premiere-ouverture.js  # la 1re ouverture des Réglages refait-elle le travail des premières fois ?
     node reseau-faible.js       # un réseau qui pend ou qui traîne : le jeu se lance quand même, et le dit
+    node decor-tenu.js          # le décor vu à travers une feuille tient pendant la montée, même page en retard
     node fuite.js sansmarge "html.gl-xf .has-gs{ overflow-clip-margin:0px !important; }"
     python3 fuite.py sansmarge     # aucun trou d'un pixel au bord des feuilles
     node matiere.js /tmp/m mat && python3 matiere.py /tmp/m mat   # la matière suffit-elle ?
