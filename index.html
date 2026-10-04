@@ -4806,7 +4806,8 @@
   .grp-act{ display:flex; align-items:center; justify-content:center; gap:0.45rem; padding:0.85rem 0.6rem; font-size:0.84rem; line-height:1.25; }
   .grp-act .ico{ width:1.1rem; height:1.1rem; flex-shrink:0; display:inline-flex; color:var(--primary); }
   .grp-lien{ display:block; margin:0.2rem auto 0.8rem; border:0; background:none; color:rgba(255,255,255,0.94); font-size:0.84rem; font-weight:600;
-    text-decoration:underline; text-underline-offset:3px; text-shadow:0 1px 8px rgba(0,0,0,0.4); padding:0.6rem 0.8rem; min-height:44px; }
+    text-decoration:underline; text-underline-offset:3px; text-shadow:0 1px 8px rgba(0,0,0,0.4); padding:0.6rem 0.8rem; min-height:44px;
+    border-radius:var(--r-full); }
   .grp-mot{ min-height:0; font-size:0.84rem; line-height:1.45; color:var(--primary-dark); text-align:center; margin:0.2rem 0 0.6rem; }
   .grp-mot:empty{ display:none; }
   .grp-mot.bon{ color:var(--green); }
@@ -4887,11 +4888,19 @@
   .screen.groupe-ecran{ height:100%; min-height:0; display:flex; flex-direction:column; }
   .grp-fil-tete{ flex-shrink:0; }
   .grp-tete{ flex:1; min-width:0; display:flex; align-items:center; gap:0.65rem; border:0; background:none; padding:0; text-align:left;
-    color:var(--ink); -webkit-tap-highlight-color:transparent; min-height:44px; }
+    color:var(--ink); -webkit-tap-highlight-color:transparent; min-height:44px; border-radius:var(--r-m); }
   .fil-carte{ position:relative; flex:1; min-height:0; display:flex; flex-direction:column; padding:0; margin-bottom:var(--e-2);
     border-radius:var(--r-l); }
   #fil{ flex:1; min-height:0; overflow-y:auto; overscroll-behavior:contain; -webkit-overflow-scrolling:touch;
-    padding:0.75rem 0.7rem 0.6rem; display:flex; flex-direction:column; gap:0.18rem; }
+    padding:0.75rem 0.7rem 0.6rem; display:flex; flex-direction:column; gap:0.18rem; --fil-h:0px; --fil-b:0px; }
+  /* Ce qui passe sous le bord de la carte s'efface au lieu d'être tranché net
+     (« Benoît a rejoint le groupe » coupé en deux à mi-hauteur). Seulement du
+     côté où il reste à lire : tout en haut, ou tout en bas, rien n'est voilé. */
+  #fil.voile-h{ --fil-h:1.4rem; }
+  #fil.voile-b{ --fil-b:1.4rem; }
+  #fil.voile-h, #fil.voile-b{
+    -webkit-mask-image:linear-gradient(to bottom, transparent 0, #000 var(--fil-h), #000 calc(100% - var(--fil-b)), transparent 100%);
+            mask-image:linear-gradient(to bottom, transparent 0, #000 var(--fil-h), #000 calc(100% - var(--fil-b)), transparent 100%); }
   .fil-plus{ align-self:center; margin:0.1rem 0 0.5rem; }
   .b-jour{ align-self:center; margin:0.35rem 0 0.45rem; font-family:'Poppins',sans-serif; font-size:0.78rem; font-weight:700; color:var(--ink-soft); }
   .b-sys{ align-self:center; text-align:center; max-width:88%; margin:0.2rem 0 0.35rem; font-size:0.86rem; line-height:1.4; color:var(--ink-soft); }
@@ -4961,7 +4970,8 @@
      l'œil, pas au doigt : 44 px de haut en pixels, pas en rem — sur un petit
      écran la racine descend à 14,6 px, et 2,75rem n'y ferait plus que 40. */
   .compte-supprimer, .lien-conf{ align-self:center; border:0; background:none; color:var(--ink-soft); font-size:0.78rem; font-weight:600;
-    text-decoration:underline; text-underline-offset:3px; padding:0.55rem 0.8rem; min-height:44px; }
+    text-decoration:underline; text-underline-offset:3px; padding:0.55rem 0.8rem; min-height:44px;
+    border-radius:var(--r-full); }   /* l'onde d'appui en prend la forme : sans arrondi, elle était carrée */
   .lien-conf{ display:block; margin:0.35rem auto 0; }
 </style>
 </head>
@@ -5215,8 +5225,8 @@ const TEXTES = {
     "Tes erreurs reviendront ici":"Your mistakes will come back here",
     /* le mode en ligne */
     "Invité":"Guest",
-    "connectés":"connected",
-    "connecté":"connected",
+    "personnes":"connected",
+    "personne":"connected",
     "Dès qu'un autre joueur cherche, la partie démarre.":"As soon as another player is looking, the game starts.",
     "{n} autre en recherche…":"{n} other player looking…",
     "{n} autres en recherche…":"{n} other players looking…",
@@ -5258,7 +5268,7 @@ const TEXTES = {
     "Ton adversaire a quitté la partie.":"Your opponent has left the game.",
     "Joueur":"Player",
     "Joueur {n}":"Player {n}",
-    "parti":"gone",
+    "a quitté":"gone",
     "terminé":"done",
     "Ton adversaire en est à {i}/{t}":"Your opponent is at {i}/{t}",
     "Tout le monde repart avec toi.":"Everyone starts again with you.",
@@ -5549,11 +5559,11 @@ const TEXTES = {
     "Il faut confirmer les deux pour entrer.":"Confirm both to enter.",
     "Choisis d'abord un nom.":"Choose a name first.",
     "Ce nom ne peut pas être utilisé dans les groupes. Change-le dans ton profil.":"This name can't be used in groups. Change it in your profile.",
-    "Respecte chacun : pas d'insultes, pas de moqueries, pas de harcèlement.":"Respect everyone: no insults, no mockery, no harassment.",
+    "Respecte tout le monde : pas d'insultes, pas de moqueries, pas de harcèlement.":"Respect everyone: no insults, no mockery, no harassment.",
     "Rien de sexuel, de violent ou de haineux.":"Nothing sexual, violent or hateful.",
     "Dans un groupe public, ne donne jamais d'adresse, de numéro ou de lien.":"In a public group, never share an address, a phone number or a link.",
     "Pas de publicité, pas de messages en série.":"No ads, no spam.",
-    "Quelqu'un te met mal à l'aise ? Signale-le et bloque-le.":"Someone making you uncomfortable? Report and block them.",
+    "Quelqu'un te met mal à l'aise ? Signale et bloque cette personne.":"Someone making you uncomfortable? Report and block them.",
     "Créer":"Create",
     "Nom du groupe":"Group name",
     "Description (facultatif)":"Description (optional)",
@@ -5816,8 +5826,8 @@ const TEXTES = {
     "Rien pour aujourd'hui":"Nada para hoy",
     "Tes erreurs reviendront ici":"Tus errores volverán aquí",
     "Invité":"Invitado",
-    "connectés":"conectados",
-    "connecté":"conectado",
+    "personnes":"personas",
+    "personne":"persona",
     "Dès qu'un autre joueur cherche, la partie démarre.":"En cuanto otro jugador esté buscando, la partida empieza.",
     "{n} autre en recherche…":"{n} jugador más buscando…",
     "{n} autres en recherche…":"{n} jugadores más buscando…",
@@ -5859,7 +5869,7 @@ const TEXTES = {
     "Ton adversaire a quitté la partie.":"Tu rival salió de la partida.",
     "Joueur":"Jugador",
     "Joueur {n}":"Jugador {n}",
-    "parti":"salió",
+    "a quitté":"salió",
     "terminé":"terminó",
     "Ton adversaire en est à {i}/{t}":"Tu rival va por {i}/{t}",
     "Tout le monde repart avec toi.":"Todos vuelven a jugar contigo.",
@@ -6153,11 +6163,11 @@ const TEXTES = {
     "Il faut confirmer les deux pour entrer.":"Confirma las dos cosas para entrar.",
     "Choisis d'abord un nom.":"Elige primero un nombre.",
     "Ce nom ne peut pas être utilisé dans les groupes. Change-le dans ton profil.":"Este nombre no se puede usar en los grupos. Cámbialo en tu perfil.",
-    "Respecte chacun : pas d'insultes, pas de moqueries, pas de harcèlement.":"Respeta a todos: nada de insultos, burlas ni acoso.",
+    "Respecte tout le monde : pas d'insultes, pas de moqueries, pas de harcèlement.":"Respeta a todo el mundo: nada de insultos, burlas ni acoso.",
     "Rien de sexuel, de violent ou de haineux.":"Nada sexual, violento ni de odio.",
     "Dans un groupe public, ne donne jamais d'adresse, de numéro ou de lien.":"En un grupo público, no compartas nunca una dirección, un número ni un enlace.",
     "Pas de publicité, pas de messages en série.":"Nada de publicidad ni mensajes en serie.",
-    "Quelqu'un te met mal à l'aise ? Signale-le et bloque-le.":"¿Alguien te incomoda? Denúncialo y bloquéalo.",
+    "Quelqu'un te met mal à l'aise ? Signale et bloque cette personne.":"¿Alguien te incomoda? Denuncia y bloquea a esa persona.",
     "Créer":"Crear",
     "Nom du groupe":"Nombre del grupo",
     "Description (facultatif)":"Descripción (opcional)",
@@ -8844,7 +8854,7 @@ function updateOnlineLobby(){
     num.textContent = n;
     num.style.animation = "none"; void num.offsetWidth; num.style.animation = "countPop 0.4s cubic-bezier(0.2,1.4,0.35,1)";
   }
-  const plbl = n > 1 ? T("connectés") : T("connecté"); // « En ligne » est déjà le titre au-dessus
+  const plbl = n > 1 ? T("personnes") : T("personne"); // « En ligne » est déjà le titre au-dessus ; « connecté » s'accordait au masculin
   if(lbl && lbl.textContent !== plbl) lbl.textContent = plbl;
   const op = document.querySelector(".searching-card .opp-progress");
   if(op){ const f = freshLookers(); op.textContent = f>0 ? Tf(f>1?"{n} autres en recherche…":"{n} autre en recherche…", {n:f}) : T("Dès qu'un autre joueur cherche, la partie démarre."); }
@@ -19435,11 +19445,11 @@ function corpsGroupes(){
    les règles, et les 13 ans. Deux interrupteurs, pas une case cochée d'avance :
    ce que le joueur accepte, il l'a touché lui-même. */
 const REGLES = [
-  "Respecte chacun : pas d'insultes, pas de moqueries, pas de harcèlement.",
+  "Respecte tout le monde : pas d'insultes, pas de moqueries, pas de harcèlement.",
   "Rien de sexuel, de violent ou de haineux.",
   "Dans un groupe public, ne donne jamais d'adresse, de numéro ou de lien.",
   "Pas de publicité, pas de messages en série.",
-  "Quelqu'un te met mal à l'aise ? Signale-le et bloque-le."
+  "Quelqu'un te met mal à l'aise ? Signale et bloque cette personne."
 ];
 function reglesHtml(){ return `<ul class="regles">${REGLES.map(r => `<li>${escapeHtml(T(r))}</li>`).join("")}</ul>`; }
 function bienvenueHtml(){
@@ -19926,11 +19936,19 @@ function bulleHtml(m){
 }
 function descendreFil(doux){
   const z = document.getElementById("fil");
-  if(z){ try{ z.scrollTo({ top:z.scrollHeight, behavior:doux ? "smooth" : "auto" }); }catch(e){ z.scrollTop = z.scrollHeight; } }
+  if(z){ try{ z.scrollTo({ top:z.scrollHeight, behavior:doux ? "smooth" : "auto" }); }catch(e){ z.scrollTop = z.scrollHeight; } voilerFil(z); }
   const b = document.getElementById("filBas"); if(b) b.hidden = true;
 }
 function surDefilementFil(z){
   if(z.scrollHeight - z.scrollTop - z.clientHeight < 40){ const b = document.getElementById("filBas"); if(b && !b.hidden) b.hidden = true; }
+  voilerFil(z);
+}
+/* Le voile suit ce qui reste à lire, en haut comme en bas. */
+function voilerFil(z){
+  if(!z) return;
+  const h = z.scrollTop > 2, b = z.scrollHeight - z.scrollTop - z.clientHeight > 2;
+  if(z.classList.contains("voile-h") !== h) z.classList.toggle("voile-h", h);
+  if(z.classList.contains("voile-b") !== b) z.classList.toggle("voile-b", b);
 }
 /* Le fil se redessine sur place. S'il était au bas, il y reste ; sinon on ne
    l'arrache pas à sa lecture — une pastille propose de descendre. */
@@ -19942,6 +19960,7 @@ function majFil(){
   z.innerHTML = filHtml(grp.courant);
   if(enBas) descendreFil(false);
   else { z.scrollTop = haut; const b = document.getElementById("filBas"); if(b) b.hidden = false; }
+  voilerFil(z);
 }
 
 /* ---------- ÉCRIRE ---------- */
@@ -22234,7 +22253,7 @@ function renderOnline(){
     <div class="presence-card">
       <span class="live-dot"></span>
       <span class="presence-num">${n}</span>
-      <span class="presence-lbl">${n>1?T("connectés"):T("connecté")}</span>
+      <span class="presence-lbl">${n>1?T("personnes"):T("personne")}</span>
     </div>
     <button class="me-row" onclick="openProfile()">
       ${avatarHtml(profile.name, profile.color, 2.05, true)}
@@ -22420,7 +22439,7 @@ function renderOnlinePlay(){
     <div class="duel-scorebar">
       <div class="ds-side me"><span class="ds-name">${escapeHtml(profile.name)}</span><span class="ds-score">${net.score}</span></div>
       <div class="ds-vs">VS</div>
-      <div class="ds-side${net.oppGone?' gone':''}"><span class="ds-name">${escapeHtml(oppName)}${net.oppGone?" \u00b7 "+T("parti"):""}</span><span class="ds-score">${net.oppScore}</span></div>
+      <div class="ds-side${net.oppGone?' gone':''}"><span class="ds-name">${escapeHtml(oppName)}${net.oppGone?" \u00b7 "+T("a quitté"):""}</span><span class="ds-score">${net.oppScore}</span></div>
     </div>`;
   if(net.myDone){
     el.innerHTML = `${renderHeader(titrePartie(), true, "quitDuel()")}
@@ -22556,7 +22575,7 @@ function renderOnlineEnd(){
         <div class="rank-row${j.moi?' moi':''}${j.gone?' gone':''}">
           <span class="rank-badge ${g}">${j.rg}</span>
           ${avatarHtml(j.name, j.color, 1.55, j.moi ? true : j.id)}
-          <span class="rank-name">${escapeHtml(j.name||T("Joueur"))}${j.gone?" \u00b7 "+T("parti"):""}</span>
+          <span class="rank-name">${escapeHtml(j.name||T("Joueur"))}${j.gone?" \u00b7 "+T("a quitté"):""}</span>
           <span class="rank-score">${j.score|0} pts</span>
         </div>`;
       }).join("")}
