@@ -48,6 +48,14 @@ const CLE = 'BOveRs4clrziwaZmqCy4re5c-vpsPRGRvw0mfUxP5D3u920HJW45-o7V1avGrvsKwFi
   await p.addInitScript(() => {
     localStorage.setItem('bt_profile', JSON.stringify({ name:'Taylor', color:'#4C86E8' }));
     localStorage.setItem('bt_fs_hint', '1');
+    /* LE LIEN N'EST PAS ENCORE OUVERT — ET IL FAUT QU'IL NE LE SOIT PAS. Depuis
+       la v302, la sonde des groupes ouvre le lien 2,5 s après le lancement,
+       sauf si sa dernière réponse est encore en mémoire (une demi-heure au
+       plus) : c'est le joueur qui relance le jeu dans la demi-heure. On part
+       de ce cas-là, le seul où le chemin des rappels doit ouvrir le lien
+       lui-même — sans quoi le banc ne vérifiait plus rien et le disait
+       (« FAUX (lien déjà ouvert) »). */
+    localStorage.setItem('bt_groupes_sonde', JSON.stringify({ installe:false, ouverts:false, version:1, modo:false, quand:Date.now() }));
     /* LE JEU EST POSÉ SUR L'ÉCRAN D'ACCUEIL. Depuis la v206, c'est la condition
        pour que les rappels existent : dans un onglet, la permission irait au
        navigateur et pas au jeu. On ne détourne que les requêtes « display-mode »,
