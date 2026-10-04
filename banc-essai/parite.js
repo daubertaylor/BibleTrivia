@@ -91,6 +91,13 @@ const figer = (p) => p.evaluate(() => {
       userAgent:ua, hasTouch:true, serviceWorkers:'block' });
     const p = await ctx.newPage();
     const errs = []; p.on('pageerror', e => errs.push(e.message));
+    /* MIDI PILE POUR LES DEUX TÉLÉPHONES. La rangée de la semaine compte les
+       heures puis les minutes qui restent (« Plus que 1 h », « Plus que 59 min ») :
+       lancé vers 23 h, le passage iPhone et le passage Android ne lisaient pas la
+       même phrase, et le banc criait « pas le même jeu » pour une minute d'écart.
+       L'horloge part de midi, aujourd'hui, et s'écoule ensuite normalement. */
+    const midi = new Date(); midi.setHours(12, 0, 0, 0);
+    await p.clock.install({ time:midi });
     await p.addInitScript(PREP);
     await p.goto(URL);
     await p.waitForFunction(() => { try { return typeof render === 'function'; } catch(e){ return false; } }, null, { timeout:20000 });

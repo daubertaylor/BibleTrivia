@@ -16,6 +16,36 @@
 const { chromium } = require('/opt/node22/lib/node_modules/playwright');
 const IOS='Mozilla/5.0 (iPhone; CPU iPhone OS 17_5 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.5 Mobile/15E148 Safari/604.1';
 const URL=process.argv[2]||'http://127.0.0.1:8099/index.html';
+/* LES GROUPES (v302), sans serveur : le décor de doigt.js, copié tel quel,
+   posé dans la page une fois chargée. Une règle absolue vaut aussi pour les
+   écrans neufs — et un champ actif y compte comme ailleurs. */
+const GRP_DECOR = `window.__grpDecor = () => {
+  const il = (h) => new Date(Date.now() - h * 3600000).toISOString();
+  compte.dispo = true;
+  compte.session = { user:{ id:'moi-0', email:'joueur@exemple.net' } }; compte.etape = 'connecte';
+  grp.installe = true; grp.ouverts = true; grp.message = '';
+  grp.etat = { participe:'ok', moderateur:true, ouverts:true, a_traiter:2 };
+  grp.profils = { 'moi-0':{ nom:'Taylor', couleur:'#4C86E8' }, 'u-2':{ nom:'Sam', couleur:'#E8574C' },
+                  'u-3':{ nom:'Lee', couleur:'#4CE88A' }, 'u-4':{ nom:'Kim', couleur:'#E8C84C' } };
+  grp.liste = [
+    { id:'g-1', nom:'Lee', teinte:2, ouvert:false, code:'ABC234', nb_membres:4, non_lus:2, dernier_message:il(1),
+      apercu:{ id:9, auteur:'u-2', genre:'texte', texte:'Amen', nom:'Sam', le:il(1) } },
+    { id:'g-2', nom:'Sam', teinte:0, ouvert:true, code:'DEF567', nb_membres:2, non_lus:0, dernier_message:il(26),
+      apercu:{ id:7, auteur:'moi-0', genre:'texte', texte:'Amen', nom:'Taylor', le:il(26) } } ];
+  grp.publics = [ { id:'g-2', nom:'Sam', description:'', nb_membres:2, teinte:0, membre:true },
+                  { id:'g-5', nom:'Ruth', description:'', nb_membres:1, teinte:3, membre:false } ];
+  grp.membres = { 'g-1':[ { membre:'moi-0', role:'proprietaire', muet_jusqu:null },
+                          { membre:'u-2', role:'admin', muet_jusqu:null },
+                          { membre:'u-4', role:'membre', muet_jusqu:null } ] };
+  const m = (id, auteur, genre, texte, extra) => Object.assign({ id, groupe:'g-1', auteur, genre, texte, donnees:{},
+    cree_le:il(0.5), masque:false, supprime_le:null }, extra || {});
+  grp.fils = { 'g-1':{ charge:true, tout:false, messages:[
+    m(1, null, 'systeme', 'cree', { donnees:{ nom:'Taylor' } }),
+    m(7, 'u-2', 'texte', 'Amen'),
+    m(10, 'u-2', 'partie', '', { donnees:{ code:'ABCD' } }),
+    m(12, 'moi-0', 'texte', 'Amen') ] } };
+  grp.courant = null; grp.nonLus = 2; moderation = null;
+};`;
 const ECRANS=[
  ['accueil',  ()=>{state.screen='mode';render();}],
  ['verset',   ()=>{state.screen='mode';render();showHeroVerse();}],
@@ -45,6 +75,27 @@ const ECRANS=[
  ['fonds',    ()=>{if(SCENES.length<2) SCENES.push({key:'essai',name:'Essai',thumb:SCENES[0].thumb,full:SCENES[0].full});
                    state.screen='mode';render();openSettings();
                    setTimeout(()=>{const e=document.querySelector('.scene-row');e&&e.scrollIntoView({block:'center'});},300);}],
+ ['barre',      ()=>{__grpDecor();state.screen='mode';render();majBarre();}],
+ ['groupes',    ()=>{__grpDecor();state.screen='groupes';render();majBarre();}],
+ ['grp-dehors', ()=>{__grpDecor();compte.session=null;compte.etape='repos';grp.etat=null;state.screen='groupes';render();}],
+ ['grp-entree', ()=>{__grpDecor();grp.etat={participe:'regles',moderateur:false};state.screen='groupes';render();}],
+ ['grp-entree-ok',()=>{__grpDecor();grp.etat={participe:'regles',moderateur:false};grp.ageOk=true;grp.reglesOk=true;state.screen='groupes';render();}],
+ ['discussion', ()=>{__grpDecor();grp.courant='g-1';state.screen='groupe';render();majCompo();}],
+ ['compo-actif',()=>{__grpDecor();grp.courant='g-1';state.screen='groupe';render();majCompo();
+                   setTimeout(()=>{const t=document.querySelector('#compo textarea,#compo input');t&&t.focus();},250);}],
+ ['grp-infos',  ()=>{__grpDecor();grp.courant='g-1';state.screen='groupe';render();ouvrirInfosGroupe(true);}],
+ ['grp-membre', ()=>{ouvrirMembre('u-4');}],
+ ['grp-message',()=>{actionsMessage('7');}],
+ ['grp-signaler',()=>{signalerMessage('7');}],
+ ['grp-creer',  ()=>{__grpDecor();state.screen='groupes';render();ouvrirCreation();}],
+ ['grp-code-actif',()=>{ouvrirCode();setTimeout(()=>{const i=document.getElementById('grpCode');i&&i.focus();},250);}],
+ ['grp-regles', ()=>{ouvrirRegles();}],
+ ['moderation', ()=>{__grpDecor();window.__lg=window.__lg||listeGroupe;
+                   listeGroupe=async(n,a)=>n==='moderation_ouverte'?[{id:1,raison:'harcelement',details:'',le:new Date().toISOString(),
+                     groupe:'g-1',groupe_nom:'Lee',message:7,texte:'Amen',cible:'u-2',cible_nom:'Sam',par_nom:'Lee',nb:2}]:__lg(n,a);
+                   state.screen='groupes';render();ouvrirModeration();}],
+ ['compte',     ()=>{__grpDecor();state.screen='profile';render();}],
+ ['confidentialite',()=>{state.screen='mode';render();openSettings();setTimeout(()=>ouvrirConfidentialite(),300);}],
 ];
 (async()=>{
   const b=await chromium.launch({executablePath:'/opt/pw-browsers/chromium'});
@@ -54,6 +105,7 @@ const ECRANS=[
     localStorage.setItem('bt_progress',JSON.stringify({books:{Genèse:12,Exode:8},correct:337,streakBest:21,achievements:['premiers-pas']}));});
   await p.goto(URL);
   await p.waitForFunction(()=>{try{return state.screen==='mode';}catch(e){return false;}},null,{timeout:20000});
+  await p.evaluate(GRP_DECOR);
   const total={};
   for(const [nom,aller] of ECRANS){
     try{ await p.evaluate(`(${aller.toString()})()`); }catch(e){ console.log('  !! '+nom+' : '+e.message); continue; }
@@ -88,7 +140,13 @@ const ECRANS=[
     r.forEach(x=>{ console.log('   '+x); total[x]=1; });
     await p.evaluate(()=>{document.querySelectorAll('.modal-veil,.sheet-veil').forEach(n=>n.remove());document.documentElement.classList.remove('show-verse');});
   }
-  console.log('\n  TOTAL rebords colorés distincts : '+Object.keys(total).length);
+  const n=Object.keys(total).length;
+  console.log('\n  TOTAL rebords colorés distincts : '+n);
   console.log('  erreurs : '+(errs.length?errs[0]:'AUCUNE'));
   await b.close();
+  /* IL DOIT RAPPORTER 0 — et le dire par son code de sortie. Jusqu'à la
+     v302 il affichait son total et sortait toujours en vert : un liseré
+     revenu n'aurait fait rougir aucune suite. */
+  console.log(n||errs.length ? '\n  ÉCHEC' : '\n  OK — aucun rebord coloré, nulle part');
+  process.exit(n||errs.length ? 1 : 0);
 })();
