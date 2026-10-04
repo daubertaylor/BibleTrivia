@@ -162,35 +162,58 @@ function lire(rel){
      parce que la puce quittée part trop vite — mesuré à 66 % avec une courbe
      trop rapide, tout aussi visible). */
   console.log('\n  la rangée garde-t-elle sa quantité de rouge ?');
-  const ROUGE = `(i)=>new Promise(res=>{
-    const q=[...document.querySelectorAll('.chip[data-group="theme"]')];
-    const n=(s)=>(String(s).match(/[-\\d.]+/g)||[0,0,0]).map(Number);
-    const ech=(t)=>{ const m=n(t); return (t==='none'||m.length<4)?1:m[0]; };
-    const rougeur=(el)=>{ const cs=getComputedStyle(el), ap=getComputedStyle(el,'::after');
-      const base=n(cs.getPropertyValue('--glass-tint')||'0,0,0'), lay=n(ap.backgroundColor);
-      const s=Math.max(0,Math.min(1,ech(ap.transform))); const couv=Math.min(1,s*s);
-      const o=(parseFloat(ap.opacity)||0)*couv;
-      const c=[0,1,2].map(k=>lay[k]*o+base[k]*(1-o));
-      return c[0]-(c[1]+c[2])/2; };
-    const rel=[]; const t0=performance.now();
-    const tic=()=>{ rel.push(q.map(rougeur).reduce((a,x)=>a+x,0));
-      if(performance.now()-t0<800) requestAnimationFrame(tic); else res(rel); };
-    requestAnimationFrame(tic);
-    setTimeout(()=>q[i].click(), 60);
-  })`;
+  /* EN PIXELS, COMME SUR UNE VIDÉO D'IPHONE. La première version recalculait
+     la couleur à partir de l'échelle de la couche (couverture = échelle²) :
+     c'était juste tant que la couche était la puce elle-même en réduction.
+     Depuis l'encre, la couche est un DISQUE bien plus grand que la puce, posé
+     sous le doigt — et ce modèle annonçait un creux à 7 % qui n'existe pas.
+     On mesure donc ce qui est peint : sur des captures (mouvement ralenti),
+     la part rouge de chaque puce, lettres exclues (les sombres comme les
+     blanches : elles ne sont ni du fond ni de l'encre), sommée sur la rangée
+     et rapportée au repos. */
+  const LENT_R = 5;
+  const ralenti = await p.addStyleTag({ content:`.chip, .len-chip{ --encre-duree:${0.5*LENT_R}s !important; --encre-sortie:${0.3*LENT_R}s !important; }
+    :root{ --onde-duree:${0.24*LENT_R}s !important; --tr-onde:${0.24*LENT_R}s cubic-bezier(0.33,1,0.68,1) !important; }` });
+  const rougeRangee = async (boites)=>{
+    const x0 = boites[0].x, larg = boites[boites.length-1].x + boites[boites.length-1].w - x0;
+    const png = await p.screenshot({ clip:{ x:x0, y:boites[0].y, width:larg, height:boites[0].h } });
+    return p.evaluate(async ({ b64, boites, x0, larg })=>{
+      const img = new Image(); img.src = 'data:image/png;base64,' + b64; await img.decode();
+      const cv = document.createElement('canvas'); cv.width = img.width; cv.height = img.height;
+      const g = cv.getContext('2d'); g.drawImage(img, 0, 0);
+      const k = img.width / larg;
+      return boites.map(bx=>{
+        const d = g.getImageData(Math.round((bx.x - x0) * k) + 8, 8, Math.round(bx.w * k) - 16, Math.round(bx.h * k) - 16).data;
+        let s = 0, n = 0;
+        for(let i = 0; i < d.length; i += 4){
+          const R = d[i], G = d[i+1], B = d[i+2];
+          if(R < 170) continue;                          // lettres sombres
+          if(G > 250 && B > 250) continue;               // lettres blanches (le crème est 248/241)
+          s += Math.max(0, Math.min(1, (246 - G) / (246 - 62))); n++;
+        }
+        return n ? s / n : 0;
+      }).reduce((a, v)=>a + v, 0);
+    }, { b64: png.toString('base64'), boites, x0, larg });
+  };
   for (const [nom, depart, cible] of [['Tout -> Ancien', 0, 1], ['Ancien -> Tout', 1, 0], ['Tout -> Nouveau', 0, 2]]){
     await prepa();
     await p.evaluate((d)=>{ const q=document.querySelectorAll('.chip[data-group="theme"]'); q[d].click(); }, depart);
-    await p.waitForTimeout(700);
-    const serie = await p.evaluate(eval('(' + ROUGE + ')'), cible);
-    const repos = serie[0] || 1;
-    const pc = serie.map(x => 100 * x / repos);
+    await p.waitForTimeout(0.5*LENT_R*1000 + 600);
+    const boites = await p.evaluate(()=>[...document.querySelectorAll('.chip[data-group="theme"]')].map(c=>{ const r=c.getBoundingClientRect(); return { x:r.left, y:r.top, w:r.width, h:r.height }; }));
+    const repos = await rougeRangee(boites);
+    await p.evaluate((c)=>{ document.querySelectorAll('.chip[data-group="theme"]')[c].click(); }, cible);
+    const serie = []; const t0 = Date.now();
+    while(Date.now() - t0 < 0.5*LENT_R*1000 + 300) serie.push(await rougeRangee(boites));
+    const pc = serie.map(x => 100 * x / (repos || 1));
+    if(process.env.SERIE) console.log('      repos ' + repos.toFixed(3) + ' : ' + pc.map(v => v.toFixed(0)).join(' '));
     const haut = Math.max(...pc), bas = Math.min(...pc);
-    const vert = haut <= 112 && bas >= 88;
+    const vert = haut <= 120 && bas >= 85;
     if(!vert) ko++;
-    console.log('    %s %s  de %s %% à %s %% du repos', vert ? 'OK   ' : 'ECHEC',
-      nom.padEnd(18), bas.toFixed(0).padStart(4), haut.toFixed(0).padStart(4));
+    console.log('    %s %s  de %s %% à %s %% du repos  (%d images)', vert ? 'OK   ' : 'ECHEC',
+      nom.padEnd(18), bas.toFixed(0).padStart(4), haut.toFixed(0).padStart(4), serie.length);
   }
+
+  await ralenti.evaluate(e => e.remove());     // la suite du banc tourne à vitesse réelle
 
   /* ===== L'AUTRE IDIOME : LA LISTE À COCHE ===== */
   await bibles();

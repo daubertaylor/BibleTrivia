@@ -643,6 +643,11 @@ for(const ligne of codeSeul.split('\n')){
     if(txt.length < 4) continue;
     if(zonesT.some(([a, b]) => abs >= a && abs <= b)) continue;   // déjà dans un T()
     if(/^[a-z][a-z0-9_-]*$/.test(txt)) continue;                  // une clé, une classe
+    /* Une PROPRIÉTÉ CSS PERSONNALISÉE (« --encre-y ») n'est pas du texte :
+       elle n'a ni accent ni mot outil — mais son dernier morceau peut en
+       ressembler à un (« y », « en »), et la porte la prenait pour une
+       phrase. */
+    if(/^--[a-z0-9-]+$/.test(txt)) continue;
     if(/^(https?:|data:|#|\.|\/)/.test(txt)) continue;
     if(/[=!]==?\s*$/.test(ligne.slice(0, m.index))) continue;      // une COMPARAISON
     if(!(ACCENT.test(txt) || (txt.match(OUTILS) || []).length >= 2 || FRANCAIS_SEUL.test(txt))) continue;

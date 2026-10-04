@@ -7,7 +7,9 @@
 #   1. shim.js et hub.js NE SONT PAS DES BANCS. Le premier est un module de
 #      page (le client Supabase réduit), le second un serveur temps réel local
 #      que d'autres bancs démarrent eux-mêmes. Lancés en ligne de commande :
-#      « ReferenceError: window is not defined » et un délai dépassé.
+#      « ReferenceError: window is not defined » et un délai dépassé. Même
+#      chose pour leurs cousins des groupes, shim-groupes.js (le client) et
+#      faux-serveur-groupes.js (un vrai PostgreSQL derrière un faux Supabase).
 #
 #   2. LE PARALLÉLISME FAUSSE LES BANCS DE TEMPS. À trois de front, parite.js
 #      annonçait 8 982 pixels d'écart entre Android et iOS ; seul, il est vert
@@ -35,7 +37,7 @@ RACINE="$(cd "$(dirname "$0")/.." && pwd)"
 URL="${1:-http://127.0.0.1:8099/index.html}"
 NODE=/opt/node22/bin/node
 SORTIE="$(mktemp -d /tmp/bancs-XXXX)"
-PAS_DES_BANCS="shim hub extraire-questions"
+PAS_DES_BANCS="shim hub extraire-questions faux-serveur-groupes shim-groupes"
 # CHANTIERS : des bancs commencés dont la MESURE n'est pas encore fiable. Ils
 # ne gardent rien tant qu'ils se trompent, et un banc qui crie à tort finit
 # par être ignoré — c'est exactement ce qui est arrivé à lisible et fondu.

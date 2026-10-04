@@ -34,6 +34,7 @@ alter table public.sauvegardes enable row level security;
 -- On repose sur auth.uid(), c'est-à-dire sur le jeton signé que Supabase
 -- délivre à la connexion. Il n'est pas falsifiable côté client : c'est ce qui
 -- sépare cette table de push_subs, plus bas.
+drop policy if exists "chacun lit la sienne" on public.sauvegardes;
 create policy "chacun lit la sienne"
   on public.sauvegardes for select to authenticated
   using (auth.uid() = id);
@@ -148,6 +149,45 @@ grant execute on function public.poser_sauvegarde(jsonb, bigint) to authenticate
 revoke insert, update, delete on public.sauvegardes from anon, authenticated;
 
 -- ============================================================================
+-- SUPPRIMER SON COMPTE, DEPUIS LE JEU
+-- ============================================================================
+-- Apple l'exige de toute app où l'on crée un compte (règle 5.1.1(v)) : on doit
+-- pouvoir le supprimer DANS l'app, pas seulement en écrivant à quelqu'un. Et
+-- c'est juste : c'est son compte.
+-- Ce qui part : le compte lui-même, et tout ce qui y est rattaché par « on
+-- delete cascade » — la sauvegarde en ligne ici, et, si les groupes sont
+-- installés, le profil, les adhésions, les messages, les signalements faits,
+-- les blocages. Ce qui RESTE : la progression sur le téléphone. Le jeu le dit
+-- avant qu'on confirme, et n'y touche pas.
+-- Si les groupes sont là, on les prévient d'abord (_quitter_tout, dans
+-- groupes/table.sql) : un groupe dont on était propriétaire passe au suivant
+-- au lieu de rester sans personne aux commandes. Appel DYNAMIQUE : ce fichier
+-- doit s'installer et marcher sans les groupes.
+-- Une seule transaction : si une étape échoue, rien n'est supprimé du tout.
+create or replace function public.supprimer_mon_compte()
+returns jsonb
+language plpgsql
+security definer
+set search_path = ''
+as $$
+declare
+  moi uuid := auth.uid();
+begin
+  if moi is null then
+    return jsonb_build_object('ok', false, 'erreur', 'non_connecte');
+  end if;
+  if to_regprocedure('public._quitter_tout(uuid)') is not null then
+    execute 'select public._quitter_tout($1)' using moi;
+  end if;
+  delete from auth.users where id = moi;
+  return jsonb_build_object('ok', true);
+end;
+$$;
+revoke all on function public.supprimer_mon_compte() from public;
+revoke all on function public.supprimer_mon_compte() from anon;
+grant execute on function public.supprimer_mon_compte() to authenticated;
+
+-- ============================================================================
 -- CE QUI DOIT ÊTRE CORRIGÉ SUR LA TABLE EXISTANTE (push_subs)
 -- ============================================================================
 -- Constat, en relisant notifications/table.sql : sa politique est
@@ -169,7 +209,12 @@ revoke insert, update, delete on public.sauvegardes from anon, authenticated;
 -- supprime l'énumération. La suppression en masse reste théoriquement possible
 -- tant qu'il n'y a pas d'identité : c'est réglé pour de bon à l'étape
 -- suivante, quand chaque abonnement sera rattaché à un compte.
+-- Recoller ce fichier une deuxième fois ne doit rien casser : chaque règle
+-- est retirée avant d'être reposée.
 drop policy if exists "un appareil gère son propre abonnement" on public.push_subs;
+drop policy if exists "un appareil pose son abonnement" on public.push_subs;
+drop policy if exists "un appareil met à jour le sien" on public.push_subs;
+drop policy if exists "un appareil retire le sien" on public.push_subs;
 
 create policy "un appareil pose son abonnement"
   on public.push_subs for insert to anon with check (true);

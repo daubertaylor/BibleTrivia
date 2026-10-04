@@ -1994,98 +1994,99 @@
      La couche est donc PASSAGÈRE : elle vit le temps du geste et s'efface,
      la teinte de verre ayant pris le relais. Au repos, la puce choisie est
      exactement ce qu'elle était — vérifié, 0 pixel d'écart. */
-  .chip::after, .len-chip::after{ content:""; position:absolute; inset:0; z-index:-1;
-    border-radius:inherit; background:rgb(236,60,26); transform:scale(0.001); opacity:0;
-    pointer-events:none; }
-  /* Le même débord d'un pixel que l'onde, pour la même raison : c'est la
-     découpe de la surface qui donne sa forme au remplissage, sinon deux
-     arrondis se superposent et laissent une frange claire dans les coins. */
-  .chip.has-gs::after, .len-chip.has-gs::after{ inset:-1px; }
-  @keyframes remplitIn{ from{ transform:scale(0.001); opacity:0; } to{ transform:scale(1); opacity:1; } }
-  /* ON ARRIVE EN GRANDISSANT, ON S'EN VA SANS RÉTRÉCIR — exactement comme
-     l'onde d'appui, et pour la même raison qu'elle. Ma première version
-     faisait rentrer le rouge vers le centre : joli sur le papier, sauf que le
-     LIBELLÉ est au centre. Le rouge s'y attardait précisément là où le mot
-     venait de repasser au noir, et on lisait « Normale » en sombre sur du
-     rouge pendant un dixième de seconde. Un départ se fond, il ne se
-     rétracte pas. */
-  @keyframes remplitOut{ from{ opacity:1; } to{ opacity:0; } }
-  .chip.remplit::after, .len-chip.remplit::after{ animation:remplitIn var(--tr-onde) forwards; }
-  /* Celle qu'on quitte a perdu sa classe d'état : c'est la classe passagère
-     qui tient son rouge le temps qu'il se retire. */
-  /* ===== LA COURBE DU DÉPART, RÉGLÉE SUR UN CLIGNOTEMENT MESURÉ =====
-     « Ça fait un effet bizarre au remplissage, comme un clignotement. »
-     (Taylor, vidéo d'écran à 60 images/seconde.)
-     CE QUI SE PASSAIT. Dans une rangée de trois puces, UNE SEULE doit être
-     rouge. On peut donc mesurer le défaut en un seul nombre : la quantité
-     TOTALE de rouge sur la rangée, qui doit rester constante pendant le
-     passage. Relevé image par image sur sa vidéo, puis reproduit ici :
-
-         au repos                          100 %
-         pendant le passage, au pire       144 %  (sa vidéo, iPhone)
-                                           133 %  (ici, même mesure)
-
-     La rangée s'éclairait donc de moitié en plus pendant un quart de seconde,
-     puis revenait. C'est ça, le clignotement : pendant ~150 ms, DEUX puces
-     sont rouges en même temps.
-     POURQUOI. La puce qui arrive grandit ET s'opacifie sur une courbe qui
-     démarre vite ; celle qui part s'effaçait sur une courbe qui démarre LENT
-     (cubic-bezier(0.4,0,1,1) : 9 % effacés au premier quart). L'une était déjà
-     là que l'autre n'avait pas bougé.
-     CE QU'ON A CHANGÉ, ET COMMENT ON L'A CHOISI. La puce qui ARRIVE n'est pas
-     touchée : sa courbe a été réglée pour la lisibilité de son libellé (voir
-     plus haut, les dix-sept instants photographiés). On a donc cherché, pour
-     le DÉPART seul, la courbe qui tient la somme au plus près de 100 %. Neuf
-     candidates essayées, quatre passages chacune :
-
-         0.24s cubic-bezier(0.4,0,1,1)      pire 133 %   creux 100 %  (avant)
-         0.24s linear                       pire 120 %   creux  92 %
-         0.24s cubic-bezier(0.5,0,0.4,1)    pire 110 %   creux 100 %
-         0.24s cubic-bezier(0.33,1,0.68,1)  pire 100 %   creux  66 %  (trou noir)
-         0.24s cubic-bezier(0.45,0.05,0.35,1) pire 102 % creux  99 %  <-- retenue
-
-     Celle qui gagne n'est ni la plus lente ni la plus rapide : c'est celle qui
-     ÉPOUSE la montée de l'autre. Trop rapide et la rangée s'éteint à moitié
-     (creux à 66 %) — l'autre défaut, symétrique, tout aussi visible. */
+  /* ===== L'ENCRE : LA COULEUR S'IMPRÈGNE DEPUIS LE DOIGT =====
+     « Je veux vraiment que ça donne l'impression, lorsque je clique, d'être
+     rempli. Comme si la couleur s'imprégnait et s'élargissait, pour remplir
+     toute la surface ultra proprement. Et de l'autre côté, où la surface
+     disparaît, fais en sorte que ça se fasse bien aussi. »
+     CE QUI NE VA PAS AVEC CE QU'IL Y AVAIT. Le rouge était un RECTANGLE
+     ARRONDI — la puce elle-même, en réduction — qu'on agrandissait depuis le
+     centre en le faisant apparaître en fondu. À l'œil, c'est un zoom : la
+     forme entière est là dès la première image, minuscule et pâle, puis elle
+     grossit. Rien ne s'étale, rien ne « prend ».
+     CE QUI LE REMPLACE. Une GOUTTE : un disque de couleur pleine, au bord à
+     peine adouci, qui naît exactement sous le doigt et s'étend jusqu'à
+     couvrir toute la puce. Vite au début, puis il ralentit en arrivant aux
+     bords — comme une encre qui s'imprègne. C'est la DÉCOUPE de la puce qui
+     lui donne sa forme (overflow:clip, un seul arrondi, donc aucune frange
+     dans les coins) ; le disque est calculé pour couvrir le coin le plus
+     éloigné du doigt, avec sa marge : la surface entière, sans exception.
+     LA PUCE QU'ON QUITTE se vide dans l'autre sens : sa couleur se retire
+     vers le côté de la nouvelle puce, comme si elle passait de l'une à
+     l'autre. Son libellé redevient sombre tout de suite — sombre sur rouge se
+     lit, blanc sur crème ne se lirait pas.
+     LE LIBELLÉ DE LA PUCE CHOISIE ne passe au blanc qu'une fois ENTIÈREMENT
+     couvert par l'encre. L'instant dépend de l'endroit touché (un doigt au
+     bord met plus longtemps à atteindre le mot qu'un doigt au centre) : il
+     est calculé à chaque toucher (voir delaiLibelle), pas deviné. Et il
+     bascule D'UN COUP : un fondu du sombre au blanc passe forcément par un
+     gris aussi clair que le rouge, et le mot y disparaît (banc-essai/
+     lisible.js l'a mesuré : contraste 1,08 avec un fondu de 0,1 s).
+     CE QUI N'A PAS CHANGÉ, ET POURQUOI :
+     — la couche passe SOUS le texte (z-index négatif) : c'est la couleur
+       pleine de l'état choisi, pas un voile ;
+     — elle est PASSAGÈRE : au repos, c'est la teinte de verre qui porte le
+       rouge, et la couche n'existe plus. Une couche peinte sous le texte
+       change le lissage des lettres (5 360 pixels d'écart mesurés autrefois
+       sur le contour des lettres blanches) ; pour un état qui reste à l'écran
+       des minutes, on ne paie pas ce prix ;
+     — la teinte de verre arrive quand l'encre a FINI (sinon on verrait un
+       fondu sous l'encre) et repart tout de suite sur la puce qu'on quitte. */
+  .chip, .len-chip{ --encre-x:50%; --encre-y:50%; --encre-r:160px; --encre-duree:0.5s; --encre-sortie:0.3s; --encre-texte:0.2s; }
+  .chip::after, .len-chip::after{ content:""; position:absolute; z-index:-1; pointer-events:none;
+    left:calc(var(--encre-x) - var(--encre-r)); top:calc(var(--encre-y) - var(--encre-r));
+    width:calc(var(--encre-r) * 2); height:calc(var(--encre-r) * 2); border-radius:50%;
+    /* Le cœur est plein jusqu'à 82 % du rayon ; au-delà, le bord se fond.
+       encrerPuce() choisit le rayon pour que ce CŒUR couvre le coin le plus
+       lointain : à la fin, la puce est rouge plein, bords et coins compris. */
+    background:radial-gradient(closest-side, rgb(236,60,26) 82%, rgba(236,60,26,0.6) 91%, rgba(236,60,26,0) 100%);
+    transform:scale(0.001); opacity:0; }
+  /* L'encre arrive un peu claire et fonce en s'étalant : elle « prend ». */
+  @keyframes encreIn{ 0%{ transform:scale(0.03); opacity:0.62; } 40%{ opacity:1; } 100%{ transform:scale(1); opacity:1; } }
+  /* Elle se retire en restant pleine — une couleur qui s'en va, pas une
+     lampe qu'on éteint — et ses dernières traces se DISSOLVENT au lieu de
+     rétrécir jusqu'au bout : sans ça, il restait au bord un petit point rouge
+     qui traînait trois images après tout le reste. */
+  @keyframes encreOut{ 0%{ transform:scale(1); opacity:1; } 60%{ opacity:1; } 100%{ transform:scale(0.02); opacity:0; } }
+  /* ===== UN SEUL ROUGE À LA FOIS : LES DEUX COURBES SONT RÉGLÉES ENSEMBLE =====
+     Dans une rangée, une seule puce est rouge. On mesure donc le geste en un
+     nombre : la quantité TOTALE de rouge sur la rangée, image par image (1 =
+     une puce pleine ; 0,92 au repos, les lettres blanches ne comptant pas
+     comme du rouge). Premier réglage — l'encre partait vite, la puce quittée
+     se vidait lentement au début : pic à 2,00, DEUX puces pleines en même
+     temps pendant un instant, c'est-à-dire un éclair. Ralentir le départ de
+     la sortie supprime l'éclair mais en refait un (126 à 163 %) ; l'accélérer
+     creuse la rangée (81 % sans doigt). Douze réglages essayés, mesurés en
+     pixels, lettres exclues, rapportés au repos ; celui-ci tient la rangée
+     entre 90 et 110 % au clic et entre 96 et 115 % sous un vrai doigt (la
+     sortie cède alors 15 % plus vite, voir basculerChoix), au centre comme au
+     bord, dans un sens comme dans l'autre, et même en sautant une puce.
+     L'encre démarre doucement (on la voit s'étaler), la sortie cède la place
+     au même rythme. */
+  .chip.remplit::after, .len-chip.remplit::after{ animation:encreIn var(--encre-duree) cubic-bezier(0.3,0.55,0.25,1) forwards; }
   .chip.devide::after, .len-chip.devide::after{ transform:scale(1); opacity:1;
-    animation:remplitOut var(--onde-duree) cubic-bezier(0.45,0.05,0.35,1) forwards; }
-  /* LA TEINTE DE VERRE ARRIVE QUAND LE REMPLISSAGE A FINI, ET REPART TOUT DE
-     SUITE. Sinon elle ferait, sous la couche, le fondu uniforme qu'on vient
-     justement d'enlever — on le verrait dépasser aux quatre coins. En partant,
-     au contraire, elle doit lâcher immédiatement : le seul rouge qui reste est
-     celui qui se retire.
-     ON RÉÉCRIT LA LISTE ENTIÈRE, ET VOICI POURQUOI. Ma première version ne
-     déclarait que « --glass-tint », en !important. Une transition est une
-     PROPRIÉTÉ RACCOURCIE : la redéclarer efface tout le reste, y compris le
-     « color 0s linear 0.14s » qui retient le libellé en sombre le temps que le
-     rouge arrive. Le mot passait donc au blanc immédiatement, sur un fond
-     encore crème. Mesuré : creux de contraste 4,02 -> 2,14. C'est le genre
-     d'oubli qui ne se voit pas en lisant la règle, et qui saute aux yeux dès
-     qu'on mesure la lisibilité au lieu de la supposer.
-     QUAND LE MOT DOIT-IL BASCULER ? On a figé le remplissage à dix-sept
-     instants, photographié CHACUN avec le libellé sombre puis blanc, et
-     calculé le creux pour chaque bascule possible :
-         bascule à   40 ms  ->  creux 1,82
-                     80 ms  ->        2,84
-                    140 ms  ->        3,72   (le réglage d'avant)
-                    180 ms  ->        3,97   <-- on prend celui-ci
-                    240 ms  ->        3,85
-     Le remplissage couvre le libellé plus tard qu'un fondu ne l'assombrissait :
-     le mot doit donc attendre quarante millisecondes de plus qu'avant. */
-  /* ET LE FOND SUIT LA TEINTE SANS DÉLAI PROPRE. La surface peint
-     « background-color: var(--glass-tint) » ; lui laisser sa transition de
-     0,22 s pendant qu'on retarde la teinte, c'est lui donner le temps de
-     partir vers le rouge tout seul puis de revenir. Relevé à l'instant :
-     fond crème au départ, rgb(237,73,41) à quinze millisecondes, crème de
-     nouveau à quarante-cinq — un éclair rouge sur toute la puce avant même
-     que le remplissage ait commencé. Le fond ne décide plus de rien : il
-     change quand la teinte change, c'est-à-dire à la fin. */
+    animation:encreOut calc(var(--encre-sortie) * var(--encre-k, 1)) cubic-bezier(0.2,0.45,0.42,1) forwards; }
+  /* LA TEINTE DE VERRE ET LE LIBELLÉ, RÉGLÉS SUR L'ENCRE. La liste entière
+     est réécrite : une transition est une propriété RACCOURCIE, en redéclarer
+     un morceau efface le reste. Le fond ne décide de rien (0s) : il suit la
+     teinte, qui ne bascule qu'à la fin de l'encre. */
   .chip.remplit, .len-chip.remplit{ transition:transform 0.44s cubic-bezier(0.2,1,0.3,1),
-    background-color 0s, border-color 0.22s ease, color 0s linear 0.18s,
-    opacity 0.22s ease, --glass-tint 0s linear var(--onde-duree); }
+    background-color 0s, border-color 0.22s ease, color 0s linear var(--encre-texte),
+    opacity 0.22s ease, --glass-tint 0s linear var(--encre-duree); }
   .chip.devide, .len-chip.devide{ transition:transform 0.44s cubic-bezier(0.2,1,0.3,1),
     background-color 0s, border-color 0.22s ease, color 0s,
     opacity 0.22s ease, --glass-tint 0s linear; }
+  /* ET L'APPUI, SUR CES PUCES, PART DU DOIGT LUI AUSSI. Le voile d'appui
+     grandissait depuis le centre pendant que l'encre naissait sous le doigt :
+     deux gestes, deux origines. Ici le voile prend la même goutte, au même
+     endroit — on pose le doigt, la puce se teinte autour de lui, puis la
+     couleur pleine s'étale du même point. (Spécificité : il faut battre
+     « button.has-gs::before ».) */
+  button.chip::before, button.len-chip::before,
+  button.chip.has-gs::before, button.len-chip.has-gs::before{ inset:auto;
+    left:calc(var(--encre-x) - var(--encre-r)); top:calc(var(--encre-y) - var(--encre-r));
+    width:calc(var(--encre-r) * 2); height:calc(var(--encre-r) * 2); border-radius:50%;
+    background:radial-gradient(closest-side, var(--press-tint, rgba(238,74,40,0.18)) 82%, transparent 100%); }
   /* Sur les surfaces DÉJÀ corail, l'onde se fait blanche : sinon rien ne se
      verrait. Même logique, feedback identique. */
   .btn-primary, .btn-next, .btn-replay, .modal-btn.ok, .sheet-done, .set-go,
@@ -4198,6 +4199,30 @@
      est réparé. Et « will-change » reste, lui : c'est lui qui garde la couche
      promue, pas le remplissage. */
   .settings-sheet.monte{ transform:translateZ(0) translateY(0); animation:sheetIn var(--tr-ouvre); }
+  /* ===== LE DÉCOR TIENT PAR LE MÊME MOTEUR QUE LA FEUILLE =====
+     « Des fois ils s'ouvrent presque pareil, mais il y a un petit décalage. »
+     La feuille monte par une ANIMATION : sur iPhone, c'est le système qui la
+     joue, image par image, sans attendre la page. Le décor vu à travers elle
+     (et à travers ses boutons de verre) était, lui, recalé par le JavaScript
+     à chaque image, en relisant où se trouve la feuille. Deux horloges : selon
+     l'instant où la page relit, elle est en phase avec le système… ou une
+     image derrière. Une image, au milieu de la montée, c'est trente pixels —
+     le décor se décale, puis se rattrape. Pas à chaque fois : « des fois ».
+     Ici, sur cette machine, les deux horloges sont la même et le défaut est
+     invisible (moins d'un pixel). Il ne peut exister que sur l'appareil.
+     ON NE COURT PLUS APRÈS LA FEUILLE : on fait faire au décor, PAR LE MÊME
+     MOTEUR, le mouvement exactement inverse — même durée, même courbe, même
+     instant de départ. Les deux translations s'annulent à chaque image, quel
+     que soit le retard de la page, parce que la page n'y participe plus. Les
+     positions de départ et d'arrivée sont celles que le moteur de verre aurait
+     écrites lui-même (voir poserContreMonte) : à la fin, il reprend la main
+     sans un pixel d'écart.
+     Une feuille qu'on referme ou qu'on tire pendant sa montée coupe le
+     contre-mouvement avec elle : le moteur reprend alors le suivi image par
+     image, comme avant. */
+  @keyframes contreMonte{ from{ transform:translate3d(var(--gx), var(--gy0), 0); } to{ transform:translate3d(var(--gx), var(--gy1), 0); } }
+  .settings-sheet.contre .gs{ animation:contreMonte var(--tr-ouvre) forwards; }
+  .sheet-veil.closing .settings-sheet .gs{ animation:none; }
   @keyframes sheetOut{ to{ transform:translateZ(0) translateY(calc(100% - 190px)); } }
   @keyframes veilOut{ to{ opacity:0; } }
 
@@ -5000,7 +5025,7 @@ const TEXTES = {
     "Aucun gel en réserve":"No freeze in reserve",
     "1 gel en réserve":"1 freeze in reserve",
     "{n} gels en réserve":"{n} freezes in reserve",
-    "Signaler les problèmes":"Report problems",
+    "Rapports de bug":"Bug reports",
     "Ta progression n'existe que sur ce téléphone.":"Your progress lives only on this phone.",
     "Sauvegarder ma progression":"Save my progress",
     "Changer de téléphone ne te fera alors rien perdre.":"Then changing phones won't cost you anything.",
@@ -5022,7 +5047,7 @@ const TEXTES = {
     "Sauvegardé à l'instant":"Saved just now",
     "Sauvegardé il y a {n} min":"Saved {n} min ago",
     "Sauvegardé il y a {n} h":"Saved {n}h ago",
-    "L'erreur, et rien de toi.":"The error, and nothing of you.",
+    "Envoyés seuls, rien à faire":"Sent on their own, nothing to do",
     "{n} h":"{n}h",
     "{n} min":"{n} min",
     "Fait pour aujourd'hui":"Done for today",
@@ -5400,7 +5425,7 @@ const TEXTES = {
     "Aucun gel en réserve":"Sin congelaciones en reserva",
     "1 gel en réserve":"1 congelación en reserva",
     "{n} gels en réserve":"{n} congelaciones en reserva",
-    "Signaler les problèmes":"Informar de los problemas",
+    "Rapports de bug":"Informes de errores",
     "Ta progression n'existe que sur ce téléphone.":"Tu progreso solo existe en este teléfono.",
     "Sauvegarder ma progression":"Guardar mi progreso",
     "Changer de téléphone ne te fera alors rien perdre.":"Así, cambiar de teléfono no te hará perder nada.",
@@ -5422,7 +5447,7 @@ const TEXTES = {
     "Sauvegardé à l'instant":"Guardado ahora mismo",
     "Sauvegardé il y a {n} min":"Guardado hace {n} min",
     "Sauvegardé il y a {n} h":"Guardado hace {n} h",
-    "L'erreur, et rien de toi.":"El error, y nada de ti.",
+    "Envoyés seuls, rien à faire":"Se envían solos, nada que hacer",
     "{n} h":"{n} h",
     "{n} min":"{n} min",
     "Fait pour aujourd'hui":"Hecho por hoy",
@@ -5816,6 +5841,11 @@ document.addEventListener("pointerdown", (e)=>{
     const teinte = getComputedStyle(b).getPropertyValue("--press-tint").trim();
     if(teinte) b.style.setProperty("--press-tint", teinte);
   }catch(e){}
+  /* L'ENCRE PART DU DOIGT : sur une puce de choix, on note où il s'est posé.
+     Le voile d'appui et, si la puce est choisie, l'encre en partiront. */
+  if(b.classList.contains("chip") || b.classList.contains("len-chip")){
+    try{ encrerPuce(b, e.clientX, e.clientY); b._doigt = performance.now(); }catch(err){}
+  }
   ondeCourante = b; ondePleine = false; ondeTenue = true;
   b.addEventListener("animationend", ondeFinie);
   b.classList.add("onde");
@@ -5888,20 +5918,22 @@ const ICONS = {
   /* Une bulle et un point d'exclamation : « dis-nous ce qui a cassé ». */
   bogue: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 14.2a2.4 2.4 0 0 1-2.4 2.4H7.6L3.4 20.4V5.4A2.4 2.4 0 0 1 5.8 3h12.8A2.4 2.4 0 0 1 21 5.4z"/><path d="M12 7.2v4.1"/><path d="M12 13.9v0.1"/></svg>`,
   gear: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3.2"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 1 1-4 0v-.09a1.65 1.65 0 0 0-1.08-1.51 1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 1 1 0-4h.09a1.65 1.65 0 0 0 1.51-1.08 1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33h.08a1.65 1.65 0 0 0 1-1.51V3a2 2 0 1 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82v.08a1.65 1.65 0 0 0 1.51 1H21a2 2 0 1 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1Z"/></svg>`,
-  /* ===== UNE NOTE, PAS DEUX =====
+  /* ===== UNE NOTE, PAS DEUX — ET UNE NOTE ENTIÈRE =====
      « Cette icône-là, je trouve que le dessin est trop vieillot, pas assez au
      goût d'aujourd'hui, minimaliste. » C'était la double croche barrée (♫) :
      deux têtes, une barre, la même silhouette que les lecteurs de fichiers
-     MIDI des années 1990. Elle porte trois formes là où il en faut une.
-     Une seule note : une tête, une hampe, un drapeau court. La tête reste un
-     ANNEAU et non un disque plein, parce que toutes les autres icônes de la
-     feuille sont des traits — la cloche, le livre, l'enveloppe. Une tête
-     pleine aurait fait une tâche noire au milieu d'une famille de contours.
-     (J'ai aussi essayé les barres d'égaliseur, plus modernes encore : elles
-     disent « du son sort », pas « de la musique », et la rangée juste en
-     dessous porte déjà un haut-parleur. Deux fois le même dessin pour deux
-     réglages différents, c'est pire qu'une icône démodée.) */
-  music: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M10.2 17.4V5.2l7.8-1.7v3.9"/><circle cx="7.1" cy="17.4" r="3.1"/></svg>`,
+     MIDI des années 1990. On l'avait réduite à une seule note — mais en
+     gardant la BARRE DROITE en biais de la double croche, avec un petit
+     retour au bout : la moitié d'un ♫. « Il est coupé en deux », et c'était
+     exactement ça.
+     Celle-ci est une vraie croche seule (♪) : une tête PLEINE, une hampe, un
+     drapeau qui s'arrondit. La tête était un anneau « pour ressembler aux
+     autres traits » ; posée entre la cloche et le haut-parleur, l'anneau se
+     lisait comme une lettre « d ». Pleine, elle se lit comme une note du
+     premier coup d'œil, et le trait de la hampe garde la famille. (Les barres
+     d'égaliseur, essayées avant, disent « du son sort » et doublaient le
+     haut-parleur de la rangée du dessous.) */
+  music: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="9" cy="17.2" r="3" fill="currentColor"/><path d="M12 17.2V4"/><path d="M12 4c2.2.6 5 2.1 5 5.4"/></svg>`,
   share: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 14.5V3.2"/><polyline points="8.2 6.7 12 3 15.8 6.7"/><path d="M7.2 10.4H6a2 2 0 0 0-2 2V19a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-6.6a2 2 0 0 0-2-2h-1.2"/></svg>`,
   /* La flèche des DEUX boutons « Partager » (réglages et fin de partie). Trait
      plus franc que l'icône ci-dessus : elle est posée en blanc sur la pastille
@@ -7742,7 +7774,7 @@ const SUPABASE_ANON_KEY = "sb_publishable_FDJ_R0foC7uIeHmxVrj6rA_2NeIgW2a";
    remontée d'un téléphone ne vaut rien si on ne sait pas QUELLE version
    tournait. Elle doit rester égale au CACHE de sw.js — c'est ce que vérifie
    banc-essai/version.js, qui refuse de laisser publier les deux en désaccord. */
-const VERSION_JEU = "v300";
+const VERSION_JEU = "v301";
 
 /* ===================== QUAND ÇA CASSE CHEZ UN JOUEUR =====================
    « Si quelque chose casse chez cinq d'entre eux sur un modèle de téléphone
@@ -8798,7 +8830,7 @@ function leaveOnline(){
 function openOnline(){
   net.error="";
   if(!navigator.onLine){
-    showModal({ title:T("Hors connexion"), message:T("Le mode en ligne nécessite Internet. Les modes Solo et Groupe restent jouables sans connexion."), okLabel:T("Compris"), cancelLabel:T("Fermer") });
+    showModal({ title:T("Hors connexion"), message:T("Le mode en ligne nécessite Internet. Les modes Solo et Groupe restent jouables sans connexion."), okLabel:T("Compris"), hideCancel:true });
     return;
   }
   bumpModeUse("online");
@@ -8822,6 +8854,13 @@ function closeModal(){
   v.classList.add("closing");
   setTimeout(()=>{ if(v.parentNode) v.remove(); }, msFerme() + 20);
 }
+/* ===== UNE FENÊTRE QUI NE FAIT QUE FERMER N'A QU'UN BOUTON =====
+   « Hors connexion » montrait « Fermer » ET « Compris », « Connexion perdue »
+   « Fermer » ET « OK », l'erreur de photo « Annuler » ET « OK » : deux
+   boutons qui faisaient exactement la même chose. Un choix qui n'en est pas
+   un oblige à lire deux fois pour rien — et laisse croire qu'« Annuler »
+   annulerait quelque chose. Deux boutons seulement quand ils mènent à deux
+   endroits différents (Quitter / Rester) ; sinon « hideCancel ». */
 function showModal(opts){
   closeModal();
   const veil = document.createElement("div");
@@ -9189,6 +9228,50 @@ function sonderOuverture(f){
   };
   requestAnimationFrame(tic);
 }
+/* ===== LE CONTRE-MOUVEMENT DU DÉCOR (voir « contreMonte » dans la feuille de
+   style) =====
+   Au moment du départ, la feuille est garée en bas de son trajet et le
+   moteur de verre a posé chaque couche .gs pour CETTE position. On lit donc
+   sa valeur (départ du contre-mouvement), et on calcule celle qu'il écrira
+   quand la feuille sera arrivée (fin) : même formule que le moteur —
+   arrondie, avec un décalage entier — appliquée au point d'arrivée. La fin du
+   contre-mouvement tombe donc exactement sur la valeur du moteur au repos. */
+function poserContreMonte(f){
+  const dy = f.getBoundingClientRect().height - 220;   // le départ de sheetIn : translateY(100% - 220px)
+  if(!(dy > 0)) return;
+  let n = 0;
+  f.querySelectorAll(".gs").forEach(gs=>{
+    const el = gs.parentElement;
+    const m = /^translate3d\((-?[\d.]+)px,\s*(-?[\d.]+)px,\s*0(?:px)?\)$/.exec(String(gs.style.transform || "").trim());
+    if(!m || !el) return;
+    const haut = el.getBoundingClientRect().top;
+    const gx = parseFloat(m[1]), gy0 = parseFloat(m[2]);
+    const gy1 = gy0 + Math.round(-haut + dy) - Math.round(-haut);
+    gs.style.setProperty("--gx", gx + "px");
+    gs.style.setProperty("--gy0", gy0 + "px");
+    gs.style.setProperty("--gy1", gy1 + "px");
+    gs._contre = [gx, gy1];
+    el._contre = true;
+    n++;
+  });
+  if(n) f.classList.add("contre");
+}
+/* À l'arrivée (ou si la montée est interrompue) : chaque couche reçoit la
+   valeur de repos, et le moteur reprend la main. */
+function deposerContreMonte(f){
+  if(!f || !f.classList.contains("contre")) return;
+  f.querySelectorAll(".gs").forEach(gs=>{
+    const el = gs.parentElement;
+    if(gs._contre){
+      const t = "translate3d(" + Math.round(gs._contre[0]) + "px," + Math.round(gs._contre[1]) + "px,0)";
+      gs.style.transform = t;
+      if(el) el._gsT = t;
+      gs._contre = null;
+    }
+    if(el) el._contre = false;
+  });
+  f.classList.remove("contre");
+}
 function monterLaFeuille(veil){
   const f = veil && veil.querySelector ? veil.querySelector(".settings-sheet") : null;
   if(!f) return;
@@ -9229,6 +9312,7 @@ function monterLaFeuille(veil){
            avec   médiane 16,7 ms   pire 106,2 ms   1 image au-dessus de 34 ms
        Quatre surfaces relues pendant huit dixièmes de seconde, ça ne se voit
        nulle part. */
+    try{ poserContreMonte(f); }catch(e){}
     f.classList.add("monte");
     /* ===== ET UN DERNIER RECALAGE À LA VRAIE FIN DU MOUVEMENT =====
        Le moteur est armé pour une DURÉE DEVINÉE (la montée plus 300 ms). Tant
@@ -9261,10 +9345,14 @@ function monterLaFeuille(veil){
       if(e && e.propertyName && e.propertyName !== "transform") return;
       f.removeEventListener("transitionend", fini);
       f.removeEventListener("animationend", fini);
+      f.removeEventListener("animationcancel", fini);
+      try{ deposerContreMonte(f); }catch(err){}
       try{ glassRelayout(); queueGlassSync(); }catch(err){}
     };
     f.addEventListener("transitionend", fini);
     f.addEventListener("animationend", fini);
+    /* Montée coupée (fermeture, doigt qui tire) : même dépose. */
+    f.addEventListener("animationcancel", fini);
   };
   requestAnimationFrame(()=>{ requestAnimationFrame(lacher); });
   /* FILET. requestAnimationFrame ne tourne PAS dans un onglet caché : si le
@@ -10142,6 +10230,7 @@ function attachSheetDrag(feuille, fermer){
       dy = e.clientY - y0;
       /* MAINTENANT seulement on coupe l'animation d'entrée — sinon elle
          reprendrait la main sur le transform qu'on va poser. */
+      try{ deposerContreMonte(feuille); }catch(e){}
       feuille.style.animation = "none";
       feuille.classList.add("dragging");
       try{ glassRelayout(); }catch(err){}   // positions à jour avant de suivre le doigt
@@ -10440,11 +10529,17 @@ function reglagesHtml(){
            régler, et il tient sur une ligne.
            ELLE RESTE VISIBLE, ET C'EST VOULU. Quelque chose quitte le
            téléphone du joueur. Même sans rien de personnel, il doit pouvoir
-           dire non — et les stores demanderont cette case. -->
+           dire non — et les stores demanderont cette case.
+           ===== ET ELLE DIT CE QU'ELLE FAIT, PAS CE QU'IL FAUDRAIT FAIRE =====
+           « Signaler les problèmes » se lisait comme une CONSIGNE : les gens
+           comprenaient qu'ils devaient, eux, signaler chaque problème. Et
+           « L'erreur, et rien de toi » ne les aidait pas à comprendre. La
+           rangée nomme donc la chose (des rapports de bug) et dit tout de
+           suite qu'ils partent seuls : le joueur n'a rien à faire. -->
       <div class="set-row">
         <span class="set-ico rap">${ICONS.bogue}</span>
-        <span class="set-txt"><b>${T("Signaler les problèmes")}</b><small>${T("L'erreur, et rien de toi.")}</small></span>
-        <button class="switch${settings.rapport?' on':''}" id="swRapport" role="switch" aria-checked="${!!settings.rapport}" aria-label="${T("Signaler les problèmes")}" onclick="setRapport(!settings.rapport)"></button>
+        <span class="set-txt"><b>${T("Rapports de bug")}</b><small>${T("Envoyés seuls, rien à faire")}</small></span>
+        <button class="switch${settings.rapport?' on':''}" id="swRapport" role="switch" aria-checked="${!!settings.rapport}" aria-label="${T("Rapports de bug")}" onclick="setRapport(!settings.rapport)"></button>
       </div>
       <button class="share-btn" onclick="shareGame()">
         <span class="share-ico">${ICONS.shareUp}</span>
@@ -15382,25 +15477,141 @@ function renameTeam(inp){
    numérotation s'arrête à 5). On le fait à la FIN de la saisie, pas pendant :
    voir les champs voisins se renuméroter lettre après lettre serait pénible. */
 function renameSettle(){ syncTeamRows(); }
-/* ===== LE ROUGE PASSE D'UNE PUCE À L'AUTRE, D'UN SEUL GESTE =====
-   Trois rangées de réglages et trois du salon faisaient toutes la même chose
-   à la main : basculer une classe sur chaque puce du groupe. Elles passent
-   maintenant par ici, pour que la puce qu'on quitte se VIDE exactement pendant
-   que celle qu'on choisit se REMPLIT — même courbe, même durée que l'onde
-   d'appui. Celles qui ne changent pas d'état ne bougent pas : rejouer le
-   remplissage sur une puce déjà choisie ferait clignoter tout le groupe. */
 function dureeOnde(){
   const v = getComputedStyle(document.documentElement).getPropertyValue("--onde-duree").trim();
   const n = parseFloat(v);
   if(!isFinite(n)) return 240;
   return /ms$/.test(v) ? n : n * 1000;
 }
+/* Une durée déclarée en CSS, lue sur l'élément lui-même (en ms). */
+function dureeCss(el, nom, defaut){
+  try{
+    const v = getComputedStyle(el).getPropertyValue(nom).trim();
+    const n = parseFloat(v);
+    if(isFinite(n)) return /ms$/.test(v) ? n : n * 1000;
+  }catch(e){}
+  return defaut;
+}
+/* ===== OÙ NAÎT LA GOUTTE, ET JUSQU'OÙ ELLE DOIT ALLER =====
+   (Voir « L'ENCRE » dans la feuille de style.) On pose sur la puce le point
+   de départ, en coordonnées de la puce, et le RAYON du disque : assez grand
+   pour que son cœur plein (82 % du rayon) couvre le coin le plus éloigné, plus
+   un pixel. Les coordonnées sont ramenées à la taille de mise en page de la
+   puce : si elle est en train de s'enfoncer sous le doigt (scale), la goutte
+   ne doit pas en être décalée. Sans point (clavier, appel du jeu), la goutte
+   naît au centre. */
+const ENCRE_COEUR = 0.82;
+function encrerPuce(c, clientX, clientY){
+  const W = c.offsetWidth, H = c.offsetHeight;
+  let x = W / 2, y = H / 2;
+  if(clientX != null && clientY != null){
+    const r = c.getBoundingClientRect();
+    if(r.width > 0 && r.height > 0){
+      x = Math.min(W, Math.max(0, (clientX - r.left) * W / r.width));
+      y = Math.min(H, Math.max(0, (clientY - r.top) * H / r.height));
+    }
+  }
+  return poserEncre(c, x, y);
+}
+function poserEncre(c, x, y){
+  const W = c.offsetWidth, H = c.offsetHeight;
+  const loin = Math.max(Math.hypot(x, y), Math.hypot(W - x, y), Math.hypot(x, H - y), Math.hypot(W - x, H - y));
+  const rayon = loin / ENCRE_COEUR + 1;
+  c.style.setProperty("--encre-x", x.toFixed(1) + "px");
+  c.style.setProperty("--encre-y", y.toFixed(1) + "px");
+  c.style.setProperty("--encre-r", rayon.toFixed(1) + "px");
+  return { x, y, rayon };
+}
+/* La courbe d'étalement de l'encre (la même que dans la feuille de style) :
+   à quel instant le disque atteint-il une échelle donnée ? On résout la
+   courbe de Bézier plutôt que de deviner : c'est cet instant qui dit quand le
+   libellé peut passer au blanc sans jamais être blanc sur crème. */
+function instantBezier(x1, y1, x2, y2, cible){
+  const bx = (u)=> 3*(1-u)*(1-u)*u*x1 + 3*(1-u)*u*u*x2 + u*u*u;
+  const by = (u)=> 3*(1-u)*(1-u)*u*y1 + 3*(1-u)*u*u*y2 + u*u*u;
+  if(cible <= 0) return 0;
+  if(cible >= 1) return 1;
+  let a = 0, b = 1;
+  for(let i = 0; i < 40; i++){ const m = (a + b) / 2; if(by(m) < cible) a = m; else b = m; }
+  return bx((a + b) / 2);
+}
+/* Quand l'encre a-t-elle couvert TOUT le libellé ? Le libellé, c'est la boîte
+   des nœuds de texte de la puce — pas ses enfants de verre, qui débordent
+   très largement de la puce. */
+function delaiLibelle(c, o, dureeMs){
+  const r = c.getBoundingClientRect();
+  const kx = c.offsetWidth / (r.width || 1), ky = c.offsetHeight / (r.height || 1);
+  let g = Infinity, h = Infinity, d = -Infinity, bas = -Infinity;
+  const w = document.createTreeWalker(c, NodeFilter.SHOW_TEXT);
+  for(let n = w.nextNode(); n; n = w.nextNode()){
+    if(!n.nodeValue || !n.nodeValue.trim()) continue;
+    const rg = document.createRange(); rg.selectNodeContents(n);
+    for(const b of rg.getClientRects()){
+      g = Math.min(g, (b.left - r.left) * kx); d = Math.max(d, (b.right - r.left) * kx);
+      h = Math.min(h, (b.top - r.top) * ky); bas = Math.max(bas, (b.bottom - r.top) * ky);
+    }
+  }
+  if(!isFinite(g)) return Math.round(dureeMs * 0.4);
+  const besoin = Math.max(Math.hypot(g - o.x, h - o.y), Math.hypot(d - o.x, h - o.y),
+                          Math.hypot(g - o.x, bas - o.y), Math.hypot(d - o.x, bas - o.y));
+  /* L'échelle à atteindre pour que le CŒUR plein couvre le libellé, ramenée
+     à la progression de la courbe (l'encre part de l'échelle 0,03). */
+  const echelle = besoin / (o.rayon * ENCRE_COEUR);
+  const prog = (echelle - 0.03) / 0.97;
+  const t = instantBezier(0.3, 0.55, 0.25, 1, Math.min(1, Math.max(0, prog)));   // la courbe d'encreIn
+  return Math.round(Math.min(dureeMs, Math.max(40, t * dureeMs + 16)));
+}
+/* ===== LE ROUGE PASSE D'UNE PUCE À L'AUTRE, D'UN SEUL GESTE =====
+   Trois rangées de réglages et trois du salon faisaient toutes la même chose
+   à la main : basculer une classe sur chaque puce du groupe. Elles passent
+   par ici, pour que la puce qu'on quitte se VIDE pendant que celle qu'on
+   choisit se REMPLIT. Celles qui ne changent pas d'état ne bougent pas :
+   rejouer le remplissage sur une puce déjà choisie ferait clignoter le
+   groupe. L'encre de la nouvelle puce naît sous le doigt s'il vient de s'y
+   poser ; celle de l'ancienne se retire vers le côté de la nouvelle. */
 function basculerChoix(selecteur, classe, k){
-  const duree = dureeOnde();
-  document.querySelectorAll(selecteur).forEach(c=>{
+  const puces = [...document.querySelectorAll(selecteur)];
+  const nouvelle = puces.find(c => c.dataset.k === k) || null;
+  /* Lu UNE fois, avant de toucher à quoi que ce soit : chaque puce traitée
+     oublie son doigt, et l'ordre du DOM ne doit rien décider. */
+  const doigt = !!(nouvelle && nouvelle._doigt && performance.now() - nouvelle._doigt < 1500);
+  const centre = (el)=>{ const r = el.getBoundingClientRect(); return [r.left + r.width / 2, r.top + r.height / 2]; };
+  puces.forEach(c=>{
     const avant = c.classList.contains(classe);
     const apres = c.dataset.k === k;
     if(avant === apres) return;
+    let duree;
+    try{
+      if(apres){
+        /* Le point posé au contact est déjà sur la puce ; sinon, le centre. */
+        const o = doigt ? { x: parseFloat(c.style.getPropertyValue("--encre-x")), y: parseFloat(c.style.getPropertyValue("--encre-y")),
+                             rayon: parseFloat(c.style.getPropertyValue("--encre-r")) } : null;
+        const ok = o && isFinite(o.x) && isFinite(o.y) && isFinite(o.rayon);
+        const pose = ok ? o : encrerPuce(c);
+        duree = dureeCss(c, "--encre-duree", 500);
+        c.style.setProperty("--encre-texte", delaiLibelle(c, pose, duree) + "ms");
+      } else {
+        /* SOUS UN DOIGT, LA PUCE QUITTÉE CÈDE UN PEU PLUS VITE. Le voile
+           d'appui rosit déjà la nouvelle puce avant même que l'encre parte :
+           l'œil reçoit du rouge plus tôt qu'au clic. Mesuré sur la rangée
+           « durée », doigt au quart gauche : la rangée montait à 120 % de son
+           rouge avec la même sortie qu'au clic, 115 % en cédant 15 % plus vite.
+           Au clic (clavier, appel du jeu), il n'y a pas de voile : la sortie
+           garde son rythme, sinon la rangée se creuserait. */
+        c.style.setProperty("--encre-k", doigt ? "0.85" : "1");
+        /* Vers la nouvelle : le milieu du bord qui lui fait face. */
+        const W = c.offsetWidth, H = c.offsetHeight;
+        let x = W / 2, y = H / 2;
+        if(nouvelle){
+          const [ax, ay] = centre(c), [nx, ny] = centre(nouvelle);
+          if(Math.abs(nx - ax) >= Math.abs(ny - ay)) x = nx > ax ? W : 0;
+          else y = ny > ay ? H : 0;
+        }
+        poserEncre(c, x, y);
+        duree = dureeCss(c, "--encre-sortie", 300) * (doigt ? 0.85 : 1);
+      }
+    }catch(e){ duree = 500; }
+    c._doigt = 0;
     /* Une animation ne se rejoue pas si sa classe est déjà là : on la retire,
        on force le calcul, on la remet. */
     c.classList.remove("remplit", "devide");
@@ -19250,7 +19461,7 @@ async function poserPhoto(fichier){
   }catch(e){
     /* Un échec silencieux serait pire que pas de photo du tout : le joueur
        recommencerait sans savoir pourquoi. */
-    try{ showModal({ title:T("Photo de profil"), message:T("Cette image n'a pas pu être lue.") }); }catch(err){}
+    try{ showModal({ title:T("Photo de profil"), message:T("Cette image n'a pas pu être lue."), okLabel:T("Compris"), hideCancel:true }); }catch(err){}
     return false;
   }finally{
     try{ if(img && img.close) img.close(); }catch(e){}
@@ -19379,7 +19590,7 @@ async function ouvrirCadrage(fichier){
     monterCadrage(toile, w, h);
     return true;
   }catch(e){
-    try{ showModal({ title:T("Photo de profil"), message:T("Cette image n'a pas pu être lue.") }); }catch(err){}
+    try{ showModal({ title:T("Photo de profil"), message:T("Cette image n'a pas pu être lue."), okLabel:T("Compris"), hideCancel:true }); }catch(err){}
     return false;
   }finally{
     try{ if(img && img.close) img.close(); }catch(e){}
@@ -19486,7 +19697,7 @@ function validerCadrage(){
   const x0 = -c.tx / c.s, y0 = -c.ty / c.s, cote = c.F / c.s;
   const url = carrePhoto(c.img, x0, y0, cote);
   const ok = enregistrerPhoto(url);
-  if(!ok){ try{ showModal({ title:T("Photo de profil"), message:T("Cette image n'a pas pu être lue.") }); }catch(e){} }
+  if(!ok){ try{ showModal({ title:T("Photo de profil"), message:T("Cette image n'a pas pu être lue."), okLabel:T("Compris"), hideCancel:true }); }catch(e){} }
   fermerCadrage();
   return ok;
 }
@@ -20634,6 +20845,9 @@ function queueGlassXF(){
     if(gs.style.display === "none") gs.style.display = "";
     if(!el.classList.contains("has-gs")) el.classList.add("has-gs");
     if(el._gsSize !== bgSize){ el._gsSize = bgSize; gs.style.width = iw + "px"; gs.style.height = ih + "px"; gs.style.backgroundSize = bgSize; }
+    /* Pendant la montée d'une feuille, c'est le contre-mouvement qui tient
+       le décor (voir contreMonte) : rien à relire, rien à écrire. */
+    if(el._contre) continue;
     /* ===== DEUX DÉFILEMENTS EMPILÉS, ET UN SEUL CALCUL =====
        Le raccourci ci-dessous déduit la position d'une surface de son offset en
        page moins le défilement de #app. Il est exact — et faux dès qu'un
@@ -21847,7 +22061,7 @@ setTimeout(sonderReseau, 5000);
 window.addEventListener("offline", ()=>{
   if(String(state.screen).indexOf("online") === 0){
     leaveOnline();
-    showModal({ title:T("Connexion perdue"), message:T("Le mode en ligne a été interrompu. Tu peux continuer en Solo ou en Groupe."), okLabel:"OK", cancelLabel:T("Fermer") });
+    showModal({ title:T("Connexion perdue"), message:T("Le mode en ligne a été interrompu. Tu peux continuer en Solo ou en Groupe."), okLabel:T("Compris"), hideCancel:true });
   }
 });
 /* Plein écran permanent : activé dès le premier toucher, et rétabli au

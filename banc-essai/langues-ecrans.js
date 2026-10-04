@@ -571,7 +571,7 @@ const ouvrirLaLangue = async (p, lg) => {
       try { achToastPause = false; achToastBusy = false; } catch(e){}
       annoncerGel(); }],
     ['Connexion perdue',   () => { __fermerTout();
-      showModal({ title:T('Connexion perdue'), message:T('Le mode en ligne a été interrompu. Tu peux continuer en Solo ou en Groupe.'), okLabel:'OK', cancelLabel:T('Fermer') }); }],
+      showModal({ title:T('Connexion perdue'), message:T('Le mode en ligne a été interrompu. Tu peux continuer en Solo ou en Groupe.'), okLabel:T('Compris'), hideCancel:true }); }],
     /* Le guide d'installation quand le navigateur propose lui-même d'installer. */
     ['Guide · invitation', () => { __fermerTout();
       invitePWA = { prompt(){} }; openFsGuide(); invitePWA = null; }],
