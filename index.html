@@ -4755,7 +4755,18 @@
   /* Le petit mot peut être une phrase entière (« Pas d'adresse… ») : il passe
      à la ligne au lieu de sortir de l'écran. */
   .mini-toast{ max-width:calc(100vw - 2.4rem); text-align:center; }
-  .parcours-ecran .semaine{ margin:0 auto var(--e-3); }
+  /* LA SEMAINE DANS LA CARTE DES CHIFFRES (Progression, v303). La même grappe
+     compacte qu'à l'accueil ; seule la matière change : posée sur le verre
+     clair et non plus sur la photo, l'encre remplace le blanc et son ombre.
+     L'or des jours joués et le bleu des jours gelés ne bougent pas — ils ont
+     leur propre matière. Le jour restant reste une pastille, jamais cernée. */
+  .parcours-sum.avec-semaine{ flex-direction:column; align-items:stretch; gap:0; padding-top:0.85rem; }
+  .parcours-sum.avec-semaine .semaine{ margin:0 auto 1.15rem; }
+  .parcours-sum .sem-t{ color:var(--ink-soft); text-shadow:none; }
+  .parcours-sum .sem-t.afaire{ color:var(--ink); }
+  .parcours-sum .sj:not(.fait):not(.gele){ background:rgba(34,26,16,0.07); color:var(--ink-soft); -webkit-backdrop-filter:none; backdrop-filter:none; }
+  .parcours-sum .sj.auj:not(.fait):not(.gele){ background:rgba(34,26,16,0.13); color:var(--ink); }
+  .parcours-sum .sem-flamme.eteinte{ --glass-tint: rgba(34,26,16,0.07); color:var(--ink-soft); text-shadow:none; }
 
   /* ---------- GLISSER DE CÔTÉ ----------
      Accueil, Groupes, puis un groupe : trois pièces côte à côte. On y va
@@ -5212,7 +5223,7 @@ const TEXTES = {
     "livres":"books",
     "bonnes réponses":"correct answers",
     "livres maîtrisés":"books mastered",
-    "meilleure série":"best streak",
+    "bonnes d'affilée":"in a row",
     "Touche un livre pour t'entraîner dessus":"Tap a book to practice it",
     "Joueurs ou équipes":"Players or teams",
     "Ajouter un joueur ou une équipe":"Add a player or team",
@@ -5814,7 +5825,7 @@ const TEXTES = {
     "livres":"libros",
     "bonnes réponses":"respuestas correctas",
     "livres maîtrisés":"libros dominados",
-    "meilleure série":"mejor racha",
+    "bonnes d'affilée":"seguidas",
     "Touche un livre pour t'entraîner dessus":"Toca un libro para practicarlo",
     "Joueurs ou équipes":"Jugadores o equipos",
     "Ajouter un joueur ou une équipe":"Añadir un jugador o equipo",
@@ -8491,7 +8502,7 @@ const SUPABASE_ANON_KEY = "sb_publishable_FDJ_R0foC7uIeHmxVrj6rA_2NeIgW2a";
    remontée d'un téléphone ne vaut rien si on ne sait pas QUELLE version
    tournait. Elle doit rester égale au CACHE de sw.js — c'est ce que vérifie
    banc-essai/version.js, qui refuse de laisser publier les deux en désaccord. */
-const VERSION_JEU = "v302";
+const VERSION_JEU = "v303";
 
 /* ===================== QUAND ÇA CASSE CHEZ UN JOUEUR =====================
    « Si quelque chose casse chez cinq d'entre eux sur un modèle de téléphone
@@ -17105,14 +17116,22 @@ function renderParcours(){
       <span class="ach-prog">${on?T("Débloqué"):cur+" / "+a.max}</span>
     </button>`;
   };
+  /* LA SEMAINE EN TÊTE DE LA CARTE DES CHIFFRES (v303). « Pour ici le truc des
+     jours et des flammes, tu penses qu'il est vraiment à la meilleure place ? »
+     Pas tout à fait : c'était le seul bloc de l'écran hors d'une carte, posé en
+     blanc sur le ciel, et sa flamme (des JOURS d'affilée) tombait pile
+     au-dessus de « meilleure série » (des RÉPONSES d'affilée) — 22 au-dessus
+     de 21, on lisait un record plus bas que la série en cours. La rangée entre
+     donc dans la carte, inchangée ; le record s'appelle « bonnes d'affilée ».
+     « Oui j'adore. » */
   el.innerHTML = `
     ${renderHeader(T("Progression"), true)}
-    ${semaineHtml()}
-    <div class="card parcours-sum">
+    <div class="card parcours-sum avec-semaine">
+      ${semaineHtml()}
       <div class="ps-cells">
         <div><b>${d.mastered}<i>/66</i></b><small>${T("livres maîtrisés")}</small></div>
         <div><b>${p.totalCorrect}</b><small>${T("bonnes réponses")}</small></div>
-        <div><b>${p.bestStreak}</b><small>${T("meilleure série")}</small></div>
+        <div><b>${p.bestStreak}</b><small>${T("bonnes d'affilée")}</small></div>
       </div>
     </div>
     ${(()=>{
