@@ -80,9 +80,14 @@ module.exports = `
         auth:{
           getSession:function(){ return Promise.resolve({ data:{ session:session } }); },
           onAuthStateChange:function(cb){ ecouteurs.push(cb); return { data:{ subscription:{ unsubscribe:function(){} } } }; },
-          signInWithOtp:function(o){ window.__faux.courriel = o.email; return Promise.resolve({ error:null }); },
+          /* erreurEnvoi / erreurCode : la panne que le banc veut voir, telle
+             que Supabase la rend (status, code, name). */
+          signInWithOtp:function(o){
+            if(window.__faux.erreurEnvoi) return Promise.resolve({ data:{ user:null, session:null }, error:window.__faux.erreurEnvoi });
+            window.__faux.courriel = o.email; return Promise.resolve({ error:null }); },
           verifyOtp:function(o){
-            if(String(o.token) !== window.__faux.codeAttendu) return Promise.resolve({ error:{ message:"Token has expired or is invalid" } });
+            if(window.__faux.erreurCode) return Promise.resolve({ data:{ user:null, session:null }, error:window.__faux.erreurCode });
+            if(String(o.token) !== window.__faux.codeAttendu) return Promise.resolve({ error:{ name:"AuthApiError", status:403, code:"otp_expired", message:"Token has expired or is invalid" } });
             session = { user:{ id:"11111111-2222-3333-4444-555555555555", email:o.email } };
             previens("SIGNED_IN");
             return Promise.resolve({ error:null });
