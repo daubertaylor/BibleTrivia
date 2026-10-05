@@ -47,6 +47,32 @@ Dans chacun, remplace le corps par quelque chose comme :
 Le lien peut rester en dessous si tu veux, ça ne gêne pas — ce qui compte,
 c'est que `{{ .Token }}` soit là.
 
+### 2b. L'ENVOI DES COURRIELS (SMTP) — sans lui, personne d'autre que toi ne reçoit de code
+
+Le service de courriel intégré à Supabase est un service **d'essai** : il
+n'envoie **qu'aux membres de ton équipe Supabase**, et **deux messages par
+heure** au plus (documentation Supabase, « Send emails with custom SMTP »). Toi,
+tu recevras ton code ; un joueur, jamais. Il faut donc brancher un vrai
+serveur d'envoi.
+
+Le plus simple sans nom de domaine : **une adresse Gmail dédiée à Yada**
+(elle peut servir aussi d'adresse de contact pour les stores).
+
+1. Sur ce compte Google : **Sécurité → Validation en deux étapes** → l'activer.
+2. Puis `myaccount.google.com/apppasswords` → nom « Supabase » → **Créer** →
+   Google affiche un mot de passe de 16 lettres. **Il ne va nulle part
+   ailleurs que dans Supabase** — ni dans le dépôt, ni dans une conversation.
+3. Supabase → **Authentication → Emails → SMTP Settings** → **Enable custom
+   SMTP** :
+   - Sender email : l'adresse Gmail · Sender name : `Yada`
+   - Host : `smtp.gmail.com` · Port : `465`
+   - Username : l'adresse Gmail · Password : les 16 lettres, sans espaces
+   - **Save**.
+
+Gmail envoie jusqu'à 500 messages par jour : largement de quoi faire pour
+vingt à cinquante joueurs. Autres services possibles (Brevo, Resend…), mais
+ils demandent de vérifier un expéditeur ou un domaine.
+
 ### 3. Google (facultatif)
 
 Authentication → **Providers** → Google : colle l'identifiant et le secret
