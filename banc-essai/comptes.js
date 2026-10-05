@@ -134,7 +134,11 @@ const photo = (p) => p.evaluate(()=> sauvegardeIci());
     await versProfil(p);
     await p.waitForTimeout(900);
     const t = await p.evaluate(()=>{ const c=document.getElementById('compteCarte'); return c ? c.textContent : ''; });
-    v("table présente : la carte propose de sauvegarder", /Sauvegarder ma progression/.test(t), t.slice(0,90));
+    /* v305 : au repos, la carte est une rangée « Se connecter », la raison
+       en dessous (« Ta progression n'existe que sur ce téléphone. »). */
+    v("table présente : la carte propose de se connecter", /Se connecter/.test(t) && /n'existe que sur ce téléphone/.test(t), t.replace(/\s+/g,' ').trim().slice(0,90));
+    const estBouton = await p.evaluate(()=>{ const c=document.getElementById('compteCarte'); return !!c && c.tagName === 'BUTTON' && !c.querySelector('.btn-primary'); });
+    v("…une rangée de verre, pas un second bouton orange", estBouton);
     await p.context().close();
   }
 
@@ -277,7 +281,7 @@ const photo = (p) => p.evaluate(()=> sauvegardeIci());
                                          texte: (document.getElementById('compteCarte')||{}).textContent || '' }));
     v("déconnecté", etat.connecte === false);
     v("SE DÉCONNECTER N'A RIEN EFFACÉ", perdus.length === 0, perdus.slice(0,4).join(' | '));
-    v("et on repropose de sauvegarder", /Sauvegarder ma progression/.test(etat.texte));
+    v("et on repropose de se connecter", /Se connecter/.test(etat.texte));
     await p.context().close();
   }
 
