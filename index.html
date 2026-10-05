@@ -18699,6 +18699,7 @@ function appliquerSauvegarde(recue){
    tout le monde : rien de ce qui se synchronise ne change une règle, une
    question ou un barème. */
 const CLE_SONDE = "bt_compte_ok";
+const CLE_GOOGLE = "bt_google_ok";   // Google ouvert côté Supabase ? (voir sonderGoogle)
 /* DEUX DURÉES, ET PAS UNE. « La table existe » est vrai pour toujours : on le
    garde une journée. « Elle n'existe pas encore » est vrai jusqu'à la minute
    où Taylor lance le SQL — le garder une journée, c'est laisser des joueurs
@@ -18715,12 +18716,49 @@ const compte = {
   message: "",
   occupe: false,
   derniere: 0,
-  google: true,
+  google: googleConnu() === true,   // Google ouvert côté Supabase ? (voir sonderGoogle)
   minuteur: null
 };
 /* Le bouton Google n'a de sens que là où le retour du navigateur revient
    jusqu'à nous. Dans une app installée sur iOS, il ne revient pas. */
 function googleUtile(){ return compte.google && !(IS_IOS && isStandalone); }
+/* ===== GOOGLE N'EST PROPOSÉ QUE S'IL EST OUVERT =====
+   « Ajoute le bouton pour se connecter avec Gmail aussi. » En regardant, le
+   bouton était là — et cassé : signInWithOAuth ne rend AUCUNE erreur quand
+   le fournisseur est fermé, il envoie le navigateur chez Supabase, qui
+   répond une page brute (mesuré le 05/10/2026 : HTTP 400,
+   « Unsupported provider: provider is not enabled », du JSON à l'écran).
+   Le filet de connexionGoogle() ne servait donc jamais.
+   On demande à Supabase quels fournisseurs sont ouverts — /auth/v1/settings,
+   public, avec la clé publique — et le bouton n'existe que si Google l'est.
+   Mêmes durées que la sonde de la table : un « oui » se garde un jour (et se
+   croit encore au-delà, le temps de revérifier), un « non » une demi-heure,
+   pour que le bouton apparaisse vite le jour où Google est ouvert. Une panne
+   de réseau ne change rien à ce qu'on savait. */
+function googleConnu(frais){
+  try{
+    const b = JSON.parse(localStorage.getItem(CLE_GOOGLE) || "null");
+    if(!b || typeof b.ok !== "boolean") return null;
+    if(frais && Date.now() - (+b.quand || 0) > (b.ok ? SONDE_VALIDE : SONDE_VALIDE_NON)) return null;
+    return b.ok;
+  }catch(e){ return null; }
+}
+let googleSondeEnCours = false;
+async function sonderGoogle(){
+  if(googleSondeEnCours || googleConnu(true) !== null) return;
+  if(!(SUPABASE_URL && SUPABASE_ANON_KEY) || typeof fetch !== "function") return;
+  googleSondeEnCours = true;
+  try{
+    const r = await fetch(SUPABASE_URL + "/auth/v1/settings", { headers:{ apikey: SUPABASE_ANON_KEY } });
+    if(r.ok){
+      const j = await r.json();
+      const ok = !!(j && j.external && j.external.google === true);
+      try{ localStorage.setItem(CLE_GOOGLE, JSON.stringify({ ok, quand: Date.now() })); }catch(e){}
+      if(compte.google !== ok){ compte.google = ok; majCarteCompte(); }
+    }
+  }catch(e){}
+  googleSondeEnCours = false;
+}
 function compteConnecte(){ return !!(compte.session && compte.session.user); }
 function compteCourriel(){ return compteConnecte() ? (compte.session.user.email || "") : ""; }
 
@@ -19040,7 +19078,7 @@ function carteCompteHtml(){
     <span class="ce-chev">${ICONS.chevronRight}</span>
   </button>`;
 }
-function compteOuvrir(){ compte.etape = "choix"; compte.message = ""; majCarteCompte(); }
+function compteOuvrir(){ compte.etape = "choix"; compte.message = ""; majCarteCompte(); try{ sonderGoogle(); }catch(e){} }
 function compteRetour(){ compte.etape = "repos"; compte.message = ""; majCarteCompte(); }
 /* On ne redessine QUE la carte : redessiner l'écran ferait perdre le champ en
    cours de frappe et le clavier avec.
