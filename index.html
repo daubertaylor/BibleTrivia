@@ -2350,6 +2350,12 @@
   /* Le mot d'erreur se distingue par sa GRAISSE, pas par une couleur : un
      rouge ici serait la seule tache de couleur d'une carte qui n'en a pas. */
   .compte-mot{ font-size:0.8rem; font-weight:600; color:var(--ink); line-height:1.45; }
+  .compte-mot:empty{ display:none; }
+  /* Le contenu d'une carte qui change d'état arrive en fondu, pendant que la
+     carte prend sa hauteur. Le verre de la carte (.gs, .glass-rim) ne fond
+     pas : seul ce qu'il y a dessus. */
+  .compte-carte.carte-arrive > :not(.gs):not(.glass-rim){ animation:carteArrive 0.32s cubic-bezier(0.33,1,0.68,1) both; }
+  @keyframes carteArrive{ from{ opacity:0; } to{ opacity:1; } }
   .compte-code{ font-size:1.4rem; letter-spacing:0.36rem; }
   .compte-google, .compte-sortir{ background:rgb(252,248,241); --glass-tint: rgb(252,248,241); }
   /* ===== AU REPOS, LA CARTE EST UN BOUTON : « SE CONNECTER » =====
@@ -18701,10 +18707,11 @@ const CLE_SONDE = "bt_compte_ok";
    par passage au Profil. */
 const SONDE_VALIDE = 86400000, SONDE_VALIDE_NON = 1800000;
 const compte = {
-  dispo: null,        // la table existe-t-elle ? null = pas encore su
+  dispo: sondeConnue() === true ? true : null, // la table existe-t-elle ? null = pas encore su (voir sondeConnue)
   session: null,
   etape: "repos",     // repos | choix | code | connecte
   courriel: "",
+  saisie: "",         // l'adresse tapée, gardée si la carte se redessine
   message: "",
   occupe: false,
   derniere: 0,
@@ -18730,11 +18737,32 @@ function sondeMemorisee(){
   }catch(e){}
   return null;
 }
-async function sonderComptes(){
+/* ===== CE QU'ON A DÉJÀ SU, MÊME VIEUX D'UN JOUR =====
+   « Lorsque je rouvre, ça décale tout d'un coup. » Passé vingt-quatre heures,
+   la réponse « la table existe » n'était plus crue : le Profil s'ouvrait SANS
+   la carte, la sonde partait sur le réseau, et la carte arrivait 200 à 800 ms
+   plus tard en poussant tout l'écran vers le haut — une fois par jour, à la
+   première visite.
+   Une table qui existait hier existe aujourd'hui. On montre donc la carte
+   tout de suite sur la foi de la dernière réponse connue, et on revérifie en
+   arrière-plan. Si la table avait vraiment disparu, la carte se replie toute
+   seule (replierCarte). Tant qu'on n'a JAMAIS vu la table, rien ne change :
+   aucune carte n'est offerte avant d'être sûr que la porte ouvre. */
+function sondeConnue(){
+  try{
+    const b = JSON.parse(localStorage.getItem(CLE_SONDE) || "null");
+    if(b && typeof b.ok === "boolean") return b.ok;
+  }catch(e){}
+  return null;
+}
+async function sonderComptes(revoir){
   const su = sondeMemorisee();
   if(su !== null){ compte.dispo = su; return su; }
+  /* Revérification en arrière-plan d'une carte déjà montrée : une panne de
+     réseau ne la retire pas — on garde ce qu'on savait. */
+  const avant = compte.dispo;
   const supa = initSupa();
-  if(!supa){ compte.dispo = false; return false; }
+  if(!supa){ if(revoir && avant === true) return true; compte.dispo = false; return false; }
   let ok = false;
   try{
     const r = await supa.from("sauvegardes").select("id").limit(1);
@@ -18743,8 +18771,8 @@ async function sonderComptes(){
        mémoriser — on la laisse pour la prochaine fois. */
     if(!r.error) ok = true;
     else if(r.error.code && r.error.code !== "42P01" && r.error.code !== "PGRST205") ok = true;
-    else if(!r.error.code) return (compte.dispo = null);
-  }catch(e){ return (compte.dispo = null); }
+    else if(!r.error.code) return (compte.dispo = (revoir ? avant : null));
+  }catch(e){ return (compte.dispo = (revoir ? avant : null)); }
   compte.dispo = ok;
   try{ localStorage.setItem(CLE_SONDE, JSON.stringify({ ok, quand: Date.now() })); }catch(e){}
   return ok;
@@ -18834,6 +18862,7 @@ function adresseValable(a){ return /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(String(a
 async function envoyerCode(){
   const champ = document.getElementById("compteMail");
   const a = String((champ && champ.value) || "").trim();
+  compte.saisie = a;
   if(!adresseValable(a)){ compte.message = T("Cette adresse n'a pas l'air d'une adresse."); majCarteCompte(); return; }
   const supa = initSupa(); if(!supa) return;
   compte.courriel = a; compte.occupe = true; compte.message = ""; majCarteCompte();
@@ -18960,9 +18989,13 @@ function carteCompteHtml(){
      le joueur voyait un bouton apparaître puis rester là, parce que rien ne
      l'enlevait ensuite. On n'offre une porte qu'une fois sûr qu'elle ouvre. */
   if(compte.dispo !== true) return "";
-  const msg = compte.message ? `<div class="compte-mot">${escapeHtml(compte.message)}</div>` : "";
+  /* L'EMPLACEMENT DU MOT EXISTE TOUJOURS, vide quand il n'y a rien à dire
+     (.compte-mot:empty le cache) : d'un message à l'autre, la carte garde
+     les mêmes enfants dans le même ordre, et majCarteCompte peut la mettre à
+     jour EN PLACE — le champ, ce qu'on y a tapé et le clavier restent. */
+  const msg = `<div class="compte-mot">${compte.message ? escapeHtml(compte.message) : ""}</div>`;
   if(compteConnecte()){
-    return `<div class="info-card compte-carte" id="compteCarte">
+    return `<div class="info-card compte-carte" id="compteCarte" data-etat="connecte">
       <div class="compte-tete"><span class="compte-ico">${ICONS.checkCircle}</span><b>${T("Progression sauvegardée")}</b></div>
       <div class="compte-sous">${escapeHtml(compteCourriel())}</div>
       <div class="compte-sous">${escapeHtml(quandSauvegarde())}</div>
@@ -18976,7 +19009,7 @@ function carteCompteHtml(){
     </div>`;
   }
   if(compte.etape === "code"){
-    return `<div class="info-card compte-carte" id="compteCarte">
+    return `<div class="info-card compte-carte" id="compteCarte" data-etat="code">
       <div class="compte-tete"><span class="compte-ico">${ICONS.bouclier}</span><b>${T("Entre le code reçu")}</b></div>
       <div class="compte-sous">${escapeHtml(compte.courriel)}</div>
       <input class="code-input compte-code" id="compteCode" inputmode="numeric" maxlength="6" placeholder="000000" autocomplete="one-time-code" enterkeyhint="go" onkeydown="if(event.key==='Enter'){event.preventDefault();verifierCode();}">
@@ -18986,11 +19019,11 @@ function carteCompteHtml(){
     </div>`;
   }
   if(compte.etape === "choix"){
-    return `<div class="info-card compte-carte" id="compteCarte">
+    return `<div class="info-card compte-carte" id="compteCarte" data-etat="choix">
       <div class="compte-tete"><span class="compte-ico">${ICONS.bouclier}</span><b>${T("Sauvegarder ma progression")}</b></div>
       <div class="compte-sous">${T("Changer de téléphone ne te fera alors rien perdre.")}</div>
       ${googleUtile() ? `<button class="btn-ghost compte-google" onclick="connexionGoogle()"${compte.occupe?" disabled":""}>${T("Continuer avec Google")}</button>` : ""}
-      <input class="text-input" id="compteMail" type="email" inputmode="email" autocomplete="email" placeholder="${T("Ton adresse e-mail")}" enterkeyhint="go" onkeydown="if(event.key==='Enter'){event.preventDefault();envoyerCode();}">
+      <input class="text-input" id="compteMail" type="email" inputmode="email" autocomplete="email" value="${escapeHtml(compte.saisie || "")}" placeholder="${T("Ton adresse e-mail")}" enterkeyhint="go" onkeydown="if(event.key==='Enter'){event.preventDefault();envoyerCode();}">
       ${msg}
       <button class="btn-primary" onclick="envoyerCode()"${compte.occupe?" disabled":""}>${T("Recevoir un code")}</button>
       <button class="btn-ghost compte-sortir" onclick="compteRetour()">${T("Annuler")}</button>
@@ -18999,7 +19032,7 @@ function carteCompteHtml(){
   /* Le mot reste visible ici aussi : c'est là qu'on atterrit après avoir
      supprimé son compte, et il faut le DIRE — la progression, elle, est là.
      Il prend la place de la raison, sous « Se connecter ». */
-  return `<button type="button" class="info-card compte-carte compte-entree" id="compteCarte" onclick="compteOuvrir()">
+  return `<button type="button" class="info-card compte-carte compte-entree" id="compteCarte" data-etat="repos" onclick="compteOuvrir()">
     <span class="ce-ico">${ICONS.bouclier}</span>
     <span class="ce-txt"><b class="ce-t">${T("Se connecter")}</b>${compte.message
       ? `<span class="compte-mot">${escapeHtml(compte.message)}</span>`
@@ -19010,14 +19043,112 @@ function carteCompteHtml(){
 function compteOuvrir(){ compte.etape = "choix"; compte.message = ""; majCarteCompte(); }
 function compteRetour(){ compte.etape = "repos"; compte.message = ""; majCarteCompte(); }
 /* On ne redessine QUE la carte : redessiner l'écran ferait perdre le champ en
-   cours de frappe et le clavier avec. */
+   cours de frappe et le clavier avec.
+   ===== ET LA CARTE GRANDIT, ELLE NE SAUTE PAS =====
+   « Lorsque je rouvre, ça décale tout d'un coup. » Toucher « Se connecter »
+   faisait passer la carte de 73 à 320 px d'une image à l'autre : la photo,
+   le nom, les couleurs remontaient de 110 px d'un bloc (mesuré sur un
+   iPhone de 430 × 932). Même chose, en plus petit, quand un mot d'erreur
+   apparaissait.
+   Désormais :
+   — MÊME ÉTAT (un mot qui arrive, un bouton qui s'occupe) : on met la carte
+     à jour EN PLACE. Le champ n'est jamais remplacé : ce qu'on y a tapé, et
+     le clavier, restent.
+   — AUTRE ÉTAT (repos, adresse, code, connecté) : la nouvelle carte prend la
+     place de l'ancienne, et son contenu arrive en fondu.
+   — Dans les deux cas, la carte passe de son ancienne hauteur à la nouvelle
+     sur la durée d'un pli (--tr-plie, la courbe des testaments de
+     Progression), et tout ce qui est au-dessus glisse avec elle. Le verre
+     suit image par image (glassSuivre), comme pour les testaments. */
 function majCarteCompte(){
   const vieille = document.getElementById("compteCarte");
   if(!vieille) return;
   const boite = document.createElement("div");
   boite.innerHTML = carteCompteHtml();
   const neuve = boite.firstElementChild;
-  if(neuve) vieille.replaceWith(neuve); else vieille.remove();
+  const h0 = vieille.offsetHeight;
+  if(!neuve){ replierCarte(vieille); return; }
+  if(vieille.dataset.etat && vieille.dataset.etat === neuve.dataset.etat && carteEnPlace(vieille, neuve)){
+    morpherCarte(vieille, h0, false);
+    return;
+  }
+  vieille.replaceWith(neuve);
+  morpherCarte(neuve, h0, true);
+}
+/* Mise à jour en place : enfant par enfant, dans l'ordre. Les couches de
+   verre (.gs, .glass-rim) que le moteur a glissées dans la carte ne comptent
+   pas. Un champ ne se touche jamais. Un bouton garde son élément (et son onde
+   d'appui) : seul son état « occupé » suit. Le reste est remplacé s'il a
+   changé. Si la forme a changé (un bouton Google qui disparaît), on rend la
+   main : la carte sera remplacée entière. */
+function carteEnPlace(vieille, neuve){
+  const nu = (el)=> [...el.children].filter(c => !c.matches(".gs, .glass-rim"));
+  const A = nu(vieille), B = nu(neuve);
+  if(A.length !== B.length) return false;
+  for(let i = 0; i < A.length; i++){
+    if(A[i].tagName !== B[i].tagName || A[i].className.replace(/\b(has-gs|onde-part|onde)\b/g, "").replace(/\s+/g, " ").trim() !== B[i].className.replace(/\s+/g, " ").trim()) return false;
+  }
+  for(let i = 0; i < A.length; i++){
+    const a = A[i], b = B[i];
+    if(a.tagName === "INPUT") continue;
+    if(a.tagName === "BUTTON"){
+      if(a.textContent.trim() !== b.textContent.trim() || a.getAttribute("onclick") !== b.getAttribute("onclick")) a.replaceWith(b);
+      else a.disabled = b.disabled;
+      continue;
+    }
+    if(a.outerHTML !== b.outerHTML) a.replaceWith(b);
+  }
+  return true;
+}
+function morpherCarte(el, h0, nouveau){
+  if(!el || !el.isConnected) return;
+  const h1 = el.offsetHeight;
+  if(nouveau){
+    el.classList.remove("carte-arrive"); void el.offsetWidth;
+    el.classList.add("carte-arrive");
+  }
+  try{ glassTrack(); }catch(e){}
+  if(!(h0 > 0) || !(h1 > 0) || Math.abs(h1 - h0) < 1) return;
+  const ms = msPli();
+  clearTimeout(el._finMorph);
+  el.style.transition = "none";
+  el.style.overflow = "clip";
+  el.style.height = h0 + "px";
+  void el.offsetHeight;
+  el.style.transition = "height " + tempoPli();
+  el.style.height = h1 + "px";
+  try{ glassSuivre(ms + 120); }catch(e){}
+  el._finMorph = setTimeout(()=>{
+    el.style.removeProperty("height"); el.style.removeProperty("transition"); el.style.removeProperty("overflow");
+    try{ glassTrack(); fitScroll(); }catch(e){}
+  }, ms + 40);
+}
+/* La carte qui s'en va (la table a disparu côté serveur) se replie, elle ne
+   s'éteint pas d'un coup ; la carte qui arrive tard (voir majProfilCompte)
+   se déplie depuis rien. */
+function replierCarte(el){
+  if(!el || !el.isConnected){ try{ el.remove(); }catch(e){} return; }
+  const ms = msPli(), h0 = el.offsetHeight;
+  el.style.transition = "none"; el.style.overflow = "clip"; el.style.height = h0 + "px";
+  void el.offsetHeight;
+  el.style.transition = "height " + tempoPli() + ", margin-bottom " + tempoPli() + ", opacity 0.25s ease";
+  el.style.height = "0px"; el.style.marginBottom = "0px"; el.style.opacity = "0";
+  try{ glassSuivre(ms + 120); }catch(e){}
+  setTimeout(()=>{ try{ el.remove(); glassTrack(); fitScroll(); }catch(e){} }, ms + 40);
+}
+function deplierCarte(el){
+  if(!el || !el.isConnected) return;
+  const ms = msPli(), h1 = el.offsetHeight, mb = getComputedStyle(el).marginBottom;
+  el.style.transition = "none"; el.style.overflow = "clip";
+  el.style.height = "0px"; el.style.marginBottom = "0px"; el.style.opacity = "0";
+  void el.offsetHeight;
+  el.style.transition = "height " + tempoPli() + ", margin-bottom " + tempoPli() + ", opacity 0.3s ease 0.08s";
+  el.style.height = h1 + "px"; el.style.marginBottom = mb; el.style.opacity = "1";
+  try{ glassTrack(); glassSuivre(ms + 120); }catch(e){}
+  setTimeout(()=>{
+    ["height","transition","overflow","margin-bottom","opacity"].forEach(k => el.style.removeProperty(k));
+    try{ glassTrack(); fitScroll(); }catch(e){}
+  }, ms + 140);
 }
 
 
@@ -22313,6 +22444,7 @@ function saveProfileAndBack(){
 
 function renderProfile(){
   const el=document.createElement("div"); el.className="screen";
+  el._ne = performance.now();
   el.innerHTML = `
     ${renderHeader(T("Profil"), true, "saveProfileAndBack()")}
     <div class="flex-sp" style="flex-grow:0.8"></div>
@@ -22341,6 +22473,7 @@ function renderProfile(){
      si le réveil différé n'a pas encore eu lieu, il a lieu maintenant. */
   try{ compteDemarrer(); }catch(e){}
   if(compte.dispo === null) sonderComptes().then(()=>{ if(compte.dispo) majProfilCompte(el); });
+  else if(compte.dispo === true && sondeMemorisee() === null) sonderComptes(true).then(()=>{ if(compte.dispo === false) majCarteCompte(); });
   return el;
 }
 /* La carte n'existe pas encore dans le DOM au premier rendu si le sondage
@@ -22351,7 +22484,13 @@ function majProfilCompte(el){
   if(!bouton) return;
   const boite = document.createElement("div");
   boite.innerHTML = carteCompteHtml();
-  if(boite.firstElementChild) bouton.before(boite.firstElementChild);
+  const carte = boite.firstElementChild;
+  if(!carte) return;
+  bouton.before(carte);
+  /* Une réponse revenue avant la première image (la sonde en mémoire) : la
+     carte est là d'emblée, rien à déplier. Plus tard, l'écran est déjà à
+     l'œil : elle se déplie au lieu de tout pousser d'un coup. */
+  if(performance.now() - (el._ne || 0) > 40) deplierCarte(carte);
 }
 
 function renderOnlineName(){

@@ -33,7 +33,11 @@ module.exports = `
       select:function(c){ col = c; return q; },
       insert:function(){ return promesse({ data:null, error:null }); },
       eq:function(k,v){ filtre = v; return q; },
-      limit:function(){ return promesse(sondage(table, F)); },
+      /* lenteur : la sonde met ce temps à revenir, comme sur un vrai réseau. */
+      limit:function(){ var v = sondage(table, F);
+        if(!F.lenteur) return promesse(v);
+        return { then:function(r){ return new Promise(function(z){ setTimeout(function(){ z(v); }, F.lenteur); }).then(r); },
+                 catch:function(){ return this; } }; },
       maybeSingle:function(){ return promesse(lecture(table, F, filtre)); },
       then:function(r){ return Promise.resolve(sondage(table, F)).then(r); }
     };
