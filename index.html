@@ -19546,6 +19546,26 @@ async function suivreNomGroupes(){
 /* ===================== LES FEUILLES DES GROUPES =====================
    Toutes de la même matière que les Réglages : la même feuille de verre, la
    même poignée, le même geste pour la fermer. */
+/* LA FEUILLE DU DESSOUS RECULE, COMME PARTOUT AILLEURS (v303). « Vérifie que
+   ça s'ouvre comme les autres superpositions, parce que là c'est pas le cas. »
+   Ce n'était pas le cas : « Confidentialité », ouverte depuis les Réglages, se
+   posait PAR-DESSUS une feuille restée en pleine taille, là où « Version de la
+   Bible » et « Langue » font reculer les Réglages au second plan
+   (feuille-recule : 0,935 et 10 px, sur la courbe d'ouverture) et les
+   ramènent dans le même geste à la fermeture. Les feuilles des groupes
+   s'empilent aussi — un membre par-dessus les infos du groupe, « Signaler »
+   par-dessus un membre — et prennent toutes ce même chemin. On cherche la
+   feuille ouverte la plus haute, sans compter celle qui s'en va. */
+function feuilleDessous(veil){
+  const veils = [...document.querySelectorAll(".sheet-veil")];
+  for(let i = veils.length - 1; i >= 0; i--){
+    const v = veils[i];
+    if(v === veil || v.classList.contains("closing")) continue;
+    const f = v.querySelector(".settings-sheet");
+    if(f) return f;
+  }
+  return null;
+}
 function ouvrirFeuilleGroupe(id, titre, ico, html){
   const ancienne = document.getElementById(id);
   if(ancienne) ancienne.remove();
@@ -19558,15 +19578,34 @@ function ouvrirFeuilleGroupe(id, titre, ico, html){
     </div>`;
   document.body.appendChild(veil);
   monterLaFeuille(veil);
+  const dessous = feuilleDessous(veil);
+  if(dessous){
+    dessous.classList.add("feuille-recule");
+    veil.classList.add("voile-second");
+    veil._dessous = dessous;
+  }
   glassTrack();
   attachSheetDrag(veil.querySelector(".settings-sheet"), ()=>fermerFeuilleGroupe(id));
   veil.addEventListener("click", (e)=>{ if(e.target === veil) fermerFeuilleGroupe(id); });
+  /* Le recul est un transform : le moteur de verre relit l'ÉCHELLE de la
+     feuille du dessous pendant tout le mouvement (voir openBibles). */
+  if(dessous) reculJusqu = performance.now() + msPli() + 200;
   return veil;
 }
 function fermerFeuilleGroupe(id){
   const v = document.getElementById(id);
   if(!v || v.classList.contains("closing")) return;
   v.classList.add("closing");
+  /* La feuille du dessous revient au premier plan PENDANT que celle-ci
+     redescend — les deux mouvements se croisent, comme à l'aller — et le
+     moteur reste éveillé tout le retour (voir closeBibles). */
+  const dessous = v._dessous;
+  if(dessous && dessous.isConnected){
+    dessous.classList.remove("feuille-recule");
+    reculJusqu = performance.now() + msPli() + 200;
+    try{ armGlass(msPli() + 300); }catch(e){}
+    setTimeout(()=>{ try{ glassRelayout(); queueGlassSync(); }catch(e){} }, msPli() + 40);
+  }
   setTimeout(()=>{ if(v.parentNode) v.remove(); }, msFerme() + 20);
 }
 /* La petite phrase sous une feuille : une erreur, ou une confirmation (bon). */
