@@ -2032,7 +2032,7 @@
        des minutes, on ne paie pas ce prix ;
      — la teinte de verre arrive quand l'encre a FINI (sinon on verrait un
        fondu sous l'encre) et repart tout de suite sur la puce qu'on quitte. */
-  .chip, .len-chip{ --encre-x:50%; --encre-y:50%; --encre-r:160px; --encre-duree:0.5s; --encre-sortie:0.3s; --encre-texte:0.2s; }
+  .chip, .len-chip{ --encre-x:50%; --encre-y:50%; --encre-r:160px; --encre-duree:0.5s; --encre-sortie:0.3s; --encre-texte:0.2s; --encre-attente:20ms; }
   .chip::after, .len-chip::after{ content:""; position:absolute; z-index:-1; pointer-events:none;
     left:calc(var(--encre-x) - var(--encre-r)); top:calc(var(--encre-y) - var(--encre-r));
     width:calc(var(--encre-r) * 2); height:calc(var(--encre-r) * 2); border-radius:50%;
@@ -2065,7 +2065,18 @@
      au même rythme. */
   .chip.remplit::after, .len-chip.remplit::after{ animation:encreIn var(--encre-duree) cubic-bezier(0.3,0.55,0.25,1) forwards; }
   .chip.devide::after, .len-chip.devide::after{ transform:scale(1); opacity:1;
-    animation:encreOut calc(var(--encre-sortie) * var(--encre-k, 1)) cubic-bezier(0.2,0.45,0.42,1) forwards; }
+    animation:encreOut calc(var(--encre-sortie) * var(--encre-k, 1)) cubic-bezier(0.2,0.45,0.42,1) var(--encre-attente) forwards; }
+  /* ===== LA PUCE QUITTÉE ATTEND UNE IMAGE AVANT DE CÉDER (v304) =====
+     « Des fois lorsque je clique sur certains boutons comme la durée de partie,
+     ça clignote légèrement. » Le réglage ci-dessus avait été mesuré AU RALENTI
+     (animations cinq fois plus lentes, banc-essai/remplir.js) : à cette
+     vitesse, un décalage d'une image ne se voit pas. Filmée à vitesse réelle,
+     image par image, sous un vrai doigt, la rangée tombait à 82–84 % de son
+     rouge pendant trois images : l'encre de la nouvelle puce naît presque
+     invisible (3 %, 7 %, 16 %) pendant que l'ancienne cède déjà (86 %, 70 %).
+     Vingt millisecondes d'attente — une image — et la rangée tient entre 97 et
+     108 %, processeur normal comme deux fois plus lent. Pendant l'attente, la
+     puce quittée garde son encre pleine (scale 1, opacité 1, ci-dessus). */
   /* LA TEINTE DE VERRE ET LE LIBELLÉ, RÉGLÉS SUR L'ENCRE. La liste entière
      est réécrite : une transition est une propriété RACCOURCIE, en redéclarer
      un morceau efface le reste. Le fond ne décide de rien (0s) : il suit la
@@ -8509,7 +8520,7 @@ const SUPABASE_ANON_KEY = "sb_publishable_FDJ_R0foC7uIeHmxVrj6rA_2NeIgW2a";
    remontée d'un téléphone ne vaut rien si on ne sait pas QUELLE version
    tournait. Elle doit rester égale au CACHE de sw.js — c'est ce que vérifie
    banc-essai/version.js, qui refuse de laisser publier les deux en désaccord. */
-const VERSION_JEU = "v303";
+const VERSION_JEU = "v304";
 
 /* ===================== QUAND ÇA CASSE CHEZ UN JOUEUR =====================
    « Si quelque chose casse chez cinq d'entre eux sur un modèle de téléphone
