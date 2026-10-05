@@ -101,6 +101,10 @@ async function ouvrir(nav, semer){
     userAgent:IOS, hasTouch:true, serviceWorkers:'block' });
   const p = await ctx.newPage();
   await p.route('**/supabase-js@2**', r => r.fulfill({ status:200, contentType:'text/javascript; charset=utf-8', body:FAUX }));
+  /* Les fournisseurs ouverts, tels que Supabase les annonce (/auth/v1/settings) :
+     le jeu ne montre « Continuer avec Google » que si Google y est ouvert. */
+  await p.route('**/auth/v1/settings', r => r.fulfill({ status:200, contentType:'application/json',
+    body: JSON.stringify({ external:{ email:true, google: ouvrir.google !== false } }) }));
   await p.addInitScript(()=>{
     localStorage.setItem('bt_profile', JSON.stringify({ name:'Taylor', color:'#4C86E8' }));
     localStorage.setItem('bt_fs_hint','1');
@@ -147,7 +151,7 @@ const photo = (p) => p.evaluate(()=> sauvegardeIci());
     const p = await ouvrir(nav);
     await versProfil(p); await p.waitForTimeout(700);
     await p.evaluate(()=>{ compteOuvrir(); });
-    await p.waitForTimeout(150);
+    await p.waitForTimeout(600);
     const avait = await p.evaluate(()=> !!document.querySelector('.compte-google'));
     await p.evaluate(()=> connexionGoogle());
     await p.waitForTimeout(400);
@@ -158,6 +162,24 @@ const photo = (p) => p.evaluate(()=> sauvegardeIci());
     v("Google refusé : le bouton disparaît", apres.bouton === false);
     v("Google refusé : on renvoie vers l'e-mail, en le disant", /adresse e-mail/.test(apres.mot), apres.mot);
     v("Google refusé : le champ e-mail est toujours là", apres.mail === true);
+    await p.context().close();
+  }
+
+  /* ---------- 3b. GOOGLE FERMÉ CÔTÉ SUPABASE : PAS DE BOUTON DU TOUT ----------
+     signInWithOAuth ne rend aucune erreur quand le fournisseur est fermé : il
+     envoie le navigateur sur une page brute de Supabase (HTTP 400, du JSON).
+     Le bouton ne doit donc pas exister tant que Supabase ne dit pas que Google
+     est ouvert. */
+  {
+    ouvrir.google = false;
+    const p = await ouvrir(nav);
+    await versProfil(p); await p.waitForTimeout(700);
+    await p.evaluate(()=>{ compteOuvrir(); });
+    await p.waitForTimeout(600);
+    const r = await p.evaluate(()=>({ bouton: !!document.querySelector('.compte-google'), memo: localStorage.getItem('bt_google_ok') || '' }));
+    v("Google fermé chez Supabase : aucun bouton Google", r.bouton === false);
+    v("…et la réponse est retenue", /"ok":false/.test(r.memo), r.memo);
+    ouvrir.google = true;
     await p.context().close();
   }
 
