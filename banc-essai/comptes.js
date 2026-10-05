@@ -179,6 +179,59 @@ const photo = (p) => p.evaluate(()=> sauvegardeIci());
     await p.context().close();
   }
 
+  /* ---------- 4b. LA VRAIE RAISON, PAS UN MOT FOURRE-TOUT ----------
+     « Ça me dit impossible d'envoyer un code pour l'instant. » Trois pannes
+     qui ne se soignent pas pareil disaient la même phrase. Chaque panne est
+     rendue telle que Supabase la rend (status, code, name), et la carte doit
+     dire laquelle — sans jamais connecter personne ni sauter à l'étape du
+     code. */
+  {
+    const ENVOI = [
+      ['trop d\'essais (429)',        { name:'AuthApiError', status:429, code:'over_email_send_rate_limit', message:'email rate limit exceeded' }, /Trop d'essais d'affilée/],
+      ['le mail ne part pas (500)',  { name:'AuthApiError', status:500, code:'unexpected_failure', message:'Error sending magic link email' }, /Le mail n'a pas pu partir/],
+      ['adresse refusée par l\'envoi intégré', { name:'AuthApiError', status:400, code:'email_address_not_authorized', message:'Email address not authorized' }, /Le mail n'a pas pu partir/],
+      ['pas de réseau',              { name:'AuthRetryableFetchError', status:0, message:'Failed to fetch' }, /Pas de réseau/],
+      ['serveur indisponible (503)', { name:'AuthRetryableFetchError', status:503, message:'Service Unavailable' }, /Le mail n'a pas pu partir/],
+      ['panne inconnue',             { name:'AuthApiError', status:422, code:'signup_disabled', message:'Signups not allowed for otp' }, /Impossible d'envoyer le code/],
+    ];
+    const CODE = [
+      ['trop d\'essais (429)',  { name:'AuthApiError', status:429, code:'over_request_rate_limit', message:'Request rate limit reached' }, /Trop d'essais d'affilée/],
+      ['serveur en panne (500)', { name:'AuthApiError', status:500, code:'unexpected_failure', message:'Internal Server Error' }, /Le serveur ne répond pas/],
+      ['pas de réseau',          { name:'AuthRetryableFetchError', status:0, message:'Failed to fetch' }, /Pas de réseau/],
+      ['code faux ou périmé',    null, /ne correspond pas, ou il a expiré/],
+    ];
+    const p = await ouvrir(nav);
+    await versProfil(p); await p.waitForTimeout(700);
+    for (const [nom, err, attendu] of ENVOI) {
+      const r = await p.evaluate(async (err)=>{
+        window.__faux.erreurEnvoi = err; compteOuvrir();
+        document.getElementById('compteMail').value = 'taylor@essai.test';
+        await envoyerCode();
+        const out = { mot: compte.message, etape: compte.etape, connecte: compteConnecte(),
+                      vu: ((document.querySelector('#compteCarte .compte-mot')||{}).textContent || '') };
+        window.__faux.erreurEnvoi = null; compteRetour();
+        return out;
+      }, err);
+      v('envoi · ' + nom + ' : la carte dit la vraie raison', attendu.test(r.mot) && r.vu === r.mot, r.mot);
+      v('envoi · ' + nom + ' : on reste sur l\'adresse, personne n\'est connecté', r.etape === 'choix' && r.connecte === false);
+    }
+    for (const [nom, err, attendu] of CODE) {
+      const r = await p.evaluate(async (err)=>{
+        compteOuvrir(); document.getElementById('compteMail').value = 'taylor@essai.test';
+        await envoyerCode();
+        window.__faux.erreurCode = err;
+        document.getElementById('compteCode').value = '999999';
+        await verifierCode();
+        const out = { mot: compte.message, etape: compte.etape, connecte: compteConnecte() };
+        window.__faux.erreurCode = null; compteRetour();
+        return out;
+      }, err);
+      v('code · ' + nom + ' : la carte dit la vraie raison', attendu.test(r.mot), r.mot);
+      v('code · ' + nom + ' : on reste sur le code, personne n\'est connecté', r.etape === 'code' && r.connecte === false);
+    }
+    await p.context().close();
+  }
+
   /* ---------- 5. LA RÈGLE ABSOLUE : RICHE ICI, PAUVRE AU SERVEUR ---------- */
   {
     const p = await ouvrir(nav, null);

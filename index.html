@@ -5401,7 +5401,10 @@ const TEXTES = {
     "Impossible d'envoyer le code pour l'instant.":"Can't send the code right now.",
     "Code envoyé. Regarde ta boîte mail.":"Code sent. Check your inbox.",
     "Le code fait six chiffres.":"The code has six digits.",
-    "Ce code ne correspond pas.":"That code doesn't match.",
+    "Ce code ne correspond pas, ou il a expiré.":"That code doesn't match, or it has expired.",
+    "Trop d'essais d'affilée. Attends une minute, puis réessaie.":"Too many tries in a row. Wait a minute, then try again.",
+    "Le mail n'a pas pu partir. Réessaie dans un instant.":"The email couldn't be sent. Try again in a moment.",
+    "Le serveur ne répond pas. Réessaie dans un instant.":"The server isn't responding. Try again in a moment.",
     "Passe plutôt par ton adresse e-mail.":"Use your e-mail address instead.",
     "Pas de réseau. La sauvegarde reprendra toute seule.":"No connection. Saving will resume on its own.",
     "Sauvegardé à l'instant":"Saved just now",
@@ -5999,7 +6002,10 @@ const TEXTES = {
     "Impossible d'envoyer le code pour l'instant.":"No se puede enviar el código ahora.",
     "Code envoyé. Regarde ta boîte mail.":"Código enviado. Mira tu correo.",
     "Le code fait six chiffres.":"El código tiene seis cifras.",
-    "Ce code ne correspond pas.":"Ese código no coincide.",
+    "Ce code ne correspond pas, ou il a expiré.":"Ese código no coincide o ha caducado.",
+    "Trop d'essais d'affilée. Attends une minute, puis réessaie.":"Demasiados intentos seguidos. Espera un minuto e inténtalo de nuevo.",
+    "Le mail n'a pas pu partir. Réessaie dans un instant.":"No se pudo enviar el correo. Inténtalo de nuevo en un momento.",
+    "Le serveur ne répond pas. Réessaie dans un instant.":"El servidor no responde. Inténtalo de nuevo en un momento.",
     "Passe plutôt par ton adresse e-mail.":"Usa mejor tu correo electrónico.",
     "Pas de réseau. La sauvegarde reprendra toute seule.":"Sin conexión. El guardado se reanudará solo.",
     "Sauvegardé à l'instant":"Guardado ahora mismo",
@@ -8554,7 +8560,7 @@ const SUPABASE_ANON_KEY = "sb_publishable_FDJ_R0foC7uIeHmxVrj6rA_2NeIgW2a";
    remontée d'un téléphone ne vaut rien si on ne sait pas QUELLE version
    tournait. Elle doit rester égale au CACHE de sw.js — c'est ce que vérifie
    banc-essai/version.js, qui refuse de laisser publier les deux en désaccord. */
-const VERSION_JEU = "v305";
+const VERSION_JEU = "v306";
 
 /* ===================== QUAND ÇA CASSE CHEZ UN JOUEUR =====================
    « Si quelque chose casse chez cinq d'entre eux sur un modèle de téléphone
@@ -18792,6 +18798,38 @@ function armerSynchro(){
 }
 
 /* ---------- SE CONNECTER ---------- */
+/* LA VRAIE RAISON, PAS UN MOT FOURRE-TOUT.
+   « Ça me dit impossible d'envoyer un code pour l'instant. » La phrase était
+   la même pour trois pannes qui ne se soignent pas pareil : trop d'essais
+   d'affilée (on attend une minute), un mail qui ne part pas (c'est le
+   serveur d'envoi), pas de réseau (c'est le téléphone). Supabase dit
+   laquelle — status 429, 5xx, ou AuthRetryableFetchError quand la requête
+   n'a même pas abouti — et on la répète au joueur, avec ce qu'il peut y
+   faire. Ce qu'on ne reconnaît pas garde la phrase d'avant.
+   Un code faux et un code périmé reviennent du serveur sous la MÊME erreur
+   (otp_expired, « Token has expired or is invalid ») : la phrase dit donc
+   les deux, pour qu'un joueur qui revient une heure plus tard sache qu'il
+   lui en faut un neuf. */
+function raisonAuth(error, envoi){
+  const st = Number(error && error.status) || 0;
+  const code = String((error && error.code) || "");
+  const nom = String((error && error.name) || "");
+  if(st === 429 || /rate_limit/.test(code)) return T("Trop d'essais d'affilée. Attends une minute, puis réessaie.");
+  /* 5xx AVANT le réseau : auth-js range aussi 502, 503 et 504 sous
+     AuthRetryableFetchError. Là, le téléphone a bien parlé au serveur —
+     c'est le serveur, ou son envoi de courriel, qui n'a pas suivi. */
+  if(st >= 500 || code === "unexpected_failure")
+    return envoi ? T("Le mail n'a pas pu partir. Réessaie dans un instant.") : T("Le serveur ne répond pas. Réessaie dans un instant.");
+  if(nom === "AuthRetryableFetchError") return T("Pas de réseau. Réessaie dans un instant.");
+  if(envoi){
+    if(code === "email_address_invalid") return T("Cette adresse n'a pas l'air d'une adresse.");
+    /* Le service intégré de Supabase refuse toute adresse hors de l'équipe :
+       pour le joueur, c'est un mail qui ne part pas. */
+    if(code === "email_address_not_authorized") return T("Le mail n'a pas pu partir. Réessaie dans un instant.");
+    return T("Impossible d'envoyer le code pour l'instant.");
+  }
+  return T("Ce code ne correspond pas, ou il a expiré.");
+}
 function adresseValable(a){ return /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(String(a||"").trim()); }
 async function envoyerCode(){
   const champ = document.getElementById("compteMail");
@@ -18802,7 +18840,7 @@ async function envoyerCode(){
   try{
     const { error } = await supa.auth.signInWithOtp({ email:a, options:{ shouldCreateUser:true } });
     compte.occupe = false;
-    if(error){ compte.message = T("Impossible d'envoyer le code pour l'instant."); majCarteCompte(); return; }
+    if(error){ compte.message = raisonAuth(error, true); majCarteCompte(); return; }
     compte.etape = "code";
     compte.message = T("Code envoyé. Regarde ta boîte mail.");
   }catch(e){ compte.occupe = false; compte.message = T("Impossible d'envoyer le code pour l'instant."); }
@@ -18835,9 +18873,9 @@ async function verifierCode(){
   try{
     const { error } = await supa.auth.verifyOtp({ email:compte.courriel, token:c, type:"email" });
     compte.occupe = false;
-    if(error){ compte.message = T("Ce code ne correspond pas."); majCarteCompte(); return; }
+    if(error){ compte.message = raisonAuth(error, false); majCarteCompte(); return; }
     await adopterSession();
-  }catch(e){ compte.occupe = false; compte.message = T("Ce code ne correspond pas."); majCarteCompte(); }
+  }catch(e){ compte.occupe = false; compte.message = T("Ce code ne correspond pas, ou il a expiré."); majCarteCompte(); }
 }
 async function connexionGoogle(){
   const supa = initSupa(); if(!supa) return;

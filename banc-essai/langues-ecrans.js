@@ -1023,11 +1023,14 @@ const ouvrirLaLangue = async (p, lg) => {
     ['Compte · deux portes',() => { compte.google = true; compteOuvrir(); }],
     ['Compte · pas une adresse', () => { compte.message = T("Cette adresse n'a pas l'air d'une adresse."); majCarteCompte(); }],
     ['Compte · envoi refusé',    () => { compte.message = T("Impossible d'envoyer le code pour l'instant."); majCarteCompte(); }],
+    ['Compte · trop d\'essais',  () => { compte.message = T("Trop d'essais d'affilée. Attends une minute, puis réessaie."); majCarteCompte(); }],
+    ['Compte · mail parti nulle part', () => { compte.message = T("Le mail n'a pas pu partir. Réessaie dans un instant."); majCarteCompte(); }],
     ['Compte · Google fermé',    () => { compte.message = T("Passe plutôt par ton adresse e-mail."); majCarteCompte(); }],
     ['Compte · code envoyé', () => { compte.courriel = 'joueur@exemple.net'; compte.etape = 'code';
       compte.message = T("Code envoyé. Regarde ta boîte mail."); majCarteCompte(); }],
     ['Compte · six chiffres',    () => { compte.message = T("Le code fait six chiffres."); majCarteCompte(); }],
-    ['Compte · code refusé',     () => { compte.message = T("Ce code ne correspond pas."); majCarteCompte(); }],
+    ['Compte · code refusé',     () => { compte.message = T("Ce code ne correspond pas, ou il a expiré."); majCarteCompte(); }],
+    ['Compte · serveur muet',    () => { compte.message = T("Le serveur ne répond pas. Réessaie dans un instant."); majCarteCompte(); }],
     ['Compte · connecté',  () => { compte.session = { user:{ id:'x', email:'joueur@exemple.net' } };
       compte.etape = 'connecte'; compte.derniere = Date.now(); compte.message = ''; majCarteCompte(); }],
     ['Compte · il y a une heure', () => { compte.derniere = Date.now() - 3700000;
