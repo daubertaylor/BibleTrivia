@@ -19,9 +19,9 @@ au besoin, exclure. Sans compte, il n'y a personne à exclure.
 Suis `comptes/LISEZMOI.md`, étapes 1 et 2 :
 
 - coller `comptes/table.sql` dans **SQL Editor** → **Run** ;
-- ajouter `{{ .Token }}` dans les deux modèles de courriel (**Confirm signup**
-  et **Magic Link**). C'est l'étape qu'on oublie, et sans elle personne ne peut
-  se connecter.
+- ajouter `{{ .Token }}` dans les deux modèles de courriel (**Confirm sign up**
+  et **Magic link or OTP**). C'est l'étape qu'on oublie, et sans elle personne
+  ne peut se connecter.
 - brancher un **serveur d'envoi (SMTP)** — étape 2b : le service intégré de
   Supabase n'envoie qu'aux membres de ton équipe, deux messages par heure. Sans
   lui, toi seul reçois ton code, et personne d'autre n'entrera jamais dans un
