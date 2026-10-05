@@ -191,11 +191,13 @@ const photo = (p) => p.evaluate(()=> sauvegardeIci());
       ['le mail ne part pas (500)',  { name:'AuthApiError', status:500, code:'unexpected_failure', message:'Error sending magic link email' }, /Le mail n'a pas pu partir/],
       ['adresse refusée par l\'envoi intégré', { name:'AuthApiError', status:400, code:'email_address_not_authorized', message:'Email address not authorized' }, /Le mail n'a pas pu partir/],
       ['pas de réseau',              { name:'AuthRetryableFetchError', status:0, message:'Failed to fetch' }, /Pas de réseau/],
+      ['serveur indisponible (503)', { name:'AuthRetryableFetchError', status:503, message:'Service Unavailable' }, /Le mail n'a pas pu partir/],
       ['panne inconnue',             { name:'AuthApiError', status:422, code:'signup_disabled', message:'Signups not allowed for otp' }, /Impossible d'envoyer le code/],
     ];
     const CODE = [
       ['trop d\'essais (429)',  { name:'AuthApiError', status:429, code:'over_request_rate_limit', message:'Request rate limit reached' }, /Trop d'essais d'affilée/],
       ['serveur en panne (500)', { name:'AuthApiError', status:500, code:'unexpected_failure', message:'Internal Server Error' }, /Le serveur ne répond pas/],
+      ['pas de réseau',          { name:'AuthRetryableFetchError', status:0, message:'Failed to fetch' }, /Pas de réseau/],
       ['code faux ou périmé',    null, /ne correspond pas, ou il a expiré/],
     ];
     const p = await ouvrir(nav);

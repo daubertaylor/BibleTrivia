@@ -8560,7 +8560,7 @@ const SUPABASE_ANON_KEY = "sb_publishable_FDJ_R0foC7uIeHmxVrj6rA_2NeIgW2a";
    remontée d'un téléphone ne vaut rien si on ne sait pas QUELLE version
    tournait. Elle doit rester égale au CACHE de sw.js — c'est ce que vérifie
    banc-essai/version.js, qui refuse de laisser publier les deux en désaccord. */
-const VERSION_JEU = "v305";
+const VERSION_JEU = "v306";
 
 /* ===================== QUAND ÇA CASSE CHEZ UN JOUEUR =====================
    « Si quelque chose casse chez cinq d'entre eux sur un modèle de téléphone
@@ -18815,13 +18815,19 @@ function raisonAuth(error, envoi){
   const code = String((error && error.code) || "");
   const nom = String((error && error.name) || "");
   if(st === 429 || /rate_limit/.test(code)) return T("Trop d'essais d'affilée. Attends une minute, puis réessaie.");
+  /* 5xx AVANT le réseau : auth-js range aussi 502, 503 et 504 sous
+     AuthRetryableFetchError. Là, le téléphone a bien parlé au serveur —
+     c'est le serveur, ou son envoi de courriel, qui n'a pas suivi. */
+  if(st >= 500 || code === "unexpected_failure")
+    return envoi ? T("Le mail n'a pas pu partir. Réessaie dans un instant.") : T("Le serveur ne répond pas. Réessaie dans un instant.");
   if(nom === "AuthRetryableFetchError") return T("Pas de réseau. Réessaie dans un instant.");
   if(envoi){
     if(code === "email_address_invalid") return T("Cette adresse n'a pas l'air d'une adresse.");
-    if(st >= 500 || code === "unexpected_failure" || code === "email_address_not_authorized") return T("Le mail n'a pas pu partir. Réessaie dans un instant.");
+    /* Le service intégré de Supabase refuse toute adresse hors de l'équipe :
+       pour le joueur, c'est un mail qui ne part pas. */
+    if(code === "email_address_not_authorized") return T("Le mail n'a pas pu partir. Réessaie dans un instant.");
     return T("Impossible d'envoyer le code pour l'instant.");
   }
-  if(st >= 500) return T("Le serveur ne répond pas. Réessaie dans un instant.");
   return T("Ce code ne correspond pas, ou il a expiré.");
 }
 function adresseValable(a){ return /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(String(a||"").trim()); }
