@@ -4755,7 +4755,18 @@
   /* Le petit mot peut être une phrase entière (« Pas d'adresse… ») : il passe
      à la ligne au lieu de sortir de l'écran. */
   .mini-toast{ max-width:calc(100vw - 2.4rem); text-align:center; }
-  .parcours-ecran .semaine{ margin:0 auto var(--e-3); }
+  /* LA SEMAINE DANS LA CARTE DES CHIFFRES (Progression, v303). La même grappe
+     compacte qu'à l'accueil ; seule la matière change : posée sur le verre
+     clair et non plus sur la photo, l'encre remplace le blanc et son ombre.
+     L'or des jours joués et le bleu des jours gelés ne bougent pas — ils ont
+     leur propre matière. Le jour restant reste une pastille, jamais cernée. */
+  .parcours-sum.ps-semaine{ flex-direction:column; align-items:stretch; gap:0; padding-top:0.85rem; }
+  .parcours-sum.ps-semaine .semaine{ margin:0 auto 1.15rem; }
+  .parcours-sum .sem-t{ color:var(--ink-soft); text-shadow:none; }
+  .parcours-sum .sem-t.afaire{ color:var(--ink); }
+  .parcours-sum .sj:not(.fait):not(.gele){ background:rgba(34,26,16,0.07); color:var(--ink-soft); -webkit-backdrop-filter:none; backdrop-filter:none; }
+  .parcours-sum .sj.auj:not(.fait):not(.gele){ background:rgba(34,26,16,0.13); color:var(--ink); }
+  .parcours-sum .sem-flamme.eteinte{ --glass-tint: rgba(34,26,16,0.07); color:var(--ink-soft); text-shadow:none; }
 
   /* ---------- GLISSER DE CÔTÉ ----------
      Accueil, Groupes, puis un groupe : trois pièces côte à côte. On y va
@@ -4976,7 +4987,14 @@
   .compte-supprimer, .lien-conf{ align-self:center; border:0; background:none; color:var(--ink-soft); font-size:0.78rem; font-weight:600;
     text-decoration:underline; text-underline-offset:3px; padding:0.55rem 0.8rem; min-height:44px;
     border-radius:var(--r-full); }   /* l'onde d'appui en prend la forme : sans arrondi, elle était carrée */
-  .lien-conf{ display:block; margin:0.35rem auto 0; }
+  /* « Confidentialité, tu peux le mettre plus bas pour gagner de la place,
+     là c'est trop espacé. » Le bouton Partager gardait 0,8 rem sous lui, le
+     lien en ajoutait 0,35 au-dessus, puis centrait son texte dans ses 44 px :
+     dix-huit pixels de vide pour un lien de bas de page. Il annule la marge
+     du bouton (toujours juste au-dessus de lui) et descend de 0,35 rem dans
+     le rembourrage du bas : la feuille raccourcit de 19 px, et son texte
+     s'arrête pile au-dessus de la zone de la barre d'accueil de l'iPhone. */
+  .lien-conf{ display:block; margin:-0.8rem auto -0.35rem; }
 </style>
 </head>
 <body style="background:#15100B">
@@ -5212,7 +5230,7 @@ const TEXTES = {
     "livres":"books",
     "bonnes réponses":"correct answers",
     "livres maîtrisés":"books mastered",
-    "meilleure série":"best streak",
+    "bonnes d'affilée":"in a row",
     "Touche un livre pour t'entraîner dessus":"Tap a book to practice it",
     "Joueurs ou équipes":"Players or teams",
     "Ajouter un joueur ou une équipe":"Add a player or team",
@@ -5814,7 +5832,7 @@ const TEXTES = {
     "livres":"libros",
     "bonnes réponses":"respuestas correctas",
     "livres maîtrisés":"libros dominados",
-    "meilleure série":"mejor racha",
+    "bonnes d'affilée":"seguidas",
     "Touche un livre pour t'entraîner dessus":"Toca un libro para practicarlo",
     "Joueurs ou équipes":"Jugadores o equipos",
     "Ajouter un joueur ou une équipe":"Añadir un jugador o equipo",
@@ -8491,7 +8509,7 @@ const SUPABASE_ANON_KEY = "sb_publishable_FDJ_R0foC7uIeHmxVrj6rA_2NeIgW2a";
    remontée d'un téléphone ne vaut rien si on ne sait pas QUELLE version
    tournait. Elle doit rester égale au CACHE de sw.js — c'est ce que vérifie
    banc-essai/version.js, qui refuse de laisser publier les deux en désaccord. */
-const VERSION_JEU = "v302";
+const VERSION_JEU = "v303";
 
 /* ===================== QUAND ÇA CASSE CHEZ UN JOUEUR =====================
    « Si quelque chose casse chez cinq d'entre eux sur un modèle de téléphone
@@ -17105,14 +17123,22 @@ function renderParcours(){
       <span class="ach-prog">${on?T("Débloqué"):cur+" / "+a.max}</span>
     </button>`;
   };
+  /* LA SEMAINE EN TÊTE DE LA CARTE DES CHIFFRES (v303). « Pour ici le truc des
+     jours et des flammes, tu penses qu'il est vraiment à la meilleure place ? »
+     Pas tout à fait : c'était le seul bloc de l'écran hors d'une carte, posé en
+     blanc sur le ciel, et sa flamme (des JOURS d'affilée) tombait pile
+     au-dessus de « meilleure série » (des RÉPONSES d'affilée) — 22 au-dessus
+     de 21, on lisait un record plus bas que la série en cours. La rangée entre
+     donc dans la carte, inchangée ; le record s'appelle « bonnes d'affilée ».
+     « Oui j'adore. » */
   el.innerHTML = `
     ${renderHeader(T("Progression"), true)}
-    ${semaineHtml()}
-    <div class="card parcours-sum">
+    <div class="card parcours-sum ps-semaine">
+      ${semaineHtml()}
       <div class="ps-cells">
         <div><b>${d.mastered}<i>/66</i></b><small>${T("livres maîtrisés")}</small></div>
         <div><b>${p.totalCorrect}</b><small>${T("bonnes réponses")}</small></div>
-        <div><b>${p.bestStreak}</b><small>${T("meilleure série")}</small></div>
+        <div><b>${p.bestStreak}</b><small>${T("bonnes d'affilée")}</small></div>
       </div>
     </div>
     ${(()=>{
@@ -19520,6 +19546,26 @@ async function suivreNomGroupes(){
 /* ===================== LES FEUILLES DES GROUPES =====================
    Toutes de la même matière que les Réglages : la même feuille de verre, la
    même poignée, le même geste pour la fermer. */
+/* LA FEUILLE DU DESSOUS RECULE, COMME PARTOUT AILLEURS (v303). « Vérifie que
+   ça s'ouvre comme les autres superpositions, parce que là c'est pas le cas. »
+   Ce n'était pas le cas : « Confidentialité », ouverte depuis les Réglages, se
+   posait PAR-DESSUS une feuille restée en pleine taille, là où « Version de la
+   Bible » et « Langue » font reculer les Réglages au second plan
+   (feuille-recule : 0,935 et 10 px, sur la courbe d'ouverture) et les
+   ramènent dans le même geste à la fermeture. Les feuilles des groupes
+   s'empilent aussi — un membre par-dessus les infos du groupe, « Signaler »
+   par-dessus un membre — et prennent toutes ce même chemin. On cherche la
+   feuille ouverte la plus haute, sans compter celle qui s'en va. */
+function feuilleDessous(veil){
+  const veils = [...document.querySelectorAll(".sheet-veil")];
+  for(let i = veils.length - 1; i >= 0; i--){
+    const v = veils[i];
+    if(v === veil || v.classList.contains("closing")) continue;
+    const f = v.querySelector(".settings-sheet");
+    if(f) return f;
+  }
+  return null;
+}
 function ouvrirFeuilleGroupe(id, titre, ico, html){
   const ancienne = document.getElementById(id);
   if(ancienne) ancienne.remove();
@@ -19532,15 +19578,34 @@ function ouvrirFeuilleGroupe(id, titre, ico, html){
     </div>`;
   document.body.appendChild(veil);
   monterLaFeuille(veil);
+  const dessous = feuilleDessous(veil);
+  if(dessous){
+    dessous.classList.add("feuille-recule");
+    veil.classList.add("voile-second");
+    veil._dessous = dessous;
+  }
   glassTrack();
   attachSheetDrag(veil.querySelector(".settings-sheet"), ()=>fermerFeuilleGroupe(id));
   veil.addEventListener("click", (e)=>{ if(e.target === veil) fermerFeuilleGroupe(id); });
+  /* Le recul est un transform : le moteur de verre relit l'ÉCHELLE de la
+     feuille du dessous pendant tout le mouvement (voir openBibles). */
+  if(dessous) reculJusqu = performance.now() + msPli() + 200;
   return veil;
 }
 function fermerFeuilleGroupe(id){
   const v = document.getElementById(id);
   if(!v || v.classList.contains("closing")) return;
   v.classList.add("closing");
+  /* La feuille du dessous revient au premier plan PENDANT que celle-ci
+     redescend — les deux mouvements se croisent, comme à l'aller — et le
+     moteur reste éveillé tout le retour (voir closeBibles). */
+  const dessous = v._dessous;
+  if(dessous && dessous.isConnected){
+    dessous.classList.remove("feuille-recule");
+    reculJusqu = performance.now() + msPli() + 200;
+    try{ armGlass(msPli() + 300); }catch(e){}
+    setTimeout(()=>{ try{ glassRelayout(); queueGlassSync(); }catch(e){} }, msPli() + 40);
+  }
   setTimeout(()=>{ if(v.parentNode) v.remove(); }, msFerme() + 20);
 }
 /* La petite phrase sous une feuille : une erreur, ou une confirmation (bon). */

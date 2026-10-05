@@ -186,6 +186,33 @@ tout ce qui touche au son sur iOS (point 56 des tâches).
 **Le banc :** `banc-essai/joueurs.js` — douze situations, trois écrans, la
 géométrie ET le temps d'arrêt.
 
+## 6c. Deux bancs de minutage au bord de leur seuil — pas des défauts du jeu (05/10/2026)
+
+En publiant la v303, la suite s'est arrêtée sur deux bancs, même rejoués
+seuls. Ni l'un ni l'autre ne mesure un défaut de la v303 : la comparaison
+**A/B avec la v302 publiée, sur la même machine au même moment**, donne la
+même chose.
+
+- `joueurs.js`, clic sur la croix, **processeur bridé x6**, seuil 45 ms de
+  médiane. Dans ce conteneur, la médiane varie de **29 à 65 ms** d'une manche
+  à l'autre. Trois essais chacune : v302 échoue 2 fois sur 3 (médianes 52,8 ·
+  32,7 · 47,2 / 37,6 · 43,0 · 39,6 / 50,3 · 41,5 · 45,4), v303 aussi (37,7 ·
+  29,2 · 41,0 / 40,9 · 38,4 · 58,3 / 28,6 · 65,1 · 37,4). Moyenne des
+  médianes : 43 contre 42 ms. Le bridage x6 multiplie le bruit de la
+  machine par six : le seuil a été posé un jour plus calme (17 à 27 ms).
+- `entree.js`, « ouvrir Progression », au plus 4 % de l'écran encore dehors à
+  250 ms. Machine au calme, trois essais chacune : **3,8 % pour les deux
+  versions, à chaque fois** (et la v303 fait mieux à 100 ms : 10,2 % contre
+  10,8 à 12 %). Sous charge, les deux montent à 4,8–5,4 %. Progression est
+  l'écran le plus haut ; il frôle ce seuil depuis avant la v303.
+
+**Ce qui comptera comme fait.** Un banc de minutage doit se juger contre la
+version publiée, sur la même machine, dans la même minute — pas contre un
+seuil absolu posé un autre jour. Les deux bancs devraient mesurer l'ÉCART à
+la version de référence, ou rejouer chaque manche jusqu'à une médiane stable.
+D'ici là : un rouge de ces deux-là se vérifie par un A/B, comme ici, avant
+d'être cru.
+
 ---
 
 ## 6. Aucun audit d'accessibilité

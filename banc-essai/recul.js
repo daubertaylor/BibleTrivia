@@ -85,6 +85,34 @@ const URL = process.argv[2] || 'http://127.0.0.1:8099/index.html';
   juge('retour', await sonde('closeBibles();'));
   await p.waitForTimeout(900);
 
+  /* ===== TOUTE FEUILLE QUI S'EMPILE RECULE PAREIL (v303) =====
+     « Vérifie que ça s'ouvre comme les autres superpositions, parce que là
+     c'est pas le cas. » Confidentialité, ouverte depuis les Réglages, se
+     posait par-dessus une feuille restée en pleine taille : ce banc ne
+     regardait que la Bible, il ne pouvait pas le voir. Même mesure, même
+     exigence. (Les feuilles des groupes passent par la même fonction,
+     ouvrirFeuilleGroupe : un membre par-dessus les infos, « Signaler »
+     par-dessus un membre.) */
+  juge('confid.', await sonde('ouvrirConfidentialite();'));
+  {
+    const e = await p.evaluate(()=>{ const f=document.querySelector('#settingsVeil .settings-sheet');
+      if(!f) return null; return +(new DOMMatrixReadOnly(getComputedStyle(f).transform).a).toFixed(4); });
+    const bon = e !== null && e > 0.90 && e < 0.97;
+    if(!bon) ko++;
+    console.log('  ' + (bon?'OK ':'KO ') + 'sous Confidentialité, les Réglages reculent'.padEnd(46)
+      + 'échelle ' + e + (bon ? '' : '   attendu ~0,935, comme sous la Bible'));
+  }
+  await p.waitForTimeout(900);
+  juge('c.retour', await sonde("fermerFeuilleGroupe('confidentialiteVeil');"));
+  await p.waitForTimeout(900);
+  {
+    const e = await p.evaluate(()=>{ const f=document.querySelector('#settingsVeil .settings-sheet');
+      if(!f) return null; return +(new DOMMatrixReadOnly(getComputedStyle(f).transform).a).toFixed(4); });
+    const bon = e !== null && Math.abs(e - 1) < 0.005;
+    if(!bon) ko++;
+    console.log('  ' + (bon?'OK ':'KO ') + 'et ils reviennent à leur taille'.padEnd(46) + 'échelle ' + e);
+  }
+
   /* ET LE PANNEAU PEINT-IL SEULEMENT QUELQUE CHOSE ? */
   await p.evaluate(()=>{ openBibles(); });
   await p.waitForTimeout(1200);
