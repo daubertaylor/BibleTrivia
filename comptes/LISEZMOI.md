@@ -18,7 +18,7 @@ sont posées d'un coup.
 
 ### 2. LES DEUX MODÈLES DE COURRIEL — l'étape qu'on oublie, et qui casse tout
 
-Supabase → **Authentication → Email Templates**
+Supabase → **Authentication → Emails → Templates**
 (`supabase.com/dashboard/project/_/auth/templates`).
 
 **Par défaut, Supabase envoie un LIEN, pas un code.** C'est écrit noir sur
@@ -29,11 +29,11 @@ silence, sans message d'erreur.
 
 Il faut donc ajouter la variable `{{ .Token }}` dans **DEUX** modèles :
 
-- **Confirm signup** — celui que reçoit un joueur qui se connecte pour la
+- **Confirm sign up** — celui que reçoit un joueur qui se connecte pour la
   PREMIÈRE fois. C'est le cas de tout le monde au départ, donc c'est le plus
   important des deux.
-- **Magic Link** (parfois affiché « Magic link or OTP ») — celui que reçoit un
-  joueur qui revient.
+- **Magic link or OTP** (« Magic Link » sur les anciens tableaux de bord) —
+  celui que reçoit un joueur qui revient.
 
 Dans chacun, remplace le corps par quelque chose comme :
 
@@ -46,6 +46,52 @@ Dans chacun, remplace le corps par quelque chose comme :
 
 Le lien peut rester en dessous si tu veux, ça ne gêne pas — ce qui compte,
 c'est que `{{ .Token }}` soit là.
+
+### 2b. L'ENVOI DES COURRIELS (SMTP) — sans lui, personne d'autre que toi ne reçoit de code
+
+Le service de courriel intégré à Supabase est un service **d'essai** : il
+n'envoie **qu'aux membres de ton équipe Supabase**, et **deux messages par
+heure** au plus (documentation Supabase, « Send emails with custom SMTP »). Toi,
+tu recevras ton code ; un joueur, jamais. Il faut donc brancher un vrai
+serveur d'envoi.
+
+**On peut la remettre à plus tard, mais pas longtemps.** Tant qu'elle n'est
+pas faite, tes propres essais marchent avec l'adresse de ton compte Supabase ;
+un joueur qui touche « Sauvegarder ma progression » lit « Impossible d'envoyer
+le code pour l'instant. » — rien n'est perdu, il ne peut juste pas
+sauvegarder. En attendant, laisse **Enable custom SMTP** éteint : n'enregistre
+jamais cette page à moitié remplie. Et elle doit être faite avant d'ouvrir les
+groupes à tout le monde.
+
+Le plus simple sans nom de domaine : **une adresse Gmail dédiée à Yada**
+(elle peut servir aussi d'adresse de contact pour les stores). C'est elle que
+les joueurs voient arriver avec leur code :
+
+- au nom du jeu, neutre dans les trois langues — par exemple
+  `yada.quiz@gmail.com`, sinon `yada.bible`, `yadaquiz.app`, `contact.yada`
+  (Gmail ignore les points : si `yada.quiz` est prise, `yadaquiz` aussi) ;
+- ni ton nom, ni chiffres, ni « noreply » : un joueur sans code doit pouvoir
+  répondre ;
+- prénom du compte Google : `Yada`, nom vide — c'est ce que voit un joueur à
+  qui tu réponds (modifiable à tout moment : Gérer votre compte Google →
+  Informations personnelles → Nom) ;
+- adresse et téléphone de récupération : les tiens. Ils restent privés, et
+  perdre ce compte couperait l'envoi de tous les codes.
+
+1. Sur ce compte Google : **Sécurité → Validation en deux étapes** → l'activer.
+2. Puis `myaccount.google.com/apppasswords` → nom « Supabase » → **Créer** →
+   Google affiche un mot de passe de 16 lettres. **Il ne va nulle part
+   ailleurs que dans Supabase** — ni dans le dépôt, ni dans une conversation.
+3. Supabase → **Authentication → Emails → SMTP Settings** → **Enable custom
+   SMTP** :
+   - Sender email : l'adresse Gmail · Sender name : `Yada`
+   - Host : `smtp.gmail.com` · Port : `465`
+   - Username : l'adresse Gmail · Password : les 16 lettres, sans espaces
+   - **Save**.
+
+Gmail envoie jusqu'à 500 messages par jour : largement de quoi faire pour
+vingt à cinquante joueurs. Autres services possibles (Brevo, Resend…), mais
+ils demandent de vérifier un expéditeur ou un domaine.
 
 ### 3. Google (facultatif)
 

@@ -133,6 +133,17 @@ const ECRANS=[
         });
         (['outlineColor'].forEach(k=>{ const w=parseFloat(s.outlineWidth)||0; if(w<0.5||s.outlineStyle==='none') return;
           const c=lire(s[k]); if(!c||c.a<0.06||c.sat*c.a<=8) return; out.push(cls+'  outline '+c.txt); }));
+        /* UNE BORDURE SOUS UNE SURFACE DE VERRE, MÊME TRANSPARENTE, EST UN
+           TRAIT (v304). Le verre s'arrête à l'intérieur de la bordure, l'ombre
+           portée commence à l'extérieur : entre les deux, un pixel de photo
+           nue — sur des rochers, un trait sombre au bas de la carte. « J'ai
+           l'impression de voir une bordure » : elle y était. Le pixel se porte
+           dans le rembourrage (règle de la v189). Seule exception, voulue : le
+           liseré blanc de la médaille de fin, celui des avatars. */
+        if(n.classList.contains('has-gs') && !n.classList.contains('end-medal')){
+          const bw=['Top','Right','Bottom','Left'].map(k=>parseFloat(s['border'+k+'Width'])||0);
+          if(bw.some(v=>v>=0.5)) out.push(cls+'  bordure de '+Math.max(...bw)+' px sous le verre (anneau de photo nue)');
+        }
       });
       return [...new Set(out)];
     });

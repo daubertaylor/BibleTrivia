@@ -172,7 +172,7 @@ function lire(rel){
      blanches : elles ne sont ni du fond ni de l'encre), sommée sur la rangée
      et rapportée au repos. */
   const LENT_R = 5;
-  const ralenti = await p.addStyleTag({ content:`.chip, .len-chip{ --encre-duree:${0.5*LENT_R}s !important; --encre-sortie:${0.3*LENT_R}s !important; }
+  const ralenti = await p.addStyleTag({ content:`.chip, .len-chip{ --encre-duree:${0.5*LENT_R}s !important; --encre-sortie:${0.3*LENT_R}s !important; --encre-attente:${0.02*LENT_R}s !important; }
     :root{ --onde-duree:${0.24*LENT_R}s !important; --tr-onde:${0.24*LENT_R}s cubic-bezier(0.33,1,0.68,1) !important; }` });
   const rougeRangee = async (boites)=>{
     const x0 = boites[0].x, larg = boites[boites.length-1].x + boites[boites.length-1].w - x0;
@@ -214,6 +214,56 @@ function lire(rel){
   }
 
   await ralenti.evaluate(e => e.remove());     // la suite du banc tourne à vitesse réelle
+
+  /* ===== ET À VITESSE RÉELLE, SOUS UN VRAI DOIGT (v304) =====
+     « Des fois lorsque je clique sur certains boutons comme la durée de
+     partie, ça clignote légèrement. » Au ralenti, la rangée tenait entre 85 et
+     120 % : un décalage d'UNE image entre l'encre qui naît et l'encre qui
+     cède ne s'y voit pas, il se dilue dans cinq fois plus d'images. Filmée à
+     vitesse réelle (chaque image composée, Page.startScreencast), la rangée
+     tombait à 82 % pendant trois images à chaque choix. On la mesure donc
+     aussi comme l'œil la reçoit : vrais touchers, cinq gestes sur les trois
+     rangées. Le haut est large (le voile d'appui rosit la puce touchée avant
+     même que l'encre parte, c'est voulu) ; le bas ne l'est pas. */
+  {
+    const cdp = await ctx.newCDPSession(p);
+    let images = [];
+    cdp.on('Page.screencastFrame', async (f) => { images.push(f.data); try { await cdp.send('Page.screencastFrameAck', { sessionId: f.sessionId }); } catch(e){} });
+    const mesurer = (b64, rang) => p.evaluate(async ({ b64, rang }) => {
+      const img = new Image(); img.src = 'data:image/png;base64,' + b64; await img.decode();
+      const k = img.width / innerWidth; const cv = document.createElement('canvas'); cv.width = img.width; cv.height = img.height;
+      const g = cv.getContext('2d'); g.drawImage(img, 0, 0);
+      const d = g.getImageData(Math.round((rang.x + 3) * k), Math.round((rang.y + 3) * k), Math.round((rang.w - 6) * k), Math.round((rang.h - 6) * k)).data;
+      let s = 0, n = 0;
+      for (let i = 0; i < d.length; i += 4) { n++; const R = d[i], G = d[i+1], B = d[i+2]; if (R < 170) continue; if (G > 250 && B > 250) continue; s += Math.max(0, Math.min(1, (246 - G) / 184)); }
+      return s / n;
+    }, { b64, rang });
+    await prepa();
+    const masque = await p.addStyleTag({ content:'.btn-primary{ visibility:hidden !important; }' });
+    console.log('\n  à vitesse réelle, sous un vrai doigt (chaque image composée) :');
+    for (const [g, d, c] of [['len', 0, 1], ['len', 2, 1], ['tmr', 0, 2], ['theme', 0, 2], ['theme', 1, 0]]) {
+      await p.evaluate(([g, d]) => { const q = document.querySelectorAll('.chip[data-group="' + g + '"]'); q[d] && q[d].click(); }, [g, d]);
+      await p.waitForTimeout(1200);
+      const rang = await p.evaluate((g) => { const q = [...document.querySelectorAll('.chip[data-group="' + g + '"]')]; const a = q[0].getBoundingClientRect(), z = q[q.length-1].getBoundingClientRect(); return { x:a.left, y:a.top, w:z.right - a.left, h:a.height }; }, g);
+      const cible = await p.evaluate(([g, c]) => { const r = document.querySelectorAll('.chip[data-group="' + g + '"]')[c].getBoundingClientRect(); return { x:r.left + r.width/2, y:r.top + r.height/2 }; }, [g, c]);
+      images = [];
+      await cdp.send('Page.startScreencast', { format:'png', everyNthFrame:1 });
+      await p.waitForTimeout(150);
+      await p.touchscreen.tap(cible.x, cible.y);
+      await p.waitForTimeout(900);
+      await cdp.send('Page.stopScreencast');
+      const vals = []; for (const im of images) vals.push(await mesurer(im, rang));
+      const repos = vals[vals.length - 1] || 1;
+      const pc = vals.map(v => 100 * v / repos);
+      const bas = Math.min(...pc), haut = Math.max(...pc);
+      const vert = vals.length >= 8 && bas >= 92 && haut <= 125;
+      if (!vert) ko++;
+      console.log('    %s %s  de %s %% à %s %% du repos  (%d images)', vert ? 'OK   ' : 'ECHEC',
+        (g + ' ' + d + ' -> ' + c).padEnd(18), bas.toFixed(0).padStart(4), haut.toFixed(0).padStart(4), vals.length);
+    }
+    await masque.evaluate(e => e.remove());
+    await cdp.detach();
+  }
 
   /* ===== L'AUTRE IDIOME : LA LISTE À COCHE ===== */
   await bibles();

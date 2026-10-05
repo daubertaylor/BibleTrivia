@@ -213,6 +213,13 @@ la version de référence, ou rejouer chaque manche jusqu'à une médiane stable
 D'ici là : un rouge de ces deux-là se vérifie par un A/B, comme ici, avant
 d'être cru.
 
+**v304 (05/10/2026), même histoire.** `entree.js` rouge seul : Progression à
+4,3 % à 250 ms. A/B avec la v303 publiée, sept manches en ordre alterné : les
+deux versions sautent entre 3,8 % et 4,3 % — une image de plus ou de moins —,
+la v303 une fois sur sept, la v304 deux. Sonde fine, douze manches chacune
+dans le même navigateur : `render()` de Progression 17,1 ms (v303) contre
+16,2 ms (v304), 3,79 % contre 3,75 % dehors à 250 ms. Aucun écart.
+
 ---
 
 ## 6. Aucun audit d'accessibilité
