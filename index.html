@@ -548,6 +548,12 @@
   .sheet-veil{ height:100%; transition:height 0.28s cubic-bezier(0.33,1,0.68,1); }
   html.kb .sheet-veil{ bottom:auto; height:var(--vvh, 100%); }
   html.kb, html.kb body{ overflow:hidden; }
+  /* La discussion, clavier ouvert (voir le module du clavier) : l'écran prend
+     la hauteur visible, sans cale ni défilement, et y glisse à la vitesse du
+     clavier d'iOS. La marge du bas n'a plus de barre d'accueil à éviter. */
+  html.ecran-discussion #app{ transition:height 0.3s cubic-bezier(0.2,0.8,0.2,1), padding-bottom 0.3s cubic-bezier(0.2,0.8,0.2,1); }
+  html.kb.kb-fil #app, html.tel-fige.kb.kb-fil #app, html.tel-fige.kb.kb-fil:not(.is-standalone) #app{ height:var(--vvh, 100%); padding-bottom:0.45rem; }
+  html.kb.kb-fil #app::after{ content:none; }
   /* ÉLÉVATION PAR DÉFAUT DE TOUTE SURFACE DE VERRE. --rim-cast est une propriété
      personnalisée, donc HÉRITÉE : sans cette déclaration, une puce posée dans une
      carte récupérait l'ombre de la carte, et un bouton posé dans la feuille
@@ -4858,10 +4864,9 @@
   .parcours-sum .sem-flamme.eteinte{ --glass-tint: rgba(34,26,16,0.07); color:var(--ink-soft); text-shadow:none; }
 
   /* ---------- GLISSER DE CÔTÉ ----------
-     Accueil, Groupes, puis un groupe : trois pièces côte à côte. On y va
-     vers la droite et on en revient vers la gauche, comme sur les réseaux —
-     le reste du jeu continue de monter. Même durée, même courbe que le pli ;
-     seul le sens change. */
+     Tout le jeu, depuis la v312 (voir PROFONDEUR) : on va plus loin vers la
+     droite et on en revient vers la gauche, comme sur les réseaux. Même
+     durée, même courbe que le pli ; seul le sens change. */
   @keyframes screenInD{ from{ transform:translate3d(28vw,0,0); } to{ transform:translate3d(0,0,0); } }
   @keyframes screenInG{ from{ transform:translate3d(-28vw,0,0); } to{ transform:translate3d(0,0,0); } }
   @keyframes screenOutD{ from{ opacity:1; transform:translate3d(0,0,0); } to{ opacity:0; transform:translate3d(-10vw,0,0); } }
@@ -10280,6 +10285,29 @@ function deposerContreMonte(f){
 function monterLaFeuille(veil){
   const f = veil && veil.querySelector ? veil.querySelector(".settings-sheet") : null;
   if(!f) return;
+  /* ===== UNE FEUILLE REFERME D'ABORD LE CLAVIER DE LA PAGE =====
+     « Dans un groupe, je parle en message, puis j'appuie sur le i : vérifie
+     que la superposition est bonne. » Elle ne l'était pas : le clavier
+     restait ouvert pendant que la feuille montait, la feuille se posait
+     dessus, puis tout redescendait avec lui — et le champ de la discussion
+     dépassait un instant au-dessus de la feuille. On referme le clavier au
+     moment où la feuille part : les deux mouvements se font ensemble, comme
+     sur iOS. (Un champ DE la feuille garde son clavier, évidemment.) */
+  try{
+    const a = document.activeElement, de = document.documentElement;
+    const champPage = !!a && (a.tagName === "INPUT" || a.tagName === "TEXTAREA") && !veil.contains(a);
+    if(champPage) a.blur();
+    /* Et la page reprend sa hauteur TOUT DE SUITE — que le champ ait perdu le
+       foyer avant le toucher (Android) ou pas (iOS) : la feuille part du bas
+       de l'écran, pas du bord d'un clavier qui s'en va. Son voile, créé une
+       image plus tôt à la hauteur du clavier, est posé net à la hauteur
+       finale (sans sa transition) — sinon la feuille redescendait en
+       montant. */
+    if((champPage || !a || !veil.contains(a)) && (de.classList.contains("kb") || de.classList.contains("kb-fil"))){
+      de.classList.remove("kb", "kb-fil");
+      veil.style.transition = "none"; void veil.offsetHeight; veil.style.transition = "";
+    }
+  }catch(e){}
   sonderOuverture(f);
   const lacher = ()=>{
     if(!f.isConnected || f.classList.contains("monte")) return;   // refermée, ou déjà partie
@@ -12049,12 +12077,36 @@ try{
     }
     defilementAvantClavier = null; defilementPose = null;
   }
+  /* ===== DANS UNE DISCUSSION, L'ÉCRAN SE RÉTRÉCIT AVEC LE CLAVIER =====
+     « Lorsque j'ouvre le clavier, ça va très vite et ça fait un peu mal de
+     tête — notamment dans les discussions : c'est même un peu saccadé. »
+     Partout ailleurs, le clavier se pose PAR-DESSUS la page et l'on fait
+     défiler la page pour dégager le champ (voir plus haut) : juste pour un
+     formulaire. Dans une discussion, le champ est TOUT EN BAS : il fallait
+     faire défiler l'écran entier de la hauteur du clavier — l'en-tête sortait
+     par le haut, tout montait d'un bloc, puis redescendait à la fermeture.
+     Une discussion se comporte donc comme toutes les messageries : l'écran
+     prend la hauteur visible, en douceur (html.kb-fil) ; l'en-tête reste en
+     place, le fil se raccourcit par le bas en gardant ses derniers messages
+     sous les yeux, et le champ monte avec le clavier. Rien d'autre ne bouge. */
+  const champDeDiscussion = ()=>{ const el = document.activeElement; return !!el && el.id === "compoTexte"; };
   function apply(){
     if(!isField()){
       restH = Math.max(restH, vv.height); // pas de clavier -> c'est la hauteur de repos
       de.classList.remove("kb");
+      if(de.classList.contains("kb-fil")){ de.classList.remove("kb-fil"); try{ glassSuivre(500); }catch(e){} }
       fitScroll();
       rendDefilementClavier();
+      return;
+    }
+    if(champDeDiscussion()){
+      const cache = restH - vv.height;
+      if(cache > 90){
+        de.style.setProperty("--vvh", Math.round(vv.height) + "px");
+        de.style.setProperty("--kbh", Math.round(cache) + "px");
+        if(!de.classList.contains("kb-fil")){ de.classList.add("kb", "kb-fil"); try{ glassSuivre(500); }catch(e){} }
+      } else if(de.classList.contains("kb-fil")){ de.classList.remove("kb", "kb-fil"); try{ glassSuivre(500); }catch(e){} }
+      if(window.scrollY){ try{ window.scrollTo(0, 0); }catch(e){} }   // le document ne bouge jamais
       return;
     }
     if(defilementAvantClavier === null){
@@ -12137,7 +12189,7 @@ try{
   vv.addEventListener("resize", apply);
   vv.addEventListener("scroll", apply);
   document.addEventListener("focusin", ()=>setTimeout(apply, 60));
-  document.addEventListener("focusout", ()=>{ clearTimeout(kbScrollTimer); clearTimeout(kbScrollTimer2); setTimeout(()=>{ if(!isField()){ de.classList.remove("kb"); fitScroll(); } }, 60); });
+  document.addEventListener("focusout", ()=>{ clearTimeout(kbScrollTimer); clearTimeout(kbScrollTimer2); setTimeout(()=>{ if(!isField()){ de.classList.remove("kb"); if(de.classList.contains("kb-fil")){ de.classList.remove("kb-fil"); try{ glassSuivre(500); }catch(e){} } fitScroll(); } }, 60); });
 })();
 
 /* ===================== VERSET SURPRISE (5 touches sur l'icône) ===================== */
@@ -20930,7 +20982,24 @@ function renderGroupe(){
      navigateur peignait d'abord le HAUT du fil, puis sautait au bas — un
      éclair de vieux messages à chaque ouverture. render() appelle _posee
      dès que l'écran est dans la page, avant toute image (voir render). */
-  el._posee = ()=>{ descendreFil(false); if(t && t.value) surSaisie(t); };
+  el._posee = ()=>{
+    descendreFil(false); if(t && t.value) surSaisie(t);
+    /* Le fil se raccourcit (le clavier monte) ou s'allonge (il redescend) :
+       s'il était au bas, il y reste, à chaque image de la transition. */
+    const z = el.querySelector("#fil");
+    if(z && typeof ResizeObserver === "function"){
+      z._enBas = true;
+      /* Seul le DOIGT dit si l'on a quitté le bas. Le défilement que pose le
+         suivi ci-dessous arrive une image plus tard, quand le fil a encore
+         rétréci : le lire comme un geste faisait lâcher le bas en plein
+         milieu de la montée du clavier (mesuré : 243 px de fil perdus). */
+      z.addEventListener("scroll", ()=>{
+        if(performance.now() - (z._redim || 0) < 200) return;
+        z._enBas = z.scrollHeight - z.scrollTop - z.clientHeight < 40;
+      }, { passive:true });
+      try{ new ResizeObserver(()=>{ z._redim = performance.now(); if(z._enBas) z.scrollTop = z.scrollHeight; }).observe(z); }catch(e){}
+    }
+  };
   return el;
 }
 function cleJour(iso){ const d = new Date(iso); return d.getFullYear() + "-" + d.getMonth() + "-" + d.getDate(); }
@@ -23886,11 +23955,31 @@ function renderOnlineEnd(){
    L'accueil, les groupes, puis un groupe (ou la modération) : on y va vers la
    droite, on en revient vers la gauche — le sens dit où l'on est. Tout le
    reste du jeu continue de monter, comme avant. */
-const RANGEE_LATERALE = { mode:0, groupes:1, groupe:2, moderation:2 };
+/* ===== TOUT LE JEU S'OUVRE SUR LE CÔTÉ =====
+   « J'aime énormément l'animation d'ouverture sur le côté, comme quand je
+   rouvre un groupe. Si tu penses que c'est bien, que tout le jeu ait cette
+   ouverture-là partout — et que les volets déroulants s'ouvrent comme
+   d'habitude. » Elle ne valait qu'entre l'accueil, les groupes et une
+   discussion ; le reste du jeu montait.
+   Chaque écran a maintenant une PROFONDEUR : aller plus loin arrive par la
+   droite, revenir arrive par la gauche — l'accueil au fond, une partie et ses
+   résultats tout devant. Lancer une partie va toujours vers l'avant (même
+   « Rejouer » depuis les résultats). Les feuilles, elles, montent comme avant.
+   Seul l'écran d'ouverture (splash) garde sa montée : c'est une arrivée, pas
+   un déplacement. */
+const PROFONDEUR = {
+  mode:0,
+  groupes:1, profile:1, parcours:1, revoir:1, setup:1, "online-name":1, online:1,
+  moderation:2, "online-join":2, play:2,
+  groupe:3, end:3,
+  "online-room":4, "online-play":5, "online-end":6
+};
 function sensDuGlissement(de, vers){
-  const a = RANGEE_LATERALE[de], b = RANGEE_LATERALE[vers];
-  if(a === undefined || b === undefined || a === b) return null;
-  return b > a ? "vers-droite" : "vers-gauche";
+  if(!de || de === "splash" || de === vers) return null;
+  if(vers === "play" || vers === "online-play") return "vers-droite";
+  const a = PROFONDEUR[de], b = PROFONDEUR[vers];
+  if(a === undefined || b === undefined) return null;
+  return b >= a ? "vers-droite" : "vers-gauche";
 }
 function render(){
   const app = document.getElementById("app");
@@ -24033,6 +24122,7 @@ function render(){
     if(typeof node._posee === "function"){ try{ node._posee(); }catch(e){} }
   }
   lastScreen = state.screen;
+  try{ document.documentElement.classList.toggle("ecran-discussion", state.screen === "groupe"); }catch(e){}
   try{ majBarre(); }catch(e){}
   /* Après la barre : c'est elle qui donne aux écrans des groupes leur pied. */
   try{ serrerEcran(node); }catch(e){}
