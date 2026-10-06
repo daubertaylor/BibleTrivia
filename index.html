@@ -725,6 +725,8 @@
   .sem-flamme{ display:inline-flex; align-items:center; justify-content:center; gap:0.3rem; font-family:inherit; font-weight:800; font-size:1rem; font-variant-numeric:tabular-nums; color:#fff; text-shadow:0 1px 2px var(--feu-encre); --glass-tint: var(--feu); border:0; border-radius:var(--r-full); min-height:2.75rem; padding:0 calc(1.1rem + 1px); flex-shrink:0; box-shadow:0 2px 8px var(--feu-ombre); cursor:pointer; -webkit-tap-highlight-color:transparent; position:relative; }
   .sem-flamme svg{ width:1.05rem; height:1.05rem; display:block; }
   .sem-flamme b{ font-weight:800; }
+  .sem-flamme .sf-chev{ display:inline-flex; width:0.85rem; height:0.85rem; margin:0 -0.3rem 0 0.02rem; opacity:0.88; }
+  .sem-flamme .sf-chev svg{ width:100%; height:100%; display:block; }
   /* Flamme éteinte : on ne crie pas un zéro en or. Le même objet, en sourdine,
      parce qu'une série à zéro n'est pas une faute — c'est un début. */
   .sem-flamme.eteinte{ --glass-tint: rgba(255,255,255,0.16); color:rgba(255,255,255,0.8); box-shadow:none; text-shadow:0 1px 4px rgba(0,0,0,0.4); }
@@ -2392,6 +2394,12 @@
   .ce-txt{ flex:1; min-width:0; display:flex; flex-direction:column; gap:0.1rem; }
   .ce-t{ font-family:'Poppins',sans-serif; font-size:0.94rem; font-weight:700; color:var(--ink); line-height:1.3; }
   .ce-chev{ display:inline-flex; width:1.1rem; height:1.1rem; flex-shrink:0; color:var(--ink-soft); }
+  .ce-ico.ok{ color:var(--green); }
+  /* La feuille « Mon compte » : l'adresse en tête, puis les deux portes. */
+  .mc-qui{ display:flex; flex-direction:column; gap:0.15rem; text-align:center; padding:0.2rem 0 0.3rem; }
+  .mc-qui b{ font-family:'Poppins',sans-serif; font-size:0.98rem; font-weight:600; color:var(--ink); overflow-wrap:anywhere; }
+  .mc-qui small{ font-size:0.82rem; color:var(--ink-soft); }
+  .mc-note{ text-align:center; margin-top:-0.25rem; }
   .ce-ico svg, .ce-chev svg{ width:100%; height:100%; }
   .info-card{ background:rgba(255,255,255,0.6); backdrop-filter:blur(18px) saturate(180%); -webkit-backdrop-filter:blur(18px) saturate(180%); border:0; border-radius:var(--r-m); padding:calc(0.85rem + 1px) calc(0.95rem + 1px); font-size:0.84rem; line-height:1.55; color:var(--ink); }
   /* ===== LE MESSAGE D'ERREUR NE POUSSE PLUS RIEN =====
@@ -5827,6 +5835,7 @@ const TEXTES = {
     "Envoi…":"Sending…",
     "Code {code}":"Code {code}",
     "Rejoindre la partie":"Join the game",
+    "Mon compte":"My account",
     "Lecture seule · modération":"Read only · moderation",
     "Tous les groupes":"All groups",
     "Voir le groupe":"View group",
@@ -6448,6 +6457,7 @@ const TEXTES = {
     "Envoi…":"Enviando…",
     "Code {code}":"Código {code}",
     "Rejoindre la partie":"Unirse a la partida",
+    "Mon compte":"Mi cuenta",
     "Lecture seule · modération":"Solo lectura · moderación",
     "Tous les groupes":"Todos los grupos",
     "Voir le groupe":"Ver el grupo",
@@ -17877,8 +17887,13 @@ function semaineHtml(){
      flamme en elle-même se sélectionne pour qu'on comprenne exactement où j'ai
      cliqué ». On sait donc toujours ce qu'on a touché. */
   const n = dailyStreakShown();
+  /* ===== ET ELLE DIT QU'ON PEUT LA TOUCHER =====
+     « On n'a pas conscience qu'on peut cliquer dessus pour afficher plus. »
+     Une pastille de compteur se lit comme une information, pas comme une
+     porte. Elle porte donc le chevron de toutes les portes du jeu (les cartes
+     de l'accueil, les testaments, les réglages) : même signe, même sens. */
   const flamme = `<button class="sem-flamme${n ? "" : " eteinte"}" onclick="ouvrirFlamme()"`
-    + ` aria-label="${T("Ta flamme")}">${ICONS.flame}<b>${n}</b></button>`;
+    + ` aria-label="${T("Ta flamme")}">${ICONS.flame}<b>${n}</b><span class="sf-chev" aria-hidden="true">${ICONS.chevronRight}</span></button>`;
   return `<div class="semaine" aria-label="${T("Tes sept derniers jours")}">`
     + `<div class="sem-h"><span class="sem-t${dailyDoneToday() ? "" : " afaire"}">${etatDuJour()}</span>${flamme}</div>`
     + `<div class="sem-j">${cases.join("")}</div></div>`;
@@ -19242,6 +19257,7 @@ async function connexionGoogle(){
    ici, et c'est écrit noir sur blanc sous le bouton. */
 async function deconnexion(){
   const supa = initSupa(); if(!supa) return;
+  try{ fermerFeuilleGroupe("compteVeil"); }catch(e){}
   try{ await supa.auth.signOut(); }catch(e){}
   compte.session = null; compte.etape = "repos"; compte.message = ""; majCarteCompte();
   surChangementDeCompte();
@@ -19312,19 +19328,22 @@ function carteCompteHtml(){
      les mêmes enfants dans le même ordre, et majCarteCompte peut la mettre à
      jour EN PLACE — le champ, ce qu'on y a tapé et le clavier restent. */
   const msg = `<div class="compte-mot">${compte.message ? escapeHtml(compte.message) : ""}</div>`;
+  /* ===== CONNECTÉ, LA CARTE SE FAIT DISCRÈTE =====
+     « Je sais bien que je suis connecté. On n'est pas obligé de m'afficher
+     une page pour me le dire : une toute petite ligne, bien placée. » La
+     carte faisait 330 px — l'adresse, la date, « Se déconnecter » et sa
+     note, « Supprimer mon compte » — pour une chose qu'on regarde une fois.
+     Elle prend maintenant la forme de la rangée « Se connecter » : une ligne,
+     l'adresse en petit, et un chevron qui ouvre « Mon compte » (voir
+     ouvrirMonCompte), où tout le reste attend. */
   if(compteConnecte()){
-    return `<div class="info-card compte-carte" id="compteCarte" data-etat="connecte">
-      <div class="compte-tete"><span class="compte-ico">${ICONS.checkCircle}</span><b>${T("Progression sauvegardée")}</b></div>
-      <div class="compte-sous">${escapeHtml(compteCourriel())}</div>
-      <div class="compte-sous">${escapeHtml(quandSauvegarde())}</div>
-      ${msg}
-      <button class="btn-ghost compte-sortir" onclick="deconnexion()">${T("Se déconnecter")}</button>
-      <div class="compte-sous">${T("Se déconnecter n'efface rien sur ce téléphone.")}</div>
-      <!-- SUPPRIMER SON COMPTE, DANS LE JEU (Apple 5.1.1(v)). Un lien discret,
-           pas un bouton : c'est une porte qu'on doit pouvoir trouver, pas une
-           invitation. La fenêtre qui suit dit ce qui part et ce qui reste. -->
-      <button class="compte-supprimer" onclick="demanderSuppressionCompte()">${T("Supprimer mon compte")}</button>
-    </div>`;
+    return `<button type="button" class="info-card compte-carte compte-entree" id="compteCarte" data-etat="connecte" onclick="ouvrirMonCompte()">
+    <span class="ce-ico ok">${ICONS.checkCircle}</span>
+    <span class="ce-txt"><b class="ce-t">${T("Progression sauvegardée")}</b>${compte.message
+      ? `<span class="compte-mot">${escapeHtml(compte.message)}</span>`
+      : `<span class="compte-sous">${escapeHtml(compteCourriel())}</span>`}</span>
+    <span class="ce-chev">${ICONS.chevronRight}</span>
+  </button>`;
   }
   if(compte.etape === "code"){
     return `<div class="info-card compte-carte" id="compteCarte" data-etat="code">
@@ -19359,6 +19378,19 @@ function carteCompteHtml(){
   </button>`;
 }
 function compteOuvrir(){ compte.etape = "choix"; compte.message = ""; majCarteCompte(); try{ sonderGoogle(); }catch(e){} }
+/* « MON COMPTE » : ce que la carte connectée montrait d'un bloc. L'adresse
+   et la dernière sauvegarde, « Se déconnecter » (qui n'efface rien), et —
+   Apple 5.1.1(v) — « Supprimer mon compte », un lien discret : une porte
+   qu'on doit pouvoir trouver, pas une invitation. */
+function ouvrirMonCompte(){
+  if(!compteConnecte()) return;
+  ouvrirFeuilleGroupe("compteVeil", T("Mon compte"), ICONS.checkCircle, `
+    <div class="mc-qui"><b>${escapeHtml(compteCourriel())}</b><small>${escapeHtml(quandSauvegarde())}</small></div>
+    <button class="btn-ghost compte-sortir" onclick="deconnexion()">${T("Se déconnecter")}</button>
+    <p class="grp-aide mc-note">${T("Se déconnecter n'efface rien sur ce téléphone.")}</p>
+    <button class="compte-supprimer" onclick="demanderSuppressionCompte()">${T("Supprimer mon compte")}</button>
+    <div class="grp-mot"><span></span></div>`);
+}
 function compteRetour(){ compte.etape = "repos"; compte.message = ""; majCarteCompte(); }
 /* On ne redessine QUE la carte : redessiner l'écran ferait perdre le champ en
    cours de frappe et le clavier avec.
@@ -21789,7 +21821,7 @@ function demanderSuppressionCompte(){
     title:T("Supprimer ton compte ?"),
     message:T("Ton compte et ta sauvegarde en ligne seront supprimés, avec tes messages et tes groupes. Ta progression sur ce téléphone reste là."),
     okLabel:T("Supprimer"), cancelLabel:T("Annuler"), danger:true,
-    onOk:()=>{ supprimerMonCompte(); return true; }
+    onOk:()=>{ try{ fermerFeuilleGroupe("compteVeil"); }catch(e){} supprimerMonCompte(); return true; }
   });
 }
 async function supprimerMonCompte(){

@@ -255,8 +255,11 @@ const dit = (quoi, bon, detail) => { console.log('  ' + (bon ? 'OK  ' : 'KO  ') 
     const avant = await progression();
     await pb.evaluate(() => { state.screen = 'mode'; render(); openProfile(); });
     await pb.waitForTimeout(900);
-    dit('le profil propose « Supprimer mon compte »', await attendre(pb, () => !!document.querySelector('.compte-supprimer')));
-    await pb.evaluate(() => document.querySelector('.compte-supprimer').click());
+    /* Connecté, la carte du compte est une ligne : « Mon compte » s'ouvre au
+       doigt, et « Supprimer mon compte » y attend (v312). */
+    await pb.evaluate(() => document.getElementById('compteCarte').click());
+    dit('le profil propose « Supprimer mon compte »', await attendre(pb, () => !!document.querySelector('#compteVeil .compte-supprimer')));
+    await pb.evaluate(() => document.querySelector('#compteVeil .compte-supprimer').click());
     await pb.waitForTimeout(400);
     await pb.evaluate(() => { sessionStorage.setItem('essai_sorti', '1'); document.getElementById('modalOk').click(); });
     dit('le compte n\'existe plus sur le serveur', await (async () => { for (let i = 0; i < 30; i++) { if ((await m.sql("select count(*) from auth.users where id = '" + B + "'")) === '0') return true; await pb.waitForTimeout(200); } return false; })());
