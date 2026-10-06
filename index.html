@@ -613,12 +613,22 @@
      bas) pose position:relative sur tous les .icon-btn — à égalité il
      gagnerait, et les deux boutons tomberaient en pile à gauche en poussant
      tout l'écran vers le bas. */
-  .icon-btn.hero-settings{ position:absolute; top:0.15rem; right:0.5rem; color:var(--ink); }
+  /* ===== LES BOUTONS DU HAUT, À LA MÊME PLACE SUR TOUS LES ÉCRANS =====
+     « Vérifie que l'affichage est parfaitement aligné. » Il ne l'était pas :
+     sur tous les autres écrans, le retour et la roue des Réglages sont posés
+     dans l'en-tête (.app-header), à calc(0.55rem + 1px) du bord des cartes et
+     calc(0.5rem + 1px) du haut de l'écran. À l'accueil, ils l'étaient à
+     0.5rem et 0.15rem : la roue sautait de 1,8 px de côté et de 6,9 px de
+     haut à chaque changement d'onglet Accueil / Groupes. Mêmes cotes que
+     l'en-tête, désormais : la roue ne bouge plus d'un pixel d'un écran à
+     l'autre — et sur un iPhone, le haut du profil et des Réglages tombe pile
+     sur le haut du logo au repos. */
+  .icon-btn.hero-settings{ position:absolute; top:calc(0.5rem + 1px); right:calc(0.55rem + 1px); color:var(--ink); }
   /* LE RÉSEAU (voir sonderReseau) : un rond du même verre que les Réglages,
      juste à sa gauche, et seulement quand le réseau va mal. La couleur est
      celle du SIGNE, jamais d'un bord : ambre pour « faible », brique pour
      « coupé » — assez sombres pour se lire sur le verre clair. */
-  .icon-btn.hero-reseau{ position:absolute; top:0.15rem; right:calc(0.5rem + 2.4rem + 0.55rem); }
+  .icon-btn.hero-reseau{ position:absolute; top:calc(0.5rem + 1px); right:calc(0.55rem + 1px + 2.4rem + 0.55rem); }
   .icon-btn.hero-reseau[data-reseau="faible"]{ color:#A8680F; }
   .icon-btn.hero-reseau[data-reseau="coupe"]{ color:#B23A2A; }
   .icon-btn.hero-reseau.arrive{ animation:reseauArrive 0.42s cubic-bezier(0.2,0.8,0.2,1) both; }
@@ -626,7 +636,7 @@
   @keyframes reseauArrive{ from{ opacity:0; transform:scale(0.6); } to{ opacity:1; transform:none; } }
   @keyframes reseauPart{ to{ opacity:0; transform:scale(0.6); } }
   @media (prefers-reduced-motion: reduce){ .icon-btn.hero-reseau.arrive, .icon-btn.hero-reseau.part{ animation-duration:0.01s; } }
-  .icon-btn.hero-profile{ position:absolute; top:0.15rem; left:0.5rem; padding:0; overflow:visible; background:transparent; border:none; box-shadow:none; }
+  .icon-btn.hero-profile{ position:absolute; top:calc(0.5rem + 1px); left:calc(0.55rem + 1px); padding:0; overflow:visible; background:transparent; border:none; box-shadow:none; }
   .hero-icon{ width:clamp(4.2rem, min(calc(27 * var(--lw)), calc(14.2 * var(--hu))), 7.4rem); height:auto; aspect-ratio:1; margin:0 auto 0.5rem; border-radius:23%; box-shadow:0 12px 30px rgba(10,8,6,0.44), 0 0 8px rgba(255,250,238,0.48), 0 0 24px rgba(255,247,228,0.34), 0 0 52px rgba(255,247,231,0.18), inset 0 0 9px rgba(255,252,245,0.4), inset 0 1.5px 4px rgba(255,255,255,0.28); display:block; object-fit:cover; animation:heroFloat 5s ease-in-out infinite; -webkit-user-drag:none; user-drag:none; -webkit-touch-callout:none; -webkit-user-select:none; user-select:none; pointer-events:none; }
   @keyframes heroFloat{ 0%,100%{ transform:translateY(0); } 50%{ transform:translateY(-6px); } }
   .hero-title{ font-family:'Poppins',sans-serif; font-weight:700; font-size:2rem; margin:0; letter-spacing:-0.01em; color:#fff; text-shadow:0 1px 12px rgba(0,0,0,0.35); }
@@ -660,6 +670,18 @@
          (max-height:750px) and (pointer:fine),
          (orientation:landscape) and (pointer:coarse) and (max-width:750px){
     .home-verse{ display:none; }
+  }
+  /* AVEC LA BARRE, IL REVIENT. Ce palier date de l'accueil à la rangée des
+     sept jours. Avec la barre des groupes, la rangée est partie dans
+     Progression — et sur un iPhone SE, 60 px restaient vides au-dessus de la
+     barre pendant que le verset était retiré « faute de place ». Il en
+     demande 36 : il revient dès 600 px de haut. Mesuré de 20 en 20 px, de
+     360 à 430 de large : il TIENT dès 560 px, mais les cartes y retombent à
+     leur écart plancher (10 px) ; à partir de 600, elles gardent 16 px et
+     plus, l'écart d'un écran normal. En dessous, la place revient aux
+     cartes, comme avant (banc-essai/accueil.js balaie les hauteurs). */
+  @media (min-height:600px) and (max-height:750px) and (orientation:portrait){
+    html.avec-barre .home-verse{ display:block; }
   }
   /* CETTE SEMAINE — le pied de l'accueil (voir semaineHtml).
      Même famille que le reste : des pastilles au rayon des petits contrôles,
@@ -4844,6 +4866,36 @@
      sans elle, rien ne change. */
   html.avec-barre .screen.accueil,
   html.avec-barre .screen.groupes-ecran{ padding-bottom:calc(var(--bb-h) + var(--bb-bas) - max(calc(env(safe-area-inset-bottom) + 0.35rem), var(--air-bas, 0.8rem)) + 0.7rem); }
+  /* ===== AVEC LA BARRE, L'ACCUEIL GARDE SON RYTHME JUSQU'EN BAS =====
+     Mesuré sur six téléphones : l'écart entre la carte Progression et la
+     barre allait de 13 px (iPhone 15) à 65 px (petit Android), pendant que
+     les cartes, elles, restaient à 18-25 px l'une de l'autre. Deux raisons :
+       1. l'écart du bas était une marge FIXE (0.7rem), hors du partage —
+          les cartes s'écartaient, lui non ;
+       2. une fois cartes et écarts à leur plafond, ce qui restait tombait
+          AU FOND du bloc des cartes, donc juste au-dessus de la barre : un
+          trou de 40 à 60 px sur un SE, un Pixel, un petit Android. Le
+          commentaire de .home-cartes le disait pourtant : ce qui reste
+          au-delà doit remonter au-dessus du logo, où il ne se voit pas. Le
+          bloc, souple, l'avalait.
+     Désormais : l'écart du bas est un espaceur comme les autres (.ec-fin),
+     le bloc des cartes ne grandit pas au-delà de ce que ses cartes et ses
+     écarts peuvent prendre, et le reste va au HAUT DU HÉROS — sous les
+     boutons, qui ne bougent pas (ils sont posés en absolu dans le héros, et
+     c'est le héros qui grandit, par le haut). Sans la barre, rien ne change :
+     la rangée des sept jours a son propre équilibre (banc-essai/pied.js). */
+  html.avec-barre .screen.accueil{ padding-bottom:calc(var(--bb-h) + var(--bb-bas) - max(calc(env(safe-area-inset-bottom) + 0.35rem), var(--air-bas, 0.8rem))); }
+  /* Le bloc d'abord, le héros ensuite : 100 000 contre 1, le héros ne reçoit
+     rien tant que le bloc peut encore grandir ; dès que le bloc touche son
+     plafond, il est gelé et le héros prend tout le reste. */
+  html.avec-barre .accueil > .home-cartes{ flex-grow:100000;
+    max-height:calc(5 * clamp(3.6rem, calc(10 * var(--hu)), 5.8rem) + 5 * clamp(0.9rem, calc(3 * var(--hu)), 1.7rem)); }
+  html.avec-barre .accueil > .hero{ flex:1 1 auto; display:flex; flex-direction:column; justify-content:flex-end; }
+  /* En colonne souple, des marges auto rétréciraient la zone du logo à la
+     largeur de l'icône — et la carte du verset (posée en absolu dans cette
+     zone, à 50 % de sa largeur) avec elle. Elle garde toute la largeur. */
+  html.avec-barre .accueil > .hero > .hero-zone{ width:100%; flex-shrink:0; }
+  html.avec-barre .accueil > .hero > :is(.hero-title, .home-verse){ flex-shrink:0; }
   /* Le petit mot (« Code copié ») se pose AU-DESSUS de la barre, pas dessus. */
   html.avec-barre .mini-toast{ bottom:calc(var(--bb-h) + var(--bb-bas) + 0.7rem); }
   /* Sur la carte Progression, quand la rangée des sept jours est partie dans
@@ -22582,7 +22634,7 @@ function renderModeSelect(){
       </span>
       ${pilule}
       <span class="chev">${ICONS.chevronRight}</span>
-    </button>`; })()}
+    </button>${barre ? '<i class="ec-carte ec-fin"></i>' : ""}`; })()}
     </div>
     ${barre ? "" : '<div class="flex-sp home-sp-bot"></div>' + semaineHtml()}
   `;
