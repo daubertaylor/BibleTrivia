@@ -86,9 +86,12 @@ module.exports = `
           onAuthStateChange:function(cb){ ecouteurs.push(cb); return { data:{ subscription:{ unsubscribe:function(){} } } }; },
           /* erreurEnvoi / erreurCode : la panne que le banc veut voir, telle
              que Supabase la rend (status, code, name). */
+          /* lenteurEnvoi : Gmail met ce temps à faire partir le mail. */
           signInWithOtp:function(o){
-            if(window.__faux.erreurEnvoi) return Promise.resolve({ data:{ user:null, session:null }, error:window.__faux.erreurEnvoi });
-            window.__faux.courriel = o.email; return Promise.resolve({ error:null }); },
+            var F = window.__faux;
+            var rep = F.erreurEnvoi ? { data:{ user:null, session:null }, error:F.erreurEnvoi } : { error:null };
+            if(!F.erreurEnvoi) F.courriel = o.email;
+            return F.lenteurEnvoi ? new Promise(function(z){ setTimeout(function(){ z(rep); }, F.lenteurEnvoi); }) : Promise.resolve(rep); },
           verifyOtp:function(o){
             if(window.__faux.erreurCode) return Promise.resolve({ data:{ user:null, session:null }, error:window.__faux.erreurCode });
             if(String(o.token) !== window.__faux.codeAttendu) return Promise.resolve({ error:{ name:"AuthApiError", status:403, code:"otp_expired", message:"Token has expired or is invalid" } });

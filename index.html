@@ -5406,7 +5406,9 @@ const TEXTES = {
     "Cette adresse n'a pas l'air d'une adresse.":"That doesn't look like an address.",
     "Impossible d'envoyer le code pour l'instant.":"Can't send the code right now.",
     "Code envoyé. Regarde ta boîte mail.":"Code sent. Check your inbox.",
-    "Le code fait six chiffres.":"The code has six digits.",
+    "Tape tout le code reçu par mail.":"Type the whole code from the email.",
+    "Envoi du code…":"Sending the code…",
+    "Connexion…":"Signing in…",
     "Ce code ne correspond pas, ou il a expiré.":"That code doesn't match, or it has expired.",
     "Trop d'essais d'affilée. Attends une minute, puis réessaie.":"Too many tries in a row. Wait a minute, then try again.",
     "Le mail n'a pas pu partir. Réessaie dans un instant.":"The email couldn't be sent. Try again in a moment.",
@@ -6007,7 +6009,9 @@ const TEXTES = {
     "Cette adresse n'a pas l'air d'une adresse.":"Eso no parece una dirección.",
     "Impossible d'envoyer le code pour l'instant.":"No se puede enviar el código ahora.",
     "Code envoyé. Regarde ta boîte mail.":"Código enviado. Mira tu correo.",
-    "Le code fait six chiffres.":"El código tiene seis cifras.",
+    "Tape tout le code reçu par mail.":"Escribe el código completo del correo.",
+    "Envoi du code…":"Enviando el código…",
+    "Connexion…":"Iniciando sesión…",
     "Ce code ne correspond pas, ou il a expiré.":"Ese código no coincide o ha caducado.",
     "Trop d'essais d'affilée. Attends une minute, puis réessaie.":"Demasiados intentos seguidos. Espera un minuto e inténtalo de nuevo.",
     "Le mail n'a pas pu partir. Réessaie dans un instant.":"No se pudo enviar el correo. Inténtalo de nuevo en un momento.",
@@ -18713,6 +18717,7 @@ const compte = {
   etape: "repos",     // repos | choix | code | connecte
   courriel: "",
   saisie: "",         // l'adresse tapée, gardée si la carte se redessine
+  envoi: 0,           // numéro de l'envoi en cours (une réponse tardive d'un ancien envoi ne compte plus)
   message: "",
   occupe: false,
   derniere: 0,
@@ -18903,14 +18908,24 @@ async function envoyerCode(){
   compte.saisie = a;
   if(!adresseValable(a)){ compte.message = T("Cette adresse n'a pas l'air d'une adresse."); majCarteCompte(); return; }
   const supa = initSupa(); if(!supa) return;
-  compte.courriel = a; compte.occupe = true; compte.message = ""; majCarteCompte();
-  try{
-    const { error } = await supa.auth.signInWithOtp({ email:a, options:{ shouldCreateUser:true } });
-    compte.occupe = false;
-    if(error){ compte.message = raisonAuth(error, true); majCarteCompte(); return; }
-    compte.etape = "code";
-    compte.message = T("Code envoyé. Regarde ta boîte mail.");
-  }catch(e){ compte.occupe = false; compte.message = T("Impossible d'envoyer le code pour l'instant."); }
+  /* ON N'ATTEND PAS GMAIL POUR AVANCER.
+     « L'envoi du code a pris du temps. » Supabase ne répond qu'une fois le
+     mail parti — par Gmail, plusieurs secondes — et pendant tout ce temps la
+     carte restait figée sur l'adresse, un bouton grisé pour seul signe.
+     On passe tout de suite à la saisie du code, en disant que le mail part :
+     le joueur peut déjà ouvrir sa boîte. Si l'envoi échoue, on revient à
+     l'adresse (elle est gardée), avec la raison. Si le joueur a annulé ou
+     relancé entre-temps, la réponse tardive ne le ramène nulle part. */
+  const envoi = (compte.envoi || 0) + 1;
+  compte.envoi = envoi; compte.courriel = a; compte.occupe = false;
+  compte.etape = "code"; compte.message = T("Envoi du code…"); majCarteCompte();
+  let error = null;
+  try{ ({ error } = await supa.auth.signInWithOtp({ email:a, options:{ shouldCreateUser:true } })); }
+  catch(e){ error = e || {}; }
+  if(compte.envoi !== envoi || compte.etape !== "code" || compte.courriel !== a) return;
+  if(error){ compte.etape = "choix"; compte.message = raisonAuth(error, true); majCarteCompte(); return; }
+  if(compte.occupe) return;   // un code d'un mail précédent est déjà en cours de vérification
+  compte.message = T("Code envoyé. Regarde ta boîte mail.");
   majCarteCompte();
 }
 /* ON NE COMPTE PAS SUR L'ÉCOUTEUR POUR SAVOIR QU'ON VIENT D'ENTRER.
@@ -18934,9 +18949,13 @@ async function adopterSession(){
 async function verifierCode(){
   const champ = document.getElementById("compteCode");
   const c = String((champ && champ.value) || "").replace(/\D/g, "");
-  if(c.length !== 6){ compte.message = T("Le code fait six chiffres."); majCarteCompte(); return; }
+  /* SIX À DIX CHIFFRES. Supabase laisse chaque projet choisir la longueur
+     de ses codes (« Email OTP Length », de 6 à 10) — et des projets récents
+     en envoient HUIT. Le champ en coupait deux : « je ne peux pas
+     confirmer ». Le jeu prend le code tel qu'il arrive. */
+  if(c.length < 6){ compte.message = T("Tape tout le code reçu par mail."); majCarteCompte(); return; }
   const supa = initSupa(); if(!supa) return;
-  compte.occupe = true; compte.message = ""; majCarteCompte();
+  compte.occupe = true; compte.message = T("Connexion…"); majCarteCompte();
   try{
     const { error } = await supa.auth.verifyOtp({ email:compte.courriel, token:c, type:"email" });
     compte.occupe = false;
@@ -19050,7 +19069,7 @@ function carteCompteHtml(){
     return `<div class="info-card compte-carte" id="compteCarte" data-etat="code">
       <div class="compte-tete"><span class="compte-ico">${ICONS.bouclier}</span><b>${T("Entre le code reçu")}</b></div>
       <div class="compte-sous">${escapeHtml(compte.courriel)}</div>
-      <input class="code-input compte-code" id="compteCode" inputmode="numeric" maxlength="6" placeholder="000000" autocomplete="one-time-code" enterkeyhint="go" onkeydown="if(event.key==='Enter'){event.preventDefault();verifierCode();}">
+      <input class="code-input compte-code" id="compteCode" inputmode="numeric" maxlength="10" placeholder="000000" autocomplete="one-time-code" enterkeyhint="go" onkeydown="if(event.key==='Enter'){event.preventDefault();verifierCode();}">
       ${msg}
       <button class="btn-primary" onclick="verifierCode()"${compte.occupe?" disabled":""}>${T("Se connecter")}</button>
       <button class="btn-ghost compte-sortir" onclick="compteRetour()">${T("Annuler")}</button>

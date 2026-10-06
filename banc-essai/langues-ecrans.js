@@ -1028,7 +1028,9 @@ const ouvrirLaLangue = async (p, lg) => {
     ['Compte · Google fermé',    () => { compte.message = T("Passe plutôt par ton adresse e-mail."); majCarteCompte(); }],
     ['Compte · code envoyé', () => { compte.courriel = 'joueur@exemple.net'; compte.etape = 'code';
       compte.message = T("Code envoyé. Regarde ta boîte mail."); majCarteCompte(); }],
-    ['Compte · six chiffres',    () => { compte.message = T("Le code fait six chiffres."); majCarteCompte(); }],
+    ['Compte · code incomplet',  () => { compte.message = T("Tape tout le code reçu par mail."); majCarteCompte(); }],
+    ['Compte · envoi en cours',  () => { compte.message = T("Envoi du code…"); majCarteCompte(); }],
+    ['Compte · connexion',       () => { compte.message = T("Connexion…"); majCarteCompte(); }],
     ['Compte · code refusé',     () => { compte.message = T("Ce code ne correspond pas, ou il a expiré."); majCarteCompte(); }],
     ['Compte · serveur muet',    () => { compte.message = T("Le serveur ne répond pas. Réessaie dans un instant."); majCarteCompte(); }],
     ['Compte · connecté',  () => { compte.session = { user:{ id:'x', email:'joueur@exemple.net' } };

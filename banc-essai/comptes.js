@@ -254,6 +254,65 @@ const photo = (p) => p.evaluate(()=> sauvegardeIci());
     await p.context().close();
   }
 
+  /* ---------- 4c. ON N'ATTEND PAS GMAIL, ET LE CODE PEUT FAIRE HUIT CHIFFRES ----------
+     « L'envoi du code a pris du temps. » — « Il fait plus de 6 chiffres, et je
+     ne peux pas confirmer. » Gmail met plusieurs secondes : la saisie du code
+     doit s'ouvrir tout de suite, en disant que le mail part. Et Supabase peut
+     envoyer des codes de 6 à 10 chiffres : le champ ne doit pas en couper. */
+  {
+    const p = await ouvrir(nav);
+    await versProfil(p); await p.waitForTimeout(700);
+    const r = await p.evaluate(async ()=>{
+      window.__faux.lenteurEnvoi = 2500; window.__faux.codeAttendu = '12345678';
+      compteOuvrir(); document.getElementById('compteMail').value = 'taylor@essai.test';
+      const t0 = performance.now();
+      const fin = envoyerCode();
+      await new Promise(z => setTimeout(z, 60));
+      const tot = { etape: compte.etape, mot: compte.message, champ: !!document.getElementById('compteCode'), ms: Math.round(performance.now() - t0) };
+      await fin;
+      const apres = { etape: compte.etape, mot: compte.message };
+      const champ = document.getElementById('compteCode');
+      champ.value = '12345678';
+      const garde = champ.value;
+      await verifierCode();
+      return { tot, apres, garde, connecte: compteConnecte() };
+    });
+    v("Gmail lent : la saisie du code s'ouvre tout de suite", r.tot.etape === 'code' && r.tot.champ, r.tot.etape + ' à ' + r.tot.ms + ' ms');
+    v("…en disant que le mail part", /Envoi du code/.test(r.tot.mot), r.tot.mot);
+    v("…puis qu'il est parti", r.apres.etape === 'code' && /Code envoyé/.test(r.apres.mot), r.apres.mot);
+    v("un code à huit chiffres tient dans le champ", r.garde === '12345678', r.garde);
+    v("…et il connecte", r.connecte === true);
+    await p.context().close();
+  }
+  {
+    const p = await ouvrir(nav);
+    await versProfil(p); await p.waitForTimeout(700);
+    const r = await p.evaluate(async ()=>{
+      compteOuvrir(); document.getElementById('compteMail').value = 'taylor@essai.test';
+      await envoyerCode();
+      document.getElementById('compteCode').value = '1234';
+      await verifierCode();
+      const court = compte.message;
+      /* Un envoi qui échoue après coup ramène à l'adresse, gardée, avec la raison. */
+      compteRetour(); compteOuvrir();
+      window.__faux.lenteurEnvoi = 300;
+      window.__faux.erreurEnvoi = { name:'AuthApiError', status:500, code:'unexpected_failure', message:'Error sending magic link email' };
+      document.getElementById('compteMail').value = 'taylor@essai.test';
+      await envoyerCode();
+      const retour = { etape: compte.etape, mot: compte.message, valeur: (document.getElementById('compteMail')||{}).value };
+      /* Annuler pendant l'envoi : la réponse tardive ne ramène nulle part. */
+      window.__faux.erreurEnvoi = null; window.__faux.lenteurEnvoi = 400;
+      const fin = envoyerCode(); await new Promise(z => setTimeout(z, 50)); compteRetour(); await fin;
+      return { court, retour, apresAnnuler: compte.etape };
+    });
+    v("code trop court : on demande tout le code", /Tape tout le code/.test(r.court), r.court);
+    v("envoi raté après coup : retour à l'adresse", r.retour.etape === 'choix', r.retour.etape);
+    v("…l'adresse est gardée", r.retour.valeur === 'taylor@essai.test', r.retour.valeur);
+    v("…et la raison est dite", /Le mail n'a pas pu partir/.test(r.retour.mot), r.retour.mot);
+    v("annulé pendant l'envoi : la réponse tardive ne ramène nulle part", r.apresAnnuler === 'repos', r.apresAnnuler);
+    await p.context().close();
+  }
+
   /* ---------- 5. LA RÈGLE ABSOLUE : RICHE ICI, PAUVRE AU SERVEUR ---------- */
   {
     const p = await ouvrir(nav, null);
