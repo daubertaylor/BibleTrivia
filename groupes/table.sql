@@ -63,9 +63,9 @@ create policy "chacun sait s'il est modérateur"
 -- 1. LES TABLES
 -- ============================================================================
 
--- CE QUE LES AUTRES VOIENT DE TOI dans un groupe : un nom, une couleur.
--- Rien d'autre — pas d'adresse, pas de photo pour l'instant (une image
--- envoyée par un joueur se modère beaucoup plus mal qu'un mot).
+-- CE QUE LES AUTRES VOIENT DE TOI dans un groupe : un nom, une couleur, et
+-- depuis la v311 ta photo de profil (voir « LES PHOTOS » plus bas). Rien
+-- d'autre — pas d'adresse.
 create table if not exists public.profils (
   id                uuid primary key references auth.users(id) on delete cascade,
   nom               text not null check (char_length(nom) between 1 and 20),
@@ -163,6 +163,38 @@ create table if not exists public.blocages (
 create table if not exists public.mots_interdits (
   mot text primary key check (mot ~ '^[a-z]{2,40}$')   -- tel que _normaliser le laisse : a à z, rien d'autre
 );
+
+-- LES PHOTOS (v311) ----------------------------------------------------------
+-- « Je veux que les groupes puissent avoir une photo de groupe, et que nos
+--   photos de profil soient visibles dans les groupes. »  (Taylor)
+-- Une image se modère plus mal qu'un mot : aucun filtre ne la lit avant
+-- qu'elle s'affiche. Elle est donc PETITE (384 px de côté, une trentaine de
+-- kilo-octets), vue des seuls membres d'un groupe partagé — la règle d'accès
+-- du nom, sans rien de plus —, signalable comme le reste, et retirable par la
+-- modération, qui interdit alors d'en remettre une pendant sept jours.
+-- Elle vit DANS la table, en texte (« data:image/jpeg;base64,… »), pas dans un
+-- stockage de fichiers à part : les mêmes règles d'accès s'appliquent d'office,
+-- et il n'y a rien d'autre à installer.
+-- « photo_maj » (en millisecondes, à l'horloge du serveur) dit au jeu s'il a
+-- déjà la bonne : les listes ne font voyager que ce nombre, jamais l'image.
+alter table public.profils add column if not exists photo            text;
+alter table public.profils add column if not exists photo_maj        bigint not null default 0;
+alter table public.profils add column if not exists photo_retiree_le timestamptz;
+alter table public.groupes add column if not exists photo            text;
+alter table public.groupes add column if not exists photo_maj        bigint not null default 0;
+alter table public.groupes add column if not exists photo_retiree_le timestamptz;
+do $$
+begin
+  alter table public.profils add constraint profils_photo_jpeg
+    check (photo is null or (char_length(photo) <= 60000 and photo ~ '^data:image/jpeg;base64,[A-Za-z0-9+/]+={0,2}$'));
+exception when duplicate_object then null;
+end $$;
+do $$
+begin
+  alter table public.groupes add constraint groupes_photo_jpeg
+    check (photo is null or (char_length(photo) <= 60000 and photo ~ '^data:image/jpeg;base64,[A-Za-z0-9+/]+={0,2}$'));
+exception when duplicate_object then null;
+end $$;
 
 
 -- ============================================================================
@@ -277,6 +309,20 @@ language sql stable security definer set search_path = '' as $$
   select nom from public.profils where id = u
 $$;
 
+-- L'heure du serveur en millisecondes : la version d'une photo.
+create or replace function public._maintenant_ms() returns bigint
+language sql volatile set search_path = '' as $$
+  select (extract(epoch from clock_timestamp()) * 1000)::bigint
+$$;
+
+-- Une photo du jeu : du JPEG, en texte, ni vide ni trop lourde. Le jeu
+-- l'envoie toujours sous cette forme ; tout le reste est refusé.
+create or replace function public._photo_valide(p text) returns boolean
+language sql immutable set search_path = '' as $$
+  select coalesce(char_length(p) between 200 and 60000
+                  and p ~ '^data:image/jpeg;base64,[A-Za-z0-9+/]+={0,2}$', false)
+$$;
+
 -- Un mot du jeu dans la discussion (« X a rejoint le groupe »).
 create or replace function public._annoncer(g uuid, quoi text, d jsonb) returns void
 language sql volatile security definer set search_path = '' as $$
@@ -366,7 +412,11 @@ begin
     'moderateur', public._moderateur(moi),
     'participe', public._peut_participer(moi),
     'regles_version', r.regles_version,
-    'profil', (select to_jsonb(p) - 'banni_le' from public.profils p where p.id = moi),
+    -- Le profil sans sa photo : le jeu a déjà la sienne, et n'a besoin que de
+    -- sa version (photo_maj) pour savoir si celle du serveur est à jour.
+    'profil', (select to_jsonb(p) - 'banni_le' - 'photo' from public.profils p where p.id = moi),
+    -- Ce serveur connaît les photos (v311) : le jeu ne les propose qu'ici.
+    'photos', true,
     -- Pour un modérateur : combien de choses attendent une décision (une par
     -- objet signalé, comme dans la file). Le jeu en fait une pastille : c'est
     -- ainsi qu'un signalement arrive jusqu'à lui sans qu'il aille le chercher.
@@ -440,8 +490,11 @@ begin
   if auth.uid() is null then return jsonb_build_object('ok', false, 'erreur', 'non_connecte'); end if;
   select * into g from public.groupes where code = upper(btrim(coalesce(p_code, ''))) and supprime_le is null;
   if g.id is null then return jsonb_build_object('ok', false, 'erreur', 'code_inconnu'); end if;
+  -- La photo voyage ICI avec l'aperçu : un groupe privé n'est lisible que de
+  -- ses membres, et celui qui tape le code n'en est pas encore un.
   return jsonb_build_object('ok', true, 'id', g.id, 'nom', g.nom, 'description', g.description,
-    'ouvert', g.ouvert, 'nb_membres', g.nb_membres, 'teinte', g.teinte, 'membre', public._membre(g.id, auth.uid()));
+    'ouvert', g.ouvert, 'nb_membres', g.nb_membres, 'teinte', g.teinte, 'membre', public._membre(g.id, auth.uid()),
+    'photo', g.photo, 'photo_maj', g.photo_maj);
 end $$;
 
 create or replace function public.rejoindre_groupe(p_groupe uuid, p_code text) returns jsonb
@@ -717,9 +770,61 @@ language plpgsql volatile security definer set search_path = '' as $$
 begin
   if not (public._role(p_groupe, auth.uid()) = 'proprietaire' or public._moderateur(auth.uid())) then
     return jsonb_build_object('ok', false, 'erreur', 'interdit'); end if;
-  update public.groupes set supprime_le = now() where id = p_groupe;
+  update public.groupes set supprime_le = now(), photo = null where id = p_groupe;
   delete from public.membres where groupe = p_groupe;
   return jsonb_build_object('ok', true);
+end $$;
+
+-- MA PHOTO, celle que voient les membres de mes groupes. null = la retirer.
+-- Le jeu l'envoie quand elle change, et la retire quand on la retire.
+create or replace function public.poser_photo(p_photo text) returns jsonb
+language plpgsql volatile security definer set search_path = '' as $$
+declare
+  moi uuid := auth.uid();
+  etat text := public._peut_participer(moi);
+  p public.profils;
+  t bigint;
+begin
+  if etat <> 'ok' then return jsonb_build_object('ok', false, 'erreur', etat); end if;
+  if p_photo is not null and not public._photo_valide(p_photo) then return jsonb_build_object('ok', false, 'erreur', 'photo'); end if;
+  select * into p from public.profils where id = moi;
+  if p_photo is null and p.photo is null then return jsonb_build_object('ok', true, 'photo_maj', p.photo_maj); end if;
+  if p_photo is not null and p.photo_retiree_le > now() - interval '7 days' then
+    return jsonb_build_object('ok', false, 'erreur', 'photo_retiree'); end if;
+  t := public._maintenant_ms();
+  if p.photo_maj > t - 3000 then return jsonb_build_object('ok', false, 'erreur', 'trop_vite'); end if;
+  update public.profils set photo = p_photo, photo_maj = t, maj = now() where id = moi;
+  return jsonb_build_object('ok', true, 'photo_maj', t);
+end $$;
+
+-- LA PHOTO D'UN GROUPE : le propriétaire et les admins. Dans un groupe où
+-- l'on n'est pas seul, un mot du jeu le dit à tout le monde — et c'est lui qui
+-- prévient les téléphones ouverts de relire la photo.
+create or replace function public.poser_photo_groupe(p_groupe uuid, p_photo text) returns jsonb
+language plpgsql volatile security definer set search_path = '' as $$
+declare
+  moi uuid := auth.uid();
+  etat text := public._peut_participer(moi);
+  g public.groupes;
+  t bigint;
+begin
+  if etat <> 'ok' then return jsonb_build_object('ok', false, 'erreur', etat); end if;
+  select * into g from public.groupes where id = p_groupe and supprime_le is null;
+  if g.id is null then return jsonb_build_object('ok', false, 'erreur', 'introuvable'); end if;
+  if not (public._moderateur(moi) or coalesce(public._role(p_groupe, moi), '') in ('proprietaire','admin')) then
+    return jsonb_build_object('ok', false, 'erreur', 'interdit'); end if;
+  if p_photo is not null and not public._photo_valide(p_photo) then return jsonb_build_object('ok', false, 'erreur', 'photo'); end if;
+  if p_photo is null and g.photo is null then return jsonb_build_object('ok', true, 'photo_maj', g.photo_maj); end if;
+  if p_photo is not null and g.photo_retiree_le > now() - interval '7 days' then
+    return jsonb_build_object('ok', false, 'erreur', 'photo_retiree'); end if;
+  t := public._maintenant_ms();
+  if g.photo_maj > t - 3000 then return jsonb_build_object('ok', false, 'erreur', 'trop_vite'); end if;
+  update public.groupes set photo = p_photo, photo_maj = t where id = p_groupe;
+  if g.nb_membres > 1 then
+    perform public._annoncer(p_groupe, case when p_photo is null then 'photo_retiree' else 'photo' end,
+                             jsonb_build_object('nom', public._nom(moi)));
+  end if;
+  return jsonb_build_object('ok', true, 'photo_maj', t);
 end $$;
 
 -- LES GROUPES PUBLICS À DÉCOUVRIR : par langue, les plus vivants d'abord,
@@ -728,7 +833,7 @@ create or replace function public.groupes_publics(p_recherche text, p_langue tex
 language sql stable security definer set search_path = '' as $$
   select jsonb_build_object('id', g.id, 'nom', g.nom, 'description', g.description, 'nb_membres', g.nb_membres,
                             'teinte', g.teinte, 'langue', g.langue, 'dernier_message', g.dernier_message,
-                            'membre', public._membre(g.id, auth.uid()))
+                            'membre', public._membre(g.id, auth.uid()), 'photo_maj', g.photo_maj)
     from public.groupes g
    where g.ouvert and g.supprime_le is null and auth.uid() is not null
      and (p_langue is null or g.langue = p_langue)
@@ -742,7 +847,7 @@ create or replace function public.mes_groupes() returns setof jsonb
 language sql stable security definer set search_path = '' as $$
   select jsonb_build_object(
            'id', g.id, 'nom', g.nom, 'ouvert', g.ouvert, 'teinte', g.teinte, 'code', g.code,
-           'nb_membres', g.nb_membres, 'role', mb.role, 'muet_jusqu', mb.muet_jusqu,
+           'nb_membres', g.nb_membres, 'role', mb.role, 'muet_jusqu', mb.muet_jusqu, 'photo_maj', g.photo_maj,
            'dernier_message', g.dernier_message,
            'non_lus', (select count(*) from public.messages x
                         where x.groupe = g.id and x.id > mb.lu_jusqu and x.auteur is distinct from mb.membre
@@ -787,6 +892,12 @@ language sql stable security definer set search_path = '' as $$
            'texte', coalesce((select texte from public.messages_caches where message = s.message),
                              (select texte from public.messages where id = s.message)),
            'cible', s.cible, 'cible_nom', (select nom from public.profils where id = s.cible),
+           -- Les versions des photos en cause (0 : pas de photo) : le jeu les
+           -- montre sur la carte, et propose alors « Retirer la photo ».
+           'cible_photo_maj', coalesce((select case when photo is null then 0 else photo_maj end
+                                          from public.profils where id = s.cible), 0),
+           'groupe_photo_maj', coalesce((select case when photo is null then 0 else photo_maj end
+                                           from public.groupes where id = s.groupe), 0),
            'par_nom', (select nom from public.profils where id = s.par),
            'nb', (select count(distinct t.par) from public.signalements t
                    where t.traite_le is null and t.message is not distinct from s.message
@@ -817,9 +928,19 @@ begin
     if s.message is not null then perform public._masquer(s.message); end if;
   elsif p_decision = 'bannir' then
     if s.message is not null then perform public._masquer(s.message); end if;
-    if s.cible is not null then update public.profils set banni_le = now() where id = s.cible; end if;
+    if s.cible is not null then
+      update public.profils set banni_le = now(), photo = null, photo_maj = public._maintenant_ms() where id = s.cible;
+    end if;
   elsif p_decision = 'fermer_groupe' then
-    if s.groupe is not null then update public.groupes set supprime_le = now() where id = s.groupe; end if;
+    if s.groupe is not null then update public.groupes set supprime_le = now(), photo = null where id = s.groupe; end if;
+  elsif p_decision = 'retirer_photo' then
+    -- La photo de la personne visée — ou, sans personne, celle du groupe. Pas
+    -- de nouvelle photo pendant sept jours (voir poser_photo).
+    if s.cible is not null then
+      update public.profils set photo = null, photo_maj = public._maintenant_ms(), photo_retiree_le = now() where id = s.cible;
+    elsif s.groupe is not null then
+      update public.groupes set photo = null, photo_maj = public._maintenant_ms(), photo_retiree_le = now() where id = s.groupe;
+    end if;
   else
     return jsonb_build_object('ok', false, 'erreur', 'decision');
   end if;
@@ -867,6 +988,7 @@ begin
             where n.nspname = 'public'
               and p.proname in ('_moderateur','_role','_membre','_partage_un_groupe','_bloque','_normaliser','_interdit',
                                 '_coordonnees','_code','_peut_participer','_annoncer','_passer_la_main','_masquer','_quitter_tout','_nom',
+                                '_maintenant_ms','_photo_valide','poser_photo','poser_photo_groupe',
                                 'mon_etat_groupes','poser_profil','accepter_regles','creer_groupe','groupe_par_code',
                                 'rejoindre_groupe','quitter_groupe','envoyer_message','marquer_lu','supprimer_message',
                                 'signaler','bloquer','debloquer','moderer_membre','modifier_groupe','nouveau_code',
