@@ -8578,7 +8578,7 @@ const SUPABASE_ANON_KEY = "sb_publishable_FDJ_R0foC7uIeHmxVrj6rA_2NeIgW2a";
    remontée d'un téléphone ne vaut rien si on ne sait pas QUELLE version
    tournait. Elle doit rester égale au CACHE de sw.js — c'est ce que vérifie
    banc-essai/version.js, qui refuse de laisser publier les deux en désaccord. */
-const VERSION_JEU = "v308";
+const VERSION_JEU = "v309";
 
 /* ===================== QUAND ÇA CASSE CHEZ UN JOUEUR =====================
    « Si quelque chose casse chez cinq d'entre eux sur un modèle de téléphone
@@ -23194,9 +23194,11 @@ function serrerEcran(ecran, siDepasse){
     const d0 = a.clientHeight - (parseFloat(c0.paddingTop) || 0) - (parseFloat(c0.paddingBottom) || 0);
     if(!(ecran.offsetHeight - d0 > 0.5)) return;
   }
+  /* Clavier ouvert : on ne touche à RIEN, pas même pour défaire — le champ
+     doit rester exactement sous le doigt pendant qu'on tape. */
+  if(document.documentElement.classList.contains("kb")) return;
   /* D'abord, tout remettre comme le gabarit l'a écrit. */
   if(ecran._serre){ ecran._serre.forEach(x => { x.el.style.setProperty(x.prop, x.orig); }); ecran._serre = null; }
-  if(document.documentElement.classList.contains("kb")) return;
   const cs = getComputedStyle(a);
   const dispo = a.clientHeight - (parseFloat(cs.paddingTop) || 0) - (parseFloat(cs.paddingBottom) || 0);
   if(!(ecran.offsetHeight - dispo > 0.5)) return;
