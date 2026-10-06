@@ -4917,18 +4917,33 @@
   .grp-aide{ margin:0; font-size:0.84rem; line-height:1.45; color:var(--ink-soft); }
   .grp-desc{ margin:0; font-size:0.9rem; line-height:1.45; color:var(--ink); }
   .grp-types{ display:grid; grid-template-columns:1fr 1fr; gap:0.6rem; }
-  .grp-type{ display:flex; flex-direction:column; align-items:center; gap:0.12rem; padding:0.7rem 0.5rem; border:0; border-radius:var(--r-m);
-    background:rgb(252,248,241); color:var(--ink); font-family:'Poppins',sans-serif; font-weight:600; font-size:0.95rem;
-    box-shadow:0 0 0 1px rgba(58,42,26,0.1), 0 3px 10px rgba(34,26,16,0.08); -webkit-tap-highlight-color:transparent; }
-  .grp-type small{ font-family:'Inter',sans-serif; font-weight:500; font-size:0.78rem; color:var(--ink-soft); }
-  .grp-type.choisi{ background:var(--primary); color:#fff; box-shadow:0 1px 2px rgba(120,30,14,0.16), 0 5px 14px rgba(214,60,34,0.26); }
-  .grp-type.choisi small{ color:rgba(255,255,255,0.9); }
-  .grp-teintes{ display:flex; justify-content:space-between; gap:0.3rem; }
-  .grp-teinte{ position:relative; width:2.4rem; height:2.4rem; border-radius:50%; border:0; padding:0.55rem; color:#fff; flex-shrink:0;
-    box-shadow:inset 0 1px 0 rgba(255,255,255,0.26), 0 2px 7px rgba(24,16,10,0.18); -webkit-tap-highlight-color:transparent; }
+  /* Deux puces de choix (len-chip) : le fond, la teinte de verre et l'encre
+     viennent d'elles. Elles ajoutent seulement leur deuxième ligne. Le petit
+     texte suit la couleur du libellé (inherit) : il passe au blanc au même
+     instant que lui, quand l'encre l'a recouvert. */
+  .len-chip.grp-type{ flex-direction:column; gap:0.12rem; padding:calc(0.66rem + 1px) calc(0.5rem + 1px);
+    font-family:'Poppins',sans-serif; font-weight:600; font-size:0.95rem; }
+  .len-chip.grp-type small{ font-family:'Inter',sans-serif; font-weight:500; font-size:0.78rem; color:inherit; opacity:0.74; }
+  /* Les deux phrases d'aide dans la même case : elle a la hauteur de la plus
+     longue, et rien en dessous ne bouge quand on change de type. */
+  .grp-aide-type{ display:grid; }
+  .grp-aide-type > span{ grid-area:1 / 1; align-self:center; opacity:0; visibility:hidden; transition:opacity 0.2s ease, visibility 0s linear 0.2s; }
+  .grp-aide-type > span.vu{ opacity:1; visibility:visible; transition:opacity 0.2s ease 0.05s, visibility 0s; }
+  /* ===== LES COULEURS DU GROUPE SE CHOISISSENT COMME CELLES DU PROFIL =====
+     « Que ce soit cohérent. » Même mécanique que .color-dot : la pastille
+     visible est le contenu du bouton (background-clip), elle GRANDIT quand on
+     la retient, et la coche arrive en s'agrandissant (.cd-ck). Mêmes tailles
+     de disque qu'au Profil (31 px, puis 39 retenue), même ombre, même voile
+     d'appui blanc. Huit pastilles au lieu de six : le bouton est un peu plus
+     étroit, et la zone qu'on touche garde ses 44 px (::after). */
+  .grp-teintes{ display:flex; justify-content:space-between; gap:0.2rem; }
+  .grp-teinte{ position:relative; width:2.45rem; height:2.45rem; border-radius:50%; border:0; padding:0.3rem; flex-shrink:0;
+    display:flex; align-items:center; justify-content:center; color:#fff;
+    box-shadow:none; filter:drop-shadow(0 1px 2px rgba(24,16,10,0.3));
+    transition:padding 0.24s cubic-bezier(0.32,0.72,0,1); -webkit-tap-highlight-color:transparent; --press-tint: rgba(255,255,255,0.55); }
   .grp-teinte::after{ content:""; position:absolute; left:50%; top:50%; width:44px; height:44px; transform:translate(-50%,-50%); }
-  .grp-teinte svg{ width:100%; height:100%; display:block; opacity:0; transition:opacity 0.15s ease; }
-  .grp-teinte.choisie svg{ opacity:1; }
+  .grp-teinte.choisie{ padding:0.08rem; }
+  .grp-teinte.choisie .cd-ck{ opacity:1; transform:scale(1); }
   .grp-code-carte{ display:flex; flex-direction:column; align-items:center; gap:0.35rem; padding:0.9rem 0.8rem 1rem; border-radius:var(--r-l);
     background:rgb(252,248,241); box-shadow:0 3px 12px rgba(34,26,16,0.08); }
   .gc-l{ font-family:'Poppins',sans-serif; font-size:0.74rem; font-weight:700; letter-spacing:0.09em; text-transform:uppercase; color:var(--ink-soft); }
@@ -19925,26 +19940,34 @@ function ligneAction(ico, libelle, action, danger){
 
 /* ===================== CRÉER UN GROUPE ===================== */
 let creation = { type:"prive", teinte:2 };
-function aideType(){
-  return creation.type === "public" ? T("Public : tout le monde peut le trouver dans « Découvrir » et y entrer.")
-                                    : T("Privé : on n'y entre qu'avec son code.");
-}
 function formulaireGroupeHtml(g){
   return `<input class="text-input" id="grpNom" maxlength="40" placeholder="${T("Nom du groupe")}" value="${g ? escapeHtml(g.nom || "") : ""}" autocomplete="off" enterkeyhint="next">
     <input class="text-input" id="grpDesc" maxlength="160" placeholder="${T("Description (facultatif)")}" value="${g ? escapeHtml(g.description || "") : ""}" autocomplete="off" enterkeyhint="done">
     <div class="grp-types">
-      <button class="grp-type${creation.type === "prive" ? " choisi" : ""}" data-t="prive" onclick="choisirTypeGroupe('prive')">${T("Privé")}<small>${T("Sur invitation")}</small></button>
-      <button class="grp-type${creation.type === "public" ? " choisi" : ""}" data-t="public" onclick="choisirTypeGroupe('public')">${T("Public")}<small>${T("Ouvert à tous")}</small></button>
+      <button class="len-chip grp-type${creation.type === "prive" ? " sel" : ""}" data-tgroup="type" data-k="prive" onclick="choisirTypeGroupe('prive')">${T("Privé")}<small>${T("Sur invitation")}</small></button>
+      <button class="len-chip grp-type${creation.type === "public" ? " sel" : ""}" data-tgroup="type" data-k="public" onclick="choisirTypeGroupe('public')">${T("Public")}<small>${T("Ouvert à tous")}</small></button>
     </div>
-    <p class="grp-aide" id="grpTypeAide">${aideType()}</p>
+    <p class="grp-aide grp-aide-type" id="grpTypeAide"><span class="${creation.type === "public" ? "" : "vu"}" data-t="prive">${T("Privé : on n'y entre qu'avec son code.")}</span><span class="${creation.type === "public" ? "vu" : ""}" data-t="public">${T("Public : tout le monde peut le trouver dans « Découvrir » et y entrer.")}</span></p>
     <div class="grp-teintes" role="radiogroup" aria-label="${T("Couleur du groupe")}">${TEINTES.map((t, i)=>
-      `<button class="grp-teinte${creation.teinte === i ? " choisie" : ""}" style="${teinte(i)}" onclick="choisirTeinte(${i})" role="radio" aria-checked="${creation.teinte === i}" aria-label="${Tf("Couleur {n}", { n:i + 1 })}">${ICONS.coche}</button>`).join("")}</div>
+      `<button class="grp-teinte${creation.teinte === i ? " choisie" : ""}" style="${teinte(i)}background-clip:content-box;" onclick="choisirTeinte(${i})" role="radio" aria-checked="${creation.teinte === i}" aria-label="${Tf("Couleur {n}", { n:i + 1 })}"><span class="cd-ck">${ACH_CHECK}</span></button>`).join("")}</div>
     <div class="grp-mot"></div>`;
 }
+/* ===== PRIVÉ / PUBLIC : LE MÊME GESTE QUE LA DURÉE ET LE CHRONO =====
+   « Quand je choisis privé ou public, ça saute et ça décale un petit peu
+   tout. Et je veux que le remplissage se fasse exactement comme dans les
+   autres modes. »
+   Deux défauts. La phrase d'aide tenait sur UNE ligne pour « Privé » et sur
+   DEUX pour « Public » : tout ce qui suivait — les couleurs, « Créer » —
+   descendait d'une ligne, puis remontait. Les deux phrases sont maintenant
+   posées l'une sur l'autre dans la même case, qui prend la hauteur de la plus
+   longue : on ne voit que la bonne, et rien ne bouge.
+   Et les deux boutons se coloraient d'un coup. Ce sont désormais des puces
+   de choix (len-chip) comme toutes les autres : l'encre part du doigt,
+   s'étale, et la puce quittée lui cède la place (basculerChoix). */
 function choisirTypeGroupe(t){
   creation.type = t;
-  document.querySelectorAll(".grp-type").forEach(b => b.classList.toggle("choisi", b.dataset.t === t));
-  const a = document.getElementById("grpTypeAide"); if(a) a.textContent = aideType();
+  basculerChoix('[data-tgroup="type"]', "sel", t);
+  document.querySelectorAll("#grpTypeAide > span").forEach(s => s.classList.toggle("vu", s.dataset.t === t));
 }
 function choisirTeinte(i){
   creation.teinte = i;
