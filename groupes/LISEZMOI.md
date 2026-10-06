@@ -77,6 +77,20 @@ Les joueurs voient la barre la prochaine fois qu'ils reviennent sur le jeu
 **Refermer en urgence** : la même ligne avec `false`. Tout le monde, sauf les
 modérateurs, perd l'accès aussitôt. Rien n'est effacé.
 
+Une fois ouverts, la barre **Accueil · Groupes** apparaît chez **tout le
+monde**, connecté ou non : l'onglet Groupes d'un joueur sans compte lui
+explique ce qu'un compte lui apporte et le connecte sur place.
+
+### 6. Les photos (v311) — recoller le fichier une fois
+
+La v311 apporte la **photo de groupe** et les **photos de profil dans les
+groupes**. Elles vivent dans les tables elles-mêmes : il suffit de recoller
+`groupes/table.sql` **en entier** dans **SQL Editor** → **Run**, comme à
+l'étape 2. Rien n'est effacé, rien n'est à refaire ensuite.
+
+Tant que ce n'est pas fait, le jeu ne propose aucune photo et n'en demande
+aucune : tout marche exactement comme avant.
+
 ## Ce que voit le joueur
 
 - **Accueil** : la barre flottante en bas, **Accueil · Groupes**, avec une
@@ -89,13 +103,19 @@ modérateurs, perd l'accès aussitôt. Rien n'est effacé.
   plus**. Ensuite, il voit ses groupes, avec un aperçu du dernier message, les
   non-lus et les groupes publics à découvrir.
 - **Créer un groupe** : un nom, une description facultative, privé (on y entre
-  avec un code) ou public (on le trouve dans « Découvrir »), et une couleur.
+  avec un code) ou public (on le trouve dans « Découvrir »), une couleur — celle
+  de la discussion : mes bulles, le bouton d'envoi, l'invitation à jouer — et
+  une photo, si l'on veut.
 - **Rejoindre** : un code à 6 caractères, ou le lien d'invitation (le bouton
   **Inviter** partage `…/BibleTrivia/?groupe=CODE`).
-- **La discussion** : les messages arrivent en direct. Le bouton manette lance
-  une partie en ligne et l'annonce dans le groupe : les autres n'ont qu'à
-  toucher **Rejoindre la partie**. Toucher une bulle permet de la copier, la
-  signaler, bloquer son auteur ou la supprimer si c'est la sienne.
+- **La discussion** : les messages arrivent en direct, et restent sur le
+  téléphone (relance, changement de langue, réseau lent). Le bouton manette
+  lance une partie en ligne et l'annonce dans le groupe : les autres n'ont qu'à
+  toucher **Rejoindre la partie** ; quitter la partie ramène à la discussion.
+  Toucher une bulle permet de la copier, la signaler, bloquer son auteur ou la
+  supprimer si c'est la sienne — supprimée, elle disparaît pour tout le monde.
+- **Les photos** (v311, étape 6) : chacun voit la photo de profil des membres
+  de ses groupes ; toucher un visage l'agrandit.
 - **Les admins** (propriétaire, et ceux qu'il nomme) peuvent mettre en
   sourdine une heure, retirer ou bannir un membre, supprimer un message,
   modifier le groupe et changer le code. Un admin ne peut jamais toucher au
@@ -125,7 +145,16 @@ nombre de personnes qui l'ont signalé. Pour chacune :
   réapparaît ;
 - **Masquer** : le message disparaît pour tout le monde ;
 - **Bannir l'auteur** : il perd l'accès à tous les groupes ;
+- **Retirer la photo** (si la personne ou le groupe signalé en a une) : elle
+  disparaît partout, et aucune nouvelle photo n'est possible pendant sept
+  jours ;
 - **Fermer le groupe** : le groupe disparaît pour tous.
+
+**Voir avant de décider** : « Voir le groupe », sur la carte, ouvre la
+discussion telle que ses membres la voient, en lecture seule — tu n'en deviens
+pas membre et rien n'est marqué « lu » à leur place. Sous les cartes, **Tous
+les groupes** liste chaque groupe du jeu, et ouvre n'importe lequel de la même
+façon.
 
 **Quand un signalement attend, tu le vois en ouvrant le jeu** : le bouclier
 porte une pastille avec le nombre de choses à décider, et l'onglet **Groupes**
@@ -169,8 +198,11 @@ changer en même temps.
 
 ## Ce qui n'y est pas, exprès
 
-- **Pas de photos ni d'images dans les groupes.** Une image se modère beaucoup
-  plus mal qu'un mot. La photo de profil ne quitte jamais le téléphone.
+- **Pas d'images dans les messages.** Une image se modère beaucoup plus mal
+  qu'un mot. Seules la photo de profil (384 px, vue des seuls membres d'un
+  groupe partagé) et la photo d'un groupe (propriétaire et admins) existent ;
+  la modération les voit sur la carte d'un signalement et peut les **retirer**
+  — aucune nouvelle photo n'est alors possible pendant sept jours.
 - **Pas de liens cliquables.** Un lien dans un message reste du texte.
 - **Pas de messages privés à une seule personne.** Un groupe privé à deux en
   tient lieu, avec les mêmes protections.
