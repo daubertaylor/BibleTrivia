@@ -10083,6 +10083,42 @@ function typoFr(s){
 function escapeHtml(s){
   return typoFr(s).replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;");
 }
+/* ===== UN EMOJI EST UN SIGNE, PAS DEUX MOITIÉS =====
+   « Fais en sorte que les noms de groupe prennent en compte les emojis. »
+   Le serveur les prenait déjà, et les rendait à l'identique (vérifié sur le
+   vrai PostgreSQL des bancs). C'est le jeu qui les cassait : toutes les
+   pastilles prenaient leur initiale avec charAt(0), qui compte en unités
+   UTF-16 — un emoji en occupe deux, une famille onze. « 🔥 Les amis »
+   donnait donc une pastille à la MOITIÉ d'un emoji : un signe cassé (�).
+   On découpe en SIGNES, tels que l'œil les voit (un drapeau, une famille, un
+   pouce avec sa couleur de peau : un seul signe chacun) — avec
+   Intl.Segmenter, et à défaut avec une expression qui reconnaît les mêmes
+   suites. Une pastille dont le nom commence par un emoji montre l'emoji. */
+const DECOUPE_SIGNES = (()=>{ try{ return new Intl.Segmenter(undefined, { granularity:"grapheme" }); }catch(e){ return null; } })();
+const SIGNE_RE = (()=>{
+  try{ return new RegExp("\\p{Regional_Indicator}{2}|\\p{Extended_Pictographic}(?:\\uFE0F|\\p{Emoji_Modifier})?(?:\\u200D\\p{Extended_Pictographic}(?:\\uFE0F|\\p{Emoji_Modifier})?)*|[\\s\\S]\\p{M}*\\uFE0F?\\u20E3?", "gu"); }
+  catch(e){ return null; }
+})();
+function signes(s){
+  s = String(s == null ? "" : s);
+  if(DECOUPE_SIGNES){ const l = []; for(const x of DECOUPE_SIGNES.segment(s)) l.push(x.segment); return l; }
+  if(SIGNE_RE) return s.match(SIGNE_RE) || [];
+  return Array.from(s);
+}
+/* L'initiale d'un nom : sa première lettre en capitale — ou son emoji. */
+function premierSigne(s){
+  const t = String(s == null ? "" : s).trim();
+  return t ? (signes(t)[0] || "").toUpperCase() : "";
+}
+/* Couper à n signes (un affichage), jamais au milieu d'un emoji. */
+function couperSignes(s, n){ const l = signes(s); return l.length > n ? l.slice(0, n).join("") : String(s == null ? "" : s); }
+/* Couper à n points de code — ce que compte le serveur (char_length) —, sans
+   jamais laisser un emoji à moitié. */
+function couperPoints(s, n){
+  let r = "", k = 0;
+  for(const x of signes(s)){ const p = Array.from(x).length; if(k + p > n) break; r += x; k += p; }
+  return r;
+}
 
 /* ===================== RÉGLAGES PERSISTANTS (effets, musique, volume) ===================== */
 function loadSettings(){
@@ -16037,7 +16073,7 @@ function goToModeSelect(){ state.screen = "mode"; render(); }
    le clavier — et le nom se fixe au passage, puisque c'est ce que fait déjà la
    sortie du champ. */
 function teamRowInner(i, t){
-  return `<span class="team-token" style="background:${TEAM_COLORS[i%6]}">${((t.name||"").trim().charAt(0).toUpperCase())||(i+1)}</span>
+  return `<span class="team-token" style="background:${TEAM_COLORS[i%6]}">${escapeHtml(premierSigne(t.name))||(i+1)}</span>
         <input type="text" value="${escapeHtml(nomEquipe(t.name))}" maxlength="20" autocomplete="off" enterkeyhint="done" oninput="renameTeam(this)" onblur="renameSettle()" onkeydown="if(event.key==='Enter'){event.preventDefault();this.blur();}" placeholder="${T("Nom du joueur ou de l'équipe")}">
         <button class="team-remove" onclick="removeTeam(this)" ${state.teams.length<=2?"disabled":""} aria-label="${T('Retirer')}"><span class="ico" style="width:0.9rem;height:0.9rem;">${ICONS.close}</span></button>`;
 }
@@ -16106,7 +16142,7 @@ function syncTeamRows(){
     const tok = rows[i].querySelector(".team-token");
     if(tok){
       tok.style.background = TEAM_COLORS[i%6];
-      tok.textContent = (t.name||"").trim().charAt(0).toUpperCase() || (i+1);
+      tok.textContent = premierSigne(t.name) || (i+1);
     }
     const rm = rows[i].querySelector(".team-remove");
     if(rm) rm.disabled = state.teams.length <= 2;
@@ -16656,7 +16692,7 @@ function renameTeam(inp){
   if(i < 0 || !state.teams[i]) return;
   state.teams[i].name = inp.value; saveTeams();
   const tok = inp.parentNode ? inp.parentNode.querySelector(".team-token") : null;
-  if(tok) tok.textContent = (inp.value||"").trim().charAt(0).toUpperCase() || (i+1);
+  if(tok) tok.textContent = premierSigne(inp.value) || (i+1);
 }
 /* Dès qu'un joueur reçoit un VRAI nom, il ne prend plus de numéro : les autres
    se resserrent derrière lui (Taylor, puis Joueur 1 à 5 — six joueurs, et la
@@ -20052,7 +20088,7 @@ function teinte(i){
 /* La pastille d'un groupe : sa photo s'il en a une (posée sur la pastille
    même, voir majAvatarsPhoto), sinon sa couleur et son initiale. */
 function pastilleGroupe(g, petite){
-  const l = escapeHtml(String(g.nom || "?").trim().charAt(0).toUpperCase() || "?");
+  const l = escapeHtml(premierSigne(g.nom) || "?");
   const v = g.id ? valeurPhotoSrv("g:" + g.id) : "";
   return `<span class="grp-av${petite ? " petite" : ""}${v ? " a-photo" : ""}"${g.id ? ` data-gid="${escapeHtml(String(g.id))}"` : ""} style="${teinte(g.teinte)}${v ? "--ph:" + v + ";" : ""}" aria-hidden="true">${l}</span>`;
 }
@@ -20251,7 +20287,7 @@ async function entrerGroupes(btn){
   const nom = String(profile.name || "").trim();
   if(!nom){ motBienvenue(T("Choisis d'abord un nom.")); return; }
   if(btn) btn.disabled = true;
-  const p = await appelGroupe("poser_profil", { p_nom:nom.slice(0, 20), p_couleur:profile.color || "#4C86E8" });
+  const p = await appelGroupe("poser_profil", { p_nom:couperPoints(nom, 20), p_couleur:profile.color || "#4C86E8" });
   if(!p.ok){
     if(btn) btn.disabled = false;
     motBienvenue(p.erreur === "mot_interdit" ? T("Ce nom ne peut pas être utilisé dans les groupes. Change-le dans ton profil.") : motErreurGroupe(p));
@@ -20271,9 +20307,9 @@ async function suivreNomGroupes(){
   const e = grp.etat, nom = String(profile.name || "").trim();
   if(!e || e.participe !== "ok" || !e.profil || !nom) return;
   const couleur = profile.color || "#4C86E8";
-  if(e.profil.nom === nom.slice(0, 20) && String(e.profil.couleur || "").toLowerCase() === couleur.toLowerCase()) return;
-  const r = await appelGroupe("poser_profil", { p_nom:nom.slice(0, 20), p_couleur:couleur });
-  if(r.ok){ e.profil.nom = nom.slice(0, 20); e.profil.couleur = couleur; const id = monId(); if(id) grp.profils[id] = { nom:e.profil.nom, couleur }; }
+  if(e.profil.nom === couperPoints(nom, 20) && String(e.profil.couleur || "").toLowerCase() === couleur.toLowerCase()) return;
+  const r = await appelGroupe("poser_profil", { p_nom:couperPoints(nom, 20), p_couleur:couleur });
+  if(r.ok){ e.profil.nom = couperPoints(nom, 20); e.profil.couleur = couleur; const id = monId(); if(id) grp.profils[id] = { nom:e.profil.nom, couleur }; }
   else if(r.erreur === "mot_interdit"){
     grp.message = T("Ce nom ne peut pas être utilisé dans les groupes. Change-le dans ton profil.");
     if(state.screen === "groupes"){ const m = document.querySelector(".groupes-ecran .grp-mot"); if(m) poserMot(m, grp.message); }
@@ -20422,7 +20458,7 @@ function photoFormulaire(){
 }
 function pastilleFormulaireHtml(g){
   const v = photoFormulaire();
-  const l = escapeHtml(String((g && g.nom) || "").trim().charAt(0).toUpperCase() || "?");
+  const l = escapeHtml(premierSigne(g && g.nom) || "?");
   return `<span class="grp-av${v ? " a-photo" : ""}" id="grpFormAv" style="${teinte(creation.teinte)}${v ? "--ph:" + v + ";" : ""}">${l}</span>`;
 }
 function majPastilleFormulaire(){
@@ -20431,7 +20467,7 @@ function majPastilleFormulaire(){
   a.setAttribute("style", teinte(creation.teinte) + (v ? "--ph:" + v + ";" : ""));
   a.classList.toggle("a-photo", !!v);
   const n = document.getElementById("grpNom");
-  a.textContent = String((n && n.value) || "").trim().charAt(0).toUpperCase() || "?";
+  a.textContent = premierSigne(n && n.value) || "?";
 }
 function choisirPhotoGroupe(){
   if(!photoFormulaire()){ ouvrirPhoto(recevoirPhotoGroupe); return; }
@@ -20467,9 +20503,14 @@ function ouvrirCreation(){
     formulaireGroupeHtml(null) + `<button class="btn-primary" onclick="creerGroupe(this)">${T("Créer")}</button>`);
 }
 function valeurChamp(id){ const c = document.getElementById(id); return String((c && c.value) || "").trim(); }
+/* « Entre 3 et 40 caractères » : trois SIGNES au moins (deux emojis ne font
+   pas un nom, un drapeau compte pour un) et quarante points de code au plus,
+   ce que compte le serveur. Le champ (maxlength, en unités UTF-16) ne laisse
+   de toute façon jamais dépasser. */
+function nomGroupeOk(nom){ return signes(nom).length >= 3 && Array.from(nom).length <= 40; }
 async function creerGroupe(btn){
   const nom = valeurChamp("grpNom"), desc = valeurChamp("grpDesc");
-  if(nom.length < 3){ motFeuille("grpCreerVeil", T("Le nom doit faire entre 3 et 40 caractères.")); return; }
+  if(!nomGroupeOk(nom)){ motFeuille("grpCreerVeil", T("Le nom doit faire entre 3 et 40 caractères.")); return; }
   if(btn) btn.disabled = true;
   const r = await appelGroupe("creer_groupe", { p_nom:nom, p_description:desc, p_ouvert:creation.type === "public", p_langue:LANGUE, p_teinte:creation.teinte });
   if(!r.ok){ if(btn) btn.disabled = false; motFeuille("grpCreerVeil", motErreurGroupe(r)); return; }
@@ -21683,7 +21724,7 @@ function ouvrirModifGroupe(){
 async function enregistrerGroupe(btn){
   const g = groupeCourant(); if(!g) return;
   const nom = valeurChamp("grpNom"), desc = valeurChamp("grpDesc");
-  if(nom.length < 3){ motFeuille("grpModifVeil", T("Le nom doit faire entre 3 et 40 caractères.")); return; }
+  if(!nomGroupeOk(nom)){ motFeuille("grpModifVeil", T("Le nom doit faire entre 3 et 40 caractères.")); return; }
   if(btn) btn.disabled = true;
   const r = await appelGroupe("modifier_groupe", { p_groupe:g.id, p_nom:nom, p_description:desc, p_ouvert:creation.type === "public", p_teinte:creation.teinte });
   if(!r.ok){ if(btn) btn.disabled = false; motFeuille("grpModifVeil", motErreurGroupe(r)); return; }
@@ -22814,7 +22855,7 @@ function renderPlay(){
         <div class="award-grid${pop?' reveal-in':''}">
           ${state.teams.map((t,i)=>`
             <button class="award-btn ${state.awarded.includes(i)?'awarded':''}" onclick="toggleAward(${i})">
-              <span class="team-token aw-token" style="background:${TEAM_COLORS[i%6]}">${((t.name||"").trim().charAt(0).toUpperCase())||(i+1)}</span>
+              <span class="team-token aw-token" style="background:${TEAM_COLORS[i%6]}">${escapeHtml(premierSigne(t.name))||(i+1)}</span>
               <span class="aw-name">${escapeHtml(nomEquipe(t.name))}</span>
               ${state.awarded.includes(i)?`<span class="aw-check" style="color:${TEAM_COLORS[i%6]}">${ICONS.checkCircle}</span>`:""}
               <span class="pts">+${info.pts}</span>
@@ -22895,7 +22936,7 @@ function renderEndGroup(){
     <div class="podium">
       ${podiumOrder.filter(i=>i<podiumTeams.length).map(i=>{
         const r = podiumTeams[i];
-        const initial = escapeHtml(state.teams[r.teamIdx].name.charAt(0).toUpperCase());
+        const initial = escapeHtml(premierSigne(state.teams[r.teamIdx].name));
         return `
         <div class="podium-col">
           ${r.rank===1 ? `<span class="podium-crown">${ICONS.crown}</span>` : `<span class="podium-crown" style="visibility:hidden"></span>`}
@@ -22921,7 +22962,7 @@ function renderEndGroup(){
         return `
         <div class="rank-row">
           <span class="rank-badge ${g}">${r.rank}</span>
-          <span class="team-token rank-token" style="background:${TEAM_COLORS[r.teamIdx%6]}">${((state.teams[r.teamIdx].name||"").trim().charAt(0).toUpperCase())||"?"}</span>
+          <span class="team-token rank-token" style="background:${TEAM_COLORS[r.teamIdx%6]}">${escapeHtml(premierSigne(state.teams[r.teamIdx].name))||"?"}</span>
           <span class="rank-name">${escapeHtml(nomEquipe(state.teams[r.teamIdx].name))}</span>
           <span class="rank-score-wrap">
             <button class="adj-btn" onclick="adjustScore(${r.teamIdx},-10)" aria-label="${T("Retirer 10 points")}">−</button>
@@ -23056,7 +23097,7 @@ function apresEntree(){ return msPli() + 40; }
    téléphone, l'identifiant du joueur pour les autres. Il portait avant le
    drapeau du badge Créateur, retiré en v287. */
 function avatarHtml(name, color, size, qui){
-  const initial = escapeHtml((name||"?").charAt(0).toUpperCase());
+  const initial = escapeHtml(premierSigne(name) || "?");
   const s = size || 2.6;
   /* --av : la taille de l'avatar, transmise à ce qui se pose dessus pour que ça
      reste à la même fraction quelle que soit la place où on l'affiche.
@@ -23609,7 +23650,7 @@ function syncProfileDraft(){
 function onProfileNameInput(el){
   profile.name = el.value.slice(0,18);
   const av = document.querySelector("[data-avatar-preview] .avatar");
-  if(av && av.firstChild){ av.firstChild.nodeValue = (profile.name.trim()||T("Invité")).charAt(0).toUpperCase(); }
+  if(av && av.firstChild){ av.firstChild.nodeValue = premierSigne(profile.name.trim()||T("Invité")); }
   const lb = document.getElementById("profileNameLabel");
   if(lb) lb.textContent = profile.name.trim() || T("Invité");
 }
@@ -23936,7 +23977,7 @@ function renderOnlinePlay(){
       <div class="ds-piste" onscroll="majVoilesScores()">
       ${classement().map(j=>`
         <span class="ds-puce${j.moi?' moi':''}${j.gone?' gone':''}">
-          <span class="dsp-nom">${escapeHtml((j.name||"?").slice(0,9))}</span>
+          <span class="dsp-nom">${escapeHtml(couperSignes(j.name||"?", 9))}</span>
           <span class="dsp-pts">${j.score|0}</span>
         </span>`).join("")}
       </div>
