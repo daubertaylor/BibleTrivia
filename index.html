@@ -4849,6 +4849,29 @@
     --rim-cast:0 10px 34px rgba(15,12,10,0.24), 0 2px 8px rgba(15,12,10,0.1); box-shadow:none;
     transition:transform var(--tr-ouvre), opacity 0.22s ease; }
   .barre-bas.cachee{ transform:translate3d(-50%, calc(100% + var(--bb-bas) + 1rem), 0); pointer-events:none; }
+  /* ===== LA BARRE ARRIVE AVEC SA PAGE =====
+     « Les logos Accueil et Messages mettent un petit peu de temps, après une
+     animation. » Mesuré au retour de Progression : la page arrivait de CÔTÉ
+     pendant que la barre remontait du BAS, et la barre n'était en place
+     qu'au bout de 0,48 s — deux mouvements dans deux directions, le second
+     traînant derrière le premier. Comme la barre d'onglets d'iOS, elle fait
+     désormais partie de sa page : elle arrive de côté, du même pas
+     (--tr-ouvre), avec elle ; et quand on quitte l'accueil pour une page
+     qui la cache, elle part avec lui, d'un fondu court vers le côté — la
+     page qu'on quitte disparaît elle aussi tout de suite. Au démarrage
+     (l'accueil monte du bas), elle monte du bas : toujours le sens de sa
+     page. Entre Accueil et Groupes elle ne bouge pas : seule la pastille
+     glisse. */
+  .barre-bas.sans-transition{ transition:none !important; }
+  @keyframes barreArriveG{ from{ transform:translate3d(calc(-50% - 28vw),0,0); } to{ transform:translate3d(-50%,0,0); } }
+  @keyframes barreArriveD{ from{ transform:translate3d(calc(-50% + 28vw),0,0); } to{ transform:translate3d(-50%,0,0); } }
+  @keyframes barrePart{ from{ opacity:1; transform:translate3d(-50%,0,0); } to{ opacity:0; transform:translate3d(calc(-50% - 10vw),0,0); } }
+  .barre-bas.arrive-g{ animation:barreArriveG var(--tr-ouvre) both; }
+  .barre-bas.arrive-d{ animation:barreArriveD var(--tr-ouvre) both; }
+  /* Un fondu qui part VITE (courbe de sortie, 0,2 s) : la page qu'on quitte
+     disparaît à l'instant, la barre ne doit pas traîner derrière elle. */
+  .barre-bas.part-cote{ animation:barrePart 0.2s cubic-bezier(0.2,0.8,0.2,1) forwards; pointer-events:none; }
+  @media (prefers-reduced-motion: reduce){ .barre-bas.arrive-g, .barre-bas.arrive-d, .barre-bas.part-cote{ animation-duration:0.01s; } }
   /* Le clavier monte (une recherche, une adresse) : la barre s'efface. Sur
      Android elle remonterait avec la page et se poserait sur le champ. */
   html.kb .barre-bas{ transform:translate3d(-50%, calc(100% + var(--bb-bas) + 1rem), 0); pointer-events:none; }
@@ -20015,9 +20038,35 @@ function majBarre(){
         : (lus > 0 ? Tf("Groupes, {n} non lus", { n:lus }) : T("Groupes")));
     }
   }
-  const etait = b.classList.contains("cachee");
-  b.classList.toggle("cachee", !montre);
-  if(etait && montre){ try{ glassTrack(); }catch(e){} }
+  const etait = b.classList.contains("cachee") || b.classList.contains("part-cote");
+  /* Le sens de la page qui arrive (voir LA BARRE ARRIVE AVEC SA PAGE). */
+  const entree = document.querySelector("#app > .screen.screen-enter:not(.screen-exit)");
+  const sens = !entree ? "" : (entree.classList.contains("vers-gauche") ? "g" : (entree.classList.contains("vers-droite") ? "d" : ""));
+  clearTimeout(b._finMouvement);
+  if(etait && montre && sens){
+    /* Elle arrive de côté, avec sa page : on la pose d'abord à sa place,
+       sans transition, et c'est l'animation qui la fait venir. */
+    b.classList.remove("part-cote", "arrive-g", "arrive-d");
+    b.classList.add("sans-transition"); b.classList.remove("cachee");
+    void b.offsetWidth;
+    b.classList.remove("sans-transition");
+    b.classList.add(sens === "g" ? "arrive-g" : "arrive-d");
+    b._finMouvement = setTimeout(()=>{ b.classList.remove("arrive-g", "arrive-d"); }, msPli() + 60);
+    try{ glassTrack(); }catch(e){}
+  } else if(!etait && !montre && sens){
+    /* Elle part avec la page qu'on quitte : un fondu court vers le côté,
+       puis on la range sous le bord, sans qu'on la voie y descendre. */
+    b.classList.remove("arrive-g", "arrive-d");
+    b.classList.add("part-cote");
+    b._finMouvement = setTimeout(()=>{
+      b.classList.add("sans-transition", "cachee"); b.classList.remove("part-cote");
+      void b.offsetWidth; b.classList.remove("sans-transition");
+    }, 230);
+  } else {
+    if(montre) b.classList.remove("part-cote");
+    b.classList.toggle("cachee", !montre);
+    if(etait && montre){ try{ glassTrack(); }catch(e){} }
+  }
 }
 function allerOnglet(o){
   if(o === "groupes"){
