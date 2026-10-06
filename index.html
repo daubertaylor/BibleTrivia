@@ -2465,7 +2465,19 @@
   .oa-txt small{ font-size:0.83rem; color:var(--ink-soft); }
 
   .searching-card, .waiting-card{ text-align:center; background:rgba(255,255,255,0.55); backdrop-filter:blur(18px) saturate(180%); -webkit-backdrop-filter:blur(18px) saturate(180%); border:0; border-radius:var(--r-l); padding:calc(1.35rem + 1px) calc(1.1rem + 1px); }
-  .spinner{ width:2rem; height:2rem; margin:0 auto 0.8rem; border-radius:50%; border:3px solid var(--surface-alt); border-top-color:var(--primary); animation:spin 0.8s linear infinite; }
+  /* L'ANNEAU DE CHARGEMENT N'EST PAS UNE BORDURE. Il était dessiné par un
+     rebord de 3 px dont un quart corail : la seule bordure colorée du jeu,
+     visible dès qu'une liste se charge (banc-essai/couleurs.js). Le même
+     anneau est maintenant un dégradé conique découpé en anneau par un masque :
+     au pixel près le même dessin, sans aucune bordure.
+     ET IL EST UN BLOC. Posé en <span> dans une liste qui se charge, il ne
+     prenait ni sa largeur ni sa hauteur : on voyait un trait de 6 × 24 px au
+     lieu d'un anneau (mesuré dans « Mes groupes »). */
+  .spinner{ display:block; width:2rem; height:2rem; margin:0 auto 0.8rem; border-radius:50%; border:0;
+    background:conic-gradient(var(--primary) 0 25%, var(--surface-alt) 25% 100%);
+    -webkit-mask:radial-gradient(farthest-side, transparent calc(100% - 3px), #000 calc(100% - 3px));
+    mask:radial-gradient(farthest-side, transparent calc(100% - 3px), #000 calc(100% - 3px));
+    animation:spin 0.8s linear infinite; }
   @keyframes spin{ to{ transform:rotate(360deg);} }
   .searching-txt{ font-weight:600; font-size:0.95rem; color:var(--ink); }
   .opp-progress{ margin-top:0.5rem; font-size:0.85rem; color:var(--ink-soft); }
@@ -4870,7 +4882,7 @@
      bord, et rendent cette marge en dedans ; la première et la dernière
      prennent l'arrondi de la carte. Rien n'a bougé d'un pixel au repos. */
   .grp-carte{ padding:0; }
-  .grp-carte .grp-ligne{ padding:0.6rem 0.95rem; border-radius:0; }
+  .grp-carte .grp-ligne{ padding:0.6rem 0.95rem; border-radius:var(--r-m); }
   #grpMes > .grp-ligne:first-child{ padding-top:0.95rem; border-top-left-radius:var(--r-l); border-top-right-radius:var(--r-l); }
   .grp-carte .grp-ligne:last-child{ padding-bottom:0.95rem; border-bottom-left-radius:var(--r-l); border-bottom-right-radius:var(--r-l); }
   .grp-carte .grp-vide{ padding:1.1rem 1.15rem 1.45rem; }
@@ -5049,7 +5061,7 @@
      arrondi, et les deux ronds restent posés par-dessus. */
   .grp-fil-tete{ position:relative; }
   .grp-fil-tete > .icon-btn{ z-index:4; }
-  .grp-fil-tete .grp-tete{ position:static; }
+  .grp-fil-tete .grp-tete{ position:static; border-radius:var(--r-l); }
   .grp-fil-tete .grp-tete::before{ border-radius:var(--r-l); }
   /* ET IL NE S'ENFONCE PAS. La compression d'appui (scale 0,968) est une
      transformation, et une transformation refait du bouton la boîte de
