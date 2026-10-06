@@ -523,7 +523,7 @@ const ouvrirLaLangue = async (p, lg) => {
        banc passait par updateRoomOpponent, qui n'existe plus depuis que le
        face-à-face a disparu — et comme il était appelé sous un
        « typeof === function », le banc ne plantait pas : il ne voyait
-       simplement plus jamais la phrase « Prêt ! En attente du lancement... »,
+       simplement plus jamais la phrase « Tout est prêt ! En attente du lancement... »,
        et la signalait comme jamais traduite. Un garde-fou qui avale son
        propre échec est pire qu'une erreur. */
     ['Salon · invité',     () => { __fermerTout(); net.error=''; net.code='ABCD'; net.isHost=false;
@@ -756,6 +756,10 @@ const ouvrirLaLangue = async (p, lg) => {
     ['Groupes · discussion', async () => { __fermerTout(); __grpDecor(); grp.courant = 'g-1'; state.screen='groupe'; render();
       await new Promise(r => setTimeout(r, 60));
       const b = document.getElementById('filBas'); if(b) b.hidden = false; }],
+    /* Revenir d'une bulle dont la partie est finie : le mot s'affiche
+       au-dessus de la discussion (voir sortirVersGroupe). */
+    ['Groupes · partie finie', async () => { showMiniToast(T("Cette partie n'est plus ouverte."));
+      await new Promise(r => setTimeout(r, 120)); }],
     ['Groupes · sourdine', () => { grp.membres['g-1'][0].muet_jusqu = new Date(Date.now() + 3600000).toISOString(); majCompo(); }],
     ['Groupes · fil vide', () => { __fermerTout(); __grpDecor(); grp.fils['g-1'] = { charge:true, tout:true, messages:[] }; grp.courant = 'g-1';
       state.screen='groupe'; render(); }],

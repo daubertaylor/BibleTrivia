@@ -5365,7 +5365,7 @@ const TEXTES = {
     "mon adversaire":"my opponent",
     "{nom} aimerait rejouer. Tu acceptes\u00a0?":"{nom} would like a rematch. Do you accept?",
     "Rejoins-moi sur {jeu}\u00a0! Code du salon\u00a0: {code}":"Join me on {jeu}! Room code: {code}",
-    "Prêt\u00a0! En attente du lancement par l'hôte…":"Ready! Waiting for the host to start…",
+    "Tout est prêt\u00a0! En attente du lancement par l'hôte…":"All set! Waiting for the host to start…",
     "Connexion au salon…":"Connecting to the room…",
     "L'hôte a quitté le salon.":"The host has left the room.",
     "La connexion au salon a échoué. Réessaie.":"Could not connect to the room. Try again.",
@@ -5387,7 +5387,6 @@ const TEXTES = {
     "Tu as rejoint la partie":"You have joined the game",
     "Toi · Hôte":"You · Host",
     "Toi":"You",
-    "Prêt":"Ready",
     "Tu es l'hôte\u00a0: règle les options, puis lance {mot}.":"You are the host: set the options, then start {mot}.",
     "L'hôte paramètre la partie puis lance {mot}.":"The host sets up the game then starts {mot}.",
     "Longueur de la partie":"Game length",
@@ -5972,9 +5971,9 @@ const TEXTES = {
     "mon adversaire":"mi rival",
     "{nom} aimerait rejouer. Tu acceptes\u00a0?":"{nom} quiere la revancha. ¿Aceptas?",
     "Rejoins-moi sur {jeu}\u00a0! Code du salon\u00a0: {code}":"¡Únete a mí en {jeu}! Código de la sala: {code}",
-    "Prêt\u00a0! En attente du lancement par l'hôte…":"¡Listo! Esperando a que el anfitrión empiece…",
+    "Tout est prêt\u00a0! En attente du lancement par l'hôte…":"¡Todo listo! Esperando a que empiece la partida…",
     "Connexion au salon…":"Conectando a la sala…",
-    "L'hôte a quitté le salon.":"El anfitrión salió de la sala.",
+    "L'hôte a quitté le salon.":"Quien abrió la sala se fue.",
     "La connexion au salon a échoué. Réessaie.":"No se pudo conectar a la sala. Inténtalo de nuevo.",
     "Impossible de rejoindre ce salon. Réessaie.":"No se pudo entrar a esa sala. Inténtalo de nuevo.",
     "Aucune partie trouvée pour ce code.":"No hay ninguna partida con ese código.",
@@ -5992,11 +5991,10 @@ const TEXTES = {
     "En attente des joueurs…":"Esperando a los jugadores…",
     "Partage ce code · jusqu'à {n} joueurs":"Comparte este código · hasta {n} jugadores",
     "Tu as rejoint la partie":"Te uniste a la partida",
-    "Toi · Hôte":"Tú · Anfitrión",
+    "Toi · Hôte":"Tú · Organizas",
     "Toi":"Tú",
-    "Prêt":"Listo",
-    "Tu es l'hôte\u00a0: règle les options, puis lance {mot}.":"Eres el anfitrión: ajusta las opciones y luego empieza {mot}.",
-    "L'hôte paramètre la partie puis lance {mot}.":"El anfitrión configura la partida y luego empieza {mot}.",
+    "Tu es l'hôte\u00a0: règle les options, puis lance {mot}.":"Tú abriste la sala: ajusta las opciones y luego empieza {mot}.",
+    "L'hôte paramètre la partie puis lance {mot}.":"Quien abrió la sala configura la partida y luego empieza {mot}.",
     "Longueur de la partie":"Duración de la partida",
     "Longueur du duel":"Duración del duelo",
     "{nom} a quitté la partie.":"{nom} salió de la partida.",
@@ -6009,7 +6007,7 @@ const TEXTES = {
     "terminé":"terminó",
     "Ton adversaire en est à {i}/{t}":"Tu rival va por {i}/{t}",
     "Tout le monde repart avec toi.":"Todos vuelven a jugar contigo.",
-    "L'hôte peut relancer une partie.":"El anfitrión puede empezar otra partida.",
+    "L'hôte peut relancer une partie.":"Quien abrió la sala puede empezar otra partida.",
     "Nouvelle partie en préparation…":"Preparando una nueva partida…",
     "En attente de la réponse de {nom}…":"Esperando la respuesta de {nom}…",
     "{nom} ne souhaite pas rejouer pour l'instant.":"{nom} no quiere jugar otra vez por ahora.",
@@ -9053,7 +9051,7 @@ function majSalleListe(){
     const k = cle(j);
     vues[k] = 1;
     let ligne = liste.querySelector('.salle-ligne[data-jid="' + CSS.escape(k) + '"]');
-    const tag = j.moi ? (net.isHost ? T("Toi · Hôte") : T("Toi")) : T("Prêt");
+    const tag = j.moi ? (net.isHost ? T("Toi · Hôte") : T("Toi")) : T("En ligne");
     if(!ligne){
       ligne = document.createElement("div");
       ligne.className = "rank-row salle-ligne" + (j.moi ? " moi" : "");
@@ -9127,7 +9125,7 @@ function majSalleListe(){
      face-à-face, qui n'existe plus. */
   const wait = document.getElementById("waitNote");
   if(wait){
-    const t = net.oppPresent ? T("Prêt ! En attente du lancement par l'hôte…") : T("Connexion au salon…");
+    const t = net.oppPresent ? T("Tout est prêt ! En attente du lancement par l'hôte…") : T("Connexion au salon…");
     if(wait.textContent !== t) wait.textContent = t;
   }
   /* Et la longueur, qui se dit « du duel » à deux et « de la partie » au-delà. */
@@ -22866,7 +22864,7 @@ function renderOnlineRoom(){
         <div class="rank-row salle-ligne${j.moi?' moi':''}" data-jid="${escapeHtml(String(j.moi ? 'moi' : (j.id||j.name||'')))}">
           ${avatarHtml(j.name, j.color, 2.1, j.moi ? true : j.id)}
           <span class="rank-name">${escapeHtml(j.name||T("Joueur"))}</span>
-          <span class="salle-tag">${j.moi ? (net.isHost?T("Toi · Hôte"):T("Toi")) : T("Prêt")}</span>
+          <span class="salle-tag">${j.moi ? (net.isHost?T("Toi · Hôte"):T("Toi")) : T("En ligne")}</span>
         </div>`).join("")}
       <!-- LA PLACE VIDE N'INVITE QUE TANT QUE JE SUIS SEUL. Elle disait
            « 6 places » avec deux joueurs dedans : une rangée entière — 58 px
@@ -22895,7 +22893,7 @@ function renderOnlineRoom(){
       </div>
       <button class="btn-primary${canStart?'':' is-waiting'}" id="roomStartBtn" onclick="hostStart()">${canStart?Tf("Commencer {mot}", {mot:motSalon}):T("En attente des joueurs…")}</button>
     ` : `
-      <div class="waiting-note" id="waitNote">${net.oppPresent?T("Prêt ! En attente du lancement par l'hôte…"):T("Connexion au salon…")}</div>
+      <div class="waiting-note" id="waitNote">${net.oppPresent?T("Tout est prêt ! En attente du lancement par l'hôte…"):T("Connexion au salon…")}</div>
       <div class="flex-sp"></div>
     `}
   `;
