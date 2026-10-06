@@ -5121,6 +5121,12 @@
   .compo-envoi:disabled{ opacity:0.4; transform:scale(0.92); }
   .compo-jeu svg, .compo-envoi svg{ width:100%; height:100%; }
   .compo-muet{ flex:1; text-align:center; font-size:0.86rem; line-height:1.4; color:var(--ink-soft); padding:0.6rem 0.4rem; }
+  /* La modération regarde : à la place du compositeur, ce qu'on est en train
+     de faire — à la même hauteur, rien ne bouge en entrant ou en sortant. */
+  .compo-lecture .compo-in{ align-items:center; justify-content:center; min-height:2.6rem; gap:0.5rem; color:var(--ink-soft);
+    font-size:0.88rem; font-weight:600; font-family:'Poppins',sans-serif; }
+  .compo-lecture .compo-in .ico{ width:1.15rem; height:1.15rem; display:inline-flex; }
+  .mod-carte .mod-voir{ color:var(--primary-dark); text-shadow:none; margin:0.6rem auto 0; }
 
   /* ---------- LA MODÉRATION DU JEU ---------- */
   .mod-carte{ display:flex; flex-direction:column; gap:0.35rem; }
@@ -5804,6 +5810,11 @@ const TEXTES = {
     "Envoi…":"Sending…",
     "Code {code}":"Code {code}",
     "Rejoindre la partie":"Join the game",
+    "Lecture seule · modération":"Read only · moderation",
+    "Tous les groupes":"All groups",
+    "Voir le groupe":"View group",
+    "Aucun groupe pour l'instant.":"No groups yet.",
+    "Ce groupe n'existe plus.":"This group no longer exists.",
     "Partie du groupe":"Group game",
     "Les membres te rejoignent depuis la discussion.":"Members join you from the chat.",
     "Cette partie n'est plus ouverte.":"This game is no longer open.",
@@ -6420,6 +6431,11 @@ const TEXTES = {
     "Envoi…":"Enviando…",
     "Code {code}":"Código {code}",
     "Rejoindre la partie":"Unirse a la partida",
+    "Lecture seule · modération":"Solo lectura · moderación",
+    "Tous les groupes":"Todos los grupos",
+    "Voir le groupe":"Ver el grupo",
+    "Aucun groupe pour l'instant.":"Todavía no hay grupos.",
+    "Ce groupe n'existe plus.":"Este grupo ya no existe.",
     "Partie du groupe":"Partida del grupo",
     "Les membres te rejoignent depuis la discussion.":"Los miembros se unen desde el chat.",
     "Cette partie n'est plus ouverte.":"Esta partida ya no está abierta.",
@@ -19597,7 +19613,7 @@ async function chargerEtatGroupes(){
     memoriserGroupes();
     /* Un modérateur : sa file est préchargée, pour que la Modération s'ouvre
        avec son contenu (voir ouvrirModeration). À zéro, rien à charger. */
-    if(r.moderateur){ if(aTraiter() === 0) moderation = []; else chargerModeration(); }
+    if(r.moderateur){ if(aTraiter() === 0) moderation = []; else chargerModeration(); if(!grp.tous) chargerTousGroupes(); }
     /* La liste se lit dès qu'on participe, pas seulement à l'ouverture de
        l'onglet : c'est elle qui donne les non-lus de la pastille de l'accueil. */
     /* Une liste venue de la mémoire de ce téléphone se relit quand même :
@@ -20379,7 +20395,10 @@ async function nouveauCodeGroupe(){
 }
 
 /* ===================== UN GROUPE ===================== */
-function groupeCourant(){ return (grp.liste || []).find(x => x.id === grp.courant) || null; }
+function groupeCourant(){ return (grp.liste || []).find(x => x.id === grp.courant) || (grp.vus && grp.vus[grp.courant]) || null; }
+/* Le groupe ouvert est-il un des miens, ou un groupe que la modération
+   regarde de l'extérieur (voir LA MODÉRATION REGARDE) ? */
+function enLecture(){ return !!grp.courant && !(grp.liste || []).some(x => x.id === grp.courant) && !!(grp.vus && grp.vus[grp.courant]); }
 function monRole(){
   const l = grp.membres[grp.courant] || [];
   const m = l.find(x => x.membre === monId());
@@ -20403,10 +20422,11 @@ async function ouvrirGroupe(id){
   await chargerFil(id);
 }
 function retourGroupes(){
+  const deModeration = enLecture();
   grp.courant = null;
-  state.screen = "groupes";
+  state.screen = deModeration ? "moderation" : "groupes";
   render();
-  chargerListes();
+  if(!deModeration) chargerListes();
 }
 async function chargerProfils(ids, tous){
   /* « tous » : on relit aussi ceux qu'on connaît déjà — leur nom, leur
@@ -20851,6 +20871,7 @@ async function chargerPlusAncien(btn){
   }
 }
 function marquerLu(id){
+  if(!(grp.liste || []).some(x => x.id === id)) return;   // la modération regarde : elle ne « lit » pas pour les membres
   const f = grp.fils[id];
   if(!f || !f.messages.length) return;
   const dernier = f.messages.reduce((a, m)=> m.id > a ? m.id : a, 0);
@@ -20886,7 +20907,9 @@ function renderGroupe(){
       <div id="fil" onscroll="surDefilementFil(this)">${filHtml(g.id)}</div>
       <button class="fil-bas" id="filBas" hidden onclick="descendreFil(true)">${T("Nouveaux messages")}</button>
     </div>
-    <div class="compo" id="compo"><div class="compo-in">${compoHtml()}</div></div>`;
+    ${enLecture()
+      ? `<div class="compo compo-lecture" id="compo"><div class="compo-in"><span class="ico">${ICONS.bouclier}</span><span>${T("Lecture seule · modération")}</span></div></div>`
+      : `<div class="compo" id="compo"><div class="compo-in">${compoHtml()}</div></div>`}`;
   const t = el.querySelector("#compoTexte");
   if(t && brouillons[g.id]){ t.value = brouillons[g.id]; const b = el.querySelector("#compoEnvoi"); if(b) b.disabled = !t.value.trim(); }
   /* ===== LE FIL S'OUVRE EN BAS, SANS GLISSER =====
@@ -21134,7 +21157,13 @@ async function surMessageDirect(m, evt){
     dejaComptes.add(m.id);
   }
   const g = (grp.liste || []).find(x => x.id === m.groupe);
-  if(!g){ if(evt === "INSERT"){ grp.liste = null; chargerListes(); } return; }
+  /* Un modérateur reçoit les messages de TOUS les groupes (la règle d'accès
+     le lui permet) : un groupe qui n'est pas le sien ne relit pas sa liste à
+     chaque message — seul le fil regardé, s'il l'est, a suivi (recevoirMessage). */
+  if(!g){
+    if(evt === "INSERT" && !(grp.etat && grp.etat.moderateur)){ grp.liste = null; chargerListes(); }
+    return;
+  }
   if(evt === "INSERT"){
     g.dernier_message = m.cree_le;
     g.apercu = { id:m.id, auteur:m.auteur, genre:m.genre, texte:m.texte, donnees:m.donnees, masque:m.masque,
@@ -21321,7 +21350,7 @@ function ouvrirInfosGroupe(invitation){
     <div class="grp-liste-act">
       ${admin ? ligneAction(ICONS.crayon, T("Modifier le groupe"), "ouvrirModifGroupe()") : ""}
       ${ligneAction(ICONS.drapeau, T("Signaler le groupe"), `signalerMessage(null, null, '${g.id}')`)}
-      ${ligneAction(ICONS.sortir, T("Quitter le groupe"), "quitterGroupeCourant()", true)}
+      ${enLecture() ? "" : ligneAction(ICONS.sortir, T("Quitter le groupe"), "quitterGroupeCourant()", true)}
       ${proprio || (grp.etat && grp.etat.moderateur) ? ligneAction(ICONS.corbeille, T("Supprimer le groupe"), "supprimerGroupeCourant()", true) : ""}
     </div>`);
 }
@@ -21493,6 +21522,7 @@ let moderation = null, moderationEnCours = null;
      après quoi l'écran s'ouvre quand même, avec son rond. */
 function ouvrirModeration(){
   if(!(grp.etat && grp.etat.moderateur)) return;
+  chargerTousGroupes();
   if(!moderation && aTraiter() === 0) moderation = [];
   const ouvrir = ()=>{ if(state.screen !== "moderation"){ state.screen = "moderation"; render(); } };
   if(moderation){ ouvrir(); chargerModeration(); return; }
@@ -21549,13 +21579,70 @@ function cartesModeration(){
         ${ph ? `<button class="grp-pill" onclick="traiterSignalement(${s.id}, 'retirer_photo', this)">${T("Retirer la photo")}</button>` : ""}
         ${s.groupe ? `<button class="grp-pill" onclick="traiterSignalement(${s.id}, 'fermer_groupe', this)">${T("Fermer le groupe")}</button>` : ""}
       </div>
+      ${s.groupe ? `<button class="grp-lien mod-voir" onclick="regarderGroupe('${s.groupe}')">${T("Voir le groupe")}</button>` : ""}
     </div>`; }).join("");
+}
+/* ===================== LA MODÉRATION REGARDE =====================
+   « Quand la modération reçoit un signalement, il faut qu'elle puisse
+   l'examiner : voir l'intérieur du groupe, ce qui s'y passe. » « Un
+   modérateur doit pouvoir voir tous les groupes — pas y entrer, mais voir. »
+   La règle d'accès du serveur le permettait déjà (groupes, membres et
+   messages se lisent par un modérateur) ; il manquait l'écran. Depuis une
+   carte (« Voir le groupe ») ou la liste de tous les groupes, la discussion
+   s'ouvre telle que ses membres la voient, EN LECTURE SEULE : pas de
+   compositeur, aucun « lu » posé au nom des membres, et l'on n'y figure pas. */
+async function chargerTousGroupes(){
+  const supa = initSupa(); if(!supa || !supa.from || !(grp.etat && grp.etat.moderateur)) return;
+  try{
+    const r = await supa.from("groupes").select("id,nom,description,ouvert,teinte,code,nb_membres,dernier_message" + (photosServeur() ? ",photo_maj" : ""))
+      .is("supprime_le", null).order("dernier_message", { ascending:false }).limit(100);
+    if(r.error || !Array.isArray(r.data)) return;
+    grp.tous = r.data;
+    if(photosServeur()) voirPhotos(r.data.map(g => ["g:" + g.id, g.photo_maj]));
+  }catch(e){ return; }
+  const z = document.getElementById("modGroupes");
+  if(z && state.screen === "moderation"){
+    const sig = JSON.stringify(grp.tous);
+    if(z._sig !== sig){ z.innerHTML = lignesTous(); z._sig = sig; try{ glassRelayout(); queueGlassSync(); fitScroll(); }catch(e){} }
+  }
+}
+function lignesTous(){
+  if(!grp.tous) return `<div class="grp-vide"><span class="spinner"></span></div>`;
+  if(!grp.tous.length) return `<div class="grp-vide">${T("Aucun groupe pour l'instant.")}</div>`;
+  return grp.tous.map(g => `<button class="grp-ligne" onclick="regarderGroupe('${g.id}')">
+      ${pastilleGroupe(g)}
+      <span class="grp-txt"><b>${escapeHtml(g.nom)}</b><small>${escapeHtml(nbMembres(g.nb_membres) + " · " + (g.ouvert ? T("Public") : T("Privé")))}</small></span>
+      <span class="grp-droite"><small>${escapeHtml(quandCourt(g.dernier_message))}</small></span>
+    </button>`).join("");
+}
+async function regarderGroupe(id){
+  if(!(grp.etat && grp.etat.moderateur) || !id) return;
+  /* Un de mes groupes : on l'ouvre comme d'habitude. */
+  if((grp.liste || []).some(x => x.id === id)){ ouvrirGroupe(id); return; }
+  grp.vus = grp.vus || {};
+  let g = grp.vus[id] || (grp.tous || []).find(x => x.id === id);
+  if(!g){
+    try{
+      const r = await initSupa().from("groupes").select("id,nom,description,ouvert,teinte,code,nb_membres").eq("id", id).maybeSingle();
+      g = r && r.data;
+    }catch(e){}
+  }
+  if(!g){ showMiniToast(T("Ce groupe n'existe plus.")); return; }
+  grp.vus[id] = Object.assign({}, g);
+  grp.courant = id;
+  state.screen = "groupe";
+  render();
+  chargerMembres(id);
+  await chargerFil(id);
 }
 function renderModeration(){
   const el = document.createElement("div");
   el.className = "screen";
-  el.innerHTML = `${renderHeader("Modération", true, "retourGroupes()")}<div id="modListe">${cartesModeration()}</div>`;
+  el.innerHTML = `${renderHeader("Modération", true, "retourGroupes()")}<div id="modListe">${cartesModeration()}</div>
+    <div class="grp-h" role="heading" aria-level="2">${T("Tous les groupes")}</div>
+    <div class="card grp-carte"><div id="modGroupes">${lignesTous()}</div></div>`;
   const z = el.querySelector("#modListe"); if(z && moderation) z._sig = JSON.stringify(moderation);
+  const zt = el.querySelector("#modGroupes"); if(zt && grp.tous) zt._sig = JSON.stringify(grp.tous);
   return el;
 }
 async function traiterSignalement(id, decision, btn){

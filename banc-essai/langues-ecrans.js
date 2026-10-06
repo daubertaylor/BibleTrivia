@@ -821,6 +821,14 @@ const ouvrirLaLangue = async (p, lg) => {
       ouvrirModeration(); await new Promise(r => setTimeout(r, 60)); listeGroupe = l; }],
     ['Modération · bannir', () => { traiterSignalement(1, 'bannir'); }],
     ['Modération · fermer', () => { __fermerTout(); traiterSignalement(1, 'fermer_groupe'); }],
+    /* LA MODÉRATION REGARDE (v311) : la liste de tous les groupes, vide puis
+       pleine, et un groupe ouvert en lecture seule. */
+    ['Modération · aucun groupe', () => { __fermerTout(); __grpDecor(); moderation = []; grp.tous = []; state.screen = 'moderation'; render(); }],
+    ['Modération · tous les groupes', () => { grp.tous = [{ id:'g-9', nom:'Ruth', ouvert:true, teinte:3, nb_membres:4, dernier_message:new Date().toISOString() }];
+      const z = document.getElementById('modGroupes'); if (z) z.innerHTML = lignesTous(); }],
+    ['Modération · lecture seule', () => { __fermerTout(); __grpDecor(); grp.vus = { 'g-9':{ id:'g-9', nom:'Ruth', ouvert:true, teinte:3, nb_membres:4 } };
+      grp.fils['g-9'] = { charge:true, tout:true, messages:[] }; grp.courant = 'g-9'; state.screen = 'groupe'; render();
+      showMiniToast(T("Ce groupe n'existe plus.")); }],
     /* LES PAGES QUE LES STORES DEMANDENT */
     ['Confidentialité',    () => { __fermerTout(); state.screen='mode'; render(); ouvrirConfidentialite(); }],
     ['Compte · supprimer', () => { __fermerTout(); __grpDecor(); state.screen='profile'; render(); demanderSuppressionCompte(); }],
