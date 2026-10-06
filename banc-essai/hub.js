@@ -5,7 +5,11 @@
    mais TOUT le reste : salons, presence, deroulement du duel, deconnexions.
    Transport : SSE pour recevoir, POST pour envoyer. Meme origine, aucun proxy. */
 const http=require('http'), fs=require('fs'), path=require('path');
-const RACINE='/home/user/BibleTrivia';
+/* La racine du jeu, c'est le dossier au-dessus de ce banc — pas un chemin
+   écrit en dur. Écrit en dur, un hub lancé depuis une autre copie du dépôt
+   (un arbre de travail) servait quand même le jeu de /home/user/BibleTrivia :
+   le banc passait au vert sur un fichier qui n'était pas celui qu'on testait. */
+const RACINE=path.resolve(__dirname, '..');
 const D=__dirname;
 const TYPES={'.html':'text/html; charset=utf-8','.js':'text/javascript; charset=utf-8','.json':'application/json','.png':'image/png','.woff2':'font/woff2'};
 

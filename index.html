@@ -2545,6 +2545,14 @@
 
   .len-label{ font-size:clamp(0.75rem, calc(1.68 * var(--hu)), 0.82rem); font-weight:600; color:rgba(255,255,255,0.9); margin:clamp(0.28rem, calc(3.8 * var(--hu) - 14.9px), 0.95rem) 0 clamp(0.13rem, calc(1.9 * var(--hu) - 8.5px), 0.45rem) 0.2rem; text-shadow:0 1px 6px rgba(0,0,0,0.4); }
   .len-row{ display:flex; gap:0.5rem; }
+  /* Un testament convenu par un appariement ne se change plus : les deux
+     autres s'effacent sans disparaître — on voit qu'ils existent. */
+  .len-chip:disabled{ opacity:0.45; }
+  /* Le testament, sur l'écran En ligne : au-dessus des trois actions, qu'il
+     règle toutes, à l'écart qui sépare deux actions. */
+  .ol-testament{ margin:0 0 0.8rem; }
+  .ol-testament .len-label{ margin-top:0; }
+  .opp-testament{ margin-top:0.35rem; font-size:0.85rem; font-weight:600; color:var(--primary); }
   .len-chip{ flex:1; display:flex; align-items:center; justify-content:center; min-height:2.75rem; --glass-tint: rgb(252,248,241); background:rgb(252,248,241); backdrop-filter:none; -webkit-backdrop-filter:none; border:0; border-radius:var(--r-m); padding:calc(0.58rem + 1px) calc(0.4rem + 1px); font-weight:600; font-size:0.84rem; color:var(--ink); }
   /* Même chose pour les puces du salon : aucun bord à elles. */
   .len-chip.sel{ --glass-tint: rgb(236,60,26); color:#fff; }
@@ -8795,6 +8803,7 @@ function setTimer(k){
   basculerChoix('[data-group="tmr"]', "active", k);
   queueGlassSync();
 }
+function selectRoomOptTheme(k){ if(net.themeFixe && k !== net.themeFixe) return; selectRoomOpt("theme", k); }
 function selectRoomOpt(g, k){
   if(g === "len") net.lengthKey = k; else if(g === "tmr") net.timerKey = k; else if(g === "theme") net.themeKey = k;
   basculerChoix('[data-rgroup="'+g+'"]', "sel", k);
@@ -9053,6 +9062,9 @@ const net = {
   code:null, isHost:false,
   opp:null, oppScore:0, oppIndex:0, oppDone:false, oppGone:false, oppPresent:false, oppLastSeen:0,
   seed:null, lengthKey:"normale", timerKey:"30", themeKey:"tout", timedOut:false,
+  themeChoix:"tout",              // le testament choisi sur l'écran En ligne (voir LE TESTAMENT, AVANT DE CHERCHER)
+  themeFixe:null,                 // le testament convenu par un appariement : l'hôte ne peut plus en changer
+  lookersT:{},                    // id -> testament annoncé par chaque joueur en recherche
   deck:[], idx:0, score:0, correct:0, selected:null, revealed:false, myDone:false, missed:[],
   joueurs:{},                     // id -> { id, name, color, score, idx, done, gone, vu }
   photos:{},                      // id -> photo reçue par diffusion (voir diffuserPhoto)
@@ -9358,6 +9370,8 @@ function joinLobby(){
   ch.on("broadcast", { event:"looking" }, ({ payload })=>{
     if(!payload || payload.id===myId) return;
     net.lookers[payload.id] = Date.now();
+    /* Un joueur resté sur une version d'avant n'annonce rien : null. */
+    net.lookersT[payload.id] = (typeof payload.t === "string") ? payload.t : null;
     matchFromLookers();
     reRenderIfOnline();
   });
@@ -9367,6 +9381,12 @@ function joinLobby(){
     // On vient d'annuler ? On n'accepte plus aucun match : l'initiateur
     // resté seul relancera sa recherche via sa garde (armMatchGuard).
     if(!net.searching) return;
+    /* Le testament convenu doit être le mien — ou « Tout » m'allait. Un
+       initiateur d'une version d'avant n'en dit rien : il ne convient qu'à
+       qui a choisi « Tout ». Refusé, il relancera seul (sa garde). */
+    const tConvenu = (typeof payload.t === "string") ? payload.t : null;
+    if(!testamentsAccordes(net.themeChoix, tConvenu)) return;
+    poserTestamentConvenu(tConvenu);
     net.searching = false; net.matching = false; stopSearchHeartbeat();
     net.lastOppId = (payload.host === myId) ? payload.guest : payload.host;
     net.autoMatch = true;
@@ -9385,10 +9405,10 @@ function setSearching(on){
 }
 function startSearchHeartbeat(){
   stopSearchHeartbeat();
-  net.lookers = {};
+  net.lookers = {}; net.lookersT = {};
   const beat = ()=>{
     if(!net.searching || net.room){ stopSearchHeartbeat(); return; }
-    if(net.lobby){ net.lobby.send({ type:"broadcast", event:"looking", payload:{ id: myId, ts: Date.now() } }); }
+    if(net.lobby){ net.lobby.send({ type:"broadcast", event:"looking", payload:{ id: myId, ts: Date.now(), t: net.themeChoix || "tout" } }); }
     matchFromLookers();
   };
   beat();
@@ -9397,8 +9417,50 @@ function startSearchHeartbeat(){
 function stopSearchHeartbeat(){ if(net.hbTimer){ clearInterval(net.hbTimer); net.hbTimer = null; } }
 function freshLookers(){
   const now = Date.now(); let c = 0;
-  Object.keys(net.lookers||{}).forEach(id=>{ if(id!==myId && (now - net.lookers[id]) < 4500) c++; });
+  Object.keys(net.lookers||{}).forEach(id=>{ if(id!==myId && (now - net.lookers[id]) < 4500 && testamentsAccordes(net.themeChoix, net.lookersT[id])) c++; });
   return c;
+}
+/* ===== LE TESTAMENT, AVANT DE CHERCHER =====
+   « Pouvoir s'affronter sur un testament en particulier, pour le mode en
+   ligne. » Le salon le permettait déjà — à l'hôte. Mais dans une partie
+   aléatoire l'hôte est tiré au sort : celui qui voulait l'Ancien Testament
+   n'avait pas son mot à dire. Le choix se fait donc sur l'écran En ligne,
+   AVANT de chercher, et l'appariement en tient compte :
+     — deux choix s'accordent s'ils sont égaux, ou si l'un des deux est
+       « Tout » (qui veut tout accepte n'importe quel testament) ;
+     — la partie se joue sur le choix le plus précis des deux ;
+     — un joueur d'une version d'avant n'annonce rien : il ne convient qu'à
+       « Tout », puisqu'on ne sait pas ce qu'il jouera.
+   Le vivier reste UN : « Tout » ne coupe personne de personne, et avec
+   quelques dizaines de joueurs, c'est ce qui compte. */
+function testamentsAccordes(a, b){
+  a = a || "tout";
+  if(b === null || b === undefined) return a === "tout";
+  return a === "tout" || b === "tout" || a === b;
+}
+function testamentCommun(a, b){
+  if(a && a !== "tout") return a;
+  if(b && b !== "tout") return b;
+  return "tout";
+}
+/* Le testament convenu devient celui du salon ; s'il est précis, il est
+   FIXÉ : l'hôte tiré au sort ne peut plus le changer (voir renderOnlineRoom). */
+function poserTestamentConvenu(t){
+  /* Rien d'annoncé (version d'avant) : on n'a pu l'accepter qu'avec « Tout ». */
+  if(t === null || t === undefined){ net.themeKey = net.themeChoix || "tout"; net.themeFixe = null; return; }
+  net.themeKey = t;
+  net.themeFixe = (t !== "tout") ? t : null;
+}
+function choisirTestamentEnLigne(k){
+  net.themeChoix = k;
+  basculerChoix('[data-ogroup="theme"]', "sel", k);
+  queueGlassSync();
+}
+function testamentsHtml(groupe, sel, action, fixe){
+  return ["tout","at","nt"].map(k=>{
+    const bloque = !!fixe && k !== fixe;
+    return `<button class="len-chip${sel===k?' sel':''}" data-${groupe}="theme" data-k="${k}"${bloque?' disabled':''} onclick="${action}('${k}')">${T(k==="tout"?"Tout":(k==="at"?"Ancien":"Nouveau"))}</button>`;
+  }).join("");
 }
 /* VRAI MATCHMAKING ALÉATOIRE.
    - Le vivier = tous les joueurs en recherche (leur « looking » bat toutes les
@@ -9414,7 +9476,8 @@ function freshLookers(){
 function matchFromLookers(){
   if(!net.searching || net.matching || net.room) return;
   const now = Date.now();
-  const others = Object.keys(net.lookers).filter(id=>id!==myId && (now - net.lookers[id]) < 4500);
+  const others = Object.keys(net.lookers).filter(id=>id!==myId && (now - net.lookers[id]) < 4500
+    && testamentsAccordes(net.themeChoix, net.lookersT[id]));
   if(!others.length) return;
   const all = others.concat([myId]).sort();
   if(all[0] !== myId) return;               // pas initiateur : l'autre nous appariera
@@ -9431,7 +9494,9 @@ function matchFromLookers(){
   const hostId = meHost ? myId : partner;
   const guestId = meHost ? partner : myId;
   net.lastOppId = partner; net.autoMatch = true;
-  net.lobby.send({ type:"broadcast", event:"matched", payload:{ code, host:hostId, guest:guestId } });
+  const tConvenu = testamentCommun(net.themeChoix, net.lookersT[partner]);
+  poserTestamentConvenu(tConvenu);
+  net.lobby.send({ type:"broadcast", event:"matched", payload:{ code, host:hostId, guest:guestId, t:tConvenu } });
   if(meHost){ createRoom(code, true); } else { joinRoom(code, false); }
   armMatchGuard();
 }
@@ -9453,7 +9518,7 @@ function armMatchGuard(){
 function leaveLobby(){
   stopSearchHeartbeat();
   if(net.lobby){ try { net.lobby.untrack(); net.supa.removeChannel(net.lobby); } catch(e){} net.lobby = null; }
-  net.searching = false; net.matching = false; net.connected = 0; net.lookers = {};
+  net.searching = false; net.matching = false; net.connected = 0; net.lookers = {}; net.lookersT = {};
 }
 
 /* ===================== PRÉSENCE EN ARRIÈRE-PLAN =====================
@@ -9860,6 +9925,7 @@ function cleanupRoom(){
   clearTimeout(photoTimer); photoTimer = null;
   net.deck=[]; net.idx=0; net.myDone=false; net.status="";
   net.iWantReplay=false; net.oppWantReplay=false; net.replayDeclined=false;
+  net.themeFixe = null;
 }
 function leaveRoomToOnline(){
   cleanupRoom();
@@ -23689,6 +23755,7 @@ function renderOnline(){
         <div class="opp-progress">${freshLookers()>0
           ? Tf(freshLookers()>1?"{n} autres en recherche…":"{n} autre en recherche…", {n:freshLookers()})
           : T("Dès qu'un autre joueur cherche, la partie démarre.")}</div>
+        ${(net.themeChoix||"tout") !== "tout" ? `<div class="opp-testament">${T(net.themeChoix === "at" ? "Ancien Testament" : "Nouveau Testament")}</div>` : ""}
         <button class="btn-ghost btn-cancel" style="margin-top:1rem" onclick="setSearching(false)">${T("Annuler")}</button>
       </div>
       <div class="flex-sp"></div>
@@ -23702,6 +23769,10 @@ function renderOnline(){
            forme, et « Rejoindre » devient « Rejoindre une partie » pour
            répondre à « Créer une partie ». La ligne d'attente disait la même
            chose en trois fois plus long. -->
+      <div class="ol-testament${actionsNew?' reveal-in':''}">
+        <div class="len-label">${T("Testament")}</div>
+        <div class="len-row">${testamentsHtml("ogroup", net.themeChoix || "tout", "choisirTestamentEnLigne", null)}</div>
+      </div>
       <button class="online-action${actionsNew?' reveal-in':''}" style="--i:0" onclick="setSearching(true)">
         <span class="oa-ico r">${ICONS.bolt}</span>
         <span class="oa-txt"><b>${T("Partie aléatoire")}</b><small>${T("Un adversaire au hasard, tout de suite")}</small></span>
@@ -23722,7 +23793,7 @@ function renderOnline(){
   `;
   return el;
 }
-function createRoomFlow(){ net.autoMatch = false; clearTimeout(net.matchGuard); createRoom(genCode(), true); }
+function createRoomFlow(){ net.autoMatch = false; clearTimeout(net.matchGuard); net.themeKey = net.themeChoix || "tout"; net.themeFixe = null; createRoom(genCode(), true); }
 
 /* LE MESSAGE APPARTIENT À L'ÉCRAN QUI L'A PRODUIT.
    « Code invalide. » se voyait sur l'accueil En ligne, où l'on ne saisit aucun
@@ -23839,9 +23910,7 @@ function renderOnlineRoom(){
       </div>
       <div class="len-label">${T("Testament")}</div>
       <div class="len-row">
-        <button class="len-chip${net.themeKey==='tout'?' sel':''}" data-rgroup="theme" data-k="tout" onclick="selectRoomOpt('theme','tout')">${T("Tout")}</button>
-        <button class="len-chip${net.themeKey==='at'?' sel':''}" data-rgroup="theme" data-k="at" onclick="selectRoomOpt('theme','at')">${T("Ancien")}</button>
-        <button class="len-chip${net.themeKey==='nt'?' sel':''}" data-rgroup="theme" data-k="nt" onclick="selectRoomOpt('theme','nt')">${T("Nouveau")}</button>
+        ${testamentsHtml("rgroup", net.themeKey || "tout", "selectRoomOptTheme", net.themeFixe)}
       </div>
       <button class="btn-primary${canStart?'':' is-waiting'}" id="roomStartBtn" onclick="hostStart()">${canStart?Tf("Commencer {mot}", {mot:motSalon}):T("En attente des joueurs…")}</button>
     ` : `
