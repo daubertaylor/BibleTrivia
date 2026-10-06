@@ -528,12 +528,15 @@
      tout — mesuré, +0px au lieu de +398. On décale donc la cale du défilement
      déjà disponible (--dep, relevé en JS avant qu'elle existe) : la course
      gagne toujours exactement la hauteur du clavier, écran court ou long. */
-  html.kb #app::after{ content:""; position:absolute; top:calc(100% + var(--dep, 0px)); left:0; width:1px; height:var(--kbh, 0px); pointer-events:none; }
+  html.kb #app::after, html.kb-cale #app::after{ content:""; position:absolute; top:calc(100% + var(--dep, 0px)); left:0; width:1px; height:var(--kbh, 0px); pointer-events:none; }
   /* Une modale à champ (le code d'une partie) est CENTRÉE dans la fenêtre — donc
      centrée derrière le clavier dès qu'il monte : le champ frôlait le bord
      (9px d'air mesurés) et le bouton « Valider » finissait 100px SOUS le
      clavier, hors d'atteinte. On ramène le voile à la hauteur réellement
      visible : la modale se recentre au-dessus du clavier, entière. */
+  /* Une hauteur explicite au repos, sinon il n'y a rien à faire glisser : de
+     « tout l'écran » à --vvh, le voile sautait d'une image à l'autre. */
+  .modal-veil{ height:100%; transition:height var(--tr-ouvre); }
   html.kb .modal-veil{ bottom:auto; height:var(--vvh, 100%); }
   /* ===== LES FEUILLES AUSSI S'ARRÊTENT AU BORD DU CLAVIER =====
      « Quand j'écris le nom du groupe ou la description, le clavier cache ce
@@ -545,13 +548,20 @@
      Clavier ouvert, le voile de la feuille prend la hauteur visible (--vvh) :
      la feuille, calée en bas de son voile, se pose sur le clavier, et elle y
      glisse au lieu d'y sauter. */
-  .sheet-veil{ height:100%; transition:height 0.28s cubic-bezier(0.33,1,0.68,1); }
+  /* ===== LE CLAVIER AU RYTHME DES PAGES =====
+     « Que le clavier s'ouvre moins vite, et qu'il soit très cohérent avec
+     l'ouverture des pages : il va beaucoup trop vite, ça donne l'impression
+     de bug. » Le clavier lui-même appartient au téléphone ; ce qui bouge
+     AVEC lui est à nous. Tout ce qui lui répond — feuille, fenêtre,
+     discussion, page qui se recadre — prend donc le pas d'une page qui
+     s'ouvre (--tr-ouvre, 0,52 s), au lieu de bondir en 0,28 s. */
+  .sheet-veil{ height:100%; transition:height var(--tr-ouvre); }
   html.kb .sheet-veil{ bottom:auto; height:var(--vvh, 100%); }
   html.kb, html.kb body{ overflow:hidden; }
   /* La discussion, clavier ouvert (voir le module du clavier) : l'écran prend
      la hauteur visible, sans cale ni défilement, et y glisse à la vitesse du
      clavier d'iOS. La marge du bas n'a plus de barre d'accueil à éviter. */
-  html.ecran-discussion #app{ transition:height 0.3s cubic-bezier(0.2,0.8,0.2,1), padding-bottom 0.3s cubic-bezier(0.2,0.8,0.2,1); }
+  html.ecran-discussion #app{ transition:height var(--tr-ouvre), padding-bottom var(--tr-ouvre); }
   html.kb.kb-fil #app, html.tel-fige.kb.kb-fil #app, html.tel-fige.kb.kb-fil:not(.is-standalone) #app{ height:var(--vvh, 100%); padding-bottom:0.45rem; }
   html.kb.kb-fil #app::after{ content:none; }
   /* ÉLÉVATION PAR DÉFAUT DE TOUTE SURFACE DE VERRE. --rim-cast est une propriété
@@ -12053,7 +12063,12 @@ try{
      clavier est monté depuis longtemps. À 22, il met 250 / 233 / 167 ms —
      l'ordre de grandeur de l'ancienne loi (167 / 150 / 100) — et c'est la
      première valeur où la fin ne rampe plus du tout, à aucune distance. */
-  const GLISSE_W = 22;            // raideur du ressort, en radians par seconde
+  /* ON LE RALENTIT, À LA DEMANDE. « Le clavier va beaucoup trop vite, ça
+     donne l'impression de bug. » À 22, le recadrage durait 0,2 s, juste après
+     un clavier qui en dure 0,3 : deux secousses à la suite. À 12, il se pose
+     en 0,4 s environ — le pas d'une page qui s'ouvre (--tr-ouvre) — avec la
+     même forme : départ doux, une seule bosse, pas de rampe. */
+  const GLISSE_W = 12;            // raideur du ressort, en radians par seconde
   /* ===== UN DÉFILEUR NE CONNAÎT QUE LES PIXELS ENTIERS, TOUJOURS =====
      Ça reste vrai, et ça donne les deux planchers ci-dessous.
      AU DÉPART, la courbe passe ses premières images sous un pixel : le
@@ -12077,17 +12092,22 @@ try{
      vaut zéro pour un geste qui monte, culmine et redescend — une seule
      bosse, la forme d'un vrai mouvement. Voir banc-essai/douceur.js. */
   const GLISSE_MONTE = 1, GLISSE_POSE = 2;   // px par image, mini
-  function glisserVers(app, cible){
+  /* « fin » est appelée quand la course s'arrête, QUELLE QUE SOIT la raison :
+     arrivée, butée, doigt posé, ou nouvelle course qui la remplace. C'est ce
+     qui permet de retirer la cale du clavier au bon moment (voir
+     rendDefilementClavier), et jamais trop tard. */
+  const finir = (g)=>{ if(g && g.fin){ const f = g.fin; g.fin = null; try{ f(); }catch(e){} } };
+  function glisserVers(app, cible, fin){
     const maintenant = ()=> (typeof performance !== "undefined" ? performance.now() : Date.now());
     const pos = app.scrollTop;
     if(Math.abs(cible - pos) < GLISSE_MINI){
-      if(glissement){ cancelAnimationFrame(glissement.id); glissement = null; }
-      app.scrollTop = cible; return;
+      if(glissement){ cancelAnimationFrame(glissement.id); const g = glissement; glissement = null; finir(g); }
+      app.scrollTop = cible; if(fin){ try{ fin(); }catch(e){} } return;
     }
     /* Une course déjà lancée n'est pas relancée : on lui donne la nouvelle
        cible, et c'est tout. C'est tout l'intérêt du suivi — et le ressort
        garde en plus sa vitesse, donc le raccord est invisible. */
-    if(glissement){ glissement.cible = cible; return; }
+    if(glissement){ glissement.cible = cible; if(fin){ const avant = glissement.fin; glissement.fin = avant ? ()=>{ avant(); fin(); } : fin; } return; }
     const pas = ()=>{
       const g = glissement;
       if(!g) return;
@@ -12095,7 +12115,7 @@ try{
       /* On repart de la position RÉELLE à chaque image, pas de notre modèle :
          le défileur arrondit, et c'est lui qui a raison. */
       const d = p - g.cible;
-      if(Math.abs(d) <= GLISSE_QUEUE){ app.scrollTop = g.cible; glissement = null; return; }
+      if(Math.abs(d) <= GLISSE_QUEUE){ app.scrollTop = g.cible; glissement = null; finir(g); return; }
       const t = maintenant();
       const dtms = Math.min(50, Math.max(1, t - g.tPrec));  // une image sautée ne fait pas bondir
       g.tPrec = t;
@@ -12125,13 +12145,13 @@ try{
          le défileur bute et la boucle tournerait indéfiniment, à consommer de
          la batterie pour ne rien déplacer. Six images sans le moindre pixel
          gagné : on est bloqué, on pose et on s'arrête. */
-      if(Math.abs(app.scrollTop - p) < 0.5){ if(++g.bloque >= 6){ glissement = null; return; } }
+      if(Math.abs(app.scrollTop - p) < 0.5){ if(++g.bloque >= 6){ glissement = null; finir(g); return; } }
       else g.bloque = 0;
       g.id = requestAnimationFrame(pas);
     };
-    glissement = { id: requestAnimationFrame(pas), cible: cible, tPrec: maintenant(), bloque: 0, v: 0 };
+    glissement = { id: requestAnimationFrame(pas), cible: cible, tPrec: maintenant(), bloque: 0, v: 0, fin: fin || null };
   }
-  function arreterGlissement(){ if(glissement){ cancelAnimationFrame(glissement.id); glissement = null; } }
+  function arreterGlissement(){ if(glissement){ cancelAnimationFrame(glissement.id); const g = glissement; glissement = null; finir(g); } }
   document.addEventListener("touchstart", arreterGlissement, { passive:true, capture:true });
   document.addEventListener("pointerdown", arreterGlissement, { passive:true, capture:true });
 
@@ -12230,15 +12250,29 @@ try{
      quand il redescend — sauf si le doigt a fait défiler entre-temps, auquel
      cas c'est le joueur qui commande, pas nous. */
   let defilementAvantClavier = null, defilementPose = null;
+  /* ET IL EST RENDU EN GLISSANT. Le clavier refermé, la page revenait d'UN
+     COUP : 40 px en une image, mesuré sur le mode Groupe — le saut le plus
+     visible de tout le geste. Elle redescend désormais du même ressort qu'à
+     l'aller, pendant que le clavier s'en va. Il faut pour ça garder la cale
+     sous le contenu le temps du retour (html.kb-cale) : sans elle, la zone
+     défilable rétrécit d'un coup et le navigateur ramène la page au bord,
+     sans animation. La cale part quand la page est arrivée. */
+  function retourAPrevoir(){
+    const app = document.getElementById("app");
+    if(!app || defilementAvantClavier === null) return false;
+    const bougeParLeDoigt = defilementPose !== null && Math.abs(app.scrollTop - defilementPose) > 4;
+    return !bougeParLeDoigt && Math.abs(app.scrollTop - defilementAvantClavier) > 1;
+  }
   function rendDefilementClavier(){
     const app = document.getElementById("app");
-    if(app && defilementAvantClavier !== null){
-      const bougeParLeDoigt = defilementPose !== null && Math.abs(app.scrollTop - defilementPose) > 4;
-      if(!bougeParLeDoigt && Math.abs(app.scrollTop - defilementAvantClavier) > 1){
-        app.scrollTop = defilementAvantClavier;
-        try{ glassRelayout(); queueGlassSync(); }catch(e){}
-      }
-    }
+    if(retourAPrevoir()){
+      de.classList.add("kb-cale");
+      glisserVers(app, defilementAvantClavier, ()=>{
+        if(!de.classList.contains("kb")) de.classList.remove("kb-cale");
+        try{ glassRelayout(); queueGlassSync(); fitScroll(); }catch(e){}
+      });
+      try{ glassSuivre(700); }catch(e){}
+    } else if(!de.classList.contains("kb") && !glissement) de.classList.remove("kb-cale");
     defilementAvantClavier = null; defilementPose = null;
   }
   /* ===== DANS UNE DISCUSSION, L'ÉCRAN SE RÉTRÉCIT AVEC LE CLAVIER =====
@@ -12257,6 +12291,7 @@ try{
   function apply(){
     if(!isField()){
       restH = Math.max(restH, vv.height); // pas de clavier -> c'est la hauteur de repos
+      if(retourAPrevoir()) de.classList.add("kb-cale");
       de.classList.remove("kb");
       if(de.classList.contains("kb-fil")){ de.classList.remove("kb-fil"); try{ glassSuivre(500); }catch(e){} }
       fitScroll();
@@ -12353,7 +12388,7 @@ try{
   vv.addEventListener("resize", apply);
   vv.addEventListener("scroll", apply);
   document.addEventListener("focusin", ()=>setTimeout(apply, 60));
-  document.addEventListener("focusout", ()=>{ clearTimeout(kbScrollTimer); clearTimeout(kbScrollTimer2); setTimeout(()=>{ if(!isField()){ de.classList.remove("kb"); if(de.classList.contains("kb-fil")){ de.classList.remove("kb-fil"); try{ glassSuivre(500); }catch(e){} } fitScroll(); } }, 60); });
+  document.addEventListener("focusout", ()=>{ clearTimeout(kbScrollTimer); clearTimeout(kbScrollTimer2); setTimeout(()=>{ if(!isField()){ if(retourAPrevoir()) de.classList.add("kb-cale"); de.classList.remove("kb"); if(de.classList.contains("kb-fil")){ de.classList.remove("kb-fil"); try{ glassSuivre(500); }catch(e){} } fitScroll(); rendDefilementClavier(); } }, 60); });
 })();
 
 /* ===================== VERSET SURPRISE (5 touches sur l'icône) ===================== */
