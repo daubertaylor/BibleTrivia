@@ -26125,9 +26125,24 @@ function toggleFullscreen(){
   if(req){ try { const p = req.call(el, { navigationUI:"hide" }); if(p && p.catch){ p.catch(()=>{}); } } catch(e){} }
   try { if(screen.orientation && screen.orientation.lock){ screen.orientation.lock("portrait").catch(()=>{}); } } catch(e){}
 }
+/* ===== LE PLEIN ÉCRAN NE REFAIT PAS L'ÉCRAN =====
+   « Sur Android, “30 s par question” clignote légèrement » ; « à certains
+   moments, quand j'appuie partout, que je déroule dans tous les sens, l'écran
+   peut venir à clignoter. » C'était ici. Dans Chrome, au premier toucher, le
+   jeu passe en plein écran — et chaque entrée ou sortie du plein écran (un
+   geste depuis le bord, le retour, le toucher suivant qui y revient)
+   REFAISAIT TOUT L'ÉCRAN : render(), donc chaque puce, chaque carte et chaque
+   couche de verre détruites puis recréées, le temps d'une image à repeindre.
+   Mesuré : un toucher sur « Courte », et l'écran entier est remplacé. iOS
+   n'a pas ce plein écran : il ne clignotait jamais — d'où « que ça soit
+   pareil que sur iOS ».
+   Seuls changent la hauteur et la marge du haut (html.is-fs). On remesure
+   donc, comme pour tout redimensionnement — resserrer l'écran, recaler le
+   verre — sans rien reconstruire. */
 function onFsChange(){
   document.documentElement.classList.toggle("is-fs", fsActive());
-  render();
+  try{ fitScroll(); }catch(e){}
+  try{ glassRelayout(); armGlass(700); queueGlassSync(); }catch(e){}
 }
 document.addEventListener("fullscreenchange", onFsChange);
 document.addEventListener("webkitfullscreenchange", onFsChange);
@@ -26372,8 +26387,15 @@ function tryAutoFullscreen(e){
    réapparaît que si le joueur la fait glisser, pour quitter). Sur iPhone,
    Safari interdit ce plein écran : fsAvailable() renvoie false, donc no-op
    (l'immersion iOS passe par « Ajouter à l'écran d'accueil »). */
+/* AU CLIC, PAS AU CONTACT. Demandé dès que le doigt se posait (pointerdown),
+   le plein écran décalait la page PENDANT le toucher — la marge du haut
+   passe de 6 à 58 px : le doigt se relevait sur autre chose, et le premier
+   toucher était perdu (« Courte » touchée, rien de choisi : relevé par
+   banc-essai/plein-ecran.js, sur la v311 comme avant). Au clic, le geste est
+   déjà joué — le choix est fait, la carte ouverte — et le navigateur accorde
+   encore le plein écran : il s'installe juste après, sans rien voler. */
 if(IS_ANDROID && !isStandalone){
-  document.addEventListener("pointerdown", tryAutoFullscreen, { capture:true, passive:true });
+  document.addEventListener("click", tryAutoFullscreen, { capture:true, passive:true });
 }
 /* ===== ANDROID SAIT INSTALLER EN UN GESTE — ON LE LUI DEMANDE =====
    Chrome prévient l'application dès qu'elle est installable
