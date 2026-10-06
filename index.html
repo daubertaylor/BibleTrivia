@@ -19469,6 +19469,9 @@ async function chargerEtatGroupes(){
     if(typeof r.ouverts === "boolean") grp.ouverts = r.ouverts;
     if(r.regles_version) grp.version = +r.regles_version || grp.version;
     memoriserGroupes();
+    /* Un modérateur : sa file est préchargée, pour que la Modération s'ouvre
+       avec son contenu (voir ouvrirModeration). À zéro, rien à charger. */
+    if(r.moderateur){ if(aTraiter() === 0) moderation = []; else chargerModeration(); }
     /* La liste se lit dès qu'on participe, pas seulement à l'ouverture de
        l'onglet : c'est elle qui donne les non-lus de la pastille de l'accueil. */
     if(r.participe === "ok"){ abonnerGroupes(); suivreNomGroupes(); if(!grp.liste) chargerListes(); if(invitationEnAttente) setTimeout(servirInvitation, 300); }
@@ -20832,20 +20835,49 @@ function supprimerGroupeCourant(){
    bout du bouclier de l'écran des groupes — visible des seuls modérateurs.
    Une carte par signalement, et les quatre décisions possibles. Le texte
    d'un message masqué n'est lisible qu'ici. */
-let moderation = null;
+let moderation = null, moderationEnCours = null;
+/* ===== LA MODÉRATION S'OUVRE AVEC SON CONTENU =====
+   « Elle se rouvre bien, mais l'affichage apparaît un peu après. Fais en
+   sorte que ça se rouvre parfaitement et que rien n'apparaisse après. »
+   À chaque ouverture, la file était jetée (moderation = null) : l'écran
+   montait VIDE, un rond tournait, puis la carte arrivait avec la réponse du
+   serveur — 200 à 800 ms plus tard.
+   On ouvre maintenant sur ce qu'on sait déjà :
+   — la file de la dernière fois, si on l'a ; elle est relue en arrière-plan
+     et l'écran ne change que si elle a vraiment changé ;
+   — sinon, le compte du serveur (grp.etat.a_traiter) : à zéro, « Rien à
+     traiter. » est déjà la bonne réponse, il n'y a rien à attendre ;
+   — sinon, la file est déjà en route (chargerEtatGroupes la précharge pour
+     un modérateur) : on attend qu'elle arrive pour ouvrir — au plus 0,7 s,
+     après quoi l'écran s'ouvre quand même, avec son rond. */
 function ouvrirModeration(){
   if(!(grp.etat && grp.etat.moderateur)) return;
-  moderation = null;
-  state.screen = "moderation"; render();
-  chargerModeration();
+  if(!moderation && aTraiter() === 0) moderation = [];
+  const ouvrir = ()=>{ if(state.screen !== "moderation"){ state.screen = "moderation"; render(); } };
+  if(moderation){ ouvrir(); chargerModeration(); return; }
+  let fait = false;
+  const t = setTimeout(()=>{ if(!fait){ fait = true; ouvrir(); } }, 700);
+  chargerModeration().then(()=>{ if(!fait){ fait = true; clearTimeout(t); ouvrir(); } });
 }
-async function chargerModeration(){
-  const l = await listeGroupe("moderation_ouverte");
-  moderation = l || [];
-  /* La file relue EST le compte (une carte par chose à décider) : la
-     pastille suit sans rien redemander au serveur. */
-  if(l && grp.etat){ grp.etat.a_traiter = l.length; majBarre(); majBouclier(); }
-  if(state.screen === "moderation"){ const z = document.getElementById("modListe"); if(z){ z.innerHTML = cartesModeration(); try{ glassRelayout(); queueGlassSync(); }catch(e){} } }
+function chargerModeration(){
+  if(moderationEnCours) return moderationEnCours;
+  const p = (async ()=>{
+    const l = await listeGroupe("moderation_ouverte");
+    if(l) moderation = l; else if(!moderation) moderation = [];
+    /* La file relue EST le compte (une carte par chose à décider) : la
+       pastille suit sans rien redemander au serveur. */
+    if(l && grp.etat){ grp.etat.a_traiter = l.length; majBarre(); majBouclier(); }
+    /* On ne redessine que ce qui a CHANGÉ : la même file relue ne touche à
+       rien, et l'écran ouvert ne clignote pas. */
+    if(state.screen === "moderation"){
+      const z = document.getElementById("modListe");
+      const sig = JSON.stringify(moderation);
+      if(z && z._sig !== sig){ z.innerHTML = cartesModeration(); z._sig = sig; try{ glassRelayout(); queueGlassSync(); fitScroll(); }catch(e){} }
+    }
+  })();
+  moderationEnCours = p;
+  p.finally(()=>{ if(moderationEnCours === p) moderationEnCours = null; });
+  return p;
 }
 function cartesModeration(){
   if(!moderation) return `<div class="grp-vide"><span class="spinner"></span></div>`;
@@ -20870,6 +20902,7 @@ function renderModeration(){
   const el = document.createElement("div");
   el.className = "screen";
   el.innerHTML = `${renderHeader("Modération", true, "retourGroupes()")}<div id="modListe">${cartesModeration()}</div>`;
+  const z = el.querySelector("#modListe"); if(z && moderation) z._sig = JSON.stringify(moderation);
   return el;
 }
 async function traiterSignalement(id, decision, btn){
