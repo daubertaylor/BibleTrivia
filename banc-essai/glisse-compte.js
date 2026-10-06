@@ -13,8 +13,8 @@
    — plus de 20 px en une image quand la carte change d'état ;
    — plus de 3 px en une image à l'ouverture du Profil quand la table a déjà
      été vue (même il y a plus d'un jour, même sur un réseau lent) ;
-   — un refus (trop d'essais) qui remplacerait le champ, effacerait ce qu'on
-     y a tapé ou ferait perdre le focus — donc le clavier.
+   — une adresse refusée qui remplacerait le champ, effacerait ce qu'on y a
+     tapé ou ferait perdre le focus — donc le clavier.
 
    Usage : node banc-essai/glisse-compte.js [url]  */
 const { chromium } = require('/opt/node22/lib/node_modules/playwright');
@@ -91,23 +91,21 @@ function pireSaut(rel){
       v(nom + ' : la photo glisse (≤ 20 px par image)', s.pire <= 20, 'pire : ' + s.pire + ' px à ' + s.quand + ' ms, sur ' + Math.round(course) + ' px de course');
       await p.waitForTimeout(300);
     }
-    /* Un refus : même état, la carte se met à jour EN PLACE. */
-    await p.click('#compteMail'); await p.keyboard.type('taylor@essai.test');
+    /* Une adresse mal tapée : même état, la carte se met à jour EN PLACE. */
+    await p.click('#compteMail'); await p.keyboard.type('taylor@essai');
     const r = await p.evaluate(async () => {
       const champ = document.getElementById('compteMail');
-      window.__faux.erreurEnvoi = { name:'AuthApiError', status:429, code:'over_email_send_rate_limit', message:'email rate limit exceeded' };
       await envoyerCode();
-      window.__faux.erreurEnvoi = null;
       const carte = document.getElementById('compteCarte'), h = [], t0 = performance.now();
       await new Promise(res => { const tic = () => { h.push(Math.round(carte.getBoundingClientRect().height)); if (performance.now() - t0 < 700) requestAnimationFrame(tic); else res(); }; requestAnimationFrame(tic); });
       return { meme: document.getElementById('compteMail') === champ, valeur: document.getElementById('compteMail').value,
                focus: document.activeElement === champ, mot: (carte.querySelector('.compte-mot')||{}).textContent || '',
                paliers: new Set(h).size };
     });
-    v('un refus garde le champ (le même élément)', r.meme);
-    v('…ce qu\'on y a tapé', r.valeur === 'taylor@essai.test', r.valeur);
+    v('une adresse refusée garde le champ (le même élément)', r.meme);
+    v('…ce qu\'on y a tapé', r.valeur === 'taylor@essai', r.valeur);
     v('…et le focus, donc le clavier', r.focus);
-    v('…dit la raison', /Trop d'essais/.test(r.mot), r.mot);
+    v('…dit la raison', /pas l'air d'une adresse/.test(r.mot), r.mot);
     v('…et la carte prend sa ligne de plus en douceur', r.paliers >= 4, r.paliers + ' hauteurs différentes');
     if (p._errs.length) v('aucune erreur JS', false, p._errs.join(' | '));
     await p.context().close(); }
