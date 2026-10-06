@@ -12134,6 +12134,11 @@ try{
     const pas = ()=>{
       const g = glissement;
       if(!g) return;
+      /* LA COURSE APPARTIENT À SON ÉCRAN. On quitte une page pendant que
+         celle-ci redescend après le clavier (toucher « Retour » referme le
+         clavier ET change d'écran) : sans cette garde, la course continuait
+         sur l'écran suivant et le faisait défiler, lui. */
+      if(g.ecran && (!g.ecran.isConnected || g.ecran.classList.contains("screen-exit"))){ glissement = null; finir(g); return; }
       const p = app.scrollTop;
       /* On repart de la position RÉELLE à chaque image, pas de notre modèle :
          le défileur arrondit, et c'est lui qui a raison. */
@@ -12172,7 +12177,8 @@ try{
       else g.bloque = 0;
       g.id = requestAnimationFrame(pas);
     };
-    glissement = { id: requestAnimationFrame(pas), cible: cible, tPrec: maintenant(), bloque: 0, v: 0, fin: fin || null };
+    const ecran = app.querySelector(":scope > .screen:not(.screen-exit)");
+    glissement = { id: requestAnimationFrame(pas), cible: cible, tPrec: maintenant(), bloque: 0, v: 0, fin: fin || null, ecran: ecran };
   }
   function arreterGlissement(){ if(glissement){ cancelAnimationFrame(glissement.id); const g = glissement; glissement = null; finir(g); } }
   document.addEventListener("touchstart", arreterGlissement, { passive:true, capture:true });
@@ -20042,8 +20048,15 @@ function majBarre(){
   /* Le sens de la page qui arrive (voir LA BARRE ARRIVE AVEC SA PAGE). */
   const entree = document.querySelector("#app > .screen.screen-enter:not(.screen-exit)");
   const sens = !entree ? "" : (entree.classList.contains("vers-gauche") ? "g" : (entree.classList.contains("vers-droite") ? "d" : ""));
-  clearTimeout(b._finMouvement);
+  /* LA MINUTERIE N'APPARTIENT QU'AU MOUVEMENT QUI L'A POSÉE. majBarre est
+     rappelée à chaque rendu, et pendant une arrivée il en vient d'autres (une
+     liste qui arrive du serveur) : annuler la minuterie à chaque appel
+     laissait « arrive-g » collée pour toujours — et une animation finie mais
+     retenue (« both ») l'emporte sur toute règle : la barre ne se cachait
+     plus ni au clavier ni en changeant de page. On ne l'annule donc que
+     lorsqu'un NOUVEAU mouvement la remplace. */
   if(etait && montre && sens){
+    clearTimeout(b._finMouvement);
     /* Elle arrive de côté, avec sa page : on la pose d'abord à sa place,
        sans transition, et c'est l'animation qui la fait venir. */
     b.classList.remove("part-cote", "arrive-g", "arrive-d");
@@ -20054,6 +20067,7 @@ function majBarre(){
     b._finMouvement = setTimeout(()=>{ b.classList.remove("arrive-g", "arrive-d"); }, msPli() + 60);
     try{ glassTrack(); }catch(e){}
   } else if(!etait && !montre && sens){
+    clearTimeout(b._finMouvement);
     /* Elle part avec la page qu'on quitte : un fondu court vers le côté,
        puis on la range sous le bord, sans qu'on la voie y descendre. */
     b.classList.remove("arrive-g", "arrive-d");
@@ -20064,6 +20078,9 @@ function majBarre(){
     }, 230);
   } else {
     if(montre) b.classList.remove("part-cote");
+    /* Cachée sans mouvement de côté : aucune animation retenue ne doit la
+       garder à l'écran. */
+    else b.classList.remove("arrive-g", "arrive-d");
     b.classList.toggle("cachee", !montre);
     if(etait && montre){ try{ glassTrack(); }catch(e){} }
   }

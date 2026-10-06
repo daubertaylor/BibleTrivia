@@ -76,6 +76,21 @@ const dit = (q, b, d) => { if (!b) ko++; console.log('  ' + (b ? 'OK  ' : 'KO  '
   const fin = await p.evaluate(() => { const b = document.getElementById('barreBas'), r = b.getBoundingClientRect(); return { l: r.left, t: r.top, cls: b.className, op: +getComputedStyle(b).opacity }; });
   dit('aller-retour rapide : la barre finit à sa place, sans classe oubliée', Math.abs(fin.l - repos.l) < 0.5 && Math.abs(fin.t - repos.t) < 0.5 && fin.op > 0.99 && !/arrive|part-cote|cachee|sans-transition/.test(fin.cls), JSON.stringify(fin));
 
+  /* ---- 5. des rendus pendant l'arrivée ----
+     Une liste qui arrive du serveur rappelle majBarre en plein mouvement :
+     l'animation ne doit pas rester collée à la barre (elle l'emporterait
+     ensuite sur « cachée » et sur le clavier). */
+  await p.evaluate(() => openParcours());
+  await p.waitForTimeout(700);
+  await p.evaluate(() => { goToModeSelect(); setTimeout(() => majBarre(), 100); setTimeout(() => majBarre(), 250); setTimeout(() => majBarre(), 400); });
+  await p.waitForTimeout(1200);
+  const apres = await p.evaluate(() => document.getElementById('barreBas').className);
+  dit('des rendus pendant son arrivée ne laissent aucune animation collée', !/arrive|part-cote|sans-transition/.test(apres), apres);
+  await p.evaluate(() => document.documentElement.classList.add('kb'));
+  await p.waitForTimeout(800);
+  const kb = await p.evaluate(() => document.getElementById('barreBas').getBoundingClientRect().top);
+  dit('… et elle se cache bien quand le clavier monte', kb >= 874, 'haut de la barre ' + Math.round(kb) + ' px');
+  await p.evaluate(() => document.documentElement.classList.remove('kb'));
   dit('aucune erreur', errs.length === 0, errs.slice(0, 2).join(' | '));
   await nav.close();
   console.log(ko ? '\n  ECHEC — ' + ko + ' point(s)' : '\n  OK — la barre arrive et part avec sa page');
