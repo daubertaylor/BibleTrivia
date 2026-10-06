@@ -692,7 +692,7 @@ const ouvrirLaLangue = async (p, lg) => {
         compte.dispo = true; profile.name = 'Taylor';
         compte.session = { user:{ id:'moi-0', email:'joueur@exemple.net' } }; compte.etape = 'connecte';
         grp.installe = true; grp.ouverts = true; grp.message = '';
-        grp.etat = { participe:'ok', moderateur:true, ouverts:true };
+        grp.etat = { participe:'ok', moderateur:true, ouverts:true, photos:true };
         grp.profils = { 'moi-0':{ nom:'Taylor', couleur:'#4C86E8' }, 'u-2':{ nom:'Sam', couleur:'#E8574C' },
                         'u-3':{ nom:'Lee', couleur:'#4CE88A' }, 'u-4':{ nom:'Kim', couleur:'#E8C84C' } };
         grp.liste = [
@@ -720,6 +720,8 @@ const ouvrirLaLangue = async (p, lg) => {
           m(4, null, 'systeme', 'exclu',  { donnees:{ nom:'Kim' } }),
           m(5, null, 'systeme', 'banni',  { donnees:{ nom:'Kim' } }),
           m(6, null, 'systeme', 'admin',  { donnees:{ nom:'Sam' } }),
+          m(13, null, 'systeme', 'photo', { donnees:{ nom:'Sam' } }),
+          m(14, null, 'systeme', 'photo_retiree', { donnees:{ nom:'Sam' } }),
           m(7, 'u-2', 'texte', 'Amen'),
           m(8, 'u-3', 'texte', '', { masque:true }),
           m(9, 'u-3', 'texte', '', { supprime_le:il(0.2) }),
@@ -830,8 +832,16 @@ const ouvrirLaLangue = async (p, lg) => {
        s'affiche là où le joueur la lirait (le mot sous les boutons). */
     ...['non_connecte', 'ferme', 'sans_profil', 'banni', 'age', 'nom_longueur', 'description_longueur', 'mot_interdit',
         'coordonnees', 'trop_de_groupes', 'code_inconnu', 'banni_du_groupe', 'groupe_plein', 'pas_membre', 'groupe_ferme',
-        'trop_vite', 'vide', 'trop_long', 'interdit', 'introuvable', 'soi_meme', 'partie_invalide', 'reseau'].map(code =>
+        'trop_vite', 'vide', 'trop_long', 'interdit', 'introuvable', 'soi_meme', 'partie_invalide', 'photo', 'photo_retiree', 'reseau'].map(code =>
       ['Groupes · erreur ' + code, (c) => { __fermerTout(); __grpDecor(); grp.message = motErreurGroupe({ erreur:c }); state.screen='groupes'; render(); }, code]),
+    /* LA PHOTO DU GROUPE (v311) : la feuille « Changer / Retirer », puis le
+       salon d'une partie lancée depuis un groupe, chez l'hôte et chez
+       l'invité. */
+    ['Groupes · photo du groupe', () => { __fermerTout(); __grpDecor(); state.screen='groupes'; render(); ouvrirCreation();
+      creation.photo = 'data:image/jpeg;base64,AAAA'; choisirPhotoGroupe(); }],
+    ['Groupes · salon du groupe', () => { __fermerTout(); __grpDecor(); net.depuisGroupe = 'g-1'; net.code = 'ABCD'; net.isHost = true;
+      net.joueurs = {}; majAdversaire(); state.screen = 'online-room'; render(); }],
+    ['Groupes · salon du groupe (invité)', () => { net.isHost = false; render(); }],
     ['Groupes · erreur muet', () => { __fermerTout(); __grpDecor();
       grp.message = motErreurGroupe({ erreur:'muet', jusqu:new Date(Date.now() + 3600000).toISOString() }); state.screen='groupes'; render(); }],
   ];

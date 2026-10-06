@@ -2487,6 +2487,12 @@
   .code-label{ text-transform:uppercase; letter-spacing:0.14em; font-size:clamp(0.66rem, calc(1.64 * var(--hu)), 0.8rem); font-weight:700; color:rgba(255,255,255,0.85); text-shadow:0 1px 6px rgba(0,0,0,0.4); }
   .code-big{ font-family:'Poppins',sans-serif; font-weight:700; font-size:clamp(1.62rem, calc(8 * var(--hu) - 23px), 2.55rem); letter-spacing:0.38rem; color:#fff; margin:clamp(0.02rem, calc(0.51 * var(--hu)), 0.25rem) 0 clamp(0.01rem, calc(1.1 * var(--hu) - 5px), 0.25rem) 0.38rem; text-shadow:0 2px 18px rgba(0,0,0,0.45); }
   .code-hint{ font-size:clamp(0.75rem, calc(1.7 * var(--hu)), 0.83rem); color:rgba(255,255,255,0.88); text-shadow:0 1px 6px rgba(0,0,0,0.35); }
+  /* Le salon d'un groupe : sa pastille, son nom, à la place du grand code. */
+  .code-hero.salon-groupe{ display:flex; flex-direction:column; align-items:center; }
+  .salon-groupe .grp-av{ width:clamp(2.6rem, calc(6.4 * var(--hu)), 3.3rem); height:clamp(2.6rem, calc(6.4 * var(--hu)), 3.3rem); font-size:1.3rem;
+    border-radius:var(--r-l); margin-bottom:clamp(0.3rem, calc(1.1 * var(--hu)), 0.55rem); }
+  .sg-nom{ font-family:'Poppins',sans-serif; font-weight:700; font-size:clamp(1.3rem, calc(5.2 * var(--hu) - 14px), 1.75rem); color:#fff;
+    text-shadow:0 2px 18px rgba(0,0,0,0.45); margin:0.05rem 0 0.15rem; max-width:100%; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
 
 
   .len-label{ font-size:clamp(0.75rem, calc(1.68 * var(--hu)), 0.82rem); font-weight:600; color:rgba(255,255,255,0.9); margin:clamp(0.28rem, calc(3.8 * var(--hu) - 14.9px), 0.95rem) 0 clamp(0.13rem, calc(1.9 * var(--hu) - 8.5px), 0.45rem) 0.2rem; text-shadow:0 1px 6px rgba(0,0,0,0.4); }
@@ -5081,6 +5087,13 @@
   .b-bulle{ min-height:44px; }
   span.b-bulle{ display:inline-flex; align-items:center; }
   .b-moi .b-bulle{ background:var(--primary); color:#fff; box-shadow:0 1px 2px rgba(120,30,14,0.16), 0 4px 12px rgba(214,60,34,0.22); }
+  /* La couleur du groupe (voir BULLES_GROUPE) ; le corail reste le repli. */
+  .groupe-ecran .b-moi .b-bulle:not(.b-partie):not(.b-vide){ background:var(--grp-c, var(--primary)); color:var(--grp-txt, #fff);
+    box-shadow:0 1px 2px rgba(var(--grp-rgb, 214,60,34),0.18), 0 4px 12px rgba(var(--grp-rgb, 214,60,34),0.24); }
+  .groupe-ecran .compo-envoi{ background:var(--grp-c, var(--primary)); color:var(--grp-txt, #fff);
+    box-shadow:0 1px 2px rgba(var(--grp-rgb, 214,60,34),0.18), 0 4px 12px rgba(var(--grp-rgb, 214,60,34),0.3); }
+  .groupe-ecran .compo-jeu, .groupe-ecran .b-partie .bp-ico{ color:var(--grp-fonce, var(--primary)); }
+  .groupe-ecran .b-partie .grp-pill:not(.calme){ background:var(--grp-c, var(--primary)); color:var(--grp-txt, #fff); }
   .b-bulle.envoi{ opacity:0.62; }
   .b-heure{ font-size:0.72rem; color:var(--ink-soft); margin:0.05rem 0.85rem 0.35rem; }
   .b-vide{ font-style:italic; color:var(--ink-soft) !important; background:rgba(252,248,241,0.6) !important; box-shadow:none !important; }
@@ -5726,7 +5739,6 @@ const TEXTES = {
     "Aucun groupe ne correspond.":"No group matches.",
     "Groupe public":"Public group",
     "Groupe privé":"Private group",
-    "Message supprimé":"Message deleted",
     "Message masqué":"Message hidden",
     "Tu lances une partie":"You're starting a game",
     "{nom} lance une partie":"{nom} is starting a game",
@@ -5792,6 +5804,8 @@ const TEXTES = {
     "Envoi…":"Sending…",
     "Code {code}":"Code {code}",
     "Rejoindre la partie":"Join the game",
+    "Partie du groupe":"Group game",
+    "Les membres te rejoignent depuis la discussion.":"Members join you from the chat.",
     "Cette partie n'est plus ouverte.":"This game is no longer open.",
     "Lancer une partie":"Start a game",
     "Écris un message…":"Write a message…",
@@ -6341,7 +6355,6 @@ const TEXTES = {
     "Aucun groupe ne correspond.":"Ningún grupo coincide.",
     "Groupe public":"Grupo público",
     "Groupe privé":"Grupo privado",
-    "Message supprimé":"Mensaje eliminado",
     "Message masqué":"Mensaje oculto",
     "Tu lances une partie":"Inicias una partida",
     "{nom} lance une partie":"{nom} inicia una partida",
@@ -6407,6 +6420,8 @@ const TEXTES = {
     "Envoi…":"Enviando…",
     "Code {code}":"Código {code}",
     "Rejoindre la partie":"Unirse a la partida",
+    "Partie du groupe":"Partida del grupo",
+    "Les membres te rejoignent depuis la discussion.":"Los miembros se unen desde el chat.",
     "Cette partie n'est plus ouverte.":"Esta partida ya no está abierta.",
     "Lancer une partie":"Iniciar una partida",
     "Écris un message…":"Escribe un mensaje…",
@@ -19781,6 +19796,25 @@ const TEINTES = [
   ["#F4512C", "#DE3616"], ["#FBBF3C", "#F29A16"], ["#5B9BF0", "#3A76DD"], ["#3DBB7E", "#22955C"],
   ["#A884F2", "#7F58DD"], ["#2FC1C6", "#14989E"], ["#F26AA6", "#D84687"], ["#7D8A9C", "#5A6678"]
 ];
+/* ===== LA COULEUR D'UN GROUPE, C'EST CELLE DE SA DISCUSSION =====
+   « Les couleurs de groupe doivent servir à quelque chose. Sinon, ça sert à
+   rien d'en avoir. » Elle ne colorait que la pastille de la liste. Elle
+   colore maintenant, dans le groupe, mes bulles, le bouton d'envoi, la
+   manette et l'invitation à jouer : chaque groupe a sa couleur, on sait où
+   l'on écrit avant d'avoir lu le nom.
+   Des dégradés un cran plus profonds que ceux des pastilles : du texte blanc
+   y garde le contraste des bulles d'aujourd'hui (au moins 3,9 au milieu,
+   mesuré) — sauf le jaune, qui prend une encre sombre (7,5). */
+const BULLES_GROUPE = [
+  ["#F04A26", "#DA3414", "#fff", "214,60,34"],   ["#FBC244", "#F3A21E", "#3B2A10", "214,140,20"],
+  ["#4D8DEA", "#336ED6", "#fff", "45,100,205"],  ["#2BA26A", "#1C8350", "#fff", "28,120,75"],
+  ["#9670EA", "#734DD4", "#fff", "105,70,200"],  ["#18A0A6", "#0E7F84", "#fff", "14,120,125"],
+  ["#E4559A", "#C93B7B", "#fff", "190,55,115"],  ["#6E7B8D", "#546072", "#fff", "70,80,100"]
+];
+function couleurGroupe(i){
+  const b = BULLES_GROUPE[(((+i || 0) % 8) + 8) % 8];
+  return "--grp-c:linear-gradient(150deg, " + b[0] + ", " + b[1] + ");--grp-fonce:" + b[1] + ";--grp-txt:" + b[2] + ";--grp-rgb:" + b[3] + ";";
+}
 function teinte(i){
   const t = TEINTES[(((+i || 0) % TEINTES.length) + TEINTES.length) % TEINTES.length];
   return "background:linear-gradient(150deg, " + t[0] + ", " + t[1] + ");";
@@ -20837,6 +20871,7 @@ function renderGroupe(){
   const el = document.createElement("div");
   el.className = "screen groupe-ecran";
   const g = groupeCourant();
+  if(g) el.setAttribute("style", couleurGroupe(g.teinte));
   if(!g){
     el.innerHTML = `${renderHeader(T("Groupes"), true, "retourGroupes()")}<div class="card grp-vide"><span class="spinner"></span></div>`;
     return el;
@@ -20920,7 +20955,6 @@ function suiteHtml(suite){
 }
 function bulleHtml(m){
   const moi = !!m.auteur && m.auteur === monId();
-  if(m.supprime_le) return `<span class="b-bulle b-vide">${T("Message supprimé")}</span>`;
   if(m.masque) return `<button class="b-bulle b-vide" onclick="actionsMessage('${m.id}')">${T("Message masqué")}</button>`;
   if(m.genre === "partie"){
     const code = String((m.donnees && m.donnees.code) || "").replace(/[^A-Z0-9]/g, "");
@@ -21394,6 +21428,8 @@ async function enregistrerGroupe(btn){
   const r = await appelGroupe("modifier_groupe", { p_groupe:g.id, p_nom:nom, p_description:desc, p_ouvert:creation.type === "public", p_teinte:creation.teinte });
   if(!r.ok){ if(btn) btn.disabled = false; motFeuille("grpModifVeil", motErreurGroupe(r)); return; }
   Object.assign(g, { nom, description:desc, ouvert:creation.type === "public", teinte:creation.teinte });
+  const ecran = document.querySelector("#app > .screen.groupe-ecran:not(.screen-exit)");
+  if(ecran) ecran.setAttribute("style", couleurGroupe(g.teinte));
   await envoyerPhotoGroupe(g.id);
   fermerFeuilleGroupe("grpModifVeil");
   const t = document.getElementById("grpTete");
@@ -23489,9 +23525,25 @@ function renderOnlineRoom(){
      eux, continuent de dire la vérité : à deux, c'est un duel. */
   const aPlusieurs = nbJoueurs() !== 2;   // ce qu'on DIT, plus ce qu'on DESSINE
   const motSalon = motPartie();         // « le duel » à deux, « la partie » au-delà
+  /* ===== LE SALON D'UN GROUPE N'EST PAS CELUI DE L'EN LIGNE =====
+     « Il faut vraiment séparer le côté en ligne et le côté groupe. Quand je
+     crée une partie pour mon groupe, je n'ai pas besoin de voir le reste. »
+     Lancée depuis un groupe, la partie dit DE QUEL groupe elle est — sa
+     pastille, son nom, sa couleur —, et les membres arrivent par la bulle de
+     la discussion : ni grand code à recopier, ni « Inviter des amis ». */
+  const gs = net.depuisGroupe ? (grp.liste || []).find(x => x.id === net.depuisGroupe) : null;
+  if(gs) el.setAttribute("style", couleurGroupe(gs.teinte));
+  const hero = gs ? `
+    <div class="code-hero salon-groupe">
+      ${pastilleGroupe(gs)}
+      <div class="code-label">${T("Partie du groupe")}</div>
+      <div class="sg-nom">${escapeHtml(gs.nom)}</div>
+      <div class="code-hint">${net.isHost ? T("Les membres te rejoignent depuis la discussion.") : T("Tu as rejoint la partie")}</div>
+    </div>` : "";
   el.innerHTML = `
     ${renderHeader(T("Salon"), true, "leaveRoomToOnline()")}
-    <div class="code-hero">
+    ${hero}
+    <div class="code-hero"${gs ? " hidden" : ""}>
       <div class="code-label">${T("Code de la partie")}</div>
       <div class="code-big">${escapeHtml(net.code||"")}</div>
       <!-- « Partage ce code avec ton ami » se disait au singulier tant que le

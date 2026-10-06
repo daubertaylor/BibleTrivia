@@ -52,6 +52,10 @@ const PEUPLEMENTS = [
   ['salon qui vient d\'ouvrir', 0],
   ['duel (2 joueurs)',          1],
   ['salon plein (8 joueurs)',   7],
+  /* LE SALON D'UN GROUPE (v311) : sa pastille et son nom à la place du
+     grand code — il doit tenir pareil, de deux à huit. */
+  ['salon d\'un groupe, à 2',   1, true],
+  ['salon d\'un groupe, à 8',   7, true],
 ];
 
 /* L'iPhone SE dans Safari (553 px utiles sur un écran de 4,7 pouces) reste
@@ -64,7 +68,7 @@ const HORS_ATTEINTE = new Set([]);
 (async () => {
   const nav = await chromium.launch({ executablePath: '/opt/pw-browsers/chromium' });
   const lignes = []; const soucis = [];
-  for (const [peuple, combien] of PEUPLEMENTS) {
+  for (const [peuple, combien, deGroupe] of PEUPLEMENTS) {
   for (const [nom, w, h, hautSure, basSure] of ECRANS) {
     const ctx = await nav.newContext({ viewport: { width: w, height: h }, deviceScaleFactor: 2,
       userAgent: IOS, hasTouch: true, serviceWorkers: 'block' });
@@ -84,13 +88,14 @@ const HORS_ATTEINTE = new Set([]);
     /* Les vraies marges du téléphone, que le navigateur sans tête ne fournit pas. */
     await p.evaluate(() => { document.documentElement.classList.add('is-standalone'); });
     await p.addStyleTag({ content: `html.is-standalone #app, #app{ padding-top:${hautSure}px !important; padding-bottom:${Math.max(basSure, 12)}px !important; }` });
-    await p.evaluate((combien) => {
+    await p.evaluate(([combien, deGroupe]) => {
       /* La VRAIE table de joueurs, celle que le jeu lit : un arrivant, une
          rangée. Les prénoms sont longs à dessein — c'est la largeur qu'on
          voudrait aussi voir tenir. */
       const NOMS = [['Stany','#2FA36B'],['Myriam','#9B5DE5'],['Jonathan','#F1B24A'],
                     ['Élisabeth','#E8734C'],['Barnabé','#4C86E8'],['Priscille','#2FA3A3'],['Zacharie','#B45DE5']];
       net.code = 'CHNW'; net.isHost = true;
+      if (deGroupe && typeof grp === 'object') { grp.liste = [{ id: 'g1', nom: 'Les amis du jeudi', teinte: 2 }]; net.depuisGroupe = 'g1'; }
       net.joueurs = {};
       for (let i = 0; i < combien; i++) {
         const [n, c] = NOMS[i];
@@ -99,7 +104,7 @@ const HORS_ATTEINTE = new Set([]);
       majAdversaire();
       net.lengthKey = Object.keys(LENGTHS)[1]; net.timerKey = Object.keys(TIMER_OPTS)[1]; net.themeKey = 'tout';
       state.screen = 'online-room'; render();
-    }, combien);
+    }, [combien, !!deGroupe]);
     await p.waitForTimeout(1300);
     const r = await p.evaluate(() => {
       const a = document.getElementById('app');
