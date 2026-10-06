@@ -1062,14 +1062,14 @@
       rgba(239,173,38,0.30) 0%, rgba(239,173,38,0.155) 34%, rgba(239,173,38,0.05) 63%, rgba(239,173,38,0) 100%); }
   .question-card .qtext{ font-family:'Poppins',sans-serif; font-weight:600; font-size:clamp(1.05rem, calc(4 * var(--lw)), 1.32rem); line-height:1.45; }
 
-  .options-grid{ display:grid; grid-template-columns:1fr 1fr; gap:clamp(0.55rem, calc(1.2 * var(--uh)), 0.8rem); margin-bottom:clamp(var(--e-2), calc(1.8 * var(--uh)), var(--e-4)); }
+  .options-grid{ display:grid; grid-template-columns:1fr 1fr; gap:clamp(0.55rem, calc(1.2 * var(--hu)), 0.8rem); margin-bottom:clamp(var(--e-2), calc(1.8 * var(--hu)), var(--e-4)); }
   @media (max-width:420px){ .options-grid{ grid-template-columns:1fr; } }
   .option-btn{
     display:flex; align-items:center; gap:0.6rem;
     background:rgba(255,255,255,0.52); backdrop-filter:blur(20px) saturate(180%); -webkit-backdrop-filter:blur(20px) saturate(180%);
     -webkit-transform:translateZ(0); transform:translateZ(0);
     border:0; border-radius:var(--r-l);
-    padding:calc(clamp(0.74rem, calc(1.5 * var(--uh)), 0.96rem) + 1px) calc(0.85rem + 1px); font-size:clamp(0.88rem, calc(2.35 * var(--lw)), 0.96rem); color:var(--ink); text-align:left; width:100%;
+    padding:calc(clamp(0.74rem, calc(1.5 * var(--hu)), 0.96rem) + 1px) calc(0.85rem + 1px); font-size:clamp(0.88rem, calc(2.35 * var(--lw)), 0.96rem); color:var(--ink); text-align:left; width:100%;
     --rim-cast:0 2px 8px rgba(15,12,10,0.1); box-shadow:none;
   }
   /* LA LETTRE N'EST PLUS UNE PASTILLE. C'était le dernier endroit du jeu à
@@ -3659,8 +3659,16 @@
   /* Espaceur flexible : répartit le vide pour que chaque écran soit habité */
   .flex-sp{ flex:1 1 0; min-height:0.35rem; }
   /* Sur les grands écrans, la question et les réponses grandissent pour occuper la place */
-  .question-card{ display:flex; align-items:center; justify-content:center; min-height:clamp(5.5rem, calc(14.5 * var(--uh)), 9.6rem); }
-  .option-btn{ min-height:clamp(3.1rem, calc(7 * var(--uh)), 4.6rem); }
+  /* ===== LA QUESTION ET LES RÉPONSES SE MESURENT À LA PLACE QUI RESTE =====
+     Elles prenaient 14,5 % et 7 % de 1vh — la hauteur de l'ÉCRAN, Dynamic
+     Island et barre d'accueil comprises. Sur un iPhone 16 Pro installé, ce
+     sont 93 px que la question et les réponses croyaient avoir et n'avaient
+     pas : la réponse d'un duel dépassait de 91 px, et l'écran se laissait
+     tirer sous le doigt. --hu est la hauteur UTILE (voir mesurerHauteurUtile),
+     celle dont le salon se sert déjà : sur Android, rien ne change ; sur un
+     iPhone à encoche, tout tient. */
+  .question-card{ display:flex; align-items:center; justify-content:center; min-height:clamp(5.5rem, calc(14.5 * var(--hu)), 9.6rem); }
+  .option-btn{ min-height:clamp(3.1rem, calc(7 * var(--hu)), 4.6rem); }
 
   /* ---------- Médaillon de fin : verre cerclé d'or, trophée intégré ---------- */
   .end-medal{ position:relative; width:clamp(5.9rem, calc(27 * var(--lw)), 7.3rem); aspect-ratio:1; margin:0 auto 0.7rem; border-radius:50%; display:flex; align-items:center; justify-content:center; border:1px solid var(--bord); animation:trophyIn var(--tr-ouvre) backwards; transform:translateZ(0); -webkit-transform:translateZ(0); --rim-cast:0 10px 30px rgba(18,12,6,0.3); }
@@ -19760,7 +19768,7 @@ function bienvenueHtml(){
   const nom = String(profile.name || "").trim();
   /* L'avatar, SANS la photo : la photo ne quitte jamais le téléphone. Ce que
      les autres verront, c'est une initiale et une couleur — on montre ça. */
-  return `<div class="card grp-bienvenue">
+  return `<div class="card grp-bienvenue" data-serre>
       <div class="gb-tete"><span class="gi-ico">${ICONS.bulles}</span><b>${T("Bienvenue dans les groupes")}</b></div>
       <p class="gb-qui">${T("Les autres te verront sous ce nom :")}</p>
       <div class="gb-nom">${avatarHtml(nom || "?", profile.color || "#4C86E8", 2.2)}<b>${nom ? escapeHtml(nom) : T("Pas encore de nom")}</b><button class="grp-pill calme" onclick="openProfile()">${T("Changer")}</button></div>
@@ -22964,6 +22972,11 @@ function render(){
   const app = document.getElementById("app");
   const sameScreen = (state.screen === lastScreen);
   const prevScroll = sameScreen ? (CUSTOM_SCROLL ? customScrollY : app.scrollTop) : 0;
+  /* La réponse s'affiche : on note où sont la question et les réponses AVANT
+     de redessiner, pour les faire glisser au lieu de les faire sauter (voir
+     glisserApresRevelation). */
+  const revelation = sameScreen && ((state.screen === "play" && justRevealed) || (state.screen === "online-play" && net && net.justRevealed));
+  const avantRevelation = revelation ? positionsDuJeu(app) : null;
 
   let node;
   if(state.screen==="splash") node = renderSplash();
@@ -23095,6 +23108,9 @@ function render(){
   }
   lastScreen = state.screen;
   try{ majBarre(); }catch(e){}
+  /* Après la barre : c'est elle qui donne aux écrans des groupes leur pied. */
+  try{ serrerEcran(node); }catch(e){}
+  if(avantRevelation){ try{ glisserApresRevelation(node, avantRevelation); }catch(e){} }
   animerLaBarre(node);
   animerLaJauge(node);
 
@@ -23127,6 +23143,126 @@ function render(){
   }
 }
 
+/* ===== UN ÉCRAN QUI TIENT PRESQUE DOIT TENIR, PAS GLISSER =====
+   « Adapte ta page pour qu'elle ne glisse plus lorsque je bouge mon doigt de
+   haut en bas. Il faut que ça soit bien net et que ça ne bouge pas. »
+   Mesuré avec les VRAIES marges d'un iPhone 16 Pro installé (62 px de
+   Dynamic Island, 34 de barre d'accueil — un navigateur sans tête les met à
+   zéro, d'où le silence des bancs) : l'entrée des groupes dépassait de 31 px,
+   la réponse d'un duel de 91, celle du solo de 76. Un écran qui dépasse
+   devient défilable, et un écran défilable se laisse tirer sous le doigt.
+   Ce qui cède, ce sont les ESPACES : les marges verticales entre les blocs
+   de l'écran — et, dans une carte marquée data-serre, entre ses lignes —,
+   le rembourrage des cartes du jeu et l'écart entre les réponses, tous dans
+   la même proportion, jamais sous 40 % (marges) ou 50 % (rembourrages) de
+   leur valeur, juste de ce qu'il faut pour que tout tienne. Rien d'autre ne
+   change : ni une taille de texte, ni une zone tactile (44 px au moins).
+   Un écran qui tient déjà ne bouge pas d'un pixel. Un écran qui ne pourrait
+   pas tenir même resserré (Progression, une longue liste) garde ses espaces
+   et défile, comme avant. On ne touche à rien clavier ouvert : le champ doit
+   rester sous le doigt.
+   La mesure se fait sur la mise en page (offsetHeight), pas sur ce qui est
+   peint : l'écran qui arrive en montant ne la fausse pas. */
+const SERRE_PLANCHER = 0.4;
+/* Les cartes du jeu peuvent aussi céder un peu de leur rembourrage (jamais
+   plus de la moitié), et les réponses un peu de leur hauteur — jamais sous
+   44 px : c'est une zone qu'on touche. */
+const SERRE_INTERIEUR = [
+  [".question-card", "padding", 0.5], [".fact-card", "padding", 0.5], [".option-btn", "padding", 0.5],
+  [".option-btn", "min-height", 0.82], [".question-card", "min-height", 0.75], [".options-grid", "row-gap", 0.5]
+];
+function elementsSerrables(ecran){
+  const els = [];
+  const prendre = (c)=>{
+    if(!c || !c.matches || c.matches(".flex-sp, .gs, .glass-rim")) return;
+    const pos = getComputedStyle(c).position;
+    if(pos === "absolute" || pos === "fixed") return;
+    els.push(c);
+  };
+  Array.prototype.forEach.call(ecran.children, prendre);
+  ecran.querySelectorAll("[data-serre]").forEach(boite => Array.prototype.forEach.call(boite.children, prendre));
+  return els;
+}
+function serrerEcran(ecran, siDepasse){
+  const a = document.getElementById("app");
+  if(!a || !ecran || !ecran.isConnected || !ecran.classList || !ecran.classList.contains("screen")) return;
+  /* Appelé par fitScroll, à chaque fin d'animation : si l'écran tient, on
+     ne refait rien — une seule lecture de mise en page, pas une dichotomie
+     au milieu d'un mouvement. On ne recalcule que si quelque chose dépasse. */
+  if(siDepasse){
+    const c0 = getComputedStyle(a);
+    const d0 = a.clientHeight - (parseFloat(c0.paddingTop) || 0) - (parseFloat(c0.paddingBottom) || 0);
+    if(!(ecran.offsetHeight - d0 > 0.5)) return;
+  }
+  /* D'abord, tout remettre comme le gabarit l'a écrit. */
+  if(ecran._serre){ ecran._serre.forEach(x => { x.el.style.setProperty(x.prop, x.orig); }); ecran._serre = null; }
+  if(document.documentElement.classList.contains("kb")) return;
+  const cs = getComputedStyle(a);
+  const dispo = a.clientHeight - (parseFloat(cs.paddingTop) || 0) - (parseFloat(cs.paddingBottom) || 0);
+  if(!(ecran.offsetHeight - dispo > 0.5)) return;
+  /* Ce qui peut céder : chaque valeur, et jusqu'où. */
+  const leviers = [];
+  const lever = (el, prop, plancher) => {
+    const v = parseFloat(getComputedStyle(el).getPropertyValue(prop)) || 0;
+    if(v > 0.5) leviers.push({ el, prop, base: v, bas: plancher(v), orig: el.style.getPropertyValue(prop) });
+  };
+  elementsSerrables(ecran).forEach(el => { lever(el, "margin-top", v => v * SERRE_PLANCHER); lever(el, "margin-bottom", v => v * SERRE_PLANCHER); });
+  Array.prototype.forEach.call(ecran.children, c => { if(c.classList && c.classList.contains("flex-sp")) lever(c, "min-height", () => 0); });
+  SERRE_INTERIEUR.forEach(([sel, prop, f]) => ecran.querySelectorAll(sel).forEach(el => {
+    if(prop === "padding"){ lever(el, "padding-top", v => v * f); lever(el, "padding-bottom", v => v * f); }
+    else if(prop === "min-height") lever(el, "min-height", v => Math.max(sel === ".option-btn" ? 44 : 0, v * f));
+    else lever(el, prop, v => v * f);
+  }));
+  if(!leviers.length) return;
+  ecran._serre = leviers.map(x => ({ el: x.el, prop: x.prop, orig: x.orig }));
+  const poser = (k) => {
+    leviers.forEach(x => x.el.style.setProperty(x.prop, (x.base - k * (x.base - x.bas)).toFixed(2) + "px"));
+    return ecran.offsetHeight - dispo;
+  };
+  /* Deux marges qui se touchent ne s'additionnent pas (la plus grande
+     l'emporte) : une règle de trois ne tombe donc pas juste. On cherche le
+     plus petit resserrement qui suffit, par dichotomie — une dizaine de
+     mises en page d'un seul écran, quelques millisecondes. Si même tout
+     resserré l'écran ne tient pas, on rend tout : il défilera, comme avant. */
+  if(poser(1) > 0.5){ ecran._serre.forEach(x => { x.el.style.setProperty(x.prop, x.orig); }); ecran._serre = null; return; }
+  let bas = 0, haut = 1;
+  for(let i = 0; i < 10; i++){ const k = (bas + haut) / 2; if(poser(k) > 0.5) bas = k; else haut = k; }
+  poser(haut);
+}
+/* ===== LA RÉPONSE S'AFFICHE, RIEN NE SAUTE =====
+   Toucher une réponse faisait apparaître « Le savais-tu ? » et « Question
+   suivante » sous les options — et la question et les options remontaient
+   d'un bloc pour leur faire place : 36 px d'une image à l'autre sur un
+   iPhone 16 Pro, 66 sur un Pro Max, sous le doigt qui venait de toucher.
+   Elles glissent désormais jusqu'à leur nouvelle place sur la durée d'un pli,
+   pendant que l'anecdote arrive. Le verre suit image par image. */
+const JEU_GLISSE = [".duel-scorebar", ".play-meta", ".progress-track", ".question-card", ".options-grid"];
+function positionsDuJeu(app){
+  const sc = app && Array.prototype.find.call(app.children, c => c.classList && c.classList.contains("screen") && !c.classList.contains("screen-exit"));
+  if(!sc) return null;
+  const o = {};
+  JEU_GLISSE.forEach(sel => { const e = sc.querySelector(sel); if(e) o[sel] = e.getBoundingClientRect().top; });
+  return o;
+}
+function glisserApresRevelation(ecran, avant){
+  const ms = msPli();
+  let bouge = false;
+  JEU_GLISSE.forEach(sel => {
+    const e = ecran.querySelector(sel);
+    if(!e || avant[sel] == null) return;
+    const d = avant[sel] - e.getBoundingClientRect().top;
+    if(Math.abs(d) < 1) return;
+    bouge = true;
+    e.style.transition = "none";
+    e.style.transform = "translateY(" + d.toFixed(2) + "px)";
+    void e.offsetHeight;
+    e.style.transition = "transform " + tempoPli();
+    e.style.transform = "";
+    setTimeout(()=>{ e.style.removeProperty("transition"); e.style.removeProperty("transform"); }, ms + 40);
+  });
+  if(bouge){ try{ glassSuivre(ms + 120); }catch(e){} }
+}
+
 /* STABILITÉ DE L'ÉCRAN : quand le contenu tient entièrement (accueil, setup…),
    #app reste un conteneur « défilable » et iOS autorise alors un petit rebond
    élastique au moindre glissement du doigt -> l'écran « bouge » légèrement. On
@@ -23145,6 +23281,10 @@ function fitScroll(){
   let fixedScreen = false;
   try{ fixedScreen = (state.screen === "mode"); }catch(e){}
   if(fixedScreen){ a.style.overflowY = "hidden"; rendLeDefilement(a); return; }
+  /* Ce qui a changé depuis le rendu (une liste arrivée du serveur, une police
+     chargée) peut faire dépasser l'écran : on resserre d'abord. La mesure se
+     fait sur la mise en page, l'arrivée en cours ne la fausse pas. */
+  try{ serrerEcran(Array.prototype.find.call(a.children, c => c.classList && c.classList.contains("screen") && !c.classList.contains("screen-exit")), true); }catch(e){}
   /* PENDANT QU'UN ÉCRAN ARRIVE, ON NE DÉCIDE RIEN. Il monte depuis le bas :
      tant qu'il n'est pas posé, il déborde sous le bord et la zone défilable est
      gonflée de toute une hauteur d'écran (868px mesurés). Trancher à cet
