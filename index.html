@@ -535,6 +535,18 @@
      clavier, hors d'atteinte. On ramène le voile à la hauteur réellement
      visible : la modale se recentre au-dessus du clavier, entière. */
   html.kb .modal-veil{ bottom:auto; height:var(--vvh, 100%); }
+  /* ===== LES FEUILLES AUSSI S'ARRÊTENT AU BORD DU CLAVIER =====
+     « Quand j'écris le nom du groupe ou la description, le clavier cache ce
+     que je suis en train d'écrire. Pareil pour rejoindre avec un code. »
+     Les fenêtres flottantes avaient leur règle (ci-dessus) ; les feuilles qui
+     montent du bas n'en avaient pas : posées sur le bas de l'écran, elles
+     restaient DERRIÈRE le clavier, champ compris. Et le module du clavier ne
+     fait défiler que #app — rien de ce qu'il tentait ne les atteignait.
+     Clavier ouvert, le voile de la feuille prend la hauteur visible (--vvh) :
+     la feuille, calée en bas de son voile, se pose sur le clavier, et elle y
+     glisse au lieu d'y sauter. */
+  .sheet-veil{ height:100%; transition:height 0.28s cubic-bezier(0.33,1,0.68,1); }
+  html.kb .sheet-veil{ bottom:auto; height:var(--vvh, 100%); }
   html.kb, html.kb body{ overflow:hidden; }
   /* ÉLÉVATION PAR DÉFAUT DE TOUTE SURFACE DE VERRE. --rim-cast est une propriété
      personnalisée, donc HÉRITÉE : sans cette déclaration, une puce posée dans une
@@ -4917,18 +4929,33 @@
   .grp-aide{ margin:0; font-size:0.84rem; line-height:1.45; color:var(--ink-soft); }
   .grp-desc{ margin:0; font-size:0.9rem; line-height:1.45; color:var(--ink); }
   .grp-types{ display:grid; grid-template-columns:1fr 1fr; gap:0.6rem; }
-  .grp-type{ display:flex; flex-direction:column; align-items:center; gap:0.12rem; padding:0.7rem 0.5rem; border:0; border-radius:var(--r-m);
-    background:rgb(252,248,241); color:var(--ink); font-family:'Poppins',sans-serif; font-weight:600; font-size:0.95rem;
-    box-shadow:0 0 0 1px rgba(58,42,26,0.1), 0 3px 10px rgba(34,26,16,0.08); -webkit-tap-highlight-color:transparent; }
-  .grp-type small{ font-family:'Inter',sans-serif; font-weight:500; font-size:0.78rem; color:var(--ink-soft); }
-  .grp-type.choisi{ background:var(--primary); color:#fff; box-shadow:0 1px 2px rgba(120,30,14,0.16), 0 5px 14px rgba(214,60,34,0.26); }
-  .grp-type.choisi small{ color:rgba(255,255,255,0.9); }
-  .grp-teintes{ display:flex; justify-content:space-between; gap:0.3rem; }
-  .grp-teinte{ position:relative; width:2.4rem; height:2.4rem; border-radius:50%; border:0; padding:0.55rem; color:#fff; flex-shrink:0;
-    box-shadow:inset 0 1px 0 rgba(255,255,255,0.26), 0 2px 7px rgba(24,16,10,0.18); -webkit-tap-highlight-color:transparent; }
+  /* Deux puces de choix (len-chip) : le fond, la teinte de verre et l'encre
+     viennent d'elles. Elles ajoutent seulement leur deuxième ligne. Le petit
+     texte suit la couleur du libellé (inherit) : il passe au blanc au même
+     instant que lui, quand l'encre l'a recouvert. */
+  .len-chip.grp-type{ flex-direction:column; gap:0.12rem; padding:calc(0.66rem + 1px) calc(0.5rem + 1px);
+    font-family:'Poppins',sans-serif; font-weight:600; font-size:0.95rem; }
+  .len-chip.grp-type small{ font-family:'Inter',sans-serif; font-weight:500; font-size:0.78rem; color:inherit; opacity:0.74; }
+  /* Les deux phrases d'aide dans la même case : elle a la hauteur de la plus
+     longue, et rien en dessous ne bouge quand on change de type. */
+  .grp-aide-type{ display:grid; }
+  .grp-aide-type > span{ grid-area:1 / 1; align-self:center; opacity:0; visibility:hidden; transition:opacity 0.2s ease, visibility 0s linear 0.2s; }
+  .grp-aide-type > span.vu{ opacity:1; visibility:visible; transition:opacity 0.2s ease 0.05s, visibility 0s; }
+  /* ===== LES COULEURS DU GROUPE SE CHOISISSENT COMME CELLES DU PROFIL =====
+     « Que ce soit cohérent. » Même mécanique que .color-dot : la pastille
+     visible est le contenu du bouton (background-clip), elle GRANDIT quand on
+     la retient, et la coche arrive en s'agrandissant (.cd-ck). Mêmes tailles
+     de disque qu'au Profil (31 px, puis 39 retenue), même ombre, même voile
+     d'appui blanc. Huit pastilles au lieu de six : le bouton est un peu plus
+     étroit, et la zone qu'on touche garde ses 44 px (::after). */
+  .grp-teintes{ display:flex; justify-content:space-between; gap:0.2rem; }
+  .grp-teinte{ position:relative; width:2.45rem; height:2.45rem; border-radius:50%; border:0; padding:0.3rem; flex-shrink:0;
+    display:flex; align-items:center; justify-content:center; color:#fff;
+    box-shadow:none; filter:drop-shadow(0 1px 2px rgba(24,16,10,0.3));
+    transition:padding 0.24s cubic-bezier(0.32,0.72,0,1); -webkit-tap-highlight-color:transparent; --press-tint: rgba(255,255,255,0.55); }
   .grp-teinte::after{ content:""; position:absolute; left:50%; top:50%; width:44px; height:44px; transform:translate(-50%,-50%); }
-  .grp-teinte svg{ width:100%; height:100%; display:block; opacity:0; transition:opacity 0.15s ease; }
-  .grp-teinte.choisie svg{ opacity:1; }
+  .grp-teinte.choisie{ padding:0.08rem; }
+  .grp-teinte.choisie .cd-ck{ opacity:1; transform:scale(1); }
   .grp-code-carte{ display:flex; flex-direction:column; align-items:center; gap:0.35rem; padding:0.9rem 0.8rem 1rem; border-radius:var(--r-l);
     background:rgb(252,248,241); box-shadow:0 3px 12px rgba(34,26,16,0.08); }
   .gc-l{ font-family:'Poppins',sans-serif; font-size:0.74rem; font-weight:700; letter-spacing:0.09em; text-transform:uppercase; color:var(--ink-soft); }
@@ -5054,6 +5081,31 @@
      le rembourrage du bas : la feuille raccourcit de 19 px, et son texte
      s'arrête pile au-dessus de la zone de la barre d'accueil de l'iPhone. */
   .lien-conf{ display:block; margin:-0.8rem auto -0.35rem; }
+  /* ===== LES RÉGLAGES, RESSERRÉS =====
+     « Il y a beaucoup trop d'espace en bas. Réajuste le tout pour que ce
+     soit beaucoup moins espacé, beaucoup plus compact, beaucoup plus net, et
+     une page beaucoup moins grande. »
+     Mesuré sur un iPhone 16 Pro : chaque réglage prenait 69 px, dont 30 de
+     vide, et la feuille couvrait 84 % de l'écran. Les lignes passent à
+     54 px — la pastille de couleur un peu plus petite, le vide autour divisé
+     par deux —, le titre et la poignée se rapprochent, le bouton Partager et
+     le lien Confidentialité se serrent sous la dernière ligne. Rien ne
+     change de taille au doigt : l'interrupteur, le sigle de la Bible et le
+     lien gardent leurs 44 px.
+     Seule cette feuille-ci est concernée (.reglages) : les autres feuilles
+     qui partagent .set-row — langues, versions, entrée des groupes — gardent
+     leur rythme. */
+  .settings-sheet.reglages{ padding-bottom:calc(env(safe-area-inset-bottom) * 0.45 + 0.15rem + 220px); }
+  .reglages .sheet-grab{ margin-bottom:0.35rem; }
+  .reglages .sheet-title{ margin-bottom:0.1rem; }
+  .reglages .set-row{ padding:0.46rem 0.1rem; gap:0.75rem; }
+  .reglages .set-ico{ width:2.05rem; height:2.05rem; padding:0.44rem; }
+  .reglages .set-txt{ gap:0.04rem; }
+  /* Le curseur déborde de sa rangée (marges négatives) pour offrir 44 px au
+     doigt ; la rangée suivante, écrite après lui, en recouvrait le bas. Avec
+     0,28 rem dessous, il ne restait que 43 px (banc-essai/doigt.js). */
+  .reglages .vol-row{ padding:0 0.1rem 0.4rem; }
+  .reglages .share-btn{ margin:0.55rem auto 0.7rem; }
 </style>
 </head>
 <body style="background:#15100B">
@@ -5316,7 +5368,7 @@ const TEXTES = {
     "mon adversaire":"my opponent",
     "{nom} aimerait rejouer. Tu acceptes\u00a0?":"{nom} would like a rematch. Do you accept?",
     "Rejoins-moi sur {jeu}\u00a0! Code du salon\u00a0: {code}":"Join me on {jeu}! Room code: {code}",
-    "Prêt\u00a0! En attente du lancement par l'hôte…":"Ready! Waiting for the host to start…",
+    "Tout est prêt\u00a0! En attente du lancement par l'hôte…":"All set! Waiting for the host to start…",
     "Connexion au salon…":"Connecting to the room…",
     "L'hôte a quitté le salon.":"The host has left the room.",
     "La connexion au salon a échoué. Réessaie.":"Could not connect to the room. Try again.",
@@ -5338,7 +5390,6 @@ const TEXTES = {
     "Tu as rejoint la partie":"You have joined the game",
     "Toi · Hôte":"You · Host",
     "Toi":"You",
-    "Prêt":"Ready",
     "Tu es l'hôte\u00a0: règle les options, puis lance {mot}.":"You are the host: set the options, then start {mot}.",
     "L'hôte paramètre la partie puis lance {mot}.":"The host sets up the game then starts {mot}.",
     "Longueur de la partie":"Game length",
@@ -5682,6 +5733,7 @@ const TEXTES = {
     "Envoi…":"Sending…",
     "Code {code}":"Code {code}",
     "Rejoindre la partie":"Join the game",
+    "Cette partie n'est plus ouverte.":"This game is no longer open.",
     "Lancer une partie":"Start a game",
     "Écris un message…":"Write a message…",
     "Envoyer":"Send",
@@ -5922,9 +5974,9 @@ const TEXTES = {
     "mon adversaire":"mi rival",
     "{nom} aimerait rejouer. Tu acceptes\u00a0?":"{nom} quiere la revancha. ¿Aceptas?",
     "Rejoins-moi sur {jeu}\u00a0! Code du salon\u00a0: {code}":"¡Únete a mí en {jeu}! Código de la sala: {code}",
-    "Prêt\u00a0! En attente du lancement par l'hôte…":"¡Listo! Esperando a que el anfitrión empiece…",
+    "Tout est prêt\u00a0! En attente du lancement par l'hôte…":"¡Todo listo! Esperando a que empiece la partida…",
     "Connexion au salon…":"Conectando a la sala…",
-    "L'hôte a quitté le salon.":"El anfitrión salió de la sala.",
+    "L'hôte a quitté le salon.":"Quien abrió la sala se fue.",
     "La connexion au salon a échoué. Réessaie.":"No se pudo conectar a la sala. Inténtalo de nuevo.",
     "Impossible de rejoindre ce salon. Réessaie.":"No se pudo entrar a esa sala. Inténtalo de nuevo.",
     "Aucune partie trouvée pour ce code.":"No hay ninguna partida con ese código.",
@@ -5942,11 +5994,10 @@ const TEXTES = {
     "En attente des joueurs…":"Esperando a los jugadores…",
     "Partage ce code · jusqu'à {n} joueurs":"Comparte este código · hasta {n} jugadores",
     "Tu as rejoint la partie":"Te uniste a la partida",
-    "Toi · Hôte":"Tú · Anfitrión",
+    "Toi · Hôte":"Tú · Organizas",
     "Toi":"Tú",
-    "Prêt":"Listo",
-    "Tu es l'hôte\u00a0: règle les options, puis lance {mot}.":"Eres el anfitrión: ajusta las opciones y luego empieza {mot}.",
-    "L'hôte paramètre la partie puis lance {mot}.":"El anfitrión configura la partida y luego empieza {mot}.",
+    "Tu es l'hôte\u00a0: règle les options, puis lance {mot}.":"Tú abriste la sala: ajusta las opciones y luego empieza {mot}.",
+    "L'hôte paramètre la partie puis lance {mot}.":"Quien abrió la sala configura la partida y luego empieza {mot}.",
     "Longueur de la partie":"Duración de la partida",
     "Longueur du duel":"Duración del duelo",
     "{nom} a quitté la partie.":"{nom} salió de la partida.",
@@ -5959,7 +6010,7 @@ const TEXTES = {
     "terminé":"terminó",
     "Ton adversaire en est à {i}/{t}":"Tu rival va por {i}/{t}",
     "Tout le monde repart avec toi.":"Todos vuelven a jugar contigo.",
-    "L'hôte peut relancer une partie.":"El anfitrión puede empezar otra partida.",
+    "L'hôte peut relancer une partie.":"Quien abrió la sala puede empezar otra partida.",
     "Nouvelle partie en préparation…":"Preparando una nueva partida…",
     "En attente de la réponse de {nom}…":"Esperando la respuesta de {nom}…",
     "{nom} ne souhaite pas rejouer pour l'instant.":"{nom} no quiere jugar otra vez por ahora.",
@@ -6291,6 +6342,7 @@ const TEXTES = {
     "Envoi…":"Enviando…",
     "Code {code}":"Código {code}",
     "Rejoindre la partie":"Unirse a la partida",
+    "Cette partie n'est plus ouverte.":"Esta partida ya no está abierta.",
     "Lancer une partie":"Iniciar una partida",
     "Écris un message…":"Escribe un mensaje…",
     "Envoyer":"Enviar",
@@ -8578,7 +8630,7 @@ const SUPABASE_ANON_KEY = "sb_publishable_FDJ_R0foC7uIeHmxVrj6rA_2NeIgW2a";
    remontée d'un téléphone ne vaut rien si on ne sait pas QUELLE version
    tournait. Elle doit rester égale au CACHE de sw.js — c'est ce que vérifie
    banc-essai/version.js, qui refuse de laisser publier les deux en désaccord. */
-const VERSION_JEU = "v309";
+const VERSION_JEU = "v310";
 
 /* ===================== QUAND ÇA CASSE CHEZ UN JOUEUR =====================
    « Si quelque chose casse chez cinq d'entre eux sur un modèle de téléphone
@@ -8824,7 +8876,8 @@ const net = {
   duelHb:null, joinTimer:null, subTimer:null,
   lastOppId:null, autoMatch:false, matchGuard:null,
   status:"", error:"",
-  iWantReplay:false, oppWantReplay:false, replayDeclined:false
+  iWantReplay:false, oppWantReplay:false, replayDeclined:false,
+  depuisGroupe:null               // le groupe d'où la partie est partie (voir sortirVersGroupe)
 };
 function initSupa(){
   if(net.supa) return net.supa;
@@ -9001,7 +9054,7 @@ function majSalleListe(){
     const k = cle(j);
     vues[k] = 1;
     let ligne = liste.querySelector('.salle-ligne[data-jid="' + CSS.escape(k) + '"]');
-    const tag = j.moi ? (net.isHost ? T("Toi · Hôte") : T("Toi")) : T("Prêt");
+    const tag = j.moi ? (net.isHost ? T("Toi · Hôte") : T("Toi")) : T("En ligne");
     if(!ligne){
       ligne = document.createElement("div");
       ligne.className = "rank-row salle-ligne" + (j.moi ? " moi" : "");
@@ -9075,7 +9128,7 @@ function majSalleListe(){
      face-à-face, qui n'existe plus. */
   const wait = document.getElementById("waitNote");
   if(wait){
-    const t = net.oppPresent ? T("Prêt ! En attente du lancement par l'hôte…") : T("Connexion au salon…");
+    const t = net.oppPresent ? T("Tout est prêt ! En attente du lancement par l'hôte…") : T("Connexion au salon…");
     if(wait.textContent !== t) wait.textContent = t;
   }
   /* Et la longueur, qui se dit « du duel » à deux et « de la partie » au-delà. */
@@ -9289,6 +9342,7 @@ function bindRoom(ch){
       if(file.findIndex(x=>x.id===myId) >= MAX_JOUEURS){
         cleanupRoom();
         net.error = Tf("Le salon est complet · {n} joueurs", {n:MAX_JOUEURS});
+        if(sortirVersGroupe(net.error)){ net.error = ""; return; }
         state.screen = "online-join"; render();
         return;
       }
@@ -9320,7 +9374,8 @@ function bindRoom(ch){
       else if(state.screen==="online-room" && !net.isHost){
         cleanupRoom();
         net.error = T("L'hôte a quitté le salon.");
-        state.screen = "online"; render();
+        if(sortirVersGroupe(net.error)) net.error = "";
+        else { state.screen = "online"; render(); }
       }
       else { reRenderIfOnline(); }
     } else { reRenderIfOnline(); }
@@ -9391,6 +9446,7 @@ function createRoom(code, host, _retry){
       createRoom(code, host, true);
     } else {
       net.error = host ? T("La connexion au salon a échoué. Réessaie.") : T("Impossible de rejoindre ce salon. Réessaie.");
+      if(sortirVersGroupe(net.error)){ net.error = ""; return; }
       state.screen = host ? "online" : "online-join"; render();
     }
   };
@@ -9428,6 +9484,9 @@ function createRoom(code, host, _retry){
           net.joinTimer = null;
           if(!net.oppPresent && state.screen==="online-room"){
             cleanupRoom();
+            /* Depuis une bulle du groupe, on n'a tapé aucun code : la partie
+               annoncée est finie, ou celui qui l'a lancée est parti. */
+            if(sortirVersGroupe(T("Cette partie n'est plus ouverte."))) return;
             net.error = T("Aucune partie trouvée pour ce code.");
             state.screen = "online-join"; render();
           }
@@ -9622,6 +9681,7 @@ function cleanupRoom(){
 function leaveRoomToOnline(){
   cleanupRoom();
   net.error = "";
+  if(sortirVersGroupe()) return;
   state.screen = "online";
   render();
 }
@@ -9629,9 +9689,34 @@ function leaveOnline(){
   cleanupRoom();
   net.error="";
   leaveLobby();
+  if(sortirVersGroupe()) return;
   state.screen = "mode"; render();
 }
+/* ===== UNE PARTIE LANCÉE DEPUIS UN GROUPE Y RAMÈNE =====
+   « Lorsque je quitte, ça me renvoie directement au menu, au lieu de me
+   renvoyer dans les messages de groupe. » La manette du groupe et sa bulle
+   « Rejoindre la partie » ouvrent le même salon que l'écran En ligne ; seule
+   la sortie n'avait pas suivi : elle menait à l'accueil, ou à un écran En
+   ligne par lequel on n'était jamais passé.
+   On retient donc le groupe d'où l'on part (net.depuisGroupe), et TOUTES les
+   sorties y reviennent : la flèche du salon, « Quitter » pendant ou après la
+   partie, la connexion perdue, et les trois refus — salon introuvable,
+   complet, ou fermé par celui qui l'avait ouvert —, dont le mot s'affiche
+   alors au-dessus de la discussion au lieu de l'écran En ligne. Si l'on n'est
+   plus dans ce groupe entre-temps, on retombe sur la liste des groupes.
+   Ouvrir En ligne depuis l'accueil l'oublie : ce départ-là ramène à l'accueil,
+   comme avant. */
+function sortirVersGroupe(mot){
+  const id = net.depuisGroupe;
+  if(!id) return false;
+  net.depuisGroupe = null;
+  if((grp.liste || []).some(x => x.id === id)) ouvrirGroupe(id);
+  else { state.screen = "groupes"; render(); ouvrirGroupes(); }
+  if(mot) showMiniToast(mot);
+  return true;
+}
 function openOnline(){
+  net.depuisGroupe = null;
   net.error="";
   if(!navigator.onLine){
     showModal({ title:T("Hors connexion"), message:T("Le mode en ligne nécessite Internet. Les modes Solo et Groupe restent jouables sans connexion."), okLabel:T("Compris"), hideCancel:true });
@@ -11266,7 +11351,7 @@ function prechaufferReglages(){
 function reglagesHtml(){
   const pct = Math.round(settings.volume*100);
   return `
-    <div class="settings-sheet" role="dialog" aria-label="${T("Réglages")}">
+    <div class="settings-sheet reglages" role="dialog" aria-label="${T("Réglages")}">
       <button class="sheet-grab" aria-label="${T("Fermer")}" onclick="closeSettings()"></button>
       <div class="sheet-title"><span class="st-ico">${ICONS.gear}</span>${T("Réglages")}${boutonLangue()}</div>
       <div class="set-row">
@@ -19420,6 +19505,9 @@ async function chargerEtatGroupes(){
     if(typeof r.ouverts === "boolean") grp.ouverts = r.ouverts;
     if(r.regles_version) grp.version = +r.regles_version || grp.version;
     memoriserGroupes();
+    /* Un modérateur : sa file est préchargée, pour que la Modération s'ouvre
+       avec son contenu (voir ouvrirModeration). À zéro, rien à charger. */
+    if(r.moderateur){ if(aTraiter() === 0) moderation = []; else chargerModeration(); }
     /* La liste se lit dès qu'on participe, pas seulement à l'ouverture de
        l'onglet : c'est elle qui donne les non-lus de la pastille de l'accueil. */
     if(r.participe === "ok"){ abonnerGroupes(); suivreNomGroupes(); if(!grp.liste) chargerListes(); if(invitationEnAttente) setTimeout(servirInvitation, 300); }
@@ -19903,26 +19991,34 @@ function ligneAction(ico, libelle, action, danger){
 
 /* ===================== CRÉER UN GROUPE ===================== */
 let creation = { type:"prive", teinte:2 };
-function aideType(){
-  return creation.type === "public" ? T("Public : tout le monde peut le trouver dans « Découvrir » et y entrer.")
-                                    : T("Privé : on n'y entre qu'avec son code.");
-}
 function formulaireGroupeHtml(g){
   return `<input class="text-input" id="grpNom" maxlength="40" placeholder="${T("Nom du groupe")}" value="${g ? escapeHtml(g.nom || "") : ""}" autocomplete="off" enterkeyhint="next">
     <input class="text-input" id="grpDesc" maxlength="160" placeholder="${T("Description (facultatif)")}" value="${g ? escapeHtml(g.description || "") : ""}" autocomplete="off" enterkeyhint="done">
     <div class="grp-types">
-      <button class="grp-type${creation.type === "prive" ? " choisi" : ""}" data-t="prive" onclick="choisirTypeGroupe('prive')">${T("Privé")}<small>${T("Sur invitation")}</small></button>
-      <button class="grp-type${creation.type === "public" ? " choisi" : ""}" data-t="public" onclick="choisirTypeGroupe('public')">${T("Public")}<small>${T("Ouvert à tous")}</small></button>
+      <button class="len-chip grp-type${creation.type === "prive" ? " sel" : ""}" data-tgroup="type" data-k="prive" onclick="choisirTypeGroupe('prive')">${T("Privé")}<small>${T("Sur invitation")}</small></button>
+      <button class="len-chip grp-type${creation.type === "public" ? " sel" : ""}" data-tgroup="type" data-k="public" onclick="choisirTypeGroupe('public')">${T("Public")}<small>${T("Ouvert à tous")}</small></button>
     </div>
-    <p class="grp-aide" id="grpTypeAide">${aideType()}</p>
+    <p class="grp-aide grp-aide-type" id="grpTypeAide"><span class="${creation.type === "public" ? "" : "vu"}" data-t="prive">${T("Privé : on n'y entre qu'avec son code.")}</span><span class="${creation.type === "public" ? "vu" : ""}" data-t="public">${T("Public : tout le monde peut le trouver dans « Découvrir » et y entrer.")}</span></p>
     <div class="grp-teintes" role="radiogroup" aria-label="${T("Couleur du groupe")}">${TEINTES.map((t, i)=>
-      `<button class="grp-teinte${creation.teinte === i ? " choisie" : ""}" style="${teinte(i)}" onclick="choisirTeinte(${i})" role="radio" aria-checked="${creation.teinte === i}" aria-label="${Tf("Couleur {n}", { n:i + 1 })}">${ICONS.coche}</button>`).join("")}</div>
+      `<button class="grp-teinte${creation.teinte === i ? " choisie" : ""}" style="${teinte(i)}background-clip:content-box;" onclick="choisirTeinte(${i})" role="radio" aria-checked="${creation.teinte === i}" aria-label="${Tf("Couleur {n}", { n:i + 1 })}"><span class="cd-ck">${ACH_CHECK}</span></button>`).join("")}</div>
     <div class="grp-mot"></div>`;
 }
+/* ===== PRIVÉ / PUBLIC : LE MÊME GESTE QUE LA DURÉE ET LE CHRONO =====
+   « Quand je choisis privé ou public, ça saute et ça décale un petit peu
+   tout. Et je veux que le remplissage se fasse exactement comme dans les
+   autres modes. »
+   Deux défauts. La phrase d'aide tenait sur UNE ligne pour « Privé » et sur
+   DEUX pour « Public » : tout ce qui suivait — les couleurs, « Créer » —
+   descendait d'une ligne, puis remontait. Les deux phrases sont maintenant
+   posées l'une sur l'autre dans la même case, qui prend la hauteur de la plus
+   longue : on ne voit que la bonne, et rien ne bouge.
+   Et les deux boutons se coloraient d'un coup. Ce sont désormais des puces
+   de choix (len-chip) comme toutes les autres : l'encre part du doigt,
+   s'étale, et la puce quittée lui cède la place (basculerChoix). */
 function choisirTypeGroupe(t){
   creation.type = t;
-  document.querySelectorAll(".grp-type").forEach(b => b.classList.toggle("choisi", b.dataset.t === t));
-  const a = document.getElementById("grpTypeAide"); if(a) a.textContent = aideType();
+  basculerChoix('[data-tgroup="type"]', "sel", t);
+  document.querySelectorAll("#grpTypeAide > span").forEach(s => s.classList.toggle("vu", s.dataset.t === t));
 }
 function choisirTeinte(i){
   creation.teinte = i;
@@ -20394,12 +20490,14 @@ async function lancerPartieGroupe(btn){
   if(btn) btn.disabled = false;
   if(!r.ok){ showMiniToast(motErreurGroupe(r)); return; }
   net.autoMatch = false; clearTimeout(net.matchGuard);
+  net.depuisGroupe = g.id;
   createRoom(code, true);
 }
 function rejoindrePartieGroupe(code){
   if(!/^[A-Z0-9]{4,8}$/.test(String(code || ""))) return;
   if(!navigator.onLine || !onlineConfigured()){ showMiniToast(T("Pas de réseau. Réessaie dans un instant.")); return; }
   net.autoMatch = false; clearTimeout(net.matchGuard);
+  net.depuisGroupe = grp.courant;
   joinRoom(code, false);
 }
 
@@ -20775,20 +20873,49 @@ function supprimerGroupeCourant(){
    bout du bouclier de l'écran des groupes — visible des seuls modérateurs.
    Une carte par signalement, et les quatre décisions possibles. Le texte
    d'un message masqué n'est lisible qu'ici. */
-let moderation = null;
+let moderation = null, moderationEnCours = null;
+/* ===== LA MODÉRATION S'OUVRE AVEC SON CONTENU =====
+   « Elle se rouvre bien, mais l'affichage apparaît un peu après. Fais en
+   sorte que ça se rouvre parfaitement et que rien n'apparaisse après. »
+   À chaque ouverture, la file était jetée (moderation = null) : l'écran
+   montait VIDE, un rond tournait, puis la carte arrivait avec la réponse du
+   serveur — 200 à 800 ms plus tard.
+   On ouvre maintenant sur ce qu'on sait déjà :
+   — la file de la dernière fois, si on l'a ; elle est relue en arrière-plan
+     et l'écran ne change que si elle a vraiment changé ;
+   — sinon, le compte du serveur (grp.etat.a_traiter) : à zéro, « Rien à
+     traiter. » est déjà la bonne réponse, il n'y a rien à attendre ;
+   — sinon, la file est déjà en route (chargerEtatGroupes la précharge pour
+     un modérateur) : on attend qu'elle arrive pour ouvrir — au plus 0,7 s,
+     après quoi l'écran s'ouvre quand même, avec son rond. */
 function ouvrirModeration(){
   if(!(grp.etat && grp.etat.moderateur)) return;
-  moderation = null;
-  state.screen = "moderation"; render();
-  chargerModeration();
+  if(!moderation && aTraiter() === 0) moderation = [];
+  const ouvrir = ()=>{ if(state.screen !== "moderation"){ state.screen = "moderation"; render(); } };
+  if(moderation){ ouvrir(); chargerModeration(); return; }
+  let fait = false;
+  const t = setTimeout(()=>{ if(!fait){ fait = true; ouvrir(); } }, 700);
+  chargerModeration().then(()=>{ if(!fait){ fait = true; clearTimeout(t); ouvrir(); } });
 }
-async function chargerModeration(){
-  const l = await listeGroupe("moderation_ouverte");
-  moderation = l || [];
-  /* La file relue EST le compte (une carte par chose à décider) : la
-     pastille suit sans rien redemander au serveur. */
-  if(l && grp.etat){ grp.etat.a_traiter = l.length; majBarre(); majBouclier(); }
-  if(state.screen === "moderation"){ const z = document.getElementById("modListe"); if(z){ z.innerHTML = cartesModeration(); try{ glassRelayout(); queueGlassSync(); }catch(e){} } }
+function chargerModeration(){
+  if(moderationEnCours) return moderationEnCours;
+  const p = (async ()=>{
+    const l = await listeGroupe("moderation_ouverte");
+    if(l) moderation = l; else if(!moderation) moderation = [];
+    /* La file relue EST le compte (une carte par chose à décider) : la
+       pastille suit sans rien redemander au serveur. */
+    if(l && grp.etat){ grp.etat.a_traiter = l.length; majBarre(); majBouclier(); }
+    /* On ne redessine que ce qui a CHANGÉ : la même file relue ne touche à
+       rien, et l'écran ouvert ne clignote pas. */
+    if(state.screen === "moderation"){
+      const z = document.getElementById("modListe");
+      const sig = JSON.stringify(moderation);
+      if(z && z._sig !== sig){ z.innerHTML = cartesModeration(); z._sig = sig; try{ glassRelayout(); queueGlassSync(); fitScroll(); }catch(e){} }
+    }
+  })();
+  moderationEnCours = p;
+  p.finally(()=>{ if(moderationEnCours === p) moderationEnCours = null; });
+  return p;
 }
 function cartesModeration(){
   if(!moderation) return `<div class="grp-vide"><span class="spinner"></span></div>`;
@@ -20813,6 +20940,7 @@ function renderModeration(){
   const el = document.createElement("div");
   el.className = "screen";
   el.innerHTML = `${renderHeader("Modération", true, "retourGroupes()")}<div id="modListe">${cartesModeration()}</div>`;
+  const z = el.querySelector("#modListe"); if(z && moderation) z._sig = JSON.stringify(moderation);
   return el;
 }
 async function traiterSignalement(id, decision, btn){
@@ -22739,7 +22867,7 @@ function renderOnlineRoom(){
         <div class="rank-row salle-ligne${j.moi?' moi':''}" data-jid="${escapeHtml(String(j.moi ? 'moi' : (j.id||j.name||'')))}">
           ${avatarHtml(j.name, j.color, 2.1, j.moi ? true : j.id)}
           <span class="rank-name">${escapeHtml(j.name||T("Joueur"))}</span>
-          <span class="salle-tag">${j.moi ? (net.isHost?T("Toi · Hôte"):T("Toi")) : T("Prêt")}</span>
+          <span class="salle-tag">${j.moi ? (net.isHost?T("Toi · Hôte"):T("Toi")) : T("En ligne")}</span>
         </div>`).join("")}
       <!-- LA PLACE VIDE N'INVITE QUE TANT QUE JE SUIS SEUL. Elle disait
            « 6 places » avec deux joueurs dedans : une rangée entière — 58 px
@@ -22768,7 +22896,7 @@ function renderOnlineRoom(){
       </div>
       <button class="btn-primary${canStart?'':' is-waiting'}" id="roomStartBtn" onclick="hostStart()">${canStart?Tf("Commencer {mot}", {mot:motSalon}):T("En attente des joueurs…")}</button>
     ` : `
-      <div class="waiting-note" id="waitNote">${net.oppPresent?T("Prêt ! En attente du lancement par l'hôte…"):T("Connexion au salon…")}</div>
+      <div class="waiting-note" id="waitNote">${net.oppPresent?T("Tout est prêt ! En attente du lancement par l'hôte…"):T("Connexion au salon…")}</div>
       <div class="flex-sp"></div>
     `}
   `;

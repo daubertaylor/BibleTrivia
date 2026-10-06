@@ -13,6 +13,8 @@
      6. sur l'accueil, la pastille des non-lus compte le message ;
      7. un mot interdit est refusé, le message ne part pas, le texte revient ;
      8. Taylor lance une partie ; Benoît la rejoint depuis la discussion ;
+        et chaque sortie — en pleine partie, par la flèche du salon, quand
+        le salon ferme, sur une bulle périmée — ramène à la discussion ;
      9. Benoît signale un message ; le bouclier de Taylor porte une pastille,
         et l'onglet Groupes la compte ; Taylor masque le message depuis la
         modération, la pastille s'éteint, Benoît voit « Message masqué » ;
@@ -148,8 +150,60 @@ const dit = (quoi, bon, detail) => { console.log('  ' + (bon ? 'OK  ' : 'KO  ') 
     await pb.evaluate(() => document.querySelector('.b-partie .grp-pill').click());
     dit('… la touche, et entre dans le salon de Taylor', await attendre(pb, (c) => state.screen === 'online-room' && net.code === c, salon, 10000));
     dit('… où Taylor le voit arriver', await attendre(pa, () => net.oppPresent === true, null, 10000));
-    await pa.evaluate(() => { try { leaveRoomToOnline(); } catch (e) {} });
-    await pb.evaluate(() => { try { leaveRoomToOnline(); } catch (e) {} });
+
+    /* ---- 8b. quitter ramène au groupe, jamais à l'accueil ----
+       « Lorsque je quitte, ça me renvoie directement au menu, au lieu de me
+       renvoyer dans les messages de groupe. » Chaque sortie, au doigt : en
+       pleine partie, depuis le salon, quand celui qui a ouvert le salon s'en
+       va, et sur une bulle dont la partie est finie. */
+    const auGroupe = (p) => attendre(p, (g) => state.screen === 'groupe' && grp.courant === g && !!document.getElementById('fil'), gid, 7000);
+    const toast = (p, re) => attendre(p, (src) => { const t = document.querySelector('.mini-toast.show'); return !!t && new RegExp(src).test(t.textContent); }, re.source, 7000);
+    const fleche = (p, quoi) => p.evaluate((q) => document.querySelector('.app-header [onclick*="' + q + '"]').click(), quoi);
+    await pa.waitForTimeout(400);
+    await pa.evaluate(() => hostStart());
+    dit('Taylor lance la partie : les deux téléphones jouent', (await attendre(pa, () => state.screen === 'online-play', null, 6000))
+      && (await attendre(pb, () => state.screen === 'online-play', null, 8000)));
+    await pa.waitForTimeout(800);
+    await fleche(pa, 'quitDuel');
+    await pa.waitForTimeout(450);
+    await pa.evaluate(() => document.getElementById('modalOk').click());
+    dit('Taylor quitte en pleine partie : retour dans la discussion du groupe', await auGroupe(pa));
+    dit('… pas sur l\'accueil, ni sur l\'écran En ligne', await pa.evaluate(() => !document.querySelector('#app > .screen.accueil:not(.screen-exit), #app > .screen.online-ecran:not(.screen-exit)')));
+    await attendre(pb, () => net.oppGone === true, null, 8000);
+    await pb.waitForTimeout(500);
+    await fleche(pb, 'quitDuel');
+    dit('Benoît, resté seul, quitte à son tour : retour dans la discussion', await auGroupe(pb));
+
+    await pa.waitForTimeout(1200);
+    await pa.evaluate(() => document.querySelector('.compo-jeu').click());
+    await attendre(pa, () => state.screen === 'online-room', null, 10000);
+    const salon2 = await pa.evaluate(() => net.code);
+    await attendre(pb, (c) => [...document.querySelectorAll('.b-partie .grp-pill')].some(b => b.getAttribute('onclick').indexOf(c) >= 0), salon2, 8000);
+    await pb.evaluate((c) => [...document.querySelectorAll('.b-partie .grp-pill')].find(b => b.getAttribute('onclick').indexOf(c) >= 0).click(), salon2);
+    await attendre(pa, () => net.oppPresent === true, null, 10000);
+    await pa.waitForTimeout(600);
+    await fleche(pa, 'leaveRoomToOnline');
+    dit('Taylor quitte son salon par la flèche : retour dans la discussion', await auGroupe(pa));
+    dit('Benoît, dans le salon fermé : retour dans la discussion', await auGroupe(pb));
+    dit('… avec le mot qui l\'explique', await toast(pb, /quitté le salon/));
+
+    await pb.waitForTimeout(2400);
+    await pb.evaluate((c) => [...document.querySelectorAll('.b-partie .grp-pill')].find(b => b.getAttribute('onclick').indexOf(c) >= 0).click(), salon2);
+    dit('une bulle dont la partie est finie ouvre le salon…', await attendre(pb, () => state.screen === 'online-room', null, 4000));
+    dit('… puis ramène à la discussion, sans laisser sur l\'écran En ligne', await attendre(pb, (g) => state.screen === 'groupe' && grp.courant === g, gid, 8000));
+    dit('… avec « Cette partie n\'est plus ouverte. »', await toast(pb, /plus ouverte/));
+
+    /* En ligne ouvert depuis l'accueil oublie le groupe : la flèche du salon
+       ramène à l'écran En ligne, comme toujours. */
+    await pa.evaluate((g) => { net.depuisGroupe = g; state.screen = 'mode'; render(); openOnline(); }, gid);
+    await pa.waitForTimeout(700);
+    await pa.evaluate(() => createRoomFlow());
+    await attendre(pa, () => state.screen === 'online-room', null, 8000);
+    await pa.waitForTimeout(600);
+    await fleche(pa, 'leaveRoomToOnline');
+    dit('depuis l\'accueil, le salon ramène à l\'écran En ligne, comme avant', await attendre(pa, () => state.screen === 'online', null, 5000));
+    await pa.evaluate(() => leaveOnline());
+    dit('… et En ligne ramène à l\'accueil', await attendre(pa, () => state.screen === 'mode', null, 5000));
     await pa.waitForTimeout(500);
 
     /* ---- 9. signaler, masquer depuis la modération ---- */

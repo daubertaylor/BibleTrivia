@@ -90,6 +90,13 @@ function lire(rel){
   const bibles = async ()=>{ await p.evaluate(()=>{ ['biblesVeil','settingsVeil'].forEach(i=>{const e=document.getElementById(i); if(e) e.remove();});
       state.screen='mode'; render(); openSettings(); }); await p.waitForTimeout(700);
     await p.evaluate(()=>openBibles()); await p.waitForTimeout(900); };
+  /* « Quand je choisis privé ou public, je veux que le remplissage se fasse
+     exactement comme dans les autres modes. » La feuille « Créer un groupe ». */
+  const creer = async ()=>{ await p.evaluate(()=>{ ['biblesVeil','settingsVeil','grpCreerVeil'].forEach(i=>{const e=document.getElementById(i); if(e) e.remove();});
+      compte.dispo=true; compte.session={ user:{ id:'moi-0', email:'j@e.net' } }; compte.etape='connecte';
+      grp.installe=true; grp.ouverts=true; grp.etat={ participe:'ok', moderateur:true }; grp.liste=[]; grp.publics=[];
+      state.screen='groupes'; render(); }); await p.waitForTimeout(700);
+    await p.evaluate(()=>ouvrirCreation()); await p.waitForTimeout(900); };
 
   /* [nom, préparer, sélecteur de la famille, comment lire l'identifiant] */
   const familles = [
@@ -99,6 +106,7 @@ function lire(rel){
     ['salon · durée',         salon,  '.len-chip[data-rgroup="len"]'],
     ['salon · chrono',        salon,  '.len-chip[data-rgroup="tmr"]'],
     ['salon · testament',     salon,  '.len-chip[data-rgroup="theme"]'],
+    ['groupe · privé/public', creer,  '.len-chip[data-tgroup="type"]'],
   ];
 
   let ko = 0; const durees = [];
