@@ -246,8 +246,13 @@ const dit = (quoi, bon, detail) => { console.log('  ' + (bon ? 'OK  ' : 'KO  ') 
     await pb.evaluate(() => document.getElementById('modalOk').click());
     dit('Benoît bloque Taylor : plus aucune bulle de Taylor', await attendre(pb, () => !document.querySelector('.b-eux')));
 
-    /* ---- 11. supprimer son compte ---- */
-    const avant = await pb.evaluate(() => JSON.stringify(Object.keys(localStorage).filter(k => /^bt_/.test(k) && k !== 'bt_groupes_sonde').sort().map(k => [k, localStorage.getItem(k)])));
+    /* ---- 11. supprimer son compte ----
+       La progression, c'est tout ce qui commence par bt_ — sauf ce que le jeu
+       retient DU COMPTE : la sonde des groupes, la mémoire des discussions et ce qu'il sait des photos du
+       serveur (bt_photos_srv…), qu'il oublie justement en sortant du compte. */
+    const progression = () => pb.evaluate(() => JSON.stringify(Object.keys(localStorage)
+      .filter(k => /^bt_/.test(k) && !/^bt_(groupes_sonde|groupes_memoire|photos_srv)/.test(k)).sort().map(k => [k, localStorage.getItem(k)])));
+    const avant = await progression();
     await pb.evaluate(() => { state.screen = 'mode'; render(); openProfile(); });
     await pb.waitForTimeout(900);
     dit('le profil propose « Supprimer mon compte »', await attendre(pb, () => !!document.querySelector('.compte-supprimer')));
@@ -256,7 +261,7 @@ const dit = (quoi, bon, detail) => { console.log('  ' + (bon ? 'OK  ' : 'KO  ') 
     await pb.evaluate(() => { sessionStorage.setItem('essai_sorti', '1'); document.getElementById('modalOk').click(); });
     dit('le compte n\'existe plus sur le serveur', await (async () => { for (let i = 0; i < 30; i++) { if ((await m.sql("select count(*) from auth.users where id = '" + B + "'")) === '0') return true; await pb.waitForTimeout(200); } return false; })());
     dit('… ses messages non plus', (await m.sql("select count(*) from public.messages where auteur = '" + B + "'")) === '0');
-    const apres = await pb.evaluate(() => JSON.stringify(Object.keys(localStorage).filter(k => /^bt_/.test(k) && k !== 'bt_groupes_sonde').sort().map(k => [k, localStorage.getItem(k)])));
+    const apres = await progression();
     dit('la progression sur le téléphone n\'a pas bougé', avant === apres);
     dit('le jeu le dit au joueur', await attendre(pb, () => /supprimé/.test((document.querySelector('.compte-mot') || {}).textContent || '')));
 

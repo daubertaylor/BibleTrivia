@@ -2465,7 +2465,19 @@
   .oa-txt small{ font-size:0.83rem; color:var(--ink-soft); }
 
   .searching-card, .waiting-card{ text-align:center; background:rgba(255,255,255,0.55); backdrop-filter:blur(18px) saturate(180%); -webkit-backdrop-filter:blur(18px) saturate(180%); border:0; border-radius:var(--r-l); padding:calc(1.35rem + 1px) calc(1.1rem + 1px); }
-  .spinner{ width:2rem; height:2rem; margin:0 auto 0.8rem; border-radius:50%; border:3px solid var(--surface-alt); border-top-color:var(--primary); animation:spin 0.8s linear infinite; }
+  /* L'ANNEAU DE CHARGEMENT N'EST PAS UNE BORDURE. Il était dessiné par un
+     rebord de 3 px dont un quart corail : la seule bordure colorée du jeu,
+     visible dès qu'une liste se charge (banc-essai/couleurs.js). Le même
+     anneau est maintenant un dégradé conique découpé en anneau par un masque :
+     au pixel près le même dessin, sans aucune bordure.
+     ET IL EST UN BLOC. Posé en <span> dans une liste qui se charge, il ne
+     prenait ni sa largeur ni sa hauteur : on voyait un trait de 6 × 24 px au
+     lieu d'un anneau (mesuré dans « Mes groupes »). */
+  .spinner{ display:block; width:2rem; height:2rem; margin:0 auto 0.8rem; border-radius:50%; border:0;
+    background:conic-gradient(var(--primary) 0 25%, var(--surface-alt) 25% 100%);
+    -webkit-mask:radial-gradient(farthest-side, transparent calc(100% - 3px), #000 calc(100% - 3px));
+    mask:radial-gradient(farthest-side, transparent calc(100% - 3px), #000 calc(100% - 3px));
+    animation:spin 0.8s linear infinite; }
   @keyframes spin{ to{ transform:rotate(360deg);} }
   .searching-txt{ font-weight:600; font-size:0.95rem; color:var(--ink); }
   .opp-progress{ margin-top:0.5rem; font-size:0.85rem; color:var(--ink-soft); }
@@ -2487,6 +2499,12 @@
   .code-label{ text-transform:uppercase; letter-spacing:0.14em; font-size:clamp(0.66rem, calc(1.64 * var(--hu)), 0.8rem); font-weight:700; color:rgba(255,255,255,0.85); text-shadow:0 1px 6px rgba(0,0,0,0.4); }
   .code-big{ font-family:'Poppins',sans-serif; font-weight:700; font-size:clamp(1.62rem, calc(8 * var(--hu) - 23px), 2.55rem); letter-spacing:0.38rem; color:#fff; margin:clamp(0.02rem, calc(0.51 * var(--hu)), 0.25rem) 0 clamp(0.01rem, calc(1.1 * var(--hu) - 5px), 0.25rem) 0.38rem; text-shadow:0 2px 18px rgba(0,0,0,0.45); }
   .code-hint{ font-size:clamp(0.75rem, calc(1.7 * var(--hu)), 0.83rem); color:rgba(255,255,255,0.88); text-shadow:0 1px 6px rgba(0,0,0,0.35); }
+  /* Le salon d'un groupe : sa pastille, son nom, à la place du grand code. */
+  .code-hero.salon-groupe{ display:flex; flex-direction:column; align-items:center; }
+  .salon-groupe .grp-av{ width:clamp(2.6rem, calc(6.4 * var(--hu)), 3.3rem); height:clamp(2.6rem, calc(6.4 * var(--hu)), 3.3rem); font-size:1.3rem;
+    border-radius:var(--r-l); margin-bottom:clamp(0.3rem, calc(1.1 * var(--hu)), 0.55rem); }
+  .sg-nom{ font-family:'Poppins',sans-serif; font-weight:700; font-size:clamp(1.3rem, calc(5.2 * var(--hu) - 14px), 1.75rem); color:#fff;
+    text-shadow:0 2px 18px rgba(0,0,0,0.45); margin:0.05rem 0 0.15rem; max-width:100%; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
 
 
   .len-label{ font-size:clamp(0.75rem, calc(1.68 * var(--hu)), 0.82rem); font-weight:600; color:rgba(255,255,255,0.9); margin:clamp(0.28rem, calc(3.8 * var(--hu) - 14.9px), 0.95rem) 0 clamp(0.13rem, calc(1.9 * var(--hu) - 8.5px), 0.45rem) 0.2rem; text-shadow:0 1px 6px rgba(0,0,0,0.4); }
@@ -4858,8 +4876,18 @@
   /* ---------- L'ÉCRAN DES GROUPES ---------- */
   .grp-h{ font-family:'Poppins',sans-serif; font-size:0.78rem; font-weight:700; letter-spacing:0.09em; text-transform:uppercase;
     color:rgba(255,255,255,0.94); text-shadow:0 1px 8px rgba(0,0,0,0.35); margin:0.35rem 0 0.5rem 0.35rem; }
-  .grp-carte{ padding:0.35rem; }
-  .grp-carte .grp-cherche{ margin:0.35rem 0.35rem 0.4rem; width:calc(100% - 0.7rem); }
+  /* ===== L'APPUI SUR UN GROUPE PREND TOUTE LA LIGNE =====
+     La carte avait 0,35 rem de marge intérieure : le voile d'appui d'une
+     ligne s'arrêtait à 6 px de ses bords. Les lignes vont maintenant jusqu'au
+     bord, et rendent cette marge en dedans ; la première et la dernière
+     prennent l'arrondi de la carte. Rien n'a bougé d'un pixel au repos. */
+  .grp-carte{ padding:0; }
+  .grp-carte .grp-ligne{ padding:0.6rem 0.95rem; border-radius:var(--r-m); }
+  #grpMes > .grp-ligne:first-child{ padding-top:0.95rem; border-top-left-radius:var(--r-l); border-top-right-radius:var(--r-l); }
+  .grp-carte .grp-ligne:last-child{ padding-bottom:0.95rem; border-bottom-left-radius:var(--r-l); border-bottom-right-radius:var(--r-l); }
+  .grp-carte .grp-vide{ padding:1.1rem 1.15rem 1.45rem; }
+  #grpMes > .grp-vide{ padding-top:1.45rem; }
+  .grp-carte .grp-cherche{ margin:0.7rem 0.7rem 0.4rem; width:calc(100% - 1.4rem); }
   .grp-ligne{ width:100%; display:flex; align-items:center; gap:0.75rem; padding:0.6rem 0.6rem; border:0; background:none;
     border-radius:var(--r-m); text-align:left; color:var(--ink); -webkit-tap-highlight-color:transparent; }
   button.grp-ligne:active{ background:rgba(42,36,30,0.06); }
@@ -4868,6 +4896,14 @@
     color:#fff; font-family:'Poppins',sans-serif; font-weight:700; font-size:1.12rem;
     box-shadow:inset 0 1px 0 rgba(255,255,255,0.26), 0 2px 7px rgba(24,16,10,0.16); }
   .grp-av.petite{ width:2.2rem; height:2.2rem; font-size:0.92rem; border-radius:12px; }
+  /* LA PHOTO DU GROUPE recouvre sa couleur. La couleur est posée en style
+     direct (le raccourci « background ») : la photo doit donc passer devant
+     avec !important. L'initiale reste dessous, transparente — elle reparaît
+     d'elle-même si l'image manque. */
+  .mod-photo{ display:flex; justify-content:center; padding:0.2rem 0 0.5rem; }
+  .mod-photo .grp-av{ width:4.6rem; height:4.6rem; border-radius:var(--r-l); font-size:1.8rem; }
+  .grp-av.a-photo{ background-image:var(--ph) !important; background-size:cover !important; background-position:50% 50% !important;
+    background-repeat:no-repeat !important; color:transparent; }
   .grp-txt{ display:flex; flex-direction:column; gap:0.14rem; min-width:0; flex:1; }
   .grp-txt b{ font-family:'Poppins',sans-serif; font-weight:600; font-size:0.96rem; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
   .grp-txt small{ font-size:0.8rem; color:var(--ink-soft); line-height:1.35; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
@@ -4894,8 +4930,19 @@
   .grp-lien{ display:block; margin:0.2rem auto 0.8rem; border:0; background:none; color:rgba(255,255,255,0.94); font-size:0.84rem; font-weight:600;
     text-decoration:underline; text-underline-offset:3px; text-shadow:0 1px 8px rgba(0,0,0,0.4); padding:0.6rem 0.8rem; min-height:44px;
     border-radius:var(--r-full); }
-  .grp-mot{ min-height:0; font-size:0.84rem; line-height:1.45; color:var(--primary-dark); text-align:center; margin:0.2rem 0 0.6rem; }
-  .grp-mot:empty{ display:none; }
+  /* ===== LE MOT S'OUVRE, IL N'APPARAÎT PAS D'UN COUP =====
+     « Le nom doit faire entre 3 et 40 caractères » surgissait en poussant
+     tout le reste d'une ligne, d'un bloc. La ligne s'ouvre maintenant comme
+     un tiroir (sa hauteur passe de 0 à la sienne) pendant que le texte entre
+     en fondu ; elle se referme de même, le texte restant là le temps de
+     partir. Repliée, elle ne prend aucune place — dans une feuille, elle rend
+     même l'écart (gap) qu'elle occupe. */
+  .grp-mot{ display:grid; grid-template-rows:0fr; opacity:0; margin:0; font-size:0.84rem; line-height:1.45; color:var(--primary-dark); text-align:center;
+    transition:grid-template-rows 0.32s cubic-bezier(0.2,0.8,0.2,1), margin 0.32s cubic-bezier(0.2,0.8,0.2,1), opacity 0.22s ease; }
+  .grp-mot > span{ min-height:0; overflow:hidden; }
+  .grp-mot.vu{ grid-template-rows:1fr; opacity:1; margin:0.2rem 0 0.6rem; transition:grid-template-rows 0.32s cubic-bezier(0.2,0.8,0.2,1), margin 0.32s cubic-bezier(0.2,0.8,0.2,1), opacity 0.26s ease 0.06s; }
+  .grp-feuille-corps > .grp-mot{ margin-top:-0.6rem; }
+  .grp-feuille-corps > .grp-mot.vu{ margin:0; }
   .grp-mot.bon{ color:var(--green); }
   .grp-intro{ display:flex; flex-direction:column; align-items:center; text-align:center; gap:0.5rem; }
   .grp-intro b{ font-family:'Poppins',sans-serif; font-weight:600; font-size:1.02rem; text-wrap:balance; }
@@ -4929,6 +4976,19 @@
   .grp-aide{ margin:0; font-size:0.84rem; line-height:1.45; color:var(--ink-soft); }
   .grp-desc{ margin:0; font-size:0.9rem; line-height:1.45; color:var(--ink); }
   .grp-types{ display:grid; grid-template-columns:1fr 1fr; gap:0.6rem; }
+  /* LA PHOTO DU GROUPE, À CÔTÉ DU NOM ET DE LA DESCRIPTION. Les deux champs
+     prennent une hauteur fixe, et la pastille exactement la leur plus l'écart :
+     un carré net, et une feuille qui ne grandit pas. Le petit appareil dit
+     qu'on la touche ; il est blanc, posé sur la pastille, sans rebord. */
+  .grp-ident{ display:flex; gap:0.6rem; align-items:flex-start; }
+  .grp-ident-ch{ flex:1; min-width:0; display:flex; flex-direction:column; gap:0.6rem; }
+  .grp-ident-ch > .text-input{ margin:0; height:2.9rem; }
+  .grp-photo-b{ position:relative; flex-shrink:0; width:6.4rem; height:6.4rem; border:0; padding:0; background:none;
+    border-radius:var(--r-l); -webkit-tap-highlight-color:transparent; }
+  .grp-photo-b .grp-av{ width:100%; height:100%; border-radius:var(--r-l); font-size:2.3rem; }
+  .grp-photo-b .gpb-ico{ position:absolute; right:0.32rem; bottom:0.32rem; width:1.75rem; height:1.75rem; border-radius:50%;
+    display:flex; align-items:center; justify-content:center; padding:0.34rem; color:var(--ink);
+    background:rgba(255,255,255,0.94); box-shadow:0 2px 7px rgba(24,16,10,0.24); pointer-events:none; }
   /* Deux puces de choix (len-chip) : le fond, la teinte de verre et l'encre
      viennent d'elles. Elles ajoutent seulement leur deuxième ligne. Le petit
      texte suit la couleur du libellé (inherit) : il passe au blanc au même
@@ -4960,6 +5020,8 @@
     background:rgb(252,248,241); box-shadow:0 3px 12px rgba(34,26,16,0.08); }
   .gc-l{ font-family:'Poppins',sans-serif; font-size:0.74rem; font-weight:700; letter-spacing:0.09em; text-transform:uppercase; color:var(--ink-soft); }
   .gc-code{ font-family:'Poppins',sans-serif; font-weight:700; font-size:1.65rem; letter-spacing:0.38rem; color:var(--ink); padding-left:0.38rem; }
+  .gc-code.gc-neuf{ animation:gcNeuf 0.46s cubic-bezier(0.2,0.9,0.3,1) both; }
+  @keyframes gcNeuf{ 0%{ opacity:0; transform:translateY(0.4rem) scale(0.97); filter:blur(3px); } 100%{ opacity:1; transform:none; filter:none; } }
   .gc-act{ display:flex; flex-wrap:wrap; justify-content:center; gap:0.5rem; margin-top:0.25rem; }
   .grp-code-carte .grp-aide{ text-align:center; }
   .grp-defile{ display:flex; flex-direction:column; }
@@ -4990,6 +5052,22 @@
   .grp-fil-tete{ flex-shrink:0; }
   .grp-tete{ flex:1; min-width:0; display:flex; align-items:center; gap:0.65rem; border:0; background:none; padding:0; text-align:left;
     color:var(--ink); -webkit-tap-highlight-color:transparent; min-height:44px; border-radius:var(--r-m); }
+  /* ===== L'APPUI SUR LE NOM DU GROUPE PREND TOUTE LA BARRE =====
+     « Je veux que la sélection prenne tout, pas la moitié. » Le voile d'appui
+     d'un bouton remplit SA boîte (button::before, inset:0) ; celle du nom ne
+     faisait que 44 px de haut au milieu d'une barre de 60, et s'arrêtait
+     avant les deux ronds. Le bouton cède donc sa place de référence à la
+     barre (position:static) : son voile s'étend à toute la barre, avec son
+     arrondi, et les deux ronds restent posés par-dessus. */
+  .grp-fil-tete{ position:relative; }
+  .grp-fil-tete > .icon-btn{ z-index:4; }
+  .grp-fil-tete .grp-tete{ position:static; border-radius:var(--r-l); }
+  .grp-fil-tete .grp-tete::before{ border-radius:var(--r-l); }
+  /* ET IL NE S'ENFONCE PAS. La compression d'appui (scale 0,968) est une
+     transformation, et une transformation refait du bouton la boîte de
+     référence de son voile : le voile revenait à sa petite taille pendant
+     tout l'appui. Ce qui vit en rangée se remplit, ça ne s'enfonce pas. */
+  .grp-fil-tete .grp-tete:active:not(:disabled), .grp-carte .grp-ligne:active:not(:disabled){ transform:none; }
   .fil-carte{ position:relative; flex:1; min-height:0; display:flex; flex-direction:column; padding:0; margin-bottom:var(--e-2);
     border-radius:var(--r-l); }
   #fil{ flex:1; min-height:0; overflow-y:auto; overscroll-behavior:contain; -webkit-overflow-scrolling:touch;
@@ -5021,6 +5099,13 @@
   .b-bulle{ min-height:44px; }
   span.b-bulle{ display:inline-flex; align-items:center; }
   .b-moi .b-bulle{ background:var(--primary); color:#fff; box-shadow:0 1px 2px rgba(120,30,14,0.16), 0 4px 12px rgba(214,60,34,0.22); }
+  /* La couleur du groupe (voir BULLES_GROUPE) ; le corail reste le repli. */
+  .groupe-ecran .b-moi .b-bulle:not(.b-partie):not(.b-vide){ background:var(--grp-c, var(--primary)); color:var(--grp-txt, #fff);
+    box-shadow:0 1px 2px rgba(var(--grp-rgb, 214,60,34),0.18), 0 4px 12px rgba(var(--grp-rgb, 214,60,34),0.24); }
+  .groupe-ecran .compo-envoi{ background:var(--grp-c, var(--primary)); color:var(--grp-txt, #fff);
+    box-shadow:0 1px 2px rgba(var(--grp-rgb, 214,60,34),0.18), 0 4px 12px rgba(var(--grp-rgb, 214,60,34),0.3); }
+  .groupe-ecran .compo-jeu, .groupe-ecran .b-partie .bp-ico{ color:var(--grp-fonce, var(--primary)); }
+  .groupe-ecran .b-partie .grp-pill:not(.calme){ background:var(--grp-c, var(--primary)); color:var(--grp-txt, #fff); }
   .b-bulle.envoi{ opacity:0.62; }
   .b-heure{ font-size:0.72rem; color:var(--ink-soft); margin:0.05rem 0.85rem 0.35rem; }
   .b-vide{ font-style:italic; color:var(--ink-soft) !important; background:rgba(252,248,241,0.6) !important; box-shadow:none !important; }
@@ -5048,6 +5133,12 @@
   .compo-envoi:disabled{ opacity:0.4; transform:scale(0.92); }
   .compo-jeu svg, .compo-envoi svg{ width:100%; height:100%; }
   .compo-muet{ flex:1; text-align:center; font-size:0.86rem; line-height:1.4; color:var(--ink-soft); padding:0.6rem 0.4rem; }
+  /* La modération regarde : à la place du compositeur, ce qu'on est en train
+     de faire — à la même hauteur, rien ne bouge en entrant ou en sortant. */
+  .compo-lecture .compo-in{ align-items:center; justify-content:center; min-height:2.6rem; gap:0.5rem; color:var(--ink-soft);
+    font-size:0.88rem; font-weight:600; font-family:'Poppins',sans-serif; }
+  .compo-lecture .compo-in .ico{ width:1.15rem; height:1.15rem; display:inline-flex; }
+  .mod-carte .mod-voir{ color:var(--primary-dark); text-shadow:none; margin:0.6rem auto 0; }
 
   /* ---------- LA MODÉRATION DU JEU ---------- */
   .mod-carte{ display:flex; flex-direction:column; gap:0.35rem; }
@@ -5666,7 +5757,6 @@ const TEXTES = {
     "Aucun groupe ne correspond.":"No group matches.",
     "Groupe public":"Public group",
     "Groupe privé":"Private group",
-    "Message supprimé":"Message deleted",
     "Message masqué":"Message hidden",
     "Tu lances une partie":"You're starting a game",
     "{nom} lance une partie":"{nom} is starting a game",
@@ -5716,7 +5806,6 @@ const TEXTES = {
     "Code copié":"Code copied",
     "Invitation copiée":"Invitation copied",
     "Rejoins mon groupe « {nom} » sur {jeu} — code {code}":"Join my group “{nom}” on {jeu} — code {code}",
-    "Nouveau code : l'ancien ne marche plus.":"New code: the old one no longer works.",
     "Code d'invitation":"Invitation code",
     "Inviter":"Invite",
     "Copier":"Copy",
@@ -5733,6 +5822,13 @@ const TEXTES = {
     "Envoi…":"Sending…",
     "Code {code}":"Code {code}",
     "Rejoindre la partie":"Join the game",
+    "Lecture seule · modération":"Read only · moderation",
+    "Tous les groupes":"All groups",
+    "Voir le groupe":"View group",
+    "Aucun groupe pour l'instant.":"No groups yet.",
+    "Ce groupe n'existe plus.":"This group no longer exists.",
+    "Partie du groupe":"Group game",
+    "Les membres te rejoignent depuis la discussion.":"Members join you from the chat.",
     "Cette partie n'est plus ouverte.":"This game is no longer open.",
     "Lancer une partie":"Start a game",
     "Écris un message…":"Write a message…",
@@ -5805,11 +5901,18 @@ const TEXTES = {
     "La décision s'applique tout de suite.":"The decision takes effect immediately.",
     "Confidentialité":"Privacy",
     "Ce qui reste sur ton téléphone":"What stays on your phone",
-    "Ta progression, tes réglages et ta photo de profil. Ta photo n'en sort jamais.":"Your progress, your settings and your profile photo. Your photo never leaves it.",
+    "Ta progression et tes réglages, tant que tu n'as pas de compte.":"Your progress and your settings, as long as you don't have an account.",
     "Si tu crées un compte":"If you create an account",
-    "Ton adresse e-mail sert à te connecter, et ta progression est sauvegardée en ligne pour la retrouver sur un autre téléphone.":"Your email address is used to sign in, and your progress is saved online so you can find it on another phone.",
+    "Ton adresse e-mail sert à te connecter. Ta progression et ta photo de profil sont sauvegardées en ligne pour les retrouver sur un autre téléphone.":"Your email address is used to sign in. Your progress and your profile photo are saved online so you can find them on another phone.",
+    "Ta photo de profil":"Your profile photo",
+    "Les joueurs de tes parties en ligne et les membres de tes groupes la voient. « Retirer la photo », dans ton profil, la retire partout.":"Players in your online games and members of your groups can see it. “Remove photo” in your profile removes it everywhere.",
     "Dans les groupes":"In groups",
-    "Les membres voient ton nom, ta couleur et tes messages. Rien d'autre.":"Members see your name, your color and your messages. Nothing else.",
+    "Les membres voient ton nom, ta couleur, ta photo et tes messages. Rien d'autre.":"Members see your name, your color, your photo and your messages. Nothing else.",
+    "Photo du groupe":"Group photo",
+    "{nom} a changé la photo du groupe":"{nom} changed the group photo",
+    "{nom} a retiré la photo du groupe":"{nom} removed the group photo",
+    "La photo n'a pas pu être envoyée.":"The photo couldn't be sent.",
+    "Une photo retirée par la modération ne peut pas être remplacée avant sept jours.":"A photo removed by moderation can't be replaced for seven days.",
     "S'ils sont activés, une erreur du jeu est envoyée, sans rien qui permette de savoir qui tu es.":"If they're on, a game error is sent, with nothing that could identify you.",
     "Ce que le jeu ne fait pas":"What the game doesn't do",
     "Pas de publicité, pas de pistage, rien n'est vendu à personne.":"No ads, no tracking, nothing is sold to anyone.",
@@ -6275,7 +6378,6 @@ const TEXTES = {
     "Aucun groupe ne correspond.":"Ningún grupo coincide.",
     "Groupe public":"Grupo público",
     "Groupe privé":"Grupo privado",
-    "Message supprimé":"Mensaje eliminado",
     "Message masqué":"Mensaje oculto",
     "Tu lances une partie":"Inicias una partida",
     "{nom} lance une partie":"{nom} inicia una partida",
@@ -6325,7 +6427,6 @@ const TEXTES = {
     "Code copié":"Código copiado",
     "Invitation copiée":"Invitación copiada",
     "Rejoins mon groupe « {nom} » sur {jeu} — code {code}":"Únete a mi grupo «{nom}» en {jeu} — código {code}",
-    "Nouveau code : l'ancien ne marche plus.":"Código nuevo: el anterior ya no funciona.",
     "Code d'invitation":"Código de invitación",
     "Inviter":"Invitar",
     "Copier":"Copiar",
@@ -6342,6 +6443,13 @@ const TEXTES = {
     "Envoi…":"Enviando…",
     "Code {code}":"Código {code}",
     "Rejoindre la partie":"Unirse a la partida",
+    "Lecture seule · modération":"Solo lectura · moderación",
+    "Tous les groupes":"Todos los grupos",
+    "Voir le groupe":"Ver el grupo",
+    "Aucun groupe pour l'instant.":"Todavía no hay grupos.",
+    "Ce groupe n'existe plus.":"Este grupo ya no existe.",
+    "Partie du groupe":"Partida del grupo",
+    "Les membres te rejoignent depuis la discussion.":"Los miembros se unen desde el chat.",
     "Cette partie n'est plus ouverte.":"Esta partida ya no está abierta.",
     "Lancer une partie":"Iniciar una partida",
     "Écris un message…":"Escribe un mensaje…",
@@ -6414,11 +6522,18 @@ const TEXTES = {
     "La décision s'applique tout de suite.":"La decisión se aplica de inmediato.",
     "Confidentialité":"Privacidad",
     "Ce qui reste sur ton téléphone":"Lo que se queda en tu teléfono",
-    "Ta progression, tes réglages et ta photo de profil. Ta photo n'en sort jamais.":"Tu progreso, tus ajustes y tu foto de perfil. Tu foto nunca sale de él.",
+    "Ta progression et tes réglages, tant que tu n'as pas de compte.":"Tu progreso y tus ajustes, mientras no tengas cuenta.",
     "Si tu crées un compte":"Si creas una cuenta",
-    "Ton adresse e-mail sert à te connecter, et ta progression est sauvegardée en ligne pour la retrouver sur un autre téléphone.":"Tu dirección de correo sirve para iniciar sesión, y tu progreso se guarda en línea para recuperarlo en otro teléfono.",
+    "Ton adresse e-mail sert à te connecter. Ta progression et ta photo de profil sont sauvegardées en ligne pour les retrouver sur un autre téléphone.":"Tu dirección de correo sirve para iniciar sesión. Tu progreso y tu foto de perfil se guardan en línea para recuperarlos en otro teléfono.",
+    "Ta photo de profil":"Tu foto de perfil",
+    "Les joueurs de tes parties en ligne et les membres de tes groupes la voient. « Retirer la photo », dans ton profil, la retire partout.":"La ven quienes juegan contigo en línea y los miembros de tus grupos. «Quitar la foto», en tu perfil, la quita en todas partes.",
     "Dans les groupes":"En los grupos",
-    "Les membres voient ton nom, ta couleur et tes messages. Rien d'autre.":"Los miembros ven tu nombre, tu color y tus mensajes. Nada más.",
+    "Les membres voient ton nom, ta couleur, ta photo et tes messages. Rien d'autre.":"Los miembros ven tu nombre, tu color, tu foto y tus mensajes. Nada más.",
+    "Photo du groupe":"Foto del grupo",
+    "{nom} a changé la photo du groupe":"{nom} cambió la foto del grupo",
+    "{nom} a retiré la photo du groupe":"{nom} quitó la foto del grupo",
+    "La photo n'a pas pu être envoyée.":"No se pudo enviar la foto.",
+    "Une photo retirée par la modération ne peut pas être remplacée avant sept jours.":"Una foto quitada por la moderación no se puede reemplazar antes de siete días.",
     "S'ils sont activés, une erreur du jeu est envoyée, sans rien qui permette de savoir qui tu es.":"Si están activados, se envía un error del juego, sin nada que permita saber quién eres.",
     "Ce que le jeu ne fait pas":"Lo que el juego no hace",
     "Pas de publicité, pas de pistage, rien n'est vendu à personne.":"Sin publicidad, sin rastreo, no se vende nada a nadie.",
@@ -6719,6 +6834,7 @@ const ICONS = {
   info: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><line x1="12" y1="11" x2="12" y2="16.4"/><circle cx="12" cy="7.7" r="0.6" fill="currentColor"/></svg>`,
   manette: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M7.4 7h9.2a4.6 4.6 0 0 1 4.5 3.7l.8 4.3a2.7 2.7 0 0 1-4.6 2.4L15.6 15.6H8.4l-1.7 1.8a2.7 2.7 0 0 1-4.6-2.4l.8-4.3A4.6 4.6 0 0 1 7.4 7Z"/><line x1="8" y1="9.6" x2="8" y2="12.8"/><line x1="6.4" y1="11.2" x2="9.6" y2="11.2"/><circle cx="15.6" cy="10.4" r="0.55" fill="currentColor"/><circle cx="17.4" cy="12.2" r="0.55" fill="currentColor"/></svg>`,
   envoyer: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="19" x2="12" y2="5.4"/><polyline points="6.4 10.8 12 5.2 17.6 10.8"/></svg>`,
+  appareil: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M4 8.6A2.4 2.4 0 0 1 6.4 6.2h1.7l1.2-1.7c.3-.4.7-.6 1.2-.6h3c.5 0 .9.2 1.2.6l1.2 1.7h1.7A2.4 2.4 0 0 1 20 8.6v7.9a2.4 2.4 0 0 1-2.4 2.4H6.4A2.4 2.4 0 0 1 4 16.5V8.6Z"/><circle cx="12" cy="12.5" r="3.3"/></svg>`,
   crayon: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M15.4 4.8a2 2 0 0 1 2.8 0l1 1a2 2 0 0 1 0 2.8L8.6 19.2 4 20l.8-4.6L15.4 4.8Z"/><line x1="13.6" y1="6.6" x2="17.4" y2="10.4"/></svg>`,
   drapeau: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><line x1="5" y1="21" x2="5" y2="3.8"/><path d="M5 4.4c2.6-1.6 5-.2 7 .8 2.1 1 4.3 1.9 7-.2v8.6c-2.7 2.1-4.9 1.2-7 .2-2-1-4.4-2.4-7-.8"/></svg>`,
   sortir: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M14.4 4H6.6A1.6 1.6 0 0 0 5 5.6v12.8A1.6 1.6 0 0 0 6.6 20h7.8"/><line x1="10" y1="12" x2="20.2" y2="12"/><polyline points="16.6 8.4 20.2 12 16.6 15.6"/></svg>`,
@@ -8630,7 +8746,7 @@ const SUPABASE_ANON_KEY = "sb_publishable_FDJ_R0foC7uIeHmxVrj6rA_2NeIgW2a";
    remontée d'un téléphone ne vaut rien si on ne sait pas QUELLE version
    tournait. Elle doit rester égale au CACHE de sw.js — c'est ce que vérifie
    banc-essai/version.js, qui refuse de laisser publier les deux en désaccord. */
-const VERSION_JEU = "v310";
+const VERSION_JEU = "v311";
 
 /* ===================== QUAND ÇA CASSE CHEZ UN JOUEUR =====================
    « Si quelque chose casse chez cinq d'entre eux sur un modèle de téléphone
@@ -19390,6 +19506,8 @@ function motErreurGroupe(r){
     introuvable:"Ce message n'existe plus.",
     soi_meme:"Tu ne peux pas faire ça sur toi-même.",
     partie_invalide:"Cette partie n'a pas pu être annoncée.",
+    photo:"La photo n'a pas pu être envoyée.",
+    photo_retiree:"Une photo retirée par la modération ne peut pas être remplacée avant sept jours.",
     reseau:"Pas de réseau. Réessaie dans un instant."
   };
   /* Aucune phrase ne suppose le genre du joueur : « t'a mis en sourdine »
@@ -19507,11 +19625,23 @@ async function chargerEtatGroupes(){
     memoriserGroupes();
     /* Un modérateur : sa file est préchargée, pour que la Modération s'ouvre
        avec son contenu (voir ouvrirModeration). À zéro, rien à charger. */
-    if(r.moderateur){ if(aTraiter() === 0) moderation = []; else chargerModeration(); }
+    if(r.moderateur){ if(aTraiter() === 0) moderation = []; else chargerModeration(); if(!grp.tous) chargerTousGroupes(); }
     /* La liste se lit dès qu'on participe, pas seulement à l'ouverture de
        l'onglet : c'est elle qui donne les non-lus de la pastille de l'accueil. */
-    if(r.participe === "ok"){ abonnerGroupes(); suivreNomGroupes(); if(!grp.liste) chargerListes(); if(invitationEnAttente) setTimeout(servirInvitation, 300); }
+    /* Une liste venue de la mémoire de ce téléphone se relit quand même :
+       elle montre tout de suite, le serveur dit ce qui a changé depuis. */
+    if(r.participe === "ok"){ abonnerGroupes(); suivreNomGroupes(); if(!grp.liste || grp.listeDeMemoire) chargerListes(); if(invitationEnAttente) setTimeout(servirInvitation, 300); }
     else desabonnerGroupes();
+    if(r.participe === "ok"){
+      ecrireBase("meta", "etat", { participe:r.participe, moderateur:!!r.moderateur, ouverts:r.ouverts, photos:r.photos === true,
+                                   regles_version:r.regles_version, a_traiter:+r.a_traiter || 0 });
+      marquerMemoire();
+    }
+    if(r.photos === true){
+      try{ localStorage.setItem(CLE_PHOTOS_SRV, "1"); }catch(e){}
+      chargerCachePhotos();
+      if(r.participe === "ok") envoyerMaPhotoBientot();
+    }
   }
   majBarre(); majBouclier();
   return grp.etat;
@@ -19529,7 +19659,16 @@ function groupesVisibles(){
 function participeGroupes(){ return !!(grp.etat && grp.etat.participe === "ok"); }
 /* Le compte vient de changer (connexion, déconnexion, compte supprimé). */
 function groupesSurCompte(){
+  if(!compteConnecte()){ oublierPhotosSrv(); oublierMemoire(); }
   grp.etat = null; grp.liste = null; grp.publics = null; grp.fils = {}; grp.profils = {}; grp.membres = {};
+  /* Le même compte qu'à la dernière fois : ses groupes reviennent tout de
+     suite, le serveur suivra (voir LA MÉMOIRE DES GROUPES). */
+  if(compteConnecte()) lireMemoire().then(()=>{
+    if(!appliquerMemoire()) return;
+    majBarre();
+    if(state.screen === "groupes") majListes();
+    else if(state.screen === "groupe" && grp.courant) majFil();
+  });
   grp.nonLus = 0; grp.message = ""; grp.bloques = new Set(); grp.ageOk = false; grp.reglesOk = false;
   if(!compteConnecte()){ grp.modoMemo = false; memoriserGroupes(); }
   desabonnerGroupes();
@@ -19657,10 +19796,12 @@ async function chargerListesUneFois(){
      seulement s'il n'y avait encore rien à montrer. */
   grp.listeEchec = !mes && !grp.liste;
   if(mes){
-    grp.liste = mes;
+    grp.liste = mes; grp.listeDeMemoire = false;
     await chargerProfils(mes.map(g => g.apercu && g.apercu.auteur));
+    memoriserListe();
   }
   if(pub) grp.publics = pub;
+  if(photosServeur()) voirPhotos([].concat(mes || [], pub || []).map(g => ["g:" + g.id, g.photo_maj]));
   grp.nonLus = (grp.liste || []).reduce((s, g)=> s + (g.id === grp.courant && state.screen === "groupe" ? 0 : (+g.non_lus || 0)), 0);
   majBarre();
   majListes();
@@ -19683,13 +19824,35 @@ const TEINTES = [
   ["#F4512C", "#DE3616"], ["#FBBF3C", "#F29A16"], ["#5B9BF0", "#3A76DD"], ["#3DBB7E", "#22955C"],
   ["#A884F2", "#7F58DD"], ["#2FC1C6", "#14989E"], ["#F26AA6", "#D84687"], ["#7D8A9C", "#5A6678"]
 ];
+/* ===== LA COULEUR D'UN GROUPE, C'EST CELLE DE SA DISCUSSION =====
+   « Les couleurs de groupe doivent servir à quelque chose. Sinon, ça sert à
+   rien d'en avoir. » Elle ne colorait que la pastille de la liste. Elle
+   colore maintenant, dans le groupe, mes bulles, le bouton d'envoi, la
+   manette et l'invitation à jouer : chaque groupe a sa couleur, on sait où
+   l'on écrit avant d'avoir lu le nom.
+   Des dégradés un cran plus profonds que ceux des pastilles : du texte blanc
+   y garde le contraste des bulles d'aujourd'hui (au moins 3,9 au milieu,
+   mesuré) — sauf le jaune, qui prend une encre sombre (7,5). */
+const BULLES_GROUPE = [
+  ["#F04A26", "#DA3414", "#fff", "214,60,34"],   ["#FBC244", "#F3A21E", "#3B2A10", "214,140,20"],
+  ["#4D8DEA", "#336ED6", "#fff", "45,100,205"],  ["#2BA26A", "#1C8350", "#fff", "28,120,75"],
+  ["#9670EA", "#734DD4", "#fff", "105,70,200"],  ["#18A0A6", "#0E7F84", "#fff", "14,120,125"],
+  ["#E4559A", "#C93B7B", "#fff", "190,55,115"],  ["#6E7B8D", "#546072", "#fff", "70,80,100"]
+];
+function couleurGroupe(i){
+  const b = BULLES_GROUPE[(((+i || 0) % 8) + 8) % 8];
+  return "--grp-c:linear-gradient(150deg, " + b[0] + ", " + b[1] + ");--grp-fonce:" + b[1] + ";--grp-txt:" + b[2] + ";--grp-rgb:" + b[3] + ";";
+}
 function teinte(i){
   const t = TEINTES[(((+i || 0) % TEINTES.length) + TEINTES.length) % TEINTES.length];
   return "background:linear-gradient(150deg, " + t[0] + ", " + t[1] + ");";
 }
+/* La pastille d'un groupe : sa photo s'il en a une (posée sur la pastille
+   même, voir majAvatarsPhoto), sinon sa couleur et son initiale. */
 function pastilleGroupe(g, petite){
   const l = escapeHtml(String(g.nom || "?").trim().charAt(0).toUpperCase() || "?");
-  return `<span class="grp-av${petite ? " petite" : ""}" style="${teinte(g.teinte)}" aria-hidden="true">${l}</span>`;
+  const v = g.id ? valeurPhotoSrv("g:" + g.id) : "";
+  return `<span class="grp-av${petite ? " petite" : ""}${v ? " a-photo" : ""}"${g.id ? ` data-gid="${escapeHtml(String(g.id))}"` : ""} style="${teinte(g.teinte)}${v ? "--ph:" + v + ";" : ""}" aria-hidden="true">${l}</span>`;
 }
 /* LES MOTS DU JEU DANS LA DISCUSSION. Aucun ne s'accorde au genre de la
    personne dont il parle : « a été retiré » aurait été faux pour une joueuse.
@@ -19703,7 +19866,9 @@ function texteSysteme(m){
     parti:"{nom} a quitté le groupe",
     exclu:"{nom} ne fait plus partie du groupe",
     banni:"{nom} ne peut plus revenir dans le groupe",
-    admin:"{nom} devient admin du groupe"
+    admin:"{nom} devient admin du groupe",
+    photo:"{nom} a changé la photo du groupe",
+    photo_retiree:"{nom} a retiré la photo du groupe"
   };
   return phrases[m.texte] ? Tf(phrases[m.texte], { nom }) : "";
 }
@@ -19720,7 +19885,7 @@ function apercuGroupe(g){
   if(!a) return g.ouvert ? T("Groupe public") : T("Groupe privé");
   if(a.genre === "systeme") return texteSysteme(a);
   const moi = !!a.auteur && a.auteur === monId();
-  if(a.supprime) return T("Message supprimé");
+  if(a.supprime) return g.ouvert ? T("Groupe public") : T("Groupe privé");
   if(a.masque) return T("Message masqué");
   const nom = a.nom || ((grp.profils[a.auteur] || {}).nom) || T("Quelqu'un");
   if(a.genre === "partie") return moi ? T("Tu lances une partie") : Tf("{nom} lance une partie", { nom });
@@ -19785,7 +19950,7 @@ function enteteGroupes(){
   return `<div class="app-header grp-entete">
       ${modo ? `<span class="grp-modo"><button class="icon-btn" onclick="ouvrirModeration()" aria-label="${escapeHtml(libelleModeration(n))}"><span class="ico" style="width:1.22rem;height:1.22rem;">${ICONS.bouclier}</span></button><i class="bb-pastille" aria-hidden="true"${n > 0 ? "" : " hidden"}>${n > 99 ? "99+" : n}</i></span>` : `<span class="icon-btn spacer"></span>`}
       <span class="header-title">${T("Groupes")}</span>
-      ${participeGroupes() ? `<button class="icon-btn" onclick="ouvrirCreation()" aria-label="${T("Créer un groupe")}"><span class="ico" style="width:1.22rem;height:1.22rem;">${ICONS.plus}</span></button>` : `<span class="icon-btn spacer"></span>`}
+      <button class="icon-btn" onclick="openSettings()" aria-label="${T("Réglages")}"><span class="ico" style="width:1.22rem;height:1.22rem;">${ICONS.gear}</span></button>
     </div>`;
 }
 function renderGroupes(){
@@ -19829,7 +19994,7 @@ function corpsGroupes(){
       <button class="btn-ghost grp-act" onclick="ouvrirCreation()"><span class="ico">${ICONS.plus}</span>${T("Créer un groupe")}</button>
       <button class="btn-ghost grp-act" onclick="ouvrirCode()"><span class="ico">${ICONS.cle}</span>${T("J'ai un code")}</button>
     </div>
-    <div class="grp-mot">${escapeHtml(grp.message || "")}</div>
+    ${motHtml(grp.message)}
     <div class="grp-h" role="heading" aria-level="2">${T("Mes groupes")}</div>
     <div class="card grp-carte"><div id="grpMes">${lignesMes()}</div></div>
     <div class="grp-h" role="heading" aria-level="2">${T("Découvrir")}</div>
@@ -19854,18 +20019,18 @@ const REGLES = [
 function reglesHtml(){ return `<ul class="regles">${REGLES.map(r => `<li>${escapeHtml(T(r))}</li>`).join("")}</ul>`; }
 function bienvenueHtml(){
   const nom = String(profile.name || "").trim();
-  /* L'avatar, SANS la photo : la photo ne quitte jamais le téléphone. Ce que
-     les autres verront, c'est une initiale et une couleur — on montre ça. */
+  /* L'avatar tel que les autres le verront : avec la photo si ce serveur
+     connaît les photos (v311), sinon une initiale et une couleur. */
   return `<div class="card grp-bienvenue" data-serre>
       <div class="gb-tete"><span class="gi-ico">${ICONS.bulles}</span><b>${T("Bienvenue dans les groupes")}</b></div>
       <p class="gb-qui">${T("Les autres te verront sous ce nom :")}</p>
-      <div class="gb-nom">${avatarHtml(nom || "?", profile.color || "#4C86E8", 2.2)}<b>${nom ? escapeHtml(nom) : T("Pas encore de nom")}</b><button class="grp-pill calme" onclick="openProfile()">${T("Changer")}</button></div>
+      <div class="gb-nom">${avatarHtml(nom || "?", profile.color || "#4C86E8", 2.2, photosServeur() ? true : undefined)}<b>${nom ? escapeHtml(nom) : T("Pas encore de nom")}</b><button class="grp-pill calme" onclick="openProfile()">${T("Changer")}</button></div>
       <div class="gb-h" role="heading" aria-level="3">${T("Les règles de la communauté")}</div>
       ${reglesHtml()}
       <p class="gb-tol">${T("Tolérance zéro : un message signalé peut être masqué, et son auteur exclu des groupes.")}</p>
       <div class="set-row gb-ok"><span class="set-txt"><b>${T("J'ai 13 ans ou plus")}</b></span><button class="switch${grp.ageOk ? " on" : ""}" role="switch" aria-checked="${!!grp.ageOk}" aria-label="${T("J'ai 13 ans ou plus")}" onclick="basculerEntree('ageOk', this)"></button></div>
       <div class="set-row gb-ok"><span class="set-txt"><b>${T("J'accepte les règles")}</b></span><button class="switch${grp.reglesOk ? " on" : ""}" role="switch" aria-checked="${!!grp.reglesOk}" aria-label="${T("J'accepte les règles")}" onclick="basculerEntree('reglesOk', this)"></button></div>
-      <div class="grp-mot" id="gbMot">${escapeHtml(grp.message || "")}</div>
+      ${motHtml(grp.message, "gbMot")}
       <button class="btn-primary" onclick="entrerGroupes(this)">${T("Entrer")}</button>
     </div>`;
 }
@@ -19877,7 +20042,7 @@ function basculerEntree(cle, b){
 function motBienvenue(t){
   grp.message = t;
   const m = document.getElementById("gbMot");
-  if(m) m.textContent = t;
+  if(m) poserMot(m, t);
 }
 async function entrerGroupes(btn){
   if(!grp.ageOk || !grp.reglesOk){ motBienvenue(T("Il faut confirmer les deux pour entrer.")); return; }
@@ -19909,7 +20074,7 @@ async function suivreNomGroupes(){
   if(r.ok){ e.profil.nom = nom.slice(0, 20); e.profil.couleur = couleur; const id = monId(); if(id) grp.profils[id] = { nom:e.profil.nom, couleur }; }
   else if(r.erreur === "mot_interdit"){
     grp.message = T("Ce nom ne peut pas être utilisé dans les groupes. Change-le dans ton profil.");
-    if(state.screen === "groupes"){ const m = document.querySelector(".groupes-ecran .grp-mot"); if(m) m.textContent = grp.message; }
+    if(state.screen === "groupes"){ const m = document.querySelector(".groupes-ecran .grp-mot"); if(m) poserMot(m, grp.message); }
   }
 }
 
@@ -19981,9 +20146,18 @@ function fermerFeuilleGroupe(id){
 /* La petite phrase sous une feuille : une erreur, ou une confirmation (bon). */
 function motFeuille(id, texte, bon){
   const z = document.querySelector("#" + id + " .grp-mot");
-  if(!z) return;
-  z.textContent = texte || "";
-  z.classList.toggle("bon", !!bon);
+  if(z) poserMot(z, texte, bon);
+}
+function motHtml(texte, id){
+  return `<div class="grp-mot${texte ? " vu" : ""}"${id ? ` id="${id}"` : ""}><span>${escapeHtml(texte || "")}</span></div>`;
+}
+/* Ouvrir ou refermer la ligne ; en se refermant, elle garde son texte le
+   temps de partir — sans lui, elle tomberait à plat avant de se replier. */
+function poserMot(z, texte, bon){
+  let s = z.firstElementChild;
+  if(!s){ s = document.createElement("span"); s.textContent = z.textContent; z.textContent = ""; z.appendChild(s); }
+  if(texte){ s.textContent = texte; z.classList.toggle("bon", !!bon); z.classList.add("vu"); }
+  else z.classList.remove("vu");
 }
 function ligneAction(ico, libelle, action, danger){
   return `<button class="grp-act-l${danger ? " danger" : ""}" onclick="${action}"><span class="ico">${ico}</span><span class="gal-t">${escapeHtml(libelle)}</span></button>`;
@@ -19992,8 +20166,19 @@ function ligneAction(ico, libelle, action, danger){
 /* ===================== CRÉER UN GROUPE ===================== */
 let creation = { type:"prive", teinte:2 };
 function formulaireGroupeHtml(g){
-  return `<input class="text-input" id="grpNom" maxlength="40" placeholder="${T("Nom du groupe")}" value="${g ? escapeHtml(g.nom || "") : ""}" autocomplete="off" enterkeyhint="next">
-    <input class="text-input" id="grpDesc" maxlength="160" placeholder="${T("Description (facultatif)")}" value="${g ? escapeHtml(g.description || "") : ""}" autocomplete="off" enterkeyhint="done">
+  const champs = `<input class="text-input" id="grpNom" maxlength="40" placeholder="${T("Nom du groupe")}" value="${g ? escapeHtml(g.nom || "") : ""}" autocomplete="off" enterkeyhint="next"${photosServeur() ? ` oninput="majPastilleFormulaire()"` : ""}>
+    <input class="text-input" id="grpDesc" maxlength="160" placeholder="${T("Description (facultatif)")}" value="${g ? escapeHtml(g.description || "") : ""}" autocomplete="off" enterkeyhint="done">`;
+  /* LA PHOTO DU GROUPE se pose À CÔTÉ du nom et de la description, à leur
+     hauteur exacte : la feuille ne grandit pas d'un pixel. Sans photo, la
+     pastille montre la couleur choisie plus bas et l'initiale du nom tapé —
+     c'est déjà le groupe tel qu'il apparaîtra dans la liste. */
+  const ident = photosServeur()
+    ? `<div class="grp-ident">
+        <button type="button" class="grp-photo-b" onclick="choisirPhotoGroupe()" aria-label="${T("Photo du groupe")}">${pastilleFormulaireHtml(g)}<span class="gpb-ico">${ICONS.appareil}</span></button>
+        <div class="grp-ident-ch">${champs}</div>
+      </div>`
+    : champs;
+  return `${ident}
     <div class="grp-types">
       <button class="len-chip grp-type${creation.type === "prive" ? " sel" : ""}" data-tgroup="type" data-k="prive" onclick="choisirTypeGroupe('prive')">${T("Privé")}<small>${T("Sur invitation")}</small></button>
       <button class="len-chip grp-type${creation.type === "public" ? " sel" : ""}" data-tgroup="type" data-k="public" onclick="choisirTypeGroupe('public')">${T("Public")}<small>${T("Ouvert à tous")}</small></button>
@@ -20001,7 +20186,7 @@ function formulaireGroupeHtml(g){
     <p class="grp-aide grp-aide-type" id="grpTypeAide"><span class="${creation.type === "public" ? "" : "vu"}" data-t="prive">${T("Privé : on n'y entre qu'avec son code.")}</span><span class="${creation.type === "public" ? "vu" : ""}" data-t="public">${T("Public : tout le monde peut le trouver dans « Découvrir » et y entrer.")}</span></p>
     <div class="grp-teintes" role="radiogroup" aria-label="${T("Couleur du groupe")}">${TEINTES.map((t, i)=>
       `<button class="grp-teinte${creation.teinte === i ? " choisie" : ""}" style="${teinte(i)}background-clip:content-box;" onclick="choisirTeinte(${i})" role="radio" aria-checked="${creation.teinte === i}" aria-label="${Tf("Couleur {n}", { n:i + 1 })}"><span class="cd-ck">${ACH_CHECK}</span></button>`).join("")}</div>
-    <div class="grp-mot"></div>`;
+    <div class="grp-mot"><span></span></div>`;
 }
 /* ===== PRIVÉ / PUBLIC : LE MÊME GESTE QUE LA DURÉE ET LE CHRONO =====
    « Quand je choisis privé ou public, ça saute et ça décale un petit peu
@@ -20023,9 +20208,59 @@ function choisirTypeGroupe(t){
 function choisirTeinte(i){
   creation.teinte = i;
   document.querySelectorAll(".grp-teinte").forEach((b, k)=>{ b.classList.toggle("choisie", k === i); b.setAttribute("aria-checked", String(k === i)); });
+  majPastilleFormulaire();
+}
+/* ---------- LA PHOTO DANS LE FORMULAIRE ----------
+   creation.photo : undefined = on n'y touche pas ; "" = la retirer ; sinon
+   la nouvelle, déjà réduite pour le serveur. Rien ne part avant « Créer »
+   ou « Enregistrer ». */
+function photoFormulaire(){
+  if(typeof creation.photo === "string") return creation.photo ? "url('" + creation.photo + "')" : "";
+  return creation.gid ? valeurPhotoSrv("g:" + creation.gid) : "";
+}
+function pastilleFormulaireHtml(g){
+  const v = photoFormulaire();
+  const l = escapeHtml(String((g && g.nom) || "").trim().charAt(0).toUpperCase() || "?");
+  return `<span class="grp-av${v ? " a-photo" : ""}" id="grpFormAv" style="${teinte(creation.teinte)}${v ? "--ph:" + v + ";" : ""}">${l}</span>`;
+}
+function majPastilleFormulaire(){
+  const a = document.getElementById("grpFormAv"); if(!a) return;
+  const v = photoFormulaire();
+  a.setAttribute("style", teinte(creation.teinte) + (v ? "--ph:" + v + ";" : ""));
+  a.classList.toggle("a-photo", !!v);
+  const n = document.getElementById("grpNom");
+  a.textContent = String((n && n.value) || "").trim().charAt(0).toUpperCase() || "?";
+}
+function choisirPhotoGroupe(){
+  if(!photoFormulaire()){ ouvrirPhoto(recevoirPhotoGroupe); return; }
+  ouvrirFeuilleGroupe("grpPhotoVeil", T("Photo du groupe"), ICONS.appareil, `<div class="grp-liste-act">
+      ${ligneAction(ICONS.appareil, T("Changer la photo"), "fermerFeuilleGroupe('grpPhotoVeil'); ouvrirPhoto(recevoirPhotoGroupe)")}
+      ${ligneAction(ICONS.corbeille, T("Retirer la photo"), "fermerFeuilleGroupe('grpPhotoVeil'); recevoirPhotoGroupe('')", true)}
+    </div>`);
+}
+function recevoirPhotoGroupe(url){
+  if(url === null){
+    showModal({ title:T("Photo du groupe"), message:T("Cette image n'a pas pu être lue."), okLabel:T("Compris"), hideCancel:true });
+    return;
+  }
+  creation.photo = url;
+  majPastilleFormulaire();
+}
+/* Après « Créer » ou « Enregistrer » : la photo choisie part, et la liste
+   comme l'en-tête la montrent tout de suite, sans attendre un aller-retour. */
+async function envoyerPhotoGroupe(gid){
+  if(typeof creation.photo !== "string" || !gid || !photosServeur()) return true;
+  const photo = creation.photo || null;
+  const r = await appelGroupe("poser_photo_groupe", { p_groupe:gid, p_photo:photo });
+  if(!r.ok){ showMiniToast(r.erreur === "photo_retiree" ? T("Une photo retirée par la modération ne peut pas être remplacée avant sept jours.") : T("La photo n'a pas pu être envoyée.")); return false; }
+  if(photo){ poserPhotoSrv("g:" + gid, r.photo_maj, photo); ecrirePhotoCache("g:" + gid, { maj:+r.photo_maj || 0, data:photo }); }
+  else oterPhotoSrv("g:" + gid);
+  const g = (grp.liste || []).find(x => x.id === gid); if(g) g.photo_maj = photo ? r.photo_maj : 0;
+  majAvatarsPhoto();
+  return true;
 }
 function ouvrirCreation(){
-  creation = { type:"prive", teinte:Math.floor(Math.random() * TEINTES.length) };
+  creation = { type:"prive", teinte:Math.floor(Math.random() * TEINTES.length), photo:undefined, gid:null };
   ouvrirFeuilleGroupe("grpCreerVeil", T("Créer un groupe"), ICONS.plus,
     formulaireGroupeHtml(null) + `<button class="btn-primary" onclick="creerGroupe(this)">${T("Créer")}</button>`);
 }
@@ -20037,6 +20272,7 @@ async function creerGroupe(btn){
   const r = await appelGroupe("creer_groupe", { p_nom:nom, p_description:desc, p_ouvert:creation.type === "public", p_langue:LANGUE, p_teinte:creation.teinte });
   if(!r.ok){ if(btn) btn.disabled = false; motFeuille("grpCreerVeil", motErreurGroupe(r)); return; }
   const prive = creation.type !== "public";
+  await envoyerPhotoGroupe(r.id);
   fermerFeuilleGroupe("grpCreerVeil");
   grp.liste = null;
   await chargerListes();
@@ -20054,7 +20290,7 @@ function ouvrirCode(code){
     <input class="code-input grp-code" id="grpCode" maxlength="6" placeholder="ABC234" autocapitalize="characters" autocomplete="off" spellcheck="false" enterkeyhint="go"
       value="${escapeHtml(code || "")}" oninput="this.value=this.value.toUpperCase().replace(/[^A-Z0-9]/g,''); apercuCode(this.value)" onkeydown="if(event.key==='Enter'){event.preventDefault();rejoindreParCode();}">
     <div class="grp-apercu" id="grpApercu"></div>
-    <div class="grp-mot"></div>
+    <div class="grp-mot"><span></span></div>
     <button class="btn-primary" id="grpCodeGo" onclick="rejoindreParCode()" disabled>${T("Rejoindre")}</button>`);
   if(code) apercuCode(code);
 }
@@ -20071,6 +20307,12 @@ async function apercuCode(c){
   if(j !== apercuJeton) return;
   if(!r.ok){ if(z) z.innerHTML = ""; if(b) b.disabled = true; motFeuille("grpCodeVeil", motErreurGroupe(r)); return; }
   apercuCourant = Object.assign({ code:c }, r);
+  if(photoValideSrv(r.photo) && r.id){
+    await chargerCachePhotos();
+    poserPhotoSrv("g:" + r.id, r.photo_maj, r.photo);
+    ecrirePhotoCache("g:" + r.id, { maj:+r.photo_maj || 0, data:r.photo });   // sans quoi la relance la retéléchargerait
+  }
+  if(j !== apercuJeton) return;
   if(z) z.innerHTML = `<div class="grp-ligne">${pastilleGroupe(r)}<span class="grp-txt"><b>${escapeHtml(r.nom)}</b><small>${escapeHtml(r.description || nbMembres(r.nb_membres))}</small></span></div>`;
   if(b){ b.disabled = false; b.textContent = r.membre ? T("Ouvrir") : T("Rejoindre"); }
   try{ glassRelayout(); queueGlassSync(); }catch(e){}
@@ -20155,12 +20397,20 @@ async function nouveauCodeGroupe(){
   const r = await appelGroupe("nouveau_code", { p_groupe:g.id });
   if(!r.ok){ motFeuille("grpInfosVeil", motErreurGroupe(r)); return; }
   g.code = r.code;
-  const c = document.querySelector("#grpInfosVeil .gc-code"); if(c) c.textContent = r.code;
-  motFeuille("grpInfosVeil", T("Nouveau code : l'ancien ne marche plus."), true);
+  /* ===== LE NOUVEAU CODE PREND LA PLACE DE L'ANCIEN, C'EST TOUT =====
+     « Ce mot sert à rien : si c'est un nouveau code, c'est juste un nouveau
+     code. » La phrase « Nouveau code : l'ancien ne marche plus » surgissait
+     sous les membres et poussait toute la feuille. Le code change sur place,
+     en fondu, et rien d'autre ne bouge. */
+  const c = document.querySelector("#grpInfosVeil .gc-code");
+  if(c){ c.classList.remove("gc-neuf"); void c.offsetWidth; c.textContent = r.code; c.classList.add("gc-neuf"); }
 }
 
 /* ===================== UN GROUPE ===================== */
-function groupeCourant(){ return (grp.liste || []).find(x => x.id === grp.courant) || null; }
+function groupeCourant(){ return (grp.liste || []).find(x => x.id === grp.courant) || (grp.vus && grp.vus[grp.courant]) || null; }
+/* Le groupe ouvert est-il un des miens, ou un groupe que la modération
+   regarde de l'extérieur (voir LA MODÉRATION REGARDE) ? */
+function enLecture(){ return !!grp.courant && !(grp.liste || []).some(x => x.id === grp.courant) && !!(grp.vus && grp.vus[grp.courant]); }
 function monRole(){
   const l = grp.membres[grp.courant] || [];
   const m = l.find(x => x.membre === monId());
@@ -20184,26 +20434,379 @@ async function ouvrirGroupe(id){
   await chargerFil(id);
 }
 function retourGroupes(){
+  const deModeration = enLecture();
   grp.courant = null;
-  state.screen = "groupes";
+  state.screen = deModeration ? "moderation" : "groupes";
   render();
-  chargerListes();
+  if(!deModeration) chargerListes();
 }
-async function chargerProfils(ids){
-  const manque = [...new Set(ids.filter(x => x && !grp.profils[x]))];
+async function chargerProfils(ids, tous){
+  /* « tous » : on relit aussi ceux qu'on connaît déjà — leur nom, leur
+     couleur et leur photo ont pu changer depuis (voir chargerMembres). */
+  const manque = [...new Set(ids.filter(x => x && (tous || !grp.profils[x])))];
   if(!manque.length) return;
   const supa = initSupa(); if(!supa || !supa.from) return;
+  const avecPhotos = photosServeur();
   try{
-    const r = await supa.from("profils").select("id,nom,couleur").in("id", manque);
+    const r = await supa.from("profils").select(avecPhotos ? "id,nom,couleur,photo_maj" : "id,nom,couleur").in("id", manque);
     (r.data || []).forEach(p => { grp.profils[p.id] = { nom:p.nom, couleur:p.couleur }; });
+    if(avecPhotos && r.data) voirPhotos(r.data.map(p => ["u:" + p.id, p.photo_maj]));
   }catch(e){}
+}
+
+/* ===================== LES PHOTOS DANS LES GROUPES (v311) =====================
+   « Je veux que les groupes puissent avoir une photo de groupe, et que nos
+     photos à nous, notre profil à nous, soient visibles dans les groupes
+     aussi, et un peu partout dans le jeu. »
+   CE QUI VOYAGE. Une copie RÉDUITE de la photo de profil — 384 px de côté,
+   une trentaine de kilo-octets —, envoyée au serveur quand elle change ici ;
+   et la photo d'un groupe, de la même taille. Le serveur ne montre une photo
+   de profil qu'aux membres d'un groupe partagé (groupes/table.sql, « LES
+   PHOTOS »). La photo en 512 px reste où elle était : sur ce téléphone et
+   dans la sauvegarde du compte.
+   CE QUI NE VOYAGE PAS. Les listes — mes groupes, Découvrir, les membres —
+   ne donnent qu'une VERSION par photo (photo_maj), jamais l'image. Chaque
+   image reçue est gardée dans une base à part de ce téléphone (« yada-photos »,
+   jamais celle du jeu) et l'on ne redemande que celles dont la version a
+   changé : rouvrir un groupe ne télécharge rien, et les visages y sont dès la
+   première image.
+   UN SERVEUR QUI NE LES CONNAÎT PAS ENCORE — le SQL de la v311 pas encore
+   recollé — ne dit pas « photos » dans son état : le jeu ne propose alors
+   rien et ne demande rien, tout reste exactement comme avant. */
+const PHOTO_SRV_COTE = 384;
+const PHOTO_SRV_MAX = 56000;               // en caractères ; le serveur refuse au-delà de 60 000
+const photosSrv = Object.create(null);     // "u:<id>" | "g:<id>" -> { maj, url }
+const CLE_PHOTOS_SRV = "bt_photos_srv";    // le serveur connaît les photos : on lit le cache tôt
+function photosServeur(){ return !!(grp.etat && grp.etat.photos === true); }
+/* La valeur CSS d'une photo du serveur : une adresse « blob: » de soixante
+   caractères, posée sur l'avatar lui-même. Jamais l'image en texte dans le
+   HTML — trente kilo-octets recopiés à chaque bulle du fil. */
+function valeurPhotoSrv(cle){ const p = photosSrv[cle]; return p && p.url ? "url('" + p.url + "')" : ""; }
+function blobDePhoto(d){
+  const bin = atob(d.slice(d.indexOf(",") + 1));
+  const a = new Uint8Array(bin.length);
+  for(let k = 0; k < bin.length; k++) a[k] = bin.charCodeAt(k);
+  return new Blob([a], { type:"image/jpeg" });
+}
+function photoValideSrv(d){ return typeof d === "string" && d.indexOf("data:image/jpeg;base64,") === 0 && d.length <= 60000; }
+/* L'ancienne adresse n'est rendue qu'APRÈS que les avatars ont pris la
+   nouvelle : la rendre avant, c'est un avatar vide le temps d'une image. */
+function poserPhotoSrv(cle, maj, data){
+  const vieille = photosSrv[cle];
+  let url = "";
+  try{ url = URL.createObjectURL(blobDePhoto(data)); }catch(e){ return; }
+  photosSrv[cle] = { maj:+maj || 0, url };
+  if(vieille && vieille.url) setTimeout(()=>{ try{ URL.revokeObjectURL(vieille.url); }catch(e){} }, 1500);
+}
+function oterPhotoSrv(cle){
+  const p = photosSrv[cle];
+  if(!p) return;
+  delete photosSrv[cle];
+  if(p.url) setTimeout(()=>{ try{ URL.revokeObjectURL(p.url); }catch(e){} }, 1500);
+  ecrirePhotoCache(cle, null);
+}
+/* ---------- LA BASE DES GROUPES, SUR CE TÉLÉPHONE ----------
+   Une base À PART (« yada-groupes ») : celle du jeu (« bibletrivia ») sert au
+   service worker et ne change jamais de forme. Trois tiroirs : les photos,
+   les discussions (fils) et le reste (meta : la liste, les noms, les
+   brouillons). Un échec ici n'est jamais grave — on relit le serveur, c'est
+   tout. */
+let baseGroupesP = null;
+function baseGroupes(){
+  if(baseGroupesP) return baseGroupesP;
+  baseGroupesP = new Promise((res)=>{
+    try{
+      if(!("indexedDB" in window)){ res(null); return; }
+      const r = indexedDB.open("yada-groupes", 1);
+      r.onupgradeneeded = ()=>{
+        try{ ["photos", "fils", "meta"].forEach(n => { if(!r.result.objectStoreNames.contains(n)) r.result.createObjectStore(n); }); }catch(e){}
+      };
+      r.onsuccess = ()=> res(r.result);
+      r.onerror = ()=> res(null);
+      r.onblocked = ()=> res(null);
+    }catch(e){ res(null); }
+  });
+  return baseGroupesP;
+}
+function ecrireBase(tiroir, cle, v){
+  baseGroupes().then(db=>{
+    if(!db) return;
+    try{ const st = db.transaction(tiroir, "readwrite").objectStore(tiroir); if(v === null || v === undefined) st.delete(cle); else st.put(v, cle); }catch(e){}
+  });
+}
+function viderBase(tiroirs){
+  baseGroupes().then(db=>{ if(!db) return; tiroirs.forEach(t => { try{ db.transaction(t, "readwrite").objectStore(t).clear(); }catch(e){} }); });
+}
+function ecrirePhotoCache(cle, v){ ecrireBase("photos", cle, v || null); }
+let cachePhotosP = null;
+function chargerCachePhotos(){
+  if(cachePhotosP) return cachePhotosP;
+  cachePhotosP = baseGroupes().then(db => new Promise((res)=>{
+    if(!db){ res(); return; }
+    try{
+      const rq = db.transaction("photos", "readonly").objectStore("photos").openCursor();
+      let n = 0;
+      rq.onsuccess = ()=>{
+        const c = rq.result;
+        if(c){
+          const v = c.value;
+          if(v && photoValideSrv(v.data) && !photosSrv[c.key]){ poserPhotoSrv(c.key, v.maj, v.data); n++; }
+          c.continue();
+        } else { if(n) majAvatarsPhoto(); res(); }
+      };
+      rq.onerror = ()=> res();
+    }catch(e){ res(); }
+  }));
+  return cachePhotosP;
+}
+/* ---------- CE QUI MANQUE, ON LE DEMANDE ----------
+   On reçoit des couples [clé, version] ; une version à 0 veut dire « pas de
+   photo ». Les demandes d'un même instant partent ensemble, vingt par vingt. */
+const photosAttente = new Map();
+let photosT = 0;
+async function voirPhotos(couples){
+  if(!photosServeur() || !Array.isArray(couples)) return;
+  await chargerCachePhotos();
+  let change = false;
+  const moi = compteConnecte() ? "u:" + monId() : "";
+  couples.forEach(([cle, maj])=>{
+    if(!cle || /:(null|undefined)?$/.test(cle)) return;
+    if(cle === moi) return;                      // ma photo, ce téléphone l'a déjà (voir photoValeur)
+    maj = +maj || 0;
+    const p = photosSrv[cle];
+    if(!maj){ if(p){ oterPhotoSrv(cle); change = true; } return; }
+    if(!p || p.maj !== maj) photosAttente.set(cle, maj);
+  });
+  if(change) majAvatarsPhoto();
+  if(photosAttente.size){ clearTimeout(photosT); photosT = setTimeout(telechargerPhotos, 30); }
+}
+async function telechargerPhotos(){
+  const supa = initSupa(); if(!supa || !supa.from) return;
+  const cles = [...photosAttente.keys()]; photosAttente.clear();
+  const lire = async (table, prefixe)=>{
+    const ids = cles.filter(c => c.indexOf(prefixe) === 0).map(c => c.slice(2));
+    for(let i = 0; i < ids.length; i += 20){
+      try{
+        const r = await supa.from(table).select("id,photo,photo_maj").in("id", ids.slice(i, i + 20));
+        (r.data || []).forEach(x=>{
+          const cle = prefixe + x.id;
+          if(photoValideSrv(x.photo)){
+            poserPhotoSrv(cle, x.photo_maj, x.photo);
+            ecrirePhotoCache(cle, { maj:+x.photo_maj || 0, data:x.photo });
+          } else oterPhotoSrv(cle);
+        });
+      }catch(e){}
+    }
+  };
+  await Promise.all([lire("profils", "u:"), lire("groupes", "g:")]);
+  majAvatarsPhoto();
+}
+/* ---------- MA PHOTO, CÔTÉ SERVEUR ----------
+   Elle part quand ELLE A CHANGÉ ICI depuis la dernière fois qu'elle est
+   partie (on retient, par compte, la version locale envoyée). On ne compare
+   pas aux heures du serveur : une horloge de téléphone en retard de dix
+   minutes aurait gardé une nouvelle photo pour elle.
+   Jamais de photo ici, jamais rien d'envoyé : un téléphone neuf, dont la
+   sauvegarde n'est pas encore revenue, n'efface pas celle des autres. Une
+   photo retirée par la modération ne repart pas d'elle-même : elle attend
+   que le joueur en choisisse une autre. */
+let photoEnvoi = false, photoEnvoiT = 0;
+function lireEnvoiPhoto(){ try{ return JSON.parse(localStorage.getItem(CLE_PHOTOS_SRV + "_envoi") || "{}") || {}; }catch(e){ return {}; } }
+function envoyerMaPhotoBientot(ms){ clearTimeout(photoEnvoiT); photoEnvoiT = setTimeout(envoyerMaPhoto, ms === undefined ? 1200 : ms); }
+async function envoyerMaPhoto(){
+  if(photoEnvoi || !photosServeur() || !participeGroupes()) return;
+  const id = monId(); if(!id) return;
+  const maj = nEntier(profile.photoMaj), p = photoProfil();
+  const deja = lireEnvoiPhoto();
+  if(deja.compte === id && deja.maj === maj) return;
+  if(!p && !maj) return;
+  photoEnvoi = true;
+  try{
+    const vignette = p ? await vignetteServeur(p) : null;
+    if(p && !vignette) return;
+    const r = await appelGroupe("poser_photo", { p_photo:vignette });
+    if(r.ok || r.erreur === "photo" || r.erreur === "photo_retiree"){
+      try{ localStorage.setItem(CLE_PHOTOS_SRV + "_envoi", JSON.stringify({ compte:id, maj })); }catch(e){}
+      if(r.ok && grp.etat && grp.etat.profil) grp.etat.profil.photo_maj = r.photo_maj;
+    } else if(r.erreur === "trop_vite") envoyerMaPhotoBientot(4000);
+  } finally { photoEnvoi = false; }
+}
+/* SANS COMPTE, PLUS DE PHOTOS DES AUTRES. Sur un téléphone prêté puis rendu,
+   rien ne doit rester des visages des groupes de quelqu'un d'autre. */
+function oublierPhotosSrv(){
+  let avait = false;
+  try{ avait = !!localStorage.getItem(CLE_PHOTOS_SRV); localStorage.removeItem(CLE_PHOTOS_SRV); }catch(e){}
+  Object.keys(photosSrv).forEach(cle=>{
+    const p = photosSrv[cle]; delete photosSrv[cle];
+    if(p && p.url) setTimeout(()=>{ try{ URL.revokeObjectURL(p.url); }catch(e){} }, 1500);
+    avait = true;
+  });
+  cachePhotosP = null;
+  if(avait) viderBase(["photos"]);
+}
+/* ===================== LA MÉMOIRE DES GROUPES (v311) =====================
+   « Lorsque je relance le jeu, mon message doit rester. » « Les données de
+     message s'effacent lorsque je change de langue. »
+   Changer de langue relance le jeu, et le relancer, c'était repartir de
+   rien : la liste des groupes et chaque discussion attendaient le réseau et
+   s'ouvraient vides — une seconde, ou bien plus sur une mauvaise connexion.
+   Ce téléphone garde donc, dans sa base à lui, la liste de mes groupes, les
+   noms et couleurs de leurs membres, les cinquante derniers messages de
+   chaque discussion, et le brouillon qu'on était en train d'écrire. Au
+   lancement, tout revient en mémoire AVANT qu'on ouvre les groupes ; le
+   serveur, interrogé comme avant, corrige ensuite ce qui a changé.
+   À QUI : au seul compte qui l'a écrite (bt_groupes_memoire). Se déconnecter
+   l'efface, comme les photos — un téléphone prêté ne garde rien. */
+const CLE_MEMOIRE = "bt_groupes_memoire";
+let memoire = null, memoireP = null;
+let brouillons = {};
+const memoireT = {};
+function marquerMemoire(){ try{ if(monId()) localStorage.setItem(CLE_MEMOIRE, monId()); }catch(e){} }
+function lireMemoire(){
+  if(memoireP) return memoireP;
+  let compte = null;
+  try{ compte = localStorage.getItem(CLE_MEMOIRE); }catch(e){}
+  if(!compte){ memoireP = Promise.resolve(null); return memoireP; }
+  memoireP = baseGroupes().then(db => new Promise((res)=>{
+    if(!db){ res(null); return; }
+    const m = { compte, fils:{}, liste:null, profils:null, brouillons:null, etat:null };
+    try{
+      const tx = db.transaction(["fils", "meta"], "readonly");
+      const rf = tx.objectStore("fils").openCursor();
+      rf.onsuccess = ()=>{ const c = rf.result; if(c){ m.fils[c.key] = c.value; c.continue(); } };
+      const rm = tx.objectStore("meta").openCursor();
+      rm.onsuccess = ()=>{ const c = rm.result; if(c){ if(c.key in m) m[c.key] = c.value; c.continue(); } };
+      tx.oncomplete = ()=>{ memoire = m; res(m); };
+      tx.onerror = tx.onabort = ()=> res(null);
+    }catch(e){ res(null); }
+  }));
+  return memoireP;
+}
+/* Ce qui est déjà là gagne toujours : la mémoire ne remplace jamais une
+   lecture du serveur arrivée avant elle. */
+function appliquerMemoire(){
+  const m = memoire;
+  if(!m || !compteConnecte() || m.compte !== monId()) return false;
+  /* L'état de la dernière fois (participe, modérateur, photos) : l'écran des
+     groupes s'ouvre sur la liste au lieu d'un rond qui tourne. Le serveur le
+     redit aussitôt (chargerEtatGroupes), et c'est lui qui décide de tout. */
+  if(!grp.etat && m.etat && m.etat.participe === "ok") grp.etat = Object.assign({}, m.etat, { depuisMemoire:true });
+  if(!grp.liste && Array.isArray(m.liste)){ grp.liste = m.liste; grp.listeDeMemoire = true; }
+  if(m.profils && typeof m.profils === "object") Object.keys(m.profils).forEach(k => { if(!grp.profils[k]) grp.profils[k] = m.profils[k]; });
+  Object.keys(m.fils).forEach(id => {
+    const v = m.fils[id];
+    if(!grp.fils[id] && v && Array.isArray(v.messages)) grp.fils[id] = { messages:v.messages.slice(), charge:true, tout:!!v.tout, lu:+v.lu || 0 };
+  });
+  if(m.brouillons && typeof m.brouillons === "object") brouillons = Object.assign({}, m.brouillons, brouillons);
+  grp.nonLus = (grp.liste || []).reduce((s, x)=> s + (+x.non_lus || 0), 0);
+  return true;
+}
+function memoriserFil(id){
+  if(!id || !compteConnecte() || !(grp.liste || []).some(x => x.id === id)) return;
+  clearTimeout(memoireT["f" + id]);
+  memoireT["f" + id] = setTimeout(()=>{ memoireT["f" + id] = 0; memoriserFilMaintenant(id); }, 400);
+}
+function memoriserFilMaintenant(id){
+  const f = grp.fils[id]; if(!f || !f.charge || !compteConnecte()) return;
+  const l = f.messages.filter(m => m.id > 0);
+  ecrireBase("fils", id, { messages:l.slice(-FIL_PAGE), tout:!!f.tout && l.length <= FIL_PAGE, lu:+f.lu || 0 });
+  marquerMemoire();
+}
+function memoriserListe(){
+  if(!compteConnecte()) return;
+  clearTimeout(memoireT.liste);
+  memoireT.liste = setTimeout(()=>{ memoireT.liste = 0; memoriserListeMaintenant(); }, 400);
+}
+function memoriserListeMaintenant(){
+  {
+    if(!grp.liste || !compteConnecte()) return;
+    ecrireBase("meta", "liste", grp.liste);
+    ecrireBase("meta", "profils", grp.profils);
+    /* Une discussion d'un groupe qu'on a quitté ne reste pas. */
+    const miens = new Set(grp.liste.map(x => x.id));
+    baseGroupes().then(db=>{
+      if(!db) return;
+      try{
+        const st = db.transaction("fils", "readwrite").objectStore("fils");
+        const rq = st.openKeyCursor ? st.openKeyCursor() : st.openCursor();
+        rq.onsuccess = ()=>{ const c = rq.result; if(c){ if(!miens.has(c.key)) st.delete(c.key); c.continue(); } };
+      }catch(e){}
+    });
+    marquerMemoire();
+  }
+}
+function memoriserBrouillon(id, texte){
+  if(!id) return;
+  if(texte) brouillons[id] = texte; else delete brouillons[id];
+  clearTimeout(memoireT.brouillons);
+  memoireT.brouillons = setTimeout(()=>{ memoireT.brouillons = 0; if(compteConnecte()){ ecrireBase("meta", "brouillons", brouillons); marquerMemoire(); } }, 400);
+}
+/* L'app passe en arrière-plan (ou se ferme) : ce qui attendait son
+   écriture part tout de suite — iOS peut ne jamais lui rendre la main. */
+function viderMemoireEnAttente(){
+  Object.keys(memoireT).forEach(k=>{
+    const t = memoireT[k]; if(!t) return;
+    clearTimeout(t); memoireT[k] = 0;
+    if(k === "liste") memoriserListeMaintenant();
+    else if(k === "brouillons"){ if(compteConnecte()) ecrireBase("meta", "brouillons", brouillons); }
+    else if(k[0] === "f") memoriserFilMaintenant(k.slice(1));
+  });
+}
+document.addEventListener("visibilitychange", ()=>{ if(document.hidden) viderMemoireEnAttente(); });
+window.addEventListener("pagehide", viderMemoireEnAttente);
+function oublierMemoire(){
+  let avait = false;
+  try{ avait = !!localStorage.getItem(CLE_MEMOIRE); localStorage.removeItem(CLE_MEMOIRE); }catch(e){}
+  Object.keys(memoireT).forEach(k => clearTimeout(memoireT[k]));
+  memoire = null; memoireP = null; brouillons = {};
+  if(avait) viderBase(["fils", "meta"]);
+}
+/* 384 px, et une qualité qui baisse d'un cran tant que l'image ne tient pas
+   sous le plafond du serveur. */
+function vignetteServeur(src){
+  return new Promise((res)=>{
+    const fin = (img)=>{
+      try{
+        const c = document.createElement("canvas");
+        c.width = c.height = PHOTO_SRV_COTE;
+        const g = c.getContext("2d"); if(!g){ res(null); return; }
+        try{ g.imageSmoothingQuality = "high"; }catch(e){}
+        const w = img.naturalWidth || img.width, h = img.naturalHeight || img.height, cote = Math.min(w, h);
+        g.drawImage(img, (w - cote) / 2, (h - cote) / 2, cote, cote, 0, 0, PHOTO_SRV_COTE, PHOTO_SRV_COTE);
+        res(jpegSousPlafond(c));
+      }catch(e){ res(null); }
+    };
+    if(typeof src !== "string"){ fin(src); return; }
+    const im = new Image();
+    im.onload = ()=> fin(im);
+    im.onerror = ()=> res(null);
+    im.src = src;
+  });
+}
+function vignetteCadree(src, sx, sy, cote){
+  try{
+    const c = document.createElement("canvas");
+    c.width = c.height = PHOTO_SRV_COTE;
+    const g = c.getContext("2d"); if(!g) return null;
+    try{ g.imageSmoothingQuality = "high"; }catch(e){}
+    g.drawImage(src, sx, sy, cote, cote, 0, 0, PHOTO_SRV_COTE, PHOTO_SRV_COTE);
+    return jpegSousPlafond(c);
+  }catch(e){ return null; }
+}
+function jpegSousPlafond(c){
+  for(const q of [0.8, 0.72, 0.64, 0.56, 0.48]){
+    const d = c.toDataURL("image/jpeg", q);
+    if(d.indexOf("data:image/jpeg;base64,") === 0 && d.length <= PHOTO_SRV_MAX) return d;
+  }
+  return null;
 }
 /* La description n'est pas dans la liste (mes_groupes) : on la lit à
    l'entrée, pour l'afficher dans les infos et ne pas l'effacer en modifiant. */
 async function chargerGroupe(id){
   const supa = initSupa(); if(!supa || !supa.from) return;
   try{
-    const r = await supa.from("groupes").select("id,nom,description,ouvert,teinte,code,nb_membres").eq("id", id).maybeSingle();
+    const r = await supa.from("groupes").select("id,nom,description,ouvert,teinte,code,nb_membres" + (photosServeur() ? ",photo_maj" : "")).eq("id", id).maybeSingle();
+    if(r && r.data && photosServeur()) await voirPhotos([["g:" + id, r.data.photo_maj]]);
     const g = (grp.liste || []).find(x => x.id === id);
     if(r && r.data && g){
       Object.assign(g, { nom:r.data.nom, description:r.data.description || "", ouvert:r.data.ouvert, teinte:r.data.teinte, code:r.data.code, nb_membres:r.data.nb_membres });
@@ -20218,7 +20821,7 @@ async function chargerMembres(id){
     const r = await supa.from("membres").select("membre,role,muet_jusqu").eq("groupe", id);
     if(r.error || !Array.isArray(r.data)) return;
     grp.membres[id] = r.data;
-    await chargerProfils(r.data.map(x => x.membre));
+    await chargerProfils(r.data.map(x => x.membre), photosServeur());
   }catch(e){ return; }
   if(grp.courant === id){ majCompo(); majInfosMembres(); }
 }
@@ -20244,6 +20847,7 @@ async function chargerFil(id){
     f.charge = true;
     f.tout = r.data.length < FIL_PAGE;
     l.forEach(m => dejaComptes.add(m.id));
+    memoriserFil(id);
   }catch(e){ return; }
   if(grp.courant === id && state.screen === "groupe"){
     const z = document.getElementById("fil");
@@ -20279,6 +20883,7 @@ async function chargerPlusAncien(btn){
   }
 }
 function marquerLu(id){
+  if(!(grp.liste || []).some(x => x.id === id)) return;   // la modération regarde : elle ne « lit » pas pour les membres
   const f = grp.fils[id];
   if(!f || !f.messages.length) return;
   const dernier = f.messages.reduce((a, m)=> m.id > a ? m.id : a, 0);
@@ -20299,6 +20904,7 @@ function renderGroupe(){
   const el = document.createElement("div");
   el.className = "screen groupe-ecran";
   const g = groupeCourant();
+  if(g) el.setAttribute("style", couleurGroupe(g.teinte));
   if(!g){
     el.innerHTML = `${renderHeader(T("Groupes"), true, "retourGroupes()")}<div class="card grp-vide"><span class="spinner"></span></div>`;
     return el;
@@ -20313,8 +20919,18 @@ function renderGroupe(){
       <div id="fil" onscroll="surDefilementFil(this)">${filHtml(g.id)}</div>
       <button class="fil-bas" id="filBas" hidden onclick="descendreFil(true)">${T("Nouveaux messages")}</button>
     </div>
-    <div class="compo" id="compo"><div class="compo-in">${compoHtml()}</div></div>`;
-  setTimeout(()=>descendreFil(false), 0);
+    ${enLecture()
+      ? `<div class="compo compo-lecture" id="compo"><div class="compo-in"><span class="ico">${ICONS.bouclier}</span><span>${T("Lecture seule · modération")}</span></div></div>`
+      : `<div class="compo" id="compo"><div class="compo-in">${compoHtml()}</div></div>`}`;
+  const t = el.querySelector("#compoTexte");
+  if(t && brouillons[g.id]){ t.value = brouillons[g.id]; const b = el.querySelector("#compoEnvoi"); if(b) b.disabled = !t.value.trim(); }
+  /* ===== LE FIL S'OUVRE EN BAS, SANS GLISSER =====
+     « Lorsque je ferme ou que je rouvre une page, le bas doit rester sur
+     les messages, sans bouger. » La descente attendait un setTimeout : le
+     navigateur peignait d'abord le HAUT du fil, puis sautait au bas — un
+     éclair de vieux messages à chaque ouverture. render() appelle _posee
+     dès que l'écran est dans la page, avant toute image (voir render). */
+  el._posee = ()=>{ descendreFil(false); if(t && t.value) surSaisie(t); };
   return el;
 }
 function cleJour(iso){ const d = new Date(iso); return d.getFullYear() + "-" + d.getMonth() + "-" + d.getDate(); }
@@ -20325,7 +20941,14 @@ const SUITE_MS = 300000;
 function filHtml(id){
   const f = grp.fils[id];
   if(!f || !f.charge) return `<div class="grp-vide"><span class="spinner"></span></div>`;
-  const msgs = f.messages.filter(m => !m.auteur || !grp.bloques.has(m.auteur));
+  /* ===== UN MESSAGE SUPPRIMÉ DISPARAÎT VRAIMENT =====
+     « Lorsque je supprime un message, il doit rester définitivement
+     supprimé. » La fenêtre de confirmation promettait « Il disparaît pour
+     tout le groupe », et une bulle « Message supprimé » restait à sa place,
+     pour toujours, jusque dans l'aperçu de la liste. Le serveur, lui, vide
+     déjà le texte : le fil ne garde plus rien de lui. (Un message MASQUÉ par
+     la modération, lui, garde sa bulle : c'est une décision en cours.) */
+  const msgs = f.messages.filter(m => !m.supprime_le && (!m.auteur || !grp.bloques.has(m.auteur)));
   let h = f.tout ? "" : `<button class="grp-pill calme fil-plus" onclick="chargerPlusAncien(this)">${T("Messages plus anciens")}</button>`;
   if(!msgs.length) return h + `<div class="grp-vide">${T("Aucun message pour l'instant. Dis bonjour !")}</div>`;
   let jour = "", suite = [];
@@ -20357,7 +20980,7 @@ function suiteHtml(suite){
   const nom = p.nom || T("Quelqu'un"), couleur = p.couleur || "#8A8F98";
   const der = suite[suite.length - 1];
   return `<div class="b ${moi ? "b-moi" : "b-eux"}">
-      ${moi ? "" : `<span class="b-av">${avatarHtml(nom, couleur, 2.05)}</span>`}
+      ${moi ? "" : `<span class="b-av">${avatarHtml(nom, couleur, 2.05, "u:" + m0.auteur)}</span>`}
       <div class="b-pile">
         ${moi ? "" : `<span class="b-nom" style="color:${couleurLisible(couleur)}">${escapeHtml(nom)}</span>`}
         ${suite.map(bulleHtml).join("")}
@@ -20367,7 +20990,6 @@ function suiteHtml(suite){
 }
 function bulleHtml(m){
   const moi = !!m.auteur && m.auteur === monId();
-  if(m.supprime_le) return `<span class="b-bulle b-vide">${T("Message supprimé")}</span>`;
   if(m.masque) return `<button class="b-bulle b-vide" onclick="actionsMessage('${m.id}')">${T("Message masqué")}</button>`;
   if(m.genre === "partie"){
     const code = String((m.donnees && m.donnees.code) || "").replace(/[^A-Z0-9]/g, "");
@@ -20441,6 +21063,8 @@ function surSaisie(t){
   t.style.height = Math.min(t.scrollHeight, 120) + "px";
   const b = document.getElementById("compoEnvoi");
   if(b) b.disabled = !t.value.trim();
+  /* Ce qu'on écrit survit à une relance, à un changement de langue. */
+  if(grp.courant && t.id === "compoTexte") memoriserBrouillon(grp.courant, t.value);
 }
 /* ENVOYER : la bulle part tout de suite, en attente ; le serveur décide. S'il
    refuse (mot interdit, trop vite, coordonnées), la bulle s'en va, le texte
@@ -20476,6 +21100,7 @@ async function envoyerMessageGroupe(){
   }
   g.dernier_message = new Date().toISOString();
   g.apercu = { id:r.id, auteur:monId(), genre:"texte", texte, donnees:{}, masque:false, supprime:false, le:g.dernier_message };
+  memoriserFil(g.id); memoriserListe();
 }
 /* ---------- JOUER ENSEMBLE ----------
    Le bouton manette crée un salon en ligne, comme « Créer une partie », et
@@ -20544,7 +21169,13 @@ async function surMessageDirect(m, evt){
     dejaComptes.add(m.id);
   }
   const g = (grp.liste || []).find(x => x.id === m.groupe);
-  if(!g){ if(evt === "INSERT"){ grp.liste = null; chargerListes(); } return; }
+  /* Un modérateur reçoit les messages de TOUS les groupes (la règle d'accès
+     le lui permet) : un groupe qui n'est pas le sien ne relit pas sa liste à
+     chaque message — seul le fil regardé, s'il l'est, a suivi (recevoirMessage). */
+  if(!g){
+    if(evt === "INSERT" && !(grp.etat && grp.etat.moderateur)){ grp.liste = null; chargerListes(); }
+    return;
+  }
   if(evt === "INSERT"){
     g.dernier_message = m.cree_le;
     g.apercu = { id:m.id, auteur:m.auteur, genre:m.genre, texte:m.texte, donnees:m.donnees, masque:m.masque,
@@ -20555,7 +21186,8 @@ async function surMessageDirect(m, evt){
     grp.liste.sort((a, b)=> String(b.dernier_message || "").localeCompare(String(a.dernier_message || "")));
     /* Quelqu'un arrive, part, change de rôle : la liste des membres suit. */
     if(m.genre === "systeme" && m.texte !== "cree"){
-      if(grp.courant === m.groupe) chargerMembres(m.groupe);
+      if(m.texte === "photo" || m.texte === "photo_retiree"){ chargerGroupe(m.groupe); }
+      else if(grp.courant === m.groupe) chargerMembres(m.groupe);
       if(m.texte === "rejoint") g.nb_membres = (+g.nb_membres || 0) + 1;
       if(m.texte === "parti" || m.texte === "exclu" || m.texte === "banni") g.nb_membres = Math.max(1, (+g.nb_membres || 1) - 1);
       const t = document.getElementById("grpTete");
@@ -20564,10 +21196,14 @@ async function surMessageDirect(m, evt){
   } else if(g.apercu && g.apercu.id === m.id){
     g.apercu.masque = !!m.masque; g.apercu.supprime = !!m.supprime_le;
     if(m.masque || m.supprime_le) g.apercu.texte = "";
+    /* Le dernier message vient d'être supprimé : l'aperçu reprend celui
+       d'avant, que le serveur connaît. */
+    if(m.supprime_le) chargerListes();
   }
   grp.nonLus = (grp.liste || []).reduce((s, x)=> s + (grp.courant === x.id && state.screen === "groupe" ? 0 : (+x.non_lus || 0)), 0);
   majBarre();
   majListes();
+  memoriserListe();
 }
 /* Un message arrive (ou change : masqué, supprimé, rendu) : il prend sa place
    dans le fil s'il est chargé. La bulle « en attente » du même texte, posée à
@@ -20586,6 +21222,7 @@ function recevoirMessage(m){
   }
   if(m.id > 0 && m.auteur === monId()) f.lu = Math.max(f.lu || 0, m.id);
   if(grp.courant === m.groupe && state.screen === "groupe") majFil();
+  memoriserFil(m.groupe);
 }
 
 /* ===================== TOUCHER UNE BULLE =====================
@@ -20609,8 +21246,8 @@ function actionsMessage(id){
     h += ligneAction(ICONS.bloquer, Tf("Bloquer {nom}", { nom }), `bloquerQuelquUn('${m.auteur}')`, true);
   }
   if(moi || admin) h += ligneAction(ICONS.corbeille, T("Supprimer le message"), `supprimerMessageGroupe('${m.id}')`, true);
-  h += `</div><div class="grp-mot"></div>`;
-  ouvrirFeuilleGroupe("grpActionsVeil", nom, avatarHtml(nom, moi ? (profile.color || "#4C86E8") : (p.couleur || "#8A8F98"), 1.5), h);
+  h += `</div><div class="grp-mot"><span></span></div>`;
+  ouvrirFeuilleGroupe("grpActionsVeil", nom, avatarHtml(nom, moi ? (profile.color || "#4C86E8") : (p.couleur || "#8A8F98"), 1.5, moi ? true : "u:" + m.auteur), h);
 }
 function copierMessage(id){
   const m = trouverMessage(id);
@@ -20629,6 +21266,10 @@ function supprimerMessageGroupe(id){
       if(m){ m.supprime_le = new Date().toISOString(); m.texte = ""; }
       fermerFeuilleGroupe("grpActionsVeil");
       majFil();
+      memoriserFil(grp.courant);
+      /* L'aperçu de la liste ne garde pas un message qui n'existe plus. */
+      const g = groupeCourant();
+      if(g && g.apercu && String(g.apercu.id) === String(id)) chargerListes();
     })(); return true; }
   });
 }
@@ -20655,7 +21296,7 @@ function signalerMessage(id, cible, groupe){
     <textarea class="text-input grp-precision" id="grpPrecision" maxlength="300" placeholder="${T("Un détail à ajouter ? (facultatif)")}"></textarea>
     <div class="grp-liste-act">${RAISONS.map(([k, t])=>
       `<button class="grp-act-l" onclick="envoyerSignalement('${k}')"><span class="gal-t">${escapeHtml(T(t))}</span><span class="chev">${ICONS.chevronRight}</span></button>`).join("")}</div>
-    <div class="grp-mot"></div>`);
+    <div class="grp-mot"><span></span></div>`);
 }
 async function envoyerSignalement(raison){
   const s = signalement; if(!s) return;
@@ -20717,11 +21358,11 @@ function ouvrirInfosGroupe(invitation){
     </div>
     <h3 class="gb-h">${nbMembres(g.nb_membres)}</h3>
     <div class="grp-defile">${membres.map(ligneMembre).join("")}</div>
-    <div class="grp-mot"></div>
+    <div class="grp-mot"><span></span></div>
     <div class="grp-liste-act">
       ${admin ? ligneAction(ICONS.crayon, T("Modifier le groupe"), "ouvrirModifGroupe()") : ""}
       ${ligneAction(ICONS.drapeau, T("Signaler le groupe"), `signalerMessage(null, null, '${g.id}')`)}
-      ${ligneAction(ICONS.sortir, T("Quitter le groupe"), "quitterGroupeCourant()", true)}
+      ${enLecture() ? "" : ligneAction(ICONS.sortir, T("Quitter le groupe"), "quitterGroupeCourant()", true)}
       ${proprio || (grp.etat && grp.etat.moderateur) ? ligneAction(ICONS.corbeille, T("Supprimer le groupe"), "supprimerGroupeCourant()", true) : ""}
     </div>`);
 }
@@ -20744,7 +21385,7 @@ function ligneMembre(x){
   const nom = p.nom || (moi ? (String(profile.name || "").trim() || T("Toi")) : T("Quelqu'un"));
   const sous = [roleDe(x), sourdineDe(x)].filter(Boolean).join(" · ");
   return `<button class="grp-ligne"${moi ? " disabled" : ` onclick="ouvrirMembre('${x.membre}')"`}>
-      ${avatarHtml(nom, p.couleur || (moi ? (profile.color || "#4C86E8") : "#8A8F98"), 2.4)}
+      ${avatarHtml(nom, p.couleur || (moi ? (profile.color || "#4C86E8") : "#8A8F98"), 2.4, moi ? true : "u:" + x.membre)}
       <span class="grp-txt"><b>${escapeHtml(nom)}${moi ? " " + escapeHtml(T("(toi)")) : ""}</b>${sous ? `<small>${escapeHtml(sous)}</small>` : ""}</span>
       ${moi ? "" : `<span class="chev">${ICONS.chevronRight}</span>`}
     </button>`;
@@ -20780,8 +21421,8 @@ function ouvrirMembre(qui){
   }
   h += ligneAction(ICONS.drapeau, T("Signaler"), `signalerMessage(null, '${qui}', '${g.id}')`);
   h += ligneAction(ICONS.bloquer, T("Bloquer"), `bloquerQuelquUn('${qui}')`, true);
-  h += `</div><div class="grp-mot"></div>`;
-  ouvrirFeuilleGroupe("grpMembreVeil", nom, avatarHtml(nom, p.couleur || "#8A8F98", 1.5), h);
+  h += `</div><div class="grp-mot"><span></span></div>`;
+  ouvrirFeuilleGroupe("grpMembreVeil", nom, avatarHtml(nom, p.couleur || "#8A8F98", 1.5, "u:" + qui), h);
 }
 async function modererMembre(qui, action){
   const g = groupeCourant(); if(!g) return;
@@ -20815,7 +21456,7 @@ async function modererMembre(qui, action){
 /* ===================== MODIFIER, QUITTER, SUPPRIMER ===================== */
 function ouvrirModifGroupe(){
   const g = groupeCourant(); if(!g) return;
-  creation = { type:g.ouvert ? "public" : "prive", teinte:+g.teinte || 0 };
+  creation = { type:g.ouvert ? "public" : "prive", teinte:+g.teinte || 0, photo:undefined, gid:g.id };
   fermerFeuilleGroupe("grpInfosVeil");
   ouvrirFeuilleGroupe("grpModifVeil", T("Modifier le groupe"), ICONS.crayon,
     formulaireGroupeHtml(g) + `<button class="btn-primary" onclick="enregistrerGroupe(this)">${T("Enregistrer")}</button>`);
@@ -20828,6 +21469,9 @@ async function enregistrerGroupe(btn){
   const r = await appelGroupe("modifier_groupe", { p_groupe:g.id, p_nom:nom, p_description:desc, p_ouvert:creation.type === "public", p_teinte:creation.teinte });
   if(!r.ok){ if(btn) btn.disabled = false; motFeuille("grpModifVeil", motErreurGroupe(r)); return; }
   Object.assign(g, { nom, description:desc, ouvert:creation.type === "public", teinte:creation.teinte });
+  const ecran = document.querySelector("#app > .screen.groupe-ecran:not(.screen-exit)");
+  if(ecran) ecran.setAttribute("style", couleurGroupe(g.teinte));
+  await envoyerPhotoGroupe(g.id);
   fermerFeuilleGroupe("grpModifVeil");
   const t = document.getElementById("grpTete");
   if(t && g) t.innerHTML = teteGroupeHtml(g);
@@ -20890,6 +21534,7 @@ let moderation = null, moderationEnCours = null;
      après quoi l'écran s'ouvre quand même, avec son rond. */
 function ouvrirModeration(){
   if(!(grp.etat && grp.etat.moderateur)) return;
+  chargerTousGroupes();
   if(!moderation && aTraiter() === 0) moderation = [];
   const ouvrir = ()=>{ if(state.screen !== "moderation"){ state.screen = "moderation"; render(); } };
   if(moderation){ ouvrir(); chargerModeration(); return; }
@@ -20902,6 +21547,11 @@ function chargerModeration(){
   const p = (async ()=>{
     const l = await listeGroupe("moderation_ouverte");
     if(l) moderation = l; else if(!moderation) moderation = [];
+    /* Les photos en cause arrivent AVANT que la carte se dessine : on ne
+       décide pas sur une initiale. */
+    if(l && photosServeur()) await voirPhotos([].concat(...l.map(x => [
+      x.cible ? ["u:" + x.cible, x.cible_photo_maj] : null,
+      x.groupe ? ["g:" + x.groupe, x.groupe_photo_maj] : null]).filter(Boolean)));
     /* La file relue EST le compte (une carte par chose à décider) : la
        pastille suit sans rien redemander au serveur. */
     if(l && grp.etat){ grp.etat.a_traiter = l.length; majBarre(); majBouclier(); }
@@ -20921,8 +21571,14 @@ function cartesModeration(){
   if(!moderation) return `<div class="grp-vide"><span class="spinner"></span></div>`;
   if(!moderation.length) return `<div class="card grp-intro"><span class="gi-ico vert">${ICONS.coche}</span><b>${T("Rien à traiter.")}</b></div>`;
   const raisons = Object.fromEntries(RAISONS);
-  return moderation.map(s=>`<div class="card mod-carte">
+  /* LA PHOTO EN CAUSE : celle de la personne visée, ou — sans personne —
+     celle du groupe. Elle s'affiche en grand sur la carte, et la décision
+     « Retirer la photo » n'existe que si elle existe. */
+  const photoEnCause = (s)=> s.cible ? (+s.cible_photo_maj > 0 ? "u:" + s.cible : "")
+                                    : (s.groupe && +s.groupe_photo_maj > 0 ? "g:" + s.groupe : "");
+  return moderation.map(s=>{ const ph = photoEnCause(s); return `<div class="card mod-carte">
       <div class="mod-tete"><b>${escapeHtml(T(raisons[s.raison] || "Autre chose"))}</b><small>${escapeHtml(quandCourt(s.le))}${+s.nb > 1 ? " · " + escapeHtml(Tf("{n} signalements", { n:s.nb })) : ""}</small></div>
+      ${ph ? `<div class="mod-photo">${ph[0] === "u" ? avatarHtml(s.cible_nom || "?", "#8A8F98", 4.6, ph) : pastilleGroupe({ id:s.groupe, nom:s.groupe_nom || "?", teinte:7 })}</div>` : ""}
       ${s.groupe_nom ? `<p class="mod-l">${T("Groupe")} : <b>${escapeHtml(s.groupe_nom)}</b></p>` : ""}
       ${s.cible_nom ? `<p class="mod-l">${T("Personne visée")} : <b>${escapeHtml(s.cible_nom)}</b></p>` : ""}
       ${s.texte ? `<p class="mod-texte">${escapeHtml(s.texte)}</p>` : ""}
@@ -20932,15 +21588,73 @@ function cartesModeration(){
         <button class="grp-pill calme" onclick="traiterSignalement(${s.id}, 'rejeter', this)">${T("Rien de mal")}</button>
         ${s.message ? `<button class="grp-pill" onclick="traiterSignalement(${s.id}, 'masquer', this)">${T("Masquer")}</button>` : ""}
         ${s.cible ? `<button class="grp-pill" onclick="traiterSignalement(${s.id}, 'bannir', this)">${T("Bannir l'auteur")}</button>` : ""}
+        ${ph ? `<button class="grp-pill" onclick="traiterSignalement(${s.id}, 'retirer_photo', this)">${T("Retirer la photo")}</button>` : ""}
         ${s.groupe ? `<button class="grp-pill" onclick="traiterSignalement(${s.id}, 'fermer_groupe', this)">${T("Fermer le groupe")}</button>` : ""}
       </div>
-    </div>`).join("");
+      ${s.groupe ? `<button class="grp-lien mod-voir" onclick="regarderGroupe('${s.groupe}')">${T("Voir le groupe")}</button>` : ""}
+    </div>`; }).join("");
+}
+/* ===================== LA MODÉRATION REGARDE =====================
+   « Quand la modération reçoit un signalement, il faut qu'elle puisse
+   l'examiner : voir l'intérieur du groupe, ce qui s'y passe. » « Un
+   modérateur doit pouvoir voir tous les groupes — pas y entrer, mais voir. »
+   La règle d'accès du serveur le permettait déjà (groupes, membres et
+   messages se lisent par un modérateur) ; il manquait l'écran. Depuis une
+   carte (« Voir le groupe ») ou la liste de tous les groupes, la discussion
+   s'ouvre telle que ses membres la voient, EN LECTURE SEULE : pas de
+   compositeur, aucun « lu » posé au nom des membres, et l'on n'y figure pas. */
+async function chargerTousGroupes(){
+  const supa = initSupa(); if(!supa || !supa.from || !(grp.etat && grp.etat.moderateur)) return;
+  try{
+    const r = await supa.from("groupes").select("id,nom,description,ouvert,teinte,code,nb_membres,dernier_message" + (photosServeur() ? ",photo_maj" : ""))
+      .is("supprime_le", null).order("dernier_message", { ascending:false }).limit(100);
+    if(r.error || !Array.isArray(r.data)) return;
+    grp.tous = r.data;
+    if(photosServeur()) voirPhotos(r.data.map(g => ["g:" + g.id, g.photo_maj]));
+  }catch(e){ return; }
+  const z = document.getElementById("modGroupes");
+  if(z && state.screen === "moderation"){
+    const sig = JSON.stringify(grp.tous);
+    if(z._sig !== sig){ z.innerHTML = lignesTous(); z._sig = sig; try{ glassRelayout(); queueGlassSync(); fitScroll(); }catch(e){} }
+  }
+}
+function lignesTous(){
+  if(!grp.tous) return `<div class="grp-vide"><span class="spinner"></span></div>`;
+  if(!grp.tous.length) return `<div class="grp-vide">${T("Aucun groupe pour l'instant.")}</div>`;
+  return grp.tous.map(g => `<button class="grp-ligne" onclick="regarderGroupe('${g.id}')">
+      ${pastilleGroupe(g)}
+      <span class="grp-txt"><b>${escapeHtml(g.nom)}</b><small>${escapeHtml(nbMembres(g.nb_membres) + " · " + (g.ouvert ? T("Public") : T("Privé")))}</small></span>
+      <span class="grp-droite"><small>${escapeHtml(quandCourt(g.dernier_message))}</small></span>
+    </button>`).join("");
+}
+async function regarderGroupe(id){
+  if(!(grp.etat && grp.etat.moderateur) || !id) return;
+  /* Un de mes groupes : on l'ouvre comme d'habitude. */
+  if((grp.liste || []).some(x => x.id === id)){ ouvrirGroupe(id); return; }
+  grp.vus = grp.vus || {};
+  let g = grp.vus[id] || (grp.tous || []).find(x => x.id === id);
+  if(!g){
+    try{
+      const r = await initSupa().from("groupes").select("id,nom,description,ouvert,teinte,code,nb_membres").eq("id", id).maybeSingle();
+      g = r && r.data;
+    }catch(e){}
+  }
+  if(!g){ showMiniToast(T("Ce groupe n'existe plus.")); return; }
+  grp.vus[id] = Object.assign({}, g);
+  grp.courant = id;
+  state.screen = "groupe";
+  render();
+  chargerMembres(id);
+  await chargerFil(id);
 }
 function renderModeration(){
   const el = document.createElement("div");
   el.className = "screen";
-  el.innerHTML = `${renderHeader("Modération", true, "retourGroupes()")}<div id="modListe">${cartesModeration()}</div>`;
+  el.innerHTML = `${renderHeader("Modération", true, "retourGroupes()")}<div id="modListe">${cartesModeration()}</div>
+    <div class="grp-h" role="heading" aria-level="2">${T("Tous les groupes")}</div>
+    <div class="card grp-carte"><div id="modGroupes">${lignesTous()}</div></div>`;
   const z = el.querySelector("#modListe"); if(z && moderation) z._sig = JSON.stringify(moderation);
+  const zt = el.querySelector("#modGroupes"); if(zt && grp.tous) zt._sig = JSON.stringify(grp.tous);
   return el;
 }
 async function traiterSignalement(id, decision, btn){
@@ -20948,6 +21662,13 @@ async function traiterSignalement(id, decision, btn){
     if(btn) btn.disabled = true;
     const r = await appelGroupe("traiter_signalement", { p_id:id, p_decision:decision });
     if(!r.ok){ if(btn) btn.disabled = false; return; }
+    /* La photo retirée disparaît tout de suite de ce téléphone aussi. */
+    if(decision === "retirer_photo" || decision === "bannir"){
+      const s = (moderation || []).find(x => x.id === id);
+      if(s && s.cible) oterPhotoSrv("u:" + s.cible);
+      else if(s && s.groupe && decision === "retirer_photo") oterPhotoSrv("g:" + s.groupe);
+      majAvatarsPhoto();
+    }
     chargerModeration();
   };
   if(decision === "bannir" || decision === "fermer_groupe"){
@@ -20971,10 +21692,16 @@ function ouvrirRegles(){
     <p class="grp-aide">${T("Les groupes sont réservés aux 13 ans et plus.")}</p>`);
 }
 function ouvrirConfidentialite(){
+  /* ===== CHAQUE LIGNE DIT CE QUE LE JEU FAIT VRAIMENT =====
+     La première promettait « Ta photo n'en sort jamais » ; ce n'était plus
+     vrai depuis la v288 (la sauvegarde du compte la garde) ni depuis que les
+     joueurs d'une partie en ligne la voient. Avec les groupes (v311), elle
+     dit maintenant les trois endroits où elle va, et comment l'en retirer. */
   const lignes = [
-    ["Ce qui reste sur ton téléphone", "Ta progression, tes réglages et ta photo de profil. Ta photo n'en sort jamais."],
-    ["Si tu crées un compte", "Ton adresse e-mail sert à te connecter, et ta progression est sauvegardée en ligne pour la retrouver sur un autre téléphone."],
-    ["Dans les groupes", "Les membres voient ton nom, ta couleur et tes messages. Rien d'autre."],
+    ["Ce qui reste sur ton téléphone", "Ta progression et tes réglages, tant que tu n'as pas de compte."],
+    ["Si tu crées un compte", "Ton adresse e-mail sert à te connecter. Ta progression et ta photo de profil sont sauvegardées en ligne pour les retrouver sur un autre téléphone."],
+    ["Ta photo de profil", "Les joueurs de tes parties en ligne et les membres de tes groupes la voient. « Retirer la photo », dans ton profil, la retire partout."],
+    ["Dans les groupes", "Les membres voient ton nom, ta couleur, ta photo et tes messages. Rien d'autre."],
     ["Rapports de bug", "S'ils sont activés, une erreur du jeu est envoyée, sans rien qui permette de savoir qui tu es."],
     ["Ce que le jeu ne fait pas", "Pas de publicité, pas de pistage, rien n'est vendu à personne."],
     ["Tout supprimer", "Profil → « Supprimer mon compte » efface ton compte, ta sauvegarde en ligne, tes messages et tes groupes."]
@@ -22133,10 +22860,10 @@ function avatarHtml(name, color, size, qui){
      l'identifiant d'un joueur du salon pour les autres. L'image ne voyage pas
      dans le HTML : l'avatar ne porte qu'un renvoi vers la variable de la
      racine où elle est posée une seule fois. */
-  const v = photoDeVar(qui);
+  const v = photoValeur(qui);
   const ph = v ? " a-photo" : "";
   const pid = qui ? ` data-pid="${qui === true ? "moi" : escapeHtml(String(qui))}"` : "";
-  const img = v ? `--ph:var(${v});` : "";
+  const img = v ? `--ph:${v};` : "";
   return `<span class="avatar${ph}"${pid} style="--av:${L};width:${L};height:${L};background-color:${color};${img}font-size:calc(${L} * 0.42);">${initial}</span>`;
 }
 
@@ -22204,6 +22931,19 @@ function photoDeVar(qui){
   if(typeof qui === "string" && qui && net.photos[qui]) return "--ph" + photoVars[qui];
   return "";
 }
+/* LA VALEUR CSS DE LA PHOTO D'UN AVATAR, d'où qu'elle vienne : la mienne
+   (true), celle d'un joueur du salon (son identifiant), ou celle d'un membre
+   d'un groupe (« u:<compte> »), venue du serveur (voir LES PHOTOS DANS LES
+   GROUPES). Mon propre compte dans un groupe, c'est MA photo, celle de ce
+   téléphone — jamais une copie qui pourrait avoir un temps de retard. */
+function photoValeur(qui){
+  if(typeof qui === "string" && qui.indexOf("u:") === 0){
+    if(compteConnecte() && qui.slice(2) === monId()) qui = true;
+    else return valeurPhotoSrv(qui);
+  }
+  const v = photoDeVar(qui);
+  return v ? "var(" + v + ")" : "";
+}
 function recevoirPhoto(id, url){
   if(!id || id === myId) return;
   const u = (typeof url === "string" && url.indexOf("data:image/") === 0 && url.length <= PHOTO_MAX) ? url : "";
@@ -22236,7 +22976,11 @@ function diffuserPhotoBientot(){
    type=file> tout juste inséré n'ouvre pas toujours le sélecteur au premier
    clic — il lui faut d'abord être dans le document. */
 let champPhoto = null;
-function ouvrirPhoto(){
+/* À QUI VA LA PHOTO CADRÉE : null, c'est la mienne (le Profil) ; une
+   fonction, c'est quelqu'un d'autre — la photo d'un groupe. */
+let photoCible = null;
+function ouvrirPhoto(cible){
+  photoCible = (typeof cible === "function") ? cible : null;
   if(!champPhoto){
     champPhoto = document.createElement("input");
     champPhoto.type = "file";
@@ -22295,6 +23039,7 @@ function enregistrerPhoto(url){
   majPhotoRacine(); majAvatarsPhoto();
   diffuserPhoto();                                   // les joueurs du salon la voient
   try{ synchroniser(); }catch(e){}                   // et le compte la garde
+  try{ envoyerMaPhotoBientot(); }catch(e){}          // et les membres de mes groupes
   return true;
 }
 /* Le chemin SANS cadrage : carré pris au centre. C'est ce que faisait tout le
@@ -22338,19 +23083,20 @@ async function poserPhoto(fichier){
    (dans le profil, ouvrir le sélecteur de fichier). */
 function nomDuPid(pid){
   if(pid === "moi") return profile.name || T("Invité");
+  if(String(pid).indexOf("u:") === 0){ const p = grp.profils[String(pid).slice(2)]; return (p && p.nom) || T("Quelqu'un"); }
   try{ const j = net.joueurs[pid]; if(j && j.name) return j.name; }catch(e){}
   try{ if(net.opp && net.opp.id === pid && net.opp.name) return net.opp.name; }catch(e){}
   return T("Joueur");
 }
 function ouvrirPhotoGrand(pid){
   if(document.getElementById("photoGrandVeil")) return;
-  const v = photoDeVar(pid === "moi" ? true : pid);
+  const v = photoValeur(pid === "moi" ? true : pid);
   if(!v) return;
   const veil = document.createElement("div");
   veil.className = "photo-veil"; veil.id = "photoGrandVeil";
   veil.setAttribute("role", "dialog");
   veil.setAttribute("aria-label", T("Photo de profil"));
-  veil.innerHTML = '<div class="pv-img" style="background-image:var(' + v + ')"></div>'
+  veil.innerHTML = '<div class="pv-img" style="background-image:' + v + '"></div>'
                  + '<div class="pv-nom">' + escapeHtml(nomDuPid(pid)) + '</div>';
   const fermer = ()=>{ try{ veil.remove(); }catch(e){} };
   veil.addEventListener("click", fermer);
@@ -22442,6 +23188,8 @@ async function ouvrirCadrage(fichier){
     monterCadrage(toile, w, h);
     return true;
   }catch(e){
+    const cible = photoCible; photoCible = null;
+    if(cible){ try{ cible(null); }catch(err){} return false; }
     try{ showModal({ title:T("Photo de profil"), message:T("Cette image n'a pas pu être lue."), okLabel:T("Compris"), hideCancel:true }); }catch(err){}
     return false;
   }finally{
@@ -22469,6 +23217,15 @@ function monterCadrage(toile, w, h){
   const scene = veil.querySelector("#cadreScene");
   scene.insertBefore(toile, scene.firstChild);
   monterLaFeuille(veil);
+  /* Ouverte PAR-DESSUS une autre feuille (la photo d'un groupe se cadre
+     depuis « Créer un groupe ») : celle du dessous recule, comme partout. */
+  const dessous = feuilleDessous(veil);
+  if(dessous){
+    dessous.classList.add("feuille-recule");
+    veil.classList.add("voile-second");
+    veil._dessous = dessous;
+    reculJusqu = performance.now() + msPli() + 200;
+  }
   glassTrack();
   /* ON LA FERME AU DOIGT, comme toutes les autres feuilles du jeu. Le geste
      part de la poignée, du titre ou du pourtour ; à l'intérieur du cadre, le
@@ -22540,6 +23297,13 @@ function fermerCadrage(){
   cadrage = null;
   if(!v || v.classList.contains("closing")) return;
   v.classList.add("closing");
+  const dessous = v._dessous;
+  if(dessous && dessous.isConnected){
+    dessous.classList.remove("feuille-recule");
+    reculJusqu = performance.now() + msPli() + 200;
+    try{ armGlass(msPli() + 300); }catch(e){}
+    setTimeout(()=>{ try{ glassRelayout(); queueGlassSync(); }catch(e){} }, msPli() + 40);
+  }
   setTimeout(()=>{ if(v.parentNode) v.remove(); }, msFerme() + 20);
 }
 function validerCadrage(){
@@ -22547,6 +23311,14 @@ function validerCadrage(){
   if(!c){ fermerCadrage(); return false; }
   /* Ce que le trou rond montre, en pixels de l'image de travail. */
   const x0 = -c.tx / c.s, y0 = -c.ty / c.s, cote = c.F / c.s;
+  /* La photo d'un groupe : directement à la taille du serveur. */
+  if(photoCible){
+    const cible = photoCible; photoCible = null;
+    const v = vignetteCadree(c.img, x0, y0, cote);
+    fermerCadrage();
+    try{ cible(v || null); }catch(e){}
+    return !!v;
+  }
   const url = carrePhoto(c.img, x0, y0, cote);
   const ok = enregistrerPhoto(url);
   if(!ok){ try{ showModal({ title:T("Photo de profil"), message:T("Cette image n'a pas pu être lue."), okLabel:T("Compris"), hideCancel:true }); }catch(e){} }
@@ -22563,6 +23335,7 @@ function retirerPhoto(){
   majPhotoRacine(); majAvatarsPhoto();
   diffuserPhoto();
   try{ synchroniser(); }catch(e){}
+  try{ envoyerMaPhotoBientot(); }catch(e){}          // retirée des groupes aussi
 }
 /* La photo qui revient du compte. On n'écrit que si elle a changé : réécrire
    seize kilo-octets dans le stockage local à chaque synchronisation pour rien
@@ -22575,6 +23348,7 @@ function appliquerPhoto(url, maj){
     majPhotoRacine(); majAvatarsPhoto(); diffuserPhoto();
   }
   profile.photoMaj = Math.max(nEntier(profile.photoMaj), nEntier(maj));
+  try{ envoyerMaPhotoBientot(); }catch(e){}
 }
 /* ON NE REDESSINE PAS L'ÉCRAN. Le Profil porte un champ de texte : un render()
    lui volerait son contenu en cours de frappe et le clavier avec. On pose la
@@ -22587,9 +23361,15 @@ function majAvatarsPhoto(){
   try{
     document.querySelectorAll(".avatar[data-pid]").forEach(a => {
       const qui = a.dataset.pid === "moi" ? true : a.dataset.pid;
-      const v = photoDeVar(qui);
+      const v = photoValeur(qui);
       a.classList.toggle("a-photo", !!v);
-      if(v) a.style.setProperty("--ph", "var(" + v + ")"); else a.style.removeProperty("--ph");
+      if(v) a.style.setProperty("--ph", v); else a.style.removeProperty("--ph");
+    });
+    /* Les pastilles des groupes : même geste, leur photo à elles. */
+    document.querySelectorAll(".grp-av[data-gid]").forEach(a => {
+      const v = valeurPhotoSrv("g:" + a.dataset.gid);
+      a.classList.toggle("a-photo", !!v);
+      if(v) a.style.setProperty("--ph", v); else a.style.removeProperty("--ph");
     });
   }catch(e){}
   const l = document.getElementById("photoLiens");
@@ -22844,9 +23624,25 @@ function renderOnlineRoom(){
      eux, continuent de dire la vérité : à deux, c'est un duel. */
   const aPlusieurs = nbJoueurs() !== 2;   // ce qu'on DIT, plus ce qu'on DESSINE
   const motSalon = motPartie();         // « le duel » à deux, « la partie » au-delà
+  /* ===== LE SALON D'UN GROUPE N'EST PAS CELUI DE L'EN LIGNE =====
+     « Il faut vraiment séparer le côté en ligne et le côté groupe. Quand je
+     crée une partie pour mon groupe, je n'ai pas besoin de voir le reste. »
+     Lancée depuis un groupe, la partie dit DE QUEL groupe elle est — sa
+     pastille, son nom, sa couleur —, et les membres arrivent par la bulle de
+     la discussion : ni grand code à recopier, ni « Inviter des amis ». */
+  const gs = net.depuisGroupe ? (grp.liste || []).find(x => x.id === net.depuisGroupe) : null;
+  if(gs) el.setAttribute("style", couleurGroupe(gs.teinte));
+  const hero = gs ? `
+    <div class="code-hero salon-groupe">
+      ${pastilleGroupe(gs)}
+      <div class="code-label">${T("Partie du groupe")}</div>
+      <div class="sg-nom">${escapeHtml(gs.nom)}</div>
+      <div class="code-hint">${net.isHost ? T("Les membres te rejoignent depuis la discussion.") : T("Tu as rejoint la partie")}</div>
+    </div>` : "";
   el.innerHTML = `
     ${renderHeader(T("Salon"), true, "leaveRoomToOnline()")}
-    <div class="code-hero">
+    ${hero}
+    <div class="code-hero"${gs ? " hidden" : ""}>
       <div class="code-label">${T("Code de la partie")}</div>
       <div class="code-big">${escapeHtml(net.code||"")}</div>
       <!-- « Partage ce code avec ton ami » se disait au singulier tant que le
@@ -23228,11 +24024,13 @@ function render(){
     if(CUSTOM_SCROLL) prevNode.style.transform = ""; // laisse l'anim de sortie repartir proprement
     app.appendChild(node);
     if(CUSTOM_SCROLL){ customScrollY = 0; applyScrollTransform(); } else { app.scrollTop = 0; }
+    if(typeof node._posee === "function"){ try{ node._posee(); }catch(e){} }
     setTimeout(()=>{ if(prevNode.parentNode) prevNode.remove(); }, msFerme() + 220);
   } else {
     app.replaceChildren(node);
     if(CUSTOM_SCROLL){ customScrollY = sameScreen ? prevScroll : 0; applyScrollTransform(); }
     else if(sameScreen) app.scrollTop = prevScroll;
+    if(typeof node._posee === "function"){ try{ node._posee(); }catch(e){} }
   }
   lastScreen = state.screen;
   try{ majBarre(); }catch(e){}
@@ -25491,6 +26289,11 @@ function sessionRangee(){
 }
 if(retourDeConnexion() || sessionRangee()){
   setTimeout(()=>{ try{ compteDemarrer(); }catch(e){} }, 3000);
+  /* Les visages des groupes sont prêts AVANT qu'on ouvre les groupes : la
+     base de ce téléphone se lit en quelques millisecondes, une fois l'accueil
+     posé (voir LES PHOTOS DANS LES GROUPES). */
+  try{ if(localStorage.getItem(CLE_PHOTOS_SRV)) setTimeout(()=>{ try{ chargerCachePhotos(); }catch(e){} }, 1500); }catch(e){}
+  try{ if(localStorage.getItem(CLE_MEMOIRE)) setTimeout(()=>{ try{ lireMemoire(); }catch(e){} }, 900); }catch(e){}
 }
 /* LES GROUPES. La barre se dessine dès la première image d'après le souvenir
    de la dernière sonde ; la sonde, elle, passe derrière, une fois l'accueil
