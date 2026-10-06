@@ -23216,6 +23216,15 @@ function serrerEcran(ecran, siDepasse){
     else lever(el, prop, v => v * f);
   }));
   if(!leviers.length) return;
+  /* Même tout resserré, ça ne tiendrait pas : on ne touche à RIEN. Pas même
+     un essai — sur un écran qui défile, un essai rétrécit le contenu, le
+     navigateur ramène alors la position de défilement dans les nouvelles
+     bornes, et elle ne revient pas quand on rend les espaces : le contenu
+     sautait sous le doigt (vu par bords.js, sur le bouton « Commencer » de la
+     mise en place en Groupe, défilée jusqu'en bas). */
+  const total = leviers.reduce((t, x) => t + (x.base - x.bas), 0);
+  if(ecran.offsetHeight - dispo > total + 0.5) return;
+  const defile = a.scrollTop;
   ecran._serre = leviers.map(x => ({ el: x.el, prop: x.prop, orig: x.orig }));
   const poser = (k) => {
     leviers.forEach(x => x.el.style.setProperty(x.prop, (x.base - k * (x.base - x.bas)).toFixed(2) + "px"));
@@ -23226,7 +23235,7 @@ function serrerEcran(ecran, siDepasse){
      plus petit resserrement qui suffit, par dichotomie — une dizaine de
      mises en page d'un seul écran, quelques millisecondes. Si même tout
      resserré l'écran ne tient pas, on rend tout : il défilera, comme avant. */
-  if(poser(1) > 0.5){ ecran._serre.forEach(x => { x.el.style.setProperty(x.prop, x.orig); }); ecran._serre = null; return; }
+  if(poser(1) > 0.5){ ecran._serre.forEach(x => { x.el.style.setProperty(x.prop, x.orig); }); ecran._serre = null; if(a.scrollTop !== defile) a.scrollTop = defile; return; }
   let bas = 0, haut = 1;
   for(let i = 0; i < 10; i++){ const k = (bas + haut) / 2; if(poser(k) > 0.5) bas = k; else haut = k; }
   poser(haut);
