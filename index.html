@@ -4858,8 +4858,18 @@
   /* ---------- L'ÉCRAN DES GROUPES ---------- */
   .grp-h{ font-family:'Poppins',sans-serif; font-size:0.78rem; font-weight:700; letter-spacing:0.09em; text-transform:uppercase;
     color:rgba(255,255,255,0.94); text-shadow:0 1px 8px rgba(0,0,0,0.35); margin:0.35rem 0 0.5rem 0.35rem; }
-  .grp-carte{ padding:0.35rem; }
-  .grp-carte .grp-cherche{ margin:0.35rem 0.35rem 0.4rem; width:calc(100% - 0.7rem); }
+  /* ===== L'APPUI SUR UN GROUPE PREND TOUTE LA LIGNE =====
+     La carte avait 0,35 rem de marge intérieure : le voile d'appui d'une
+     ligne s'arrêtait à 6 px de ses bords. Les lignes vont maintenant jusqu'au
+     bord, et rendent cette marge en dedans ; la première et la dernière
+     prennent l'arrondi de la carte. Rien n'a bougé d'un pixel au repos. */
+  .grp-carte{ padding:0; }
+  .grp-carte .grp-ligne{ padding:0.6rem 0.95rem; border-radius:0; }
+  #grpMes > .grp-ligne:first-child{ padding-top:0.95rem; border-top-left-radius:var(--r-l); border-top-right-radius:var(--r-l); }
+  .grp-carte .grp-ligne:last-child{ padding-bottom:0.95rem; border-bottom-left-radius:var(--r-l); border-bottom-right-radius:var(--r-l); }
+  .grp-carte .grp-vide{ padding:1.1rem 1.15rem 1.45rem; }
+  #grpMes > .grp-vide{ padding-top:1.45rem; }
+  .grp-carte .grp-cherche{ margin:0.7rem 0.7rem 0.4rem; width:calc(100% - 1.4rem); }
   .grp-ligne{ width:100%; display:flex; align-items:center; gap:0.75rem; padding:0.6rem 0.6rem; border:0; background:none;
     border-radius:var(--r-m); text-align:left; color:var(--ink); -webkit-tap-highlight-color:transparent; }
   button.grp-ligne:active{ background:rgba(42,36,30,0.06); }
@@ -4902,8 +4912,19 @@
   .grp-lien{ display:block; margin:0.2rem auto 0.8rem; border:0; background:none; color:rgba(255,255,255,0.94); font-size:0.84rem; font-weight:600;
     text-decoration:underline; text-underline-offset:3px; text-shadow:0 1px 8px rgba(0,0,0,0.4); padding:0.6rem 0.8rem; min-height:44px;
     border-radius:var(--r-full); }
-  .grp-mot{ min-height:0; font-size:0.84rem; line-height:1.45; color:var(--primary-dark); text-align:center; margin:0.2rem 0 0.6rem; }
-  .grp-mot:empty{ display:none; }
+  /* ===== LE MOT S'OUVRE, IL N'APPARAÎT PAS D'UN COUP =====
+     « Le nom doit faire entre 3 et 40 caractères » surgissait en poussant
+     tout le reste d'une ligne, d'un bloc. La ligne s'ouvre maintenant comme
+     un tiroir (sa hauteur passe de 0 à la sienne) pendant que le texte entre
+     en fondu ; elle se referme de même, le texte restant là le temps de
+     partir. Repliée, elle ne prend aucune place — dans une feuille, elle rend
+     même l'écart (gap) qu'elle occupe. */
+  .grp-mot{ display:grid; grid-template-rows:0fr; opacity:0; margin:0; font-size:0.84rem; line-height:1.45; color:var(--primary-dark); text-align:center;
+    transition:grid-template-rows 0.32s cubic-bezier(0.2,0.8,0.2,1), margin 0.32s cubic-bezier(0.2,0.8,0.2,1), opacity 0.22s ease; }
+  .grp-mot > span{ min-height:0; overflow:hidden; }
+  .grp-mot.vu{ grid-template-rows:1fr; opacity:1; margin:0.2rem 0 0.6rem; transition:grid-template-rows 0.32s cubic-bezier(0.2,0.8,0.2,1), margin 0.32s cubic-bezier(0.2,0.8,0.2,1), opacity 0.26s ease 0.06s; }
+  .grp-feuille-corps > .grp-mot{ margin-top:-0.6rem; }
+  .grp-feuille-corps > .grp-mot.vu{ margin:0; }
   .grp-mot.bon{ color:var(--green); }
   .grp-intro{ display:flex; flex-direction:column; align-items:center; text-align:center; gap:0.5rem; }
   .grp-intro b{ font-family:'Poppins',sans-serif; font-weight:600; font-size:1.02rem; text-wrap:balance; }
@@ -4981,6 +5002,8 @@
     background:rgb(252,248,241); box-shadow:0 3px 12px rgba(34,26,16,0.08); }
   .gc-l{ font-family:'Poppins',sans-serif; font-size:0.74rem; font-weight:700; letter-spacing:0.09em; text-transform:uppercase; color:var(--ink-soft); }
   .gc-code{ font-family:'Poppins',sans-serif; font-weight:700; font-size:1.65rem; letter-spacing:0.38rem; color:var(--ink); padding-left:0.38rem; }
+  .gc-code.gc-neuf{ animation:gcNeuf 0.46s cubic-bezier(0.2,0.9,0.3,1) both; }
+  @keyframes gcNeuf{ 0%{ opacity:0; transform:translateY(0.4rem) scale(0.97); filter:blur(3px); } 100%{ opacity:1; transform:none; filter:none; } }
   .gc-act{ display:flex; flex-wrap:wrap; justify-content:center; gap:0.5rem; margin-top:0.25rem; }
   .grp-code-carte .grp-aide{ text-align:center; }
   .grp-defile{ display:flex; flex-direction:column; }
@@ -5011,6 +5034,22 @@
   .grp-fil-tete{ flex-shrink:0; }
   .grp-tete{ flex:1; min-width:0; display:flex; align-items:center; gap:0.65rem; border:0; background:none; padding:0; text-align:left;
     color:var(--ink); -webkit-tap-highlight-color:transparent; min-height:44px; border-radius:var(--r-m); }
+  /* ===== L'APPUI SUR LE NOM DU GROUPE PREND TOUTE LA BARRE =====
+     « Je veux que la sélection prenne tout, pas la moitié. » Le voile d'appui
+     d'un bouton remplit SA boîte (button::before, inset:0) ; celle du nom ne
+     faisait que 44 px de haut au milieu d'une barre de 60, et s'arrêtait
+     avant les deux ronds. Le bouton cède donc sa place de référence à la
+     barre (position:static) : son voile s'étend à toute la barre, avec son
+     arrondi, et les deux ronds restent posés par-dessus. */
+  .grp-fil-tete{ position:relative; }
+  .grp-fil-tete > .icon-btn{ z-index:4; }
+  .grp-fil-tete .grp-tete{ position:static; }
+  .grp-fil-tete .grp-tete::before{ border-radius:var(--r-l); }
+  /* ET IL NE S'ENFONCE PAS. La compression d'appui (scale 0,968) est une
+     transformation, et une transformation refait du bouton la boîte de
+     référence de son voile : le voile revenait à sa petite taille pendant
+     tout l'appui. Ce qui vit en rangée se remplit, ça ne s'enfonce pas. */
+  .grp-fil-tete .grp-tete:active:not(:disabled), .grp-carte .grp-ligne:active:not(:disabled){ transform:none; }
   .fil-carte{ position:relative; flex:1; min-height:0; display:flex; flex-direction:column; padding:0; margin-bottom:var(--e-2);
     border-radius:var(--r-l); }
   #fil{ flex:1; min-height:0; overflow-y:auto; overscroll-behavior:contain; -webkit-overflow-scrolling:touch;
@@ -5737,7 +5776,6 @@ const TEXTES = {
     "Code copié":"Code copied",
     "Invitation copiée":"Invitation copied",
     "Rejoins mon groupe « {nom} » sur {jeu} — code {code}":"Join my group “{nom}” on {jeu} — code {code}",
-    "Nouveau code : l'ancien ne marche plus.":"New code: the old one no longer works.",
     "Code d'invitation":"Invitation code",
     "Inviter":"Invite",
     "Copier":"Copy",
@@ -6353,7 +6391,6 @@ const TEXTES = {
     "Code copié":"Código copiado",
     "Invitation copiée":"Invitación copiada",
     "Rejoins mon groupe « {nom} » sur {jeu} — code {code}":"Únete a mi grupo «{nom}» en {jeu} — código {code}",
-    "Nouveau code : l'ancien ne marche plus.":"Código nuevo: el anterior ya no funciona.",
     "Code d'invitation":"Código de invitación",
     "Inviter":"Invitar",
     "Copier":"Copiar",
@@ -19548,7 +19585,9 @@ async function chargerEtatGroupes(){
     if(r.moderateur){ if(aTraiter() === 0) moderation = []; else chargerModeration(); }
     /* La liste se lit dès qu'on participe, pas seulement à l'ouverture de
        l'onglet : c'est elle qui donne les non-lus de la pastille de l'accueil. */
-    if(r.participe === "ok"){ abonnerGroupes(); suivreNomGroupes(); if(!grp.liste) chargerListes(); if(invitationEnAttente) setTimeout(servirInvitation, 300); }
+    /* Une liste venue de la mémoire de ce téléphone se relit quand même :
+       elle montre tout de suite, le serveur dit ce qui a changé depuis. */
+    if(r.participe === "ok"){ abonnerGroupes(); suivreNomGroupes(); if(!grp.liste || grp.listeDeMemoire) chargerListes(); if(invitationEnAttente) setTimeout(servirInvitation, 300); }
     else desabonnerGroupes();
     if(r.participe === "ok"){
       ecrireBase("meta", "etat", { participe:r.participe, moderateur:!!r.moderateur, ouverts:r.ouverts, photos:r.photos === true,
@@ -19714,7 +19753,7 @@ async function chargerListesUneFois(){
      seulement s'il n'y avait encore rien à montrer. */
   grp.listeEchec = !mes && !grp.liste;
   if(mes){
-    grp.liste = mes;
+    grp.liste = mes; grp.listeDeMemoire = false;
     await chargerProfils(mes.map(g => g.apercu && g.apercu.auteur));
     memoriserListe();
   }
@@ -19849,7 +19888,7 @@ function enteteGroupes(){
   return `<div class="app-header grp-entete">
       ${modo ? `<span class="grp-modo"><button class="icon-btn" onclick="ouvrirModeration()" aria-label="${escapeHtml(libelleModeration(n))}"><span class="ico" style="width:1.22rem;height:1.22rem;">${ICONS.bouclier}</span></button><i class="bb-pastille" aria-hidden="true"${n > 0 ? "" : " hidden"}>${n > 99 ? "99+" : n}</i></span>` : `<span class="icon-btn spacer"></span>`}
       <span class="header-title">${T("Groupes")}</span>
-      ${participeGroupes() ? `<button class="icon-btn" onclick="ouvrirCreation()" aria-label="${T("Créer un groupe")}"><span class="ico" style="width:1.22rem;height:1.22rem;">${ICONS.plus}</span></button>` : `<span class="icon-btn spacer"></span>`}
+      <button class="icon-btn" onclick="openSettings()" aria-label="${T("Réglages")}"><span class="ico" style="width:1.22rem;height:1.22rem;">${ICONS.gear}</span></button>
     </div>`;
 }
 function renderGroupes(){
@@ -19893,7 +19932,7 @@ function corpsGroupes(){
       <button class="btn-ghost grp-act" onclick="ouvrirCreation()"><span class="ico">${ICONS.plus}</span>${T("Créer un groupe")}</button>
       <button class="btn-ghost grp-act" onclick="ouvrirCode()"><span class="ico">${ICONS.cle}</span>${T("J'ai un code")}</button>
     </div>
-    <div class="grp-mot">${escapeHtml(grp.message || "")}</div>
+    ${motHtml(grp.message)}
     <div class="grp-h" role="heading" aria-level="2">${T("Mes groupes")}</div>
     <div class="card grp-carte"><div id="grpMes">${lignesMes()}</div></div>
     <div class="grp-h" role="heading" aria-level="2">${T("Découvrir")}</div>
@@ -19929,7 +19968,7 @@ function bienvenueHtml(){
       <p class="gb-tol">${T("Tolérance zéro : un message signalé peut être masqué, et son auteur exclu des groupes.")}</p>
       <div class="set-row gb-ok"><span class="set-txt"><b>${T("J'ai 13 ans ou plus")}</b></span><button class="switch${grp.ageOk ? " on" : ""}" role="switch" aria-checked="${!!grp.ageOk}" aria-label="${T("J'ai 13 ans ou plus")}" onclick="basculerEntree('ageOk', this)"></button></div>
       <div class="set-row gb-ok"><span class="set-txt"><b>${T("J'accepte les règles")}</b></span><button class="switch${grp.reglesOk ? " on" : ""}" role="switch" aria-checked="${!!grp.reglesOk}" aria-label="${T("J'accepte les règles")}" onclick="basculerEntree('reglesOk', this)"></button></div>
-      <div class="grp-mot" id="gbMot">${escapeHtml(grp.message || "")}</div>
+      ${motHtml(grp.message, "gbMot")}
       <button class="btn-primary" onclick="entrerGroupes(this)">${T("Entrer")}</button>
     </div>`;
 }
@@ -19941,7 +19980,7 @@ function basculerEntree(cle, b){
 function motBienvenue(t){
   grp.message = t;
   const m = document.getElementById("gbMot");
-  if(m) m.textContent = t;
+  if(m) poserMot(m, t);
 }
 async function entrerGroupes(btn){
   if(!grp.ageOk || !grp.reglesOk){ motBienvenue(T("Il faut confirmer les deux pour entrer.")); return; }
@@ -19973,7 +20012,7 @@ async function suivreNomGroupes(){
   if(r.ok){ e.profil.nom = nom.slice(0, 20); e.profil.couleur = couleur; const id = monId(); if(id) grp.profils[id] = { nom:e.profil.nom, couleur }; }
   else if(r.erreur === "mot_interdit"){
     grp.message = T("Ce nom ne peut pas être utilisé dans les groupes. Change-le dans ton profil.");
-    if(state.screen === "groupes"){ const m = document.querySelector(".groupes-ecran .grp-mot"); if(m) m.textContent = grp.message; }
+    if(state.screen === "groupes"){ const m = document.querySelector(".groupes-ecran .grp-mot"); if(m) poserMot(m, grp.message); }
   }
 }
 
@@ -20045,9 +20084,18 @@ function fermerFeuilleGroupe(id){
 /* La petite phrase sous une feuille : une erreur, ou une confirmation (bon). */
 function motFeuille(id, texte, bon){
   const z = document.querySelector("#" + id + " .grp-mot");
-  if(!z) return;
-  z.textContent = texte || "";
-  z.classList.toggle("bon", !!bon);
+  if(z) poserMot(z, texte, bon);
+}
+function motHtml(texte, id){
+  return `<div class="grp-mot${texte ? " vu" : ""}"${id ? ` id="${id}"` : ""}><span>${escapeHtml(texte || "")}</span></div>`;
+}
+/* Ouvrir ou refermer la ligne ; en se refermant, elle garde son texte le
+   temps de partir — sans lui, elle tomberait à plat avant de se replier. */
+function poserMot(z, texte, bon){
+  let s = z.firstElementChild;
+  if(!s){ s = document.createElement("span"); s.textContent = z.textContent; z.textContent = ""; z.appendChild(s); }
+  if(texte){ s.textContent = texte; z.classList.toggle("bon", !!bon); z.classList.add("vu"); }
+  else z.classList.remove("vu");
 }
 function ligneAction(ico, libelle, action, danger){
   return `<button class="grp-act-l${danger ? " danger" : ""}" onclick="${action}"><span class="ico">${ico}</span><span class="gal-t">${escapeHtml(libelle)}</span></button>`;
@@ -20076,7 +20124,7 @@ function formulaireGroupeHtml(g){
     <p class="grp-aide grp-aide-type" id="grpTypeAide"><span class="${creation.type === "public" ? "" : "vu"}" data-t="prive">${T("Privé : on n'y entre qu'avec son code.")}</span><span class="${creation.type === "public" ? "vu" : ""}" data-t="public">${T("Public : tout le monde peut le trouver dans « Découvrir » et y entrer.")}</span></p>
     <div class="grp-teintes" role="radiogroup" aria-label="${T("Couleur du groupe")}">${TEINTES.map((t, i)=>
       `<button class="grp-teinte${creation.teinte === i ? " choisie" : ""}" style="${teinte(i)}background-clip:content-box;" onclick="choisirTeinte(${i})" role="radio" aria-checked="${creation.teinte === i}" aria-label="${Tf("Couleur {n}", { n:i + 1 })}"><span class="cd-ck">${ACH_CHECK}</span></button>`).join("")}</div>
-    <div class="grp-mot"></div>`;
+    <div class="grp-mot"><span></span></div>`;
 }
 /* ===== PRIVÉ / PUBLIC : LE MÊME GESTE QUE LA DURÉE ET LE CHRONO =====
    « Quand je choisis privé ou public, ça saute et ça décale un petit peu
@@ -20180,7 +20228,7 @@ function ouvrirCode(code){
     <input class="code-input grp-code" id="grpCode" maxlength="6" placeholder="ABC234" autocapitalize="characters" autocomplete="off" spellcheck="false" enterkeyhint="go"
       value="${escapeHtml(code || "")}" oninput="this.value=this.value.toUpperCase().replace(/[^A-Z0-9]/g,''); apercuCode(this.value)" onkeydown="if(event.key==='Enter'){event.preventDefault();rejoindreParCode();}">
     <div class="grp-apercu" id="grpApercu"></div>
-    <div class="grp-mot"></div>
+    <div class="grp-mot"><span></span></div>
     <button class="btn-primary" id="grpCodeGo" onclick="rejoindreParCode()" disabled>${T("Rejoindre")}</button>`);
   if(code) apercuCode(code);
 }
@@ -20197,7 +20245,11 @@ async function apercuCode(c){
   if(j !== apercuJeton) return;
   if(!r.ok){ if(z) z.innerHTML = ""; if(b) b.disabled = true; motFeuille("grpCodeVeil", motErreurGroupe(r)); return; }
   apercuCourant = Object.assign({ code:c }, r);
-  if(photoValideSrv(r.photo) && r.id){ await chargerCachePhotos(); poserPhotoSrv("g:" + r.id, r.photo_maj, r.photo); }
+  if(photoValideSrv(r.photo) && r.id){
+    await chargerCachePhotos();
+    poserPhotoSrv("g:" + r.id, r.photo_maj, r.photo);
+    ecrirePhotoCache("g:" + r.id, { maj:+r.photo_maj || 0, data:r.photo });   // sans quoi la relance la retéléchargerait
+  }
   if(j !== apercuJeton) return;
   if(z) z.innerHTML = `<div class="grp-ligne">${pastilleGroupe(r)}<span class="grp-txt"><b>${escapeHtml(r.nom)}</b><small>${escapeHtml(r.description || nbMembres(r.nb_membres))}</small></span></div>`;
   if(b){ b.disabled = false; b.textContent = r.membre ? T("Ouvrir") : T("Rejoindre"); }
@@ -20283,8 +20335,13 @@ async function nouveauCodeGroupe(){
   const r = await appelGroupe("nouveau_code", { p_groupe:g.id });
   if(!r.ok){ motFeuille("grpInfosVeil", motErreurGroupe(r)); return; }
   g.code = r.code;
-  const c = document.querySelector("#grpInfosVeil .gc-code"); if(c) c.textContent = r.code;
-  motFeuille("grpInfosVeil", T("Nouveau code : l'ancien ne marche plus."), true);
+  /* ===== LE NOUVEAU CODE PREND LA PLACE DE L'ANCIEN, C'EST TOUT =====
+     « Ce mot sert à rien : si c'est un nouveau code, c'est juste un nouveau
+     code. » La phrase « Nouveau code : l'ancien ne marche plus » surgissait
+     sous les membres et poussait toute la feuille. Le code change sur place,
+     en fondu, et rien d'autre ne bouge. */
+  const c = document.querySelector("#grpInfosVeil .gc-code");
+  if(c){ c.classList.remove("gc-neuf"); void c.offsetWidth; c.textContent = r.code; c.classList.add("gc-neuf"); }
 }
 
 /* ===================== UN GROUPE ===================== */
@@ -20445,8 +20502,10 @@ async function voirPhotos(couples){
   if(!photosServeur() || !Array.isArray(couples)) return;
   await chargerCachePhotos();
   let change = false;
+  const moi = compteConnecte() ? "u:" + monId() : "";
   couples.forEach(([cle, maj])=>{
     if(!cle || /:(null|undefined)?$/.test(cle)) return;
+    if(cle === moi) return;                      // ma photo, ce téléphone l'a déjà (voir photoValeur)
     maj = +maj || 0;
     const p = photosSrv[cle];
     if(!maj){ if(p){ oterPhotoSrv(cle); change = true; } return; }
@@ -20566,7 +20625,7 @@ function appliquerMemoire(){
      groupes s'ouvre sur la liste au lieu d'un rond qui tourne. Le serveur le
      redit aussitôt (chargerEtatGroupes), et c'est lui qui décide de tout. */
   if(!grp.etat && m.etat && m.etat.participe === "ok") grp.etat = Object.assign({}, m.etat, { depuisMemoire:true });
-  if(!grp.liste && Array.isArray(m.liste)) grp.liste = m.liste;
+  if(!grp.liste && Array.isArray(m.liste)){ grp.liste = m.liste; grp.listeDeMemoire = true; }
   if(m.profils && typeof m.profils === "object") Object.keys(m.profils).forEach(k => { if(!grp.profils[k]) grp.profils[k] = m.profils[k]; });
   Object.keys(m.fils).forEach(id => {
     const v = m.fils[id];
@@ -20579,18 +20638,22 @@ function appliquerMemoire(){
 function memoriserFil(id){
   if(!id || !compteConnecte() || !(grp.liste || []).some(x => x.id === id)) return;
   clearTimeout(memoireT["f" + id]);
-  memoireT["f" + id] = setTimeout(()=>{
-    const f = grp.fils[id]; if(!f || !f.charge) return;
-    const l = f.messages.filter(m => m.id > 0);
-    ecrireBase("fils", id, { messages:l.slice(-FIL_PAGE), tout:!!f.tout && l.length <= FIL_PAGE, lu:+f.lu || 0 });
-    marquerMemoire();
-  }, 400);
+  memoireT["f" + id] = setTimeout(()=>{ memoireT["f" + id] = 0; memoriserFilMaintenant(id); }, 400);
+}
+function memoriserFilMaintenant(id){
+  const f = grp.fils[id]; if(!f || !f.charge || !compteConnecte()) return;
+  const l = f.messages.filter(m => m.id > 0);
+  ecrireBase("fils", id, { messages:l.slice(-FIL_PAGE), tout:!!f.tout && l.length <= FIL_PAGE, lu:+f.lu || 0 });
+  marquerMemoire();
 }
 function memoriserListe(){
   if(!compteConnecte()) return;
   clearTimeout(memoireT.liste);
-  memoireT.liste = setTimeout(()=>{
-    if(!grp.liste) return;
+  memoireT.liste = setTimeout(()=>{ memoireT.liste = 0; memoriserListeMaintenant(); }, 400);
+}
+function memoriserListeMaintenant(){
+  {
+    if(!grp.liste || !compteConnecte()) return;
     ecrireBase("meta", "liste", grp.liste);
     ecrireBase("meta", "profils", grp.profils);
     /* Une discussion d'un groupe qu'on a quitté ne reste pas. */
@@ -20604,14 +20667,27 @@ function memoriserListe(){
       }catch(e){}
     });
     marquerMemoire();
-  }, 400);
+  }
 }
 function memoriserBrouillon(id, texte){
   if(!id) return;
   if(texte) brouillons[id] = texte; else delete brouillons[id];
   clearTimeout(memoireT.brouillons);
-  memoireT.brouillons = setTimeout(()=>{ if(compteConnecte()){ ecrireBase("meta", "brouillons", brouillons); marquerMemoire(); } }, 400);
+  memoireT.brouillons = setTimeout(()=>{ memoireT.brouillons = 0; if(compteConnecte()){ ecrireBase("meta", "brouillons", brouillons); marquerMemoire(); } }, 400);
 }
+/* L'app passe en arrière-plan (ou se ferme) : ce qui attendait son
+   écriture part tout de suite — iOS peut ne jamais lui rendre la main. */
+function viderMemoireEnAttente(){
+  Object.keys(memoireT).forEach(k=>{
+    const t = memoireT[k]; if(!t) return;
+    clearTimeout(t); memoireT[k] = 0;
+    if(k === "liste") memoriserListeMaintenant();
+    else if(k === "brouillons"){ if(compteConnecte()) ecrireBase("meta", "brouillons", brouillons); }
+    else if(k[0] === "f") memoriserFilMaintenant(k.slice(1));
+  });
+}
+document.addEventListener("visibilitychange", ()=>{ if(document.hidden) viderMemoireEnAttente(); });
+window.addEventListener("pagehide", viderMemoireEnAttente);
 function oublierMemoire(){
   let avait = false;
   try{ avait = !!localStorage.getItem(CLE_MEMOIRE); localStorage.removeItem(CLE_MEMOIRE); }catch(e){}
@@ -21095,7 +21171,7 @@ function actionsMessage(id){
     h += ligneAction(ICONS.bloquer, Tf("Bloquer {nom}", { nom }), `bloquerQuelquUn('${m.auteur}')`, true);
   }
   if(moi || admin) h += ligneAction(ICONS.corbeille, T("Supprimer le message"), `supprimerMessageGroupe('${m.id}')`, true);
-  h += `</div><div class="grp-mot"></div>`;
+  h += `</div><div class="grp-mot"><span></span></div>`;
   ouvrirFeuilleGroupe("grpActionsVeil", nom, avatarHtml(nom, moi ? (profile.color || "#4C86E8") : (p.couleur || "#8A8F98"), 1.5, moi ? true : "u:" + m.auteur), h);
 }
 function copierMessage(id){
@@ -21145,7 +21221,7 @@ function signalerMessage(id, cible, groupe){
     <textarea class="text-input grp-precision" id="grpPrecision" maxlength="300" placeholder="${T("Un détail à ajouter ? (facultatif)")}"></textarea>
     <div class="grp-liste-act">${RAISONS.map(([k, t])=>
       `<button class="grp-act-l" onclick="envoyerSignalement('${k}')"><span class="gal-t">${escapeHtml(T(t))}</span><span class="chev">${ICONS.chevronRight}</span></button>`).join("")}</div>
-    <div class="grp-mot"></div>`);
+    <div class="grp-mot"><span></span></div>`);
 }
 async function envoyerSignalement(raison){
   const s = signalement; if(!s) return;
@@ -21207,7 +21283,7 @@ function ouvrirInfosGroupe(invitation){
     </div>
     <h3 class="gb-h">${nbMembres(g.nb_membres)}</h3>
     <div class="grp-defile">${membres.map(ligneMembre).join("")}</div>
-    <div class="grp-mot"></div>
+    <div class="grp-mot"><span></span></div>
     <div class="grp-liste-act">
       ${admin ? ligneAction(ICONS.crayon, T("Modifier le groupe"), "ouvrirModifGroupe()") : ""}
       ${ligneAction(ICONS.drapeau, T("Signaler le groupe"), `signalerMessage(null, null, '${g.id}')`)}
@@ -21270,7 +21346,7 @@ function ouvrirMembre(qui){
   }
   h += ligneAction(ICONS.drapeau, T("Signaler"), `signalerMessage(null, '${qui}', '${g.id}')`);
   h += ligneAction(ICONS.bloquer, T("Bloquer"), `bloquerQuelquUn('${qui}')`, true);
-  h += `</div><div class="grp-mot"></div>`;
+  h += `</div><div class="grp-mot"><span></span></div>`;
   ouvrirFeuilleGroupe("grpMembreVeil", nom, avatarHtml(nom, p.couleur || "#8A8F98", 1.5, "u:" + qui), h);
 }
 async function modererMembre(qui, action){

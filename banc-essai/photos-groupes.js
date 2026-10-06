@@ -240,6 +240,9 @@ const dit = (quoi, bon, detail) => { console.log('  ' + (bon ? 'OK  ' : 'KO  ') 
     await pc.waitForTimeout(800);
     dit('… et ne demande aucune photo', telechargees.get(pc) === 0 && await pc.evaluate(() => !photosServeur()), telechargees.get(pc) + ' demande(s)');
 
+    /* Taylor n'a jamais eu à télécharger d'image : sa photo, ce téléphone
+       l'a ; celle du groupe, il l'a envoyée lui-même. */
+    dit('le téléphone de Taylor n\'a téléchargé aucune image, pas même la sienne', telechargees.get(pa) === 0, telechargees.get(pa) + ' téléchargement(s)');
     dit('aucune erreur dans les pages', erreurs.length === 0, erreurs.slice(0, 3).join(' | '));
   } catch (e) {
     console.log('  KO  le banc s\'est arrêté : ' + (e.stack || e).toString().slice(0, 500)); ko++;
