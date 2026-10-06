@@ -19550,6 +19550,11 @@ async function chargerEtatGroupes(){
        l'onglet : c'est elle qui donne les non-lus de la pastille de l'accueil. */
     if(r.participe === "ok"){ abonnerGroupes(); suivreNomGroupes(); if(!grp.liste) chargerListes(); if(invitationEnAttente) setTimeout(servirInvitation, 300); }
     else desabonnerGroupes();
+    if(r.participe === "ok"){
+      ecrireBase("meta", "etat", { participe:r.participe, moderateur:!!r.moderateur, ouverts:r.ouverts, photos:r.photos === true,
+                                   regles_version:r.regles_version, a_traiter:+r.a_traiter || 0 });
+      marquerMemoire();
+    }
     if(r.photos === true){
       try{ localStorage.setItem(CLE_PHOTOS_SRV, "1"); }catch(e){}
       chargerCachePhotos();
@@ -19572,8 +19577,16 @@ function groupesVisibles(){
 function participeGroupes(){ return !!(grp.etat && grp.etat.participe === "ok"); }
 /* Le compte vient de changer (connexion, déconnexion, compte supprimé). */
 function groupesSurCompte(){
-  if(!compteConnecte()) oublierPhotosSrv();
+  if(!compteConnecte()){ oublierPhotosSrv(); oublierMemoire(); }
   grp.etat = null; grp.liste = null; grp.publics = null; grp.fils = {}; grp.profils = {}; grp.membres = {};
+  /* Le même compte qu'à la dernière fois : ses groupes reviennent tout de
+     suite, le serveur suivra (voir LA MÉMOIRE DES GROUPES). */
+  if(compteConnecte()) lireMemoire().then(()=>{
+    if(!appliquerMemoire()) return;
+    majBarre();
+    if(state.screen === "groupes") majListes();
+    else if(state.screen === "groupe" && grp.courant) majFil();
+  });
   grp.nonLus = 0; grp.message = ""; grp.bloques = new Set(); grp.ageOk = false; grp.reglesOk = false;
   if(!compteConnecte()){ grp.modoMemo = false; memoriserGroupes(); }
   desabonnerGroupes();
@@ -19703,6 +19716,7 @@ async function chargerListesUneFois(){
   if(mes){
     grp.liste = mes;
     await chargerProfils(mes.map(g => g.apercu && g.apercu.auteur));
+    memoriserListe();
   }
   if(pub) grp.publics = pub;
   if(photosServeur()) voirPhotos([].concat(mes || [], pub || []).map(g => ["g:" + g.id, g.photo_maj]));
@@ -19770,7 +19784,7 @@ function apercuGroupe(g){
   if(!a) return g.ouvert ? T("Groupe public") : T("Groupe privé");
   if(a.genre === "systeme") return texteSysteme(a);
   const moi = !!a.auteur && a.auteur === monId();
-  if(a.supprime) return T("Message supprimé");
+  if(a.supprime) return g.ouvert ? T("Groupe public") : T("Groupe privé");
   if(a.masque) return T("Message masqué");
   const nom = a.nom || ((grp.profils[a.auteur] || {}).nom) || T("Quelqu'un");
   if(a.genre === "partie") return moi ? T("Tu lances une partie") : Tf("{nom} lance une partie", { nom });
@@ -20368,38 +20382,46 @@ function oterPhotoSrv(cle){
   if(p.url) setTimeout(()=>{ try{ URL.revokeObjectURL(p.url); }catch(e){} }, 1500);
   ecrirePhotoCache(cle, null);
 }
-/* ---------- LA BASE DES PHOTOS, SUR CE TÉLÉPHONE ----------
-   Une base À PART : celle du jeu (« bibletrivia ») sert au service worker
-   et ne change jamais de forme. Un échec ici n'est jamais grave — on
-   retélécharge, c'est tout. */
-let basePhotosP = null;
-function basePhotos(){
-  if(basePhotosP) return basePhotosP;
-  basePhotosP = new Promise((res)=>{
+/* ---------- LA BASE DES GROUPES, SUR CE TÉLÉPHONE ----------
+   Une base À PART (« yada-groupes ») : celle du jeu (« bibletrivia ») sert au
+   service worker et ne change jamais de forme. Trois tiroirs : les photos,
+   les discussions (fils) et le reste (meta : la liste, les noms, les
+   brouillons). Un échec ici n'est jamais grave — on relit le serveur, c'est
+   tout. */
+let baseGroupesP = null;
+function baseGroupes(){
+  if(baseGroupesP) return baseGroupesP;
+  baseGroupesP = new Promise((res)=>{
     try{
       if(!("indexedDB" in window)){ res(null); return; }
-      const r = indexedDB.open("yada-photos", 1);
-      r.onupgradeneeded = ()=>{ try{ if(!r.result.objectStoreNames.contains("p")) r.result.createObjectStore("p"); }catch(e){} };
+      const r = indexedDB.open("yada-groupes", 1);
+      r.onupgradeneeded = ()=>{
+        try{ ["photos", "fils", "meta"].forEach(n => { if(!r.result.objectStoreNames.contains(n)) r.result.createObjectStore(n); }); }catch(e){}
+      };
       r.onsuccess = ()=> res(r.result);
       r.onerror = ()=> res(null);
       r.onblocked = ()=> res(null);
     }catch(e){ res(null); }
   });
-  return basePhotosP;
+  return baseGroupesP;
 }
-function ecrirePhotoCache(cle, v){
-  basePhotos().then(db=>{
+function ecrireBase(tiroir, cle, v){
+  baseGroupes().then(db=>{
     if(!db) return;
-    try{ const st = db.transaction("p", "readwrite").objectStore("p"); if(v) st.put(v, cle); else st.delete(cle); }catch(e){}
+    try{ const st = db.transaction(tiroir, "readwrite").objectStore(tiroir); if(v === null || v === undefined) st.delete(cle); else st.put(v, cle); }catch(e){}
   });
 }
+function viderBase(tiroirs){
+  baseGroupes().then(db=>{ if(!db) return; tiroirs.forEach(t => { try{ db.transaction(t, "readwrite").objectStore(t).clear(); }catch(e){} }); });
+}
+function ecrirePhotoCache(cle, v){ ecrireBase("photos", cle, v || null); }
 let cachePhotosP = null;
 function chargerCachePhotos(){
   if(cachePhotosP) return cachePhotosP;
-  cachePhotosP = basePhotos().then(db => new Promise((res)=>{
+  cachePhotosP = baseGroupes().then(db => new Promise((res)=>{
     if(!db){ res(); return; }
     try{
-      const rq = db.transaction("p", "readonly").objectStore("p").openCursor();
+      const rq = db.transaction("photos", "readonly").objectStore("photos").openCursor();
       let n = 0;
       rq.onsuccess = ()=>{
         const c = rq.result;
@@ -20495,7 +20517,107 @@ function oublierPhotosSrv(){
     avait = true;
   });
   cachePhotosP = null;
-  if(avait) basePhotos().then(db=>{ if(!db) return; try{ db.transaction("p", "readwrite").objectStore("p").clear(); }catch(e){} });
+  if(avait) viderBase(["photos"]);
+}
+/* ===================== LA MÉMOIRE DES GROUPES (v311) =====================
+   « Lorsque je relance le jeu, mon message doit rester. » « Les données de
+     message s'effacent lorsque je change de langue. »
+   Changer de langue relance le jeu, et le relancer, c'était repartir de
+   rien : la liste des groupes et chaque discussion attendaient le réseau et
+   s'ouvraient vides — une seconde, ou bien plus sur une mauvaise connexion.
+   Ce téléphone garde donc, dans sa base à lui, la liste de mes groupes, les
+   noms et couleurs de leurs membres, les cinquante derniers messages de
+   chaque discussion, et le brouillon qu'on était en train d'écrire. Au
+   lancement, tout revient en mémoire AVANT qu'on ouvre les groupes ; le
+   serveur, interrogé comme avant, corrige ensuite ce qui a changé.
+   À QUI : au seul compte qui l'a écrite (bt_groupes_memoire). Se déconnecter
+   l'efface, comme les photos — un téléphone prêté ne garde rien. */
+const CLE_MEMOIRE = "bt_groupes_memoire";
+let memoire = null, memoireP = null;
+let brouillons = {};
+const memoireT = {};
+function marquerMemoire(){ try{ if(monId()) localStorage.setItem(CLE_MEMOIRE, monId()); }catch(e){} }
+function lireMemoire(){
+  if(memoireP) return memoireP;
+  let compte = null;
+  try{ compte = localStorage.getItem(CLE_MEMOIRE); }catch(e){}
+  if(!compte){ memoireP = Promise.resolve(null); return memoireP; }
+  memoireP = baseGroupes().then(db => new Promise((res)=>{
+    if(!db){ res(null); return; }
+    const m = { compte, fils:{}, liste:null, profils:null, brouillons:null, etat:null };
+    try{
+      const tx = db.transaction(["fils", "meta"], "readonly");
+      const rf = tx.objectStore("fils").openCursor();
+      rf.onsuccess = ()=>{ const c = rf.result; if(c){ m.fils[c.key] = c.value; c.continue(); } };
+      const rm = tx.objectStore("meta").openCursor();
+      rm.onsuccess = ()=>{ const c = rm.result; if(c){ if(c.key in m) m[c.key] = c.value; c.continue(); } };
+      tx.oncomplete = ()=>{ memoire = m; res(m); };
+      tx.onerror = tx.onabort = ()=> res(null);
+    }catch(e){ res(null); }
+  }));
+  return memoireP;
+}
+/* Ce qui est déjà là gagne toujours : la mémoire ne remplace jamais une
+   lecture du serveur arrivée avant elle. */
+function appliquerMemoire(){
+  const m = memoire;
+  if(!m || !compteConnecte() || m.compte !== monId()) return false;
+  /* L'état de la dernière fois (participe, modérateur, photos) : l'écran des
+     groupes s'ouvre sur la liste au lieu d'un rond qui tourne. Le serveur le
+     redit aussitôt (chargerEtatGroupes), et c'est lui qui décide de tout. */
+  if(!grp.etat && m.etat && m.etat.participe === "ok") grp.etat = Object.assign({}, m.etat, { depuisMemoire:true });
+  if(!grp.liste && Array.isArray(m.liste)) grp.liste = m.liste;
+  if(m.profils && typeof m.profils === "object") Object.keys(m.profils).forEach(k => { if(!grp.profils[k]) grp.profils[k] = m.profils[k]; });
+  Object.keys(m.fils).forEach(id => {
+    const v = m.fils[id];
+    if(!grp.fils[id] && v && Array.isArray(v.messages)) grp.fils[id] = { messages:v.messages.slice(), charge:true, tout:!!v.tout, lu:+v.lu || 0 };
+  });
+  if(m.brouillons && typeof m.brouillons === "object") brouillons = Object.assign({}, m.brouillons, brouillons);
+  grp.nonLus = (grp.liste || []).reduce((s, x)=> s + (+x.non_lus || 0), 0);
+  return true;
+}
+function memoriserFil(id){
+  if(!id || !compteConnecte() || !(grp.liste || []).some(x => x.id === id)) return;
+  clearTimeout(memoireT["f" + id]);
+  memoireT["f" + id] = setTimeout(()=>{
+    const f = grp.fils[id]; if(!f || !f.charge) return;
+    const l = f.messages.filter(m => m.id > 0);
+    ecrireBase("fils", id, { messages:l.slice(-FIL_PAGE), tout:!!f.tout && l.length <= FIL_PAGE, lu:+f.lu || 0 });
+    marquerMemoire();
+  }, 400);
+}
+function memoriserListe(){
+  if(!compteConnecte()) return;
+  clearTimeout(memoireT.liste);
+  memoireT.liste = setTimeout(()=>{
+    if(!grp.liste) return;
+    ecrireBase("meta", "liste", grp.liste);
+    ecrireBase("meta", "profils", grp.profils);
+    /* Une discussion d'un groupe qu'on a quitté ne reste pas. */
+    const miens = new Set(grp.liste.map(x => x.id));
+    baseGroupes().then(db=>{
+      if(!db) return;
+      try{
+        const st = db.transaction("fils", "readwrite").objectStore("fils");
+        const rq = st.openKeyCursor ? st.openKeyCursor() : st.openCursor();
+        rq.onsuccess = ()=>{ const c = rq.result; if(c){ if(!miens.has(c.key)) st.delete(c.key); c.continue(); } };
+      }catch(e){}
+    });
+    marquerMemoire();
+  }, 400);
+}
+function memoriserBrouillon(id, texte){
+  if(!id) return;
+  if(texte) brouillons[id] = texte; else delete brouillons[id];
+  clearTimeout(memoireT.brouillons);
+  memoireT.brouillons = setTimeout(()=>{ if(compteConnecte()){ ecrireBase("meta", "brouillons", brouillons); marquerMemoire(); } }, 400);
+}
+function oublierMemoire(){
+  let avait = false;
+  try{ avait = !!localStorage.getItem(CLE_MEMOIRE); localStorage.removeItem(CLE_MEMOIRE); }catch(e){}
+  Object.keys(memoireT).forEach(k => clearTimeout(memoireT[k]));
+  memoire = null; memoireP = null; brouillons = {};
+  if(avait) viderBase(["fils", "meta"]);
 }
 /* 384 px, et une qualité qui baisse d'un cran tant que l'image ne tient pas
    sous le plafond du serveur. */
@@ -20583,6 +20705,7 @@ async function chargerFil(id){
     f.charge = true;
     f.tout = r.data.length < FIL_PAGE;
     l.forEach(m => dejaComptes.add(m.id));
+    memoriserFil(id);
   }catch(e){ return; }
   if(grp.courant === id && state.screen === "groupe"){
     const z = document.getElementById("fil");
@@ -20653,7 +20776,15 @@ function renderGroupe(){
       <button class="fil-bas" id="filBas" hidden onclick="descendreFil(true)">${T("Nouveaux messages")}</button>
     </div>
     <div class="compo" id="compo"><div class="compo-in">${compoHtml()}</div></div>`;
-  setTimeout(()=>descendreFil(false), 0);
+  const t = el.querySelector("#compoTexte");
+  if(t && brouillons[g.id]){ t.value = brouillons[g.id]; const b = el.querySelector("#compoEnvoi"); if(b) b.disabled = !t.value.trim(); }
+  /* ===== LE FIL S'OUVRE EN BAS, SANS GLISSER =====
+     « Lorsque je ferme ou que je rouvre une page, le bas doit rester sur
+     les messages, sans bouger. » La descente attendait un setTimeout : le
+     navigateur peignait d'abord le HAUT du fil, puis sautait au bas — un
+     éclair de vieux messages à chaque ouverture. render() appelle _posee
+     dès que l'écran est dans la page, avant toute image (voir render). */
+  el._posee = ()=>{ descendreFil(false); if(t && t.value) surSaisie(t); };
   return el;
 }
 function cleJour(iso){ const d = new Date(iso); return d.getFullYear() + "-" + d.getMonth() + "-" + d.getDate(); }
@@ -20664,7 +20795,14 @@ const SUITE_MS = 300000;
 function filHtml(id){
   const f = grp.fils[id];
   if(!f || !f.charge) return `<div class="grp-vide"><span class="spinner"></span></div>`;
-  const msgs = f.messages.filter(m => !m.auteur || !grp.bloques.has(m.auteur));
+  /* ===== UN MESSAGE SUPPRIMÉ DISPARAÎT VRAIMENT =====
+     « Lorsque je supprime un message, il doit rester définitivement
+     supprimé. » La fenêtre de confirmation promettait « Il disparaît pour
+     tout le groupe », et une bulle « Message supprimé » restait à sa place,
+     pour toujours, jusque dans l'aperçu de la liste. Le serveur, lui, vide
+     déjà le texte : le fil ne garde plus rien de lui. (Un message MASQUÉ par
+     la modération, lui, garde sa bulle : c'est une décision en cours.) */
+  const msgs = f.messages.filter(m => !m.supprime_le && (!m.auteur || !grp.bloques.has(m.auteur)));
   let h = f.tout ? "" : `<button class="grp-pill calme fil-plus" onclick="chargerPlusAncien(this)">${T("Messages plus anciens")}</button>`;
   if(!msgs.length) return h + `<div class="grp-vide">${T("Aucun message pour l'instant. Dis bonjour !")}</div>`;
   let jour = "", suite = [];
@@ -20780,6 +20918,8 @@ function surSaisie(t){
   t.style.height = Math.min(t.scrollHeight, 120) + "px";
   const b = document.getElementById("compoEnvoi");
   if(b) b.disabled = !t.value.trim();
+  /* Ce qu'on écrit survit à une relance, à un changement de langue. */
+  if(grp.courant && t.id === "compoTexte") memoriserBrouillon(grp.courant, t.value);
 }
 /* ENVOYER : la bulle part tout de suite, en attente ; le serveur décide. S'il
    refuse (mot interdit, trop vite, coordonnées), la bulle s'en va, le texte
@@ -20815,6 +20955,7 @@ async function envoyerMessageGroupe(){
   }
   g.dernier_message = new Date().toISOString();
   g.apercu = { id:r.id, auteur:monId(), genre:"texte", texte, donnees:{}, masque:false, supprime:false, le:g.dernier_message };
+  memoriserFil(g.id); memoriserListe();
 }
 /* ---------- JOUER ENSEMBLE ----------
    Le bouton manette crée un salon en ligne, comme « Créer une partie », et
@@ -20904,10 +21045,14 @@ async function surMessageDirect(m, evt){
   } else if(g.apercu && g.apercu.id === m.id){
     g.apercu.masque = !!m.masque; g.apercu.supprime = !!m.supprime_le;
     if(m.masque || m.supprime_le) g.apercu.texte = "";
+    /* Le dernier message vient d'être supprimé : l'aperçu reprend celui
+       d'avant, que le serveur connaît. */
+    if(m.supprime_le) chargerListes();
   }
   grp.nonLus = (grp.liste || []).reduce((s, x)=> s + (grp.courant === x.id && state.screen === "groupe" ? 0 : (+x.non_lus || 0)), 0);
   majBarre();
   majListes();
+  memoriserListe();
 }
 /* Un message arrive (ou change : masqué, supprimé, rendu) : il prend sa place
    dans le fil s'il est chargé. La bulle « en attente » du même texte, posée à
@@ -20926,6 +21071,7 @@ function recevoirMessage(m){
   }
   if(m.id > 0 && m.auteur === monId()) f.lu = Math.max(f.lu || 0, m.id);
   if(grp.courant === m.groupe && state.screen === "groupe") majFil();
+  memoriserFil(m.groupe);
 }
 
 /* ===================== TOUCHER UNE BULLE =====================
@@ -20969,6 +21115,10 @@ function supprimerMessageGroupe(id){
       if(m){ m.supprime_le = new Date().toISOString(); m.texte = ""; }
       fermerFeuilleGroupe("grpActionsVeil");
       majFil();
+      memoriserFil(grp.courant);
+      /* L'aperçu de la liste ne garde pas un message qui n'existe plus. */
+      const g = groupeCourant();
+      if(g && g.apercu && String(g.apercu.id) === String(id)) chargerListes();
     })(); return true; }
   });
 }
@@ -23647,11 +23797,13 @@ function render(){
     if(CUSTOM_SCROLL) prevNode.style.transform = ""; // laisse l'anim de sortie repartir proprement
     app.appendChild(node);
     if(CUSTOM_SCROLL){ customScrollY = 0; applyScrollTransform(); } else { app.scrollTop = 0; }
+    if(typeof node._posee === "function"){ try{ node._posee(); }catch(e){} }
     setTimeout(()=>{ if(prevNode.parentNode) prevNode.remove(); }, msFerme() + 220);
   } else {
     app.replaceChildren(node);
     if(CUSTOM_SCROLL){ customScrollY = sameScreen ? prevScroll : 0; applyScrollTransform(); }
     else if(sameScreen) app.scrollTop = prevScroll;
+    if(typeof node._posee === "function"){ try{ node._posee(); }catch(e){} }
   }
   lastScreen = state.screen;
   try{ majBarre(); }catch(e){}
@@ -25914,6 +26066,7 @@ if(retourDeConnexion() || sessionRangee()){
      base de ce téléphone se lit en quelques millisecondes, une fois l'accueil
      posé (voir LES PHOTOS DANS LES GROUPES). */
   try{ if(localStorage.getItem(CLE_PHOTOS_SRV)) setTimeout(()=>{ try{ chargerCachePhotos(); }catch(e){} }, 1500); }catch(e){}
+  try{ if(localStorage.getItem(CLE_MEMOIRE)) setTimeout(()=>{ try{ lireMemoire(); }catch(e){} }, 900); }catch(e){}
 }
 /* LES GROUPES. La barre se dessine dès la première image d'après le souvenir
    de la dernière sonde ; la sonde, elle, passe derrière, une fois l'accueil

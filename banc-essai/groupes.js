@@ -248,10 +248,10 @@ const dit = (quoi, bon, detail) => { console.log('  ' + (bon ? 'OK  ' : 'KO  ') 
 
     /* ---- 11. supprimer son compte ----
        La progression, c'est tout ce qui commence par bt_ — sauf ce que le jeu
-       retient DU COMPTE : la sonde des groupes, et ce qu'il sait des photos du
+       retient DU COMPTE : la sonde des groupes, la mémoire des discussions et ce qu'il sait des photos du
        serveur (bt_photos_srv…), qu'il oublie justement en sortant du compte. */
     const progression = () => pb.evaluate(() => JSON.stringify(Object.keys(localStorage)
-      .filter(k => /^bt_/.test(k) && k !== 'bt_groupes_sonde' && !/^bt_photos_srv/.test(k)).sort().map(k => [k, localStorage.getItem(k)])));
+      .filter(k => /^bt_/.test(k) && !/^bt_(groupes_sonde|groupes_memoire|photos_srv)/.test(k)).sort().map(k => [k, localStorage.getItem(k)])));
     const avant = await progression();
     await pb.evaluate(() => { state.screen = 'mode'; render(); openProfile(); });
     await pb.waitForTimeout(900);

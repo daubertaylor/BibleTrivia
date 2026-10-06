@@ -857,7 +857,9 @@ language sql stable security definer set search_path = '' as $$
                                                 'masque', x.masque, 'supprime', x.supprime_le is not null, 'le', x.cree_le,
                                                 'nom', (select p.nom from public.profils p where p.id = x.auteur))
                         from public.messages x
-                       where x.groupe = g.id and not public._bloque(mb.membre, x.auteur)
+                       -- Un message supprimé n'est plus l'aperçu de rien (v311) : on montre
+                       -- celui d'avant, comme si l'autre n'avait jamais existé.
+                       where x.groupe = g.id and x.supprime_le is null and not public._bloque(mb.membre, x.auteur)
                        order by x.id desc limit 1))
     from public.membres mb join public.groupes g on g.id = mb.groupe
    where mb.membre = auth.uid() and g.supprime_le is null
