@@ -9,12 +9,16 @@
         sur le testament de celui-là — chez les deux ;
      4. dans le salon, l'hôte tiré au sort ne peut plus changer ce testament ;
      5. la partie lancée, les deux jouent bien ce testament ;
-     6. un téléphone resté sur une version d'avant (il n'annonce aucun
-        testament) n'est apparié qu'à « Tout » ;
+     6. un vrai téléphone resté en v311 (il n'annonce aucun testament) est
+        apparié à « Tout », et jamais à qui a choisi un testament ;
      7. « Créer une partie » part du testament choisi, et reste modifiable ;
      8. aucune erreur.
    Usage : node banc-essai/testament-enligne.js */
 const { serveur } = require('./hub.js');
+const fs = require('fs'), path = require('path');
+const { execSync } = require('child_process');
+const RACINE = path.resolve(__dirname, '..');
+const ANCIEN = path.join(RACINE, 'banc-ancien.html');
 const { chromium } = require('/opt/node22/lib/node_modules/playwright');
 const IOS = 'Mozilla/5.0 (iPhone; CPU iPhone OS 17_5 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.5 Mobile/15E148 Safari/604.1';
 let ko = 0;
@@ -26,14 +30,21 @@ const attends = (ms) => new Promise(r => setTimeout(r, ms));
   const base = 'http://127.0.0.1:' + serveur.address().port + '/';
   const nav = await chromium.launch({ executablePath: '/opt/pw-browsers/chromium' });
   const erreurs = [];
-  const ouvre = async (nom) => {
+  const ouvre = async (nom, page) => {
     const ctx = await nav.newContext({ viewport: { width: 402, height: 874 }, userAgent: IOS, isMobile: true, hasTouch: true, serviceWorkers: 'block' });
     const p = await ctx.newPage();
     p.on('pageerror', e => erreurs.push(nom + ' : ' + e.message));
     await p.addInitScript((n) => { localStorage.setItem('bt_profile', JSON.stringify({ name: n, color: '#4C86E8' })); localStorage.setItem('bt_fs_hint', '1'); }, nom);
-    await p.goto(base);
+    await p.goto(base + (page || ''));
     await p.waitForFunction(() => { try { return state.screen === 'mode'; } catch (e) { return false; } }, null, { timeout: 20000 });
     await p.evaluate(() => openOnline());
+    if (process.env.TRACE) {
+      await p.exposeFunction('__trace', (q) => console.log('      [' + nom + '] ' + q));
+      await p.evaluate(() => {
+        for (const n of ['createRoom', 'joinRoom', 'cleanupRoom', 'matchFromLookers']) { const o = window[n]; if (typeof o !== 'function') continue;
+          window[n] = function () { if (n !== 'matchFromLookers') window.__trace(n + '(' + [...arguments].slice(0, 2).join(',') + ') moi=' + String(myId).slice(0, 6) + ' ' + (new Error().stack.split('\n')[2] || '').trim().slice(0, 70)); return o.apply(this, arguments); }; }
+      });
+    }
     await p.waitForFunction(() => !!net.lobby && net.connected > 0, null, { timeout: 15000 }).catch(() => {});
     await attends(500);
     return { ctx, p, nom };
@@ -88,25 +99,30 @@ const attends = (ms) => new Promise(r => setTimeout(r, ms));
 
     /* ---- 6. un téléphone d'avant ---- */
     const R = P === A ? B : A, rChoix = P === A ? 'nt' : 'at';
-    const X = await ouvre('Xavier');
-    await X.p.evaluate(() => {
-      /* une version d'avant : le battement et l'appariement n'annoncent aucun testament */
-      const send = net.lobby.send.bind(net.lobby);
-      net.lobby.send = (m) => { if (m && m.payload) { m = JSON.parse(JSON.stringify(m)); delete m.payload.t; } return send(m); };
-      setSearching(true);
-    });
-    /* Le téléphone d'avant ne filtre rien : il peut CHOISIR R et ouvrir un
-       salon pour lui. Ce qu'on exige, c'est que R n'y entre jamais — l'autre
-       retombe alors sur sa garde de 8 s et recherche, comme quand un
-       adversaire annule. On surveille donc R pendant toute la fenêtre. */
-    const rEntre = await R.p.evaluate(() => new Promise(res => { let vu = false; const t0 = Date.now();
-      const tic = () => { if (net.room) vu = true; if (Date.now() - t0 < 6500) setTimeout(tic, 100); else res(vu); }; tic(); }));
-    const r6 = await etat(R);
-    dit('un téléphone d\'avant n\'est pas apparié à « ' + (rChoix === 'at' ? 'Ancien' : 'Nouveau') + ' »', !rEntre && r6.cherche && !r6.salon, JSON.stringify(r6));
+    /* DE VRAIS TÉLÉPHONES D'AVANT : la v311 publiée (6ea2c24), servie à côté
+       par le même hub. (La simuler en retirant le testament de ses messages
+       ne tenait pas : le jeu rouvre son canal de recherche, et la simulation
+       tombait avec lui.)
+       La v311 ne regarde pas le testament : elle peut CHOISIR quelqu'un qui
+       veut l'Ancien ou le Nouveau, et l'attendre en vain — c'est son
+       comportement à elle, le temps que chacun reçoive la mise à jour. Ce
+       qu'on exige de la nouvelle version : apparier la v311 à qui accepte
+       « Tout », et ne JAMAIS entrer chez elle quand on a choisi un testament. */
+    fs.writeFileSync(ANCIEN, execSync('git show 6ea2c24:index.html', { cwd: RACINE, maxBuffer: 64 << 20 }));
     await R.p.evaluate(() => setSearching(false));
+    const X = await ouvre('Xavier', 'banc-ancien.html');
     const D = await ouvre('Damien');
+    await X.p.evaluate(() => setSearching(true));
     await D.p.evaluate(() => setSearching(true));
-    dit('… mais il l\'est à « Tout »', await attendre(D, () => !!net.room && net.oppPresent, 15000) && (await etat(X)).salon);
+    dit('un téléphone d\'avant est apparié à « Tout »', await attendre(D, () => !!net.room && net.oppPresent, 15000) && (await etat(X)).salon);
+    const X2 = await ouvre('Yvon', 'banc-ancien.html');
+    await R.p.evaluate(() => setSearching(true));
+    await X2.p.evaluate(() => setSearching(true));
+    const rEntre = await R.p.evaluate(() => new Promise(res => { let vu = false; const t0 = Date.now();
+      const tic = () => { if (net.room) vu = true; if (Date.now() - t0 < 7000) setTimeout(tic, 100); else res(vu); }; tic(); }));
+    const r6 = await etat(R);
+    dit('… mais jamais à « ' + (rChoix === 'at' ? 'Ancien' : 'Nouveau') + ' » : on n\'entre pas chez lui', !rEntre && r6.cherche && !r6.salon, JSON.stringify(r6));
+    await R.p.evaluate(() => setSearching(false));
 
     /* ---- 7. « Créer une partie » ---- */
     await R.p.evaluate(() => { choisirTestamentEnLigne(net.themeChoix); createRoomFlow(); });
@@ -117,12 +133,13 @@ const attends = (ms) => new Promise(r => setTimeout(r, ms));
     dit('… l\'hôte peut le changer', (await etat(R)).theme === 'tout');
 
     dit('aucune erreur dans les pages', erreurs.length === 0, erreurs.slice(0, 3).join(' | '));
-    for (const c of [A, B, C, X, D]) await c.ctx.close().catch(() => {});
+    for (const c of [A, B, C, X, D, X2]) await c.ctx.close().catch(() => {});
   } catch (e) {
     console.log('  KO  le banc s\'est arrêté : ' + (e.stack || e).toString().slice(0, 600)); ko++;
   } finally {
     await nav.close().catch(() => {});
     await new Promise(r => serveur.close(r));
+    try { fs.unlinkSync(ANCIEN); } catch (e) {}
   }
   console.log(ko ? '\n  ' + ko + ' KO' : '\n  OK — en ligne, on s\'affronte sur le testament qu\'on a choisi');
   process.exit(ko ? 1 : 0);

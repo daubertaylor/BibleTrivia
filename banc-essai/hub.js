@@ -66,7 +66,10 @@ const serveur = http.createServer(async (rq,rs)=>{
     return fs.createReadStream(D+"/shim.js").pipe(rs); }
   const f = path.join(RACINE, p);
   if(!f.startsWith(RACINE)||!fs.existsSync(f)||fs.statSync(f).isDirectory()){ rs.writeHead(404); return rs.end("non"); }
-  if(p === "/index.html"){
+  /* Toute page du jeu reçoit le faux Supabase, pas seulement index.html : un
+     banc peut servir à côté une VERSION D'AVANT du jeu (banc-ancien.html),
+     pour vérifier qu'une nouvelle version s'entend avec elle. */
+  if(p === "/index.html" || /^\/banc-[a-z0-9-]+\.html$/.test(p)){
     const h = fs.readFileSync(f,"utf8").replace("https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2", "/shim.js");
     rs.writeHead(200,{'content-type':'text/html; charset=utf-8'}); return rs.end(h);
   }
