@@ -954,7 +954,10 @@ const ouvrirLaLangue = async (p, lg) => {
     /* La carte de recherche d'adversaire : un écran entier que le banc ne
        voyait pas, et qui contenait « Dès qu'un autre joueur cherche… » en
        français dans le texte. */
-    ['Recherche',         () => { net.searching=true; render(); }],
+    /* « Partie aléatoire » demande d'abord le testament, dans une feuille
+       (v313) : la question, les trois lignes et la note. */
+    ['Partie aléatoire',  () => { net.error=''; net.searching=false; render(); ouvrirPartieAleatoire(); }],
+    ['Recherche',         () => { __fermerTout(); net.searching=true; render(); }],
     ['Rejoindre',         () => { net.searching=false; net.error=''; state.screen='online-join'; render(); }],
     ['Code invalide',     () => { joinRoom('AB', false); }],
     ['Salon seul',        () => { net.error=''; net.code='ABCD'; net.isHost=true; net.joueurs={}; net.oppPresent=false; state.screen='online-room'; render(); }],

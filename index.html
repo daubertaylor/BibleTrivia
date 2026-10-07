@@ -1627,8 +1627,16 @@
   .mr-col{ display:flex; flex-direction:column; align-items:center; gap:0.22rem; min-width:0; }
   .mr-bar{ width:100%; height:2.7rem; border-radius:var(--r-s); background:rgba(92,72,56,0.1);
     display:flex; align-items:flex-end; overflow:hidden; }
+  /* ===== UNE MARCHE VIDE EST VIDE =====
+     Chaque colonne gardait 6 % de remplissage même à zéro : sous chaque
+     tuile vide, un trait de 2,6 px de sa couleur — orange, ambre, jaune,
+     vert. À l'œil, c'est un liseré de couleur au bas de la tuile, et il n'y
+     a de bordure de couleur nulle part dans ce jeu. Zéro ne remplit plus
+     rien ; une marche qui compte au moins une erreur prend un vrai pavé
+     (au moins un cinquième de la hauteur, voir renderRevoir), jamais un
+     trait. */
   .mr-bar i{ display:block; width:100%; border-radius:inherit; background:var(--mr-c, #F0723A);
-    height:calc(max(var(--h, 0), 0.06) * 100%); transition:height var(--tr-plie); }
+    height:calc(var(--h, 0) * 100%); transition:height var(--tr-plie); }
   .mr-col:nth-child(1){ --mr-c:#EC3C1A; }
   .mr-col:nth-child(2){ --mr-c:#F2712C; }
   .mr-col:nth-child(3){ --mr-c:#F2A62C; }
@@ -2558,10 +2566,11 @@
   /* Un testament convenu par un appariement ne se change plus : les deux
      autres s'effacent sans disparaître — on voit qu'ils existent. */
   .len-chip:disabled{ opacity:0.45; }
-  /* Le testament, sur l'écran En ligne : au-dessus des trois actions, qu'il
-     règle toutes, à l'écart qui sépare deux actions. */
-  .ol-testament{ margin:0 0 0.8rem; }
-  .ol-testament .len-label{ margin-top:0; }
+  /* La feuille « Partie aléatoire » (voir ouvrirPartieAleatoire) : la
+     question, les trois lignes, et ce qu'il faut savoir pour choisir. */
+  .alea-q{ margin:0 0.1rem; font-size:0.9rem; color:var(--ink-soft); }
+  .grp-feuille-corps > .alea-liste{ margin:0; }
+  .alea-note{ margin:0.1rem 0.1rem 0; font-size:0.8rem; line-height:1.4; color:var(--ink-soft); }
   .opp-testament{ margin-top:0.35rem; font-size:0.85rem; font-weight:600; color:var(--primary); }
   .len-chip{ flex:1; display:flex; align-items:center; justify-content:center; min-height:2.75rem; --glass-tint: rgb(252,248,241); background:rgb(252,248,241); backdrop-filter:none; -webkit-backdrop-filter:none; border:0; border-radius:var(--r-m); padding:calc(0.58rem + 1px) calc(0.4rem + 1px); font-weight:600; font-size:0.84rem; color:var(--ink); }
   /* Même chose pour les puces du salon : aucun bord à elles. */
@@ -3359,7 +3368,11 @@
      chaque légende a la place de tenir sur une ligne, sur tous les téléphones. */
   .ps-cells small{ font-size:0.66rem; color:var(--ink-soft); font-weight:600; line-height:1.3; white-space:nowrap; display:block; }
 
-  .parcours-h{ display:flex; align-items:baseline; justify-content:space-between; font-family:'Poppins',sans-serif; font-size:0.98rem; font-weight:700; color:#fff; text-shadow:0 1px 6px rgba(0,0,0,0.45); margin:var(--e-2) 0.2rem var(--e-2); }
+  /* Le titre « Objectifs » se tient PRÈS de ce qu'il annonce : plus d'air
+     au-dessus (il sépare des testaments) qu'en dessous (il présente sa
+     grille). Il en avait par accident — les marges fantômes des testaments
+     repliés, voir REPLIÉ, IL NE GARDE RIEN ; il l'a maintenant exprès. */
+  .parcours-h{ display:flex; align-items:baseline; justify-content:space-between; font-family:'Poppins',sans-serif; font-size:0.98rem; font-weight:700; color:#fff; text-shadow:0 1px 6px rgba(0,0,0,0.45); margin:var(--e-4) 0.2rem var(--e-2); }
   .parcours-h small{ font-weight:600; font-size:0.82rem; opacity:0.92; }
 
   /* Objectifs : VITRINE (grille compacte dans UNE carte de verre) au lieu d'une
@@ -3380,7 +3393,17 @@
      toujours largement : là, le défilement est vrai et personne ne le confond
      avec un décalage. */
   .ach-card{ padding:calc(0.62rem + 1px) calc(0.7rem + 1px) calc(0.55rem + 1px); margin-bottom:0; }
-  .ach-grid{ display:grid; grid-template-columns:repeat(4, 1fr); gap:0.45rem 0.35rem; }
+  /* ===== CHAQUE CHIFFRE SOUS SA TUILE, PAS SUR LA SUIVANTE =====
+     « Vérifie l'ajustement visuel des différents modes. » Le nom d'un
+     objectif se réserve deux lignes (pour que les chiffres d'une même rangée
+     restent alignés), mais il s'écrivait EN HAUT de cette place : sous un nom
+     d'une ligne — quatorze objectifs sur seize — le « 0 / 10 » tombait à
+     16,8 px de son nom et à 7,5 px de l'icône de la rangée suivante. L'œil
+     range un chiffre avec ce qui le touche : chaque compteur se lisait comme
+     celui de la tuile du dessous. Le nom est maintenant CENTRÉ dans sa place
+     (voir .ach-nm), et les rangées s'écartent : chaque tuile redevient un
+     bloc — icône, nom, chiffre —, et l'air passe ENTRE les blocs. */
+  .ach-grid{ display:grid; grid-template-columns:repeat(4, 1fr); gap:1rem 0.35rem; }
   /* L'onde d'appui (button::before) hérite du border-radius de son bouton.
      .ach n'en avait aucun : l'onde sortait donc en CARRÉ net autour de la
      pastille et de son nom — le seul appui à angle droit du jeu. On lui donne
@@ -3407,7 +3430,8 @@
   .ach-tile.c-gold{ background:linear-gradient(150deg, #FFC64F, #F09A18); box-shadow:inset 0 1px 0 rgba(255,255,255,0.26), 0 2px 7px rgba(206,138,42,0.24); }
   .ach-tile.c-blue{ background:linear-gradient(150deg, #4DA8FF, #2E7FE8); box-shadow:inset 0 1px 0 rgba(255,255,255,0.26), 0 2px 7px rgba(46,127,232,0.24); }
   .ach-tile.c-green{ background:linear-gradient(150deg, #58C08A, #2E9968); box-shadow:inset 0 1px 0 rgba(255,255,255,0.26), 0 2px 7px rgba(46,153,104,0.24); }
-  .ach-nm{ font-family:'Poppins',sans-serif; font-weight:600; font-size:0.66rem; color:var(--ink); line-height:1.16; display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical; overflow:hidden; min-height:1.55rem; }
+  .ach-nm{ font-family:'Poppins',sans-serif; font-weight:600; font-size:0.66rem; color:var(--ink); line-height:1.16; display:flex; align-items:center; justify-content:center; min-height:1.55rem; }
+  .ach-nm > span{ display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical; overflow:hidden; }
   .ach-prog{ font-size:0.6rem; font-weight:700; color:var(--ink-soft); font-variant-numeric:tabular-nums; letter-spacing:0.01em; }
   .ach.on .ach-prog{ color:#1f7a4d; }
   /* Popup d'un objectif (au tap) : tuile + titre + description + progression. */
@@ -3456,7 +3480,15 @@
      et n'a rien à refaire. */
   .tst .tst-body{ display:grid; grid-template-rows:0fr; margin-top:0; opacity:0;
     transition:grid-template-rows var(--tr-plie), margin-top var(--tr-plie), opacity 0.24s ease; }
-  .tst .tst-body > *{ min-height:0; overflow:hidden; }
+  .tst .tst-body > *{ min-height:0; overflow:hidden; transition:padding-top var(--tr-plie), padding-bottom var(--tr-plie); }
+  /* ===== REPLIÉ, IL NE GARDE RIEN =====
+     La ligne de grille se repliait bien à zéro, mais la carte des livres
+     gardait ses marges intérieures : 19,5 px invisibles sous chaque
+     testament. Entre « Ancien » et « Nouveau », l'écart vu à l'écran faisait
+     donc 30 px, contre 10 entre la carte des chiffres et « Ancien » — deux
+     écarts différents pour deux boutons pareils. Replié, la carte perd aussi
+     ses marges (elles reviennent avec le dépli, au même pas). */
+  .tst:not(.open) .tst-body > *{ padding-top:0; padding-bottom:0; }
   /* Petits écrans (SE & co) : la Progression doit tenir SANS défiler tant que
      les testaments sont repliés -> on resserre juste ce qu'il faut. */
   /* PETITS ÉCRANS — ET LA MÊME DÉFINITION QUAND LE TÉLÉPHONE EST COUCHÉ.
@@ -3477,14 +3509,14 @@
          (orientation:landscape) and (pointer:coarse) and (max-width:700px){
     .ach-tile{ width:2.35rem; height:2.35rem; border-radius:var(--r-s); }
     .ach-tile svg{ width:1.3rem; height:1.3rem; }
-    .ach-grid{ gap:0.45rem 0.3rem; }
+    .ach-grid{ gap:0.85rem 0.3rem; }
     .ach{ gap:0.26rem; }
     .ach-nm{ min-height:1.4rem; }
     .ach-card{ padding:calc(0.6rem + 1px) calc(0.65rem + 1px) calc(0.5rem + 1px); }
     .parcours-sum{ padding:calc(0.6rem + 1px) calc(0.9rem + 1px); }
     .tst{ margin-top:0.42rem; }
     .tst-head{ padding:calc(0.5rem + 1px) calc(0.8rem + 1px); }
-    .parcours-h{ margin:0.5rem 0.2rem 0.4rem; }
+    .parcours-h{ margin:1.1rem 0.2rem 0.4rem; }
     /* Le verset signature est déclaré plus haut, dans son propre palier
        (max-height:750px) : la ligne est gardée ici pour que ce bloc reste
        lisible seul, mais elle ne fait plus le travail à elle seule. */
@@ -5458,6 +5490,8 @@ const TEXTES = {
     "Cette image n'a pas pu être lue.":"This image could not be read.",
     "Modifier":"Edit",
     "Partie aléatoire":"Random game",
+    "Sur quelle partie de la Bible ?":"Which part of the Bible?",
+    "« Toute la Bible » s'accorde avec tous les choix : c'est elle qui trouve un adversaire le plus vite.":"“Whole Bible” goes with every choice: it finds an opponent the fastest.",
     "Recherche d'un adversaire…":"Looking for an opponent…",
     "Refuser":"Decline",
     "Rejoindre":"Join",
@@ -5503,7 +5537,9 @@ const TEXTES = {
     "par question":"per question",
     "Testament":"Testament",
     "Tout":"All",
-    "Toute la Bible":"The whole Bible",
+    /* « The whole Bible » passait sur deux lignes sous « All » : la rangée
+       du testament montait à 73 px, ses voisines restaient à 57. */
+    "Toute la Bible":"Whole Bible",
     "Ancien":"Old",
     "Nouveau":"New",
     "Commencer la partie":"Start the game",
@@ -5511,7 +5547,7 @@ const TEXTES = {
     "Normale":"Normal",
     "Longue":"Long",
     "Sans":"None",
-    "prenez votre temps":"take your time",
+    "chrono":"no timer",
     /* --- à revoir --- */
     "À revoir":"To review",
     "à revoir maintenant":"to review right now",
@@ -6047,8 +6083,8 @@ const TEXTES = {
        Même exigence qu'en anglais : chaque phrase du jeu, sans exception, et
        une seule voix. On tutoie, comme en français — c'est un jeu, pas un
        formulaire — sauf là où le français vouvoie déjà parce qu'il parle à
-       une table de plusieurs joueurs (« tómense su tiempo », « lean la
-       pregunta en voz alta », « Añadan al menos dos jugadores »).
+       une table de plusieurs joueurs (« lean la pregunta en voz alta »,
+       « Añadan al menos dos jugadores »).
        Espagnol neutre d'Amérique latine : c'est le plus large des usages, et
        il se lit sans accroc en Espagne. */
     "Excellent\u00a0! Tu connais vraiment bien ta Bible.":"¡Excelente! Conoces muy bien tu Biblia.",
@@ -6082,6 +6118,8 @@ const TEXTES = {
     "Cette image n'a pas pu être lue.":"No se ha podido leer esta imagen.",
     "Modifier":"Editar",
     "Partie aléatoire":"Partida al azar",
+    "Sur quelle partie de la Bible ?":"¿Qué parte de la Biblia?",
+    "« Toute la Bible » s'accorde avec tous les choix : c'est elle qui trouve un adversaire le plus vite.":"«Toda la Biblia» combina con cualquier elección: es la que encuentra rival más rápido.",
     "Recherche d'un adversaire…":"Buscando un rival…",
     "Refuser":"Rechazar",
     "Rejoindre":"Unirse",
@@ -6133,7 +6171,9 @@ const TEXTES = {
     "Normale":"Normal",
     "Longue":"Larga",
     "Sans":"Sin",
-    "prenez votre temps":"tómense su tiempo",
+    /* « Sin / límite » se lit « Sin límite » : deux mots, comme ses
+       voisines, et plus de vouvoiement en Solo (« tómense su tiempo »). */
+    "chrono":"límite",
     "À revoir":"Por repasar",
     "à revoir maintenant":"para repasar ahora",
     "Carnet maîtrisé":"Cuaderno dominado",
@@ -9539,8 +9579,45 @@ function poserTestamentConvenu(t){
 }
 function choisirTestamentEnLigne(k){
   net.themeChoix = k;
-  basculerChoix('[data-ogroup="theme"]', "sel", k);
-  queueGlassSync();
+  /* La ligne retenue de la feuille « Partie aléatoire », si elle est
+     ouverte : seules les deux lignes qui changent d'état sont touchées. */
+  document.querySelectorAll("#aleaVeil [data-alea]").forEach(x => {
+    const doit = x.dataset.alea === k;
+    if(x.classList.contains("sel") !== doit) x.classList.toggle("sel", doit);
+  });
+}
+/* ===== LE TESTAMENT SE CHOISIT EN LANÇANT LA PARTIE ALÉATOIRE =====
+   « Pourquoi il y a les testaments ici ? » Les trois puces flottaient au
+   sommet des trois actions de l'écran En ligne, comme si elles les réglaient
+   toutes. Elles n'en réglaient qu'une. « Créer une partie » laisse l'hôte
+   choisir dans son salon ; qui REJOINT joue ce que l'hôte a choisi. Le choix
+   n'a de sens que là où personne ne choisit pour nous — la partie
+   aléatoire, dont l'hôte est tiré au sort. Il s'y pose donc : toucher
+   « Partie aléatoire » ouvre une feuille, et une ligne lance la recherche.
+   Les lignes sont celles des versions de la Bible et des langues : le geste
+   est déjà connu, et le nombre de livres sert de sigle — il se lit pareil
+   dans les trois langues. */
+const ALEA_LIGNES = [["tout", "66", "Toute la Bible"], ["at", "39", "Ancien Testament"], ["nt", "27", "Nouveau Testament"]];
+function ouvrirPartieAleatoire(){
+  if(document.getElementById("aleaVeil") || net.searching) return;
+  const t = net.themeChoix || "tout";
+  const lignes = ALEA_LIGNES.map(([k, n, nom]) =>
+    `<button class="bible-item${t === k ? " sel" : ""}" data-alea="${k}" onclick="lancerPartieAleatoire('${k}')">`
+    + `<span class="bible-sig">${n}</span><span class="bible-txt"><b>${T(nom)}</b></span>`
+    + `<span class="bible-ck">${ACH_CHECK}</span></button>`).join("");
+  ouvrirFeuilleGroupe("aleaVeil", T("Partie aléatoire"), ICONS.bolt,
+    `<p class="alea-q">${T("Sur quelle partie de la Bible ?")}</p>
+     <div class="bible-list alea-liste">${lignes}</div>
+     <p class="alea-note">${T("« Toute la Bible » s'accorde avec tous les choix : c'est elle qui trouve un adversaire le plus vite.")}</p>`);
+}
+function lancerPartieAleatoire(k){
+  const v = document.getElementById("aleaVeil");
+  if(!v || v.classList.contains("closing") || v._lance) return;
+  v._lance = true;
+  choisirTestamentEnLigne(k);
+  /* La coche paraît, puis la feuille redescend sur la recherche qui
+     commence — un seul toucher compte, même tapé deux fois. */
+  setTimeout(() => { fermerFeuilleGroupe("aleaVeil"); if(!net.searching && !net.room) setSearching(true); }, 160);
 }
 function testamentsHtml(groupe, sel, action, fixe){
   return ["tout","at","nt"].map(k=>{
@@ -17752,7 +17829,7 @@ function renderParcours(){
     const on = !!p.ach[a.id], cur = a.cur(p,d);
     return `<button class="ach ${on?'on':'off'}" onclick="openAchInfo('${a.id}')">
       <span class="ach-tile c-${a.clr}">${a.ico}</span>
-      <span class="ach-nm">${escapeHtml(T(a.t))}</span>
+      <span class="ach-nm"><span>${escapeHtml(T(a.t))}</span></span>
       <span class="ach-prog">${on?T("Débloqué"):cur+" / "+a.max}</span>
     </button>`;
   };
@@ -22314,7 +22391,7 @@ function renderRevoir(){
        </div>
        ${carnet || (function(){ try{ return Object.keys(loadAcquises()).length; }catch(e){ return 0; } })()
          ? (function(){ const M = marchesCarnet();
-             const col = (n, mot) => `<span class="mr-col"><span class="mr-bar"><i style="--h:${(n / M.haut).toFixed(4)}"></i></span><b>${n}</b><small>${mot}</small></span>`;
+             const col = (n, mot) => `<span class="mr-col"><span class="mr-bar"><i style="--h:${n ? Math.max(n / M.haut, 0.2).toFixed(4) : 0}"></i></span><b>${n}</b><small>${mot}</small></span>`;
              return `<div class="card rv-marches">
                <div class="rv-t">${T("Où en sont tes erreurs")}</div>
                <div class="mr-grille">
@@ -22775,11 +22852,19 @@ function renderLengthCard(){
         `).join("")}
       </div>
       <h2 style="margin-top:1rem">${T("Chrono par question")}</h2>
+      <!-- « SANS CHRONO », PAS « PRENEZ VOTRE TEMPS ».
+           « Vérifie l'ajustement visuel des différents modes. » La troisième
+           puce du chrono passait sur TROIS lignes (« prenez votre / temps ») :
+           toute la rangée prenait 73 px quand celles de la durée et du
+           testament en font 57 — une rangée plus haute que ses voisines, dans
+           la même carte. Et elle VOUVOYAIT en mode Solo, où tout le reste de
+           l'écran tutoie (« réponds à chaque question… »). Deux mots, comme
+           ses voisines (« 15 s / par question ») : « Sans / chrono ». -->
       <div class="chip-row">
         ${Object.keys(TIMER_OPTS).map(k=>`
           <button class="chip ${state.timerKey===k?'active':''}" data-group="tmr" data-k="${k}" onclick="setTimer('${k}')">
             ${T(TIMER_LABELS[k])}
-            <span class="sub">${T(TIMER_OPTS[k]?T("par question"):T("prenez votre temps"))}</span>
+            <span class="sub">${TIMER_OPTS[k] ? T("par question") : T("chrono")}</span>
           </button>
         `).join("")}
       </div>
@@ -24002,11 +24087,7 @@ function renderOnline(){
            forme, et « Rejoindre » devient « Rejoindre une partie » pour
            répondre à « Créer une partie ». La ligne d'attente disait la même
            chose en trois fois plus long. -->
-      <div class="ol-testament${actionsNew?' reveal-in':''}">
-        <div class="len-label">${T("Testament")}</div>
-        <div class="len-row">${testamentsHtml("ogroup", net.themeChoix || "tout", "choisirTestamentEnLigne", null)}</div>
-      </div>
-      <button class="online-action${actionsNew?' reveal-in':''}" style="--i:0" onclick="setSearching(true)">
+      <button class="online-action${actionsNew?' reveal-in':''}" style="--i:0" onclick="ouvrirPartieAleatoire()">
         <span class="oa-ico r">${ICONS.bolt}</span>
         <span class="oa-txt"><b>${T("Partie aléatoire")}</b><small>${T("Un adversaire au hasard, tout de suite")}</small></span>
         <span class="chev">${ICONS.chevronRight}</span>
