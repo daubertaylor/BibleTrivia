@@ -5294,15 +5294,24 @@
      leur rythme. */
   .settings-sheet.reglages{ padding-bottom:calc(env(safe-area-inset-bottom) * 0.45 + 0.15rem + 220px); }
   .reglages .sheet-grab{ margin-bottom:0.35rem; }
-  .reglages .sheet-title{ margin-bottom:0.1rem; }
-  .reglages .set-row{ padding:0.46rem 0.1rem; gap:0.75rem; }
+  /* ===== ET À LEUR JUSTE MESURE =====
+     « Je me demande si ce n'est pas un peu trop compressé. » Ça l'était
+     devenu : de 69 px par ligne (« beaucoup trop d'espace ») on était passé
+     à 50, l'icône à 16 px de sa voisine, le titre à 2 px de la première
+     ligne, le curseur du volume calé contre « Rappels ». Le juste milieu :
+     53 à 56 px par ligne, de l'air sous le titre et autour du curseur, et
+     les trois groupes (voir reglagesHtml) séparés d'un demi-rem. La feuille
+     couvre 65 % d'un iPhone 16 Pro — 84 % avant la v310, 59 % depuis. */
+  .reglages .sheet-title{ margin-bottom:0.4rem; }
+  .reglages .set-row{ padding:0.58rem 0.1rem; gap:0.75rem; }
+  .reglages .set-groupe + .set-groupe{ margin-top:0.5rem; }
   .reglages .set-ico{ width:2.05rem; height:2.05rem; padding:0.44rem; }
   .reglages .set-txt{ gap:0.04rem; }
   /* Le curseur déborde de sa rangée (marges négatives) pour offrir 44 px au
      doigt ; la rangée suivante, écrite après lui, en recouvrait le bas. Avec
      0,28 rem dessous, il ne restait que 43 px (banc-essai/doigt.js). */
-  .reglages .vol-row{ padding:0 0.1rem 0.4rem; }
-  .reglages .share-btn{ margin:0.55rem auto 0.7rem; }
+  .reglages .vol-row{ padding:0.05rem 0.1rem 0.45rem; }
+  .reglages .share-btn{ margin:0.9rem auto 0.7rem; }
 </style>
 </head>
 <body style="background:#15100B">
@@ -6932,6 +6941,9 @@ const ICONS = {
   book: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M3 5.2C3 5.2 5.3 4.3 8.3 4.3C10.3 4.3 12 5 12 5V18C12 18 10.3 17.3 8.3 17.3C5.3 17.3 3 18.2 3 18.2V5.2Z"/><path d="M21 5.2C21 5.2 18.7 4.3 15.7 4.3C13.7 4.3 12 5 12 5V18C12 18 13.7 17.3 15.7 17.3C18.7 17.3 21 18.2 21 18.2V5.2Z"/></svg>`,
   speakerOn: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M4 9.3V14.7H7.3L12.3 18.7V5.3L7.3 9.3H4Z"/><path d="M15.8 8.7C16.9 9.7 17.5 11 17.5 12.5C17.5 14 16.9 15.3 15.8 16.3"/><path d="M18.3 6C19.9 7.7 20.8 10 20.8 12.5C20.8 15 19.9 17.3 18.3 19"/></svg>`,
   speakerOff: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M4 9.3V14.7H7.3L12.3 18.7V5.3L7.3 9.3H4Z"/><line x1="16.5" y1="9" x2="21.5" y2="16"/><line x1="21.5" y1="9" x2="16.5" y2="16"/></svg>`,
+  /* Les effets sonores ont leur propre signe : ils portaient la cloche des
+     Rappels, et deux cloches dans la même feuille disent la même chose. */
+  ondes: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><line x1="4.5" y1="9.4" x2="4.5" y2="14.6"/><line x1="8.25" y1="6.4" x2="8.25" y2="17.6"/><line x1="12" y1="3.6" x2="12" y2="20.4"/><line x1="15.75" y1="7.6" x2="15.75" y2="16.4"/><line x1="19.5" y1="10" x2="19.5" y2="14"/></svg>`,
   bell: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M18 8.5A6 6 0 0 0 6 8.5c0 5.5-2.5 6.8-2.5 6.8h17S18 14 18 8.5Z"/><path d="M13.7 19.5a2 2 0 0 1-3.4 0"/></svg>`,
   /* ===== LES ICÔNES DES GROUPES =====
      Le même trait que le reste du jeu : 24 × 24, contour arrondi, la couleur
@@ -11740,8 +11752,18 @@ function reglagesHtml(){
     <div class="settings-sheet reglages" role="dialog" aria-label="${T("Réglages")}">
       <button class="sheet-grab" aria-label="${T("Fermer")}" onclick="closeSettings()"></button>
       <div class="sheet-title"><span class="st-ico">${ICONS.gear}</span>${T("Réglages")}${boutonLangue()}</div>
+      <!-- ===== TROIS GROUPES, PAS UNE COLONNE =====
+           « Je me demande si cette partie n'est pas un peu trop compressée ;
+           vois la disposition pour qu'elle soit la meilleure possible. »
+           Six réglages en file, à 50 px chacun, se lisaient comme une liste
+           tassée. Ils sont maintenant rangés par ce qu'ils règlent : LE SON
+           (effets, musique, volume — ce qu'on touche le plus, en haut), LE
+           JEU (rappels, version de la Bible), L'APPLICATION (installer,
+           rapports de bug). Un peu d'air sépare les groupes — de l'air, pas
+           de trait : l'œil les distingue sans qu'on dessine de bord. -->
+      <div class="set-groupe">
       <div class="set-row">
-        <span class="set-ico sfx">${ICONS.bell}</span>
+        <span class="set-ico sfx">${ICONS.ondes}</span>
         <span class="set-txt"><b>${T("Effets sonores")}</b></span>
         <button class="switch${settings.sfx?' on':''}" id="swSfx" role="switch" aria-checked="${settings.sfx}" aria-label="${T("Effets sonores")}" onclick="setSfx(!settings.sfx)"></button>
       </div>
@@ -11750,12 +11772,6 @@ function reglagesHtml(){
         <span class="set-txt"><b>${T("Musique de fond")}</b></span>
         <button class="switch${settings.music?' on':''}" id="swMusic" role="switch" aria-checked="${settings.music}" aria-label="${T("Musique de fond")}" onclick="setMusic(!settings.music)"></button>
       </div>
-      ${(IS_PHONE && !isStandalone) ? `
-      <div class="set-row">
-        <span class="set-ico fsx">${ICONS.telecharger}</span>
-        <span class="set-txt"><b>${T("Installer le jeu")}</b></span>
-        <button class="set-go" onclick="openFsGuide()">${T("Guide")}</button>
-      </div>` : ``}
       <div class="set-row">
         <span class="set-ico vol">${ICONS.speakerOn}</span>
         <span class="set-txt"><b>${T("Volume de la musique")}</b></span>
@@ -11766,6 +11782,8 @@ function reglagesHtml(){
         <input type="range" class="vol" id="volSlider" min="0" max="1" step="0.05" value="${settings.volume}" style="--vol:${pct}%" aria-label="${T("Volume")}" oninput="setVolume(parseFloat(this.value), this)">
         <span class="vr-ico">${ICONS.speakerOn}</span>
       </div>
+      </div>
+      <div class="set-groupe">
       <!-- ARRIÈRE-PLAN : la ligne n'existe QUE s'il y a un choix à faire.
            Il n'y a pour l'instant qu'un décor. La ligne montrait donc une
            vignette qu'on ne pouvait pas changer, sous un titre qui annonçait
@@ -11795,6 +11813,14 @@ function reglagesHtml(){
         <span class="set-txt"><b>${T("Version de la Bible")}</b><small id="bibleNom">${bibleActive().court} ${bibleActive().annee}</small></span>
         <button class="set-go" id="bibleGo" onclick="openBibles()">${bibleActive().sigle}</button>
       </div>
+      </div>
+      <div class="set-groupe">
+      ${(IS_PHONE && !isStandalone) ? `
+      <div class="set-row">
+        <span class="set-ico fsx">${ICONS.telecharger}</span>
+        <span class="set-txt"><b>${T("Installer le jeu")}</b></span>
+        <button class="set-go" onclick="openFsGuide()">${T("Guide")}</button>
+      </div>` : ``}
       <!-- ===== SIGNALER LES PROBLÈMES : EN DERNIER, ET C'EST SA PLACE =====
            Elle était au milieu des réglages de jeu, entre les Rappels et la
            Bible, et son sous-titre la faisait déborder sur deux lignes : la
@@ -11815,6 +11841,7 @@ function reglagesHtml(){
         <span class="set-ico rap">${ICONS.bogue}</span>
         <span class="set-txt"><b>${T("Rapports de bug")}</b><small>${T("Envoyés seuls, rien à faire")}</small></span>
         <button class="switch${settings.rapport?' on':''}" id="swRapport" role="switch" aria-checked="${!!settings.rapport}" aria-label="${T("Rapports de bug")}" onclick="setRapport(!settings.rapport)"></button>
+      </div>
       </div>
       <button class="share-btn" onclick="shareGame()">
         <span class="share-ico">${ICONS.shareUp}</span>
