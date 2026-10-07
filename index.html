@@ -9112,6 +9112,7 @@ const net = {
   themeChoix:"tout",              // le testament choisi sur l'écran En ligne (voir LE TESTAMENT, AVANT DE CHERCHER)
   themeFixe:null,                 // le testament convenu par un appariement : l'hôte ne peut plus en changer
   lookersT:{},                    // id -> testament annoncé par chaque joueur en recherche
+  sortis:{},                      // id -> quand on l'a vu apparié (voir UN « JE CHERCHE » EN RETARD)
   deck:[], idx:0, score:0, correct:0, selected:null, revealed:false, myDone:false, missed:[],
   joueurs:{},                     // id -> { id, name, color, score, idx, done, gone, vu }
   photos:{},                      // id -> photo reçue par diffusion (voir diffuserPhoto)
@@ -9406,7 +9407,7 @@ function joinLobby(){
   const supa = initSupa();
   if(!supa) return;
   if(net.lobby) return;
-  net.lookers = {}; net.lookersT = {};
+  net.lookers = {}; net.lookersT = {}; net.sortis = {};
   const ch = supa.channel("bt-lobby-v1", { config:{ presence:{ key: myId }, broadcast:{ self:false } } });
   net.lobby = ch;
   ch.on("presence", { event:"sync" }, ()=>{
@@ -9416,6 +9417,16 @@ function joinLobby(){
   });
   ch.on("broadcast", { event:"looking" }, ({ payload })=>{
     if(!payload || payload.id===myId) return;
+    /* ===== UN « JE CHERCHE » EN RETARD =====
+       L'appariement vient d'un joueur, le dernier « je cherche » de
+       l'apparié vient de l'apparié : deux expéditeurs, et rien ne garantit
+       qu'on les reçoive dans l'ordre. Parti juste avant qu'il apprenne son
+       appariement, ce « je cherche » arrivait parfois APRÈS, et le remettait
+       dans le vivier 4,5 s — de quoi le choisir encore, et l'attendre 8 s
+       dans un salon vide. Qui vient d'être apparié est donc tenu à l'écart
+       3 s : s'il cherche vraiment de nouveau, son annonce suivante passe. */
+    const sorti = net.sortis[payload.id];
+    if(sorti && Date.now() - sorti < 3000) return;
     net.lookers[payload.id] = Date.now();
     /* Un joueur resté sur une version d'avant n'annonce rien : null. */
     net.lookersT[payload.id] = (typeof payload.t === "string") ? payload.t : null;
@@ -9438,7 +9449,7 @@ function joinLobby(){
   });
   ch.on("broadcast", { event:"matched" }, ({ payload })=>{
     if(!payload) return;
-    for(const id of [payload.host, payload.guest]){ if(id && id !== myId){ delete net.lookers[id]; delete net.lookersT[id]; } }
+    for(const id of [payload.host, payload.guest]){ if(id && id !== myId){ delete net.lookers[id]; delete net.lookersT[id]; net.sortis[id] = Date.now(); } }
     if(net.room) return;
     if(payload.guest !== myId && payload.host !== myId) return;
     // On vient d'annuler ? On n'accepte plus aucun match : l'initiateur
@@ -9608,7 +9619,7 @@ function armMatchGuard(){
 function leaveLobby(){
   stopSearchHeartbeat();
   if(net.lobby){ try { net.lobby.untrack(); net.supa.removeChannel(net.lobby); } catch(e){} net.lobby = null; }
-  net.searching = false; net.matching = false; net.connected = 0; net.lookers = {}; net.lookersT = {};
+  net.searching = false; net.matching = false; net.connected = 0; net.lookers = {}; net.lookersT = {}; net.sortis = {};
 }
 
 /* ===================== PRÉSENCE EN ARRIÈRE-PLAN =====================

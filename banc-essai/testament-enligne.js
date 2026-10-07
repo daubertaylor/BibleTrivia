@@ -12,7 +12,9 @@
      6. un vrai téléphone resté en v311 (il n'annonce aucun testament) est
         apparié à « Tout », et jamais à qui a choisi un testament ;
      7. « Créer une partie » part du testament choisi, et reste modifiable ;
-     8. aucune erreur.
+     8. un « je cherche » reçu APRÈS l'appariement de son auteur ne le remet
+        pas dans le vivier (v313) — mais sa recherche suivante, si ;
+     9. aucune erreur.
    Usage : node banc-essai/testament-enligne.js */
 const { serveur } = require('./hub.js');
 const fs = require('fs'), path = require('path');
@@ -132,8 +134,25 @@ const attends = (ms) => new Promise(r => setTimeout(r, ms));
     await R.p.evaluate(() => selectRoomOptTheme('tout'));
     dit('… l\'hôte peut le changer', (await etat(R)).theme === 'tout');
 
+    /* ---- 8. un « je cherche » en retard ----
+       L'appariement vient de l'initiateur, le dernier « je cherche » de
+       l'apparié vient de l'apparié : deux expéditeurs, aucun ordre garanti.
+       On rejoue le désordre à la main : l'appariement, PUIS le « je cherche »
+       parti juste avant. */
+    await X2.p.evaluate(() => setSearching(false));
+    const E = await ouvre('Élise'), F = await ouvre('Fabien');
+    await F.p.evaluate(() => {
+      net.lobby.send({ type: 'broadcast', event: 'matched', payload: { code: '000000', host: 'fantome-a', guest: 'fantome-b', t: 'tout' } });
+      net.lobby.send({ type: 'broadcast', event: 'looking', payload: { id: 'fantome-b', ts: Date.now(), t: 'tout' } });
+    });
+    await attends(800);
+    dit('un « je cherche » reçu après l\'appariement ne remet pas l\'apparié dans le vivier', await E.p.evaluate(() => !net.lookers['fantome-b']));
+    await attends(2600);
+    await F.p.evaluate(() => net.lobby.send({ type: 'broadcast', event: 'looking', payload: { id: 'fantome-b', ts: Date.now(), t: 'tout' } }));
+    dit('… et s\'il cherche vraiment de nouveau, son annonce suivante passe', await attendre(E, () => !!net.lookers['fantome-b'], 3000));
+
     dit('aucune erreur dans les pages', erreurs.length === 0, erreurs.slice(0, 3).join(' | '));
-    for (const c of [A, B, C, X, D, X2]) await c.ctx.close().catch(() => {});
+    for (const c of [A, B, C, X, D, X2, E, F]) await c.ctx.close().catch(() => {});
   } catch (e) {
     console.log('  KO  le banc s\'est arrêté : ' + (e.stack || e).toString().slice(0, 600)); ko++;
   } finally {
