@@ -528,12 +528,15 @@
      tout — mesuré, +0px au lieu de +398. On décale donc la cale du défilement
      déjà disponible (--dep, relevé en JS avant qu'elle existe) : la course
      gagne toujours exactement la hauteur du clavier, écran court ou long. */
-  html.kb #app::after{ content:""; position:absolute; top:calc(100% + var(--dep, 0px)); left:0; width:1px; height:var(--kbh, 0px); pointer-events:none; }
+  html.kb #app::after, html.kb-cale #app::after{ content:""; position:absolute; top:calc(100% + var(--dep, 0px)); left:0; width:1px; height:var(--kbh, 0px); pointer-events:none; }
   /* Une modale à champ (le code d'une partie) est CENTRÉE dans la fenêtre — donc
      centrée derrière le clavier dès qu'il monte : le champ frôlait le bord
      (9px d'air mesurés) et le bouton « Valider » finissait 100px SOUS le
      clavier, hors d'atteinte. On ramène le voile à la hauteur réellement
      visible : la modale se recentre au-dessus du clavier, entière. */
+  /* Une hauteur explicite au repos, sinon il n'y a rien à faire glisser : de
+     « tout l'écran » à --vvh, le voile sautait d'une image à l'autre. */
+  .modal-veil{ height:100%; transition:height var(--tr-ouvre); }
   html.kb .modal-veil{ bottom:auto; height:var(--vvh, 100%); }
   /* ===== LES FEUILLES AUSSI S'ARRÊTENT AU BORD DU CLAVIER =====
      « Quand j'écris le nom du groupe ou la description, le clavier cache ce
@@ -545,9 +548,22 @@
      Clavier ouvert, le voile de la feuille prend la hauteur visible (--vvh) :
      la feuille, calée en bas de son voile, se pose sur le clavier, et elle y
      glisse au lieu d'y sauter. */
-  .sheet-veil{ height:100%; transition:height 0.28s cubic-bezier(0.33,1,0.68,1); }
+  /* ===== LE CLAVIER AU RYTHME DES PAGES =====
+     « Que le clavier s'ouvre moins vite, et qu'il soit très cohérent avec
+     l'ouverture des pages : il va beaucoup trop vite, ça donne l'impression
+     de bug. » Le clavier lui-même appartient au téléphone ; ce qui bouge
+     AVEC lui est à nous. Tout ce qui lui répond — feuille, fenêtre,
+     discussion, page qui se recadre — prend donc le pas d'une page qui
+     s'ouvre (--tr-ouvre, 0,52 s), au lieu de bondir en 0,28 s. */
+  .sheet-veil{ height:100%; transition:height var(--tr-ouvre); }
   html.kb .sheet-veil{ bottom:auto; height:var(--vvh, 100%); }
   html.kb, html.kb body{ overflow:hidden; }
+  /* La discussion, clavier ouvert (voir le module du clavier) : l'écran prend
+     la hauteur visible, sans cale ni défilement, et y glisse à la vitesse du
+     clavier d'iOS. La marge du bas n'a plus de barre d'accueil à éviter. */
+  html.ecran-discussion #app{ transition:height var(--tr-ouvre), padding-bottom var(--tr-ouvre); }
+  html.kb.kb-fil #app, html.tel-fige.kb.kb-fil #app, html.tel-fige.kb.kb-fil:not(.is-standalone) #app{ height:var(--vvh, 100%); padding-bottom:0.45rem; }
+  html.kb.kb-fil #app::after{ content:none; }
   /* ÉLÉVATION PAR DÉFAUT DE TOUTE SURFACE DE VERRE. --rim-cast est une propriété
      personnalisée, donc HÉRITÉE : sans cette déclaration, une puce posée dans une
      carte récupérait l'ombre de la carte, et un bouton posé dans la feuille
@@ -607,12 +623,22 @@
      bas) pose position:relative sur tous les .icon-btn — à égalité il
      gagnerait, et les deux boutons tomberaient en pile à gauche en poussant
      tout l'écran vers le bas. */
-  .icon-btn.hero-settings{ position:absolute; top:0.15rem; right:0.5rem; color:var(--ink); }
+  /* ===== LES BOUTONS DU HAUT, À LA MÊME PLACE SUR TOUS LES ÉCRANS =====
+     « Vérifie que l'affichage est parfaitement aligné. » Il ne l'était pas :
+     sur tous les autres écrans, le retour et la roue des Réglages sont posés
+     dans l'en-tête (.app-header), à calc(0.55rem + 1px) du bord des cartes et
+     calc(0.5rem + 1px) du haut de l'écran. À l'accueil, ils l'étaient à
+     0.5rem et 0.15rem : la roue sautait de 1,8 px de côté et de 6,9 px de
+     haut à chaque changement d'onglet Accueil / Groupes. Mêmes cotes que
+     l'en-tête, désormais : la roue ne bouge plus d'un pixel d'un écran à
+     l'autre — et sur un iPhone, le haut du profil et des Réglages tombe pile
+     sur le haut du logo au repos. */
+  .icon-btn.hero-settings{ position:absolute; top:calc(0.5rem + 1px); right:calc(0.55rem + 1px); color:var(--ink); }
   /* LE RÉSEAU (voir sonderReseau) : un rond du même verre que les Réglages,
      juste à sa gauche, et seulement quand le réseau va mal. La couleur est
      celle du SIGNE, jamais d'un bord : ambre pour « faible », brique pour
      « coupé » — assez sombres pour se lire sur le verre clair. */
-  .icon-btn.hero-reseau{ position:absolute; top:0.15rem; right:calc(0.5rem + 2.4rem + 0.55rem); }
+  .icon-btn.hero-reseau{ position:absolute; top:calc(0.5rem + 1px); right:calc(0.55rem + 1px + 2.4rem + 0.55rem); }
   .icon-btn.hero-reseau[data-reseau="faible"]{ color:#A8680F; }
   .icon-btn.hero-reseau[data-reseau="coupe"]{ color:#B23A2A; }
   .icon-btn.hero-reseau.arrive{ animation:reseauArrive 0.42s cubic-bezier(0.2,0.8,0.2,1) both; }
@@ -620,7 +646,7 @@
   @keyframes reseauArrive{ from{ opacity:0; transform:scale(0.6); } to{ opacity:1; transform:none; } }
   @keyframes reseauPart{ to{ opacity:0; transform:scale(0.6); } }
   @media (prefers-reduced-motion: reduce){ .icon-btn.hero-reseau.arrive, .icon-btn.hero-reseau.part{ animation-duration:0.01s; } }
-  .icon-btn.hero-profile{ position:absolute; top:0.15rem; left:0.5rem; padding:0; overflow:visible; background:transparent; border:none; box-shadow:none; }
+  .icon-btn.hero-profile{ position:absolute; top:calc(0.5rem + 1px); left:calc(0.55rem + 1px); padding:0; overflow:visible; background:transparent; border:none; box-shadow:none; }
   .hero-icon{ width:clamp(4.2rem, min(calc(27 * var(--lw)), calc(14.2 * var(--hu))), 7.4rem); height:auto; aspect-ratio:1; margin:0 auto 0.5rem; border-radius:23%; box-shadow:0 12px 30px rgba(10,8,6,0.44), 0 0 8px rgba(255,250,238,0.48), 0 0 24px rgba(255,247,228,0.34), 0 0 52px rgba(255,247,231,0.18), inset 0 0 9px rgba(255,252,245,0.4), inset 0 1.5px 4px rgba(255,255,255,0.28); display:block; object-fit:cover; animation:heroFloat 5s ease-in-out infinite; -webkit-user-drag:none; user-drag:none; -webkit-touch-callout:none; -webkit-user-select:none; user-select:none; pointer-events:none; }
   @keyframes heroFloat{ 0%,100%{ transform:translateY(0); } 50%{ transform:translateY(-6px); } }
   .hero-title{ font-family:'Poppins',sans-serif; font-weight:700; font-size:2rem; margin:0; letter-spacing:-0.01em; color:#fff; text-shadow:0 1px 12px rgba(0,0,0,0.35); }
@@ -654,6 +680,18 @@
          (max-height:750px) and (pointer:fine),
          (orientation:landscape) and (pointer:coarse) and (max-width:750px){
     .home-verse{ display:none; }
+  }
+  /* AVEC LA BARRE, IL REVIENT. Ce palier date de l'accueil à la rangée des
+     sept jours. Avec la barre des groupes, la rangée est partie dans
+     Progression — et sur un iPhone SE, 60 px restaient vides au-dessus de la
+     barre pendant que le verset était retiré « faute de place ». Il en
+     demande 36 : il revient dès 600 px de haut. Mesuré de 20 en 20 px, de
+     360 à 430 de large : il TIENT dès 560 px, mais les cartes y retombent à
+     leur écart plancher (10 px) ; à partir de 600, elles gardent 16 px et
+     plus, l'écart d'un écran normal. En dessous, la place revient aux
+     cartes, comme avant (banc-essai/accueil.js balaie les hauteurs). */
+  @media (min-height:600px) and (max-height:750px) and (orientation:portrait){
+    html.avec-barre .home-verse{ display:block; }
   }
   /* CETTE SEMAINE — le pied de l'accueil (voir semaineHtml).
      Même famille que le reste : des pastilles au rayon des petits contrôles,
@@ -719,6 +757,8 @@
   .sem-flamme{ display:inline-flex; align-items:center; justify-content:center; gap:0.3rem; font-family:inherit; font-weight:800; font-size:1rem; font-variant-numeric:tabular-nums; color:#fff; text-shadow:0 1px 2px var(--feu-encre); --glass-tint: var(--feu); border:0; border-radius:var(--r-full); min-height:2.75rem; padding:0 calc(1.1rem + 1px); flex-shrink:0; box-shadow:0 2px 8px var(--feu-ombre); cursor:pointer; -webkit-tap-highlight-color:transparent; position:relative; }
   .sem-flamme svg{ width:1.05rem; height:1.05rem; display:block; }
   .sem-flamme b{ font-weight:800; }
+  .sem-flamme .sf-chev{ display:inline-flex; width:0.85rem; height:0.85rem; margin:0 -0.3rem 0 0.02rem; opacity:0.88; }
+  .sem-flamme .sf-chev svg{ width:100%; height:100%; display:block; }
   /* Flamme éteinte : on ne crie pas un zéro en or. Le même objet, en sourdine,
      parce qu'une série à zéro n'est pas une faute — c'est un début. */
   .sem-flamme.eteinte{ --glass-tint: rgba(255,255,255,0.16); color:rgba(255,255,255,0.8); box-shadow:none; text-shadow:0 1px 4px rgba(0,0,0,0.4); }
@@ -2386,6 +2426,12 @@
   .ce-txt{ flex:1; min-width:0; display:flex; flex-direction:column; gap:0.1rem; }
   .ce-t{ font-family:'Poppins',sans-serif; font-size:0.94rem; font-weight:700; color:var(--ink); line-height:1.3; }
   .ce-chev{ display:inline-flex; width:1.1rem; height:1.1rem; flex-shrink:0; color:var(--ink-soft); }
+  .ce-ico[data-etat="ok"]{ color:var(--green); }
+  /* La feuille « Mon compte » : l'adresse en tête, puis les deux portes. */
+  .mc-qui{ display:flex; flex-direction:column; gap:0.15rem; text-align:center; padding:0.2rem 0 0.3rem; }
+  .mc-qui b{ font-family:'Poppins',sans-serif; font-size:0.98rem; font-weight:600; color:var(--ink); overflow-wrap:anywhere; }
+  .mc-qui small{ font-size:0.82rem; color:var(--ink-soft); }
+  .mc-note{ text-align:center; margin-top:-0.25rem; }
   .ce-ico svg, .ce-chev svg{ width:100%; height:100%; }
   .info-card{ background:rgba(255,255,255,0.6); backdrop-filter:blur(18px) saturate(180%); -webkit-backdrop-filter:blur(18px) saturate(180%); border:0; border-radius:var(--r-m); padding:calc(0.85rem + 1px) calc(0.95rem + 1px); font-size:0.84rem; line-height:1.55; color:var(--ink); }
   /* ===== LE MESSAGE D'ERREUR NE POUSSE PLUS RIEN =====
@@ -2509,6 +2555,14 @@
 
   .len-label{ font-size:clamp(0.75rem, calc(1.68 * var(--hu)), 0.82rem); font-weight:600; color:rgba(255,255,255,0.9); margin:clamp(0.28rem, calc(3.8 * var(--hu) - 14.9px), 0.95rem) 0 clamp(0.13rem, calc(1.9 * var(--hu) - 8.5px), 0.45rem) 0.2rem; text-shadow:0 1px 6px rgba(0,0,0,0.4); }
   .len-row{ display:flex; gap:0.5rem; }
+  /* Un testament convenu par un appariement ne se change plus : les deux
+     autres s'effacent sans disparaître — on voit qu'ils existent. */
+  .len-chip:disabled{ opacity:0.45; }
+  /* Le testament, sur l'écran En ligne : au-dessus des trois actions, qu'il
+     règle toutes, à l'écart qui sépare deux actions. */
+  .ol-testament{ margin:0 0 0.8rem; }
+  .ol-testament .len-label{ margin-top:0; }
+  .opp-testament{ margin-top:0.35rem; font-size:0.85rem; font-weight:600; color:var(--primary); }
   .len-chip{ flex:1; display:flex; align-items:center; justify-content:center; min-height:2.75rem; --glass-tint: rgb(252,248,241); background:rgb(252,248,241); backdrop-filter:none; -webkit-backdrop-filter:none; border:0; border-radius:var(--r-m); padding:calc(0.58rem + 1px) calc(0.4rem + 1px); font-weight:600; font-size:0.84rem; color:var(--ink); }
   /* Même chose pour les puces du salon : aucun bord à elles. */
   .len-chip.sel{ --glass-tint: rgb(236,60,26); color:#fff; }
@@ -4795,6 +4849,29 @@
     --rim-cast:0 10px 34px rgba(15,12,10,0.24), 0 2px 8px rgba(15,12,10,0.1); box-shadow:none;
     transition:transform var(--tr-ouvre), opacity 0.22s ease; }
   .barre-bas.cachee{ transform:translate3d(-50%, calc(100% + var(--bb-bas) + 1rem), 0); pointer-events:none; }
+  /* ===== LA BARRE ARRIVE AVEC SA PAGE =====
+     « Les logos Accueil et Messages mettent un petit peu de temps, après une
+     animation. » Mesuré au retour de Progression : la page arrivait de CÔTÉ
+     pendant que la barre remontait du BAS, et la barre n'était en place
+     qu'au bout de 0,48 s — deux mouvements dans deux directions, le second
+     traînant derrière le premier. Comme la barre d'onglets d'iOS, elle fait
+     désormais partie de sa page : elle arrive de côté, du même pas
+     (--tr-ouvre), avec elle ; et quand on quitte l'accueil pour une page
+     qui la cache, elle part avec lui, d'un fondu court vers le côté — la
+     page qu'on quitte disparaît elle aussi tout de suite. Au démarrage
+     (l'accueil monte du bas), elle monte du bas : toujours le sens de sa
+     page. Entre Accueil et Groupes elle ne bouge pas : seule la pastille
+     glisse. */
+  .barre-bas.sans-transition{ transition:none !important; }
+  @keyframes barreArriveG{ from{ transform:translate3d(calc(-50% - 28vw),0,0); } to{ transform:translate3d(-50%,0,0); } }
+  @keyframes barreArriveD{ from{ transform:translate3d(calc(-50% + 28vw),0,0); } to{ transform:translate3d(-50%,0,0); } }
+  @keyframes barrePart{ from{ opacity:1; transform:translate3d(-50%,0,0); } to{ opacity:0; transform:translate3d(calc(-50% - 10vw),0,0); } }
+  .barre-bas.arrive-g{ animation:barreArriveG var(--tr-ouvre) both; }
+  .barre-bas.arrive-d{ animation:barreArriveD var(--tr-ouvre) both; }
+  /* Un fondu qui part VITE (courbe de sortie, 0,2 s) : la page qu'on quitte
+     disparaît à l'instant, la barre ne doit pas traîner derrière elle. */
+  .barre-bas.part-cote{ animation:barrePart 0.2s cubic-bezier(0.2,0.8,0.2,1) forwards; pointer-events:none; }
+  @media (prefers-reduced-motion: reduce){ .barre-bas.arrive-g, .barre-bas.arrive-d, .barre-bas.part-cote{ animation-duration:0.01s; } }
   /* Le clavier monte (une recherche, une adresse) : la barre s'efface. Sur
      Android elle remonterait avec la page et se poserait sur le champ. */
   html.kb .barre-bas{ transform:translate3d(-50%, calc(100% + var(--bb-bas) + 1rem), 0); pointer-events:none; }
@@ -4830,6 +4907,36 @@
      sans elle, rien ne change. */
   html.avec-barre .screen.accueil,
   html.avec-barre .screen.groupes-ecran{ padding-bottom:calc(var(--bb-h) + var(--bb-bas) - max(calc(env(safe-area-inset-bottom) + 0.35rem), var(--air-bas, 0.8rem)) + 0.7rem); }
+  /* ===== AVEC LA BARRE, L'ACCUEIL GARDE SON RYTHME JUSQU'EN BAS =====
+     Mesuré sur six téléphones : l'écart entre la carte Progression et la
+     barre allait de 13 px (iPhone 15) à 65 px (petit Android), pendant que
+     les cartes, elles, restaient à 18-25 px l'une de l'autre. Deux raisons :
+       1. l'écart du bas était une marge FIXE (0.7rem), hors du partage —
+          les cartes s'écartaient, lui non ;
+       2. une fois cartes et écarts à leur plafond, ce qui restait tombait
+          AU FOND du bloc des cartes, donc juste au-dessus de la barre : un
+          trou de 40 à 60 px sur un SE, un Pixel, un petit Android. Le
+          commentaire de .home-cartes le disait pourtant : ce qui reste
+          au-delà doit remonter au-dessus du logo, où il ne se voit pas. Le
+          bloc, souple, l'avalait.
+     Désormais : l'écart du bas est un espaceur comme les autres (.ec-fin),
+     le bloc des cartes ne grandit pas au-delà de ce que ses cartes et ses
+     écarts peuvent prendre, et le reste va au HAUT DU HÉROS — sous les
+     boutons, qui ne bougent pas (ils sont posés en absolu dans le héros, et
+     c'est le héros qui grandit, par le haut). Sans la barre, rien ne change :
+     la rangée des sept jours a son propre équilibre (banc-essai/pied.js). */
+  html.avec-barre .screen.accueil{ padding-bottom:calc(var(--bb-h) + var(--bb-bas) - max(calc(env(safe-area-inset-bottom) + 0.35rem), var(--air-bas, 0.8rem))); }
+  /* Le bloc d'abord, le héros ensuite : 100 000 contre 1, le héros ne reçoit
+     rien tant que le bloc peut encore grandir ; dès que le bloc touche son
+     plafond, il est gelé et le héros prend tout le reste. */
+  html.avec-barre .accueil > .home-cartes{ flex-grow:100000;
+    max-height:calc(5 * clamp(3.6rem, calc(10 * var(--hu)), 5.8rem) + 5 * clamp(0.9rem, calc(3 * var(--hu)), 1.7rem)); }
+  html.avec-barre .accueil > .hero{ flex:1 1 auto; display:flex; flex-direction:column; justify-content:flex-end; }
+  /* En colonne souple, des marges auto rétréciraient la zone du logo à la
+     largeur de l'icône — et la carte du verset (posée en absolu dans cette
+     zone, à 50 % de sa largeur) avec elle. Elle garde toute la largeur. */
+  html.avec-barre .accueil > .hero > .hero-zone{ width:100%; flex-shrink:0; }
+  html.avec-barre .accueil > .hero > :is(.hero-title, .home-verse){ flex-shrink:0; }
   /* Le petit mot (« Code copié ») se pose AU-DESSUS de la barre, pas dessus. */
   html.avec-barre .mini-toast{ bottom:calc(var(--bb-h) + var(--bb-bas) + 0.7rem); }
   /* Sur la carte Progression, quand la rangée des sept jours est partie dans
@@ -4858,10 +4965,9 @@
   .parcours-sum .sem-flamme.eteinte{ --glass-tint: rgba(34,26,16,0.07); color:var(--ink-soft); text-shadow:none; }
 
   /* ---------- GLISSER DE CÔTÉ ----------
-     Accueil, Groupes, puis un groupe : trois pièces côte à côte. On y va
-     vers la droite et on en revient vers la gauche, comme sur les réseaux —
-     le reste du jeu continue de monter. Même durée, même courbe que le pli ;
-     seul le sens change. */
+     Tout le jeu, depuis la v312 (voir PROFONDEUR) : on va plus loin vers la
+     droite et on en revient vers la gauche, comme sur les réseaux. Même
+     durée, même courbe que le pli ; seul le sens change. */
   @keyframes screenInD{ from{ transform:translate3d(28vw,0,0); } to{ transform:translate3d(0,0,0); } }
   @keyframes screenInG{ from{ transform:translate3d(-28vw,0,0); } to{ transform:translate3d(0,0,0); } }
   @keyframes screenOutD{ from{ opacity:1; transform:translate3d(0,0,0); } to{ opacity:0; transform:translate3d(-10vw,0,0); } }
@@ -5152,9 +5258,9 @@
   .mod-act{ display:flex; flex-wrap:wrap; gap:0.5rem; margin-top:0.35rem; }
 
   /* ---------- CONFIDENTIALITÉ ---------- */
-  .conf-liste{ display:flex; flex-direction:column; gap:0.75rem; }
-  .conf-l b{ display:block; font-family:'Poppins',sans-serif; font-weight:600; font-size:0.95rem; margin-bottom:0.15rem; }
-  .conf-l p{ margin:0; font-size:0.88rem; line-height:1.5; color:var(--ink-soft); }
+  .conf-liste{ display:flex; flex-direction:column; gap:0.5rem; }
+  .conf-l{ margin:0; font-size:0.86rem; line-height:1.42; color:var(--ink-soft); }
+  .conf-l b{ font-family:'Poppins',sans-serif; font-weight:600; color:var(--ink); }
 
   /* ---------- DEUX LIENS DISCRETS ----------
      Supprimer son compte (carte du compte) et la confidentialité (Réglages) :
@@ -5542,6 +5648,20 @@ const TEXTES = {
     "1 gel en réserve":"1 freeze in reserve",
     "{n} gels en réserve":"{n} freezes in reserve",
     "Rapports de bug":"Bug reports",
+    "Sans compte,":"Without an account,",
+    "ta progression et tes réglages restent sur ton téléphone.":"your progress and settings stay on your phone.",
+    "Avec un compte,":"With an account,",
+    "ton e-mail sert à te connecter ; ta progression et ta photo sont sauvegardées en ligne.":"your email is used to sign in; your progress and photo are saved online.",
+    "Les autres voient":"Others see",
+    "ton nom, ta couleur, ta photo et, dans tes groupes, tes messages.":"your name, color and photo — and, in your groups, your messages.",
+    "La modération":"Moderators",
+    "peut lire les groupes, pour faire respecter les règles.":"can read groups to enforce the rules.",
+    "Les rapports de bug,":"Bug reports,",
+    "s'ils sont activés, n'envoient que l'erreur, rien sur toi.":"if turned on, send only the error, nothing about you.",
+    "Jamais":"Never",
+    "de publicité, de pistage ni de revente.":"any ads, tracking or data selling.",
+    "Tout supprimer :":"To delete everything:",
+    "Profil → Mon compte → « Supprimer mon compte ».":"Profile → My account → “Delete my account”.",
     "Ta progression n'existe que sur ce téléphone.":"Your progress lives only on this phone.",
     "Sauvegarder ma progression":"Save my progress",
     "Changer de téléphone ne te fera alors rien perdre.":"Then changing phones won't cost you anything.",
@@ -5822,6 +5942,7 @@ const TEXTES = {
     "Envoi…":"Sending…",
     "Code {code}":"Code {code}",
     "Rejoindre la partie":"Join the game",
+    "Mon compte":"My account",
     "Lecture seule · modération":"Read only · moderation",
     "Tous les groupes":"All groups",
     "Voir le groupe":"View group",
@@ -5900,24 +6021,11 @@ const TEXTES = {
     "Fermer ce groupe pour tout le monde ?":"Close this group for everyone?",
     "La décision s'applique tout de suite.":"The decision takes effect immediately.",
     "Confidentialité":"Privacy",
-    "Ce qui reste sur ton téléphone":"What stays on your phone",
-    "Ta progression et tes réglages, tant que tu n'as pas de compte.":"Your progress and your settings, as long as you don't have an account.",
-    "Si tu crées un compte":"If you create an account",
-    "Ton adresse e-mail sert à te connecter. Ta progression et ta photo de profil sont sauvegardées en ligne pour les retrouver sur un autre téléphone.":"Your email address is used to sign in. Your progress and your profile photo are saved online so you can find them on another phone.",
-    "Ta photo de profil":"Your profile photo",
-    "Les joueurs de tes parties en ligne et les membres de tes groupes la voient. « Retirer la photo », dans ton profil, la retire partout.":"Players in your online games and members of your groups can see it. “Remove photo” in your profile removes it everywhere.",
-    "Dans les groupes":"In groups",
-    "Les membres voient ton nom, ta couleur, ta photo et tes messages. Rien d'autre.":"Members see your name, your color, your photo and your messages. Nothing else.",
     "Photo du groupe":"Group photo",
     "{nom} a changé la photo du groupe":"{nom} changed the group photo",
     "{nom} a retiré la photo du groupe":"{nom} removed the group photo",
     "La photo n'a pas pu être envoyée.":"The photo couldn't be sent.",
     "Une photo retirée par la modération ne peut pas être remplacée avant sept jours.":"A photo removed by moderation can't be replaced for seven days.",
-    "S'ils sont activés, une erreur du jeu est envoyée, sans rien qui permette de savoir qui tu es.":"If they're on, a game error is sent, with nothing that could identify you.",
-    "Ce que le jeu ne fait pas":"What the game doesn't do",
-    "Pas de publicité, pas de pistage, rien n'est vendu à personne.":"No ads, no tracking, nothing is sold to anyone.",
-    "Tout supprimer":"Delete everything",
-    "Profil → « Supprimer mon compte » efface ton compte, ta sauvegarde en ligne, tes messages et tes groupes.":"Profile → “Delete my account” erases your account, your online save, your messages and your groups.",
     "Supprimer mon compte":"Delete my account",
     "Supprimer ton compte ?":"Delete your account?",
     "Ton compte et ta sauvegarde en ligne seront supprimés, avec tes messages et tes groupes. Ta progression sur ce téléphone reste là.":"Your account and your online save will be deleted, along with your messages and your groups. Your progress on this phone stays.",
@@ -6157,6 +6265,20 @@ const TEXTES = {
     "1 gel en réserve":"1 congelación en reserva",
     "{n} gels en réserve":"{n} congelaciones en reserva",
     "Rapports de bug":"Informes de errores",
+    "Sans compte,":"Sin cuenta,",
+    "ta progression et tes réglages restent sur ton téléphone.":"tu progreso y tus ajustes se quedan en tu teléfono.",
+    "Avec un compte,":"Con una cuenta,",
+    "ton e-mail sert à te connecter ; ta progression et ta photo sont sauvegardées en ligne.":"tu correo sirve para iniciar sesión; tu progreso y tu foto se guardan en línea.",
+    "Les autres voient":"Los demás ven",
+    "ton nom, ta couleur, ta photo et, dans tes groupes, tes messages.":"tu nombre, tu color, tu foto y, en tus grupos, tus mensajes.",
+    "La modération":"La moderación",
+    "peut lire les groupes, pour faire respecter les règles.":"puede leer los grupos para hacer cumplir las reglas.",
+    "Les rapports de bug,":"Los informes de errores,",
+    "s'ils sont activés, n'envoient que l'erreur, rien sur toi.":"si están activados, solo envían el error, nada sobre ti.",
+    "Jamais":"Nunca",
+    "de publicité, de pistage ni de revente.":"publicidad, rastreo ni venta de datos.",
+    "Tout supprimer :":"Para borrarlo todo:",
+    "Profil → Mon compte → « Supprimer mon compte ».":"Perfil → Mi cuenta → «Eliminar mi cuenta».",
     "Ta progression n'existe que sur ce téléphone.":"Tu progreso solo existe en este teléfono.",
     "Sauvegarder ma progression":"Guardar mi progreso",
     "Changer de téléphone ne te fera alors rien perdre.":"Así, cambiar de teléfono no te hará perder nada.",
@@ -6443,6 +6565,7 @@ const TEXTES = {
     "Envoi…":"Enviando…",
     "Code {code}":"Código {code}",
     "Rejoindre la partie":"Unirse a la partida",
+    "Mon compte":"Mi cuenta",
     "Lecture seule · modération":"Solo lectura · moderación",
     "Tous les groupes":"Todos los grupos",
     "Voir le groupe":"Ver el grupo",
@@ -6521,24 +6644,11 @@ const TEXTES = {
     "Fermer ce groupe pour tout le monde ?":"¿Cerrar este grupo para todos?",
     "La décision s'applique tout de suite.":"La decisión se aplica de inmediato.",
     "Confidentialité":"Privacidad",
-    "Ce qui reste sur ton téléphone":"Lo que se queda en tu teléfono",
-    "Ta progression et tes réglages, tant que tu n'as pas de compte.":"Tu progreso y tus ajustes, mientras no tengas cuenta.",
-    "Si tu crées un compte":"Si creas una cuenta",
-    "Ton adresse e-mail sert à te connecter. Ta progression et ta photo de profil sont sauvegardées en ligne pour les retrouver sur un autre téléphone.":"Tu dirección de correo sirve para iniciar sesión. Tu progreso y tu foto de perfil se guardan en línea para recuperarlos en otro teléfono.",
-    "Ta photo de profil":"Tu foto de perfil",
-    "Les joueurs de tes parties en ligne et les membres de tes groupes la voient. « Retirer la photo », dans ton profil, la retire partout.":"La ven quienes juegan contigo en línea y los miembros de tus grupos. «Quitar la foto», en tu perfil, la quita en todas partes.",
-    "Dans les groupes":"En los grupos",
-    "Les membres voient ton nom, ta couleur, ta photo et tes messages. Rien d'autre.":"Los miembros ven tu nombre, tu color, tu foto y tus mensajes. Nada más.",
     "Photo du groupe":"Foto del grupo",
     "{nom} a changé la photo du groupe":"{nom} cambió la foto del grupo",
     "{nom} a retiré la photo du groupe":"{nom} quitó la foto del grupo",
     "La photo n'a pas pu être envoyée.":"No se pudo enviar la foto.",
     "Une photo retirée par la modération ne peut pas être remplacée avant sept jours.":"Una foto quitada por la moderación no se puede reemplazar antes de siete días.",
-    "S'ils sont activés, une erreur du jeu est envoyée, sans rien qui permette de savoir qui tu es.":"Si están activados, se envía un error del juego, sin nada que permita saber quién eres.",
-    "Ce que le jeu ne fait pas":"Lo que el juego no hace",
-    "Pas de publicité, pas de pistage, rien n'est vendu à personne.":"Sin publicidad, sin rastreo, no se vende nada a nadie.",
-    "Tout supprimer":"Borrarlo todo",
-    "Profil → « Supprimer mon compte » efface ton compte, ta sauvegarde en ligne, tes messages et tes groupes.":"Perfil → «Eliminar mi cuenta» borra tu cuenta, tu copia en línea, tus mensajes y tus grupos.",
     "Supprimer mon compte":"Eliminar mi cuenta",
     "Supprimer ton compte ?":"¿Eliminar tu cuenta?",
     "Ton compte et ta sauvegarde en ligne seront supprimés, avec tes messages et tes groupes. Ta progression sur ce téléphone reste là.":"Tu cuenta y tu copia en línea se eliminarán, junto con tus mensajes y tus grupos. Tu progreso en este teléfono se queda.",
@@ -8728,6 +8838,7 @@ function setTimer(k){
   basculerChoix('[data-group="tmr"]', "active", k);
   queueGlassSync();
 }
+function selectRoomOptTheme(k){ if(net.themeFixe && k !== net.themeFixe) return; selectRoomOpt("theme", k); }
 function selectRoomOpt(g, k){
   if(g === "len") net.lengthKey = k; else if(g === "tmr") net.timerKey = k; else if(g === "theme") net.themeKey = k;
   basculerChoix('[data-rgroup="'+g+'"]', "sel", k);
@@ -8746,7 +8857,7 @@ const SUPABASE_ANON_KEY = "sb_publishable_FDJ_R0foC7uIeHmxVrj6rA_2NeIgW2a";
    remontée d'un téléphone ne vaut rien si on ne sait pas QUELLE version
    tournait. Elle doit rester égale au CACHE de sw.js — c'est ce que vérifie
    banc-essai/version.js, qui refuse de laisser publier les deux en désaccord. */
-const VERSION_JEU = "v311";
+const VERSION_JEU = "v312";
 
 /* ===================== QUAND ÇA CASSE CHEZ UN JOUEUR =====================
    « Si quelque chose casse chez cinq d'entre eux sur un modèle de téléphone
@@ -8986,6 +9097,9 @@ const net = {
   code:null, isHost:false,
   opp:null, oppScore:0, oppIndex:0, oppDone:false, oppGone:false, oppPresent:false, oppLastSeen:0,
   seed:null, lengthKey:"normale", timerKey:"30", themeKey:"tout", timedOut:false,
+  themeChoix:"tout",              // le testament choisi sur l'écran En ligne (voir LE TESTAMENT, AVANT DE CHERCHER)
+  themeFixe:null,                 // le testament convenu par un appariement : l'hôte ne peut plus en changer
+  lookersT:{},                    // id -> testament annoncé par chaque joueur en recherche
   deck:[], idx:0, score:0, correct:0, selected:null, revealed:false, myDone:false, missed:[],
   joueurs:{},                     // id -> { id, name, color, score, idx, done, gone, vu }
   photos:{},                      // id -> photo reçue par diffusion (voir diffuserPhoto)
@@ -9280,7 +9394,7 @@ function joinLobby(){
   const supa = initSupa();
   if(!supa) return;
   if(net.lobby) return;
-  net.lookers = {};
+  net.lookers = {}; net.lookersT = {};
   const ch = supa.channel("bt-lobby-v1", { config:{ presence:{ key: myId }, broadcast:{ self:false } } });
   net.lobby = ch;
   ch.on("presence", { event:"sync" }, ()=>{
@@ -9291,15 +9405,39 @@ function joinLobby(){
   ch.on("broadcast", { event:"looking" }, ({ payload })=>{
     if(!payload || payload.id===myId) return;
     net.lookers[payload.id] = Date.now();
+    /* Un joueur resté sur une version d'avant n'annonce rien : null. */
+    net.lookersT[payload.id] = (typeof payload.t === "string") ? payload.t : null;
     matchFromLookers();
     reRenderIfOnline();
   });
+  /* ===== QUI EST APPARIÉ NE CHERCHE PLUS =====
+     L'annonce « je cherche » reste fraîche 4,5 s. Un joueur qui vient d'être
+     apparié ailleurs restait donc candidat tout ce temps : un autre pouvait
+     le choisir, ouvrir un salon pour lui… et l'y attendre 8 s, seul (vu par
+     banc-essai/testament-enligne.js). Chaque appariement est annoncé à TOUT
+     le hall : on y lit qui sort du vivier, et on l'en retire tout de suite —
+     y compris quand l'annonce vient d'une version d'avant. Une annulation
+     est annoncée de même (« plus-cherche »). Un joueur retiré à tort se
+     remet de lui-même : il annonce encore qu'il cherche, 1,5 s plus tard. */
+  ch.on("broadcast", { event:"plus-cherche" }, ({ payload })=>{
+    if(!payload || payload.id === myId) return;
+    delete net.lookers[payload.id]; delete net.lookersT[payload.id];
+    reRenderIfOnline();
+  });
   ch.on("broadcast", { event:"matched" }, ({ payload })=>{
-    if(!payload || net.room) return;
+    if(!payload) return;
+    for(const id of [payload.host, payload.guest]){ if(id && id !== myId){ delete net.lookers[id]; delete net.lookersT[id]; } }
+    if(net.room) return;
     if(payload.guest !== myId && payload.host !== myId) return;
     // On vient d'annuler ? On n'accepte plus aucun match : l'initiateur
     // resté seul relancera sa recherche via sa garde (armMatchGuard).
     if(!net.searching) return;
+    /* Le testament convenu doit être le mien — ou « Tout » m'allait. Un
+       initiateur d'une version d'avant n'en dit rien : il ne convient qu'à
+       qui a choisi « Tout ». Refusé, il relancera seul (sa garde). */
+    const tConvenu = (typeof payload.t === "string") ? payload.t : null;
+    if(!testamentsAccordes(net.themeChoix, tConvenu)) return;
+    poserTestamentConvenu(tConvenu);
     net.searching = false; net.matching = false; stopSearchHeartbeat();
     net.lastOppId = (payload.host === myId) ? payload.guest : payload.host;
     net.autoMatch = true;
@@ -9312,16 +9450,19 @@ function joinLobby(){
   });
 }
 function setSearching(on){
+  /* On cessait de chercher sans le dire : les autres nous gardaient 4,5 s
+     dans leur vivier (voir QUI EST APPARIÉ NE CHERCHE PLUS). */
+  if(!on && net.searching && net.lobby){ try{ net.lobby.send({ type:"broadcast", event:"plus-cherche", payload:{ id: myId } }); }catch(e){} }
   net.searching = on; net.matching = false;
   if(on){ startSearchHeartbeat(); } else { stopSearchHeartbeat(); clearTimeout(net.matchGuard); }
   if(String(state.screen).indexOf('online')===0) render(); else reRenderIfOnline();
 }
 function startSearchHeartbeat(){
   stopSearchHeartbeat();
-  net.lookers = {};
+  net.lookers = {}; net.lookersT = {};
   const beat = ()=>{
     if(!net.searching || net.room){ stopSearchHeartbeat(); return; }
-    if(net.lobby){ net.lobby.send({ type:"broadcast", event:"looking", payload:{ id: myId, ts: Date.now() } }); }
+    if(net.lobby){ net.lobby.send({ type:"broadcast", event:"looking", payload:{ id: myId, ts: Date.now(), t: net.themeChoix || "tout" } }); }
     matchFromLookers();
   };
   beat();
@@ -9330,8 +9471,60 @@ function startSearchHeartbeat(){
 function stopSearchHeartbeat(){ if(net.hbTimer){ clearInterval(net.hbTimer); net.hbTimer = null; } }
 function freshLookers(){
   const now = Date.now(); let c = 0;
-  Object.keys(net.lookers||{}).forEach(id=>{ if(id!==myId && (now - net.lookers[id]) < 4500) c++; });
+  Object.keys(net.lookers||{}).forEach(id=>{ if(id!==myId && (now - net.lookers[id]) < 4500 && testamentsAccordes(net.themeChoix, net.lookersT[id])) c++; });
   return c;
+}
+/* ===== LE TESTAMENT, AVANT DE CHERCHER =====
+   « Pouvoir s'affronter sur un testament en particulier, pour le mode en
+   ligne. » Le salon le permettait déjà — à l'hôte. Mais dans une partie
+   aléatoire l'hôte est tiré au sort : celui qui voulait l'Ancien Testament
+   n'avait pas son mot à dire. Le choix se fait donc sur l'écran En ligne,
+   AVANT de chercher, et l'appariement en tient compte :
+     — deux choix s'accordent s'ils sont égaux, ou si l'un des deux est
+       « Tout » (qui veut tout accepte n'importe quel testament) ;
+     — la partie se joue sur le choix le plus précis des deux ;
+     — un joueur d'une version d'avant n'annonce rien : il ne convient qu'à
+       « Tout », puisqu'on ne sait pas ce qu'il jouera.
+   Le vivier reste UN : « Tout » ne coupe personne de personne, et avec
+   quelques dizaines de joueurs, c'est ce qui compte. */
+function testamentsAccordes(a, b){
+  a = a || "tout";
+  if(b === null || b === undefined) return a === "tout";
+  return a === "tout" || b === "tout" || a === b;
+}
+/* Pour juger deux AUTRES joueurs entre eux : deux téléphones d'avant
+   (aucun testament annoncé) s'accordent comme avant, sur tout. */
+function compatiblesEntre(a, b){
+  const vide = (x)=> x === null || x === undefined;
+  if(vide(a) && vide(b)) return true;
+  if(vide(a)) return b === "tout";
+  if(vide(b)) return a === "tout";
+  return a === "tout" || b === "tout" || a === b;
+}
+function testamentCommun(a, b){
+  if(a && a !== "tout") return a;
+  if(b && b !== "tout") return b;
+  return "tout";
+}
+/* Le testament convenu devient celui du salon ; s'il est précis, il est
+   FIXÉ : l'hôte tiré au sort ne peut plus le changer (voir renderOnlineRoom). */
+function poserTestamentConvenu(t){
+  /* Rien d'annoncé (version d'avant) : on n'a pu l'accepter qu'avec « Tout ». */
+  if(t === null || t === undefined){ net.themeKey = net.themeChoix || "tout"; net.themeFixe = null; return; }
+  net.themeKey = t;
+  net.themeFixe = (t !== "tout") ? t : null;
+}
+function choisirTestamentEnLigne(k){
+  net.themeChoix = k;
+  basculerChoix('[data-ogroup="theme"]', "sel", k);
+  queueGlassSync();
+}
+function testamentsHtml(groupe, sel, action, fixe){
+  return ["tout","at","nt"].map(k=>{
+    const bloque = !!fixe && k !== fixe;
+    const nom = k === "tout" ? T("Tout") : (k === "at" ? T("Ancien") : T("Nouveau"));
+    return `<button class="len-chip${sel===k?' sel':''}" data-${groupe}="theme" data-k="${k}"${bloque?' disabled':''} onclick="${action}('${k}')">${nom}</button>`;
+  }).join("");
 }
 /* VRAI MATCHMAKING ALÉATOIRE.
    - Le vivier = tous les joueurs en recherche (leur « looking » bat toutes les
@@ -9347,10 +9540,25 @@ function freshLookers(){
 function matchFromLookers(){
   if(!net.searching || net.matching || net.room) return;
   const now = Date.now();
-  const others = Object.keys(net.lookers).filter(id=>id!==myId && (now - net.lookers[id]) < 4500);
+  /* ===== UN SEUL INITIATEUR, POUR TOUT LE VIVIER =====
+     La règle d'origine : le plus petit identifiant de TOUT le vivier
+     apparie, personne d'autre — donc jamais deux salons pour un même joueur.
+     Avec le testament, j'avais pris « le plus petit parmi CEUX AVEC QUI JE
+     PEUX JOUER » : chacun voyait alors un vivier différent, et Ancien et
+     Nouveau pouvaient se croire initiateurs EN MÊME TEMPS vers le même
+     « Tout ». L'un des deux restait 8 s dans un salon vide (vu par
+     banc-essai/testament-enligne.js, une fois sur trois).
+     Tout le monde lit les mêmes annonces : on reprend donc la règle d'origine
+     sur le vivier ENTIER, en n'écartant que ceux qui n'ont personne avec qui
+     jouer. Un seul initiateur à la fois, et il choisit parmi SES partenaires
+     possibles. */
+  const frais = Object.keys(net.lookers).filter(id=>id!==myId && (now - net.lookers[id]) < 4500);
+  const tDe = (id)=> id === myId ? (net.themeChoix || "tout") : net.lookersT[id];
+  const vivier = frais.concat([myId]).sort();
+  const initiateur = vivier.find(x => vivier.some(y => y !== x && compatiblesEntre(tDe(x), tDe(y))));
+  if(initiateur !== myId) return;            // pas initiateur : l'autre nous appariera
+  const others = frais.filter(id => testamentsAccordes(net.themeChoix, net.lookersT[id]));
   if(!others.length) return;
-  const all = others.concat([myId]).sort();
-  if(all[0] !== myId) return;               // pas initiateur : l'autre nous appariera
   let pool = others;
   if(others.length > 1 && net.lastOppId){
     const fresh = others.filter(id=>id!==net.lastOppId);
@@ -9364,7 +9572,9 @@ function matchFromLookers(){
   const hostId = meHost ? myId : partner;
   const guestId = meHost ? partner : myId;
   net.lastOppId = partner; net.autoMatch = true;
-  net.lobby.send({ type:"broadcast", event:"matched", payload:{ code, host:hostId, guest:guestId } });
+  const tConvenu = testamentCommun(net.themeChoix, net.lookersT[partner]);
+  poserTestamentConvenu(tConvenu);
+  net.lobby.send({ type:"broadcast", event:"matched", payload:{ code, host:hostId, guest:guestId, t:tConvenu } });
   if(meHost){ createRoom(code, true); } else { joinRoom(code, false); }
   armMatchGuard();
 }
@@ -9386,7 +9596,7 @@ function armMatchGuard(){
 function leaveLobby(){
   stopSearchHeartbeat();
   if(net.lobby){ try { net.lobby.untrack(); net.supa.removeChannel(net.lobby); } catch(e){} net.lobby = null; }
-  net.searching = false; net.matching = false; net.connected = 0; net.lookers = {};
+  net.searching = false; net.matching = false; net.connected = 0; net.lookers = {}; net.lookersT = {};
 }
 
 /* ===================== PRÉSENCE EN ARRIÈRE-PLAN =====================
@@ -9793,6 +10003,7 @@ function cleanupRoom(){
   clearTimeout(photoTimer); photoTimer = null;
   net.deck=[]; net.idx=0; net.myDone=false; net.status="";
   net.iWantReplay=false; net.oppWantReplay=false; net.replayDeclined=false;
+  net.themeFixe = null;
 }
 function leaveRoomToOnline(){
   cleanupRoom();
@@ -9949,6 +10160,42 @@ function typoFr(s){
 }
 function escapeHtml(s){
   return typoFr(s).replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;");
+}
+/* ===== UN EMOJI EST UN SIGNE, PAS DEUX MOITIÉS =====
+   « Fais en sorte que les noms de groupe prennent en compte les emojis. »
+   Le serveur les prenait déjà, et les rendait à l'identique (vérifié sur le
+   vrai PostgreSQL des bancs). C'est le jeu qui les cassait : toutes les
+   pastilles prenaient leur initiale avec charAt(0), qui compte en unités
+   UTF-16 — un emoji en occupe deux, une famille onze. « 🔥 Les amis »
+   donnait donc une pastille à la MOITIÉ d'un emoji : un signe cassé (�).
+   On découpe en SIGNES, tels que l'œil les voit (un drapeau, une famille, un
+   pouce avec sa couleur de peau : un seul signe chacun) — avec
+   Intl.Segmenter, et à défaut avec une expression qui reconnaît les mêmes
+   suites. Une pastille dont le nom commence par un emoji montre l'emoji. */
+const DECOUPE_SIGNES = (()=>{ try{ return new Intl.Segmenter(undefined, { granularity:"grapheme" }); }catch(e){ return null; } })();
+const SIGNE_RE = (()=>{
+  try{ return new RegExp("\\p{Regional_Indicator}{2}|\\p{Extended_Pictographic}(?:\\uFE0F|\\p{Emoji_Modifier})?(?:\\u200D\\p{Extended_Pictographic}(?:\\uFE0F|\\p{Emoji_Modifier})?)*|[\\s\\S]\\p{M}*\\uFE0F?\\u20E3?", "gu"); }
+  catch(e){ return null; }
+})();
+function signes(s){
+  s = String(s == null ? "" : s);
+  if(DECOUPE_SIGNES){ const l = []; for(const x of DECOUPE_SIGNES.segment(s)) l.push(x.segment); return l; }
+  if(SIGNE_RE) return s.match(SIGNE_RE) || [];
+  return Array.from(s);
+}
+/* L'initiale d'un nom : sa première lettre en capitale — ou son emoji. */
+function premierSigne(s){
+  const t = String(s == null ? "" : s).trim();
+  return t ? (signes(t)[0] || "").toUpperCase() : "";
+}
+/* Couper à n signes (un affichage), jamais au milieu d'un emoji. */
+function couperSignes(s, n){ const l = signes(s); return l.length > n ? l.slice(0, n).join("") : String(s == null ? "" : s); }
+/* Couper à n points de code — ce que compte le serveur (char_length) —, sans
+   jamais laisser un emoji à moitié. */
+function couperPoints(s, n){
+  let r = "", k = 0;
+  for(const x of signes(s)){ const p = Array.from(x).length; if(k + p > n) break; r += x; k += p; }
+  return r;
 }
 
 /* ===================== RÉGLAGES PERSISTANTS (effets, musique, volume) ===================== */
@@ -10280,6 +10527,29 @@ function deposerContreMonte(f){
 function monterLaFeuille(veil){
   const f = veil && veil.querySelector ? veil.querySelector(".settings-sheet") : null;
   if(!f) return;
+  /* ===== UNE FEUILLE REFERME D'ABORD LE CLAVIER DE LA PAGE =====
+     « Dans un groupe, je parle en message, puis j'appuie sur le i : vérifie
+     que la superposition est bonne. » Elle ne l'était pas : le clavier
+     restait ouvert pendant que la feuille montait, la feuille se posait
+     dessus, puis tout redescendait avec lui — et le champ de la discussion
+     dépassait un instant au-dessus de la feuille. On referme le clavier au
+     moment où la feuille part : les deux mouvements se font ensemble, comme
+     sur iOS. (Un champ DE la feuille garde son clavier, évidemment.) */
+  try{
+    const a = document.activeElement, de = document.documentElement;
+    const champPage = !!a && (a.tagName === "INPUT" || a.tagName === "TEXTAREA") && !veil.contains(a);
+    if(champPage) a.blur();
+    /* Et la page reprend sa hauteur TOUT DE SUITE — que le champ ait perdu le
+       foyer avant le toucher (Android) ou pas (iOS) : la feuille part du bas
+       de l'écran, pas du bord d'un clavier qui s'en va. Son voile, créé une
+       image plus tôt à la hauteur du clavier, est posé net à la hauteur
+       finale (sans sa transition) — sinon la feuille redescendait en
+       montant. */
+    if((champPage || !a || !veil.contains(a)) && (de.classList.contains("kb") || de.classList.contains("kb-fil"))){
+      de.classList.remove("kb", "kb-fil");
+      veil.style.transition = "none"; void veil.offsetHeight; veil.style.transition = "";
+    }
+  }catch(e){}
   sonderOuverture(f);
   const lacher = ()=>{
     if(!f.isConnected || f.classList.contains("monte")) return;   // refermée, ou déjà partie
@@ -11861,7 +12131,12 @@ try{
      clavier est monté depuis longtemps. À 22, il met 250 / 233 / 167 ms —
      l'ordre de grandeur de l'ancienne loi (167 / 150 / 100) — et c'est la
      première valeur où la fin ne rampe plus du tout, à aucune distance. */
-  const GLISSE_W = 22;            // raideur du ressort, en radians par seconde
+  /* ON LE RALENTIT, À LA DEMANDE. « Le clavier va beaucoup trop vite, ça
+     donne l'impression de bug. » À 22, le recadrage durait 0,2 s, juste après
+     un clavier qui en dure 0,3 : deux secousses à la suite. À 12, il se pose
+     en 0,4 s environ — le pas d'une page qui s'ouvre (--tr-ouvre) — avec la
+     même forme : départ doux, une seule bosse, pas de rampe. */
+  const GLISSE_W = 12;            // raideur du ressort, en radians par seconde
   /* ===== UN DÉFILEUR NE CONNAÎT QUE LES PIXELS ENTIERS, TOUJOURS =====
      Ça reste vrai, et ça donne les deux planchers ci-dessous.
      AU DÉPART, la courbe passe ses premières images sous un pixel : le
@@ -11885,25 +12160,35 @@ try{
      vaut zéro pour un geste qui monte, culmine et redescend — une seule
      bosse, la forme d'un vrai mouvement. Voir banc-essai/douceur.js. */
   const GLISSE_MONTE = 1, GLISSE_POSE = 2;   // px par image, mini
-  function glisserVers(app, cible){
+  /* « fin » est appelée quand la course s'arrête, QUELLE QUE SOIT la raison :
+     arrivée, butée, doigt posé, ou nouvelle course qui la remplace. C'est ce
+     qui permet de retirer la cale du clavier au bon moment (voir
+     rendDefilementClavier), et jamais trop tard. */
+  const finir = (g)=>{ if(g && g.fin){ const f = g.fin; g.fin = null; try{ f(); }catch(e){} } };
+  function glisserVers(app, cible, fin){
     const maintenant = ()=> (typeof performance !== "undefined" ? performance.now() : Date.now());
     const pos = app.scrollTop;
     if(Math.abs(cible - pos) < GLISSE_MINI){
-      if(glissement){ cancelAnimationFrame(glissement.id); glissement = null; }
-      app.scrollTop = cible; return;
+      if(glissement){ cancelAnimationFrame(glissement.id); const g = glissement; glissement = null; finir(g); }
+      app.scrollTop = cible; if(fin){ try{ fin(); }catch(e){} } return;
     }
     /* Une course déjà lancée n'est pas relancée : on lui donne la nouvelle
        cible, et c'est tout. C'est tout l'intérêt du suivi — et le ressort
        garde en plus sa vitesse, donc le raccord est invisible. */
-    if(glissement){ glissement.cible = cible; return; }
+    if(glissement){ glissement.cible = cible; if(fin){ const avant = glissement.fin; glissement.fin = avant ? ()=>{ avant(); fin(); } : fin; } return; }
     const pas = ()=>{
       const g = glissement;
       if(!g) return;
+      /* LA COURSE APPARTIENT À SON ÉCRAN. On quitte une page pendant que
+         celle-ci redescend après le clavier (toucher « Retour » referme le
+         clavier ET change d'écran) : sans cette garde, la course continuait
+         sur l'écran suivant et le faisait défiler, lui. */
+      if(g.ecran && (!g.ecran.isConnected || g.ecran.classList.contains("screen-exit"))){ glissement = null; finir(g); return; }
       const p = app.scrollTop;
       /* On repart de la position RÉELLE à chaque image, pas de notre modèle :
          le défileur arrondit, et c'est lui qui a raison. */
       const d = p - g.cible;
-      if(Math.abs(d) <= GLISSE_QUEUE){ app.scrollTop = g.cible; glissement = null; return; }
+      if(Math.abs(d) <= GLISSE_QUEUE){ app.scrollTop = g.cible; glissement = null; finir(g); return; }
       const t = maintenant();
       const dtms = Math.min(50, Math.max(1, t - g.tPrec));  // une image sautée ne fait pas bondir
       g.tPrec = t;
@@ -11933,13 +12218,14 @@ try{
          le défileur bute et la boucle tournerait indéfiniment, à consommer de
          la batterie pour ne rien déplacer. Six images sans le moindre pixel
          gagné : on est bloqué, on pose et on s'arrête. */
-      if(Math.abs(app.scrollTop - p) < 0.5){ if(++g.bloque >= 6){ glissement = null; return; } }
+      if(Math.abs(app.scrollTop - p) < 0.5){ if(++g.bloque >= 6){ glissement = null; finir(g); return; } }
       else g.bloque = 0;
       g.id = requestAnimationFrame(pas);
     };
-    glissement = { id: requestAnimationFrame(pas), cible: cible, tPrec: maintenant(), bloque: 0, v: 0 };
+    const ecran = app.querySelector(":scope > .screen:not(.screen-exit)");
+    glissement = { id: requestAnimationFrame(pas), cible: cible, tPrec: maintenant(), bloque: 0, v: 0, fin: fin || null, ecran: ecran };
   }
-  function arreterGlissement(){ if(glissement){ cancelAnimationFrame(glissement.id); glissement = null; } }
+  function arreterGlissement(){ if(glissement){ cancelAnimationFrame(glissement.id); const g = glissement; glissement = null; finir(g); } }
   document.addEventListener("touchstart", arreterGlissement, { passive:true, capture:true });
   document.addEventListener("pointerdown", arreterGlissement, { passive:true, capture:true });
 
@@ -12038,23 +12324,62 @@ try{
      quand il redescend — sauf si le doigt a fait défiler entre-temps, auquel
      cas c'est le joueur qui commande, pas nous. */
   let defilementAvantClavier = null, defilementPose = null;
+  /* ET IL EST RENDU EN GLISSANT. Le clavier refermé, la page revenait d'UN
+     COUP : 40 px en une image, mesuré sur le mode Groupe — le saut le plus
+     visible de tout le geste. Elle redescend désormais du même ressort qu'à
+     l'aller, pendant que le clavier s'en va. Il faut pour ça garder la cale
+     sous le contenu le temps du retour (html.kb-cale) : sans elle, la zone
+     défilable rétrécit d'un coup et le navigateur ramène la page au bord,
+     sans animation. La cale part quand la page est arrivée. */
+  function retourAPrevoir(){
+    const app = document.getElementById("app");
+    if(!app || defilementAvantClavier === null) return false;
+    const bougeParLeDoigt = defilementPose !== null && Math.abs(app.scrollTop - defilementPose) > 4;
+    return !bougeParLeDoigt && Math.abs(app.scrollTop - defilementAvantClavier) > 1;
+  }
   function rendDefilementClavier(){
     const app = document.getElementById("app");
-    if(app && defilementAvantClavier !== null){
-      const bougeParLeDoigt = defilementPose !== null && Math.abs(app.scrollTop - defilementPose) > 4;
-      if(!bougeParLeDoigt && Math.abs(app.scrollTop - defilementAvantClavier) > 1){
-        app.scrollTop = defilementAvantClavier;
-        try{ glassRelayout(); queueGlassSync(); }catch(e){}
-      }
-    }
+    if(retourAPrevoir()){
+      de.classList.add("kb-cale");
+      glisserVers(app, defilementAvantClavier, ()=>{
+        if(!de.classList.contains("kb")) de.classList.remove("kb-cale");
+        try{ glassRelayout(); queueGlassSync(); fitScroll(); }catch(e){}
+      });
+      try{ glassSuivre(700); }catch(e){}
+    } else if(!de.classList.contains("kb") && !glissement) de.classList.remove("kb-cale");
     defilementAvantClavier = null; defilementPose = null;
   }
+  /* ===== DANS UNE DISCUSSION, L'ÉCRAN SE RÉTRÉCIT AVEC LE CLAVIER =====
+     « Lorsque j'ouvre le clavier, ça va très vite et ça fait un peu mal de
+     tête — notamment dans les discussions : c'est même un peu saccadé. »
+     Partout ailleurs, le clavier se pose PAR-DESSUS la page et l'on fait
+     défiler la page pour dégager le champ (voir plus haut) : juste pour un
+     formulaire. Dans une discussion, le champ est TOUT EN BAS : il fallait
+     faire défiler l'écran entier de la hauteur du clavier — l'en-tête sortait
+     par le haut, tout montait d'un bloc, puis redescendait à la fermeture.
+     Une discussion se comporte donc comme toutes les messageries : l'écran
+     prend la hauteur visible, en douceur (html.kb-fil) ; l'en-tête reste en
+     place, le fil se raccourcit par le bas en gardant ses derniers messages
+     sous les yeux, et le champ monte avec le clavier. Rien d'autre ne bouge. */
+  const champDeDiscussion = ()=>{ const el = document.activeElement; return !!el && el.id === "compoTexte"; };
   function apply(){
     if(!isField()){
       restH = Math.max(restH, vv.height); // pas de clavier -> c'est la hauteur de repos
+      if(retourAPrevoir()) de.classList.add("kb-cale");
       de.classList.remove("kb");
+      if(de.classList.contains("kb-fil")){ de.classList.remove("kb-fil"); try{ glassSuivre(500); }catch(e){} }
       fitScroll();
       rendDefilementClavier();
+      return;
+    }
+    if(champDeDiscussion()){
+      const cache = restH - vv.height;
+      if(cache > 90){
+        de.style.setProperty("--vvh", Math.round(vv.height) + "px");
+        de.style.setProperty("--kbh", Math.round(cache) + "px");
+        if(!de.classList.contains("kb-fil")){ de.classList.add("kb", "kb-fil"); try{ glassSuivre(500); }catch(e){} }
+      } else if(de.classList.contains("kb-fil")){ de.classList.remove("kb", "kb-fil"); try{ glassSuivre(500); }catch(e){} }
+      if(window.scrollY){ try{ window.scrollTo(0, 0); }catch(e){} }   // le document ne bouge jamais
       return;
     }
     if(defilementAvantClavier === null){
@@ -12137,7 +12462,7 @@ try{
   vv.addEventListener("resize", apply);
   vv.addEventListener("scroll", apply);
   document.addEventListener("focusin", ()=>setTimeout(apply, 60));
-  document.addEventListener("focusout", ()=>{ clearTimeout(kbScrollTimer); clearTimeout(kbScrollTimer2); setTimeout(()=>{ if(!isField()){ de.classList.remove("kb"); fitScroll(); } }, 60); });
+  document.addEventListener("focusout", ()=>{ clearTimeout(kbScrollTimer); clearTimeout(kbScrollTimer2); setTimeout(()=>{ if(!isField()){ if(retourAPrevoir()) de.classList.add("kb-cale"); de.classList.remove("kb"); if(de.classList.contains("kb-fil")){ de.classList.remove("kb-fil"); try{ glassSuivre(500); }catch(e){} } fitScroll(); rendDefilementClavier(); } }, 60); });
 })();
 
 /* ===================== VERSET SURPRISE (5 touches sur l'icône) ===================== */
@@ -15857,7 +16182,7 @@ function goToModeSelect(){ state.screen = "mode"; render(); }
    le clavier — et le nom se fixe au passage, puisque c'est ce que fait déjà la
    sortie du champ. */
 function teamRowInner(i, t){
-  return `<span class="team-token" style="background:${TEAM_COLORS[i%6]}">${((t.name||"").trim().charAt(0).toUpperCase())||(i+1)}</span>
+  return `<span class="team-token" style="background:${TEAM_COLORS[i%6]}">${escapeHtml(premierSigne(t.name))||(i+1)}</span>
         <input type="text" value="${escapeHtml(nomEquipe(t.name))}" maxlength="20" autocomplete="off" enterkeyhint="done" oninput="renameTeam(this)" onblur="renameSettle()" onkeydown="if(event.key==='Enter'){event.preventDefault();this.blur();}" placeholder="${T("Nom du joueur ou de l'équipe")}">
         <button class="team-remove" onclick="removeTeam(this)" ${state.teams.length<=2?"disabled":""} aria-label="${T('Retirer')}"><span class="ico" style="width:0.9rem;height:0.9rem;">${ICONS.close}</span></button>`;
 }
@@ -15926,7 +16251,7 @@ function syncTeamRows(){
     const tok = rows[i].querySelector(".team-token");
     if(tok){
       tok.style.background = TEAM_COLORS[i%6];
-      tok.textContent = (t.name||"").trim().charAt(0).toUpperCase() || (i+1);
+      tok.textContent = premierSigne(t.name) || (i+1);
     }
     const rm = rows[i].querySelector(".team-remove");
     if(rm) rm.disabled = state.teams.length <= 2;
@@ -16476,7 +16801,7 @@ function renameTeam(inp){
   if(i < 0 || !state.teams[i]) return;
   state.teams[i].name = inp.value; saveTeams();
   const tok = inp.parentNode ? inp.parentNode.querySelector(".team-token") : null;
-  if(tok) tok.textContent = (inp.value||"").trim().charAt(0).toUpperCase() || (i+1);
+  if(tok) tok.textContent = premierSigne(inp.value) || (i+1);
 }
 /* Dès qu'un joueur reçoit un VRAI nom, il ne prend plus de numéro : les autres
    se resserrent derrière lui (Taylor, puis Joueur 1 à 5 — six joueurs, et la
@@ -17825,8 +18150,13 @@ function semaineHtml(){
      flamme en elle-même se sélectionne pour qu'on comprenne exactement où j'ai
      cliqué ». On sait donc toujours ce qu'on a touché. */
   const n = dailyStreakShown();
+  /* ===== ET ELLE DIT QU'ON PEUT LA TOUCHER =====
+     « On n'a pas conscience qu'on peut cliquer dessus pour afficher plus. »
+     Une pastille de compteur se lit comme une information, pas comme une
+     porte. Elle porte donc le chevron de toutes les portes du jeu (les cartes
+     de l'accueil, les testaments, les réglages) : même signe, même sens. */
   const flamme = `<button class="sem-flamme${n ? "" : " eteinte"}" onclick="ouvrirFlamme()"`
-    + ` aria-label="${T("Ta flamme")}">${ICONS.flame}<b>${n}</b></button>`;
+    + ` aria-label="${T("Ta flamme")}">${ICONS.flame}<b>${n}</b><span class="sf-chev" aria-hidden="true">${ICONS.chevronRight}</span></button>`;
   return `<div class="semaine" aria-label="${T("Tes sept derniers jours")}">`
     + `<div class="sem-h"><span class="sem-t${dailyDoneToday() ? "" : " afaire"}">${etatDuJour()}</span>${flamme}</div>`
     + `<div class="sem-j">${cases.join("")}</div></div>`;
@@ -19190,6 +19520,7 @@ async function connexionGoogle(){
    ici, et c'est écrit noir sur blanc sous le bouton. */
 async function deconnexion(){
   const supa = initSupa(); if(!supa) return;
+  try{ fermerFeuilleGroupe("compteVeil"); }catch(e){}
   try{ await supa.auth.signOut(); }catch(e){}
   compte.session = null; compte.etape = "repos"; compte.message = ""; majCarteCompte();
   surChangementDeCompte();
@@ -19260,19 +19591,22 @@ function carteCompteHtml(){
      les mêmes enfants dans le même ordre, et majCarteCompte peut la mettre à
      jour EN PLACE — le champ, ce qu'on y a tapé et le clavier restent. */
   const msg = `<div class="compte-mot">${compte.message ? escapeHtml(compte.message) : ""}</div>`;
+  /* ===== CONNECTÉ, LA CARTE SE FAIT DISCRÈTE =====
+     « Je sais bien que je suis connecté. On n'est pas obligé de m'afficher
+     une page pour me le dire : une toute petite ligne, bien placée. » La
+     carte faisait 330 px — l'adresse, la date, « Se déconnecter » et sa
+     note, « Supprimer mon compte » — pour une chose qu'on regarde une fois.
+     Elle prend maintenant la forme de la rangée « Se connecter » : une ligne,
+     l'adresse en petit, et un chevron qui ouvre « Mon compte » (voir
+     ouvrirMonCompte), où tout le reste attend. */
   if(compteConnecte()){
-    return `<div class="info-card compte-carte" id="compteCarte" data-etat="connecte">
-      <div class="compte-tete"><span class="compte-ico">${ICONS.checkCircle}</span><b>${T("Progression sauvegardée")}</b></div>
-      <div class="compte-sous">${escapeHtml(compteCourriel())}</div>
-      <div class="compte-sous">${escapeHtml(quandSauvegarde())}</div>
-      ${msg}
-      <button class="btn-ghost compte-sortir" onclick="deconnexion()">${T("Se déconnecter")}</button>
-      <div class="compte-sous">${T("Se déconnecter n'efface rien sur ce téléphone.")}</div>
-      <!-- SUPPRIMER SON COMPTE, DANS LE JEU (Apple 5.1.1(v)). Un lien discret,
-           pas un bouton : c'est une porte qu'on doit pouvoir trouver, pas une
-           invitation. La fenêtre qui suit dit ce qui part et ce qui reste. -->
-      <button class="compte-supprimer" onclick="demanderSuppressionCompte()">${T("Supprimer mon compte")}</button>
-    </div>`;
+    return `<button type="button" class="info-card compte-carte compte-entree" id="compteCarte" data-etat="connecte" onclick="ouvrirMonCompte()">
+    <span class="ce-ico" data-etat="ok">${ICONS.checkCircle}</span>
+    <span class="ce-txt"><b class="ce-t">${T("Progression sauvegardée")}</b>${compte.message
+      ? `<span class="compte-mot">${escapeHtml(compte.message)}</span>`
+      : `<span class="compte-sous">${escapeHtml(compteCourriel())}</span>`}</span>
+    <span class="ce-chev">${ICONS.chevronRight}</span>
+  </button>`;
   }
   if(compte.etape === "code"){
     return `<div class="info-card compte-carte" id="compteCarte" data-etat="code">
@@ -19307,6 +19641,19 @@ function carteCompteHtml(){
   </button>`;
 }
 function compteOuvrir(){ compte.etape = "choix"; compte.message = ""; majCarteCompte(); try{ sonderGoogle(); }catch(e){} }
+/* « MON COMPTE » : ce que la carte connectée montrait d'un bloc. L'adresse
+   et la dernière sauvegarde, « Se déconnecter » (qui n'efface rien), et —
+   Apple 5.1.1(v) — « Supprimer mon compte », un lien discret : une porte
+   qu'on doit pouvoir trouver, pas une invitation. */
+function ouvrirMonCompte(){
+  if(!compteConnecte()) return;
+  ouvrirFeuilleGroupe("compteVeil", T("Mon compte"), ICONS.checkCircle, `
+    <div class="mc-qui"><b>${escapeHtml(compteCourriel())}</b><small>${escapeHtml(quandSauvegarde())}</small></div>
+    <button class="btn-ghost compte-sortir" onclick="deconnexion()">${T("Se déconnecter")}</button>
+    <p class="grp-aide mc-note">${T("Se déconnecter n'efface rien sur ce téléphone.")}</p>
+    <button class="compte-supprimer" onclick="demanderSuppressionCompte()">${T("Supprimer mon compte")}</button>
+    <div class="grp-mot"><span></span></div>`);
+}
 function compteRetour(){ compte.etape = "repos"; compte.message = ""; majCarteCompte(); }
 /* On ne redessine QUE la carte : redessiner l'écran ferait perdre le champ en
    cours de frappe et le clavier avec.
@@ -19742,9 +20089,46 @@ function majBarre(){
         : (lus > 0 ? Tf("Groupes, {n} non lus", { n:lus }) : T("Groupes")));
     }
   }
-  const etait = b.classList.contains("cachee");
-  b.classList.toggle("cachee", !montre);
-  if(etait && montre){ try{ glassTrack(); }catch(e){} }
+  const etait = b.classList.contains("cachee") || b.classList.contains("part-cote");
+  /* Le sens de la page qui arrive (voir LA BARRE ARRIVE AVEC SA PAGE). */
+  const entree = document.querySelector("#app > .screen.screen-enter:not(.screen-exit)");
+  const sens = !entree ? "" : (entree.classList.contains("vers-gauche") ? "g" : (entree.classList.contains("vers-droite") ? "d" : ""));
+  /* LA MINUTERIE N'APPARTIENT QU'AU MOUVEMENT QUI L'A POSÉE. majBarre est
+     rappelée à chaque rendu, et pendant une arrivée il en vient d'autres (une
+     liste qui arrive du serveur) : annuler la minuterie à chaque appel
+     laissait « arrive-g » collée pour toujours — et une animation finie mais
+     retenue (« both ») l'emporte sur toute règle : la barre ne se cachait
+     plus ni au clavier ni en changeant de page. On ne l'annule donc que
+     lorsqu'un NOUVEAU mouvement la remplace. */
+  if(etait && montre && sens){
+    clearTimeout(b._finMouvement);
+    /* Elle arrive de côté, avec sa page : on la pose d'abord à sa place,
+       sans transition, et c'est l'animation qui la fait venir. */
+    b.classList.remove("part-cote", "arrive-g", "arrive-d");
+    b.classList.add("sans-transition"); b.classList.remove("cachee");
+    void b.offsetWidth;
+    b.classList.remove("sans-transition");
+    b.classList.add(sens === "g" ? "arrive-g" : "arrive-d");
+    b._finMouvement = setTimeout(()=>{ b.classList.remove("arrive-g", "arrive-d"); }, msPli() + 60);
+    try{ glassTrack(); }catch(e){}
+  } else if(!etait && !montre && sens){
+    clearTimeout(b._finMouvement);
+    /* Elle part avec la page qu'on quitte : un fondu court vers le côté,
+       puis on la range sous le bord, sans qu'on la voie y descendre. */
+    b.classList.remove("arrive-g", "arrive-d");
+    b.classList.add("part-cote");
+    b._finMouvement = setTimeout(()=>{
+      b.classList.add("sans-transition", "cachee"); b.classList.remove("part-cote");
+      void b.offsetWidth; b.classList.remove("sans-transition");
+    }, 230);
+  } else {
+    if(montre) b.classList.remove("part-cote");
+    /* Cachée sans mouvement de côté : aucune animation retenue ne doit la
+       garder à l'écran. */
+    else b.classList.remove("arrive-g", "arrive-d");
+    b.classList.toggle("cachee", !montre);
+    if(etait && montre){ try{ glassTrack(); }catch(e){} }
+  }
 }
 function allerOnglet(o){
   if(o === "groupes"){
@@ -19850,7 +20234,7 @@ function teinte(i){
 /* La pastille d'un groupe : sa photo s'il en a une (posée sur la pastille
    même, voir majAvatarsPhoto), sinon sa couleur et son initiale. */
 function pastilleGroupe(g, petite){
-  const l = escapeHtml(String(g.nom || "?").trim().charAt(0).toUpperCase() || "?");
+  const l = escapeHtml(premierSigne(g.nom) || "?");
   const v = g.id ? valeurPhotoSrv("g:" + g.id) : "";
   return `<span class="grp-av${petite ? " petite" : ""}${v ? " a-photo" : ""}"${g.id ? ` data-gid="${escapeHtml(String(g.id))}"` : ""} style="${teinte(g.teinte)}${v ? "--ph:" + v + ";" : ""}" aria-hidden="true">${l}</span>`;
 }
@@ -20049,7 +20433,7 @@ async function entrerGroupes(btn){
   const nom = String(profile.name || "").trim();
   if(!nom){ motBienvenue(T("Choisis d'abord un nom.")); return; }
   if(btn) btn.disabled = true;
-  const p = await appelGroupe("poser_profil", { p_nom:nom.slice(0, 20), p_couleur:profile.color || "#4C86E8" });
+  const p = await appelGroupe("poser_profil", { p_nom:couperPoints(nom, 20), p_couleur:profile.color || "#4C86E8" });
   if(!p.ok){
     if(btn) btn.disabled = false;
     motBienvenue(p.erreur === "mot_interdit" ? T("Ce nom ne peut pas être utilisé dans les groupes. Change-le dans ton profil.") : motErreurGroupe(p));
@@ -20069,9 +20453,9 @@ async function suivreNomGroupes(){
   const e = grp.etat, nom = String(profile.name || "").trim();
   if(!e || e.participe !== "ok" || !e.profil || !nom) return;
   const couleur = profile.color || "#4C86E8";
-  if(e.profil.nom === nom.slice(0, 20) && String(e.profil.couleur || "").toLowerCase() === couleur.toLowerCase()) return;
-  const r = await appelGroupe("poser_profil", { p_nom:nom.slice(0, 20), p_couleur:couleur });
-  if(r.ok){ e.profil.nom = nom.slice(0, 20); e.profil.couleur = couleur; const id = monId(); if(id) grp.profils[id] = { nom:e.profil.nom, couleur }; }
+  if(e.profil.nom === couperPoints(nom, 20) && String(e.profil.couleur || "").toLowerCase() === couleur.toLowerCase()) return;
+  const r = await appelGroupe("poser_profil", { p_nom:couperPoints(nom, 20), p_couleur:couleur });
+  if(r.ok){ e.profil.nom = couperPoints(nom, 20); e.profil.couleur = couleur; const id = monId(); if(id) grp.profils[id] = { nom:e.profil.nom, couleur }; }
   else if(r.erreur === "mot_interdit"){
     grp.message = T("Ce nom ne peut pas être utilisé dans les groupes. Change-le dans ton profil.");
     if(state.screen === "groupes"){ const m = document.querySelector(".groupes-ecran .grp-mot"); if(m) poserMot(m, grp.message); }
@@ -20220,7 +20604,7 @@ function photoFormulaire(){
 }
 function pastilleFormulaireHtml(g){
   const v = photoFormulaire();
-  const l = escapeHtml(String((g && g.nom) || "").trim().charAt(0).toUpperCase() || "?");
+  const l = escapeHtml(premierSigne(g && g.nom) || "?");
   return `<span class="grp-av${v ? " a-photo" : ""}" id="grpFormAv" style="${teinte(creation.teinte)}${v ? "--ph:" + v + ";" : ""}">${l}</span>`;
 }
 function majPastilleFormulaire(){
@@ -20229,7 +20613,7 @@ function majPastilleFormulaire(){
   a.setAttribute("style", teinte(creation.teinte) + (v ? "--ph:" + v + ";" : ""));
   a.classList.toggle("a-photo", !!v);
   const n = document.getElementById("grpNom");
-  a.textContent = String((n && n.value) || "").trim().charAt(0).toUpperCase() || "?";
+  a.textContent = premierSigne(n && n.value) || "?";
 }
 function choisirPhotoGroupe(){
   if(!photoFormulaire()){ ouvrirPhoto(recevoirPhotoGroupe); return; }
@@ -20265,9 +20649,14 @@ function ouvrirCreation(){
     formulaireGroupeHtml(null) + `<button class="btn-primary" onclick="creerGroupe(this)">${T("Créer")}</button>`);
 }
 function valeurChamp(id){ const c = document.getElementById(id); return String((c && c.value) || "").trim(); }
+/* « Entre 3 et 40 caractères » : trois SIGNES au moins (deux emojis ne font
+   pas un nom, un drapeau compte pour un) et quarante points de code au plus,
+   ce que compte le serveur. Le champ (maxlength, en unités UTF-16) ne laisse
+   de toute façon jamais dépasser. */
+function nomGroupeOk(nom){ return signes(nom).length >= 3 && Array.from(nom).length <= 40; }
 async function creerGroupe(btn){
   const nom = valeurChamp("grpNom"), desc = valeurChamp("grpDesc");
-  if(nom.length < 3){ motFeuille("grpCreerVeil", T("Le nom doit faire entre 3 et 40 caractères.")); return; }
+  if(!nomGroupeOk(nom)){ motFeuille("grpCreerVeil", T("Le nom doit faire entre 3 et 40 caractères.")); return; }
   if(btn) btn.disabled = true;
   const r = await appelGroupe("creer_groupe", { p_nom:nom, p_description:desc, p_ouvert:creation.type === "public", p_langue:LANGUE, p_teinte:creation.teinte });
   if(!r.ok){ if(btn) btn.disabled = false; motFeuille("grpCreerVeil", motErreurGroupe(r)); return; }
@@ -20930,7 +21319,24 @@ function renderGroupe(){
      navigateur peignait d'abord le HAUT du fil, puis sautait au bas — un
      éclair de vieux messages à chaque ouverture. render() appelle _posee
      dès que l'écran est dans la page, avant toute image (voir render). */
-  el._posee = ()=>{ descendreFil(false); if(t && t.value) surSaisie(t); };
+  el._posee = ()=>{
+    descendreFil(false); if(t && t.value) surSaisie(t);
+    /* Le fil se raccourcit (le clavier monte) ou s'allonge (il redescend) :
+       s'il était au bas, il y reste, à chaque image de la transition. */
+    const z = el.querySelector("#fil");
+    if(z && typeof ResizeObserver === "function"){
+      z._enBas = true;
+      /* Seul le DOIGT dit si l'on a quitté le bas. Le défilement que pose le
+         suivi ci-dessous arrive une image plus tard, quand le fil a encore
+         rétréci : le lire comme un geste faisait lâcher le bas en plein
+         milieu de la montée du clavier (mesuré : 243 px de fil perdus). */
+      z.addEventListener("scroll", ()=>{
+        if(performance.now() - (z._redim || 0) < 200) return;
+        z._enBas = z.scrollHeight - z.scrollTop - z.clientHeight < 40;
+      }, { passive:true });
+      try{ new ResizeObserver(()=>{ z._redim = performance.now(); if(z._enBas) z.scrollTop = z.scrollHeight; }).observe(z); }catch(e){}
+    }
+  };
   return el;
 }
 function cleJour(iso){ const d = new Date(iso); return d.getFullYear() + "-" + d.getMonth() + "-" + d.getDate(); }
@@ -21464,7 +21870,7 @@ function ouvrirModifGroupe(){
 async function enregistrerGroupe(btn){
   const g = groupeCourant(); if(!g) return;
   const nom = valeurChamp("grpNom"), desc = valeurChamp("grpDesc");
-  if(nom.length < 3){ motFeuille("grpModifVeil", T("Le nom doit faire entre 3 et 40 caractères.")); return; }
+  if(!nomGroupeOk(nom)){ motFeuille("grpModifVeil", T("Le nom doit faire entre 3 et 40 caractères.")); return; }
   if(btn) btn.disabled = true;
   const r = await appelGroupe("modifier_groupe", { p_groupe:g.id, p_nom:nom, p_description:desc, p_ouvert:creation.type === "public", p_teinte:creation.teinte });
   if(!r.ok){ if(btn) btn.disabled = false; motFeuille("grpModifVeil", motErreurGroupe(r)); return; }
@@ -21697,17 +22103,25 @@ function ouvrirConfidentialite(){
      vrai depuis la v288 (la sauvegarde du compte la garde) ni depuis que les
      joueurs d'une partie en ligne la voient. Avec les groupes (v311), elle
      dit maintenant les trois endroits où elle va, et comment l'en retirer. */
+  /* ===== ET ELLE TIENT DANS LA MAIN =====
+     « Je trouve cette page énorme, trop grande. » Elle l'était : sept blocs
+     « titre + paragraphe », 640 px de liste sur un iPhone 16 Pro — la
+     feuille défilait — et tout l'écran sur un SE. Chaque point tient
+     maintenant en UNE phrase, ouverte par ses mots-clés en gras : rien de ce
+     qu'elle disait ne manque, et deux choses y entrent pour qu'elle reste
+     vraie : la modération peut lire les groupes (v311), et « Supprimer mon
+     compte » se trouve dans « Mon compte » (v312). */
   const lignes = [
-    ["Ce qui reste sur ton téléphone", "Ta progression et tes réglages, tant que tu n'as pas de compte."],
-    ["Si tu crées un compte", "Ton adresse e-mail sert à te connecter. Ta progression et ta photo de profil sont sauvegardées en ligne pour les retrouver sur un autre téléphone."],
-    ["Ta photo de profil", "Les joueurs de tes parties en ligne et les membres de tes groupes la voient. « Retirer la photo », dans ton profil, la retire partout."],
-    ["Dans les groupes", "Les membres voient ton nom, ta couleur, ta photo et tes messages. Rien d'autre."],
-    ["Rapports de bug", "S'ils sont activés, une erreur du jeu est envoyée, sans rien qui permette de savoir qui tu es."],
-    ["Ce que le jeu ne fait pas", "Pas de publicité, pas de pistage, rien n'est vendu à personne."],
-    ["Tout supprimer", "Profil → « Supprimer mon compte » efface ton compte, ta sauvegarde en ligne, tes messages et tes groupes."]
+    ["Sans compte,", "ta progression et tes réglages restent sur ton téléphone."],
+    ["Avec un compte,", "ton e-mail sert à te connecter ; ta progression et ta photo sont sauvegardées en ligne."],
+    ["Les autres voient", "ton nom, ta couleur, ta photo et, dans tes groupes, tes messages."],
+    ["La modération", "peut lire les groupes, pour faire respecter les règles."],
+    ["Les rapports de bug,", "s'ils sont activés, n'envoient que l'erreur, rien sur toi."],
+    ["Jamais", "de publicité, de pistage ni de revente."],
+    ["Tout supprimer :", "Profil → Mon compte → « Supprimer mon compte »."]
   ];
   ouvrirFeuilleGroupe("confidentialiteVeil", T("Confidentialité"), ICONS.bouclier,
-    `<div class="conf-liste">${lignes.map(([t, d])=>`<div class="conf-l"><b>${escapeHtml(T(t))}</b><p>${escapeHtml(T(d))}</p></div>`).join("")}</div>`);
+    `<div class="conf-liste">${lignes.map(([t, d])=>`<p class="conf-l"><b>${escapeHtml(T(t))}</b> ${escapeHtml(T(d))}</p>`).join("")}</div>`);
 }
 
 /* ===================== SUPPRIMER SON COMPTE =====================
@@ -21720,7 +22134,7 @@ function demanderSuppressionCompte(){
     title:T("Supprimer ton compte ?"),
     message:T("Ton compte et ta sauvegarde en ligne seront supprimés, avec tes messages et tes groupes. Ta progression sur ce téléphone reste là."),
     okLabel:T("Supprimer"), cancelLabel:T("Annuler"), danger:true,
-    onOk:()=>{ supprimerMonCompte(); return true; }
+    onOk:()=>{ try{ fermerFeuilleGroupe("compteVeil"); }catch(e){} supprimerMonCompte(); return true; }
   });
 }
 async function supprimerMonCompte(){
@@ -22481,7 +22895,7 @@ function renderModeSelect(){
       </span>
       ${pilule}
       <span class="chev">${ICONS.chevronRight}</span>
-    </button>`; })()}
+    </button>${barre ? '<i class="ec-carte ec-fin"></i>' : ""}`; })()}
     </div>
     ${barre ? "" : '<div class="flex-sp home-sp-bot"></div>' + semaineHtml()}
   `;
@@ -22595,7 +23009,7 @@ function renderPlay(){
         <div class="award-grid${pop?' reveal-in':''}">
           ${state.teams.map((t,i)=>`
             <button class="award-btn ${state.awarded.includes(i)?'awarded':''}" onclick="toggleAward(${i})">
-              <span class="team-token aw-token" style="background:${TEAM_COLORS[i%6]}">${((t.name||"").trim().charAt(0).toUpperCase())||(i+1)}</span>
+              <span class="team-token aw-token" style="background:${TEAM_COLORS[i%6]}">${escapeHtml(premierSigne(t.name))||(i+1)}</span>
               <span class="aw-name">${escapeHtml(nomEquipe(t.name))}</span>
               ${state.awarded.includes(i)?`<span class="aw-check" style="color:${TEAM_COLORS[i%6]}">${ICONS.checkCircle}</span>`:""}
               <span class="pts">+${info.pts}</span>
@@ -22676,7 +23090,7 @@ function renderEndGroup(){
     <div class="podium">
       ${podiumOrder.filter(i=>i<podiumTeams.length).map(i=>{
         const r = podiumTeams[i];
-        const initial = escapeHtml(state.teams[r.teamIdx].name.charAt(0).toUpperCase());
+        const initial = escapeHtml(premierSigne(state.teams[r.teamIdx].name));
         return `
         <div class="podium-col">
           ${r.rank===1 ? `<span class="podium-crown">${ICONS.crown}</span>` : `<span class="podium-crown" style="visibility:hidden"></span>`}
@@ -22702,7 +23116,7 @@ function renderEndGroup(){
         return `
         <div class="rank-row">
           <span class="rank-badge ${g}">${r.rank}</span>
-          <span class="team-token rank-token" style="background:${TEAM_COLORS[r.teamIdx%6]}">${((state.teams[r.teamIdx].name||"").trim().charAt(0).toUpperCase())||"?"}</span>
+          <span class="team-token rank-token" style="background:${TEAM_COLORS[r.teamIdx%6]}">${escapeHtml(premierSigne(state.teams[r.teamIdx].name))||"?"}</span>
           <span class="rank-name">${escapeHtml(nomEquipe(state.teams[r.teamIdx].name))}</span>
           <span class="rank-score-wrap">
             <button class="adj-btn" onclick="adjustScore(${r.teamIdx},-10)" aria-label="${T("Retirer 10 points")}">−</button>
@@ -22837,7 +23251,7 @@ function apresEntree(){ return msPli() + 40; }
    téléphone, l'identifiant du joueur pour les autres. Il portait avant le
    drapeau du badge Créateur, retiré en v287. */
 function avatarHtml(name, color, size, qui){
-  const initial = escapeHtml((name||"?").charAt(0).toUpperCase());
+  const initial = escapeHtml(premierSigne(name) || "?");
   const s = size || 2.6;
   /* --av : la taille de l'avatar, transmise à ce qui se pose dessus pour que ça
      reste à la même fraction quelle que soit la place où on l'affiche.
@@ -23390,7 +23804,7 @@ function syncProfileDraft(){
 function onProfileNameInput(el){
   profile.name = el.value.slice(0,18);
   const av = document.querySelector("[data-avatar-preview] .avatar");
-  if(av && av.firstChild){ av.firstChild.nodeValue = (profile.name.trim()||T("Invité")).charAt(0).toUpperCase(); }
+  if(av && av.firstChild){ av.firstChild.nodeValue = premierSigne(profile.name.trim()||T("Invité")); }
   const lb = document.getElementById("profileNameLabel");
   if(lb) lb.textContent = profile.name.trim() || T("Invité");
 }
@@ -23536,6 +23950,7 @@ function renderOnline(){
         <div class="opp-progress">${freshLookers()>0
           ? Tf(freshLookers()>1?"{n} autres en recherche…":"{n} autre en recherche…", {n:freshLookers()})
           : T("Dès qu'un autre joueur cherche, la partie démarre.")}</div>
+        ${(net.themeChoix||"tout") !== "tout" ? `<div class="opp-testament">${net.themeChoix === "at" ? T("Ancien Testament") : T("Nouveau Testament")}</div>` : ""}
         <button class="btn-ghost btn-cancel" style="margin-top:1rem" onclick="setSearching(false)">${T("Annuler")}</button>
       </div>
       <div class="flex-sp"></div>
@@ -23549,6 +23964,10 @@ function renderOnline(){
            forme, et « Rejoindre » devient « Rejoindre une partie » pour
            répondre à « Créer une partie ». La ligne d'attente disait la même
            chose en trois fois plus long. -->
+      <div class="ol-testament${actionsNew?' reveal-in':''}">
+        <div class="len-label">${T("Testament")}</div>
+        <div class="len-row">${testamentsHtml("ogroup", net.themeChoix || "tout", "choisirTestamentEnLigne", null)}</div>
+      </div>
       <button class="online-action${actionsNew?' reveal-in':''}" style="--i:0" onclick="setSearching(true)">
         <span class="oa-ico r">${ICONS.bolt}</span>
         <span class="oa-txt"><b>${T("Partie aléatoire")}</b><small>${T("Un adversaire au hasard, tout de suite")}</small></span>
@@ -23569,7 +23988,7 @@ function renderOnline(){
   `;
   return el;
 }
-function createRoomFlow(){ net.autoMatch = false; clearTimeout(net.matchGuard); createRoom(genCode(), true); }
+function createRoomFlow(){ net.autoMatch = false; clearTimeout(net.matchGuard); net.themeKey = net.themeChoix || "tout"; net.themeFixe = null; createRoom(genCode(), true); }
 
 /* LE MESSAGE APPARTIENT À L'ÉCRAN QUI L'A PRODUIT.
    « Code invalide. » se voyait sur l'accueil En ligne, où l'on ne saisit aucun
@@ -23686,9 +24105,7 @@ function renderOnlineRoom(){
       </div>
       <div class="len-label">${T("Testament")}</div>
       <div class="len-row">
-        <button class="len-chip${net.themeKey==='tout'?' sel':''}" data-rgroup="theme" data-k="tout" onclick="selectRoomOpt('theme','tout')">${T("Tout")}</button>
-        <button class="len-chip${net.themeKey==='at'?' sel':''}" data-rgroup="theme" data-k="at" onclick="selectRoomOpt('theme','at')">${T("Ancien")}</button>
-        <button class="len-chip${net.themeKey==='nt'?' sel':''}" data-rgroup="theme" data-k="nt" onclick="selectRoomOpt('theme','nt')">${T("Nouveau")}</button>
+        ${testamentsHtml("rgroup", net.themeKey || "tout", "selectRoomOptTheme", net.themeFixe)}
       </div>
       <button class="btn-primary${canStart?'':' is-waiting'}" id="roomStartBtn" onclick="hostStart()">${canStart?Tf("Commencer {mot}", {mot:motSalon}):T("En attente des joueurs…")}</button>
     ` : `
@@ -23714,7 +24131,7 @@ function renderOnlinePlay(){
       <div class="ds-piste" onscroll="majVoilesScores()">
       ${classement().map(j=>`
         <span class="ds-puce${j.moi?' moi':''}${j.gone?' gone':''}">
-          <span class="dsp-nom">${escapeHtml((j.name||"?").slice(0,9))}</span>
+          <span class="dsp-nom">${escapeHtml(couperSignes(j.name||"?", 9))}</span>
           <span class="dsp-pts">${j.score|0}</span>
         </span>`).join("")}
       </div>
@@ -23886,11 +24303,31 @@ function renderOnlineEnd(){
    L'accueil, les groupes, puis un groupe (ou la modération) : on y va vers la
    droite, on en revient vers la gauche — le sens dit où l'on est. Tout le
    reste du jeu continue de monter, comme avant. */
-const RANGEE_LATERALE = { mode:0, groupes:1, groupe:2, moderation:2 };
+/* ===== TOUT LE JEU S'OUVRE SUR LE CÔTÉ =====
+   « J'aime énormément l'animation d'ouverture sur le côté, comme quand je
+   rouvre un groupe. Si tu penses que c'est bien, que tout le jeu ait cette
+   ouverture-là partout — et que les volets déroulants s'ouvrent comme
+   d'habitude. » Elle ne valait qu'entre l'accueil, les groupes et une
+   discussion ; le reste du jeu montait.
+   Chaque écran a maintenant une PROFONDEUR : aller plus loin arrive par la
+   droite, revenir arrive par la gauche — l'accueil au fond, une partie et ses
+   résultats tout devant. Lancer une partie va toujours vers l'avant (même
+   « Rejouer » depuis les résultats). Les feuilles, elles, montent comme avant.
+   Seul l'écran d'ouverture (splash) garde sa montée : c'est une arrivée, pas
+   un déplacement. */
+const PROFONDEUR = {
+  mode:0,
+  groupes:1, profile:1, parcours:1, revoir:1, setup:1, "online-name":1, online:1,
+  moderation:2, "online-join":2, play:2,
+  groupe:3, end:3,
+  "online-room":4, "online-play":5, "online-end":6
+};
 function sensDuGlissement(de, vers){
-  const a = RANGEE_LATERALE[de], b = RANGEE_LATERALE[vers];
-  if(a === undefined || b === undefined || a === b) return null;
-  return b > a ? "vers-droite" : "vers-gauche";
+  if(!de || de === "splash" || de === vers) return null;
+  if(vers === "play" || vers === "online-play") return "vers-droite";
+  const a = PROFONDEUR[de], b = PROFONDEUR[vers];
+  if(a === undefined || b === undefined) return null;
+  return b >= a ? "vers-droite" : "vers-gauche";
 }
 function render(){
   const app = document.getElementById("app");
@@ -24033,6 +24470,7 @@ function render(){
     if(typeof node._posee === "function"){ try{ node._posee(); }catch(e){} }
   }
   lastScreen = state.screen;
+  try{ document.documentElement.classList.toggle("ecran-discussion", state.screen === "groupe"); }catch(e){}
   try{ majBarre(); }catch(e){}
   /* Après la barre : c'est elle qui donne aux écrans des groupes leur pied. */
   try{ serrerEcran(node); }catch(e){}
@@ -25757,9 +26195,24 @@ function toggleFullscreen(){
   if(req){ try { const p = req.call(el, { navigationUI:"hide" }); if(p && p.catch){ p.catch(()=>{}); } } catch(e){} }
   try { if(screen.orientation && screen.orientation.lock){ screen.orientation.lock("portrait").catch(()=>{}); } } catch(e){}
 }
+/* ===== LE PLEIN ÉCRAN NE REFAIT PAS L'ÉCRAN =====
+   « Sur Android, “30 s par question” clignote légèrement » ; « à certains
+   moments, quand j'appuie partout, que je déroule dans tous les sens, l'écran
+   peut venir à clignoter. » C'était ici. Dans Chrome, au premier toucher, le
+   jeu passe en plein écran — et chaque entrée ou sortie du plein écran (un
+   geste depuis le bord, le retour, le toucher suivant qui y revient)
+   REFAISAIT TOUT L'ÉCRAN : render(), donc chaque puce, chaque carte et chaque
+   couche de verre détruites puis recréées, le temps d'une image à repeindre.
+   Mesuré : un toucher sur « Courte », et l'écran entier est remplacé. iOS
+   n'a pas ce plein écran : il ne clignotait jamais — d'où « que ça soit
+   pareil que sur iOS ».
+   Seuls changent la hauteur et la marge du haut (html.is-fs). On remesure
+   donc, comme pour tout redimensionnement — resserrer l'écran, recaler le
+   verre — sans rien reconstruire. */
 function onFsChange(){
   document.documentElement.classList.toggle("is-fs", fsActive());
-  render();
+  try{ fitScroll(); }catch(e){}
+  try{ glassRelayout(); armGlass(700); queueGlassSync(); }catch(e){}
 }
 document.addEventListener("fullscreenchange", onFsChange);
 document.addEventListener("webkitfullscreenchange", onFsChange);
@@ -26004,8 +26457,15 @@ function tryAutoFullscreen(e){
    réapparaît que si le joueur la fait glisser, pour quitter). Sur iPhone,
    Safari interdit ce plein écran : fsAvailable() renvoie false, donc no-op
    (l'immersion iOS passe par « Ajouter à l'écran d'accueil »). */
+/* AU CLIC, PAS AU CONTACT. Demandé dès que le doigt se posait (pointerdown),
+   le plein écran décalait la page PENDANT le toucher — la marge du haut
+   passe de 6 à 58 px : le doigt se relevait sur autre chose, et le premier
+   toucher était perdu (« Courte » touchée, rien de choisi : relevé par
+   banc-essai/plein-ecran.js, sur la v311 comme avant). Au clic, le geste est
+   déjà joué — le choix est fait, la carte ouverte — et le navigateur accorde
+   encore le plein écran : il s'installe juste après, sans rien voler. */
 if(IS_ANDROID && !isStandalone){
-  document.addEventListener("pointerdown", tryAutoFullscreen, { capture:true, passive:true });
+  document.addEventListener("click", tryAutoFullscreen, { capture:true, passive:true });
 }
 /* ===== ANDROID SAIT INSTALLER EN UN GESTE — ON LE LUI DEMANDE =====
    Chrome prévient l'application dès qu'elle est installable

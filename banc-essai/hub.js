@@ -5,7 +5,11 @@
    mais TOUT le reste : salons, presence, deroulement du duel, deconnexions.
    Transport : SSE pour recevoir, POST pour envoyer. Meme origine, aucun proxy. */
 const http=require('http'), fs=require('fs'), path=require('path');
-const RACINE='/home/user/BibleTrivia';
+/* La racine du jeu, c'est le dossier au-dessus de ce banc — pas un chemin
+   écrit en dur. Écrit en dur, un hub lancé depuis une autre copie du dépôt
+   (un arbre de travail) servait quand même le jeu de /home/user/BibleTrivia :
+   le banc passait au vert sur un fichier qui n'était pas celui qu'on testait. */
+const RACINE=path.resolve(__dirname, '..');
 const D=__dirname;
 const TYPES={'.html':'text/html; charset=utf-8','.js':'text/javascript; charset=utf-8','.json':'application/json','.png':'image/png','.woff2':'font/woff2'};
 
@@ -62,7 +66,10 @@ const serveur = http.createServer(async (rq,rs)=>{
     return fs.createReadStream(D+"/shim.js").pipe(rs); }
   const f = path.join(RACINE, p);
   if(!f.startsWith(RACINE)||!fs.existsSync(f)||fs.statSync(f).isDirectory()){ rs.writeHead(404); return rs.end("non"); }
-  if(p === "/index.html"){
+  /* Toute page du jeu reçoit le faux Supabase, pas seulement index.html : un
+     banc peut servir à côté une VERSION D'AVANT du jeu (banc-ancien.html),
+     pour vérifier qu'une nouvelle version s'entend avec elle. */
+  if(p === "/index.html" || /^\/banc-[a-z0-9-]+\.html$/.test(p)){
     const h = fs.readFileSync(f,"utf8").replace("https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2", "/shim.js");
     rs.writeHead(200,{'content-type':'text/html; charset=utf-8'}); return rs.end(h);
   }

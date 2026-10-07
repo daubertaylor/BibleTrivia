@@ -1060,6 +1060,10 @@ const ouvrirLaLangue = async (p, lg) => {
     ['Compte · il y a une heure', () => { compte.derniere = Date.now() - 3700000;
       compte.message = T("Pas de réseau. La sauvegarde reprendra toute seule."); majCarteCompte(); }],
     ['Compte · il y a dix minutes', () => { compte.derniere = Date.now() - 600000; compte.message = ''; majCarteCompte(); }],
+    /* CONNECTÉ, LA CARTE EST UNE LIGNE (v312) : l'adresse, la dernière
+       sauvegarde, « Se déconnecter » et « Supprimer mon compte » vivent dans
+       la feuille « Mon compte », qu'il faut donc ouvrir pour les lire. */
+    ['Compte · Mon compte', () => { compte.derniere = Date.now() - 30000; ouvrirMonCompte(); }],
     /* ===== LA PHOTO DE PROFIL, DANS SES TROIS ÉTATS =====
        « Ajouter une photo » se montre à l'étape Profil ordinaire. Mais
        « Changer la photo » et « Retirer la photo » n'existent QUE si une photo
