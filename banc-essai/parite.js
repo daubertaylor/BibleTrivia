@@ -90,6 +90,15 @@ const figer = (p) => p.evaluate(() => {
     const ctx = await nav.newContext({ viewport:{ width:393, height:852 }, deviceScaleFactor:2,
       userAgent:ua, hasTouch:true, serviceWorkers:'block' });
     const p = await ctx.newPage();
+    /* LA MÊME RÉPONSE DU SERVEUR, À CHAQUE PASSE ET DES DEUX CÔTÉS. Depuis que
+       la barre du bas est pour tout le monde (v314), elle dépend de la sonde
+       des groupes ; jointe en vrai, la sonde répondait tantôt avant la photo,
+       tantôt après : la barre n'était peinte que d'un côté (4,75 % de pixels
+       « différents »), ou que dans une passe sur deux du MÊME téléphone
+       (l'accueil et la flamme « pas posés », 607 208 px d'écart). La
+       bibliothèque du CDN est servie vide : aucune sonde, aucune barre,
+       pareil partout. */
+    await p.route('**/supabase-js@2*', (route) => route.fulfill({ status:200, contentType:'application/javascript', body:'' }));
     const errs = []; p.on('pageerror', e => errs.push(e.message));
     /* MIDI PILE POUR LES DEUX TÉLÉPHONES. La rangée de la semaine compte les
        heures puis les minutes qui restent (« Plus que 1 h », « Plus que 59 min ») :

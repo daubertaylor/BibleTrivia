@@ -79,6 +79,11 @@ const CIBLES = [
     localStorage.setItem('bt_profile', JSON.stringify({ name:'Taylor', color:'#4C86E8' }));
     localStorage.setItem('bt_fs_hint', '1');
     localStorage.setItem('bt_progress', JSON.stringify({ books:{'Genèse':12}, correct:126 }));
+    /* La sonde du compte, déjà connue (voir jumeaux.js) : sinon la carte du
+       compte arrive pendant la mesure du Profil, pousse les pastilles de
+       couleur, et l'appui tombe à côté (« onde invisible »). */
+    localStorage.setItem('bt_compte_ok', JSON.stringify({ ok:true, quand:Date.now() }));
+    localStorage.setItem('bt_google_ok', JSON.stringify({ ok:false, quand:Date.now() }));
   });
   await p.goto(URL);
   await p.waitForFunction(() => { try { return state.screen === 'mode'; } catch(e){ return false; } }, null, { timeout:20000 });

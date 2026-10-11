@@ -21,6 +21,14 @@
    sommet de clarté à chaque jambage (ma première version mesurait ça, et
    annonçait 102 unités de couture sur le mot « Short »).
 
+   SEUL CE QUE L'APPUI FAIT NAÎTRE COMPTE (v313). Un sommet de clarté peut
+   exister AVANT tout appui : le dégradé du verre de la carte, au ras d'une
+   puce, en dessine un d'une unité ou deux. Il était compté comme une
+   couture — 1,7 sur la puce « Tout », au repos comme pressée, le jour où la
+   rangée du chrono a raccourci et décalé la carte d'une fraction de pixel.
+   On prend donc deux images, au repos puis pressée, et on ne retient d'un
+   pixel que ce que l'appui a AJOUTÉ à son sommet.
+
    Usage : node banc-essai/couture.js [url]
 */
 const { chromium } = require('/opt/node22/lib/node_modules/playwright');
@@ -83,15 +91,19 @@ const CIBLES = [
     const el = p.locator(sel).first();
     if (!(await el.count())) { console.log('  ' + nom + ' : introuvable'); continue; }
     const b = await el.boundingBox();
+    const cadre = { x: Math.round(b.x - 4), y: Math.round(b.y - 4), width: Math.round(b.width + 8), height: Math.round(b.height + 8) };
+    const r = SC + '/couture-' + nom + '-repos.png';
+    await p.mouse.move(2, 2);
+    await p.waitForTimeout(200);
+    await p.screenshot({ path: r, clip: cadre });
     await p.mouse.move(Math.round(b.x + b.width / 2), Math.round(b.y + b.height / 2));
     await p.mouse.down();
     await p.waitForTimeout(600);
     const f = SC + '/couture-' + nom + '.png';
-    await p.screenshot({ path: f, clip: { x: Math.round(b.x - 4), y: Math.round(b.y - 4),
-      width: Math.round(b.width + 8), height: Math.round(b.height + 8) } });
+    await p.screenshot({ path: f, clip: cadre });
     await p.mouse.up();
     await p.waitForTimeout(300);
-    faits.push([nom, f, plafond]);
+    faits.push([nom, f, plafond, r]);
   }
   await nav.close();
 
@@ -102,21 +114,25 @@ CIB = ${JSON.stringify(faits)}
 SEUIL = ${SEUIL}
 def cl(p): return 0.2126*p[0]+0.7152*p[1]+0.0722*p[2]
 ko = 0
-for nom, f, plafond in CIB:
+def sommet(a, b, c): return cl(b) - max(cl(a), cl(c))
+for nom, f, plafond, r in CIB:
     im = Image.open(f).convert("RGB"); px = im.load(); W, H = im.size
+    rp = Image.open(r).convert("RGB").load()
     pire = 0.0; ou = None; n = 0
-    def voir(a, b, c, x, y):
+    def voir(a, b, c, ra, rb, rc, x, y):
         global pire, ou, n
-        e = cl(b) - max(cl(a), cl(c))
+        e = sommet(a, b, c)
         if e > 0.8 and abs(cl(a) - cl(c)) > 8:
             n += 1
+            # ce que l'appui a AJOUTÉ au sommet déjà là au repos
+            e = e - max(0.0, sommet(ra, rb, rc))
             if e > pire:
                 pire = e; ou = (x, y)
     B = 26
     for y in range(4, H-4):
-        for x in list(range(2, B)) + list(range(W-B, W-2)): voir(px[x-1,y], px[x,y], px[x+1,y], x, y)
+        for x in list(range(2, B)) + list(range(W-B, W-2)): voir(px[x-1,y], px[x,y], px[x+1,y], rp[x-1,y], rp[x,y], rp[x+1,y], x, y)
     for x in range(4, W-4):
-        for y in list(range(2, B)) + list(range(H-B, H-2)): voir(px[x,y-1], px[x,y], px[x,y+1], x, y)
+        for y in list(range(2, B)) + list(range(H-B, H-2)): voir(px[x,y-1], px[x,y], px[x,y+1], rp[x,y-1], rp[x,y], rp[x,y+1], x, y)
     etat = "OK" if pire <= plafond else "KO"
     if pire > plafond: ko += 1
     note = "" if plafond == SEUIL else "   (plafond %.1f : défaut connu du moteur de verre)" % plafond

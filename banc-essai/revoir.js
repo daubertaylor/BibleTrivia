@@ -1,5 +1,7 @@
-/* La révision espacée, de bout en bout. */
+/* La révision espacée, de bout en bout.
+   Usage : node banc-essai/revoir.js [url] */
 const { chromium } = require('/opt/node22/lib/node_modules/playwright');
+const URL = process.argv[2] || 'http://127.0.0.1:8099/index.html';
 let ko=0;
 function v(nom, a, b){ const bon=JSON.stringify(a)===JSON.stringify(b); if(!bon) ko++;
   console.log('  '+(bon?'OK ':'KO ')+nom.padEnd(54)+(bon?'':'  obtenu '+JSON.stringify(a)+', attendu '+JSON.stringify(b))); }
@@ -8,7 +10,7 @@ function v(nom, a, b){ const bon=JSON.stringify(a)===JSON.stringify(b); if(!bon)
   const ctx = await b.newContext({ viewport:{width:393,height:852}, deviceScaleFactor:2, isMobile:true, hasTouch:true, serviceWorkers:'block' });
   const p = await ctx.newPage(); const errs=[]; p.on('pageerror',e=>errs.push(e.message));
   await p.addInitScript(()=>{ localStorage.setItem('bt_profile',JSON.stringify({name:'Taylor',color:'#4C86E8'})); localStorage.setItem('bt_fs_hint','1'); });
-  await p.goto('http://127.0.0.1:8099/index.html');
+  await p.goto(URL);
   await p.waitForFunction(()=>{ try{ return state.screen==='mode'; }catch(e){ return false; } }, null, {timeout:20000});
   const ev=(f,...a)=>p.evaluate(f,...a);
   await ev(()=>{ window.__q = BANK.facile[0]; localStorage.setItem('bt_errbook','[]'); });
@@ -163,6 +165,26 @@ function v(nom, a, b){ const bon=JSON.stringify(a)===JSON.stringify(b); if(!bon)
   }));
   v("se retromper en révision ramène au palier 0, dès demain",
     [rechute.p, rechute.du === await ev(()=>dayKey(1))], [0, true]);
+
+  /* « Où en sont tes erreurs » : une marche vide est VIDE. Elle gardait 6 %
+     de remplissage, soit un trait de sa couleur au bas de chaque tuile vide —
+     un liseré de couleur, et il n'y en a nulle part dans ce jeu (v313). Une
+     marche qui compte, elle, prend un vrai pavé, pas un trait. */
+  const marches = await ev(()=> new Promise(res=>{
+    localStorage.setItem('bt_errbook','[]'); localStorage.setItem('bt_acquises','{}');
+    BANK.moyen.slice(0, 12).forEach(q=>errbookAdd(q));
+    const a = loadErrbook(); a[0].p = 1; saveErrbook(a);           // 11 à apprendre, 1 vue une fois
+    ouvrirRevoir();
+    setTimeout(()=>res([...document.querySelectorAll('#app > .screen:not(.screen-exit) .mr-col')].map(c=>{
+      const bar = c.querySelector('.mr-bar').getBoundingClientRect().height, i = c.querySelector('.mr-bar i').getBoundingClientRect().height;
+      return { n:+c.querySelector('b').textContent, i:+i.toFixed(1), part:+(i/bar).toFixed(2) }; })), 900);
+  }));
+  v("les cinq marches sont là", marches.length, 5);
+  v("une marche à zéro ne peint rien, pas même un trait",
+    marches.filter(m=>m.n===0).map(m=>m.i), marches.filter(m=>m.n===0).map(()=>0));
+  v("une marche qui compte prend un pavé (un cinquième au moins)",
+    marches.filter(m=>m.n>0).every(m=>m.part>=0.19), true);
+  v("la plus haute remplit sa tuile", Math.max.apply(null, marches.map(m=>m.part)), 1);
 
   if(errs.length){ ko++; console.log('  erreurs : '+[...new Set(errs)].slice(0,3).join(' | ')); }
   await b.close();

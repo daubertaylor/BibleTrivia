@@ -45,6 +45,15 @@ const CLE = 'BOveRs4clrziwaZmqCy4re5c-vpsPRGRvw0mfUxP5D3u920HJW45-o7V1avGrvsKwFi
     await route.fulfill({ response: rep, body: remplace });
   });
 
+  /* LA VRAIE BIBLIOTHÈQUE NE DOIT PAS ARRIVER. Le Supabase de laboratoire
+     (plus bas) est posé AVANT le chargement de la page ; la bibliothèque du
+     CDN, chargée en « defer », passe après lui et l'écrase. Tant que le
+     conteneur ne joignait pas le CDN, personne ne le voyait. Depuis qu'il le
+     joint, le banc parlait au vrai serveur et ne notait plus rien
+     (« FAUX : rien n'a été écrit »). On lui sert un script vide : l'ordre des
+     scripts ne bouge pas, et le laboratoire reste en place. */
+  await p.route('**/supabase-js@2*', (route) => route.fulfill({ status:200, contentType:'application/javascript', body:'' }));
+
   await p.addInitScript(() => {
     localStorage.setItem('bt_profile', JSON.stringify({ name:'Taylor', color:'#4C86E8' }));
     localStorage.setItem('bt_fs_hint', '1');

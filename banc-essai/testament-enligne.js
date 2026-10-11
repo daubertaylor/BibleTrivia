@@ -2,7 +2,9 @@
    « Pouvoir s'affronter sur un testament en particulier, pour le mode en
      ligne, vu qu'en mode solo on peut déjà faire ça. »
    Le serveur temps réel local (hub.js), plusieurs téléphones :
-     1. l'écran En ligne propose le testament (Tout / Ancien / Nouveau) ;
+     1. toucher « Partie aléatoire » demande le testament (Toute la Bible /
+        Ancien / Nouveau) et une ligne lance la recherche — l'écran En ligne,
+        lui, n'en porte plus (v313 : « pourquoi il y a les testaments ici ? ») ;
      2. Ancien contre Nouveau : ils cherchent ensemble, et ne sont JAMAIS
         appariés ;
      3. arrive « Tout » : il est apparié à l'un des deux, et la partie se joue
@@ -12,7 +14,9 @@
      6. un vrai téléphone resté en v311 (il n'annonce aucun testament) est
         apparié à « Tout », et jamais à qui a choisi un testament ;
      7. « Créer une partie » part du testament choisi, et reste modifiable ;
-     8. aucune erreur.
+     8. un « je cherche » reçu APRÈS l'appariement de son auteur ne le remet
+        pas dans le vivier (v313) — mais sa recherche suivante, si ;
+     9. aucune erreur.
    Usage : node banc-essai/testament-enligne.js */
 const { serveur } = require('./hub.js');
 const fs = require('fs'), path = require('path');
@@ -54,16 +58,19 @@ const attends = (ms) => new Promise(r => setTimeout(r, ms));
   try {
     const A = await ouvre('Anne'), B = await ouvre('Benoît');
 
-    /* ---- 1. le choix est là ---- */
-    const puces = await A.p.evaluate(() => [...document.querySelectorAll('[data-ogroup="theme"]')].map(b => b.dataset.k + (b.classList.contains('sel') ? '*' : '')).join(','));
-    dit('l\'écran En ligne propose le testament : Tout, Ancien, Nouveau', puces === 'tout*,at,nt', puces);
-    await A.p.evaluate(() => document.querySelector('[data-ogroup="theme"][data-k="at"]').click());
-    await B.p.evaluate(() => choisirTestamentEnLigne('nt'));
-    dit('… toucher « Ancien » le choisit', await A.p.evaluate(() => net.themeChoix === 'at' && document.querySelector('[data-ogroup="theme"][data-k="at"]').classList.contains('sel') && !document.querySelector('[data-ogroup="theme"][data-k="tout"]').classList.contains('sel')));
+    /* ---- 1. le choix est dans la partie aléatoire, pas sur l'écran ---- */
+    dit('l\'écran En ligne ne porte plus de puces de testament', await A.p.evaluate(() => !document.querySelector('#app > .screen:not(.screen-exit) .len-chip')));
+    await A.p.evaluate(() => document.querySelector('#app > .screen:not(.screen-exit) .online-action').click());
+    const feuille = await attendre(A, () => document.querySelectorAll('#aleaVeil [data-alea]').length === 3, 4000);
+    const lignes = await A.p.evaluate(() => [...document.querySelectorAll('#aleaVeil [data-alea]')].map(b => b.dataset.alea + (b.classList.contains('sel') ? '*' : '')).join(','));
+    dit('« Partie aléatoire » demande le testament : Toute la Bible, Ancien, Nouveau', feuille && lignes === 'tout*,at,nt', lignes);
+    dit('… sans chercher encore', await A.p.evaluate(() => !net.searching));
+    await A.p.evaluate(() => document.querySelector('#aleaVeil [data-alea="at"]').click());
+    const parti = await attendre(A, () => net.searching && !document.getElementById('aleaVeil'), 4000);
+    dit('toucher « Ancien Testament » lance la recherche sur l\'Ancien, et la feuille s\'en va', parti && await A.p.evaluate(() => net.themeChoix === 'at'));
 
     /* ---- 2. Ancien contre Nouveau : jamais ---- */
-    await A.p.evaluate(() => setSearching(true));
-    await B.p.evaluate(() => setSearching(true));
+    await B.p.evaluate(() => { choisirTestamentEnLigne('nt'); setSearching(true); });
     dit('en recherche, la carte dit le testament cherché', await attendre(A, () => /Ancien Testament/.test((document.querySelector('.searching-card') || {}).textContent || '')));
     await attends(6500);
     const [a2, b2] = [await etat(A), await etat(B)];
@@ -132,8 +139,25 @@ const attends = (ms) => new Promise(r => setTimeout(r, ms));
     await R.p.evaluate(() => selectRoomOptTheme('tout'));
     dit('… l\'hôte peut le changer', (await etat(R)).theme === 'tout');
 
+    /* ---- 8. un « je cherche » en retard ----
+       L'appariement vient de l'initiateur, le dernier « je cherche » de
+       l'apparié vient de l'apparié : deux expéditeurs, aucun ordre garanti.
+       On rejoue le désordre à la main : l'appariement, PUIS le « je cherche »
+       parti juste avant. */
+    await X2.p.evaluate(() => setSearching(false));
+    const E = await ouvre('Élise'), F = await ouvre('Fabien');
+    await F.p.evaluate(() => {
+      net.lobby.send({ type: 'broadcast', event: 'matched', payload: { code: '000000', host: 'fantome-a', guest: 'fantome-b', t: 'tout' } });
+      net.lobby.send({ type: 'broadcast', event: 'looking', payload: { id: 'fantome-b', ts: Date.now(), t: 'tout' } });
+    });
+    await attends(800);
+    dit('un « je cherche » reçu après l\'appariement ne remet pas l\'apparié dans le vivier', await E.p.evaluate(() => !net.lookers['fantome-b']));
+    await attends(2600);
+    await F.p.evaluate(() => net.lobby.send({ type: 'broadcast', event: 'looking', payload: { id: 'fantome-b', ts: Date.now(), t: 'tout' } }));
+    dit('… et s\'il cherche vraiment de nouveau, son annonce suivante passe', await attendre(E, () => !!net.lookers['fantome-b'], 3000));
+
     dit('aucune erreur dans les pages', erreurs.length === 0, erreurs.slice(0, 3).join(' | '));
-    for (const c of [A, B, C, X, D, X2]) await c.ctx.close().catch(() => {});
+    for (const c of [A, B, C, X, D, X2, E, F]) await c.ctx.close().catch(() => {});
   } catch (e) {
     console.log('  KO  le banc s\'est arrêté : ' + (e.stack || e).toString().slice(0, 600)); ko++;
   } finally {

@@ -840,7 +840,9 @@ const ouvrirLaLangue = async (p, lg) => {
        s'affiche là où le joueur la lirait (le mot sous les boutons). */
     ...['non_connecte', 'ferme', 'sans_profil', 'banni', 'age', 'nom_longueur', 'description_longueur', 'mot_interdit',
         'coordonnees', 'trop_de_groupes', 'code_inconnu', 'banni_du_groupe', 'groupe_plein', 'pas_membre', 'groupe_ferme',
-        'trop_vite', 'vide', 'trop_long', 'interdit', 'introuvable', 'soi_meme', 'partie_invalide', 'photo', 'photo_retiree', 'reseau'].map(code =>
+        'trop_vite', 'vide', 'trop_long', 'interdit', 'introuvable', 'soi_meme', 'partie_invalide', 'photo', 'photo_retiree', 'reseau',
+        /* Une partie à la fois (v314) : la sienne encore ouverte, ou relancée trop vite. */
+        'partie_en_cours', 'parties_trop_vite'].map(code =>
       ['Groupes · erreur ' + code, (c) => { __fermerTout(); __grpDecor(); grp.message = motErreurGroupe({ erreur:c }); state.screen='groupes'; render(); }, code]),
     /* LA PHOTO DU GROUPE (v311) : la feuille « Changer / Retirer », puis le
        salon d'une partie lancée depuis un groupe, chez l'hôte et chez
@@ -954,7 +956,10 @@ const ouvrirLaLangue = async (p, lg) => {
     /* La carte de recherche d'adversaire : un écran entier que le banc ne
        voyait pas, et qui contenait « Dès qu'un autre joueur cherche… » en
        français dans le texte. */
-    ['Recherche',         () => { net.searching=true; render(); }],
+    /* « Partie aléatoire » demande d'abord le testament, dans une feuille
+       (v313) : la question, les trois lignes et la note. */
+    ['Partie aléatoire',  () => { net.error=''; net.searching=false; render(); ouvrirPartieAleatoire(); }],
+    ['Recherche',         () => { __fermerTout(); net.searching=true; render(); }],
     ['Rejoindre',         () => { net.searching=false; net.error=''; state.screen='online-join'; render(); }],
     ['Code invalide',     () => { joinRoom('AB', false); }],
     ['Salon seul',        () => { net.error=''; net.code='ABCD'; net.isHost=true; net.joueurs={}; net.oppPresent=false; state.screen='online-room'; render(); }],

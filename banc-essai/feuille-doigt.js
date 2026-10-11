@@ -94,8 +94,14 @@ const URL = process.argv[2] || process.env.URL_ESSAI || 'http://127.0.0.1:8099/i
 
   /* 1. un vrai glissement vers le bas ferme */
   await ouvre("openSettings()");
-  let b = await p.evaluate(()=>{ const f=document.querySelector('.settings-sheet').getBoundingClientRect();
-    return { x:f.left+f.width/2, y:f.top + f.height*0.30 }; });
+  /* LE DOIGT SE POSE SUR UN LIBELLÉ, PAS À UNE HAUTEUR AU HASARD. « 30 % de
+     la feuille » tombait sur une ligne… jusqu'au jour où la disposition a
+     changé (v312) et que ce point est tombé sur le curseur du volume — qui
+     prend le geste, comme il le doit : un glissé commencé sur un curseur ne
+     ferme pas la feuille. On pose donc le doigt là où on la saisit
+     vraiment : sur le texte d'une ligne. */
+  let b = await p.evaluate(()=>{ const l=document.querySelector('.settings-sheet .set-row .set-txt b').getBoundingClientRect();
+    return { x:l.left+l.width/2, y:l.top + l.height/2 }; });
   await p.mouse.move(b.x, b.y); await p.mouse.down();
   for(let i=1;i<=8;i++){ await p.mouse.move(b.x, b.y + i*20); await p.waitForTimeout(16); }
   await p.mouse.up(); await p.waitForTimeout(800);

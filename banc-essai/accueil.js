@@ -80,6 +80,13 @@ const RELEVE = () => {
   const ctx = await nav.newContext({ viewport:{ width:393, height:HAUTEURS[0] }, deviceScaleFactor:2,
     userAgent:IOS, hasTouch:true, serviceWorkers:'block' });
   const p = await ctx.newPage();
+  /* PAS DE RÉSEAU, PAS DE BARRE PAR SURPRISE (v314). La barre du bas est
+     maintenant pour tout le monde dès que la sonde trouve les groupes sur le
+     serveur — et depuis que le conteneur joint Supabase, elle les trouvait :
+     la bande des sept jours quittait l'accueil pour la Progression. Ce banc
+     choisit lui-même s'il y a une barre ; la bibliothèque du CDN est donc
+     servie vide, et la sonde ne décide rien. */
+  await p.route('**/supabase-js@2*', (route) => route.fulfill({ status:200, contentType:'application/javascript', body:'' }));
   const errs = []; p.on('pageerror', e => errs.push(e.message));
   await p.addInitScript(PREP);
   await p.goto(URL);

@@ -4,8 +4,9 @@
    (voir faux-serveur-groupes.js). Deux joueurs, deux téléphones, et tout ce
    qu'un joueur fait vraiment, au doigt :
 
-     1. tant que les groupes sont fermés, la barre n'apparaît pas — sauf pour
-        le modérateur ; ouverts, elle est là dès le premier dessin ;
+     1. la barre est là pour tout le monde (v314) ; tant que les groupes
+        sont fermés, l'écran des groupes dit qu'ils arrivent bientôt — sauf
+        au modérateur ; ouverts, la barre est là dès le premier dessin ;
      2. l'onglet glisse de côté (vers la droite, puis retour à gauche) ;
      3. un nouveau venu passe les règles et les 13 ans, puis entre ;
      4. Taylor crée un groupe privé, le code d'invitation s'affiche ;
@@ -60,10 +61,14 @@ const dit = (quoi, bon, detail) => { console.log('  ' + (bon ? 'OK  ' : 'KO  ') 
     const accueil = (p) => p.waitForFunction(() => { try { return state.screen === 'mode'; } catch (e) { return false; } }, null, { timeout: 20000 });
     const barreVisible = (p) => p.evaluate(() => { const b = document.getElementById('barreBas'); return !!b && !b.classList.contains('cachee'); });
 
-    /* ---- 1. fermés : la barre n'est que pour le modérateur ---- */
+    /* ---- 1. la barre pour tout le monde ; fermés, l'écran le dit ---- */
     const pb = await telephone(B, 'Benoît');
     await pb.waitForTimeout(4200);
-    dit('fermés : pas de barre chez Benoît', !(await barreVisible(pb)));
+    dit('fermés : la barre est là chez Benoît aussi (pour tout le monde)', await barreVisible(pb));
+    await pb.evaluate(() => allerOnglet('groupes'));
+    dit('… et l\'écran des groupes lui dit qu\'ils arrivent bientôt', await attendre(pb, () => /bientôt/.test((document.querySelector('.groupes-ecran .grp-intro') || {}).textContent || ''), null, 8000));
+    await pb.evaluate(() => allerOnglet('accueil'));
+    await pb.waitForTimeout(700);
     const pa = await telephone(A, 'Taylor');
     dit('fermés : la barre chez Taylor, modérateur', await attendre(pa, () => { const b = document.getElementById('barreBas'); return !!b && !b.classList.contains('cachee'); }, null, 9000));
     await m.ouvrir(true);
@@ -174,6 +179,13 @@ const dit = (quoi, bon, detail) => { console.log('  ' + (bon ? 'OK  ' : 'KO  ') 
     await fleche(pb, 'quitDuel');
     dit('Benoît, resté seul, quitte à son tour : retour dans la discussion', await auGroupe(pb));
 
+    /* La partie précédente est fermée (Taylor a quitté) : une autre peut
+       partir — une fois passées les cinq secondes entre deux lancements. */
+    dit('la partie quittée est close : sa bulle dit « Partie terminée », sans bouton', await attendre(pb, (c) => {
+      const b = [...document.querySelectorAll('.b-partie')].find(x => /Partie terminée/.test(x.textContent));
+      return !!b && !b.querySelector('.grp-pill'); }, null, 8000));
+    await m.sql("update public.messages set cree_le = cree_le - interval '10 seconds' where genre = 'partie'");
+    await pa.evaluate(() => { net.partieLancee = 0; });
     await pa.waitForTimeout(1200);
     await pa.evaluate(() => document.querySelector('.compo-jeu').click());
     await attendre(pa, () => state.screen === 'online-room', null, 10000);
@@ -187,6 +199,14 @@ const dit = (quoi, bon, detail) => { console.log('  ' + (bon ? 'OK  ' : 'KO  ') 
     dit('Benoît, dans le salon fermé : retour dans la discussion', await auGroupe(pb));
     dit('… avec le mot qui l\'explique', await toast(pb, /quitté le salon/));
 
+    dit('… et sa bulle dit maintenant « Partie terminée », sans bouton', await attendre(pb, (c) => {
+      const b = [...document.querySelectorAll('.b-partie')].pop();
+      return !!b && /Partie terminée/.test(b.textContent) && !b.querySelector('.grp-pill'); }, null, 8000));
+    /* Un salon fermé SANS que la bulle le sache (le téléphone de l'hôte s'est
+       éteint en pleine partie) : la bulle propose encore de rejoindre, et le
+       salon vide ramène à la discussion avec le mot qui l'explique. */
+    await m.sql("update public.messages set donnees = donnees - 'fermee' where genre = 'partie'");
+    await attendre(pb, (c) => [...document.querySelectorAll('.b-partie .grp-pill')].some(b => b.getAttribute('onclick').indexOf(c) >= 0), salon2, 8000);
     await pb.waitForTimeout(2400);
     await pb.evaluate((c) => [...document.querySelectorAll('.b-partie .grp-pill')].find(b => b.getAttribute('onclick').indexOf(c) >= 0).click(), salon2);
     dit('une bulle dont la partie est finie ouvre le salon…', await attendre(pb, () => state.screen === 'online-room', null, 4000));
