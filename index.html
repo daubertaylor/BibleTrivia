@@ -647,6 +647,9 @@
   @keyframes reseauPart{ to{ opacity:0; transform:scale(0.6); } }
   @media (prefers-reduced-motion: reduce){ .icon-btn.hero-reseau.arrive, .icon-btn.hero-reseau.part{ animation-duration:0.01s; } }
   .icon-btn.hero-profile{ position:absolute; top:calc(0.5rem + 1px); left:calc(0.55rem + 1px); padding:0; overflow:visible; background:transparent; border:none; box-shadow:none; }
+  /* Le même profil, en tête des Groupes, pour qui n'est pas modérateur
+     (voir enteteGroupes) : posé dans l'en-tête au lieu d'être en absolu. */
+  .icon-btn.grp-profil{ padding:0; overflow:visible; background:transparent; border:none; box-shadow:none; }
   .hero-icon{ width:clamp(4.2rem, min(calc(27 * var(--lw)), calc(14.2 * var(--hu))), 7.4rem); height:auto; aspect-ratio:1; margin:0 auto 0.5rem; border-radius:23%; box-shadow:0 12px 30px rgba(10,8,6,0.44), 0 0 8px rgba(255,250,238,0.48), 0 0 24px rgba(255,247,228,0.34), 0 0 52px rgba(255,247,231,0.18), inset 0 0 9px rgba(255,252,245,0.4), inset 0 1.5px 4px rgba(255,255,255,0.28); display:block; object-fit:cover; animation:heroFloat 5s ease-in-out infinite; -webkit-user-drag:none; user-drag:none; -webkit-touch-callout:none; -webkit-user-select:none; user-select:none; pointer-events:none; }
   @keyframes heroFloat{ 0%,100%{ transform:translateY(0); } 50%{ transform:translateY(-6px); } }
   .hero-title{ font-family:'Poppins',sans-serif; font-weight:700; font-size:2rem; margin:0; letter-spacing:-0.01em; color:#fff; text-shadow:0 1px 12px rgba(0,0,0,0.35); }
@@ -668,7 +671,7 @@
      que soit la largeur du téléphone, elle occupe exactement la même place et
      ne déplace plus rien. Le verset affiché ici est choisi court dans les cinq
      versions (74 signes au pire) pour qu'il y tienne sans jamais être coupé. */
-  .home-verse{ margin:0.15rem auto 0; max-width:21.5rem; height:calc(2 * 0.8rem * 1.42); overflow:hidden; text-align:center; font-family:'Fraunces',serif; font-size:0.8rem; font-style:italic; font-weight:400; line-height:1.42; letter-spacing:0.01em; color:rgba(255,255,255,0.88); text-shadow:0 1px 10px rgba(0,0,0,0.5); text-wrap:balance; }
+  .home-verse{ margin:0.15rem auto 0; max-width:21.5rem; height:calc(2 * 0.8rem * 1.42); overflow:hidden; text-align:center; font-family:'Fraunces',serif; font-size:0.8rem; font-style:italic; font-weight:400; line-height:1.42; letter-spacing:0.01em; color:rgba(255,255,255,0.88); text-shadow:none; filter:drop-shadow(0 1px 5px rgba(0,0,0,0.5)); text-wrap:balance; }
   .home-verse .hv-ref{ font-family:'Poppins',sans-serif; font-style:normal; font-weight:600; font-size:0.62rem; letter-spacing:0.06em; text-transform:uppercase; color:rgba(255,224,150,0.85); white-space:nowrap; }
   /* JUSQU'OÙ LE VERSET TIENT.
      Il partait sous 700 px, avec cinq cartes. Avec six, la colonne redemande
@@ -776,6 +779,10 @@
      pousse pas. Avec les textes d'aujourd'hui ça n'arrive dans aucune des
      trois (banc-essai/pied.js le mesure), c'est une ceinture. */
   .sem-t{ min-width:0; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+  /* Même défaut que le nom d'un groupe (voir UNE OMBRE QUI NE S'ARRÊTE PAS AU
+     BORD D'UNE BOÎTE) : la ligne coupe ce qui dépasse, donc son ombre aussi.
+     L'ombre passe en filtre. */
+  .sem-t{ text-shadow:none; filter:drop-shadow(0 1px 4px rgba(0,0,0,0.5)); }
   .sem-j{ display:flex; gap:var(--sj-e); }
   /* MÊME HAUTEUR QUE LA FLAMME. « La flamme en bas a l'air beaucoup trop
      grosse » — elle faisait 1,34 fois la hauteur d'un carré, parce qu'elle a
@@ -1955,7 +1962,7 @@
   /* L'EXCEPTION, ET ELLE EST RÉELLE : le bouton du profil porte du verre mais
      laisse déborder (overflow visible) — sa pastille de notification sort de
      sa boîte. Lui, on ne l'étend pas. */
-  .icon-btn.hero-profile::before{ inset:0; }
+  .icon-btn.hero-profile::before, .icon-btn.grp-profil::before{ inset:0; }
   /* ===== L'ONDE SE REMPLIT ENTIÈREMENT, MÊME SUR UN TAPOTEMENT =====
      Elle était portée par « :active » : elle grandissait tant que le doigt
      restait posé, et repartait à l'envers dès qu'il se levait. Or un
@@ -2295,6 +2302,17 @@
      banc-essai/photo.js refait cette mesure à chaque passage. */
   .avatar.a-photo{ background-image:var(--ph, none); background-origin:border-box; background-clip:border-box;
     background-size:cover; background-position:50% 50%; background-repeat:no-repeat; color:transparent; text-shadow:none; }
+  /* ===== LA PHOTO VA JUSQU'AU BORD, SUR LES DEUX TÉLÉPHONES =====
+     « Sur ma photo de profil, sur iOS il y a des bordures, et sur Android
+     aucune. Que ce soit exactement pareil. » L'anneau clair des avatars
+     (2 px de blanc à 16 %, voir LES OBJETS GARDENT UN ANNEAU CLAIR) se
+     posait aussi PAR-DESSUS la photo : WebKit le dessine net, en liseré
+     gris autour du visage ; Chrome le fond dans l'image. Une photo n'en a pas
+     besoin — c'est elle qui se détache du décor. L'anneau devient
+     transparent dès qu'il y a une photo : même rond, même taille (la bordure
+     garde sa place), la photo jusqu'au bord, partout. L'initiale sur
+     couleur, elle, garde son anneau. */
+  .avatar.a-photo{ --bord:transparent; }
   /* LE BADGE « CRÉATEUR » A ÉTÉ RETIRÉ (v287, demande de Taylor). Il occupait
      ici une pastille dorée sur l'avatar et une gélule dorée sous le nom, toutes
      deux débloquées par un code secret. Sa place — le tap sur l'avatar du
@@ -2483,11 +2501,16 @@
   @keyframes errFlotIn{ from{ opacity:0; transform:translateY(-8px); } to{ opacity:1; transform:translateY(0); } }
 
   .presence-card{ display:flex; align-items:center; gap:0.62rem; justify-content:center; background:rgba(255,255,255,0.55); backdrop-filter:blur(18px) saturate(180%); -webkit-backdrop-filter:blur(18px) saturate(180%); border:0; border-radius:var(--r-full); padding:calc(0.45rem + 1px) calc(0.95rem + 1px); margin-bottom:0.8rem; }
-  .live-dot{ width:0.55rem; height:0.55rem; border-radius:50%; flex-shrink:0; background:#2FBF74; animation:liveHalo 2.4s ease-out infinite; }
-  @keyframes liveHalo{
-    0%{ box-shadow:0 0 0 0 rgba(47,191,116,0.5), 0 0 5px rgba(47,191,116,0.5); }
-    60%{ box-shadow:0 0 0 7px rgba(47,191,116,0), 0 0 5px rgba(47,191,116,0.5); }
-    100%{ box-shadow:0 0 0 0 rgba(47,191,116,0), 0 0 5px rgba(47,191,116,0.5); }
+  /* LE POINT « EN DIRECT » RESPIRE, IL NE FAIT PLUS D'ANNEAU. L'ancienne
+     pulsation gonflait un cercle vert autour du point (« 0 0 0 7px ») : un
+     liseré de couleur, le temps de chaque battement — exactement ce que la
+     règle interdit. Il garde sa lueur douce, et c'est le point lui-même qui
+     bat : un peu plus petit, un peu plus pâle, puis de retour. */
+  .live-dot{ width:0.55rem; height:0.55rem; border-radius:50%; flex-shrink:0; background:#2FBF74;
+    box-shadow:0 0 5px rgba(47,191,116,0.5); animation:liveSouffle 2.4s ease-in-out infinite; }
+  @keyframes liveSouffle{
+    0%, 100%{ opacity:1; transform:scale(1); }
+    50%{ opacity:0.55; transform:scale(0.8); }
   }
   /* Largeur fixe (chiffres tabulaires) : le nombre change sans décaler le point ni le texte. */
   .presence-num{ font-family:'Poppins',sans-serif; font-weight:700; font-size:0.95rem; color:var(--ink); font-variant-numeric:tabular-nums; display:inline-block; min-width:1.6ch; text-align:center; }
@@ -2557,8 +2580,18 @@
   .code-hero.salon-groupe{ display:flex; flex-direction:column; align-items:center; }
   .salon-groupe .grp-av{ width:clamp(2.6rem, calc(6.4 * var(--hu)), 3.3rem); height:clamp(2.6rem, calc(6.4 * var(--hu)), 3.3rem); font-size:1.3rem;
     border-radius:var(--r-l); margin-bottom:clamp(0.3rem, calc(1.1 * var(--hu)), 0.55rem); }
+  /* ===== UNE OMBRE QUI NE S'ARRÊTE PAS AU BORD D'UNE BOÎTE =====
+     « Ici il ne doit pas y avoir cette sorte de rectangle transparent, et même
+     partout ailleurs. » Le nom du groupe coupe ce qui dépasse (il finit en
+     « … ») — et une boîte qui coupe son texte coupe aussi son OMBRE : le halo
+     de 18 px s'arrêtait net à ses quatre bords, et dessinait un rectangle
+     sombre autour du nom (plus marqué sur iPhone). Un relevé de tous les
+     écrans (ombre de texte, boîte qui coupe) n'en trouve que trois : ce nom,
+     le verset de l'accueil (.home-verse) et la ligne de la semaine (.sem-t).
+     Les trois prennent la même ombre en FILTRE : elle se calcule sur les
+     lettres déjà dessinées, et déborde librement de la boîte. */
   .sg-nom{ font-family:'Poppins',sans-serif; font-weight:700; font-size:clamp(1.3rem, calc(5.2 * var(--hu) - 14px), 1.75rem); color:#fff;
-    text-shadow:0 2px 18px rgba(0,0,0,0.45); margin:0.05rem 0 0.15rem; max-width:100%; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+    text-shadow:none; filter:drop-shadow(0 2px 9px rgba(0,0,0,0.45)); margin:0.05rem 0 0.15rem; max-width:100%; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
 
 
   .len-label{ font-size:clamp(0.75rem, calc(1.68 * var(--hu)), 0.82rem); font-weight:600; color:rgba(255,255,255,0.9); margin:clamp(0.28rem, calc(3.8 * var(--hu) - 14.9px), 0.95rem) 0 clamp(0.13rem, calc(1.9 * var(--hu) - 8.5px), 0.45rem) 0.2rem; text-shadow:0 1px 6px rgba(0,0,0,0.4); }
@@ -3164,10 +3197,10 @@
      moteurs. */
   html.gl-xf .set-go.has-gs, html.gl-native .set-go.has-gs{ background-image:linear-gradient(150deg, #F44E2C, #DE3616); }
   html.gl-xf .glass-refl{ display:none; }
-  .hero-profile .gs{ display:none; }
+  .hero-profile .gs, .grp-profil .gs{ display:none; }
   /* Le bouton avatar est transparent et déborde (badge C) : sans découpe, sa
      couche reflet montrerait un rectangle de photo pendant les transitions. */
-  .hero-profile .glass-refl{ display:none; }
+  .hero-profile .glass-refl, .grp-profil .glass-refl{ display:none; }
   .fact-card{ --glass-tint: rgb(255,244,222); }
   .btn-reveal{ --glass-tint: rgb(228,150,38); }
   .btn-primary, .btn-next, .btn-replay{ --glass-tint: rgb(236,60,26); color:#fff; }
@@ -4588,6 +4621,14 @@
   .hero:has(.hero-zone.show-verse) .hero-profile,
   .hero:has(.hero-zone.show-verse) .hero-settings,
   .hero:has(.hero-zone.show-verse) .hero-reseau{ opacity:0; pointer-events:none; }
+  /* « Lorsque j'ouvre un verset, je ne dois pas avoir l'icône de réseau
+     derrière. » La règle ci-dessus l'effaçait bien… sur le papier : son
+     animation d'arrivée (« arrive », remplie « both ») tenait l'opacité à 1,
+     et une animation passe devant une règle ordinaire. Le rond dépassait au
+     coin haut de la carte. L'effacement du verset passe désormais devant
+     (!important), et l'icône rend sa classe d'arrivée une fois arrivée (voir
+     majIndicateurReseau). */
+  .hero:has(.hero-zone.show-verse) .hero-reseau{ opacity:0 !important; }
   /* LE NOM DU JEU RESTE. Il s'effaçait avec eux, systématiquement — alors que
      la carte ne descend jusqu'à lui que si le verset est assez long pour la
      faire grandir au-delà de la zone du héros. Mesuré sur les 992 affichages
@@ -5042,6 +5083,10 @@
   .mod-photo .grp-av{ width:4.6rem; height:4.6rem; border-radius:var(--r-l); font-size:1.8rem; }
   .grp-av.a-photo{ background-image:var(--ph) !important; background-size:cover !important; background-position:50% 50% !important;
     background-repeat:no-repeat !important; color:transparent; }
+  /* La photo d'un groupe non plus ne porte pas de trait : le reflet blanc
+     du haut des pastilles (inset 0 1px 0) tirait une ligne claire sur
+     l'image — le même « bord » que sur les photos de profil. */
+  .grp-av.a-photo{ box-shadow:0 2px 7px rgba(24,16,10,0.16); }
   .grp-txt{ display:flex; flex-direction:column; gap:0.14rem; min-width:0; flex:1; }
   .grp-txt b{ font-family:'Poppins',sans-serif; font-weight:600; font-size:0.96rem; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
   .grp-txt small{ font-size:0.8rem; color:var(--ink-soft); line-height:1.35; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
@@ -5206,6 +5251,24 @@
      référence de son voile : le voile revenait à sa petite taille pendant
      tout l'appui. Ce qui vit en rangée se remplit, ça ne s'enfonce pas. */
   .grp-fil-tete .grp-tete:active:not(:disabled), .grp-carte .grp-ligne:active:not(:disabled){ transform:none; }
+  /* ===== LA BARRE D'UNE DISCUSSION A LA HAUTEUR DE TOUTES LES AUTRES =====
+     « Quand je reviens en arrière d'un groupe, en arrivant sur la page, le
+     haut se déforme légèrement. » Il changeait de TAILLE : la barre d'une
+     discussion faisait 63,9 px (60,8 sur un SE), celle de la liste 58,5
+     (52,4) — le nom du groupe gardait le minimum de 44 px des cibles
+     tactiles, et ses deux lignes de texte en prenaient 45. Au retour, la
+     barre perdait 5 à 8 px d'un coup sous le doigt. Ce minimum ne sert plus
+     ici : le voile du nom couvre déjà toute la barre (voir ci-dessus), c'est
+     elle la cible. Les deux lignes se resserrent juste ce qu'il faut pour
+     tenir dans la hauteur d'un rond (2,4 rem), et la barre retrouve les
+     58,5 px de toutes les autres, d'un écran à l'autre.
+     PAS EN DESSOUS DE 1,4 POUR LE NOM : le nom coupe ce qui dépasse (il finit
+     en « … »), et Poppins dessine ses accents et ses jambages sur 1,4 em. À
+     1,22, le haut d'un « É » et le bas d'un « j » étaient rognés. */
+  .grp-fil-tete .grp-tete{ min-height:0; }
+  .grp-fil-tete .grp-txt{ gap:0; }
+  .grp-fil-tete .grp-txt b{ line-height:1.4; }
+  .grp-fil-tete .grp-txt small{ line-height:1.25; }
   .fil-carte{ position:relative; flex:1; min-height:0; display:flex; flex-direction:column; padding:0; margin-bottom:var(--e-2);
     border-radius:var(--r-l); }
   #fil{ flex:1; min-height:0; overflow-y:auto; overscroll-behavior:contain; -webkit-overflow-scrolling:touch;
@@ -5252,6 +5315,9 @@
   .b-partie .bp-ico svg{ width:100%; height:100%; }
   .b-partie b{ font-family:'Poppins',sans-serif; font-weight:600; font-size:0.98rem; }
   .b-moi .b-partie{ background:rgb(252,248,241); color:var(--ink); box-shadow:0 1px 2px rgba(34,26,16,0.08), 0 3px 10px rgba(34,26,16,0.06); }
+  /* Une partie terminée : la manette s'éteint, la ligne le dit, plus de bouton. */
+  .b-partie small{ color:var(--ink-soft); font-size:0.8rem; }
+  .b-partie.finie .bp-ico{ opacity:0.45; }
   .fil-bas{ position:absolute; left:50%; bottom:0.6rem; transform:translateX(-50%); z-index:2; border:0; border-radius:var(--r-full);
     padding:0.5rem 0.95rem; min-height:2.2rem; background:rgba(30,22,14,0.86); color:#fff; font-family:'Poppins',sans-serif; font-weight:600; font-size:0.8rem;
     box-shadow:0 4px 14px rgba(15,12,10,0.28); }
@@ -5924,6 +5990,9 @@ const TEXTES = {
     "Groupe privé":"Private group",
     "Message masqué":"Message hidden",
     "Tu lances une partie":"You're starting a game",
+    "Termine ou ferme ta partie avant d'en lancer une autre.":"Finish or close your game before starting another one.",
+    "Doucement : attends un peu avant de lancer une autre partie.":"Easy: wait a little before starting another game.",
+    "Attends {s} s avant de lancer une autre partie.":"Wait {s} s before starting another game.",
     "{nom} lance une partie":"{nom} is starting a game",
     "Toi : {texte}":"You: {texte}",
     "{nom} : {texte}":"{nom}: {texte}",
@@ -6551,6 +6620,9 @@ const TEXTES = {
     "Groupe privé":"Grupo privado",
     "Message masqué":"Mensaje oculto",
     "Tu lances une partie":"Inicias una partida",
+    "Termine ou ferme ta partie avant d'en lancer une autre.":"Termina o cierra tu partida antes de lanzar otra.",
+    "Doucement : attends un peu avant de lancer une autre partie.":"Con calma: espera un poco antes de lanzar otra partida.",
+    "Attends {s} s avant de lancer une autre partie.":"Espera {s} s antes de lanzar otra partida.",
     "{nom} lance une partie":"{nom} inicia una partida",
     "Toi : {texte}":"Tú: {texte}",
     "{nom} : {texte}":"{nom}: {texte}",
@@ -9756,6 +9828,7 @@ function bindRoom(ch){
        demande rien, tout le monde se présente. */
     const nouveau = Object.keys(vus).some(id => !net.joueurs[id]);
     net.joueurs = vus;
+    if(Object.keys(vus).length && net.partieGroupe && net.partieGroupe.code === net.code) net.partieGroupe.venus = true;
     if(nouveau) diffuserPhotoBientot();
     /* SALLE PLEINE. Personne n'arbitre les arrivées : chacun trie les
        identifiants et regarde sa propre place. Au-delà de la huitième, on
@@ -10093,6 +10166,7 @@ function quitDuel(){
   }
 }
 function cleanupRoom(){
+  if(net.partieGroupe && net.partieGroupe.code === net.code) clorePartieGroupe();
   stopDuelHeartbeat();
   clearTimeout(net.matchGuard); net.autoMatch = false;
   if(net.joinTimer){ clearTimeout(net.joinTimer); net.joinTimer=null; }
@@ -17677,14 +17751,25 @@ function plierTst(t){
   if(!corps){ t.classList.toggle("open", ouvrir); return; }
   const depart = corps.getBoundingClientRect().height;
   /* La hauteur d'arrivée se mesure SANS jouer l'animation : on pose la valeur
-     de destination, on lit, on remet le départ. */
+     de destination, on lit, on remet le départ.
+     DANS L'ÉTAT D'ARRIVÉE, PAS DANS CELUI DU DÉPART (v314). Replié, la carte
+     des livres perd aussi ses marges (voir REPLIÉ, IL NE GARDE RIEN) : mesurée
+     classe « open » encore absente, l'ouverture visait 19,5 px trop court, et
+     la page sautait d'autant à la fin du pli (banc-essai/pli.js : 19,1 px de
+     retard du verre). On pose donc la classe d'arrivée le temps de lire, sans
+     transition, puis on remet tout comme au départ. */
+  const enfant = corps.firstElementChild;
   corps.style.transition = "none";
+  if(enfant) enfant.style.transition = "none";
+  t.classList.toggle("open", ouvrir);
   corps.style.gridTemplateRows = ouvrir ? "max-content" : "0fr";
   const arrivee = corps.getBoundingClientRect().height;
+  t.classList.toggle("open", !ouvrir);
   corps.style.gridTemplateRows = depart + "px";
   void corps.offsetHeight;              // le départ est figé, en pixels
   corps.style.transition = "";
-  t.classList.toggle("open", ouvrir);   // margin-top et opacité partent d'ici
+  if(enfant) enfant.style.transition = "";
+  t.classList.toggle("open", ouvrir);   // margin-top, marges et opacité partent d'ici
   corps.style.gridTemplateRows = arrivee + "px";
   /* À l'arrivée on rend la main au CSS. La valeur épinglée et la valeur
      calculée sont la même : la reprise ne se voit pas. Un second tap pendant
@@ -19968,6 +20053,8 @@ function motErreurGroupe(r){
     introuvable:"Ce message n'existe plus.",
     soi_meme:"Tu ne peux pas faire ça sur toi-même.",
     partie_invalide:"Cette partie n'a pas pu être annoncée.",
+    partie_en_cours:"Termine ou ferme ta partie avant d'en lancer une autre.",
+    parties_trop_vite:"Doucement : attends un peu avant de lancer une autre partie.",
     photo:"La photo n'a pas pu être envoyée.",
     photo_retiree:"Une photo retirée par la modération ne peut pas être remplacée avant sept jours.",
     reseau:"Pas de réseau. Réessaie dans un instant."
@@ -20447,7 +20534,14 @@ function enteteGroupes(){
   const modo = !!(grp.etat && grp.etat.moderateur);
   const n = aTraiter();
   return `<div class="app-header grp-entete">
-      ${modo ? `<span class="grp-modo"><button class="icon-btn" onclick="ouvrirModeration()" aria-label="${escapeHtml(libelleModeration(n))}"><span class="ico" style="width:1.22rem;height:1.22rem;">${ICONS.bouclier}</span></button><i class="bb-pastille" aria-hidden="true"${n > 0 ? "" : " hidden"}>${n > 99 ? "99+" : n}</i></span>` : `<span class="icon-btn spacer"></span>`}
+      ${modo ? `<span class="grp-modo"><button class="icon-btn" onclick="ouvrirModeration()" aria-label="${escapeHtml(libelleModeration(n))}"><span class="ico" style="width:1.22rem;height:1.22rem;">${ICONS.bouclier}</span></button><i class="bb-pastille" aria-hidden="true"${n > 0 ? "" : " hidden"}>${n > 99 ? "99+" : n}</i></span>`
+             /* QUI N'EST PAS MODÉRATEUR NE VOYAIT RIEN À GAUCHE : un rond
+                invisible, là seulement pour centrer le titre. L'onglet Groupes
+                est, comme l'Accueil, un écran de premier niveau ; il prend
+                donc la même tête : le profil à gauche, les Réglages à droite.
+                C'est aussi là qu'on règle le nom et la photo que les groupes
+                voient. */
+             : `<button class="icon-btn grp-profil" onclick="openProfile()" aria-label="${T("Profil")}">${avatarHtml(profile.name || "?", profile.color, 2.4, true)}</button>`}
       <span class="header-title">${T("Groupes")}</span>
       <button class="icon-btn" onclick="openSettings()" aria-label="${T("Réglages")}"><span class="ico" style="width:1.22rem;height:1.22rem;">${ICONS.gear}</span></button>
     </div>`;
@@ -21515,11 +21609,14 @@ function bulleHtml(m){
   if(m.genre === "partie"){
     const code = String((m.donnees && m.donnees.code) || "").replace(/[^A-Z0-9]/g, "");
     const nom = (grp.profils[m.auteur] || {}).nom || T("Quelqu'un");
-    return `<div class="b-bulle b-partie" onclick="actionsMessage('${m.id}')">
+    /* Fermée par celui qui l'a lancée, ou vieille de plus de quarante-cinq
+       minutes (la règle du serveur) : on ne la rejoint plus. */
+    const finie = !!(m.donnees && m.donnees.fermee) || (Date.now() - new Date(m.cree_le || 0).getTime() > 45 * 60000);
+    return `<div class="b-bulle b-partie${finie ? " finie" : ""}" onclick="actionsMessage('${m.id}')">
         <span class="bp-ico">${ICONS.manette}</span>
         <b>${moi ? T("Tu lances une partie") : escapeHtml(Tf("{nom} lance une partie", { nom }))}</b>
-        ${moi ? `<small>${escapeHtml(Tf("Code {code}", { code }))}</small>` : ""}
-        ${code ? `<button class="grp-pill" onclick="event.stopPropagation(); rejoindrePartieGroupe('${code}')">${T("Rejoindre la partie")}</button>` : ""}
+        ${finie ? `<small>${T("Partie terminée")}</small>` : (moi ? `<small>${escapeHtml(Tf("Code {code}", { code }))}</small>` : "")}
+        ${code && !finie ? `<button class="grp-pill" onclick="event.stopPropagation(); rejoindrePartieGroupe('${code}')">${T("Rejoindre la partie")}</button>` : ""}
       </div>`;
   }
   return `<button class="b-bulle${m.id < 0 ? " envoi" : ""}" onclick="actionsMessage('${m.id}')">${escapeHtml(m.texte)}</button>`;
@@ -21627,17 +21724,69 @@ async function envoyerMessageGroupe(){
    Le bouton manette crée un salon en ligne, comme « Créer une partie », et
    l'annonce dans le groupe : les autres n'ont qu'à toucher la bulle. Seul le
    code du salon voyage — aucun texte libre ne passe par là. */
-async function lancerPartieGroupe(btn){
+/* ===== LA MANETTE OUVRE LE SALON AU TOUCHER (v314) =====
+   « Quand je clique sur la manette pour créer une partie de groupe, que ça se
+   lance très rapidement, sans délai. » Le salon attendait la réponse du
+   serveur — l'annonce dans la discussion — avant de s'ouvrir : un aller-
+   retour réseau entre le toucher et l'écran. Il s'ouvre maintenant au
+   toucher, et l'invitation part en même temps. Si le serveur la refuse, on
+   ressort du salon, avec la raison, au-dessus de la discussion.
+   ===== UNE PARTIE À LA FOIS =====
+   « Que l'utilisateur ne puisse pas créer trop de parties à la chaîne : qu'il
+   ferme sa partie ou qu'il la termine avant d'en créer une autre. » La règle
+   est au serveur (envoyer_message) ; le téléphone la connaît aussi, pour la
+   dire AVANT d'ouvrir un salon : une partie à moi encore ouverte, ou une
+   autre lancée il y a moins de cinq secondes, et la manette l'explique au
+   lieu de lancer. Fermer, c'est quitter son salon ; terminer, c'est en
+   atteindre la fin. L'invitation dit alors « Partie terminée » chez tout le
+   monde — et s'en va tout à fait si personne n'était venu. */
+const PARTIE_ECART = 5000;
+function lancerPartieGroupe(btn){
   const g = groupeCourant(); if(!g) return;
   if(!navigator.onLine || !onlineConfigured()){ showMiniToast(T("Pas de réseau. Réessaie dans un instant.")); return; }
+  if(net.partieGroupe && net.room){ showMiniToast(T("Termine ou ferme ta partie avant d'en lancer une autre.")); return; }
+  const depuis = Date.now() - (net.partieLancee || 0);
+  if(depuis < PARTIE_ECART){ showMiniToast(Tf("Attends {s} s avant de lancer une autre partie.", { s:Math.ceil((PARTIE_ECART - depuis) / 1000) })); return; }
   const code = genCode();
-  if(btn) btn.disabled = true;
-  const r = await appelGroupe("envoyer_message", { p_groupe:g.id, p_texte:"", p_genre:"partie", p_donnees:{ code } });
-  if(btn) btn.disabled = false;
-  if(!r.ok){ showMiniToast(motErreurGroupe(r)); return; }
+  net.partieLancee = Date.now();
+  net.partieGroupe = { groupe:g.id, code, message:null, venus:false };
   net.autoMatch = false; clearTimeout(net.matchGuard);
   net.depuisGroupe = g.id;
   createRoom(code, true);
+  annoncerPartie(g.id, code, false);
+}
+async function annoncerPartie(gid, code, reessai){
+  const r = await appelGroupe("envoyer_message", { p_groupe:gid, p_texte:"", p_genre:"partie", p_donnees:{ code } });
+  const pg = net.partieGroupe;
+  const encore = !!(pg && pg.code === code);
+  if(r.ok && r.id){
+    if(encore) pg.message = r.id;
+    /* Le salon a déjà été quitté pendant que l'annonce faisait l'aller-retour. */
+    else retirerInvitation(r.id, false);
+    return;
+  }
+  if(!encore) return;
+  /* L'ancienne partie n'existe plus sur ce téléphone (l'app a été relancée,
+     ou fermée sans réseau) : on la ferme, et l'invitation repart. */
+  if(r.erreur === "partie_en_cours" && r.message && !reessai){
+    await appelGroupe("fermer_partie", { p_message:+r.message });
+    return annoncerPartie(gid, code, true);
+  }
+  net.partieGroupe = null;
+  if(net.code === code){ cleanupRoom(); net.error = ""; if(!sortirVersGroupe(motErreurGroupe(r))){ state.screen = "online"; render(); } }
+  else showMiniToast(motErreurGroupe(r));
+}
+/* La partie que j'ai lancée prend fin — salon quitté, ou partie terminée. */
+function clorePartieGroupe(){
+  const pg = net.partieGroupe; if(!pg) return;
+  net.partieGroupe = null;
+  if(pg.message) retirerInvitation(pg.message, pg.venus || !!(net.deck && net.deck.length));
+}
+/* Personne n'est venu : l'invitation n'a plus rien à dire, elle part. Sinon
+   elle reste, et dit « Partie terminée ». */
+async function retirerInvitation(id, jouee){
+  const r = await appelGroupe(jouee ? "fermer_partie" : "supprimer_message", { p_message:+id });
+  if(!r.ok && !jouee) appelGroupe("fermer_partie", { p_message:+id });
 }
 function rejoindrePartieGroupe(code){
   if(!/^[A-Z0-9]{4,8}$/.test(String(code || ""))) return;
@@ -21695,6 +21844,9 @@ async function surMessageDirect(m, evt){
      chaque message — seul le fil regardé, s'il l'est, a suivi (recevoirMessage). */
   if(!g){
     if(evt === "INSERT" && !(grp.etat && grp.etat.moderateur)){ grp.liste = null; chargerListes(); }
+    /* Un groupe que la modération ne connaît pas encore — il vient de
+       naître (« cree ») : « Tous les groupes » se relit. */
+    else if(evt === "INSERT" && !(grp.tous || []).some(x => x.id === m.groupe)) rafraichirTousGroupes();
     return;
   }
   if(evt === "INSERT"){
@@ -21770,6 +21922,49 @@ function actionsMessage(id){
   h += `</div><div class="grp-mot"><span></span></div>`;
   ouvrirFeuilleGroupe("grpActionsVeil", nom, avatarHtml(nom, moi ? (profile.color || "#4C86E8") : (p.couleur || "#8A8F98"), 1.5, moi ? true : "u:" + m.auteur), h);
 }
+/* ===== L'APPUI LONG OUVRE SOUS LE DOIGT =====
+   « Quand je reste appuyé, au bout d'un certain délai, j'aimerais que ça
+   s'ouvre — supprimer le message par exemple — avant que j'aie eu le temps
+   de lâcher. Là, je suis obligé de lâcher le doigt, et ça paraît bizarre. »
+   C'est juste : partout ailleurs sur un téléphone, ce qu'on tient finit par
+   répondre. La bulle n'ouvrait son menu qu'au CLIC — donc au lâcher. Elle
+   l'ouvre maintenant au bout de 0,42 s de maintien, doigt toujours posé
+   (le temps que prennent iOS et Android). Le simple toucher l'ouvre encore,
+   comme avant. Un doigt qui bouge de plus de 9 px fait défiler la discussion
+   et n'ouvre rien.
+   LE LÂCHER QUI SUIT NE COMPTE PAS. La feuille vient de monter sous le doigt :
+   le clic que le navigateur envoie en le levant tomberait sur elle ou sur
+   son voile — et le voile, touché, referme la feuille. Ce clic-là, et lui
+   seul, est avalé ; le suivant (une action de la feuille) passe. */
+(function(){
+  const DELAI = 420, BOUGE = 9;
+  let minuteur = 0, cible = null, x0 = 0, y0 = 0, tenu = false, leve = 0;
+  const lacher = () => { if(minuteur){ clearTimeout(minuteur); minuteur = 0; } cible = null; };
+  document.addEventListener("pointerdown", (e)=>{
+    leve = 0; tenu = false;
+    if(e.pointerType === "mouse" && e.button !== 0) return;
+    const b = e.target && e.target.closest ? e.target.closest(".b-bulle") : null;
+    if(!b || (e.target.closest && e.target.closest(".grp-pill"))) return;
+    lacher();
+    cible = b; x0 = e.clientX; y0 = e.clientY;
+    minuteur = setTimeout(()=>{
+      minuteur = 0;
+      const c = cible; cible = null;
+      if(!c || !c.isConnected) return;
+      tenu = true;
+      try{ if(navigator.vibrate) navigator.vibrate(10); }catch(err){}
+      c.click();
+    }, DELAI);
+  }, { capture:true, passive:true });
+  document.addEventListener("pointermove", (e)=>{
+    if(cible && Math.hypot(e.clientX - x0, e.clientY - y0) > BOUGE) lacher();
+  }, { capture:true, passive:true });
+  document.addEventListener("pointerup", ()=>{ if(tenu){ tenu = false; leve = performance.now(); } lacher(); }, { capture:true, passive:true });
+  document.addEventListener("pointercancel", ()=>{ tenu = false; lacher(); }, { capture:true, passive:true });
+  document.addEventListener("click", (e)=>{
+    if(leve && e.isTrusted && performance.now() - leve < 450){ leve = 0; e.preventDefault(); e.stopPropagation(); }
+  }, true);
+})();
 function copierMessage(id){
   const m = trouverMessage(id);
   fermerFeuilleGroupe("grpActionsVeil");
@@ -22124,6 +22319,24 @@ function cartesModeration(){
    carte (« Voir le groupe ») ou la liste de tous les groupes, la discussion
    s'ouvre telle que ses membres la voient, EN LECTURE SEULE : pas de
    compositeur, aucun « lu » posé au nom des membres, et l'on n'y figure pas. */
+/* ===== UN GROUPE TOUT JUSTE CRÉÉ SE VOIT À LA MODÉRATION =====
+   « Lorsqu'un nouveau groupe est créé, je ne peux pas le voir dans la
+   modération. Si un groupe est créé, je dois pouvoir le voir. » La liste
+   n'était relue qu'en ouvrant la modération par son bouclier : créé
+   pendant qu'on la regardait — ou qu'on revenait d'un groupe par la flèche —,
+   le groupe n'y apparaissait jamais (banc-essai/moderation-nouveau.js). Elle
+   se relit maintenant à chaque retour sur l'écran, et d'elle-même quand le
+   direct apporte un message d'un groupe qu'elle ne connaît pas encore — à
+   commencer par l'annonce « groupe créé ». Pas plus d'une lecture toutes les
+   deux secondes, quoi qu'il arrive. */
+let tousLu = 0, tousMinuteur = 0;
+function rafraichirTousGroupes(){
+  if(!(grp.etat && grp.etat.moderateur)) return;
+  const reste = 2000 - (Date.now() - tousLu);
+  if(reste > 0){ if(!tousMinuteur) tousMinuteur = setTimeout(()=>{ tousMinuteur = 0; rafraichirTousGroupes(); }, reste); return; }
+  tousLu = Date.now();
+  chargerTousGroupes();
+}
 async function chargerTousGroupes(){
   const supa = initSupa(); if(!supa || !supa.from || !(grp.etat && grp.etat.moderateur)) return;
   try{
@@ -22169,6 +22382,7 @@ async function regarderGroupe(id){
   await chargerFil(id);
 }
 function renderModeration(){
+  setTimeout(rafraichirTousGroupes, 0);
   const el = document.createElement("div");
   el.className = "screen";
   el.innerHTML = `${renderHeader("Modération", true, "retourGroupes()")}<div id="modListe">${cartesModeration()}</div>
@@ -24322,6 +24536,8 @@ function renderOnlinePlay(){
 }
 
 function renderOnlineEnd(){
+  /* La partie lancée depuis un groupe est TERMINÉE : son invitation le dit. */
+  if(net.partieGroupe && net.partieGroupe.code === net.code) clorePartieGroupe();
   relacherToasts();   // idem en ligne
   stopDuelHeartbeat();
   const el=document.createElement("div"); el.className="screen";
@@ -26435,6 +26651,7 @@ function majIndicateurReseau(){
     const tmp = document.createElement("div"); tmp.innerHTML = html;
     const neuf = tmp.firstElementChild;
     neuf.classList.add("arrive");
+    neuf.addEventListener("animationend", ()=>{ neuf.classList.remove("arrive"); }, { once:true });
     if(ancien) ancien.replaceWith(neuf);
     else { const reg = hero.querySelector(".hero-settings"); if(reg) reg.insertAdjacentElement("afterend", neuf); else hero.appendChild(neuf); }
     try{ glassTrack(); }catch(e){}

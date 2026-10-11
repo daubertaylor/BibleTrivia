@@ -174,6 +174,13 @@ const dit = (quoi, bon, detail) => { console.log('  ' + (bon ? 'OK  ' : 'KO  ') 
     await fleche(pb, 'quitDuel');
     dit('Benoît, resté seul, quitte à son tour : retour dans la discussion', await auGroupe(pb));
 
+    /* La partie précédente est fermée (Taylor a quitté) : une autre peut
+       partir — une fois passées les cinq secondes entre deux lancements. */
+    dit('la partie quittée est close : sa bulle dit « Partie terminée », sans bouton', await attendre(pb, (c) => {
+      const b = [...document.querySelectorAll('.b-partie')].find(x => /Partie terminée/.test(x.textContent));
+      return !!b && !b.querySelector('.grp-pill'); }, null, 8000));
+    await m.sql("update public.messages set cree_le = cree_le - interval '10 seconds' where genre = 'partie'");
+    await pa.evaluate(() => { net.partieLancee = 0; });
     await pa.waitForTimeout(1200);
     await pa.evaluate(() => document.querySelector('.compo-jeu').click());
     await attendre(pa, () => state.screen === 'online-room', null, 10000);
@@ -187,6 +194,14 @@ const dit = (quoi, bon, detail) => { console.log('  ' + (bon ? 'OK  ' : 'KO  ') 
     dit('Benoît, dans le salon fermé : retour dans la discussion', await auGroupe(pb));
     dit('… avec le mot qui l\'explique', await toast(pb, /quitté le salon/));
 
+    dit('… et sa bulle dit maintenant « Partie terminée », sans bouton', await attendre(pb, (c) => {
+      const b = [...document.querySelectorAll('.b-partie')].pop();
+      return !!b && /Partie terminée/.test(b.textContent) && !b.querySelector('.grp-pill'); }, null, 8000));
+    /* Un salon fermé SANS que la bulle le sache (le téléphone de l'hôte s'est
+       éteint en pleine partie) : la bulle propose encore de rejoindre, et le
+       salon vide ramène à la discussion avec le mot qui l'explique. */
+    await m.sql("update public.messages set donnees = donnees - 'fermee' where genre = 'partie'");
+    await attendre(pb, (c) => [...document.querySelectorAll('.b-partie .grp-pill')].some(b => b.getAttribute('onclick').indexOf(c) >= 0), salon2, 8000);
     await pb.waitForTimeout(2400);
     await pb.evaluate((c) => [...document.querySelectorAll('.b-partie .grp-pill')].find(b => b.getAttribute('onclick').indexOf(c) >= 0).click(), salon2);
     dit('une bulle dont la partie est finie ouvre le salon…', await attendre(pb, () => state.screen === 'online-room', null, 4000));

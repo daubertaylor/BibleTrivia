@@ -569,6 +569,7 @@ declare
   g public.groupes;
   dernier timestamptz;
   id_ bigint;
+  ouverte bigint;
 begin
   if etat <> 'ok' then return jsonb_build_object('ok', false, 'erreur', etat); end if;
   select * into m from public.membres where groupe = p_groupe and membre = moi;
@@ -593,6 +594,25 @@ begin
     -- Une invitation à jouer : seulement le code d'un salon en ligne. Aucun
     -- texte libre ne passe par là.
     if coalesce(p_donnees->>'code', '') !~ '^[A-Z0-9]{4,8}$' then return jsonb_build_object('ok', false, 'erreur', 'partie_invalide'); end if;
+    -- UNE PARTIE À LA FOIS (v314). « Que l'utilisateur ne puisse pas créer
+    -- trop de parties à la chaîne : qu'il ferme sa partie ou qu'il la
+    -- termine avant d'en créer une autre. » La précédente doit avoir été
+    -- fermée (fermer_partie) ; passé quarante-cinq minutes, elle ne compte
+    -- plus — un téléphone éteint en pleine partie ne bloque personne.
+    -- (« x. » partout : la fonction a sa propre variable « genre ».)
+    select x.id into ouverte from public.messages x
+     where x.auteur = moi and x.genre = 'partie' and x.supprime_le is null
+       and not coalesce((x.donnees->>'fermee')::boolean, false)
+       and x.cree_le > now() - interval '45 minutes'
+     order by x.id desc limit 1;
+    if ouverte is not null then
+      return jsonb_build_object('ok', false, 'erreur', 'partie_en_cours', 'message', ouverte); end if;
+    -- Et jamais en rafale : cinq secondes entre deux parties, trente par
+    -- heure — rejouer juste après une partie reste naturel, une boucle
+    -- « lancer, fermer, lancer » ne l'est pas.
+    if exists (select 1 from public.messages x where x.auteur = moi and x.genre = 'partie' and x.cree_le > now() - interval '5 seconds')
+       or (select count(*) from public.messages x where x.auteur = moi and x.genre = 'partie' and x.cree_le > now() - interval '1 hour') >= 30 then
+      return jsonb_build_object('ok', false, 'erreur', 'parties_trop_vite'); end if;
     t := '';
     d := jsonb_build_object('code', p_donnees->>'code');
   else
@@ -602,6 +622,23 @@ begin
   update public.groupes set dernier_message = now() where id = p_groupe;
   update public.membres set lu_jusqu = id_ where groupe = p_groupe and membre = moi;
   return jsonb_build_object('ok', true, 'id', id_);
+end $$;
+
+-- FERMER SA PARTIE (v314) : celui qui l'a lancée, et lui seul. La bulle de
+-- l'invitation dit alors « Partie terminée » chez tout le monde (le direct
+-- apporte le changement), et il peut en lancer une autre.
+create or replace function public.fermer_partie(p_message bigint) returns jsonb
+language plpgsql volatile security definer set search_path = '' as $$
+declare moi uuid := auth.uid(); m public.messages;
+begin
+  if moi is null then return jsonb_build_object('ok', false, 'erreur', 'non_connecte'); end if;
+  select * into m from public.messages where id = p_message;
+  if m.id is null or m.genre <> 'partie' then return jsonb_build_object('ok', false, 'erreur', 'introuvable'); end if;
+  if m.auteur is distinct from moi then return jsonb_build_object('ok', false, 'erreur', 'interdit'); end if;
+  if not coalesce((m.donnees->>'fermee')::boolean, false) then
+    update public.messages set donnees = donnees || jsonb_build_object('fermee', true) where id = p_message;
+  end if;
+  return jsonb_build_object('ok', true);
 end $$;
 
 create or replace function public.marquer_lu(p_groupe uuid, p_message bigint) returns void
@@ -992,7 +1029,7 @@ begin
                                 '_coordonnees','_code','_peut_participer','_annoncer','_passer_la_main','_masquer','_quitter_tout','_nom',
                                 '_maintenant_ms','_photo_valide','poser_photo','poser_photo_groupe',
                                 'mon_etat_groupes','poser_profil','accepter_regles','creer_groupe','groupe_par_code',
-                                'rejoindre_groupe','quitter_groupe','envoyer_message','marquer_lu','supprimer_message',
+                                'rejoindre_groupe','quitter_groupe','envoyer_message','fermer_partie','marquer_lu','supprimer_message',
                                 'signaler','bloquer','debloquer','moderer_membre','modifier_groupe','nouveau_code',
                                 'supprimer_groupe','groupes_publics','mes_groupes','moderation_ouverte',
                                 'traiter_signalement')
