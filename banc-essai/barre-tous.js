@@ -93,7 +93,11 @@ const dit = (quoi, bon, detail) => { console.log('  ' + (bon ? 'OK  ' : 'KO  ') 
     await p.evaluate(() => document.querySelector('.app-header [onclick*="saveProfileAndBack"]').click());
     await p.waitForTimeout(1100);
     rel = await vider();
-    const ecrans = [...new Set(rel.map(r => r.ecran))].join(' > ');
+    /* LA SUITE DES ÉCRANS, PAS LEUR ENSEMBLE. Un Set fusionnait
+       « groupes > profile > groupes » en « groupes > profile » dès qu'une image
+       des Groupes était captée avant l'ouverture du Profil — sous charge, ça
+       arrive, et le banc croyait le retour manqué. */
+    const ecrans = rel.map(r => r.ecran).filter((e, i, a) => i === 0 || e !== a[i - 1]).join(' > ');
     const vues = rel.filter(r => r.vue);
     const hors = vues.filter(r => Math.abs(r.x - fin) > 0.5 || r.o !== 'groupes');
     dit('Groupes > Profil > Groupes : la pastille ne quitte jamais l\'onglet Groupes', ecrans.includes('profile') && /groupes$/.test(ecrans) && vues.length > 10 && hors.length === 0,

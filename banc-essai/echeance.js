@@ -46,6 +46,13 @@ const ouvrirLaLangue = async (p, lg) => {
 };
 const accueil = async (ctx, { heure, daily, langue }) => {
   const p = await ctx.newPage();
+  /* PAS DE RÉSEAU, PAS DE BARRE PAR SURPRISE (v314). La barre du bas est
+     maintenant pour tout le monde dès que la sonde trouve les groupes sur le
+     serveur — et depuis que le conteneur joint Supabase, elle les trouvait :
+     la bande des sept jours quittait l'accueil pour la Progression. Ce banc
+     choisit lui-même s'il y a une barre ; la bibliothèque du CDN est donc
+     servie vide, et la sonde ne décide rien. */
+  await p.route('**/supabase-js@2*', (route) => route.fulfill({ status:200, contentType:'application/javascript', body:'' }));
   if(heure) await p.clock.install({ time:heure });
   await ouvrirLaLangue(p, langue || 'fr');
   await p.addInitScript(([d, l]) => {
