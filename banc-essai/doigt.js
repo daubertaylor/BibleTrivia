@@ -111,6 +111,11 @@ const ECRANS = [
     localStorage.setItem('bt_profile', JSON.stringify({ name:'Taylor', color:'#4C86E8' }));
     localStorage.setItem('bt_fs_hint', '1');
     localStorage.setItem('bt_progress', JSON.stringify({ books:{'Genèse':12}, correct:126 }));
+    /* La sonde du compte, déjà connue (voir jumeaux.js) : sinon la carte
+       « Se connecter » est mesurée pendant qu'elle arrive (30 px de haut,
+       « sous 44 px » pour la seule raison qu'elle grandit encore). */
+    localStorage.setItem('bt_compte_ok', JSON.stringify({ ok:true, quand:Date.now() }));
+    localStorage.setItem('bt_google_ok', JSON.stringify({ ok:false, quand:Date.now() }));
   });
   await p.goto(URL);
   await p.waitForFunction(() => { try { return state.screen === 'mode'; } catch(e){ return false; } }, null, { timeout:20000 });

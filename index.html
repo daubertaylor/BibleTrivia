@@ -4953,6 +4953,7 @@
     box-shadow:0 1px 2px rgba(120,30,14,0.16), 0 6px 16px rgba(214,60,34,0.32);
     transition:transform var(--tr-ouvre); }
   .barre-bas[data-o="groupes"] .bb-curseur{ transform:translate3d(100%,0,0); }
+  .barre-bas.pose-nette .bb-curseur, .barre-bas.pose-nette .bb-onglet{ transition:none !important; }
   .bb-onglet{ position:relative; z-index:1; display:flex; align-items:center; justify-content:center; gap:0.42rem;
     border:0; background:none; color:var(--ink); font-family:'Poppins',sans-serif; font-weight:600; font-size:0.86rem;
     border-radius:var(--r-full); -webkit-tap-highlight-color:transparent; transition:color 0.18s ease; }
@@ -5266,6 +5267,12 @@
      en « … »), et Poppins dessine ses accents et ses jambages sur 1,4 em. À
      1,22, le haut d'un « É » et le bas d'un « j » étaient rognés. */
   .grp-fil-tete .grp-tete{ min-height:0; }
+  /* LE DOIGT GARDE SES 44 PX. Sans son minimum, la boîte du nom ne faisait
+     plus que 38 à 40 px de haut (banc-essai/doigt.js). Elle reprend 4 px en
+     haut et en bas DANS la barre : rembourrage d'un côté, marge négative de
+     l'autre, la mise en page ne bouge pas d'un pixel et la zone de toucher
+     repasse à 46 px et plus. */
+  .grp-fil-tete .grp-tete{ padding-block:4px; margin-block:-4px; }
   .grp-fil-tete .grp-txt{ gap:0; }
   .grp-fil-tete .grp-txt b{ line-height:1.4; }
   .grp-fil-tete .grp-txt small{ line-height:1.25; }
@@ -12111,6 +12118,32 @@ try{
      -> détection fiable sur iOS ET Android. */
   let restH = vv.height;
   let kbScrollTimer = null, kbScrollTimer2 = null;
+  /* ===== SUR ANDROID, LE CLAVIER NE SE VOIT PAS DANS LA ZONE VISIBLE =====
+     « Sur le truc pour se connecter, le clavier cache ce qu'on écrit. Règle
+     ça sur iOS et Android. » Depuis la v254, la page déclare
+     interactive-widget=overlays-content (voir l'en-tête) pour qu'Android
+     fasse comme iOS : le clavier se pose PAR-DESSUS. Mais Chrome va plus loin
+     qu'iOS : il ne réduit ni la page NI la zone visible. visualViewport garde
+     toute la hauteur, ce module ne voyait donc jamais le clavier — pas de
+     recadrage, pas de cale, et sur un champ bas (l'adresse et le code de la
+     connexion, au bas du Profil) le clavier recouvrait tout, bouton compris.
+     Les feuilles et la discussion, qui se règlent sur la même mesure,
+     restaient elles aussi derrière.
+     Chrome le dit autrement : navigator.virtualKeyboard donne la place exacte
+     du clavier (boundingRect) et prévient quand elle change
+     (« geometrychange »). On le lui demande explicitement (overlaysContent,
+     le même mode que l'en-tête), et la zone visible devient « ce que la
+     fenêtre montre au-dessus du clavier » — partout où ce module la lisait.
+     iOS n'a pas cette interface : il continue de rétrécir visualViewport,
+     rien ne change pour lui. */
+  const vk = ("virtualKeyboard" in navigator) ? navigator.virtualKeyboard : null;
+  if(vk){ try{ vk.overlaysContent = true; }catch(e){} }
+  const rectClavier = ()=>{ try{ const r = vk && vk.boundingRect; return (r && r.height > 0) ? r : null; }catch(e){ return null; } };
+  const hauteurVisible = ()=>{
+    const r = rectClavier();
+    if(!r) return vv.height;
+    return Math.max(0, Math.min(vv.height, r.y > 0 ? r.y : innerHeight - r.height));
+  };
   /* Placement du champ actif : CONTRÔLÉ, jamais scrollIntoView.
      scrollIntoView({block:"center"}) avait deux défauts visibles à l'écran :
        1. il fait défiler TOUS les ancêtres, y compris le document -> le contenu
@@ -12438,7 +12471,7 @@ try{
        sa hauteur : son bord bas est caché derrière le clavier. La zone où l'œil
        voit quelque chose s'arrête donc à la hauteur du viewport visible. */
     let pli = ar.bottom;
-    try{ if(de.classList.contains("kb")) pli = Math.min(pli, (vv.offsetTop || 0) + vv.height); }catch(e){}
+    try{ if(de.classList.contains("kb")) pli = Math.min(pli, (vv.offsetTop || 0) + hauteurVisible()); }catch(e){}
     const H = Math.max(80, pli - ar.top);                         // hauteur RÉELLEMENT visible
     /* Ligne HAUTE sûre = juste sous l'encoche / la barre d'état. */
     let pad = 0;
@@ -12458,6 +12491,19 @@ try{
        clavier pour un gain devenu marginal. */
     const marge = Math.max(12, Math.min(28, H * 0.06));
     const champ = enDoc(el);
+    /* LA CONNEXION SE DÉGAGE AVEC SON BOUTON. On y tape une adresse, puis un
+       code : le bouton qui envoie (« Recevoir un code », « Se connecter »)
+       est juste dessous, et c'est lui qu'on touche ensuite. Si le champ ET le
+       bouton tiennent ensemble au-dessus du clavier, on remonte les deux ;
+       sinon, le champ seul, comme partout. */
+    try{
+      const carte = el.closest(".compte-carte");
+      const bt = carte && carte.querySelector(".btn-primary");
+      if(bt){
+        const b = enDoc(bt);
+        if(b.bas > champ.bas && b.bas - champ.haut + marge <= H - pad) champ.bas = b.bas;
+      }
+    }catch(e){}
     /* Fourchette des défilements qui gardent le champ ENTIÈREMENT lisible :
        au-dessus du clavier (mini) et sous la barre d'état (maxi). */
     const mini = Math.max(0, Math.min(max, champ.bas + marge - H));
@@ -12562,9 +12608,9 @@ try{
       return;
     }
     if(champDeDiscussion()){
-      const cache = restH - vv.height;
+      const cache = restH - hauteurVisible();
       if(cache > 90){
-        de.style.setProperty("--vvh", Math.round(vv.height) + "px");
+        de.style.setProperty("--vvh", Math.round(hauteurVisible()) + "px");
         de.style.setProperty("--kbh", Math.round(cache) + "px");
         if(!de.classList.contains("kb-fil")){ de.classList.add("kb", "kb-fil"); try{ glassSuivre(500); }catch(e){} }
       } else if(de.classList.contains("kb-fil")){ de.classList.remove("kb", "kb-fil"); try{ glassSuivre(500); }catch(e){} }
@@ -12575,7 +12621,7 @@ try{
       const app = document.getElementById("app");
       if(app) defilementAvantClavier = app.scrollTop;
     }
-    const hidden = restH - vv.height; // hauteur réellement masquée par le clavier
+    const hidden = restH - hauteurVisible(); // hauteur réellement masquée par le clavier
     if(hidden > 90){
       /* Défilement DÉJÀ possible, relevé avant que la cale du clavier existe :
          c'est là qu'elle doit commencer, sinon elle retombe dans le contenu et
@@ -12589,7 +12635,7 @@ try{
           if(a) de.style.setProperty("--dep", Math.max(0, a.scrollHeight - a.clientHeight) + "px");
         }catch(e){}
       }
-      de.style.setProperty("--vvh", Math.round(vv.height) + "px");
+      de.style.setProperty("--vvh", Math.round(hauteurVisible()) + "px");
       de.style.setProperty("--kbh", Math.round(hidden) + "px");  // de quoi remonter le champ
       de.classList.add("kb");
       /* iOS fait parfois défiler le DOCUMENT lui-même sous le clavier -> #app
@@ -12630,8 +12676,15 @@ try{
          rien du tout (le placement est calculé, pas appliqué à l'aveugle). */
       clearTimeout(kbScrollTimer2);
       kbScrollTimer2 = setTimeout(bringFieldIntoView, 400);
-    } else {
+    } else if(de.classList.contains("kb")){
+      /* LE CLAVIER EST PARTI, LE CHAMP GARDE LE FOYER : le bouton « retour »
+         d'Android range le clavier sans quitter le champ. On rend la page
+         comme à une sortie de champ — en glissant, cale comprise — au lieu de
+         retirer la cale d'un coup (la page tombait au bord, sans animation). */
+      clearTimeout(kbScrollTimer); clearTimeout(kbScrollTimer2);
+      if(retourAPrevoir()) de.classList.add("kb-cale");
       de.classList.remove("kb");
+      rendDefilementClavier();
     }
     fitScroll(); // le clavier change la hauteur utile -> re-décider défilement
   }
@@ -12650,6 +12703,11 @@ try{
   }, true);
   vv.addEventListener("resize", apply);
   vv.addEventListener("scroll", apply);
+  if(vk){ try{ vk.addEventListener("geometrychange", apply); }catch(e){} }
+  /* Un contenu qui change de taille SOUS un champ actif (la carte de
+     connexion qui grandit d'un mot, ou passe de l'adresse au code) : on
+     recale le champ une fois la carte posée. Rien si le clavier est rangé. */
+  window.recalerChampClavier = ()=>{ if(de.classList.contains("kb") && isField()){ clearTimeout(kbScrollTimer); kbScrollTimer = setTimeout(bringFieldIntoView, 40); } };
   document.addEventListener("focusin", ()=>setTimeout(apply, 60));
   document.addEventListener("focusout", ()=>{ clearTimeout(kbScrollTimer); clearTimeout(kbScrollTimer2); setTimeout(()=>{ if(!isField()){ if(retourAPrevoir()) de.classList.add("kb-cale"); de.classList.remove("kb"); if(de.classList.contains("kb-fil")){ de.classList.remove("kb-fil"); try{ glassSuivre(500); }catch(e){} } fitScroll(); rendDefilementClavier(); } }, 60); });
 })();
@@ -19657,7 +19715,15 @@ async function envoyerCode(){
      relancé entre-temps, la réponse tardive ne le ramène nulle part. */
   const envoi = (compte.envoi || 0) + 1;
   compte.envoi = envoi; compte.courriel = a; compte.occupe = false;
+  /* LE CLAVIER RESTE OUVERT, SUR LE CODE. La carte change d'état : le champ
+     de l'adresse disparaît, et avec lui le foyer — le clavier redescendait,
+     pour remonter au premier toucher sur le champ du code. Si l'on écrivait
+     (le clavier était là), le foyer passe directement au champ du code : le
+     clavier ne bouge pas, et sur iPhone le code reçu par mail s'y propose
+     tout seul au-dessus des touches. */
+  const ecrivait = !!champ && document.activeElement === champ;
   compte.etape = "code"; compte.message = T("Envoi du code…"); majCarteCompte();
+  if(ecrivait){ const c = document.getElementById("compteCode"); if(c) try{ c.focus({ preventScroll:true }); }catch(e){} }
   let error = null;
   try{ ({ error } = await supa.auth.signInWithOtp({ email:a, options:{ shouldCreateUser:true } })); }
   catch(e){ error = e || {}; }
@@ -19934,6 +20000,7 @@ function morpherCarte(el, h0, nouveau){
   el._finMorph = setTimeout(()=>{
     el.style.removeProperty("height"); el.style.removeProperty("transition"); el.style.removeProperty("overflow");
     try{ glassTrack(); fitScroll(); }catch(e){}
+    try{ if(window.recalerChampClavier) recalerChampClavier(); }catch(e){}
   }, ms + 40);
 }
 /* La carte qui s'en va (la table a disparu côté serveur) se replie, elle ne
@@ -20195,16 +20262,16 @@ async function chargerEtatGroupes(){
   majBarre(); majBouclier();
   return grp.etat;
 }
-/* LA BARRE N'APPARAÎT QUE LÀ OÙ ELLE MÈNE QUELQUE PART : groupes installés,
-   et ouverts — ou ouverts à MOI, modérateur, pendant l'essai. */
-function groupesVisibles(){
-  if(grp.installe !== true) return false;
-  if(grp.ouverts) return true;
-  /* Fermés : la barre n'est que pour un modérateur CONNECTÉ. Tant que l'état
-     n'est pas revenu du serveur, on se fie au souvenir de la dernière fois. */
-  if(!compteConnecte() && !sessionRangee()) return false;
-  return grp.etat ? !!grp.etat.moderateur : !!grp.modoMemo;
-}
+/* ===== LA BARRE EST LÀ POUR TOUT LE MONDE (v314) =====
+   « Je veux absolument que l'Accueil et les Messages soient présents, même
+   pour les joueurs qui ne sont pas connectés : ça les incite à se connecter
+   pour rejoindre des groupes. » Elle attendait deux choses : un compte, et
+   que les groupes soient ouverts au public (sinon, seul un modérateur la
+   voyait). Il suffit maintenant que les groupes existent sur le serveur.
+   L'écran des groupes dit ensuite à chacun où il en est : se connecter,
+   accepter les règles — ou « arrivent bientôt » tant qu'ils ne sont pas
+   ouverts (voir corpsGroupes). */
+function groupesVisibles(){ return grp.installe === true; }
 function participeGroupes(){ return !!(grp.etat && grp.etat.participe === "ok"); }
 /* Le compte vient de changer (connexion, déconnexion, compte supprimé). */
 function groupesSurCompte(){
@@ -20268,13 +20335,28 @@ function majBarre(){
   }
   if(b.dataset.langue !== LANGUE){ b.innerHTML = barreHtml(); b.dataset.langue = LANGUE; b.setAttribute("aria-label", T("Navigation")); }
   const montre = state.screen === "mode" || state.screen === "groupes";
-  const o = state.screen === "groupes" ? "groupes" : "accueil";
+  /* ===== LA PASTILLE RESTE SUR SON ONGLET =====
+     « Quand elle est sur Messages, elle doit bien rester sur Messages — et
+     inversement sur Accueil. » Elle suivait l'ÉCRAN : tout ce qui n'était pas
+     la liste des groupes valait « Accueil ». En quittant les Groupes pour une
+     discussion ou le Profil, la pastille filait vers Accueil pendant que la
+     barre s'en allait ; au retour, elle revenait en glissant vers Groupes
+     pendant que la barre arrivait. Elle suit maintenant la SECTION : une
+     discussion et la modération sont dans les Groupes, l'accueil est
+     l'Accueil, et tout le reste (Profil, Progression, une partie) la laisse
+     où elle était. */
+  const o = ({ groupes:"groupes", groupe:"groupes", moderation:"groupes", mode:"accueil" })[state.screen] || b.dataset.o || "accueil";
+  const revient = montre && (b.classList.contains("cachee") || b.classList.contains("part-cote"));
+  /* Elle ne glisse que sous les yeux, d'un onglet à l'autre. Une barre qui
+     REVIENT arrive avec sa pastille déjà en place. */
+  if(revient && b.dataset.o !== o) b.classList.add("pose-nette");
   b.querySelectorAll(".bb-onglet").forEach(x=>{
     const actif = x.dataset.o === o;
     x.classList.toggle("actif", actif);
     if(actif) x.setAttribute("aria-current", "page"); else x.removeAttribute("aria-current");
   });
   b.dataset.o = o;
+  if(b.classList.contains("pose-nette")){ void b.offsetWidth; b.classList.remove("pose-nette"); }
   /* La pastille compte ce qui attend : les messages non lus et, pour un
      modérateur, les signalements à traiter. C'est par elle qu'un
      signalement arrive jusqu'à lui sans qu'il ait à aller le chercher. */
@@ -20557,9 +20639,11 @@ function renderGroupes(){
    groupes. Chaque état dit pourquoi, jamais un écran vide. */
 function corpsGroupes(){
   if(!compteConnecte()){
+    /* Pas encore ouverts au public : on le dit AVANT qu'il crée un compte
+       pour rien. Le compte reste proposé — il sera prêt le jour venu. */
     return `<div class="card grp-intro">
         <span class="gi-ico">${ICONS.bulles}</span>
-        <b>${T("Parle et joue avec tes amis")}</b>
+        <b>${grp.ouverts ? T("Parle et joue avec tes amis") : T("Les groupes arrivent bientôt.")}</b>
         <p>${T("Les groupes demandent un compte : c'est lui qui permet de te reconnaître, et de bloquer quelqu'un si besoin.")}</p>
       </div>
       ${carteCompteHtml()}`;
@@ -27095,9 +27179,12 @@ if(retourDeConnexion() || sessionRangee()){
    de la dernière sonde ; la sonde, elle, passe derrière, une fois l'accueil
    posé — une petite requête, au plus une fois la demi-heure. Un lien
    d'invitation la fait passer plus tôt : quelqu'un attend. */
+/* LE TOUT PREMIER LANCEMENT n'a aucun souvenir : la sonde part tout de suite,
+   pendant l'écran d'ouverture, pour que la barre soit là dès la première
+   image de l'accueil au lieu d'arriver dessus (et de le redessiner). */
 setTimeout(()=>{
   try{ sonderGroupes().then(()=>{ try{ servirInvitation(); }catch(e){} }); }catch(e){}
-}, invitationEnAttente ? 600 : 2500);
+}, invitationEnAttente ? 600 : (grp.installe === null ? 200 : 2500));
 document.addEventListener("visibilitychange", ()=>{ if(!document.hidden && state.screen !== "splash") sonderGroupes(); });
 
 const _savedGame = loadSavedGame();

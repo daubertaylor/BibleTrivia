@@ -4,8 +4,9 @@
    (voir faux-serveur-groupes.js). Deux joueurs, deux téléphones, et tout ce
    qu'un joueur fait vraiment, au doigt :
 
-     1. tant que les groupes sont fermés, la barre n'apparaît pas — sauf pour
-        le modérateur ; ouverts, elle est là dès le premier dessin ;
+     1. la barre est là pour tout le monde (v314) ; tant que les groupes
+        sont fermés, l'écran des groupes dit qu'ils arrivent bientôt — sauf
+        au modérateur ; ouverts, la barre est là dès le premier dessin ;
      2. l'onglet glisse de côté (vers la droite, puis retour à gauche) ;
      3. un nouveau venu passe les règles et les 13 ans, puis entre ;
      4. Taylor crée un groupe privé, le code d'invitation s'affiche ;
@@ -60,10 +61,14 @@ const dit = (quoi, bon, detail) => { console.log('  ' + (bon ? 'OK  ' : 'KO  ') 
     const accueil = (p) => p.waitForFunction(() => { try { return state.screen === 'mode'; } catch (e) { return false; } }, null, { timeout: 20000 });
     const barreVisible = (p) => p.evaluate(() => { const b = document.getElementById('barreBas'); return !!b && !b.classList.contains('cachee'); });
 
-    /* ---- 1. fermés : la barre n'est que pour le modérateur ---- */
+    /* ---- 1. la barre pour tout le monde ; fermés, l'écran le dit ---- */
     const pb = await telephone(B, 'Benoît');
     await pb.waitForTimeout(4200);
-    dit('fermés : pas de barre chez Benoît', !(await barreVisible(pb)));
+    dit('fermés : la barre est là chez Benoît aussi (pour tout le monde)', await barreVisible(pb));
+    await pb.evaluate(() => allerOnglet('groupes'));
+    dit('… et l\'écran des groupes lui dit qu\'ils arrivent bientôt', await attendre(pb, () => /bientôt/.test((document.querySelector('.groupes-ecran .grp-intro') || {}).textContent || ''), null, 8000));
+    await pb.evaluate(() => allerOnglet('accueil'));
+    await pb.waitForTimeout(700);
     const pa = await telephone(A, 'Taylor');
     dit('fermés : la barre chez Taylor, modérateur', await attendre(pa, () => { const b = document.getElementById('barreBas'); return !!b && !b.classList.contains('cachee'); }, null, 9000));
     await m.ouvrir(true);
