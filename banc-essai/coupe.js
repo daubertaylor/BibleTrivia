@@ -164,7 +164,12 @@ const SONDE = (temoin) => {
   const ctx=await b.newContext({viewport:{width:w,height:h},deviceScaleFactor:2,userAgent:IOS,hasTouch:true,serviceWorkers:'block'});
   const p=await ctx.newPage();
   await p.addInitScript(()=>{localStorage.setItem('bt_profile',JSON.stringify({name:'Taylor',color:'#4C86E8'}));localStorage.setItem('bt_fs_hint','1');
-    localStorage.setItem('bt_progress',JSON.stringify({books:{'Genèse':12,'Exode':8,'Apocalypse':3},correct:126,streakBest:14}));});
+    localStorage.setItem('bt_progress',JSON.stringify({books:{'Genèse':12,'Exode':8,'Apocalypse':3},correct:126,streakBest:14}));
+    /* La sonde du compte, déjà connue (voir jumeaux.js) : sinon la carte
+       « Se connecter » arrive en glissant pendant la mesure, et son texte est
+       « coupé » de 0,6 px pour la seule raison qu'il est en route. */
+    localStorage.setItem('bt_compte_ok',JSON.stringify({ok:true,quand:Date.now()}));
+    localStorage.setItem('bt_google_ok',JSON.stringify({ok:false,quand:Date.now()}));});
   await p.goto(U);
   await p.waitForFunction(()=>{try{return state.screen==='mode';}catch(e){return false;}},null,{timeout:20000});
   let n=0;

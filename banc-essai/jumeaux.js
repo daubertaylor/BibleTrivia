@@ -64,6 +64,17 @@ async function lire(b, ua, android) {
     localStorage.setItem('bt_profile', JSON.stringify({ name:'Taylor', color:'#4C86E8' }));
     localStorage.setItem('bt_fs_hint', '1');
     localStorage.setItem('bt_progress', JSON.stringify({ books:{'Genèse':12,'Exode':8}, correct:126 }));
+    /* LA RÉPONSE DU SERVEUR EST CONNUE D'AVANCE, ET LA MÊME DES DEUX CÔTÉS.
+       Sans elle, la carte du compte attend la sonde réseau (« la table
+       existe-t-elle ? ») et arrive 200 à 800 ms après le Profil, en glissant.
+       Tant que le conteneur ne joignait pas Supabase, la sonde échouait tout
+       de suite des deux côtés et personne ne le voyait ; depuis qu'il le
+       joint, l'iPhone mesurait la carte en route et l'Android posée (69 px
+       d'écart, « pas le même jeu »). Le banc compare deux téléphones, pas
+       deux temps de réponse : on lui donne ce qu'un joueur qui revient a
+       déjà en mémoire. */
+    localStorage.setItem('bt_compte_ok', JSON.stringify({ ok:true, quand:Date.now() }));
+    localStorage.setItem('bt_google_ok', JSON.stringify({ ok:false, quand:Date.now() }));
   });
   if (TEMOIN && android) {
     /* Un écart fabriqué exprès, du seul côté Android : le banc DOIT le voir. */
