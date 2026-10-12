@@ -562,7 +562,11 @@
      la hauteur visible, sans cale ni défilement, et y glisse à la vitesse du
      clavier d'iOS. La marge du bas n'a plus de barre d'accueil à éviter. */
   html.ecran-discussion #app{ transition:height var(--tr-ouvre), padding-bottom var(--tr-ouvre); }
-  html.kb.kb-fil #app, html.tel-fige.kb.kb-fil #app, html.tel-fige.kb.kb-fil:not(.is-standalone) #app{ height:var(--vvh, 100%); padding-bottom:0.45rem; }
+  /* !important (v317) : une hauteur ÉPINGLÉE en ligne (reparerHauteurApp)
+     passait devant cette règle, et la barre d'écriture redescendait sous le
+     clavier. Clavier ouvert dans une discussion, c'est la hauteur visible qui
+     décide, quoi qu'on ait épinglé avant. */
+  html.kb.kb-fil #app, html.tel-fige.kb.kb-fil #app, html.tel-fige.kb.kb-fil:not(.is-standalone) #app{ height:var(--vvh, 100%) !important; padding-bottom:0.45rem; }
   html.kb.kb-fil #app::after{ content:none; }
   /* ÉLÉVATION PAR DÉFAUT DE TOUTE SURFACE DE VERRE. --rim-cast est une propriété
      personnalisée, donc HÉRITÉE : sans cette déclaration, une puce posée dans une
@@ -27058,6 +27062,21 @@ document.addEventListener("focusout", (e)=>{
     try{ figerColonne(); majCouche(); reparerHauteurApp(); mesurerHauteurUtile(); fitScroll(); }catch(e2){}
   }, DESCENTE_CLAVIER + 30);
 }, true);
+/* ===== UN CHAMP QUI REPREND LE FOYER ANNULE LA REPRISE (v317) =====
+   « Lors de l'ouverture du clavier dans les groupes, à certains moments la
+     barre d'écriture redescend. » Fermer le clavier programme la reprise
+   ci-dessus, 1,23 s plus tard. Le rouvrir avant — retoucher le champ juste
+   après l'avoir quitté — la laissait tomber SUR le clavier rouvert :
+   reparerHauteurApp voyait une discussion plus petite que l'écran (elle
+   l'est exprès, html.kb-fil), lui rendait sa pleine hauteur en dur, et la
+   barre passait sous le clavier. Mesuré au banc : à 1,35 s, 874 px épinglés,
+   le champ à 857 px pour un clavier qui commence à 528. Le clavier revient :
+   il n'y a plus rien à reprendre. */
+document.addEventListener("focusin", (e)=>{
+  const t = e && e.target;
+  if(!t || (t.tagName !== "INPUT" && t.tagName !== "TEXTAREA")) return;
+  clearTimeout(reposeApresClavier);
+}, true);
 /* ===== UN CLAVIER NE REND JAMAIS LA FENÊTRE PLUS GRANDE =====
    Ma première version tenait la hauteur de repos tant qu'un champ avait le
    focus, plus un délai de grâce de 380 ms pour laisser le clavier redescendre.
@@ -27156,6 +27175,9 @@ function majCouche(){
 function reparerHauteurApp(){
   const app = glassAppEl;
   if(!app) return;
+  /* Clavier ouvert, l'écran est plus petit EXPRÈS (html.kb, html.kb-fil) :
+     rien à réparer — c'est ce qui faisait redescendre la barre d'écriture. */
+  if(document.documentElement.classList.contains("kb")) return;
   const vraie = hauteurDeRepos();   // jamais la hauteur d'un clavier ouvert
   if(!vraie) return;
   if(appEpinglee){ app.style.height = ""; appEpinglee = false; }
@@ -27180,6 +27202,9 @@ function reparerHauteurApp(){
 function mesurerHauteurUtile(){
   const app = glassAppEl || document.getElementById("app");
   if(!app) return;
+  /* La place utile se mesure clavier rangé : une discussion rétrécie au
+     clavier ferait rétrécir tout ce qui s'accroche à --hu. */
+  if(document.documentElement.classList.contains("kb")) return;
   const cs = getComputedStyle(app);
   const utile = app.clientHeight - (parseFloat(cs.paddingTop)||0) - (parseFloat(cs.paddingBottom)||0);
   if(utile > 80) document.documentElement.style.setProperty("--hu", (utile / 100) + "px");
