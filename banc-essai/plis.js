@@ -112,7 +112,7 @@ const norme = (s) => (s || '').replace(/\s+/g, '');
   await attente(200);
   await lire('anneau des résultats', "state.screen='end'; state.mode='solo'; state.soloScore=80; state.soloCorrect=3; state.soloBestStreak=2; state.soloMissed=[]; state.questions=new Array(9).fill(0).map((_,i)=>({q:'q'+i,tier:'moyen'})); render();", '.ring-fg', 'stroke-dashoffset');
   await attente(300);
-  await lire('feuille qui recule', "openSettings();", '#settingsVeil .settings-sheet', 'transform');
+  await lire('page poussée (dessous)', "openSettings();", '#settingsVeil .settings-sheet', 'transform');
   await p.evaluate(() => closeSettings());
   await attente(400);
   /* La ligne de joueur : son pli est posé en style EN LIGNE, au moment du geste. */
@@ -219,8 +219,10 @@ const norme = (s) => (s || '').replace(/\s+/g, '');
   await attente(700);
   await p.evaluate(() => { state.screen='mode'; render(); }); await attente(600);
   await p.evaluate(() => { openSettings(); }); await attente(700);
-  await lireFerme('feuille qui se ferme', "closeSettings();", '#settingsVeil.closing .settings-sheet');
-  await lireFerme('voile de la feuille', "", '#settingsVeil.closing');
+  /* Depuis la v315 la feuille est une PAGE : c'est la page entière qui
+     repart (pageOut, sur le voile), et la feuille qu'elle porte ne bouge plus
+     d'elle-même. Une seule horloge à lire, donc. */
+  await lireFerme('page qui se ferme', "closeSettings();", '#settingsVeil.closing');
   await attente(700);
   /* Le verrou paysage : on le fait apparaître puis on redresse le téléphone. */
   await p.setViewportSize({ width:852, height:393 }); await attente(500);

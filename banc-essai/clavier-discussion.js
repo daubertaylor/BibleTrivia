@@ -95,12 +95,19 @@ async function telephone(nav){
       ouvrirInfosGroupe();
       setTimeout(() => { window.__kb = false; window.visualViewport.dispatchEvent(new Event('resize')); }, 80);
       const t0 = performance.now();
-      const pas = () => { const f = document.querySelector('#grpInfosVeil .settings-sheet'); if (f) h.push(Math.round(f.getBoundingClientRect().top)); if (performance.now() - t0 < 950) requestAnimationFrame(pas); else res(h); };
+      /* Depuis la v315, les infos du groupe sont une PAGE : elle arrive de
+         la DROITE, sur toute la hauteur. On relève donc son bord gauche (le
+         mouvement) et son bord haut (qui ne doit pas bouger du tout, clavier
+         qui se ferme ou pas). */
+      const pas = () => { const v = document.querySelector('#grpInfosVeil'); if (v) { const b = v.getBoundingClientRect(); h.push([Math.round(b.left), Math.round(b.top)]); } if (performance.now() - t0 < 950) requestAnimationFrame(pas); else res(h); };
       requestAnimationFrame(pas);
     }), avantToucher);
-    let recul = 0; for (let i = 1; i < hauts.length; i++) if (hauts[i] > hauts[i - 1]) recul = Math.max(recul, hauts[i] - hauts[i - 1]);
-    dit(nom + ' : la feuille monte d\'un seul mouvement', recul <= 1, 'plus grand recul ' + recul + ' px');
-    dit(nom + ' : … depuis le bas de l\'écran', hauts[0] >= H - 2, 'départ à ' + hauts[0] + ' px');
+    const gauches = hauts.map(x => x[0]), tops = hauts.map(x => x[1]);
+    let recul = 0; for (let i = 1; i < gauches.length; i++) if (gauches[i] > gauches[i - 1]) recul = Math.max(recul, gauches[i] - gauches[i - 1]);
+    dit(nom + ' : la page arrive d\'un seul mouvement', recul <= 1 && gauches[gauches.length - 1] === 0, 'plus grand recul ' + recul + ' px, arrivée à ' + gauches[gauches.length - 1] + ' px');
+    dit(nom + ' : … depuis le bord droit de l\'écran', gauches[0] >= W - 30, 'départ à ' + gauches[0] + ' px');
+    const bougeHaut = Math.max(...tops.map(Math.abs));
+    dit(nom + ' : … sans monter ni descendre', bougeHaut <= 1, 'haut au plus à ' + bougeHaut + ' px');
     if (errs.length) dit('aucune erreur', false, errs.slice(0, 2).join(' | '));
     await ctx.close();
   }
