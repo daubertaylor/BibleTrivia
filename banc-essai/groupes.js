@@ -235,8 +235,22 @@ const dit = (quoi, bon, detail) => { console.log('  ' + (bon ? 'OK  ' : 'KO  ') 
     await pb.waitForTimeout(500);
     await pb.evaluate(() => { const l = [...document.querySelectorAll('#grpActionsVeil .grp-act-l')].find(x => /Signaler/.test(x.textContent)); l.click(); });
     await pb.waitForTimeout(700);
-    await pb.evaluate(() => { document.querySelector('#grpSignalerVeil .grp-act-l').click(); });
+    /* ===== CHOISIR, PRÉCISER, ENVOYER (v319) =====
+       « Il n'y a pas la possibilité de mettre quelque chose de spécifique et
+       d'envoyer le signalement. » Une raison ne part plus seule : elle se
+       coche ; le détail écrit part avec elle, par le bouton « Envoyer ». */
+    const avant9 = await pb.evaluate(() => ({ envoi: !!document.getElementById('grpSignalerEnvoi'), off: !!(document.getElementById('grpSignalerEnvoi') || {}).disabled }));
+    await pb.evaluate(() => document.querySelector('#grpSignalerVeil .grp-raison[data-k="harcelement"]').click());
+    await pb.waitForTimeout(400);
+    const coche9 = await pb.evaluate(() => ({ merci: !!document.querySelector('#grpSignalerVeil .grp-merci'), choisie: (document.querySelector('#grpSignalerVeil .grp-raison.choisie') || {}).dataset,
+      on: !(document.getElementById('grpSignalerEnvoi') || { disabled: true }).disabled }));
+    dit('Signaler : « Envoyer » attend une raison ; toucher une raison la coche sans rien envoyer', avant9.envoi && avant9.off && !coche9.merci && coche9.on && coche9.choisie && coche9.choisie.k === 'harcelement',
+      JSON.stringify({ avant: avant9, apres: { merci: coche9.merci, choisie: coche9.choisie && coche9.choisie.k, actif: coche9.on } }));
+    await pb.locator('#grpPrecision').fill('Il se moque de Chloé depuis hier.');
+    await pb.evaluate(() => document.getElementById('grpSignalerEnvoi').click());
     dit('le signalement est remercié', await attendre(pb, () => !!document.querySelector('#grpSignalerVeil .grp-merci')));
+    const detail9 = await m.sql("select raison || ' | ' || details from public.signalements order by id desc limit 1");
+    dit('… et le serveur a reçu la raison ET le détail écrit', detail9 === 'harcelement | Il se moque de Chloé depuis hier.', detail9);
     /* Le signalement arrive jusqu'au modérateur : Taylor revient sur
        l'accueil, puis entre dans les groupes comme un joueur le ferait. */
     await pa.evaluate(() => { state.screen = 'mode'; render(); allerOnglet('groupes'); });

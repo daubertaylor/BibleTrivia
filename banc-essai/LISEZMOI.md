@@ -782,3 +782,46 @@ iPhone, et qu'Android garde la sienne. C'est `historique-page.js`.
 Dans les deux cas, le banc dit franchement ce qu'il ne voit pas, et il tient
 ce qui rend le défaut possible. Un banc vert à l'écran, quand le défaut ne
 naît que sur le téléphone, ne prouve rien : c'est la cause qu'il faut tenir.
+
+## Ce qu'on ne voit pas coûte quand même (v319)
+
+« Sur Android, quand j'ajoute ou retire des joueurs, ça clignote bizarrement ;
+quand je change les modes aussi. » Troisième fois que le reproche revenait,
+et aucun banc ne voyait de clignotement : Chromium sans écran ne rastérise
+pas comme le processeur graphique d'un téléphone. On a donc cherché ce que le
+téléphone avait à faire à ces moments-là, et deux choses n'avaient rien à y
+faire.
+
+**Des couches que personne ne voyait.** Dix des dix-sept couches de verre de
+l'écran du Mode Groupe étaient de la taille de toute la scène floutée, sous
+une teinte OPAQUE (neuf puces et « Commencer ») : la photo n'y apparaissait
+jamais. Choisir une puce les repeignait ; ajouter un joueur les recalait à
+chaque image. `verre-plein.js` tient la règle : une surface opaque porte une
+couche pleine à sa taille, une surface translucide garde sa photo — et il
+compte les grandes couches de l'écran (7, contre 17 sur la v318). Le rendu,
+lui, a été comparé au pixel près, écran par écran, avec et sans : zéro écart.
+Une première version peignait la couche pleine AVEC sa surface : zéro écart au
+repos, mais `couture.js` a vu un pixel plus clair autour d'une puce pressée
+(1,8 pour un plafond de 1,5) — le bord arrondi lissé deux fois. Elle reste
+donc une couche à part, comme avant, seulement petite. Et une autre version
+relisait la teinte de chaque surface pour décider qui est plein : `charge.js`
+a compté une lecture de style forcée au repos, interdite. Ce sont maintenant
+les classes qui décident, et c'est `verre-plein.js` qui relit les teintes, sur
+dix écrans. Le même banc a attrapé au passage la barre du bas, qui relisait
+son `bottom` à chaque passage du moteur : une fois par mise en page suffit.
+Enfin `liste-salon.js` prenait comme repère du paysage la couche d'une puce —
+devenue pleine, elle ne portait plus de paysage. Un repère doit être fait de
+ce qu'il mesure.
+
+**Un geste qui en déclenchait un autre.** Le plein écran se redemandait à
+chaque toucher tant qu'on n'y était pas — une puce, une croix, une réponse.
+Entrer en plein écran agrandit la fenêtre : tout l'écran descendait de 50 px
+au milieu du geste. `plein-ecran.js` exige maintenant qu'il ne s'installe
+qu'au changement d'écran.
+
+**Et un banc qui comparait deux temps de réponse.** `jumeaux.js` (le même
+écran sur iPhone et sur Android) tombait un passage sur deux, sur la v318
+comme sur la v319 : la barre du bas arrivait avec la réponse du serveur, avant
+la mesure d'un côté, après de l'autre. Il reçoit maintenant cette réponse en
+mémoire, comme il recevait déjà celle des comptes. Un banc qui compare deux
+téléphones doit leur donner le même monde ; sinon il compare le réseau.

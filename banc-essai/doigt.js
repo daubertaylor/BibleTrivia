@@ -18,7 +18,7 @@
 
        node doigt.js        (jeu servi en HTTP sur 8099)
 
-   Repère : 44 px dans les deux sens. Deux exceptions documentées plus bas. */
+   Repère : 44 px dans les deux sens. Les exceptions sont documentées plus bas. */
 const { chromium } = require('/opt/node22/lib/node_modules/playwright');
 const IOS = 'Mozilla/5.0 (iPhone; CPU iPhone OS 17_5 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.5 Mobile/15E148 Safari/604.1';
 const URL = process.env.URL_ESSAI || process.argv[2] || 'http://127.0.0.1:8099/index.html';
@@ -32,10 +32,8 @@ const TOLERE = {
                '                          de 5,8 px sur TOUS les écrans. Cinq pixels de zone ne valent pas ça.',
   'input':     'champ de texte, 40 px : on le vise sur toute sa largeur (238 px),\n' +
                '                          et le clavier s\'ouvre au moindre contact.',
-  '.set-go':   'bouton Guide / version, 30 px : porté à 44, il devenait une grosse\n' +
-               '                          pastille corail pour une action secondaire. Il porte du verre, donc une\n' +
-               '                          découpe : ni pseudo-élément ni bordure transparente ne peuvent agrandir\n' +
-               '                          la zone sans grossir le dessin ou détacher son ombre. Le dessin gagne.',
+  /* '.set-go' (le bouton Guide / version, 30 px) n'est plus une exception : depuis
+     la v319, c'est la ligne entière qui se touche (55 px). */
 };
 /* Le décor des groupes : un compte connecté, modérateur, deux groupes à
    soi et un à découvrir, une discussion qui contient chaque sorte de bulle

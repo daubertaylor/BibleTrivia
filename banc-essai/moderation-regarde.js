@@ -11,7 +11,12 @@
      4. les infos montrent les membres, sans « Quitter le groupe » ;
      5. le retour ramène à la modération, où « Tous les groupes » liste aussi
         ce groupe, et l'ouvre de même ;
-     6. rien n'a été marqué « lu » au nom des membres.
+     6. rien n'a été marqué « lu » au nom des membres ;
+     7. (v319) un signalement dans un groupe dont Taylor EST membre : « Voir
+        le groupe » l'ouvre normalement, et la flèche ramène à la
+        modération — pas à la liste des groupes. (« Quand je reviens en
+        arrière, je veux revenir sur la page précédente. ») Ouvert depuis la
+        liste des groupes, le même groupe ramène toujours à la liste.
    Usage : node banc-essai/moderation-regarde.js */
 const { chromium } = require('/opt/node22/lib/node_modules/playwright');
 const { monter } = require('./faux-serveur-groupes.js');
@@ -94,6 +99,36 @@ const dit = (quoi, bon, detail) => { console.log('  ' + (bon ? 'OK  ' : 'KO  ') 
     await p.waitForTimeout(800);
     const luApres = await m.sql(`select string_agg(membre || ':' || lu_jusqu, ',' order by membre) from public.membres where groupe = '${g.id}'`);
     dit('rien n\'a été marqué « lu » au nom des membres', luAvant === luApres, luApres);
+
+    /* ---- 7. un de SES groupes, regardé depuis la modération ---- */
+    await p.evaluate(() => document.querySelector('.grp-fil-tete .icon-btn').click());
+    await attendre(p, () => state.screen === 'moderation', null, 4000);
+    const g2 = (await m.rpc(A, 'creer_groupe', { p_nom: 'La Modération', p_description: '', p_ouvert: false, p_langue: 'fr', p_teinte: 2 })).data;
+    const code2 = await m.sql(`select code from public.groupes where id = '${g2.id}'`);
+    await m.rpc(B, 'rejoindre_groupe', { p_groupe: g2.id, p_code: code2 });
+    await m.sql("update public.messages set cree_le = cree_le - interval '4 seconds'");
+    const mid2 = (await m.rpc(B, 'envoyer_message', { p_groupe: g2.id, p_texte: 'Un autre message à vérifier', p_genre: 'texte', p_donnees: null })).data.id;
+    await m.rpc(A, 'signaler', { p_message: mid2, p_cible: null, p_groupe: null, p_raison: 'inapproprie', p_details: '' });
+    await p.evaluate(() => { chargerListes(); chargerEtatGroupes(); });
+    await attendre(p, (id) => (grp.liste || []).some(x => x.id === id), g2.id, 8000);
+    await p.evaluate(() => chargerModeration());
+    const carte = await attendre(p, () => [...document.querySelectorAll('.mod-carte')].some(c => /à vérifier/.test(c.textContent) && c.querySelector('.mod-voir')), null, 9000);
+    await p.evaluate(() => [...document.querySelectorAll('.mod-carte')].find(c => /à vérifier/.test(c.textContent)).querySelector('.mod-voir').click());
+    const ouvert = await attendre(p, (id) => state.screen === 'groupe' && grp.courant === id && !!document.getElementById('compoTexte'), g2.id, 9000);
+    await p.waitForTimeout(700);
+    await p.evaluate(() => document.querySelector('.grp-fil-tete .icon-btn').click());
+    const versModo = await attendre(p, () => state.screen === 'moderation', null, 4000);
+    dit('7. un de ses groupes, vu depuis un signalement : la flèche ramène à la modération', carte && ouvert && versModo,
+      (carte ? 'carte' : 'PAS de carte') + ', ' + (ouvert ? 'groupe ouvert (membre)' : 'groupe PAS ouvert') + ', retour ' + (await p.evaluate(() => state.screen)));
+    await p.waitForTimeout(700);
+    await p.evaluate(() => allerOnglet('groupes'));
+    await attendre(p, () => state.screen === 'groupes' && !!document.getElementById('grpMes'), null, 6000);
+    await p.evaluate((id) => ouvrirGroupe(id), g2.id);
+    await attendre(p, (id) => state.screen === 'groupe' && grp.courant === id, g2.id, 6000);
+    await p.waitForTimeout(700);
+    await p.evaluate(() => document.querySelector('.grp-fil-tete .icon-btn').click());
+    const versListe = await attendre(p, () => state.screen === 'groupes', null, 4000);
+    dit('   … ouvert depuis la liste des groupes, il ramène toujours à la liste', versListe, 'retour ' + (await p.evaluate(() => state.screen)));
     dit('aucune erreur dans la page', erreurs.length === 0, erreurs.slice(0, 3).join(' | '));
   } catch (e) {
     console.log('  KO  le banc s\'est arrêté : ' + (e.stack || e).toString().slice(0, 500)); ko++;
