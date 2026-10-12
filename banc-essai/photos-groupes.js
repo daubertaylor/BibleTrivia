@@ -207,7 +207,8 @@ const dit = (quoi, bon, detail) => { console.log('  ' + (bon ? 'OK  ' : 'KO  ') 
     await pb.waitForTimeout(500);
     await pb.evaluate(() => { const l = [...document.querySelectorAll('#grpMembreVeil .grp-act-l')].find(x => /Signaler/.test(x.textContent)); l.click(); });
     await pb.waitForTimeout(600);
-    await pb.evaluate(() => document.querySelector('#grpSignalerVeil .grp-act-l').click());
+    /* v319 : on choisit la raison, puis on envoie. */
+    await pb.evaluate(() => { document.querySelector('#grpSignalerVeil .grp-raison').click(); document.getElementById('grpSignalerEnvoi').click(); });
     await attendre(pb, () => !!document.querySelector('#grpSignalerVeil .grp-merci'), null, 6000);
     await pb.evaluate(() => fermerFeuilleGroupe('grpSignalerVeil'));
     await pa.evaluate(() => { state.screen = 'mode'; render(); allerOnglet('groupes'); });

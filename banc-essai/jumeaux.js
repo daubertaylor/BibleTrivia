@@ -75,6 +75,14 @@ async function lire(b, ua, android) {
        déjà en mémoire. */
     localStorage.setItem('bt_compte_ok', JSON.stringify({ ok:true, quand:Date.now() }));
     localStorage.setItem('bt_google_ok', JSON.stringify({ ok:false, quand:Date.now() }));
+    /* MÊME CHOSE POUR LES GROUPES (v319). Sans souvenir de la sonde, la barre
+       du bas n'arrive qu'à la réponse du serveur, et l'accueil se recale alors
+       d'un rendu (voir majBarre) : c'est voulu, au tout premier lancement. Mais
+       la réponse tombait avant la mesure d'un côté et après de l'autre — un
+       passage sur deux, sur la v318 comme sur la v319 : « PAS LE MÊME JEU »
+       sur l'accueil, ligne d'Hébreux 4:16 réécrite, 182,7 px d'écart. Avec ce
+       souvenir, six passages sur six identiques. */
+    localStorage.setItem('bt_groupes_sonde', JSON.stringify({ installe:true, ouverts:true, version:1, modo:false, quand:Date.now() }));
   });
   if (TEMOIN && android) {
     /* Un écart fabriqué exprès, du seul côté Android : le banc DOIT le voir. */

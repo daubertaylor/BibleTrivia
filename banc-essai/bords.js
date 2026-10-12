@@ -60,7 +60,8 @@ const CIBLES = [
      produit un clic sur le voile, qui REFERME la feuille. La cible suivante ne
      trouvait donc plus rien. */
   ['réglages',     "state.screen='mode'; render(); openSettings();",                                            '.switch'],
-  ['réglages',     "closeSettings(); openSettings();",                                                          '.set-go'],
+  /* (v319) la pastille « LSG » / « Guide » des Réglages n'existe plus : la ligne entière
+     se touche, sans verre ni onde (voir UNE LIGNE QUI OUVRE QUELQUE CHOSE). */
   ['réglages',     "closeSettings(); openSettings();",                                                          '.share-btn'],
   ['en-tête',      "closeSettings(); state.screen='parcours'; render();",                                      '.icon-btn'],
   /* LES PASTILLES DE LIVRE — la dernière famille du jeu à porter encore une

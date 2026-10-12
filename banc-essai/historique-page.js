@@ -19,6 +19,12 @@
      2. une page ouverte depuis une page non plus ;
      3. notre geste du bord ramène toujours : la page suit le doigt, l'écran
         de dessous se voit pendant qu'on tire, et la page se referme ;
+     3b. sur une page posée sur une autre (Réglages, puis Version de la
+        Bible), le geste ne referme QUE celle du dessus : on revient aux
+        Réglages, pas à l'accueil. (« Je dois revenir à la page précédente,
+        pas directement sur le menu. » Avec deux gestes à la fois, le nôtre
+        refermait la page du dessus et celui d'iOS, en remontant
+        l'historique, refermait celle d'en dessous.) ;
      4. le bouton retour referme, et l'historique n'a toujours pas bougé ;
    sur Android —
      5. une page pose UNE marque, et une page par-dessus n'en ajoute pas ;
@@ -80,6 +86,20 @@ const dit = (q, b, d) => { if (!b) ko++; console.log('  ' + (b ? 'OK  ' : 'KO  '
       const apres = await pages(p);
       dit('3. iPhone : notre geste du bord ramène toujours', pendant.x > 40 && pendant.dessous === 'visible' && apres.length === 0,
         'page à ' + pendant.x + ' px sous le doigt, écran de dessous ' + pendant.dessous + ', ' + (apres.length ? 'page restée : ' + apres.join(',') : 'page refermée'));
+      /* 3b. Deux pages l'une sur l'autre : le bord ne referme que celle du dessus. */
+      await p.evaluate(() => openSettings());
+      await p.waitForTimeout(1300);
+      await p.evaluate(() => openBibles());
+      await p.waitForTimeout(1300);
+      const avant3b = await pages(p);
+      await doigt('touchStart', 6, 420);
+      for (let i = 1; i <= 12; i++) { await doigt('touchMove', 6 + i * 18, 422); await p.waitForTimeout(16); }
+      await doigt('touchEnd'); await p.waitForTimeout(1000);
+      const apres3b = await pages(p), h3b = await histoire(p);
+      dit('3b. iPhone : sur une page posée sur une autre, le bord ne referme que celle du dessus', avant3b.join(',') === 'settingsVeil,biblesVeil' && apres3b.join(',') === 'settingsVeil' && h3b.n === avant.n,
+        (avant3b.join(' + ') || 'rien') + ' -> ' + (apres3b.join(' + ') || 'rien') + ', historique ' + h3b.n);
+      await p.evaluate(() => { const b = document.querySelector('#settingsVeil .sheet-grab'); if (b) b.click(); });
+      await p.waitForTimeout(900);
       await p.evaluate(() => openSettings());
       await p.waitForTimeout(1300);
       await p.evaluate(() => { const b = document.querySelector('#settingsVeil .sheet-grab'); if (b) b.click(); });

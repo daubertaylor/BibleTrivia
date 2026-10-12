@@ -122,10 +122,14 @@ const soucis = [];
         /* UN VRAI TÉMOIN EST UNE SURFACE DE VERRE. Ma première version prenait
            .code-hero, qui n'est pas dans GLASS_SEL : il n'a pas de couche, le
            témoin lisait 0, et le banc accusait la rangée de sauter toute seule
-           alors que c'est tout l'écran qui glisse. Le bouton de lancement, lui,
-           est du verre et il est toujours là pour l'hôte. */
-        const tem = document.querySelector('.btn-primary, .len-chip');
-        const tgs = tem ? tem.querySelector('.gs') : null;
+           alors que c'est tout l'écran qui glisse. Le bouton de lancement a
+           servi de témoin jusqu'à la v318 ; depuis la v319 il est PLEIN (sa
+           couche ne porte plus de paysage, voir verre-plein.js). Le témoin est
+           donc l'en-tête, du verre qui montre le paysage, toujours là — celui
+           de l'écran QUI ARRIVE : pendant la transition, l'en-tête de l'écran
+           qui s'en va est encore là, et le prendre faisait lire un saut de
+           400 px d'un en-tête à l'autre. */
+        const tgs = document.querySelector('#app > .screen:not(.screen-exit) .app-header > .gs:not(.gs-plein)');
         const t = performance.now() - t0;
         if (gs) im.push([t, gs.getBoundingClientRect().top, tgs ? tgs.getBoundingClientRect().top : null]);
         if (t < 1400) requestAnimationFrame(tic);
@@ -169,7 +173,10 @@ const soucis = [];
       await new Promise(r => setTimeout(r, 900));
       const vus = [];
       const releve = (quand) => {
-        const t = document.querySelector('.len-chip .gs, .btn-primary .gs');
+        /* le repère : une couche qui porte le paysage (l'en-tête) — une puce ou
+           le bouton de lancement sont pleins depuis la v319, leur couche suit
+           leur surface et ne dit rien de l'origine du paysage */
+        const t = document.querySelector('#app > .screen:not(.screen-exit) .app-header > .gs:not(.gs-plein)');
         const ref = t ? t.getBoundingClientRect().top : null;
         document.querySelectorAll('.salle-ligne').forEach((r, i) => {
           const gs = r.querySelector('.gs');

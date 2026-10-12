@@ -1286,9 +1286,25 @@
   .end-title{ font-family:'Poppins',sans-serif; font-weight:700; font-size:clamp(1.35rem, calc(5.5 * var(--lw)), 1.7rem); margin:0.2rem 0 0.28rem; color:#fff; text-shadow:0 2px 14px rgba(0,0,0,0.55); }
   .end-sub{ color:rgba(255,255,255,0.94); font-size:0.88rem; line-height:1.5; text-shadow:0 1px 8px rgba(0,0,0,0.5); }
 
-  /* Group podium */
-  .podium{ display:flex; align-items:flex-end; justify-content:center; gap:0.55rem; margin:0.4rem 0 1.1rem; }
-  .podium-col{ flex:1; max-width:33%; display:flex; flex-direction:column; align-items:center; }
+  /* ===== LE PODIUM EST UNE CARTE (v319) =====
+     « Je trouve cette page pas forcément au goût du jour : je veux qu'elle
+       soit top, et cohérente avec le reste de l'app. » (capture de Taylor :
+       trois joueurs à égalité, « Ex æquo en tête ! »)
+     Le podium était posé à même la photo : les noms en encre sur les
+     rochers (« Joueur 3 » ne se lisait plus), les scores en corail sur le
+     ciel, et dessous trois blocs dorés coupés net, lourds comme des marches
+     de stade. Partout ailleurs dans le jeu, ce qui se lit est posé sur une
+     carte. Le podium devient donc une carte de verre, comme « Joueurs ou
+     équipes » sur l'écran d'avant. Les marches se posent DEDANS, plus basses,
+     arrondies de tous les côtés, dans les trois teintes que portent déjà les
+     pastilles de rang de la liste juste en dessous (or, argent, bronze : les
+     mêmes couleurs, en vertical). Aucun anneau de couleur autour des joueurs :
+     la règle est la même partout, pas de bordure de couleur.
+     Quand TOUT LE MONDE est premier, il n'y a pas de podium : trois marches
+     dorées identiques pour trois joueurs pris au hasard parmi six ex æquo ne
+     disaient rien de vrai. Le titre le dit, et la liste montre chacun. */
+  .card.podium{ display:flex; align-items:flex-end; justify-content:center; gap:0.55rem; margin:0.25rem 0 var(--e-3); padding:calc(0.8rem + 1px) calc(0.85rem + 1px) 0; }
+  .podium-col{ flex:1; max-width:33%; min-width:0; display:flex; flex-direction:column; align-items:center; }
   /* « both » ET PAS « forwards ». La couronne attend trois dixièmes de seconde
      que les marches soient montées, puis s'installe en venant de 6 px plus
      bas. Avec « forwards » seul, rien ne tenait son état de DÉPART pendant
@@ -1309,7 +1325,7 @@
      endroit, elles ne peuvent plus diverger. Le diamètre extérieur ne bouge
      pas d'un pixel (la bordure était en border-box) et l'élévation reste
      exactement celle qu'elle avait. */
-  .podium-avatar{ width:2.4rem; height:2.4rem; font-size:1rem; margin-bottom:0.5rem; }
+  .podium-avatar{ width:2.4rem; height:2.4rem; font-size:1rem; margin-bottom:0.45rem; }
   /* ===== LA PASTILLE D'UN JOUEUR NE DÉPEND PAS DE SA PLACE =====
      Le premier avait ici une ombre À LUI : elle REMPLAÇAIT celle des autres au
      lieu de s'y ajouter. Il perdait donc le reflet intérieur du haut — celui
@@ -1321,12 +1337,19 @@
      La pastille est l'identité du joueur ; elle ne bouge pas. Le vainqueur est
      déjà dit trois fois ailleurs — la couronne au-dessus, la marche dorée, et
      le titre « Vainqueur » en haut de l'écran. */
-  .podium-name{ font-weight:600; font-size:0.82rem; text-align:center; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; max-width:100%; margin-bottom:0.15rem; }
-  .podium-score{ font-family:'Poppins',sans-serif; font-weight:700; font-size:0.9rem; color:var(--primary); margin-bottom:0.4rem; }
-  .podium-bar{ width:100%; border-radius:var(--r-ico) 14px 0 0; display:flex; align-items:flex-start; justify-content:center; padding-top:0.5rem; font-family:'Poppins',sans-serif; font-weight:700; color:rgba(255,255,255,0.95); font-size:1.05rem; box-shadow:inset 0 2px 6px rgba(255,255,255,0.25); }
-  .podium-bar.p1{ height:4.9rem; background:linear-gradient(180deg, rgba(255,217,104,0.92), rgba(239,173,38,0.92)); }
-  .podium-bar.p2{ height:3.5rem; background:linear-gradient(180deg, rgba(216,220,226,0.92), rgba(169,176,186,0.92)); }
-  .podium-bar.p3{ height:2.6rem; background:linear-gradient(180deg, rgba(228,181,136,0.92), rgba(193,133,79,0.92)); }
+  .podium-name{ font-weight:600; font-size:0.82rem; color:var(--ink); text-align:center; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; max-width:100%; margin-bottom:0.1rem; }
+  .podium-score{ font-family:'Poppins',sans-serif; font-weight:700; font-size:0.86rem; font-variant-numeric:tabular-nums; color:var(--primary); margin-bottom:0.5rem; }
+  /* LA MARCHE MONTE DE SON SOCLE. Elle grandissait en s'étirant (scaleY) :
+     arrondie de tous les côtés, elle aurait eu les coins écrasés pendant
+     toute la montée. Elle GLISSE donc vers le haut, dans un socle qui a sa
+     forme et la découpe : la marche sort du sol entière, coins compris, et
+     c'est une translation — le compositeur la fait seul, fluide sur
+     n'importe quel téléphone. */
+  .podium-socle{ width:100%; border-radius:var(--r-s) var(--r-s) 0 0; overflow:hidden; }
+  .podium-bar{ width:100%; border-radius:var(--r-s) var(--r-s) 0 0; display:flex; align-items:flex-start; justify-content:center; padding-top:0.42rem; font-family:'Poppins',sans-serif; font-weight:700; color:#fff; font-size:1rem; box-shadow:inset 0 1px 0 rgba(255,255,255,0.5); }
+  .podium-bar.p1{ height:3.5rem; background:linear-gradient(180deg, #FFD968, #EFAD26); }
+  .podium-bar.p2{ height:2.6rem; background:linear-gradient(180deg, #DFE3E8, #A9B0BA); }
+  .podium-bar.p3{ height:1.95rem; background:linear-gradient(180deg, #F5B77E, #D08243); }
 
   .rank-list{ margin-bottom:1.2rem; }
   .rank-row{ display:flex; align-items:center; gap:0.75rem; background:rgba(255,255,255,0.55); backdrop-filter:blur(14px) saturate(180%); -webkit-backdrop-filter:blur(14px) saturate(180%); border:0; border-radius:var(--r-s); padding:calc(0.6rem + 1px) calc(0.8rem + 1px); margin-bottom:0.5rem; }
@@ -3157,6 +3180,43 @@
   .gs{ position:absolute; top:0; left:0; transform-origin:0 0; z-index:-2; pointer-events:none; background-repeat:no-repeat; background-position:0 0;
        background-image:linear-gradient(var(--glass-tint, rgba(255,253,247,0.58)), var(--glass-tint, rgba(255,253,247,0.58))), var(--blur-url);
        will-change:transform; transform:translate3d(0,0,0); backface-visibility:hidden; -webkit-backface-visibility:hidden; }
+  /* ===== UNE SURFACE PLEINE N'A PAS DE DÉCOR À MONTRER (v319) =====
+     « Sur Android, lorsque j'ajoute ou que je retire des joueurs, ça ne fait
+       pas comme sur iOS, et en plus ça clignote bizarrement » ; « lorsque je
+       change les modes, ça ne fait pas tout clean, ça clignote à certains
+       endroits » (photos de Taylor : la carte des joueurs, puis les puces
+       Durée, Chrono et Testament du Mode Groupe).
+     Compté sur cet écran : dix-sept couches de verre, chacune de la taille de
+     la scène floutée — 538 x 1664 px sur un téléphone de 384 px de large —,
+     dont NEUF pour les seules puces. Or une puce est PLEINE : crème ou
+     corail, sans la moindre transparence. Sa couche peignait donc une teinte
+     opaque par-dessus une photo que personne n'a jamais vue, et restait
+     pourtant une couche graphique entière, que le téléphone devait tenir :
+       — choisir une puce change sa teinte : toute la couche était à repeindre,
+         et deux fois (la puce qu'on prend, celle qu'on quitte) ;
+       — ajouter ou retirer un joueur fait monter ou descendre tout ce qui
+         suit : le moteur recalait, à chaque image, la photo invisible de neuf
+         puces et du bouton « Commencer ».
+     Je ne peux pas filmer un vrai Android ici ; ce que je sais, c'est ce que
+     ces couches coûtaient, à quel moment, et qu'elles ne montraient rien.
+     Une surface pleine reçoit donc une couche PLEINE : la même teinte, et rien
+     d'autre. Pas de photo, pas de calage : elle suit le mouvement de sa
+     surface sans qu'on ait rien à lui dire. Et elle a la taille de sa surface
+     (un pixel de plus tout autour, comme l'ancienne : c'est la découpe qui lui
+     donne sa forme) au lieu de celle de toute la scène.
+     ELLE RESTE UNE COUCHE À PART, et c'est voulu. Peinte avec sa surface,
+     elle passait sous la même découpe que l'onde d'appui, mais l'une après
+     l'autre : le bord arrondi était lissé deux fois, et un pixel plus clair
+     apparaissait tout autour de la puce pressée — banc-essai/couture.js l'a
+     vu, 1,8 sur « Courte » pour un plafond de 1,5. En couche à part, la
+     découpe s'applique une seule fois à l'ensemble, exactement comme avant.
+     Une couche de la taille d'une puce, d'une seule couleur : rien à voir
+     avec une scène entière.
+     Au repos, les deux rendus ont été comparés au pixel près, écran par écran.
+     Qui est plein, c'est le moteur qui le décide (GLASS_PLEIN), en relisant
+     la teinte réelle de chaque surface. */
+  .gs.gs-plein{ top:-1px; left:-1px; right:-1px; bottom:-1px; width:auto; height:auto;
+    background-image:linear-gradient(var(--glass-tint, rgba(255,253,247,0.58)), var(--glass-tint, rgba(255,253,247,0.58))); }
   /* EN MOTEUR « XF », LA COUCHE .gs FAIT TOUT — ET ELLE SEULE.
      La surface gardait aussi son backdrop-filter, hérité de l'autre moteur.
      Résultat : un flou et une saturation appliqués DEUX fois, et surtout un
@@ -3297,8 +3357,8 @@
   .screen-exit{ animation:screenOut var(--tr-ferme) forwards; }
   @keyframes screenOut{ from{ opacity:1; transform:translate3d(0,0,0); } to{ opacity:0; transform:translate3d(0,-8px,0); } }
   .reveal-in{ animation:fadeSlide var(--tr-ouvre) both; }
-  .screen-enter .podium-bar{ transform-origin:bottom; animation:barUp var(--tr-ouvre) 0.12s backwards; }
-  @keyframes barUp{ from{ transform:scaleY(0.15); opacity:0; } to{ transform:scaleY(1); opacity:1; } }
+  .screen-enter .podium-bar{ animation:marcheMonte var(--tr-ouvre) 0.12s backwards; }
+  @keyframes marcheMonte{ from{ transform:translateY(100%); } to{ transform:translateY(0); } }
 
 
   /* ---------- Échelle fluide : tout est en rem, le rem suit la taille du téléphone ---------- */
@@ -4365,6 +4425,20 @@
      Vérifié de 320 à 430 px de large : toujours la même taille. */
   .set-go{ display:inline-flex; align-items:center; justify-content:center; min-width:3.6rem; border:0; border-radius:var(--r-full); padding:calc(0.4rem + 1px) calc(0.62rem + 1px); font-weight:700; font-size:0.76rem; color:#fff; --glass-tint: rgb(236,60,26); background-image:linear-gradient(150deg, #F44E2C, #DE3616); --rim-edge:0 0 0 1px rgba(150,40,20,0.3); --rim-cast:0 5px 14px rgba(214,71,44,0.44); text-shadow:0 1px 2px rgba(120,26,10,0.32); flex-shrink:0; }
   .set-txt{ flex:1; display:flex; flex-direction:column; gap:0.12rem; min-width:0; }
+  /* ===== UNE LIGNE QUI OUVRE QUELQUE CHOSE SE TOUCHE EN ENTIER (v319) =====
+     « Le bouton rouge n'est pas assez compréhensible : ce style de bouton ne
+     fait pas comprendre clairement que tu peux cliquer dessus. » La pastille
+     corail « LSG » (et « Guide ») se lisait comme une étiquette posée au
+     bout de la ligne, pas comme une porte. Comme dans les réglages d'un
+     iPhone, c'est maintenant la LIGNE entière qui se touche, et elle finit
+     par un chevron — le signe que tout le monde lit « ça s'ouvre ». Le nom
+     de la version reste dessous, en entier : le sigle à droite le répétait.
+     Le doigt a toute la ligne, bien plus que 44 px. */
+  .set-lien{ width:100%; border:0; background:none; font:inherit; color:inherit; text-align:left; cursor:pointer;
+    border-radius:var(--r-m); -webkit-tap-highlight-color:transparent; transition:background-color 0.12s ease; }
+  .set-lien:active{ background:rgba(42,36,30,0.06); }
+  .set-chev{ width:1.15rem; height:1.15rem; display:inline-flex; flex-shrink:0; color:var(--ink-soft); margin-right:0.15rem; }
+  .set-chev svg{ width:100%; height:100%; }
   .set-txt b{ font-size:0.93rem; color:var(--ink); }
   .set-txt small{ font-size:0.82rem; color:var(--ink-soft); }
   /* INTERRUPTEURS : ils étaient les seuls éléments du jeu sans le moindre
@@ -5347,6 +5421,13 @@
   .grp-merci b{ font-family:'Poppins',sans-serif; font-weight:600; font-size:1.02rem; }
   .grp-merci p{ margin:0; color:var(--ink-soft); font-size:0.86rem; line-height:1.5; }
   .grp-precision{ min-height:4.2rem; resize:none; font-family:'Inter',sans-serif; line-height:1.4; }
+  /* Les raisons de Signaler se COCHENT (v319) : la choisie prend l'encre
+     corail, un fond à peine teinté et sa coche ; la place de la coche est
+     gardée sur toutes (visibility), pour qu'aucune ligne ne bouge. */
+  .grp-raison .gr-coche{ margin-left:auto; width:1.15rem; height:1.15rem; display:inline-flex; flex-shrink:0; color:var(--primary); visibility:hidden; }
+  .grp-raison .gr-coche svg{ width:100%; height:100%; }
+  .grp-raison.choisie{ color:var(--primary-dark); background:rgba(238,74,40,0.08); }
+  .grp-raison.choisie .gr-coche{ visibility:visible; }
   /* L'avatar du groupe dans le titre d'une feuille REMPLIT la case d'icône
      (1,5 rem), il ne la dépasse pas : à 1,75 rem il débordait sur le titre
      et descendait sur la carte du code d'invitation. */
@@ -5916,7 +5997,6 @@ const TEXTES = {
     "Effets sonores":"Sound effects",
     "Musique de fond":"Background music",
     "Installer le jeu":"Install the game",
-    "Guide":"Guide",
     "Volume de la musique":"Music volume",
     "Volume":"Volume",
     "Arrière-plan":"Background",
@@ -6382,7 +6462,8 @@ const TEXTES = {
     "Signaler cette personne":"Report this person",
     "Signaler ce groupe":"Report this group",
     "Pourquoi ? La modération le reçoit, sans que l'autre personne sache que ça vient de toi.":"Why? Moderators receive it, without the other person knowing it came from you.",
-    "Un détail à ajouter ? (facultatif)":"Anything to add? (optional)",
+    "Précise ce qui s'est passé (facultatif)":"Tell us what happened (optional)",
+    "Envoyer le signalement":"Send report",
     "Harcèlement ou moquerie":"Harassment or mockery",
     "Contenu sexuel, violent ou haineux":"Sexual, violent or hateful content",
     "Publicité ou messages en série":"Ads or spam",
@@ -6566,7 +6647,6 @@ const TEXTES = {
     "Effets sonores":"Efectos de sonido",
     "Musique de fond":"Música de fondo",
     "Installer le jeu":"Instalar el juego",
-    "Guide":"Guía",
     "Volume de la musique":"Volumen de la música",
     "Volume":"Volumen",
     "Arrière-plan":"Fondo",
@@ -7032,7 +7112,8 @@ const TEXTES = {
     "Signaler cette personne":"Denunciar a esta persona",
     "Signaler ce groupe":"Denunciar este grupo",
     "Pourquoi ? La modération le reçoit, sans que l'autre personne sache que ça vient de toi.":"¿Por qué? La moderación lo recibe sin que la otra persona sepa que viene de ti.",
-    "Un détail à ajouter ? (facultatif)":"¿Algún detalle que añadir? (opcional)",
+    "Précise ce qui s'est passé (facultatif)":"Cuenta lo que pasó (opcional)",
+    "Envoyer le signalement":"Enviar la denuncia",
     "Harcèlement ou moquerie":"Acoso o burla",
     "Contenu sexuel, violent ou haineux":"Contenido sexual, violento o de odio",
     "Publicité ou messages en série":"Publicidad o mensajes en serie",
@@ -9366,7 +9447,7 @@ const SUPABASE_ANON_KEY = "sb_publishable_FDJ_R0foC7uIeHmxVrj6rA_2NeIgW2a";
    remontée d'un téléphone ne vaut rien si on ne sait pas QUELLE version
    tournait. Elle doit rester égale au CACHE de sw.js — c'est ce que vérifie
    banc-essai/version.js, qui refuse de laisser publier les deux en désaccord. */
-const VERSION_JEU = "v318";
+const VERSION_JEU = "v319";
 
 /* ===================== QUAND ÇA CASSE CHEZ UN JOUEUR =====================
    « Si quelque chose casse chez cinq d'entre eux sur un modèle de téléphone
@@ -11505,8 +11586,6 @@ function setBible(cle){
   });
   const nom = document.getElementById("bibleNom");
   if(nom) nom.textContent = b.court + " " + b.annee;
-  const go = document.getElementById("bibleGo");
-  if(go) go.textContent = b.sigle;
   /* LE VERSET DE L'ACCUEIL SUIT LA VERSION, ET TOUT DE SUITE. Il la suivait
      déjà — mais seulement au rendu de l'accueil, donc en pratique au prochain
      lancement : on choisissait Darby et on lisait encore le Segond derrière la
@@ -12588,19 +12667,19 @@ function reglagesHtml(){
         <span class="set-txt"><b>${T("Rappels")}</b>${notifEtat()==="denied" ? `<small id="notifTxt">${T("Bloquées dans les réglages du téléphone")}</small>` : ``}</span>
         <button class="switch${settings.notif && notifEtat()==="granted" ? " on" : ""}" id="swNotif" role="switch" aria-checked="${!!(settings.notif && notifEtat()==="granted")}" aria-label="Rappels" ${notifEtat()==="denied" ? "disabled" : ""} onclick="setNotif(!(settings.notif && notifEtat()==='granted'))"></button>
       </div>` : ""}
-      <div class="set-row">
+      <button class="set-row set-lien" id="bibleGo" onclick="openBibles()">
         <span class="set-ico bib">${ICONS.bookOpen}</span>
         <span class="set-txt"><b>${T("Version de la Bible")}</b><small id="bibleNom">${bibleActive().court} ${bibleActive().annee}</small></span>
-        <button class="set-go" id="bibleGo" onclick="openBibles()">${bibleActive().sigle}</button>
-      </div>
+        <span class="set-chev">${ICONS.chevronRight}</span>
+      </button>
       </div>
       <div class="set-groupe">
       ${(IS_PHONE && !isStandalone) ? `
-      <div class="set-row">
+      <button class="set-row set-lien" onclick="openFsGuide()">
         <span class="set-ico fsx">${ICONS.telecharger}</span>
         <span class="set-txt"><b>${T("Installer le jeu")}</b></span>
-        <button class="set-go" onclick="openFsGuide()">${T("Guide")}</button>
-      </div>` : ``}
+        <span class="set-chev">${ICONS.chevronRight}</span>
+      </button>` : ``}
       <!-- ===== SIGNALER LES PROBLÈMES : EN DERNIER, ET C'EST SA PLACE =====
            Elle était au milieu des réglages de jeu, entre les Rappels et la
            Bible, et son sous-titre la faisait déborder sur deux lignes : la
@@ -20648,6 +20727,7 @@ const grp = {
   publics:null,      // groupes_publics()
   recherche:"",
   courant:null,      // l'identifiant du groupe ouvert
+  depuis:null,       // l'écran qui l'a ouvert, quand c'est la modération (voir ON REVIENT LÀ D'OÙ L'ON VIENT)
   fils:{},           // id -> { messages:[], tout:false }
   profils:{},        // id -> { nom, couleur }
   membres:{},        // id -> [ { membre, role, muet_jusqu } ]
@@ -21750,6 +21830,15 @@ async function ouvrirGroupe(id){
   if(!grp.liste) await chargerListes();
   const g = (grp.liste || []).find(x => x.id === id);
   if(!g){ showMiniToast(T("Tu ne fais plus partie de ce groupe.")); return; }
+  /* ===== ON REVIENT LÀ D'OÙ L'ON VIENT (v319) =====
+     « Lorsque je vérifie un signalement et que je regarde dans un groupe,
+     quand je reviens en arrière, je veux revenir sur la page précédente. »
+     « Voir le groupe », depuis la modération, ouvre un de MES groupes comme
+     d'habitude — et la flèche, qui ne savait pas d'où l'on venait, menait à
+     la liste des groupes. Le groupe retient donc l'écran qui l'a ouvert, et
+     la modération y ramène. (Un groupe dont on n'est pas membre, regardé en
+     lecture seule, y ramenait déjà : voir enLecture.) */
+  if(state.screen !== "groupe") grp.depuis = state.screen === "moderation" ? "moderation" : null;
   grp.courant = id;
   g.non_lus = 0; g.mentions = 0;
   recompterNonLus(id);
@@ -21761,7 +21850,8 @@ async function ouvrirGroupe(id){
   await chargerFil(id);
 }
 function retourGroupes(){
-  const deModeration = enLecture();
+  const deModeration = enLecture() || (!!grp.courant && grp.depuis === "moderation");
+  grp.depuis = null;
   grp.courant = null;
   state.screen = deModeration ? "moderation" : "groupes";
   render();
@@ -22981,22 +23071,44 @@ const RAISONS = [
 let signalement = null;
 function signalerMessage(id, cible, groupe){
   if(!id && !cible && !groupe) return;
-  signalement = { message:id ? +id : null, cible:cible || null, groupe:groupe || null };
+  signalement = { message:id ? +id : null, cible:cible || null, groupe:groupe || null, raison:null };
   fermerFeuilleGroupe("grpActionsVeil");
   const titre = id ? T("Signaler ce message") : (cible ? T("Signaler cette personne") : T("Signaler ce groupe"));
+  /* ===== CHOISIR, PRÉCISER, ENVOYER (v319) =====
+     « Dans les signalements, il n'y a pas la possibilité de mettre quelque
+     chose de spécifique et d'envoyer le signalement. » Toucher une raison
+     ENVOYAIT tout de suite : le détail, posé au-dessus, partait vide si l'on
+     touchait d'abord — et une fois écrit, rien ne disait comment l'envoyer
+     (les raisons portaient un chevron, comme des pages à ouvrir). La page se
+     lit maintenant dans l'ordre : on choisit une raison, qui se coche ; on
+     précise si l'on veut ; et l'on envoie avec un vrai bouton, qui attend
+     qu'une raison soit choisie. */
   ouvrirFeuilleGroupe("grpSignalerVeil", titre, ICONS.drapeau, `
     <p class="grp-aide">${T("Pourquoi ? La modération le reçoit, sans que l'autre personne sache que ça vient de toi.")}</p>
-    <textarea class="text-input grp-precision" id="grpPrecision" maxlength="300" placeholder="${T("Un détail à ajouter ? (facultatif)")}"></textarea>
-    <div class="grp-liste-act">${RAISONS.map(([k, t])=>
-      `<button class="grp-act-l" onclick="envoyerSignalement('${k}')"><span class="gal-t">${escapeHtml(T(t))}</span><span class="chev">${ICONS.chevronRight}</span></button>`).join("")}</div>
+    <div class="grp-liste-act grp-raisons" role="radiogroup">${RAISONS.map(([k, t])=>
+      `<button class="grp-act-l grp-raison" role="radio" aria-checked="false" data-k="${k}" onclick="choisirRaison('${k}')"><span class="gal-t">${escapeHtml(T(t))}</span><span class="gr-coche">${ICONS.coche}</span></button>`).join("")}</div>
+    <textarea class="text-input grp-precision" id="grpPrecision" maxlength="300" placeholder="${T("Précise ce qui s'est passé (facultatif)")}"></textarea>
+    <button class="btn-primary grp-signaler-envoi" id="grpSignalerEnvoi" onclick="envoyerSignalement()" disabled>${T("Envoyer le signalement")}</button>
     <div class="grp-mot"><span></span></div>`);
+}
+function choisirRaison(k){
+  if(!signalement) return;
+  signalement.raison = k;
+  document.querySelectorAll("#grpSignalerVeil .grp-raison").forEach(b => {
+    const oui = b.dataset.k === k;
+    b.classList.toggle("choisie", oui); b.setAttribute("aria-checked", String(oui));
+  });
+  const e = document.getElementById("grpSignalerEnvoi"); if(e) e.disabled = false;
 }
 async function envoyerSignalement(raison){
   const s = signalement; if(!s) return;
-  const boutons = document.querySelectorAll("#grpSignalerVeil .grp-act-l");
+  const k = raison || s.raison; if(!k) return;
+  const envoi = document.getElementById("grpSignalerEnvoi");
+  const boutons = document.querySelectorAll("#grpSignalerVeil .grp-raison");
+  if(envoi) envoi.disabled = true;
   boutons.forEach(b => b.disabled = true);
-  const r = await appelGroupe("signaler", { p_message:s.message, p_cible:s.cible, p_groupe:s.groupe, p_raison:raison, p_details:valeurChamp("grpPrecision") });
-  if(!r.ok){ boutons.forEach(b => b.disabled = false); motFeuille("grpSignalerVeil", motErreurGroupe(r)); return; }
+  const r = await appelGroupe("signaler", { p_message:s.message, p_cible:s.cible, p_groupe:s.groupe, p_raison:k, p_details:valeurChamp("grpPrecision") });
+  if(!r.ok){ if(envoi) envoi.disabled = false; boutons.forEach(b => b.disabled = false); motFeuille("grpSignalerVeil", motErreurGroupe(r)); return; }
   const corps = document.querySelector("#grpSignalerVeil .grp-feuille-corps");
   if(corps) corps.innerHTML = `<div class="grp-merci"><span class="gi-ico vert">${ICONS.coche}</span><b>${T("Merci. La modération va regarder.")}</b>
       <p>${(s.message || s.cible) ? T("Tu peux aussi bloquer cette personne : tu ne verras plus ses messages.") : T("Tu peux aussi quitter ce groupe.")}</p></div>
@@ -23388,6 +23500,7 @@ async function regarderGroupe(id){
   }
   if(!g){ showMiniToast(T("Ce groupe n'existe plus.")); return; }
   grp.vus[id] = Object.assign({}, g);
+  if(state.screen !== "groupe") grp.depuis = "moderation";
   grp.courant = id;
   state.screen = "groupe";
   render();
@@ -24448,8 +24561,10 @@ function renderEndGroup(){
   const barByRank = {1:"p1",2:"p2",3:"p3"};
   const podiumTeams = withRanks.slice(0,3);
 
-  const podiumHtml = podiumTeams.length>=2 ? `
-    <div class="podium">
+  /* Tous premiers : pas de podium (voir LE PODIUM EST UNE CARTE). */
+  const tousPremiers = withRanks.every(r => r.rank === 1);
+  const podiumHtml = podiumTeams.length>=2 && !tousPremiers ? `
+    <div class="card podium">
       ${podiumOrder.filter(i=>i<podiumTeams.length).map(i=>{
         const r = podiumTeams[i];
         const initial = escapeHtml(premierSigne(state.teams[r.teamIdx].name));
@@ -24458,8 +24573,8 @@ function renderEndGroup(){
           ${r.rank===1 ? `<span class="podium-crown">${ICONS.crown}</span>` : `<span class="podium-crown" style="visibility:hidden"></span>`}
           <span class="team-token podium-avatar" style="background:${TEAM_COLORS[r.teamIdx%6]}">${initial}</span>
           <span class="podium-name">${escapeHtml(nomEquipe(state.teams[r.teamIdx].name))}</span>
-          <span class="podium-score">${state.scores[r.teamIdx]}</span>
-          <div class="podium-bar ${barByRank[Math.min(r.rank,3)]}">${r.rank}</div>
+          <span class="podium-score">${state.scores[r.teamIdx]} pts</span>
+          <div class="podium-socle"><div class="podium-bar ${barByRank[Math.min(r.rank,3)]}">${r.rank}</div></div>
         </div>`;
       }).join("")}
     </div>` : "";
@@ -26149,6 +26264,23 @@ const GLASS_SEL = ".app-header,.card,.mode-card,.question-card,.solo-summary,.so
    reflet, ni calage par image — la page est pleine, et ce qu'elle porte aussi. */
 const GLASS_VIVANT = ":is(" + GLASS_SEL + "):not(.sheet-veil *)";
 const GLASS_SKIP = ".timer-chip.low,.btn-primary:disabled,.btn-next:disabled";
+/* LES SURFACES PLEINES (voir « UNE SURFACE PLEINE N'A PAS DE DÉCOR À
+   MONTRER » dans la feuille de style). Ce sont les familles qui portent déjà
+   leur teinte en fond (« AUCUN REFLET SUR LES SURFACES PLEINES ») et dont
+   TOUTES les teintes sont opaques, dans tous leurs états : crème au repos,
+   corail une fois choisies, vert ou rose pour une réponse, or pour la
+   révélation — relevé règle par règle, puis écran par écran.
+   LA LISTE DÉCIDE SEULE, ET UN BANC LA TIENT. La première version relisait en
+   plus la teinte calculée de chaque surface : une lecture de style forcée
+   dans la boucle du verre, à chaque nouvelle génération de la mise en page —
+   c'est-à-dire au repos aussi. banc-essai/charge.js l'a refusée (« 1 lecture
+   de style forcée, max 0 »), et il a raison : le moteur ne doit rien
+   recalculer quand rien ne bouge. La vérification a donc changé de place :
+   banc-essai/verre-plein.js relit, écran par écran, la teinte de chaque
+   surface pleine, et tombe si l'une d'elles est translucide. Une famille qui
+   passerait un jour par une teinte translucide n'a rien à faire ici : elle
+   doit garder sa photo. */
+const GLASS_PLEIN = ".chip,.len-chip,.btn-ghost,.btn-invite,.btn-review,.adj-btn,.fsh-close,.share-btn,.tst-head,.option-btn,.modal-btn,.btn-newgame,.question-card,.solo-score-bar,.duel-scorebar,.score-pane,.award-btn,.rev-item,.btn-primary,.btn-next,.btn-replay,.btn-reveal,.sheet-done,.streak-chip,.dc-streak,.fact-card,.leave-banner";
 /* RÉFRACTION VIVANTE : le verre est calé sur la position RÉELLE à l'écran et
    ré-aligné image par image pendant les mouvements -> quand une carte glisse
    OU se comprime sous le doigt, la photo à l'intérieur reste accrochée au
@@ -26499,11 +26631,6 @@ function queueGlassXF(){
       if(el.classList.contains("has-gs")) el.classList.remove("has-gs");
       continue;
     }
-    if(el._ggen !== glassGen || suivre){ // décalages, en cache — sauf en suivi
-      let lx = 0, ly = 0, n = el;
-      while(n && n !== document.body){ lx += n.offsetLeft; ly += n.offsetTop; n = n.offsetParent; }
-      el._lx0 = lx; el._ly0 = ly; el._oh0 = el.offsetHeight; el._ggen = glassGen;
-    }
     if(!el._rim || el._rim.parentNode !== el){ // rebord (créé une fois)
       const rim = document.createElement("b"); rim.className = "glass-rim";
       el.insertBefore(rim, el.firstChild); el._rim = rim;
@@ -26516,6 +26643,27 @@ function queueGlassXF(){
     }
     if(gs.style.display === "none") gs.style.display = "";
     if(!el.classList.contains("has-gs")) el.classList.add("has-gs");
+    /* SURFACE PLEINE : sa couche ne porte que la teinte (.gs-plein), elle n'a
+       ni taille à recevoir ni photo à caler — rien d'autre à faire pour elle,
+       ni maintenant ni pendant un mouvement. Ce sont ses classes qui le
+       disent (GLASS_PLEIN) : on ne les relit que lorsqu'elles changent, et
+       jamais un style calculé. */
+    if(el._pleinCls !== el.className){
+      el._pleinCls = el.className;
+      const plein = el.matches(GLASS_PLEIN);
+      if(plein !== !!el._plein){
+        el._plein = plein;
+        gs.classList.toggle("gs-plein", plein);
+        gs.style.width = ""; gs.style.height = ""; gs.style.backgroundSize = ""; gs.style.transform = "";
+        el._gsSize = ""; el._gsT = ""; el._gsH = -1; el._ggen = -1;
+      }
+    }
+    if(el._plein) continue;
+    if(el._ggen !== glassGen || suivre){ // décalages, en cache — sauf en suivi
+      let lx = 0, ly = 0, n = el;
+      while(n && n !== document.body){ lx += n.offsetLeft; ly += n.offsetTop; n = n.offsetParent; }
+      el._lx0 = lx; el._ly0 = ly; el._oh0 = el.offsetHeight; el._ggen = glassGen;
+    }
     if(el._gsSize !== bgSize){ el._gsSize = bgSize; gs.style.width = iw + "px"; gs.style.height = ih + "px"; gs.style.backgroundSize = bgSize; }
     /* Pendant la montée d'une feuille, c'est le contre-mouvement qui tient
        le décor (voir contreMonte) : rien à relire, rien à écrire. */
@@ -26573,7 +26721,32 @@ function queueGlassXF(){
       // (getBoundingClientRect) -> vrai verre fixe à l'écran pendant qu'on défile
       // à l'intérieur. Peu de surfaces, et on n'écrit qu'un transform (n'invalide
       // pas la mise en page) -> aucun reflow forcé coûteux. Pas de culling ici.
-      const r = el.getBoundingClientRect();
+      let r = el.getBoundingClientRect();
+      /* ===== LE VERRE DE LA BARRE DU BAS SE CALE SUR SA PLACE (v319) =====
+         « Lorsque je quitte une page, il y a un petit décalage dans l'image »
+         (capture de Taylor : la barre Accueil · Groupes de l'accueil). La
+         barre revient de côté avec sa page (arrive-g / arrive-d), pendant que
+         le moteur est GELÉ (glassFreezeForTransition) — et sa position était
+         LUE au moment du gel, c'est-à-dire au départ de son mouvement, à 28vw
+         de sa place. Le décor vu à travers elle voyageait donc avec elle,
+         puis sautait de 28vw au dégel, la barre posée depuis plus d'un
+         dixième de seconde : l'image glissait d'un coup sous une barre
+         immobile. Même chose quand elle monte du bas au démarrage.
+         Comme les surfaces de #app, qui se calent sur leur place de mise en
+         page, la barre se cale maintenant sur sa place de REPOS, calculée :
+         centrée (left:50% moins sa demi-largeur), à « bottom » du bas de
+         l'écran. Pendant son mouvement, son décor part avec elle — comme
+         celui des cartes de la page qui arrive avec elle — et il est juste à
+         l'arrivée : le dégel ne trouve plus rien à corriger. Au repos, la
+         place calculée EST la place réelle : rien ne change.
+         Son « bottom » n'est lu qu'une fois par mise en page (glassGen) :
+         lire un style calculé à chaque passage forçait un recalcul de style
+         au repos, ce que banc-essai/charge.js refuse (« 1 lecture forcée,
+         max 0 »). Il ne change qu'avec la mise en page elle-même. */
+      if(el.id === "barreBas"){
+        if(el._basGen !== glassGen){ el._basGen = glassGen; el._bas = parseFloat(getComputedStyle(el).bottom) || 0; }
+        r = { left:(de.clientWidth - r.width) / 2, top:de.clientHeight - el._bas - r.height };
+      }
       tx = -r.left - ox; ty = -r.top - oy;
     }
     /* ===== ON DÉFAIT LE REPÈRE DÉFORMÉ =====
@@ -27626,9 +27799,10 @@ function toggleFullscreen(){
 /* ===== LE PLEIN ÉCRAN NE REFAIT PAS L'ÉCRAN =====
    « Sur Android, “30 s par question” clignote légèrement » ; « à certains
    moments, quand j'appuie partout, que je déroule dans tous les sens, l'écran
-   peut venir à clignoter. » C'était ici. Dans Chrome, au premier toucher, le
-   jeu passe en plein écran — et chaque entrée ou sortie du plein écran (un
-   geste depuis le bord, le retour, le toucher suivant qui y revient)
+   peut venir à clignoter. » C'était ici. Dans Chrome, le jeu passe en plein
+   écran (au premier changement d'écran depuis la v319, voir tryAutoFullscreen)
+   — et chaque entrée ou sortie du plein écran (un geste depuis le bord, le
+   retour, le toucher suivant qui y revient)
    REFAISAIT TOUT L'ÉCRAN : render(), donc chaque puce, chaque carte et chaque
    couche de verre détruites puis recréées, le temps d'une image à repeindre.
    Mesuré : un toucher sur « Courte », et l'écran entier est remplacé. iOS
@@ -27874,14 +28048,38 @@ function champEnCours(){
   const a = document.activeElement;
   return !!(a && (a.tagName === "INPUT" || a.tagName === "TEXTAREA"));
 }
+/* ===== LE PLEIN ÉCRAN S'INSTALLE ENTRE DEUX ÉCRANS, JAMAIS DEDANS (v319) =====
+   « Sur Android, lorsque j'ajoute ou que je retire des joueurs, ça ne fait pas
+     comme sur iOS, et en plus ça clignote bizarrement » ; « lorsque je change
+     les modes, ça clignote à certains endroits ».
+   Le plein écran se demandait au premier toucher, quel qu'il soit — puis de
+   nouveau à CHAQUE toucher tant qu'on n'y était pas. Sorti du plein écran (un
+   geste depuis le bord, le retour), le joueur y était renvoyé par la puce
+   suivante, ou par la croix d'un joueur. Mesuré en Android simulé : trois
+   puces touchées, trois demandes. Or entrer en plein écran change la hauteur
+   de la fenêtre et la marge du haut (de 6 à 58 px) : tout l'écran glissait
+   d'un bloc, au beau milieu du geste qu'on était en train de faire. L'iPhone
+   n'a pas ce plein écran : chez lui, rien de tel n'arrive jamais.
+   La demande attend donc un CHANGEMENT D'ÉCRAN : le toucher qui ouvre un mode,
+   qui revient à l'accueil, qui lance la partie. L'écran entier bouge déjà à
+   cet instant, la fenêtre peut grandir sans qu'on voie rien d'autre que
+   l'écran qui arrive. Une puce, la croix d'un joueur, « Ajouter » : rien ne
+   change d'écran, donc rien ne bouge. Le navigateur accorde le plein écran
+   pendant quelques secondes après un toucher : la demande part juste après
+   que le toucher a produit son effet, quand on sait s'il a changé d'écran. */
 function tryAutoFullscreen(e){
   if(toucheUnChamp(e) || champEnCours()) return;
   if(fsPending || !fsAvailable() || fsActive()) return;
-  fsPending = true;
-  setTimeout(()=>{ fsPending = false; }, 600);
-  toggleFullscreen();
+  const avant = state.screen;
+  setTimeout(()=>{
+    if(state.screen === avant) return;
+    if(fsPending || !fsAvailable() || fsActive() || champEnCours()) return;
+    fsPending = true;
+    setTimeout(()=>{ fsPending = false; }, 600);
+    toggleFullscreen();
+  }, 0);
 }
-/* Android : au tout premier toucher, on passe en plein écran immersif — la
+/* Android : au premier changement d'écran, on passe en plein écran immersif — la
    barre de navigation BLANCHE du système se masque alors d'elle-même (elle ne
    réapparaît que si le joueur la fait glisser, pour quitter). Sur iPhone,
    Safari interdit ce plein écran : fsAvailable() renvoie false, donc no-op
