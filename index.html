@@ -5902,6 +5902,8 @@ const TEXTES = {
     "{livre} · {n} questions":"{livre} · {n} questions",
     "{livre} — pas assez de questions":"{livre} — not enough questions",
     "Tout le monde joue les questions de ce livre. Le chiffre dit combien il en a.":"Everyone plays this book's questions. The number shows how many it has.",
+    "La partie ne prend que les questions de ce livre. Le chiffre dit combien il en a.":"The game only uses this book's questions. The number shows how many it has.",
+    "Au choix":"Your pick",
     "Un joueur doit mettre le jeu à jour pour jouer sur un livre\u00a0: la partie porte sur son testament.":"A player needs to update the game to play a single book: this game covers its Testament instead.",
     /* LA SECONDE CHANCE (v316) : l'écran « À revoir » refait. */
     "erreurs récentes à rattraper":"recent mistakes to fix",
@@ -6558,6 +6560,8 @@ const TEXTES = {
     "{livre} · {n} questions":"{livre} · {n} preguntas",
     "{livre} — pas assez de questions":"{livre}: no hay suficientes preguntas",
     "Tout le monde joue les questions de ce livre. Le chiffre dit combien il en a.":"Todos juegan las preguntas de este libro. El número indica cuántas tiene.",
+    "La partie ne prend que les questions de ce livre. Le chiffre dit combien il en a.":"La partida solo usa las preguntas de este libro. El número indica cuántas tiene.",
+    "Au choix":"A elegir",
     "Un joueur doit mettre le jeu à jour pour jouer sur un livre\u00a0: la partie porte sur son testament.":"Un jugador debe actualizar el juego para jugar con un solo libro: la partida abarca su testamento.",
     /* LA SECONDE CHANCE (v316) : l'écran « À revoir » refait. */
     "erreurs récentes à rattraper":"errores recientes por corregir",
@@ -9404,10 +9408,18 @@ function majPuceLivre(){
 }
 function ouvrirChoixLivre(){
   if(!net.isHost || net.themeFixe || !pageLibre("livreVeil")) return;
+  pageDesLivres(net.livre, "choisirLivreSalon", LIVRE_MIN, T("Tout le monde joue les questions de ce livre. Le chiffre dit combien il en a."));
+}
+/* LA PAGE DES LIVRES, UNE SEULE POUR TOUT LE JEU (v320) : l'En ligne et
+   l'écran du Solo ou du Groupe l'ouvrent chacun avec son livre actuel, son
+   geste et sa phrase du bas. En ligne, un livre doit avoir LIVRE_MIN
+   questions (tout le salon les joue) ; seul ou en groupe sur un téléphone,
+   un livre qui en a une se joue — c'était déjà le cas depuis la Progression. */
+function pageDesLivres(actuel, action, min, note){
   const tuile = (b) => {
-    const n = BOOK_TOTALS[b] || 0, ok = n >= LIVRE_MIN, i = BIBLE_BOOKS.indexOf(b);
+    const n = BOOK_TOTALS[b] || 0, ok = n >= min, i = BIBLE_BOOKS.indexOf(b);
     const dit = ok ? Tf("{livre} · {n} questions", { livre:nomLivre(b), n }) : Tf("{livre} — pas assez de questions", { livre:nomLivre(b) });
-    return `<button class="bk bk-choix${net.livre === b ? " sel" : ""}${ok ? "" : " vide"}" data-i="${i}"${ok ? ` onclick="choisirLivreSalon(${i})"` : " disabled"} aria-label="${escapeHtml(dit)}">`
+    return `<button class="bk bk-choix${actuel === b ? " sel" : ""}${ok ? "" : " vide"}" data-i="${i}"${ok ? ` onclick="${action}(${i})"` : " disabled"} aria-label="${escapeHtml(dit)}">`
       + `<span class="bk-nm">${escapeHtml(livreCourt(b))}</span><span class="lt-n">${n}</span></button>`;
   };
   const at = BIBLE_BOOKS.slice(0, BIBLE_AT_COUNT), nt = BIBLE_BOOKS.slice(BIBLE_AT_COUNT);
@@ -9415,7 +9427,7 @@ function ouvrirChoixLivre(){
     `<p class="alea-q">${T("Sur quel livre jouer ?")}</p>
      <div class="bk-carte"><div class="bk-sec">${T("Ancien Testament")}</div><div class="bk-grid">${at.map(tuile).join("")}</div></div>
      <div class="bk-carte"><div class="bk-sec">${T("Nouveau Testament")}</div><div class="bk-grid">${nt.map(tuile).join("")}</div></div>
-     <p class="alea-note">${T("Tout le monde joue les questions de ce livre. Le chiffre dit combien il en a.")}</p>`);
+     <p class="alea-note">${note}</p>`);
 }
 function choisirLivreSalon(i){
   const b = BIBLE_BOOKS[i];
@@ -9447,7 +9459,7 @@ const SUPABASE_ANON_KEY = "sb_publishable_FDJ_R0foC7uIeHmxVrj6rA_2NeIgW2a";
    remontée d'un téléphone ne vaut rien si on ne sait pas QUELLE version
    tournait. Elle doit rester égale au CACHE de sw.js — c'est ce que vérifie
    banc-essai/version.js, qui refuse de laisser publier les deux en désaccord. */
-const VERSION_JEU = "v319";
+const VERSION_JEU = "v320";
 
 /* ===================== QUAND ÇA CASSE CHEZ UN JOUEUR =====================
    « Si quelque chose casse chez cinq d'entre eux sur un modèle de téléphone
@@ -17945,8 +17957,63 @@ function setLength(key){
 }
 function setTheme(key){
   state.themeKey = key;
+  /* Un testament remplace le livre choisi (voir UN LIVRE, DEPUIS L'ÉCRAN DU
+     MODE) : la puce du livre se vide et reprend « Un livre ». */
+  if(state.livre){ state.livre = null; majPuceLivreLocale(); }
   basculerChoix('[data-group="theme"]', "active", key);
   queueGlassSync();
+}
+/* ===== UN LIVRE, DEPUIS L'ÉCRAN DU MODE (v320) =====
+   « Pour jouer directement dans un livre précis, est-ce qu'il ne serait pas
+     mieux de passer par le mode Solo ou le mode Groupe directement, plutôt
+     que par les testaments, ce qui paraît un peu bizarre ? » (Taylor)
+   Oui. Choisir un livre, c'est choisir CE QU'ON JOUE — exactement ce que
+   règlent déjà Durée, Chrono et Testament, sur l'écran du mode. Le seul
+   chemin passait pourtant par la Progression, puis la page d'un testament :
+   un tableau de bord, pas l'endroit où l'on prépare une partie. Et la partie
+   qui en sortait n'écoutait ni la durée choisie ni le Mode Groupe : neuf
+   questions, en Solo, toujours. L'En ligne avait déjà sa puce « Un livre »
+   dans la rangée des testaments (v316).
+   Solo et Groupe la reçoivent à leur tour, sous Tout · Ancien · Nouveau. Elle
+   ouvre la même page des livres que l'En ligne, chaque tuile avec son nombre
+   de questions. Choisi, le livre prend la place du testament : la puce se
+   remplit et porte son nom ; toucher un testament le rend. La partie suit la
+   durée et le chrono choisis — autant de questions de chaque niveau que le
+   livre en a, celles qu'on n'a jamais vues d'abord ; un livre plus court que
+   la partie se joue en entier. Le livre reste choisi pour la partie suivante,
+   comme la durée et le chrono.
+   La Progression ne lance plus rien elle-même : toucher un livre y mène à
+   l'écran du Solo, ce livre déjà choisi. On voit ce qu'on va jouer, et l'on
+   peut encore changer la durée. */
+function puceLivreLocaleHtml(){
+  const b = state.livre;
+  return `<button class="chip puce-livre${b ? " active" : ""}" data-group="theme" data-k="bk" onclick="ouvrirLivreLocal()">`
+    + `<span class="pl-mot">${b ? escapeHtml(livreCourt(b)) : T("Un livre")}</span>`
+    + `<span class="sub">${b ? T("Un livre") : T("Au choix")}</span></button>`;
+}
+function majPuceLivreLocale(){
+  const c = document.querySelector(".puce-livre");
+  if(!c) return;
+  const m = c.querySelector(".pl-mot"), sub = c.querySelector(".sub");
+  const tm = state.livre ? livreCourt(state.livre) : T("Un livre"), ts = state.livre ? T("Un livre") : T("Au choix");
+  if(m && m.textContent !== tm) m.textContent = tm;
+  if(sub && sub.textContent !== ts) sub.textContent = ts;
+}
+function ouvrirLivreLocal(){
+  if(!pageLibre("livreVeil")) return;
+  pageDesLivres(state.livre, "choisirLivreLocal", 1, T("La partie ne prend que les questions de ce livre. Le chiffre dit combien il en a."));
+}
+function choisirLivreLocal(i){
+  const b = BIBLE_BOOKS[i];
+  const v = document.getElementById("livreVeil");
+  if(!b || !((BOOK_TOTALS[b] || 0) > 0) || !v || v.classList.contains("closing")) return;
+  state.livre = b;
+  v.querySelectorAll(".bk-choix").forEach(x => { const doit = x.dataset.i === String(i); if(x.classList.contains("sel") !== doit) x.classList.toggle("sel", doit); });
+  majPuceLivreLocale();
+  try{ basculerChoix('[data-group="theme"]', "active", "bk"); }catch(e){}
+  /* La tuile se colore, puis la page repart sur l'écran du mode — un seul
+     toucher compte, comme pour l'En ligne. */
+  setTimeout(() => fermerFeuilleGroupe("livreVeil"), 180);
 }
 /* Les joueurs retenus pour la partie : ceux qui ont un nom, six au plus. Le
    plafond est redit ici parce que c'est cette liste-là qui devient les scores —
@@ -18547,7 +18614,7 @@ function tuileLivre(p, name){
   const dit = dispo ? Tf("S'entraîner sur {livre} · {c} sur {t}", {livre:nomLivre(name), c:c, t:tgt})
                     : Tf("{livre} — pas encore de question", {livre:nomLivre(name)});
   const i = BIBLE_BOOKS.indexOf(name);
-  return `<button class="bk ${cls}" ${dispo ? `onclick="jouerLivreDuTestament(${i})"` : "disabled"} aria-label="${escapeHtml(dit)}">`
+  return `<button class="bk ${cls}" ${dispo ? `onclick="choisirLivreDuTestament(${i})"` : "disabled"} aria-label="${escapeHtml(dit)}">`
     + `<span class="bk-nm">${escapeHtml(livreCourt(name))}</span>`
     + `<span class="bk-pr">${acquis ? ACH_CHECK : (dispo ? Math.min(c, tgt) + "/" + tgt : "–")}</span></button>`;
 }
@@ -18569,13 +18636,15 @@ function ouvrirTestament(k){
      <p class="bk-mode tp-aide"><span class="bk-mode-i">${ICONS.bolt}</span>${T("Touche un livre pour t'entraîner dessus")}</p>
      ${sections}`);
 }
-/* La page s'efface pendant que la partie arrive dessous. */
-function jouerLivreDuTestament(i){
+/* La page s'efface pendant que l'écran du Solo arrive dessous, ce livre déjà
+   choisi (voir UN LIVRE, DEPUIS L'ÉCRAN DU MODE). */
+function choisirLivreDuTestament(i){
   const b = BIBLE_BOOKS[i];
   const v = document.getElementById("tstVeil");
   if(!b || !v || v.classList.contains("closing")) return;
   fermerFeuilleGroupe("tstVeil");
-  jouerLivre(b);
+  state.livre = b; state.mode = "solo"; state.revision = false; state.screen = "setup";
+  render();
 }
 let achToastQueue = [], achToastBusy = false;
 /* ===== ON NE FÉLICITE PAS QUELQU'UN EN PLEINE QUESTION =====
@@ -23605,11 +23674,12 @@ async function supprimerMonCompte(){
   groupesSurCompte();
 }
 
-/* ===== S'ENTRAÎNER SUR UN SEUL LIVRE =====
-   Même moteur que le solo, une seule différence : le tirage est borné à un
-   livre. On ne touche ni au chrono choisi, ni aux scores, ni aux objectifs —
-   c'est une partie solo ordinaire, sur un rayon plus étroit. La progression du
-   livre monte donc normalement, puisque c'est progressCredit qui la tient. */
+/* ===== LES QUESTIONS D'UN LIVRE =====
+   Toutes, chacune avec son niveau. C'est le vivier où buildQuestions tire une
+   partie sur un livre (voir UN LIVRE, DEPUIS L'ÉCRAN DU MODE) ; la partie
+   elle-même est une partie ordinaire — mêmes scores, mêmes objectifs, et la
+   progression du livre monte normalement, puisque c'est progressCredit qui
+   la tient. */
 /* LE NIVEAU N'EST PAS DANS LA QUESTION, C'EST LA CLÉ DE SA CORBEILLE. Une
    question de BANK n'a pas de propriété « tier » : c'est buildQuestions qui la
    pose en la tirant. L'oublier ici cassait l'écran de jeu (TIER_INFO[undefined]
@@ -23620,29 +23690,6 @@ function questionsDuLivre(nom){
     (BANK[tier]||[]).forEach(q=>{ if(bookOf(q) === nom) out.push(Object.assign({}, q, { tier })); });
   });
   return out;
-}
-function jouerLivre(nom){
-  const pool = questionsDuLivre(nom);
-  if(!pool.length) return;
-  /* Le livre et la porte restent avec la partie (v316) : « Rejouer » rejoue
-     CE livre (il relançait une partie ordinaire), et « Quitter » ramène à la
-     Progression, d'où l'on était parti. */
-  state.livreSolo = nom; state.depuisParcours = true;
-  /* On privilégie ce qu'il n'a jamais vu, comme partout ailleurs. */
-  const vues = loadSeen();
-  const neuves = shuffle(pool.filter(q=>!vues.has(qKey(q))));
-  const revues = shuffle(pool.filter(q=>vues.has(qKey(q))));
-  const choix = neuves.concat(revues).slice(0, Math.min(9, pool.length));
-  /* Comme toute partie : ce qui a été tiré est noté comme vu. */
-  try{ choix.forEach(q=>vues.add(qKey(q))); saveSeen(vues); }catch(e){}
-  state.mode = "solo"; state.revision = false;
-  state.soloScore = 0; state.soloStreak = 0; state.soloBestStreak = 0; state.soloCorrect = 0;
-  displayedSoloScore = 0; state.soloMissed = []; state.soloIsRecord = false;
-  state.questions = choix.map(q=>Object.assign({}, q, { shuffledOptions: shuffle(q.options.slice()) }));
-  state.currentIndex = 0; state.revealed = false; state.awarded = []; state.soloSelected = null; state.timedOut = false;
-  state.screen = "play";
-  marquerJoue();
-  render();
 }
 /* ===== ON A DEMANDÉ CE QU'ON VOULAIT RÉVISER, PUIS ON A ARRÊTÉ DE DEMANDER =====
    « J'aimerais vraiment un truc où en gros ça te demande ce que tu veux
@@ -23751,7 +23798,7 @@ function startRevision(quoi){
      l'autre. Un seul nombre pour tout le jeu. */
   const b = (quoi === "carnet") ? source : parEntetement(source).slice(0, REVISION_LOT);
   if(!b.length) return;
-  state.mode = "solo"; state.revision = true; state.livreSolo = null; state.depuisParcours = false;
+  state.mode = "solo"; state.revision = true;
   /* D'où part la révision : « Quitter » y ramène (voir LA PARTIE FINIE, ON
      REVIENT DANS SON MODE). Gardé dans la partie sauvegardée, il survit à une
      relance de l'app en pleine révision. */
@@ -23828,6 +23875,24 @@ function questionsDuCarnet(combien, theme){
 function buildQuestions(){
   const n = LENGTHS[state.lengthKey];
   const seen = loadSeen();
+  /* UN LIVRE CHOISI (v320, voir UN LIVRE, DEPUIS L'ÉCRAN DU MODE) : n
+     questions de chaque niveau tant que le livre en a, celles qu'on n'a
+     jamais vues d'abord ; un niveau trop court laisse sa place aux deux
+     autres ; un livre plus court que la partie se joue en entier. Le carnet
+     ne s'y mêle pas : on est venu pour CE livre. */
+  if(state.livre && (BOOK_TOTALS[state.livre] || 0) > 0){
+    const par = { facile:[], moyen:[], difficile:[] };
+    questionsDuLivre(state.livre).forEach(q=>{ if(par[q.tier]) par[q.tier].push(q); });
+    const ordre = (l)=> shuffle(l.filter(q=>!seen.has(qKey(q)))).concat(shuffle(l.filter(q=>seen.has(qKey(q)))));
+    const pris = [], restes = [];
+    ["facile","moyen","difficile"].forEach(t=>{ const m = ordre(par[t]); m.slice(0, n).forEach(q=>pris.push(q)); m.slice(n).forEach(q=>restes.push(q)); });
+    ordre(restes).slice(0, Math.max(0, 3 * n - pris.length)).forEach(q=>pris.push(q));
+    if(pris.length){
+      state.questions = shuffle(pris.map(q=>{ seen.add(qKey(q)); return { ...q, shuffledOptions: shuffle(q.options) }; }));
+      saveSeen(seen);
+      return;
+    }
+  }
   const theme = state.themeKey || "tout";
   const revoir = (state.mode === "solo") ? questionsDuCarnet(Math.round(n * 3 * PART_REVOIR), theme) : [];
   const dejaPris = new Set(revoir.map(q=>qKey(q)));
@@ -23853,9 +23918,10 @@ function buildQuestions(){
   state.questions = shuffle(list);
 }
 function startGame(){
-  /* Partie ordinaire : on sort TOUJOURS du contexte révision — et de celui
-     d'un livre. */
-  state.revision = false; state.livreSolo = null; state.depuisParcours = false;
+  /* Partie ordinaire : on sort TOUJOURS du contexte révision. Le livre, lui,
+     est un réglage de l'écran du mode, comme la durée : il reste (voir UN
+     LIVRE, DEPUIS L'ÉCRAN DU MODE). */
+  state.revision = false;
   marquerJoue();
   if(state.mode==="group"){
     const valid = validTeams();
@@ -23885,7 +23951,6 @@ function replayGame(){
     if(state.screen !== "play") retourAuMode();
     return;
   }
-  if(state.livreSolo){ jouerLivre(state.livreSolo); return; }
   buildQuestions();
   if(state.mode==="group"){ state.scores = state.teams.map(()=>0); }
   else { state.soloScore = 0; state.soloStreak = 0; state.soloBestStreak = 0; state.soloCorrect = 0; displayedSoloScore = 0; state.soloMissed = []; state.soloIsRecord = false; }
@@ -23894,7 +23959,7 @@ function replayGame(){
   render();
 }
 function etatNeuf(){
-  return { screen:"mode", mode:null, teams: loadTeams(), lengthKey: state.lengthKey, timerKey: state.timerKey, themeKey: state.themeKey||"tout", daily:false, revision:false, timedOut:false, scores:[], soloScore:0, soloStreak:0, soloBestStreak:0, soloCorrect:0, soloSelected:null, soloMissed:[], soloIsRecord:false, questions:[], currentIndex:0, revealed:false, awarded:[] };
+  return { screen:"mode", mode:null, teams: loadTeams(), lengthKey: state.lengthKey, timerKey: state.timerKey, themeKey: state.themeKey||"tout", livre: state.livre || null, daily:false, revision:false, timedOut:false, scores:[], soloScore:0, soloStreak:0, soloBestStreak:0, soloCorrect:0, soloSelected:null, soloMissed:[], soloIsRecord:false, questions:[], currentIndex:0, revealed:false, awarded:[] };
 }
 function newGame(){
   clearSavedGame();
@@ -23912,14 +23977,13 @@ function newGame(){
    même retour, un écran plus tôt. L'accueil est à un geste de là.
    Une révision a deux portes : « À revoir » (le carnet), et « Réviser la
    dernière partie » sur l'écran du Solo. Chacune ramène à la sienne. Une
-   partie sur un livre, lancée depuis la page de son testament, ramène à la
-   Progression (v316). */
+   partie sur un livre ramène à l'écran de son mode, le livre toujours choisi
+   (v320 ; elle ramenait à la Progression quand c'est de là qu'elle partait). */
 function retourAuMode(){
-  const mode = state.mode, revision = !!state.revision, de = state.revisionDe, parcours = !!state.depuisParcours;
+  const mode = state.mode, revision = !!state.revision, de = state.revisionDe;
   clearSavedGame();
   state = etatNeuf();
-  if(parcours) state.screen = "parcours";
-  else if(revision && de !== "setup") state.screen = "revoir";
+  if(revision && de !== "setup") state.screen = "revoir";
   else if(mode === "solo" || mode === "group"){ state.mode = mode; state.screen = "setup"; }
   render();
 }
@@ -23933,7 +23997,7 @@ function saveState(){
         teams:state.teams, scores:state.scores,
         soloScore:state.soloScore, soloStreak:state.soloStreak, soloBestStreak:state.soloBestStreak, soloCorrect:state.soloCorrect, soloSelected:state.soloSelected,
         soloMissed:state.soloMissed, themeKey:state.themeKey, revision:state.revision, revisionDe:state.revisionDe,
-        livreSolo:state.livreSolo || null, depuisParcours:!!state.depuisParcours,
+        livre:state.livre || null,
         questions:state.questions, currentIndex:state.currentIndex, revealed:state.revealed, awarded:state.awarded
       };
       localStorage.setItem("bt_game", JSON.stringify(snap));
@@ -24378,9 +24442,10 @@ function renderSetup(){
       <div class="card">
         <h2>${T("Testament")}</h2>
         <div class="chip-row">
-          <button class="chip ${(state.themeKey||'tout')==='tout'?'active':''}" data-group="theme" data-k="tout" onclick="setTheme('tout')">${T("Tout")}<span class="sub">${T("Toute la Bible")}</span></button>
-          <button class="chip ${state.themeKey==='at'?'active':''}" data-group="theme" data-k="at" onclick="setTheme('at')">${T("Ancien")}<span class="sub">${T("Testament")}</span></button>
-          <button class="chip ${state.themeKey==='nt'?'active':''}" data-group="theme" data-k="nt" onclick="setTheme('nt')">${T("Nouveau")}<span class="sub">${T("Testament")}</span></button>
+          <button class="chip ${!state.livre&&(state.themeKey||'tout')==='tout'?'active':''}" data-group="theme" data-k="tout" onclick="setTheme('tout')">${T("Tout")}<span class="sub">${T("Toute la Bible")}</span></button>
+          <button class="chip ${!state.livre&&state.themeKey==='at'?'active':''}" data-group="theme" data-k="at" onclick="setTheme('at')">${T("Ancien")}<span class="sub">${T("Testament")}</span></button>
+          <button class="chip ${!state.livre&&state.themeKey==='nt'?'active':''}" data-group="theme" data-k="nt" onclick="setTheme('nt')">${T("Nouveau")}<span class="sub">${T("Testament")}</span></button>
+          ${puceLivreLocaleHtml()}
         </div>
       </div>
       <div class="rules"><b>${T("Déroulé :")}</b> ${T("lisez la question à voix haute → révélez la réponse → attribuez les points au bon joueur (ou à la bonne équipe). Avec le chrono, la réponse se révèle toute seule à la fin du temps. Une erreur ? Les boutons −/+ corrigent à tout moment.")}</div>
@@ -24396,9 +24461,10 @@ function renderSetup(){
       <div class="card">
         <h2>${T("Testament")}</h2>
         <div class="chip-row">
-          <button class="chip ${(state.themeKey||'tout')==='tout'?'active':''}" data-group="theme" data-k="tout" onclick="setTheme('tout')">${T("Tout")}<span class="sub">${T("Toute la Bible")}</span></button>
-          <button class="chip ${state.themeKey==='at'?'active':''}" data-group="theme" data-k="at" onclick="setTheme('at')">${T("Ancien")}<span class="sub">${T("Testament")}</span></button>
-          <button class="chip ${state.themeKey==='nt'?'active':''}" data-group="theme" data-k="nt" onclick="setTheme('nt')">${T("Nouveau")}<span class="sub">${T("Testament")}</span></button>
+          <button class="chip ${!state.livre&&(state.themeKey||'tout')==='tout'?'active':''}" data-group="theme" data-k="tout" onclick="setTheme('tout')">${T("Tout")}<span class="sub">${T("Toute la Bible")}</span></button>
+          <button class="chip ${!state.livre&&state.themeKey==='at'?'active':''}" data-group="theme" data-k="at" onclick="setTheme('at')">${T("Ancien")}<span class="sub">${T("Testament")}</span></button>
+          <button class="chip ${!state.livre&&state.themeKey==='nt'?'active':''}" data-group="theme" data-k="nt" onclick="setTheme('nt')">${T("Nouveau")}<span class="sub">${T("Testament")}</span></button>
+          ${puceLivreLocaleHtml()}
         </div>
       </div>
       ${(()=>{ const n = lastMissEntries().length; return n>0 ? `<button class="btn-review" onclick="startRevision()"><span class="ico">${ICONS.bookOpen}</span>${T("Réviser la dernière partie")} (${n} ${n>1?T("erreurs"):T("erreur")})</button>` : ""; })()}

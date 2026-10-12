@@ -15,8 +15,11 @@
         27 en 3 — chaque livre une seule fois, dans l'ordre de la Bible ;
      3. chaque tuile dit où l'on en est : « c/t », ou une coche quand le livre
         est maîtrisé ;
-     4. toucher un livre ferme la page et lance la partie sur CE livre ;
-     5. « Quitter » ramène à la Progression, « Rejouer » rejoue le même livre ;
+     4. toucher un livre ferme la page et mène au Solo, CE livre déjà choisi
+        — depuis la v320, on ne lance plus la partie d'un coup : on la règle
+        d'abord (durée, chrono), comme pour tout le reste ;
+     5. « Commencer » joue ce livre et lui seul, « Rejouer » le rejoue,
+        « Quitter » ramène au Solo, le livre toujours choisi ;
      6. le retour de la page rend la Progression telle qu'elle était ;
      7. aucune erreur.
    Usage : node banc-essai/pli.js [url] */
@@ -83,13 +86,21 @@ const dit = (quoi, bon, detail) => { console.log('  ' + (bon ? 'OK  ' : 'KO  ') 
       noms: [...v.querySelectorAll('.tp-carte .bk .bk-nm')].map(t => t.textContent), ordre: BIBLE_BOOKS.slice(BIBLE_AT_COUNT).map(x => livreCourt(x)) }; });
     dit('le Nouveau Testament : 27 livres en 3 sections, dans l\'ordre', nt.sections === 3 && JSON.stringify(nt.noms) === JSON.stringify(nt.ordre), nt.sections + ' sections, ' + nt.noms.length + ' livres');
 
-    /* ---- 4 ---- toucher Matthieu */
+    /* ---- 4 ---- toucher Matthieu : le Solo, Matthieu déjà choisi (v320) */
     const i = await p.evaluate(() => BIBLE_BOOKS.indexOf('Matthieu'));
     await p.locator('#tstVeil .bk[onclick*="(' + i + ')"]').tap();
     await p.waitForTimeout(1200);
-    const jeu = await p.evaluate(() => ({ page: !!document.getElementById('tstVeil'), ecran: state.screen, livres: [...new Set(state.questions.map(q => bookOf(q)))], n: state.questions.length,
+    const puceLivre = () => p.evaluate(() => { const c = document.querySelector('#app > .screen:not(.screen-exit) .puce-livre');
+      return c ? { active: c.classList.contains('active'), mot: (c.querySelector('.pl-mot') || {}).textContent || '' } : null; });
+    const solo = await p.evaluate(() => ({ page: !!document.getElementById('tstVeil'), ecran: state.screen, mode: state.mode, livre: state.livre,
       app: getComputedStyle(document.getElementById('app')).visibility }));
-    dit('toucher un livre ferme la page et lance la partie sur CE livre', !jeu.page && jeu.ecran === 'play' && jeu.livres.length === 1 && jeu.livres[0] === 'Matthieu' && jeu.app === 'visible', JSON.stringify(jeu));
+    const c4 = await puceLivre();
+    dit('toucher un livre ferme la page et mène au Solo, CE livre déjà choisi', !solo.page && solo.ecran === 'setup' && solo.mode === 'solo' && solo.livre === 'Matthieu'
+      && !!c4 && c4.active && /Matthieu/.test(c4.mot) && solo.app === 'visible', JSON.stringify(solo) + ', puce « ' + (c4 ? c4.mot : '?') + ' »');
+    await p.locator('#app > .screen:not(.screen-exit) .btn-primary').tap();
+    await p.waitForTimeout(1200);
+    const jeu = await p.evaluate(() => ({ ecran: state.screen, livres: [...new Set(state.questions.map(q => bookOf(q)))], n: state.questions.length }));
+    dit('« Commencer » joue ce livre, et lui seul', jeu.ecran === 'play' && jeu.livres.length === 1 && jeu.livres[0] === 'Matthieu', JSON.stringify(jeu));
 
     /* ---- 5 ---- Rejouer, puis Quitter */
     await p.evaluate(async () => {
@@ -104,8 +115,10 @@ const dit = (quoi, bon, detail) => { console.log('  ' + (bon ? 'OK  ' : 'KO  ') 
     await p.waitForTimeout(600);
     await p.locator('#modalOk').tap();
     await p.waitForTimeout(900);
-    const fin = await p.evaluate(() => ({ ecran: state.screen }));
-    dit('« Quitter » ramène à la Progression', fin.ecran === 'parcours', JSON.stringify(fin));
+    const fin = await p.evaluate(() => ({ ecran: state.screen, mode: state.mode, livre: state.livre }));
+    const c5 = await puceLivre();
+    dit('« Quitter » ramène au Solo, Matthieu toujours choisi', fin.ecran === 'setup' && fin.mode === 'solo' && fin.livre === 'Matthieu' && !!c5 && c5.active,
+      JSON.stringify(fin) + ', puce « ' + (c5 ? c5.mot : '?') + ' »');
 
     dit('aucune erreur', errs.length === 0, errs.slice(0, 3).join(' | '));
   } catch (e) {
