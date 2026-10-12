@@ -5790,7 +5790,7 @@ const TEXTES = {
     "Ta seconde chance":"Your second chance",
     "Seconde chance":"Second chance",
     "Jouer en Solo":"Play Solo",
-    "Une bonne réponse, et l'erreur est rattrapée. Au bout de sept jours, elle s'efface d'ici.":"One right answer and the mistake is fixed. After seven days, it leaves this list.",
+    "Une bonne réponse, et l'erreur est rattrapée. Seules tes {n} dernières erreurs restent ici, sept jours au plus.":"One right answer and the mistake is fixed. Only your last {n} mistakes stay here, for seven days at most.",
     "Tes erreurs récentes":"Your recent mistakes",
     "Tout est rattrapé\u00a0!":"All caught up!",
     "Plus rien à rattraper, bravo\u00a0!":"Nothing left to fix, well done!",
@@ -6446,7 +6446,7 @@ const TEXTES = {
     "Ta seconde chance":"Tu segunda oportunidad",
     "Seconde chance":"Segunda oportunidad",
     "Jouer en Solo":"Jugar en Solo",
-    "Une bonne réponse, et l'erreur est rattrapée. Au bout de sept jours, elle s'efface d'ici.":"Una respuesta correcta y el error queda corregido. A los siete días, sale de esta lista.",
+    "Une bonne réponse, et l'erreur est rattrapée. Seules tes {n} dernières erreurs restent ici, sept jours au plus.":"Una respuesta correcta y el error queda corregido. Aquí solo quedan tus {n} últimos errores, siete días como máximo.",
     "Tes erreurs récentes":"Tus errores recientes",
     "Tout est rattrapé\u00a0!":"¡Todo corregido!",
     "Plus rien à rattraper, bravo\u00a0!":"¡Nada más por corregir, bien hecho!",
@@ -19615,6 +19615,19 @@ function errbookCount(){ return loadErrbook().length; }
    rattraper » et « rattrapée » se LISENT dans le carnet, ils n'y écrivent
    rien d'autre que l'instant de la dernière erreur. */
 const CHANCE_JOURS = 7, CHANCE_LOT = 5;
+/* ===== QUINZE ERREURS AU PLUS (v317) =====
+   « Ici 193 à revoir, c'est beaucoup trop. Il faut que les erreurs
+     disparaissent avec le temps, pour que ça reste correct : pas des tonnes
+     à revoir. » Sept jours ne suffisaient pas à borner la liste : une seule
+     grosse journée de jeu y versait cent quatre-vingt-treize erreurs, et
+     « Et 188 autres ensuite » ne donne envie de rien.
+   Ne comptent donc que les QUINZE erreurs les plus récentes de ces sept
+   jours — sues depuis ou pas. Une nouvelle erreur pousse la plus vieille
+   dehors ; une erreur rattrapée n'est pas remplacée par une plus ancienne :
+   la liste BAISSE quand on joue la seconde chance, et la jauge dit « 5
+   rattrapées sur 15 », jamais « sur 193 ». Trois séances au plus pour tout
+   rattraper. Le carnet, lui, n'oublie toujours rien (les parties Solo). */
+const CHANCE_MAX = 15;
 /* Une séance, ce n'est plus dix questions : c'est la seconde chance — cinq. */
 const REVISION_LOT = CHANCE_LOT;
 /* L'instant de la dernière erreur. Une entrée d'avant la v316 n'a pas de
@@ -19640,16 +19653,22 @@ function recente(x){
   const j = joursDepuis(t);
   return j >= -1 && j < CHANCE_JOURS;
 }
-/* À RATTRAPER : ratée ces sept derniers jours, et pas sue depuis. Les plus
-   fraîches d'abord ; à égalité, la plus tenace. */
-function aRattraper(){
-  return loadErrbook().filter(x => (x.p | 0) === 0 && recente(x))
-    .sort((a, b) => (rateLe(b) - rateLe(a)) || ((b.n | 0) - (a.n | 0)));
+/* LES ERREURS QUI COMPTENT : les quinze plus récentes des sept derniers
+   jours, sues depuis ou pas. Les plus fraîches d'abord ; à égalité, la plus
+   tenace. */
+function dernieresErreurs(){
+  return loadErrbook().filter(recente)
+    .sort((a, b) => (rateLe(b) - rateLe(a)) || ((b.n | 0) - (a.n | 0)))
+    .slice(0, CHANCE_MAX);
 }
-/* RATTRAPÉES : ratées ces sept derniers jours, et sues depuis — ici ou dans
-   une partie, la bonne réponse compte où qu'elle soit donnée. */
+/* À RATTRAPER : parmi elles, celles qui ne sont pas sues depuis. */
+function aRattraper(){
+  return dernieresErreurs().filter(x => (x.p | 0) === 0);
+}
+/* RATTRAPÉES : parmi elles, celles qui sont sues depuis — ici ou dans une
+   partie, la bonne réponse compte où qu'elle soit donnée. */
 function rattrapees(){
-  return loadErrbook().filter(x => (x.p | 0) > 0 && recente(x));
+  return dernieresErreurs().filter(x => (x.p | 0) > 0);
 }
 function fileDeRevision(){ return aRattraper().slice(0, CHANCE_LOT); }
 /* Le jour d'une erreur, dit comme on le dirait — et comme le disent déjà
@@ -23432,7 +23451,7 @@ function renderRevoir(){
        <div class="flex-sp"></div>
        ${n ? `<button class="btn-primary rv-go" onclick="lancerRevision()">${T("Seconde chance")}</button>`
            : `<button class="btn-primary rv-go" onclick="jouerSoloDepuisRevoir()">${T("Jouer en Solo")}</button>`}
-       <div class="flam-regle rvl-regle">${T("Une bonne réponse, et l'erreur est rattrapée. Au bout de sept jours, elle s'efface d'ici.")}</div>`;
+       <div class="flam-regle rvl-regle">${Tf("Une bonne réponse, et l'erreur est rattrapée. Seules tes {n} dernières erreurs restent ici, sept jours au plus.", { n:CHANCE_MAX })}</div>`;
   return el;
 }
 /* Le bouton de l'écran a son propre nom, et il ne porte aucun mot dans son
