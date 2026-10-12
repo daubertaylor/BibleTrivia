@@ -4690,6 +4690,16 @@
      temps, le nom du jeu ne bouge pas. */
   .hero:has(.hero-zone.show-verse.verse-haute) .hero-title{ opacity:0; pointer-events:none; }
   .hero-title{ transition:opacity var(--tr-voile-in); }
+  /* LA LIGNE D'HÉBREUX 4:16 S'EFFACE AUSSI, QUAND LA CARTE L'ATTEINT (v316).
+     « Ça se superpose avec le verset, corrige ça. » La barre des groupes a
+     ramené sous le titre la ligne du verset de l'accueil (.home-verse) ; la
+     carte, qui descend jusqu'aux cartes de mode, effaçait le titre mais
+     passait sur cette ligne sans l'effacer — deux versets l'un sur l'autre,
+     le second peint par-dessus le premier. Même règle que pour le titre :
+     .verse-basse est posée en JS (showHeroVerse), seulement quand la carte
+     arrive à la ligne. Un verset court la laisse où elle est. */
+  .hero:has(.hero-zone.show-verse.verse-basse) .home-verse{ opacity:0; pointer-events:none; }
+  .home-verse{ transition:opacity var(--tr-voile-in); }
   /* UN VERSET SE LIT, DONC IL RESTE LISIBLE.
      La carte était plafonnée à 9,5 rem et c'est le TEXTE qui rétrécissait pour
      y entrer : mesuré sur les 992 versets des quatre versions, 80 % tombaient
@@ -16745,8 +16755,9 @@ function showHeroVerse(){
      4 px de marge : le titre garde de l'air, la carte ne vient pas le frôler. */
   if(card){
     const titre = document.querySelector(".hero-title");
+    const rz = zone.getBoundingClientRect();
     if(titre){
-      const rz = zone.getBoundingClientRect(), rt = titre.getBoundingClientRect();
+      const rt = titre.getBoundingClientRect();
       /* On vise le haut des LETTRES, pas le haut de la boîte du titre : un <h1>
          porte son interligne au-dessus de ses capitales. Mesurer contre la
          boîte faisait s'effacer le nom pour du vide où il n'y a rien d'écrit.
@@ -16762,6 +16773,20 @@ function showHeroVerse(){
       const limite = rt.top + Math.max(0, (lh - fs) / 2);
       zone.classList.toggle("verse-haute", (rz.top + card.offsetHeight) > limite);
     }
+    /* LA LIGNE D'HÉBREUX 4:16, MÊME MESURE (voir .verse-basse en CSS) : le
+       haut de ses LETTRES, et six pixels d'air en plus — une carte qui
+       s'arrêterait à deux pixels des lettres aurait l'air de les écraser.
+       Une ligne absente (écran court sans la barre : display:none) n'a pas
+       de boîte, et rien à effacer. */
+    const ligne = document.getElementById("homeVerse");
+    let basse = false;
+    if(ligne && ligne.getClientRects().length){
+      const rl = ligne.getBoundingClientRect(), cl = getComputedStyle(ligne);
+      const fl = parseFloat(cl.fontSize) || 0;
+      const hl = parseFloat(cl.lineHeight) || fl * 1.42;
+      basse = (rz.top + card.offsetHeight) > rl.top + Math.max(0, (hl - fl) / 2) - 6;
+    }
+    zone.classList.toggle("verse-basse", basse);
   }
   /* On GÈLE le verre le temps de l'animation (comme les transitions d'écran) :
      la carte-verset se morphe alors en pur GPU, sans que Safari iOS ne
@@ -16788,6 +16813,7 @@ function hideHeroVerse(){
   clearTimeout(zone._verseTimer);
   zone.classList.remove("show-verse");
   zone.classList.remove("verse-haute");
+  zone.classList.remove("verse-basse");
   glassFreezeForTransition(); // même gel au retour de l'icône : fluide sur iOS
 }
 

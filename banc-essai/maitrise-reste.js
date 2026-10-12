@@ -49,10 +49,17 @@ const URL = process.argv[2] || 'http://127.0.0.1:8099/index.html';
       bookTarget = function (b) { return vraie(b) + 2; }; });
     return { p, ctx, errs };
   };
-  const tuile = (p, livre) => p.evaluate((livre) => {
+  /* v316 : les livres ne sont plus dans un volet de la Progression, mais dans
+     la page de leur testament (voir LES TESTAMENTS DEVIENNENT DES PAGES). On
+     l'ouvre, on lit la tuile, on la referme. */
+  const tuile = (p, livre) => p.evaluate(async (livre) => {
     state.screen = 'parcours'; render();
-    const b = [...document.querySelectorAll('.bk')].find(x => (x.getAttribute('aria-label') || '').indexOf(livre) >= 0);
-    return b ? { maitrise: b.classList.contains('mastered'), dit: b.getAttribute('aria-label') } : null;
+    ouvrirTestament(BIBLE_BOOKS.indexOf(livre) < BIBLE_AT_COUNT ? 'at' : 'nt');
+    await new Promise(r => setTimeout(r, 60));
+    const b = [...document.querySelectorAll('#tstVeil .bk')].find(x => (x.getAttribute('aria-label') || '').indexOf(livre) >= 0);
+    const r = b ? { maitrise: b.classList.contains('mastered'), dit: b.getAttribute('aria-label') } : null;
+    fermerFeuilleGroupe('tstVeil');
+    return r;
   }, livre);
 
   /* 1 et 2 : un joueur d'avant, Deutéronome maîtrisé à 3 sous la cible de 3. */
