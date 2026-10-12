@@ -98,12 +98,21 @@ avec=0; for f in "${liste[@]}"; do prend_url "$f" && avec=$((avec+1)); done
 echo "$total bancs — $avec reçoivent $URL, $((total-avec)) tournent sur leurs propres valeurs"
 [ -n "$CHANTIERS" ] && echo "  (hors batterie, chantier en cours :$CHANTIERS — voir DETTE.md)"
 
+# ===== SEPT MINUTES PAR BANC — SAUF CELUI QUI PARCOURT TOUT LE JEU =====
+# langues-ecrans ouvre chaque écran du jeu (260 en v317) dans trois langues,
+# et laisse à chacun 450 ms pour finir d'apparaître : 260 × 3 × 0,45 s, c'est
+# déjà près de six minutes d'attente pure. Il a franchi les 420 s le jour où
+# les mentions ont ajouté leurs écrans. On ne rogne pas sa pose (un texte qui
+# arrive en fondu serait relevé avant d'être visible) : on lui donne le temps.
+duree(){ case "$1" in langues-ecrans) echo 900;; *) echo 420;; esac; }
+export -f duree
+
 # Tout est passé en argument : $1 node, $2 banc, $3 url, $4 dossier de sortie.
 printf '%s\n' "${liste[@]}" | xargs -P 2 -I{} bash -c '
   n="$(basename "$2" .js)"
   if grep -q "process\.argv\[2\][^;]*http" "$2"
-  then timeout 420 "$1" "$2" "$3" > "$4/$n.txt" 2>&1
-  else timeout 420 "$1" "$2"      > "$4/$n.txt" 2>&1
+  then timeout "$(duree "$n")" "$1" "$2" "$3" > "$4/$n.txt" 2>&1
+  else timeout "$(duree "$n")" "$1" "$2"      > "$4/$n.txt" 2>&1
   fi
   echo "$? $n" >> "$4/etats.txt"' _ "$NODE" {} "$URL" "$SORTIE"
 
@@ -124,8 +133,8 @@ restants=""
 for n in $rouges; do
   printf '    %-22s ' "$n"
   b="$RACINE/banc-essai/$n.js"
-  if prend_url "$b"; then timeout 420 "$NODE" "$b" "$URL" > "$SORTIE/$n.txt" 2>&1
-  else                    timeout 420 "$NODE" "$b"        > "$SORTIE/$n.txt" 2>&1; fi
+  if prend_url "$b"; then timeout "$(duree "$n")" "$NODE" "$b" "$URL" > "$SORTIE/$n.txt" 2>&1
+  else                    timeout "$(duree "$n")" "$NODE" "$b"        > "$SORTIE/$n.txt" 2>&1; fi
   if [ $? -eq 0 ]; then echo "vert seul (c'était le parallélisme)"
   else echo "ROUGE"; restants="$restants $n"; fi
 done
