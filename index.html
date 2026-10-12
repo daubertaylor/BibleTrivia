@@ -2422,6 +2422,12 @@
   .text-input,.code-input{ width:100%; background:rgba(255,255,255,0.68); backdrop-filter:blur(14px) saturate(180%); -webkit-backdrop-filter:blur(14px) saturate(180%); border:1px solid var(--bord); border-radius:var(--r-s); padding:0.78rem 0.9rem; font-size:0.95rem; color:var(--ink); font-family:'Inter',sans-serif; }
   .text-input:focus,.code-input:focus{ outline:none; }
   .code-input{ text-align:center; font-family:'Poppins',sans-serif; font-weight:700; font-size:1.7rem; letter-spacing:0.42rem; text-transform:uppercase; }
+  /* Champ centré et vide : iOS pose le curseur AU MILIEU, donc au milieu du
+     code d'exemple — on lisait « ABC|234 », comme un code à moitié tapé
+     (capture de Taylor, v318). Tant que l'exemple est là, le curseur ne se
+     dessine pas : la lueur corail du champ dit déjà qu'il attend. Il
+     réapparaît dès la première lettre, derrière elle. */
+  .code-input:placeholder-shown{ caret-color:transparent; }
   /* LA COULEUR EST UNE COULEUR, PAS UNE PLAQUE.
      Deux essais ont raté pour la même raison, invisible dans la feuille de
      style : background-clip:content-box était bien écrit ici, mais l'attribut
@@ -5026,7 +5032,27 @@
     border-radius:var(--r-full); background:var(--primary);
     box-shadow:0 1px 2px rgba(120,30,14,0.16), 0 6px 16px rgba(214,60,34,0.32);
     transition:transform var(--tr-ouvre); }
-  .barre-bas[data-o="groupes"] .bb-curseur{ transform:translate3d(100%,0,0); }
+  /* ===== LA PASTILLE N'A PAS DE COUCHE À ELLE (v318) =====
+     « Lorsque je quitte une page, ça s'affiche pas directement. » Capture de
+     Taylor, de retour sur les Groupes : la pastille corail est là, mais vide
+     — ni la bulle ni le mot. L'Accueil, à côté, est entier.
+     Ce qui sépare les deux onglets : sur Groupes, la pastille se posait par
+     un translate3d, et une transformation 3D lui donne SA couche, dessinée
+     par-dessus la barre. Le mot blanc ne reste alors devant que si le
+     moteur, voyant qu'il chevauche la pastille, le sort lui aussi de la
+     barre. Que Safari oublie ce calcul en ré-affichant la barre cachée sous
+     une page (html.sous-page), et le mot reste peint dans la barre, sous la
+     pastille : exactement la capture. Sur Accueil, aucune transformation,
+     aucune couche, rien à calculer.
+     Une translation PLATE ne crée pas de couche : la pastille et les mots
+     sont peints ensemble, dans l'ordre, dans la barre. Elle glisse toujours
+     (le temps du glissement elle a sa couche, puis elle la rend).
+     Le moteur qu'on pilote en machine refait ce calcul et ne montre pas le
+     défaut : banc-essai/barre-onglet.js en garde la cause — rien dans la
+     barre, au repos, n'a de couche à soi. (L'autre chemin possible vers la
+     même image, le geste retour d'iOS qui montrait une PHOTO de l'écran, est
+     fermé en même temps : voir SUR iPHONE ET iPAD, AUCUNE MARQUE.) */
+  .barre-bas[data-o="groupes"] .bb-curseur{ transform:translateX(100%); }
   .barre-bas.pose-nette .bb-curseur, .barre-bas.pose-nette .bb-onglet{ transition:none !important; }
   .bb-onglet{ position:relative; z-index:1; display:flex; align-items:center; justify-content:center; gap:0.42rem;
     border:0; background:none; color:var(--ink); font-family:'Poppins',sans-serif; font-weight:600; font-size:0.86rem;
@@ -5049,7 +5075,12 @@
      posée à côté du rond de verre et non dedans : la découpe du verre la
      couperait. Le toucher la traverse jusqu'au bouton. */
   .grp-modo{ position:relative; display:inline-flex; flex-shrink:0; }
-  .grp-modo .bb-pastille{ top:-0.3rem; right:-0.36rem; z-index:2; pointer-events:none; }
+  /* Elle passe DEVANT le rond de verre, qui a sa couche à lui (translateZ :
+     il en a besoin pour son verre). Elle n'y restait que par le calcul de
+     chevauchement qui manquait à la barre (voir LA PASTILLE N'A PAS DE
+     COUCHE À ELLE) : elle prend donc sa couche à elle, et passe devant par
+     son rang (z-index), sans rien demander à ce calcul. */
+  .grp-modo .bb-pastille{ top:-0.3rem; right:-0.36rem; z-index:2; pointer-events:none; transform:translateZ(0); }
   /* L'accueil et l'écran des groupes gardent la place de la barre : la
      dernière carte ne passe jamais dessous. Seulement quand la barre existe —
      sans elle, rien ne change. */
@@ -5579,8 +5610,24 @@
   .sheet-veil.page .settings-sheet.settings-sheet{ position:absolute; inset:0; width:auto; max-width:none; margin:0; border-radius:0;
     padding:0 var(--page-marge) calc(env(safe-area-inset-bottom) + 1.75rem);
     overflow-x:hidden; overflow-y:auto; overscroll-behavior:contain; -webkit-overflow-scrolling:touch; touch-action:pan-y;
-    background:none; box-shadow:none; transform:none; animation:none !important; transition:transform var(--tr-ouvre); will-change:auto; }
+    background:none; box-shadow:none; transform:none; animation:none !important; transition:transform var(--tr-ouvre), bottom var(--tr-ouvre); will-change:auto; }
   .sheet-veil.page .settings-sheet.settings-sheet.feuille-recule{ transform:translate3d(-22%,0,0); }
+  /* ===== UNE PAGE PASSE SOUS LE CLAVIER (v318) =====
+     « Ici, bug d'affichage. » (capture de Taylor, iPhone : « Rejoindre avec
+     un code », clavier ouvert — sous la page, une bande du désert, et la
+     barre « ˄ ˅ ✓ » d'iOS qui flottait dessus.) La règle des feuilles
+     (html.kb .sheet-veil, plus haut) ramène le VOILE entier à la hauteur
+     visible : une feuille, posée au bas de son voile, se pose ainsi sur le
+     clavier. Une page, elle, était COUPÉE au-dessus. Tant que le clavier
+     d'iOS était un bloc opaque collé au bas de l'écran, ça ne se voyait pas ;
+     celui d'iOS 26 a les coins arrondis et sa barre de boutons flotte,
+     détachée : ce qui est derrière se voit — et c'était le décor du jeu.
+     La page garde donc toute sa hauteur, son crème passe sous le clavier, et
+     c'est son CORPS (ce qui défile) qui s'arrête au bord du clavier, au même
+     pas que lui. Le champ se dégage comme avant : bringFieldIntoView mesure
+     le corps, pas le voile. */
+  html.kb .sheet-veil.page{ height:100%; }
+  html.kb .sheet-veil.page .settings-sheet.settings-sheet{ bottom:calc(100% - var(--vvh, 100%)); }
   .sheet-veil.page .rev-list, .sheet-veil.page .flam-list{ max-height:none; height:auto; overflow:visible; }
   /* LA BARRE DU HAUT. Elle déborde des marges de la page pour couvrir toute
      la largeur, et garde la zone de l'encoche. */
@@ -9319,7 +9366,7 @@ const SUPABASE_ANON_KEY = "sb_publishable_FDJ_R0foC7uIeHmxVrj6rA_2NeIgW2a";
    remontée d'un téléphone ne vaut rien si on ne sait pas QUELLE version
    tournait. Elle doit rester égale au CACHE de sw.js — c'est ce que vérifie
    banc-essai/version.js, qui refuse de laisser publier les deux en désaccord. */
-const VERSION_JEU = "v317";
+const VERSION_JEU = "v318";
 
 /* ===================== QUAND ÇA CASSE CHEZ UN JOUEUR =====================
    « Si quelque chose casse chez cinq d'entre eux sur un modèle de téléphone
@@ -11139,8 +11186,30 @@ function majPages(){
    S'il reste une page dessous, une nouvelle marque est posée. Une page
    fermée à l'écran retire la marque qu'elle avait posée. Une seule marque à
    la fois, quel que soit le nombre de pages : l'historique ne s'allonge pas. */
+/* ===== SUR iPHONE ET iPAD, AUCUNE MARQUE (v318) =====
+   « Lorsque je déplace la page, on dirait qu'il reste encore l'ancienne
+   version qui bug. » Capture de Taylor : en tirant une page depuis le bord
+   gauche, DEUX gestes partaient ensemble. Le nôtre (attacherRetourPage),
+   qui fait glisser la page au-dessus de l'écran vivant ; et celui d'iOS
+   qui, voyant une marque dans l'historique, faisait glisser l'APPLICATION
+   ENTIÈRE pour revenir en arrière — en montrant dessous une PHOTO de
+   l'écran prise au moment où la marque avait été posée, décalée vers la
+   gauche comme iOS décale toujours la page d'avant. C'était « l'ancienne
+   version » : la discussion figée, coupée net là où commençait
+   l'application qui glissait ; puis, dans l'application, la vraie
+   discussion ; puis la page. Les mesures de la capture vont dans ce sens :
+   la photo est décalée d'environ 0,3 fois le chemin qui reste à faire —
+   la parallaxe d'iOS — et l'application qui glisse a les coins arrondis
+   des cartes d'iOS.
+   La marque ne sert qu'au bouton retour d'Android. Un iPhone n'a pas de
+   bouton retour : il a le bord de l'écran, et ce geste-là est le nôtre. On
+   ne pose donc plus de marque sur iPhone ni sur iPad : iOS n'a plus rien à
+   remonter, et il ne reste qu'un geste. (Même test que IS_IOS, plus bas
+   dans le fichier : celui-ci doit être prêt avant.) */
+const MARQUE_INUTILE = /iP(hone|od|ad)/.test(navigator.userAgent) || (navigator.platform === "MacIntel" && navigator.maxTouchPoints > 1);
 let retourArme = false, retourAIgnorer = 0;
 function retourTelephone(n){
+  if(MARQUE_INUTILE) return;
   if(n > 0 && !retourArme){ try{ history.pushState({ yada:"page" }, ""); retourArme = true; }catch(e){} }
   else if(n === 0 && retourArme){
     retourArme = false; retourAIgnorer++;
@@ -20588,6 +20657,7 @@ const grp = {
   occupe:false,
   enCours:0,         // compteur des messages en route (identifiants provisoires)
   bloques:new Set(), // ceux que j'ai bloqués : leurs bulles partent tout de suite
+  retires:new Set(), // mes invitations que personne n'a prises : hors du fil sans attendre le serveur
   ageOk:false, reglesOk:false,   // les deux interrupteurs de la première fois
   listeEchec:false,  // la liste n'a pas pu être lue (réseau)
   etatLu:0           // quand mon_etat_groupes() a été lu pour la dernière fois
@@ -22229,15 +22299,15 @@ function filHtml(id){
      pour toujours, jusque dans l'aperçu de la liste. Le serveur, lui, vide
      déjà le texte : le fil ne garde plus rien de lui. (Un message MASQUÉ par
      la modération, lui, garde sa bulle : c'est une décision en cours.) */
-  const msgs = f.messages.filter(m => !m.supprime_le && (!m.auteur || !grp.bloques.has(m.auteur)));
+  const msgs = f.messages.filter(m => !m.supprime_le && !grp.retires.has(m.id) && (!m.auteur || !grp.bloques.has(m.auteur)));
   let h = f.tout ? "" : `<button class="grp-pill calme fil-plus" onclick="chargerPlusAncien(this)">${T("Messages plus anciens")}</button>`;
   if(!msgs.length) return h + `<div class="grp-vide">${T("Aucun message pour l'instant. Dis bonjour !")}</div>`;
   let jour = "", suite = [];
   const fermer = ()=>{ if(suite.length){ h += suiteHtml(suite); suite = []; } };
   msgs.forEach(m=>{
     const j = cleJour(m.cree_le);
-    if(j !== jour){ fermer(); jour = j; h += `<div class="b-jour">${escapeHtml(jourDuFil(m.cree_le))}</div>`; }
-    if(m.genre === "systeme"){ fermer(); const t = texteSysteme(m); if(t) h += `<div class="b-sys">${escapeHtml(t)}</div>`; return; }
+    if(j !== jour){ fermer(); jour = j; h += `<div class="b-jour" data-j="${escapeHtml(j)}">${escapeHtml(jourDuFil(m.cree_le))}</div>`; }
+    if(m.genre === "systeme"){ fermer(); const t = texteSysteme(m); if(t) h += `<div class="b-sys" data-m="${m.id}">${escapeHtml(t)}</div>`; return; }
     const p = suite[suite.length - 1];
     if(p && (p.auteur !== m.auteur || new Date(m.cree_le) - new Date(p.cree_le) > SUITE_MS)) fermer();
     suite.push(m);
@@ -22271,21 +22341,21 @@ function suiteHtml(suite){
 }
 function bulleHtml(m){
   const moi = !!m.auteur && m.auteur === monId();
-  if(m.masque) return `<button class="b-bulle b-vide" onclick="actionsMessage('${m.id}')">${T("Message masqué")}</button>`;
+  if(m.masque) return `<button class="b-bulle b-vide" data-m="${m.id}" onclick="actionsMessage('${m.id}')">${T("Message masqué")}</button>`;
   if(m.genre === "partie"){
     const code = String((m.donnees && m.donnees.code) || "").replace(/[^A-Z0-9]/g, "");
     const nom = (grp.profils[m.auteur] || {}).nom || T("Quelqu'un");
     /* Fermée par celui qui l'a lancée, ou vieille de plus de quarante-cinq
        minutes (la règle du serveur) : on ne la rejoint plus. */
     const finie = !!(m.donnees && m.donnees.fermee) || (Date.now() - new Date(m.cree_le || 0).getTime() > 45 * 60000);
-    return `<div class="b-bulle b-partie${finie ? " finie" : ""}" onclick="actionsMessage('${m.id}')">
+    return `<div class="b-bulle b-partie${finie ? " finie" : ""}" data-m="${m.id}" onclick="actionsMessage('${m.id}')">
         <span class="bp-ico">${ICONS.manette}</span>
         <b>${moi ? T("Tu lances une partie") : escapeHtml(Tf("{nom} lance une partie", { nom }))}</b>
         ${finie ? `<small>${T("Partie terminée")}</small>` : (moi ? `<small>${escapeHtml(Tf("Code {code}", { code }))}</small>` : "")}
         ${code && !finie ? `<button class="grp-pill" onclick="event.stopPropagation(); rejoindrePartieGroupe('${code}')">${T("Rejoindre la partie")}</button>` : ""}
       </div>`;
   }
-  return `<button class="b-bulle${m.id < 0 ? " envoi" : ""}${mentionneMoi(m) ? " me-nomme" : ""}" onclick="actionsMessage('${m.id}')">${texteAvecMentions(m)}</button>`;
+  return `<button class="b-bulle${m.id < 0 ? " envoi" : ""}${mentionneMoi(m) ? " me-nomme" : ""}" data-m="${m.id}" onclick="actionsMessage('${m.id}')">${texteAvecMentions(m)}</button>`;
 }
 function descendreFil(doux){
   const z = document.getElementById("fil");
@@ -22305,15 +22375,91 @@ function voilerFil(z){
 }
 /* Le fil se redessine sur place. S'il était au bas, il y reste ; sinon on ne
    l'arrache pas à sa lecture — une pastille propose de descendre. */
+/* ===== UN MESSAGE QUI S'EN VA SE REPLIE (v318) =====
+   « Lorsque je lance une partie puis reviens en arrière sans jouer, le
+   message de la partie disparaît brusquement. » Le fil se redessinait d'un
+   bloc : un message qui n'y a plus sa place — l'invitation que personne n'a
+   prise, un message supprimé, ceux d'une personne qu'on bloque — sautait
+   hors du fil d'une image à l'autre, et ce qui le suivait remontait d'un
+   coup.
+   Il part maintenant comme une ligne de joueur : il s'efface vite (0,15 s)
+   pendant que sa place se referme sur l'horloge des plis (--tr-plie) — avec
+   la date du jour, s'il ne reste plus rien à dater. Le pli annule aussi
+   l'écart du fil (row-gap) qu'il laisse derrière lui : une fois fini, le fil
+   a déjà sa forme d'après, et le redessin qui suit ne bouge rien.
+   Ce qui arrive PENDANT le pli attend sa fin (une demi-seconde au plus) : le
+   redessin le prend avec lui. Une bulle encore « en route » (identifiant
+   provisoire) ne se replie jamais — elle est REMPLACÉE par la vraie. */
 function majFil(){
   const z = document.getElementById("fil");
   if(!z || !grp.courant || state.screen !== "groupe") return;
+  const html = filHtml(grp.courant);
+  const partants = document.hidden ? [] : partantsDuFil(z, html);
+  if(partants.length){
+    const neufs = partants.filter(el => !el._plie);
+    if(neufs.length){
+      replierDansLeFil(z, neufs);
+      clearTimeout(z._repli);
+      z._repli = setTimeout(()=>{
+        z._repli = 0;
+        if(z.isConnected && grp.courant && state.screen === "groupe") poserFil(z, filHtml(grp.courant));
+      }, msPli() + 60);
+    }
+    return;
+  }
+  if(z._repli){ clearTimeout(z._repli); z._repli = 0; }
+  poserFil(z, html);
+}
+function poserFil(z, html){
   const enBas = z.scrollHeight - z.scrollTop - z.clientHeight < 90;
   const haut = z.scrollTop;
-  z.innerHTML = filHtml(grp.courant);
+  z.innerHTML = html;
   if(enBas) descendreFil(false);
   else { z.scrollTop = haut; const b = document.getElementById("filBas"); if(b) b.hidden = false; }
   voilerFil(z);
+}
+/* Ce qui est à l'écran et n'aura plus sa place : une bulle seule, ou sa suite
+   entière si toutes ses bulles partent (l'avatar, le nom et l'heure avec
+   elle), une ligne « système », une date sans plus rien dessous. */
+function partantsDuFil(z, html){
+  if(!z.querySelector("[data-m]")) return [];
+  const t = document.createElement("template");
+  t.innerHTML = html;
+  const reste = new Set();
+  t.content.querySelectorAll("[data-m]").forEach(e => reste.add(e.getAttribute("data-m")));
+  t.content.querySelectorAll("[data-j]").forEach(e => reste.add("j" + e.getAttribute("data-j")));
+  const part = (e)=>{ const k = e.getAttribute("data-m"); return +k > 0 && !reste.has(k); };
+  const out = [];
+  z.querySelectorAll(":scope > .b").forEach(b => {
+    const ms = b.querySelectorAll("[data-m]"), vont = [];
+    ms.forEach(e => { if(part(e)) vont.push(e); });
+    if(!vont.length) return;
+    if(vont.length === ms.length) out.push(b);
+    else out.push.apply(out, vont);
+  });
+  z.querySelectorAll(":scope > .b-sys[data-m]").forEach(e => { if(part(e)) out.push(e); });
+  z.querySelectorAll(":scope > [data-j]").forEach(e => { if(!reste.has("j" + e.getAttribute("data-j"))) out.push(e); });
+  return out;
+}
+function replierDansLeFil(z, els){
+  const haut = z.scrollTop;
+  const RESSORT = tempoPli(), EFFACE = "0.15s cubic-bezier(0.4,0,0.6,1)";
+  const departs = els.map(el => ({ el, h:el.getBoundingClientRect().height, G:parseFloat(getComputedStyle(el.parentNode).rowGap) || 0 }));
+  departs.forEach(({ el, h })=>{
+    el._plie = true;
+    el.style.transition = "none";
+    el.style.overflow = "hidden"; el.style.pointerEvents = "none"; el.style.boxSizing = "border-box";
+    el.style.height = h + "px"; el.style.minHeight = "0px";
+    el.style.transformOrigin = el.closest(".b-moi") ? "100% 50%" : (el.closest(".b-eux") ? "0 50%" : "50% 50%");
+  });
+  void z.offsetHeight;
+  departs.forEach(({ el, G })=>{
+    el.style.transition = "height " + RESSORT + ", padding " + RESSORT + ", margin " + RESSORT + ", transform " + RESSORT + ", opacity " + EFFACE;
+    el.style.height = "0px"; el.style.paddingTop = "0px"; el.style.paddingBottom = "0px";
+    el.style.marginTop = "0px"; el.style.marginBottom = (-G) + "px";
+    el.style.transform = "scale(0.94)"; el.style.opacity = "0";
+  });
+  if(z.scrollTop !== haut) z.scrollTop = haut;
 }
 
 /* ---------- ÉCRIRE ---------- */
@@ -22599,9 +22745,22 @@ function clorePartieGroupe(){
 }
 /* Personne n'est venu : l'invitation n'a plus rien à dire, elle part. Sinon
    elle reste, et dit « Partie terminée ». */
+/* ===== ELLE PART AVANT QU'ON REVIENNE (v318) =====
+   Elle attendait la réponse du serveur : on revenait dans la discussion,
+   l'invitation y était encore, et elle sautait hors du fil une demi-seconde
+   plus tard, sous les yeux. Elle quitte maintenant le fil de ce téléphone
+   tout de suite — avant même qu'on y revienne (grp.retires, que le fil
+   écarte comme un message supprimé) — et le serveur suit. S'il refuse, elle
+   revient, et dit « Partie terminée ». Chez les autres, c'est le serveur qui
+   la retire, et elle se replie (voir UN MESSAGE QUI S'EN VA SE REPLIE). */
 async function retirerInvitation(id, jouee){
+  if(!jouee){ grp.retires.add(+id); majFil(); }
   const r = await appelGroupe(jouee ? "fermer_partie" : "supprimer_message", { p_message:+id });
-  if(!r.ok && !jouee) appelGroupe("fermer_partie", { p_message:+id });
+  if(!r.ok && !jouee){
+    grp.retires.delete(+id);
+    await appelGroupe("fermer_partie", { p_message:+id });
+    majFil();
+  }
 }
 function rejoindrePartieGroupe(code){
   if(!/^[A-Z0-9]{4,8}$/.test(String(code || ""))) return;
