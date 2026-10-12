@@ -9944,11 +9944,18 @@ function choisirTestamentEnLigne(k){
    est déjà connu, et le nombre de livres sert de sigle — il se lit pareil
    dans les trois langues. */
 const ALEA_LIGNES = [["tout", "66", "Toute la Bible"], ["at", "39", "Ancien Testament"], ["nt", "27", "Nouveau Testament"]];
+/* ===== RIEN N'EST COCHÉ D'AVANCE (v316) =====
+   « C'est déjà sélectionné avant même que je sélectionne sur le mode
+     aléatoire. » La page cochait le dernier choix — « Toute la Bible » la
+   première fois —, comme les Versions de la Bible cochent la version qu'on
+   lit. Mais ici une ligne ne RÈGLE rien : elle LANCE la recherche. Une coche
+   avant le toucher disait qu'un choix était déjà fait. Les trois lignes
+   arrivent donc égales ; la coche paraît sous le doigt, sur la ligne
+   touchée, et la recherche part (lancerPartieAleatoire). */
 function ouvrirPartieAleatoire(){
   if(document.getElementById("aleaVeil") || net.searching) return;
-  const t = net.themeChoix || "tout";
   const lignes = ALEA_LIGNES.map(([k, n, nom]) =>
-    `<button class="bible-item${t === k ? " sel" : ""}" data-alea="${k}" onclick="lancerPartieAleatoire('${k}')">`
+    `<button class="bible-item" data-alea="${k}" onclick="lancerPartieAleatoire('${k}')">`
     + `<span class="bible-sig">${n}</span><span class="bible-txt"><b>${T(nom)}</b></span>`
     + `<span class="bible-ck">${ACH_CHECK}</span></button>`).join("");
   ouvrirFeuilleGroupe("aleaVeil", T("Partie aléatoire"), ICONS.bolt,

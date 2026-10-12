@@ -4,7 +4,10 @@
    Le serveur temps réel local (hub.js), plusieurs téléphones :
      1. toucher « Partie aléatoire » demande le testament (Toute la Bible /
         Ancien / Nouveau) et une ligne lance la recherche — l'écran En ligne,
-        lui, n'en porte plus (v313 : « pourquoi il y a les testaments ici ? ») ;
+        lui, n'en porte plus (v313 : « pourquoi il y a les testaments ici ? »).
+        Rien n'y est coché d'avance, ni la première fois ni après un choix
+        (v316 : « c'est déjà sélectionné avant même que je sélectionne ») : la
+        coche paraît sur la ligne touchée ;
      2. Ancien contre Nouveau : ils cherchent ensemble, et ne sont JAMAIS
         appariés ;
      3. arrive « Tout » : il est apparié à l'un des deux, et la partie se joue
@@ -62,10 +65,20 @@ const attends = (ms) => new Promise(r => setTimeout(r, ms));
     dit('l\'écran En ligne ne porte plus de puces de testament', await A.p.evaluate(() => !document.querySelector('#app > .screen:not(.screen-exit) .len-chip')));
     await A.p.evaluate(() => document.querySelector('#app > .screen:not(.screen-exit) .online-action').click());
     const feuille = await attendre(A, () => document.querySelectorAll('#aleaVeil [data-alea]').length === 3, 4000);
-    const lignes = await A.p.evaluate(() => [...document.querySelectorAll('#aleaVeil [data-alea]')].map(b => b.dataset.alea + (b.classList.contains('sel') ? '*' : '')).join(','));
-    dit('« Partie aléatoire » demande le testament : Toute la Bible, Ancien, Nouveau', feuille && lignes === 'tout*,at,nt', lignes);
+    const lire = () => A.p.evaluate(() => [...document.querySelectorAll('#aleaVeil [data-alea]')].map(b => b.dataset.alea + (b.classList.contains('sel') ? '*' : '')).join(','));
+    const lignes = await lire();
+    dit('« Partie aléatoire » demande le testament : Toute la Bible, Ancien, Nouveau — rien de coché', feuille && lignes === 'tout,at,nt', lignes);
     dit('… sans chercher encore', await A.p.evaluate(() => !net.searching));
-    await A.p.evaluate(() => document.querySelector('#aleaVeil [data-alea="at"]').click());
+    /* Un choix d'avant (le Nouveau Testament) ne se coche pas d'avance non plus. */
+    await A.p.evaluate(() => { fermerFeuilleGroupe('aleaVeil'); net.themeChoix = 'nt'; });
+    await attends(700);
+    await A.p.evaluate(() => ouvrirPartieAleatoire());
+    await attendre(A, () => document.querySelectorAll('#aleaVeil [data-alea]').length === 3 && !document.querySelector('#aleaVeil.closing'), 4000);
+    const lignes2 = await lire();
+    dit('… et rouverte après un choix, toujours rien de coché', lignes2 === 'tout,at,nt', lignes2);
+    const coche = await A.p.evaluate(() => { document.querySelector('#aleaVeil [data-alea="at"]').click();
+      return [...document.querySelectorAll('#aleaVeil [data-alea]')].map(b => b.dataset.alea + (b.classList.contains('sel') ? '*' : '')).join(','); });
+    dit('la coche paraît sur la ligne touchée, et elle seule', coche === 'tout,at*,nt', coche);
     const parti = await attendre(A, () => net.searching && !document.getElementById('aleaVeil'), 4000);
     dit('toucher « Ancien Testament » lance la recherche sur l\'Ancien, et la feuille s\'en va', parti && await A.p.evaluate(() => net.themeChoix === 'at'));
 
@@ -94,7 +107,9 @@ const attends = (ms) => new Promise(r => setTimeout(r, ms));
     await attendre(H, () => state.screen === 'online-room' && !!document.querySelector('[data-rgroup="theme"]'), 6000);
     const salon = await H.p.evaluate(() => [...document.querySelectorAll('[data-rgroup="theme"]')].map(b => b.dataset.k + (b.classList.contains('sel') ? '*' : '') + (b.disabled ? '-' : '')).join(','));
     const bloques = salon.split(',').filter(x => /-$/.test(x)).length;
-    dit('dans le salon, l\'hôte voit le testament convenu, les deux autres bloqués', bloques === 2 && salon.indexOf(attendu + '*') >= 0 && salon.indexOf(attendu + '*-') < 0, salon);
+    /* v316 : la quatrième puce, « Un livre », est bloquée elle aussi — l'autre
+       a accepté un testament, pas un seul de ses livres. */
+    dit('dans le salon, l\'hôte voit le testament convenu ; les deux autres et « Un livre », bloqués', bloques === 3 && /(^|,)bk-$/.test(salon) && salon.indexOf(attendu + '*') >= 0 && salon.indexOf(attendu + '*-') < 0, salon);
     await H.p.evaluate(() => { const b = [...document.querySelectorAll('[data-rgroup="theme"]')].find(x => x.disabled); if (b) b.click(); selectRoomOptTheme('tout'); });
     dit('… et toucher un autre testament n\'y change rien', (await etat(H)).theme === attendu);
 
