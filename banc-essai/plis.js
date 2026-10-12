@@ -92,8 +92,8 @@ const norme = (s) => (s || '').replace(/\s+/g, '');
     releves.push([nom, r]);
   };
 
-  await lire('testament (le pli)', "state.screen='parcours'; render();", '.tst .tst-body', 'grid-template-rows');
-  await lire('testament (chevron)', "", '.tst-chev', 'transform');
+  /* (Le pli du testament et son chevron sont partis à la v316 : chaque
+     testament ouvre sa page — voir pli.js.) */
   await attente(200);
   /* On lance une VRAIE partie : fabriquer des questions à la main finit
      toujours par mentir sur la forme réelle des données. */
@@ -268,10 +268,6 @@ const norme = (s) => (s || '').replace(/\s+/g, '');
       saut.toFixed(1).padStart(5) + ' px/image  |  80 % à ' + String(t80).padStart(4) + ' ms' + (bon ? '' : '   <-- SECOUSSE'));
   };
   console.log('');
-  await p.evaluate(() => { state.screen = 'parcours'; render(); });
-  await attente(700);
-  await profil('pli du testament', "toggleTst(document.querySelector('.tst-head'));", '.ach-card');
-  await attente(900);
   await p.evaluate(() => { state.screen = 'setup'; state.mode = 'group'; state.teams = [{name:'Taylor'},{name:'Sarah'}]; render(); });
   await attente(700);
   await profil('naissance d\'une ligne', "addTeam();", '.add-team');
