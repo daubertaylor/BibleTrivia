@@ -38,7 +38,7 @@ notre code, et il est éprouvé. Tout le reste l'est.
     node partage.js     # « Partager le jeu » fait toujours quelque chose
     node enpartie.js    # en partie : une horloge, aucun rebond, le bas avec le haut
     node pli.js         # déplier un testament glisse, et le verre suit
-    node englouti.js    # la liste des erreurs ne tombe pas du bord de l'écran
+    node englouti.js    # la page « Revoir mes erreurs » défile en entier, rien de tranché (v316)
     node plis.js        # tous les plis du jeu tournent-ils sur la même horloge ?
     node ouverture.js   # « créer une partie » : même vitesse, et sans saccade
     node motfin.js      # le mot de la fin ne se trompe jamais de joueur

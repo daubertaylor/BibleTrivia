@@ -97,6 +97,11 @@ const TOLERE = [
      anglais — c'est la tâche suivante, et le jour où elle sera faite ces
      lignes-là ne passeront plus par ici. */
   /^(La Sainte Bible|La Bible|Bible Annotée|Segond|Darby|Ostervald|Crampon|King James|American Standard|World English)/i,
+  /* L'ESPAGNOL ABRÈGE TESALONICENSES EN « TES. » (v316 : les vingt-sept
+     abrégés du Nouveau Testament se lisent maintenant dans sa page). Le
+     détecteur y voit le français « tes » ; le français, lui, écrit
+     « 1 Thess. ». Le motif est exact : ces deux abrégés-là, rien d'autre. */
+  /^[12] Tes\.$/,
 ];
 
 const PREP = (lg) => {
@@ -235,6 +240,16 @@ const MEME_DANS_LES_DEUX = [
      Ce n'est pas une phrase, c'est un repère : il s'écrit pareil partout,
      sinon on ne le retrouve pas. */
   { quoi:/^CONFIG EN LIGNE$/, ou:/info-card/, car:'le nom d\'un bloc de code, pas du texte' },
+  /* LA PAGE DU NOUVEAU TESTAMENT (v316) montre ses vingt-sept abrégés. Trois
+     s'écrivent pareil en anglais — LIVRES_COURTS_EN les porte exprès —, et
+     l'espagnol abrège Apocalipsis en « Apoc. », comme le français. */
+  { lg:'en', quoi:/^(Coloss\.|1 Thess\.|2 Thess\.)$/, ou:/bk-nm/, car:'la même abréviation, portée exprès par LIVRES_COURTS_EN' },
+  { lg:'es', quoi:/^Apoc\.$/, ou:/bk-nm/, car:'la même abréviation d\'Apocalipsis en espagnol' },
+  /* LA PAGE « UN LIVRE » (v316) dit à voix haute le nom de chaque livre et
+     son nombre de questions : « Ruth · 8 questions ». Neuf livres ont le même
+     nom en anglais, et « questions » s'écrit pareil. */
+  { lg:'en', quoi:/^(Ruth|1 Samuel|2 Samuel|Esther|Job|Lamentations|Daniel|Amos|Nahum|Jude|Joel) · \d+ questions?$/, ou:/bk-choix/,
+    car:'un nom de livre écrit pareil, un nombre, et « questions », le même mot en anglais' },
 ];
 /* Les endroits où un texte identique est normal quelle que soit la langue :
    l'initiale d'un avatar, le code du salon, un score, un chiffre.
@@ -327,6 +342,9 @@ const ouvrirLaLangue = async (p, lg) => {
     __fermerTout();
     localStorage.setItem('bt_stats', JSON.stringify({ bestScore:1, bestPct:o.best, games:o.games }));
     state.mode = 'solo'; state.daily = false; state.revision = !!o.revision;
+    /* Ce qui reste à rattraper se lit d'après la porte d'où l'on vient
+       (v316) : par la dernière partie, c'est bt_lastmiss — que l'étape pose. */
+    state.revisionDe = o.revision ? 'setup' : null;
     state.soloIsRecord = !!o.record;
     state.questions = seededDeck(21, '9', null);
     state.currentIndex = state.questions.length;
@@ -872,13 +890,17 @@ const ouvrirLaLangue = async (p, lg) => {
       state.screen='mode'; render(); ouvrirFlamme(); }],
     ['Profil',            () => { __fermerTout(); state.screen='profile'; render(); }],
     ['Progression',       () => { state.screen='parcours'; render(); }],
+    /* LES TESTAMENTS SONT DES PAGES (v316) : leurs sections — Pentateuque…,
+       Évangiles et Actes… — ne se peignent qu'à l'ouverture de chacune. */
+    ['Ancien Testament (page)',  () => { ouvrirTestament('at'); }],
+    ['Nouveau Testament (page)', () => { __fermerTout(); ouvrirTestament('nt'); }],
+    ['Progression (retour)',     () => { __fermerTout(); state.screen='parcours'; render(); }],
     ['À revoir',          () => { state.screen='revoir'; render(); }],
-    /* LE CARNET VIDE NE MONTRE PAS TOUT. Sans erreurs, la jauge, la liste des
-       livres et le compte des échéances ne sont pas peints du tout — six
-       intitulés que le banc ne voyait donc jamais. On remplit le carnet par le
-       CHEMIN DU JEU (errbookAdd), puis on avance deux échéances à aujourd'hui
-       et on rate deux questions une seconde fois, pour que les quatre portes
-       comptent quelque chose. */
+    /* LE CARNET VIDE NE MONTRE PAS TOUT. Sans erreurs, la jauge, la liste et
+       le compte ne sont pas peints du tout — des intitulés que le banc ne
+       verrait donc jamais. On remplit le carnet par le CHEMIN DU JEU
+       (errbookAdd : les erreurs sont d'aujourd'hui), et on rate deux
+       questions une seconde fois. */
     ['À revoir · rempli', () => {
       __fermerTout();
       localStorage.removeItem('bt_errbook');
@@ -886,69 +908,45 @@ const ouvrirLaLangue = async (p, lg) => {
       d.forEach(q => errbookAdd(q));
       errbookAdd(d[0]); errbookAdd(d[1]);
       const a = loadErrbook();
-      if(a[2]) a[2].du = dayKey(0);
-      if(a[3]) a[3].du = dayKey(0);
-      if(a[4]) a[4].p = 2;
+      if(a[4]) a[4].p = 2;      // une rattrapée : la jauge de la semaine a de quoi dire
       saveErrbook(a);
       localStorage.setItem('bt_lastmiss', JSON.stringify([qKey(d[0]), qKey(d[1])]));
-      modeRevoir = 'auj'; state.screen='revoir'; render(); }],
-    /* LES QUATRE MIRES ONT CHACUNE LEUR PHRASE, ET DEUX CHACUNE : celle qui
-       compte, et celle qui dit qu'il n'y a rien. L'écran n'en peint qu'une à
-       la fois — huit intitulés que le banc ne verrait jamais s'il se contentait
-       de la mire par défaut sur un carnet rempli. On les visite donc toutes,
-       pleines PUIS vides. */
-    ['À revoir · tenaces',  () => { modeRevoir='tenaces'; state.screen='revoir'; render(); }],
-    ['À revoir · un livre', () => { modeRevoir='livre';   state.screen='revoir'; render(); }],
-    ['À revoir · ma partie',() => { modeRevoir='partie';  state.screen='revoir'; render(); }],
-    ['À revoir · rien de raté', () => { localStorage.removeItem('bt_lastmiss');
-      modeRevoir='partie'; state.screen='revoir'; render(); }],
-    ['À revoir · rien ne résiste', () => {
-      const a = loadErrbook(); a.forEach(x=>{ x.n = 1; }); saveErrbook(a);
-      modeRevoir='tenaces'; state.screen='revoir'; render(); }],
-    ['À revoir · aucun livre', () => {
-      /* Un carnet dont aucune question ne nomme un livre : c'est le seul cas
-         où la mire du livre n'a rien à montrer. */
-      localStorage.setItem('bt_errbook', JSON.stringify([{ k:'sansLivre', n:1, p:0, du:dayKey(0),
-        q:'Combien de livres compte la Bible protestante\u00a0?', options:['66','73','39','27'],
-        correct:'66', fact:'', tier:'facile' }]));
-      modeRevoir='livre'; state.screen='revoir'; render(); }],
+      state.screen='revoir'; render(); }],
+    /* LA SECONDE CHANCE (v316) A TROIS ÉTATS, et chacun ses phrases : des
+       erreurs à rattraper (le nombre, la liste, « Et 12 autres ensuite », la
+       jauge), tout rattrapé cette semaine, et rien du tout. L'écran n'en
+       peint qu'un à la fois : on les visite tous. */
+    ['À revoir · une seule', () => {
+      const a = loadErrbook().slice(0, 1); a[0].p = 0; saveErrbook(a);
+      state.screen='revoir'; render(); }],
+    ['À revoir · tout rattrapé', () => {
+      const a = loadErrbook(); a.forEach(x => { x.p = 1; }); saveErrbook(a);
+      state.screen='revoir'; render(); }],
     ['À revoir · vide',    () => { localStorage.setItem('bt_errbook','[]');
       localStorage.removeItem('bt_acquises');
-      modeRevoir='auj'; state.screen='revoir'; render(); }],
-    /* LA CARTE DES MARCHES N'EXISTE QUE S'IL Y A QUELQUE CHOSE À MONTRER : un
-       carnet, ou des questions déjà acquises. Ses sept intitulés ne se peignent
-       donc jamais sur un carnet vide. */
-    ['À revoir · les marches', () => {
-      const d = seededDeck(4242, '9', null);
-      localStorage.removeItem('bt_errbook');
-      d.forEach(q => errbookAdd(q));
-      const a = loadErrbook();
-      a.forEach((x, i) => { x.p = i % 4; x.du = dayKey(0); });
-      saveErrbook(a);
-      marquerAcquise('essai-acquise-1'); marquerAcquise('essai-acquise-2');
-      modeRevoir='auj'; state.screen='revoir'; render(); }],
-    /* ON REMET LE CARNET COMME ON L'A TROUVÉ. Les sept scénarios ci-dessus
-       vident le carnet et effacent les erreurs de la dernière partie — et les
-       écrans qui viennent APRÈS en dépendent : la carte de l'accueil ne dit
-       « À réviser aujourd'hui » que s'il y a une échéance, et le bouton
-       « Réviser la dernière partie » n'existe que s'il reste des ratées. Un
-       scénario qui laisse l'état sale rend AVEUGLE tout ce qui le suit, et le
-       banc accuse alors le jeu de ne pas traduire des phrases qu'il n'a
-       simplement pas peintes. */
+      state.screen='revoir'; render(); }],
+    /* ON REMET LE CARNET COMME ON L'A TROUVÉ. Les scénarios ci-dessus vident
+       le carnet et effacent les erreurs de la dernière partie — et les écrans
+       qui viennent APRÈS en dépendent : la carte de l'accueil ne dit « Tes
+       erreurs récentes » que s'il y en a, et le bouton « Réviser la dernière
+       partie » n'existe que s'il reste des ratées. Un scénario qui laisse
+       l'état sale rend AVEUGLE tout ce qui le suit, et le banc accuse alors le
+       jeu de ne pas traduire des phrases qu'il n'a simplement pas peintes. */
     ['Carnet remis à l\'état rempli', () => {
       localStorage.removeItem('bt_errbook');
       const d = seededDeck(4242, '9', null);
       d.forEach(q => errbookAdd(q));
       errbookAdd(d[0]); errbookAdd(d[1]);
-      const a = loadErrbook();
-      if(a[2]) a[2].du = dayKey(0);
-      if(a[3]) a[3].du = dayKey(0);
-      saveErrbook(a);
       localStorage.setItem('bt_lastmiss', JSON.stringify([qKey(d[0]), qKey(d[1])]));
-      modeRevoir='auj'; state.screen='mode'; render(); }],
+      state.screen='mode'; render(); }],
     ['Réglages Groupe',   () => { state.mode='group'; state.screen='setup'; render(); }],
     ['Réglages Solo',     () => { state.mode='solo'; state.screen='setup'; render(); }],
     ['Partie Solo',       () => { state.mode='solo'; startGame(); }],
+    /* LA SECONDE CHANCE EN JEU (v316) : une bonne réponse, et le fait dit
+       « Rattrapée ! » au lieu de « Le savais-tu ? ». Par le vrai chemin : la
+       séance de l'écran À revoir, et une bonne réponse. */
+    ['Seconde chance · rattrapée', () => { __fermerTout(); startRevision('carnet');
+      const q = currentQ(); if (q) soloAnswer(q.shuffledOptions.indexOf(q.correct)); }],
     ['Fin de partie',     () => { state.screen='end'; render(); }],
     ['Nom en ligne',      () => { state.screen='online-name'; render(); }],
     ['Hub en ligne',      () => { net.connected=1; net.error=''; state.screen='online'; render(); }],
@@ -970,6 +968,16 @@ const ouvrirLaLangue = async (p, lg) => {
        colonne de droite, et il était resté en français pendant que le banc
        était vert — parce qu'aucune étape ne passait par là. */
     ['Salon · duel vide',  () => { net.joueurs={ b:{ id:'b', name:'Sam', color:'#E8574C' } }; net.oppPresent=false; net.opp=null; render(); }],
+    /* UN SEUL LIVRE (v316) : la page des livres, et le mot qui prévient
+       l'hôte quand un invité resté sur une version d'avant ne sait pas lire
+       un livre. Le mot passe par la fonction du jeu (lancerLaManche) ; seul
+       le départ de la manche est retenu — on relève des textes, on ne joue
+       pas. */
+    ['Salon · un livre',   () => { ouvrirChoixLivre(); }],
+    ['Salon · invité d\'avant', () => { __fermerTout();
+      const salon = net.room, depart = window.beginDuel;
+      net.livre = BIBLE_BOOKS[0]; net.room = { send(){} }; window.beginDuel = () => {};
+      try { lancerLaManche(); } finally { net.room = salon; window.beginDuel = depart; net.livre = null; } }],
     /* Une partie en ligne, posée à la main : la même pioche que le jeu, la
        réponse déjà révélée, pour voir aussi la carte du fait et le bouton
        « Question suivante ». */
@@ -1047,7 +1055,16 @@ const ouvrirLaLangue = async (p, lg) => {
        qu'aucun écran ne montre est une traduction qu'on ne peut pas relire. */
     ['Compte · repos',     () => { compte.dispo = true; compte.session = null; compte.etape = 'repos';
       compte.message = ''; state.screen = 'profile'; render(); }],
-    ['Compte · deux portes',() => { compte.google = true; compteOuvrir(); }],
+    /* LA SONDE GOOGLE INTERROGE LE VRAI SERVEUR (/auth/v1/settings, appelée
+       par compteOuvrir), où Google est fermé : selon la vitesse du réseau,
+       elle retirait le bouton avant ou après le relevé, et « Continuer avec
+       Google » passait pour jamais vu une fois sur deux, dans une langue ou
+       dans l'autre. On lui donne sa réponse d'avance (le souvenir qu'elle
+       garde elle-même) : c'est un relevé de textes, pas un essai de la
+       connexion. */
+    ['Compte · deux portes',() => {
+      try { localStorage.setItem(CLE_GOOGLE, JSON.stringify({ ok:true, quand:Date.now() })); } catch(e){}
+      compte.google = true; compteOuvrir(); }],
     ['Compte · pas une adresse', () => { compte.message = T("Cette adresse n'a pas l'air d'une adresse."); majCarteCompte(); }],
     ['Compte · envoi refusé',    () => { compte.message = T("Impossible d'envoyer le code pour l'instant."); majCarteCompte(); }],
     ['Compte · trop d\'essais',  () => { compte.message = T("Trop d'essais d'affilée. Attends une minute, puis réessaie."); majCarteCompte(); }],

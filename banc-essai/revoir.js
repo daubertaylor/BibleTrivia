@@ -38,20 +38,24 @@ function v(nom, a, b){ const bon=JSON.stringify(a)===JSON.stringify(b); if(!bon)
   await ev(()=>{ localStorage.setItem('bt_errbook', JSON.stringify([{k:'vieux', n:1, q:'Q ?', options:['a','b'], correct:'a', fact:'F', tier:'moyen'}])); });
   v("une entrée d'avant la mise à jour est à revoir tout de suite", await ev(()=>aRevoir().length), 1);
 
-  /* la carte de l'accueil */
-  await ev(()=>{ state.screen='mode'; render(); });
+  /* la carte de l'accueil — LA SECONDE CHANCE (v316) : elle compte les
+     erreurs RÉCENTES pas encore sues, plus ce dont l'échelle dit que le jour
+     est venu. L'entrée d'avant l'échelle ci-dessus n'a ni « rate » ni
+     « maj » : elle est à revoir pour l'échelle (les parties Solo la
+     ressortent), mais elle n'a pas d'âge, donc pas de seconde chance. Une
+     erreur d'aujourd'hui, si. */
+  await ev(()=>{ localStorage.setItem('bt_errbook','[]'); errbookAdd(__q); state.screen='mode'; render(); });
   await p.waitForTimeout(600);
   v("la carte « À revoir » apparaît", await ev(()=>!!document.querySelector('.revoir-card')), true);
-  /* LA PASTILLE DIT LA SÉANCE, jamais la dette : dix au plus, et exactement le
-     nombre que l'écran suivant affichera. */
+  /* LA PASTILLE DIT LA SÉANCE, jamais la dette : cinq au plus, et exactement
+     le nombre que l'écran suivant affichera. */
   v("et elle dit la séance qui attend", await ev(()=>{ const e=document.querySelector('.rv-n'); return e?e.textContent:''; }), "1");
   v("  jamais plus que le lot", await ev(()=>{
     const d = seededDeck(777, '9', null); d.forEach(q=>errbookAdd(q));
-    const a = loadErrbook(); a.forEach(x=>{ x.du = dayKey(0); }); saveErrbook(a);
     state.screen='mode'; render();
     const e = document.querySelector('.rv-n');
-    return [loadErrbook().length > REVISION_LOT, e ? +e.textContent : -1];
-  }), [true, 10]);
+    return [loadErrbook().length > REVISION_LOT, REVISION_LOT, e ? +e.textContent : -1];
+  }), [true, 5, 5]);
   /* ===== LA CARTE NE PART PLUS, MÊME À VIDE (v219) =====
      Le banc exigeait ici l'inverse : « rien à revoir, pas de carte ». C'était
      la règle jusqu'à ce que Taylor demande le contraire, et pour une raison de
@@ -68,12 +72,13 @@ function v(nom, a, b){ const bon=JSON.stringify(a)===JSON.stringify(b); if(!bon)
   v("carnet vide : la carte reste", await ev(()=>!!document.querySelector('.revoir-card')), true);
   v("  et elle le dit", await ev(()=>{ const e=document.querySelector('.revoir-card .dc-txt small'); return e?e.textContent:''; }), "Tes erreurs reviendront ici");
   v("  sans pastille", await ev(()=>!!document.querySelector('.revoir-card .rv-n')), false);
-  /* Rien pour AUJOURD'HUI, mais le carnet n'est pas vide : troisième état. */
+  /* Troisième état (v316) : tout ce qui a été raté cette semaine a été su
+     depuis. La carte le fête. */
   await ev(()=>{ localStorage.setItem('bt_errbook', JSON.stringify([
-    {k:'plustard', n:1, p:1, du:dayKey(3), q:'Q ?', options:['a','b'], correct:'a', fact:'F', tier:'moyen'}]));
+    {k:'plustard', n:1, p:1, du:dayKey(3), rate:Date.now() - 3600000, maj:Date.now(), q:'Q ?', options:['a','b'], correct:'a', fact:'F', tier:'moyen'}]));
     state.screen='mode'; render(); });
   await p.waitForTimeout(500);
-  v("rien pour aujourd'hui, mais le carnet n'est pas vide", await ev(()=>{ const e=document.querySelector('.revoir-card .dc-txt small'); return e?e.textContent:''; }), "Rien pour aujourd'hui");
+  v("tout est rattrapé cette semaine", await ev(()=>{ const e=document.querySelector('.revoir-card .dc-txt small'); return e?e.textContent:''; }), "Tout est rattrapé");
   /* ET PLUS AUCUNE PASTILLE CE JOUR-LÀ. Il y avait ici une pastille grise qui
      disait la taille du carnet les jours sans échéance — 143, 209, 356.
      « Il ne faut pas submerger le joueur avec un tas énorme de choses à
@@ -100,8 +105,11 @@ function v(nom, a, b){ const bon=JSON.stringify(a)===JSON.stringify(b); if(!bon)
      vide ne casse pas l'écran, il le DIT. On la nomme donc enfin pour ce
      qu'elle est — un zéro qu'on peut lire, un bouton qui refuse de partir pour
      rien — et plus par le nombre de rangées qui l'entourent. */
-  v("  carnet vide : l'écran affiche zéro", await ev(()=>{ const e=document.querySelector('.rv-nb'); return e?e.textContent:''; }), "0");
-  v("  et le bouton ne part pas pour rien", await ev(()=>!!document.querySelector('.rv-go[disabled]')), true);
+  /* v316 : un carnet vide ne montre plus un zéro et un bouton éteint — il dit
+     « Rien à rattraper », et le bouton mène à une partie Solo, là où les
+     erreurs naissent. */
+  v("  carnet vide : l'écran le dit", await ev(()=>{ const e=document.querySelector('.rv-titre'); return e?e.textContent:''; }), "Rien à rattraper");
+  v("  et le bouton mène au Solo", await ev(()=>{ const b=document.querySelector('.rv-go'); return !!b && !b.disabled && /jouerSoloDepuisRevoir/.test(b.getAttribute('onclick')||''); }), true);
   v("  ni portes ni grille de livres", await ev(()=>document.querySelectorAll('.rv-choix, .rvl-card .bk').length), 0);
   await ev(()=>{ state.screen='mode'; render(); });
   await p.waitForTimeout(500);
@@ -166,25 +174,8 @@ function v(nom, a, b){ const bon=JSON.stringify(a)===JSON.stringify(b); if(!bon)
   v("se retromper en révision ramène au palier 0, dès demain",
     [rechute.p, rechute.du === await ev(()=>dayKey(1))], [0, true]);
 
-  /* « Où en sont tes erreurs » : une marche vide est VIDE. Elle gardait 6 %
-     de remplissage, soit un trait de sa couleur au bas de chaque tuile vide —
-     un liseré de couleur, et il n'y en a nulle part dans ce jeu (v313). Une
-     marche qui compte, elle, prend un vrai pavé, pas un trait. */
-  const marches = await ev(()=> new Promise(res=>{
-    localStorage.setItem('bt_errbook','[]'); localStorage.setItem('bt_acquises','{}');
-    BANK.moyen.slice(0, 12).forEach(q=>errbookAdd(q));
-    const a = loadErrbook(); a[0].p = 1; saveErrbook(a);           // 11 à apprendre, 1 vue une fois
-    ouvrirRevoir();
-    setTimeout(()=>res([...document.querySelectorAll('#app > .screen:not(.screen-exit) .mr-col')].map(c=>{
-      const bar = c.querySelector('.mr-bar').getBoundingClientRect().height, i = c.querySelector('.mr-bar i').getBoundingClientRect().height;
-      return { n:+c.querySelector('b').textContent, i:+i.toFixed(1), part:+(i/bar).toFixed(2) }; })), 900);
-  }));
-  v("les cinq marches sont là", marches.length, 5);
-  v("une marche à zéro ne peint rien, pas même un trait",
-    marches.filter(m=>m.n===0).map(m=>m.i), marches.filter(m=>m.n===0).map(()=>0));
-  v("une marche qui compte prend un pavé (un cinquième au moins)",
-    marches.filter(m=>m.n>0).every(m=>m.part>=0.19), true);
-  v("la plus haute remplit sa tuile", Math.max.apply(null, marches.map(m=>m.part)), 1);
+  /* (« Où en sont tes erreurs » et ses cinq marches sont partis avec l'écran
+     d'avant la v316 : voir seconde-chance.js pour l'écran d'aujourd'hui.) */
 
   if(errs.length){ ko++; console.log('  erreurs : '+[...new Set(errs)].slice(0,3).join(' | ')); }
   await b.close();

@@ -29,7 +29,8 @@ const DEPART = {
 /* Chaque geste que le joueur peut faire et qui approche la progression. */
 const GESTES = [
   ['ouvrir la progression',   "state.screen='parcours'; render();"],
-  ['déplier un testament',    "var t=document.querySelector('.tst-head'); if(t) t.click();"],
+  ['ouvrir un testament',     "var t=document.querySelector('.tst-head'); if(t) t.click();"],
+  ['refermer sa page',        "try{ fermerFeuilleGroupe('tstVeil'); }catch(e){}"],
   ['ouvrir le profil',        "state.screen='profile'; render();"],
   ['changer de nom',          "profile.name='Taylor-2'; saveProfile(); render();"],
   ['changer de couleur',      "profile.color='#EE4A28'; saveProfile(); render();"],
