@@ -22040,7 +22040,7 @@ function renderGroupe(){
     </div>
     <div class="card fil-carte">
       <div id="fil" onscroll="surDefilementFil(this)">${filHtml(g.id)}</div>
-      <button class="fil-bas" id="filBas" hidden onclick="descendreFil(true)">${T("Nouveaux messages")}</button>
+      <button class="fil-bas" id="filBas" hidden onpointerdown="event.preventDefault()" onmousedown="event.preventDefault()" onclick="descendreFil(true)">${T("Nouveaux messages")}</button>
     </div>
     ${enLecture()
       ? `<div class="compo compo-lecture" id="compo"><div class="compo-in"><span class="ico">${ICONS.bouclier}</span><span>${T("Lecture seule · modération")}</span></div></div>`
@@ -22187,7 +22187,7 @@ function compoHtml(){
   return `<button class="compo-jeu" onclick="lancerPartieGroupe(this)" aria-label="${T("Lancer une partie")}">${ICONS.manette}</button>
     <textarea class="compo-texte" id="compoTexte" rows="1" maxlength="500" placeholder="${T("Écris un message…")}" enterkeyhint="send"
       oninput="surSaisie(this)" onkeydown="if(event.key==='Enter' && !event.shiftKey && !event.isComposing){event.preventDefault();envoyerMessageGroupe();}"></textarea>
-    <button class="compo-envoi" id="compoEnvoi" onclick="envoyerMessageGroupe()" aria-label="${T("Envoyer")}" disabled>${ICONS.envoyer}</button>`;
+    <button class="compo-envoi" id="compoEnvoi" onpointerdown="event.preventDefault()" onmousedown="event.preventDefault()" onclick="envoyerMessageGroupe()" aria-label="${T("Envoyer")}" disabled>${ICONS.envoyer}</button>`;
 }
 /* Le compositeur suit l'état de sourdine sans perdre ce qui est en cours de
    frappe : on ne le redessine que si l'état change. */
@@ -22209,7 +22209,16 @@ function surSaisie(t){
   /* Ce qu'on écrit survit à une relance, à un changement de langue. */
   if(grp.courant && t.id === "compoTexte") memoriserBrouillon(grp.courant, t.value);
 }
-/* ENVOYER : la bulle part tout de suite, en attente ; le serveur décide. S'il
+/* ===== ENVOYER NE FERME PAS LE CLAVIER (v316) =====
+   « Lorsque je mets le clavier dans un groupe, à certains moments il
+     redescend. » C'était à chaque ENVOI : toucher la flèche donnait le foyer
+   au bouton, le champ le perdait, et le clavier redescendait — il fallait
+   retoucher le champ pour écrire la suite. Mesuré : « focusout compoTexte
+   vers compoEnvoi », puis kb-fil retiré. Le bouton d'envoi (et la pastille
+   « Nouveaux messages ») ne prennent plus le foyer : pointerdown et
+   mousedown sans suite, le toucher reste un toucher, le clic part, et le
+   champ garde son clavier — comme dans toutes les messageries.
+   ENVOYER : la bulle part tout de suite, en attente ; le serveur décide. S'il
    refuse (mot interdit, trop vite, coordonnées), la bulle s'en va, le texte
    revient dans le champ, et on dit pourquoi. Rien n'est perdu. */
 async function envoyerMessageGroupe(){

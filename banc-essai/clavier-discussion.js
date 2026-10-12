@@ -12,7 +12,11 @@
      4. on touche « i », clavier ouvert — que le champ perde le foyer avant le
         toucher (Android) ou après (iOS) : la feuille monte d'UN SEUL
         mouvement, du bas de l'écran, sans jamais redescendre ;
-     5. aucune erreur.
+     5. ENVOYER NE FERME PAS LE CLAVIER (v316 : « à certains moments il
+        redescend » — c'était à chaque envoi) : on écrit, on touche la
+        flèche, le message part et le champ garde le foyer ; pareil pour la
+        pastille « Nouveaux messages » ;
+     6. aucune erreur.
    Usage : node banc-essai/clavier-discussion.js [url] */
 const { chromium } = require('/opt/node22/lib/node_modules/playwright');
 const URL = process.argv[2] || 'http://127.0.0.1:8099/index.html';
@@ -111,7 +115,30 @@ async function telephone(nav){
     if (errs.length) dit('aucune erreur', false, errs.slice(0, 2).join(' | '));
     await ctx.close();
   }
+  /* ---- 5 : envoyer garde le clavier ---- */
+  {
+    const { p, ctx, errs } = await telephone(nav);
+    await p.evaluate(() => { window.__kb = true; window.__envois = 0;
+      const vraie = window.envoyerMessageGroupe; window.envoyerMessageGroupe = function(){ window.__envois++; return vraie.apply(this, arguments); };
+      document.getElementById('compoTexte').focus({ preventScroll: true }); window.visualViewport.dispatchEvent(new Event('resize')); });
+    await p.waitForTimeout(700);
+    await p.locator('#compoTexte').pressSequentially('on joue ce soir ?');
+    const pertes = await p.evaluate(() => { window.__pertes = 0; document.getElementById('compoTexte').addEventListener('blur', () => window.__pertes++); return 0; });
+    await p.locator('#compoEnvoi').tap();
+    await p.waitForTimeout(600);
+    const e = await p.evaluate(() => ({ envois: window.__envois, foyer: (document.activeElement || {}).id || '', pertes: window.__pertes,
+      fil: document.documentElement.classList.contains('kb-fil') }));
+    dit('toucher la flèche envoie le message', e.envois === 1, e.envois + ' envoi(s)');
+    dit('… et le champ garde le foyer : le clavier reste levé', e.foyer === 'compoTexte' && e.pertes === 0 && e.fil, JSON.stringify(e));
+    await p.evaluate(() => { const b = document.getElementById('filBas'); if (b) b.hidden = false; });
+    await p.locator('#filBas').tap();
+    await p.waitForTimeout(500);
+    const f = await p.evaluate(() => ({ foyer: (document.activeElement || {}).id || '', pertes: window.__pertes }));
+    dit('la pastille « Nouveaux messages » non plus ne le ferme pas', f.foyer === 'compoTexte' && f.pertes === 0, JSON.stringify(f));
+    if (errs.length) dit('aucune erreur', false, errs.slice(0, 2).join(' | '));
+    await ctx.close();
+  }
   await nav.close();
-  console.log(ko ? '\n  ECHEC — ' + ko + ' point(s)' : '\n  OK — le clavier ne fait plus bouger la discussion, et la feuille monte d\'un trait');
+  console.log(ko ? '\n  ECHEC — ' + ko + ' point(s)' : '\n  OK — le clavier ne fait plus bouger la discussion, la feuille monte d\'un trait, et envoyer ne le ferme pas');
   process.exit(ko ? 1 : 0);
 })();
