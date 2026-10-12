@@ -755,3 +755,30 @@ bornes BASSES (au moins 7 % d'enfoncement, au moins 1,2 % de ressort, au moins
 4° de bascule) et `agitation.js` les bornes HAUTES. Un banc qui n'a que des
 bornes basses ne freine rien — il pousse. C'est comme ça que j'en étais arrivé
 à 162 °/s sans qu'aucun voyant ne s'allume.
+
+## Ce que la machine ne peut pas montrer, on en garde la cause (v318)
+
+Deux reproches de Taylor le même jour, et aucun banc ne pouvait les filmer :
+Chromium n'est pas Safari, et un banc ne fait pas glisser un iPhone.
+
+**L'onglet vide.** De retour d'une page, la pastille corail de la barre du bas
+était là, mais vide — ni la bulle ni le mot. Chromium peint le mot au-dessus
+de la pastille quoi qu'il arrive : un banc qui compte les pixels blancs est
+vert avant la correction comme après. Ce qui séparait Groupes d'Accueil, c'est
+une règle de la feuille de style : `translate3d` d'un côté, rien de l'autre —
+donc une couche à part d'un côté seulement, et un mot qui ne passait devant
+que si Safari refaisait un calcul de chevauchement. `barre-onglet.js` lit les
+RÈGLES (pas la matrice calculée : `translate3d(x, 0, 0)` se calcule en une
+matrice plate, alors que c'est bien une opération 3D, celle que les moteurs
+regardent), et refuse toute couche à part dans la barre au repos.
+
+**L'ancienne version.** En tirant une page depuis le bord, deux gestes
+partaient : le nôtre, et celui d'iOS, réveillé par la marque qu'on posait dans
+l'historique pour le bouton retour d'Android. Le geste d'iOS montrait une
+PHOTO de l'écran prise au moment de la marque. Un banc ne peut pas faire
+glisser le téléphone ; il peut vérifier qu'aucune marque n'est posée sur un
+iPhone, et qu'Android garde la sienne. C'est `historique-page.js`.
+
+Dans les deux cas, le banc dit franchement ce qu'il ne voit pas, et il tient
+ce qui rend le défaut possible. Un banc vert à l'écran, quand le défaut ne
+naît que sur le téléphone, ne prouve rien : c'est la cause qu'il faut tenir.
