@@ -562,7 +562,11 @@
      la hauteur visible, sans cale ni défilement, et y glisse à la vitesse du
      clavier d'iOS. La marge du bas n'a plus de barre d'accueil à éviter. */
   html.ecran-discussion #app{ transition:height var(--tr-ouvre), padding-bottom var(--tr-ouvre); }
-  html.kb.kb-fil #app, html.tel-fige.kb.kb-fil #app, html.tel-fige.kb.kb-fil:not(.is-standalone) #app{ height:var(--vvh, 100%); padding-bottom:0.45rem; }
+  /* !important (v317) : une hauteur ÉPINGLÉE en ligne (reparerHauteurApp)
+     passait devant cette règle, et la barre d'écriture redescendait sous le
+     clavier. Clavier ouvert dans une discussion, c'est la hauteur visible qui
+     décide, quoi qu'on ait épinglé avant. */
+  html.kb.kb-fil #app, html.tel-fige.kb.kb-fil #app, html.tel-fige.kb.kb-fil:not(.is-standalone) #app{ height:var(--vvh, 100%) !important; padding-bottom:0.45rem; }
   html.kb.kb-fil #app::after{ content:none; }
   /* ÉLÉVATION PAR DÉFAUT DE TOUTE SURFACE DE VERRE. --rim-cast est une propriété
      personnalisée, donc HÉRITÉE : sans cette déclaration, une puce posée dans une
@@ -5168,6 +5172,15 @@
   .grp-nl{ min-width:1.3rem; height:1.3rem; padding:0 0.36rem; border-radius:var(--r-full); background:var(--primary); color:#fff;
     font-style:normal; font-size:0.72rem; font-weight:700; display:flex; align-items:center; justify-content:center; }
   .grp-nl.vide{ visibility:hidden; }
+  /* v317 : un groupe qui se tait compte en gris ; un « @ » en couleur quand
+     quelqu'un m'a nommé. La marque du réglage vit à côté de l'heure. */
+  .grp-nls{ display:flex; align-items:center; gap:0.25rem; }
+  .grp-nl.calme{ background:rgba(58,42,26,0.15); color:var(--ink-soft); }
+  .grp-nl.grp-at{ padding:0; width:1.3rem; font-size:0.78rem; }
+  .grp-droite small{ display:inline-flex; align-items:center; gap:0.22rem; }
+  .grp-mode{ display:inline-flex; width:0.86rem; height:0.86rem; flex-shrink:0; color:var(--ink-soft); }
+  .grp-mode svg{ width:100%; height:100%; }
+  .grp-mode-at{ width:auto; height:auto; font-weight:700; font-size:0.74rem; line-height:1; }
   /* LES PILULES. Discrètes à l'œil (2,2 rem), pas au doigt : une zone
      invisible et centrée de 44 px attrape le toucher. Possible ici parce
      qu'une pilule ne porte pas de verre, donc pas de découpe. */
@@ -5253,6 +5266,14 @@
   /* Les deux phrases d'aide dans la même case : elle a la hauteur de la plus
      longue, et rien en dessous ne bouge quand on change de type. */
   .grp-aide-type{ display:grid; }
+  /* Les notifications d'un groupe : trois puces d'une ligne, comme la durée
+     et le chrono du salon. */
+  .grp-types.grp-notifs{ grid-template-columns:repeat(3, minmax(0, 1fr)); }
+  .grp-notifs .len-chip{ font-family:'Poppins',sans-serif; font-weight:600; font-size:0.92rem; }
+  .grp-notifs + .grp-aide-type{ margin:0.55rem 0.2rem 0.9rem; }
+  /* La phrase se pose juste sous les puces ; la place réservée à la plus
+     longue reste dessous, là où elle ne se voit pas. */
+  .grp-notifs + .grp-aide-type > span{ align-self:start; }
   .grp-aide-type > span{ grid-area:1 / 1; align-self:center; opacity:0; visibility:hidden; transition:opacity 0.2s ease, visibility 0s linear 0.2s; }
   .grp-aide-type > span.vu{ opacity:1; visibility:visible; transition:opacity 0.2s ease 0.05s, visibility 0s; }
   /* ===== LES COULEURS DU GROUPE SE CHOISISSENT COMME CELLES DU PROFIL =====
@@ -5385,6 +5406,30 @@
   .groupe-ecran .compo-jeu, .groupe-ecran .b-partie .bp-ico{ color:var(--grp-fonce, var(--primary)); }
   .groupe-ecran .b-partie .grp-pill:not(.calme){ background:var(--grp-c, var(--primary)); color:var(--grp-txt, #fff); }
   .b-bulle.envoi{ opacity:0.62; }
+  /* LES MENTIONS (v317). Le nom nommé en gras, dans la couleur du groupe sur
+     le crème, dans celle du texte sur ma propre bulle. Une bulle qui me nomme
+     prend un fond doré — un fond, jamais un trait. */
+  .b-bulle .mention{ font-weight:700; color:var(--grp-fonce, var(--primary-dark)); }
+  .b-moi .b-bulle .mention{ color:inherit; }
+  .b-eux .b-bulle.me-nomme{ background:rgb(255,239,204); }
+  /* LES NOMS PROPOSÉS APRÈS « @ » : posés au-dessus du bas du fil, sans rien
+     pousser — le fil ne bouge pas d'un pixel quand ils paraissent. */
+  .compo-noms{ position:absolute; left:0.45rem; right:0.45rem; bottom:0.45rem; z-index:3; display:flex; flex-direction:column;
+    max-height:calc(4 * 44px + 0.7rem); overflow-y:auto; overscroll-behavior:contain; padding:0.35rem; border-radius:var(--r-l);
+    background:rgb(252,248,241); box-shadow:0 2px 6px rgba(34,26,16,0.10), 0 10px 28px rgba(34,26,16,0.18);
+    animation:cnArrive 0.2s cubic-bezier(0.2,0.9,0.3,1) both; }
+  .compo-noms[hidden]{ display:none; }
+  @keyframes cnArrive{ from{ opacity:0; transform:translateY(0.35rem); } to{ opacity:1; transform:none; } }
+  .cn-nom{ display:flex; align-items:center; gap:0.6rem; width:100%; min-height:44px; flex-shrink:0; padding:0.3rem 0.55rem; border:0; border-radius:var(--r-m);
+    background:none; text-align:left; color:var(--ink); font-family:'Poppins',sans-serif; font-size:0.95rem; -webkit-tap-highlight-color:transparent; }
+  .cn-nom:active{ background:rgba(42,36,30,0.06); }
+  .cn-nom b{ flex:1; min-width:0; font-weight:600; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+  .cn-nom small{ flex-shrink:0; font-family:'Inter',sans-serif; font-size:0.76rem; font-weight:600; color:var(--ink-soft); }
+  .cn-nom.off b{ color:var(--ink-soft); }
+  .cn-nom .cn-ico{ width:1.85rem; height:1.85rem; flex-shrink:0; border-radius:50%; display:flex; align-items:center; justify-content:center;
+    padding:0.4rem; background:var(--grp-c, var(--primary)); color:var(--grp-txt, #fff); }
+  .cn-nom.off .cn-ico{ background:rgba(58,42,26,0.15); color:var(--ink-soft); }
+  .cn-nom .cn-ico svg{ width:100%; height:100%; }
   .b-heure{ font-size:0.72rem; color:var(--ink-soft); margin:0.05rem 0.85rem 0.35rem; }
   .b-vide{ font-style:italic; color:var(--ink-soft) !important; background:rgba(252,248,241,0.6) !important; box-shadow:none !important; }
   .b-partie{ display:flex; flex-direction:column; align-items:flex-start; gap:0.45rem; padding:0.85rem 0.9rem 0.95rem; }
@@ -5745,7 +5790,7 @@ const TEXTES = {
     "Ta seconde chance":"Your second chance",
     "Seconde chance":"Second chance",
     "Jouer en Solo":"Play Solo",
-    "Une bonne réponse, et l'erreur est rattrapée. Au bout de sept jours, elle s'efface d'ici.":"One right answer and the mistake is fixed. After seven days, it leaves this list.",
+    "Une bonne réponse, et l'erreur est rattrapée. Seules tes {n} dernières erreurs restent ici, sept jours au plus.":"One right answer and the mistake is fixed. Only your last {n} mistakes stay here, for seven days at most.",
     "Tes erreurs récentes":"Your recent mistakes",
     "Tout est rattrapé\u00a0!":"All caught up!",
     "Plus rien à rattraper, bravo\u00a0!":"Nothing left to fix, well done!",
@@ -6357,6 +6402,18 @@ const TEXTES = {
     "La suppression n'a pas abouti. Réessaie dans un instant.":"The deletion didn't go through. Try again in a moment.",
     "Ton compte a été supprimé. Ta progression est toujours sur ce téléphone.":"Your account has been deleted. Your progress is still on this phone.",
     "{n}/66 livres maîtrisés":"{n}/66 books mastered",
+    /* LES MENTIONS ET LES NOTIFICATIONS D'UN GROUPE (v317) */
+    "Seuls les admins du groupe peuvent prévenir tout le monde.":"Only the group's admins can notify everyone.",
+    "Tout le monde a déjà été prévenu trois fois cette heure-ci. Réessaie plus tard.":"Everyone has already been notified three times this hour. Try again later.",
+    "Pas encore disponible. Réessaie plus tard.":"Not available yet. Try again later.",
+    "Notifications":"Notifications",
+    "Mentions":"Mentions",
+    "Muet":"Muted",
+    "Chaque nouveau message t'est signalé.":"You're alerted to every new message.",
+    "Seuls les messages qui te nomment, ou qui s'adressent à tout le monde, te sont signalés.":"You're only alerted to messages that mention you or that are meant for everyone.",
+    "Ce groupe ne te signale plus rien. Ses messages t'attendent quand tu l'ouvres.":"This group no longer alerts you. Its messages are waiting whenever you open it.",
+    "@tout le monde":"@everyone",
+    "Réservé aux admins":"Admins only",
   },
   es: {
     /* LES TESTAMENTS DEVIENNENT DES PAGES (v316) : les sections. */
@@ -6389,7 +6446,7 @@ const TEXTES = {
     "Ta seconde chance":"Tu segunda oportunidad",
     "Seconde chance":"Segunda oportunidad",
     "Jouer en Solo":"Jugar en Solo",
-    "Une bonne réponse, et l'erreur est rattrapée. Au bout de sept jours, elle s'efface d'ici.":"Una respuesta correcta y el error queda corregido. A los siete días, sale de esta lista.",
+    "Une bonne réponse, et l'erreur est rattrapée. Seules tes {n} dernières erreurs restent ici, sept jours au plus.":"Una respuesta correcta y el error queda corregido. Aquí solo quedan tus {n} últimos errores, siete días como máximo.",
     "Tes erreurs récentes":"Tus errores recientes",
     "Tout est rattrapé\u00a0!":"¡Todo corregido!",
     "Plus rien à rattraper, bravo\u00a0!":"¡Nada más por corregir, bien hecho!",
@@ -6995,6 +7052,18 @@ const TEXTES = {
     "La suppression n'a pas abouti. Réessaie dans un instant.":"No se pudo eliminar. Inténtalo de nuevo en un momento.",
     "Ton compte a été supprimé. Ta progression est toujours sur ce téléphone.":"Tu cuenta ha sido eliminada. Tu progreso sigue en este teléfono.",
     "{n}/66 livres maîtrisés":"{n}/66 libros dominados",
+    /* LES MENTIONS ET LES NOTIFICATIONS D'UN GROUPE (v317) */
+    "Seuls les admins du groupe peuvent prévenir tout le monde.":"Solo los admins del grupo pueden avisar a todos.",
+    "Tout le monde a déjà été prévenu trois fois cette heure-ci. Réessaie plus tard.":"Ya se avisó a todos tres veces en esta hora. Vuelve a intentarlo más tarde.",
+    "Pas encore disponible. Réessaie plus tard.":"Aún no está disponible. Vuelve a intentarlo más tarde.",
+    "Notifications":"Notificaciones",
+    "Mentions":"Menciones",
+    "Muet":"Silencio",
+    "Chaque nouveau message t'est signalé.":"Se te avisa de cada mensaje nuevo.",
+    "Seuls les messages qui te nomment, ou qui s'adressent à tout le monde, te sont signalés.":"Solo se te avisa de los mensajes que te mencionan o que van dirigidos a todos.",
+    "Ce groupe ne te signale plus rien. Ses messages t'attendent quand tu l'ouvres.":"Este grupo ya no te avisa de nada. Sus mensajes te esperan cuando lo abras.",
+    "@tout le monde":"@todos",
+    "Réservé aux admins":"Solo para admins",
   },
 };
 let LANGUE = "fr";
@@ -7275,6 +7344,9 @@ const ICONS = {
      Rappels, et deux cloches dans la même feuille disent la même chose. */
   ondes: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><line x1="4.5" y1="9.4" x2="4.5" y2="14.6"/><line x1="8.25" y1="6.4" x2="8.25" y2="17.6"/><line x1="12" y1="3.6" x2="12" y2="20.4"/><line x1="15.75" y1="7.6" x2="15.75" y2="16.4"/><line x1="19.5" y1="10" x2="19.5" y2="14"/></svg>`,
   bell: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M18 8.5A6 6 0 0 0 6 8.5c0 5.5-2.5 6.8-2.5 6.8h17S18 14 18 8.5Z"/><path d="M13.7 19.5a2 2 0 0 1-3.4 0"/></svg>`,
+  /* La même cloche, barrée : un groupe mis en muet (v317). Le trait coupe la
+     cloche au lieu de la recouvrir — elle s'interrompt d'un côté de la barre. */
+  clocheMuette: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 8.5A6 6 0 0 0 8.67 3.51"/><path d="M6.39 6.39A6 6 0 0 0 6 8.5c0 5.5-2.5 6.8-2.5 6.8h11.8"/><path d="M18 8.5c0 5.5 2.5 6.8 2.5 6.8h-2.3"/><path d="M13.7 19.5a2 2 0 0 1-3.4 0"/><line x1="3" y1="3" x2="21" y2="21"/></svg>`,
   /* ===== LES ICÔNES DES GROUPES =====
      Le même trait que le reste du jeu : 24 × 24, contour arrondi, la couleur
      du texte. Rien de rempli, sauf ce qui doit se lire à 16 px. */
@@ -9247,7 +9319,7 @@ const SUPABASE_ANON_KEY = "sb_publishable_FDJ_R0foC7uIeHmxVrj6rA_2NeIgW2a";
    remontée d'un téléphone ne vaut rien si on ne sait pas QUELLE version
    tournait. Elle doit rester égale au CACHE de sw.js — c'est ce que vérifie
    banc-essai/version.js, qui refuse de laisser publier les deux en désaccord. */
-const VERSION_JEU = "v316";
+const VERSION_JEU = "v317";
 
 /* ===================== QUAND ÇA CASSE CHEZ UN JOUEUR =====================
    « Si quelque chose casse chez cinq d'entre eux sur un modèle de téléphone
@@ -19543,6 +19615,19 @@ function errbookCount(){ return loadErrbook().length; }
    rattraper » et « rattrapée » se LISENT dans le carnet, ils n'y écrivent
    rien d'autre que l'instant de la dernière erreur. */
 const CHANCE_JOURS = 7, CHANCE_LOT = 5;
+/* ===== QUINZE ERREURS AU PLUS (v317) =====
+   « Ici 193 à revoir, c'est beaucoup trop. Il faut que les erreurs
+     disparaissent avec le temps, pour que ça reste correct : pas des tonnes
+     à revoir. » Sept jours ne suffisaient pas à borner la liste : une seule
+     grosse journée de jeu y versait cent quatre-vingt-treize erreurs, et
+     « Et 188 autres ensuite » ne donne envie de rien.
+   Ne comptent donc que les QUINZE erreurs les plus récentes de ces sept
+   jours — sues depuis ou pas. Une nouvelle erreur pousse la plus vieille
+   dehors ; une erreur rattrapée n'est pas remplacée par une plus ancienne :
+   la liste BAISSE quand on joue la seconde chance, et la jauge dit « 5
+   rattrapées sur 15 », jamais « sur 193 ». Trois séances au plus pour tout
+   rattraper. Le carnet, lui, n'oublie toujours rien (les parties Solo). */
+const CHANCE_MAX = 15;
 /* Une séance, ce n'est plus dix questions : c'est la seconde chance — cinq. */
 const REVISION_LOT = CHANCE_LOT;
 /* L'instant de la dernière erreur. Une entrée d'avant la v316 n'a pas de
@@ -19568,16 +19653,22 @@ function recente(x){
   const j = joursDepuis(t);
   return j >= -1 && j < CHANCE_JOURS;
 }
-/* À RATTRAPER : ratée ces sept derniers jours, et pas sue depuis. Les plus
-   fraîches d'abord ; à égalité, la plus tenace. */
-function aRattraper(){
-  return loadErrbook().filter(x => (x.p | 0) === 0 && recente(x))
-    .sort((a, b) => (rateLe(b) - rateLe(a)) || ((b.n | 0) - (a.n | 0)));
+/* LES ERREURS QUI COMPTENT : les quinze plus récentes des sept derniers
+   jours, sues depuis ou pas. Les plus fraîches d'abord ; à égalité, la plus
+   tenace. */
+function dernieresErreurs(){
+  return loadErrbook().filter(recente)
+    .sort((a, b) => (rateLe(b) - rateLe(a)) || ((b.n | 0) - (a.n | 0)))
+    .slice(0, CHANCE_MAX);
 }
-/* RATTRAPÉES : ratées ces sept derniers jours, et sues depuis — ici ou dans
-   une partie, la bonne réponse compte où qu'elle soit donnée. */
+/* À RATTRAPER : parmi elles, celles qui ne sont pas sues depuis. */
+function aRattraper(){
+  return dernieresErreurs().filter(x => (x.p | 0) === 0);
+}
+/* RATTRAPÉES : parmi elles, celles qui sont sues depuis — ici ou dans une
+   partie, la bonne réponse compte où qu'elle soit donnée. */
 function rattrapees(){
-  return loadErrbook().filter(x => (x.p | 0) > 0 && recente(x));
+  return dernieresErreurs().filter(x => (x.p | 0) > 0);
 }
 function fileDeRevision(){ return aRattraper().slice(0, CHANCE_LOT); }
 /* Le jour d'une erreur, dit comme on le dirait — et comme le disent déjà
@@ -20527,7 +20618,11 @@ function memoriserGroupes(){
    phrase : c'est au jeu de parler la langue du joueur. Un code inconnu ne
    doit pas s'afficher tel quel — on retombe sur une phrase générique. */
 function motErreurGroupe(r){
-  const code = r && (r.erreur || (r.error && "reseau")) || "reseau";
+  /* Une fonction que le serveur ne connaît pas encore — la base n'a pas reçu
+     la dernière version de groupes/table.sql — n'est pas une panne de réseau :
+     on ne demande pas de « réessayer dans un instant » ce qui ne marchera pas. */
+  const absente = !!(r && r.error && r.error.code === "PGRST202");
+  const code = absente ? "indisponible" : (r && (r.erreur || (r.error && "reseau")) || "reseau");
   const textes = {
     non_connecte:"Connecte-toi d'abord.",
     ferme:"Les groupes ne sont pas encore ouverts.",
@@ -20556,6 +20651,9 @@ function motErreurGroupe(r){
     parties_trop_vite:"Doucement : attends un peu avant de lancer une autre partie.",
     photo:"La photo n'a pas pu être envoyée.",
     photo_retiree:"Une photo retirée par la modération ne peut pas être remplacée avant sept jours.",
+    tous_reserve:"Seuls les admins du groupe peuvent prévenir tout le monde.",
+    tous_trop_souvent:"Tout le monde a déjà été prévenu trois fois cette heure-ci. Réessaie plus tard.",
+    indisponible:"Pas encore disponible. Réessaie plus tard.",
     reseau:"Pas de réseau. Réessaie dans un instant."
   };
   /* Aucune phrase ne suppose le genre du joueur : « t'a mis en sourdine »
@@ -20902,7 +21000,7 @@ async function chargerListesUneFois(){
   }
   if(pub) grp.publics = pub;
   if(photosServeur()) voirPhotos([].concat(mes || [], pub || []).map(g => ["g:" + g.id, g.photo_maj]));
-  grp.nonLus = (grp.liste || []).reduce((s, g)=> s + (g.id === grp.courant && state.screen === "groupe" ? 0 : (+g.non_lus || 0)), 0);
+  recompterNonLus();
   majBarre();
   majListes();
   return grp.liste;
@@ -20992,12 +21090,48 @@ function apercuGroupe(g){
   const texte = a.texte || "";
   return moi ? Tf("Toi : {texte}", { texte }) : Tf("{nom} : {texte}", { nom, texte });
 }
+/* ===== CE QUE CHACUN VEUT ENTENDRE D'UN GROUPE (v317) =====
+   « Pour les groupes, je veux la possibilité de mettre le groupe en muet, et
+     autre, comme par exemple choisir de recevoir juste les mentions. »
+   Trois réglages, choisis par chacun pour lui seul — le serveur les garde
+   (regler_notifs), les autres membres ne les voient pas : « tout », les
+   « mentions » (seulement les messages qui me nomment, ou qui s'adressent à
+   tout le monde), « rien ». Le réglage décide de ce que le groupe SIGNALE —
+   la pastille de « Messages », et demain la notification. Jamais de ce qu'il
+   CONTIENT : ses non-lus restent comptés sur sa ligne, en gris. */
+const NOTIFS_MODES = ["tout", "mentions", "rien"];
+function modeNotifs(g){ return g && NOTIFS_MODES.indexOf(g.notifs) > 0 ? g.notifs : "tout"; }
+function aSignaler(g){
+  const m = modeNotifs(g);
+  return m === "rien" ? 0 : (m === "mentions" ? (+g.mentions || 0) : (+g.non_lus || 0));
+}
+/* La pastille de « Messages » : ce que chaque groupe signale, sauf celui
+   qu'on a sous les yeux (ou qu'on est en train d'ouvrir). */
+function recompterNonLus(ouvert){
+  const regarde = ouvert || (state.screen === "groupe" ? grp.courant : null);
+  grp.nonLus = (grp.liste || []).reduce((s, x)=> s + (x.id === regarde ? 0 : aSignaler(x)), 0);
+}
+/* Un message me nomme : mon nom dans ses mentions, ou « @tout le monde ».
+   Le serveur a déjà trié — on lit ce qu'il a gardé, rien de plus. */
+function mentionneMoi(m){
+  const d = m && m.donnees, moi = monId();
+  if(!d || !moi || m.genre !== "texte" || !m.auteur || m.auteur === moi) return false;
+  return d.tous === true || (Array.isArray(d.mentions) && d.mentions.indexOf(moi) >= 0);
+}
+/* LA LIGNE D'UN GROUPE. Le compte des non-lus en couleur quand le groupe les
+   signale, en gris quand il se tait ; un « @ » en couleur quand quelqu'un
+   m'a nommé ; et, à côté de l'heure, la cloche barrée d'un groupe en muet ou
+   le « @ » d'un groupe qui ne signale que les mentions. */
 function ligneGroupe(g){
-  const n = +g.non_lus || 0;
-  return `<button class="grp-ligne${n ? " a-lire" : ""}" onclick="ouvrirGroupe('${g.id}')">
+  const n = +g.non_lus || 0, mode = modeNotifs(g);
+  const nomme = mode === "rien" ? 0 : (+g.mentions || 0);
+  const vif = mode === "tout";
+  const marque = mode === "rien" ? `<span class="grp-mode">${ICONS.clocheMuette}</span>`
+               : (mode === "mentions" ? `<span class="grp-mode grp-mode-at">@</span>` : "");
+  return `<button class="grp-ligne${(n && mode !== "rien") || nomme ? " a-lire" : ""}" onclick="ouvrirGroupe('${g.id}')">
       ${pastilleGroupe(g)}
       <span class="grp-txt"><b>${escapeHtml(g.nom)}</b><small>${escapeHtml(apercuGroupe(g))}</small></span>
-      <span class="grp-droite"><small>${escapeHtml(quandCourt(g.dernier_message))}</small><i class="grp-nl${n ? "" : " vide"}">${n > 99 ? "99+" : (n || 0)}</i></span>
+      <span class="grp-droite"><small>${marque}${escapeHtml(quandCourt(g.dernier_message))}</small><span class="grp-nls">${nomme ? `<i class="grp-nl grp-at">@</i>` : ""}<i class="grp-nl${n ? "" : " vide"}${vif ? "" : " calme"}">${n > 99 ? "99+" : (n || 0)}</i></span></span>
     </button>`;
 }
 function lignesMes(){
@@ -21547,8 +21681,8 @@ async function ouvrirGroupe(id){
   const g = (grp.liste || []).find(x => x.id === id);
   if(!g){ showMiniToast(T("Tu ne fais plus partie de ce groupe.")); return; }
   grp.courant = id;
-  g.non_lus = 0;
-  grp.nonLus = (grp.liste || []).reduce((s, x)=> s + (x.id === id ? 0 : (+x.non_lus || 0)), 0);
+  g.non_lus = 0; g.mentions = 0;
+  recompterNonLus(id);
   majBarre();
   state.screen = "groupe";
   render();
@@ -21821,7 +21955,7 @@ function appliquerMemoire(){
     if(!grp.fils[id] && v && Array.isArray(v.messages)) grp.fils[id] = { messages:v.messages.slice(), charge:true, tout:!!v.tout, lu:+v.lu || 0 };
   });
   if(m.brouillons && typeof m.brouillons === "object") brouillons = Object.assign({}, m.brouillons, brouillons);
-  grp.nonLus = (grp.liste || []).reduce((s, x)=> s + (+x.non_lus || 0), 0);
+  recompterNonLus();
   return true;
 }
 function memoriserFil(id){
@@ -21946,7 +22080,13 @@ async function chargerMembres(id){
     grp.membres[id] = r.data;
     await chargerProfils(r.data.map(x => x.membre), photosServeur());
   }catch(e){ return; }
-  if(grp.courant === id){ majCompo(); majInfosMembres(); }
+  if(grp.courant === id){
+    majCompo(); majInfosMembres();
+    /* Les noms des membres viennent d'arriver : une mention dessinée avant
+       qu'on les connaisse se met en gras maintenant (v317). */
+    const f = grp.fils[id];
+    if(f && f.messages.some(m => m.donnees && (Array.isArray(m.donnees.mentions) || m.donnees.tous === true))) majFil();
+  }
 }
 /* ---------- LES MESSAGES ---------- */
 const FIL_PAGE = 50;
@@ -22011,8 +22151,8 @@ function marquerLu(id){
   if(!f || !f.messages.length) return;
   const dernier = f.messages.reduce((a, m)=> m.id > a ? m.id : a, 0);
   if(!dernier) return;
-  const g = groupeCourant(); if(g) g.non_lus = 0;
-  grp.nonLus = (grp.liste || []).reduce((s, x)=> s + (+x.non_lus || 0), 0);
+  const g = groupeCourant(); if(g){ g.non_lus = 0; g.mentions = 0; }
+  recompterNonLus();
   majBarre();
   if(dernier <= (f.lu || 0)) return;
   f.lu = dernier;
@@ -22041,6 +22181,7 @@ function renderGroupe(){
     <div class="card fil-carte">
       <div id="fil" onscroll="surDefilementFil(this)">${filHtml(g.id)}</div>
       <button class="fil-bas" id="filBas" hidden onpointerdown="event.preventDefault()" onmousedown="event.preventDefault()" onclick="descendreFil(true)">${T("Nouveaux messages")}</button>
+      <div class="compo-noms" id="compoNoms" hidden></div>
     </div>
     ${enLecture()
       ? `<div class="compo compo-lecture" id="compo"><div class="compo-in"><span class="ico">${ICONS.bouclier}</span><span>${T("Lecture seule · modération")}</span></div></div>`
@@ -22144,7 +22285,7 @@ function bulleHtml(m){
         ${code && !finie ? `<button class="grp-pill" onclick="event.stopPropagation(); rejoindrePartieGroupe('${code}')">${T("Rejoindre la partie")}</button>` : ""}
       </div>`;
   }
-  return `<button class="b-bulle${m.id < 0 ? " envoi" : ""}" onclick="actionsMessage('${m.id}')">${escapeHtml(m.texte)}</button>`;
+  return `<button class="b-bulle${m.id < 0 ? " envoi" : ""}${mentionneMoi(m) ? " me-nomme" : ""}" onclick="actionsMessage('${m.id}')">${texteAvecMentions(m)}</button>`;
 }
 function descendreFil(doux){
   const z = document.getElementById("fil");
@@ -22186,7 +22327,7 @@ function compoHtml(){
   if(muet) return `<div class="compo-muet">${escapeHtml(Tf("Tu es en sourdine jusqu'à {h}.", { h:heureCourte(muet) }))}</div>`;
   return `<button class="compo-jeu" onclick="lancerPartieGroupe(this)" aria-label="${T("Lancer une partie")}">${ICONS.manette}</button>
     <textarea class="compo-texte" id="compoTexte" rows="1" maxlength="500" placeholder="${T("Écris un message…")}" enterkeyhint="send"
-      oninput="surSaisie(this)" onkeydown="if(event.key==='Enter' && !event.shiftKey && !event.isComposing){event.preventDefault();envoyerMessageGroupe();}"></textarea>
+      oninput="surSaisie(this)" onkeydown="toucheCompo(event)" onclick="majNoms(this)" onkeyup="if(/^Arrow|^Home|^End/.test(event.key)) majNoms(this)" onblur="setTimeout(cacherNoms, 150)"></textarea>
     <button class="compo-envoi" id="compoEnvoi" onpointerdown="event.preventDefault()" onmousedown="event.preventDefault()" onclick="envoyerMessageGroupe()" aria-label="${T("Envoyer")}" disabled>${ICONS.envoyer}</button>`;
 }
 /* Le compositeur suit l'état de sourdine sans perdre ce qui est en cours de
@@ -22207,7 +22348,146 @@ function surSaisie(t){
   const b = document.getElementById("compoEnvoi");
   if(b) b.disabled = !t.value.trim();
   /* Ce qu'on écrit survit à une relance, à un changement de langue. */
-  if(grp.courant && t.id === "compoTexte") memoriserBrouillon(grp.courant, t.value);
+  if(grp.courant && t.id === "compoTexte"){ memoriserBrouillon(grp.courant, t.value); majNoms(t); }
+}
+/* ===== LES MENTIONS (v317) =====
+   « Le @ et le nom de la personne, ou le @tout le monde pour notifier tout
+     le monde — et faire en sorte que les @tout le monde soient réservés à un
+     certain grade dans le groupe. »
+   On tape « @ » : les membres du groupe se proposent au-dessus du champ —
+   ceux dont le nom commence par ce qui suit d'abord. Toucher un nom l'écrit
+   en entier, sans fermer le clavier. À l'envoi, le téléphone dit au serveur
+   qui il nomme ; le serveur ne garde que de vrais membres du groupe, jamais
+   soi-même. « @tout le monde » ne se propose qu'aux admins du groupe (et aux
+   modérateurs du jeu) : le serveur le refuse aux autres, et ne le laisse
+   passer que trois fois par heure dans un même groupe. */
+const MENTIONS_MAX = 12;
+const LETTRE = /[\p{L}\p{N}_]/u;
+/* « @tout le monde » s'écrit dans la langue de celui qui écrit : les trois
+   formes valent partout. */
+function jetonsTous(){
+  const k = "@tout le monde";
+  return [k].concat(Object.keys(TEXTES).map(l => TEXTES[l][k]).filter(Boolean));
+}
+function peutNommerTous(){ return suisAdmin() || !!(grp.etat && grp.etat.moderateur); }
+function sansAccents(x){ return String(x || "").normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLocaleLowerCase(); }
+/* Mon propre nom se connaît avant que le serveur n'ait rendu les profils : une
+   bulle qui me nomme se dessine dès l'ouverture, souvent avant eux. */
+function nomDe(id){ return String((grp.profils[id] || {}).nom || (id && id === monId() ? profile.name : "") || "").trim(); }
+/* Les autres membres du groupe qui ont un nom à écrire. */
+function nommables(){
+  const moi = monId();
+  return (grp.membres[grp.courant] || []).filter(x => x.membre !== moi && nomDe(x.membre)).map(x => ({ id:x.membre, nom:nomDe(x.membre) }));
+}
+/* « jeton » commence-t-il à la position i de « texte », et s'y arrête-t-il
+   net ? « @Marc » ne nomme pas Marc dans « @Marco ». */
+function jetonEn(texte, i, jeton){
+  return texte.slice(i, i + jeton.length).toLocaleLowerCase() === jeton.toLocaleLowerCase()
+    && !LETTRE.test(texte.charAt(i + jeton.length));
+}
+/* Le mot en train de s'écrire sous le curseur, s'il commence par « @ ». */
+function jetonSousCurseur(t){
+  if(!t || t.selectionStart !== t.selectionEnd) return null;
+  const avant = t.value.slice(0, t.selectionStart);
+  const m = /(?:^|[\s(«"])@([^\s@]{0,30})$/u.exec(avant);
+  return m ? { debut:t.selectionStart - m[1].length - 1, q:m[1] } : null;
+}
+let nomsProposes = [];
+function majNoms(t){
+  const z = document.getElementById("compoNoms");
+  if(!z) return;
+  const j = t && t.id === "compoTexte" ? jetonSousCurseur(t) : null;
+  let l = [];
+  if(j){
+    const q = sansAccents(j.q);
+    l = nommables().map(x => {
+      const n = sansAccents(x.nom);
+      const rang = !q || n.startsWith(q) ? 0 : (n.split(/\s+/).some(w => w.startsWith(q)) ? 1 : -1);
+      return Object.assign({ rang }, x);
+    }).filter(x => x.rang >= 0).sort((a, b)=> a.rang - b.rang || a.nom.localeCompare(b.nom)).slice(0, 6);
+    /* « @tout le monde » : proposé à qui peut s'en servir ; à un simple
+       membre, seulement quand il commence à l'écrire — pour lui dire, avant
+       l'envoi, que ce n'est pas pour lui. */
+    const tous = jetonsTous().some(x => sansAccents(x.slice(1)).startsWith(q));
+    if(tous && peutNommerTous()) l.push({ id:"*", nom:T("@tout le monde") });
+    else if(tous && q.length >= 2) l.push({ id:"*", nom:T("@tout le monde"), off:true });
+  }
+  nomsProposes = l;
+  if(!l.length){ if(!z.hidden){ z.hidden = true; z.innerHTML = ""; } return; }
+  /* pointerdown et mousedown sans suite : le champ garde le focus, et le
+     clavier reste levé. */
+  z.innerHTML = l.map((x, i)=> `<button class="cn-nom${x.off ? " off" : ""}" onpointerdown="event.preventDefault()" onmousedown="event.preventDefault()" onclick="choisirNom(${i})">${
+      x.id === "*" ? `<span class="cn-ico">${ICONS.users}</span>` : avatarHtml(x.nom, (grp.profils[x.id] || {}).couleur || "#8A8F98", 1.85, "u:" + x.id)
+    }<b>${escapeHtml(x.nom)}</b>${x.off ? `<small>${T("Réservé aux admins")}</small>` : ""}</button>`).join("");
+  z.hidden = false;
+}
+function cacherNoms(){
+  const t = document.getElementById("compoTexte"), z = document.getElementById("compoNoms");
+  if(z && !z.hidden && document.activeElement !== t){ z.hidden = true; z.innerHTML = ""; nomsProposes = []; }
+}
+function choisirNom(i){
+  const t = document.getElementById("compoTexte"), x = nomsProposes[i];
+  if(!t || !x) return;
+  if(x.off){ showMiniToast(T("Seuls les admins du groupe peuvent prévenir tout le monde.")); return; }
+  const j = jetonSousCurseur(t);
+  if(!j) return;
+  const apres = t.value.slice(t.selectionStart);
+  /* Le curseur se pose APRÈS l'espace qui suit le nom — sinon le nom, encore
+     sous le curseur, rouvrirait aussitôt la liste. */
+  const espace = /^\s/.test(apres);
+  const pose = (x.id === "*" ? x.nom : "@" + x.nom) + (espace ? "" : " ");
+  t.value = (t.value.slice(0, j.debut) + pose + apres).slice(0, 500);
+  const pos = Math.min(t.value.length, j.debut + pose.length + (espace ? 1 : 0));
+  if(document.activeElement !== t){ try{ t.focus({ preventScroll:true }); }catch(e){ t.focus(); } }
+  try{ t.setSelectionRange(pos, pos); }catch(e){}
+  surSaisie(t);
+}
+/* Entrée envoie — sauf quand un nom est proposé pour ce qu'on écrit : elle
+   le choisit, comme Tab. Échap referme la liste. */
+function toucheCompo(e){
+  if(e.isComposing) return;
+  const t = e.target, z = document.getElementById("compoNoms");
+  const ouverte = !!(z && !z.hidden && nomsProposes.length);
+  const j = ouverte ? jetonSousCurseur(t) : null;
+  if(ouverte && (e.key === "Tab" || (e.key === "Enter" && !e.shiftKey && j && j.q))){ e.preventDefault(); choisirNom(0); return; }
+  if(ouverte && e.key === "Escape"){ e.preventDefault(); z.hidden = true; z.innerHTML = ""; nomsProposes = []; return; }
+  if(e.key === "Enter" && !e.shiftKey){ e.preventDefault(); envoyerMessageGroupe(); }
+}
+/* Qui ce texte nomme-t-il ? À chaque « @ » qui commence un mot, le nom le
+   plus long qui s'y lit en entier — « @Jean Paul » nomme Jean Paul, pas Jean. */
+function mentionsDuTexte(texte){
+  const noms = nommables().map(x => ({ id:x.id, j:"@" + x.nom })).sort((a, b)=> b.j.length - a.j.length);
+  const tous = jetonsTous();
+  const ids = []; let pourTous = false;
+  for(let i = texte.indexOf("@"); i >= 0; i = texte.indexOf("@", i + 1)){
+    if(i > 0 && LETTRE.test(texte.charAt(i - 1))) continue;   // une adresse, pas une mention
+    const x = noms.find(x => jetonEn(texte, i, x.j));
+    if(x){ if(ids.length < MENTIONS_MAX && ids.indexOf(x.id) < 0) ids.push(x.id); continue; }
+    if(tous.some(k => jetonEn(texte, i, k))) pourTous = true;
+  }
+  const d = {};
+  if(ids.length) d.mentions = ids;
+  if(pourTous && peutNommerTous()) d.tous = true;
+  return (d.mentions || d.tous) ? d : null;
+}
+/* Le texte d'une bulle, ses mentions en gras — seulement celles que le
+   serveur a gardées : un « @Nom » écrit pour un non-membre reste du texte. */
+function texteAvecMentions(m){
+  const texte = String(m.texte || ""), d = m.donnees || {};
+  const jetons = [];
+  if(Array.isArray(d.mentions)) d.mentions.forEach(id => { const n = nomDe(id); if(n) jetons.push("@" + n); });
+  if(d.tous === true) jetons.push(...jetonsTous());
+  if(!jetons.length) return escapeHtml(texte);
+  jetons.sort((a, b)=> b.length - a.length);
+  let h = "", de = 0;
+  for(let i = texte.indexOf("@"); i >= 0; i = texte.indexOf("@", i + 1)){
+    if(i < de || (i > 0 && LETTRE.test(texte.charAt(i - 1)))) continue;
+    const j = jetons.find(j => jetonEn(texte, i, j));
+    if(!j) continue;
+    h += escapeHtml(texte.slice(de, i)) + `<b class="mention">${escapeHtml(texte.slice(i, i + j.length))}</b>`;
+    de = i + j.length;
+  }
+  return h + escapeHtml(texte.slice(de));
 }
 /* ===== ENVOYER NE FERME PAS LE CLAVIER (v316) =====
    « Lorsque je mets le clavier dans un groupe, à certains moments il
@@ -22228,10 +22508,11 @@ async function envoyerMessageGroupe(){
   if(!texte) return;
   const f = grp.fils[g.id];
   const id = -(++grp.enCours);
-  if(f) f.messages.push({ id, groupe:g.id, auteur:monId(), genre:"texte", texte, donnees:{}, cree_le:new Date().toISOString(), masque:false, supprime_le:null });
+  const donnees = mentionsDuTexte(texte);
+  if(f) f.messages.push({ id, groupe:g.id, auteur:monId(), genre:"texte", texte, donnees:donnees || {}, cree_le:new Date().toISOString(), masque:false, supprime_le:null });
   t.value = ""; surSaisie(t);
   majFil(); descendreFil(true);
-  const r = await appelGroupe("envoyer_message", { p_groupe:g.id, p_texte:texte, p_genre:"texte", p_donnees:null });
+  const r = await appelGroupe("envoyer_message", { p_groupe:g.id, p_texte:texte, p_genre:"texte", p_donnees:donnees });
   if(!r.ok){
     if(f) f.messages = f.messages.filter(m => m.id !== id);
     majFil();
@@ -22251,7 +22532,7 @@ async function envoyerMessageGroupe(){
     majFil();
   }
   g.dernier_message = new Date().toISOString();
-  g.apercu = { id:r.id, auteur:monId(), genre:"texte", texte, donnees:{}, masque:false, supprime:false, le:g.dernier_message };
+  g.apercu = { id:r.id, auteur:monId(), genre:"texte", texte, donnees:donnees || {}, masque:false, supprime:false, le:g.dernier_message };
   memoriserFil(g.id); memoriserListe();
 }
 /* ---------- JOUER ENSEMBLE ----------
@@ -22388,7 +22669,10 @@ async function surMessageDirect(m, evt){
     g.apercu = { id:m.id, auteur:m.auteur, genre:m.genre, texte:m.texte, donnees:m.donnees, masque:m.masque,
                  supprime:!!m.supprime_le, le:m.cree_le, nom:(grp.profils[m.auteur] || {}).nom };
     const lu = grp.courant === m.groupe && state.screen === "groupe" && !document.hidden;
-    if(!lu && m.auteur && m.auteur !== monId() && m.genre !== "systeme") g.non_lus = (+g.non_lus || 0) + 1;
+    if(!lu && m.auteur && m.auteur !== monId() && m.genre !== "systeme"){
+      g.non_lus = (+g.non_lus || 0) + 1;
+      if(mentionneMoi(m)) g.mentions = (+g.mentions || 0) + 1;
+    }
     if(lu) marquerLu(m.groupe);
     grp.liste.sort((a, b)=> String(b.dernier_message || "").localeCompare(String(a.dernier_message || "")));
     /* Quelqu'un arrive, part, change de rôle : la liste des membres suit. */
@@ -22407,7 +22691,7 @@ async function surMessageDirect(m, evt){
        d'avant, que le serveur connaît. */
     if(m.supprime_le) chargerListes();
   }
-  grp.nonLus = (grp.liste || []).reduce((s, x)=> s + (grp.courant === x.id && state.screen === "groupe" ? 0 : (+x.non_lus || 0)), 0);
+  recompterNonLus();
   majBarre();
   majListes();
   memoriserListe();
@@ -22606,7 +22890,8 @@ function ouvrirInfosGroupe(invitation){
       </div>
       ${invitation ? `<p class="grp-aide">${T("Envoie ce code à tes amis : avec lui, ils entrent directement.")}</p>` : ""}
     </div>
-    <h3 class="gb-h">${nbMembres(g.nb_membres)}</h3>
+    ${enLecture() ? "" : choixNotifsHtml(g)}
+    <h3 class="gb-h grp-nb-h">${nbMembres(g.nb_membres)}</h3>
     <div class="grp-defile">${membres.map(ligneMembre).join("")}</div>
     <div class="grp-mot"><span></span></div>
     <div class="grp-liste-act">
@@ -22615,6 +22900,41 @@ function ouvrirInfosGroupe(invitation){
       ${enLecture() ? "" : ligneAction(ICONS.sortir, T("Quitter le groupe"), "quitterGroupeCourant()", true)}
       ${proprio || (grp.etat && grp.etat.moderateur) ? ligneAction(ICONS.corbeille, T("Supprimer le groupe"), "supprimerGroupeCourant()", true) : ""}
     </div>`);
+}
+/* Trois puces, le même geste que Privé / Public : l'encre part du doigt. Les
+   trois phrases d'aide sont posées l'une sur l'autre dans la même case — on
+   ne voit que la bonne, et rien en dessous ne bouge quand on change. */
+function choixNotifsHtml(g){
+  const mode = modeNotifs(g);
+  const noms = [T("Tout"), T("Mentions"), T("Muet")];
+  const aides = [T("Chaque nouveau message t'est signalé."),
+                 T("Seuls les messages qui te nomment, ou qui s'adressent à tout le monde, te sont signalés."),
+                 T("Ce groupe ne te signale plus rien. Ses messages t'attendent quand tu l'ouvres.")];
+  return `<h3 class="gb-h">${T("Notifications")}</h3>
+    <div class="grp-types grp-notifs" role="radiogroup" aria-label="${T("Notifications")}">${NOTIFS_MODES.map((k, i)=>
+      `<button class="len-chip${mode === k ? " sel" : ""}" data-ngroup="notifs" data-k="${k}" role="radio" aria-checked="${mode === k}" onclick="reglerNotifs(${i})">${noms[i]}</button>`).join("")}</div>
+    <p class="grp-aide grp-aide-type" id="grpNotifsAide">${NOTIFS_MODES.map((k, i)=> `<span class="${mode === k ? "vu" : ""}" data-t="${k}">${aides[i]}</span>`).join("")}</p>`;
+}
+/* Le choix se voit tout de suite ; si le serveur ne le prend pas, il revient
+   à l'ancien, et la page dit pourquoi. */
+async function reglerNotifs(i){
+  const g = groupeCourant(), k = NOTIFS_MODES[i];
+  if(!g || !k) return;
+  const avant = modeNotifs(g);
+  if(k === avant) return;
+  appliquerNotifs(g, k);
+  const r = await appelGroupe("regler_notifs", { p_groupe:g.id, p_notifs:k });
+  if(!r.ok){
+    if(modeNotifs(g) === k) appliquerNotifs(g, avant);
+    motFeuille("grpInfosVeil", motErreurGroupe(r));
+  }
+}
+function appliquerNotifs(g, k){
+  g.notifs = k;
+  basculerChoix('[data-ngroup="notifs"]', "sel", k);
+  document.querySelectorAll('[data-ngroup="notifs"]').forEach(b => b.setAttribute("aria-checked", String(b.dataset.k === k)));
+  document.querySelectorAll("#grpNotifsAide > span").forEach(x => x.classList.toggle("vu", x.dataset.t === k));
+  recompterNonLus(); majBarre(); memoriserListe();
 }
 function membresTries(g){
   return (grp.membres[g.id] || []).slice().sort((a, b)=>{
@@ -22645,7 +22965,7 @@ function majInfosMembres(){
   const g = groupeCourant(); if(!g) return;
   const d = document.querySelector("#grpInfosVeil .grp-defile");
   if(d) d.innerHTML = membresTries(g).map(ligneMembre).join("");
-  const h = document.querySelector("#grpInfosVeil .gb-h");
+  const h = document.querySelector("#grpInfosVeil .grp-nb-h");
   if(h) h.textContent = nbMembres(g.nb_membres);
 }
 function ouvrirMembre(qui){
@@ -23131,7 +23451,7 @@ function renderRevoir(){
        <div class="flex-sp"></div>
        ${n ? `<button class="btn-primary rv-go" onclick="lancerRevision()">${T("Seconde chance")}</button>`
            : `<button class="btn-primary rv-go" onclick="jouerSoloDepuisRevoir()">${T("Jouer en Solo")}</button>`}
-       <div class="flam-regle rvl-regle">${T("Une bonne réponse, et l'erreur est rattrapée. Au bout de sept jours, elle s'efface d'ici.")}</div>`;
+       <div class="flam-regle rvl-regle">${Tf("Une bonne réponse, et l'erreur est rattrapée. Seules tes {n} dernières erreurs restent ici, sept jours au plus.", { n:CHANCE_MAX })}</div>`;
   return el;
 }
 /* Le bouton de l'écran a son propre nom, et il ne porte aucun mot dans son
@@ -26761,6 +27081,21 @@ document.addEventListener("focusout", (e)=>{
     try{ figerColonne(); majCouche(); reparerHauteurApp(); mesurerHauteurUtile(); fitScroll(); }catch(e2){}
   }, DESCENTE_CLAVIER + 30);
 }, true);
+/* ===== UN CHAMP QUI REPREND LE FOYER ANNULE LA REPRISE (v317) =====
+   « Lors de l'ouverture du clavier dans les groupes, à certains moments la
+     barre d'écriture redescend. » Fermer le clavier programme la reprise
+   ci-dessus, 1,23 s plus tard. Le rouvrir avant — retoucher le champ juste
+   après l'avoir quitté — la laissait tomber SUR le clavier rouvert :
+   reparerHauteurApp voyait une discussion plus petite que l'écran (elle
+   l'est exprès, html.kb-fil), lui rendait sa pleine hauteur en dur, et la
+   barre passait sous le clavier. Mesuré au banc : à 1,35 s, 874 px épinglés,
+   le champ à 857 px pour un clavier qui commence à 528. Le clavier revient :
+   il n'y a plus rien à reprendre. */
+document.addEventListener("focusin", (e)=>{
+  const t = e && e.target;
+  if(!t || (t.tagName !== "INPUT" && t.tagName !== "TEXTAREA")) return;
+  clearTimeout(reposeApresClavier);
+}, true);
 /* ===== UN CLAVIER NE REND JAMAIS LA FENÊTRE PLUS GRANDE =====
    Ma première version tenait la hauteur de repos tant qu'un champ avait le
    focus, plus un délai de grâce de 380 ms pour laisser le clavier redescendre.
@@ -26859,6 +27194,9 @@ function majCouche(){
 function reparerHauteurApp(){
   const app = glassAppEl;
   if(!app) return;
+  /* Clavier ouvert, l'écran est plus petit EXPRÈS (html.kb, html.kb-fil) :
+     rien à réparer — c'est ce qui faisait redescendre la barre d'écriture. */
+  if(document.documentElement.classList.contains("kb")) return;
   const vraie = hauteurDeRepos();   // jamais la hauteur d'un clavier ouvert
   if(!vraie) return;
   if(appEpinglee){ app.style.height = ""; appEpinglee = false; }
@@ -26883,6 +27221,9 @@ function reparerHauteurApp(){
 function mesurerHauteurUtile(){
   const app = glassAppEl || document.getElementById("app");
   if(!app) return;
+  /* La place utile se mesure clavier rangé : une discussion rétrécie au
+     clavier ferait rétrécir tout ce qui s'accroche à --hu. */
+  if(document.documentElement.classList.contains("kb")) return;
   const cs = getComputedStyle(app);
   const utile = app.clientHeight - (parseFloat(cs.paddingTop)||0) - (parseFloat(cs.paddingBottom)||0);
   if(utile > 80) document.documentElement.style.setProperty("--hu", (utile / 100) + "px");

@@ -16,7 +16,13 @@
         redescend » — c'était à chaque envoi) : on écrit, on touche la
         flèche, le message part et le champ garde le foyer ; pareil pour la
         pastille « Nouveaux messages » ;
-     6. aucune erreur.
+     6. ROUVRIR LE CLAVIER JUSTE APRÈS L'AVOIR FERMÉ (v317 : « lors de
+        l'ouverture du clavier, à certains moments la barre d'écriture
+        redescend ») : une remise à la hauteur de repos, programmée 1,2 s
+        après chaque fermeture, tombait sur le clavier rouvert et rendait à
+        la discussion sa pleine hauteur — la barre passait sous le clavier.
+        Elle doit rester au-dessus, sans hauteur épinglée ;
+     7. aucune erreur.
    Usage : node banc-essai/clavier-discussion.js [url] */
 const { chromium } = require('/opt/node22/lib/node_modules/playwright');
 const URL = process.argv[2] || 'http://127.0.0.1:8099/index.html';
@@ -130,7 +136,11 @@ async function telephone(nav){
       fil: document.documentElement.classList.contains('kb-fil') }));
     dit('toucher la flèche envoie le message', e.envois === 1, e.envois + ' envoi(s)');
     dit('… et le champ garde le foyer : le clavier reste levé', e.foyer === 'compoTexte' && e.pertes === 0 && e.fil, JSON.stringify(e));
-    await p.evaluate(() => { const b = document.getElementById('filBas'); if (b) b.hidden = false; });
+    /* La pastille, montrée et TENUE montrée : le fil qui se recale au bas
+       (le clavier vient de bouger) la recachait entre deux, et le toucher
+       attendait un bouton disparu. On ne juge ici que son toucher. */
+    await p.evaluate(() => { const b = document.getElementById('filBas'); if (!b) return; b.hidden = false;
+      Object.defineProperty(b, 'hidden', { configurable: true, get: () => false, set: () => {} }); });
     await p.locator('#filBas').tap();
     await p.waitForTimeout(500);
     const f = await p.evaluate(() => ({ foyer: (document.activeElement || {}).id || '', pertes: window.__pertes }));
@@ -138,7 +148,42 @@ async function telephone(nav){
     if (errs.length) dit('aucune erreur', false, errs.slice(0, 2).join(' | '));
     await ctx.close();
   }
+  /* ---- 6 : fermer, rouvrir aussitôt, attendre la remise de 1,2 s ---- */
+  {
+    const { p, ctx, errs } = await telephone(nav);
+    const clavier = (haut) => p.evaluate((haut) => { window.__kb = haut; window.visualViewport.dispatchEvent(new Event('resize')); }, haut);
+    await p.evaluate(() => document.getElementById('compoTexte').focus({ preventScroll: true }));
+    await clavier(true);
+    await p.waitForTimeout(700);
+    await p.evaluate(() => document.getElementById('compoTexte').blur());
+    await clavier(false);
+    await p.waitForTimeout(350);
+    await p.evaluate(() => document.getElementById('compoTexte').focus({ preventScroll: true }));
+    await clavier(true);
+    /* On suit la barre pendant deux secondes : la remise tombe à 1,23 s
+       après la fermeture. */
+    const suivi = await p.evaluate((bord) => new Promise(res => {
+      const out = []; const t0 = performance.now();
+      const pas = () => { const c = document.getElementById('compoTexte').getBoundingClientRect();
+        out.push({ t: Math.round(performance.now() - t0), bas: Math.round(c.bottom), haut: Math.round(document.getElementById('app').getBoundingClientRect().height),
+          epingle: document.getElementById('app').style.height || '' });
+        if (performance.now() - t0 < 2000) requestAnimationFrame(pas); else res(out); };
+      requestAnimationFrame(pas);
+    }), H - KB);
+    /* La barre MONTE avec le clavier (la discussion prend la hauteur visible
+       en douceur) : ce qu'on juge, c'est qu'une fois en haut elle n'en
+       redescend plus — c'était le défaut. */
+    const arrivee = suivi.findIndex(x => x.bas <= H - KB);
+    const apres = arrivee >= 0 ? suivi.slice(arrivee) : [];
+    const pire = apres.reduce((a, x) => x.bas > a.bas ? x : a, apres[0] || suivi[0]);
+    const fin = suivi[suivi.length - 1];
+    dit('rouvrir le clavier juste après l\'avoir fermé : la barre monte, et n\'en redescend plus', arrivee >= 0 && suivi[arrivee].t < 700 && pire.bas <= H - KB,
+      (arrivee >= 0 ? 'en haut à ' + suivi[arrivee].t + ' ms ; ' : 'jamais en haut ; ') + 'pire ensuite à ' + pire.t + ' ms : bas du champ ' + pire.bas + ' / bord ' + (H - KB) + (pire.epingle ? ', hauteur épinglée ' + pire.epingle : ''));
+    dit('… et la discussion garde la hauteur visible, sans hauteur épinglée', fin.haut <= H - KB + 1 && !fin.epingle, JSON.stringify(fin));
+    if (errs.length) dit('aucune erreur', false, errs.slice(0, 2).join(' | '));
+    await ctx.close();
+  }
   await nav.close();
-  console.log(ko ? '\n  ECHEC — ' + ko + ' point(s)' : '\n  OK — le clavier ne fait plus bouger la discussion, la feuille monte d\'un trait, et envoyer ne le ferme pas');
+  console.log(ko ? '\n  ECHEC — ' + ko + ' point(s)' : '\n  OK — le clavier ne fait plus bouger la discussion, la feuille monte d\'un trait, envoyer ne le ferme pas, et la barre reste au-dessus');
   process.exit(ko ? 1 : 0);
 })();

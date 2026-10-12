@@ -29,7 +29,12 @@
      8. rien à rattraper : « Rien à rattraper » et un bouton vers le Solo ;
         tout rattrapé cette semaine : « Tout est rattrapé » ;
      9. la page ne déborde pas, sur un iPhone SE comme sur un iPhone 15 ;
-    10. aucune erreur.
+    10. QUINZE AU PLUS (v317 : « ici 193 à revoir, c'est beaucoup trop ») :
+        une journée à 193 erreurs n'en garde que les 15 plus récentes ;
+        rattraper fait BAISSER la liste (pas de vieille erreur pour combler) ;
+        une nouvelle erreur pousse la plus vieille dehors ; le carnet, lui,
+        n'oublie rien ;
+    11. aucune erreur.
    Usage : node banc-essai/seconde-chance.js [url] */
 const { chromium } = require('/opt/node22/lib/node_modules/playwright');
 const URL = process.argv[2] || 'http://127.0.0.1:8099/index.html';
@@ -189,6 +194,37 @@ const v = (nom, bon, det) => { if (!bon) ko++; console.log('  ' + (bon ? 'OK ' :
       await p.waitForTimeout(600);
       const solo = await p.evaluate(() => ({ ecran: state.screen, mode: state.mode }));
       v('rien à rattraper : « Rien à rattraper », et le bouton mène au Solo', /Rien à rattraper/.test(rien.titre) && solo.ecran === 'setup' && solo.mode === 'solo', rien.titre + ' -> ' + JSON.stringify(solo));
+
+      /* ---- 10 ---- QUINZE AU PLUS : 193 erreurs d'hier, une par minute. */
+      const quinze = await p.evaluate(() => {
+        const tous = [].concat(BANK.facile, BANK.moyen, BANK.difficile).filter(q => bookOf(q));
+        const d = new Date(), hier = new Date(d.getFullYear(), d.getMonth(), d.getDate() - 1, 18, 0, 0).getTime();
+        const a = [];
+        for (let i = 0; i < 193; i++) { const q = tous[i], t = hier - i * 60000;
+          a.push({ k: qKey(q), n: 1, p: 0, du: dayKey(1), maj: t, rate: t, q: q.q, options: q.options, correct: q.correct, fact: q.fact, tier: 'moyen' }); }
+        saveErrbook(a); localStorage.removeItem('bt_acquises');
+        const r = { file: aRattraper().map(x => x.k), faites: rattrapees().length, carnet: loadErrbook().length, attendu: a.slice(0, 15).map(x => x.k) };
+        state.screen = 'revoir'; render();
+        return r;
+      });
+      await p.waitForTimeout(700);
+      const ecran15 = await p.evaluate(() => ({ nb: +((document.querySelector('.rv-nb') || {}).textContent || -1), lignes: document.querySelectorAll('.rv-ligne').length,
+        suite: (document.querySelector('.rv-suite') || {}).textContent || '', jauge: (document.querySelector('.rv-pct') || {}).textContent || '' }));
+      v('193 erreurs d\'hier : seules les 15 plus récentes comptent', quinze.file.length === 15 && JSON.stringify(quinze.file) === JSON.stringify(quinze.attendu), quinze.file.length + ' à rattraper sur ' + quinze.carnet + ' au carnet');
+      v('… l\'écran en montre 5, « Et 10 autres ensuite », la jauge « sur 15 »', ecran15.nb === 5 && ecran15.lignes === 5 && /\b10\b/.test(ecran15.suite) && /sur 15$/.test(ecran15.jauge.trim()), JSON.stringify(ecran15));
+      /* Rattraper cinq, par le chemin d'une bonne réponse (errbookRemove). */
+      const apres5 = await p.evaluate(() => { aRattraper().slice(0, 5).forEach(x => errbookRemove(x));
+        return { file: aRattraper().length, faites: rattrapees().length, carnet: loadErrbook().length }; });
+      v('rattraper cinq : la liste baisse à 10, sans vieille erreur pour combler', apres5.file === 10 && apres5.faites === 5, JSON.stringify(apres5));
+      /* Une nouvelle erreur, par le chemin d'une mauvaise réponse (errbookAdd). */
+      const neuve = await p.evaluate(() => {
+        const tous = [].concat(BANK.facile, BANK.moyen, BANK.difficile).filter(q => bookOf(q));
+        const q = tous[400]; errbookAdd(q);
+        const l = dernieresErreurs();
+        return { tete: (aRattraper()[0] || {}).k === qKey(q), total: l.length, file: aRattraper().length, faites: rattrapees().length, carnet: loadErrbook().length };
+      });
+      v('une nouvelle erreur passe en tête et pousse la plus vieille dehors', neuve.tete && neuve.total === 15 && neuve.file === 10 && neuve.faites === 5, JSON.stringify(neuve));
+      v('… et le carnet n\'a rien oublié', neuve.carnet === 194, neuve.carnet + ' au carnet');
       v('aucune erreur', errs.length === 0, errs.slice(0, 2).join(' | '));
       await ctx.close();
     }

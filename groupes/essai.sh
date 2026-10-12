@@ -289,6 +289,64 @@ dit "C (membre) ne supprime pas le groupe" "$(F_ $C "supprimer_groupe('$GP')")" 
 dit "B (propriétaire) le supprime" "$(F_ $B "supprimer_groupe('$GP')")" "ok"
 dit "  ... il disparaît de « mes groupes »" "$(R $C "select count(*) from mes_groupes() x where x->>'id' = '$GP'")" "0"
 
+# ---- 9 bis. les mentions et les notifications (v317) --------------------------
+titre "mentions, @tout le monde, notifications"
+vieillir
+GM=$(R $A "select creer_groupe('Les mentions', '', false, 'fr', 1)->>'id'")
+CM=$(R $A "select code from groupes where id = '$GM'")
+for u in $B $C $E; do R $u "select rejoindre_groupe(null, '$CM')" >/dev/null; done
+R $A "select moderer_membre('$GM', '$B', 'promouvoir', null)" >/dev/null
+lire_tout(){ R "$1" "select marquer_lu('$GM', (select max(id) from messages where groupe = '$GM'))" >/dev/null; }
+compte(){ R "$1" "select (x->>'non_lus') || '/' || (x->>'mentions') from mes_groupes() x where x->>'id' = '$GM'"; }
+for u in $A $B $C $E; do lire_tout $u; done
+dit "chacun commence à « tout »" "$(R $C "select x->>'notifs' from mes_groupes() x where x->>'id' = '$GM'")" "tout"
+dit "C ne veut que les mentions" "$(F_ $C "regler_notifs('$GM', 'mentions')")" "ok"
+dit "  ... et le retrouve dans « mes groupes »" "$(R $C "select x->>'notifs' from mes_groupes() x where x->>'id' = '$GM'")" "mentions"
+dit "  ... E, lui, n'a rien changé" "$(R $E "select x->>'notifs' from mes_groupes() x where x->>'id' = '$GM'")" "tout"
+dit "une valeur inconnue" "$(F_ $C "regler_notifs('$GM', 'bruit')")" "valeur"
+dit "régler un groupe dont on n'est pas" "$(F_ $F "regler_notifs('$GM', 'rien')")" "pas_membre"
+dit "un non-connecté ne règle rien" "$(refuse "$(Q -c "begin; set local role anon; select regler_notifs('$GM', 'rien'); commit;" 2>&1 | head -1)")" "refusé"
+dit "le réglage de C ne se lit pas par E" "$(refuse "$(R $E "select notifs from membres where groupe = '$GM' and membre = '$C'")")" "refusé"
+dit "  ... ni par C lui-même, en direct (seulement par « mes groupes »)" "$(refuse "$(R $C "select notifs from membres where membre = '$C'")")" "refusé"
+dit "  ... le reste des membres se lit toujours" "$(R $E "select role from membres where groupe = '$GM' and membre = '$A'")" "proprietaire"
+dit "  ... et se compte" "$(R $E "select count(*) from membres where groupe = '$GM'")" "4"
+dit "personne ne règle les notifications d'un autre en direct" "$(refuse "$(R $E "update membres set notifs = 'rien' where membre = '$C'")")" "refusé"
+vieillir
+dit "A nomme C (et F, qui n'est pas du groupe, et lui-même)" "$(F_ $A "envoyer_message('$GM', 'Bravo @Chloé', 'texte', '{\"mentions\":[\"$C\",\"$F\",\"$A\",\"$C\",\"pas-un-id\"]}')")" "ok"
+dit "  ... le serveur ne garde que C, une fois" "$(R $A "select donnees->'mentions' from messages where groupe = '$GM' order by id desc limit 1")" "[\"$C\"]"
+dit "  ... C : un non-lu, une mention" "$(compte $C)" "1/1"
+dit "  ... E : un non-lu, aucune mention" "$(compte $E)" "1/0"
+vieillir
+dit "des mentions qui ne sont pas une liste sont ignorées" "$(F_ $E "envoyer_message('$GM', 'salut', 'texte', '{\"mentions\":\"$C\",\"code\":\"X\"}')")" "ok"
+dit "  ... et rien d'autre ne passe dans le message" "$(R $E "select donnees::text from messages where groupe = '$GM' order by id desc limit 1")" "{}"
+dit "  ... C : deux non-lus, toujours une mention" "$(compte $C)" "2/1"
+lire_tout $C
+dit "lire remet les mentions à zéro" "$(compte $C)" "0/0"
+vieillir
+dit "C (membre) ne prévient pas tout le monde" "$(F_ $C "envoyer_message('$GM', '@tout le monde venez', 'texte', '{\"tous\":true}')")" "tous_reserve"
+dit "  ... et rien n'est parti" "$(R $A "select count(*) from messages where groupe = '$GM' and texte = '@tout le monde venez'")" "0"
+dit "B (admin) prévient tout le monde" "$(F_ $B "envoyer_message('$GM', '@tout le monde on joue', 'texte', '{\"tous\":true}')")" "ok"
+dit "  ... le message le dit" "$(R $C "select donnees->>'tous' from messages where groupe = '$GM' order by id desc limit 1")" "true"
+dit "  ... C le compte comme une mention" "$(compte $C)" "1/1"
+dit "  ... A aussi (et le message d'E)" "$(compte $A)" "2/1"
+dit "  ... mais pas B, qui l'a écrit — écrire, c'est avoir lu" "$(compte $B)" "0/0"
+vieillir; F_ $A "envoyer_message('$GM', '@tout le monde 2', 'texte', '{\"tous\":true}')" >/dev/null
+vieillir; F_ $B "envoyer_message('$GM', '@tout le monde 3', 'texte', '{\"tous\":true}')" >/dev/null
+vieillir
+dit "une quatrième fois dans l'heure : refusé" "$(F_ $A "envoyer_message('$GM', '@tout le monde 4', 'texte', '{\"tous\":true}')")" "tous_trop_souvent"
+dit "  ... mais nommer quelqu'un passe toujours" "$(F_ $A "envoyer_message('$GM', '@Chloé tu viens', 'texte', '{\"mentions\":[\"$C\"]}')")" "ok"
+lire_tout $E
+F_ $E "bloquer('$C')" >/dev/null
+vieillir
+F_ $C "envoyer_message('$GM', 'coucou @Joueur', 'texte', '{\"mentions\":[\"$E\"]}')" >/dev/null
+dit "une mention d'une personne bloquée ne compte pas" "$(compte $E)" "0/0"
+F_ $E "debloquer('$C')" >/dev/null
+dit "  ... débloquée, elle revient" "$(compte $E)" "1/1"
+vieillir
+dit "une invitation à jouer qui glisse des mentions" "$(F_ $A "envoyer_message('$GM', '', 'partie', '{\"code\":\"AB3C\",\"mentions\":[\"$C\"]}')")" "ok"
+dit "  ... ne garde que son code" "$(R $A "select donnees::text from messages where groupe = '$GM' and genre = 'partie' order by id desc limit 1")" '{"code": "AB3C"}'
+dit "  ... et ne nomme personne (C a écrit juste avant : tout était lu)" "$(compte $C)" "1/0"
+
 # ---- 10. supprimer son compte -------------------------------------------------
 titre "supprimer son compte"
 vieillir; R $F "select envoyer_message('$GO', 'au revoir', 'texte', null)" >/dev/null

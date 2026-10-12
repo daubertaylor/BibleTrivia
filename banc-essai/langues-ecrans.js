@@ -240,6 +240,9 @@ const MEME_DANS_LES_DEUX = [
      Ce n'est pas une phrase, c'est un repère : il s'écrit pareil partout,
      sinon on ne le retrouve pas. */
   { quoi:/^CONFIG EN LIGNE$/, ou:/info-card/, car:'le nom d\'un bloc de code, pas du texte' },
+  /* La puce « Mentions » des notifications d'un groupe (v317) : le même mot
+     en anglais (l'espagnol dit « Menciones »). */
+  { lg:'en', quoi:/^Mentions$/, ou:/grp-notifs/, car:'même mot dans les deux langues' },
   /* LA PAGE DU NOUVEAU TESTAMENT (v316) montre ses vingt-sept abrégés. Trois
      s'écrivent pareil en anglais — LIVRES_COURTS_EN les porte exprès —, et
      l'espagnol abrège Apocalipsis en « Apoc. », comme le français. */
@@ -780,10 +783,32 @@ const ouvrirLaLangue = async (p, lg) => {
        au-dessus de la discussion (voir sortirVersGroupe). */
     ['Groupes · partie finie', async () => { showMiniToast(T("Cette partie n'est plus ouverte."));
       await new Promise(r => setTimeout(r, 120)); }],
+    /* LES MENTIONS (v317). Taper « @ » propose les membres et, à qui peut
+       s'en servir, « @tout le monde » ; un simple membre qui commence à
+       l'écrire lit qu'il est réservé. Par majNoms, la fonction que la frappe
+       appelle. Puis les deux refus du serveur, par motErreurGroupe, celle
+       qui les traduit pour l'envoi. */
+    ['Groupes · mentions', () => { const t = document.getElementById('compoTexte');
+      t.focus({ preventScroll:true }); t.value = '@'; t.setSelectionRange(1, 1); majNoms(t); }],
+    ['Groupes · mentions réservées', () => { grp.membres['g-1'][0].role = 'membre'; grp.etat.moderateur = false;
+      const t = document.getElementById('compoTexte'); t.value = '@to'; t.setSelectionRange(3, 3); majNoms(t); }],
+    ['Groupes · prévenir refusé', async () => { const t = document.getElementById('compoTexte'); t.value = ''; majNoms(t);
+      grp.membres['g-1'][0].role = 'proprietaire'; grp.etat.moderateur = true;
+      showMiniToast(motErreurGroupe({ ok:false, erreur:'tous_reserve' })); await new Promise(r => setTimeout(r, 120)); }],
+    ['Groupes · prévenir trop souvent', async () => {
+      showMiniToast(motErreurGroupe({ ok:false, erreur:'tous_trop_souvent' })); await new Promise(r => setTimeout(r, 120)); }],
     ['Groupes · sourdine', () => { grp.membres['g-1'][0].muet_jusqu = new Date(Date.now() + 3600000).toISOString(); majCompo(); }],
     ['Groupes · fil vide', () => { __fermerTout(); __grpDecor(); grp.fils['g-1'] = { charge:true, tout:true, messages:[] }; grp.courant = 'g-1';
       state.screen='groupe'; render(); }],
     ['Groupes · infos',    () => { __fermerTout(); __grpDecor(); grp.courant = 'g-1'; state.screen='groupe'; render(); ouvrirInfosGroupe(true); }],
+    /* LES NOTIFICATIONS D'UN GROUPE (v317) : la page ne montre que l'aide du
+       réglage choisi. On passe par les trois — appliquerNotifs, ce que le
+       toucher appelle, sans le serveur —, puis le mot d'un serveur qui n'a
+       pas encore reçu la nouvelle table (une fonction absente). */
+    ['Groupes · notifs mentions', () => { appliquerNotifs(groupeCourant(), 'mentions'); }],
+    ['Groupes · notifs muet',     () => { appliquerNotifs(groupeCourant(), 'rien'); }],
+    ['Groupes · réglage indisponible', () => { appliquerNotifs(groupeCourant(), 'tout');
+      motFeuille('grpInfosVeil', motErreurGroupe({ ok:false, erreur:'reseau', error:{ code:'PGRST202' } })); }],
     ['Groupes · membre',   () => { __fermerTout(); ouvrirMembre('u-4'); }],
     ['Groupes · admin',    () => { __fermerTout(); ouvrirMembre('u-2'); }],
     ['Groupes · en sourdine', () => { __fermerTout(); ouvrirMembre('u-3'); }],

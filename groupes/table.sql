@@ -183,6 +183,18 @@ alter table public.profils add column if not exists photo_retiree_le timestamptz
 alter table public.groupes add column if not exists photo            text;
 alter table public.groupes add column if not exists photo_maj        bigint not null default 0;
 alter table public.groupes add column if not exists photo_retiree_le timestamptz;
+-- LES NOTIFICATIONS D'UN GROUPE, CHOISIES PAR CHAQUE MEMBRE (v317).
+-- « Pour les groupes, je veux la possibilité de mettre le groupe en muet, et
+--   autre, comme par exemple choisir de recevoir juste les mentions. »
+-- « tout » (par défaut), « mentions » (seulement quand on me nomme, ou
+-- « @tout le monde »), « rien ». À ne pas confondre avec « muet_jusqu », la
+-- sourdine qu'un admin impose à un membre pour l'empêcher d'ÉCRIRE.
+alter table public.membres add column if not exists notifs text not null default 'tout';
+do $$
+begin
+  alter table public.membres add constraint membres_notifs_valeurs check (notifs in ('tout','mentions','rien'));
+exception when duplicate_object then null;
+end $$;
 do $$
 begin
   alter table public.profils add constraint profils_photo_jpeg
@@ -357,6 +369,12 @@ create policy "groupes publics et les siens" on public.groupes for select to aut
 drop policy if exists "les membres de ses groupes" on public.membres;
 create policy "les membres de ses groupes" on public.membres for select to authenticated
   using (public._membre(groupe, auth.uid()) or public._moderateur(auth.uid()));
+-- CE QUE CHACUN VEUT ENTENDRE D'UN GROUPE NE REGARDE QUE LUI (v317). La
+-- table des membres se lit colonne par colonne : toutes, sauf « notifs ». Le
+-- jeu reçoit son propre réglage par mes_groupes(), jamais celui des autres.
+-- (Une colonne ajoutée plus tard à « membres » devra être nommée ici pour se lire.)
+revoke select on public.membres from anon, authenticated;
+grant select (groupe, membre, role, rejoint_le, muet_jusqu, lu_jusqu) on public.membres to authenticated;
 
 drop policy if exists "les admins voient les bannis" on public.bannis;
 create policy "les admins voient les bannis" on public.bannis for select to authenticated
@@ -570,6 +588,7 @@ declare
   dernier timestamptz;
   id_ bigint;
   ouverte bigint;
+  nommes jsonb;
 begin
   if etat <> 'ok' then return jsonb_build_object('ok', false, 'erreur', etat); end if;
   select * into m from public.membres where groupe = p_groupe and membre = moi;
@@ -590,6 +609,30 @@ begin
     if char_length(t) > 500 then return jsonb_build_object('ok', false, 'erreur', 'trop_long'); end if;
     if public._interdit(t) then return jsonb_build_object('ok', false, 'erreur', 'mot_interdit'); end if;
     if g.ouvert and public._coordonnees(t) then return jsonb_build_object('ok', false, 'erreur', 'coordonnees'); end if;
+    -- LES MENTIONS (v317). « Le @ et le nom de la personne, ou @tout le
+    -- monde pour notifier tout le monde — réservé à un certain grade dans le
+    -- groupe, pas que tout le monde puisse faire n'importe quoi. »
+    -- Le téléphone dit qui il nomme ; le serveur ne garde que des membres du
+    -- groupe (jamais soi-même), chacun une fois, douze au plus. « @tout le
+    -- monde » n'appartient qu'aux admins du groupe (et aux modérateurs du
+    -- jeu), et trois fois par heure au plus dans un groupe : c'est une
+    -- sonnette, pas un haut-parleur.
+    if p_donnees is not null and jsonb_typeof(p_donnees->'mentions') = 'array' then
+      select coalesce(jsonb_agg(x.membre::text), '[]'::jsonb) into nommes
+        from public.membres x
+       where x.groupe = p_groupe and x.membre <> moi
+         and x.membre::text in (select e from jsonb_array_elements_text(p_donnees->'mentions') e limit 12);
+      if jsonb_array_length(nommes) > 0 then d := d || jsonb_build_object('mentions', nommes); end if;
+    end if;
+    if p_donnees is not null and p_donnees->'tous' = 'true'::jsonb then
+      if not (m.role in ('proprietaire','admin') or public._moderateur(moi)) then
+        return jsonb_build_object('ok', false, 'erreur', 'tous_reserve'); end if;
+      if (select count(*) from public.messages x
+           where x.groupe = p_groupe and x.genre = 'texte' and x.donnees->'tous' = 'true'::jsonb
+             and x.cree_le > now() - interval '1 hour') >= 3 then
+        return jsonb_build_object('ok', false, 'erreur', 'tous_trop_souvent'); end if;
+      d := d || jsonb_build_object('tous', true);
+    end if;
   elsif genre = 'partie' then
     -- Une invitation à jouer : seulement le code d'un salon en ligne. Aucun
     -- texte libre ne passe par là.
@@ -639,6 +682,19 @@ begin
     update public.messages set donnees = donnees || jsonb_build_object('fermee', true) where id = p_message;
   end if;
   return jsonb_build_object('ok', true);
+end $$;
+
+-- CE QUE JE VEUX ENTENDRE D'UN GROUPE (v317) : tout, seulement les
+-- mentions, ou rien. Chacun pour soi, sans que les autres le sachent.
+create or replace function public.regler_notifs(p_groupe uuid, p_notifs text) returns jsonb
+language plpgsql volatile security definer set search_path = '' as $$
+declare moi uuid := auth.uid();
+begin
+  if moi is null then return jsonb_build_object('ok', false, 'erreur', 'non_connecte'); end if;
+  if coalesce(p_notifs, '') not in ('tout','mentions','rien') then return jsonb_build_object('ok', false, 'erreur', 'valeur'); end if;
+  update public.membres set notifs = p_notifs where groupe = p_groupe and membre = moi;
+  if not found then return jsonb_build_object('ok', false, 'erreur', 'pas_membre'); end if;
+  return jsonb_build_object('ok', true, 'notifs', p_notifs);
 end $$;
 
 create or replace function public.marquer_lu(p_groupe uuid, p_message bigint) returns void
@@ -886,6 +942,14 @@ language sql stable security definer set search_path = '' as $$
            'id', g.id, 'nom', g.nom, 'ouvert', g.ouvert, 'teinte', g.teinte, 'code', g.code,
            'nb_membres', g.nb_membres, 'role', mb.role, 'muet_jusqu', mb.muet_jusqu, 'photo_maj', g.photo_maj,
            'dernier_message', g.dernier_message,
+           -- v317 : ce que je veux entendre de ce groupe, et combien de
+           -- messages non lus me nomment (ou nomment tout le monde).
+           'notifs', mb.notifs,
+           'mentions', (select count(*) from public.messages x
+                         where x.groupe = g.id and x.id > mb.lu_jusqu and x.auteur is distinct from mb.membre
+                           and x.supprime_le is null and not x.masque and not public._bloque(mb.membre, x.auteur)
+                           and x.genre = 'texte'
+                           and ((x.donnees->'mentions') ? mb.membre::text or x.donnees->'tous' = 'true'::jsonb)),
            'non_lus', (select count(*) from public.messages x
                         where x.groupe = g.id and x.id > mb.lu_jusqu and x.auteur is distinct from mb.membre
                           and x.supprime_le is null and not public._bloque(mb.membre, x.auteur) and x.genre <> 'systeme'),
@@ -1029,7 +1093,7 @@ begin
                                 '_coordonnees','_code','_peut_participer','_annoncer','_passer_la_main','_masquer','_quitter_tout','_nom',
                                 '_maintenant_ms','_photo_valide','poser_photo','poser_photo_groupe',
                                 'mon_etat_groupes','poser_profil','accepter_regles','creer_groupe','groupe_par_code',
-                                'rejoindre_groupe','quitter_groupe','envoyer_message','fermer_partie','marquer_lu','supprimer_message',
+                                'rejoindre_groupe','quitter_groupe','envoyer_message','fermer_partie','marquer_lu','regler_notifs','supprimer_message',
                                 'signaler','bloquer','debloquer','moderer_membre','modifier_groupe','nouveau_code',
                                 'supprimer_groupe','groupes_publics','mes_groupes','moderation_ouverte',
                                 'traiter_signalement')

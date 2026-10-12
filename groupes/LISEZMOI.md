@@ -91,6 +91,18 @@ l'étape 2. Rien n'est effacé, rien n'est à refaire ensuite.
 Tant que ce n'est pas fait, le jeu ne propose aucune photo et n'en demande
 aucune : tout marche exactement comme avant.
 
+### 7. Les mentions et les notifications (v317) — recoller le fichier une fois
+
+La v317 apporte les **mentions** (`@Nom`, et `@tout le monde` pour les admins)
+et le choix, groupe par groupe, de ce qu'on veut entendre : **Tout**,
+**Mentions** ou **Muet**. Comme à l'étape 6 : recoller `groupes/table.sql`
+**en entier** dans **SQL Editor** → **Run**. Rien n'est effacé, et chacun
+commence à « Tout ».
+
+Tant que ce n'est pas fait, les messages partent normalement — simplement sans
+mention retenue —, et le choix Tout / Mentions / Muet répond « Pas encore
+disponible » au lieu de s'enregistrer.
+
 ## Ce que voit le joueur
 
 - **Accueil** : la barre flottante en bas, **Accueil · Groupes**, avec une
@@ -120,6 +132,17 @@ aucune : tout marche exactement comme avant.
   sourdine une heure, retirer ou bannir un membre, supprimer un message,
   modifier le groupe et changer le code. Un admin ne peut jamais toucher au
   propriétaire.
+- **Les mentions** (v317, étape 7) : taper `@` propose les membres du groupe ;
+  le nom choisi s'écrit en entier et ressort en gras dans la bulle, et la bulle
+  qui me nomme prend un fond doré. `@tout le monde` (`@everyone`, `@todos`)
+  n'est proposé qu'aux admins du groupe et aux modérateurs — le serveur le
+  refuse aux autres, et ne le laisse passer que **trois fois par heure** dans
+  un même groupe. Le serveur ne retient que de vrais membres du groupe.
+- **Les notifications d'un groupe** (v317) : dans la page du groupe, chacun
+  choisit **Tout**, **Mentions** (seulement ce qui le nomme, ou s'adresse à
+  tout le monde) ou **Muet**. Ce choix décide de ce qui compte dans la pastille
+  de « Messages » ; les non-lus restent comptés sur la ligne du groupe, en gris.
+  Personne d'autre ne voit ce choix.
 
 ## La modération
 
@@ -220,7 +243,7 @@ changer en même temps.
 ## Vérifier sans le jeu
 
 ```bash
-bash groupes/essai.sh      # 155 vérifications sur un vrai PostgreSQL 16
+bash groupes/essai.sh      # 189 vérifications sur un vrai PostgreSQL 16
 bash comptes/essai.sh      # les comptes, la sauvegarde, la suppression
 node banc-essai/groupes.js # le jeu de bout en bout, à deux téléphones, sur le vrai SQL
 ```
