@@ -97,6 +97,11 @@ const TOLERE = [
      anglais — c'est la tâche suivante, et le jour où elle sera faite ces
      lignes-là ne passeront plus par ici. */
   /^(La Sainte Bible|La Bible|Bible Annotée|Segond|Darby|Ostervald|Crampon|King James|American Standard|World English)/i,
+  /* L'ESPAGNOL ABRÈGE TESALONICENSES EN « TES. » (v316 : les vingt-sept
+     abrégés du Nouveau Testament se lisent maintenant dans sa page). Le
+     détecteur y voit le français « tes » ; le français, lui, écrit
+     « 1 Thess. ». Le motif est exact : ces deux abrégés-là, rien d'autre. */
+  /^[12] Tes\.$/,
 ];
 
 const PREP = (lg) => {
@@ -235,6 +240,16 @@ const MEME_DANS_LES_DEUX = [
      Ce n'est pas une phrase, c'est un repère : il s'écrit pareil partout,
      sinon on ne le retrouve pas. */
   { quoi:/^CONFIG EN LIGNE$/, ou:/info-card/, car:'le nom d\'un bloc de code, pas du texte' },
+  /* LA PAGE DU NOUVEAU TESTAMENT (v316) montre ses vingt-sept abrégés. Trois
+     s'écrivent pareil en anglais — LIVRES_COURTS_EN les porte exprès —, et
+     l'espagnol abrège Apocalipsis en « Apoc. », comme le français. */
+  { lg:'en', quoi:/^(Coloss\.|1 Thess\.|2 Thess\.)$/, ou:/bk-nm/, car:'la même abréviation, portée exprès par LIVRES_COURTS_EN' },
+  { lg:'es', quoi:/^Apoc\.$/, ou:/bk-nm/, car:'la même abréviation d\'Apocalipsis en espagnol' },
+  /* LA PAGE « UN LIVRE » (v316) dit à voix haute le nom de chaque livre et
+     son nombre de questions : « Ruth · 8 questions ». Neuf livres ont le même
+     nom en anglais, et « questions » s'écrit pareil. */
+  { lg:'en', quoi:/^(Ruth|1 Samuel|2 Samuel|Esther|Job|Lamentations|Daniel|Amos|Nahum|Jude|Joel) · \d+ questions?$/, ou:/bk-choix/,
+    car:'un nom de livre écrit pareil, un nombre, et « questions », le même mot en anglais' },
 ];
 /* Les endroits où un texte identique est normal quelle que soit la langue :
    l'initiale d'un avatar, le code du salon, un score, un chiffre.
@@ -327,6 +342,9 @@ const ouvrirLaLangue = async (p, lg) => {
     __fermerTout();
     localStorage.setItem('bt_stats', JSON.stringify({ bestScore:1, bestPct:o.best, games:o.games }));
     state.mode = 'solo'; state.daily = false; state.revision = !!o.revision;
+    /* Ce qui reste à rattraper se lit d'après la porte d'où l'on vient
+       (v316) : par la dernière partie, c'est bt_lastmiss — que l'étape pose. */
+    state.revisionDe = o.revision ? 'setup' : null;
     state.soloIsRecord = !!o.record;
     state.questions = seededDeck(21, '9', null);
     state.currentIndex = state.questions.length;
@@ -872,6 +890,11 @@ const ouvrirLaLangue = async (p, lg) => {
       state.screen='mode'; render(); ouvrirFlamme(); }],
     ['Profil',            () => { __fermerTout(); state.screen='profile'; render(); }],
     ['Progression',       () => { state.screen='parcours'; render(); }],
+    /* LES TESTAMENTS SONT DES PAGES (v316) : leurs sections — Pentateuque…,
+       Évangiles et Actes… — ne se peignent qu'à l'ouverture de chacune. */
+    ['Ancien Testament (page)',  () => { ouvrirTestament('at'); }],
+    ['Nouveau Testament (page)', () => { __fermerTout(); ouvrirTestament('nt'); }],
+    ['Progression (retour)',     () => { __fermerTout(); state.screen='parcours'; render(); }],
     ['À revoir',          () => { state.screen='revoir'; render(); }],
     /* LE CARNET VIDE NE MONTRE PAS TOUT. Sans erreurs, la jauge, la liste et
        le compte ne sont pas peints du tout — des intitulés que le banc ne
@@ -919,6 +942,11 @@ const ouvrirLaLangue = async (p, lg) => {
     ['Réglages Groupe',   () => { state.mode='group'; state.screen='setup'; render(); }],
     ['Réglages Solo',     () => { state.mode='solo'; state.screen='setup'; render(); }],
     ['Partie Solo',       () => { state.mode='solo'; startGame(); }],
+    /* LA SECONDE CHANCE EN JEU (v316) : une bonne réponse, et le fait dit
+       « Rattrapée ! » au lieu de « Le savais-tu ? ». Par le vrai chemin : la
+       séance de l'écran À revoir, et une bonne réponse. */
+    ['Seconde chance · rattrapée', () => { __fermerTout(); startRevision('carnet');
+      const q = currentQ(); if (q) soloAnswer(q.shuffledOptions.indexOf(q.correct)); }],
     ['Fin de partie',     () => { state.screen='end'; render(); }],
     ['Nom en ligne',      () => { state.screen='online-name'; render(); }],
     ['Hub en ligne',      () => { net.connected=1; net.error=''; state.screen='online'; render(); }],
@@ -940,6 +968,16 @@ const ouvrirLaLangue = async (p, lg) => {
        colonne de droite, et il était resté en français pendant que le banc
        était vert — parce qu'aucune étape ne passait par là. */
     ['Salon · duel vide',  () => { net.joueurs={ b:{ id:'b', name:'Sam', color:'#E8574C' } }; net.oppPresent=false; net.opp=null; render(); }],
+    /* UN SEUL LIVRE (v316) : la page des livres, et le mot qui prévient
+       l'hôte quand un invité resté sur une version d'avant ne sait pas lire
+       un livre. Le mot passe par la fonction du jeu (lancerLaManche) ; seul
+       le départ de la manche est retenu — on relève des textes, on ne joue
+       pas. */
+    ['Salon · un livre',   () => { ouvrirChoixLivre(); }],
+    ['Salon · invité d\'avant', () => { __fermerTout();
+      const salon = net.room, depart = window.beginDuel;
+      net.livre = BIBLE_BOOKS[0]; net.room = { send(){} }; window.beginDuel = () => {};
+      try { lancerLaManche(); } finally { net.room = salon; window.beginDuel = depart; net.livre = null; } }],
     /* Une partie en ligne, posée à la main : la même pioche que le jeu, la
        réponse déjà révélée, pour voir aussi la carte du fait et le bouton
        « Question suivante ». */
@@ -1017,7 +1055,16 @@ const ouvrirLaLangue = async (p, lg) => {
        qu'aucun écran ne montre est une traduction qu'on ne peut pas relire. */
     ['Compte · repos',     () => { compte.dispo = true; compte.session = null; compte.etape = 'repos';
       compte.message = ''; state.screen = 'profile'; render(); }],
-    ['Compte · deux portes',() => { compte.google = true; compteOuvrir(); }],
+    /* LA SONDE GOOGLE INTERROGE LE VRAI SERVEUR (/auth/v1/settings, appelée
+       par compteOuvrir), où Google est fermé : selon la vitesse du réseau,
+       elle retirait le bouton avant ou après le relevé, et « Continuer avec
+       Google » passait pour jamais vu une fois sur deux, dans une langue ou
+       dans l'autre. On lui donne sa réponse d'avance (le souvenir qu'elle
+       garde elle-même) : c'est un relevé de textes, pas un essai de la
+       connexion. */
+    ['Compte · deux portes',() => {
+      try { localStorage.setItem(CLE_GOOGLE, JSON.stringify({ ok:true, quand:Date.now() })); } catch(e){}
+      compte.google = true; compteOuvrir(); }],
     ['Compte · pas une adresse', () => { compte.message = T("Cette adresse n'a pas l'air d'une adresse."); majCarteCompte(); }],
     ['Compte · envoi refusé',    () => { compte.message = T("Impossible d'envoyer le code pour l'instant."); majCarteCompte(); }],
     ['Compte · trop d\'essais',  () => { compte.message = T("Trop d'essais d'affilée. Attends une minute, puis réessaie."); majCarteCompte(); }],

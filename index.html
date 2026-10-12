@@ -1682,13 +1682,25 @@
   .rv-t{ font-family:'Poppins',sans-serif; font-size:0.74rem; font-weight:700; letter-spacing:0.06em;
     text-transform:uppercase; color:var(--ink-soft); }
   .rv-liste .rv-t{ margin-bottom:0.35rem; }
-  .rv-ligne{ display:flex; align-items:center; gap:0.55rem; min-height:2.45rem; }
+  /* LA QUESTION SE LIT EN ENTIER (v316). Elle tenait sur une ligne, coupée
+     par « … » — « Quel roi égyptien refusa de laisse… » : on ne savait plus
+     ce qu'on allait rattraper. Elle passe maintenant à la ligne. Les lignes
+     forment une grille à trois colonnes (le livre, la question, le jour) :
+     toutes les questions commencent au même endroit, quelle que soit la
+     largeur du nom du livre, et le livre et le jour se posent sur la ligne de
+     base de leur PREMIÈRE ligne. */
+  .rv-lignes{ display:grid; grid-template-columns:auto minmax(0, 1fr) auto; column-gap:0.6rem; row-gap:0.78rem;
+    align-items:baseline; padding:0.35rem 0 0.5rem; }
+  .rv-ligne{ display:contents; }
+  .rv-lignes .rv-bk{ justify-self:start; }
+  .rv-bk.vide{ padding:0; }
+  .rv-lignes .rv-quand{ justify-self:end; }
   .rv-bk{ flex-shrink:0; max-width:6.5rem; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;
     font-family:'Poppins',sans-serif; font-size:0.68rem; font-weight:700; letter-spacing:0.02em;
     padding:0.24rem 0.52rem; border-radius:var(--r-full); }
   .rv-bk.at{ background:rgba(240,154,24,0.17); color:#8a5e14; }
   .rv-bk.nt{ background:rgba(76,134,232,0.15); color:#2f5fb3; }
-  .rv-q{ flex:1; min-width:0; font-size:0.86rem; color:var(--ink); white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+  .rv-q{ flex:1; min-width:0; font-size:0.86rem; line-height:1.38; color:var(--ink); overflow-wrap:anywhere; hyphens:auto; }
   .rv-quand{ flex-shrink:0; font-size:0.74rem; font-weight:600; color:var(--ink-soft); }
   .rv-suite{ font-size:0.78rem; color:var(--ink-soft); padding:0.2rem 0 0.35rem; }
   /* ===== UN SEUL LIVRE, EN LIGNE (v316) =====
@@ -23101,10 +23113,10 @@ function renderRevoir(){
        </div>
        ${n ? `<div class="card rv-liste">
          <div class="rv-t">${T("Ta seconde chance")}</div>
-         ${seance.map(x => {
+         <div class="rv-lignes">${seance.map(x => {
              const l = bookOf(x), at = l ? BIBLE_BOOKS.indexOf(l) < BIBLE_AT_COUNT : true;
-             return `<div class="rv-ligne">${l ? `<span class="rv-bk ${at ? "at" : "nt"}">${escapeHtml(livreCourt(l))}</span>` : ""}<span class="rv-q">${escapeHtml(texteQuestion(x))}</span><span class="rv-quand">${quandRatee(x)}</span></div>`;
-           }).join("")}
+             return `<div class="rv-ligne">${l ? `<span class="rv-bk ${at ? "at" : "nt"}">${escapeHtml(livreCourt(l))}</span>` : `<span class="rv-bk vide"></span>`}<span class="rv-q">${escapeHtml(texteQuestion(x))}</span><span class="rv-quand">${quandRatee(x)}</span></div>`;
+           }).join("")}</div>
          ${suite > 0 ? `<div class="rv-suite">${Tf(suite > 1 ? "Et {n} autres ensuite" : "Et {n} autre ensuite", { n:suite })}</div>` : ""}
        </div>` : ""}
        <div class="flex-sp"></div>
