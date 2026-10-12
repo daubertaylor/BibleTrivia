@@ -44,12 +44,16 @@ const FRANCAIS = /[àâäéèêëîïôöùûüçÀÂÄÉÈÊËÎÏÔÖÙÛÜÇ]
 
   const mesure = ()=> p.evaluate(()=>{
     const f=document.querySelector('.settings-sheet'), t=document.querySelector('.sheet-title'),
-          b=document.querySelector('.lang-btn');
+          b=document.querySelector('.lang-btn'), h=document.querySelector('#settingsVeil .page-tete');
     const r=(e)=>e?e.getBoundingClientRect():null;
-    const rf=r(f), rt=r(t), rb=r(b);
+    const rf=r(f), rt=r(t), rb=r(b), rh=r(h);
     return { feuille: rf?+rf.height.toFixed(1):null, haut: rf?+rf.top.toFixed(1):null,
              titre: rt?+rt.height.toFixed(1):null,
-             btnDroite: (rb&&rt)?+(rt.right-rb.right).toFixed(1):null,
+             /* Depuis la v315, les Réglages sont une PAGE : le titre est au
+                centre de sa barre, et le drapeau en haut À DROITE de la barre
+                (le retour est à gauche). On le mesure donc au bord droit de la
+                barre, à sa marge près. */
+             btnDroite: (rb&&rh)?+(rh.right-rb.right).toFixed(1):null,
              btnL: rb?+rb.width.toFixed(1):null, code: b?b.textContent.trim():null,
              lang: document.documentElement.lang };
   });
@@ -58,7 +62,7 @@ const FRANCAIS = /[àâäéèêëîïôöùûüçÀÂÄÉÈÊËÎÏÔÖÙÛÜÇ]
   await p.waitForTimeout(800);
   const a = await mesure();
   v("un drapeau dans la rangée de titre", a.code !== null, a.code ? ('« ' + a.code +' », large de ' + a.btnL + ' px') : 'absent');
-  v("il est bien à DROITE du titre", a.btnDroite !== null && Math.abs(a.btnDroite) < 2,
+  v("il est bien en haut à DROITE de la barre", a.btnDroite !== null && a.btnDroite >= 0 && a.btnDroite <= 24,
     a.btnDroite === null ? '—' : (a.btnDroite + ' px du bord droit'));
 
   /* LE DRAPEAU OUVRE UN MENU, il ne fait plus défiler les langues. « Je veux

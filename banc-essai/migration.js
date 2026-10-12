@@ -54,7 +54,7 @@ const { chromium } = require('/opt/node22/lib/node_modules/playwright');
       photo:(localStorage.getItem('bt_photo')||'').length,
       /* le drapeau mort : on le cherche LÀ OÙ IL ÉTAIT ÉCRIT, pas en mémoire */
       badgeEfface: !('isCreator' in JSON.parse(localStorage.getItem('bt_profile')||'{}')),
-      joursLus:joursFaits().size };
+      joursLus:joursFaits().size, memoire:(typeof FLAMME_MEMOIRE !== 'undefined') ? FLAMME_MEMOIRE : 90 };
   });
   const attendu = { genese:14, jean:9, psaumes:22, total:505, meilleure:22, parfaites:3, succes:3, score:980, parties:61,
     serie:120, gels:2, carnet:200, vues:300, sfx:false, volume:0.7, bible:'darby',
@@ -69,11 +69,15 @@ const { chromium } = require('/opt/node22/lib/node_modules/playwright');
      joursFaits() redéploie alors les jours depuis « dernier + série », bornés
      à la mémoire. Ce qu'il faut vérifier, ce n'est donc pas la liste brute,
      c'est ce que le jeu en LIT. */
-  const lus = r.joursLus;
-  const bonJours = lus === Math.min(90, 120);
+  /* LA MÉMOIRE EST CELLE DU JEU, PAS UN CHIFFRE ÉCRIT ICI. Elle était de
+     quatre-vingt-dix jours jusqu'à la v314 ; elle est de quatre cents depuis
+     (la flamme se lit sur un an) : les cent vingt jours de la série se lisent
+     désormais tous. On demande au jeu sa mémoire au lieu de la deviner. */
+  const lus = r.joursLus, attendus = Math.min(r.memoire, 120);
+  const bonJours = lus === attendus;
   if(!bonJours) ko++;
   console.log('  ' + (bonJours?'OK ':'KO ') + 'jours lus'.padEnd(12) + String(lus).padEnd(10)
-    + (bonJours ? '  (série 120 bornée à la mémoire de 90, la série elle-même reste 120)' : '  attendu 90'));
+    + (bonJours ? '  (série 120, mémoire de ' + r.memoire + ' jours : ' + attendus + ' lus ; la série elle-même reste 120)' : '  attendu ' + attendus));
   console.log('  -- livres gardés : ' + r.livres + ' (Exode était à 0 : zéro et absent disent la même chose)');
   if(errs.length){ ko++; console.log('  ERREURS : ' + [...new Set(errs)].slice(0,3).join(' | ')); }
   await b.close();

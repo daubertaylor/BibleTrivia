@@ -327,14 +327,19 @@ const URL = process.argv[2] || 'http://127.0.0.1:8099/index.html';
   dire(apres.ty !== null && Math.abs(apres.ty - z.ty) > 1, '  et le doigt y déplace bien l\'image',
        apres.ty === null ? 'scène fermée' : ('ty ' + z.ty.toFixed(0) + ' -> ' + apres.ty.toFixed(0)));
 
-  /* 2. le doigt sur le TITRE ferme */
+  /* 2. le doigt tire la PAGE depuis le bord gauche : on revient (v315).
+     Le cadrage est devenu une page comme les autres volets : on n'en sort
+     plus en la tirant vers le bas, mais en la tirant depuis le bord gauche —
+     au vrai doigt, le geste du bord ne répond qu'aux touchers. Et ce geste ne
+     part pas de l'image : dans le cadre, le doigt appartient à la photo. */
   if(apres.ouvert){
-    const t = await p.evaluate(()=>{ const e=document.querySelector('#cadrageVeil .sheet-title').getBoundingClientRect();
-      return { x:e.left+e.width/2, y:e.top+e.height/2 }; });
-    await p.mouse.move(t.x, t.y); await p.mouse.down();
-    for(let i=1;i<=8;i++){ await p.mouse.move(t.x, t.y + i*20); await p.waitForTimeout(16); }
-    await p.mouse.up(); await p.waitForTimeout(800);
-    dire(!(await laScene()), 'glisser le doigt vers le bas ferme la scène de cadrage', '');
+    const cdp = await ctx.newCDPSession(p);
+    const doigt = (type, x, y) => cdp.send('Input.dispatchTouchEvent', { type, touchPoints: type === 'touchEnd' ? [] : [{ x, y }] });
+    const yBord = await p.evaluate(()=>{ const e=document.querySelector('#cadrageVeil .page-tete').getBoundingClientRect(); return e.bottom + 12; });
+    await doigt('touchStart', 6, yBord);
+    for(let i=1;i<=12;i++){ await doigt('touchMove', 6 + i*18, yBord + 2); await p.waitForTimeout(16); }
+    await doigt('touchEnd'); await p.waitForTimeout(800);
+    dire(!(await laScene()), 'tirer la page depuis le bord gauche ferme la scène de cadrage', '');
   }
   await p.evaluate(()=>{ try{ fermerCadrage(); }catch(e){} });
   await p.waitForTimeout(600);

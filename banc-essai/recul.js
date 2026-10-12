@@ -1,135 +1,100 @@
-/* ============ BANC « LA FEUILLE QUI RECULE GARDE SON DÉCOR » ============
-   Quand le choix des versions s'ouvre, la feuille des Réglages RECULE : elle
-   rétrécit à 0,935 depuis son bord haut. Sa couche de verre (.gs) est un
-   enfant : elle rétrécit avec elle, et le décor qu'on voit à travers le
-   panneau part en glissade — « la page derrière bug au moment de reprendre sa
-   place ».
-   Le verre du jeu est une FENÊTRE sur un décor fixe : quelle que soit la
-   position du panneau, ce qu'on voit à travers ne doit pas bouger d'un pixel
-   à l'écran. Le banc relève donc, image par image, la position ÉCRAN de la
-   couche .gs pendant le recul et pendant le retour. Tout écart est ce qu'on
-   voit glisser.
-   Il vérifie aussi que le panneau PEINT quelque chose : la v210 avait éteint
-   la couche pour supprimer la glissade, et comme .has-gs retire son fond à la
-   surface, le panneau devenait transparent — titre et interrupteurs flottant
-   au-dessus de l'accueil.
+/* ============ BANC « UNE PAGE SUR UNE PAGE » (v315) ============
+   Jusqu'à la v314, ce banc suivait la couche de verre d'une FEUILLE qui
+   reculait (elle rétrécissait à 0,935 sous la feuille des versions) : le décor
+   vu à travers ne devait pas glisser. Depuis la v315, les feuilles sont des
+   PAGES pleines, sans verre (voir LES VOLETS DEVIENNENT DES PAGES) : il n'y a
+   plus de décor à travers, donc plus rien à retenir. Ce qui compte quand une
+   page s'ouvre par-dessus une autre (la Version de la Bible ou la
+   Confidentialité depuis les Réglages), c'est :
+     1. la page du dessous GLISSE vers la gauche (-22 %) et revient, d'un
+        mouvement régulier — pas de bond d'une image à l'autre ;
+     2. chaque page PEINT un fond plein : rien de l'accueil ne la traverse ;
+     3. l'accueil, dessous, ne se peint plus tant qu'une page le couvre
+        (html.sous-page), et réapparaît dès que la dernière page commence à
+        partir — pas avant, pas après.
    Usage : node banc-essai/recul.js [url]
 */
 const { chromium } = require('/opt/node22/lib/node_modules/playwright');
 const URL = process.argv[2] || 'http://127.0.0.1:8099/index.html';
+let ko = 0;
+const dit = (quoi, bon, detail) => { console.log('  ' + (bon ? 'OK ' : 'KO ') + quoi + (detail ? '   (' + detail + ')' : '')); if (!bon) ko++; };
 
 (async () => {
   const nav = await chromium.launch({ executablePath: '/opt/pw-browsers/chromium' });
   const ctx = await nav.newContext({ viewport:{ width:393, height:852 }, deviceScaleFactor:2,
     isMobile:true, hasTouch:true, serviceWorkers:'block' });
   const p = await ctx.newPage();
+  const erreurs = []; p.on('pageerror', e => erreurs.push(e.message));
+  await p.route('**/supabase-js@2*', (route) => route.fulfill({ status:200, contentType:'application/javascript', body:'' }));
   await p.addInitScript(() => {
     localStorage.setItem('bt_profile', JSON.stringify({ name:'Taylor', color:'#4C86E8' }));
     localStorage.setItem('bt_fs_hint', '1');
   });
-  await p.goto(URL, { waitUntil:'networkidle' });
+  await p.goto(URL);
   await p.waitForFunction(() => { try { return state.screen === 'mode'; } catch(e){ return false; } }, null, { timeout:20000 });
-  await p.evaluate(()=>{ openSettings(); });
-  await p.waitForTimeout(1400);
+  await p.waitForTimeout(500);
 
+  /* Le relevé : la position à l'écran du corps des Réglages, image par image,
+     pendant qu'une action se joue. */
   const sonde = (action) => p.evaluate((a) => new Promise(res => {
     const f = document.querySelector('#settingsVeil .settings-sheet');
-    const gs = f && f.querySelector(':scope > .gs');
-    if(!gs) return res(null);
-    const rel = [];
-    const t0 = performance.now();
-    const tic = ()=>{
-      const g = gs.getBoundingClientRect(), r = f.getBoundingClientRect();
-      rel.push([+(performance.now()-t0).toFixed(0), +g.left.toFixed(1), +g.top.toFixed(1), +r.top.toFixed(1), +r.width.toFixed(1)]);
-      if(performance.now()-t0 < 900) requestAnimationFrame(tic); else res(rel);
+    if (!f) return res(null);
+    const rel = []; const t0 = performance.now();
+    const tic = () => {
+      rel.push(+f.getBoundingClientRect().left.toFixed(1));
+      if (performance.now() - t0 < 900) requestAnimationFrame(tic); else res(rel);
     };
     requestAnimationFrame(tic);
-    setTimeout(()=>{ new Function(a)(); }, 60);
+    setTimeout(() => { new Function(a)(); }, 60);
   }), action);
-
-  let ko = 0;
-  const juge = (nom, rel)=>{
-    if(!rel || rel.length < 6){ console.log('  ' + nom + ' : relevé vide'); ko++; return; }
-    const l0 = rel[0][1], t0v = rel[0][2];
-    let dl = 0, dt = 0;
-    for(const e of rel){ dl = Math.max(dl, Math.abs(e[1]-l0)); dt = Math.max(dt, Math.abs(e[2]-t0v)); }
-    const glisse = Math.max(dl, dt);
-    const course = Math.abs(rel[rel.length-1][4] - rel[0][4]);
-    const bon = glisse <= 3;
-    if(!bon) ko++;
-    console.log('  ' + nom.padEnd(9) + (bon ? ' OK ' : ' KO ')
-      + ' le décor glisse de ' + glisse.toFixed(1) + ' px à l\'écran'
-      + '  (le panneau, lui, se resserre de ' + course.toFixed(1) + ' px)');
+  const juge = (nom, rel, cible) => {
+    if (!rel || rel.length < 8) { dit(nom + ' : relevé', false, 'vide'); return; }
+    let saut = 0;
+    for (let i = 1; i < rel.length; i++) saut = Math.max(saut, Math.abs(rel[i] - rel[i - 1]));
+    const fin = rel[rel.length - 1];
+    dit(nom, Math.abs(fin - cible) <= 1.5 && saut <= 30, 'arrivée ' + fin + ' px pour ' + cible + ', plus grand pas ' + saut.toFixed(1) + ' px/image');
   };
+  const fond = (sel) => p.evaluate((s) => {
+    const v = document.querySelector(s); if (!v) return null;
+    const c = getComputedStyle(v).backgroundColor;
+    const m = /rgba?\(([^)]+)\)/.exec(c); if (!m) return null;
+    const parts = m[1].split(',').map(x => parseFloat(x));
+    return { c, a: parts.length > 3 ? parts[3] : 1 };
+  }, sel);
+  const sousPage = () => p.evaluate(() => ({ classe: document.documentElement.classList.contains('sous-page'),
+    app: getComputedStyle(document.getElementById('app')).visibility }));
 
-  /* ===== D'ABORD CONSTATER QUE LA FEUILLE RECULE VRAIMENT =====
-     Ce banc mesure une COMPENSATION : que le décor reste fixe pendant que la
-     feuille rétrécit. Pendant quatre versions, la feuille ne rétrécissait plus
-     du tout — « both » sur son animation d'entrée battait la règle du recul —
-     et le banc passait au vert en vérifiant une correction pour un mouvement
-     qui n'existait pas. Photo à l'appui : deux feuilles à pleine largeur, l'une
-     sur l'autre.
-     Un banc qui vérifie une compensation doit donc TOUJOURS commencer par
-     établir que la chose à compenser se produit. Sinon son vert ne veut rien
-     dire. */
-  juge('recul', await sonde('openBibles();'));
-  {
-    const e = await p.evaluate(()=>{ const f=document.querySelector('#settingsVeil .settings-sheet');
-      if(!f) return null; return +(new DOMMatrixReadOnly(getComputedStyle(f).transform).a).toFixed(4); });
-    const bon = e !== null && e > 0.90 && e < 0.97;
-    if(!bon) ko++;
-    console.log('  ' + (bon?'OK ':'KO ') + 'la feuille du dessous recule pour de bon'.padEnd(46)
-      + 'échelle ' + e + (bon ? '' : '   attendu ~0,935 — SANS RECUL, TOUT CE BANC NE MESURE RIEN'));
-  }
-  await p.waitForTimeout(900);
-  juge('retour', await sonde('closeBibles();'));
-  await p.waitForTimeout(900);
+  await p.evaluate(() => openSettings());
+  await p.waitForTimeout(1300);
+  const f0 = await fond('#settingsVeil');
+  dit('la page des Réglages peint un fond plein', !!f0 && f0.a >= 0.999, f0 ? f0.c : 'introuvable');
+  const s0 = await sousPage();
+  dit('posée, elle cache l\'accueil (il ne se peint plus)', s0.classe && s0.app === 'hidden', JSON.stringify(s0));
+  const largeur = await p.evaluate(() => innerWidth);
 
-  /* ===== TOUTE FEUILLE QUI S'EMPILE RECULE PAREIL (v303) =====
-     « Vérifie que ça s'ouvre comme les autres superpositions, parce que là
-     c'est pas le cas. » Confidentialité, ouverte depuis les Réglages, se
-     posait par-dessus une feuille restée en pleine taille : ce banc ne
-     regardait que la Bible, il ne pouvait pas le voir. Même mesure, même
-     exigence. (Les feuilles des groupes passent par la même fonction,
-     ouvrirFeuilleGroupe : un membre par-dessus les infos, « Signaler »
-     par-dessus un membre.) */
-  juge('confid.', await sonde('ouvrirConfidentialite();'));
-  {
-    const e = await p.evaluate(()=>{ const f=document.querySelector('#settingsVeil .settings-sheet');
-      if(!f) return null; return +(new DOMMatrixReadOnly(getComputedStyle(f).transform).a).toFixed(4); });
-    const bon = e !== null && e > 0.90 && e < 0.97;
-    if(!bon) ko++;
-    console.log('  ' + (bon?'OK ':'KO ') + 'sous Confidentialité, les Réglages reculent'.padEnd(46)
-      + 'échelle ' + e + (bon ? '' : '   attendu ~0,935, comme sous la Bible'));
-  }
-  await p.waitForTimeout(900);
-  juge('c.retour', await sonde("fermerFeuilleGroupe('confidentialiteVeil');"));
-  await p.waitForTimeout(900);
-  {
-    const e = await p.evaluate(()=>{ const f=document.querySelector('#settingsVeil .settings-sheet');
-      if(!f) return null; return +(new DOMMatrixReadOnly(getComputedStyle(f).transform).a).toFixed(4); });
-    const bon = e !== null && Math.abs(e - 1) < 0.005;
-    if(!bon) ko++;
-    console.log('  ' + (bon?'OK ':'KO ') + 'et ils reviennent à leur taille'.padEnd(46) + 'échelle ' + e);
+  for (const [nom, ouvrir, fermer, id] of [['Version de la Bible', 'openBibles()', 'closeBibles()', '#biblesVeil'],
+                                           ['Confidentialité', 'ouvrirConfidentialite()', "fermerFeuilleGroupe('confidentialiteVeil')", '#confidentialiteVeil']]) {
+    juge(nom + ' : les Réglages glissent à gauche', await sonde(ouvrir), Math.round(-0.22 * largeur * 10) / 10);
+    const f1 = await fond(id);
+    dit(nom + ' : la page du dessus peint un fond plein', !!f1 && f1.a >= 0.999, f1 ? f1.c : 'introuvable');
+    const s1 = await sousPage();
+    dit(nom + ' : l\'accueil reste caché sous les deux pages', s1.classe && s1.app === 'hidden', JSON.stringify(s1));
+    juge(nom + ' : … et reviennent à leur place', await sonde(fermer), 0);
+    await p.waitForTimeout(400);
+    const s2 = await sousPage();
+    dit(nom + ' : une page reste : l\'accueil reste caché', s2.classe && s2.app === 'hidden', JSON.stringify(s2));
   }
 
-  /* ET LE PANNEAU PEINT-IL SEULEMENT QUELQUE CHOSE ? */
-  await p.evaluate(()=>{ openBibles(); });
-  await p.waitForTimeout(1200);
-  const fond = await p.evaluate(()=>{
-    const f = document.querySelector('#settingsVeil .settings-sheet');
-    const gs = f.querySelector(':scope > .gs');
-    const cs = getComputedStyle(f);
-    const og = gs ? parseFloat(getComputedStyle(gs).opacity) : 0;
-    const surface = (cs.backgroundImage !== 'none') || !/, 0\)$/.test(cs.backgroundColor);
-    return { peint: surface || (!!gs && og > 0.01), parLaSurface:surface, parLaCouche: !!gs && og > 0.01, og };
-  });
-  if(!fond.peint) ko++;
-  console.log('  panneau   ' + (fond.peint ? 'OK ' : 'KO ')
-    + ' il peint un fond (surface ' + (fond.parLaSurface?'oui':'non') + ', couche ' + (fond.parLaCouche?'oui':'non') + ')');
-  if(!fond.peint) console.log('           ↳ la feuille du dessous est TRANSPARENTE : son contenu flotte sur l\'accueil');
-
+  /* La dernière page part : l'accueil réapparaît DÈS le départ. */
+  const auDepart = await p.evaluate(() => new Promise(res => {
+    closeSettings();
+    requestAnimationFrame(() => res({ classe: document.documentElement.classList.contains('sous-page'),
+      app: getComputedStyle(document.getElementById('app')).visibility }));
+  }));
+  dit('la dernière page qui part découvre l\'accueil dès son départ', !auDepart.classe && auDepart.app === 'visible', JSON.stringify(auDepart));
+  await p.waitForTimeout(600);
+  dit('aucune erreur', erreurs.length === 0, erreurs.slice(0, 2).join(' | '));
   await nav.close();
-  console.log(ko === 0 ? '\n  OK' : '\n  ' + ko + ' défaut(s)');
-  process.exit(ko === 0 ? 0 : 1);
+  console.log(ko ? '\n  ' + ko + ' défaut(s)' : '\n  OK — une page sur une page : elle glisse, elle couvre, et l\'accueil revient au bon moment');
+  process.exit(ko ? 1 : 0);
 })();

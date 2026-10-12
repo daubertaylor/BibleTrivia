@@ -83,8 +83,17 @@ function lire(rel){
   await p.waitForFunction(()=>{ try{ return state.screen==='mode'; }catch(e){ return false; } }, null, {timeout:20000});
   await p.evaluate(()=>{ try{ getCtx(); }catch(e){} });
 
-  const prepa = async ()=>{ await p.evaluate(()=>{ state.mode='group'; state.teams=[{name:'A'},{name:'B'}]; state.screen='setup'; render(); }); await p.waitForTimeout(800); };
-  const salon = async ()=>{ await p.evaluate(()=>{
+  /* AUCUNE PAGE NE TRAÎNE AU-DESSUS (v315). La famille « Créer un groupe »
+     laisse sa page ouverte ; depuis que les volets sont des pages pleines,
+     l'écran de préparation ne se peint plus dessous (html.sous-page) — et les
+     mesures en pixels relevaient la page au lieu des puces : « 100 % à 100 % »
+     sur une seule image. Avant, c'était déjà faux (la feuille couvrait la
+     rangée et la mesure restait plate), mais ça ne se voyait pas. On ferme
+     donc tout ce qui est ouvert avant de préparer l'écran, comme un doigt
+     l'aurait fait. */
+  const nettoyer = ()=>p.evaluate(()=>{ document.querySelectorAll('.sheet-veil').forEach(e=>e.remove()); });
+  const prepa = async ()=>{ await nettoyer(); await p.evaluate(()=>{ state.mode='group'; state.teams=[{name:'A'},{name:'B'}]; state.screen='setup'; render(); }); await p.waitForTimeout(800); };
+  const salon = async ()=>{ await nettoyer(); await p.evaluate(()=>{
       net.room = { id:'ESSAI' }; net.isHost = true; net.roomCode = 'ESSAI'; net.oppPresent = false;
       state.screen = 'online-room'; render(); }); await p.waitForTimeout(800); };
   const bibles = async ()=>{ await p.evaluate(()=>{ ['biblesVeil','settingsVeil'].forEach(i=>{const e=document.getElementById(i); if(e) e.remove();});

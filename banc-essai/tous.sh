@@ -52,7 +52,13 @@ PAS_DES_BANCS="shim hub extraire-questions faux-serveur-groupes shim-groupes bro
 #   photo » — le relevé et l'image ne décrivent alors pas le même instant.
 #   Ses deux autres relevés, eux, sont déjà sûrs (ils ne photographient rien) :
 #   voir DETTE.md point 6.
-CHANTIERS="acces"
+#   decor-tenu : réécrit à la v315 (les feuilles sont devenues des pages
+#   pleines, il n'y a plus de décor à travers une vitre). Il voit bien la page
+#   glisser par le compositeur (26 positions sous le retard, contre 9 pour le
+#   témoin), mais relève un recul de 9 px pendant l'arrivée qu'il reste à
+#   expliquer : vrai rebond, ou image mal lue. Tant qu'on ne sait pas, il ne
+#   juge pas.
+CHANTIERS="acces decor-tenu"
 
 # OÙ LES BANCS POSENT CE QU'ILS FABRIQUENT (banc-essai/brouillon.js) : le
 # même dossier pour tous, BANC_TMP s'il est donné, sinon un dossier à eux

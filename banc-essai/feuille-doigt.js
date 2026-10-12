@@ -13,6 +13,11 @@
    Un vrai doigt ne se pose jamais parfaitement immobile : deux ou trois
    pixels suffisent. On simule donc ça, exactement : poser, bouger de 2 px,
    relâcher — après que la feuille soit arrivée depuis longtemps.
+   DEPUIS LA v315, LES FEUILLES SONT DES PAGES (voir LES VOLETS DEVIENNENT DES
+   PAGES dans index.html). Le doigt posé ne doit toujours rien déplacer ; mais
+   les gestes ont changé : tirer vers le BAS fait défiler la page et ne la
+   ferme plus ; c'est en la tirant depuis le BORD GAUCHE, vers la droite,
+   qu'on revient — comme partout sur un téléphone — ou par son bouton retour.
    Usage : node doigt-feuille.js [url]
 */
 const { chromium } = require('/opt/node22/lib/node_modules/playwright');
@@ -84,61 +89,68 @@ const URL = process.argv[2] || process.env.URL_ESSAI || 'http://127.0.0.1:8099/i
     await p.waitForTimeout(800);
   }
 
-  /* ===== ET LE GLISSEMENT DOIT TOUJOURS MARCHER =====
-     Un seuil qui empêche le saut mais empêche AUSSI de fermer la feuille au
-     doigt n'aurait rien réparé : il aurait déplacé le défaut. Trois gestes,
-     donc, et les trois doivent faire ce qu'ils ont toujours fait. */
+  /* ===== ET LES GESTES D'UNE PAGE DOIVENT MARCHER =====
+     Un seuil qui empêche le saut mais empêche AUSSI de revenir au doigt
+     n'aurait rien réparé : il aurait déplacé le défaut. Quatre gestes, au
+     vrai doigt (des touchers, pas une souris : le geste du bord ne répond
+     qu'au doigt). */
   console.log('');
   const ouvre = async (c)=>{ await p.evaluate((x)=>{ new Function(x)(); }, c); await p.waitForTimeout(1300); };
   const laFeuille = ()=> p.evaluate(()=>!!document.querySelector('.sheet-veil:not(.closing) .settings-sheet'));
+  const cdp = await ctx.newCDPSession(p);
+  const doigt = (type, x, y) => cdp.send('Input.dispatchTouchEvent', { type, touchPoints: type === 'touchEnd' ? [] : [{ x, y }] });
 
-  /* 1. un vrai glissement vers le bas ferme */
+  /* 1. glisser vers le bas, posé sur un libellé : la page défile, elle reste */
   await ouvre("openSettings()");
-  /* LE DOIGT SE POSE SUR UN LIBELLÉ, PAS À UNE HAUTEUR AU HASARD. « 30 % de
-     la feuille » tombait sur une ligne… jusqu'au jour où la disposition a
-     changé (v312) et que ce point est tombé sur le curseur du volume — qui
-     prend le geste, comme il le doit : un glissé commencé sur un curseur ne
-     ferme pas la feuille. On pose donc le doigt là où on la saisit
-     vraiment : sur le texte d'une ligne. */
   let b = await p.evaluate(()=>{ const l=document.querySelector('.settings-sheet .set-row .set-txt b').getBoundingClientRect();
     return { x:l.left+l.width/2, y:l.top + l.height/2 }; });
-  await p.mouse.move(b.x, b.y); await p.mouse.down();
-  for(let i=1;i<=8;i++){ await p.mouse.move(b.x, b.y + i*20); await p.waitForTimeout(16); }
-  await p.mouse.up(); await p.waitForTimeout(800);
-  const ferme1 = !(await laFeuille());
-  if(!ferme1) ok = false;
-  console.log('  glisser de 160 px vers le bas ferme la feuille : ' + (ferme1 ? 'oui' : 'NON'));
-  if(!ferme1) await p.evaluate(()=>closeSettings());
+  await doigt('touchStart', b.x, b.y);
+  for(let i=1;i<=8;i++){ await doigt('touchMove', b.x, b.y + i*20); await p.waitForTimeout(16); }
+  await doigt('touchEnd'); await p.waitForTimeout(800);
+  const reste1 = await laFeuille();
+  if(!reste1) ok = false;
+  console.log('  glisser de 160 px vers le bas ne ferme PAS la page : ' + (reste1 ? 'oui' : 'NON'));
+  await p.evaluate(()=>closeSettings()); await p.waitForTimeout(700);
+
+  /* 2. tirer depuis le bord gauche vers la droite : on revient */
+  await ouvre("openSettings()");
+  await doigt('touchStart', 6, 420);
+  for(let i=1;i<=12;i++){ await doigt('touchMove', 6 + i*18, 422); await p.waitForTimeout(16); }
+  await doigt('touchEnd'); await p.waitForTimeout(800);
+  const ferme2 = !(await laFeuille());
+  if(!ferme2) ok = false;
+  console.log('  tirer depuis le bord gauche ferme la page        : ' + (ferme2 ? 'oui' : 'NON'));
+  if(!ferme2) await p.evaluate(()=>closeSettings());
   await p.waitForTimeout(700);
 
-  /* 2. un appui sur la poignée ferme */
+  /* 3. un appui sur le bouton retour ferme */
   await ouvre("openSettings()");
-  const bp = await p.evaluate(()=>{ const g=document.querySelector('.sheet-grab').getBoundingClientRect();
+  const bp = await p.evaluate(()=>{ const g=document.querySelector('.sheet-veil:not(.closing) .sheet-grab').getBoundingClientRect();
     return { x:g.left+g.width/2, y:g.top+g.height/2 }; });
   await p.mouse.move(bp.x, bp.y); await p.mouse.down(); await p.waitForTimeout(60);
   await p.mouse.move(bp.x, bp.y + 2); await p.mouse.up();
   await p.waitForTimeout(800);
-  const ferme2 = !(await laFeuille());
-  if(!ferme2) ok = false;
-  console.log('  appuyer sur la poignée ferme la feuille          : ' + (ferme2 ? 'oui' : 'NON'));
-  if(!ferme2) await p.evaluate(()=>closeSettings());
+  const ferme3 = !(await laFeuille());
+  if(!ferme3) ok = false;
+  console.log('  appuyer sur le bouton retour ferme la page       : ' + (ferme3 ? 'oui' : 'NON'));
+  if(!ferme3) await p.evaluate(()=>closeSettings());
   await p.waitForTimeout(700);
 
-  /* 3. un appui ailleurs, avec la dérive habituelle, ne ferme RIEN */
+  /* 4. un appui ailleurs, avec la dérive habituelle, ne ferme RIEN */
   await ouvre("openSettings()");
   b = await p.evaluate(()=>{ const f=document.querySelector('.settings-sheet').getBoundingClientRect();
     return { x:f.left+f.width/2, y:f.top + f.height*0.30 }; });
   await p.mouse.move(b.x, b.y); await p.mouse.down(); await p.waitForTimeout(80);
   await p.mouse.move(b.x, b.y + 3); await p.mouse.up();
   await p.waitForTimeout(700);
-  const reste = await laFeuille();
-  if(!reste) ok = false;
-  console.log('  un appui avec 3 px de dérive ne ferme rien       : ' + (reste ? 'oui' : 'NON'));
+  const reste4 = await laFeuille();
+  if(!reste4) ok = false;
+  console.log('  un appui avec 3 px de dérive ne ferme rien       : ' + (reste4 ? 'oui' : 'NON'));
   await p.evaluate(()=>closeSettings());
   await p.waitForTimeout(700);
 
   if(errs.length){ ok=false; console.log('  ERREURS : '+[...new Set(errs)].slice(0,3).join(' | ')); }
   await nav.close();
-  console.log(ok?'\n  OK — le doigt posé ne déplace rien, et le glissement marche toujours':'\n  ÉCHEC');
+  console.log(ok?'\n  OK — le doigt posé ne déplace rien, et les gestes d\'une page marchent':'\n  ÉCHEC');
   process.exit(ok?0:1);
 })();

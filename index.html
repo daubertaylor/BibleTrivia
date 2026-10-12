@@ -1200,6 +1200,47 @@
   .aw-name{ flex:1; min-width:0; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; text-align:left; color:var(--ink); font-weight:700; }
   .award-btn.awarded{ border-color:transparent; --glass-tint: rgb(255,247,238); box-shadow:inset 0 1px 0 rgba(255,255,255,0.5), 0 3px 10px rgba(15,12,10,0.16); font-weight:700; }
   .award-btn .pts{ font-variant-numeric:tabular-nums; color:var(--ink-soft); }
+  /* SIX JOUEURS (voir renderPlay) : une grille à colonnes égales — deux, ou
+     trois à partir de cinq joueurs —, le score de l'équipe sous son nom, et
+     les points de la question une seule fois, à côté de la question. */
+  .award-label{ display:flex; align-items:baseline; justify-content:space-between; gap:0.6rem; }
+  .award-label .aw-pts{ flex-shrink:0; font-variant-numeric:tabular-nums; letter-spacing:0.02em; }
+  .award-grid{ display:grid; grid-template-columns:repeat(var(--cols, 2), minmax(0, 1fr)); gap:0.5rem; }
+  /* 44 px au moins : c'est une zone qu'on touche, même resserrée sur un
+     petit écran. */
+  .award-grid .award-btn{ min-width:0; min-height:44px; flex:none; gap:0.45rem; padding:calc(0.4rem + 1px) calc(0.5rem + 1px) calc(0.4rem + 1px) calc(0.42rem + 1px); }
+  .aw-txt{ flex:1; min-width:0; display:flex; flex-direction:column; align-items:flex-start; line-height:1.2; }
+  .aw-txt .aw-name{ width:100%; }
+  .aw-sc{ font-size:0.74rem; font-weight:600; color:var(--ink-soft); font-variant-numeric:tabular-nums; }
+  .award-grid .aw-token{ flex-shrink:0; }
+  /* Trois colonnes : le jeton et les marges rendent de la place au nom, et la
+     coche se fait plus petite. */
+  .award-grid.trois .award-btn{ gap:0.32rem; padding-left:calc(0.32rem + 1px); padding-right:calc(0.36rem + 1px); }
+  .award-grid.trois .aw-token{ width:1.38rem; height:1.38rem; font-size:0.7rem; }
+  .award-grid.trois .aw-name{ font-size:0.8rem; }
+  .award-grid.trois .aw-check{ width:0.98rem; height:0.98rem; }
+  /* LES MAUVAISES RÉPONSES, UNE FOIS LA BONNE RÉVÉLÉE, TIENNENT SUR UNE
+     LIGNE. On joue à voix haute : personne ne les a touchées, elles ne
+     servent plus qu'à se souvenir de ce qui était proposé. La bonne réponse
+     garde toute la largeur, en tête ; les trois autres se rangent dessous,
+     côte à côte, en petit — entières, sur deux lignes s'il le faut, jamais
+     coupées. Mesuré sur un iPhone SE à six joueurs, réponse révélée : une
+     question sur quatre débordait encore de 100 à 125 px quand elles
+     restaient en colonne. */
+  .screen.groupe-revele .options-grid{ grid-template-columns:repeat(3, minmax(0, 1fr)); gap:0.42rem; }
+  .screen.groupe-revele .option-btn.correct{ grid-column:1 / -1; order:-1; }
+  .screen.groupe-revele .option-btn.dim{ min-height:2.1rem; padding:0.46rem 0.4rem 0.46rem 0.44rem; gap:0.24rem; font-size:0.78rem; line-height:1.2; align-items:center; }
+  .screen.groupe-revele .option-btn.dim .letter{ font-size:0.7rem; }
+  /* Un mot plus long que la pastille (« arrepentimiento ») se coupe — avec un
+     trait d'union là où la langue le permet — au lieu de dépasser. */
+  .screen.groupe-revele .option-btn.dim .opt-text{ min-width:0; overflow-wrap:anywhere; -webkit-hyphens:auto; hyphens:auto; }
+  /* La question et l'anecdote rendent un peu de leur air : de quoi laisser le
+     resserrement de l'écran (serrerEcran) faire tenir le reste, même à six
+     joueurs sur un iPhone SE. Le passage se fait en glissant (voir
+     glisserApresRevelation), rien ne saute. */
+  .screen.groupe-revele .question-card{ min-height:0; padding-top:calc(1rem + 1px); padding-bottom:calc(1rem + 1px); }
+  .screen.groupe-revele .fact-card{ padding-top:calc(0.68rem + 1px); padding-bottom:calc(0.68rem + 1px); }
+  .screen.groupe-revele .fact-card .ftext{ line-height:1.45; }
 
   /* ===== TOUS LES PAVÉS DE LA MÊME LARGEUR =====
      C'était un flex qui passe à la ligne, avec « flex:1 » sur chaque pavé : à
@@ -5417,6 +5458,132 @@
      0,28 rem dessous, il ne restait que 43 px (banc-essai/doigt.js). */
   .reglages .vol-row{ padding:0.05rem 0.1rem 0.45rem; }
   .reglages .share-btn{ margin:0.9rem auto 0.7rem; }
+
+  /* ===================== LES VOLETS DEVIENNENT DES PAGES (v315) =====================
+     « Je veux que tous les volets déroulants deviennent de vraies pages
+     dédiées, avec un fond uni, sans glassmorphism : une couleur de la palette,
+     un contraste voulu, élégant et premium. Moins de superpositions, de flou,
+     de couches transparentes, de défilements imbriqués. Chaque ancien volet
+     doit devenir une véritable destination. Ne refais pas toute l'application. »
+     Le moule des feuilles (un voile, une feuille, une poignée, un titre) sert
+     aux sept volets du jeu et à toutes les feuilles des groupes. C'est LUI qui
+     devient une page, et chaque volet le devient avec lui, contenu intact :
+       - la page couvre l'écran, sur le crème uni de la palette
+         (--surface-alt) ; ce qu'elle porte est blanc et plein, sans verre ;
+       - elle arrive par la droite et repart par la droite, au pas des écrans
+         (--tr-ouvre) ; une page ouverte depuis une page pousse la première un
+         peu vers la gauche ;
+       - en haut, une barre : le retour à gauche, le titre au centre. Elle
+         reste en place quand on fait défiler, et prend une ombre douce dès
+         que le contenu passe dessous ;
+       - on revient par le bouton, en tirant la page depuis le bord gauche,
+         ou par le bouton « retour » du téléphone (Android) ;
+       - une fois la page posée, le dessous ne se peint plus (html.sous-page) :
+         plus de verre ni de flou calculés derrière un écran qui les cache.
+     Deux exceptions restent des MENUS posés en bas — unis eux aussi : ce
+     qu'on fait d'un message (l'appui long) et ce qu'on fait d'une photo. Ce
+     sont des réponses à un geste, pas des destinations. Les fenêtres de
+     confirmation restent des fenêtres. */
+  :root{ --page-fond:var(--surface-alt); --page-carte:var(--surface); --page-marge:max(1.15rem, calc((100vw - 34rem) / 2)); }
+  .sheet-veil.page{ display:block; overflow:hidden; background:var(--page-fond); touch-action:pan-y;
+    box-shadow:-18px 0 42px rgba(24,16,10,0.22); }
+  /* « html » en tête : le moteur de verre éteint l'animation de tout voile
+     ouvert (html.gl-xf .sheet-veil:not(.closing), même poids). Une fois
+     arrivée, la page passe « posée » et n'a plus d'animation du tout : sans
+     ça, la moindre classe retirée la relançait depuis le bord. */
+  html .sheet-veil.page:not(.closing){ animation:pageIn var(--tr-ouvre); }
+  html .sheet-veil.page.posee:not(.closing){ animation:none; }
+  html .sheet-veil.page.closing{ animation:pageOut var(--tr-ferme) forwards; }
+  /* Tirée au doigt depuis le bord : elle suit le doigt, sans animation. */
+  html .sheet-veil.page.tiree{ animation:none; transition:none; }
+  @keyframes pageIn{ from{ transform:translate3d(100%,0,0); } to{ transform:translate3d(0,0,0); } }
+  @keyframes pageOut{ to{ transform:translate3d(100%,0,0); } }
+  /* La feuille devient le CORPS de la page : toute la hauteur, et c'est elle
+     — elle seule — qui défile. Les listes qui défilaient dans la feuille
+     (erreurs, flamme) s'allongent avec la page : plus de défilement dans un
+     défilement. */
+  .sheet-veil.page .settings-sheet.settings-sheet{ position:absolute; inset:0; width:auto; max-width:none; margin:0; border-radius:0;
+    padding:0 var(--page-marge) calc(env(safe-area-inset-bottom) + 1.75rem);
+    overflow-x:hidden; overflow-y:auto; overscroll-behavior:contain; -webkit-overflow-scrolling:touch; touch-action:pan-y;
+    background:none; box-shadow:none; transform:none; animation:none !important; transition:transform var(--tr-ouvre); will-change:auto; }
+  .sheet-veil.page .settings-sheet.settings-sheet.feuille-recule{ transform:translate3d(-22%,0,0); }
+  .sheet-veil.page .rev-list, .sheet-veil.page .flam-list{ max-height:none; height:auto; overflow:visible; }
+  /* LA BARRE DU HAUT. Elle déborde des marges de la page pour couvrir toute
+     la largeur, et garde la zone de l'encoche. */
+  .page-tete{ position:sticky; top:0; z-index:6; display:flex; align-items:center; justify-content:center;
+    min-height:calc(env(safe-area-inset-top) + 3.7rem); padding:env(safe-area-inset-top) 3.45rem 0;
+    margin:0 calc(-1 * var(--page-marge)) 0.85rem; background:var(--page-fond); transition:box-shadow 0.2s ease; }
+  .page-tete.ombre{ box-shadow:0 10px 22px -14px rgba(24,16,10,0.34); }
+  .page-tete .sheet-title{ margin:0; min-width:0; justify-content:center; font-size:1.02rem; gap:0.45rem; }
+  .page-tete .sheet-title .st-ico{ width:1.3rem; height:1.3rem; }
+  .page-tete .sheet-title.sans-ico .st-ico{ display:none; }
+  .page-tete .sheet-title .st-mot{ min-width:0; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; line-height:1.4; }
+  .page-tete .sheet-title small{ margin-left:0.15rem; }
+  .page-tete .sheet-grab{ position:absolute; left:max(0.75rem, calc(var(--page-marge) - 0.35rem)); bottom:0.6rem; margin:0;
+    width:2.5rem; height:2.5rem; border-radius:50%; display:flex; align-items:center; justify-content:center;
+    background:var(--page-carte); color:var(--ink); box-shadow:var(--ombre-pose); transition:transform 0.15s ease; }
+  .page-tete .sheet-grab::after{ content:none; }
+  .page-tete .sheet-grab:active{ transform:scale(0.92); }
+  .page-tete .pt-retour{ position:relative; z-index:1; width:1.25rem; height:1.25rem; display:inline-flex; }
+  .page-tete .pt-retour svg{ width:100%; height:100%; }
+  .page-tete .lang-btn{ position:absolute; right:max(0.75rem, calc(var(--page-marge) - 0.35rem)); bottom:0.6rem; margin:0; }
+  /* CE QUE LA PAGE PORTE : du plein. Le moteur de verre ne prend plus rien
+     dans une page (voir GLASS_VIVANT) ; on retire donc aussi la photo
+     floutée que la règle commune peint au fond de chaque surface, et tout
+     flou d'arrière-plan. */
+  .sheet-veil :is(.card, .info-card, .text-input, .code-input, .btn-ghost, .icon-btn, .len-chip, .share-btn, .rev-item, .rules,
+    .chip, .fs-hint, .option-btn, .tst-head, .me-row, .waiting-note, .btn-invite, .adj-btn, .btn-review, .daily-card, .parcours-card){
+    background-image:none; background-color:var(--page-carte); -webkit-backdrop-filter:none; backdrop-filter:none; }
+  .sheet-veil :is(.btn-primary, .sheet-done, .set-go, .btn-next, .btn-replay, .btn-newgame){
+    background-image:linear-gradient(150deg, #F44E2C, #DE3616); background-color:var(--primary); -webkit-backdrop-filter:none; backdrop-filter:none; color:#fff; }
+  .sheet-veil .settings-sheet{ -webkit-backdrop-filter:none; backdrop-filter:none; }
+  /* Les MENUS (message, photo) gardent leur forme de feuille, sur le même
+     crème uni que les pages. */
+  .sheet-veil.menu .settings-sheet{ background-image:none; background-color:var(--page-fond); }
+  /* Les réglages se rangent en cartes blanches, une par groupe. */
+  .sheet-veil.page .set-groupe{ background:var(--page-carte); border-radius:var(--r-l); padding:0.15rem 0.95rem; box-shadow:var(--ombre-pose); }
+  .sheet-veil.page .reglages .set-groupe + .set-groupe, .sheet-veil.page .set-groupe + .set-groupe{ margin-top:0.85rem; }
+  .sheet-veil.page .bible-item{ background:var(--page-carte); box-shadow:var(--ombre-pose); }
+  /* Les listes d'une page (actions, membres, règles, confidentialité, compte,
+     tête de la flamme) deviennent des cartes blanches : sur le crème, une
+     rangée nue avait l'air de flotter. */
+  .sheet-veil.page :is(.grp-liste-act, .grp-defile, .regles, .conf-liste, .mc-qui, .flam-tete){
+    background:var(--page-carte); border-radius:var(--r-l); box-shadow:var(--ombre-pose); }
+  .sheet-veil.page :is(.grp-liste-act, .grp-defile){ padding:0.3rem 0.35rem; }
+  .sheet-veil.page :is(.regles, .conf-liste){ padding:0.95rem 1rem; }
+  .sheet-veil.page .mc-qui{ padding:1rem; }
+  .sheet-veil.page .flam-tete{ padding:0.9rem 1rem; }
+  .sheet-veil.page .grp-code-carte{ background:var(--page-carte); box-shadow:var(--ombre-pose); }
+  /* LA FLAMME, MOIS PAR MOIS : une carte blanche par mois, le titre et le
+     compte au-dessus, les sept colonnes dessous. Les cases sans flamme
+     portent leur numéro. */
+  .flam-list .flam-mois{ background:var(--page-carte); border-radius:var(--r-l); box-shadow:var(--ombre-pose); padding:0.85rem 0.8rem 0.95rem; }
+  .flam-list .flam-mois + .flam-mois{ margin-top:0.85rem; }
+  .fm-tete{ display:flex; align-items:baseline; justify-content:space-between; gap:0.6rem; margin:0 0.2rem 0.6rem; }
+  .fm-tete b{ display:inline-block; font-family:'Poppins',sans-serif; font-weight:700; font-size:0.98rem; color:var(--ink); }
+  .fm-tete b::first-letter{ text-transform:uppercase; }
+  .fm-tete small{ font-size:0.8rem; font-weight:600; color:var(--ink-soft); }
+  .flam-mois .fj{ display:flex; align-items:center; justify-content:center; }
+  .flam-mois .fj i{ font-style:normal; font-family:'Poppins',sans-serif; font-size:0.74rem; font-weight:600; color:var(--ink-soft); }
+  .flam-mois .fj.horschamp i{ color:rgba(110,102,91,0.55); }
+  .flam-mois .fj.auj i{ color:var(--primary); font-weight:700; }
+  .sheet-veil.page .flam-leg{ margin:0.85rem 0.2rem 0.85rem; }
+  /* La puce choisie garde son corail : sa teinte venait du verre. */
+  .sheet-veil .len-chip.sel{ background-image:linear-gradient(150deg, #F44E2C, #DE3616); color:#fff; }
+  .sheet-veil.page .bible-item.sel{ background:rgb(255,244,238); }
+  /* ===== LE VERSET RESTE EN VERRE — UN VERRE CRÈME, PAS LE BLEU DU CIEL (v315) =====
+     « Le rectangle qui affiche les versets : mieux en glassmorphism, ou au
+     contraire le changer ? Fais pour le mieux. » Il reste en verre : c'est un
+     élément flottant de l'interface principale, celle qui garde son verre.
+     Mais posé sur le CIEL, le verre commun (blanc à 58 %) en prenait le bleu
+     gris : une carte froide au-dessus de cartes crème, et la référence dorée
+     sur un fond qui ne lui va pas. Il prend donc la teinte de « Le savais-tu ? »
+     — l'autre carte qui porte l'Écriture —, un crème chaud plus dense : on
+     devine encore le ciel derrière, le texte se lit mieux, et la carte
+     appartient à l'accueil au lieu de flotter à part. */
+  .hero-verse-card{ --glass-tint:rgba(255,247,232,0.84); }
+  /* Une page posée cache ce qui est dessous : on ne le peint plus. */
+  html.sous-page #app, html.sous-page #barreBas{ visibility:hidden; }
 </style>
 </head>
 <body style="background:#15100B">
@@ -5759,6 +5926,8 @@ const TEXTES = {
     " — il couvre UN jour manqué":" — it covers ONE missed day",
     "{n} parties jouées":"{n} games played",
     "joué":"played",
+    "1 jour joué":"1 day played",
+    "{n} jours joués":"{n} days played",
     "gelé":"frozen",
     "à faire":"to do",
     "manqué":"missed",
@@ -5938,7 +6107,6 @@ const TEXTES = {
     "R\u00e9vision":"Review",
     "R\u00e9sultat":"Result",
     "{jeu} \u2014 {gagnants} remporte la partie avec {p} points\u00a0!":"{jeu} \u2014 {gagnants} wins the game with {p} points!",
-    "Tes jours, du plus ancien au plus r\u00e9cent":"Your days, from oldest to most recent",
     "Réviser la dernière partie":"Review the last game",
     "erreur":"mistake",
     "erreurs":"mistakes",
@@ -6383,6 +6551,8 @@ const TEXTES = {
     " — il couvre UN jour manqué":" — cubre UN día perdido",
     "{n} parties jouées":"{n} partidas jugadas",
     "joué":"jugado",
+    "1 jour joué":"1 día jugado",
+    "{n} jours joués":"{n} días jugados",
     "gelé":"congelado",
     "à faire":"por hacer",
     "manqué":"perdido",
@@ -6568,7 +6738,6 @@ const TEXTES = {
     "Révision":"Repaso",
     "Résultat":"Resultado",
     "{jeu} — {gagnants} remporte la partie avec {p} points\u00a0!":"{jeu} — ¡{gagnants} gana la partida con {p} puntos!",
-    "Tes jours, du plus ancien au plus récent":"Tus días, del más antiguo al más reciente",
     "Réviser la dernière partie":"Repasar la última partida",
     "erreur":"error",
     "erreurs":"errores",
@@ -6882,13 +7051,12 @@ function ligneLangue(l){
     + `<span class="bible-ck">${ACH_CHECK}</span></button>`;
 }
 function openLangues(){
-  if(document.getElementById("languesVeil")) return;
+  if(!pageLibre("languesVeil")) return;
   const veil = document.createElement("div");
-  veil.className = "sheet-veil"; veil.id = "languesVeil";
+  veil.className = "sheet-veil page"; veil.id = "languesVeil";
   veil.innerHTML = `
     <div class="settings-sheet bibles-sheet" role="dialog" aria-label="${T("Langue")}">
-      <button class="sheet-grab" aria-label="${T("Fermer")}" onclick="closeLangues()"></button>
-      <div class="sheet-title"><span class="st-ico">${ICONS.globe}</span>${T("Langue")}</div>
+      <div class="page-tete"><button class="sheet-grab" aria-label="${T("Retour")}" onclick="closeLangues()"><span class="pt-retour">${ICONS.chevronLeft}</span></button><div class="sheet-title"><span class="st-ico">${ICONS.globe}</span>${T("Langue")}</div></div>
       <div class="bible-list">${LANGUES.map(ligneLangue).join("")}</div>
     </div>`;
   document.body.appendChild(veil);
@@ -8988,7 +9156,7 @@ const SUPABASE_ANON_KEY = "sb_publishable_FDJ_R0foC7uIeHmxVrj6rA_2NeIgW2a";
    remontée d'un téléphone ne vaut rien si on ne sait pas QUELLE version
    tournait. Elle doit rester égale au CACHE de sw.js — c'est ce que vérifie
    banc-essai/version.js, qui refuse de laisser publier les deux en désaccord. */
-const VERSION_JEU = "v314";
+const VERSION_JEU = "v315";
 
 /* ===================== QUAND ÇA CASSE CHEZ UN JOUEUR =====================
    « Si quelque chose casse chez cinq d'entre eux sur un modèle de téléphone
@@ -10094,7 +10262,7 @@ function broadcastProgress(done){
    ne démarre QUE lorsque les deux ont accepté (l'hôte fait alors autorité pour
    la graine). Fini le lancement forcé de l'adversaire. */
 function onlineRematch(){
-  if(net.oppGone){ leaveOnline(); return; }
+  if(net.oppGone){ quitterFinEnLigne(); return; }
   net.iWantReplay = true; net.replayDeclined = false;
   sendReplayMsg("rematch");
   maybeStartRematch();
@@ -10159,6 +10327,9 @@ function markOppGone(){
   if(net.myDone && state.screen==="online-play"){ state.screen="online-end"; }
   reRenderIfOnline();
 }
+/* Quitter un duel, fini ou pas, ramène à l'écran En ligne — comme le Solo et
+   le Groupe ramènent à leur écran (voir LA PARTIE FINIE, ON REVIENT DANS SON
+   MODE). */
 function quitDuel(){
   const inProgress = !net.myDone && net.deck.length && net.idx < net.deck.length && !net.oppGone;
   if(inProgress){
@@ -10166,10 +10337,10 @@ function quitDuel(){
       title:T("Quitter le duel ?"),
       message:T("La partie en cours sera perdue."),
       okLabel:T("Quitter"), cancelLabel:T("Rester"), danger:true,
-      onOk:()=>{ leaveOnline(); }
+      onOk:()=>{ quitterFinEnLigne(); }
     });
   } else {
-    leaveOnline();
+    quitterFinEnLigne();
   }
 }
 function cleanupRoom(){
@@ -10198,6 +10369,18 @@ function leaveOnline(){
   net.error="";
   leaveLobby();
   if(sortirVersGroupe()) return;
+  state.screen = "mode"; render();
+}
+/* « Quitter » à la fin d'une partie en ligne : on revient à l'écran En ligne
+   (le salon d'attente de tous), pas à l'accueil — voir LA PARTIE FINIE, ON
+   REVIENT DANS SON MODE. Une partie lancée depuis un groupe ramène toujours
+   à son groupe. Sans réseau, l'accueil, comme avant. */
+function quitterFinEnLigne(){
+  cleanupRoom();
+  net.error = "";
+  if(sortirVersGroupe()) return;
+  if(navigator.onLine && onlineConfigured() && profile.name){ initSupa(); joinLobby(); state.screen = "online"; render(); return; }
+  leaveLobby();
   state.screen = "mode"; render();
 }
 /* ===== UNE PARTIE LANCÉE DEPUIS UN GROUPE Y RAMÈNE =====
@@ -10705,9 +10888,153 @@ function deposerContreMonte(f){
   });
   f.classList.remove("contre");
 }
+/* ===================== LA VIE D'UNE PAGE (v315) =====================
+   Voir LES VOLETS DEVIENNENT DES PAGES dans la feuille de style. Une page
+   arrive (pageIn), se pose (« posee » : plus d'animation, et le dessous cesse
+   d'être peint), puis repart (« closing »). Tout ce qui suit ne touche qu'au
+   CONTENANT : chaque volet garde ses fonctions d'ouverture et de fermeture. */
+/* UNE PAGE QUI S'EN VA PEUT REVENIR TOUT DE SUITE. Les volets refusaient de
+   s'ouvrir tant que le précédent existait — y compris pendant qu'il PARTAIT :
+   un retour suivi d'un toucher rapide sur le même bouton ne faisait rien
+   (le quart de seconde de la sortie). Une page encore ouverte reste unique ;
+   une page qui s'en va cède sa place. */
+function pageLibre(id){
+  const v = document.getElementById(id);
+  if(!v) return true;
+  if(!v.classList.contains("closing")) return false;
+  v.remove();
+  return true;
+}
+function pagesOuvertes(){
+  return Array.prototype.filter.call(document.querySelectorAll(".sheet-veil.page, .sheet-veil.menu"),
+    v => !v.classList.contains("closing") && v.getAttribute("aria-hidden") !== "true");
+}
+function majPages(){
+  const ouvertes = pagesOuvertes();
+  /* Le dessous redevient visible dès qu'aucune page ne le couvre plus — au
+     DÉBUT de la sortie de la dernière, pour qu'elle reparte en le découvrant. */
+  if(!ouvertes.some(v => v.classList.contains("page") && v.classList.contains("posee")))
+    document.documentElement.classList.remove("sous-page");
+  retourTelephone(ouvertes.length);
+}
+/* ===== LE BOUTON « RETOUR » DU TÉLÉPHONE REFERME LA PAGE =====
+   Sur Android, le geste ou le bouton retour fermait l'application entière,
+   même avec une page ouverte. Une page ouverte pose donc UNE marque dans
+   l'historique ; le retour du téléphone la consomme et referme la page du
+   dessus (en touchant son propre bouton : chaque volet garde sa fermeture).
+   S'il reste une page dessous, une nouvelle marque est posée. Une page
+   fermée à l'écran retire la marque qu'elle avait posée. Une seule marque à
+   la fois, quel que soit le nombre de pages : l'historique ne s'allonge pas. */
+let retourArme = false, retourAIgnorer = 0;
+function retourTelephone(n){
+  if(n > 0 && !retourArme){ try{ history.pushState({ yada:"page" }, ""); retourArme = true; }catch(e){} }
+  else if(n === 0 && retourArme){
+    retourArme = false; retourAIgnorer++;
+    try{ history.back(); }catch(e){ retourAIgnorer--; }
+  }
+}
+window.addEventListener("popstate", ()=>{
+  if(retourAIgnorer > 0){ retourAIgnorer--; return; }
+  retourArme = false;
+  const ouvertes = pagesOuvertes();
+  const haut = ouvertes[ouvertes.length - 1];
+  if(!haut) return;
+  const b = haut.querySelector(".page-tete .sheet-grab, .sheet-grab");
+  if(b) b.click();
+  else haut.classList.add("closing");
+});
+function pageOuverte(veil){
+  const de = document.documentElement;
+  const posee = ()=>{
+    if(!veil.isConnected || veil.classList.contains("closing") || veil.classList.contains("posee")) return;
+    veil.classList.add("posee");
+    de.classList.add("sous-page");
+  };
+  veil.addEventListener("animationend", (e)=>{ if(e.target === veil && e.animationName === "pageIn") posee(); });
+  /* Filet : onglet caché pendant l'arrivée, animation coupée. */
+  setTimeout(posee, msPli() + 180);
+  /* UN TITRE QUI NE TIENT PAS LAISSE TOMBER SON ICÔNE, pas ses mots :
+     « Les règles de la commu… » ne se lisait plus. Un avatar (un groupe, un
+     membre) reste : c'est lui qui dit de qui l'on parle. */
+  try{
+    const ti = veil.querySelector(".page-tete .sheet-title");
+    const ico = ti && ti.querySelector(".st-ico");
+    if(ico && !ico.querySelector(".avatar, .grp-av")){
+      /* La largeur VRAIE du texte (un Range mesure les lettres posées, même
+         coupées par « … ») contre celle de sa boîte : scrollWidth arrondit, et
+         un dépassement d'un demi-pixel suffit à couper deux lettres. */
+      const mot = ti.querySelector(".st-mot") || ti;
+      const rg = document.createRange(); rg.selectNodeContents(mot);
+      let texte = 0; Array.prototype.forEach.call(rg.getClientRects(), r => { texte = Math.max(texte, r.right); });
+      const boite = mot.getBoundingClientRect();
+      if(texte > boite.right + 0.25) ti.classList.add("sans-ico");
+    }
+  }catch(e){}
+  /* L'ombre de la barre du haut, dès que le contenu passe dessous. */
+  const f = veil.querySelector(".settings-sheet"), t = veil.querySelector(".page-tete");
+  if(f && t) f.addEventListener("scroll", ()=>{ t.classList.toggle("ombre", f.scrollTop > 2); }, { passive:true });
+  /* La page qui commence à partir rend le dessous et l'historique. */
+  try{ new MutationObserver(majPages).observe(veil, { attributes:true, attributeFilter:["class"] }); }catch(e){}
+  majPages();
+}
+/* Le retrait d'un voile (fin de sortie) : on recompte. */
+try{ new MutationObserver(majPages).observe(document.body, { childList:true }); }catch(e){}
+/* ===== ON REVIENT EN TIRANT LA PAGE DEPUIS LE BORD GAUCHE =====
+   Le geste de toutes les pages d'un iPhone. Il ne part que d'une bande de
+   26 px au bord gauche, et seulement si le doigt va franchement vers la
+   droite : faire défiler la page reste un défilement. Lâchée au-delà du
+   tiers de l'écran (ou lancée), la page part ; sinon elle revient se poser. */
+function attacherRetourPage(veil, fermer){
+  const BORD = 26;
+  let x0 = 0, y0 = 0, dx = 0, t0 = 0, id = null, suivi = false, decide = false;
+  veil.addEventListener("pointerdown", (e)=>{
+    if(e.pointerType === "mouse" || veil.classList.contains("closing") || e.clientX > BORD) return;
+    /* Là où le doigt appartient déjà à quelque chose — l'image qu'on cadre,
+       un curseur, une rangée qui défile de côté — il ne tire pas la page. */
+    if(e.target && e.target.closest && e.target.closest(".cadre, input[type=range], .scene-row")) return;
+    suivi = true; decide = false; dx = 0; x0 = e.clientX; y0 = e.clientY; t0 = performance.now(); id = e.pointerId;
+  }, { passive:true });
+  veil.addEventListener("pointermove", (e)=>{
+    if(!suivi || e.pointerId !== id) return;
+    const mx = e.clientX - x0, my = e.clientY - y0;
+    if(!decide){
+      if(Math.abs(mx) < 8 && Math.abs(my) < 8) return;
+      if(mx <= 0 || Math.abs(my) > Math.abs(mx)){ suivi = false; return; }
+      decide = true;
+      veil.classList.add("tiree");
+      /* Ce qui est dessous doit se voir pendant qu'on tire. */
+      document.documentElement.classList.remove("sous-page");
+      try{ veil.setPointerCapture(id); }catch(err){}
+    }
+    dx = Math.max(0, mx);
+    veil.style.transform = "translate3d(" + dx + "px,0,0)";
+  }, { passive:true });
+  const lacher = ()=>{
+    if(!suivi) return;
+    suivi = false;
+    if(!decide) return;
+    const vitesse = dx / Math.max(1, performance.now() - t0);
+    veil.classList.remove("tiree");
+    if(dx > veil.clientWidth / 3 || vitesse > 0.65){
+      /* La sortie part de là où le doigt l'a laissée : l'animation de
+         fermeture n'a pas de point de départ, elle prend la position du moment. */
+      fermer();
+      return;
+    }
+    veil.style.transition = "transform 0.3s cubic-bezier(0.22,1,0.3,1)";
+    veil.style.transform = "translate3d(0,0,0)";
+    setTimeout(()=>{
+      veil.style.transition = ""; veil.style.transform = "";
+      if(!veil.classList.contains("closing") && veil.classList.contains("posee")) document.documentElement.classList.add("sous-page");
+    }, 320);
+  };
+  veil.addEventListener("pointerup", lacher, { passive:true });
+  veil.addEventListener("pointercancel", lacher, { passive:true });
+}
 function monterLaFeuille(veil){
   const f = veil && veil.querySelector ? veil.querySelector(".settings-sheet") : null;
   if(!f) return;
+  if(veil.classList.contains("page") && veil.getAttribute("aria-hidden") !== "true") pageOuverte(veil);
   /* ===== UNE FEUILLE REFERME D'ABORD LE CLAVIER DE LA PAGE =====
      « Dans un groupe, je parle en message, puis j'appuie sur le i : vérifie
      que la superposition est bonne. » Elle ne l'était pas : le clavier
@@ -10819,13 +11146,12 @@ function monterLaFeuille(veil){
   setTimeout(lacher, 250);
 }
 function openBibles(){
-  if(document.getElementById("biblesVeil")) return;
+  if(!pageLibre("biblesVeil")) return;
   const veil = document.createElement("div");
-  veil.className = "sheet-veil"; veil.id = "biblesVeil";
+  veil.className = "sheet-veil page"; veil.id = "biblesVeil";
   veil.innerHTML = `
     <div class="settings-sheet bibles-sheet" role="dialog" aria-label="${T("Version de la Bible")}">
-      <button class="sheet-grab" aria-label="${T('Fermer')}" onclick="closeBibles()"></button>
-      <div class="sheet-title"><span class="st-ico">${ICONS.bookOpen}</span>${T("Version de la Bible")}</div>
+      <div class="page-tete"><button class="sheet-grab" aria-label="${T("Retour")}" onclick="closeBibles()"><span class="pt-retour">${ICONS.chevronLeft}</span></button><div class="sheet-title"><span class="st-ico">${ICONS.bookOpen}</span>${T("Version de la Bible")}</div></div>
       <div class="bible-list">${biblesDeLaLangue().map(ligneBible).join("")}</div>
     </div>`;
   document.body.appendChild(veil);
@@ -11623,6 +11949,10 @@ function maybeStartMusic(){ if(settings.music && audioUnlocked && !musicPlaying 
    feuille revient se poser toute seule. */
 function attachSheetDrag(feuille, fermer){
   if(!feuille) return;
+  /* Une PAGE ne se tire pas vers le bas : elle se tire depuis le bord gauche,
+     vers la droite, comme toutes les pages d'un téléphone (attacherRetourPage). */
+  const voilePage = feuille.closest ? feuille.closest(".sheet-veil.page") : null;
+  if(voilePage){ attacherRetourPage(voilePage, fermer); return; }
   let y0 = 0, t0 = 0, dy = 0, actif = false, poignee = false;
   /* CE QUI N'EST PAS « NEUTRE » NE TIRE PAS LA FEUILLE : un champ, un bouton,
      un curseur, et TOUTE LISTE QUI DÉFILE. Cette dernière catégorie doit
@@ -11757,9 +12087,9 @@ function closeSettings(){
 function openMissedReview(list){
   const missed = list || state.soloMissed;
   if(!missed || !missed.length) return;
-  if(document.getElementById("reviewVeil")) return;
+  if(!pageLibre("reviewVeil")) return;
   const veil = document.createElement("div");
-  veil.className = "sheet-veil"; veil.id = "reviewVeil";
+  veil.className = "sheet-veil page"; veil.id = "reviewVeil";
   veil.onclick = (e)=>{ if(e.target===veil) closeMissedReview(); };
   const items = missed.map(m=>{
     /* Le carnet ne garde que du texte ; on reconstitue le strict nécessaire
@@ -11774,8 +12104,7 @@ function openMissedReview(list){
     </div>`;}).join("");
   veil.innerHTML = `
     <div class="settings-sheet review-sheet" role="dialog" aria-label="${T("Revoir mes erreurs")}">
-      <button class="sheet-grab" aria-label="${T('Fermer')}" onclick="closeMissedReview()"></button>
-      <div class="sheet-title"><span class="st-ico">${ICONS.bookOpen}</span>${T("Revoir mes erreurs")}<small>${missed.length}</small></div>
+      <div class="page-tete"><button class="sheet-grab" aria-label="${T("Retour")}" onclick="closeMissedReview()"><span class="pt-retour">${ICONS.chevronLeft}</span></button><div class="sheet-title"><span class="st-ico">${ICONS.bookOpen}</span>${T("Revoir mes erreurs")}<small>${missed.length}</small></div></div>
       <div class="rev-list" onscroll="majVoilesErreurs()">${items}</div>
     </div>`;
   document.body.appendChild(veil);
@@ -11904,7 +12233,7 @@ function prechaufferReglages(){
   if(reglagesChauds || document.getElementById("settingsVeil")) return;
   reglagesChauds = true;
   const v = document.createElement("div");
-  v.className = "sheet-veil";
+  v.className = "sheet-veil page";
   v.setAttribute("aria-hidden", "true");
   try{
     v.innerHTML = reglagesHtml();
@@ -11919,8 +12248,7 @@ function reglagesHtml(){
   const pct = Math.round(settings.volume*100);
   return `
     <div class="settings-sheet reglages" role="dialog" aria-label="${T("Réglages")}">
-      <button class="sheet-grab" aria-label="${T("Fermer")}" onclick="closeSettings()"></button>
-      <div class="sheet-title"><span class="st-ico">${ICONS.gear}</span>${T("Réglages")}${boutonLangue()}</div>
+      <div class="page-tete"><button class="sheet-grab" aria-label="${T("Retour")}" onclick="closeSettings()"><span class="pt-retour">${ICONS.chevronLeft}</span></button><div class="sheet-title"><span class="st-ico">${ICONS.gear}</span>${T("Réglages")}${boutonLangue()}</div></div>
       <!-- ===== TROIS GROUPES, PAS UNE COLONNE =====
            « Je me demande si cette partie n'est pas un peu trop compressée ;
            vois la disposition pour qu'elle soit la meilleure possible. »
@@ -12020,10 +12348,10 @@ function reglagesHtml(){
     </div>`;
 }
 function openSettings(){
-  if(document.getElementById("settingsVeil")) return;
+  if(!pageLibre("settingsVeil")) return;
   reglagesChauds = true;          // la vraie ouverture chauffe tout autant
   const veil = document.createElement("div");
-  veil.className = "sheet-veil"; veil.id = "settingsVeil";
+  veil.className = "sheet-veil page"; veil.id = "settingsVeil";
   veil.innerHTML = reglagesHtml();
   document.body.appendChild(veil);
   monterLaFeuille(veil);
@@ -12460,7 +12788,36 @@ try{
        fenêtre, pas dans #app. Faire défiler #app ne la déplacerait pas d'un
        pixel — ça ne ferait que glisser le décor derrière, pour rien (18px
        mesurés). C'est la règle CSS html.kb .modal-veil qui s'en occupe. */
-    if(!app.contains(el)){ if(window.scrollY){ try{ window.scrollTo(0, 0); }catch(e){} } return; }
+    if(!app.contains(el)){
+      if(window.scrollY){ try{ window.scrollTo(0, 0); }catch(e){} }
+      /* ===== UN CHAMP DANS UNE PAGE (v315) =====
+         La page a déjà pris la hauteur visible (html.kb .sheet-veil) ; c'est
+         donc SON défilement qui dégage le champ, sous sa barre du haut et
+         au-dessus du clavier — avec son bouton, dans la carte de connexion,
+         quand les deux tiennent. */
+      const corps = el.closest ? el.closest(".sheet-veil.page .settings-sheet") : null;
+      if(corps){
+        const rc = corps.getBoundingClientRect();
+        const tete = corps.querySelector(".page-tete");
+        const haut = tete ? tete.getBoundingClientRect().bottom : rc.top;
+        let pliP = rc.bottom;
+        try{ if(de.classList.contains("kb")) pliP = Math.min(pliP, (vv.offsetTop || 0) + hauteurVisible()); }catch(e){}
+        const margeP = Math.max(12, Math.min(24, (pliP - haut) * 0.06));
+        const r = el.getBoundingClientRect();
+        let bas = r.bottom;
+        try{
+          const carte = el.closest(".compte-carte"), bt = carte && carte.querySelector(".btn-primary");
+          if(bt){ const b = bt.getBoundingClientRect(); if(b.bottom > bas && b.bottom - r.top + margeP <= pliP - haut) bas = b.bottom; }
+        }catch(e){}
+        let delta = 0;
+        if(bas + margeP > pliP) delta = bas + margeP - pliP;
+        else if(r.top - margeP < haut) delta = r.top - margeP - haut;
+        const maxP = Math.max(0, corps.scrollHeight - corps.clientHeight);
+        const cibleP = Math.max(0, Math.min(maxP, corps.scrollTop + delta));
+        if(Math.abs(cibleP - corps.scrollTop) >= GLISSE_MINI) glisserVers(corps, cibleP);
+      }
+      return;
+    }
     razDefilementsParasites(el, app);
     const ar = app.getBoundingClientRect();
     const st = app.scrollTop;
@@ -18046,7 +18403,15 @@ function dayKey(off){ const d = new Date(Date.now() + (off||0)*86400000); const 
        d'acheter des vacances.
    Un gel se dépense TOUT SEUL, le lendemain du jour manqué, et le joueur
    l'apprend par un bandeau. Rien à activer, rien à cliquer. */
-const GEL_MAX = 2, GEL_PALIER = 10, GEL_PARTIES = 30, FLAMME_MEMOIRE = 90;
+/* FLAMME_MEMOIRE : combien de jours joués on garde. Quatre-vingt-dix
+   jusqu'à la v314 ; la page de la flamme montre maintenant toute l'histoire
+   (« sur un an »), elle en garde donc plus d'un an. On ne retire jamais rien
+   de ce qui était gardé : on garde simplement plus longtemps. */
+const GEL_MAX = 2, GEL_PALIER = 10, GEL_PARTIES = 30, FLAMME_MEMOIRE = 400;
+/* L'ANCIENNE MÉMOIRE NE S'OUBLIE PAS. Une liste écrite par une version d'avant
+   la v315 a pu être coupée à quatre-vingt-dix jours : voir le bord de la
+   mémoire dans serieDepuisLesJours. */
+const FLAMME_MEMOIRE_V314 = 90;
 /* ===== DEUX FAÇONS DE MÉRITER UN GEL, ET UN SEUL PLAFOND =====
    La RÉGULARITÉ (dix jours d'affilée au Défi) récompense celui qui revient.
    Le VOLUME (trente parties terminées, tous modes) récompense celui qui joue
@@ -18260,7 +18625,7 @@ function joursDerives(d){
   if(!d.last || !d.streak) return faits;
   const t = dateDeCle(d.last); if(!t) return faits;
   /* BORNÉ À LA MÉMOIRE, ET C'EST UN GARDE-FOU AUTANT QU'UNE COHÉRENCE.
-     Cohérence : bornerJours ne garde de toute façon que les quatre-vingt-dix
+     Cohérence : bornerJours ne garde de toute façon que les FLAMME_MEMOIRE
      derniers jours, donc en dériver davantage ne servirait à rien.
      Garde-fou : cette boucle tourne autant de fois que la série ANNONCÉE. Tant
      que ce nombre venait du seul appareil, il était sain. Le jour où il peut
@@ -18454,84 +18819,76 @@ function iconeEnFond(svg){
   return 'url("data:image/svg+xml,' + encodeURIComponent(avecNs) + '")';
 }
 function ouvrirFlamme(){
-  if(document.getElementById("flammeVeil")) return;
+  if(!pageLibre("flammeVeil")) return;
   const d = loadDaily(), faits = joursFaits(), gels = joursGeles();
   const serie = dailyStreakShown(), auj = dayKey(0);
-  /* Le plus ancien jour dont on ait la trace borne la liste par le bas ; on ne
-     montre jamais plus de trois mois. */
+  /* Le plus ancien jour dont on ait la trace : avant lui, on ne sait rien. */
   let plusVieux = auj;
   faits.forEach(j=>{ if(j < plusVieux) plusVieux = j; });
   gels.forEach(j=>{ if(j < plusVieux) plusVieux = j; });
-  /* ===== LA FENÊTRE FAIT QUATRE SEMAINES, MÊME À TROIS JOURS DE SÉRIE =====
-     La grille ne couvrait que l'histoire connue : deux rangées pour un joueur
-     qui vient d'arriver, huit pour un joueur fidèle — et la feuille montait
-     d'autant. Maintenant que la fenêtre a une hauteur FIXE, il faut aussi que
-     la grille la remplisse, sinon on aurait troqué une feuille qui grandit
-     contre une feuille à moitié vide.
-     ON REMONTE DONC TOUJOURS À VINGT-HUIT JOURS. Les jours antérieurs à la
-     première trace sortent en cases TRANSPARENTES, jamais en « manqué » :
-     afficher trente « Manqué » à quelqu'un qui vient d'installer le jeu serait
-     un reproche, pas une information — c'est la règle posée le jour où cette
-     feuille est née, et elle ne change pas. */
-  const FENETRE_SEMAINES = 4;
-  const tAujBorne = dateDeCle(auj);
-  /* QUATRE SEMAINES DE CALENDRIER, PAS VINGT-HUIT JOURS. Vingt-huit jours à
-     partir d'aujourd'hui tombent au milieu d'une semaine : la grille sortait
-     CINQ rangées dont une à moitié vide, et un joueur de trois jours avait
-     déjà de quoi faire défiler sans rien à y voir. On remonte donc au dimanche
-     d'il y a trois semaines : la fenêtre tombe alors exactement sur quatre
-     rangées, quel que soit le jour où l'on ouvre la feuille. */
-  const borne = cleDeDate(new Date(tAujBorne.getFullYear(), tAujBorne.getMonth(),
-    tAujBorne.getDate() - (7 * (FENETRE_SEMAINES - 1) + tAujBorne.getDay())));
-  const debutVrai = plusVieux;                 // avant ça, on n'a aucune trace
-  if(borne < plusVieux) plusVieux = borne;
-  /* LA GRILLE SE LIT COMME UN CALENDRIER : sept colonnes, du dimanche au
-     samedi, la semaine la plus ancienne en haut, aujourd'hui en bas. On
-     complète le début et la fin par des cases vides pour que chaque colonne
-     reste le même jour de la semaine — sans ça, la forme de la série ne veut
-     plus rien dire. */
-  const cases = [];
-  const tVieux = dateDeCle(plusVieux) || dateDeCle(auj);
-  for(let i = 0; i < tVieux.getDay(); i++) cases.push(`<span class="fj horschamp"></span>`);
-  const tAuj = dateDeCle(auj);
-  const jours = Math.round((tAuj - tVieux) / 86400000);
-  for(let k = 0; k <= jours; k++){
-    const t = new Date(tVieux.getFullYear(), tVieux.getMonth(), tVieux.getDate() + k);
-    const cle = cleDeDate(t);
-    if(cle < debutVrai){ cases.push(`<span class="fj horschamp"></span>`); continue; }
-    const fait = faits.has(cle), gele = !fait && gels.has(cle);
-    const etat = fait ? T("joué") : (gele ? T("gelé") : (cle === auj ? T("à faire") : T("manqué")));
-    const cls = (fait ? " fait" : (gele ? " gele" : "")) + (cle === auj ? " auj" : "");
-    const dit = dateLongue(t) + " — " + etat;
-    cases.push(`<span class="fj${cls}" title="${escapeHtml(dit)}" aria-label="${escapeHtml(dit)}"></span>`);
+  /* ===== UN MOIS PAR CARTE, ET LA PAGE DÉFILE (v315) =====
+     « J'ai pas l'impression d'avoir une page déroulante. Je veux voir toutes
+     mes flammes : sur un mois, deux mois, six mois, un an. » La feuille
+     montrait quatre semaines dans une fenêtre de hauteur fixe, qui défilait
+     À L'INTÉRIEUR d'une feuille qu'on tirait : un défilement dans un autre,
+     et rien au-delà de trois mois.
+     C'est maintenant une page, et l'histoire s'y lit comme un calendrier :
+     une carte par mois, LE MOIS EN COURS EN HAUT, les plus anciens en
+     descendant, jusqu'au premier jour dont on ait la trace. Chaque carte
+     porte ses sept colonnes (du dimanche au samedi) et le nombre de jours
+     joués. Un jour joué porte sa flamme, un jour couvert par un gel sa
+     flamme gelée ; les autres portent leur numéro, sur un fond neutre s'il a
+     été manqué. Avant la première trace et après aujourd'hui, le numéro seul
+     — afficher des mois de « manqué » à quelqu'un qui vient d'arriver serait
+     un reproche, pas une information. */
+  const tAuj = dateDeCle(auj), tVieux = dateDeCle(plusVieux) || tAuj;
+  const lettres = `<div class="fg-sem">${SEM_LETTRES.map(l=>`<span>${l}</span>`).join("")}</div>`;
+  const mois = [];
+  for(let y = tAuj.getFullYear(), m = tAuj.getMonth(), n = 0; n < 36; n++){
+    mois.push([y, m]);
+    if(y < tVieux.getFullYear() || (y === tVieux.getFullYear() && m <= tVieux.getMonth())) break;
+    if(--m < 0){ m = 11; y--; }
   }
-  for(let i = tAuj.getDay() + 1; i < 7; i++) cases.push(`<span class="fj horschamp"></span>`);
-  /* LES LETTRES DES JOURS NE DÉFILENT PAS AVEC LA GRILLE. Elles étaient dans
-     la fenêtre : à la première semaine de recul, la colonne du mardi n'était
-     plus surmontée de rien. Un calendrier garde son en-tête. (Et c'était
-     aussi, tout simplement, les vingt et un pixels qui restaient à défiler
-     chez un joueur de trois jours : le seul débord était l'en-tête.) */
-  const enTete = `<div class="fg-sem">${SEM_LETTRES.map(l=>`<span>${l}</span>`).join("")}</div>`;
-  const grille = `<div class="fg-cases" role="img" aria-label="${T("Tes jours, du plus ancien au plus récent")}">${cases.join("")}</div>`;
+  const carteMois = ([y, m])=>{
+    const premier = new Date(y, m, 1), nb = new Date(y, m + 1, 0).getDate();
+    const cases = [];
+    for(let i = 0; i < premier.getDay(); i++) cases.push(`<span class="fj horschamp"></span>`);
+    let joues = 0;
+    for(let j = 1; j <= nb; j++){
+      const t = new Date(y, m, j), cle = cleDeDate(t);
+      if(cle > auj){ cases.push(`<span class="fj horschamp avenir"><i>${j}</i></span>`); continue; }
+      if(cle < plusVieux){ cases.push(`<span class="fj horschamp"><i>${j}</i></span>`); continue; }
+      const fait = faits.has(cle), gele = !fait && gels.has(cle);
+      if(fait) joues++;
+      const etat = fait ? T("joué") : (gele ? T("gelé") : (cle === auj ? T("à faire") : T("manqué")));
+      const cls = (fait ? " fait" : (gele ? " gele" : "")) + (cle === auj ? " auj" : "");
+      const dit = dateLongue(t) + " — " + etat;
+      cases.push(`<span class="fj${cls}" title="${escapeHtml(dit)}" aria-label="${escapeHtml(dit)}">${fait || gele ? "" : `<i>${j}</i>`}</span>`);
+    }
+    const compte = joues === 0 ? "" : (joues === 1 ? T("1 jour joué") : Tf("{n} jours joués", { n:joues }));
+    return `<div class="flam-mois">
+        <div class="fm-tete"><b>${escapeHtml(T(MOIS_FR[m]))} ${y}</b>${compte ? `<small>${escapeHtml(compte)}</small>` : ""}</div>
+        ${lettres}
+        <div class="fg-cases" role="img" aria-label="${escapeHtml(T(MOIS_FR[m]) + " " + y)}">${cases.join("")}</div>
+      </div>`;
+  };
   const reserve = d.gels === 0 ? T("Aucun gel en réserve")
     : (d.gels === 1 ? T("1 gel en réserve") : Tf("{n} gels en réserve", {n:d.gels}));
   const veil = document.createElement("div");
-  veil.className = "sheet-veil"; veil.id = "flammeVeil";
+  veil.className = "sheet-veil page"; veil.id = "flammeVeil";
   veil.innerHTML = `
     <div class="settings-sheet flam-sheet" role="dialog" aria-label="${T("Ta flamme")}">
-      <button class="sheet-grab" aria-label="${T('Fermer')}" onclick="closeFlamme()"></button>
-      <div class="sheet-title"><span class="st-ico">${ICONS.flame}</span>${T("Ta flamme")}<small>${serie}</small></div>
+      <div class="page-tete"><button class="sheet-grab" aria-label="${T("Retour")}" onclick="closeFlamme()"><span class="pt-retour">${ICONS.chevronLeft}</span></button><div class="sheet-title"><span class="st-ico">${ICONS.flame}</span>${T("Ta flamme")}<small>${serie}</small></div></div>
       <div class="flam-tete">
         <span class="ft-txt">
           <span class="ft-n">${serie === 0 ? T("Aucune série en cours") : (serie === 1 ? T("1 jour d'affilée") : Tf("{n} jours d'affilée", {n:serie}))}</span>
           <span class="flam-jour">${phraseDuJour()}</span>
           <span class="ft-g">${ICONS.flammeGelee}${escapeHtml(reserve)}</span>
-          <span class="flam-regle">${Tf("Un gel tous les {p} jours d'affilée ou toutes les {g} parties, {m} en réserve au maximum. Il couvre un seul jour manqué : deux jours de suite et la flamme s'éteint.", {p:GEL_PALIER, g:GEL_PARTIES, m:GEL_MAX})}</span>
+          <span class="flam-regle">${Tf("Un gel tous les {p} jours d'affilée ou toutes les {g} parties, {m} en réserve au maximum. Il couvre un seul jour manqué : deux jours de suite et la flamme s'éteint.", {p:GEL_PALIER, g:GEL_PARTIES, m:GEL_MAX})}</span>
         </span>
       </div>
-      ${enTete}
-      <div class="flam-list">${grille}</div>
       <div class="flam-leg"><span class="fj fait"></span><b>${T("joué")}</b><span class="fj gele"></span><b>${T("gelé")}</b></div>
+      <div class="flam-list">${mois.map(carteMois).join("")}</div>
     </div>`;
   /* Les deux flammes, fabriquées une fois pour toutes les cases. */
   try{
@@ -18540,10 +18897,6 @@ function ouvrirFlamme(){
     f.style.setProperty("--fj-glace", iconeEnFond(ICONS.flammeGelee));
   }catch(e){}
   document.body.appendChild(veil);
-  /* ON OUVRE SUR AUJOURD'HUI, pas sur le premier jour. La grille se lit du
-     plus ancien au plus récent — donc sans ça, un joueur de trois mois ouvre
-     sa flamme sur juillet et doit défiler pour se voir. */
-  try{ const l = veil.querySelector(".flam-list"); if(l) l.scrollTop = l.scrollHeight; }catch(e){}
   monterLaFeuille(veil);
   glassTrack();
   attachSheetDrag(veil.querySelector(".settings-sheet"), closeFlamme);
@@ -19278,11 +19631,11 @@ function joursDeLaFlamme(f){
    C'est la seule entorse à la monotonie, et c'est la vérité : une série cassée
    était déjà cassée, le jeu le voit tout seul au prochain défi.
 
-   LE BORD DE LA MÉMOIRE. La liste des jours est bornée à quatre-vingt-dix
-   (FLAMME_MEMOIRE) : un joueur qui tient depuis cent vingt jours n'a pas ses
-   trente premiers en liste. Si la marche va jusqu'au plus ancien jour connu,
-   on ne peut PAS voir plus loin — il serait faux d'en conclure que la série
-   s'arrête là. On garde alors ce qui était annoncé. */
+   LE BORD DE LA MÉMOIRE. La liste des jours est bornée (FLAMME_MEMOIRE) : un
+   joueur qui tient depuis plus longtemps n'a pas ses premiers jours en
+   liste. Si la marche va jusqu'au plus ancien jour connu, on ne peut PAS voir
+   plus loin — il serait faux d'en conclure que la série s'arrête là. On garde
+   alors ce qui était annoncé. */
 function serieDepuisLesJours(dernier, jours, geles, annonce){
   if(!dernier || !jours.length) return 0;
   const faits = new Set(jours), gel = new Set(geles);
@@ -19293,11 +19646,17 @@ function serieDepuisLesJours(dernier, jours, geles, annonce){
   const plusAncien = jours[0];                            // jours est trié
   const t = dateDeCle(dernier);
   if(!t) return 0;
-  /* Le bord ne compte QUE si la liste est pleine. Atteindre le plus ancien jour
-     d'une liste de trois jours ne cache rien : la série commence là, point.
-     C'est seulement quand la mémoire est saturée (quatre-vingt-dix jours) qu'on
-     ne peut pas voir plus loin et qu'il faut croire ce qui était annoncé. */
-  const memoirePleine = jours.length >= FLAMME_MEMOIRE;
+  /* Le bord ne compte QUE si la liste a pu être coupée. Atteindre le plus
+     ancien jour d'une liste de trois jours ne cache rien : la série commence
+     là, point. C'est seulement quand la mémoire a pu être saturée qu'on ne
+     peut pas voir plus loin et qu'il faut croire ce qui était annoncé.
+     ET « SATURÉE » VEUT DIRE QUATRE-VINGT-DIX, PAS QUATRE CENTS. La mémoire est
+     passée de 90 à 400 jours à la v315 ; une liste de 90 jours venue d'une
+     version d'avant ne montre pas plus loin qu'avant. Avec « 400 » ici, une
+     série de cent vingt jours tombait à quatre-vingt-dix au premier échange
+     (banc-essai/fusion.js) : une progression perdue. On croit donc
+     l'annonce dès que la liste atteint l'ancien plafond. */
+  const memoirePleine = jours.length >= Math.min(FLAMME_MEMOIRE, FLAMME_MEMOIRE_V314);
   let n = 0, bord = false;
   for(let garde = 0; garde < 4000; garde++){
     const k = cleDeDate(t);
@@ -20778,14 +21137,23 @@ function feuilleDessous(veil){
   }
   return null;
 }
+const MENUS_FEUILLE = new Set(["grpActionsVeil", "grpPhotoVeil"]);
 function ouvrirFeuilleGroupe(id, titre, ico, html){
   const ancienne = document.getElementById(id);
   if(ancienne) ancienne.remove();
   const veil = document.createElement("div");
   veil.className = "sheet-veil"; veil.id = id;
+  /* Deux exceptions restent des MENUS, posés en bas (voir LES VOLETS
+     DEVIENNENT DES PAGES) : ce qu'on fait d'un message, ce qu'on fait d'une
+     photo. Ce sont des réponses à un geste, pas des destinations. */
+  const menu = MENUS_FEUILLE.has(id);
+  veil.classList.add(menu ? "menu" : "page");
+  const tete = menu
+    ? `<button class="sheet-grab" aria-label="${T("Fermer")}" onclick="fermerFeuilleGroupe('${id}')"></button>
+      <div class="sheet-title"><span class="st-ico">${ico}</span>${escapeHtml(titre)}</div>`
+    : `<div class="page-tete"><button class="sheet-grab" aria-label="${T("Retour")}" onclick="fermerFeuilleGroupe('${id}')"><span class="pt-retour">${ICONS.chevronLeft}</span></button><div class="sheet-title"><span class="st-ico">${ico}</span><span class="st-mot">${escapeHtml(titre)}</span></div></div>`;
   veil.innerHTML = `<div class="settings-sheet grp-feuille" role="dialog" aria-label="${escapeHtml(titre)}">
-      <button class="sheet-grab" aria-label="${T("Fermer")}" onclick="fermerFeuilleGroupe('${id}')"></button>
-      <div class="sheet-title"><span class="st-ico">${ico}</span>${escapeHtml(titre)}</div>
+      ${tete}
       <div class="grp-feuille-corps">${html}</div>
     </div>`;
   document.body.appendChild(veil);
@@ -22752,6 +23120,10 @@ function startRevision(quoi){
   const b = (quoi === "carnet") ? source : parEntetement(source).slice(0, REVISION_LOT);
   if(!b.length) return;
   state.mode = "solo"; state.revision = true;
+  /* D'où part la révision : « Quitter » y ramène (voir LA PARTIE FINIE, ON
+     REVIENT DANS SON MODE). Gardé dans la partie sauvegardée, il survit à une
+     relance de l'app en pleine révision. */
+  state.revisionDe = (quoi === "carnet") ? "revoir" : "setup";
   state.soloScore = 0; state.soloStreak = 0; state.soloBestStreak = 0; state.soloCorrect = 0; displayedSoloScore = 0; state.soloMissed = []; state.soloIsRecord = false;
   // Pas de chrono en révision — sans toucher au réglage choisi par le joueur.
   state.questions = b.map(x=>({ q:x.q, options:x.options, correct:x.correct, fact:x.fact, tier:x.tier, shuffledOptions:shuffle(x.options.slice()) }));
@@ -22870,21 +23242,48 @@ function startGame(){
   render();
 }
 function replayGame(){
+  /* REJOUER UNE RÉVISION, C'EST ROUVRIR LA MÊME PORTE : le carnet pour « À
+     revoir », les erreurs de la dernière partie pour l'écran du Solo. Avant,
+     les deux rejouaient les erreurs de la dernière partie (par neuf, quand
+     une séance en compte dix), et une fois tout maîtrisé, « Rejouer » menait
+     à l'accueil. Plus rien à revoir : on revient dans le mode. */
   if(state.revision){
-    const b = shuffle(lastMissEntries()).slice(0, 9);
-    if(!b.length){ newGame(); return; }
-    state.questions = b.map(x=>({ q:x.q, options:x.options, correct:x.correct, fact:x.fact, tier:x.tier, shuffledOptions:shuffle(x.options.slice()) }));
+    startRevision(state.revisionDe === "setup" ? undefined : "carnet");
+    if(state.screen !== "play") retourAuMode();
+    return;
   }
-  else buildQuestions();
+  buildQuestions();
   if(state.mode==="group"){ state.scores = state.teams.map(()=>0); }
   else { state.soloScore = 0; state.soloStreak = 0; state.soloBestStreak = 0; state.soloCorrect = 0; displayedSoloScore = 0; state.soloMissed = []; state.soloIsRecord = false; }
   state.currentIndex = 0; state.revealed = false; state.awarded = []; state.soloSelected = null;
   state.screen = "play";
   render();
 }
+function etatNeuf(){
+  return { screen:"mode", mode:null, teams: loadTeams(), lengthKey: state.lengthKey, timerKey: state.timerKey, themeKey: state.themeKey||"tout", daily:false, revision:false, timedOut:false, scores:[], soloScore:0, soloStreak:0, soloBestStreak:0, soloCorrect:0, soloSelected:null, soloMissed:[], soloIsRecord:false, questions:[], currentIndex:0, revealed:false, awarded:[] };
+}
 function newGame(){
   clearSavedGame();
-  state = { screen:"mode", mode:null, teams: loadTeams(), lengthKey: state.lengthKey, timerKey: state.timerKey, themeKey: state.themeKey||"tout", daily:false, revision:false, timedOut:false, scores:[], soloScore:0, soloStreak:0, soloBestStreak:0, soloCorrect:0, soloSelected:null, soloMissed:[], soloIsRecord:false, questions:[], currentIndex:0, revealed:false, awarded:[] };
+  state = etatNeuf();
+  render();
+}
+/* ===== LA PARTIE FINIE, ON REVIENT DANS SON MODE (v315) =====
+   « Lorsque je suis dans un mode, une fois la partie terminée, ce serait
+   bien de revenir dans le mode en question plutôt que de retourner à la page
+   d'accueil. » « Quitter » menait toujours à l'accueil : pour rejouer en
+   Solo avec un autre réglage, il fallait repasser par lui et rouvrir le mode.
+   On revient maintenant là d'où l'on est parti — l'écran du Solo, celui du
+   Groupe avec ses joueurs, « À revoir » après une révision — avec une partie
+   neuve, rien d'autre. Quitter EN COURS de partie y ramène aussi : c'est le
+   même retour, un écran plus tôt. L'accueil est à un geste de là.
+   Une révision a deux portes : « À revoir » (le carnet), et « Réviser la
+   dernière partie » sur l'écran du Solo. Chacune ramène à la sienne. */
+function retourAuMode(){
+  const mode = state.mode, revision = !!state.revision, de = state.revisionDe;
+  clearSavedGame();
+  state = etatNeuf();
+  if(revision && de !== "setup") state.screen = "revoir";
+  else if(mode === "solo" || mode === "group"){ state.mode = mode; state.screen = "setup"; }
   render();
 }
 
@@ -22896,7 +23295,7 @@ function saveState(){
         v:1, screen:"play", mode:state.mode, lengthKey:state.lengthKey, timerKey:state.timerKey,
         teams:state.teams, scores:state.scores,
         soloScore:state.soloScore, soloStreak:state.soloStreak, soloBestStreak:state.soloBestStreak, soloCorrect:state.soloCorrect, soloSelected:state.soloSelected,
-        soloMissed:state.soloMissed, themeKey:state.themeKey, revision:state.revision,
+        soloMissed:state.soloMissed, themeKey:state.themeKey, revision:state.revision, revisionDe:state.revisionDe,
         questions:state.questions, currentIndex:state.currentIndex, revealed:state.revealed, awarded:state.awarded
       };
       localStorage.setItem("bt_game", JSON.stringify(snap));
@@ -22923,7 +23322,7 @@ function confirmLeaveGame(){
     title:T("Quitter la partie ?"),
     message:T("La partie en cours sera perdue."),
     okLabel:T("Quitter"), cancelLabel:T("Rester"), danger:true,
-    onOk:()=>{ stopQTimer(); clearSavedGame(); goToModeSelect(); }
+    onOk:()=>{ stopQTimer(); retourAuMode(); }
   });
 }
 
@@ -23394,7 +23793,7 @@ function animateCount(el, from, to, duration, suffix){
 }
 function renderPlay(){
   const el = document.createElement("div");
-  el.className = "screen";
+  el.className = "screen" + (state.mode === "group" && state.revealed ? " groupe-revele" : "");
   const q = currentQ();
   const info = TIER_INFO[q.tier];
   const total = state.questions.length;
@@ -23423,24 +23822,41 @@ function renderPlay(){
   let bottomHtml;
   if(state.mode==="group"){
     const ranked = rankedTeamIndices();
+    /* ===== SIX JOUEURS, UN SEUL ÉCRAN (v315) =====
+       « Il faut que ça prenne en compte les six joueurs de la façon la plus
+       optimale possible, tout en gardant le jeu cohérent. » Mesuré, réponse
+       révélée : 344 px à faire défiler sur un iPhone SE à six joueurs (291 sur
+       un iPhone 15), et déjà 177 à deux. La raison : DEUX listes des mêmes
+       joueurs l'une sous l'autre — « Qui a trouvé ? » (139 px à six) puis le
+       tableau des scores (149 px).
+       Pendant la révélation, il n'y en a donc plus qu'UNE : chaque bouton de
+       « Qui a trouvé ? » porte le score de l'équipe, mis à jour dès qu'on le
+       touche, et le tableau des scores se retire jusqu'à la question
+       suivante (on y corrige un score, comme avant). Les points de la
+       question s'écrivent une fois, à côté de la question posée, au lieu
+       d'être répétés sur chaque bouton. À cinq et six joueurs, trois
+       colonnes ; à quatre, deux et deux — plus jamais trois plus un seul. Et
+       les trois mauvaises réponses, que personne n'a touchées (on joue à
+       voix haute), se resserrent sous la bonne. */
+    const colsScores = ranked.length === 4 ? 2 : Math.min(3, ranked.length);
+    const colsPrix = state.teams.length >= 5 ? 3 : 2;
     bottomHtml = `
       ${state.revealed ? `<div class="fact-card${pop?' reveal-in':''}">${testamentTag(q)}<span class="ficon">${ICONS.bookOpen}</span><span class="ftext"><span class="fact-label">${T("Le savais-tu ?")}</span>${escapeHtml(faitVersion(texteFait(q)))}</span></div>` : `<button class="btn-reveal${fresh?' reveal-in':''}" onclick="revealAnswer()">${T("Révéler la réponse")}</button>`}
       ${state.revealed ? `
-        <div class="award-label${pop?' reveal-in':''}">${T("Qui a trouvé la bonne réponse ?")}</div>
-        <div class="award-grid${pop?' reveal-in':''}">
+        <div class="award-label${pop?' reveal-in':''}"><span>${T("Qui a trouvé la bonne réponse ?")}</span><span class="aw-pts">+${info.pts}</span></div>
+        <div class="award-grid${colsPrix === 3 ? ' trois' : ''}${pop?' reveal-in':''}" style="--cols:${colsPrix}">
           ${state.teams.map((t,i)=>`
             <button class="award-btn ${state.awarded.includes(i)?'awarded':''}" onclick="toggleAward(${i})">
               <span class="team-token aw-token" style="background:${TEAM_COLORS[i%6]}">${escapeHtml(premierSigne(t.name))||(i+1)}</span>
-              <span class="aw-name">${escapeHtml(nomEquipe(t.name))}</span>
+              <span class="aw-txt"><span class="aw-name">${escapeHtml(nomEquipe(t.name))}</span><span class="aw-sc">${state.scores[i]}</span></span>
               ${state.awarded.includes(i)?`<span class="aw-check" style="color:${TEAM_COLORS[i%6]}">${ICONS.checkCircle}</span>`:""}
-              <span class="pts">+${info.pts}</span>
             </button>
           `).join("")}
         </div>
       ` : ""}
       ${state.revealed ? `<button class="btn-next${pop?' reveal-in':''}" onclick="nextQuestion()">${state.currentIndex>=total-1 ? T("Voir les résultats") : T("Question suivante")}</button>` : ""}
       <div class="flex-sp"></div>
-      <div class="score-strip" style="--cols:${Math.min(3, ranked.length)}">
+      ${state.revealed ? "" : `<div class="score-strip" style="--cols:${colsScores}">
         ${ranked.map(i=>`
           <div class="score-pane">
             <span class="nm"><span class="dot-sm" style="background:${TEAM_COLORS[i%6]}"></span>${escapeHtml(nomEquipe(state.teams[i].name))}</span>
@@ -23451,7 +23867,7 @@ function renderPlay(){
             </span>
           </div>
         `).join("")}
-      </div>
+      </div>`}
     `;
   } else {
     bottomHtml = `
@@ -23550,7 +23966,7 @@ function renderEndGroup(){
     <div class="end-bottom">
     <div class="end-actions">
       <button class="btn-replay" onclick="replayGame()">${T("Rejouer")}</button>
-      <button class="btn-newgame btn-quit" onclick="newGame()">${T("Quitter")}</button>
+      <button class="btn-newgame btn-quit" onclick="retourAuMode()">${T("Quitter")}</button>
     </div>
     ${shareLineHtml(state.mode)}
     </div>
@@ -23598,7 +24014,7 @@ function renderEndSolo(){
     <div class="end-bottom">
     <div class="end-actions">
       <button class="btn-replay" onclick="replayGame()">${T("Rejouer")}</button>
-      <button class="btn-newgame btn-quit" onclick="newGame()">${T("Quitter")}</button>
+      <button class="btn-newgame btn-quit" onclick="retourAuMode()">${T("Quitter")}</button>
     </div>
     ${shareLineHtml(state.mode)}
     </div>
@@ -24032,13 +24448,12 @@ async function ouvrirCadrage(fichier){
   }
 }
 function monterCadrage(toile, w, h){
-  if(document.getElementById("cadrageVeil")) return;
+  if(!pageLibre("cadrageVeil")) return;
   const veil = document.createElement("div");
-  veil.className = "sheet-veil"; veil.id = "cadrageVeil";
+  veil.className = "sheet-veil page"; veil.id = "cadrageVeil";
   veil.innerHTML = `
     <div class="settings-sheet cadrage-sheet" role="dialog" aria-label="${T("Ajuster la photo")}">
-      <button class="sheet-grab" aria-label="${T('Fermer')}" onclick="fermerCadrage()"></button>
-      <div class="sheet-title"><span class="st-ico">${ICONS.user}</span>${T("Ajuster la photo")}</div>
+      <div class="page-tete"><button class="sheet-grab" aria-label="${T("Retour")}" onclick="fermerCadrage()"><span class="pt-retour">${ICONS.chevronLeft}</span></button><div class="sheet-title"><span class="st-ico">${ICONS.user}</span>${T("Ajuster la photo")}</div></div>
       <div class="cadre" id="cadreScene"><div class="cadre-trou"></div></div>
       <div class="cadre-aide">${T("Pince pour zoomer, glisse pour cadrer")}</div>
       <div class="cadre-zoom">
@@ -24570,7 +24985,7 @@ function renderOnlinePlay(){
           : (aPlusieurs
              ? joueursPresents().map(j=>escapeHtml(j.name||T("Joueur"))+" : "+(j.done?T("terminé"):(j.idx|0)+"/"+total)).join(" · ")
              : Tf("Ton adversaire en est à {i}/{t}", {i:net.oppIndex, t:total}))}</div>
-        <button class="btn-ghost${net.oppGone?'':' btn-quit'}" style="margin-top:1.1rem" onclick="${net.oppGone?"state.screen='online-end';render()":"leaveOnline()"}">${net.oppGone?T("Voir le résultat"):T("Quitter la partie")}</button>
+        <button class="btn-ghost${net.oppGone?'':' btn-quit'}" style="margin-top:1.1rem" onclick="${net.oppGone?"state.screen='online-end';render()":"quitterFinEnLigne()"}">${net.oppGone?T("Voir le résultat"):T("Quitter la partie")}</button>
       </div>
       <div class="flex-sp"></div>`;
     return el;
@@ -24642,13 +25057,13 @@ function renderOnlineEnd(){
     if(net.isHost){
       replayMsg = T("Tout le monde repart avec toi.");
       replayActions = `<button class="btn-replay" onclick="relancerPartie()">${T("Rejouer")}</button>`
-        + `<button class="btn-newgame btn-quit" onclick="leaveOnline()">${T("Quitter")}</button>`;
+        + `<button class="btn-newgame btn-quit" onclick="quitterFinEnLigne()">${T("Quitter")}</button>`;
     } else {
       replayMsg = T("L'hôte peut relancer une partie.");
-      replayActions = `<button class="btn-newgame btn-quit" onclick="leaveOnline()">${T("Quitter")}</button>`;
+      replayActions = `<button class="btn-newgame btn-quit" onclick="quitterFinEnLigne()">${T("Quitter")}</button>`;
     }
   } else if(net.oppGone){
-    replayActions = `<button class="btn-newgame btn-quit" onclick="leaveOnline()">${T("Quitter")}</button>`;
+    replayActions = `<button class="btn-newgame btn-quit" onclick="quitterFinEnLigne()">${T("Quitter")}</button>`;
   } else if(net.iWantReplay && net.oppWantReplay){
     replayMsg = T("Nouvelle partie en préparation…");
     replayActions = `<button class="btn-replay is-waiting" disabled>${T("C'est parti…")}</button>`;
@@ -24663,7 +25078,7 @@ function renderOnlineEnd(){
   } else {
     if(net.replayDeclined){ replayMsg = Tf("{nom} ne souhaite pas rejouer pour l'instant.", {nom:oppName}); }
     replayActions = `<button class="btn-replay" onclick="onlineRematch()">${T("Rejouer")}</button>`
-      + `<button class="btn-newgame btn-quit" onclick="leaveOnline()">${T("Quitter")}</button>`;
+      + `<button class="btn-newgame btn-quit" onclick="quitterFinEnLigne()">${T("Quitter")}</button>`;
   }
   /* LE RÉSULTAT À PLUSIEURS reprend le classement du mode Groupe — mêmes
      rangées, mêmes médailles or/argent/bronze. Rien de neuf à dessiner : le
@@ -25036,6 +25451,12 @@ function positionsDuJeu(app){
   if(!sc) return null;
   const o = {};
   JEU_GLISSE.forEach(sel => { const e = sc.querySelector(sel); if(e) o[sel] = e.getBoundingClientRect().top; });
+  /* Chaque réponse, par rapport à sa grille : en Groupe, la révélation range
+     la bonne en tête et les trois autres sur une rangée (voir LES MAUVAISES
+     RÉPONSES… TIENNENT SUR UNE LIGNE). */
+  const g = sc.querySelector(".options-grid");
+  if(g){ const rg = g.getBoundingClientRect();
+    o.reponses = Array.prototype.map.call(g.querySelectorAll(":scope > .option-btn"), e => { const r = e.getBoundingClientRect(); return { x: r.left - rg.left, y: r.top - rg.top }; }); }
   return o;
 }
 function glisserApresRevelation(ecran, avant){
@@ -25054,6 +25475,36 @@ function glisserApresRevelation(ecran, avant){
     e.style.transform = "";
     setTimeout(()=>{ e.style.removeProperty("transition"); e.style.removeProperty("transform"); }, ms + 40);
   });
+  /* EN GROUPE, LES RÉPONSES CHANGENT DE PLACE DANS LA GRILLE : la bonne monte
+     en tête (elle glisse depuis sa ligne, la grille glissant déjà pour son
+     compte), les trois autres naissent en fondu à leur nouvelle place, plus
+     petites — les étirer depuis leur ancienne taille écraserait leurs mots. */
+  if(avant.reponses && ecran.classList.contains("groupe-revele")){
+    const g = ecran.querySelector(".options-grid");
+    if(g){
+      const rg = g.getBoundingClientRect();
+      Array.prototype.forEach.call(g.querySelectorAll(":scope > .option-btn"), (e, i) => {
+        const v = avant.reponses[i]; if(!v) return;
+        const r = e.getBoundingClientRect();
+        e.style.transition = "none";
+        if(e.classList.contains("correct")){
+          const dx = v.x - (r.left - rg.left), dy = v.y - (r.top - rg.top);
+          if(Math.abs(dx) < 1 && Math.abs(dy) < 1) return;
+          e.style.transform = "translate(" + dx.toFixed(2) + "px," + dy.toFixed(2) + "px)";
+          void e.offsetHeight;
+          e.style.transition = "transform " + tempoPli();
+          e.style.transform = "";
+        } else {
+          e.style.opacity = "0";
+          void e.offsetHeight;
+          e.style.transition = "opacity " + Math.round(ms * 0.8) + "ms ease " + Math.round(ms * 0.35) + "ms";
+          e.style.opacity = "";
+        }
+        bouge = true;
+        setTimeout(()=>{ e.style.removeProperty("transition"); e.style.removeProperty("transform"); e.style.removeProperty("opacity"); }, ms + 80);
+      });
+    }
+  }
   if(bouge){ try{ glassSuivre(ms + 120); }catch(e){} }
 }
 
@@ -25160,6 +25611,10 @@ document.addEventListener("click", (e)=>{
    qu'une carte glisse — ce qui autorise de vraies transitions animées « à la
    Apple » sans le moindre décalage du verre. */
 const GLASS_SEL = ".app-header,.card,.mode-card,.question-card,.solo-summary,.solo-score-bar,.score-pane,.option-btn,.btn-primary,.btn-next,.btn-replay,.fact-card,.tier-chip,.q-counter,.streak-chip,.chip,.icon-btn,.btn-reveal,.btn-newgame,.award-btn,.presence-card,.me-row,.online-action,.searching-card,.waiting-card,.info-card,.len-chip,.duel-scorebar,.timer-chip,.dr-side,.rank-row,.text-input,.code-input,.fs-hint,.modal-card,.btn-ghost,.fsh-close,.settings-sheet,.hero-verse-card,.modal-btn.ok,.modal-btn.cancel,.leave-banner,.end-medal,.adj-btn,.waiting-note,.rules,.btn-review,.daily-card,.dc-streak,.sem-flamme,.btn-invite,.sheet-done,.set-go,.share-btn,.rev-item,.parcours-card,.parcours-sum,.tst-head,.barre-bas,.fil-carte,.compo";
+/* LES PAGES NE SONT PAS EN VERRE (v315, voir LES VOLETS DEVIENNENT DES PAGES).
+   Le moteur ne ramasse aucune surface DANS un voile : ni couche floutée, ni
+   reflet, ni calage par image — la page est pleine, et ce qu'elle porte aussi. */
+const GLASS_VIVANT = ":is(" + GLASS_SEL + "):not(.sheet-veil *)";
 const GLASS_SKIP = ".timer-chip.low,.btn-primary:disabled,.btn-next:disabled";
 /* RÉFRACTION VIVANTE : le verre est calé sur la position RÉELLE à l'écran et
    ré-aligné image par image pendant les mouvements -> quand une carte glisse
@@ -25428,7 +25883,7 @@ function queueGlassXF(){
      liste qui vit DANS #app. Voir plus bas, au calcul de tx/ty. */
   const revEl = document.querySelector(".rev-list, .ecran-salon .salle-liste");
   const revSl = revEl ? revEl.scrollLeft : 0, revSt = revEl ? revEl.scrollTop : 0;
-  if(glassElsGen !== glassGen){ glassEls = document.querySelectorAll(GLASS_SEL); glassElsGen = glassGen; }
+  if(glassElsGen !== glassGen){ glassEls = document.querySelectorAll(GLASS_VIVANT); glassElsGen = glassGen; }
   const els = glassEls, vh = h;
   const suivre = now < glassSuivreJusqu;   // une mise en page bouge : on relit tout
   /* ===== LA FEUILLE QUI RECULE, ET SON ÉCHELLE DU MOMENT =====
@@ -25622,7 +26077,7 @@ function queueGlassXF(){
    les fonds pleins de GLASS_SKIP — chrono rouge, bouton désactivé — sont
    ignorés). Appelé après chaque rendu via queueGlassSync. */
 function ensureGlassRims(){
-  if(glassElsGen !== glassGen){ glassEls = document.querySelectorAll(GLASS_SEL); glassElsGen = glassGen; }
+  if(glassElsGen !== glassGen){ glassEls = document.querySelectorAll(GLASS_VIVANT); glassElsGen = glassGen; }
   const els = glassEls;
   for(let i = 0; i < els.length; i++){
     const el = els[i];
@@ -25746,7 +26201,7 @@ function queueGlassSyncPainted(freeze){
       pRevSl = glassRevBgSX; pRevSt = glassRevBgSY;
     }
   }
-  if(glassElsGen !== glassGen){ glassEls = document.querySelectorAll(GLASS_SEL); glassElsGen = glassGen; }
+  if(glassElsGen !== glassGen){ glassEls = document.querySelectorAll(GLASS_VIVANT); glassElsGen = glassGen; }
   const els = glassEls;
   /* Écran qui SORT pendant une transition : il s'efface et va disparaître —
      inutile de recalculer son verre (moitié moins de travail à l'instant le
