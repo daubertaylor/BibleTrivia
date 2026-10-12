@@ -966,6 +966,11 @@ const ouvrirLaLangue = async (p, lg) => {
       state.screen='mode'; render(); }],
     ['Réglages Groupe',   () => { state.mode='group'; state.screen='setup'; render(); }],
     ['Réglages Solo',     () => { state.mode='solo'; state.screen='setup'; render(); }],
+    /* UN LIVRE, DEPUIS L'ÉCRAN DU MODE (v320) : la page des livres ouverte
+       depuis le Solo, avec sa phrase à elle — puis la puce, un livre choisi. */
+    ['Solo · un livre',   () => { __fermerTout(); state.mode='solo'; state.screen='setup'; render(); ouvrirLivreLocal(); }],
+    ['Solo · Genèse',     () => { __fermerTout(); state.livre = BIBLE_BOOKS[0]; state.mode='solo'; state.screen='setup'; render(); }],
+    ['Solo · sans livre', () => { state.livre = null; render(); }],
     ['Partie Solo',       () => { state.mode='solo'; startGame(); }],
     /* LA SECONDE CHANCE EN JEU (v316) : une bonne réponse, et le fait dit
        « Rattrapée ! » au lieu de « Le savais-tu ? ». Par le vrai chemin : la
