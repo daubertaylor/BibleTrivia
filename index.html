@@ -1347,16 +1347,43 @@
      n'importe quel téléphone. */
   .podium-socle{ width:100%; border-radius:var(--r-s) var(--r-s) 0 0; overflow:hidden; }
   .podium-bar{ width:100%; border-radius:var(--r-s) var(--r-s) 0 0; display:flex; align-items:flex-start; justify-content:center; padding-top:0.42rem; font-family:'Poppins',sans-serif; font-weight:700; color:#fff; font-size:1rem; box-shadow:inset 0 1px 0 rgba(255,255,255,0.5); }
-  .podium-bar.p1{ height:3.5rem; background:linear-gradient(180deg, #FFD968, #EFAD26); }
-  .podium-bar.p2{ height:2.6rem; background:linear-gradient(180deg, #DFE3E8, #A9B0BA); }
-  .podium-bar.p3{ height:1.95rem; background:linear-gradient(180deg, #F5B77E, #D08243); }
+  /* ===== UNE MARCHE CHANGE DE HAUTEUR ET DE MÉTAL SANS SAUTER (v321) =====
+     Quand on corrige un score sur la page des résultats, un joueur peut
+     passer de la troisième marche à la première. Un dégradé ne s'anime pas :
+     il sautait du bronze à l'or. Ses deux teintes sont donc des propriétés
+     DÉCLARÉES (@property, type couleur) : déclarées, elles s'interpolent, et
+     le dégradé glisse d'un métal à l'autre pendant que la marche monte ou
+     descend à sa nouvelle hauteur, sur l'horloge des plis. Un navigateur qui
+     ne connaît pas @property garde exactement le dessin d'avant (la couleur
+     change d'un coup, comme avant) — rien ne se casse. Au premier dessin, il
+     n'y a pas de transition : seule l'entrée (marcheMonte) se joue. */
+  .podium-bar{ background:linear-gradient(180deg, var(--pb-haut), var(--pb-bas));
+    transition:height var(--tr-plie), --pb-haut var(--tr-plie), --pb-bas var(--tr-plie); }
+  .podium-bar.p1{ height:3.5rem; --pb-haut:#FFD968; --pb-bas:#EFAD26; }
+  .podium-bar.p2{ height:2.6rem; --pb-haut:#DFE3E8; --pb-bas:#A9B0BA; }
+  .podium-bar.p3{ height:1.95rem; --pb-haut:#F5B77E; --pb-bas:#D08243; }
 
   .rank-list{ margin-bottom:1.2rem; }
   .rank-row{ display:flex; align-items:center; gap:0.75rem; background:rgba(255,255,255,0.55); backdrop-filter:blur(14px) saturate(180%); -webkit-backdrop-filter:blur(14px) saturate(180%); border:0; border-radius:var(--r-s); padding:calc(0.6rem + 1px) calc(0.8rem + 1px); margin-bottom:0.5rem; }
-  .rank-badge{ width:1.7rem; height:1.7rem; border-radius:50%; display:flex; align-items:center; justify-content:center; font-weight:700; font-size:0.82rem; flex-shrink:0; background:var(--surface-alt); color:var(--ink-soft); }
-  .rank-badge.g1{ background:linear-gradient(150deg,#FFD968,#EFAD26); color:#fff; }
-  .rank-badge.g2{ background:linear-gradient(150deg,#DFE3E8,#A9B0BA); color:#fff; }
-  .rank-badge.g3{ background:linear-gradient(150deg,#F5B77E,#D08243); color:#fff; }
+  /* La pastille du rang suit la même règle que la marche : or, argent,
+     bronze ou rien, elle passe de l'un à l'autre en fondu (v321). */
+  .rank-badge{ width:1.7rem; height:1.7rem; border-radius:50%; display:flex; align-items:center; justify-content:center; font-weight:700; font-size:0.82rem; flex-shrink:0;
+    --rb-haut:var(--surface-alt); --rb-bas:var(--surface-alt); background:linear-gradient(150deg, var(--rb-haut), var(--rb-bas)); color:var(--ink-soft);
+    transition:--rb-haut var(--tr-plie), --rb-bas var(--tr-plie), color var(--tr-plie); }
+  .rank-badge.g1{ --rb-haut:#FFD968; --rb-bas:#EFAD26; color:#fff; }
+  .rank-badge.g2{ --rb-haut:#DFE3E8; --rb-bas:#A9B0BA; color:#fff; }
+  .rank-badge.g3{ --rb-haut:#F5B77E; --rb-bas:#D08243; color:#fff; }
+  @property --pb-haut{ syntax:'<color>'; inherits:false; initial-value:#FFD968; }
+  @property --pb-bas{ syntax:'<color>'; inherits:false; initial-value:#EFAD26; }
+  @property --rb-haut{ syntax:'<color>'; inherits:false; initial-value:#F4EFE7; }
+  @property --rb-bas{ syntax:'<color>'; inherits:false; initial-value:#F4EFE7; }
+  /* UN SCORE CORRIGÉ BAT UNE FOIS : il dit « c'est pris ». Un − à zéro, ou
+     un + au plafond de la partie, fait non de la tête au lieu de tout
+     redessiner pour rien (v321). */
+  .rank-score.bat, .podium-score.bat, .score-pane .sc.bat{ animation:scoreBat 0.36s cubic-bezier(0.33,1,0.68,1); }
+  .rank-score.non, .score-pane .sc.non{ animation:scoreNon 0.32s ease; }
+  @keyframes scoreBat{ 0%{ transform:scale(1); } 32%{ transform:scale(1.16); } 100%{ transform:scale(1); } }
+  @keyframes scoreNon{ 0%,100%{ transform:translateX(0); } 22%{ transform:translateX(-3px); } 50%{ transform:translateX(3px); } 76%{ transform:translateX(-2px); } }
   .rank-token{ width:1.55rem; height:1.55rem; font-size:0.78rem; }
   /* ---------- LE SALON ET LE RÉSULTAT À PLUSIEURS ----------
      Aucune matière nouvelle : la rangée est celle du classement du mode
@@ -2277,7 +2304,22 @@
      ci-dessus qui remplit, et elle seule — deux mécanismes se seraient
      disputé la même surface.) */
   .hero-icon-btn::before{ content:none; }
-  button:active:not(:disabled),
+  /* ===== L'APPUI NE TOUCHE PLUS À L'HORLOGE DES PUCES (v321) =====
+     « Lorsqu'il y a le remplissage rouge qui s'effectue, je veux qu'il n'y
+       ait pas le petit effet grisé au moment où l'animation se fait. »
+     Filmé image par image, puis lu propriété par propriété : le libellé de
+     la puce passait de l'encre au blanc par rgb(166,164,161) — un gris posé
+     sur le rouge, pendant une image, puis le blanc. Il devait basculer D'UN
+     COUP (transition de 0 s, à l'instant où l'encre le couvre : voir
+     delaiLibelle). Or la puce est encore ENFONCÉE (:active) quand le clic
+     l'allume, et cette règle-ci imposait alors « transition-duration:0.09s »
+     à TOUTES ses transitions : le basculement net devenait un fondu de
+     90 ms, du sombre au blanc, donc par le gris.
+     Les puces (et les tuiles des livres) ne s'enfoncent de toute façon pas
+     (voir CE QUI VIT EN RANGÉE, plus bas) : elles sortent de cette règle, et
+     gardent leur propre horloge, réglée sur l'encre. :where() garde à la
+     règle exactement sa spécificité d'avant pour tous les autres boutons. */
+  button:active:not(:disabled):where(:not(.chip, .len-chip, .bk)),
   .mode-card:active{ transform:translateZ(0) scale(0.968); transition-duration:0.09s; transition-timing-function:cubic-bezier(0.3,0,0.45,1); }
   /* ===== CE QUI VIT EN RANGÉE NE S'ENFONCE PAS : ÇA SE REMPLIT =====
      « Le remplissage ne se fait pas à 100 %. » Mesuré sur la rangée Testament,
@@ -9459,7 +9501,7 @@ const SUPABASE_ANON_KEY = "sb_publishable_FDJ_R0foC7uIeHmxVrj6rA_2NeIgW2a";
    remontée d'un téléphone ne vaut rien si on ne sait pas QUELLE version
    tournait. Elle doit rester égale au CACHE de sw.js — c'est ce que vérifie
    banc-essai/version.js, qui refuse de laisser publier les deux en désaccord. */
-const VERSION_JEU = "v320";
+const VERSION_JEU = "v321";
 
 /* ===================== QUAND ÇA CASSE CHEZ UN JOUEUR =====================
    « Si quelque chose casse chez cinq d'entre eux sur un modèle de téléphone
@@ -24062,7 +24104,254 @@ function toggleAward(teamIdx){
   else { state.awarded.push(teamIdx); state.scores[teamIdx] += TIER_INFO[q.tier].pts; }
   render();
 }
-function adjustScore(teamIdx, delta){ const cap = maxPossibleScore(); state.scores[teamIdx] = Math.min(cap, Math.max(0, state.scores[teamIdx]+delta)); render(); }
+/* ===== CHANGER LES POINTS NE REFAIT PLUS L'ÉCRAN (v321) =====
+   « Ici vérifie les animations lorsque je modifie les points. » Filmé image
+   par image sur la page des résultats : chaque + ou − refaisait TOUTE la
+   page. Le trophée rejouait son entrée (trophyIn le fait repartir de
+   l'invisible, et son verre se reposait gris pendant un tiers de seconde),
+   les couronnes s'éteignaient puis retombaient (crownPop, après 0,3 s
+   d'attente), et le podium comme le classement sautaient d'un coup à leurs
+   nouvelles places : un joueur qui passait devant se téléportait. Un − à
+   zéro refaisait même tout cela pour ne rien changer.
+   On ne touche plus qu'à ce qui change :
+     - le score s'écrit sur place et bat une fois ; un − à zéro ou un + au
+       plafond fait non de la tête, et rien d'autre ne bouge ;
+     - les rangées du classement GLISSENT jusqu'à leur nouvelle place, et
+       leur pastille passe d'un métal à l'autre en fondu. Celle qu'on vient de
+       toucher passe AU-DESSUS des autres : filmées sans cela, deux rangées
+       qui se croisaient se mélangeaient ;
+     - sur le podium, les MARCHES restent où elles sont — la première au
+       centre, la deuxième à gauche, la troisième à droite —, et ce sont les
+       JOUEURS qui changent de marche : leur pastille glisse de l'une à
+       l'autre, leur nom et leur score s'échangent en fondu. Une marche dont
+       le rang change monte ou descend à sa nouvelle hauteur en changeant de
+       métal. Une couronne gagnée tombe, une couronne perdue s'efface, celles
+       qui restent ne bougent pas.
+       (Faire glisser les colonnes entières a été essayé et filmé : les
+       marches se croisaient, et les noms se chevauchaient à mi-chemin —
+       « TaylorJoueur 2 ». Déplacer une colonne relançait aussi l'entrée de sa
+       couronne, comme le rendu complet d'avant.)
+     - « Égalité · Ex æquo en tête ! » et « Vainqueur · un nom » passent de
+       l'un à l'autre en fondu ;
+     - quand tout le monde se retrouve à égalité, la carte du podium se
+       replie (il n'y a plus de marches à montrer) ; elle se déplie quand
+       l'égalité se rompt.
+   Pendant la partie, le tableau des scores fait de même : la case touchée
+   bat, et les cases glissent si l'ordre change.
+   Le verre suit chaque mouvement (glassSuivre), comme à la révélation d'une
+   réponse. Et si l'écran n'est pas celui qu'on attend, on retombe sur le
+   rendu complet d'avant : rien ne peut rester faux. */
+function adjustScore(teamIdx, delta){
+  const cap = maxPossibleScore(), avant = state.scores[teamIdx];
+  const apres = Math.min(cap, Math.max(0, avant + delta));
+  if(apres === avant){ refuserScore(teamIdx); return; }
+  state.scores[teamIdx] = apres;
+  if(state.screen === "end" && state.mode === "group" && majFinGroupe(teamIdx)) return;
+  if(state.screen === "play" && state.mode === "group" && majScoresPartie(teamIdx)){ saveState(); return; }
+  render();
+}
+function ecranCourant(){
+  const app = document.getElementById("app");
+  return app ? Array.prototype.find.call(app.children, c => c.classList && c.classList.contains("screen") && !c.classList.contains("screen-exit")) : null;
+}
+/* Rejouer une animation de classe : l'ôter, laisser le navigateur le voir, la remettre. */
+function rejouerClasse(el, cls){
+  if(!el) return;
+  el.classList.remove(cls); void el.offsetWidth; el.classList.add(cls);
+  clearTimeout(el._finClasse);
+  el._finClasse = setTimeout(() => el.classList.remove(cls), 500);
+}
+function refuserScore(teamIdx){
+  const e = ecranCourant();
+  if(!e) return;
+  rejouerClasse(e.querySelector('.rank-row[data-t="' + teamIdx + '"] .rank-score, .score-pane[data-t="' + teamIdx + '"] .sc'), "non");
+}
+/* FLIP : un élément déjà déplacé dans la page repart de là où on le VOYAIT
+   (avant), et glisse jusqu'à sa vraie place (apres). axe : "x", "y" ou les deux. */
+function glisserDe(e, avant, apres, axe){
+  if(!avant || !apres) return false;
+  const dx = axe === "y" ? 0 : avant.left - apres.left, dy = axe === "x" ? 0 : avant.top - apres.top;
+  if(Math.abs(dx) < 0.5 && Math.abs(dy) < 0.5) return false;
+  const j = (e._glisse = (e._glisse || 0) + 1);
+  e.style.transition = "none";
+  e.style.transform = "translate(" + dx.toFixed(2) + "px," + dy.toFixed(2) + "px)";
+  void e.offsetHeight;
+  e.style.transition = "transform " + tempoPli();
+  e.style.transform = "";
+  setTimeout(() => { if(e._glisse === j){ e.style.removeProperty("transition"); e.style.removeProperty("transform"); } }, msPli() + 60);
+  return true;
+}
+/* Un texte qui change s'en va en fondu, et le nouveau arrive à sa place.
+   Plusieurs touchers rapides : le fondu en cours écrira le DERNIER texte voulu. */
+function fonduTexte(el, html){
+  el._vise = html;
+  if(el._fondu) return;
+  const sortie = el.animate([{ opacity:1, transform:"none" }, { opacity:0, transform:"translateY(-4px)" }],
+    { duration: msFerme(), easing: "cubic-bezier(0.4,0,1,1)", fill: "forwards" });
+  el._fondu = sortie;
+  sortie.onfinish = () => {
+    el.innerHTML = el._vise;
+    const entree = el.animate([{ opacity:0, transform:"translateY(5px)" }, { opacity:1, transform:"none" }],
+      { duration: Math.round(msPli() * 0.8), easing: "cubic-bezier(0.33,1,0.68,1)" });
+    sortie.cancel();
+    el._fondu = entree;
+    entree.onfinish = () => { el._fondu = null; if(el.innerHTML !== el._vise) fonduTexte(el, el._vise); };
+  };
+}
+/* La couronne d'une colonne qui reste sur le podium : elle tombe si le
+   joueur passe premier, elle s'efface s'il ne l'est plus. */
+function majCouronne(k, voulue){
+  const visible = k.style.visibility !== "hidden" && !k._sortie;
+  if(voulue === visible) return;
+  if(voulue){
+    if(k._sortie){ k._sortie.cancel(); k._sortie = null; }
+    if(!k.firstChild) k.innerHTML = ICONS.crown;
+    k.style.visibility = "";
+    k.style.animation = "none"; void k.offsetWidth;
+    k.style.animation = "crownPop " + tempoPli() + " both";
+  } else {
+    const a = k.animate([{ opacity:1, transform:"none" }, { opacity:0, transform:"translateY(4px) scale(0.7)" }],
+      { duration: msFerme(), easing: "cubic-bezier(0.4,0,1,1)", fill: "forwards" });
+    k._sortie = a;
+    a.onfinish = () => { if(k._sortie === a){ k.style.visibility = "hidden"; } };
+  }
+}
+/* La carte du podium se replie (tout le monde à égalité) ou se déplie. */
+function plierPodium(pod, ouvrir){
+  const cs = getComputedStyle(pod);
+  const plein = { height: pod.offsetHeight + "px", opacity: 1, marginTop: cs.marginTop, marginBottom: cs.marginBottom, paddingTop: cs.paddingTop };
+  const vide = { height: "0px", opacity: 0, marginTop: "0px", marginBottom: "0px", paddingTop: "0px" };
+  pod.style.overflow = "hidden";
+  const a = pod.animate(ouvrir ? [vide, plein] : [plein, vide], { duration: msPli(), easing: "cubic-bezier(0.33,1,0.68,1)", fill: ouvrir ? "none" : "forwards" });
+  a.onfinish = () => { if(ouvrir) pod.style.removeProperty("overflow"); else pod.remove(); try{ fitScroll(); }catch(e){} };
+}
+function majFinGroupe(teamIdx){
+  const ecran = ecranCourant();
+  const liste = ecran && ecran.querySelector(".rank-list");
+  if(!liste || liste.querySelectorAll(":scope > .rank-row[data-t]").length !== state.teams.length) return false;
+  const neuf = document.createElement("div");
+  neuf.innerHTML = renderEndGroup();
+  const nListe = neuf.querySelector(".rank-list");
+  if(!nListe) return false;
+  const pod = ecran.querySelector(".card.podium:not(.repliee)"), nPod = neuf.querySelector(".card.podium");
+  /* Où l'on VOYAIT chaque rangée et chaque colonne, transformations en cours comprises. */
+  const avant = new Map();
+  ecran.querySelectorAll(".rank-row[data-t]").forEach(e => avant.set(e, e.getBoundingClientRect()));
+  /* Le haut : le mot et le titre, en fondu s'ils changent. */
+  [".end-eyebrow", ".end-title"].forEach(sel => {
+    const a = ecran.querySelector(".end-hero " + sel), b = neuf.querySelector(".end-hero " + sel);
+    if(a && b && (a._vise != null ? a._vise : a.innerHTML) !== b.innerHTML) fonduTexte(a, b.innerHTML);
+  });
+  /* Le classement : les MÊMES rangées, remises dans le nouvel ordre. */
+  const rangees = {};
+  liste.querySelectorAll(":scope > .rank-row[data-t]").forEach(r => { rangees[r.dataset.t] = r; });
+  nListe.querySelectorAll(":scope > .rank-row[data-t]").forEach(nr => {
+    const r = rangees[nr.dataset.t]; if(!r) return;
+    const b = r.querySelector(".rank-badge"), nb = nr.querySelector(".rank-badge");
+    if(b && nb){ if(b.className !== nb.className) b.className = nb.className; if(b.textContent !== nb.textContent) b.textContent = nb.textContent; }
+    const sc = r.querySelector(".rank-score"), nsc = nr.querySelector(".rank-score");
+    if(sc && nsc && sc.textContent !== nsc.textContent) sc.textContent = nsc.textContent;
+    liste.appendChild(r);
+  });
+  /* Le podium : chaque MARCHE reste à sa place. On y pose le joueur qui
+     l'occupe désormais ; s'il en change, sa pastille vient de là où on la
+     voyait, et son nom comme son score arrivent en fondu. Si tout le monde
+     est à égalité, la carte se replie. */
+  const vols = [];
+  if(pod && nPod){
+    const marches = Array.from(pod.querySelectorAll(":scope > .podium-col[data-t]"));
+    const nMarches = Array.from(nPod.querySelectorAll(":scope > .podium-col[data-t]"));
+    if(marches.length !== nMarches.length){ pod.replaceWith(nPod); }
+    else {
+      const ouEtait = {};
+      marches.forEach(c => { ouEtait[c.dataset.t] = c.querySelector(".podium-avatar").getBoundingClientRect(); });
+      marches.forEach((c, i) => {
+        const nc = nMarches[i];
+        majCouronne(c.querySelector(".podium-crown"), nc.querySelector(".podium-crown").style.visibility !== "hidden");
+        const bar = c.querySelector(".podium-bar"), nbar = nc.querySelector(".podium-bar");
+        if(bar.className !== nbar.className) bar.className = nbar.className;
+        if(bar.textContent !== nbar.textContent) bar.textContent = nbar.textContent;
+        const av = c.querySelector(".podium-avatar"), nav = nc.querySelector(".podium-avatar");
+        const nom = c.querySelector(".podium-name"), nnom = nc.querySelector(".podium-name");
+        const sc = c.querySelector(".podium-score"), nsc = nc.querySelector(".podium-score");
+        if(c.dataset.t !== nc.dataset.t){
+          c.dataset.t = nc.dataset.t;
+          av.style.background = nav.style.background;
+          av.innerHTML = nav.innerHTML;
+          vols.push({ av, de: ouEtait[nc.dataset.t] || null, moi: nc.dataset.t === String(teamIdx) });
+          fonduTexte(nom, nnom.innerHTML);
+          fonduTexte(sc, nsc.innerHTML);
+        } else if((sc._vise != null ? sc._vise : sc.innerHTML) !== nsc.innerHTML){
+          if(sc._fondu) fonduTexte(sc, nsc.innerHTML); else sc.innerHTML = nsc.innerHTML;
+          if(nc.dataset.t === String(teamIdx)) rejouerClasse(sc, "bat");
+        }
+      });
+    }
+  } else if(pod && !nPod){
+    pod.classList.add("repliee");
+    plierPodium(pod, false);
+  } else if(!pod && nPod){
+    ecran.querySelectorAll(".card.podium.repliee").forEach(p => p.remove());
+    liste.parentNode.insertBefore(nPod, liste);
+    plierPodium(nPod, true);
+  }
+  /* Le score touché bat, en bas comme sur sa marche. */
+  rejouerClasse(liste.querySelector('.rank-row[data-t="' + teamIdx + '"] .rank-score'), "bat");
+  /* FLIP : on remet tout à plat, on mesure la vraie place, puis chacun part de
+     là où on le voyait. Les colonnes ne glissent que de côté : en hauteur,
+     c'est leur marche qui monte ou descend. */
+  const rangs = Array.from(liste.querySelectorAll(":scope > .rank-row[data-t]"));
+  rangs.concat(vols.map(v => v.av)).forEach(e => { e.style.transition = "none"; e.style.transform = ""; });
+  const apres = new Map();
+  rangs.forEach(e => apres.set(e, e.getBoundingClientRect()));
+  rangs.forEach(e => {
+    const moi = e.dataset.t === String(teamIdx);
+    if(glisserDe(e, avant.get(e), apres.get(e), "y")){
+      e.style.position = "relative"; e.style.zIndex = moi ? "3" : "2";
+      const j = e._glisse;
+      setTimeout(() => { if(e._glisse === j){ e.style.removeProperty("position"); e.style.removeProperty("z-index"); } }, msPli() + 60);
+    }
+  });
+  vols.forEach(v => {
+    const ici = v.av.getBoundingClientRect();
+    if(v.de && glisserDe(v.av, v.de, ici, "xy")){
+      v.av.style.position = "relative"; v.av.style.zIndex = v.moi ? "3" : "2";
+      const j = v.av._glisse;
+      setTimeout(() => { if(v.av._glisse === j){ v.av.style.removeProperty("position"); v.av.style.removeProperty("z-index"); } }, msPli() + 60);
+    } else if(!v.de){
+      v.av.animate([{ opacity:0, transform:"scale(0.6)" }, { opacity:1, transform:"none" }], { duration: msPli(), easing: "cubic-bezier(0.33,1,0.68,1)" });
+    }
+  });
+  try{ glassSuivre(msPli() + 160); }catch(e){}
+  return true;
+}
+/* Pendant la partie : la case du joueur bat, et les cases glissent si
+   l'ordre du tableau change. */
+function majScoresPartie(teamIdx){
+  const ecran = ecranCourant();
+  const piste = ecran && ecran.querySelector(".score-strip");
+  if(!piste) return false;
+  const cases = Array.from(piste.querySelectorAll(":scope > .score-pane[data-t]"));
+  if(cases.length !== state.teams.length) return false;
+  const avant = new Map(cases.map(c => [c, c.getBoundingClientRect()]));
+  const parT = {}; cases.forEach(c => { parT[c.dataset.t] = c; });
+  const sc = parT[teamIdx] && parT[teamIdx].querySelector(".sc");
+  if(!sc) return false;
+  sc.textContent = state.scores[teamIdx];
+  rankedTeamIndices().forEach(i => { if(parT[i]) piste.appendChild(parT[i]); });
+  rejouerClasse(sc, "bat");
+  cases.forEach(c => { c.style.transition = "none"; c.style.transform = ""; });
+  const apres = new Map(cases.map(c => [c, c.getBoundingClientRect()]));
+  cases.forEach(c => {
+    if(!glisserDe(c, avant.get(c), apres.get(c), "xy")) return;
+    /* la case touchée passe au-dessus de celle qu'elle double */
+    c.style.position = "relative"; c.style.zIndex = c.dataset.t === String(teamIdx) ? "3" : "2";
+    const j = c._glisse;
+    setTimeout(() => { if(c._glisse === j){ c.style.removeProperty("position"); c.style.removeProperty("z-index"); } }, msPli() + 60);
+  });
+  try{ glassSuivre(msPli() + 160); }catch(e){}
+  return true;
+}
 
 function nextQuestion(){
   if(!state.revealed) return;
@@ -24562,7 +24851,7 @@ function renderPlay(){
       <div class="flex-sp"></div>
       ${state.revealed ? "" : `<div class="score-strip" style="--cols:${colsScores}">
         ${ranked.map(i=>`
-          <div class="score-pane">
+          <div class="score-pane" data-t="${i}">
             <span class="nm"><span class="dot-sm" style="background:${TEAM_COLORS[i%6]}"></span>${escapeHtml(nomEquipe(state.teams[i].name))}</span>
             <span class="score-row">
               <button class="adj-btn" onclick="adjustScore(${i},-10)" aria-label="${T("Retirer 10 points")}">−</button>
@@ -24635,7 +24924,7 @@ function renderEndGroup(){
         const r = podiumTeams[i];
         const initial = escapeHtml(premierSigne(state.teams[r.teamIdx].name));
         return `
-        <div class="podium-col">
+        <div class="podium-col" data-t="${r.teamIdx}">
           ${r.rank===1 ? `<span class="podium-crown">${ICONS.crown}</span>` : `<span class="podium-crown" style="visibility:hidden"></span>`}
           <span class="team-token podium-avatar" style="background:${TEAM_COLORS[r.teamIdx%6]}">${initial}</span>
           <span class="podium-name">${escapeHtml(nomEquipe(state.teams[r.teamIdx].name))}</span>
@@ -24657,7 +24946,7 @@ function renderEndGroup(){
       ${withRanks.map(r=>{
         const g = r.rank<=3 ? `g${r.rank}` : "";
         return `
-        <div class="rank-row">
+        <div class="rank-row" data-t="${r.teamIdx}">
           <span class="rank-badge ${g}">${r.rank}</span>
           <span class="team-token rank-token" style="background:${TEAM_COLORS[r.teamIdx%6]}">${escapeHtml(premierSigne(state.teams[r.teamIdx].name))||"?"}</span>
           <span class="rank-name">${escapeHtml(nomEquipe(state.teams[r.teamIdx].name))}</span>
