@@ -395,7 +395,7 @@
        montrait le fond noir de la page : l'écran coupé en deux. En min-height
        ce cas n'existe plus : le décor ne peut jamais être plus court que
        l'écran, quelle que soit la valeur de lvh à cet instant. */
-    #bg-layer, #bg-overlay, #bg-grain{ min-height:100lvh; }
+    #bg-layer, #bg-overlay, #bg-grain, .ov-fond, .ov-vignette, .ov-grain{ min-height:100lvh; }
     /* L'app garde la HAUTEUR MAXIMALE (lvh) : quand la barre de navigation
        Android glisse pour apparaître, elle se superpose simplement en bas —
        l'app ne se réajuste plus (fini les zones blanches / le contenu qui
@@ -425,7 +425,7 @@
     -webkit-font-smoothing:antialiased;
     overflow:hidden;
   }
-  #bg-layer{
+  #bg-layer, .ov-fond{
     position:fixed;
     top:0; left:0; right:0; bottom:0;
     z-index:0;
@@ -435,13 +435,13 @@
     background-repeat:no-repeat;
   }
   /* Cinematic vignette + fine film grain over the photo for premium depth */
-  #bg-overlay{
+  #bg-overlay, .ov-vignette{
     position:fixed; top:0; left:0; right:0; bottom:0; z-index:0; pointer-events:none;
     background:
       radial-gradient(130% 100% at 50% 0%, transparent 55%, rgba(10,7,4,0.55) 100%),
       radial-gradient(120% 90% at 50% 42%, transparent 60%, rgba(10,7,4,0.4) 100%);
   }
-  #bg-grain{
+  #bg-grain, .ov-grain{
     position:fixed; top:0; left:0; right:0; bottom:0; z-index:0; pointer-events:none;
     opacity:0.045;
     background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='120' height='120'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
@@ -1836,6 +1836,15 @@
   }
 
   .splash-screen{ flex:1; display:flex; flex-direction:column; align-items:center; justify-content:center; position:relative; text-align:center; min-height:100%; }
+  /* ===== LE CHARGEMENT S'EFFACE SUR L'ACCUEIL DÉJÀ PEINT (v323) =====
+     Voir fondreLeSplash : un voile fixe, au-dessus de tout, qui porte le décor
+     (les trois mêmes calques que la page, mêmes règles) et l'écran de
+     chargement tel qu'il était. Il s'efface d'un bloc, en opacité : un seul
+     calque simple à fondre, sans verre dedans. */
+  .ouverture-voile{ position:fixed; inset:0; z-index:9000; pointer-events:all; opacity:1;
+    transition:opacity 0.52s cubic-bezier(0.33,0,0.2,1); will-change:opacity; }
+  .ouverture-voile.part{ opacity:0; }
+  .ouverture-voile > .ov-app{ position:relative; z-index:1; margin:0 auto; height:100%; display:flex; flex-direction:column; box-sizing:border-box; }
   /* ===== LE VOILE DE REDÉMARRAGE =====
      Changer de langue recharge la page. Entre le doigt qui choisit et la page
      qui repart, iOS montre un blanc franc — un trou d'une demi-seconde en
@@ -2779,7 +2788,7 @@
     transform: translateZ(0);
     -webkit-transform: translateZ(0);
   }
-  #bg-overlay, #bg-grain{ transform: translateZ(0); -webkit-transform: translateZ(0); }
+  #bg-overlay, #bg-grain, .ov-vignette, .ov-grain{ transform: translateZ(0); -webkit-transform: translateZ(0); }
 
   /* Safari : jamais de backdrop-filter imbriqué dans un parent qui en a déjà un */
   .searching-card .btn-ghost, .modal-card .text-input, .modal-card .code-input{ backdrop-filter:none; -webkit-backdrop-filter:none; }
@@ -9576,7 +9585,7 @@ const SUPABASE_ANON_KEY = "sb_publishable_FDJ_R0foC7uIeHmxVrj6rA_2NeIgW2a";
    remontée d'un téléphone ne vaut rien si on ne sait pas QUELLE version
    tournait. Elle doit rester égale au CACHE de sw.js — c'est ce que vérifie
    banc-essai/version.js, qui refuse de laisser publier les deux en désaccord. */
-const VERSION_JEU = "v322";
+const VERSION_JEU = "v323";
 
 /* ===================== QUAND ÇA CASSE CHEZ UN JOUEUR =====================
    « Si quelque chose casse chez cinq d'entre eux sur un modèle de téléphone
@@ -23584,10 +23593,18 @@ async function modererMembre(qui, action){
   } else faire();
 }
 /* ===================== MODIFIER, QUITTER, SUPPRIMER ===================== */
+/* ===== « MODIFIER LE GROUPE » S'EMPILE SUR LES INFOS (v323) =====
+   « Lorsque je suis dans la modification de groupe, si je reviens en arrière
+     en glissant mon doigt sur le côté, je veux que ça revienne à l'écran
+     précédent, pas au groupe directement. » La page des infos se refermait
+     AVANT que celle de la modification s'ouvre : revenir, au doigt comme à la
+     flèche, ramenait donc à la discussion. Elle reste maintenant ouverte
+     dessous et recule, comme un membre ouvert par-dessus les infos : revenir
+     la ramène. Après « Enregistrer », on y revient aussi, à jour (voir
+     majInfosGroupe). */
 function ouvrirModifGroupe(){
   const g = groupeCourant(); if(!g) return;
   creation = { type:g.ouvert ? "public" : "prive", teinte:+g.teinte || 0, logo:+g.logo || 0, photo:undefined, gid:g.id };
-  fermerFeuilleGroupe("grpInfosVeil");
   ouvrirFeuilleGroupe("grpModifVeil", T("Modifier le groupe"), ICONS.crayon,
     formulaireGroupeHtml(g) + `<button class="btn-primary" onclick="enregistrerGroupe(this)">${T("Enregistrer")}</button>`);
 }
@@ -23605,10 +23622,28 @@ async function enregistrerGroupe(btn){
   const ecran = document.querySelector("#app > .screen.groupe-ecran:not(.screen-exit)");
   if(ecran) ecran.setAttribute("style", couleurGroupe(g.teinte));
   await envoyerPhotoGroupe(g.id);
+  majInfosGroupe(g);
   fermerFeuilleGroupe("grpModifVeil");
   const t = document.getElementById("grpTete");
   if(t && g) t.innerHTML = teteGroupeHtml(g);
   showMiniToast(T("Groupe modifié"));
+}
+/* La page des infos, restée dessous, reprend le nouveau nom, la nouvelle
+   image et la nouvelle description — sans être refaite : elle revient au
+   premier plan telle qu'on l'a laissée (défilement, réglages), juste à jour. */
+function majInfosGroupe(g){
+  const v = document.getElementById("grpInfosVeil");
+  if(!v || v.classList.contains("closing") || !g) return;
+  const mot = v.querySelector(".sheet-title .st-mot"); if(mot) mot.textContent = g.nom;
+  const ico = v.querySelector(".sheet-title .st-ico"); if(ico) ico.innerHTML = pastilleGroupe(g, true);
+  const f = v.querySelector(".settings-sheet"); if(f) f.setAttribute("aria-label", g.nom);
+  const corps = v.querySelector(".grp-feuille-corps");
+  let d = corps && corps.querySelector(":scope > .grp-desc");
+  if(g.description){
+    if(!d && corps){ d = document.createElement("p"); d.className = "grp-desc"; corps.insertBefore(d, corps.firstChild); }
+    if(d) d.textContent = g.description;
+  } else if(d) d.remove();
+  try{ majAvatarsPhoto(); }catch(e){}
 }
 function quitterGroupeCourant(){
   const g = groupeCourant(); if(!g) return;
@@ -26355,8 +26390,64 @@ function sensDuGlissement(de, vers){
   if(a === undefined || b === undefined) return null;
   return b >= a ? "vers-droite" : "vers-gauche";
 }
+/* ===== LE CHARGEMENT S'EFFACE, L'ACCUEIL EST DÉJÀ LÀ (v323) =====
+   « Lors de la transition entre l'écran de chargement et l'écran d'accueil,
+     je me demande si les petits appareils pas trop puissants souffrent de ça
+     et buguent. Ne vaut-il pas mieux un truc beaucoup plus classique, mais
+     qui reste très clean ? »
+   Mesuré sur un téléphone ralenti (processeur divisé par 4, puis par 6) :
+   l'accueil MONTAIT pendant qu'on le construisait. Sa construction — le
+   DOM, le verre, la première peinture — tient à elle seule une image de 230
+   à 430 ms ; le mouvement, lui, était déjà parti : l'écran restait figé,
+   puis l'accueil surgissait aux trois quarts de sa course. Un à-coup, à
+   chaque lancement, sur exactement les téléphones qui en ont le moins besoin.
+   On sépare les deux. L'accueil se construit et se peint SOUS l'écran de
+   chargement, qui reste affiché tel quel (posé dans un voile fixe, au-dessus
+   de tout, avec le même décor) ; deux images plus tard, l'accueil est peint
+   et le voile s'efface en fondu, d'un bloc. Le décor, identique dessus et
+   dessous, ne bouge pas : la colombe et le titre s'en vont, l'accueil
+   apparaît. Le plus classique des passages, et le plus léger : un seul
+   calque simple qui change d'opacité au-dessus d'un écran déjà prêt — le
+   même sur iPhone et sur Android, et le même sur un petit téléphone.
+   Déplacer un nœud relance ses animations CSS (la colombe remonterait, son
+   halo repartirait de zéro) : on relève où en est chacune avant, et on les
+   remet au même instant après. */
+function fondreLeSplash(){
+  const app = document.getElementById("app");
+  const ecran = app && app.querySelector(":scope > .splash-screen");
+  if(!ecran) return false;
+  let avant = [];
+  try{ avant = ecran.getAnimations({ subtree:true }).map(a => ({ cible:a.effect && a.effect.target, pseudo:(a.effect && a.effect.pseudoElement) || "", nom:a.animationName || "", t:a.currentTime })); }catch(e){}
+  const voile = document.createElement("div");
+  voile.className = "ouverture-voile";
+  voile.setAttribute("aria-hidden", "true");
+  voile.innerHTML = '<div class="ov-fond"></div><div class="ov-vignette"></div><div class="ov-grain"></div>';
+  const cadre = document.createElement("div");
+  cadre.className = "ov-app";
+  const cs = getComputedStyle(app);
+  cadre.style.width = app.getBoundingClientRect().width + "px";
+  cadre.style.padding = cs.paddingTop + " " + cs.paddingRight + " " + cs.paddingBottom + " " + cs.paddingLeft;
+  cadre.appendChild(ecran);
+  voile.appendChild(cadre);
+  document.body.appendChild(voile);
+  try{
+    ecran.getAnimations({ subtree:true }).forEach(a => {
+      const v = avant.find(x => x.cible === (a.effect && a.effect.target) && x.pseudo === ((a.effect && a.effect.pseudoElement) || "") && x.nom === (a.animationName || ""));
+      if(v && v.t !== null && v.t !== undefined) a.currentTime = v.t;
+    });
+  }catch(e){}
+  /* L'accueil se peint d'abord (deux images) ; ensuite seulement le voile part. */
+  requestAnimationFrame(() => requestAnimationFrame(() => {
+    voile.classList.add("part");
+    setTimeout(() => { if(voile.parentNode) voile.remove(); }, 640);
+  }));
+  return true;
+}
 function render(){
   const app = document.getElementById("app");
+  /* En quittant le chargement : l'écran suivant se pose SUR PLACE, sous le
+     voile (voir fondreLeSplash) — aucun mouvement à construire en même temps. */
+  if(lastScreen === "splash" && state.screen !== "splash" && fondreLeSplash()) lastScreen = state.screen;
   const sameScreen = (state.screen === lastScreen);
   const prevScroll = sameScreen ? (CUSTOM_SCROLL ? customScrollY : app.scrollTop) : 0;
   /* La réponse s'affiche : on note où sont la question et les réponses AVANT
