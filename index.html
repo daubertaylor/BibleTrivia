@@ -2275,7 +2275,7 @@
   /* Sur les surfaces DÉJÀ corail, l'onde se fait blanche : sinon rien ne se
      verrait. Même logique, feedback identique. */
   .btn-primary, .btn-next, .btn-replay, .modal-btn.ok, .sheet-done, .set-go,
-  .btn-ghost.btn-cancel, .chip.active, .len-chip.sel, .online-action.primary,
+  .chip.active, .len-chip.sel, .online-action.primary,
   .modal-btn.cancel.keep{ --press-tint: rgba(255,255,255,0.34); }
   /* L'ONDE SUIT LE FOND DU BOUTON, PAS SA FAMILLE. Deux exceptions, trouvées
      en composant chaque teinte sur la couleur réelle de son bouton :
@@ -2451,10 +2451,9 @@
      CARRÉE — sur un avatar rond, ça se voit. banc-essai/forme.js l'a dit du
      premier coup : « profil avatar-tap 69x69 arrondi 0 px <-- ONDE CARRÉE ». */
   .avatar-tap{ display:block; margin:0 auto; padding:0; border:0; border-radius:50%; background:none; box-shadow:none; -webkit-appearance:none; appearance:none; cursor:pointer; }
-  /* Les deux mots sous le nom. 44 px de haut : c'est la plus petite cible qu'un
-     doigt attrape sans viser (voir DETTE.md, point 6). */
-  .photo-liens{ display:flex; align-items:center; justify-content:center; gap:0.2rem; margin-top:0.35rem; }
-  .photo-lien{ min-height:44px; padding:0 0.7rem; border:0; border-radius:var(--r-full); background:none; box-shadow:none; color:#fff; text-shadow:0 1px 10px rgba(0,0,0,0.55); font-size:0.82rem; font-weight:600; -webkit-appearance:none; appearance:none; cursor:pointer; }
+  /* Le petit rond de l'appareil photo, posé sur le visage comme sur la
+     pastille d'un groupe (v322, voir choisirPhotoProfil). */
+  .avatar-tap{ position:relative; }
   /* ===== LA PHOTO EN GRAND =====
      On touche un avatar qui porte une photo — le sien ou celui d'un autre
      joueur — et elle s'ouvre en grand. Rien de plus : un fond sombre, l'image,
@@ -2785,10 +2784,10 @@
   /* Safari : jamais de backdrop-filter imbriqué dans un parent qui en a déjà un */
   .searching-card .btn-ghost, .modal-card .text-input, .modal-card .code-input{ backdrop-filter:none; -webkit-backdrop-filter:none; }
   .searching-card .btn-ghost{ color:var(--ink); }
-  /* Bouton « Annuler » / « Quitter » (en ligne) : verre corail plein + texte
-     blanc -> l'action « arrêter » ressort nettement du verre neutre, lisible et
-     dans la couleur signature de l'app. Le bord reste blanc 0,55 (uniforme). */
-  .btn-ghost.btn-cancel, .searching-card .btn-ghost.btn-cancel, .waiting-card .btn-ghost.btn-cancel{ --glass-tint: rgb(236,60,26); color:#fff; --rim-edge:0 0 0 1px rgba(150,30,14,0.3); --rim-cast:0 6px 16px rgba(214,60,34,0.42); }
+  /* « Annuler » de la recherche d'adversaire était en verre corail plein, seul
+     de son espèce : partout ailleurs (fenêtres, compte, revanche) « Annuler »
+     est le bouton crème. v322 : il redevient un bouton clair comme les autres
+     (« même nom, même bouton »). */
   /* Toute surface CORAIL porte le même liseré corail : un fil brun sur du rouge
      salissait le contour. Même règle que le vert des réponses justes. */
   .modal-btn.cancel.keep, .modal-btn.ok, .online-action.primary{ --rim-edge:0 0 0 1px rgba(150,30,14,0.3); }
@@ -2845,7 +2844,14 @@
   .modal-input{ margin-top:0.95rem; text-align:center; }
   .modal-err{ color:var(--error); font-size:0.82rem; font-weight:600; min-height:1.1rem; margin-top:0.4rem; }
   .modal-actions{ display:flex; gap:0.6rem; margin-top:0.7rem; }
-  .modal-btn{ flex:1; border:0; border-radius:var(--r-m); padding:calc(0.92rem + 1px); font-weight:700; font-size:0.95rem; letter-spacing:0.01em; box-shadow:inset 0 1px 0 rgba(255,255,255,0.45), inset 0 0 0 1px rgba(255,255,255,0.14); }
+  /* UN LIBELLÉ TROP LONG NE SE COUPE PAS EN DEUX (v322). « Fermer le groupe »
+     ne tient pas dans une moitié de fenêtre : il passait sur deux lignes, un
+     bouton deux fois plus haut que son voisin. Les deux boutons se rangent
+     alors l'un sous l'autre, l'action en haut — comme les alertes d'iPhone
+     quand leurs mots sont longs (voir showModal). */
+  .modal-actions.colonne{ flex-direction:column-reverse; }
+  .modal-actions.colonne .modal-btn{ flex:none; width:100%; }
+  .modal-btn{ flex:1; border:0; border-radius:var(--r-m); padding:calc(0.92rem + 1px); font-weight:700; font-size:0.95rem; letter-spacing:0.01em; white-space:nowrap; box-shadow:inset 0 1px 0 rgba(255,255,255,0.45), inset 0 0 0 1px rgba(255,255,255,0.14); }
   .modal-btn.cancel{ border:0; color:var(--ink); --rim-cast:0 4px 12px rgba(15,12,10,0.14); box-shadow:none; }
   /* Même rouge d'action que « Commencer la partie », mais avec les VRAIS
      rebords de verre (liseré clair vif + anneau intérieur + ombre basse),
@@ -3636,6 +3642,16 @@
   .modal-card.ach-info{ text-align:center; display:flex; flex-direction:column; align-items:center; gap:0.5rem; }
   .modal-card.ach-info .ach-tile{ width:3.4rem; height:3.4rem; border-radius:var(--r-l); box-shadow:inset 0 1px 0 rgba(255,255,255,0.26), 0 2px 7px rgba(15,12,10,0.24); }
   .modal-card.ach-info .ach-tile svg{ width:1.9rem; height:1.9rem; }
+  /* ===== LA COCHE D'UN OBJECTIF DÉBLOQUÉ (v322) =====
+     Elle n'avait AUCUNE règle : dans la tuile (display:flex), elle se posait à
+     côté du dessin, à sa taille (1,9 rem), et le poussait contre le bord — deux
+     pictogrammes serrés dans un carré, « Premiers pas » à moitié écrasé. Elle
+     devient ce qu'elle est partout ailleurs dans le jeu : un petit rond blanc
+     posé sur le coin, la coche dedans, dans le vert de « Objectif débloqué ». */
+  .ach-check{ position:absolute; right:-0.38rem; bottom:-0.38rem; width:1.45rem; height:1.45rem; border-radius:50%;
+    display:flex; align-items:center; justify-content:center; padding:0.3rem; color:#1f7a4d;
+    background:rgba(255,255,255,0.97); box-shadow:0 2px 7px rgba(15,12,10,0.24); pointer-events:none; }
+  .modal-card.ach-info .ach-tile .ach-check svg{ width:100%; height:100%; }
   .ach-info-t{ font-family:'Poppins',sans-serif; font-weight:700; font-size:1.12rem; color:var(--ink); margin-top:0.15rem; }
   .ach-info-d{ font-size:0.9rem; color:var(--ink-soft); line-height:1.45; }
   .ach-info-bar{ width:100%; height:7px; border-radius:var(--r-full); background:rgba(120,90,50,0.18); overflow:hidden; margin-top:0.2rem; }
@@ -3644,6 +3660,12 @@
   .ach-info-c{ font-family:'Poppins',sans-serif; font-weight:700; font-size:0.84rem; color:var(--ink-soft); font-variant-numeric:tabular-nums; }
   .ach-info-c.on{ color:#1f7a4d; }
   .modal-card.ach-info .modal-btn.ok{ margin-top:0.5rem; width:100%; }
+  /* ===== TOUS LES « FERMER » SONT LE MÊME BOUTON (v322) =====
+     « J'aime beaucoup le bouton Fermer du badge débloqué : il doit être
+       cohérent avec tous les autres boutons Fermer du jeu. » Celui du
+     signalement était un grand bouton d'action (dégradé, autre hauteur). Il
+     prend la classe de celui du badge, à la même largeur. */
+  .grp-fermer{ display:block; width:100%; flex:none; margin-top:0.5rem; }
   /* Testaments REPLIABLES : pliés par défaut (fini le pavé), dépliés au tap. */
   /* Testaments : en-têtes en BOUTONS DE VERRE (cohérents avec les cartes de
      l'app), au lieu de texte posé sur le fond -> plus fini, on voit que ça se
@@ -5297,6 +5319,10 @@
     color:#fff; font-family:'Poppins',sans-serif; font-weight:700; font-size:1.12rem;
     box-shadow:inset 0 1px 0 rgba(255,255,255,0.26), 0 2px 7px rgba(24,16,10,0.16); }
   .grp-av.petite{ width:2.2rem; height:2.2rem; font-size:0.92rem; border-radius:12px; }
+  /* LE LOGO (v322) : un glyphe blanc à la place de l'initiale, à 54 % du côté
+     de la pastille, quelle que soit sa taille. Sous une photo, il devient
+     transparent comme l'initiale (color:transparent, plus bas). */
+  .grp-av.a-logo > svg{ width:54%; height:54%; flex-shrink:0; }
   /* LA PHOTO DU GROUPE recouvre sa couleur. La couleur est posée en style
      direct (le raccourci « background ») : la photo doit donc passer devant
      avec !important. L'initiale reste dessous, transparente — elle reparaît
@@ -5335,6 +5361,9 @@
     background:var(--primary); color:#fff; box-shadow:0 1px 2px rgba(120,30,14,0.16), 0 5px 14px rgba(214,60,34,0.26); }
   .grp-pill::after{ content:""; position:absolute; left:0; right:0; top:50%; height:44px; transform:translateY(-50%); }
   .grp-pill.calme{ background:rgb(252,248,241); color:var(--ink); box-shadow:0 0 0 1px rgba(58,42,26,0.14), 0 3px 10px rgba(34,26,16,0.10); }
+  /* « Rejoindre » est une pilule dans la liste et un grand bouton dans la page
+     du code : la même couleur, le même dégradé, juste en plus petit (v322). */
+  .grp-pill:not(.calme){ background-image:linear-gradient(180deg, #FB6A45, #EA4A28); }
   .grp-pill:disabled{ opacity:0.55; }
   .grp-vide{ padding:1.1rem 0.8rem; text-align:center; color:var(--ink-soft); font-size:0.88rem; line-height:1.5; }
   .grp-vide .spinner{ margin:0 auto; }
@@ -5400,9 +5429,15 @@
   .grp-photo-b{ position:relative; flex-shrink:0; width:6.4rem; height:6.4rem; border:0; padding:0; background:none;
     border-radius:var(--r-l); -webkit-tap-highlight-color:transparent; }
   .grp-photo-b .grp-av{ width:100%; height:100%; border-radius:var(--r-l); font-size:2.3rem; }
-  .grp-photo-b .gpb-ico{ position:absolute; right:0.32rem; bottom:0.32rem; width:1.75rem; height:1.75rem; border-radius:50%;
+  .grp-photo-b .gpb-ico, .avatar-tap .gpb-ico{ position:absolute; right:0.32rem; bottom:0.32rem; width:1.75rem; height:1.75rem; border-radius:50%;
     display:flex; align-items:center; justify-content:center; padding:0.34rem; color:var(--ink);
     background:rgba(255,255,255,0.94); box-shadow:0 2px 7px rgba(24,16,10,0.24); pointer-events:none; }
+  /* Sur le visage du profil, un rond : le petit rond se pose sur son bord.
+     Ici il se TOUCHE : avec une photo, toucher le visage l'ouvre en grand
+     (« et nous aussi », voir ouvrirPhotoGrand) ; c'est le petit rond qui
+     ouvre le menu de la photo. Sa zone de toucher fait 44 px. */
+  .avatar-tap .gpb-ico{ right:-0.15rem; bottom:-0.15rem; pointer-events:auto; }
+  .avatar-tap .gpb-ico::after{ content:""; position:absolute; left:50%; top:50%; width:44px; height:44px; transform:translate(-50%,-50%); }
   /* Deux puces de choix (len-chip) : le fond, la teinte de verre et l'encre
      viennent d'elles. Elles ajoutent seulement leur deuxième ligne. Le petit
      texte suit la couleur du libellé (inherit) : il passe au blanc au même
@@ -5457,6 +5492,24 @@
   .grp-act-l .chev{ margin-left:auto; width:1.1rem; height:1.1rem; display:inline-flex; color:var(--ink-soft); }
   .grp-act-l small{ display:block; font-family:'Inter',sans-serif; font-weight:500; font-size:0.8rem; color:var(--ink-soft); margin-top:0.1rem; }
   .grp-act-l .gal-t{ display:flex; flex-direction:column; min-width:0; }
+  /* ===== L'IMAGE DU GROUPE : SEIZE VIGNETTES (v322) =====
+     Quatre par rangée, chacune la pastille telle qu'elle sera. Celle qu'on
+     retient grandit, et une coche arrive dans un rond blanc, en bas à droite
+     — le rond du petit appareil photo du formulaire. Aucun trait autour. */
+  .grp-logos-t{ font-family:'Poppins',sans-serif; font-size:0.74rem; font-weight:700; letter-spacing:0.09em; text-transform:uppercase;
+    color:var(--ink-soft); margin:0.75rem 0.6rem 0.5rem; }
+  .grp-liste-act + .grp-logos-t{ margin-top:0.95rem; }
+  .grp-logos{ display:grid; grid-template-columns:repeat(4, minmax(0, 1fr)); gap:0.55rem; padding:0 0.45rem 0.35rem; }
+  .grp-logo-b{ position:relative; display:flex; border:0; padding:0.3rem; background:none; aspect-ratio:1 / 1;
+    border-radius:calc(var(--r-l) + 0.3rem); -webkit-tap-highlight-color:transparent; --press-tint: rgba(255,255,255,0.55); }
+  .grp-logo-b > .grp-av{ width:100%; height:100%; border-radius:var(--r-l); font-size:1.55rem;
+    transform:scale(0.88); transition:transform 0.24s cubic-bezier(0.32,0.72,0,1); }
+  .grp-logo-b.choisi > .grp-av{ transform:none; }
+  .glb-ck{ position:absolute; right:0; bottom:0; width:1.55rem; height:1.55rem; border-radius:50%; padding:0.33rem; display:flex;
+    color:var(--ink); background:rgba(255,255,255,0.94); box-shadow:0 2px 7px rgba(24,16,10,0.24);
+    opacity:0; transform:scale(0.5); transition:opacity 0.16s ease-out, transform var(--tr-ouvre); pointer-events:none; }
+  .glb-ck svg{ width:100%; height:100%; }
+  .grp-logo-b.choisi .glb-ck{ opacity:1; transform:scale(1); }
   .grp-ligne .chev{ width:1.1rem; height:1.1rem; }
   .grp-apercu .grp-ligne{ background:rgb(252,248,241); }
   .grp-merci{ display:flex; flex-direction:column; align-items:center; text-align:center; gap:0.6rem; padding:0.6rem 0 0.4rem; }
@@ -5780,6 +5833,10 @@
     background-image:none; background-color:var(--page-carte); -webkit-backdrop-filter:none; backdrop-filter:none; }
   .sheet-veil :is(.btn-primary, .sheet-done, .set-go, .btn-next, .btn-replay, .btn-newgame){
     background-image:linear-gradient(150deg, #F44E2C, #DE3616); background-color:var(--primary); -webkit-backdrop-filter:none; backdrop-filter:none; color:#fff; }
+  /* Le bouton « Fermer » du badge (modal-btn ok), posé dans une page — celui
+     du signalement : le même corail plein qu'au milieu d'une fenêtre, sans la
+     photo floutée que la règle commune met sous chaque verre (v322). */
+  .sheet-veil .modal-btn.ok{ background-image:none; background-color:rgb(236,60,26); -webkit-backdrop-filter:none; backdrop-filter:none; color:#fff; }
   .sheet-veil .settings-sheet{ -webkit-backdrop-filter:none; backdrop-filter:none; }
   /* Les MENUS (message, photo) gardent leur forme de feuille, sur le même
      crème uni que les pages. */
@@ -6006,7 +6063,6 @@ const TEXTES = {
     "Pince pour zoomer, glisse pour cadrer":"Pinch to zoom, drag to frame",
     "Zoom":"Zoom",
     "Photo de profil":"Profile photo",
-    "Ajouter une photo":"Add a photo",
     "Changer la photo":"Change photo",
     "Retirer la photo":"Remove photo",
     "Cette image n'a pas pu être lue.":"This image could not be read.",
@@ -6564,6 +6620,14 @@ const TEXTES = {
     "La décision s'applique tout de suite.":"The decision takes effect immediately.",
     "Confidentialité":"Privacy",
     "Photo du groupe":"Group photo",
+    "Image du groupe":"Group picture",
+    "Choisir une photo":"Choose a photo",
+    "Ou un logo":"Or a logo",
+    "Logo du groupe":"Group logo",
+    "Initiale":"Initial",
+    "Croix":"Cross", "Bible":"Bible", "Colombe":"Dove", "Poisson":"Fish", "Flamme":"Flame",
+    "Cœur":"Heart", "Couronne":"Crown", "Étoile":"Star", "Église":"Church", "Musique":"Music",
+    "Bougie":"Candle", "Soleil":"Sun", "Montagne":"Mountain", "Rameau d'olivier":"Olive branch", "Ancre":"Anchor",
     "{nom} a changé la photo du groupe":"{nom} changed the group photo",
     "{nom} a retiré la photo du groupe":"{nom} removed the group photo",
     "La photo n'a pas pu être envoyée.":"The photo couldn't be sent.",
@@ -6659,7 +6723,6 @@ const TEXTES = {
     "Pince pour zoomer, glisse pour cadrer":"Pellizca para ampliar, arrastra para encuadrar",
     "Zoom":"Zoom",
     "Photo de profil":"Foto de perfil",
-    "Ajouter une photo":"Añadir una foto",
     "Changer la photo":"Cambiar la foto",
     "Retirer la photo":"Quitar la foto",
     "Cette image n'a pas pu être lue.":"No se ha podido leer esta imagen.",
@@ -7216,6 +7279,14 @@ const TEXTES = {
     "La décision s'applique tout de suite.":"La decisión se aplica de inmediato.",
     "Confidentialité":"Privacidad",
     "Photo du groupe":"Foto del grupo",
+    "Image du groupe":"Imagen del grupo",
+    "Choisir une photo":"Elegir una foto",
+    "Ou un logo":"O un logo",
+    "Logo du groupe":"Logo del grupo",
+    "Initiale":"Inicial",
+    "Croix":"Cruz", "Bible":"Biblia", "Colombe":"Paloma", "Poisson":"Pez", "Flamme":"Llama",
+    "Cœur":"Corazón", "Couronne":"Corona", "Étoile":"Estrella", "Église":"Iglesia", "Musique":"Música",
+    "Bougie":"Vela", "Soleil":"Sol", "Montagne":"Montaña", "Rameau d'olivier":"Rama de olivo", "Ancre":"Ancla",
     "{nom} a changé la photo du groupe":"{nom} cambió la foto del grupo",
     "{nom} a retiré la photo du groupe":"{nom} quitó la foto del grupo",
     "La photo n'a pas pu être envoyée.":"No se pudo enviar la foto.",
@@ -9225,7 +9296,11 @@ const LENGTHS = { courte:3, normale:5, longue:7 };
 const TIMER_OPTS = { "15":15, "30":30, "off":null };
 const TIMER_LABELS = { "15":"15 s", "30":"30 s", "off":"Sans" };
 const LENGTH_LABELS = { courte:"Courte", normale:"Normale", longue:"Longue" };
-const TROPHY_GOLD = `<svg viewBox="0 0 24 26"><defs><linearGradient id="pcG" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#FFF6CF"/><stop offset="0.3" stop-color="#FFD968"/><stop offset="0.62" stop-color="#EFA92B"/><stop offset="1" stop-color="#C57D07"/></linearGradient><linearGradient id="pcB" x1="0" y1="0" x2="1" y2="0"><stop offset="0" stop-color="#A96F06"/><stop offset="0.5" stop-color="#FFE9A8"/><stop offset="1" stop-color="#A96F06"/></linearGradient><linearGradient id="pcD" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#5A4630"/><stop offset="0.55" stop-color="#2B2013"/><stop offset="1" stop-color="#150E07"/></linearGradient><linearGradient id="pcS" x1="0" y1="3.4" x2="0" y2="10.8" gradientUnits="userSpaceOnUse"><stop offset="0" stop-color="#FFFFFF" stop-opacity="0"/><stop offset="0.28" stop-color="#FFFFFF" stop-opacity="0.85"/><stop offset="0.68" stop-color="#FFFFFF" stop-opacity="0.45"/><stop offset="1" stop-color="#FFFFFF" stop-opacity="0"/></linearGradient></defs><path d="M6.5 3.6C4.45 3.65 3 4.75 3 6.3c0 1.9 1.75 3.2 4.2 3.5" fill="none" stroke="url(#pcG)" stroke-width="1.2" stroke-linecap="round"/><path d="M17.5 3.6C19.55 3.65 21 4.75 21 6.3c0 1.9-1.75 3.2-4.2 3.5" fill="none" stroke="url(#pcG)" stroke-width="1.2" stroke-linecap="round"/><path fill="url(#pcG)" d="M6.3 2.75C6.3 7.2 7.35 10.05 9.1 11.68C9.85 12.33 10.3 13.2 10.36 14.2L13.64 14.2C13.7 13.2 14.15 12.33 14.9 11.68C16.65 10.05 17.7 7.2 17.7 2.75Z"/><ellipse cx="12" cy="2.75" rx="5.7" ry="0.92" fill="url(#pcB)"/><ellipse cx="12" cy="2.84" rx="4.72" ry="0.6" fill="rgba(122,72,2,0.42)"/><path d="M9.05 4.1C8.44 5.95 8.34 8.02 8.92 10.15" fill="none" stroke="url(#pcS)" stroke-width="1" stroke-linecap="round"/><path fill="url(#pcG)" d="M10.75 14.2h2.5l.4 1.15h-3.3l.4-1.15Z"/><rect x="9.3" y="15.35" width="5.4" height="0.75" rx="0.37" fill="url(#pcB)"/><path fill="url(#pcG)" d="M9.95 16.1h4.1l.95 1.45H9l.95-1.45Z"/><path fill="url(#pcD)" d="M8.15 17.55h7.7l.9 2.75H7.25l.9-2.75Z"/><rect x="10.3" y="18.2" width="3.4" height="1.35" rx="0.32" fill="url(#pcG)"/><circle cx="12" cy="18.88" r="0.33" fill="#7A4E04"/><rect x="6.6" y="20.3" width="10.8" height="0.78" rx="0.39" fill="url(#pcB)"/><path fill="url(#pcD)" d="M6.9 21.08h10.2c1.55.4 2.45 1.2 2.65 2.37H4.25c.2-1.17 1.1-1.97 2.65-2.37Z"/><rect x="3.1" y="23.45" width="17.8" height="1.85" rx="0.92" fill="url(#pcD)"/><rect x="3.1" y="23.45" width="17.8" height="0.6" rx="0.3" fill="rgba(255,235,170,0.22)"/><path d="M19.35 1.15l.42 1.03.98.4-.98.4-.42 1.03-.42-1.03-.98-.4.98-.4.42-1.03Z" fill="#FFF6CF"/><path d="M4.5 12.1l.32.78.75.31-.75.31-.32.78-.32-.78-.75-.31.75-.31.32-.78Z" fill="#FFE9A8"/></svg>`;
+/* LE TROPHÉE DES RÉSULTATS. v322 : son socle était presque noir (#150E07),
+   le socle de vitrine d'une coupe sportive d'autrefois, la seule tache froide
+   de la page. Il passe à l'acajou : la même lumière chaude que la coupe et le
+   décor, le même dessin. */
+const TROPHY_GOLD = `<svg viewBox="0 0 24 26"><defs><linearGradient id="pcG" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#FFF6CF"/><stop offset="0.3" stop-color="#FFD968"/><stop offset="0.62" stop-color="#EFA92B"/><stop offset="1" stop-color="#C57D07"/></linearGradient><linearGradient id="pcB" x1="0" y1="0" x2="1" y2="0"><stop offset="0" stop-color="#A96F06"/><stop offset="0.5" stop-color="#FFE9A8"/><stop offset="1" stop-color="#A96F06"/></linearGradient><linearGradient id="pcD" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#A5603A"/><stop offset="0.55" stop-color="#7A3F1F"/><stop offset="1" stop-color="#4E230D"/></linearGradient><linearGradient id="pcS" x1="0" y1="3.4" x2="0" y2="10.8" gradientUnits="userSpaceOnUse"><stop offset="0" stop-color="#FFFFFF" stop-opacity="0"/><stop offset="0.28" stop-color="#FFFFFF" stop-opacity="0.85"/><stop offset="0.68" stop-color="#FFFFFF" stop-opacity="0.45"/><stop offset="1" stop-color="#FFFFFF" stop-opacity="0"/></linearGradient></defs><path d="M6.5 3.6C4.45 3.65 3 4.75 3 6.3c0 1.9 1.75 3.2 4.2 3.5" fill="none" stroke="url(#pcG)" stroke-width="1.2" stroke-linecap="round"/><path d="M17.5 3.6C19.55 3.65 21 4.75 21 6.3c0 1.9-1.75 3.2-4.2 3.5" fill="none" stroke="url(#pcG)" stroke-width="1.2" stroke-linecap="round"/><path fill="url(#pcG)" d="M6.3 2.75C6.3 7.2 7.35 10.05 9.1 11.68C9.85 12.33 10.3 13.2 10.36 14.2L13.64 14.2C13.7 13.2 14.15 12.33 14.9 11.68C16.65 10.05 17.7 7.2 17.7 2.75Z"/><ellipse cx="12" cy="2.75" rx="5.7" ry="0.92" fill="url(#pcB)"/><ellipse cx="12" cy="2.84" rx="4.72" ry="0.6" fill="rgba(122,72,2,0.42)"/><path d="M9.05 4.1C8.44 5.95 8.34 8.02 8.92 10.15" fill="none" stroke="url(#pcS)" stroke-width="1" stroke-linecap="round"/><path fill="url(#pcG)" d="M10.75 14.2h2.5l.4 1.15h-3.3l.4-1.15Z"/><rect x="9.3" y="15.35" width="5.4" height="0.75" rx="0.37" fill="url(#pcB)"/><path fill="url(#pcG)" d="M9.95 16.1h4.1l.95 1.45H9l.95-1.45Z"/><path fill="url(#pcD)" d="M8.15 17.55h7.7l.9 2.75H7.25l.9-2.75Z"/><rect x="10.3" y="18.2" width="3.4" height="1.35" rx="0.32" fill="url(#pcG)"/><circle cx="12" cy="18.88" r="0.33" fill="#7A4E04"/><rect x="6.6" y="20.3" width="10.8" height="0.78" rx="0.39" fill="url(#pcB)"/><path fill="url(#pcD)" d="M6.9 21.08h10.2c1.55.4 2.45 1.2 2.65 2.37H4.25c.2-1.17 1.1-1.97 2.65-2.37Z"/><rect x="3.1" y="23.45" width="17.8" height="1.85" rx="0.92" fill="url(#pcD)"/><rect x="3.1" y="23.45" width="17.8" height="0.6" rx="0.3" fill="rgba(255,235,170,0.22)"/><path d="M19.35 1.15l.42 1.03.98.4-.98.4-.42 1.03-.42-1.03-.98-.4.98-.4.42-1.03Z" fill="#FFF6CF"/><path d="M4.5 12.1l.32.78.75.31-.75.31-.32.78-.32-.78-.75-.31.75-.31.32-.78Z" fill="#FFE9A8"/></svg>`;
 const TEAM_COLORS = ["#3E8EE0","#E0506B","#2FA96E","#8E5BD8","#F08A2E","#1FA8A8"];
 const BANK_TOTAL = BANK.facile.length + BANK.moyen.length + BANK.difficile.length;
 
@@ -9501,7 +9576,7 @@ const SUPABASE_ANON_KEY = "sb_publishable_FDJ_R0foC7uIeHmxVrj6rA_2NeIgW2a";
    remontée d'un téléphone ne vaut rien si on ne sait pas QUELLE version
    tournait. Elle doit rester égale au CACHE de sw.js — c'est ce que vérifie
    banc-essai/version.js, qui refuse de laisser publier les deux en désaccord. */
-const VERSION_JEU = "v321";
+const VERSION_JEU = "v322";
 
 /* ===================== QUAND ÇA CASSE CHEZ UN JOUEUR =====================
    « Si quelque chose casse chez cinq d'entre eux sur un modèle de téléphone
@@ -10837,6 +10912,17 @@ function closeModal(){
    un oblige à lire deux fois pour rien — et laisse croire qu'« Annuler »
    annulerait quelque chose. Deux boutons seulement quand ils mènent à deux
    endroits différents (Quitter / Rester) ; sinon « hideCancel ». */
+/* ===== « ANNULER » EST TOUJOURS LE MÊME BOUTON (v322) =====
+   « Si c'est le même nom, il faut que ça soit le même bouton. » Une
+   confirmation marquée danger:true peignait son « Annuler » en corail et
+   l'action en blanc — « Bloquer Sam ? », « Supprimer ce message ? »,
+   « Bannir… » — alors que partout ailleurs « Annuler » est le bouton crème.
+   danger:true ne sert plus qu'aux SORTIES, qui ont leurs mots à elles :
+   « Rester » en corail, « Quitter » en blanc, comme tous les « Quitter » du
+   jeu (la partie, le duel, un groupe). Les autres confirmations sont des
+   fenêtres ordinaires : « Annuler » crème, et l'action qu'on vient de
+   demander en corail — c'est elle qu'on confirme, la phrase au-dessus dit ce
+   qu'elle coûte. */
 function showModal(opts){
   closeModal();
   const veil = document.createElement("div");
@@ -10855,6 +10941,9 @@ function showModal(opts){
       </div>
     </div>`;
   document.body.appendChild(veil);
+  /* Un libellé qui ne tient pas sur sa moitié : les boutons s'empilent. */
+  const actions = veil.querySelector(".modal-actions");
+  if(actions && (actions.scrollWidth > actions.clientWidth + 1 || Array.prototype.some.call(actions.children, b => b.scrollWidth > b.clientWidth + 1))) actions.classList.add("colonne");
   glassTrack();
   const input = veil.querySelector("#modalInput");
   if(input){ setTimeout(()=>{ try{ input.focus(); }catch(e){} }, 80); }
@@ -21040,7 +21129,7 @@ async function chargerEtatGroupes(){
     if(r.participe === "ok"){ abonnerGroupes(); suivreNomGroupes(); if(!grp.liste || grp.listeDeMemoire) chargerListes(); if(invitationEnAttente) setTimeout(servirInvitation, 300); }
     else desabonnerGroupes();
     if(r.participe === "ok"){
-      ecrireBase("meta", "etat", { participe:r.participe, moderateur:!!r.moderateur, ouverts:r.ouverts, photos:r.photos === true,
+      ecrireBase("meta", "etat", { participe:r.participe, moderateur:!!r.moderateur, ouverts:r.ouverts, photos:r.photos === true, logos:r.logos === true,
                                    regles_version:r.regles_version, a_traiter:+r.a_traiter || 0 });
       marquerMemoire();
     }
@@ -21306,12 +21395,43 @@ function teinte(i){
   const t = TEINTES[(((+i || 0) % TEINTES.length) + TEINTES.length) % TEINTES.length];
   return "background:linear-gradient(150deg, " + t[0] + ", " + t[1] + ");";
 }
+/* ===== LE LOGO D'UN GROUPE (v322) =====
+   « Je veux aussi pouvoir ajouter une photo de profil de groupe, ou sinon
+     pouvoir choisir un logo de groupe. »
+   Quinze glyphes pleins, dessinés dans le langage des badges (viewBox 24,
+   currentColor) : blancs sur la couleur du groupe, à la place de l'initiale.
+   Le serveur ne garde qu'un NUMÉRO (groupes.logo) : 0 = l'initiale, puis
+   l'ordre de cette liste. Cet ordre ne doit donc plus jamais changer : on
+   ajoute à la fin, on ne retire rien. Un numéro inconnu (un logo ajouté par
+   une version plus récente) s'affiche comme l'initiale. Une photo, si le
+   groupe en a une, passe devant le logo comme devant l'initiale. */
+const LOGOS_GROUPE = [
+  /*  0 */ null,
+  /*  1 */ { nom:()=>T("Croix"), svg:`<svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><rect x="10.1" y="2.3" width="3.8" height="19.4" rx="1.05"/><rect x="5.1" y="7" width="13.8" height="3.8" rx="1.05"/></svg>` },
+  /*  2 */ { nom:()=>T("Bible"), svg:`<svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M11.15 6.25C9.2 4.95 6.9 4.4 4.2 4.55c-.72.04-1.25.63-1.25 1.35v11.55c0 .77.65 1.38 1.42 1.33 2.6-.15 4.8.37 6.78 1.62V6.25Z"/><path d="M12.85 6.25c1.95-1.3 4.25-1.85 6.95-1.7.72.04 1.25.63 1.25 1.35v11.55c0 .77-.65 1.38-1.42 1.33-2.6-.15-4.8.37-6.78 1.62V6.25Z"/></svg>` },
+  /*  3 */ { nom:()=>T("Colombe"), svg:`<svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><g transform="translate(-0.35 1.5)"><path fill-rule="evenodd" d="M2.3 10.2L4.15 9.15C4.45 7.6 5.6 6.55 7 6.55C8.6 6.55 9.75 7.8 9.8 9.3C9.85 10.3 10.4 11 11.4 11.4L15.8 12.9L21.1 11.5C21.75 12.9 21.85 14.75 21.25 16.6L15.4 16.25C11.7 17.7 7.3 16.75 5.45 13.75C4.75 12.65 4.4 11.6 4.25 11ZM7.55 7.95a.85 .85 0 1 0 0 1.7a.85 .85 0 1 0 0-1.7Z"/><path d="M10.1 11.3C11.1 7.5 14.2 4.1 20.3 2.6C20.1 4.1 19.55 5.25 18.7 6.2C19.55 6.3 19.95 6.4 20.4 6.6C19.25 8.3 17.95 9.35 16.5 10C17.1 10.2 17.65 10.3 18.15 10.5C16.7 12.2 14.3 13.05 11.95 13.05Z"/></g></svg>` },
+  /*  4 */ { nom:()=>T("Poisson"), svg:`<svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path fill-rule="evenodd" d="M2.3 12C5.1 7.7 10.9 5.6 15.5 9.1L20.4 5.6c.52-.37 1.22.06 1.12.69L20.6 12l.92 5.71c.1.63-.6 1.06-1.12.69L15.5 14.9C10.9 18.4 5.1 16.3 2.3 12ZM7.7 10.75a1.2 1.2 0 1 0 0 2.4a1.2 1.2 0 1 0 0-2.4Z"/></svg>` },
+  /*  5 */ { nom:()=>T("Flamme"), svg:`<svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path fill-rule="evenodd" d="M13.2 2.2c.3 2.6 1.7 4.1 3.1 5.6 1.5 1.6 2.8 3.3 2.8 5.9A7 7 0 0 1 12 20.9a7 7 0 0 1-7-6.9c0-2.4 1.1-4.1 2.6-5.6.5.9 1.2 1.6 2.1 1.9-.6-2.7.3-5.4 3.5-8.1ZM12 11.9c1.65 1.65 2.55 2.95 2.55 4.5a2.55 2.55 0 0 1-5.1 0c0-1.55.9-2.85 2.55-4.5Z"/></svg>` },
+  /*  6 */ { nom:()=>T("Cœur"), svg:`<svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M12 20.4c-.3 0-.6-.1-.85-.3C6.2 16.2 2.8 13.1 2.8 9.25 2.8 6.55 4.95 4.4 7.6 4.4c1.8 0 3.4.95 4.4 2.45 1-1.5 2.6-2.45 4.4-2.45 2.65 0 4.8 2.15 4.8 4.85 0 3.85-3.4 6.95-8.35 10.85-.25.2-.55.3-.85.3Z"/></svg>` },
+  /*  7 */ { nom:()=>T("Couronne"), svg:`<svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><g transform="translate(0 0.9)"><path d="M3.2 9L6.6 12.2 12 5.8l5.4 6.4L20.8 9v8.3c0 .8-.6 1.4-1.4 1.4H4.6c-.8 0-1.4-.6-1.4-1.4V9Z"/><circle cx="3.2" cy="7.4" r="1.4"/><circle cx="20.8" cy="7.4" r="1.4"/><circle cx="12" cy="4.4" r="1.5"/></g></svg>` },
+  /*  8 */ { nom:()=>T("Étoile"), svg:`<svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M12 3.1l2.7 5.5 6.05.88-4.38 4.27 1.03 6.03L12 16.93l-5.4 2.85 1.03-6.03-4.38-4.27 6.05-.88L12 3.1Z" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round"/></svg>` },
+  /*  9 */ { nom:()=>T("Église"), svg:`<svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><rect x="11.3" y="1.5" width="1.4" height="5" rx="0.45"/><rect x="9.95" y="2.75" width="4.1" height="1.35" rx="0.45"/><path fill-rule="evenodd" d="M12 5.9l5 4.1V21.2H7V10l5-4.1ZM10.25 21.2v-3.1a1.75 1.75 0 0 1 3.5 0v3.1ZM12 11.25a1.25 1.25 0 1 0 0 2.5a1.25 1.25 0 1 0 0-2.5Z"/><path d="M6.2 13.2L2.9 15.3c-.25.16-.4.44-.4.74v4.4c0 .42.34.76.76.76H6.2Z"/><path d="M17.8 13.2l3.3 2.1c.25.16.4.44.4.74v4.4c0 .42-.34.76-.76.76H17.8Z"/></svg>` },
+  /* 10 */ { nom:()=>T("Musique"), svg:`<svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M8.6 6.5L20.2 3.7v3L8.6 9.5Z"/><rect x="8.6" y="6.6" width="1.75" height="11"/><rect x="18.45" y="4" width="1.75" height="11.2"/><ellipse cx="6.75" cy="17.75" rx="2.95" ry="2.25" transform="rotate(-22 6.75 17.75)"/><ellipse cx="16.6" cy="15.35" rx="2.95" ry="2.25" transform="rotate(-22 16.6 15.35)"/></svg>` },
+  /* 11 */ { nom:()=>T("Bougie"), svg:`<svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><rect x="8.4" y="10.6" width="7.2" height="11" rx="1.5"/><rect x="11.4" y="8.6" width="1.2" height="2.6" rx="0.55"/><path d="M12 1.8C14.2 4.3 15.05 5.95 14.7 7.45 14.42 8.6 13.3 9.35 12 9.35S9.58 8.6 9.3 7.45C8.95 5.95 9.8 4.3 12 1.8Z"/></svg>` },
+  /* 12 */ { nom:()=>T("Soleil"), svg:`<svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M6.6 16.1a5.4 5.4 0 0 1 10.8 0Z"/><rect x="2.3" y="17.35" width="19.4" height="2" rx="1"/><rect x="6.6" y="20.4" width="10.8" height="1.8" rx="0.9"/><path d="M12 9L12 6.6M16.07 10.28L17.45 8.32M7.93 10.28L6.55 8.32M18.58 13.44L20.81 12.54M5.42 13.44L3.19 12.54" stroke="currentColor" stroke-width="2" stroke-linecap="round" fill="none"/></svg>` },
+  /* 13 */ { nom:()=>T("Montagne"), svg:`<svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M1.9 19.9L8.55 8.35c.46-.8 1.6-.8 2.06 0L14.2 14.6l1.65-2.85c.46-.8 1.6-.8 2.06 0L22.1 19.9Z"/><circle cx="18.3" cy="5.6" r="2.25"/></svg>` },
+  /* 14 */ { nom:()=>T("Rameau d'olivier"), svg:`<svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M4.6 19.6L18.6 5.6" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"/><ellipse cx="10.1" cy="16.14" rx="2.95" ry="1.55" transform="rotate(-9 10.1 16.14)"/><ellipse cx="10.3" cy="11.86" rx="2.95" ry="1.55" transform="rotate(-81 10.3 11.86)"/><ellipse cx="14.58" cy="11.66" rx="2.95" ry="1.55" transform="rotate(-9 14.58 11.66)"/><ellipse cx="14.78" cy="7.38" rx="2.95" ry="1.55" transform="rotate(-81 14.78 7.38)"/><ellipse cx="19.06" cy="7.18" rx="2.95" ry="1.55" transform="rotate(-9 19.06 7.18)"/><ellipse cx="19.59" cy="4.61" rx="2.75" ry="1.5" transform="rotate(-45 19.59 4.61)"/><circle cx="9.2" cy="17.6" r="1.25"/><circle cx="13.9" cy="12.9" r="1.2"/></svg>` },
+  /* 15 */ { nom:()=>T("Ancre"), svg:`<svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><circle cx="12" cy="4.7" r="2.05" fill="none" stroke="currentColor" stroke-width="1.9"/><rect x="11.05" y="6.5" width="1.9" height="14.3" rx="0.6"/><rect x="7.4" y="8.7" width="9.2" height="1.85" rx="0.92"/><path d="M5.1 13.9C5.5 18.1 8.5 20.5 12 20.5C15.5 20.5 18.5 18.1 18.9 13.9" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round"/><path d="M3.2 15.1L5.05 11.9L7.1 14.9Z"/><path d="M20.8 15.1L18.95 11.9L16.9 14.9Z"/></svg>` },
+];
+function logoGroupe(k){ const l = LOGOS_GROUPE[+k || 0]; return l ? l.svg : ""; }
 /* La pastille d'un groupe : sa photo s'il en a une (posée sur la pastille
-   même, voir majAvatarsPhoto), sinon sa couleur et son initiale. */
+   même, voir majAvatarsPhoto), sinon sa couleur et son logo — ou, sans
+   logo, son initiale. */
 function pastilleGroupe(g, petite){
-  const l = escapeHtml(premierSigne(g.nom) || "?");
+  const lg = logoGroupe(g.logo);
+  const l = lg || escapeHtml(premierSigne(g.nom) || "?");
   const v = g.id ? valeurPhotoSrv("g:" + g.id) : "";
-  return `<span class="grp-av${petite ? " petite" : ""}${v ? " a-photo" : ""}"${g.id ? ` data-gid="${escapeHtml(String(g.id))}"` : ""} style="${teinte(g.teinte)}${v ? "--ph:" + v + ";" : ""}" aria-hidden="true">${l}</span>`;
+  return `<span class="grp-av${petite ? " petite" : ""}${lg ? " a-logo" : ""}${v ? " a-photo" : ""}"${g.id ? ` data-gid="${escapeHtml(String(g.id))}"` : ""} style="${teinte(g.teinte)}${v ? "--ph:" + v + ";" : ""}" aria-hidden="true">${l}</span>`;
 }
 /* LES MOTS DU JEU DANS LA DISCUSSION. Aucun ne s'accorde au genre de la
    personne dont il parle : « a été retiré » aurait été faux pour une joueuse.
@@ -21605,7 +21725,7 @@ function feuilleDessous(veil){
   }
   return null;
 }
-const MENUS_FEUILLE = new Set(["grpActionsVeil", "grpPhotoVeil"]);
+const MENUS_FEUILLE = new Set(["grpActionsVeil", "grpPhotoVeil", "grpImageVeil", "profilPhotoVeil"]);
 function ouvrirFeuilleGroupe(id, titre, ico, html){
   const ancienne = document.getElementById(id);
   if(ancienne) ancienne.remove();
@@ -21626,7 +21746,13 @@ function ouvrirFeuilleGroupe(id, titre, ico, html){
     </div>`;
   document.body.appendChild(veil);
   monterLaFeuille(veil);
-  const dessous = feuilleDessous(veil);
+  /* UN MENU NE POUSSE PAS LA PAGE (v322). Ouvert par-dessus une page — la
+     photo ou le logo du groupe, depuis « Créer un groupe » —, il la faisait
+     reculer de 22 % vers la gauche, le geste d'une page qu'on empile : la page
+     partait en coin derrière un menu qui, lui, monte du bas. Un menu répond à
+     un geste, il ne mène nulle part : la page reste où elle est, il se pose
+     dessus, comme celui d'un message se pose sur la discussion. */
+  const dessous = menu ? null : feuilleDessous(veil);
   if(dessous){
     dessous.classList.add("feuille-recule");
     veil.classList.add("voile-second");
@@ -21679,15 +21805,19 @@ function ligneAction(ico, libelle, action, danger){
 /* ===================== CRÉER UN GROUPE ===================== */
 let creation = { type:"prive", teinte:2 };
 function formulaireGroupeHtml(g){
-  const champs = `<input class="text-input" id="grpNom" maxlength="40" placeholder="${T("Nom du groupe")}" value="${g ? escapeHtml(g.nom || "") : ""}" autocomplete="off" enterkeyhint="next"${photosServeur() ? ` oninput="majPastilleFormulaire()"` : ""}>
+  const image = photosServeur() || logosServeur();
+  const champs = `<input class="text-input" id="grpNom" maxlength="40" placeholder="${T("Nom du groupe")}" value="${g ? escapeHtml(g.nom || "") : ""}" autocomplete="off" enterkeyhint="next"${image ? ` oninput="majPastilleFormulaire()"` : ""}>
     <input class="text-input" id="grpDesc" maxlength="160" placeholder="${T("Description (facultatif)")}" value="${g ? escapeHtml(g.description || "") : ""}" autocomplete="off" enterkeyhint="done">`;
   /* LA PHOTO DU GROUPE se pose À CÔTÉ du nom et de la description, à leur
      hauteur exacte : la feuille ne grandit pas d'un pixel. Sans photo, la
      pastille montre la couleur choisie plus bas et l'initiale du nom tapé —
-     c'est déjà le groupe tel qu'il apparaîtra dans la liste. */
-  const ident = photosServeur()
+     c'est déjà le groupe tel qu'il apparaîtra dans la liste.
+     v322 : là où le serveur connaît les logos, la pastille ouvre « Image du
+     groupe » (une photo, ou un logo) ; son petit rond porte alors un crayon,
+     puisqu'on n'y choisit plus seulement une photo. */
+  const ident = image
     ? `<div class="grp-ident">
-        <button type="button" class="grp-photo-b" onclick="choisirPhotoGroupe()" aria-label="${T("Photo du groupe")}">${pastilleFormulaireHtml(g)}<span class="gpb-ico">${ICONS.appareil}</span></button>
+        <button type="button" class="grp-photo-b" onclick="choisirImageGroupe()" aria-label="${logosServeur() ? T("Image du groupe") : T("Photo du groupe")}">${pastilleFormulaireHtml(g)}<span class="gpb-ico">${logosServeur() ? ICONS.crayon : ICONS.appareil}</span></button>
         <div class="grp-ident-ch">${champs}</div>
       </div>`
     : champs;
@@ -21733,14 +21863,20 @@ function photoFormulaire(){
 }
 function pastilleFormulaireHtml(g){
   const v = photoFormulaire();
-  const l = escapeHtml(premierSigne(g && g.nom) || "?");
-  return `<span class="grp-av${v ? " a-photo" : ""}" id="grpFormAv" style="${teinte(creation.teinte)}${v ? "--ph:" + v + ";" : ""}">${l}</span>`;
+  const lg = logoGroupe(creation.logo);
+  const l = lg || escapeHtml(premierSigne(g && g.nom) || "?");
+  return `<span class="grp-av${lg ? " a-logo" : ""}${v ? " a-photo" : ""}" id="grpFormAv" style="${teinte(creation.teinte)}${v ? "--ph:" + v + ";" : ""}">${l}</span>`;
 }
 function majPastilleFormulaire(){
   const a = document.getElementById("grpFormAv"); if(!a) return;
   const v = photoFormulaire();
   a.setAttribute("style", teinte(creation.teinte) + (v ? "--ph:" + v + ";" : ""));
   a.classList.toggle("a-photo", !!v);
+  /* Un logo ne dépend pas du nom tapé : on ne le redessine que s'il change. */
+  const lg = logoGroupe(creation.logo);
+  a.classList.toggle("a-logo", !!lg);
+  if(lg){ if(a._logo !== creation.logo){ a.innerHTML = lg; a._logo = creation.logo; } return; }
+  a._logo = 0;
   const n = document.getElementById("grpNom");
   a.textContent = premierSigne(n && n.value) || "?";
 }
@@ -21750,6 +21886,41 @@ function choisirPhotoGroupe(){
       ${ligneAction(ICONS.appareil, T("Changer la photo"), "fermerFeuilleGroupe('grpPhotoVeil'); ouvrirPhoto(recevoirPhotoGroupe)")}
       ${ligneAction(ICONS.corbeille, T("Retirer la photo"), "fermerFeuilleGroupe('grpPhotoVeil'); recevoirPhotoGroupe('')", true)}
     </div>`);
+}
+/* ===== L'IMAGE DU GROUPE : UNE PHOTO, OU UN LOGO (v322) =====
+   Toucher la pastille du formulaire ouvre ce menu : la photo d'abord (en
+   choisir une, ou retirer celle qui est posée), puis seize vignettes —
+   l'initiale et les quinze logos —, chacune déjà dans la couleur choisie :
+   on voit le groupe tel qu'il sera. Toucher une vignette la retient, la
+   coche arrive, et le menu se referme. Si une photo était posée, elle s'en
+   va : sinon le logo choisi resterait caché dessous. Comme pour la photo,
+   rien ne part avant « Créer » ou « Enregistrer ».
+   Un serveur qui ne connaît que les photos garde l'ancien menu. */
+function choisirImageGroupe(){
+  if(!logosServeur()){ choisirPhotoGroupe(); return; }
+  const ph = !!photoFormulaire();
+  const initiale = escapeHtml(premierSigne(valeurChamp("grpNom")) || "?");
+  const vignettes = LOGOS_GROUPE.map((l, k)=>{
+    const choisi = !ph && (+creation.logo || 0) === k;
+    return `<button type="button" class="grp-logo-b${choisi ? " choisi" : ""}" onclick="choisirLogoGroupe(${k})" role="radio" aria-checked="${choisi}" aria-label="${escapeHtml(l ? l.nom() : T("Initiale"))}"><span class="grp-av${l ? " a-logo" : ""}" style="${teinte(creation.teinte)}">${l ? l.svg : initiale}</span><span class="glb-ck">${ACH_CHECK}</span></button>`;
+  }).join("");
+  const photo = photosServeur() ? `<div class="grp-liste-act">
+      ${ligneAction(ICONS.appareil, ph ? T("Changer la photo") : T("Choisir une photo"), "fermerFeuilleGroupe('grpImageVeil'); ouvrirPhoto(recevoirPhotoGroupe)")}
+      ${ph ? ligneAction(ICONS.corbeille, T("Retirer la photo"), "fermerFeuilleGroupe('grpImageVeil'); recevoirPhotoGroupe('')", true) : ""}
+    </div>` : "";
+  ouvrirFeuilleGroupe("grpImageVeil", T("Image du groupe"), ICONS.crayon, `${photo}
+    <div class="grp-logos-t">${photo ? T("Ou un logo") : T("Logo du groupe")}</div>
+    <div class="grp-logos" role="radiogroup" aria-label="${T("Logo du groupe")}">${vignettes}</div>`);
+}
+let logoFerme = 0;
+function choisirLogoGroupe(k){
+  creation.logo = k;
+  if(photoFormulaire()) creation.photo = "";
+  document.querySelectorAll("#grpImageVeil .grp-logo-b").forEach((b, i)=>{ b.classList.toggle("choisi", i === k); b.setAttribute("aria-checked", String(i === k)); });
+  majPastilleFormulaire();
+  /* Le temps de voir la coche arriver, puis le menu redescend. */
+  clearTimeout(logoFerme);
+  logoFerme = setTimeout(()=>fermerFeuilleGroupe("grpImageVeil"), 220);
 }
 function recevoirPhotoGroupe(url){
   if(url === null){
@@ -21773,7 +21944,7 @@ async function envoyerPhotoGroupe(gid){
   return true;
 }
 function ouvrirCreation(){
-  creation = { type:"prive", teinte:Math.floor(Math.random() * TEINTES.length), photo:undefined, gid:null };
+  creation = { type:"prive", teinte:Math.floor(Math.random() * TEINTES.length), logo:0, photo:undefined, gid:null };
   ouvrirFeuilleGroupe("grpCreerVeil", T("Créer un groupe"), ICONS.plus,
     formulaireGroupeHtml(null) + `<button class="btn-primary" onclick="creerGroupe(this)">${T("Créer")}</button>`);
 }
@@ -21787,7 +21958,11 @@ async function creerGroupe(btn){
   const nom = valeurChamp("grpNom"), desc = valeurChamp("grpDesc");
   if(!nomGroupeOk(nom)){ motFeuille("grpCreerVeil", T("Le nom doit faire entre 3 et 40 caractères.")); return; }
   if(btn) btn.disabled = true;
-  const r = await appelGroupe("creer_groupe", { p_nom:nom, p_description:desc, p_ouvert:creation.type === "public", p_langue:LANGUE, p_teinte:creation.teinte });
+  const params = { p_nom:nom, p_description:desc, p_ouvert:creation.type === "public", p_langue:LANGUE, p_teinte:creation.teinte };
+  /* Le logo ne part que vers un serveur qui le connaît : un paramètre de
+     trop, et l'ancien serveur refuserait toute la création. */
+  if(logosServeur()) params.p_logo = +creation.logo || 0;
+  const r = await appelGroupe("creer_groupe", params);
   if(!r.ok){ if(btn) btn.disabled = false; motFeuille("grpCreerVeil", motErreurGroupe(r)); return; }
   const prive = creation.type !== "public";
   await envoyerPhotoGroupe(r.id);
@@ -22006,6 +22181,9 @@ const PHOTO_SRV_MAX = 56000;               // en caractères ; le serveur refuse
 const photosSrv = Object.create(null);     // "u:<id>" | "g:<id>" -> { maj, url }
 const CLE_PHOTOS_SRV = "bt_photos_srv";    // le serveur connaît les photos : on lit le cache tôt
 function photosServeur(){ return !!(grp.etat && grp.etat.photos === true); }
+/* v322 : le serveur connaît les logos de groupe (la colonne groupes.logo et
+   les fonctions qui la lisent et l'écrivent, groupes/table.sql). */
+function logosServeur(){ return !!(grp.etat && grp.etat.logos === true); }
 /* La valeur CSS d'une photo du serveur : une adresse « blob: » de soixante
    caractères, posée sur l'avatar lui-même. Jamais l'image en texte dans le
    HTML — trente kilo-octets recopiés à chaque bulle du fil. */
@@ -22333,7 +22511,7 @@ function jpegSousPlafond(c){
 async function chargerGroupe(id){
   const supa = initSupa(); if(!supa || !supa.from) return;
   try{
-    const r = await supa.from("groupes").select("id,nom,description,ouvert,teinte,code,nb_membres" + (photosServeur() ? ",photo_maj" : "")).eq("id", id).maybeSingle();
+    const r = await supa.from("groupes").select("id,nom,description,ouvert,teinte,code,nb_membres" + (photosServeur() ? ",photo_maj" : "") + (logosServeur() ? ",logo" : "")).eq("id", id).maybeSingle();
     if(r && r.data && photosServeur()) await voirPhotos([["g:" + id, r.data.photo_maj]]);
     const g = (grp.liste || []).find(x => x.id === id);
     if(r && r.data && g){
@@ -23152,7 +23330,7 @@ function supprimerMessageGroupe(id){
   showModal({
     title:T("Supprimer ce message ?"),
     message:T("Il disparaît pour tout le groupe."),
-    okLabel:T("Supprimer"), cancelLabel:T("Annuler"), danger:true,
+    okLabel:T("Supprimer"), cancelLabel:T("Annuler"),
     onOk:()=>{ (async ()=>{
       const r = await appelGroupe("supprimer_message", { p_message:+id });
       if(!r.ok){ motFeuille("grpActionsVeil", motErreurGroupe(r)); return; }
@@ -23223,7 +23401,7 @@ async function envoyerSignalement(raison){
   const corps = document.querySelector("#grpSignalerVeil .grp-feuille-corps");
   if(corps) corps.innerHTML = `<div class="grp-merci"><span class="gi-ico vert">${ICONS.coche}</span><b>${T("Merci. La modération va regarder.")}</b>
       <p>${(s.message || s.cible) ? T("Tu peux aussi bloquer cette personne : tu ne verras plus ses messages.") : T("Tu peux aussi quitter ce groupe.")}</p></div>
-    <button class="btn-primary" onclick="fermerFeuilleGroupe('grpSignalerVeil')">${T("Fermer")}</button>`;
+    <button class="modal-btn ok grp-fermer" onclick="fermerFeuilleGroupe('grpSignalerVeil')">${T("Fermer")}</button>`;
   /* Un modérateur qui signale lui-même : sa pastille compte ce signalement. */
   if(grp.etat && grp.etat.moderateur) chargerEtatGroupes();
 }
@@ -23237,7 +23415,7 @@ function bloquerQuelquUn(qui){
   showModal({
     title:Tf("Bloquer {nom} ?", { nom }),
     message:T("Tu ne verras plus ses messages, dans aucun groupe. Cette personne ne le saura pas."),
-    okLabel:T("Bloquer"), cancelLabel:T("Annuler"), danger:true,
+    okLabel:T("Bloquer"), cancelLabel:T("Annuler"),
     onOk:()=>{ (async ()=>{
       const r = await appelGroupe("bloquer", { p_cible:qui });
       if(!r.ok){ showMiniToast(motErreurGroupe(r)); return; }
@@ -23400,7 +23578,7 @@ async function modererMembre(qui, action){
     showModal({
       title:action === "bannir" ? Tf("Bannir {nom} du groupe ?", { nom }) : Tf("Retirer {nom} du groupe ?", { nom }),
       message:action === "bannir" ? T("Cette personne ne pourra plus revenir, même avec le code.") : T("Cette personne pourra revenir avec le code."),
-      okLabel:action === "bannir" ? T("Bannir") : T("Retirer"), cancelLabel:T("Annuler"), danger:true,
+      okLabel:action === "bannir" ? T("Bannir") : T("Retirer"), cancelLabel:T("Annuler"),
       onOk:()=>{ faire(); return true; }
     });
   } else faire();
@@ -23408,7 +23586,7 @@ async function modererMembre(qui, action){
 /* ===================== MODIFIER, QUITTER, SUPPRIMER ===================== */
 function ouvrirModifGroupe(){
   const g = groupeCourant(); if(!g) return;
-  creation = { type:g.ouvert ? "public" : "prive", teinte:+g.teinte || 0, photo:undefined, gid:g.id };
+  creation = { type:g.ouvert ? "public" : "prive", teinte:+g.teinte || 0, logo:+g.logo || 0, photo:undefined, gid:g.id };
   fermerFeuilleGroupe("grpInfosVeil");
   ouvrirFeuilleGroupe("grpModifVeil", T("Modifier le groupe"), ICONS.crayon,
     formulaireGroupeHtml(g) + `<button class="btn-primary" onclick="enregistrerGroupe(this)">${T("Enregistrer")}</button>`);
@@ -23418,9 +23596,12 @@ async function enregistrerGroupe(btn){
   const nom = valeurChamp("grpNom"), desc = valeurChamp("grpDesc");
   if(!nomGroupeOk(nom)){ motFeuille("grpModifVeil", T("Le nom doit faire entre 3 et 40 caractères.")); return; }
   if(btn) btn.disabled = true;
-  const r = await appelGroupe("modifier_groupe", { p_groupe:g.id, p_nom:nom, p_description:desc, p_ouvert:creation.type === "public", p_teinte:creation.teinte });
+  const params = { p_groupe:g.id, p_nom:nom, p_description:desc, p_ouvert:creation.type === "public", p_teinte:creation.teinte };
+  if(logosServeur()) params.p_logo = +creation.logo || 0;
+  const r = await appelGroupe("modifier_groupe", params);
   if(!r.ok){ if(btn) btn.disabled = false; motFeuille("grpModifVeil", motErreurGroupe(r)); return; }
   Object.assign(g, { nom, description:desc, ouvert:creation.type === "public", teinte:creation.teinte });
+  if(logosServeur()) g.logo = +creation.logo || 0;
   const ecran = document.querySelector("#app > .screen.groupe-ecran:not(.screen-exit)");
   if(ecran) ecran.setAttribute("style", couleurGroupe(g.teinte));
   await envoyerPhotoGroupe(g.id);
@@ -23436,7 +23617,7 @@ function quitterGroupeCourant(){
     title:Tf("Quitter « {nom} » ?", { nom:g.nom }),
     message:proprio ? T("Tu en es propriétaire : le groupe passera à son plus ancien admin, ou à son plus ancien membre.")
                     : (g.ouvert ? T("Tu pourras revenir quand tu veux.") : T("Tu pourras revenir avec le code.")),
-    okLabel:T("Quitter"), cancelLabel:T("Annuler"), danger:true,
+    okLabel:T("Quitter"), cancelLabel:T("Rester"), danger:true,
     onOk:()=>{ (async ()=>{
       const r = await appelGroupe("quitter_groupe", { p_groupe:g.id });
       if(!r.ok){ motFeuille("grpInfosVeil", motErreurGroupe(r)); return; }
@@ -23452,7 +23633,7 @@ function supprimerGroupeCourant(){
   showModal({
     title:Tf("Supprimer « {nom} » ?", { nom:g.nom }),
     message:T("Le groupe et ses messages disparaissent pour tout le monde."),
-    okLabel:T("Supprimer"), cancelLabel:T("Annuler"), danger:true,
+    okLabel:T("Supprimer"), cancelLabel:T("Annuler"),
     onOk:()=>{ (async ()=>{
       const r = await appelGroupe("supprimer_groupe", { p_groupe:g.id });
       if(!r.ok){ motFeuille("grpInfosVeil", motErreurGroupe(r)); return; }
@@ -23576,7 +23757,7 @@ function rafraichirTousGroupes(){
 async function chargerTousGroupes(){
   const supa = initSupa(); if(!supa || !supa.from || !(grp.etat && grp.etat.moderateur)) return;
   try{
-    const r = await supa.from("groupes").select("id,nom,description,ouvert,teinte,code,nb_membres,dernier_message" + (photosServeur() ? ",photo_maj" : ""))
+    const r = await supa.from("groupes").select("id,nom,description,ouvert,teinte,code,nb_membres,dernier_message" + (photosServeur() ? ",photo_maj" : "") + (logosServeur() ? ",logo" : ""))
       .is("supprime_le", null).order("dernier_message", { ascending:false }).limit(100);
     if(r.error || !Array.isArray(r.data)) return;
     grp.tous = r.data;
@@ -23605,7 +23786,7 @@ async function regarderGroupe(id){
   let g = grp.vus[id] || (grp.tous || []).find(x => x.id === id);
   if(!g){
     try{
-      const r = await initSupa().from("groupes").select("id,nom,description,ouvert,teinte,code,nb_membres").eq("id", id).maybeSingle();
+      const r = await initSupa().from("groupes").select("id,nom,description,ouvert,teinte,code,nb_membres" + (logosServeur() ? ",logo" : "")).eq("id", id).maybeSingle();
       g = r && r.data;
     }catch(e){}
   }
@@ -23647,7 +23828,7 @@ async function traiterSignalement(id, decision, btn){
     showModal({
       title:decision === "bannir" ? T("Bannir l'auteur de tous les groupes ?") : T("Fermer ce groupe pour tout le monde ?"),
       message:T("La décision s'applique tout de suite."),
-      okLabel:decision === "bannir" ? T("Bannir") : T("Fermer"), cancelLabel:T("Annuler"), danger:true,
+      okLabel:decision === "bannir" ? T("Bannir") : T("Fermer le groupe"), cancelLabel:T("Annuler"),
       onOk:()=>{ faire(); return true; }
     });
   } else faire();
@@ -23699,7 +23880,7 @@ function demanderSuppressionCompte(){
   showModal({
     title:T("Supprimer ton compte ?"),
     message:T("Ton compte et ta sauvegarde en ligne seront supprimés, avec tes messages et tes groupes. Ta progression sur ce téléphone reste là."),
-    okLabel:T("Supprimer"), cancelLabel:T("Annuler"), danger:true,
+    okLabel:T("Supprimer"), cancelLabel:T("Annuler"),
     onOk:()=>{ try{ fermerFeuilleGroupe("compteVeil"); }catch(e){} supprimerMonCompte(); return true; }
   });
 }
@@ -25624,13 +25805,22 @@ function majAvatarsPhoto(){
       if(v) a.style.setProperty("--ph", v); else a.style.removeProperty("--ph");
     });
   }catch(e){}
-  const l = document.getElementById("photoLiens");
-  if(l) l.innerHTML = photoLiensHtml();
 }
-function photoLiensHtml(){
-  const p = !!photoProfil();
-  return `<button type="button" class="photo-lien" onclick="ouvrirPhoto()">${p ? T("Changer la photo") : T("Ajouter une photo")}</button>`
-       + (p ? `<button type="button" class="photo-lien" onclick="retirerPhoto()">${T("Retirer la photo")}</button>` : "");
+/* ===== LA PHOTO DE PROFIL SE CHANGE COMME CELLE D'UN GROUPE (v322) =====
+   « Si c'est le même nom, il faut que ça soit le même bouton. » « Changer la
+   photo » et « Retirer la photo » étaient ici deux liens blancs sous le
+   visage ; pour un groupe, les lignes d'un menu. Le visage porte maintenant
+   le même petit rond que la pastille d'un groupe, l'appareil photo, et le
+   toucher fait la même chose : sans photo, on va droit à la photothèque ;
+   avec une photo, le même menu monte du bas — « Changer la photo »,
+   « Retirer la photo ». Toucher le visage lui-même, quand il porte une
+   photo, l'ouvre toujours en grand, comme avant. */
+function choisirPhotoProfil(){
+  if(!photoProfil()){ ouvrirPhoto(); return; }
+  ouvrirFeuilleGroupe("profilPhotoVeil", T("Photo de profil"), ICONS.appareil, `<div class="grp-liste-act">
+      ${ligneAction(ICONS.appareil, T("Changer la photo"), "fermerFeuilleGroupe('profilPhotoVeil'); ouvrirPhoto()")}
+      ${ligneAction(ICONS.corbeille, T("Retirer la photo"), "fermerFeuilleGroupe('profilPhotoVeil'); retirerPhoto()", true)}
+    </div>`);
 }
 let profileReturn = "mode";
 function openProfile(){ if(state.screen !== "profile"){ profileReturn = state.screen; } state.screen="profile"; render(); }
@@ -25674,9 +25864,8 @@ function renderProfile(){
     ${renderHeader(T("Profil"), true, "saveProfileAndBack()")}
     <div class="flex-sp" style="flex-grow:0.8"></div>
     <div class="profile-card">
-      <button type="button" class="avatar-tap" onclick="ouvrirPhoto()" aria-label="${T("Photo de profil")}" data-avatar-preview>${avatarHtml(profile.name||T("Invité"), profile.color, 4.2, true)}</button>
+      <button type="button" class="avatar-tap" onclick="choisirPhotoProfil()" aria-label="${T("Photo de profil")}" data-avatar-preview>${avatarHtml(profile.name||T("Invité"), profile.color, 4.2, true)}<span class="gpb-ico">${ICONS.appareil}</span></button>
       <div class="profile-name" id="profileNameLabel">${escapeHtml(profile.name||T("Invité"))}</div>
-      <div class="photo-liens" id="photoLiens">${photoLiensHtml()}</div>
     </div>
     <label class="field-label">${T("Nom affiché")}</label>
     <input class="text-input" id="profileName" maxlength="18" value="${escapeHtml(profile.name)}" placeholder="${T("Ton prénom")}" autocomplete="off" enterkeyhint="done" oninput="onProfileNameInput(this)" onkeydown="if(event.key==='Enter'){event.preventDefault();this.blur();}">
