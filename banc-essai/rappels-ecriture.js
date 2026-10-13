@@ -215,6 +215,12 @@ const dire = (nom, v) => {
     if (!c.p_dernier) soucis.push('(avec fonction) « p_dernier » vide');
     if ((c.p_serie | 0) < 2) soucis.push('(avec fonction) « p_serie » vaut ' + c.p_serie + ' au lieu de 5');
     if (!c.p_vu) soucis.push('(avec fonction) « p_vu » vide');
+    /* v324 : la synchro de chaque lancement renvoie l'abonnement ENTIER. Sans
+       lui, un téléphone que le serveur a perdu n'y revient jamais : son
+       interrupteur reste allumé et plus rien n'arrive. */
+    const ab = c.p_abonnement;
+    console.log('     abonnement renvoyé : ' + (ab && ab.endpoint && ab.keys ? 'oui, adresse et clés' : 'NON'));
+    if (!(ab && ab.endpoint && ab.keys)) soucis.push("la synchro n'envoie pas l'abonnement : un téléphone perdu par le serveur ne s'y réinscrit jamais");
   }
   if (avecRpc.some(x => x.methode !== 'RPC')) {
     soucis.push('la table est encore touchée alors que la fonction répond : ' + avecRpc.filter(x => x.methode !== 'RPC').length + ' requête(s)');
