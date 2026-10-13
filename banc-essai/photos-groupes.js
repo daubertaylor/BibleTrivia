@@ -55,12 +55,13 @@ const dit = (quoi, bon, detail) => { console.log('  ' + (bon ? 'OK  ' : 'KO  ') 
         try { const b = JSON.parse(r.postData() || '{}'); if (/(^|,)\s*photo\s*(,|$)/.test(b.cols || '')) telechargees.set(p, telechargees.get(p) + 1); } catch (e) {}
       });
       if (ancienServeur) {
-        /* Le serveur d'avant la v311 : son état ne dit pas « photos ». */
+        /* Le serveur d'avant la v311 : son état ne dit pas « photos » — ni,
+           à plus forte raison, « logos » (v322). */
         await p.route('**/faux/rpc', async (route) => {
           const corps = JSON.parse(route.request().postData() || '{}');
           const rep = await route.fetch();
           const j = await rep.json();
-          if (corps.nom === 'mon_etat_groupes' && j && j.data) delete j.data.photos;
+          if (corps.nom === 'mon_etat_groupes' && j && j.data) { delete j.data.photos; delete j.data.logos; }
           await route.fulfill({ response: rep, json: j });
         });
       }
@@ -122,7 +123,12 @@ const dit = (quoi, bon, detail) => { console.log('  ' + (bon ? 'OK  ' : 'KO  ') 
     await pa.fill('#grpNom', 'Les amis du jeudi');
     dit('… et montre déjà l\'initiale du nom tapé', await pa.evaluate(() => document.getElementById('grpFormAv').textContent === 'L'));
     const paysage = await imageEssai(pa, 200);
-    const [choix] = await Promise.all([pa.waitForEvent('filechooser', { timeout: 5000 }), pa.evaluate(() => document.querySelector('.grp-photo-b').click())]);
+    /* v322 : la pastille ouvre « Image du groupe » (une photo, ou un logo) ;
+       « Choisir une photo » y ouvre le vrai sélecteur. */
+    await pa.evaluate(() => document.querySelector('.grp-photo-b').click());
+    dit('la pastille ouvre « Image du groupe », « Choisir une photo » en tête', await attendre(pa, () => { const l = document.querySelector('#grpImageVeil .grp-act-l'); return !!l && /Choisir une photo/.test(l.textContent); }, null, 3000));
+    await pa.waitForTimeout(350);
+    const [choix] = await Promise.all([pa.waitForEvent('filechooser', { timeout: 5000 }), pa.evaluate(() => document.querySelector('#grpImageVeil .grp-act-l').click())]);
     await choix.setFiles(fichier(paysage, 'groupe.jpg'));
     dit('le vrai sélecteur de fichier ouvre le cadrage', await attendre(pa, () => !!document.getElementById('cadrageVeil') && !!cadrage, null, 6000));
     dit('… par-dessus la feuille, qui recule', await pa.evaluate(() => document.querySelector('#grpCreerVeil .settings-sheet').classList.contains('feuille-recule')));
@@ -189,9 +195,10 @@ const dit = (quoi, bon, detail) => { console.log('  ' + (bon ? 'OK  ' : 'KO  ') 
     await pa.waitForTimeout(650);
     dit('« Modifier le groupe » montre la photo actuelle', await pa.evaluate(() => document.getElementById('grpFormAv').classList.contains('a-photo')));
     await pa.evaluate(() => document.querySelector('.grp-photo-b').click());
-    dit('… la toucher propose « Changer » ou « Retirer »', await attendre(pa, () => (document.querySelectorAll('#grpPhotoVeil .grp-act-l') || []).length === 2, null, 3000));
+    dit('… la toucher propose « Changer » ou « Retirer »', await attendre(pa, () => (document.querySelectorAll('#grpImageVeil .grp-act-l') || []).length === 2, null, 3000));
+    await pa.waitForTimeout(350);
     const autre = await imageEssai(pa, 300);
-    const [choix2] = await Promise.all([pa.waitForEvent('filechooser', { timeout: 5000 }), pa.evaluate(() => document.querySelector('#grpPhotoVeil .grp-act-l').click())]);
+    const [choix2] = await Promise.all([pa.waitForEvent('filechooser', { timeout: 5000 }), pa.evaluate(() => document.querySelector('#grpImageVeil .grp-act-l').click())]);
     await choix2.setFiles(fichier(autre, 'autre.jpg'));
     await attendre(pa, () => !!document.getElementById('cadrageVeil') && !!cadrage, null, 6000);
     await pa.waitForTimeout(400);

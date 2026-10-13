@@ -183,6 +183,21 @@ alter table public.profils add column if not exists photo_retiree_le timestamptz
 alter table public.groupes add column if not exists photo            text;
 alter table public.groupes add column if not exists photo_maj        bigint not null default 0;
 alter table public.groupes add column if not exists photo_retiree_le timestamptz;
+-- LE LOGO D'UN GROUPE (v322).
+-- « Je veux aussi pouvoir ajouter une photo de profil de groupe, ou sinon
+--   pouvoir choisir un logo de groupe. »
+-- Un NUMÉRO, pas une image : 0 = l'initiale du nom (comme avant), de 1 à 15 =
+-- un des glyphes dessinés dans le jeu (la croix, la Bible, la colombe…). Il
+-- n'y a donc rien à modérer : le jeu ne dessine que ses propres glyphes. Une
+-- photo, si le groupe en a une, passe devant. La marge (jusqu'à 63) laisse la
+-- place à de nouveaux glyphes sans retoucher la règle ; un numéro que le jeu
+-- ne connaît pas encore s'affiche comme l'initiale.
+alter table public.groupes add column if not exists logo smallint not null default 0;
+do $$
+begin
+  alter table public.groupes add constraint groupes_logo_valeurs check (logo between 0 and 63);
+exception when duplicate_object then null;
+end $$;
 -- LES NOTIFICATIONS D'UN GROUPE, CHOISIES PAR CHAQUE MEMBRE (v317).
 -- « Pour les groupes, je veux la possibilité de mettre le groupe en muet, et
 --   autre, comme par exemple choisir de recevoir juste les mentions. »
@@ -435,6 +450,8 @@ begin
     'profil', (select to_jsonb(p) - 'banni_le' - 'photo' from public.profils p where p.id = moi),
     -- Ce serveur connaît les photos (v311) : le jeu ne les propose qu'ici.
     'photos', true,
+    -- Et les logos (v322) : le jeu ne propose d'en choisir un qu'ici.
+    'logos', true,
     -- Pour un modérateur : combien de choses attendent une décision (une par
     -- objet signalé, comme dans la file). Le jeu en fait une pastille : c'est
     -- ainsi qu'un signalement arrive jusqu'à lui sans qu'il aille le chercher.
@@ -469,7 +486,13 @@ begin
   return jsonb_build_object('ok', true);
 end $$;
 
-create or replace function public.creer_groupe(p_nom text, p_description text, p_ouvert boolean, p_langue text, p_teinte int) returns jsonb
+-- v322 : un sixième paramètre, le logo. L'ancienne signature (cinq
+-- paramètres) est retirée d'abord : avec deux versions côte à côte, PostgREST
+-- ne saurait pas laquelle appeler. Le logo a une valeur par défaut : un jeu
+-- resté à une version précédente (qui n'envoie pas p_logo) crée toujours ses
+-- groupes.
+drop function if exists public.creer_groupe(text, text, boolean, text, int);
+create or replace function public.creer_groupe(p_nom text, p_description text, p_ouvert boolean, p_langue text, p_teinte int, p_logo int default 0) returns jsonb
 language plpgsql volatile security definer set search_path = '' as $$
 declare
   moi uuid := auth.uid();
@@ -489,10 +512,10 @@ begin
   if (select count(*) from public.membres where membre = moi) >= 30 then
     return jsonb_build_object('ok', false, 'erreur', 'trop_de_groupes'); end if;
   c := public._code();
-  insert into public.groupes (nom, description, ouvert, code, langue, teinte, createur, nb_membres, dernier_message)
+  insert into public.groupes (nom, description, ouvert, code, langue, teinte, logo, createur, nb_membres, dernier_message)
   values (n, d, coalesce(p_ouvert, false), c,
           case when p_langue in ('fr','en','es') then p_langue else 'fr' end,
-          greatest(0, least(7, coalesce(p_teinte, 0))), moi, 1, now())
+          greatest(0, least(7, coalesce(p_teinte, 0))), greatest(0, least(63, coalesce(p_logo, 0))), moi, 1, now())
   returning id into g;
   insert into public.membres (groupe, membre, role) values (g, moi, 'proprietaire');
   perform public._annoncer(g, 'cree', jsonb_build_object('par', moi, 'nom', public._nom(moi)));
@@ -511,7 +534,7 @@ begin
   -- La photo voyage ICI avec l'aperçu : un groupe privé n'est lisible que de
   -- ses membres, et celui qui tape le code n'en est pas encore un.
   return jsonb_build_object('ok', true, 'id', g.id, 'nom', g.nom, 'description', g.description,
-    'ouvert', g.ouvert, 'nb_membres', g.nb_membres, 'teinte', g.teinte, 'membre', public._membre(g.id, auth.uid()),
+    'ouvert', g.ouvert, 'nb_membres', g.nb_membres, 'teinte', g.teinte, 'logo', g.logo, 'membre', public._membre(g.id, auth.uid()),
     'photo', g.photo, 'photo_maj', g.photo_maj);
 end $$;
 
@@ -829,7 +852,10 @@ begin
   return jsonb_build_object('ok', true);
 end $$;
 
-create or replace function public.modifier_groupe(p_groupe uuid, p_nom text, p_description text, p_ouvert boolean, p_teinte int) returns jsonb
+-- v322 : le logo, comme pour la création. Sans p_logo (un jeu plus ancien),
+-- le logo du groupe ne change pas.
+drop function if exists public.modifier_groupe(uuid, text, text, boolean, int);
+create or replace function public.modifier_groupe(p_groupe uuid, p_nom text, p_description text, p_ouvert boolean, p_teinte int, p_logo int default null) returns jsonb
 language plpgsql volatile security definer set search_path = '' as $$
 declare
   moi uuid := auth.uid();
@@ -843,7 +869,8 @@ begin
   if public._interdit(n) or public._interdit(d) then return jsonb_build_object('ok', false, 'erreur', 'mot_interdit'); end if;
   if coalesce(p_ouvert, false) and (public._coordonnees(n) or public._coordonnees(d)) then return jsonb_build_object('ok', false, 'erreur', 'coordonnees'); end if;
   update public.groupes set nom = n, description = d, ouvert = coalesce(p_ouvert, ouvert),
-         teinte = greatest(0, least(7, coalesce(p_teinte, teinte))) where id = p_groupe and supprime_le is null;
+         teinte = greatest(0, least(7, coalesce(p_teinte, teinte))),
+         logo = greatest(0, least(63, coalesce(p_logo, logo))) where id = p_groupe and supprime_le is null;
   return jsonb_build_object('ok', true);
 end $$;
 
@@ -925,7 +952,7 @@ end $$;
 create or replace function public.groupes_publics(p_recherche text, p_langue text, p_limite int) returns setof jsonb
 language sql stable security definer set search_path = '' as $$
   select jsonb_build_object('id', g.id, 'nom', g.nom, 'description', g.description, 'nb_membres', g.nb_membres,
-                            'teinte', g.teinte, 'langue', g.langue, 'dernier_message', g.dernier_message,
+                            'teinte', g.teinte, 'logo', g.logo, 'langue', g.langue, 'dernier_message', g.dernier_message,
                             'membre', public._membre(g.id, auth.uid()), 'photo_maj', g.photo_maj)
     from public.groupes g
    where g.ouvert and g.supprime_le is null and auth.uid() is not null
@@ -939,7 +966,7 @@ $$;
 create or replace function public.mes_groupes() returns setof jsonb
 language sql stable security definer set search_path = '' as $$
   select jsonb_build_object(
-           'id', g.id, 'nom', g.nom, 'ouvert', g.ouvert, 'teinte', g.teinte, 'code', g.code,
+           'id', g.id, 'nom', g.nom, 'ouvert', g.ouvert, 'teinte', g.teinte, 'logo', g.logo, 'code', g.code,
            'nb_membres', g.nb_membres, 'role', mb.role, 'muet_jusqu', mb.muet_jusqu, 'photo_maj', g.photo_maj,
            'dernier_message', g.dernier_message,
            -- v317 : ce que je veux entendre de ce groupe, et combien de

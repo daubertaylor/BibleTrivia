@@ -892,6 +892,17 @@ const ouvrirLaLangue = async (p, lg) => {
        l'invité. */
     ['Groupes · photo du groupe', () => { __fermerTout(); __grpDecor(); state.screen='groupes'; render(); ouvrirCreation();
       creation.photo = 'data:image/jpeg;base64,AAAA'; choisirPhotoGroupe(); }],
+    /* L'IMAGE DU GROUPE (v322) : une photo, ou l'un des quinze logos — le
+       menu, sans photo puis avec, et le logo posé sur la pastille. */
+    ['Groupes · image du groupe', () => { __fermerTout(); __grpDecor(); grp.etat.photos = true; grp.etat.logos = true; state.screen='groupes'; render(); ouvrirCreation();
+      choisirImageGroupe(); }],
+    ['Groupes · image du groupe (photo)', () => { __fermerTout(); __grpDecor(); grp.etat.photos = true; grp.etat.logos = true; state.screen='groupes'; render(); ouvrirCreation();
+      creation.photo = 'data:image/jpeg;base64,AAAA'; choisirImageGroupe(); }],
+    ['Groupes · logo choisi', () => { __fermerTout(); __grpDecor(); grp.etat.photos = true; grp.etat.logos = true; state.screen='groupes'; render(); ouvrirCreation();
+      creation.logo = 3; majPastilleFormulaire(); }],
+    /* LA PHOTO DE PROFIL (v322) : le même menu que celle d'un groupe. */
+    ['Profil · photo de profil', () => { __fermerTout(); state.screen='profile'; render();
+      photoCache = 'data:image/jpeg;base64,AAAA'; choisirPhotoProfil(); photoCache = ''; }],
     ['Groupes · salon du groupe', () => { __fermerTout(); __grpDecor(); net.depuisGroupe = 'g-1'; net.code = 'ABCD'; net.isHost = true;
       net.joueurs = {}; majAdversaire(); state.screen = 'online-room'; render(); }],
     ['Groupes · salon du groupe (invité)', () => { net.isHost = false; render(); }],

@@ -103,6 +103,25 @@ Tant que ce n'est pas fait, les messages partent normalement — simplement sans
 mention retenue —, et le choix Tout / Mentions / Muet répond « Pas encore
 disponible » au lieu de s'enregistrer.
 
+### 8. Le logo d'un groupe (v322) — recoller le fichier une fois
+
+La v322 apporte le **logo de groupe** : au lieu d'une photo, on peut choisir un
+des quinze logos dessinés dans le jeu (la croix, la Bible, la colombe, le
+poisson, la flamme, le cœur, la couronne, l'étoile, l'église, la musique, la
+bougie, le soleil, la montagne, le rameau d'olivier, l'ancre), posé en blanc
+sur la couleur du groupe. Comme aux étapes 6 et 7 : recoller
+`groupes/table.sql` **en entier** dans **SQL Editor** → **Run**. Les groupes
+qui existent gardent leur initiale tant que personne ne leur choisit un logo.
+
+Tant que ce n'est pas fait, le jeu ne propose aucun logo, et crée et modifie
+les groupes exactement comme avant.
+
+**Une seule fois suffit pour les étapes 6, 7 et 8 ensemble**, quelle que soit
+la version déjà installée : le fichier d'aujourd'hui se colle par-dessus
+n'importe laquelle de ses versions passées sans rien perdre, et donne
+exactement la même base qu'une installation neuve (vérifié par
+`banc-essai/sql-montee.js`, sur chacune des versions passées).
+
 ## Ce que voit le joueur
 
 - **Accueil** : la barre flottante en bas, **Accueil · Groupes**, avec une
@@ -117,7 +136,8 @@ disponible » au lieu de s'enregistrer.
 - **Créer un groupe** : un nom, une description facultative, privé (on y entre
   avec un code) ou public (on le trouve dans « Découvrir »), une couleur — celle
   de la discussion : mes bulles, le bouton d'envoi, l'invitation à jouer — et
-  une photo, si l'on veut.
+  son image : une photo, ou un des quinze logos (v322, étape 8). On la choisit
+  en touchant la grande pastille, à côté du nom.
 - **Rejoindre** : un code à 6 caractères, ou le lien d'invitation (le bouton
   **Inviter** partage `…/BibleTrivia/?groupe=CODE`).
 - **La discussion** : les messages arrivent en direct, et restent sur le
