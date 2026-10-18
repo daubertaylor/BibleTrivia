@@ -77,9 +77,28 @@ const ABSENCES = [3, 7, 30];
 const FENETRE = 60;
 /* La version de ce code, dans chaque réponse : la page « Rappels » de la
    Modération dit ainsi si la fonction déployée est bien celle-ci. */
-const VERSION = 326;
+const VERSION = 327;
 /* Un essai demandé par un téléphone pour lui-même : un par minute au plus. */
 const ESSAI_DELAI = 60000;
+/* ===== « ESSAYER CHAQUE RAPPEL » (v327) =====
+   « La prière et la lecture ne sonnent pas, et le rappel pour jouer doit
+   marcher aussi. » Les rappels du jeu ne partent qu'à leur heure (19 h, midi,
+   le dimanche matin) et seulement s'il y a une raison : on ne pouvait donc
+   pas les voir avant un soir sans partie. La Modération les fait arriver
+   TOUS, tout de suite, sur le seul téléphone qui le demande, avec leurs vrais
+   mots (« essai: true » : l'appareil les montre sans ses garde-fous, sous une
+   étiquette à part qui ne remplace aucun vrai rappel). Les genres s'écrivent
+   en toutes lettres : banc-essai/mots-rappels.js vérifie que l'appareil sait
+   dire chacun de ceux qu'on envoie. */
+const ESSAIS: Record<string, Record<string, unknown>> = {
+  serie:   { genre: "serie", n: 3 },
+  defi:    { genre: "defi" },
+  revoir:  { genre: "revoir", n: 3 },
+  verset:  { genre: "verset" },
+  absence: { genre: "absence", jours: 7 },
+  priere:  { genre: "priere" },
+  lecture: { genre: "lecture" },
+};
 
 /* ===== UN 500 NE DIT RIEN. CETTE FONCTION, SI. =====
    Trois secrets à poser à la main, donc trois occasions de se tromper : un nom
@@ -196,7 +215,30 @@ Deno.serve(async (req: Request) => {
      PUBLIQUE est rendue en entier — elle est publique par définition, et le
      jeu la compare à la sienne : un téléphone abonné avec une autre clé
      publique ne recevra jamais rien (le service d'envoi refuse la signature). */
-  if (corpsRecu.etat) return repondre({ vapid: soucis.length ? soucis : "ok", pub: pub || null });
+  if (corpsRecu.etat) {
+    const corps: Record<string, unknown> = { vapid: soucis.length ? soucis : "ok", pub: pub || null };
+    /* (v327) CE QUE LE SERVEUR SAIT DE CE TÉLÉPHONE. Relevé le 18/10/2026 :
+       la Modération disait tout vert, et la prière ne sonnait pas — le
+       téléphone n'avait plus rien envoyé depuis 15 h 42, et rien ne le
+       montrait. Le jeu donne son adresse d'envoi (lui seul la connaît), et
+       reçoit les heures telles qu'elles sont rangées ici, pour les comparer
+       aux siennes. Jamais les clés de l'abonnement : on choisit les champs un
+       à un. */
+    if (typeof corpsRecu.moi === "string" && corpsRecu.moi) {
+      try {
+        const lecteur = createClient(Deno.env.get("SUPABASE_URL")!, cleServeur());
+        const { data, error } = await lecteur.from("push_subs").select("*").eq("endpoint", corpsRecu.moi);
+        const l = (data ?? [])[0];
+        corps.moi = error ? { erreur: error.message }
+          : !l ? { inscrit: false }
+          : { inscrit: true, decalage: l.decalage, jeu: l.jeu, priere: l.priere, lecture: l.lecture,
+              priere_le: l.priere_le, lecture_le: l.lecture_le, jeu_le: l.jeu_le, maj: l.maj };
+      } catch (e: any) {
+        corps.moi = { erreur: String(e?.message || e) };
+      }
+    }
+    return repondre(corps);
+  }
   if (soucis.length) return repondre({ erreur: "clés VAPID", details: soucis }, 400);
 
   webpush.setVapidDetails(sujet, pub, priv);
@@ -213,6 +255,24 @@ Deno.serve(async (req: Request) => {
     if (a.essai_le && Date.now() - Date.parse(a.essai_le) < ESSAI_DELAI) return repondre({ erreur: "patience", details: ["un essai par minute"] }, 429);
     if (!a.abonnement || !a.abonnement.endpoint) return repondre({ erreur: "abonnement", details: ["l'abonnement enregistré est incomplet : rouvre le jeu, il se réinscrit"] }, 400);
     await db.from("push_subs").update({ essai_le: new Date(Date.now()).toISOString() }).eq("endpoint", ep);
+    /* (v327) Plusieurs sortes d'un coup (« Essayer chaque rappel ») : une
+       seule minute de patience pour toutes, et seulement celles de ESSAIS. */
+    if (Array.isArray(corpsRecu.genres)) {
+      const voulus = [...new Set(corpsRecu.genres)].filter((g) => typeof g === "string" && Object.hasOwn(ESSAIS, g)) as string[];
+      if (!voulus.length) return repondre({ erreur: "genres", details: ["aucune sorte de rappel connue"] }, 400);
+      let n = 0;
+      for (const g of voulus) {
+        try {
+          await webpush.sendNotification(a.abonnement, JSON.stringify({ ...ESSAIS[g], decalage: a.decalage | 0, essai: true }));
+          n++;
+        } catch (e: any) {
+          const code = e?.statusCode | 0;
+          if (code === 404 || code === 410) await db.from("push_subs").delete().eq("endpoint", ep);
+          return repondre({ erreur: "envoi", code, details: [raison(e)], envoyes: n }, 502);
+        }
+      }
+      return repondre({ envoye: true, envoyes: n });
+    }
     try {
       /* Les genres s'écrivent en toutes lettres : banc-essai/mots-rappels.js
          vérifie que l'appareil sait dire chacun de ceux qu'on envoie. */

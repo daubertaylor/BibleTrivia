@@ -79,6 +79,59 @@
 > `table.sql`, `verrouiller.sql` et `cron.sql` restent pour l'histoire :
 > `installer.sql` les contient (la table, le verrou), et remplace `cron.sql`.
 
+## Pourquoi la prière ne sonnait pas, et ce qui l'en empêche désormais (v327)
+
+« L'essai marche, mais la prière et la lecture ne sonnent pas. » Relevé le
+18/10/2026 avec une requête en lecture seule sur `push_subs` : le dernier
+envoi du téléphone au serveur datait de 15 h 42. Tout ce qui avait été réglé
+ensuite n'était jamais arrivé — et la Modération, qui regardait la chaîne
+sans regarder les heures, était toute verte. Deux défauts dans le jeu, l'un
+ou l'autre suffisait :
+
+1. **Un raté qui empoisonnait la session.** La moindre erreur passagère
+   (réseau qui coupe, serveur qui hoquette) faisait croire au jeu que
+   `push_enregistrer` n'existait pas : il passait à la table, que le verrou
+   refuse, et ne revenait plus à la bonne porte avant d'être fermé. Seul
+   « cette fonction n'existe pas » (PGRST202) dit désormais quelque chose du
+   serveur ; le reste répond « pas fait », et **la relance** repart seule
+   (15 s, 30 s, 1 min… jusqu'à 5 min d'écart), avec l'état du moment.
+2. **Des écritures dans le désordre.** Sur iPhone, la roue de l'heure annonce
+   chaque cran ; chaque annonce lançait sa propre écriture, et la première,
+   plus lente, pouvait arriver en dernier : le serveur gardait une heure
+   intermédiaire, déjà passée, donc remise à demain. Les écritures partent
+   maintenant **l'une après l'autre**, et la dernière lit l'état le plus
+   récent. `banc-essai/rappels-ordre.js` rejoue la roue (crans à 150 ms, la
+   première écriture lente) : la v326 gardait 15:00, la v327 garde 15:50.
+
+**La carte « Rappels » montre maintenant les heures du serveur** pour CE
+téléphone (la fonction les rend quand le jeu donne son adresse d'envoi, sans
+jamais les clés) : « Prière : prochain rappel aujourd'hui à 15:50 » — ou
+demain, s'il est déjà parti ou si l'heure était passée au moment du réglage.
+Si le serveur a une autre heure, un autre fuseau ou un autre réglage des
+rappels du jeu, une ligne rouge le dit, et le téléphone les renvoie aussitôt.
+
+**« Essayer chaque rappel »** fait arriver les sept sortes sur ce téléphone,
+tout de suite, avec leurs vrais mots : la flamme, la partie, ce qui est à
+revoir, le verset du dimanche, l'absence, la prière, la lecture. Les rappels
+du jeu ne partent sinon qu'à leur heure, et seulement s'il y a une raison ;
+on ne pouvait pas les voir avant un soir sans partie.
+
+**Le téléphone ne tait plus la prière ou la lecture faute de miroir.** Il ne
+se tait que si elles ont été éteintes sur ce téléphone même (−1) ; un miroir
+vide ou ancien ne dit rien contre le serveur, qui a l'heure. (Un téléphone
+qui reçoit sans rien montrer finit aussi par perdre son abonnement.)
+
+**Le son.** Les notifications d'un jeu installé depuis Safari ou Chrome ne
+peuvent pas choisir leur son : l'API des notifications n'a pas d'option
+« sound » (seulement « silent »), et ni Apple ni Google n'en offrent une
+autre aux applications web. Le son Yada est prêt pour les versions App Store
+et Play Store, où il deviendra le vrai son des rappels.
+
+Bancs : `rappels-ordre` (nouveau), `sw-push` (nouveau : le service worker
+chargé tel quel, chaque sorte d'envoi présentée), `rappels-diag` (les heures
+du serveur, l'essai de chaque rappel), `rappels` (la fonction : `moi`,
+`genres`).
+
 ## La prière et la lecture, à l'heure choisie (v326)
 
 « Dans les réglages, un bouton qui rappelle de prier à une certaine heure de

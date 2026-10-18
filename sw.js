@@ -1,6 +1,6 @@
 /* Yada — service worker : rend l'app jouable hors connexion.
    À déposer à côté de index.html (même dossier, nom exact "sw.js"). */
-const CACHE = "yada-v326";
+const CACHE = "yada-v327";
 /* ===== LES BANQUES DE QUESTIONS NE SONT PAS DANS LE SOCLE =====
    questions-en.js y était, et questions-es.js allait l'y rejoindre : six cent
    mille octets téléchargés à l'installation par TOUT LE MONDE, y compris les
@@ -371,6 +371,22 @@ self.addEventListener("push", (e) => {
       body: m[1], icon: "./icon-192.png", badge: "./icon-192.png",
       tag: genre, renotify: false, requireInteraction: false, data: { url: "./" },
     });
+    /* ===== « ESSAYER CHAQUE RAPPEL » (v327) =====
+       Demandé par la Modération pour CE téléphone : chaque sorte de rappel,
+       avec ses vrais mots et des valeurs d'exemple (une flamme de 3 jours,
+       3 questions, 7 jours d'absence). Il passe outre tous les garde-fous —
+       c'est un essai — et prend une étiquette à part : il ne remplace aucun
+       vrai rappel, ne consomme pas le « déjà prévenu aujourd'hui », et les
+       sept s'empilent au lieu de s'effacer l'un l'autre. */
+    if(charge.essai === true && ["serie", "defi", "revoir", "verset", "absence", "priere", "lecture"].indexOf(charge.genre) >= 0){
+      const val = { n: (charge.n | 0) || 3, j: (charge.jours | 0) || 7 };
+      const m = motsDuJour(charge.genre, aujourdhui, langue);
+      await self.registration.showNotification(remplir(m[0], val), {
+        body: remplir(m[1], val), icon: "./icon-192.png", badge: "./icon-192.png",
+        tag: "essai-" + charge.genre, renotify: true, requireInteraction: false, data: { url: "./" },
+      });
+      return;
+    }
     /* ===== PRIÈRE ET LECTURE : L'HEURE QUE LE JOUEUR A CHOISIE (v326) =====
        Ce ne sont pas des rappels du JEU : le joueur les a demandés, à une
        heure qu'il a choisie. Ils ne passent donc ni par « actif » (les
@@ -378,10 +394,14 @@ self.addEventListener("push", (e) => {
        (« prevenu »), et ne le consomment pas. Le serveur ne les envoie qu'une
        fois par jour (priere_le, lecture_le) ; l'appareil vérifie seulement
        qu'ils sont toujours allumés ICI — éteints entre-temps, ils se taisent.
-       (« null >= 0 » est vrai en JavaScript : on exige un vrai nombre.) */
+       (v327) SEULEMENT s'ils ont été éteints ici (-1). Un miroir absent ou
+       ancien (stockage vidé par iOS, réglage d'avant la v326) ne dit rien
+       contre le serveur, qui a l'heure : on montre. Se taire là faisait
+       manquer le rendez-vous, et un téléphone qui reçoit sans rien montrer
+       finit par perdre son abonnement. */
     if(charge.genre === "priere" || charge.genre === "lecture"){
       const h = etat && etat[charge.genre];
-      if(typeof h !== "number" || !(h >= 0)) return;
+      if(typeof h === "number" && h < 0) return;
       await montrer(charge.genre, motsDuJour(charge.genre, aujourdhui, langue));
       return;
     }

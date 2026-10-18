@@ -1242,6 +1242,13 @@ const ouvrirLaLangue = async (p, lg) => {
       { etat:avecBase({ reponse:{ status_code:200, contenu:'{"version":326,"envoyes":5,"echecs":2,"dernier_echec":{"code":410,"raison":"Gone"}}', created:quand } }), f:F_OK, essai:{ st:502, c:{ code:403 } } },
       { etat:avecBase({ reponse:{ status_code:401, contenu:'{"erreur":"accès"}', created:quand } }), f:F_OK, essai:{ st:502, c:{ code:400, details:['Bad Request'] } } },
       { etat:avecBase({ reponse:{ status_code:400, contenu:'{"erreur":"table"}', created:quand } }), f:F_OK, essai:{ st:404, c:{ erreur:'inconnu' } } },
+      /* (v327) Les heures que le serveur a pour CE téléphone : la prière à
+         7 h là-bas, éteinte ici ; un autre fuseau ; les rappels du jeu
+         allumés là-bas. Et « Essayer chaque rappel » face à une fonction
+         d'avant la v327, qui n'envoie qu'un essai et ne compte rien. */
+      { etat:avecBase({ reponse:{ status_code:200, contenu:'{"version":327,"envoyes":0}', created:quand } }),
+        f:{ st:200, c:{ version:327, vapid:'ok', pub:'@JEU', moi:{ inscrit:true, decalage:-999, jeu:true, priere:420, lecture:null, priere_le:null, lecture_le:null, jeu_le:null } } },
+        essai:{ st:200, c:{ envoye:true } }, chaque:true },
     ];
     const INSTALLE = () => {
       const vraiMM = window.matchMedia ? window.matchMedia.bind(window) : null;
@@ -1303,6 +1310,7 @@ const ouvrirLaLangue = async (p, lg) => {
               rapDiag.essai = null;
               await diagnosticRappels(true);
               if(sc.essai) await essaiRappel();
+              if(sc.chaque) await essaiChaqueRappel();
               if(sc.copier){ const b = [...document.querySelectorAll('#modRappels .mod-act button')].find(x => /copierDansPressePapier/.test(x.getAttribute('onclick') || '')); if(b) b.click(); }
             }, sc);
             /* L'écran a pu partir (le jeu renvoie à l'accueil un joueur sans
@@ -1395,7 +1403,8 @@ const ouvrirLaLangue = async (p, lg) => {
       await q.addInitScript((l) => localStorage.setItem('bt_langue', l), lg);
       await q.goto(URL);
       await q.waitForFunction(() => { try { return typeof TEXTES === 'object'; } catch(e){ return false; } }, null, { timeout:20000 });
-      const v = await q.evaluate((l) => Object.values(TEXTES[l] || {}), lg);
+      const v = await q.evaluate((l) => ({ textes:Object.values(TEXTES[l] || {}),
+        versets:Object.values((typeof VERSETS_LANGUE === 'object' && VERSETS_LANGUE[l]) || {}) }), lg);
       await ctx2.close();
       return v;
     })();
@@ -1430,12 +1439,21 @@ const ouvrirLaLangue = async (p, lg) => {
        valeur du dictionnaire, « September 21 — played » n'en est pas une. Un
        morceau ne compte donc que s'il est pris dans un texte qui n'est pas
        lui-même une autre entrée. */
-    const valeurs = new Set(dico.map(aplat));
+    /* ===== UN VERSET N'EST PAS UNE PHRASE DU JEU =====
+       Le verset du jour change chaque jour, et le Psaume 46 dit en espagnol
+       « nuestro pronto auxilio » : le 18/10/2026, « pronto » (« bientôt »,
+       qui ne s'affiche plus nulle part) était déclaré VU, dans un verset — et
+       sa justification « ne sert plus ». Un banc qui change d'avis avec la
+       date ne dit rien du jeu : les textes des versets ne créditent aucune
+       phrase. */
+    const debutsVersets = dico.versets.map(x => aplat(x).slice(0, 24)).filter(x => x.length >= 12);
+    const lusHorsVersets = [...lus].filter(t => !debutsVersets.some(d => t.includes(d)));
+    const valeurs = new Set(dico.textes.map(aplat));
     const dansUnTexteComposé = (v) => {
-      for(const t of lus) if(t !== v && t.indexOf(v) >= 0 && !valeurs.has(t)) return true;
+      for(const t of lusHorsVersets) if(t !== v && t.indexOf(v) >= 0 && !valeurs.has(t)) return true;
       return false;
     };
-    const jamais = [...new Set(dico)].filter(v => !/\{/.test(v)
+    const jamais = [...new Set(dico.textes)].filter(v => !/\{/.test(v)
       && aplat(v).length >= 2
       && !lus.has(aplat(v)) && !dansUnTexteComposé(aplat(v)));
     const mesJust = JAMAIS_A_L_ECRAN.filter(x => !x.lg || x.lg === lg);

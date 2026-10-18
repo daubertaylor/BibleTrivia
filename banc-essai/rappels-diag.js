@@ -19,6 +19,11 @@
     10. allumer « Rappels » envoie UNE confirmation « bienvenue », pas deux
     11. chaque appel à la fonction porte la clé publishable, jamais la session
     12. la carte tient sur le plus petit écran, en anglais et en espagnol aussi
+    13. (v327) les heures que le serveur a pour CE téléphone : égales, on dit
+        quand sonne le prochain rappel (aujourd'hui, ou demain s'il est déjà
+        parti) ; différentes, on le dit et le téléphone les renvoie aussitôt
+    14. (v327) « Essayer chaque rappel » : les sept sortes, d'un coup ; une
+        fonction d'avant la v327 le dit au lieu de faire semblant
    Usage : node banc-essai/rappels-diag.js [url] */
 const { chromium } = require('/opt/node22/lib/node_modules/playwright');
 const fs = require('fs');
@@ -185,6 +190,56 @@ const porte = (r, re) => r.lignes.some(l => re.test(l.t.replace(/\u00a0/g, ' '))
   dire(e.essai && e.essai.k === 'non' && /refuse la signature \(403\)/.test(e.vu), "le service d'envoi refuse (403) : la signature, nommée");
   e = await essai({ st: 404, c: { version: 326, erreur: 'inconnu' } });
   dire(/n'est pas inscrit : éteins puis rallume/.test(e.vu.replace(/\u00a0/g, ' ')), 'téléphone inconnu du serveur : « éteins puis rallume »');
+
+  /* 13. (v327) CE QUE LE SERVEUR SAIT DE CE TÉLÉPHONE */
+  const ici = await p.evaluate(() => { const d = new Date(); return { dec: -d.getTimezoneOffset(), min: d.getHours() * 60 + d.getMinutes() }; });
+  const hh = (m) => String(Math.floor(m / 60)).padStart(2, '0') + ':' + String(m % 60).padStart(2, '0');
+  const plusTard = (ici.min + 90) % 1440, encoreAujourdhui = plusTard > ici.min;
+  const jour = await p.evaluate((dec) => { const d = new Date(Date.now() + dec * 60000);
+    return d.getUTCFullYear() + '-' + String(d.getUTCMonth() + 1).padStart(2, '0') + '-' + String(d.getUTCDate()).padStart(2, '0'); }, ici.dec);
+  await p.evaluate((h) => { settings.priere = true; settings.priereH = h; settings.lecture = false; settings.notif = false; }, hh(plusTard));
+  const MOI = { inscrit: true, decalage: ici.dec, jeu: false, priere: plusTard, lecture: null, priere_le: null, lecture_le: null, jeu_le: null, maj: new Date().toISOString() };
+  const fonctionMoi = (moi) => ({ st: 200, c: { version: 327, vapid: 'ok', pub: PUB, moi } });
+  const lisible = (m) => p.evaluate((h) => heureLisible(h), hh(m));
+  r = await scenario(p, { etat: VERSION_OK, fonction: fonctionMoi(MOI) });
+  const hPlus = await lisible(plusTard);
+  dire(r.invoke[0] && r.invoke[0].corps.moi === 'https://web.push.apple.com/appareil-de-taylor-0002', '13. la fonction reçoit l\'adresse de CE téléphone (moi)');
+  dire(compte(r, 'non') === 0 && porte(r, new RegExp('Prière : prochain rappel ' + (encoreAujourdhui ? "aujourd'hui" : 'demain') + ' à ' + hPlus.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'))),
+    '    mêmes heures : « Prière : prochain rappel ' + (encoreAujourdhui ? "aujourd'hui" : 'demain') + ' à ' + hPlus + ' », rien de rouge');
+  r = await scenario(p, { etat: VERSION_OK, fonction: fonctionMoi(Object.assign({}, MOI, { priere_le: jour })) });
+  dire(porte(r, /Prière : prochain rappel demain à/), '    déjà partie aujourd\'hui : « prochain rappel demain »');
+  await p.evaluate(() => { window.__banc.rpc.length = 0; });
+  r = await scenario(p, { etat: VERSION_OK, fonction: fonctionMoi(Object.assign({}, MOI, { priere: 420 })) });
+  await p.waitForTimeout(300);
+  const renvoi = await p.evaluate(() => window.__banc.rpc.filter(x => x.nom === 'push_enregistrer').pop());
+  const h7 = await lisible(420);
+  const espaces = (s) => s.replace(/[\u00a0\u202f]/g, ' ');
+  dire(r.lignes.some(l => l.k === 'non' && espaces(l.t).includes(espaces('Prière : le serveur a ' + h7 + ' au lieu de ' + hPlus + '. Ce téléphone le lui renvoie.'))),
+    '    le serveur a 07:00 au lieu de ' + hPlus + ' : la ligne rouge le dit');
+  dire(renvoi && renvoi.corps.p_priere === plusTard, '    et le téléphone renvoie aussitôt sa vraie heure (p_priere ' + (renvoi && renvoi.corps.p_priere) + ')');
+  r = await scenario(p, { etat: VERSION_OK, fonction: fonctionMoi(Object.assign({}, MOI, { decalage: ici.dec + 120 })) });
+  dire(porte(r, /Fuseau horaire : le serveur a UTC.+ au lieu de UTC/), '    un autre fuseau sur le serveur : dit, en UTC±');
+  r = await scenario(p, { etat: VERSION_OK, fonction: fonctionMoi({ erreur: 'column "jeu" does not exist' }) });
+  dire(porte(r, /Ce que le serveur sait de ce téléphone ne se lit pas : column "jeu"/), '    une lecture qui échoue : dite telle quelle');
+  r = await scenario(p, { etat: VERSION_OK, fonction: FONCTION_OK });
+  dire(!porte(r, /prochain rappel|le serveur a/), '    une fonction d\'avant la v327 (sans « moi ») : rien d\'inventé');
+
+  /* 14. (v327) ESSAYER CHAQUE RAPPEL */
+  const chaque = async (rep) => {
+    await p.evaluate((rep) => { window.__banc.scenario = Object.assign({}, window.__banc.scenario, { essai: rep }); window.__banc.invoke.length = 0; }, rep);
+    await p.evaluate(() => { const b = [...document.querySelectorAll('#modRappels .mod-act button')].find(b => /chaque/.test(b.textContent)); b.click(); });
+    await p.waitForTimeout(500);
+    return p.evaluate(() => ({ essai: rapDiag.essai, invoke: window.__banc.invoke.slice(), vu: [...document.querySelectorAll('#modRappels .rd-t')].map(x => x.textContent).pop() }));
+  };
+  await scenario(p, { etat: VERSION_OK, fonction: FONCTION_OK });
+  e = await chaque({ st: 200, c: { version: 327, envoye: true, envoyes: 7 } });
+  const g = e.invoke[0] && e.invoke[0].corps.genres;
+  dire(e.essai && e.essai.k === 'ok' && /7 rappels envoyés, un de chaque sorte/.test(e.vu) && e.invoke[0].corps.essai_moi === 'https://web.push.apple.com/appareil-de-taylor-0002'
+    && Array.isArray(g) && g.join() === 'serie,defi,revoir,verset,absence,priere,lecture', "14. « Essayer chaque rappel » : les sept sortes, vers CE téléphone (" + (g || []).join(',') + ')');
+  e = await chaque({ st: 200, c: { version: 326, envoye: true } });
+  dire(e.essai && e.essai.k === 'att' && /ne sait pas encore envoyer chaque sorte/.test(e.vu), "    une fonction d'avant la v327 : dit, au lieu de faire semblant");
+  e = await chaque({ st: 429, c: { version: 327, erreur: 'patience' } });
+  dire(e.essai && e.essai.k === 'att' && /Un essai par minute/.test(e.vu), '    dans la minute d\'un autre essai : « un essai par minute »');
 
   /* 12. la carte tient : rien ne déborde, à 393 px */
   r = await scenario(p, { etat: null, fonction: { st: 0 } });
