@@ -37,6 +37,13 @@ jobs:
     name: Déployer et vérifier
     runs-on: ubuntu-latest
     timeout-minutes: 10
+    # « shell: bash » nommé, c'est « bash -eo pipefail » ; laissé implicite,
+    # GitHub lance « bash -e » (relevé dans le journal du premier
+    # déploiement, 18/10/2026) : « supabase … | tee » prendrait alors le code
+    # de sortie de tee, et un déploiement raté passerait pour réussi.
+    defaults:
+      run:
+        shell: bash
     env:
       PROJET: chyuckryusxzssezesuw
       # L'outil Supabase, figé et vérifié à l'octet près : l'empreinte est

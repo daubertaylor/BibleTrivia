@@ -6347,6 +6347,16 @@ const TEXTES = {
     "La fonction ne répond pas au jeu : remplace son code par notifications/rappels.ts → Deploy, puis désactive « Verify\u00a0JWT ».":"The function doesn't answer the game: replace its code with notifications/rappels.ts → Deploy, then turn off “Verify\u00a0JWT”.",
     "Essai envoyé : la notification arrive dans quelques secondes.":"Test sent: the notification will arrive in a few seconds.",
     "Un essai par minute : réessaie dans un instant.":"One test per minute: try again in a moment.",
+    "Essayer chaque rappel":"Try every reminder",
+    "{n} rappels envoyés, un de chaque sorte : ils arrivent dans quelques secondes.":"{n} reminders sent, one of each kind: they'll arrive in a few seconds.",
+    "La fonction en ligne ne sait pas encore envoyer chaque sorte : sa mise à jour part toute seule de GitHub.":"The online function can't send every kind yet: its update goes out on its own from GitHub.",
+    "Ce que le serveur sait de ce téléphone ne se lit pas : {m}":"What the server knows about this phone can't be read: {m}",
+    "éteinte":"off",
+    "{rappel} : le serveur a {serveur} au lieu de {ici}. Ce téléphone le lui renvoie.":"{rappel}: the server has {serveur} instead of {ici}. This phone is sending it again.",
+    "{rappel} : prochain rappel demain à {heure}.":"{rappel}: next reminder tomorrow at {heure}.",
+    "{rappel} : prochain rappel aujourd'hui à {heure}.":"{rappel}: next reminder today at {heure}.",
+    "Fuseau horaire : le serveur a {serveur} au lieu de {ici}. Ce téléphone le lui renvoie.":"Time zone: the server has {serveur} instead of {ici}. This phone is sending it again.",
+    "Rappels du jeu : le serveur n'a pas le même réglage que ce téléphone. Ce téléphone le lui renvoie.":"Game reminders: the server doesn't have the same setting as this phone. This phone is sending it again.",
     "Le service d'envoi refuse la signature (403) : les secrets VAPID ne vont pas avec la clé publique du jeu.":"The push service refuses the signature (403): the VAPID secrets don't match the game's public key.",
     "Le service d'envoi a refusé (code {code}) : {raison}":"The push service refused (code {code}): {raison}",
     "Bloquées dans les réglages du téléphone":"Blocked in the phone settings",
@@ -7056,6 +7066,16 @@ const TEXTES = {
     "La fonction ne répond pas au jeu : remplace son code par notifications/rappels.ts → Deploy, puis désactive « Verify\u00a0JWT ».":"La función no responde al juego: reemplaza su código por notifications/rappels.ts → Deploy y luego desactiva «Verify\u00a0JWT».",
     "Essai envoyé : la notification arrive dans quelques secondes.":"Prueba enviada: la notificación llegará en unos segundos.",
     "Un essai par minute : réessaie dans un instant.":"Una prueba por minuto: vuelve a intentarlo en un momento.",
+    "Essayer chaque rappel":"Probar cada recordatorio",
+    "{n} rappels envoyés, un de chaque sorte : ils arrivent dans quelques secondes.":"{n} recordatorios enviados, uno de cada tipo: llegarán en unos segundos.",
+    "La fonction en ligne ne sait pas encore envoyer chaque sorte : sa mise à jour part toute seule de GitHub.":"La función en línea aún no sabe enviar cada tipo: su actualización sale sola desde GitHub.",
+    "Ce que le serveur sait de ce téléphone ne se lit pas : {m}":"Lo que el servidor sabe de este teléfono no se puede leer: {m}",
+    "éteinte":"apagada",
+    "{rappel} : le serveur a {serveur} au lieu de {ici}. Ce téléphone le lui renvoie.":"{rappel}: el servidor tiene {serveur} en lugar de {ici}. Este teléfono se lo vuelve a enviar.",
+    "{rappel} : prochain rappel demain à {heure}.":"{rappel}: próximo recordatorio mañana a las {heure}.",
+    "{rappel} : prochain rappel aujourd'hui à {heure}.":"{rappel}: próximo recordatorio hoy a las {heure}.",
+    "Fuseau horaire : le serveur a {serveur} au lieu de {ici}. Ce téléphone le lui renvoie.":"Zona horaria: el servidor tiene {serveur} en lugar de {ici}. Este teléfono se la vuelve a enviar.",
+    "Rappels du jeu : le serveur n'a pas le même réglage que ce téléphone. Ce téléphone le lui renvoie.":"Recordatorios del juego: el servidor no tiene el mismo ajuste que este teléfono. Este teléfono se lo vuelve a enviar.",
     "Le service d'envoi refuse la signature (403) : les secrets VAPID ne vont pas avec la clé publique du jeu.":"El servicio de envío rechaza la firma (403): los secretos VAPID no coinciden con la clave pública del juego.",
     "Le service d'envoi a refusé (code {code}) : {raison}":"El servicio de envío rechazó (código {code}): {raison}",
     "Bloquées dans les réglages du téléphone":"Bloqueados en los ajustes del teléfono",
@@ -9780,7 +9800,7 @@ const SUPABASE_ANON_KEY = "sb_publishable_FDJ_R0foC7uIeHmxVrj6rA_2NeIgW2a";
    remontée d'un téléphone ne vaut rien si on ne sait pas QUELLE version
    tournait. Elle doit rester égale au CACHE de sw.js — c'est ce que vérifie
    banc-essai/version.js, qui refuse de laisser publier les deux en désaccord. */
-const VERSION_JEU = "v326";
+const VERSION_JEU = "v327";
 
 /* ===================== QUAND ÇA CASSE CHEZ UN JOUEUR =====================
    « Si quelque chose casse chez cinq d'entre eux sur un modèle de téléphone
@@ -19883,6 +19903,34 @@ let notifSansRpc = false;
    p_lecture) : on lui écrit sans, et la prière et la lecture répondent
    « Pas encore disponible » au lieu de faire semblant. */
 let notifSansHeures = false;
+/* ===== (v327) UNE ÉCRITURE À LA FOIS, ET LA PLUS RÉCENTE GAGNE =====
+   Sur iPhone, la roue de l'heure annonce chaque cran : « 15:00 », puis
+   « 15:50 »… Chaque annonce lançait sa propre écriture, et rien ne disait
+   dans quel ordre elles arriveraient : la plus ancienne pouvait passer en
+   dernier, et le serveur garder une heure intermédiaire — déjà passée, donc
+   remise à demain. Désormais elles partent l'une après l'autre ; une demande
+   qui arrive pendant qu'une autre attend son tour ne crée rien de plus,
+   puisque celle qui attend lira, en partant, l'état le plus récent. */
+let notifFile = Promise.resolve(), notifAttente = null;
+function notifEcrireEnOrdre(supa, endpoint, abonnement){
+  if(notifAttente && notifAttente.endpoint === endpoint) return notifAttente;
+  const p = notifFile.catch(() => {}).then(() => {
+    if(notifAttente === p) notifAttente = null;
+    return notifEcrire(supa, endpoint, abonnement);
+  });
+  p.endpoint = endpoint;
+  notifAttente = p; notifFile = p;
+  return p;
+}
+/* ET CE QUI N'EST PAS PARTI REPART : 15 s, 30 s, 1 min… jusqu'à 5 min
+   d'écart, et toujours avec l'état du moment. Un rappel réglé pendant une
+   coupure de réseau arrive donc au serveur sans qu'on ait à rouvrir le jeu. */
+let notifRelance = null, notifRates = 0;
+function notifRelancer(){
+  if(notifRelance) return;
+  const d = Math.min(300000, 15000 * Math.pow(2, notifRates++));
+  notifRelance = setTimeout(() => { notifRelance = null; notifSync(); }, d);
+}
 
 /* ===== L'ÉTAT QUI DÉCIDE DES RAPPELS, EN UN SEUL ENDROIT =====
    Cinq nombres, et rien d'autre : ni pseudo, ni score, ni réponses, ni
@@ -19921,13 +19969,22 @@ function notifEtatCourant(){
 async function notifEcrire(supa, endpoint, abonnement){
   const e = notifEtatCourant();
   if(!notifSansRpc){
+    /* (v327) UN RATÉ N'EST PAS UNE RÉPONSE. Toute erreur, même passagère —
+       un réseau qui coupe sous le pouce, un serveur qui hoquette —, faisait
+       croire que la fonction n'existait pas : le jeu passait à la table, que
+       le verrou de la v326 refuse, et ne revenait plus à la bonne porte avant
+       d'être fermé. Relevé le 18/10/2026 : plus un seul envoi du téléphone
+       après 15 h 42, et la prière, réglée ensuite, ne sonnait pas. Seul
+       « cette fonction n'existe pas » (PGRST202) dit quelque chose du
+       serveur ; le reste répond « pas fait », et la relance s'en charge. */
+    let r = null;
     try{
       const corps = {
         p_endpoint: endpoint, p_abonnement: abonnement || null,
         p_dernier: e.dernier, p_serie: e.serie, p_vu: e.vu,
         p_revoir: e.revoir, p_decalage: e.decalage };
       if(!notifSansHeures) Object.assign(corps, { p_jeu: e.jeu, p_priere: e.priere, p_lecture: e.lecture });
-      let r = await supa.rpc("push_enregistrer", corps);
+      r = await supa.rpc("push_enregistrer", corps);
       if(r && r.error && !notifSansHeures && r.error.code === "PGRST202"){
         /* Une fonction d'avant la v326 ne connaît pas ces trois noms : on
            réessaie sans. (Si elle n'existe pas du tout, ce second essai
@@ -19936,8 +19993,15 @@ async function notifEcrire(supa, endpoint, abonnement){
         delete corps.p_jeu; delete corps.p_priere; delete corps.p_lecture;
         r = await supa.rpc("push_enregistrer", corps);
       }
-      if(!(r && r.error)) return true;
-    }catch(_){}
+    }catch(_){
+      /* Un client sans « rpc » — le tout premier serveur, la table seule
+         (banc-essai/notifs.js le joue) — garde son repli. Toute autre
+         exception est un raté : on réessaiera. */
+      if(typeof supa.rpc === "function") return false;
+      r = { error:{ code:"PGRST202" } };
+    }
+    if(!(r && r.error)) return true;
+    if(r.error.code !== "PGRST202") return false;
     notifSansRpc = true;
     notifSansHeures = true;
   }
@@ -19958,10 +20022,11 @@ async function notifEcrire(supa, endpoint, abonnement){
 }
 async function notifEffacer(supa, endpoint){
   if(!notifSansRpc){
-    try{
-      const r = await supa.rpc("push_oublier", { p_endpoint: endpoint });
-      if(!(r && r.error)) return;
-    }catch(_){}
+    let r = null;
+    try{ r = await supa.rpc("push_oublier", { p_endpoint: endpoint }); }
+    catch(_){ if(typeof supa.rpc === "function") return; r = { error:{ code:"PGRST202" } }; }
+    if(!(r && r.error)) return;
+    if(r.error.code !== "PGRST202") return;     // passager : rien à en conclure
     notifSansRpc = true;
   }
   await supa.from("push_subs").delete().eq("endpoint", endpoint);
@@ -19987,8 +20052,12 @@ function notifSync(){
        vaut réinscription. */
     navigator.serviceWorker.ready
       .then(reg => reg.pushManager.getSubscription())
-      .then(sub => { if(sub) return notifEcrire(supa, sub.endpoint, sub.toJSON()); })
-      .catch(()=>{});
+      .then(sub => sub ? notifEcrireEnOrdre(supa, sub.endpoint, sub.toJSON()) : null)
+      .then(fait => {
+        if(fait === false) notifRelancer();
+        else if(fait){ notifRates = 0; if(notifRelance){ clearTimeout(notifRelance); notifRelance = null; } }
+      })
+      .catch(()=>{ notifRelancer(); });
   } catch(e){}
 }
 
@@ -20059,7 +20128,7 @@ async function notifActiver(){
     /* (v326) Allumé AVANT d'écrire : l'état envoyé dit « jeu : oui » dès le
        premier appel (il disait « non », et c'était le second qui corrigeait). */
     settings.notif = true; saveSettings();
-    if(!(await notifEcrire(supa, sub.endpoint, sub.toJSON()))){
+    if(!(await notifEcrireEnOrdre(supa, sub.endpoint, sub.toJSON()))){
       /* Message TECHNIQUE, jamais montré : il est rattrapé juste en dessous et
          remplacé par une phrase traduite. Il ne doit donc pas être en français,
          sinon le banc des traductions le réclame à juste titre. */
@@ -20187,7 +20256,7 @@ async function rappelHeureAllumer(k){
     const supa = initSupa();
     if(!supa) throw new Error("push:serveur");
     settings[k] = true; saveSettings();
-    const ok = await notifEcrire(supa, sub.endpoint, sub.toJSON());
+    const ok = await notifEcrireEnOrdre(supa, sub.endpoint, sub.toJSON());
     if(!ok) throw new Error("push:refus");
     if(notifSansHeures) throw new Error("push:ancien");   // le serveur ne garde pas l'heure : ne pas promettre
     notifMiroir(); rafraichirRappelsHeure();
@@ -24226,6 +24295,7 @@ function lignesRappelsDiag(){
         <button class="grp-pill calme" onclick="diagnosticRappels(true)"${rapDiag.enCours ? " disabled" : ""}>${T("Actualiser")}</button>
         ${rapDiag.cleDiff ? `<button class="grp-pill calme" onclick="copierDansPressePapier(VAPID_PUBLIC, T('Clé copiée'))">${T("Copier la clé publique")}</button>` : ""}
         ${rapDiag.endpoint ? `<button class="grp-pill" onclick="essaiRappel(this)">${T("M'envoyer un essai")}</button>` : ""}
+        ${rapDiag.endpoint ? `<button class="grp-pill calme" onclick="essaiChaqueRappel(this)">${T("Essayer chaque rappel")}</button>` : ""}
       </div>`;
 }
 function peindreRappelsDiag(){
@@ -24288,6 +24358,51 @@ function lireReponseTache(r, ok, non, att){
   else if(c && c.erreur === "table") non(RAP_TABLE());
   else non(Tf("La fonction a répondu {s} : {m}", { s:st, m:String(r.contenu || "").slice(0, 160) }));
 }
+/* ===== (v327) CE QUE LE SERVEUR SAIT DE CE TÉLÉPHONE =====
+   Relevé le 18/10/2026 : toute la carte était verte, et la prière ne sonnait
+   pas. Le téléphone n'avait plus rien envoyé depuis 15 h 42 — et rien ne le
+   montrait, puisqu'on regardait la chaîne sans jamais regarder les heures.
+   La fonction rend maintenant les heures rangées pour CE téléphone ; on les
+   compare aux siennes. Égales : on dit quand sonnera le prochain rappel,
+   aujourd'hui ou demain (une heure déjà passée au moment du réglage, ou un
+   rappel déjà parti, attend demain). Différentes : on le dit, et le
+   téléphone les renvoie aussitôt. */
+const hhmmMinutes = (m) => String(Math.floor(m / 60)).padStart(2, "0") + ":" + String(m % 60).padStart(2, "0");
+const ecritFuseau = (m) => "UTC" + (m < 0 ? "−" : "+") + Math.floor(Math.abs(m) / 60) + (Math.abs(m) % 60 ? ":" + String(Math.abs(m) % 60).padStart(2, "0") : "");
+function comparerAuServeur(m, ok, non){
+  if(m.erreur){ non(Tf("Ce que le serveur sait de ce téléphone ne se lit pas : {m}", { m:String(m.erreur).slice(0, 120) })); return; }
+  const ici = notifEtatCourant();
+  const lisible = (v) => typeof v === "number" && v >= 0 ? heureLisible(hhmmMinutes(v)) : T("éteinte");
+  const d = new Date(Date.now() + ici.decalage * 60000);
+  const aujourdhui = d.getUTCFullYear() + "-" + String(d.getUTCMonth() + 1).padStart(2, "0") + "-" + String(d.getUTCDate()).padStart(2, "0");
+  const maintenant = d.getUTCHours() * 60 + d.getUTCMinutes();
+  let ecart = false;
+  for(const k of ["priere", "lecture"]){
+    const a = ici[k] >= 0 ? ici[k] : null, b = typeof m[k] === "number" && m[k] >= 0 ? m[k] : null;
+    const rappel = RAPPELS_HEURE[k].nom();
+    if(a !== b){
+      ecart = true;
+      non(Tf("{rappel} : le serveur a {serveur} au lieu de {ici}. Ce téléphone le lui renvoie.", { rappel, serveur:lisible(b), ici:lisible(a) }));
+    } else if(a !== null){
+      /* Demain : s'il est déjà parti aujourd'hui (ou si l'heure était passée
+         au moment du réglage), ou si l'heure de grâce du serveur est finie —
+         il l'envoie au premier passage dans l'heure qui suit (FENETRE, 60 min). */
+      const heure = lisible(a);
+      const demain = String(m[k + "_le"] || "").slice(0, 10) === aujourdhui || maintenant >= a + 60;
+      ok(demain ? Tf("{rappel} : prochain rappel demain à {heure}.", { rappel, heure })
+                : Tf("{rappel} : prochain rappel aujourd'hui à {heure}.", { rappel, heure }));
+    }
+  }
+  if(typeof m.decalage === "number" && m.decalage !== ici.decalage){
+    ecart = true;
+    non(Tf("Fuseau horaire : le serveur a {serveur} au lieu de {ici}. Ce téléphone le lui renvoie.", { serveur:ecritFuseau(m.decalage), ici:ecritFuseau(ici.decalage) }));
+  }
+  if(typeof m.jeu === "boolean" && m.jeu !== ici.jeu){
+    ecart = true;
+    non(T("Rappels du jeu : le serveur n'a pas le même réglage que ce téléphone. Ce téléphone le lui renvoie."));
+  }
+  if(ecart) notifSync();
+}
 async function diagnosticRappels(force){
   if(rapDiag.enCours) return;
   if(!force && rapDiag.lignes && Date.now() - rapDiag.quand < 15000) return;
@@ -24330,7 +24445,7 @@ async function diagnosticRappels(force){
       if(e.cron && e.net && e.tache && e.tache.active) lireReponseTache(e.reponse, ok, non, att);
     }
     /* 3. LA FONCTION, interrogée par le jeu lui-même : sa version, ses clés */
-    const f = await lireFonction({ etat:true });
+    const f = await lireFonction(ep ? { etat:true, moi:ep } : { etat:true });
     rapDiag.cleDiff = false;
     if(f.st === 200 && f.c && f.c.version){
       if(f.c.vapid !== "ok") non(RAP_VAPID(f.c.vapid));
@@ -24345,6 +24460,8 @@ async function diagnosticRappels(force){
     else if(f.st === 404) non(RAP_ABSENTE());
     else if(f.st) non(Tf("La fonction a répondu {s} : {m}", { s:f.st, m:JSON.stringify(f.c || "").slice(0, 160) }));
     else non(T("La fonction ne répond pas au jeu : remplace son code par notifications/rappels.ts → Deploy, puis désactive « Verify\u00a0JWT »."));
+    /* 4. (v327) les heures de CE téléphone, telles que le serveur les a */
+    if(ep && f.st === 200 && f.c && f.c.moi && f.c.moi.inscrit !== false) comparerAuServeur(f.c.moi, ok, non);
   }catch(x){ non(Tf("La base ne répond pas : {m}", { m:String((x && x.message) || x).slice(0, 120) })); }
   rapDiag.lignes = L; rapDiag.quand = Date.now(); rapDiag.enCours = false;
   peindreRappelsDiag();
@@ -24356,9 +24473,32 @@ async function essaiRappel(btn){
   if(btn) btn.disabled = true;
   const f = await lireFonction({ essai_moi:rapDiag.endpoint });
   const c = f.c || {};
+  if(f.st === 200 && c.envoye) rapDiag.essai = { k:"ok", t:T("Essai envoyé : la notification arrive dans quelques secondes.") };
+  else rapDiag.essai = lireRefusEssai(f);
+  peindreRappelsDiag();
+}
+/* (v327) « ESSAYER CHAQUE RAPPEL » : les sept sortes, d'un coup, vers ce
+   téléphone seul, avec leurs vrais mots — la flamme, la partie, ce qui est à
+   revoir, le verset, l'absence, la prière, la lecture. Les rappels du jeu ne
+   partent qu'à leur heure et s'il y a une raison : sans ce bouton, on ne
+   pouvait pas les voir avant un soir sans partie. */
+const SORTES_ESSAI = ["serie", "defi", "revoir", "verset", "absence", "priere", "lecture"];
+async function essaiChaqueRappel(btn){
+  if(!rapDiag.endpoint) return;
+  if(btn) btn.disabled = true;
+  const f = await lireFonction({ essai_moi:rapDiag.endpoint, genres:SORTES_ESSAI });
+  const c = f.c || {};
+  if(f.st === 200 && c.envoyes) rapDiag.essai = { k:"ok", t:Tf("{n} rappels envoyés, un de chaque sorte : ils arrivent dans quelques secondes.", { n:c.envoyes | 0 }) };
+  /* Une fonction d'avant la v327 ne connaît pas « genres » : elle envoie un
+     seul essai et ne compte rien. */
+  else if(f.st === 200 && c.envoye) rapDiag.essai = { k:"att", t:T("La fonction en ligne ne sait pas encore envoyer chaque sorte : sa mise à jour part toute seule de GitHub.") };
+  else rapDiag.essai = lireRefusEssai(f);
+  peindreRappelsDiag();
+}
+function lireRefusEssai(f){
+  const c = f.c || {};
   let k = "non", t;
-  if(f.st === 200 && c.envoye){ k = "ok"; t = T("Essai envoyé : la notification arrive dans quelques secondes."); }
-  else if(f.st === 429){ k = "att"; t = T("Un essai par minute : réessaie dans un instant."); }
+  if(f.st === 429){ k = "att"; t = T("Un essai par minute : réessaie dans un instant."); }
   else if(f.st === 404 && c.erreur === "inconnu") t = T("Ce téléphone n'est pas inscrit : éteins puis rallume un rappel dans les Réglages du jeu.");
   else if(f.st === 502 && c.code === 403) t = T("Le service d'envoi refuse la signature (403) : les secrets VAPID ne vont pas avec la clé publique du jeu.");
   else if(f.st === 502){ const code = c.code || "?"; t = Tf("Le service d'envoi a refusé (code {code}) : {raison}", { code, raison:[].concat(c.details || []).join(" ") }); }
@@ -24368,8 +24508,7 @@ async function essaiRappel(btn){
   else if(f.st === 404) t = RAP_ABSENTE();
   else if(f.st === 200) t = RAP_ANCIENNE();
   else t = T("La fonction ne répond pas au jeu : remplace son code par notifications/rappels.ts → Deploy, puis désactive « Verify\u00a0JWT ».");
-  rapDiag.essai = { k, t };
-  peindreRappelsDiag();
+  return { k, t };
 }
 /* LA CONFIRMATION (v326) : en allumant un rappel pour la première fois sur
    ce téléphone, le joueur reçoit aussitôt « Les rappels sont activés ».

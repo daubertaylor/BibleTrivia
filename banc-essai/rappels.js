@@ -91,6 +91,9 @@ globalThis.Deno = { env:{ get:(k)=> SECRETS[k] }, serve:(fn)=>{ handler = fn; } 
 const source = fs.readFileSync(SRC, 'utf8')
   .replace(/^import .*$/gm, '');                 // les deux imports npm: sont remplacés par les doublures
 const js = ts.transpileModule(source, { compilerOptions:{ module: ts.ModuleKind.CommonJS, target: ts.ScriptTarget.ES2022 } }).outputText;
+/* La version que la fonction annonce, lue dans son code (elle changeait à
+   chaque publication, et le banc l'écrivait en dur). */
+const VERSION_FN = +(source.match(/const VERSION = (\d+);/) || [, 0])[1];
 new Function('createClient', 'webpush', js)(createClient, webpush);
 
 /* ---- la table de joueurs ---- */
@@ -314,18 +317,18 @@ async function fabriquerPaire(){
   };
   Date.now = () => MAINTENANT;
   const nbAvant = LIGNES.length;
-  await porte('passage sans clé', sansCle(), 401, (c) => !envois.length && c.erreur === 'accès' && c.version === 326);
+  await porte('passage sans clé', sansCle(), 401, (c) => !envois.length && c.erreur === 'accès' && c.version === VERSION_FN);
   await porte('essai à tous, sans clé', sansCle({ essai:true }), 401, () => !envois.length);
   await porte('mauvaise clé interne', requete({ essai:true }, { 'x-rappels': CLE.replace(/.$/, '0') }), 401, () => !envois.length);
   REGLAGE = null;
   await porte('clé interne absente de la base', requete({ essai:true }), 401, (c) => !envois.length && /installer\.sql/.test(c.details.join(' ')));
   REGLAGE = [{ id:1, cle:CLE }];
   await porte('l’ancienne tâche (service_role)', requete({ essai:true }, { authorization:'Bearer cle-de-laboratoire' }), 200, (c) => c.essai === nbAvant && envois.length === nbAvant);
-  await porte('la tâche, clé interne', requete({ essai:true }), 200, (c) => c.essai === nbAvant && c.version === 326);
+  await porte('la tâche, clé interne', requete({ essai:true }), 200, (c) => c.essai === nbAvant && c.version === VERSION_FN);
   await porte('le navigateur demande la permission', requete(undefined, { 'access-control-request-headers':'authorization, x-client-info, apikey, content-type' }, 'OPTIONS'), 200,
     (c, r) => r.headers.get('access-control-allow-origin') === '*' && /apikey/.test(r.headers.get('access-control-allow-headers')) && !envois.length);
   await porte('l’état, demandé par le jeu', sansCle({ etat:true }), 200,
-    (c, r) => c.version === 326 && c.vapid === 'ok' && c.pub === SECRETS.VAPID_PUBLIQUE && r.headers.get('access-control-allow-origin') === '*' && !envois.length);
+    (c, r) => c.version === VERSION_FN && c.vapid === 'ok' && c.pub === SECRETS.VAPID_PUBLIQUE && r.headers.get('access-control-allow-origin') === '*' && !envois.length);
   /* un essai pour MOI : un seul envoi, vers moi, et pas deux dans la minute */
   const moi = LIGNES[0].endpoint;
   for (const l of LIGNES) { l.essai_le = null; }
@@ -333,6 +336,25 @@ async function fabriquerPaire(){
   await porte('essai pour moi, encore, dans la minute', sansCle({ essai_moi: moi }), 429, () => !envois.length);
   Date.now = () => MAINTENANT + 61000;
   await porte('essai pour moi, une minute après', sansCle({ essai_moi: moi, genre:'bienvenue' }), 200, () => envois.length === 1 && envois[0].charge.genre === 'bienvenue');
+  /* (v327) ESSAYER CHAQUE RAPPEL : les sept sortes, d'un coup, vers moi
+     seul, avec leurs valeurs d'exemple ; une sorte inconnue ou répétée est
+     ignorée ; et la même minute de patience que l'essai. */
+  const SEPT = ['serie', 'defi', 'revoir', 'verset', 'absence', 'priere', 'lecture'];
+  Date.now = () => MAINTENANT + 122000;
+  await porte('essayer chaque rappel', sansCle({ essai_moi: moi, genres: SEPT.concat(['inconnu', 'serie', 'essai']) }), 200,
+    (c) => c.envoyes === 7 && envois.length === 7 && envois.every(e => e.qui === moi && e.charge.essai === true && typeof e.charge.decalage === 'number')
+        && envois.map(e => e.charge.genre).join() === SEPT.join()
+        && envois.find(e => e.charge.genre === 'revoir').charge.n === 3 && envois.find(e => e.charge.genre === 'absence').charge.jours === 7);
+  await porte('essayer chaque rappel, encore, dans la minute', sansCle({ essai_moi: moi, genres: SEPT }), 429, () => !envois.length);
+  Date.now = () => MAINTENANT + 244000;
+  await porte('essayer chaque rappel, aucune sorte connue', sansCle({ essai_moi: moi, genres: ['inconnu', 42] }), 400, (c) => c.erreur === 'genres' && !envois.length);
+  /* (v327) CE QUE LE SERVEUR SAIT DE MOI : mes heures telles qu'elles sont
+     rangées, jamais les clés de mon abonnement. */
+  const lu = LIGNES.find(l => typeof l.priere === 'number') || LIGNES[0];
+  await porte('l’état, et ce que le serveur sait de moi', sansCle({ etat:true, moi: lu.endpoint }), 200,
+    (c) => c.moi && c.moi.inscrit === true && c.moi.priere === lu.priere && c.moi.lecture === lu.lecture && c.moi.decalage === lu.decalage
+        && !('abonnement' in c.moi) && !('endpoint' in c.moi) && !JSON.stringify(c).includes('"abonnement"') && !envois.length);
+  await porte('l’état, un téléphone inconnu', sansCle({ etat:true, moi: 'https://inconnu.exemple/x' }), 200, (c) => c.moi && c.moi.inscrit === false && !envois.length);
   Date.now = () => MAINTENANT;
   await porte('essai pour un téléphone inconnu', sansCle({ essai_moi: 'https://inconnu.exemple/x' }), 404, () => !envois.length);
   const lui = LIGNES[1].endpoint; REFUSES.add(lui);

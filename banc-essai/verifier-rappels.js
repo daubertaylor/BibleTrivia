@@ -109,6 +109,11 @@ function verifier(url){
   dire(deploie.length === 1 && /--no-verify-jwt/.test(deploie[0]) && /\brappels\b/.test(deploie[0]),
        'une seule commande de déploiement, et « Verify JWT » s\'en va DANS la même');
   dire(/cp notifications\/rappels\.ts "\$P\/supabase\/functions\/rappels\/index\.ts"/.test(wf), 'c\'est bien notifications/rappels.ts qui part');
+  /* Sans « shell: bash » nommé, GitHub lance « bash -e » sans pipefail : le
+     code de sortie de « supabase … | tee » serait celui de tee (relevé le
+     18/10/2026 dans le journal du premier déploiement). */
+  dire(/\n    defaults:\n      run:\n        shell: bash\n/.test(wf) && /supabase functions deploy[^\n]*\| tee/.test(wf),
+       'un déploiement raté se voit malgré le « | tee » (shell: bash, donc pipefail)');
   const jetons = wf.match(/SUPABASE_ACCESS_TOKEN:.*/g) || [];
   dire(jetons.length >= 2 && jetons.every(l => /\$\{\{ secrets\.SUPABASE_ACCESS_TOKEN \}\}/.test(l)), 'le jeton ne vient que des secrets de GitHub');
   dire(!/sbp_[0-9a-f]{40}|sb_secret_|service_role/.test(wf), 'aucune clé écrite dans le workflow');
