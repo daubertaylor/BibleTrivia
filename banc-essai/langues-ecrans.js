@@ -37,6 +37,10 @@ const path = require('path');
 const SUPA = process.env.SUPA_UMD || require('./brouillon.js') + '/supabase.js';
 const IOS = 'Mozilla/5.0 (iPhone; CPU iPhone OS 17_5 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.5 Mobile/15E148 Safari/604.1';
 const ANDROID = 'Mozilla/5.0 (Linux; Android 14; Pixel 8) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/126.0.0.0 Mobile Safari/537.36';
+/* Safari d'iOS 26 : la version du système est gelée (18_6), celle de Safari dit 26. */
+const IOS26 = 'Mozilla/5.0 (iPhone; CPU iPhone OS 18_6 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/26.0 Mobile/15E148 Safari/604.1';
+const DANS_APPLI = 'Mozilla/5.0 (iPhone; CPU iPhone OS 18_6 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Mobile/15E148 Instagram 350.0.0.30.97 (iPhone14,2; iOS 18_6; fr_FR; fr; scale=3.00; 1170x2532)';
+const CHROME_IOS = 'Mozilla/5.0 (iPhone; CPU iPhone OS 18_6 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) CriOS/131.0.6778.73 Mobile/15E148 Safari/604.1';
 const URL = process.argv[2] || process.env.URL_ESSAI || 'http://127.0.0.1:8099/index.html';
 
 /* Les mots-outils français qui NE SONT PAS des mots anglais. Volontairement
@@ -1209,9 +1213,16 @@ const ouvrirLaLangue = async (p, lg) => {
        ses trois étapes une fois pour toutes, et la passe ci-dessus est un
        iPhone. Les quatre phrases du chemin Android n'auraient donc jamais été
        relues. Un autre téléphone, un écran, et elles le sont. */
-    {
-      const ctx = await nav.newContext({ viewport:{ width:412, height:915 }, deviceScaleFactor:2,
-        userAgent:ANDROID, hasTouch:true, serviceWorkers:'block' });
+    /* (v325) Et trois iPhone de plus : le guide y choisit aussi ses gestes
+       au chargement — Safari d'iOS 26 range Partager dans « ••• », une
+       application (Instagram, TikTok…) doit d'abord ouvrir Safari, Chrome a
+       son bouton dans sa barre. */
+    for(const [nomGuide, ua, vue] of [['Guide Android', ANDROID, { width:412, height:915 }],
+                                      ['Guide iPhone · Safari 26', IOS26, { width:393, height:852 }],
+                                      ['Guide iPhone · dans une appli', DANS_APPLI, { width:393, height:852 }],
+                                      ['Guide iPhone · Chrome', CHROME_IOS, { width:393, height:852 }]]){
+      const ctx = await nav.newContext({ viewport:vue, deviceScaleFactor:2,
+        userAgent:ua, hasTouch:true, serviceWorkers:'block' });
       const q = await ctx.newPage();
       await ouvrirLaLangue(q, lg);
       await q.addInitScript(PREP, lg);
@@ -1221,8 +1232,8 @@ const ouvrirLaLangue = async (p, lg) => {
       try {
         await q.evaluate(() => { state.screen='mode'; render(); openFsGuide(); });
         await q.waitForTimeout(450);
-        p2.releve.set('Guide Android', await q.evaluate(RAMASSER));
-      } catch(e){ fautes.push('Guide Android (' + lg + ') : ' + e.message.split('\n')[0]); }
+        p2.releve.set(nomGuide, await q.evaluate(RAMASSER));
+      } catch(e){ fautes.push(nomGuide + ' (' + lg + ') : ' + e.message.split('\n')[0]); }
       await ctx.close();
     }
 

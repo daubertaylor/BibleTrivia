@@ -1772,6 +1772,42 @@
   .bk-carte .bk.sel{ background-image:linear-gradient(150deg, #F44E2C, #DE3616); }
   .bk-carte .bk.sel .bk-nm{ color:#fff; font-weight:700; }
   .bk-carte .bk.sel .lt-n{ color:rgba(255,255,255,0.86); }
+  /* ===== LE LIVRE SE REMPLIT COMME UNE PUCE (v325) =====
+     « Pour choisir un livre spécifique, il n'y a pas l'animation de couleur
+       rouge qui vient se remplir. Je veux que le changement de livre soit
+       cohérent avec les boutons de la page précédente. »
+     Filmé au ralenti : la tuile passait du beige au rouge d'une image à
+     l'autre, sans rien entre les deux. Elle prend maintenant le geste des
+     puces, tel quel (basculerChoix) : l'encre naît sous le doigt et s'étale
+     jusqu'aux coins, le libellé passe au blanc quand elle le couvre, et la
+     tuile qu'on quitte se vide vers la nouvelle. Il lui fallait ce que les
+     puces tiennent du verre : une découpe (l'encre s'arrête à l'arrondi) et
+     un empilement à elle (l'encre passe sous le texte, sur le fond). */
+  .bk-choix{ overflow:hidden; overflow:clip; isolation:isolate; }
+  .bk-choix.remplit :is(.bk-nm, .lt-n){ transition:color 0s linear var(--encre-texte), font-weight 0s linear var(--encre-texte); }
+  /* ===== DANS UNE PAGE, L'ENCRE EST LE DÉGRADÉ DE L'ÉTAT CHOISI (v325) =====
+     Dans une page, la puce choisie n'est pas teintée par le verre : elle porte
+     le dégradé des boutons pleins (voir « La puce choisie garde son corail »,
+     plus bas), comme la tuile du livre. Deux défauts, filmés au ralenti sur
+     des puces posées dans une page (Privé/Public, Tout/Mentions/Muet) :
+     — le dégradé arrivait D'UN COUP avec la classe : la puce était rouge dès
+       la première image, l'encre s'étalait sous un rouge déjà là, et le
+       libellé restait sombre sur rouge le temps qu'elle le couvre ;
+     — et une encre d'un rouge uni qui finirait sur un dégradé changerait de
+       teinte dans ses coins à la dernière image.
+     Le dégradé attend donc la fin de l'encre (remplit), et l'encre EST ce
+     dégradé : peint sur toute la goutte, ses deux arrêts de couleur placés là
+     où tombent ceux de la puce (--encre-g0, --encre-g1, calculés par
+     poserEncre), et découpé en goutte par un masque au même bord adouci. À
+     l'échelle 1, elle est la puce choisie au pixel près : la relève ne se
+     voit pas. (Un dégradé de la taille de la puce, posé dans la goutte,
+     rétrécissait AVEC elle : on voyait grandir un rectangle, pas une goutte.) (« .bk-carte » devant la tuile : la règle
+     commune de la goutte, plus bas dans la feuille, l'emporterait à égalité.) */
+  .sheet-veil .len-chip::after, .bk-carte .bk-choix::after{
+    background:linear-gradient(150deg, #F44E2C var(--encre-g0, 0%), #DE3616 var(--encre-g1, 100%));
+    -webkit-mask-image:radial-gradient(closest-side, #000 82%, rgba(0,0,0,0.6) 91%, transparent 100%);
+    mask-image:radial-gradient(closest-side, #000 82%, rgba(0,0,0,0.6) 91%, transparent 100%); }
+  .sheet-veil .len-chip.sel.remplit, .bk-carte .bk-choix.sel.remplit{ background-image:none; }
   /* LA JAUGE DE LA SEMAINE (v316 ; avant, celle du carnet entier). Elle ne
      remplace pas le nombre — la porte doit continuer d'annoncer ce qu'elle
      jouera — elle montre le CHEMIN : les erreurs de la semaine déjà
@@ -2215,8 +2251,8 @@
        des minutes, on ne paie pas ce prix ;
      — la teinte de verre arrive quand l'encre a FINI (sinon on verrait un
        fondu sous l'encre) et repart tout de suite sur la puce qu'on quitte. */
-  .chip, .len-chip{ --encre-x:50%; --encre-y:50%; --encre-r:160px; --encre-duree:0.5s; --encre-sortie:0.3s; --encre-texte:0.2s; --encre-attente:20ms; }
-  .chip::after, .len-chip::after{ content:""; position:absolute; z-index:-1; pointer-events:none;
+  .chip, .len-chip, .bk-choix{ --encre-x:50%; --encre-y:50%; --encre-r:160px; --encre-duree:0.5s; --encre-sortie:0.3s; --encre-texte:0.2s; --encre-attente:20ms; }
+  .chip::after, .len-chip::after, .bk-choix::after{ content:""; position:absolute; z-index:-1; pointer-events:none;
     left:calc(var(--encre-x) - var(--encre-r)); top:calc(var(--encre-y) - var(--encre-r));
     width:calc(var(--encre-r) * 2); height:calc(var(--encre-r) * 2); border-radius:50%;
     /* Le cœur est plein jusqu'à 82 % du rayon ; au-delà, le bord se fond.
@@ -2246,8 +2282,8 @@
      bord, dans un sens comme dans l'autre, et même en sautant une puce.
      L'encre démarre doucement (on la voit s'étaler), la sortie cède la place
      au même rythme. */
-  .chip.remplit::after, .len-chip.remplit::after{ animation:encreIn var(--encre-duree) cubic-bezier(0.3,0.55,0.25,1) forwards; }
-  .chip.devide::after, .len-chip.devide::after{ transform:scale(1); opacity:1;
+  .chip.remplit::after, .len-chip.remplit::after, .bk-choix.remplit::after{ animation:encreIn var(--encre-duree) cubic-bezier(0.3,0.55,0.25,1) forwards; }
+  .chip.devide::after, .len-chip.devide::after, .bk-choix.devide::after{ transform:scale(1); opacity:1;
     animation:encreOut calc(var(--encre-sortie) * var(--encre-k, 1)) cubic-bezier(0.2,0.45,0.42,1) var(--encre-attente) forwards; }
   /* ===== LA PUCE QUITTÉE ATTEND UNE IMAGE AVANT DE CÉDER (v304) =====
      « Des fois lorsque je clique sur certains boutons comme la durée de partie,
@@ -2276,7 +2312,7 @@
      endroit — on pose le doigt, la puce se teinte autour de lui, puis la
      couleur pleine s'étale du même point. (Spécificité : il faut battre
      « button.has-gs::before ».) */
-  button.chip::before, button.len-chip::before,
+  button.chip::before, button.len-chip::before, button.bk-choix::before,
   button.chip.has-gs::before, button.len-chip.has-gs::before{ inset:auto;
     left:calc(var(--encre-x) - var(--encre-r)); top:calc(var(--encre-y) - var(--encre-r));
     width:calc(var(--encre-r) * 2); height:calc(var(--encre-r) * 2); border-radius:50%;
@@ -2284,7 +2320,7 @@
   /* Sur les surfaces DÉJÀ corail, l'onde se fait blanche : sinon rien ne se
      verrait. Même logique, feedback identique. */
   .btn-primary, .btn-next, .btn-replay, .modal-btn.ok, .sheet-done, .set-go,
-  .chip.active, .len-chip.sel, .online-action.primary,
+  .chip.active, .len-chip.sel, .bk-choix.sel, .online-action.primary,
   .modal-btn.cancel.keep{ --press-tint: rgba(255,255,255,0.34); }
   /* L'ONDE SUIT LE FOND DU BOUTON, PAS SA FAMILLE. Deux exceptions, trouvées
      en composant chaque teinte sur la couleur réelle de son bouton :
@@ -6356,6 +6392,14 @@ const TEXTES = {
     "Il faut ajouter {jeu} à ton écran d'accueil. Trois gestes, une seule fois.":"You need to add {jeu} to your home screen. Three gestures, just once.",
     "Il faut installer {jeu} depuis le navigateur. Trois gestes, une seule fois.":"You need to install {jeu} from the browser. Three gestures, just once.",
     "Touche Partager":"Tap Share",
+    "Ouvre le jeu dans Safari":"Open the game in Safari",
+    "Avec le menu « ••• » de l'appli":"With the app's “•••” menu",
+    "Ajoute-le à l'écran d'accueil":"Add it to your Home Screen",
+    "Partager, puis « Sur l'écran d'accueil »":"Share, then “Add to Home Screen”",
+    "Touche « ••• », puis Partager":"Tap “•••”, then Share",
+    "À droite de la barre d'adresse":"To the right of the address bar",
+    "Plus bas dans la liste, puis « Ajouter »":"Further down the list, then “Add”",
+    "Dans la barre ou le menu du navigateur":"In the browser's bar or menu",
     "L'icône en bas de Safari":"The icon at the bottom of Safari",
     "« Sur l'écran d'accueil »":"“Add to Home Screen”",
     "Dans la liste qui s'ouvre":"In the list that opens",
@@ -7005,6 +7049,14 @@ const TEXTES = {
     "Il faut ajouter {jeu} à ton écran d'accueil. Trois gestes, une seule fois.":"Hay que añadir {jeu} a tu pantalla de inicio. Tres gestos, una sola vez.",
     "Il faut installer {jeu} depuis le navigateur. Trois gestes, une seule fois.":"Hay que instalar {jeu} desde el navegador. Tres gestos, una sola vez.",
     "Touche Partager":"Toca Compartir",
+    "Ouvre le jeu dans Safari":"Abre el juego en Safari",
+    "Avec le menu « ••• » de l'appli":"Con el menú «•••» de la app",
+    "Ajoute-le à l'écran d'accueil":"Añádelo a la pantalla de inicio",
+    "Partager, puis « Sur l'écran d'accueil »":"Compartir, luego «Añadir a pantalla de inicio»",
+    "Touche « ••• », puis Partager":"Toca «•••» y luego Compartir",
+    "À droite de la barre d'adresse":"A la derecha de la barra de direcciones",
+    "Plus bas dans la liste, puis « Ajouter »":"Más abajo en la lista, luego «Añadir»",
+    "Dans la barre ou le menu du navigateur":"En la barra o el menú del navegador",
     "L'icône en bas de Safari":"El icono abajo en Safari",
     "« Sur l'écran d'accueil »":"“Añadir a pantalla de inicio”",
     "Dans la liste qui s'ouvre":"En la lista que se abre",
@@ -7563,7 +7615,7 @@ document.addEventListener("pointerdown", (e)=>{
   }catch(e){}
   /* L'ENCRE PART DU DOIGT : sur une puce de choix, on note où il s'est posé.
      Le voile d'appui et, si la puce est choisie, l'encre en partiront. */
-  if(b.classList.contains("chip") || b.classList.contains("len-chip")){
+  if(b.classList.contains("chip") || b.classList.contains("len-chip") || b.classList.contains("bk-choix")){
     try{ encrerPuce(b, e.clientX, e.clientY); b._doigt = performance.now(); }catch(err){}
   }
   ondeCourante = b; ondePleine = false; ondeTenue = true;
@@ -9545,7 +9597,7 @@ function pageDesLivres(actuel, action, min, note){
   const tuile = (b) => {
     const n = BOOK_TOTALS[b] || 0, ok = n >= min, i = BIBLE_BOOKS.indexOf(b);
     const dit = ok ? Tf("{livre} · {n} questions", { livre:nomLivre(b), n }) : Tf("{livre} — pas assez de questions", { livre:nomLivre(b) });
-    return `<button class="bk bk-choix${actuel === b ? " sel" : ""}${ok ? "" : " vide"}" data-i="${i}"${ok ? ` onclick="${action}(${i})"` : " disabled"} aria-label="${escapeHtml(dit)}">`
+    return `<button class="bk bk-choix${actuel === b ? " sel" : ""}${ok ? "" : " vide"}" data-i="${i}" data-k="${i}"${ok ? ` onclick="${action}(${i})"` : " disabled"} aria-label="${escapeHtml(dit)}">`
       + `<span class="bk-nm">${escapeHtml(livreCourt(b))}</span><span class="lt-n">${n}</span></button>`;
   };
   const at = BIBLE_BOOKS.slice(0, BIBLE_AT_COUNT), nt = BIBLE_BOOKS.slice(BIBLE_AT_COUNT);
@@ -9555,17 +9607,34 @@ function pageDesLivres(actuel, action, min, note){
      <div class="bk-carte"><div class="bk-sec">${T("Nouveau Testament")}</div><div class="bk-grid">${nt.map(tuile).join("")}</div></div>
      <p class="alea-note">${note}</p>`);
 }
+/* ===== LA TUILE SE REMPLIT, PUIS LA PAGE REPART (v325) =====
+   Le même geste que les puces de l'écran d'avant (basculerChoix) : l'encre
+   part du doigt, la tuile quittée se vide vers la nouvelle. La page attendait
+   180 ms avant de repartir : on ne voyait que le premier tiers du rouge. Elle
+   attend maintenant que l'encre ait couvert la tuile — les huit premiers
+   dixièmes de sa course ; le dernier, qui finit d'arrondir les coins, se
+   joue pendant que la page s'en va. Un seul toucher compte, même tapé deux
+   fois. */
+function remplirLivre(v, i){
+  if(v._choisi) return false;
+  v._choisi = true;
+  try{ basculerChoix("#livreVeil .bk-choix", "sel", String(i)); }
+  catch(e){ v.querySelectorAll(".bk-choix").forEach(x => x.classList.toggle("sel", x.dataset.i === String(i))); }
+  const t = v.querySelector('.bk-choix[data-i="' + i + '"]');
+  const d = t ? dureeCss(t, "--encre-duree", 500) : 500;
+  /* Seulement CETTE page : refermée au doigt puis rouverte entre-temps, la
+     nouvelle ne doit pas repartir toute seule. */
+  setTimeout(() => { if(document.getElementById("livreVeil") === v) fermerFeuilleGroupe("livreVeil"); }, Math.round(d * 0.8));
+  return true;
+}
 function choisirLivreSalon(i){
   const b = BIBLE_BOOKS[i];
   const v = document.getElementById("livreVeil");
   if(!b || !net.isHost || net.themeFixe || (BOOK_TOTALS[b] || 0) < LIVRE_MIN || !v || v.classList.contains("closing")) return;
+  if(!remplirLivre(v, i)) return;
   net.livre = b;
-  v.querySelectorAll(".bk-choix").forEach(x => { const doit = x.dataset.i === String(i); if(x.classList.contains("sel") !== doit) x.classList.toggle("sel", doit); });
   try{ basculerChoix('[data-rgroup="theme"]', "sel", "bk"); }catch(e){}
   majPuceLivre();
-  /* La tuile se colore, puis la page repart sur le salon — un seul toucher
-     compte, comme dans la feuille de la partie aléatoire. */
-  setTimeout(() => fermerFeuilleGroupe("livreVeil"), 180);
 }
 function selectRoomOpt(g, k){
   if(g === "len") net.lengthKey = k; else if(g === "tmr") net.timerKey = k; else if(g === "theme") net.themeKey = k;
@@ -9585,7 +9654,7 @@ const SUPABASE_ANON_KEY = "sb_publishable_FDJ_R0foC7uIeHmxVrj6rA_2NeIgW2a";
    remontée d'un téléphone ne vaut rien si on ne sait pas QUELLE version
    tournait. Elle doit rester égale au CACHE de sw.js — c'est ce que vérifie
    banc-essai/version.js, qui refuse de laisser publier les deux en désaccord. */
-const VERSION_JEU = "v324";
+const VERSION_JEU = "v325";
 
 /* ===================== QUAND ÇA CASSE CHEZ UN JOUEUR =====================
    « Si quelque chose casse chez cinq d'entre eux sur un modèle de téléphone
@@ -9615,8 +9684,11 @@ function appareilGrossier(){
     const u = navigator.userAgent || "";
     let sys = "?";
     let m;
-    if((m = /iPhone OS (\d+)/.exec(u))) sys = "iPhone · iOS " + m[1];
-    else if((m = /iPad.*OS (\d+)/.exec(u))) sys = "iPad · iOS " + m[1];
+    /* Depuis iOS 26, Safari gèle la version du système (18_6, 18_7) : la
+       vraie est celle de Safari (« Version/26 »). */
+    const vs = +((/Version\/(\d+)/.exec(u) || [])[1] || 0);
+    if((m = /iPhone OS (\d+)/.exec(u))) sys = "iPhone · iOS " + (vs >= 26 ? vs : m[1]);
+    else if((m = /iPad.*OS (\d+)/.exec(u))) sys = "iPad · iOS " + (vs >= 26 ? vs : m[1]);
     else if((m = /Android (\d+)/.exec(u))) sys = "Android " + m[1];
     else if(/Macintosh/.test(u)) sys = "Mac";
     else if(/Windows/.test(u)) sys = "Windows";
@@ -17985,6 +18057,18 @@ function poserEncre(c, x, y){
   c.style.setProperty("--encre-x", x.toFixed(1) + "px");
   c.style.setProperty("--encre-y", y.toFixed(1) + "px");
   c.style.setProperty("--encre-r", rayon.toFixed(1) + "px");
+  /* LE DÉGRADÉ DE LA GOUTTE, CALÉ SUR CELUI DE LA PUCE. Dans une page, la puce
+     choisie porte linear-gradient(150deg, …) sur SA boîte ; la goutte, elle,
+     est un carré de 2 × rayon centré sur le doigt. Pour qu'à l'échelle 1 les
+     deux soient la même couleur en chaque point, on place les deux arrêts de
+     couleur de la goutte là où tombent ceux de la puce, le long de la même
+     direction (150° : vers (0,5 ; 0,866), y vers le bas). Ligne de dégradé
+     d'une boîte L × H à 150° : 0,5·L + 0,866·H ; elle passe par le centre. */
+  const sx = 0.5, sy = 0.8660254;
+  const lPuce = sx * W + sy * H, mi = rayon * (sx + sy);
+  const delta = (x - W / 2) * sx + (y - H / 2) * sy;
+  c.style.setProperty("--encre-g0", (mi - lPuce / 2 - delta).toFixed(1) + "px");
+  c.style.setProperty("--encre-g1", (mi + lPuce / 2 - delta).toFixed(1) + "px");
   return { x, y, rayon };
 }
 /* La courbe d'étalement de l'encre (la même que dans la feuille de style) :
@@ -18147,13 +18231,10 @@ function choisirLivreLocal(i){
   const b = BIBLE_BOOKS[i];
   const v = document.getElementById("livreVeil");
   if(!b || !((BOOK_TOTALS[b] || 0) > 0) || !v || v.classList.contains("closing")) return;
+  if(!remplirLivre(v, i)) return;
   state.livre = b;
-  v.querySelectorAll(".bk-choix").forEach(x => { const doit = x.dataset.i === String(i); if(x.classList.contains("sel") !== doit) x.classList.toggle("sel", doit); });
   majPuceLivreLocale();
   try{ basculerChoix('[data-group="theme"]', "active", "bk"); }catch(e){}
-  /* La tuile se colore, puis la page repart sur l'écran du mode — un seul
-     toucher compte, comme pour l'En ligne. */
-  setTimeout(() => fermerFeuilleGroupe("livreVeil"), 180);
 }
 /* Les joueurs retenus pour la partie : ceux qui ont un nom, six au plus. Le
    plafond est redit ici parce que c'est cette liste-là qui devient les scores —
@@ -28780,6 +28861,44 @@ window.addEventListener("appinstalled", ()=>{ invitePWA = null; });
    tient sur UNE ligne de titre et UNE de sous-titre — c'était deux, parfois
    trois, ce qui donnait un mur de texte gris entre les pastilles. */
 const ICO_MENU_NAV = `<svg viewBox="0 0 24 24" fill="currentColor"><circle cx="12" cy="5" r="1.9"/><circle cx="12" cy="12" r="1.9"/><circle cx="12" cy="19" r="1.9"/></svg>`;
+/* ===== SUR IPHONE, LE BOUTON PARTAGER N'EST PLUS TOUJOURS EN BAS (v325) =====
+   « iPhone 13 Pro : pas de bouton Partager sur Yada. » Le guide disait
+   « Touche Partager — l'icône en bas de Safari ». Depuis iOS 26, avec la
+   présentation des onglets « Compacte » — celle que Safari choisit par
+   défaut —, ce bouton n'est plus dans la barre : il est rangé dans le menu
+   « ••• », à droite de la barre d'adresse. Le guide envoyait chercher un
+   bouton qui n'existe plus.
+   Trois chemins, selon ce que le téléphone affiche vraiment :
+   — Safari 26 et suivants : « ••• », puis Partager. On le reconnaît à
+     « Version/26 » : depuis iOS 26, la version du SYSTÈME écrite dans
+     l'identifiant du navigateur est gelée (18_6, puis 18_7) et ne dit plus
+     rien ; celle de Safari, si ;
+   — dans une application (Instagram, TikTok, Facebook, Messenger,
+     Snapchat…) : ni Partager ni écran d'accueil. Il faut d'abord ouvrir le
+     jeu dans Safari — c'est là qu'arrive quiconque touche le lien d'une
+     vidéo ;
+   — Safari d'avant iOS 26, et les autres navigateurs : le bouton Partager
+     est en vue ; on dit où. */
+const ICO_PLUS_SAFARI = `<svg viewBox="0 0 24 24" fill="currentColor"><circle cx="5" cy="12" r="2"/><circle cx="12" cy="12" r="2"/><circle cx="19" cy="12" r="2"/></svg>`;
+const NAV_DANS_APPLI = /FBAN|FBAV|FB_IAB|Instagram|musical_ly|BytedanceWebview|TikTok|Snapchat|LinkedInApp|Line\/|GSA\/|Pinterest/i;
+function etapesIphone(){
+  const ua = navigator.userAgent || "";
+  const fin = { c:"vol", i:ICONS.expand, t:T("Ouvre le jeu par son icône"), s:T("Il démarre en plein écran") };
+  if(NAV_DANS_APPLI.test(ua)) return [
+    { c:"fsx", i:ICONS.globe,      t:T("Ouvre le jeu dans Safari"),      s:T("Avec le menu « ••• » de l'appli") },
+    { c:"scn", i:ICONS.plusCircle, t:T("Ajoute-le à l'écran d'accueil"), s:T("Partager, puis « Sur l'écran d'accueil »") },
+    fin ];
+  const safari = /Safari\//.test(ua) && !/CriOS|FxiOS|EdgiOS|OPiOS/.test(ua);
+  const version = +((/Version\/(\d+)/.exec(ua) || [])[1] || 0);
+  if(safari && version >= 26) return [
+    { c:"fsx", i:ICO_PLUS_SAFARI,  t:T("Touche « ••• », puis Partager"), s:T("À droite de la barre d'adresse") },
+    { c:"scn", i:ICONS.plusCircle, t:T("« Sur l'écran d'accueil »"),     s:T("Plus bas dans la liste, puis « Ajouter »") },
+    fin ];
+  return [
+    { c:"fsx", i:ICONS.share,      t:T("Touche Partager"),               s:safari ? T("L'icône en bas de Safari") : T("Dans la barre ou le menu du navigateur") },
+    { c:"scn", i:ICONS.plusCircle, t:T("« Sur l'écran d'accueil »"),     s:T("Dans la liste qui s'ouvre") },
+    fin ];
+}
 function openFsGuide(){
   /* Quand le téléphone sait le faire, on n'explique pas : on installe. */
   if(invitePWA){
@@ -28801,11 +28920,7 @@ function openFsGuide(){
     });
     return;
   }
-  const etapes = IS_IOS ? [
-    { c:"fsx", i:ICONS.share,      t:T("Touche Partager"),            s:T("L'icône en bas de Safari") },
-    { c:"scn", i:ICONS.plusCircle, t:T("« Sur l'écran d'accueil »"),  s:T("Dans la liste qui s'ouvre") },
-    { c:"vol", i:ICONS.expand,     t:T("Ouvre le jeu par son icône"), s:T("Il démarre en plein écran") },
-  ] : [
+  const etapes = IS_IOS ? etapesIphone() : [
     { c:"fsx", i:ICO_MENU_NAV,     t:T("Ouvre le menu du navigateur"), s:T("Les trois points, en haut") },
     { c:"scn", i:ICONS.plusCircle, t:T("« Installer l'application »"), s:T("Ou « Ajouter à l'écran d'accueil »") },
     { c:"vol", i:ICONS.expand,     t:T("Ouvre le jeu par son icône"),  s:T("Il démarre en plein écran") },

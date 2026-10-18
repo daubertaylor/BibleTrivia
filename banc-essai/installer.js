@@ -20,6 +20,10 @@
 const { chromium } = require('/opt/node22/lib/node_modules/playwright');
 const IOS = 'Mozilla/5.0 (iPhone; CPU iPhone OS 17_5 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.5 Mobile/15E148 Safari/604.1';
 const AND = 'Mozilla/5.0 (Linux; Android 14; Pixel 8) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/126.0.0.0 Mobile Safari/537.36';
+/* (v325) Safari d'iOS 26 — système gelé à 18_6, Safari 26 —, une application (Instagram), Chrome sur iPhone. */
+const IOS26 = 'Mozilla/5.0 (iPhone; CPU iPhone OS 18_6 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/26.0 Mobile/15E148 Safari/604.1';
+const APPLI = 'Mozilla/5.0 (iPhone; CPU iPhone OS 18_6 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Mobile/15E148 Instagram 350.0.0.30.97 (iPhone14,2; iOS 18_6; fr_FR; fr; scale=3.00; 1170x2532)';
+const CRIOS = 'Mozilla/5.0 (iPhone; CPU iPhone OS 18_6 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) CriOS/131.0.6778.73 Mobile/15E148 Safari/604.1';
 const URL = process.env.URL_ESSAI || process.argv[2] || 'http://127.0.0.1:8099/index.html';
 const BASE = URL.replace(/[^/]*$/, '');
 
@@ -44,7 +48,7 @@ const BASE = URL.replace(/[^/]*$/, '');
   await ctx0.close();
 
   /* ===== les trois chemins ===== */
-  const essai = async (ua, nom, invite) => {
+  const essai = async (ua, nom, invite, premier) => {
     const ctx = await b.newContext({ viewport:{width:393,height:852}, deviceScaleFactor:2,
       userAgent:ua, hasTouch:true, serviceWorkers:'block' });
     const p = await ctx.newPage(); const errs = []; p.on('pageerror', e => errs.push(e.message));
@@ -89,6 +93,10 @@ const BASE = URL.replace(/[^/]*$/, '');
       dire(!!r2 && r2.n === 3 && r2.ok === 'Compris', 'une invitation ne sert qu\'une fois : retour au guide (' + (r2 ? r2.n + ' gestes, « ' + r2.ok + ' »' : 'rien') + ')');
     } else {
       dire(t.gestes.length === 3 && t.ok === 'Compris', 'guide en trois gestes, bouton « ' + t.ok + ' »');
+      /* (v325) le premier geste est celui que CE téléphone peut faire */
+      /* les espaces insécables de la typographie française ne comptent pas */
+      const plat = (x) => String(x || '').replace(/[\u00a0\u202f]/g, ' ');
+      if (premier) dire(plat(t.gestes[0]) === plat(premier), 'premier geste : « ' + t.gestes[0] + ' » (attendu : « ' + premier + ' »)');
     }
     if (errs.length) dire(false, 'ERREURS JS : ' + [...new Set(errs)].slice(0,2).join(' | '));
     await ctx.close();
@@ -96,7 +104,13 @@ const BASE = URL.replace(/[^/]*$/, '');
 
   await essai(AND, 'Android, invitation reçue', true);
   await essai(AND, 'Android, aucune invitation', false);
-  await essai(IOS, 'iPhone', false);
+  await essai(IOS, 'iPhone', false, 'Touche Partager');
+  /* « iPhone 13 Pro : pas de bouton Partager sur Yada. » Sur iOS 26, la barre
+     compacte de Safari range Partager dans « ••• » ; dans une application, il
+     n'y a ni l'un ni l'autre : il faut d'abord ouvrir Safari. */
+  await essai(IOS26, 'iPhone · Safari 26', false, 'Touche « ••• », puis Partager');
+  await essai(APPLI, 'iPhone · dans une application (Instagram)', false, 'Ouvre le jeu dans Safari');
+  await essai(CRIOS, 'iPhone · Chrome', false, 'Touche Partager');
 
   console.log(ok ? '\n  OK — un seul geste quand le téléphone sait le faire, le guide sinon'
                  : '\n  ECHEC');
