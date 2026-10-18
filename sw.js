@@ -1,6 +1,6 @@
 /* Yada — service worker : rend l'app jouable hors connexion.
    À déposer à côté de index.html (même dossier, nom exact "sw.js"). */
-const CACHE = "yada-v325";
+const CACHE = "yada-v326";
 /* ===== LES BANQUES DE QUESTIONS NE SONT PAS DANS LE SOCLE =====
    questions-en.js y était, et questions-es.js allait l'y rejoindre : six cent
    mille octets téléchargés à l'installation par TOUT LE MONDE, y compris les
@@ -199,17 +199,28 @@ function litEtat(){
    les raisons passent de deux à cinq, et chacune a plusieurs formulations qui
    tournent. Le même texte reçu trois lundis de suite cesse d'être lu ; c'est
    une autre façon de ne rien dire. */
+/* ===== LES MOTS PARLENT LA LANGUE DU JOUEUR, ET CELLE DU JEU D'AUJOURD'HUI (v326) =====
+   Deux défauts, relevés en ajoutant la prière et la lecture :
+   — les rappels n'existaient qu'en français : un joueur qui lit le jeu en
+     anglais ou en espagnol recevait « Ta série de 5 jours s'arrête ce soir ».
+     Le miroir de l'appareil porte maintenant sa langue (notifMiroir) ;
+   — ils parlaient d'un « défi du jour » qui n'existe plus dans le jeu : la
+     flamme compte n'importe quelle partie. Ils disent donc « ta flamme » et
+     « une partie », comme l'écran.
+   Les noms des motifs (serie, defi…) ne changent pas : le serveur les envoie.
+   Les versets restent recopiés AU MOT PRÈS des listes du jeu, dans la version
+   de chaque langue : Segond 1910, King James 1769, Reina-Valera 1909. */
 const MOTS = {
   serie: [
-    ["Ta série de {n} jours s'arrête ce soir", "Un défi, et elle repart. À tout de suite !"],
-    ["{n} jours d'affilée, et ce soir ?", "Trois minutes suffisent pour la garder."],
-    ["Ne laisse pas tomber tes {n} jours", "Le défi du jour t'attend, il est court."],
+    ["Ta flamme de {n} jours s'éteint ce soir", "Une partie avant minuit, et elle continue."],
+    ["{n} jours d'affilée, et ce soir ?", "Trois minutes suffisent pour garder ta flamme."],
+    ["Ne laisse pas filer tes {n} jours", "Une partie, même courte, garde ta flamme allumée."],
   ],
   defi: [
-    ["Le défi du jour t'attend", "Le même pour tout le monde, aujourd'hui seulement."],
-    ["Trois minutes, dix questions", "Le défi d'aujourd'hui n'a pas encore été relevé."],
-    ["On se fait le défi du jour ?", "Il change demain — celui-là ne reviendra pas."],
-    ["Un défi t'attend", "Dix questions pour commencer ta série."],
+    ["Une partie aujourd'hui ?", "Trois minutes suffisent, et la journée compte."],
+    ["Ta flamme t'attend", "Une partie rapide, et la journée compte pour elle."],
+    ["Trois minutes, quelques questions", "Ta partie du jour n'est pas encore jouée."],
+    ["On joue aujourd'hui ?", "Une partie pour faire briller ta flamme."],
   ],
   revoir: [
     ["{n} question{s} à revoir aujourd'hui", "Ce sont tes erreurs passées. C'est là qu'on progresse."],
@@ -219,28 +230,126 @@ const MOTS = {
   absence: [
     ["Ça fait {j} jours", "Ta progression est intacte. On reprend quand tu veux."],
     ["Tu nous manques", "Ta progression t'attend, exactement où tu l'as laissée."],
-    ["Le défi du jour continue sans toi", "Rien n'est perdu — tout est encore là."],
+    ["Tes questions t'attendent", "Rien n'est perdu — tout est encore là."],
   ],
-  /* LES VERSETS SONT RECOPIÉS AU MOT PRÈS DE LA LISTE DU JEU (HERO_VERSES,
-     Segond 1910), et ce sont tous des versets COMPLETS. Un verset tronqué au
-     milieu d'une phrase pour tenir dans un bandeau, dans une app de Bible,
-     n'est pas un raccourci : c'est une citation fausse. Hébreux 4:16, pourtant
-     le verset signature de l'accueil, a été écarté d'ici pour cette seule
-     raison — il fait deux fois la longueur tenable dans une notification. */
   verset: [
     ["Un verset pour la semaine", "« Ta parole est une lampe à mes pieds, Et une lumière sur mon sentier. » Psaume 119:105"],
-    ["Un verset pour la semaine", "« Que tout ce qui respire loue l'Éternel ! Louez l'Éternel ! » Psaume 150:6"],
+    ["Un verset pour la semaine", "« Que tout ce qui respire loue l'Éternel ! Louez l'Éternel ! » Psaume 150:6"],
     ["Un verset pour la semaine", "« Je puis tout par celui qui me fortifie. » Philippiens 4:13"],
-    ["Un verset pour la semaine", "« L'Éternel est mon berger : je ne manquerai de rien. » Psaume 23:1"],
-    ["Un verset pour la semaine", "« Que l'Éternel te bénisse, et qu'il te garde ! » Nombres 6:24"],
+    ["Un verset pour la semaine", "« L'Éternel est mon berger : je ne manquerai de rien. » Psaume 23:1"],
+    ["Un verset pour la semaine", "« Que l'Éternel te bénisse, et qu'il te garde ! » Nombres 6:24"],
     ["Un verset pour la semaine", "« Car rien n'est impossible à Dieu. » Luc 1:37"],
   ],
+  priere: [
+    ["C'est l'heure de prier", "Prends un moment avec Dieu."],
+    ["Ton moment de prière", "Quelques minutes au calme, avec Lui."],
+    ["Un temps pour prier", "Confie-lui ce que tu portes aujourd'hui."],
+  ],
+  lecture: [
+    ["C'est l'heure de lire ta Bible", "Un passage, même court : ta Bible t'attend."],
+    ["Ton moment de lecture", "Ouvre ta Bible, ne serait-ce que pour quelques versets."],
+    ["La Parole t'attend", "Un moment de lecture, rien que pour toi."],
+  ],
+  essai: [["Les rappels sont bien branchés", "C'est un essai : tout est bien relié jusqu'à ton téléphone."]],
+  /* La confirmation, une seule fois, quand un rappel est allumé sur ce téléphone. */
+  bienvenue: [["Les rappels sont activés", "C'est ici qu'ils arriveront."]],
 };
+const MOTS_EN = {
+  serie: [
+    ["Your {n}-day flame goes out tonight", "One game before midnight, and it keeps going."],
+    ["{n} days in a row — and tonight?", "Three minutes is enough to keep your flame."],
+    ["Don't let your {n} days slip away", "One game, even a short one, keeps your flame alight."],
+  ],
+  defi: [
+    ["A game today?", "Three minutes is enough, and the day counts."],
+    ["Your flame is waiting", "One quick game, and the day counts for it."],
+    ["Three minutes, a few questions", "Today's game hasn't been played yet."],
+    ["Shall we play today?", "One game to make your flame shine."],
+  ],
+  revoir: [
+    ["{n} question{s} to review today", "These are your past mistakes. That's where you grow."],
+    ["Your memory asks for {n} question{s}", "Reviewed today, they won't come back for three days."],
+    ["You have {n} question{s} to go over", "Two minutes, and they move up a level."],
+  ],
+  absence: [
+    ["It's been {j} days", "Your progress is intact. Pick up whenever you like."],
+    ["We miss you", "Your progress is waiting, exactly where you left it."],
+    ["Your questions are waiting", "Nothing is lost — it's all still here."],
+  ],
+  verset: [
+    ["A verse for the week", "“Thy word is a lamp unto my feet, and a light unto my path.” Psalm 119:105"],
+    ["A verse for the week", "“Let every thing that hath breath praise the LORD. Praise ye the LORD.” Psalm 150:6"],
+    ["A verse for the week", "“I can do all things through Christ which strengtheneth me.” Philippians 4:13"],
+    ["A verse for the week", "“The LORD is my shepherd; I shall not want.” Psalm 23:1"],
+    ["A verse for the week", "“The LORD bless thee, and keep thee:” Numbers 6:24"],
+    ["A verse for the week", "“For with God nothing shall be impossible.” Luke 1:37"],
+  ],
+  priere: [
+    ["Time to pray", "Take a moment with God."],
+    ["Your prayer time", "A few quiet minutes with Him."],
+    ["A time to pray", "Bring Him what you are carrying today."],
+  ],
+  lecture: [
+    ["Time to read your Bible", "A passage, even a short one: your Bible is waiting."],
+    ["Your reading time", "Open your Bible, even for just a few verses."],
+    ["The Word is waiting", "A moment of reading, just for you."],
+  ],
+  essai: [["Reminders are all set", "This is a test: everything is connected, right up to your phone."]],
+  bienvenue: [["Reminders are on", "This is where they'll arrive."]],
+};
+const MOTS_ES = {
+  serie: [
+    ["Tu llama de {n} días se apaga esta noche", "Una partida antes de medianoche, y sigue."],
+    ["{n} días seguidos, ¿y esta noche?", "Tres minutos bastan para mantener tu llama."],
+    ["No dejes escapar tus {n} días", "Una partida, aunque sea corta, mantiene tu llama encendida."],
+  ],
+  defi: [
+    ["¿Una partida hoy?", "Tres minutos bastan, y el día cuenta."],
+    ["Tu llama te espera", "Una partida rápida, y el día cuenta para ella."],
+    ["Tres minutos, unas preguntas", "Tu partida del día aún no se ha jugado."],
+    ["¿Jugamos hoy?", "Una partida para hacer brillar tu llama."],
+  ],
+  revoir: [
+    ["{n} pregunta{s} por repasar hoy", "Son tus errores pasados. Ahí es donde se progresa."],
+    ["Tu memoria pide {n} pregunta{s}", "Repasadas hoy, no volverán hasta dentro de tres días."],
+    ["Tienes {n} pregunta{s} por retomar", "Dos minutos, y suben un nivel."],
+  ],
+  absence: [
+    ["Han pasado {j} días", "Tu progreso está intacto. Retoma cuando quieras."],
+    ["Te echamos de menos", "Tu progreso te espera, justo donde lo dejaste."],
+    ["Tus preguntas te esperan", "No se ha perdido nada: todo sigue aquí."],
+  ],
+  verset: [
+    ["Un versículo para la semana", "«Lámpara es á mis pies tu palabra, y lumbrera á mi camino.» Salmo 119:105"],
+    ["Un versículo para la semana", "«Todo lo que respira alabe á JAH. Aleluya.» Salmo 150:6"],
+    ["Un versículo para la semana", "«Todo lo puedo en Cristo que me fortalece.» Filipenses 4:13"],
+    ["Un versículo para la semana", "«Jehová es mi pastor; nada me faltará.» Salmo 23:1"],
+    ["Un versículo para la semana", "«Jehová te bendiga, y te guarde:» Números 6:24"],
+    ["Un versículo para la semana", "«Porque ninguna cosa es imposible para Dios.» Lucas 1:37"],
+  ],
+  priere: [
+    ["Es hora de orar", "Tómate un momento con Dios."],
+    ["Tu momento de oración", "Unos minutos en calma, con Él."],
+    ["Un tiempo para orar", "Confíale lo que llevas hoy."],
+  ],
+  lecture: [
+    ["Es hora de leer tu Biblia", "Un pasaje, aunque sea corto: tu Biblia te espera."],
+    ["Tu momento de lectura", "Abre tu Biblia, aunque sea para unos versículos."],
+    ["La Palabra te espera", "Un momento de lectura, solo para ti."],
+  ],
+  essai: [["Los recordatorios están listos", "Es una prueba: todo está conectado hasta tu teléfono."]],
+  bienvenue: [["Los recordatorios están activados", "Aquí es donde llegarán."]],
+};
+
+/* La langue du joueur, lue dans le miroir ; le français si elle manque (un
+   miroir écrit avant la v326 n'en porte pas). */
+const MOTS_LANGUE = { fr: MOTS, en: MOTS_EN, es: MOTS_ES };
 /* La formulation du jour est TIRÉE DU JOUR, pas au hasard : deux envois du
    même jour (une reprise du service d'envoi, par exemple) donnent le même
    texte, et deux jours de suite en donnent deux différents. */
-function motsDuJour(genre, jour){
-  const liste = MOTS[genre] || MOTS.defi;
+function motsDuJour(genre, jour, langue){
+  const lot = (typeof MOTS_LANGUE !== "undefined" && MOTS_LANGUE[langue]) || MOTS;
+  const liste = lot[genre] || lot.defi;
   let h = 0;
   for(let i = 0; i < jour.length; i++) h = (h * 31 + jour.charCodeAt(i)) >>> 0;
   return liste[h % liste.length];
@@ -257,6 +366,38 @@ self.addEventListener("push", (e) => {
     const dec = typeof charge.decalage === "number" ? charge.decalage : -(new Date().getTimezoneOffset());
     const etat = await litEtat();
     const aujourdhui = jourLocal(dec);
+    const langue = etat && etat.langue;
+    const montrer = (genre, m) => self.registration.showNotification(m[0], {
+      body: m[1], icon: "./icon-192.png", badge: "./icon-192.png",
+      tag: genre, renotify: false, requireInteraction: false, data: { url: "./" },
+    });
+    /* ===== PRIÈRE ET LECTURE : L'HEURE QUE LE JOUEUR A CHOISIE (v326) =====
+       Ce ne sont pas des rappels du JEU : le joueur les a demandés, à une
+       heure qu'il a choisie. Ils ne passent donc ni par « actif » (les
+       rappels du jeu) ni par le plafond d'un rappel du jeu par jour
+       (« prevenu »), et ne le consomment pas. Le serveur ne les envoie qu'une
+       fois par jour (priere_le, lecture_le) ; l'appareil vérifie seulement
+       qu'ils sont toujours allumés ICI — éteints entre-temps, ils se taisent.
+       (« null >= 0 » est vrai en JavaScript : on exige un vrai nombre.) */
+    if(charge.genre === "priere" || charge.genre === "lecture"){
+      const h = etat && etat[charge.genre];
+      if(typeof h !== "number" || !(h >= 0)) return;
+      await montrer(charge.genre, motsDuJour(charge.genre, aujourdhui, langue));
+      return;
+    }
+    /* L'ESSAI PASSE OUTRE LES GARDE-FOUS — c'est tout son intérêt : il prouve
+       la chaîne entière (clés, signature, service d'envoi, appareil) sans
+       attendre le soir où un vrai rappel aurait lieu, et il s'affiche sur
+       tout appareil abonné, rappels du jeu allumés ou non (prière, lecture).
+       Il ne consomme pas le « déjà prévenu aujourd'hui » : un essai ne doit
+       pas voler le rappel du jour. (Avant la v326, il passait APRÈS ces
+       garde-fous, contrairement à ce que disait son commentaire.) */
+    /* (v326) « bienvenue » est l'essai qu'un joueur reçoit, une fois, en
+       allumant un rappel : même chemin, ses propres mots. */
+    if(charge.genre === "essai" || charge.genre === "bienvenue"){
+      await montrer(charge.genre, motsDuJour(charge.genre, aujourdhui, langue));
+      return;
+    }
     /* Les garde-fous, dans l'ordre où ils comptent :
        - le joueur a bien accepté ;
        - on ne l'a pas déjà prévenu aujourd'hui ;
@@ -266,20 +407,14 @@ self.addEventListener("push", (e) => {
     if(!etat || !etat.actif) return;
     if(etat.prevenu === aujourdhui) return;      // un seul rappel par jour, tous motifs confondus
 
-    const CONNUS = ["serie", "defi", "revoir", "absence", "verset", "essai"];
+    /* (v326) priere, lecture, essai et bienvenue sont servis plus haut ; ils restent nommés
+       ici pour que la liste dise tout ce que le serveur peut envoyer. */
+    const CONNUS = ["serie", "defi", "revoir", "absence", "verset", "priere", "lecture", "essai", "bienvenue"];
     const genre = CONNUS.indexOf(charge.genre) >= 0 ? charge.genre : "serie";
     let titre = "", corps = "";
     const val = { n: 0, j: 0 };
 
-    if(genre === "essai"){
-      /* L'ESSAI PASSE OUTRE LES GARDE-FOUS, ET C'EST TOUT SON INTÉRÊT : il
-         prouve la chaîne entière (clés, signature, service d'envoi, appareil)
-         sans attendre le soir où un vrai rappel aurait lieu. Il ne consomme
-         pas le « déjà prévenu aujourd'hui » : un essai ne doit pas voler le
-         rappel du jour. */
-      titre = "Les rappels sont bien branch\u00e9s";
-      corps = "C'est un essai. Tu recevras au plus un rappel par jour.";
-    } else if(genre === "serie"){
+    if(genre === "serie"){
       /* - il a une série à perdre (deux jours au moins) ;
          - il n'a PAS déjà joué le défi aujourd'hui ;
          - il l'a joué hier, donc la série est encore rattrapable. */
@@ -329,20 +464,13 @@ self.addEventListener("push", (e) => {
     }
 
     if(!titre){
-      const m = motsDuJour(genre, aujourdhui);
+      const m = motsDuJour(genre, aujourdhui, langue);
       titre = remplir(m[0], val);
       corps = remplir(m[1], val);
     }
 
-    await self.registration.showNotification(titre, {
-      body: corps,
-      icon: "./icon-192.png", badge: "./icon-192.png",
-      tag: genre, renotify: false, requireInteraction: false,
-      data: { url: "./" },
-    });
-    /* on note le jour : même si un second envoi arrivait, il resterait muet.
-       Sauf pour un essai, qui ne doit pas voler le rappel du jour. */
-    if(genre === "essai") return;
+    await montrer(genre, [titre, corps]);
+    /* on note le jour : même si un second envoi arrivait, il resterait muet. */
     try {
       const r = indexedDB.open("bibletrivia", 1);
       r.onsuccess = () => { try {

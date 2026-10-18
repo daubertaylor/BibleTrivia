@@ -1,6 +1,11 @@
 /* Fonction Supabase (Deno) — les rappels.
-   À déclencher une fois par heure. CINQ MOTIFS, jamais plus d'un envoi par
-   joueur et par jour, et toujours à une heure qui a du sens chez lui :
+   À déclencher TOUTES LES CINQ MINUTES (cron.sql, depuis la v326 : les
+   rappels de prière et de lecture tombent à l'heure que le joueur choisit,
+   à la minute près). Deux familles :
+
+   LES RAPPELS DU JEU — cinq motifs, jamais plus d'un envoi par joueur et par
+   jour (jeu_le), seulement s'il les a allumés (jeu), et toujours à une heure
+   qui a du sens chez lui :
 
      série en jeu       19 h   la série peut encore être sauvée ce soir
      défi du jour       19 h   pas relevé aujourd'hui, mais relevé dans la semaine
@@ -18,7 +23,17 @@
    Ce plafond n'est pas décoratif : un abonnement push est déclaré
    « userVisibleOnly », donc chaque envoi DOIT produire une notification.
    Envoyer à tout le monde ferait afficher au navigateur son propre message
-   « ce site a été mis à jour en arrière-plan » — exactement ce qu'on évite. */
+   « ce site a été mis à jour en arrière-plan » — exactement ce qu'on évite.
+
+   LA PRIÈRE ET LA LECTURE (v326) — demandées par le joueur, à l'heure qu'il a
+   choisie (priere, lecture : des minutes après minuit, chez lui ; null =
+   éteint). Une fois par jour chacune (priere_le, lecture_le), au premier
+   passage qui suit l'heure choisie. Elles ne comptent pas dans le plafond du
+   jeu : ce ne sont pas des rappels du jeu, c'est un rendez-vous que le joueur
+   s'est donné. */
+/* DÉPLOIEMENT (v326) : Edge Functions → rappels → coller ce fichier → Deploy,
+   et « Verify JWT » DÉSACTIVÉ (voir QUI A LE DROIT D'APPELER, plus bas). La
+   tâche des cinq minutes est posée par notifications/installer.sql. */
 import { createClient } from "npm:@supabase/supabase-js@2";
 import webpush from "npm:web-push@3.6.7";
 
@@ -54,6 +69,17 @@ const VERSET_JOURS = 14;
    aucun compteur à tenir côté serveur pour éviter la répétition — c'est la
    forme de la condition qui l'empêche. */
 const ABSENCES = [3, 7, 30];
+/* LA FENÊTRE D'UN RENDEZ-VOUS À HEURE CHOISIE : le premier passage dans
+   l'heure qui suit. Toutes les cinq minutes, il tombe dans les cinq minutes ;
+   si un passage saute, le suivant le rattrape ; et une tâche restée à une
+   fois par heure le servirait encore. Le « déjà envoyé aujourd'hui »
+   (priere_le, lecture_le) empêche qu'il parte deux fois. */
+const FENETRE = 60;
+/* La version de ce code, dans chaque réponse : la page « Rappels » de la
+   Modération dit ainsi si la fonction déployée est bien celle-ci. */
+const VERSION = 326;
+/* Un essai demandé par un téléphone pour lui-même : un par minute au plus. */
+const ESSAI_DELAI = 60000;
 
 /* ===== UN 500 NE DIT RIEN. CETTE FONCTION, SI. =====
    Trois secrets à poser à la main, donc trois occasions de se tromper : un nom
@@ -97,15 +123,58 @@ async function paireCoherente(pub: string, priv: string): Promise<string> {
   return "";
 }
 
+/* ===== QUI A LE DROIT D'APPELER ? (v326) =====
+   Avant, la tâche devait porter la clé service_role, recopiée à la main dans
+   cron.sql : une clé qui ouvre tout le projet, et une étape de plus où tout
+   pouvait casser sans bruit. Maintenant installer.sql fabrique une CLÉ
+   INTERNE (public.rappels_reglage, lisible par personne de l'extérieur) et la
+   tâche l'envoie dans l'en-tête « x-rappels » ; la fonction la relit avec ses
+   propres droits et compare. L'ancienne tâche (service_role) reste acceptée.
+   Pourquoi « Verify JWT » doit être désactivé : le jeu parle à Supabase avec
+   une clé « publishable » (sb_publishable_…), qui n'est pas un JWT, et la
+   tâche n'en porte pas. La porte d'entrée de Supabase les refuserait toutes
+   les deux avant même la fonction ; c'est donc la fonction qui garde la
+   porte, et elle n'ouvre à un inconnu que deux choses sans danger : son état
+   (version, clés valides ou non — jamais leur valeur) et un essai envoyé au
+   SEUL téléphone qui le demande, une fois par minute. */
+function cleServeur(): string {
+  const k = (Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? "").trim();
+  if (k) return k;
+  /* Un projet passé aux nouvelles clés les reçoit en JSON. */
+  try {
+    const o = JSON.parse(Deno.env.get("SUPABASE_SECRET_KEYS") ?? "{}");
+    return String(o.default ?? Object.values(o)[0] ?? "").trim();
+  } catch { return ""; }
+}
+/* Ce qu'un service d'envoi répond quand il refuse, sans adresse dedans (une
+   adresse d'envoi est propre à un téléphone). */
+const raison = (e: any) =>
+  String(e?.body || e?.message || e || "").replace(/https?:\/\/\S+/g, "…").replace(/\s+/g, " ").trim().slice(0, 300);
+
 Deno.serve(async (req: Request) => {
+  /* Le jeu appelle depuis le navigateur (github.io) : sans ces en-têtes, le
+     navigateur bloquerait la réponse avant que le jeu ne la lise. */
+  const cors = {
+    "Access-Control-Allow-Origin": "*",
+    "Access-Control-Allow-Headers": req.headers?.get?.("access-control-request-headers") || "authorization, x-client-info, apikey, content-type",
+    "Access-Control-Allow-Methods": "POST, OPTIONS",
+  };
+  if (req.method === "OPTIONS") return new Response("ok", { headers: cors });
+  const repondre = (corps: Record<string, unknown>, status = 200) =>
+    Response.json({ version: VERSION, ...corps }, { status, headers: cors });
+
   /* ===== UN ESSAI, POUR VOIR LA CHAÎNE MARCHER TOUT DE SUITE =====
      Sans lui, la première preuve que tout est branché arriverait un soir à
      19 h, des jours plus tard, et un défaut se découvrirait à l'aveugle.
      Appelée avec { "essai": true }, la fonction écrit à TOUS les abonnés sans
-     regarder ni l'heure ni la série. Ce n'est pas une porte ouverte : l'appel
-     exige déjà la clé service_role, celle qui ouvre tout le projet. */
-  let essai = false;
-  try { essai = !!(await req.json())?.essai; } catch { /* pas de corps : passage normal */ }
+     regarder ni l'heure ni la série — réservé à la tâche (clé interne) et à
+     la clé service_role. Avec { "essai_moi": "<adresse>" }, elle n'écrit
+     qu'à ce téléphone-là : c'est le bouton « M'envoyer un essai » de la
+     Modération, et la confirmation qu'un joueur reçoit en allumant un rappel
+     (« bienvenue »). */
+  let corpsRecu: any = {};
+  try { corpsRecu = (await req.json()) ?? {}; } catch { /* pas de corps : passage normal */ }
+  const essai = !!corpsRecu.essai;
 
   /* Les espaces au bout sont invisibles et suffisent à tout casser. */
   const sujet = (Deno.env.get("VAPID_SUJET") ?? "").trim();
@@ -114,7 +183,7 @@ Deno.serve(async (req: Request) => {
 
   const soucis: string[] = [];
   if (!sujet) soucis.push("VAPID_SUJET est absent ou vide");
-  else if (!/^mailto:\S+@\S+$/.test(sujet)) soucis.push(`VAPID_SUJET doit ressembler à « mailto:toi@exemple.fr » (reçu : « ${sujet} »)`);
+  else if (!/^mailto:\S+@\S+$/.test(sujet)) soucis.push(`VAPID_SUJET doit ressembler à « mailto:toi@exemple.fr » (il fait ${sujet.length} caractères et ne commence pas ainsi)`);
   if (!pub) soucis.push("VAPID_PUBLIQUE est absente ou vide — vérifie l'orthographe du nom du secret");
   else if (pub.length !== 87) soucis.push(`VAPID_PUBLIQUE fait ${pub.length} caractères au lieu de 87`);
   if (!priv) soucis.push("VAPID_PRIVEE est absente ou vide — vérifie l'orthographe du nom du secret");
@@ -123,15 +192,70 @@ Deno.serve(async (req: Request) => {
     const m = await paireCoherente(pub, priv);
     if (m) soucis.push(m);
   }
-  if (soucis.length) return Response.json({ erreur: "clés VAPID", details: soucis }, { status: 400 });
+  /* L'ÉTAT, POUR LE JEU : la version, et les clés sont-elles bonnes ? La clé
+     PUBLIQUE est rendue en entier — elle est publique par définition, et le
+     jeu la compare à la sienne : un téléphone abonné avec une autre clé
+     publique ne recevra jamais rien (le service d'envoi refuse la signature). */
+  if (corpsRecu.etat) return repondre({ vapid: soucis.length ? soucis : "ok", pub: pub || null });
+  if (soucis.length) return repondre({ erreur: "clés VAPID", details: soucis }, 400);
 
   webpush.setVapidDetails(sujet, pub, priv);
-  const db = createClient(Deno.env.get("SUPABASE_URL")!, Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!);
+  const db = createClient(Deno.env.get("SUPABASE_URL")!, cleServeur());
+
+  /* ===== L'ESSAI D'UN SEUL TÉLÉPHONE ===== */
+  if (typeof corpsRecu.essai_moi === "string" && corpsRecu.essai_moi) {
+    const ep = corpsRecu.essai_moi;
+    const { data: lignes, error: e1 } = await db.from("push_subs").select("*").eq("endpoint", ep);
+    if (e1) return repondre({ erreur: "table", details: [e1.message] }, 500);
+    const a = (lignes ?? [])[0];
+    if (!a) return repondre({ erreur: "inconnu", details: ["ce téléphone n'est pas inscrit sur le serveur"] }, 404);
+    if (!("essai_le" in a)) return repondre({ erreur: "table", details: ["la table n'a pas la colonne essai_le : colle notifications/installer.sql dans l'éditeur SQL"] }, 400);
+    if (a.essai_le && Date.now() - Date.parse(a.essai_le) < ESSAI_DELAI) return repondre({ erreur: "patience", details: ["un essai par minute"] }, 429);
+    if (!a.abonnement || !a.abonnement.endpoint) return repondre({ erreur: "abonnement", details: ["l'abonnement enregistré est incomplet : rouvre le jeu, il se réinscrit"] }, 400);
+    await db.from("push_subs").update({ essai_le: new Date(Date.now()).toISOString() }).eq("endpoint", ep);
+    try {
+      /* Les genres s'écrivent en toutes lettres : banc-essai/mots-rappels.js
+         vérifie que l'appareil sait dire chacun de ceux qu'on envoie. */
+      const charge = corpsRecu.genre === "bienvenue" ? { genre: "bienvenue", decalage: a.decalage | 0 }
+                                                     : { genre: "essai", decalage: a.decalage | 0 };
+      await webpush.sendNotification(a.abonnement, JSON.stringify(charge));
+      return repondre({ envoye: true });
+    } catch (e: any) {
+      const code = e?.statusCode | 0;
+      if (code === 404 || code === 410) await db.from("push_subs").delete().eq("endpoint", ep);
+      return repondre({ erreur: "envoi", code, details: [raison(e)] }, 502);
+    }
+  }
+
+  /* ===== LE RESTE EST RÉSERVÉ : LA TÂCHE, OU LA CLÉ SERVICE_ROLE ===== */
+  const enTete = (req.headers?.get?.("x-rappels") ?? "").trim();
+  const porteur = (req.headers?.get?.("authorization") ?? "").replace(/^Bearer\s+/i, "").trim();
+  const service = cleServeur();
+  let interne = !!porteur && !!service && porteur === service;
+  let sansCle = false;
+  if (!interne && enTete) {
+    const { data: r, error: e2 } = await db.from("rappels_reglage").select("cle").eq("id", 1);
+    if (e2) sansCle = true;
+    const cle = (r ?? [])[0]?.cle;
+    interne = typeof cle === "string" && cle.length >= 32 && cle === enTete;
+  }
+  if (!interne) {
+    return repondre({ erreur: "accès", details: [sansCle
+      ? "la clé interne est introuvable : colle notifications/installer.sql dans l'éditeur SQL"
+      : "appel sans la clé interne : la tâche « rappels » doit être celle de notifications/installer.sql"] }, 401);
+  }
 
   /* On ne filtre plus sur la série : un joueur absent depuis un mois a
      justement une série à zéro. Le tri se fait plus bas, cas par cas. */
   const { data: abos, error } = await db.from("push_subs").select("*");
-  if (error) return new Response(error.message, { status: 500 });
+  if (error) return repondre({ erreur: "table", details: [error.message] }, 500);
+  /* UNE TABLE D'AVANT LA V326 FERAIT SONNER DOUZE FOIS PAR HEURE. Sans
+     jeu_le, rien n'empêche un motif du soir de repartir à chaque passage de
+     cinq minutes. On refuse donc de tourner, en disant quoi faire, plutôt
+     que de déranger quelqu'un douze fois. */
+  if (abos && abos.length && !("jeu_le" in abos[0])) {
+    return repondre({ erreur: "table", details: ["la table push_subs n'a pas les colonnes de la v326 (jeu, priere, lecture…) : colle notifications/installer.sql dans l'éditeur SQL, puis relance"] }, 400);
+  }
 
   const jour = (dec: number, decalageJours = 0) => {
     const d = new Date(Date.now() + dec * 60000 + decalageJours * 86400000);
@@ -142,8 +266,31 @@ Deno.serve(async (req: Request) => {
   const ecart = (a: string, b: string) =>
     Math.round((Date.parse(b + "T00:00:00Z") - Date.parse(a + "T00:00:00Z")) / 86400000);
 
-  const compte: Record<string, number> = { serie: 0, defi: 0, revoir: 0, verset: 0, absence: 0, essai: 0 };
-  let envoyes = 0, retires = 0;
+  const compte: Record<string, number> = { serie: 0, defi: 0, revoir: 0, verset: 0, absence: 0, priere: 0, lecture: 0, essai: 0 };
+  let envoyes = 0, retires = 0, echecs = 0;
+  /* Le premier refus du passage, pour la page « Rappels » : le code du
+     service d'envoi et ce qu'il dit (403 : la signature ne va pas avec la clé
+     publique de l'abonnement ; 400 : abonnement abîmé…). */
+  let dernierEchec: Record<string, unknown> | null = null;
+  /* Un envoi, et le ménage si l'appareil n'existe plus (404/410 : il a
+     désinstallé ou révoqué). Rend vrai si c'est parti. */
+  const envoyer = async (a: any, charge: Record<string, unknown>) => {
+    try {
+      await webpush.sendNotification(a.abonnement, JSON.stringify(charge));
+      envoyes++;
+      return true;
+    } catch (e: any) {
+      if (e?.statusCode === 404 || e?.statusCode === 410) {
+        await db.from("push_subs").delete().eq("endpoint", a.endpoint);
+        retires++;
+        a.__parti = true;
+      } else {
+        echecs++;
+        if (!dernierEchec) dernierEchec = { code: e?.statusCode | 0, raison: raison(e) };
+      }
+      return false;
+    }
+  };
   for (const a of abos ?? []) {
     const dec = a.decalage | 0;
     if (essai) {
@@ -153,14 +300,38 @@ Deno.serve(async (req: Request) => {
       } catch (e: any) {
         if (e?.statusCode === 404 || e?.statusCode === 410) {
           await db.from("push_subs").delete().eq("endpoint", a.endpoint); retires++;
+        } else {
+          echecs++;
+          if (!dernierEchec) dernierEchec = { code: e?.statusCode | 0, raison: raison(e) };
         }
       }
       continue;
     }
     const dLocale = new Date(Date.now() + dec * 60000);
     const heureLocale = dLocale.getUTCHours();
+    const minutesLocales = heureLocale * 60 + dLocale.getUTCMinutes();
     const jourSemaine = dLocale.getUTCDay();          // 0 = dimanche
     const aujourdhui = jour(dec);
+
+    /* 0. LA PRIÈRE ET LA LECTURE, à l'heure choisie (v326). */
+    for (const [g, charge] of [["priere", { genre: "priere", decalage: dec }], ["lecture", { genre: "lecture", decalage: dec }]] as const) {
+      const h = a[g];
+      if (typeof h !== "number" || !(h >= 0 && h < 1440)) continue;
+      if (a[g + "_le"] === aujourdhui) continue;
+      if (!(minutesLocales >= h && minutesLocales < h + FENETRE)) continue;
+      if (a.__parti) break;
+      if (await envoyer(a, charge)) {
+        compte[g]++;
+        a[g + "_le"] = aujourdhui;
+        await db.from("push_subs").update({ [g + "_le"]: aujourdhui }).eq("endpoint", a.endpoint);
+      }
+    }
+    if (a.__parti) continue;
+    /* LES RAPPELS DU JEU : seulement s'ils sont allumés, et une fois par jour.
+       La tâche passe toutes les cinq minutes : sans « jeu_le », un motif du
+       soir repartirait douze fois dans l'heure. */
+    if (a.jeu === false) continue;
+    if (a.jeu_le === aujourdhui) continue;
     const joueAujourdhui = a.dernier === aujourdhui;
     const depuis = a.vu ? ecart(a.vu, aujourdhui) : 9999;
 
@@ -218,16 +389,10 @@ Deno.serve(async (req: Request) => {
     }
 
     if (!charge) continue;
-    try {
-      await webpush.sendNotification(a.abonnement, JSON.stringify(charge));
-      envoyes++;
-    } catch (e: any) {
-      /* 404/410 : l'appareil a désinstallé ou révoqué — on nettoie. */
-      if (e?.statusCode === 404 || e?.statusCode === 410) {
-        await db.from("push_subs").delete().eq("endpoint", a.endpoint);
-        retires++;
-      }
+    if (await envoyer(a, charge)) {
+      a.jeu_le = aujourdhui;
+      await db.from("push_subs").update({ jeu_le: aujourdhui }).eq("endpoint", a.endpoint);
     }
   }
-  return Response.json({ envoyes, ...compte, retires, examines: abos?.length ?? 0 });
+  return repondre({ envoyes, ...compte, retires, echecs, dernier_echec: dernierEchec, examines: abos?.length ?? 0 });
 });

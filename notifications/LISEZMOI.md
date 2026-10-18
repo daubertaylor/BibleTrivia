@@ -1,5 +1,92 @@
 # Les rappels
 
+> ## ✅ CE QU'IL FAUT FAIRE, DANS L'ORDRE (à jour au 18/10/2026, v326)
+>
+> Relevé le 18/10 sur la vraie base, avec la seule clé publique : la fonction
+> d'inscription `push_enregistrer` **n'existe pas** en ligne, la colonne
+> `revoir` non plus, et la table ne laisse plus rien lire (elle montrait huit
+> abonnements le 28/09). C'est ce qui donne « Impossible d'activer le rappel
+> pour le moment ». Rien de tout ça ne se règle depuis le jeu : il faut la
+> console Supabase. **Trois gestes, une fois, dans cet ordre** — et plus
+> aucune clé `service_role` à recopier nulle part :
+>
+> 1. **SQL Editor** → New query → colle **`notifications/installer.sql` en
+>    entier** → **Run**. Tout le serveur en un collage : la table et ses
+>    colonnes, le verrou, la porte d'inscription, une **clé interne** que la
+>    base fabrique elle-même, la **tâche des cinq minutes** qui appelle la
+>    fonction avec cette clé, et `rappels_etat()` que le jeu lit pour dire ce
+>    qui manque. Il se recolle sans risque, par-dessus n'importe quelle
+>    installation d'avant : aucun joueur ne perd rien.
+>    S'il écrit « pg_cron indisponible » ou « pg_net indisponible » :
+>    **Database → Extensions** → active `pg_cron` et `pg_net` → recolle.
+> 2. **Edge Functions** → `rappels` → **Code** → remplace tout par
+>    **`notifications/rappels.ts`** → **Deploy**. (Si elle n'existe pas :
+>    *Deploy a new function* → *Via Editor* → nom `rappels`.) Ses trois
+>    secrets restent ceux qui y sont : `VAPID_PUBLIQUE` (celle du jeu),
+>    `VAPID_PRIVEE` (la tienne, qui ne passe jamais par une conversation),
+>    `VAPID_SUJET` = `mailto:yadaquiz.app@gmail.com`.
+> 3. **Seulement ensuite**, dans la même fonction → **Details** → désactive
+>    **Verify JWT** (parfois écrit *Enforce JWT verification*) → **Save**.
+>    Le jeu parle à Supabase avec une clé *publishable*, qui n'est pas un
+>    JWT, et la tâche n'en porte pas : la porte de Supabase les refuserait
+>    toutes les deux. C'est donc la fonction qui garde sa porte (la clé
+>    interne). **Pas avant l'étape 2** : sans porte, l'ancienne fonction,
+>    qui ne vérifie rien, partirait toutes les cinq minutes.
+>
+> **Pour vérifier, sans rien deviner** : dans le jeu installé, Groupes →
+> bouclier → **Modération** → carte **« Rappels »**. Chaque maillon a sa
+> ligne (la base, ce téléphone, la tâche, la dernière réponse de la fonction,
+> la fonction elle-même et ses clés) : vert, ou une phrase qui dit quoi faire
+> et où. **« M'envoyer un essai »** fait arriver une notification sur ce
+> téléphone en quelques secondes — ou dit pourquoi elle ne part pas, jusqu'au
+> refus du service d'envoi. Sans le jeu sous la main, la même chose se lit
+> dans le SQL Editor : `select public.rappels_etat();` (la tâche, son dernier
+> passage, la dernière réponse de la fonction).
+>
+> Les joueurs qui avaient allumé les rappels n'ont rien à refaire : depuis la
+> v324, chaque lancement réinscrit le téléphone. Et en allumant un rappel, un
+> joueur reçoit une fois « Les rappels sont activés » : la preuve, sur son
+> propre écran, que toute la chaîne tient.
+>
+> `table.sql`, `verrouiller.sql` et `cron.sql` restent pour l'histoire :
+> `installer.sql` les contient (la table, le verrou), et remplace `cron.sql`.
+
+## La prière et la lecture, à l'heure choisie (v326)
+
+« Dans les réglages, un bouton qui rappelle de prier à une certaine heure de
+la journée, et la lecture aussi. » Deux rangées sous « Rappels », dans le jeu
+installé : **Prière** et **Lecture de la Bible**, chacune avec son heure (le
+vrai sélecteur du téléphone) et son interrupteur.
+
+Ce ne sont pas des rappels du jeu. Ceux-là doivent rester rares — au plus un
+par jour —, parce que c'est nous qui frappons. Ici, c'est le joueur qui prend
+rendez-vous : on tient seulement sa promesse. Ils ne comptent donc pas dans
+le plafond du jeu, et ne disent rien du jeu : « C'est l'heure de prier »,
+« C'est l'heure de lire ta Bible », dans la langue du joueur.
+
+Ce que le serveur en sait : deux heures, en minutes après minuit chez le
+joueur (`priere`, `lecture` ; vide = éteint), et le jour du dernier envoi de
+chaque sorte (`priere_le`, `lecture_le`, `jeu_le`). Une heure choisie déjà
+passée aujourd'hui commence demain. Éteindre les rappels du jeu (`jeu`) ne
+coupe pas la prière ni la lecture : l'abonnement reste tant qu'un rappel est
+allumé.
+
+**Pourquoi toutes les cinq minutes.** Avant, la tâche passait une fois par
+heure, et chaque motif du jeu n'avait qu'un passage dans son heure. Toutes
+les cinq minutes, rien n'empêcherait un motif du soir de repartir douze fois :
+c'est `jeu_le` qui l'en empêche. La fonction refuse d'ailleurs de tourner sur
+une table d'avant la v326 (sans `jeu_le`) et dit quoi coller, plutôt que de
+déranger quelqu'un douze fois. Coût : 288 appels par jour, très loin des
+limites gratuites. Banc : `banc-essai/rappels.js` (la vraie fonction, cinq
+passages dans l'heure, rien ne se répète).
+
+**Et ils parlent la langue du joueur.** Les rappels n'existaient qu'en
+français, et parlaient encore d'un « défi du jour » qui n'est plus dans le
+jeu. Ils disent maintenant « ta flamme » et « une partie », en français, en
+anglais et en espagnol ; les versets du dimanche sont recopiés mot pour mot
+de la version de chaque langue (Segond 1910, King James 1769, Reina-Valera
+1909). Banc : `banc-essai/mots-rappels.js`.
+
 > ## 🔴 RELEVÉ À NOUVEAU LE 28/09/2026 : RIEN N'A BOUGÉ
 >
 > « Et les rappels aussi ne marchent pas je crois. » Vérifié le jour même sur

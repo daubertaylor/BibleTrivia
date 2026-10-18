@@ -4309,6 +4309,26 @@
   .set-ico.bib{ background:linear-gradient(150deg, #D8A85E, #A9762C); box-shadow:inset 0 1px 0 rgba(255,255,255,0.26), 0 2px 7px rgba(169,118,44,0.24); }
   /* Le gris-bleu des outils : la ligne n'est pas un réglage de jeu, c'est un
      interrupteur d'atelier. Elle ne doit pas attirer l'œil plus que le son. */
+  /* (v326) La prière : la bougie, en indigo. La lecture : le livre, en rose
+     — pas le bronze de « Version de la Bible », juste en dessous. */
+  .set-ico.pri{ background:linear-gradient(150deg, #8C93F2, #5A62D8); box-shadow:inset 0 1px 0 rgba(255,255,255,0.26), 0 2px 7px rgba(90,98,216,0.24); }
+  .set-ico.lec{ background:linear-gradient(150deg, #F28AA8, #D9577F); box-shadow:inset 0 1px 0 rgba(255,255,255,0.26), 0 2px 7px rgba(217,87,127,0.24); }
+  /* L'HEURE SE TOUCHE — TOUT LE TEXTE DE LA RANGÉE LA CHOISIT. Le sous-titre
+     dit « Chaque jour à 07:00 » au format du téléphone ; le vrai sélecteur
+     d'heure (la roue sur iPhone, l'horloge sur Android) est posé dessus,
+     invisible, sur le nom et le sous-titre : une grande cible, et le même
+     dessin partout. Une pilule à côté du nom coupait « Lecture de la Bible »
+     sur deux lignes, trois avec le sous-titre. L'heure est grise quand le
+     rappel est éteint, corail quand il sonne — mais toujours réglable : on
+     choisit son heure, puis on allume. La cible déborde d'un demi-rem en
+     haut et en bas : toute la hauteur de la rangée (48 px). 16 px : en
+     dessous, iOS agrandit la page en touchant un champ. */
+  .rh-txt{ position:relative; cursor:pointer; -webkit-tap-highlight-color:transparent; }
+  .rh-val{ display:inline-block; margin-left:0.1rem; padding:0 0.42rem; border-radius:var(--r-full);
+    background:rgba(58,42,26,0.07); color:var(--ink-soft); font-weight:600; font-variant-numeric:tabular-nums; }
+  .rh-row.on .rh-val{ color:var(--primary-dark); background:rgba(238,74,40,0.10); }
+  .rh-heure{ position:absolute; left:0; top:-0.5rem; width:100%; height:calc(100% + 1rem); margin:0; padding:0; border:0; opacity:0;
+    -webkit-appearance:none; appearance:none; font-size:16px; cursor:pointer; }
   .set-ico.rap{ background:linear-gradient(150deg, #9AA7B8, #6B7A8F); box-shadow:inset 0 1px 0 rgba(255,255,255,0.26), 0 2px 7px rgba(90,104,124,0.24); }
   /* Le choix de version réutilise le chip du jeu — même arrondi, même texte,
      même corail à la sélection. Une version dont le texte n'est pas livré reste
@@ -5725,6 +5745,20 @@
   .mod-tete small{ font-size:0.78rem; color:var(--ink-soft); white-space:nowrap; }
   .mod-l{ margin:0; font-size:0.86rem; line-height:1.45; color:var(--ink-soft); }
   .mod-l b{ color:var(--ink); }
+  /* (v326) LES RAPPELS, VUS DE LA MODÉRATION : une ligne par maillon de la
+     chaîne, et une pastille pleine qui dit d'un coup d'œil s'il tient. */
+  .rd-l{ display:flex; align-items:flex-start; gap:0.6rem; padding:0.3rem 0; }
+  .rd-m{ width:1.35rem; height:1.35rem; flex-shrink:0; border-radius:50%; padding:0.3rem; color:#fff; display:flex; margin-top:0.04rem; }
+  .rd-m svg{ width:100%; height:100%; }
+  .rd-m.ok{ background:linear-gradient(150deg, #3DBB7E, #22955C); }
+  .rd-m.non{ background:linear-gradient(150deg, #F44E2C, #DE3616); }
+  .rd-m.att{ background:linear-gradient(150deg, #9AA3B0, #7D8794); }
+  .rd-t{ font-size:0.86rem; line-height:1.45; color:var(--ink); overflow-wrap:anywhere; }
+  /* Sa propre classe, pas « mod-carte » : une carte de modération est UN
+     signalement à traiter, et la file vide se reconnaît à ce qu'il n'y en a
+     plus aucune (banc-essai/groupes.js). */
+  .rd-carte{ display:flex; flex-direction:column; gap:0.35rem; }
+  .rd-carte .mod-act{ margin-top:0.35rem; }
   .mod-texte{ margin:0.15rem 0; padding:0.6rem 0.8rem; border-radius:var(--r-m); background:rgb(252,248,241); font-size:0.92rem; line-height:1.45;
     white-space:pre-wrap; overflow-wrap:anywhere; }
   .mod-act{ display:flex; flex-wrap:wrap; gap:0.5rem; margin-top:0.35rem; }
@@ -6269,6 +6303,52 @@ const TEXTES = {
     "tout en haut du script, et colle l'URL + la clé « anon » de ton projet Supabase. Aucune table à créer. Les instructions détaillées sont dans le message.":"at the very top of the script, and paste the URL + the “anon” key of your Supabase project. No table to create. The detailed instructions are in the message.",
     /* les rappels */
     "Rappels":"Reminders",
+    "Prière":"Prayer",
+    "Lecture de la Bible":"Bible reading",
+    "Chaque jour à {heure}":"Every day at {heure}",
+    "Heure : {rappel}":"Time: {rappel}",
+    "Actualiser":"Refresh",
+    "M'envoyer un essai":"Send me a test",
+    "Copier la clé publique":"Copy the public key",
+    "Clé copiée":"Key copied",
+    "La porte de Supabase refuse le jeu (« Verify\u00a0JWT » activé) : remplace d'abord le code de la fonction par notifications/rappels.ts → Deploy, PUIS désactive « Verify\u00a0JWT ».":"Supabase's gate refuses the game (“Verify\u00a0JWT” is on): first replace the function's code with notifications/rappels.ts → Deploy, THEN turn off “Verify\u00a0JWT”.",
+    "La fonction « rappels » n'existe pas : Edge Functions → Deploy a new function → nom « rappels » → colle notifications/rappels.ts → Deploy.":"The “rappels” function doesn't exist: Edge Functions → Deploy a new function → name “rappels” → paste notifications/rappels.ts → Deploy.",
+    "La fonction « rappels » est l'ancienne : Edge Functions → rappels → remplace son code par notifications/rappels.ts → Deploy.":"The “rappels” function is the old one: Edge Functions → rappels → replace its code with notifications/rappels.ts → Deploy.",
+    "La table des rappels n'est pas à jour : recolle installer.sql.":"The reminders table is out of date: paste installer.sql again.",
+    "Secrets VAPID de la fonction : {d}":"The function's VAPID secrets: {d}",
+    "La fonction n'a pas encore répondu à la tâche : attends cinq minutes, puis Actualiser.":"The function hasn't answered the task yet: wait five minutes, then Refresh.",
+    "La réponse de la fonction ne se lit pas : {m}":"The function's answer can't be read: {m}",
+    "La tâche n'a pas pu joindre la fonction : {m}":"The task couldn't reach the function: {m}",
+    "Dernier passage ({quand}) : rien à envoyer.":"Last run ({quand}): nothing to send.",
+    "Dernier passage ({quand}) : 1 rappel envoyé.":"Last run ({quand}): 1 reminder sent.",
+    "Dernier passage ({quand}) : {n} rappels envoyés.":"Last run ({quand}): {n} reminders sent.",
+    "{n} envoi refusé par le service d'envoi (code {code}) : {raison}":"{n} delivery refused by the push service (code {code}): {raison}",
+    "{n} envois refusés par le service d'envoi (code {code}) : {raison}":"{n} deliveries refused by the push service (code {code}): {raison}",
+    "La fonction refuse la clé interne de la tâche : recolle installer.sql.":"The function refuses the task's internal key: paste installer.sql again.",
+    "La fonction a répondu {s} : {m}":"The function answered {s}: {m}",
+    "Sur ce téléphone, les rappels n'arrivent que dans le jeu installé sur l'écran d'accueil.":"On this phone, reminders only arrive in the game installed on the home screen.",
+    "Ce téléphone a refusé les notifications : Réglages du téléphone → Notifications → Yada.":"This phone has refused notifications: phone Settings → Notifications → Yada.",
+    "Ce téléphone n'est pas abonné : allume un rappel dans les Réglages du jeu, puis Actualiser.":"This phone isn't subscribed: turn on a reminder in the game's Settings, then Refresh.",
+    "La base n'a pas le script des rappels : Supabase → SQL Editor → colle notifications/installer.sql → Run.":"The database doesn't have the reminders script: Supabase → SQL Editor → paste notifications/installer.sql → Run.",
+    "La base ne répond pas : {m}":"The database isn't answering: {m}",
+    "Script des rappels installé · {n} téléphone inscrit":"Reminders script installed · {n} phone registered",
+    "Script des rappels installé · {n} téléphones inscrits":"Reminders script installed · {n} phones registered",
+    "Ce téléphone est inscrit.":"This phone is registered.",
+    "Ce téléphone n'est pas inscrit : éteins puis rallume un rappel dans les Réglages du jeu.":"This phone isn't registered: turn a reminder off and on again in the game's Settings.",
+    "pg_cron ou pg_net manque : Database → Extensions → active pg_cron et pg_net, puis recolle installer.sql.":"pg_cron or pg_net is missing: Database → Extensions → enable pg_cron and pg_net, then paste installer.sql again.",
+    "La tâche des cinq minutes n'est pas posée : recolle installer.sql.":"The five-minute task isn't set up: paste installer.sql again.",
+    "La tâche ne se lit pas : {m}":"The task can't be read: {m}",
+    "La tâche des rappels est arrêtée : recolle installer.sql.":"The reminders task is stopped: paste installer.sql again.",
+    "La tâche des rappels est l'ancienne (une fois par heure) : recolle installer.sql.":"The reminders task is the old one (once an hour): paste installer.sql again.",
+    "La tâche passe toutes les cinq minutes.":"The task runs every five minutes.",
+    "Le dernier passage de la tâche a échoué : {m}":"The task's last run failed: {m}",
+    "Le secret VAPID_PUBLIQUE n'est pas la clé publique du jeu : copie-la ci-dessous, remets-la dans ce secret, avec la clé privée de la même paire.":"The VAPID_PUBLIQUE secret isn't the game's public key: copy it below and put it back in that secret, with the private key from the same pair.",
+    "La fonction répond (v{v}) et ses clés vont avec celles du jeu.":"The function answers (v{v}) and its keys match the game's.",
+    "La fonction ne répond pas au jeu : remplace son code par notifications/rappels.ts → Deploy, puis désactive « Verify\u00a0JWT ».":"The function doesn't answer the game: replace its code with notifications/rappels.ts → Deploy, then turn off “Verify\u00a0JWT”.",
+    "Essai envoyé : la notification arrive dans quelques secondes.":"Test sent: the notification will arrive in a few seconds.",
+    "Un essai par minute : réessaie dans un instant.":"One test per minute: try again in a moment.",
+    "Le service d'envoi refuse la signature (403) : les secrets VAPID ne vont pas avec la clé publique du jeu.":"The push service refuses the signature (403): the VAPID secrets don't match the game's public key.",
+    "Le service d'envoi a refusé (code {code}) : {raison}":"The push service refused (code {code}): {raison}",
     "Bloquées dans les réglages du téléphone":"Blocked in the phone settings",
     "Ta série sur le point de s'éteindre, tes erreurs à revoir, un verset le dimanche, et un mot si tu t'absentes. Au plus UN rappel par jour, et jamais si tu as déjà joué.":"Your streak about to go out, your mistakes to review, a verse on Sunday, and a word if you stay away. At most ONE reminder a day, and never if you have already played.",
     "Impossible d'activer le rappel pour le moment.":"Cannot turn the reminder on right now.",
@@ -6932,6 +7012,52 @@ const TEXTES = {
     "Ouvre le fichier, trouve le bloc":"Abre el archivo, busca el bloque",
     "tout en haut du script, et colle l'URL + la clé «\u00a0anon\u00a0» de ton projet Supabase. Aucune table à créer. Les instructions détaillées sont dans le message.":"al principio del script, y pega la URL y la clave “anon” de tu proyecto Supabase. No hay que crear ninguna tabla. Las instrucciones detalladas están en el mensaje.",
     "Rappels":"Recordatorios",
+    "Prière":"Oración",
+    "Lecture de la Bible":"Lectura de la Biblia",
+    "Chaque jour à {heure}":"Cada día a las {heure}",
+    "Heure : {rappel}":"Hora: {rappel}",
+    "Actualiser":"Actualizar",
+    "M'envoyer un essai":"Enviarme una prueba",
+    "Copier la clé publique":"Copiar la clave pública",
+    "Clé copiée":"Clave copiada",
+    "La porte de Supabase refuse le jeu (« Verify\u00a0JWT » activé) : remplace d'abord le code de la fonction par notifications/rappels.ts → Deploy, PUIS désactive « Verify\u00a0JWT ».":"La puerta de Supabase rechaza el juego («Verify\u00a0JWT» activado): primero reemplaza el código de la función por notifications/rappels.ts → Deploy, DESPUÉS desactiva «Verify\u00a0JWT».",
+    "La fonction « rappels » n'existe pas : Edge Functions → Deploy a new function → nom « rappels » → colle notifications/rappels.ts → Deploy.":"La función «rappels» no existe: Edge Functions → Deploy a new function → nombre «rappels» → pega notifications/rappels.ts → Deploy.",
+    "La fonction « rappels » est l'ancienne : Edge Functions → rappels → remplace son code par notifications/rappels.ts → Deploy.":"La función «rappels» es la antigua: Edge Functions → rappels → reemplaza su código por notifications/rappels.ts → Deploy.",
+    "La table des rappels n'est pas à jour : recolle installer.sql.":"La tabla de recordatorios no está al día: vuelve a pegar installer.sql.",
+    "Secrets VAPID de la fonction : {d}":"Secretos VAPID de la función: {d}",
+    "La fonction n'a pas encore répondu à la tâche : attends cinq minutes, puis Actualiser.":"La función aún no ha respondido a la tarea: espera cinco minutos y luego Actualizar.",
+    "La réponse de la fonction ne se lit pas : {m}":"La respuesta de la función no se puede leer: {m}",
+    "La tâche n'a pas pu joindre la fonction : {m}":"La tarea no pudo llegar a la función: {m}",
+    "Dernier passage ({quand}) : rien à envoyer.":"Última pasada ({quand}): nada que enviar.",
+    "Dernier passage ({quand}) : 1 rappel envoyé.":"Última pasada ({quand}): 1 recordatorio enviado.",
+    "Dernier passage ({quand}) : {n} rappels envoyés.":"Última pasada ({quand}): {n} recordatorios enviados.",
+    "{n} envoi refusé par le service d'envoi (code {code}) : {raison}":"{n} envío rechazado por el servicio de envío (código {code}): {raison}",
+    "{n} envois refusés par le service d'envoi (code {code}) : {raison}":"{n} envíos rechazados por el servicio de envío (código {code}): {raison}",
+    "La fonction refuse la clé interne de la tâche : recolle installer.sql.":"La función rechaza la clave interna de la tarea: vuelve a pegar installer.sql.",
+    "La fonction a répondu {s} : {m}":"La función respondió {s}: {m}",
+    "Sur ce téléphone, les rappels n'arrivent que dans le jeu installé sur l'écran d'accueil.":"En este teléfono, los recordatorios solo llegan en el juego instalado en la pantalla de inicio.",
+    "Ce téléphone a refusé les notifications : Réglages du téléphone → Notifications → Yada.":"Este teléfono rechazó las notificaciones: Ajustes del teléfono → Notificaciones → Yada.",
+    "Ce téléphone n'est pas abonné : allume un rappel dans les Réglages du jeu, puis Actualiser.":"Este teléfono no está suscrito: activa un recordatorio en los Ajustes del juego y luego Actualizar.",
+    "La base n'a pas le script des rappels : Supabase → SQL Editor → colle notifications/installer.sql → Run.":"La base de datos no tiene el script de recordatorios: Supabase → SQL Editor → pega notifications/installer.sql → Run.",
+    "La base ne répond pas : {m}":"La base de datos no responde: {m}",
+    "Script des rappels installé · {n} téléphone inscrit":"Script de recordatorios instalado · {n} teléfono registrado",
+    "Script des rappels installé · {n} téléphones inscrits":"Script de recordatorios instalado · {n} teléfonos registrados",
+    "Ce téléphone est inscrit.":"Este teléfono está registrado.",
+    "Ce téléphone n'est pas inscrit : éteins puis rallume un rappel dans les Réglages du jeu.":"Este teléfono no está registrado: desactiva y vuelve a activar un recordatorio en los Ajustes del juego.",
+    "pg_cron ou pg_net manque : Database → Extensions → active pg_cron et pg_net, puis recolle installer.sql.":"Falta pg_cron o pg_net: Database → Extensions → activa pg_cron y pg_net, y vuelve a pegar installer.sql.",
+    "La tâche des cinq minutes n'est pas posée : recolle installer.sql.":"La tarea de cinco minutos no está creada: vuelve a pegar installer.sql.",
+    "La tâche ne se lit pas : {m}":"La tarea no se puede leer: {m}",
+    "La tâche des rappels est arrêtée : recolle installer.sql.":"La tarea de recordatorios está detenida: vuelve a pegar installer.sql.",
+    "La tâche des rappels est l'ancienne (une fois par heure) : recolle installer.sql.":"La tarea de recordatorios es la antigua (una vez por hora): vuelve a pegar installer.sql.",
+    "La tâche passe toutes les cinq minutes.":"La tarea se ejecuta cada cinco minutos.",
+    "Le dernier passage de la tâche a échoué : {m}":"La última pasada de la tarea falló: {m}",
+    "Le secret VAPID_PUBLIQUE n'est pas la clé publique du jeu : copie-la ci-dessous, remets-la dans ce secret, avec la clé privée de la même paire.":"El secreto VAPID_PUBLIQUE no es la clave pública del juego: cópiala abajo y vuelve a ponerla en ese secreto, con la clave privada del mismo par.",
+    "La fonction répond (v{v}) et ses clés vont avec celles du jeu.":"La función responde (v{v}) y sus claves coinciden con las del juego.",
+    "La fonction ne répond pas au jeu : remplace son code par notifications/rappels.ts → Deploy, puis désactive « Verify\u00a0JWT ».":"La función no responde al juego: reemplaza su código por notifications/rappels.ts → Deploy y luego desactiva «Verify\u00a0JWT».",
+    "Essai envoyé : la notification arrive dans quelques secondes.":"Prueba enviada: la notificación llegará en unos segundos.",
+    "Un essai par minute : réessaie dans un instant.":"Una prueba por minuto: vuelve a intentarlo en un momento.",
+    "Le service d'envoi refuse la signature (403) : les secrets VAPID ne vont pas avec la clé publique du jeu.":"El servicio de envío rechaza la firma (403): los secretos VAPID no coinciden con la clave pública del juego.",
+    "Le service d'envoi a refusé (code {code}) : {raison}":"El servicio de envío rechazó (código {code}): {raison}",
     "Bloquées dans les réglages du téléphone":"Bloqueados en los ajustes del teléfono",
     "Ta série sur le point de s'éteindre, tes erreurs à revoir, un verset le dimanche, et un mot si tu t'absentes. Au plus UN rappel par jour, et jamais si tu as déjà joué.":"Tu racha a punto de apagarse, tus errores por repasar, un versículo el domingo, y un mensaje si te ausentas. Como máximo UN recordatorio al día, y nunca si ya jugaste.",
     "Impossible d'activer le rappel pour le moment.":"No se puede activar el recordatorio ahora mismo.",
@@ -9654,7 +9780,7 @@ const SUPABASE_ANON_KEY = "sb_publishable_FDJ_R0foC7uIeHmxVrj6rA_2NeIgW2a";
    remontée d'un téléphone ne vaut rien si on ne sait pas QUELLE version
    tournait. Elle doit rester égale au CACHE de sw.js — c'est ce que vérifie
    banc-essai/version.js, qui refuse de laisser publier les deux en désaccord. */
-const VERSION_JEU = "v325";
+const VERSION_JEU = "v326";
 
 /* ===================== QUAND ÇA CASSE CHEZ UN JOUEUR =====================
    « Si quelque chose casse chez cinq d'entre eux sur un modèle de téléphone
@@ -11139,6 +11265,12 @@ function loadSettings(){
   if(typeof s.scene !== "string") s.scene = "canyon";
   if(typeof s.bible !== "string") s.bible = "lsg1910";
   if(typeof s.notif !== "boolean") s.notif = false;   // jamais sans accord explicite
+  /* PRIÈRE ET LECTURE (v326) : éteintes tant que le joueur ne les allume pas.
+     L'heure reste gardée quand on éteint : rallumer retrouve la sienne. */
+  if(typeof s.priere !== "boolean") s.priere = false;
+  if(typeof s.lecture !== "boolean") s.lecture = false;
+  if(!/^\d\d:\d\d$/.test(s.priereH || "")) s.priereH = "07:00";
+  if(!/^\d\d:\d\d$/.test(s.lectureH || "")) s.lectureH = "21:00";
   /* ALLUMÉ PAR DÉFAUT, ET C'EST LE POINT. Un rapport d'erreur qu'il faut aller
      activer ne remonte rien : celui à qui le jeu casse est justement celui qui
      n'ira pas dans les Réglages. Ce qui part ne dit rien de lui (voir
@@ -12890,7 +13022,9 @@ function reglagesHtml(){
         <span class="set-ico ntf">${ICONS.bell}</span>
         <span class="set-txt"><b>${T("Rappels")}</b>${notifEtat()==="denied" ? `<small id="notifTxt">${T("Bloquées dans les réglages du téléphone")}</small>` : ``}</span>
         <button class="switch${settings.notif && notifEtat()==="granted" ? " on" : ""}" id="swNotif" role="switch" aria-checked="${!!(settings.notif && notifEtat()==="granted")}" aria-label="Rappels" ${notifEtat()==="denied" ? "disabled" : ""} onclick="setNotif(!(settings.notif && notifEtat()==='granted'))"></button>
-      </div>` : ""}
+      </div>
+      ${rangeeRappelHeure("priere")}
+      ${rangeeRappelHeure("lecture")}` : ""}
       <button class="set-row set-lien" id="bibleGo" onclick="openBibles()">
         <span class="set-ico bib">${ICONS.bookOpen}</span>
         <span class="set-txt"><b>${T("Version de la Bible")}</b><small id="bibleNom">${bibleActive().court} ${bibleActive().annee}</small></span>
@@ -19713,6 +19847,11 @@ function notifMiroir(){
            principe que pour la série. */
         revoir:  (function(){ try{ return aRattraper().length; }catch(e){ return 0; } })(),
         actif:   !!settings.notif,  // le joueur a-t-il accepté ?
+        /* (v326) la prière et la lecture : l'heure en minutes, -1 éteint ; et
+           la langue du joueur, pour que le rappel lui parle dans la sienne. */
+        priere:  settings.priere ? minutesHeure(settings.priereH) : -1,
+        lecture: settings.lecture ? minutesHeure(settings.lectureH) : -1,
+        langue:  LANGUE,
         maj:     Date.now(),
       }, "serie");
     }).catch(()=>{});
@@ -19740,6 +19879,10 @@ let notifSansRevoir = false;
 /* Idem pour la fonction d'enregistrement : tant qu'elle n'est pas posée sur le
    serveur, on écrit dans la table comme avant. */
 let notifSansRpc = false;
+/* Vrai si la fonction du serveur est d'avant la v326 (sans p_jeu, p_priere,
+   p_lecture) : on lui écrit sans, et la prière et la lecture répondent
+   « Pas encore disponible » au lieu de faire semblant. */
+let notifSansHeures = false;
 
 /* ===== L'ÉTAT QUI DÉCIDE DES RAPPELS, EN UN SEUL ENDROIT =====
    Cinq nombres, et rien d'autre : ni pseudo, ni score, ni réponses, ni
@@ -19753,6 +19896,12 @@ function notifEtatCourant(){
     vu: loadVu() || null,                              // dernière partie, tous modes
     revoir: (function(){ try{ return aRattraper().length; }catch(e){ return 0; } })(),
     decalage: -(new Date().getTimezoneOffset()) | 0,   // minutes par rapport à UTC
+    /* (v326) les rappels du JEU sont-ils allumés, et à quelle heure (en
+       minutes après minuit, chez le joueur) la prière et la lecture ? -1 :
+       éteint. Deux heures et un oui/non : rien qui dise qui il est. */
+    jeu: !!settings.notif,
+    priere: settings.priere ? minutesHeure(settings.priereH) : -1,
+    lecture: settings.lecture ? minutesHeure(settings.lectureH) : -1,
   };
 }
 
@@ -19773,13 +19922,24 @@ async function notifEcrire(supa, endpoint, abonnement){
   const e = notifEtatCourant();
   if(!notifSansRpc){
     try{
-      const r = await supa.rpc("push_enregistrer", {
+      const corps = {
         p_endpoint: endpoint, p_abonnement: abonnement || null,
         p_dernier: e.dernier, p_serie: e.serie, p_vu: e.vu,
-        p_revoir: e.revoir, p_decalage: e.decalage });
+        p_revoir: e.revoir, p_decalage: e.decalage };
+      if(!notifSansHeures) Object.assign(corps, { p_jeu: e.jeu, p_priere: e.priere, p_lecture: e.lecture });
+      let r = await supa.rpc("push_enregistrer", corps);
+      if(r && r.error && !notifSansHeures && r.error.code === "PGRST202"){
+        /* Une fonction d'avant la v326 ne connaît pas ces trois noms : on
+           réessaie sans. (Si elle n'existe pas du tout, ce second essai
+           échoue aussi, et c'est la table qui prend le relais plus bas.) */
+        notifSansHeures = true;
+        delete corps.p_jeu; delete corps.p_priere; delete corps.p_lecture;
+        r = await supa.rpc("push_enregistrer", corps);
+      }
       if(!(r && r.error)) return true;
     }catch(_){}
     notifSansRpc = true;
+    notifSansHeures = true;
   }
   const base = { dernier:e.dernier, serie:e.serie, vu:e.vu, decalage:e.decalage,
                  maj:new Date().toISOString() };
@@ -19809,7 +19969,7 @@ async function notifEffacer(supa, endpoint){
 
 function notifSync(){
   try {
-    if(!settings.notif || notifEtat() !== "granted") return;
+    if(!rappelsAllumes() || notifEtat() !== "granted") return;
     /* On OUVRE le lien au lieu d'attendre qu'une partie en ligne l'ait ouvert
        pour nous : sans ça, la série et le fuseau horaire d'un joueur qui ne
        joue que seul n'étaient jamais mis à jour — le serveur le croyait
@@ -19896,13 +20056,17 @@ async function notifActiver(){
     /* UN SEUL APPEL, qui pose l'abonnement ET l'état. L'ancien code écrivait
        l'abonnement seul et comptait sur notifSync() pour le reste — or ce
        reste ne partait jamais (voir notifEcrire). */
+    /* (v326) Allumé AVANT d'écrire : l'état envoyé dit « jeu : oui » dès le
+       premier appel (il disait « non », et c'était le second qui corrigeait). */
+    settings.notif = true; saveSettings();
     if(!(await notifEcrire(supa, sub.endpoint, sub.toJSON()))){
       /* Message TECHNIQUE, jamais montré : il est rattrapé juste en dessous et
          remplacé par une phrase traduite. Il ne doit donc pas être en français,
          sinon le banc des traductions le réclame à juste titre. */
       throw new Error("push:refus");
     }
-    settings.notif = true; saveSettings(); notifMiroir(); notifRafraichir();
+    notifMiroir(); notifRafraichir();
+    confirmerRappels(sub.endpoint);
     return true;
   } catch(e){
     settings.notif = false; saveSettings(); notifRafraichir();
@@ -19912,6 +20076,10 @@ async function notifActiver(){
 }
 async function notifCouper(){
   settings.notif = false; saveSettings(); notifMiroir(); notifRafraichir();
+  /* (v326) La prière ou la lecture sonnent encore : l'abonnement reste, et
+     le serveur apprend seulement que les rappels du jeu sont éteints
+     (notifMiroir -> notifSync l'a écrit : jeu = false). */
+  if(settings.priere || settings.lecture) return;
   try {
     const reg = await navigator.serviceWorker.ready;
     const sub = await reg.pushManager.getSubscription();
@@ -19947,6 +20115,115 @@ function notifRafraichir(){
      Le seul cas où l'on parle encore, c'est un refus posé dans les réglages du
      téléphone — le joueur ne peut pas le deviner, et cette ligne-là ne change
      pas quand on touche l'interrupteur. */
+}
+
+/* ===== PRIÈRE ET LECTURE : UN RAPPEL À L'HEURE QU'ON CHOISIT (v326) =====
+   « Dans les réglages, un bouton qui rappelle de prier à une certaine heure
+     de la journée, et la lecture aussi — mais seulement si tu penses que
+     c'est vraiment bien. »
+   Oui, et pour une raison précise : ce n'est pas un rappel du JEU. Celui-là
+   doit rester rare (un par jour au plus), parce que c'est nous qui frappons.
+   Ici c'est le joueur qui prend rendez-vous, à l'heure qu'il a choisie : on
+   ne fait que tenir sa promesse. Ces deux rappels ne comptent donc pas dans
+   le plafond du jeu, et le jeu n'en dit rien : « C'est l'heure de prier »,
+   « C'est l'heure de lire ta Bible », dans la langue du joueur.
+   Même chemin que les rappels du jeu (abonnement, serveur, service worker),
+   avec deux réglages de plus : l'heure part en MINUTES après minuit, chez
+   le joueur, et -1 veut dire éteint. Le serveur ne l'envoie qu'une fois par
+   jour ; une heure choisie déjà passée commence demain. */
+const RAPPELS_HEURE = {
+  priere:  { cls:"pri", nom:() => T("Prière"),             ico:() => LOGOS_GROUPE[11].svg },   // la bougie (10 est la musique)
+  lecture: { cls:"lec", nom:() => T("Lecture de la Bible"), ico:() => ICONS.book },
+};
+function minutesHeure(h){
+  const m = /^(\d\d):(\d\d)$/.exec(h || "");
+  return m ? Math.min(1439, (+m[1]) * 60 + (+m[2])) : -1;
+}
+/* L'heure telle que le téléphone l'écrit : « 07:00 » en France, « 07:00 AM »
+   aux États-Unis — la même que dans son sélecteur. */
+function heureLisible(h){
+  const m = /^(\d\d):(\d\d)$/.exec(h || "");
+  if(!m) return h || "";
+  try{ return new Date(2000, 0, 1, +m[1], +m[2]).toLocaleTimeString([], { hour:"2-digit", minute:"2-digit" }); }catch(e){ return h; }
+}
+function rappelsAllumes(){ return !!(settings.notif || settings.priere || settings.lecture); }
+const idRappel = (k) => k === "priere" ? "Priere" : "Lecture";
+function rangeeRappelHeure(k){
+  const r = RAPPELS_HEURE[k], id = idRappel(k);
+  const on = !!settings[k] && notifEtat() === "granted";
+  return `<div class="set-row rh-row${on ? " on" : ""}" id="row${id}">
+        <span class="set-ico ${r.cls}">${r.ico()}</span>
+        <label class="set-txt rh-txt"><b>${r.nom()}</b><small>${escapeHtml(T("Chaque jour à {heure}")).split("{heure}").join(`<span class="rh-val">${escapeHtml(heureLisible(settings[k + "H"]))}</span>`)}</small>
+          <input type="time" class="rh-heure" id="h${id}" value="${settings[k + "H"]}" aria-label="${escapeHtml(Tf("Heure : {rappel}", { rappel:r.nom() }))}" onchange="changerHeureRappel('${k}', this.value)"></label>
+        <button class="switch${on ? " on" : ""}" id="sw${id}" role="switch" aria-checked="${on}" aria-label="${escapeHtml(r.nom())}" ${notifEtat()==="denied" ? "disabled" : ""} onclick="setRappelHeure('${k}', !(settings.${k} && notifEtat()==='granted'))"></button>
+      </div>`;
+}
+function rafraichirRappelsHeure(){
+  for(const k of ["priere", "lecture"]){
+    const id = idRappel(k), on = !!settings[k] && notifEtat() === "granted";
+    const sw = document.getElementById("sw" + id), row = document.getElementById("row" + id);
+    if(sw){ sw.classList.toggle("on", on); sw.setAttribute("aria-checked", on ? "true" : "false"); }
+    if(row) row.classList.toggle("on", on);
+  }
+}
+/* L'interrupteur répond au doigt (comme setNotif) : il bascule tout de suite,
+   et revient en arrière, en le disant, si quelque chose échoue. */
+function setRappelHeure(k, on){
+  const id = idRappel(k);
+  const sw = document.getElementById("sw" + id), row = document.getElementById("row" + id);
+  if(sw){ sw.classList.toggle("on", !!on); sw.setAttribute("aria-checked", on ? "true" : "false"); }
+  if(row) row.classList.toggle("on", !!on);
+  if(on) rappelHeureAllumer(k); else rappelHeureEteindre(k);
+}
+async function rappelHeureAllumer(k){
+  if(!notifPossible()) return false;
+  let perm = notifEtat();
+  if(perm === "default"){ try { perm = await Notification.requestPermission(); } catch(e){ perm = "denied"; } }
+  if(perm !== "granted"){ settings[k] = false; saveSettings(); rafraichirRappelsHeure(); notifRafraichir(); return false; }
+  try {
+    const reg = await navigator.serviceWorker.ready;
+    let sub = await reg.pushManager.getSubscription();
+    if(!sub) sub = await reg.pushManager.subscribe({ userVisibleOnly:true, applicationServerKey: b64ToU8(VAPID_PUBLIC) });
+    const supa = initSupa();
+    if(!supa) throw new Error("push:serveur");
+    settings[k] = true; saveSettings();
+    const ok = await notifEcrire(supa, sub.endpoint, sub.toJSON());
+    if(!ok) throw new Error("push:refus");
+    if(notifSansHeures) throw new Error("push:ancien");   // le serveur ne garde pas l'heure : ne pas promettre
+    notifMiroir(); rafraichirRappelsHeure();
+    confirmerRappels(sub.endpoint);
+    return true;
+  } catch(e){
+    settings[k] = false; saveSettings(); rafraichirRappelsHeure();
+    try{ notifMiroir(); }catch(_){}
+    /* Message TECHNIQUE dans l'erreur ; le joueur lit une phrase traduite. */
+    try{ showMiniToast(e && e.message === "push:ancien" ? T("Pas encore disponible. Réessaie plus tard.")
+                                                      : T("Impossible d'activer le rappel pour le moment.")); }catch(_){}
+    return false;
+  }
+}
+async function rappelHeureEteindre(k){
+  settings[k] = false; saveSettings(); rafraichirRappelsHeure();
+  notifMiroir();                      // -> notifSync : le serveur apprend « éteint » (-1)
+  if(rappelsAllumes()) return;        // un autre rappel sonne encore : l'abonnement reste
+  try {
+    const reg = await navigator.serviceWorker.ready;
+    const sub = await reg.pushManager.getSubscription();
+    if(sub){
+      const supa = initSupa();
+      if(supa) await notifEffacer(supa, sub.endpoint);
+      await sub.unsubscribe();
+    }
+  } catch(e){}
+}
+/* L'heure change : on la garde, et si le rappel sonne, le serveur l'apprend
+   tout de suite (notifMiroir -> notifSync). */
+function changerHeureRappel(k, v){
+  if(!/^\d\d:\d\d$/.test(v || "")) return;
+  settings[k + "H"] = v; saveSettings();
+  const val = document.querySelector("#row" + idRappel(k) + " .rh-val");
+  if(val) val.textContent = heureLisible(v);
+  if(settings[k]) notifMiroir();
 }
 
 /* ===================== CARNET DE RÉVISION =====================
@@ -23929,11 +24206,193 @@ async function regarderGroupe(id){
   chargerMembres(id);
   await chargerFil(id);
 }
+/* ===================== LES RAPPELS, VUS DE LA MODÉRATION (v326) =====================
+   « Les notifications ne marchent toujours pas. » Le jeu ne pouvait rien en
+   dire : tout se joue chez Supabase, en quatre endroits — la base, la tâche
+   des cinq minutes, la fonction « rappels », ses clés — et le premier qui
+   manque coupe la chaîne sans un bruit. Relevé le 18/10/2026, vu d'ici : pas
+   de push_enregistrer, pas de colonne « revoir »… et rien, à l'écran, pour
+   le dire. Cette carte interroge chaque maillon depuis le téléphone et dit,
+   ligne par ligne, ce qui tient — et sinon quoi faire, à quel endroit de
+   Supabase. Elle ne lit aucun secret : un nombre d'abonnements, des oui/non,
+   une version, et la clé PUBLIQUE (publique par définition). */
+const rapDiag = { lignes:null, quand:0, endpoint:null, enCours:false, essai:null, cleDiff:false };
+function lignesRappelsDiag(){
+  if(!rapDiag.lignes) return `<div class="grp-vide"><span class="spinner"></span></div>`;
+  const marque = (k) => k === "ok" ? ICONS.coche : k === "non" ? ICONS.close : ICONS.info;
+  const l = rapDiag.lignes.concat(rapDiag.essai ? [rapDiag.essai] : []);
+  return l.map(x => `<div class="rd-l"><span class="rd-m ${x.k}">${marque(x.k)}</span><span class="rd-t">${escapeHtml(frSpace(x.t))}</span></div>`).join("")
+    + `<div class="mod-act">
+        <button class="grp-pill calme" onclick="diagnosticRappels(true)"${rapDiag.enCours ? " disabled" : ""}>${T("Actualiser")}</button>
+        ${rapDiag.cleDiff ? `<button class="grp-pill calme" onclick="copierDansPressePapier(VAPID_PUBLIC, T('Clé copiée'))">${T("Copier la clé publique")}</button>` : ""}
+        ${rapDiag.endpoint ? `<button class="grp-pill" onclick="essaiRappel(this)">${T("M'envoyer un essai")}</button>` : ""}
+      </div>`;
+}
+function peindreRappelsDiag(){
+  const z = document.getElementById("modRappels");
+  if(!z || state.screen !== "moderation") return;
+  z.innerHTML = lignesRappelsDiag();
+  try{ glassRelayout(); queueGlassSync(); fitScroll(); }catch(e){}
+}
+/* LA FONCTION « rappels », appelée comme un joueur l'appelle : avec la clé
+   publishable, jamais avec la session. Deux raisons. C'est ce que vit un
+   joueur sans compte — ce qui marche ici marche pour lui. Et tant que
+   « Verify JWT » est activé, la porte de Supabase refuse cette clé : une
+   ANCIENNE fonction, qui ne garde pas sa porte elle-même, n'est donc jamais
+   lancée par erreur depuis ce bouton. */
+/* Rien ici n'attend sans fin : un réseau qui ne répond pas, ou un service
+   worker absent, laisseraient la carte tourner pour toujours. (Message
+   technique, en anglais : il peut s'afficher tel quel dans « {m} ».) */
+const sousDelai = (p, ms) => Promise.race([p, new Promise((_, non) => setTimeout(() => non(new Error("timeout")), ms))]);
+async function lireFonction(corps){
+  const supa = initSupa();
+  if(!supa || !supa.functions) return { st:0, c:null };
+  try{
+    const r = await sousDelai(supa.functions.invoke("rappels", { body:corps, headers:{ Authorization:"Bearer " + SUPABASE_ANON_KEY } }), 12000);
+    if(!r.error) return { st:200, c:r.data };
+    const rep = r.error.context;
+    let c = null, st = 0;
+    if(rep && typeof rep.status === "number"){ st = rep.status; try{ c = await rep.json(); }catch(_){} }
+    return { st, c };
+  }catch(e){ return { st:0, c:null }; }
+}
+/* Les phrases qui reviennent : chacune nomme l'endroit exact de Supabase.
+   « Verify JWT » se désactive APRÈS le nouveau code, jamais avant : sans sa
+   porte, l'ancienne fonction partirait toutes les cinq minutes. */
+const RAP_VERIFY = () => T("La porte de Supabase refuse le jeu (« Verify\u00a0JWT » activé) : remplace d'abord le code de la fonction par notifications/rappels.ts → Deploy, PUIS désactive « Verify\u00a0JWT ».");
+const RAP_ABSENTE = () => T("La fonction « rappels » n'existe pas : Edge Functions → Deploy a new function → nom « rappels » → colle notifications/rappels.ts → Deploy.");
+const RAP_ANCIENNE = () => T("La fonction « rappels » est l'ancienne : Edge Functions → rappels → remplace son code par notifications/rappels.ts → Deploy.");
+const RAP_TABLE = () => T("La table des rappels n'est pas à jour : recolle installer.sql.");
+const RAP_VAPID = (d) => Tf("Secrets VAPID de la fonction : {d}", { d:[].concat(d || []).join(" ; ") });
+function lireReponseTache(r, ok, non, att){
+  if(!r){ att(T("La fonction n'a pas encore répondu à la tâche : attends cinq minutes, puis Actualiser.")); return; }
+  if(r.erreur){ non(Tf("La réponse de la fonction ne se lit pas : {m}", { m:String(r.erreur).slice(0, 120) })); return; }
+  if(r.error_msg){ non(Tf("La tâche n'a pas pu joindre la fonction : {m}", { m:String(r.error_msg).slice(0, 120) })); return; }
+  let c = null; try{ c = JSON.parse(r.contenu || ""); }catch(_){}
+  const st = r.status_code | 0, quand = quandCourt(r.created) || "";
+  if(st === 200 && c && c.version){
+    const n = c.envoyes | 0;
+    ok(n === 0 ? Tf("Dernier passage ({quand}) : rien à envoyer.", { quand })
+       : Tf(n === 1 ? "Dernier passage ({quand}) : 1 rappel envoyé." : "Dernier passage ({quand}) : {n} rappels envoyés.", { quand, n }));
+    const e = c.echecs | 0, d = c.dernier_echec || {};
+    /* (les replis hors de l'appel : tout littéral dans Tf est une phrase à traduire) */
+    const code = d.code || "?", raison = d.raison || "";
+    if(e) non(Tf(e === 1 ? "{n} envoi refusé par le service d'envoi (code {code}) : {raison}" : "{n} envois refusés par le service d'envoi (code {code}) : {raison}",
+                 { n:e, code, raison }));
+  }
+  else if(st === 200) non(RAP_ANCIENNE());
+  else if(st === 401 && c && c.erreur === "accès") non(T("La fonction refuse la clé interne de la tâche : recolle installer.sql."));
+  else if(st === 401) non(RAP_VERIFY());
+  else if(st === 404) non(RAP_ABSENTE());
+  else if(c && c.erreur === "clés VAPID") non(RAP_VAPID(c.details));
+  else if(c && c.erreur === "table") non(RAP_TABLE());
+  else non(Tf("La fonction a répondu {s} : {m}", { s:st, m:String(r.contenu || "").slice(0, 160) }));
+}
+async function diagnosticRappels(force){
+  if(rapDiag.enCours) return;
+  if(!force && rapDiag.lignes && Date.now() - rapDiag.quand < 15000) return;
+  rapDiag.enCours = true;
+  if(force) rapDiag.essai = null;
+  peindreRappelsDiag();
+  /* Une même cause vue par deux maillons (la tâche ET le jeu butent sur
+     « Verify JWT ») ne s'écrit qu'une fois. */
+  const L = [];
+  const met = (k, t) => { if(!L.some(x => x.t === t)) L.push({ k, t }); };
+  const ok = (t) => met("ok", t), non = (t) => met("non", t), att = (t) => met("att", t);
+  try{
+    /* 1. CE TÉLÉPHONE */
+    let ep = null;
+    if(!notifPossible()) att(T("Sur ce téléphone, les rappels n'arrivent que dans le jeu installé sur l'écran d'accueil."));
+    else if(notifEtat() === "denied") non(T("Ce téléphone a refusé les notifications : Réglages du téléphone → Notifications → Yada."));
+    else {
+      try{ const reg = await sousDelai(navigator.serviceWorker.ready, 4000); const sub = await reg.pushManager.getSubscription(); ep = (sub && sub.endpoint) || null; }catch(e){}
+      if(!ep) att(T("Ce téléphone n'est pas abonné : allume un rappel dans les Réglages du jeu, puis Actualiser."));
+    }
+    rapDiag.endpoint = ep;
+    /* 2. LA BASE : le script, les abonnés, la tâche, sa dernière réponse */
+    const supa = initSupa();
+    let e = null, err = null;
+    try{ const r = await sousDelai(supa.rpc("rappels_etat", { p_endpoint:ep }), 12000); if(r && r.error) err = r.error; else e = r && r.data; }catch(x){ err = x || {}; }
+    if(!e){
+      const m = err ? String((err.code || "") + " " + (err.message || "")).trim() : "";
+      if(!m || /PGRST202|could not find the function|does not exist/i.test(m)) non(T("La base n'a pas le script des rappels : Supabase → SQL Editor → colle notifications/installer.sql → Run."));
+      else non(Tf("La base ne répond pas : {m}", { m:m.slice(0, 120) }));
+    } else {
+      ok(Tf((e.abonnes | 0) === 1 ? "Script des rappels installé · {n} téléphone inscrit" : "Script des rappels installé · {n} téléphones inscrits", { n:e.abonnes | 0 }));
+      if(ep){ if(e.inscrit) ok(T("Ce téléphone est inscrit.")); else non(T("Ce téléphone n'est pas inscrit : éteins puis rallume un rappel dans les Réglages du jeu.")); }
+      if(!e.cron || !e.net) non(T("pg_cron ou pg_net manque : Database → Extensions → active pg_cron et pg_net, puis recolle installer.sql."));
+      else if(!e.tache) non(T("La tâche des cinq minutes n'est pas posée : recolle installer.sql."));
+      else if(e.tache.erreur) non(Tf("La tâche ne se lit pas : {m}", { m:String(e.tache.erreur).slice(0, 120) }));
+      else if(!e.tache.active) non(T("La tâche des rappels est arrêtée : recolle installer.sql."));
+      else if(e.tache.schedule !== "*/5 * * * *") non(T("La tâche des rappels est l'ancienne (une fois par heure) : recolle installer.sql."));
+      else ok(T("La tâche passe toutes les cinq minutes."));
+      if(e.passage && e.passage.status === "failed") non(Tf("Le dernier passage de la tâche a échoué : {m}", { m:String(e.passage.message || "?").slice(0, 120) }));
+      if(e.cron && e.net && e.tache && e.tache.active) lireReponseTache(e.reponse, ok, non, att);
+    }
+    /* 3. LA FONCTION, interrogée par le jeu lui-même : sa version, ses clés */
+    const f = await lireFonction({ etat:true });
+    rapDiag.cleDiff = false;
+    if(f.st === 200 && f.c && f.c.version){
+      if(f.c.vapid !== "ok") non(RAP_VAPID(f.c.vapid));
+      else if(f.c.pub && f.c.pub !== VAPID_PUBLIC){
+        rapDiag.cleDiff = true;
+        non(T("Le secret VAPID_PUBLIQUE n'est pas la clé publique du jeu : copie-la ci-dessous, remets-la dans ce secret, avec la clé privée de la même paire."));
+      }
+      else ok(Tf("La fonction répond (v{v}) et ses clés vont avec celles du jeu.", { v:f.c.version }));
+    }
+    else if(f.st === 200) non(RAP_ANCIENNE());
+    else if(f.st === 401) non(RAP_VERIFY());
+    else if(f.st === 404) non(RAP_ABSENTE());
+    else if(f.st) non(Tf("La fonction a répondu {s} : {m}", { s:f.st, m:JSON.stringify(f.c || "").slice(0, 160) }));
+    else non(T("La fonction ne répond pas au jeu : remplace son code par notifications/rappels.ts → Deploy, puis désactive « Verify\u00a0JWT »."));
+  }catch(x){ non(Tf("La base ne répond pas : {m}", { m:String((x && x.message) || x).slice(0, 120) })); }
+  rapDiag.lignes = L; rapDiag.quand = Date.now(); rapDiag.enCours = false;
+  peindreRappelsDiag();
+}
+/* « M'ENVOYER UN ESSAI » : la chaîne entière, jusqu'à CE téléphone, tout de
+   suite. La réponse dit ce qui a cassé, jusqu'au refus du service d'envoi. */
+async function essaiRappel(btn){
+  if(!rapDiag.endpoint) return;
+  if(btn) btn.disabled = true;
+  const f = await lireFonction({ essai_moi:rapDiag.endpoint });
+  const c = f.c || {};
+  let k = "non", t;
+  if(f.st === 200 && c.envoye){ k = "ok"; t = T("Essai envoyé : la notification arrive dans quelques secondes."); }
+  else if(f.st === 429){ k = "att"; t = T("Un essai par minute : réessaie dans un instant."); }
+  else if(f.st === 404 && c.erreur === "inconnu") t = T("Ce téléphone n'est pas inscrit : éteins puis rallume un rappel dans les Réglages du jeu.");
+  else if(f.st === 502 && c.code === 403) t = T("Le service d'envoi refuse la signature (403) : les secrets VAPID ne vont pas avec la clé publique du jeu.");
+  else if(f.st === 502){ const code = c.code || "?"; t = Tf("Le service d'envoi a refusé (code {code}) : {raison}", { code, raison:[].concat(c.details || []).join(" ") }); }
+  else if(c.erreur === "table") t = RAP_TABLE();
+  else if(c.erreur === "clés VAPID") t = RAP_VAPID(c.details);
+  else if(f.st === 401) t = RAP_VERIFY();
+  else if(f.st === 404) t = RAP_ABSENTE();
+  else if(f.st === 200) t = RAP_ANCIENNE();
+  else t = T("La fonction ne répond pas au jeu : remplace son code par notifications/rappels.ts → Deploy, puis désactive « Verify\u00a0JWT ».");
+  rapDiag.essai = { k, t };
+  peindreRappelsDiag();
+}
+/* LA CONFIRMATION (v326) : en allumant un rappel pour la première fois sur
+   ce téléphone, le joueur reçoit aussitôt « Les rappels sont activés ».
+   C'est la seule preuve qui compte — la chaîne entière, jusqu'à SON écran —
+   et elle arrive au moment où il vient de dire oui, pas un soir de la
+   semaine suivante. Une fois par abonnement, gardée sur ce téléphone
+   seulement ; en silence si le serveur n'est pas prêt (la Modération dit
+   pourquoi). */
+async function confirmerRappels(endpoint){
+  if(!endpoint) return;
+  const marque = endpoint.slice(-24);
+  try{ if(localStorage.getItem("bt_rappels_confirmes") === marque) return; }catch(e){}
+  const f = await lireFonction({ essai_moi:endpoint, genre:"bienvenue" });
+  if(f.st === 200 && f.c && f.c.envoye){ try{ localStorage.setItem("bt_rappels_confirmes", marque); }catch(e){} }
+}
 function renderModeration(){
   setTimeout(rafraichirTousGroupes, 0);
+  setTimeout(() => diagnosticRappels(false), 0);
   const el = document.createElement("div");
   el.className = "screen";
   el.innerHTML = `${renderHeader("Modération", true, "retourGroupes()")}<div id="modListe">${cartesModeration()}</div>
+    <div class="grp-h" role="heading" aria-level="2">${T("Rappels")}</div>
+    <div class="card rd-carte" id="modRappels">${lignesRappelsDiag()}</div>
     <div class="grp-h" role="heading" aria-level="2">${T("Tous les groupes")}</div>
     <div class="card grp-carte"><div id="modGroupes">${lignesTous()}</div></div>`;
   const z = el.querySelector("#modListe"); if(z && moderation) z._sig = JSON.stringify(moderation);

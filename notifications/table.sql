@@ -19,6 +19,13 @@ create index if not exists push_subs_vu on public.push_subs (vu);
 alter table public.push_subs add column if not exists vu date;
 -- Et sans « revoir » (installée avant la v219) :
 alter table public.push_subs add column if not exists revoir int not null default 0;
+-- Et sans les rappels à l'heure choisie (v326 : prière, lecture) :
+alter table public.push_subs add column if not exists jeu        boolean not null default true;  -- les rappels du JEU sont-ils allumés ?
+alter table public.push_subs add column if not exists priere     int;    -- minutes après minuit, chez le joueur ; null = pas de rappel
+alter table public.push_subs add column if not exists lecture    int;    -- idem, pour la lecture de la Bible
+alter table public.push_subs add column if not exists jeu_le     date;   -- dernier jour (chez lui) où un rappel du jeu est parti
+alter table public.push_subs add column if not exists priere_le  date;   -- … un rappel de prière
+alter table public.push_subs add column if not exists lecture_le date;   -- … un rappel de lecture
 
 alter table public.push_subs enable row level security;
 
