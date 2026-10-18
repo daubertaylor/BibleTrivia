@@ -32,7 +32,7 @@ const ts = require('/opt/node22/lib/node_modules/typescript');
 const SRC = process.argv[2] || path.join(__dirname, '..', 'notifications', 'rappels.ts');
 
 /* ---- l'horloge, figée : 15 mars 2026, 18 h UTC ---- */
-const MAINTENANT = Date.parse('2026-03-15T18:00:00Z');
+let MAINTENANT = Date.parse('2026-03-15T18:00:00Z');
 const vraiNow = Date.now;
 Date.now = () => MAINTENANT;
 
@@ -40,11 +40,27 @@ Date.now = () => MAINTENANT;
 const envois = [];
 const webpush = {
   setVapidDetails(){},
-  sendNotification(abo, corps){ envois.push({ qui: abo.endpoint, charge: JSON.parse(corps) }); return Promise.resolve(); },
+  sendNotification(abo, corps){
+    if (REFUSES.has(abo.endpoint)) { const e = new Error('Received unexpected response code'); e.statusCode = 403; e.body = 'the VAPID credentials in the authorization header do not correspond to the credentials used to create the subscription (https://push.exemple/abc)'; return Promise.reject(e); }
+    envois.push({ qui: abo.endpoint, charge: JSON.parse(corps) }); return Promise.resolve();
+  },
 };
 let LIGNES = [];
+/* (v326) La clé interne que installer.sql fabrique dans public.rappels_reglage,
+   et que la tâche envoie dans l'en-tête « x-rappels ». */
+const CLE = 'b'.repeat(16) + '0123456789abcdef'.repeat(4);
+let REGLAGE = [{ id:1, cle:CLE }];
+/* Un service d'envoi qui refuse un appareil précis (403 : signature refusée). */
+const REFUSES = new Set();
 const createClient = () => ({
-  from(){ return {
+  from(table){
+    if (table === 'rappels_reglage') return {
+      select(){ let l = REGLAGE; const q = {
+        eq(col, v){ l = l && l.filter(x => x[col] === v); return q; },
+        then(r){ return Promise.resolve(REGLAGE === null ? { data:null, error:{ message:'relation "public.rappels_reglage" does not exist' } } : { data:l, error:null }).then(r); },
+      }; return q; },
+    };
+    return {
     /* Une requête qu'on peut filtrer AVANT de l'attendre, comme la vraie : la
        version d'avant demandait « .gte("serie", 2) » et le banc doit pouvoir
        l'exécuter telle quelle, sinon il ne compare rien. */
@@ -58,6 +74,13 @@ const createClient = () => ({
       return q;
     },
     delete(){ return { eq(){ return Promise.resolve({ error:null }); } }; },
+    /* (v326) la fonction note le jour de chaque envoi (jeu_le, priere_le,
+       lecture_le) : la doublure l'écrit vraiment dans la table, pour que le
+       passage suivant le lise — c'est tout l'objet de ces dates. */
+    update(valeurs){ return { eq(col, v){
+      for (const l of LIGNES) if (l[col] === v) Object.assign(l, valeurs);
+      return Promise.resolve({ error:null });
+    } }; },
   }; },
 });
 
@@ -117,9 +140,26 @@ const CAS = [
   ['dimanche 9 h, absent 60 jours',     { serie:0, dernier:jd(90), vu:jd(60), decalage:MATIN }, null],
   /* ---- le vide ---- */
   ['n’a jamais joué (vu vide)',         { serie:0, dernier:null, vu:null, decalage:SOIR }, null],
+  /* ---- (v326) la prière et la lecture, à l'heure choisie — il est 19 h chez eux ---- */
+  ['prière à 19 h',                     { serie:0, dernier:null, vu:j(0), decalage:SOIR, priere:1140 }, 'priere'],
+  ['prière à 18 h 30 (dans l’heure)',   { serie:0, dernier:null, vu:j(0), decalage:SOIR, priere:1110 }, 'priere'],
+  ['prière à 17 h 55 (l’heure est passée)', { serie:0, dernier:null, vu:j(0), decalage:SOIR, priere:1075 }, null],
+  ['prière à 19 h 05 (pas encore)',     { serie:0, dernier:null, vu:j(0), decalage:SOIR, priere:1145 }, null],
+  ['prière déjà partie aujourd’hui',    { serie:0, dernier:null, vu:j(0), decalage:SOIR, priere:1140, priere_le:j(0) }, null],
+  ['prière partie hier, 19 h',          { serie:0, dernier:null, vu:j(0), decalage:SOIR, priere:1140, priere_le:j(1) }, 'priere'],
+  ['lecture à 19 h',                    { serie:0, dernier:null, vu:j(0), decalage:SOIR, lecture:1140 }, 'lecture'],
+  ['prière et lecture à 19 h',          { serie:0, dernier:null, vu:j(0), decalage:SOIR, priere:1140, lecture:1140 }, 'priere+lecture'],
+  ['lecture à 12 h, il est midi',       { serie:0, dernier:null, vu:jm(0), decalage:MIDI, lecture:720 }, 'lecture'],
+  /* ---- (v326) les rappels du jeu, éteints ou déjà partis ---- */
+  ['rappels du jeu éteints, série en jeu', { serie:3, dernier:j(1), vu:j(1), decalage:SOIR, jeu:false }, null],
+  ['rappels du jeu éteints, prière à 19 h', { serie:3, dernier:j(1), vu:j(1), decalage:SOIR, jeu:false, priere:1140 }, 'priere'],
+  ['série en jeu, déjà prévenu aujourd’hui', { serie:3, dernier:j(1), vu:j(1), decalage:SOIR, jeu_le:j(0) }, null],
+  ['série en jeu, et prière à 19 h',    { serie:3, dernier:j(1), vu:j(1), decalage:SOIR, priere:1140 }, 'priere+serie'],
 ];
 
-LIGNES = CAS.map(([nom, l], i) => Object.assign({ endpoint:'appareil-' + i, abonnement:{ endpoint:'appareil-' + i }, revoir:0 }, l));
+/* Les colonnes de la v326, telles que la table les donne à la fonction. */
+const V326 = { jeu:true, priere:null, lecture:null, jeu_le:null, priere_le:null, lecture_le:null };
+LIGNES = CAS.map(([nom, l], i) => Object.assign({ endpoint:'appareil-' + i, abonnement:{ endpoint:'appareil-' + i }, revoir:0 }, V326, l));
 
 /* Une VRAIE paire de clés, fabriquée ici : rien de secret n'entre dans le
    dépôt, et la vérification de cohérence a de quoi mordre. */
@@ -142,8 +182,15 @@ async function fabriquerPaire(){
     SUPABASE_SERVICE_ROLE_KEY: 'cle-de-laboratoire',
   });
 
-  /* Le handler lit le corps de la requête (pour l'essai) : on lui en donne une. */
-  const requete = (corps) => ({ json: () => corps === undefined ? Promise.reject(new Error('pas de corps')) : Promise.resolve(corps) });
+  /* Le handler lit le corps de la requête (pour l'essai) : on lui en donne une.
+     (v326) Et des en-têtes : par défaut ceux de la TÂCHE, qui porte la clé
+     interne ; « sansCle » est l'appel du jeu, ou d'un inconnu. */
+  const requete = (corps, entetes = { 'x-rappels': CLE }, methode = 'POST') => ({
+    method: methode,
+    headers: new Headers(entetes),
+    json: () => corps === undefined ? Promise.reject(new Error('pas de corps')) : Promise.resolve(corps),
+  });
+  const sansCle = (corps) => requete(corps, { authorization:'Bearer sb_publishable_exemple', apikey:'sb_publishable_exemple' });
   const rep = await handler(requete());
   if (rep && rep.status === 400) {
     console.log('  LA FONCTION A REFUSÉ DES CLÉS POURTANT VALIDES :', JSON.stringify(await rep.json()));
@@ -153,17 +200,57 @@ async function fabriquerPaire(){
   let ok = true;
   console.log('  cas                                       attendu      reçu');
   CAS.forEach(([nom, , attendu], i) => {
-    const e = envois.find(x => x.qui === 'appareil-' + i);
-    /* L'absence dit AUSSI combien de jours : c'est ce qui distingue les trois
+    /* (v326) TOUT ce qui part vers cet appareil, dans l'ordre : la prière et
+       la lecture s'ajoutent au rappel du jeu, elles ne le remplacent pas.
+       L'absence dit AUSSI combien de jours : c'est ce qui distingue les trois
        paliers, et les confondre laisserait passer un rappel au mauvais jour. */
-    const recu = !e ? 'rien'
-      : (e.charge.genre === 'absence' ? 'absence' + e.charge.jours : (e.charge.genre || 'serie'));
+    const partis = envois.filter(x => x.qui === 'appareil-' + i);
+    const recu = !partis.length ? 'rien' : partis.map(e =>
+      e.charge.genre === 'absence' ? 'absence' + e.charge.jours : (e.charge.genre || 'serie')).join('+');
     const veut = attendu || 'rien';
     const bon = recu === veut;
     if (!bon) ok = false;
     console.log('  ' + nom.padEnd(40) + veut.padEnd(12) + recu + (bon ? '' : '   <-- NON'));
   });
   console.log('\n  ' + envois.length + ' envoi(s) pour ' + CAS.length + ' joueurs');
+
+  /* ===== (v326) TOUTES LES CINQ MINUTES, RIEN NE SE RÉPÈTE =====
+     La tâche passe désormais toutes les cinq minutes. Les passages suivants
+     tombent toujours dans l'heure du soir, et dans l'heure de chaque prière :
+     sans les dates d'envoi (jeu_le, priere_le, lecture_le), tout repartirait.
+     Aucun appareil ne doit recevoir deux fois la même chose ; et la prière
+     de 19 h 05, qui n'était pas encore là au premier passage, part au
+     passage de 19 h 05 — une fois. */
+  const tous = envois.slice();
+  envois.length = 0;
+  for (const m of [5, 10, 30, 55]) { Date.now = () => MAINTENANT + m * 60000; await handler(requete()); }
+  Date.now = vraiNow;
+  const ensuite = envois.map(e => e.qui + ':' + e.charge.genre);
+  const vus = {};
+  for (const e of tous.concat(envois)) { const k = e.qui + ':' + e.charge.genre; vus[k] = (vus[k] || 0) + 1; }
+  const repetes = Object.keys(vus).filter(k => vus[k] > 1);
+  const iTard = CAS.findIndex(c => /19 h 05/.test(c[0]));
+  const tard = ensuite.filter(k => k === 'appareil-' + iTard + ':priere').length;
+  const autres = ensuite.filter(k => k !== 'appareil-' + iTard + ':priere');
+  if (repetes.length || tard !== 1 || autres.length) ok = false;
+  console.log('  quatre passages de plus dans l\'heure : ' + (repetes.length ? repetes.length + ' envoi(s) répété(s) <-- NON : ' + repetes.slice(0, 4).join(', ') : 'rien ne se répète')
+    + ' ; la prière de 19 h 05 part ' + tard + ' fois' + (tard === 1 ? '' : ' <-- NON')
+    + (autres.length ? ' ; envoi(s) inattendu(s) <-- NON : ' + autres.slice(0, 4).join(', ') : ''));
+
+  /* ===== (v326) UNE TABLE D'AVANT LA V326 ===== sans jeu_le, la fonction
+     ferait sonner un motif du soir à chaque passage de cinq minutes. Elle
+     doit refuser de tourner, et dire quoi coller. */
+  const sauve = LIGNES;
+  LIGNES = [{ endpoint:'ancienne', abonnement:{ endpoint:'ancienne' }, serie:3, dernier:j(1), vu:j(1), revoir:0, decalage:SOIR }];
+  envois.length = 0;
+  Date.now = () => MAINTENANT;
+  const repAncienne = await handler(requete());
+  Date.now = vraiNow;
+  const dit = repAncienne && repAncienne.status === 400 ? (await repAncienne.json()).details.join(' ') : '';
+  const refuse = repAncienne && repAncienne.status === 400 && /installer\.sql/.test(dit) && !envois.length;
+  if (!refuse) ok = false;
+  console.log('  table sans les colonnes de la v326 : ' + (refuse ? 'refusée, « ' + dit.slice(0, 70) + '… »' : 'ACCEPTÉE <-- elle ferait sonner douze fois par heure'));
+  LIGNES = sauve;
 
   /* ===== L'ESSAI ===== écrit à TOUT LE MONDE, sans regarder l'heure ni la
      série : c'est ce qui permet de voir la chaîne marcher le jour où on la
@@ -207,6 +294,67 @@ async function fabriquerPaire(){
   Object.keys(SECRETS).forEach(k => delete SECRETS[k]);
   Object.assign(SECRETS, bon);
 
-  console.log(ok ? '\n  OK — les cinq motifs, rien d\'autre, et un message clair quand les clés sont mauvaises' : '\n  ÉCHEC');
+  /* ===== (v326) LA PORTE =====
+     « Verify JWT » est désactivé (le jeu parle avec une clé publishable, qui
+     n'est pas un JWT) : c'est donc la fonction qui garde la porte. Sans la clé
+     interne ni la clé service_role, un passage normal et l'essai à TOUS sont
+     refusés, sans rien envoyer ; l'état et l'essai d'UN téléphone restent
+     ouverts, et ne disent jamais un secret. */
+  console.log('\n  la porte                                   attendu      reçu');
+  const PORTE = [];
+  const porte = async (nom, req, veutStatut, verifie) => {
+    envois.length = 0;
+    const r = await handler(req);
+    const corps = r.status === 200 && r.headers.get('content-type') === 'text/plain;charset=UTF-8' ? {} : await r.json().catch(() => ({}));
+    const juste = r.status === veutStatut && (!verifie || verifie(corps, r));
+    if (!juste) ok = false;
+    PORTE.push(nom);
+    console.log('  ' + nom.padEnd(42) + String(veutStatut).padEnd(13) + r.status + (juste ? '' : '   <-- NON ' + JSON.stringify(corps).slice(0, 120)));
+    return corps;
+  };
+  Date.now = () => MAINTENANT;
+  const nbAvant = LIGNES.length;
+  await porte('passage sans clé', sansCle(), 401, (c) => !envois.length && c.erreur === 'accès' && c.version === 326);
+  await porte('essai à tous, sans clé', sansCle({ essai:true }), 401, () => !envois.length);
+  await porte('mauvaise clé interne', requete({ essai:true }, { 'x-rappels': CLE.replace(/.$/, '0') }), 401, () => !envois.length);
+  REGLAGE = null;
+  await porte('clé interne absente de la base', requete({ essai:true }), 401, (c) => !envois.length && /installer\.sql/.test(c.details.join(' ')));
+  REGLAGE = [{ id:1, cle:CLE }];
+  await porte('l’ancienne tâche (service_role)', requete({ essai:true }, { authorization:'Bearer cle-de-laboratoire' }), 200, (c) => c.essai === nbAvant && envois.length === nbAvant);
+  await porte('la tâche, clé interne', requete({ essai:true }), 200, (c) => c.essai === nbAvant && c.version === 326);
+  await porte('le navigateur demande la permission', requete(undefined, { 'access-control-request-headers':'authorization, x-client-info, apikey, content-type' }, 'OPTIONS'), 200,
+    (c, r) => r.headers.get('access-control-allow-origin') === '*' && /apikey/.test(r.headers.get('access-control-allow-headers')) && !envois.length);
+  await porte('l’état, demandé par le jeu', sansCle({ etat:true }), 200,
+    (c, r) => c.version === 326 && c.vapid === 'ok' && c.pub === SECRETS.VAPID_PUBLIQUE && r.headers.get('access-control-allow-origin') === '*' && !envois.length);
+  /* un essai pour MOI : un seul envoi, vers moi, et pas deux dans la minute */
+  const moi = LIGNES[0].endpoint;
+  for (const l of LIGNES) { l.essai_le = null; }
+  await porte('essai pour moi', sansCle({ essai_moi: moi }), 200, (c) => c.envoye === true && envois.length === 1 && envois[0].qui === moi && envois[0].charge.genre === 'essai');
+  await porte('essai pour moi, encore, dans la minute', sansCle({ essai_moi: moi }), 429, () => !envois.length);
+  Date.now = () => MAINTENANT + 61000;
+  await porte('essai pour moi, une minute après', sansCle({ essai_moi: moi, genre:'bienvenue' }), 200, () => envois.length === 1 && envois[0].charge.genre === 'bienvenue');
+  Date.now = () => MAINTENANT;
+  await porte('essai pour un téléphone inconnu', sansCle({ essai_moi: 'https://inconnu.exemple/x' }), 404, () => !envois.length);
+  const lui = LIGNES[1].endpoint; REFUSES.add(lui);
+  await porte('essai refusé par le service d’envoi', sansCle({ essai_moi: lui }), 502,
+    (c) => c.code === 403 && /VAPID credentials/.test(c.details[0]) && !/https?:/.test(c.details[0]));
+  /* le même refus pendant un passage : compté, et nommé dans la réponse */
+  for (const l of LIGNES) { l.essai_le = null; }
+  await porte('un refus pendant le passage', requete({ essai:true }), 200,
+    (c) => c.echecs === 1 && c.dernier_echec && c.dernier_echec.code === 403 && c.essai === nbAvant - 1);
+  REFUSES.clear();
+  /* une table sans essai_le (installer.sql pas encore collé) */
+  const sauveL = LIGNES; LIGNES = sauveL.map(l => { const c = { ...l }; delete c.essai_le; return c; });
+  await porte('essai, table sans essai_le', sansCle({ essai_moi: moi }), 400, (c) => /installer\.sql/.test(c.details.join(' ')) && !envois.length);
+  LIGNES = sauveL;
+  /* et l'état ne dit jamais un secret, même mal posé */
+  const bonS = { ...SECRETS };
+  SECRETS.VAPID_SUJET = SECRETS.VAPID_PRIVEE;          // la clé privée collée dans la mauvaise case
+  const cEtat = await porte('l’état, clé privée dans le sujet', sansCle({ etat:true }), 200,
+    (c) => Array.isArray(c.vapid) && /VAPID_SUJET/.test(c.vapid.join(' ')) && !JSON.stringify(c).includes(bonS.VAPID_PRIVEE));
+  Object.assign(SECRETS, bonS);
+  Date.now = vraiNow;
+
+  console.log(ok ? '\n  OK — les cinq motifs, la prière et la lecture à leur heure, rien de répété, une porte gardée, et un message clair quand les clés sont mauvaises' : '\n  ÉCHEC');
   process.exit(ok ? 0 : 1);
 })();

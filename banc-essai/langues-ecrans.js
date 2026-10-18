@@ -185,15 +185,13 @@ const JAMAIS_A_L_ECRAN = [
   { lg:'es', quoi:'Victoria',  car:"« Victoire » sans point d'exclamation ne sert qu'au texte partagé" },
   { lg:'es', quoi:'Buen duelo', car:"n'existe que dans le texte PARTAGÉ d'un duel serré" },
   { lg:'es', quoi:'mi rival',   car:"le repli du nom dans le texte partagé, jamais à l'écran" },
-  { lg:'es', quoi:'Recordatorios', car:"la rangée des rappels n'existe que dans le jeu INSTALLÉ (notifPossible)" },
   { lg:'es', quoi:'Bloqueados en los ajustes del teléfono', car:'idem, et seulement si le téléphone a refusé' },
   { lg:'es', quoi:'No se puede activar el recordatorio ahora mismo.', car:"idem, et seulement si l'abonnement échoue" },
   { lg:'en', quoi:'my opponent', car:"même chose : le repli du nom dans le texte partagé, jamais à l'écran" },
-  /* Les rappels : notifPossible() exige le mode installé, et isStandalone est
-     une const évaluée au chargement. L'émulation display-mode de Chromium ne
-     la change pas — vérifié. Ces trois-là ne se lisent que sur un vrai
-     téléphone, jeu installé, notifications refusées. */
-  { lg:'en', quoi:'Reminders', car:"la rangée des rappels n'existe que dans le jeu INSTALLÉ (notifPossible)" },
+  /* Les rappels : la rangée elle-même se lit depuis la v326 (passe « jeu
+     installé », plus bas). Restent ces deux phrases, qui ne paraissent que
+     sur un téléphone qui a REFUSÉ les notifications, ou quand l'abonnement
+     échoue. */
   { lg:'en', quoi:'Blocked in the phone settings', car:'idem, et seulement si le téléphone a refusé' },
   { lg:'en', quoi:'Cannot turn the reminder on right now.', car:"idem, et seulement si l'abonnement échoue" },
 ];
@@ -1217,22 +1215,117 @@ const ouvrirLaLangue = async (p, lg) => {
        au chargement — Safari d'iOS 26 range Partager dans « ••• », une
        application (Instagram, TikTok…) doit d'abord ouvrir Safari, Chrome a
        son bouton dans sa barre. */
-    for(const [nomGuide, ua, vue] of [['Guide Android', ANDROID, { width:412, height:915 }],
+    /* (v326) ET UN JEU INSTALLÉ. La rangée des rappels — Rappels, Prière,
+       Lecture de la Bible — n'existe que là (notifPossible exige le mode
+       installé, lu au chargement). Comme banc-essai/notifs.js, on fait
+       répondre « installé » à matchMedia avant que le jeu ne se lance : la
+       rangée se lit alors pour de vrai, au lieu d'être excusée. */
+    /* (v326) Les pannes que la carte « Rappels » sait nommer, une par passage :
+       à elles toutes, elles font dire à la carte chacune de ses phrases. */
+    const quand = new Date().toISOString();
+    const BASE_OK = { version:326, abonnes:3, inscrit:true, cron:true, net:true, tache:{ active:true, schedule:'*/5 * * * *' } };
+    const F_OK = { st:200, c:{ version:326, vapid:'ok', pub:'@JEU' } };
+    const avecBase = (plus) => Object.assign({}, BASE_OK, plus);
+    const DIAG_RAPPELS = [
+      { possible:false, etat:null, f:{ st:404, c:null } },
+      { perm:'denied', etat:null, err:{ code:'57014', message:'canceling statement due to statement timeout' }, f:{ st:0 } },
+      { abonne:false, etat:{ version:326, abonnes:1, inscrit:null, cron:false, net:true }, f:{ st:401, c:{} } },
+      { etat:avecBase({ inscrit:false, tache:null }), f:{ st:200, c:{ envoyes:0 } } },
+      { etat:avecBase({ tache:{ erreur:'permission denied for schema cron' } }), f:{ st:200, c:{ version:326, vapid:['VAPID_PRIVEE'], pub:'@JEU' } } },
+      { etat:avecBase({ tache:{ active:false, schedule:'*/5 * * * *' } }), f:{ st:500, c:{ code:'WORKER_ERROR' } } },
+      { etat:avecBase({ tache:{ active:true, schedule:'0 * * * *' }, passage:{ status:'failed', message:'connection refused' }, reponse:null }),
+        f:{ st:200, c:{ version:326, vapid:'ok', pub:'B' + 'x'.repeat(86) } }, copier:true },
+      { etat:avecBase({ reponse:{ erreur:'permission denied for table _http_response' } }), f:F_OK },
+      { etat:avecBase({ reponse:{ error_msg:'Timeout of 25000 ms reached', created:quand } }), f:F_OK },
+      { etat:avecBase({ reponse:{ status_code:200, contenu:'{"version":326,"envoyes":0}', created:quand } }), f:F_OK, essai:{ st:200, c:{ envoye:true } } },
+      { etat:avecBase({ reponse:{ status_code:200, contenu:'{"version":326,"envoyes":1,"echecs":1,"dernier_echec":{"code":403,"raison":"VAPID"}}', created:quand } }), f:F_OK, essai:{ st:429, c:{} } },
+      { etat:avecBase({ reponse:{ status_code:200, contenu:'{"version":326,"envoyes":5,"echecs":2,"dernier_echec":{"code":410,"raison":"Gone"}}', created:quand } }), f:F_OK, essai:{ st:502, c:{ code:403 } } },
+      { etat:avecBase({ reponse:{ status_code:401, contenu:'{"erreur":"accès"}', created:quand } }), f:F_OK, essai:{ st:502, c:{ code:400, details:['Bad Request'] } } },
+      { etat:avecBase({ reponse:{ status_code:400, contenu:'{"erreur":"table"}', created:quand } }), f:F_OK, essai:{ st:404, c:{ erreur:'inconnu' } } },
+    ];
+    const INSTALLE = () => {
+      const vraiMM = window.matchMedia ? window.matchMedia.bind(window) : null;
+      window.matchMedia = (q) => /display-mode/.test(String(q))
+        ? { matches:true, media:q, onchange:null, addEventListener(){}, removeEventListener(){}, addListener(){}, removeListener(){}, dispatchEvent(){ return false; } }
+        : (vraiMM ? vraiMM(q) : { matches:false, media:q, addEventListener(){}, removeEventListener(){} });
+      window.Notification = function(){}; window.Notification.permission = 'default';
+      window.Notification.requestPermission = () => Promise.resolve('default');
+    };
+    for(const [nomGuide, ua, vue, installe] of [['Guide Android', ANDROID, { width:412, height:915 }],
                                       ['Guide iPhone · Safari 26', IOS26, { width:393, height:852 }],
                                       ['Guide iPhone · dans une appli', DANS_APPLI, { width:393, height:852 }],
-                                      ['Guide iPhone · Chrome', CHROME_IOS, { width:393, height:852 }]]){
+                                      ['Guide iPhone · Chrome', CHROME_IOS, { width:393, height:852 }],
+                                      ['Réglages · jeu installé', IOS, { width:393, height:852 }, true],
+                                      ['Modération · rappels', IOS, { width:393, height:852 }, 'diag']]){
       const ctx = await nav.newContext({ viewport:vue, deviceScaleFactor:2,
         userAgent:ua, hasTouch:true, serviceWorkers:'block' });
       const q = await ctx.newPage();
+      if(installe === 'diag') await ctx.grantPermissions(['clipboard-read', 'clipboard-write'], { origin:URL.match(/^https?:\/\/[^/]+/)[0] });
       await ouvrirLaLangue(q, lg);
+      if(installe) await q.addInitScript(INSTALLE);
       await q.addInitScript(PREP, lg);
       await q.goto(URL);
       await q.waitForFunction((l) => { try { return typeof render === 'function' && LANGUE === l; } catch(e){ return false; } }, lg, { timeout:20000 });
       await q.waitForFunction(() => { try { return state.screen === 'mode'; } catch(e){ return false; } }, null, { timeout:20000 });
       try {
-        await q.evaluate(() => { state.screen='mode'; render(); openFsGuide(); });
-        await q.waitForTimeout(450);
-        p2.releve.set(nomGuide, await q.evaluate(RAMASSER));
+        if(installe === 'diag'){
+          /* (v326) LA CARTE « RAPPELS » : chaque panne qu'elle sait nommer, jouée
+             par la vraie fonction du jeu ; on ne remplace que ce qui répond à
+             sa place — la base (rappels_etat), la fonction (lireFonction), le
+             téléphone (abonnement, permission). Le texte de chaque passage
+             s'ajoute au relevé. */
+          const lus = [];
+          /* Vrai quand la carte est là ET que chacun de ses parents est
+             pleinement visible : c'est ce que RAMASSER exige. */
+          const carteLisible = () => q.evaluate(() => {
+            if(state.screen !== 'moderation') return false;
+            const c = document.querySelector('#modRappels .rd-l');
+            if(!c) return false;
+            for(let n = c; n && n !== document.body; n = n.parentElement){
+              const s = getComputedStyle(n);
+              if(s.display === 'none' || s.visibility === 'hidden' || parseFloat(s.opacity) < 1) return false;
+            }
+            return true;
+          });
+          for(const sc of DIAG_RAPPELS){
+           let lisible = false;
+           for(let essai = 0; essai < 4 && !lisible; essai++){
+            await q.evaluate(async (sc) => {
+              const pub = (x) => x && x.c && x.c.pub === '@JEU' ? Object.assign({}, x, { c:Object.assign({}, x.c, { pub:VAPID_PUBLIC }) }) : x;
+              window.notifPossible = () => sc.possible !== false;
+              window.notifEtat = () => sc.perm || 'granted';
+              const sub = sc.abonne === false ? null : { endpoint:'https://web.push.apple.com/appareil-0001', toJSON(){ return { endpoint:this.endpoint }; } };
+              try { Object.defineProperty(navigator, 'serviceWorker', { configurable:true, value:{ ready:Promise.resolve({ pushManager:{ getSubscription:() => Promise.resolve(sub) } }),
+                addEventListener(){}, register:() => Promise.resolve({}) } }); } catch(e){}
+              window.initSupa = () => ({ rpc:async () => sc.etat ? { data:sc.etat, error:null } : { data:null, error:sc.err || { code:'PGRST202', message:'Could not find the function' } } });
+              window.lireFonction = async (corps) => pub((corps && corps.essai_moi) ? (sc.essai || { st:404, c:null }) : (sc.f || { st:404, c:null }));
+              if(state.screen !== 'moderation'){ grp.etat = Object.assign({}, grp.etat || {}, { moderateur:true }); moderation = []; grp.tous = []; state.screen = 'moderation'; render(); }
+              rapDiag.essai = null;
+              await diagnosticRappels(true);
+              if(sc.essai) await essaiRappel();
+              if(sc.copier){ const b = [...document.querySelectorAll('#modRappels .mod-act button')].find(x => /copierDansPressePapier/.test(x.getAttribute('onclick') || '')); if(b) b.click(); }
+            }, sc);
+            /* L'écran a pu partir (le jeu renvoie à l'accueil un joueur sans
+               compte), ou être encore en train d'arriver : on attend qu'il
+               soit lisible, et sinon on rejoue le passage. */
+            for(let t = 0; t < 12 && !(lisible = await carteLisible()); t++) await q.waitForTimeout(100);
+           }
+            if(!lisible) fautes.push(nomGuide + ' (' + lg + ') : la carte « Rappels » ne reste pas lisible');
+            await q.waitForTimeout(sc.copier ? 300 : 0);
+            lus.push(...await q.evaluate(RAMASSER));
+          }
+          p2.releve.set(nomGuide, lus);
+        } else if(installe){
+          const vu = await q.evaluate(() => { state.screen='mode'; render(); openSettings(); return notifPossible(); });
+          if(!vu) fautes.push(nomGuide + ' (' + lg + ') : la rangée des rappels n\'apparaît pas (notifPossible faux)');
+          await q.waitForTimeout(700);
+        } else {
+          await q.evaluate(() => { state.screen='mode'; render(); openFsGuide(); });
+          await q.waitForTimeout(450);
+        }
+        /* La passe « carte Rappels » a déjà posé ses quatorze relevés : une
+           capture finale ici les écrasait tous, sauf le dernier. */
+        if(installe !== 'diag') p2.releve.set(nomGuide, await q.evaluate(RAMASSER));
       } catch(e){ fautes.push(nomGuide + ' (' + lg + ') : ' + e.message.split('\n')[0]); }
       await ctx.close();
     }
@@ -1318,6 +1411,13 @@ const ouvrirLaLangue = async (p, lg) => {
       const tx = p2.releve.get(process.env.ETAPE);
       console.log('  >>> ' + lg + ' ' + process.env.ETAPE + ' : ' + (tx ? tx.length + ' textes' : 'ABSENTE'));
       if(tx) console.log('      ' + tx.map(x => x.t).slice(0, 30).join(' | ').slice(0, 900));
+    }
+    /* OÙ UN MOT S'AFFICHE-T-IL ? CHERCHE=soon dit chaque écran, chaque
+       endroit et chaque texte qui le porte : pour savoir pourquoi une
+       justification « ne sert plus » sans deviner. */
+    if(process.env.CHERCHE){
+      for(const [etape, textes] of p2.releve) for(const { t, ou } of textes)
+        if(aplat(t).includes(process.env.CHERCHE)) console.log('  >>> ' + lg + ' ' + etape + ' [' + ou + '] ' + aplat(t).slice(0, 200));
     }
     /* ===== UN MORCEAU, OUI — MAIS PAS LE DÉBUT D'UNE AUTRE PHRASE =====
        Chercher la valeur DANS ce qui a été lu rattrape les phrases composées

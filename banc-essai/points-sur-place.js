@@ -120,6 +120,14 @@ const dit = (quoi, bon, detail) => { console.log('  ' + (bon ? 'OK  ' : 'KO  ') 
     /* ---- 6 ---- tout le monde à égalité (Joueur 4 → 30, Taylor → 30, Joueur 2 → 30) : la carte se replie ; puis l'égalité se rompt */
     for (const [nom, n] of [['Joueur 4', 3], ['Taylor', 1], ['Joueur 2', 1]]) for (let k = 0; k < n; k++) { await toucher(nom, '+'); await p.clock.runFor(700); }
     await p.clock.runFor(800);
+    /* LE REPLI EST UNE ANIMATION WEB (pod.animate) : elle suit l'horloge du
+       navigateur, pas celle du banc. Sur une machine rapide, runFor rend la
+       main avant la fin réelle du repli et l'on comptait encore la carte. On
+       attend donc SA fin à elle — une carte qui ne se replierait pas n'a pas
+       d'animation à attendre, et resterait comptée. */
+    await p.evaluate(() => Promise.all([...document.querySelectorAll('#app > .screen:not(.screen-exit) .card.podium')]
+      .flatMap(c => c.getAnimations()).map(a => a.finished.catch(() => null))));
+    await p.clock.runFor(50);
     const plie = await p.evaluate(() => ({ pod: document.querySelectorAll('#app > .screen:not(.screen-exit) .card.podium').length, scores: state.scores.join(',') }));
     const e6 = await etat();
     dit('6. tout le monde à égalité : la carte du podium se replie et s\'en va', plie.pod === 0 && JSON.stringify(e6.live) === JSON.stringify(e6.neuf), JSON.stringify(plie));

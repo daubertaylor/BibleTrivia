@@ -68,10 +68,16 @@ function ecart(a, b){
 }
 const AUJOURDHUI = { comptes: fs.readFileSync(path.join(RACINE, 'comptes/table.sql'), 'utf8'), groupes: fs.readFileSync(path.join(RACINE, 'groupes/table.sql'), 'utf8'),
                      notifs: fs.readFileSync(path.join(RACINE, 'notifications/table.sql'), 'utf8'),
-                     verrou: fs.readFileSync(path.join(RACINE, 'notifications/verrouiller.sql'), 'utf8') };
-/* Aujourd'hui, Taylor colle aussi notifications/verrouiller.sql (les rappels
-   en ont besoin) : il doit passer AVANT comme APRÈS les autres. */
-async function installer(b, v){ await b.fichier(v.notifs); if (v.verrou) await b.fichier(v.verrou); await b.fichier(v.comptes); await b.fichier(v.groupes); if (v.verrou) await b.fichier(v.verrou); }
+                     verrou: fs.readFileSync(path.join(RACINE, 'notifications/verrouiller.sql'), 'utf8'),
+                     installeur: fs.readFileSync(path.join(RACINE, 'notifications/installer.sql'), 'utf8') };
+/* Aujourd'hui (v326), pour les rappels, Taylor colle UN fichier :
+   notifications/installer.sql (la table, le verrou, la clé interne, la tâche,
+   l'état). Il doit passer AVANT comme APRÈS les autres. Les versions passées
+   se rejouent avec ce qu'elles avaient. */
+async function installer(b, v){
+  if (v.installeur) { await b.fichier(v.installeur); await b.fichier(v.comptes); await b.fichier(v.groupes); await b.fichier(v.installeur); return; }
+  await b.fichier(v.notifs); if (v.verrou) await b.fichier(v.verrou); await b.fichier(v.comptes); await b.fichier(v.groupes); if (v.verrou) await b.fichier(v.verrou);
+}
 
 (async () => {
   try {

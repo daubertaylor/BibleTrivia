@@ -130,7 +130,11 @@ const dire = (nom, v) => {
          Le jeu doit retomber sur l'écriture directe dans la table.
        — « fonction posée »   : le jeu doit l'utiliser, et NE PLUS TOUCHER à
          la table du tout — c'est ce qui permet de la fermer. */
-  const essaiDuJeu = async (rpcExiste) => {
+  /* (v326) rpcExiste peut aussi valoir 'ancienne' : la fonction d'avant la
+     v326, qui refuse p_jeu/p_priere/p_lecture comme le fait PostgREST
+     (PGRST202). Et les réglages du joueur se choisissent par essai. */
+  const essaiDuJeu = async (rpcExiste, reglages) => {
+    reglages = reglages || { notif: true };
     const ctx = await nav.newContext({ serviceWorkers: 'block' });
     const p = await ctx.newPage();
     await p.route('**/cdn.jsdelivr.net/**', route =>
@@ -148,6 +152,8 @@ const dire = (nom, v) => {
       if (rpc ? !/\/rpc\/push_/.test(r.url()) : !/\/push_subs/.test(r.url())) return route.fulfill({ status: 204, headers: cors });
       vues.push({ methode: rpc ? 'RPC' : r.method(), url: r.url(), corps });
       if (rpc) {
+        if (rpcExiste === 'ancienne' && /p_jeu/.test(corps)) return route.fulfill({ status: 404, headers: cors, contentType: 'application/json',
+          body: JSON.stringify({ code: 'PGRST202', message: "Could not find the function public.push_enregistrer(p_abonnement, p_decalage, p_dernier, p_endpoint, p_jeu, p_lecture, p_priere, p_revoir, p_serie, p_vu)" }) });
         if (rpcExiste) return route.fulfill({ status: 204, headers: cors });
         return route.fulfill({ status: 404, headers: cors, contentType: 'application/json',
           body: JSON.stringify({ code: 'PGRST202', message: "Could not find the function public.push_enregistrer" }) });
@@ -173,7 +179,7 @@ const dire = (nom, v) => {
     await p.waitForFunction(() => { try { return typeof notifSync === 'function' && typeof settings === 'object'; } catch (e) { return false; } }, null, { timeout: 20000 });
     await p.waitForFunction(() => !!(window.supabase && window.supabase.createClient), null, { timeout: 20000 });
     vues.length = 0;
-    await p.evaluate(() => { settings.notif = true; notifSync(); });
+    await p.evaluate((r) => { Object.assign(settings, r); notifSync(); }, reglages);
     await p.waitForTimeout(2500);
     const v = vues.slice();
     await ctx.close();
@@ -182,6 +188,9 @@ const dire = (nom, v) => {
 
   const sansRpc = await essaiDuJeu(false);
   const avecRpc = await essaiDuJeu(true);
+  const ancienne = await essaiDuJeu('ancienne');
+  /* le joueur n'a QUE la prière, à 7 h 30 : la synchro doit tourner quand même */
+  const priereSeule = await essaiDuJeu(true, { notif: false, priere: true, priereH: '07:30' });
   await nav.close(); serveur.close();
 
   /* Ce qui compte : l'état est-il VRAIMENT arrivé quelque part ? */
@@ -215,6 +224,10 @@ const dire = (nom, v) => {
     if (!c.p_dernier) soucis.push('(avec fonction) « p_dernier » vide');
     if ((c.p_serie | 0) < 2) soucis.push('(avec fonction) « p_serie » vaut ' + c.p_serie + ' au lieu de 5');
     if (!c.p_vu) soucis.push('(avec fonction) « p_vu » vide');
+    /* (v326) les rappels du jeu allumés, la prière et la lecture éteintes */
+    console.log('     réglages : ' + JSON.stringify({ p_jeu: c.p_jeu, p_priere: c.p_priere, p_lecture: c.p_lecture }));
+    if (c.p_jeu !== true) soucis.push('(avec fonction) « p_jeu » vaut ' + c.p_jeu + ' au lieu de true');
+    if (c.p_priere !== -1 || c.p_lecture !== -1) soucis.push('(avec fonction) prière/lecture éteintes devraient partir à -1 (' + c.p_priere + ', ' + c.p_lecture + ')');
     /* v324 : la synchro de chaque lancement renvoie l'abonnement ENTIER. Sans
        lui, un téléphone que le serveur a perdu n'y revient jamais : son
        interrupteur reste allumé et plus rien n'arrive. */
@@ -225,6 +238,24 @@ const dire = (nom, v) => {
   if (avecRpc.some(x => x.methode !== 'RPC')) {
     soucis.push('la table est encore touchée alors que la fonction répond : ' + avecRpc.filter(x => x.methode !== 'RPC').length + ' requête(s)');
   }
+
+  /* ===== 5. (v326) UNE FONCTION D'AVANT LA V326 ===== elle ne connaît pas
+     p_jeu, p_priere, p_lecture : le jeu doit réessayer SANS, et l'état doit
+     partir quand même — sans retomber sur la table, qui sera fermée. */
+  dire2('5. LE JEU, serveur avec la fonction d\'AVANT la v326 :', ancienne);
+  const okAncienne = ancienne.filter(x => x.methode === 'RPC');
+  const sansLesTrois = okAncienne.find(x => !/p_jeu/.test(x.corps));
+  if (!sansLesTrois) soucis.push("avec la fonction d'avant la v326, le jeu ne réessaie pas sans p_jeu/p_priere/p_lecture : plus aucun rappel ne part");
+  if (ancienne.some(x => x.methode !== 'RPC')) soucis.push("avec la fonction d'avant la v326, le jeu retombe sur la table");
+  /* ===== 6. (v326) LA PRIÈRE SEULE ===== les rappels du jeu éteints, la
+     prière à 7 h 30 : la synchro tourne (avant, elle s'arrêtait dès que les
+     rappels du jeu étaient éteints), et dit jeu = false, prière = 450. */
+  dire2('6. LE JEU, la prière seule, à 7 h 30 :', priereSeule);
+  const ps = priereSeule.find(x => x.methode === 'RPC');
+  const cps = ps ? JSON.parse(ps.corps) : {};
+  console.log('     réglages : ' + JSON.stringify({ p_jeu: cps.p_jeu, p_priere: cps.p_priere, p_lecture: cps.p_lecture }));
+  if (!ps) soucis.push('la prière seule : la synchro ne part pas (elle attend encore les rappels du jeu)');
+  else if (!(cps.p_jeu === false && cps.p_priere === 450 && cps.p_lecture === -1)) soucis.push('la prière seule : réglages ' + JSON.stringify({ p_jeu: cps.p_jeu, p_priere: cps.p_priere, p_lecture: cps.p_lecture }) + ' au lieu de false / 450 / -1');
 
   if (soucis.length) { console.log('  DÉFAUTS :'); soucis.forEach(s => console.log('   ' + s)); process.exit(1); }
   console.log("  OK — l'état part dans les deux ordres, et la table n'est plus touchée dès que la fonction existe");

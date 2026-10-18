@@ -1,10 +1,20 @@
--- Programmer les rappels : une fois par heure, en UTC.
+-- ============================================================================
+--  REMPLACÉ PAR installer.sql (v326) — NE PLUS COLLER CE FICHIER.
+--  installer.sql pose la même tâche, toutes les cinq minutes, avec une clé
+--  interne que la base fabrique elle-même : plus de clé service_role à
+--  recopier. Ce fichier reste pour l'histoire.
+-- ============================================================================
+
+-- Programmer les rappels : toutes les cinq minutes (v326), en UTC.
 -- (Étape 5 du LISEZMOI. À coller dans l'éditeur SQL de Supabase.)
 --
--- Pourquoi toutes les heures : les joueurs ne sont pas dans le même fuseau.
--- À chaque passage, la fonction ne réveille QUE ceux chez qui il est 19 h,
--- et seulement dans les deux cas prévus (série en jeu, ou longue absence).
--- Elle ne fait donc rien 23 fois sur 24 pour un joueur donné.
+-- Pourquoi si souvent : les rappels de prière et de lecture tombent à l'heure
+-- que le joueur a choisie, à la minute près (v326) ; avant, une fois par heure
+-- suffisait. La fonction ne fait presque toujours RIEN : à chaque passage,
+-- elle ne réveille que ceux dont c'est l'heure, et chacun au plus une fois
+-- par jour et par sorte de rappel (jeu_le, priere_le, lecture_le). Coût :
+-- 288 appels par jour, très loin des limites gratuites de Supabase.
+-- (Si la tâche « rappels » existe déjà, la même commande la remplace.)
 
 -- 1. Les deux extensions nécessaires (une seule fois).
 create extension if not exists pg_cron;
@@ -15,7 +25,7 @@ create extension if not exists pg_net;
 --    elle ne doit JAMAIS se retrouver dans index.html ni dans le dépôt.
 select cron.schedule(
   'rappels',
-  '0 * * * *',
+  '*/5 * * * *',
   $$
     select net.http_post(
       url     := 'https://chyuckryusxzssezesuw.supabase.co/functions/v1/rappels',
