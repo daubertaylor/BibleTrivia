@@ -1,37 +1,64 @@
 # Les rappels
 
-> ## ✅ CE QU'IL FAUT FAIRE, DANS L'ORDRE (à jour au 18/10/2026, v326)
+> ## ✅ CE QU'IL FAUT FAIRE, DANS L'ORDRE (à jour au 18/10/2026)
 >
-> Relevé le 18/10 sur la vraie base, avec la seule clé publique : la fonction
-> d'inscription `push_enregistrer` **n'existe pas** en ligne, la colonne
-> `revoir` non plus, et la table ne laisse plus rien lire (elle montrait huit
-> abonnements le 28/09). C'est ce qui donne « Impossible d'activer le rappel
-> pour le moment ». Rien de tout ça ne se règle depuis le jeu : il faut la
-> console Supabase. **Trois gestes, une fois, dans cet ordre** — et plus
-> aucune clé `service_role` à recopier nulle part :
->
-> 1. **SQL Editor** → New query → colle **`notifications/installer.sql` en
->    entier** → **Run**. Tout le serveur en un collage : la table et ses
->    colonnes, le verrou, la porte d'inscription, une **clé interne** que la
->    base fabrique elle-même, la **tâche des cinq minutes** qui appelle la
->    fonction avec cette clé, et `rappels_etat()` que le jeu lit pour dire ce
->    qui manque. Il se recolle sans risque, par-dessus n'importe quelle
->    installation d'avant : aucun joueur ne perd rien.
+> 1. **La base — FAIT le 18/10/2026.** SQL Editor → New query → colle
+>    **`notifications/installer.sql` en entier** → **Run**. Tout le serveur
+>    en un collage : la table et ses colonnes, le verrou, la porte
+>    d'inscription, une **clé interne** que la base fabrique elle-même, la
+>    **tâche des cinq minutes** qui appelle la fonction avec cette clé, et
+>    `rappels_etat()` que le jeu lit pour dire ce qui manque. Il se recolle
+>    sans risque, par-dessus n'importe quelle installation d'avant : aucun
+>    joueur ne perd rien. (Relevé le 18/10 à 12 h 45 UTC : la base répond
+>    v326, la tâche passe toutes les cinq minutes, huit abonnés.)
 >    S'il écrit « pg_cron indisponible » ou « pg_net indisponible » :
 >    **Database → Extensions** → active `pg_cron` et `pg_net` → recolle.
-> 2. **Edge Functions** → `rappels` → **Code** → remplace tout par
->    **`notifications/rappels.ts`** → **Deploy**. (Si elle n'existe pas :
->    *Deploy a new function* → *Via Editor* → nom `rappels`.) Ses trois
->    secrets restent ceux qui y sont : `VAPID_PUBLIQUE` (celle du jeu),
+> 2. **La fonction : GitHub la pose lui-même.** « Le code pour les Edge
+>    Functions ne se colle pas » : l'éditeur de code de Supabase refuse le
+>    collage. Plus rien à coller : `.github/workflows/rappels.yml` dépose
+>    `notifications/rappels.ts` dans Supabase en désactivant **Verify JWT**
+>    du même geste (jamais l'ancienne fonction sans sa porte), puis vérifie
+>    la fonction en ligne (`notifications/verifier.js`). Une seule chose à
+>    faire, une fois — un jeton qui ne vit que chez GitHub :
+>    1. **supabase.com/dashboard/account/tokens** → **Generate token** →
+>       *Expires in* : *Never* (il se supprime d'un geste) → *Resource
+>       access* : **Project**, le projet du jeu (`chyuckryusxzssezesuw`) →
+>       permissions : **Edge Functions → Read-write**, et rien d'autre →
+>       **Review access** → crée-le → copie le jeton (il commence par
+>       `sbp_fc`, et ne s'affiche qu'une fois). C'est le seul droit dont le
+>       déploiement a besoin : il n'appelle que « Deploy a function » (relevé
+>       le 18/10 avec l'outil 2.119.0 contre une fausse API de gestion, qui a
+>       noté chaque appel) ;
+>    2. **github.com/daubertaylor/BibleTrivia/settings/secrets/actions/new** →
+>       Name : `SUPABASE_ACCESS_TOKEN` → Secret : colle le jeton → **Add
+>       secret** ;
+>    3. **Actions → « Fonction rappels » → Run workflow.** Vert : la fonction
+>       est en place et vérifiée. Rouge : la page du déploiement dit pourquoi,
+>       en français.
+>
+>    Ensuite, chaque changement de `rappels.ts` sur `main` part tout seul. Le
+>    jeton ne va **jamais** ni dans le dépôt, ni dans une conversation ; il se
+>    révoque d'un geste sur la même page de Supabase. Les trois secrets de la
+>    fonction restent ceux qui y sont — `VAPID_PUBLIQUE` (celle du jeu),
 >    `VAPID_PRIVEE` (la tienne, qui ne passe jamais par une conversation),
->    `VAPID_SUJET` = `mailto:yadaquiz.app@gmail.com`.
-> 3. **Seulement ensuite**, dans la même fonction → **Details** → désactive
->    **Verify JWT** (parfois écrit *Enforce JWT verification*) → **Save**.
->    Le jeu parle à Supabase avec une clé *publishable*, qui n'est pas un
->    JWT, et la tâche n'en porte pas : la porte de Supabase les refuserait
->    toutes les deux. C'est donc la fonction qui garde sa porte (la clé
->    interne). **Pas avant l'étape 2** : sans porte, l'ancienne fonction,
->    qui ne vérifie rien, partirait toutes les cinq minutes.
+>    `VAPID_SUJET` = `mailto:yadaquiz.app@gmail.com` — et le déploiement
+>    vérifie qu'ils vont ensemble et que la clé publique est celle du jeu.
+>
+>    *Sans GitHub, depuis un ordinateur* : Edge Functions → `rappels` →
+>    **Code** → remplace tout par `notifications/rappels.ts` → **Deploy** ;
+>    **seulement ensuite**, Details → désactive **Verify JWT** (parfois écrit
+>    *Enforce JWT verification*) → **Save**.
+>
+> **Pourquoi « Verify JWT » s'en va, et pourquoi vite.** La tâche n'a pas de
+> JWT : tant que la porte est là, Supabase la refuse (401), et c'est donc la
+> fonction qui garde sa porte (la clé interne). Et une surprise, mesurée le
+> 18/10/2026 : Supabase laisse désormais passer la clé *publishable* du jeu
+> devant cette porte. Tant que l'**ancienne** fonction est en ligne, chaque
+> appel du jeu — la carte « Rappels » de la Modération, la confirmation d'un
+> rappel allumé — lui fait faire un passage de rappels hors de la tâche :
+> elle ne vérifie rien. **N'ouvre pas la Modération avant que le déploiement
+> soit vert.** Le vérificateur, lui, interroge la fonction sans clé, comme
+> la tâche : il ne réveille jamais l'ancienne.
 >
 > **Pour vérifier, sans rien deviner** : dans le jeu installé, Groupes →
 > bouclier → **Modération** → carte **« Rappels »**. Chaque maillon a sa
@@ -41,7 +68,8 @@
 > téléphone en quelques secondes — ou dit pourquoi elle ne part pas, jusqu'au
 > refus du service d'envoi. Sans le jeu sous la main, la même chose se lit
 > dans le SQL Editor : `select public.rappels_etat();` (la tâche, son dernier
-> passage, la dernière réponse de la fonction).
+> passage, la dernière réponse de la fonction), et d'un terminal :
+> `node notifications/verifier.js`.
 >
 > Les joueurs qui avaient allumé les rappels n'ont rien à refaire : depuis la
 > v324, chaque lancement réinscrit le téléphone. Et en allumant un rappel, un
