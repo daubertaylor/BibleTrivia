@@ -7,7 +7,9 @@
 #
 # Une seule chose à faire, une fois : le secret SUPABASE_ACCESS_TOKEN
 # (Settings → Secrets and variables → Actions), un jeton d'accès créé sur
-# supabase.com/dashboard/account/tokens. Il ne vit que là : jamais dans le
+# supabase.com/dashboard/account/tokens, limité au projet du jeu avec le seul
+# droit Edge Functions en lecture-écriture (le déploiement n'appelle que
+# « Deploy a function »). Il ne vit que là : jamais dans le
 # dépôt, jamais dans une conversation, masqué dans les journaux. Sans lui, rien
 # ne part, et la page du déploiement le dit sans passer au rouge.
 #
@@ -88,6 +90,8 @@ jobs:
               printf '### ❌ Le déploiement a échoué\n\n'
               if grep -q "Invalid access token" "$RUNNER_TEMP/deploiement.txt"; then
                 printf -- "- Supabase refuse le jeton : recrée-le sur supabase.com/dashboard/account/tokens, puis remplace le secret SUPABASE_ACCESS_TOKEN.\n"
+              elif grep -qE "missing_permissions|status 403" "$RUNNER_TEMP/deploiement.txt"; then
+                printf -- "- Le jeton n'a pas le bon droit : il lui faut Edge Functions → Read-write sur le projet du jeu. Un jeton ne se modifie pas : supprime-le, recrée-le, puis remplace le secret SUPABASE_ACCESS_TOKEN.\n"
               fi
               printf '\n```\n%s\n```\n' "$(tail -n 5 "$RUNNER_TEMP/deploiement.txt")"
             } >> "$GITHUB_STEP_SUMMARY"

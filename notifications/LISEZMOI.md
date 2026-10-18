@@ -20,9 +20,15 @@
 >    du même geste (jamais l'ancienne fonction sans sa porte), puis vérifie
 >    la fonction en ligne (`notifications/verifier.js`). Une seule chose à
 >    faire, une fois — un jeton qui ne vit que chez GitHub :
->    1. **supabase.com/dashboard/account/tokens** → **Generate new token** →
->       nom « GitHub Yada » → **Generate token** → copie le jeton (il
->       commence par `sbp_`, et ne s'affiche qu'une fois) ;
+>    1. **supabase.com/dashboard/account/tokens** → **Generate token** →
+>       *Expires in* : *Never* (il se supprime d'un geste) → *Resource
+>       access* : **Project**, le projet du jeu (`chyuckryusxzssezesuw`) →
+>       permissions : **Edge Functions → Read-write**, et rien d'autre →
+>       **Review access** → crée-le → copie le jeton (il commence par
+>       `sbp_fc`, et ne s'affiche qu'une fois). C'est le seul droit dont le
+>       déploiement a besoin : il n'appelle que « Deploy a function » (relevé
+>       le 18/10 avec l'outil 2.119.0 contre une fausse API de gestion, qui a
+>       noté chaque appel) ;
 >    2. **github.com/daubertaylor/BibleTrivia/settings/secrets/actions/new** →
 >       Name : `SUPABASE_ACCESS_TOKEN` → Secret : colle le jeton → **Add
 >       secret** ;
