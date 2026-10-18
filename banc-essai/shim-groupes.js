@@ -9,7 +9,14 @@
    - channel().on("presence"|"broadcast")  -> les salons, par hub.js ;
    - auth.getSession / onAuthStateChange / signOut / signInWithOtp / verifyOtp.
    L'IDENTITÉ est posée par le banc : localStorage « essai_moi », ou
-   window.__seConnecter(id). Ce n'est pas un banc (voir tous.sh). */
+   window.__seConnecter(id). Ce n'est pas un banc (voir tous.sh).
+   (v328) Un canal du direct (postgres_changes) a un « state » comme celui de
+   supabase-js (closed, joining, joined, errored) et dit CLOSED quand on le
+   quitte. window.__couperDirect(mode) coupe tous les canaux du direct de la
+   page : « silence » (le canal se croit encore ouvert — le pire cas),
+   « erreur » (une vraie coupure : state « errored », rappel CHANNEL_ERROR),
+   « etat » (state « errored », sans rappel : un téléphone qui revient de
+   veille). window.__canauxDirect les tient. */
 (function(){
   function moi(){ try{ return localStorage.getItem("essai_moi") || ""; }catch(e){ return ""; } }
   function session(){
@@ -62,12 +69,27 @@
     return b;
   }
 
+  window.__canauxDirect = window.__canauxDirect || [];
+  window.__couperDirect = function(mode){
+    let n = 0;
+    window.__canauxDirect.forEach(function(c){ if(c.__couper(mode)) n++; });
+    return n;
+  };
   function creeCanal(nom, opts){
     const cle = (opts && opts.config && opts.config.presence && opts.config.presence.key) || ("id" + Math.random());
     const self = !(opts && opts.config && opts.config.broadcast && opts.config.broadcast.self === false);
     const ecouteurs = { presence:{}, broadcast:{}, pg:[] };
-    let etatPresence = {}, source = null, sources = [], abonne = false;
+    let etatPresence = {}, source = null, sources = [], abonne = false, etat = "closed", rappel = null;
     const api = {
+      get state(){ return etat; },
+      __nom:nom,
+      __couper:function(mode){
+        if(!ecouteurs.pg.length || etat !== "joined") return false;
+        sources.forEach(function(s){ s.close(); }); sources = [];
+        if(mode === "erreur" || mode === "etat") etat = "errored";
+        if(mode === "erreur" && rappel) setTimeout(function(){ rappel("CHANNEL_ERROR"); }, 0);
+        return true;
+      },
       on:function(type, filtre, cb){
         if(type === "presence"){ const e = (filtre && filtre.event) || "sync";
           (ecouteurs.presence[e] = ecouteurs.presence[e] || []).push(cb); }
@@ -77,7 +99,9 @@
       },
       subscribe:function(cb){
         let attendus = 0, ouverts = 0;
-        const pret = function(){ ouverts++; if(!abonne && ouverts >= attendus){ abonne = true; if(cb) cb("SUBSCRIBED"); } };
+        rappel = cb || null; etat = "joining";
+        if(ecouteurs.pg.length) window.__canauxDirect.push(api);
+        const pret = function(){ ouverts++; if(!abonne && ouverts >= attendus){ abonne = true; etat = "joined"; if(cb) cb("SUBSCRIBED"); } };
         const aPresence = Object.keys(ecouteurs.presence).length || Object.keys(ecouteurs.broadcast).length;
         if(aPresence || !ecouteurs.pg.length){
           attendus++;
@@ -111,7 +135,14 @@
       untrack:async function(){ await fetch("/hub/untrack", { method:"POST", body:JSON.stringify({ chan:nom, id:cle }) }); return "ok"; },
       send:async function(msg){ await fetch("/hub/send", { method:"POST", body:JSON.stringify({ chan:nom, from:cle, event:msg.event, payload:msg.payload, self:self }) }); return "ok"; },
       presenceState:function(){ return etatPresence; },
-      unsubscribe:function(){ if(source) source.close(); sources.forEach(function(s){ s.close(); }); sources = []; return Promise.resolve("ok"); }
+      unsubscribe:function(){
+        if(source) source.close(); sources.forEach(function(s){ s.close(); }); sources = [];
+        const etait = etat; etat = "closed";
+        /* Comme supabase-js : un canal du direct qu'on quitte dit CLOSED. */
+        if(ecouteurs.pg.length && rappel && etait !== "closed") setTimeout(function(){ rappel("CLOSED"); }, 0);
+        window.__canauxDirect = window.__canauxDirect.filter(function(c){ return c !== api; });
+        return Promise.resolve("ok");
+      }
     };
     return api;
   }

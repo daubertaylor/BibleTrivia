@@ -1803,11 +1803,24 @@
      voit pas. (Un dégradé de la taille de la puce, posé dans la goutte,
      rétrécissait AVEC elle : on voyait grandir un rectangle, pas une goutte.) (« .bk-carte » devant la tuile : la règle
      commune de la goutte, plus bas dans la feuille, l'emporterait à égalité.) */
+  /* ===== (v328) SANS MASQUE : L'IPHONE NE LE SUIT PAS EN MOUVEMENT =====
+     « Sur iOS, Tout, Mentions, Muet : l'animation bugue. » Ces puces sont les
+     seules dont l'encre ANIMÉE portait un masque (-webkit-mask-image) : sur
+     iPhone, une couche qui s'agrandit en direct et qu'un masque découpe est
+     confiée au compositeur, qui ne tient pas le masque à chaque image — le
+     dégradé passe par moments en carré, sans sa découpe. La goutte est
+     maintenant un disque net (border-radius, la découpe de la couche elle-
+     même), toujours peint du dégradé calé sur celui de la puce : à l'échelle
+     1, elle est la puce choisie au pixel près. Son rayon est celui qui couvre
+     le coin le plus éloigné, sans la marge du bord adouci (voir coeurEncre).
+     ET LA RELÈVE SE CHEVAUCHE. Le dégradé de la puce revient UNE FOIS
+     l'encre pleine (encre-posee), et l'encre reste encore 120 ms dessus —
+     sept images : les deux sont la même image, et si l'iPhone peint l'un une
+     image après l'autre, rien ne clignote entre les deux. */
   .sheet-veil .len-chip::after, .bk-carte .bk-choix::after{
-    background:linear-gradient(150deg, #F44E2C var(--encre-g0, 0%), #DE3616 var(--encre-g1, 100%));
-    -webkit-mask-image:radial-gradient(closest-side, #000 82%, rgba(0,0,0,0.6) 91%, transparent 100%);
-    mask-image:radial-gradient(closest-side, #000 82%, rgba(0,0,0,0.6) 91%, transparent 100%); }
+    background:linear-gradient(150deg, #F44E2C var(--encre-g0, 0%), #DE3616 var(--encre-g1, 100%)); }
   .sheet-veil .len-chip.sel.remplit, .bk-carte .bk-choix.sel.remplit{ background-image:none; }
+  .sheet-veil .len-chip.sel.remplit.encre-posee, .bk-carte .bk-choix.sel.remplit.encre-posee{ background-image:linear-gradient(150deg, #F44E2C, #DE3616); }
   /* LA JAUGE DE LA SEMAINE (v316 ; avant, celle du carnet entier). Elle ne
      remplace pas le nombre — la porte doit continuer d'annoncer ce qu'elle
      jouera — elle montre le CHEMIN : les erreurs de la semaine déjà
@@ -2282,9 +2295,11 @@
      bord, dans un sens comme dans l'autre, et même en sautant une puce.
      L'encre démarre doucement (on la voit s'étaler), la sortie cède la place
      au même rythme. */
-  .chip.remplit::after, .len-chip.remplit::after, .bk-choix.remplit::after{ animation:encreIn var(--encre-duree) cubic-bezier(0.3,0.55,0.25,1) forwards; }
+  /* (v328) --encre-avance : un geste interrompu repart d'où il en est, par un
+     délai négatif (voir basculerChoix). Zéro le reste du temps. */
+  .chip.remplit::after, .len-chip.remplit::after, .bk-choix.remplit::after{ animation:encreIn var(--encre-duree) cubic-bezier(0.3,0.55,0.25,1) calc(0ms - var(--encre-avance, 0ms)) forwards; }
   .chip.devide::after, .len-chip.devide::after, .bk-choix.devide::after{ transform:scale(1); opacity:1;
-    animation:encreOut calc(var(--encre-sortie) * var(--encre-k, 1)) cubic-bezier(0.2,0.45,0.42,1) var(--encre-attente) forwards; }
+    animation:encreOut calc(var(--encre-sortie) * var(--encre-k, 1)) cubic-bezier(0.2,0.45,0.42,1) calc(var(--encre-attente) - var(--encre-avance, 0ms)) forwards; }
   /* ===== LA PUCE QUITTÉE ATTEND UNE IMAGE AVANT DE CÉDER (v304) =====
      « Des fois lorsque je clique sur certains boutons comme la durée de partie,
      ça clignote légèrement. » Le réglage ci-dessus avait été mesuré AU RALENTI
@@ -2314,8 +2329,8 @@
      « button.has-gs::before ».) */
   button.chip::before, button.len-chip::before, button.bk-choix::before,
   button.chip.has-gs::before, button.len-chip.has-gs::before{ inset:auto;
-    left:calc(var(--encre-x) - var(--encre-r)); top:calc(var(--encre-y) - var(--encre-r));
-    width:calc(var(--encre-r) * 2); height:calc(var(--encre-r) * 2); border-radius:50%;
+    left:calc(var(--onde-x, var(--encre-x)) - var(--onde-r, var(--encre-r))); top:calc(var(--onde-y, var(--encre-y)) - var(--onde-r, var(--encre-r)));
+    width:calc(var(--onde-r, var(--encre-r)) * 2); height:calc(var(--onde-r, var(--encre-r)) * 2); border-radius:50%;
     background:radial-gradient(closest-side, var(--press-tint, rgba(238,74,40,0.18)) 82%, transparent 100%); }
   /* Sur les surfaces DÉJÀ corail, l'onde se fait blanche : sinon rien ne se
      verrait. Même logique, feedback identique. */
@@ -5530,13 +5545,31 @@
      de disque qu'au Profil (31 px, puis 39 retenue), même ombre, même voile
      d'appui blanc. Huit pastilles au lieu de six : le bouton est un peu plus
      étroit, et la zone qu'on touche garde ses 44 px (::after). */
+  /* ===== (v328) UN VRAI DISQUE, PAS UN FOND DÉCOUPÉ =====
+     « Sur Android, les couleurs de groupe sont carrées au lieu de rondes. »
+     Reproduit dans Chrome : le disque était le FOND du bouton, un dégradé
+     découpé à la boîte de contenu (background-clip), et l'ombre un FILTRE
+     (drop-shadow). Quand la pastille tombe entre deux pixels — huit
+     pastilles réparties sur la largeur, c'est presque toujours —, Chrome
+     rogne le dégradé filtré au pixel entier : des côtés plats, à gauche pour
+     l'une, à droite pour l'autre, en haut et en bas pour la retenue. Le
+     disque est maintenant un élément à lui (.gt-disque), rond par son propre
+     border-radius, avec une ombre ordinaire (box-shadow, la même : 1 px de
+     décalage, 2 px de flou). Mêmes tailles : il occupe ce qu'occupait la
+     boîte de contenu (0,3rem de marge, 0,08rem retenue), et c'est cette
+     marge qui s'ouvre. (Les pastilles du Profil, en couleur unie, n'ont pas
+     ce défaut : mesurées rondes, elles ne changent pas.) */
   .grp-teintes{ display:flex; justify-content:space-between; gap:0.2rem; }
-  .grp-teinte{ position:relative; width:2.45rem; height:2.45rem; border-radius:50%; border:0; padding:0.3rem; flex-shrink:0;
+  .grp-teinte{ position:relative; width:2.45rem; height:2.45rem; border-radius:50%; border:0; padding:0; flex-shrink:0; background:none;
     display:flex; align-items:center; justify-content:center; color:#fff;
-    box-shadow:none; filter:drop-shadow(0 1px 2px rgba(24,16,10,0.3));
-    transition:padding 0.24s cubic-bezier(0.32,0.72,0,1); -webkit-tap-highlight-color:transparent; --press-tint: rgba(255,255,255,0.55); }
+    box-shadow:none; -webkit-tap-highlight-color:transparent; --press-tint: rgba(255,255,255,0.55); }
+  .gt-disque{ position:absolute; top:0.3rem; right:0.3rem; bottom:0.3rem; left:0.3rem; border-radius:50%; pointer-events:none;
+    box-shadow:0 1px 2px rgba(24,16,10,0.3);
+    transition:top 0.24s cubic-bezier(0.32,0.72,0,1), right 0.24s cubic-bezier(0.32,0.72,0,1),
+      bottom 0.24s cubic-bezier(0.32,0.72,0,1), left 0.24s cubic-bezier(0.32,0.72,0,1); }
+  .grp-teinte .cd-ck{ position:relative; }
   .grp-teinte::after{ content:""; position:absolute; left:50%; top:50%; width:44px; height:44px; transform:translate(-50%,-50%); }
-  .grp-teinte.choisie{ padding:0.08rem; }
+  .grp-teinte.choisie .gt-disque{ top:0.08rem; right:0.08rem; bottom:0.08rem; left:0.08rem; }
   .grp-teinte.choisie .cd-ck{ opacity:1; transform:scale(1); }
   .grp-code-carte{ display:flex; flex-direction:column; align-items:center; gap:0.35rem; padding:0.9rem 0.8rem 1rem; border-radius:var(--r-l);
     background:rgb(252,248,241); box-shadow:0 3px 12px rgba(34,26,16,0.08); }
@@ -6463,6 +6496,16 @@ const TEXTES = {
     "D'accord":"Yes, please",
     "Non merci":"No thanks",
     "Installer":"Install",
+    "{jeu} est installé : ouvre-le depuis ton écran d'accueil.":"{jeu} is installed: open it from your home screen.",
+    "Samsung Internet installe {jeu} avec un avertissement d'Android. Chrome l'installe sans : {jeu} s'ouvre dans Chrome, tu n'as plus qu'à toucher « Installer ».":"Samsung Internet installs {jeu} with an Android warning. Chrome installs it without one: {jeu} opens in Chrome, then just tap “Install”.",
+    "Ouvrir dans Chrome":"Open in Chrome",
+    "Installer {jeu}":"Install {jeu}",
+    "Plus tard":"Later",
+    "Les trois traits, en bas":"The three lines, at the bottom",
+    "« Ajouter la page à »":"“Add page to”",
+    "Puis « Écran d'accueil »":"Then “Home screen”",
+    "Si Android avertit":"If Android shows a warning",
+    "Touche « Installer quand même »":"Tap “Install anyway”",
     "Retirer 10 points":"Remove 10 points",
     "Ajouter 10 points":"Add 10 points",
     "★ Nouveau record personnel\u00a0!":"★ New personal best!",
@@ -6687,6 +6730,8 @@ const TEXTES = {
     "Tous les groupes":"All groups",
     "Voir le groupe":"View group",
     "Aucun groupe pour l'instant.":"No groups yet.",
+    "La liste des groupes ne se lit pas : {m}":"The group list can't be read: {m}",
+    "pas de réseau":"no network",
     "Ce groupe n'existe plus.":"This group no longer exists.",
     "Partie du groupe":"Group game",
     "Les membres te rejoignent depuis la discussion.":"Members join you from the chat.",
@@ -7178,6 +7223,16 @@ const TEXTES = {
     "D'accord":"Sí, claro",
     "Non merci":"No, gracias",
     "Installer":"Instalar",
+    "{jeu} est installé : ouvre-le depuis ton écran d'accueil.":"{jeu} está instalado: ábrelo desde tu pantalla de inicio.",
+    "Samsung Internet installe {jeu} avec un avertissement d'Android. Chrome l'installe sans : {jeu} s'ouvre dans Chrome, tu n'as plus qu'à toucher « Installer ».":"Samsung Internet instala {jeu} con un aviso de Android. Chrome lo instala sin aviso: {jeu} se abre en Chrome y solo tienes que tocar “Instalar”.",
+    "Ouvrir dans Chrome":"Abrir en Chrome",
+    "Installer {jeu}":"Instalar {jeu}",
+    "Plus tard":"Más tarde",
+    "Les trois traits, en bas":"Las tres rayas, abajo",
+    "« Ajouter la page à »":"“Añadir página a”",
+    "Puis « Écran d'accueil »":"Luego “Pantalla de inicio”",
+    "Si Android avertit":"Si Android muestra un aviso",
+    "Touche « Installer quand même »":"Toca “Instalar de todos modos”",
     "Retirer 10 points":"Quitar 10 puntos",
     "Ajouter 10 points":"Añadir 10 puntos",
     "★ Nouveau record personnel\u00a0!":"★ ¡Nuevo récord personal!",
@@ -7410,6 +7465,8 @@ const TEXTES = {
     "Tous les groupes":"Todos los grupos",
     "Voir le groupe":"Ver el grupo",
     "Aucun groupe pour l'instant.":"Todavía no hay grupos.",
+    "La liste des groupes ne se lit pas : {m}":"La lista de grupos no se puede leer: {m}",
+    "pas de réseau":"sin red",
     "Ce groupe n'existe plus.":"Este grupo ya no existe.",
     "Partie du groupe":"Partida del grupo",
     "Les membres te rejoignent depuis la discussion.":"Los miembros se unen desde el chat.",
@@ -7760,9 +7817,12 @@ document.addEventListener("pointerdown", (e)=>{
     if(teinte) b.style.setProperty("--press-tint", teinte);
   }catch(e){}
   /* L'ENCRE PART DU DOIGT : sur une puce de choix, on note où il s'est posé.
-     Le voile d'appui et, si la puce est choisie, l'encre en partiront. */
+     Le voile d'appui et, si la puce est choisie, l'encre en partiront.
+     (v328) Une encre en plein geste garde son centre : si cette puce est
+     reprise, elle repart d'où elle en est (voir basculerChoix). Le voile,
+     lui, part toujours du doigt. */
   if(b.classList.contains("chip") || b.classList.contains("len-chip") || b.classList.contains("bk-choix")){
-    try{ encrerPuce(b, e.clientX, e.clientY); b._doigt = performance.now(); }catch(err){}
+    try{ ondePuce(b, e.clientX, e.clientY); b._doigt = performance.now(); }catch(err){}
   }
   ondeCourante = b; ondePleine = false; ondeTenue = true;
   b.addEventListener("animationend", ondeFinie);
@@ -9800,7 +9860,7 @@ const SUPABASE_ANON_KEY = "sb_publishable_FDJ_R0foC7uIeHmxVrj6rA_2NeIgW2a";
    remontée d'un téléphone ne vaut rien si on ne sait pas QUELLE version
    tournait. Elle doit rester égale au CACHE de sw.js — c'est ce que vérifie
    banc-essai/version.js, qui refuse de laisser publier les deux en désaccord. */
-const VERSION_JEU = "v327";
+const VERSION_JEU = "v328";
 
 /* ===================== QUAND ÇA CASSE CHEZ UN JOUEUR =====================
    « Si quelque chose casse chez cinq d'entre eux sur un modèle de téléphone
@@ -13053,7 +13113,7 @@ function reglagesHtml(){
       </div>
       <div class="set-groupe">
       ${(IS_PHONE && !isStandalone) ? `
-      <button class="set-row set-lien" onclick="openFsGuide()">
+      <button class="set-row set-lien" id="setInstaller" onclick="installerJeu()">
         <span class="set-ico fsx">${ICONS.telecharger}</span>
         <span class="set-txt"><b>${T("Installer le jeu")}</b></span>
         <span class="set-chev">${ICONS.chevronRight}</span>
@@ -13205,12 +13265,69 @@ try{
      iOS n'a pas cette interface : il continue de rétrécir visualViewport,
      rien ne change pour lui. */
   const vk = ("virtualKeyboard" in navigator) ? navigator.virtualKeyboard : null;
-  if(vk){ try{ vk.overlaysContent = true; }catch(e){} }
-  const rectClavier = ()=>{ try{ const r = vk && vk.boundingRect; return (r && r.height > 0) ? r : null; }catch(e){ return null; } };
+  /* ===== (v328) UN CLAVIER QUI NE DIT PAS SA TAILLE : LE MODE ORDINAIRE =====
+     « Sur Android, le clavier » : la barre d'écriture d'une discussion
+     restait sous le clavier ouvert. « Par-dessus » (overlays-content) n'est
+     sûr que si le navigateur DIT où est son clavier. Certains le posent
+     par-dessus sans jamais le dire — un navigateur sans
+     navigator.virtualKeyboard qui suit pourtant l'en-tête (Firefox), un
+     autre dont l'interface reste muette (on soupçonne Samsung Internet,
+     celui qui a installé Yada sur le Galaxy de Taylor) : le jeu ne voyait
+     aucun clavier, et rien ne montait.
+     Un guetteur : un champ qu'un doigt vient de toucher prend le foyer, et
+     dans les 900 ms qui suivent, ni l'interface du clavier ni la zone visible
+     n'ont rien dit — le navigateur ne dira rien. Le jeu repasse alors au mode
+     ORDINAIRE des navigateurs (interactive-widget=resizes-visual : la zone
+     visible rétrécit), que tout ce module sait lire, et s'en souvient pour
+     les lancements suivants sur ce téléphone (bt_clavier_redim). Chrome, qui
+     dit son clavier, ne bascule jamais. */
+  const CLE_REDIM = "bt_clavier_redim";
+  let redim = false;
+  try{ redim = localStorage.getItem(CLE_REDIM) === "1"; }catch(e){}
+  const modeOrdinaire = ()=>{
+    const m = document.querySelector('meta[name="viewport"]');
+    const c = m ? (m.getAttribute("content") || "") : "";
+    if(m && /interactive-widget=overlays-content/.test(c)) m.setAttribute("content", c.replace("interactive-widget=overlays-content", "interactive-widget=resizes-visual"));
+    if(vk){ try{ vk.overlaysContent = false; }catch(e){} }
+  };
+  if(redim) modeOrdinaire();
+  else if(vk){ try{ vk.overlaysContent = true; }catch(e){} }
+  const rectClavier = ()=>{ try{ const r = !redim && vk && vk.boundingRect; return (r && r.height > 0) ? r : null; }catch(e){ return null; } };
+  if(/Android/i.test(navigator.userAgent || "") && !redim){
+    let toucheChamp = 0, guet = null;
+    document.addEventListener("pointerdown", (e)=>{
+      const el = e.target && e.target.closest ? e.target.closest("input, textarea") : null;
+      if(el) toucheChamp = performance.now();
+    }, { capture:true, passive:true });
+    document.addEventListener("focusin", (e)=>{
+      const el = e.target;
+      if(redim || !el || !(el.tagName === "INPUT" || el.tagName === "TEXTAREA")) return;
+      if(performance.now() - toucheChamp > 1200) return;        // un foyer sans doigt n'ouvre pas de clavier
+      const h0 = vv.height;
+      clearTimeout(guet);
+      guet = setTimeout(()=>{
+        if(redim || !isField() || document.hidden) return;
+        if(rectClavier() || vv.height < h0 - 90 || vv.height < restH - 90) return;   // il a parlé
+        redim = true;
+        try{ localStorage.setItem(CLE_REDIM, "1"); }catch(err){}
+        modeOrdinaire();
+        setTimeout(apply, 60); setTimeout(apply, 400);
+      }, 900);
+    });
+  }
+  /* (v328) LA HAUTEUR DU CLAVIER, PAS SA POSITION. « Sur Android, le
+     clavier cache où l'on écrit, dans un groupe. » Chrome Android a rendu
+     une position fausse pour un clavier posé en bas (crbug 493416495 :
+     boundingRect.y valait 66 au lieu de « hauteur de la fenêtre − clavier »),
+     la hauteur restant juste. Le jeu prenait cette position : il croyait
+     n'avoir que 66 px de visibles, et la barre d'écriture partait n'importe
+     où sauf au-dessus du clavier. Un clavier de téléphone est toujours posé
+     sur le bas de la fenêtre : ce qui reste visible, c'est la fenêtre moins
+     sa hauteur. */
   const hauteurVisible = ()=>{
     const r = rectClavier();
     if(!r) return vv.height;
-    return Math.max(0, Math.min(vv.height, r.y > 0 ? r.y : innerHeight - r.height));
+    return Math.max(0, Math.min(vv.height, innerHeight - r.height));
   };
   /* Placement du champ actif : CONTRÔLÉ, jamais scrollIntoView.
      scrollIntoView({block:"center"}) avait deux défauts visibles à l'écran :
@@ -18192,7 +18309,10 @@ function dureeCss(el, nom, defaut){
    ne doit pas en être décalée. Sans point (clavier, appel du jeu), la goutte
    naît au centre. */
 const ENCRE_COEUR = 0.82;
-function encrerPuce(c, clientX, clientY){
+/* (v328) Dans une page, la goutte est un disque net (sans bord adouci, voir
+   « SANS MASQUE ») : c'est son bord même qui doit couvrir le coin. */
+function coeurEncre(c){ return c.closest(".sheet-veil, .bk-carte") ? 1 : ENCRE_COEUR; }
+function pointPuce(c, clientX, clientY){
   const W = c.offsetWidth, H = c.offsetHeight;
   let x = W / 2, y = H / 2;
   if(clientX != null && clientY != null){
@@ -18202,12 +18322,29 @@ function encrerPuce(c, clientX, clientY){
       y = Math.min(H, Math.max(0, (clientY - r.top) * H / r.height));
     }
   }
-  return poserEncre(c, x, y);
+  return { x, y };
+}
+const lePlusLoin = (c, x, y)=>{ const W = c.offsetWidth, H = c.offsetHeight;
+  return Math.max(Math.hypot(x, y), Math.hypot(W - x, y), Math.hypot(x, H - y), Math.hypot(W - x, H - y)); };
+function encrerPuce(c, clientX, clientY){
+  const o = pointPuce(c, clientX, clientY);
+  return poserEncre(c, o.x, o.y);
+}
+/* Le voile d'appui : un disque adouci centré sur le doigt (son cœur couvre le
+   coin le plus éloigné). L'encre suit le doigt elle aussi, sauf en plein
+   geste. */
+function ondePuce(c, clientX, clientY){
+  const o = pointPuce(c, clientX, clientY);
+  c.style.setProperty("--onde-x", o.x.toFixed(1) + "px");
+  c.style.setProperty("--onde-y", o.y.toFixed(1) + "px");
+  c.style.setProperty("--onde-r", (lePlusLoin(c, o.x, o.y) / ENCRE_COEUR + 1).toFixed(1) + "px");
+  if(echelleEncre(c) == null) poserEncre(c, o.x, o.y);
 }
 function poserEncre(c, x, y){
   const W = c.offsetWidth, H = c.offsetHeight;
-  const loin = Math.max(Math.hypot(x, y), Math.hypot(W - x, y), Math.hypot(x, H - y), Math.hypot(W - x, H - y));
-  const rayon = loin / ENCRE_COEUR + 1;
+  const loin = lePlusLoin(c, x, y);
+  const coeur = coeurEncre(c);
+  const rayon = loin / coeur + 1;
   c.style.setProperty("--encre-x", x.toFixed(1) + "px");
   c.style.setProperty("--encre-y", y.toFixed(1) + "px");
   c.style.setProperty("--encre-r", rayon.toFixed(1) + "px");
@@ -18223,7 +18360,7 @@ function poserEncre(c, x, y){
   const delta = (x - W / 2) * sx + (y - H / 2) * sy;
   c.style.setProperty("--encre-g0", (mi - lPuce / 2 - delta).toFixed(1) + "px");
   c.style.setProperty("--encre-g1", (mi + lPuce / 2 - delta).toFixed(1) + "px");
-  return { x, y, rayon };
+  return { x, y, rayon, coeur };
 }
 /* La courbe d'étalement de l'encre (la même que dans la feuille de style) :
    à quel instant le disque atteint-il une échelle donnée ? On résout la
@@ -18259,7 +18396,7 @@ function delaiLibelle(c, o, dureeMs){
                           Math.hypot(g - o.x, bas - o.y), Math.hypot(d - o.x, bas - o.y));
   /* L'échelle à atteindre pour que le CŒUR plein couvre le libellé, ramenée
      à la progression de la courbe (l'encre part de l'échelle 0,03). */
-  const echelle = besoin / (o.rayon * ENCRE_COEUR);
+  const echelle = besoin / (o.rayon * (o.coeur || ENCRE_COEUR));
   const prog = (echelle - 0.03) / 0.97;
   const t = instantBezier(0.3, 0.55, 0.25, 1, Math.min(1, Math.max(0, prog)));   // la courbe d'encreIn
   return Math.round(Math.min(dureeMs, Math.max(40, t * dureeMs + 16)));
@@ -18272,6 +18409,41 @@ function delaiLibelle(c, o, dureeMs){
    rejouer le remplissage sur une puce déjà choisie ferait clignoter le
    groupe. L'encre de la nouvelle puce naît sous le doigt s'il vient de s'y
    poser ; celle de l'ancienne se retire vers le côté de la nouvelle. */
+/* ===== (v328) UN GESTE INTERROMPU REPART D'OÙ IL EN EST =====
+   « Tout, Mentions, Muet : l'animation bugue quand je clique un peu
+     partout. » Touchées vite l'une après l'autre, les puces repartaient du
+   DÉBUT de leur geste : une puce à moitié remplie qu'on quittait redevenait
+   pleine d'un coup avant de se vider ; une puce à moitié vidée qu'on
+   reprenait redevenait vide avant de se remplir. Deux sauts par changement
+   d'avis. L'encre garde maintenant la trace de son geste (son sens, son
+   départ, sa durée) : interrompue, la nouvelle animation démarre à l'instant
+   de SA courbe où l'échelle est celle de l'écran (un délai négatif,
+   --encre-avance), depuis le même centre. Elle continue, dans l'autre sens. */
+const COURBE_ENCRE_IN = [0.3, 0.55, 0.25, 1], COURBE_ENCRE_OUT = [0.2, 0.45, 0.42, 1];
+/* La valeur d'une courbe de Bézier CSS à l'instant x (de 0 à 1). */
+function valeurBezier(x1, y1, x2, y2, x){
+  const bx = (u)=> 3*(1-u)*(1-u)*u*x1 + 3*(1-u)*u*u*x2 + u*u*u;
+  const by = (u)=> 3*(1-u)*(1-u)*u*y1 + 3*(1-u)*u*u*y2 + u*u*u;
+  if(x <= 0) return 0;
+  if(x >= 1) return 1;
+  let a = 0, b = 1;
+  for(let i = 0; i < 40; i++){ const m = (a + b) / 2; if(bx(m) < x) a = m; else b = m; }
+  return by((a + b) / 2);
+}
+/* L'échelle de l'encre d'une puce à cet instant, tant qu'un geste est en
+   vol ; null s'il n'y en a pas (ou plus). */
+function echelleEncre(c){
+  const a = c && c._encre;
+  if(!a || !(c.classList.contains("remplit") || c.classList.contains("devide"))) return null;
+  const t = performance.now() - a.debut;
+  if(a.sens === "in"){
+    if(t >= a.duree) return null;
+    return 0.03 + 0.97 * valeurBezier(...COURBE_ENCRE_IN, Math.max(0, t) / a.duree);
+  }
+  if(t >= a.attente + a.duree) return null;
+  if(t <= a.attente) return 1;
+  return 1 - 0.98 * valeurBezier(...COURBE_ENCRE_OUT, (t - a.attente) / a.duree);
+}
 function basculerChoix(selecteur, classe, k){
   const puces = [...document.querySelectorAll(selecteur)];
   const nouvelle = puces.find(c => c.dataset.k === k) || null;
@@ -18283,16 +18455,26 @@ function basculerChoix(selecteur, classe, k){
     const avant = c.classList.contains(classe);
     const apres = c.dataset.k === k;
     if(avant === apres) return;
-    let duree;
+    let duree, avance = 0, attente = 0;
+    /* Lu avant de toucher aux classes : où en est l'encre de CETTE puce. */
+    const enVol = echelleEncre(c);
+    const geometrie = ()=>({ x: parseFloat(c.style.getPropertyValue("--encre-x")), y: parseFloat(c.style.getPropertyValue("--encre-y")),
+                             rayon: parseFloat(c.style.getPropertyValue("--encre-r")), coeur: coeurEncre(c) });
+    const valide = (o)=> o && isFinite(o.x) && isFinite(o.y) && isFinite(o.rayon);
     try{
       if(apres){
-        /* Le point posé au contact est déjà sur la puce ; sinon, le centre. */
-        const o = doigt ? { x: parseFloat(c.style.getPropertyValue("--encre-x")), y: parseFloat(c.style.getPropertyValue("--encre-y")),
-                             rayon: parseFloat(c.style.getPropertyValue("--encre-r")) } : null;
-        const ok = o && isFinite(o.x) && isFinite(o.y) && isFinite(o.rayon);
-        const pose = ok ? o : encrerPuce(c);
         duree = dureeCss(c, "--encre-duree", 500);
-        c.style.setProperty("--encre-texte", delaiLibelle(c, pose, duree) + "ms");
+        let pose;
+        if(enVol != null && enVol > 0.03 && valide(geometrie())){
+          /* Elle se vidait : elle se remplit d'où elle en est, depuis son centre. */
+          pose = geometrie();
+          avance = instantBezier(...COURBE_ENCRE_IN, Math.min(1, (enVol - 0.03) / 0.97)) * duree;
+        } else {
+          /* Le point posé au contact est déjà sur la puce ; sinon, le centre. */
+          const o = doigt ? geometrie() : null;
+          pose = valide(o) ? o : encrerPuce(c);
+        }
+        c.style.setProperty("--encre-texte", Math.max(0, delaiLibelle(c, pose, duree) - avance) + "ms");
       } else {
         /* SOUS UN DOIGT, LA PUCE QUITTÉE CÈDE UN PEU PLUS VITE. Le voile
            d'appui rosit déjà la nouvelle puce avant même que l'encre parte :
@@ -18302,30 +18484,44 @@ function basculerChoix(selecteur, classe, k){
            Au clic (clavier, appel du jeu), il n'y a pas de voile : la sortie
            garde son rythme, sinon la rangée se creuserait. */
         c.style.setProperty("--encre-k", doigt ? "0.85" : "1");
-        /* Vers la nouvelle : le milieu du bord qui lui fait face. */
-        const W = c.offsetWidth, H = c.offsetHeight;
-        let x = W / 2, y = H / 2;
-        if(nouvelle){
-          const [ax, ay] = centre(c), [nx, ny] = centre(nouvelle);
-          if(Math.abs(nx - ax) >= Math.abs(ny - ay)) x = nx > ax ? W : 0;
-          else y = ny > ay ? H : 0;
-        }
-        poserEncre(c, x, y);
         duree = dureeCss(c, "--encre-sortie", 300) * (doigt ? 0.85 : 1);
+        attente = dureeCss(c, "--encre-attente", 20);
+        if(enVol != null && enVol < 1 && valide(geometrie())){
+          /* Elle se remplissait : elle se vide d'où elle en est, tout de suite,
+             depuis son centre — sans l'image d'attente, qui la rendrait pleine. */
+          avance = instantBezier(...COURBE_ENCRE_OUT, Math.min(1, (1 - enVol) / 0.98)) * duree + attente;
+        } else {
+          /* Vers la nouvelle : le milieu du bord qui lui fait face. */
+          const W = c.offsetWidth, H = c.offsetHeight;
+          let x = W / 2, y = H / 2;
+          if(nouvelle){
+            const [ax, ay] = centre(c), [nx, ny] = centre(nouvelle);
+            if(Math.abs(nx - ax) >= Math.abs(ny - ay)) x = nx > ax ? W : 0;
+            else y = ny > ay ? H : 0;
+          }
+          poserEncre(c, x, y);
+        }
       }
-    }catch(e){ duree = 500; }
+    }catch(e){ duree = 500; avance = 0; }
     c._doigt = 0;
+    c.style.setProperty("--encre-avance", avance.toFixed(0) + "ms");
+    c._encre = { sens: apres ? "in" : "out", debut: performance.now() - avance, duree, attente: apres ? 0 : attente };
     /* Une animation ne se rejoue pas si sa classe est déjà là : on la retire,
        on force le calcul, on la remet. */
-    c.classList.remove("remplit", "devide");
+    c.classList.remove("remplit", "devide", "encre-posee");
     void c.offsetWidth;
     c.classList.toggle(classe, apres);
     c.classList.add(apres ? "remplit" : "devide");
-    clearTimeout(c._remplirT);
+    clearTimeout(c._remplirT); clearTimeout(c._poseT);
+    /* Dans une page, le dégradé de la puce revient dès que l'encre est
+       pleine, et l'encre reste encore un instant par-dessus (voir SANS
+       MASQUE) : la relève se chevauche. */
+    const page = apres && coeurEncre(c) === 1;
+    if(page) c._poseT = setTimeout(()=>{ c.classList.add("encre-posee"); }, Math.max(0, duree - avance));
     /* La classe passagère s'en va une fois le mouvement fini : l'état, lui,
        est porté par « active »/« sel », qui restent. Un filet de sécurité au
        cas où l'animation ne rendrait jamais la main (onglet endormi). */
-    c._remplirT = setTimeout(()=>{ c.classList.remove("remplit", "devide"); }, duree + 120);
+    c._remplirT = setTimeout(()=>{ c.classList.remove("remplit", "devide", "encre-posee"); }, duree + 120);
   });
 }
 function setLength(key){
@@ -21797,6 +21993,8 @@ async function chargerListesUneFois(){
     grp.liste = mes; grp.listeDeMemoire = false;
     await chargerProfils(mes.map(g => g.apercu && g.apercu.auteur));
     memoriserListe();
+    /* (v328) La discussion ouverte prend le nom que la liste vient d'apporter. */
+    if(state.screen === "groupe" && grp.courant) majTeteGroupe(groupeCourant());
   }
   if(pub) grp.publics = pub;
   if(photosServeur()) voirPhotos([].concat(mes || [], pub || []).map(g => ["g:" + g.id, g.photo_maj]));
@@ -21810,9 +22008,12 @@ async function chargerListesUneFois(){
 function majListes(){
   if(state.screen !== "groupes") return;
   const m = document.getElementById("grpMes"), p = document.getElementById("grpPublics");
-  if(m) m.innerHTML = lignesMes();
-  if(p) p.innerHTML = lignesPublics();
-  try{ glassRelayout(); queueGlassSync(); }catch(e){}
+  /* (v328) Relues toutes les 30 s (voir LES LISTES SE RELISENT) : rien ne se
+     redessine si rien n'a changé. */
+  let change = false;
+  if(m){ const h = lignesMes(); if(m._html !== h){ m.innerHTML = h; m._html = h; change = true; } }
+  if(p){ const h = lignesPublics(); if(p._html !== h){ p.innerHTML = h; p._html = h; change = true; } }
+  if(change){ try{ glassRelayout(); queueGlassSync(); }catch(e){} }
 }
 
 /* ---------- LA COULEUR D'UN GROUPE ----------
@@ -22278,7 +22479,7 @@ function formulaireGroupeHtml(g){
     </div>
     <p class="grp-aide grp-aide-type" id="grpTypeAide"><span class="${creation.type === "public" ? "" : "vu"}" data-t="prive">${T("Privé : on n'y entre qu'avec son code.")}</span><span class="${creation.type === "public" ? "vu" : ""}" data-t="public">${T("Public : tout le monde peut le trouver dans « Découvrir » et y entrer.")}</span></p>
     <div class="grp-teintes" role="radiogroup" aria-label="${T("Couleur du groupe")}">${TEINTES.map((t, i)=>
-      `<button class="grp-teinte${creation.teinte === i ? " choisie" : ""}" style="${teinte(i)}background-clip:content-box;" onclick="choisirTeinte(${i})" role="radio" aria-checked="${creation.teinte === i}" aria-label="${Tf("Couleur {n}", { n:i + 1 })}"><span class="cd-ck">${ACH_CHECK}</span></button>`).join("")}</div>
+      `<button class="grp-teinte${creation.teinte === i ? " choisie" : ""}" onclick="choisirTeinte(${i})" role="radio" aria-checked="${creation.teinte === i}" aria-label="${Tf("Couleur {n}", { n:i + 1 })}"><span class="gt-disque" style="${teinte(i)}"></span><span class="cd-ck">${ACH_CHECK}</span></button>`).join("")}</div>
     <div class="grp-mot"><span></span></div>`;
 }
 /* ===== PRIVÉ / PUBLIC : LE MÊME GESTE QUE LA DURÉE ET LE CHRONO =====
@@ -22965,11 +23166,35 @@ async function chargerGroupe(id){
     if(r && r.data && photosServeur()) await voirPhotos([["g:" + id, r.data.photo_maj]]);
     const g = (grp.liste || []).find(x => x.id === id);
     if(r && r.data && g){
+      const avant = signatureGroupe(g);
       Object.assign(g, { nom:r.data.nom, description:r.data.description || "", ouvert:r.data.ouvert, teinte:r.data.teinte, code:r.data.code, nb_membres:r.data.nb_membres });
-      const t = document.getElementById("grpTete");
-      if(t && grp.courant === id) t.innerHTML = teteGroupeHtml(g);
+      if(logosServeur() && r.data.logo != null) g.logo = r.data.logo;
+      majTeteGroupe(g);
+      /* Renommé, recoloré ailleurs : la liste de ce téléphone s'en souvient. */
+      if(signatureGroupe(g) !== avant) memoriserListe();
     }
   }catch(e){}
+}
+/* ===== (v328) LE NOM CHANGÉ SE VOIT AUSSI DEDANS =====
+   « Quand je change le nom du groupe, à l'intérieur du groupe c'est toujours
+     l'ancien nom. » Un renommage ne prévient personne : les autres
+   téléphones — et les autres appareils du même joueur — ne l'apprenaient
+   qu'en relisant leur liste, et une discussion déjà ouverte ne relisait
+   jamais son en-tête, même quand la liste, elle, arrivait à jour. Maintenant
+   l'en-tête, la couleur de l'écran et la page des infos suivent le groupe
+   chaque fois qu'il est relu : à l'entrée, à chaque relève de la discussion
+   ouverte (toutes les 10 s, voir releverFil), et à chaque relecture de la
+   liste. Rien ne se redessine si rien n'a changé. */
+function signatureGroupe(g){ return g ? [g.nom, g.description, g.ouvert, g.teinte, g.logo, g.nb_membres].join("|") : ""; }
+function majTeteGroupe(g){
+  if(!g || grp.courant !== g.id || state.screen !== "groupe") return;
+  const t = document.getElementById("grpTete");
+  const sig = signatureGroupe(g) + "|" + (valeurPhotoSrv("g:" + g.id) || "");
+  if(t && t._sig !== sig){ t.innerHTML = teteGroupeHtml(g); t._sig = sig; }
+  const ecran = document.querySelector("#app > .screen.groupe-ecran:not(.screen-exit)");
+  const style = couleurGroupe(g.teinte);
+  if(ecran && ecran.getAttribute("style") !== style) ecran.setAttribute("style", style);
+  majInfosGroupe(g);
 }
 async function chargerMembres(id){
   const supa = initSupa(); if(!supa || !supa.from) return;
@@ -22981,6 +23206,10 @@ async function chargerMembres(id){
   }catch(e){ return; }
   if(grp.courant === id){
     majCompo(); majInfosMembres();
+    /* (v328) Un « @ » tapé avant que les membres soient connus : la liste se
+       propose dès qu'ils arrivent. */
+    const ta = document.getElementById("compoTexte");
+    if(ta && document.activeElement === ta) majNoms(ta);
     /* Les noms des membres viennent d'arriver : une mention dessinée avant
        qu'on les connaisse se met en gras maintenant (v317). */
     const f = grp.fils[id];
@@ -23017,6 +23246,7 @@ async function chargerFil(id){
        l'app, réouverture) ne bouge pas qui lisait plus haut. */
     if(z && premiere){ z.innerHTML = filHtml(id); descendreFil(false); }
     else if(z) majFil();
+    releverFil();
   }
   marquerLu(id);
 }
@@ -23355,9 +23585,13 @@ function nommables(){
   return (grp.membres[grp.courant] || []).filter(x => x.membre !== moi && nomDe(x.membre)).map(x => ({ id:x.membre, nom:nomDe(x.membre) }));
 }
 /* « jeton » commence-t-il à la position i de « texte », et s'y arrête-t-il
-   net ? « @Marc » ne nomme pas Marc dans « @Marco ». */
+   net ? « @Marc » ne nomme pas Marc dans « @Marco ».
+   (v328) Ni les majuscules ni les accents ne comptent : « @benoit », tapé à
+   la main sans passer par la liste, nomme Benoît, comme « @BENOÎT ». Le texte
+   et les noms sont comparés sous leur forme composée (NFC), lettre pour
+   lettre : la longueur du jeton reste celle du nom écrit. */
 function jetonEn(texte, i, jeton){
-  return texte.slice(i, i + jeton.length).toLocaleLowerCase() === jeton.toLocaleLowerCase()
+  return sansAccents(texte.slice(i, i + jeton.length)) === sansAccents(jeton)
     && !LETTRE.test(texte.charAt(i + jeton.length));
 }
 /* Le mot en train de s'écrire sous le curseur, s'il commence par « @ ». */
@@ -23372,6 +23606,11 @@ function majNoms(t){
   const z = document.getElementById("compoNoms");
   if(!z) return;
   const j = t && t.id === "compoTexte" ? jetonSousCurseur(t) : null;
+  /* (v328) Les membres ne sont pas encore là (groupe tout juste ouvert) : on
+     les demande ; la liste se proposera à leur arrivée (chargerMembres). */
+  if(j && grp.courant && !grp.membres[grp.courant] && !grp.membresEnCours){
+    grp.membresEnCours = chargerMembres(grp.courant).finally(()=>{ grp.membresEnCours = null; });
+  }
   let l = [];
   if(j){
     const q = sansAccents(j.q);
@@ -23431,7 +23670,8 @@ function toucheCompo(e){
 /* Qui ce texte nomme-t-il ? À chaque « @ » qui commence un mot, le nom le
    plus long qui s'y lit en entier — « @Jean Paul » nomme Jean Paul, pas Jean. */
 function mentionsDuTexte(texte){
-  const noms = nommables().map(x => ({ id:x.id, j:"@" + x.nom })).sort((a, b)=> b.j.length - a.j.length);
+  texte = String(texte || "").normalize("NFC");
+  const noms = nommables().map(x => ({ id:x.id, j:"@" + x.nom.normalize("NFC") })).sort((a, b)=> b.j.length - a.j.length);
   const tous = jetonsTous();
   const ids = []; let pourTous = false;
   for(let i = texte.indexOf("@"); i >= 0; i = texte.indexOf("@", i + 1)){
@@ -23448,9 +23688,9 @@ function mentionsDuTexte(texte){
 /* Le texte d'une bulle, ses mentions en gras — seulement celles que le
    serveur a gardées : un « @Nom » écrit pour un non-membre reste du texte. */
 function texteAvecMentions(m){
-  const texte = String(m.texte || ""), d = m.donnees || {};
+  const texte = String(m.texte || "").normalize("NFC"), d = m.donnees || {};
   const jetons = [];
-  if(Array.isArray(d.mentions)) d.mentions.forEach(id => { const n = nomDe(id); if(n) jetons.push("@" + n); });
+  if(Array.isArray(d.mentions)) d.mentions.forEach(id => { const n = nomDe(id); if(n) jetons.push("@" + n.normalize("NFC")); });
   if(d.tous === true) jetons.push(...jetonsTous());
   if(!jetons.length) return escapeHtml(texte);
   jetons.sort((a, b)=> b.length - a.length);
@@ -23481,6 +23721,20 @@ async function envoyerMessageGroupe(){
   if(!t || !g) return;
   const texte = t.value.trim();
   if(!texte) return;
+  /* (v328) UNE MENTION NE SE PERD PLUS À L'OUVERTURE. Écrite dans les
+     premières secondes, avant que la liste des membres soit arrivée, elle
+     partait sans personne : pas de gras, pas de « @ » chez la personne
+     nommée. Si le texte contient « @ » et que les membres manquent, on les
+     attend — deux secondes et demie au plus. */
+  if(texte.indexOf("@") >= 0 && !grp.membres[g.id]){
+    if(grp.envoiAttend) return;                // un deuxième toucher pendant l'attente : un seul envoi
+    grp.envoiAttend = true;
+    try{
+      if(!grp.membresEnCours) grp.membresEnCours = chargerMembres(g.id).finally(()=>{ grp.membresEnCours = null; });
+      await Promise.race([grp.membresEnCours, new Promise(r => setTimeout(r, 2500))]);
+    } finally { grp.envoiAttend = false; }
+    if(groupeCourant() !== g || t.value.trim() !== texte) return;   // on a changé de groupe, ou de texte, entre-temps
+  }
   const f = grp.fils[g.id];
   const id = -(++grp.enCours);
   const donnees = mentionsDuTexte(texte);
@@ -23603,23 +23857,124 @@ function rejoindrePartieGroupe(code){
    Un seul canal pour tous mes groupes : le serveur ne m'envoie QUE les
    messages de mes groupes, moins ceux des personnes que j'ai bloquées (les
    règles d'accès s'appliquent au direct comme au reste). */
+/* ===== (v328) LE DIRECT SE PERD, ET RIEN NE LE DISAIT =====
+   « Les messages, je les vois — mais pas quand je suis à l'intérieur d'un
+     groupe. » Le serveur, lui, diffuse bien (sondé le 18/10/2026 : « Subscribed
+   to PostgreSQL » sur public.messages). C'est le téléphone qui perdait son
+   canal — une mise en veille, un réseau qui change, une session renouvelée —
+   et ne le rouvrait jamais : « grp.canal » existait encore, donc on ne se
+   réabonnait plus. La liste se rattrapait toute seule (elle se relit au retour
+   sur l'app) ; une discussion ouverte, rien ne la relisait.
+   Le canal dit maintenant son état (le rappel de subscribe). Une coupure du
+   réseau, la bibliothèque la répare d'elle-même (elle rejoint le canal) : on
+   lui en laisse le temps, et s'il n'est toujours pas rouvert, on en ouvre un
+   neuf, de plus en plus patiemment (2 s, 4 s… 1 min au plus). Au retour sur
+   l'app ou du réseau, un canal qui n'est pas « joined » est rouvert tout de
+   suite. Et un canal rouvert après une coupure relit la discussion regardée
+   et la liste : ce qui est arrivé entre-temps ne lui a pas été diffusé.
+   UN NOM NEUF À CHAQUE OUVERTURE. supabase-js rend le canal qui porte déjà ce
+   nom s'il en existe un — y compris celui qu'on vient de quitter et qui n'a
+   pas fini de se fermer — et un canal ne s'abonne qu'une fois : rouvrir sous
+   le même nom échouait en silence, et le direct restait mort. */
+let directRelance = null, directNo = 0;
 function abonnerGroupes(){
   if(grp.canal || !compteConnecte()) return;
   const supa = initSupa(); if(!supa || !supa.channel) return;
   try{
-    grp.canal = supa.channel("groupes-" + monId())
+    const canal = supa.channel("groupes-" + monId() + "-" + (++directNo))
       .on("postgres_changes", { event:"*", schema:"public", table:"messages" }, (p)=>{
         const m = p && p.new;
         if(!m || !m.groupe) return;
+        if(grp.canal === canal) grp.directVu = Date.now();
         surMessageDirect(m, p.eventType);
-      })
-      .subscribe();
-  }catch(e){ grp.canal = null; }
+      });
+    grp.canal = canal;
+    canal.subscribe((statut)=>{
+      if(grp.canal !== canal) return;            // un canal qu'on a quitté se ferme : rien à faire
+      grp.direct = statut;
+      if(statut === "SUBSCRIBED"){
+        grp.directRates = 0;
+        clearTimeout(directRelance); directRelance = null;
+        if(grp.directPerdu){
+          grp.directPerdu = false;
+          if(state.screen === "groupe" && grp.courant) chargerFil(grp.courant);
+          chargerListes();
+        }
+      }
+      else if(statut === "CHANNEL_ERROR" || statut === "TIMED_OUT" || statut === "CLOSED"){ grp.directPerdu = true; relancerDirect(); }
+    });
+  }catch(e){ grp.canal = null; grp.directPerdu = true; relancerDirect(); }
+}
+function relancerDirect(){
+  if(directRelance || !compteConnecte()) return;
+  const d = Math.min(60000, 2000 * Math.pow(2, Math.min(5, grp.directRates || 0)));
+  grp.directRates = (grp.directRates || 0) + 1;
+  directRelance = setTimeout(()=>{
+    directRelance = null;
+    if(grp.canal && grp.canal.state === "joined") return;    // la bibliothèque l'a rejoint d'elle-même
+    desabonnerGroupes(); abonnerGroupes();
+  }, d);
+}
+/* Un canal qui n'est ni ouvert ni en train de s'ouvrir est rouvert tout de suite. */
+function verifierDirect(){
+  if(!participeGroupes()) return;
+  if(!grp.canal){ grp.directPerdu = true; abonnerGroupes(); return; }
+  const s = grp.canal.state;
+  if(s && s !== "joined" && s !== "joining"){
+    clearTimeout(directRelance); directRelance = null;
+    grp.directPerdu = true;
+    desabonnerGroupes(); abonnerGroupes();
+  }
 }
 function desabonnerGroupes(){
+  clearTimeout(directRelance); directRelance = null;
   if(!grp.canal) return;
-  try{ initSupa().removeChannel(grp.canal); }catch(e){}
-  grp.canal = null;
+  const c = grp.canal;
+  grp.canal = null; grp.direct = null;           // d'abord : la fermeture de c ne relance rien
+  try{ Promise.resolve(initSupa().removeChannel(c)).catch(()=>{}); }catch(e){}
+}
+/* ===== (v328) ET TANT QU'UNE DISCUSSION EST OUVERTE, ON RELÈVE =====
+   Le direct reste le chemin rapide ; la relève est le filet. Discussion
+   ouverte et regardée : on demande au serveur ce qui est arrivé APRÈS le
+   dernier message connu — toutes les 4 s si le direct n'est pas établi,
+   toutes les 10 s s'il l'est (un canal peut se taire en se croyant ouvert).
+   Une seule petite requête, et rien du tout quand on a quitté la discussion,
+   ni quand l'app est en arrière-plan.
+   UN CANAL QUI SE TAIT SE TRAHIT ICI. Si la relève trouve des messages que
+   le direct aurait dû apporter, et que le direct n'a rien dit depuis trois
+   secondes, c'est qu'il se croit ouvert sans plus rien recevoir : on en
+   ouvre un neuf. (Au pire, un message tombé entre les deux coûte une
+   réouverture de trop — rien de visible.) */
+let releveT = null;
+function releverFil(){
+  clearTimeout(releveT); releveT = null;
+  if(state.screen !== "groupe" || !grp.courant) return;
+  const id = grp.courant;
+  releveT = setTimeout(async ()=>{
+    releveT = null;
+    if(state.screen !== "groupe" || grp.courant !== id) return;
+    if(!document.hidden && navigator.onLine !== false){
+      try{ await rattraperFil(id); }catch(e){}
+      if(!enLecture()) chargerGroupe(id);       // son nom, sa couleur : peut-être changés ailleurs
+      verifierDirect();
+    }
+    releverFil();
+  }, grp.direct === "SUBSCRIBED" ? 10000 : 4000);
+}
+async function rattraperFil(id){
+  id = id || (state.screen === "groupe" ? grp.courant : null);
+  const f = id && grp.fils[id];
+  if(!f || !f.charge) return;
+  const dernier = (f.messages || []).reduce((a, m)=> m.id > a ? m.id : a, 0);
+  const supa = initSupa(); if(!supa || !supa.from) return;
+  const r = await supa.from("messages").select(COLONNES_FIL).eq("groupe", id).gt("id", dernier).order("id", { ascending:true }).limit(FIL_PAGE);
+  if(r.error || !Array.isArray(r.data)) return;
+  const manques = r.data.filter(m => !(grp.fils[id].messages || []).some(x => x.id === m.id)).length;
+  for(const m of r.data){ try{ await surMessageDirect(m, "INSERT"); }catch(e){} }
+  if(manques && grp.canal && grp.direct === "SUBSCRIBED" && Date.now() - (grp.directVu || 0) > 3000){
+    grp.directPerdu = true;
+    desabonnerGroupes(); abonnerGroupes();
+  }
 }
 /* AU RETOUR SUR L'APP. Le direct ne rattrape pas ce qui est arrivé pendant
    que le téléphone dormait : on relit la liste (les non-lus de la pastille)
@@ -23627,15 +23982,22 @@ function desabonnerGroupes(){
    le joueur à ce qu'il lisait (voir chargerFil). */
 document.addEventListener("visibilitychange", ()=>{
   if(document.hidden || !participeGroupes()) return;
+  verifierDirect();
   if(state.screen === "groupe" && grp.courant) chargerFil(grp.courant);
   chargerListes();
+});
+/* (v328) Le réseau revient : le canal aussi, et la discussion rattrape. */
+window.addEventListener("online", ()=>{
+  if(!participeGroupes()) return;
+  verifierDirect();
+  if(state.screen === "groupe" && grp.courant) rattraperFil(grp.courant).catch(()=>{});
 });
 /* UN MESSAGE NE COMPTE QU'UNE FOIS. Le direct peut rejouer un événement —
    une reconnexion, un rattrapage qui croise le direct — et chaque doublon
    ajoutait un non-lu de plus. On retient les identifiants déjà comptés. */
 const dejaComptes = new Set();
 async function surMessageDirect(m, evt){
-  if(m.auteur && !grp.profils[m.auteur]) await chargerProfils([m.auteur]);
+  if(m.auteur && !grp.profils[m.auteur]){ try{ await chargerProfils([m.auteur]); }catch(e){} }
   recevoirMessage(m);
   if(evt === "INSERT"){
     if(dejaComptes.has(m.id)) return;
@@ -23926,18 +24288,45 @@ function choixNotifsHtml(g){
     <p class="grp-aide grp-aide-type" id="grpNotifsAide">${NOTIFS_MODES.map((k, i)=> `<span class="${mode === k ? "vu" : ""}" data-t="${k}">${aides[i]}</span>`).join("")}</p>`;
 }
 /* Le choix se voit tout de suite ; si le serveur ne le prend pas, il revient
-   à l'ancien, et la page dit pourquoi. */
-async function reglerNotifs(i){
+   à l'ancien, et la page dit pourquoi.
+   (v328) UNE DEMANDE À LA FOIS, ET LA DERNIÈRE GAGNE. Trois touchers rapides
+   (Mentions, Muet, Tout) lançaient trois demandes à la fois ; elles
+   arrivaient au serveur dans l'ordre du réseau, pas dans celui des doigts —
+   il pouvait garder « Muet » quand la page montrait « Tout ». Et un refus
+   tardif ramenait la page à un choix déjà dépassé. Maintenant une seule
+   demande est en route par groupe ; à son retour, si le joueur a changé
+   d'avis entre-temps, c'est son DERNIER choix qui part. Un refus ne ramène
+   en arrière que s'il porte sur ce dernier choix, et il ramène à ce que le
+   serveur a vraiment. */
+const notifsEnvoi = {};
+function reglerNotifs(i){
   const g = groupeCourant(), k = NOTIFS_MODES[i];
   if(!g || !k) return;
-  const avant = modeNotifs(g);
-  if(k === avant) return;
+  if(k === modeNotifs(g)) return;
+  const e = notifsEnvoi[g.id] = notifsEnvoi[g.id] || { enRoute: false };
+  /* Rien en route : ce que la page montre est ce que le serveur a (il a pu
+     changer depuis un autre téléphone). */
+  if(!e.enRoute) e.confirme = modeNotifs(g);
+  e.voulu = k;
   appliquerNotifs(g, k);
-  const r = await appelGroupe("regler_notifs", { p_groupe:g.id, p_notifs:k });
-  if(!r.ok){
-    if(modeNotifs(g) === k) appliquerNotifs(g, avant);
-    motFeuille("grpInfosVeil", motErreurGroupe(r));
-  }
+  envoyerNotifs(g);
+}
+async function envoyerNotifs(g){
+  const e = notifsEnvoi[g.id];
+  if(!e || e.enRoute) return;
+  e.enRoute = true;
+  try{
+    while(e.voulu !== e.confirme){
+      const k = e.voulu;
+      const r = await appelGroupe("regler_notifs", { p_groupe:g.id, p_notifs:k });
+      if(r.ok){ e.confirme = k; continue; }
+      if(e.voulu !== k) continue;            // un choix plus récent attend : c'est lui qui part
+      e.voulu = e.confirme;
+      const gg = (grp.liste || []).find(x => x.id === g.id) || g;
+      if(modeNotifs(gg) === k) appliquerNotifs(gg, e.confirme);
+      motFeuille("grpInfosVeil", motErreurGroupe(r));
+    }
+  } finally { e.enRoute = false; }
 }
 function appliquerNotifs(g, k){
   g.notifs = k;
@@ -24060,13 +24449,10 @@ async function enregistrerGroupe(btn){
   if(!r.ok){ if(btn) btn.disabled = false; motFeuille("grpModifVeil", motErreurGroupe(r)); return; }
   Object.assign(g, { nom, description:desc, ouvert:creation.type === "public", teinte:creation.teinte });
   if(logosServeur()) g.logo = +creation.logo || 0;
-  const ecran = document.querySelector("#app > .screen.groupe-ecran:not(.screen-exit)");
-  if(ecran) ecran.setAttribute("style", couleurGroupe(g.teinte));
   await envoyerPhotoGroupe(g.id);
-  majInfosGroupe(g);
+  majTeteGroupe(g);
+  memoriserListe();
   fermerFeuilleGroupe("grpModifVeil");
-  const t = document.getElementById("grpTete");
-  if(t && g) t.innerHTML = teteGroupeHtml(g);
   showMiniToast(T("Groupe modifié"));
 }
 /* La page des infos, restée dessous, reprend le nouveau nom, la nouvelle
@@ -24223,6 +24609,16 @@ function cartesModeration(){
    commencer par l'annonce « groupe créé ». Pas plus d'une lecture toutes les
    deux secondes, quoi qu'il arrive. */
 let tousLu = 0, tousMinuteur = 0;
+/* ===== (v328) LES LISTES SE RELISENT D'ELLES-MÊMES =====
+   Un groupe créé, renommé, recoloré ne prévient personne : la liste de mes
+   groupes et celle de la Modération ne l'apprenaient qu'en étant rouvertes.
+   Tant que l'une d'elles est à l'écran (et l'app au premier plan), elle se
+   relit toutes les 30 s — une requête, rien de redessiné si rien n'a changé. */
+setInterval(()=>{
+  if(document.hidden || !participeGroupes()) return;
+  if(state.screen === "groupes") chargerListes();
+  else if(state.screen === "moderation"){ rafraichirTousGroupes(); chargerModeration(); }
+}, 30000);
 function rafraichirTousGroupes(){
   if(!(grp.etat && grp.etat.moderateur)) return;
   const reste = 2000 - (Date.now() - tousLu);
@@ -24235,20 +24631,36 @@ async function chargerTousGroupes(){
   try{
     const r = await supa.from("groupes").select("id,nom,description,ouvert,teinte,code,nb_membres,dernier_message" + (photosServeur() ? ",photo_maj" : "") + (logosServeur() ? ",logo" : ""))
       .is("supprime_le", null).order("dernier_message", { ascending:false }).limit(100);
-    if(r.error || !Array.isArray(r.data)) return;
-    grp.tous = r.data;
+    if(r.error || !Array.isArray(r.data)){ tousEnEchec(r && r.error); return; }
+    grp.tous = r.data; grp.tousEchec = null;
     if(photosServeur()) voirPhotos(r.data.map(g => ["g:" + g.id, g.photo_maj]));
-  }catch(e){ return; }
+  }catch(e){ tousEnEchec(e); return; }
+  const n = document.getElementById("modGroupesNb");
+  if(n) n.textContent = grp.tous.length ? "· " + grp.tous.length : "";
   const z = document.getElementById("modGroupes");
   if(z && state.screen === "moderation"){
     const sig = JSON.stringify(grp.tous);
     if(z._sig !== sig){ z.innerHTML = lignesTous(); z._sig = sig; try{ glassRelayout(); queueGlassSync(); fitScroll(); }catch(e){} }
   }
 }
+/* (v328) « Des gens ont créé un groupe, je ne le vois pas dans la
+   Modération. » Une lecture ratée de la liste ne disait rien : la
+   Modération gardait l'ancienne (ou tournait sans fin), sans un mot. Elle le
+   dit maintenant, avec la raison et de quoi réessayer ; et l'en-tête compte
+   les groupes, pour qu'on sache ce qu'on regarde. Elle se relit aussi toute
+   seule toutes les 30 s tant qu'elle est à l'écran (LES LISTES SE RELISENT). */
+function tousEnEchec(err){
+  grp.tousEchec = String((err && (err.message || err.code)) || T("pas de réseau"));
+  const z = document.getElementById("modGroupes");
+  if(z && state.screen === "moderation"){ z.innerHTML = lignesTous(); z._sig = ""; try{ glassRelayout(); queueGlassSync(); fitScroll(); }catch(e){} }
+}
 function lignesTous(){
-  if(!grp.tous) return `<div class="grp-vide"><span class="spinner"></span></div>`;
+  const echec = grp.tousEchec ? `<div class="grp-vide grp-echec">${escapeHtml(Tf("La liste des groupes ne se lit pas : {m}", { m:grp.tousEchec }))}
+      <button class="grp-pill calme" onclick="tousLu = 0; rafraichirTousGroupes()">${T("Réessayer")}</button></div>` : "";
+  if(!grp.tous) return echec || `<div class="grp-vide"><span class="spinner"></span></div>`;
+  if(echec && !grp.tous.length) return echec;
   if(!grp.tous.length) return `<div class="grp-vide">${T("Aucun groupe pour l'instant.")}</div>`;
-  return grp.tous.map(g => `<button class="grp-ligne" onclick="regarderGroupe('${g.id}')">
+  return echec + grp.tous.map(g => `<button class="grp-ligne" onclick="regarderGroupe('${g.id}')">
       ${pastilleGroupe(g)}
       <span class="grp-txt"><b>${escapeHtml(g.nom)}</b><small>${escapeHtml(nbMembres(g.nb_membres) + " · " + (g.ouvert ? T("Public") : T("Privé")))}</small></span>
       <span class="grp-droite"><small>${escapeHtml(quandCourt(g.dernier_message))}</small></span>
@@ -24532,7 +24944,7 @@ function renderModeration(){
   el.innerHTML = `${renderHeader("Modération", true, "retourGroupes()")}<div id="modListe">${cartesModeration()}</div>
     <div class="grp-h" role="heading" aria-level="2">${T("Rappels")}</div>
     <div class="card rd-carte" id="modRappels">${lignesRappelsDiag()}</div>
-    <div class="grp-h" role="heading" aria-level="2">${T("Tous les groupes")}</div>
+    <div class="grp-h" role="heading" aria-level="2">${T("Tous les groupes")} <span id="modGroupesNb">${grp.tous && grp.tous.length ? "· " + grp.tous.length : ""}</span></div>
     <div class="card grp-carte"><div id="modGroupes">${lignesTous()}</div></div>`;
   const z = el.querySelector("#modListe"); if(z && moderation) z._sig = JSON.stringify(moderation);
   const zt = el.querySelector("#modGroupes"); if(zt && grp.tous) zt._sig = JSON.stringify(grp.tous);
@@ -29441,8 +29853,93 @@ let invitePWA = null;
 window.addEventListener("beforeinstallprompt", (e)=>{
   try{ e.preventDefault(); }catch(err){}
   invitePWA = e;
+  if(installerArrivee) installerArrivee();
 });
-window.addEventListener("appinstalled", ()=>{ invitePWA = null; });
+window.addEventListener("appinstalled", ()=>{
+  invitePWA = null;
+  const r = document.getElementById("setInstaller"); if(r) r.remove();
+  try{ showMiniToast(Tf("{jeu} est installé : ouvre-le depuis ton écran d'accueil.", { jeu:NOM_DU_JEU })); }catch(e){}
+});
+/* ===== (v328) « INSTALLER » INSTALLE, SANS DÉTOUR =====
+   « Le mieux, ce serait un bouton dans les Réglages : on clique sur
+     télécharger, et ça ouvre directement le truc pour télécharger. » Et :
+   « Sur un Android récent, il m'a dit que le jeu avait été conçu pour les
+     vieux téléphones — il a fallu que je clique sur Installer quand même. »
+   — Chrome (et ceux qui font comme lui) : le bouton ouvre DIRECTEMENT la
+     fenêtre d'installation du téléphone — plus de page intermédiaire.
+   — Samsung Internet, le navigateur des Galaxy : c'est LUI qui fabrique une
+     application « pour une ancienne version d'Android », et Play Protect
+     l'arrête (« conçue pour une ancienne version… »). Chrome installe le
+     même jeu sans aucun avertissement. Le bouton rouvre donc Yada dans
+     Chrome, où il n'y a plus qu'à toucher « Installer ».
+   — iPhone : Apple ne laisse aucun site ouvrir l'installation ; c'est le
+     guide le plus court qui reste (deux gestes). */
+const IS_SAMSUNG = /SamsungBrowser/i.test(navigator.userAgent || "");
+let installerArrivee = null;
+function installerJeu(){
+  if(IS_ANDROID && IS_SAMSUNG){ proposerChrome(); return; }
+  if(invitePWA){ lancerInstallation(); return; }
+  openFsGuide();
+}
+function lancerInstallation(){
+  const invitation = invitePWA;
+  if(!invitation){ openFsGuide(); return; }
+  invitePWA = null;          // une invitation ne sert qu'une fois
+  try{
+    const p = invitation.prompt();
+    if(p && p.catch) p.catch(()=>{ openFsGuide(); });
+  }catch(e){ openFsGuide(); }
+}
+function lienChrome(sorte){
+  const u = new URL(location.href); u.hash = ""; u.search = ""; u.searchParams.set("installer", sorte);
+  return u;
+}
+function proposerChrome(){
+  const cible = lienChrome("1"), repli = lienChrome("guide");
+  showModal({
+    title:T("Installer le jeu"),
+    message:Tf("Samsung Internet installe {jeu} avec un avertissement d'Android. Chrome l'installe sans : {jeu} s'ouvre dans Chrome, tu n'as plus qu'à toucher « Installer ».", { jeu:NOM_DU_JEU }),
+    cardClass:"guide", okLabel:T("Ouvrir dans Chrome"), cancelLabel:T("Annuler"),
+    onOk:()=>{
+      ouvrirLien("intent://" + cible.href.replace(/^https?:\/\//, "") + "#Intent;scheme=https;package=com.android.chrome;S.browser_fallback_url=" + encodeURIComponent(repli.href) + ";end");
+      return true;
+    }
+  });
+}
+function ouvrirLien(u){ location.href = u; }
+/* Arrivé dans Chrome par ce lien (?installer=1) : dès que Chrome dit le jeu
+   installable, une seule question, un seul bouton. S'il ne le dit pas (déjà
+   installé, ou un navigateur qui ne sait pas), le guide. Revenu sans Chrome
+   (?installer=guide), le guide aussi, avec ce que dira Android. */
+(function(){
+  let sorte = null;
+  try{ sorte = new URL(location.href).searchParams.get("installer"); }catch(e){}
+  if(!sorte) return;
+  try{ const u = new URL(location.href); u.searchParams.delete("installer"); history.replaceState(history.state, "", u.pathname + u.search + u.hash); }catch(e){}
+  if(isStandalone) return;
+  const demander = ()=>{
+    installerArrivee = null;
+    showModal({
+      title:Tf("Installer {jeu}", { jeu:NOM_DU_JEU }),
+      message:Tf("{jeu} s'ajoute à ton écran d'accueil et démarre en plein écran. Un seul geste.", { jeu:NOM_DU_JEU }),
+      cardClass:"guide", okLabel:T("Installer"), cancelLabel:T("Plus tard"),
+      onOk:()=>{ lancerInstallation(); return true; }
+    });
+  };
+  /* Chrome dit le jeu installable une à quelques secondes après le
+     chargement — plus sur un téléphone lent. Sans nouvelle au bout de 8 s, le
+     guide ; et si l'invitation arrive APRÈS, elle le remplace. */
+  const attendre = ()=>{
+    if(sorte !== "1"){ openFsGuide(); return; }
+    if(invitePWA){ demander(); return; }
+    installerArrivee = demander;
+    setTimeout(()=>{ if(installerArrivee === demander) openFsGuide(); }, 8000);
+  };
+  /* Sans attendre « load » : une image ou une police qui traîne le
+     retarderait d'autant, et l'invitation de Chrome, arrivée entre-temps,
+     resterait sans réponse. */
+  setTimeout(attendre, 700);
+})();
 /* Pas de plein écran forcé sur le web : l'utilisateur passe par « écran d'accueil ».
    Le bandeau qui expliquait ça EN HAUT DE L'ACCUEIL a été retiré : la même chose
    est déjà dans les Réglages (« Installer le jeu », bouton Guide), rangée avec
@@ -29518,11 +30015,15 @@ function openFsGuide(){
     });
     return;
   }
-  const etapes = IS_IOS ? etapesIphone() : [
+  const etapes = IS_IOS ? etapesIphone() : (IS_SAMSUNG ? [
+    { c:"fsx", i:ICO_MENU_NAV,     t:T("Ouvre le menu du navigateur"), s:T("Les trois traits, en bas") },
+    { c:"scn", i:ICONS.plusCircle, t:T("« Ajouter la page à »"),        s:T("Puis « Écran d'accueil »") },
+    { c:"vol", i:ICONS.expand,     t:T("Si Android avertit"),          s:T("Touche « Installer quand même »") },
+  ] : [
     { c:"fsx", i:ICO_MENU_NAV,     t:T("Ouvre le menu du navigateur"), s:T("Les trois points, en haut") },
     { c:"scn", i:ICONS.plusCircle, t:T("« Installer l'application »"), s:T("Ou « Ajouter à l'écran d'accueil »") },
     { c:"vol", i:ICONS.expand,     t:T("Ouvre le jeu par son icône"),  s:T("Il démarre en plein écran") },
-  ];
+  ]);
   const corps = `<div class="guide-steps">${etapes.map(e=>`
       <div class="set-row">
         <span class="set-ico ${e.c}">${e.i}</span>

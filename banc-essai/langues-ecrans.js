@@ -39,6 +39,7 @@ const IOS = 'Mozilla/5.0 (iPhone; CPU iPhone OS 17_5 like Mac OS X) AppleWebKit/
 const ANDROID = 'Mozilla/5.0 (Linux; Android 14; Pixel 8) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/126.0.0.0 Mobile Safari/537.36';
 /* Safari d'iOS 26 : la version du système est gelée (18_6), celle de Safari dit 26. */
 const IOS26 = 'Mozilla/5.0 (iPhone; CPU iPhone OS 18_6 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/26.0 Mobile/15E148 Safari/604.1';
+const SAMSUNG = 'Mozilla/5.0 (Linux; Android 15; SM-S931B) AppleWebKit/537.36 (KHTML, like Gecko) SamsungBrowser/28.0 Chrome/130.0.0.0 Mobile Safari/537.36';
 const DANS_APPLI = 'Mozilla/5.0 (iPhone; CPU iPhone OS 18_6 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Mobile/15E148 Instagram 350.0.0.30.97 (iPhone14,2; iOS 18_6; fr_FR; fr; scale=3.00; 1170x2532)';
 const CHROME_IOS = 'Mozilla/5.0 (iPhone; CPU iPhone OS 18_6 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) CriOS/131.0.6778.73 Mobile/15E148 Safari/604.1';
 const URL = process.argv[2] || process.env.URL_ESSAI || 'http://127.0.0.1:8099/index.html';
@@ -771,8 +772,11 @@ const ouvrirLaLangue = async (p, lg) => {
     ['Groupes · signalements en attente', () => { grp.etat = { participe:'ok', moderateur:true, ouverts:true, a_traiter:2 }; render(); majBarre(); }],
     ['Groupes · rien que des signalements', () => { grp.nonLus = 0; grp.etat.a_traiter = 1; render(); majBarre(); }],
     ['Groupes · listes vides', () => { grp.liste = []; grp.publics = []; grp.recherche = ''; render(); }],
-    ['Groupes · recherche vaine', () => { grp.recherche = 'Zzz'; render(); grp.recherche = ''; }],
-    ['Groupes · créer',    () => { __fermerTout(); __grpDecor(); state.screen='groupes'; render(); ouvrirCreation(); }],
+    /* (v328) La recherche reste posée jusqu'à l'écran suivant : les listes à
+       l'écran se relisent d'elles-mêmes (toutes les 30 s), et une relecture
+       tombée entre le dessin et le relevé repeignait la liste sans elle. */
+    ['Groupes · recherche vaine', () => { grp.recherche = 'Zzz'; render(); }],
+    ['Groupes · créer',    () => { grp.recherche = ''; __fermerTout(); __grpDecor(); state.screen='groupes'; render(); ouvrirCreation(); }],
     ['Groupes · créer public', () => { choisirTypeGroupe('public'); }],
     ['Groupes · code',     () => { __fermerTout(); ouvrirCode(); }],
     ['Groupes · règles',   () => { __fermerTout(); ouvrirRegles(); }],
@@ -1263,19 +1267,45 @@ const ouvrirLaLangue = async (p, lg) => {
                                       ['Guide iPhone · dans une appli', DANS_APPLI, { width:393, height:852 }],
                                       ['Guide iPhone · Chrome', CHROME_IOS, { width:393, height:852 }],
                                       ['Réglages · jeu installé', IOS, { width:393, height:852 }, true],
-                                      ['Modération · rappels', IOS, { width:393, height:852 }, 'diag']]){
+                                      ['Modération · rappels', IOS, { width:393, height:852 }, 'diag'],
+                                      /* (v328) « Installer » : Samsung Internet passe par Chrome (et
+                                         son guide, sans Chrome) ; l'arrivée dans Chrome par ce lien,
+                                         puis « installé ». */
+                                      ['Installer · Samsung Internet', SAMSUNG, { width:412, height:915 }, 'samsung'],
+                                      ['Installer · arrivée dans Chrome', ANDROID, { width:412, height:915 }, 'arrivee']]){
       const ctx = await nav.newContext({ viewport:vue, deviceScaleFactor:2,
         userAgent:ua, hasTouch:true, serviceWorkers:'block' });
       const q = await ctx.newPage();
       if(installe === 'diag') await ctx.grantPermissions(['clipboard-read', 'clipboard-write'], { origin:URL.match(/^https?:\/\/[^/]+/)[0] });
       await ouvrirLaLangue(q, lg);
-      if(installe) await q.addInitScript(INSTALLE);
+      /* Les passes d'installation (v328) jouent un jeu PAS encore installé. */
+      if(installe === true || installe === 'diag') await q.addInitScript(INSTALLE);
       await q.addInitScript(PREP, lg);
-      await q.goto(URL);
+      await q.goto(installe === 'arrivee' ? URL + (URL.indexOf('?') >= 0 ? '&' : '?') + 'installer=1' : URL);
       await q.waitForFunction((l) => { try { return typeof render === 'function' && LANGUE === l; } catch(e){ return false; } }, lg, { timeout:20000 });
       await q.waitForFunction(() => { try { return state.screen === 'mode'; } catch(e){ return false; } }, null, { timeout:20000 });
       try {
-        if(installe === 'diag'){
+        if(installe === 'samsung'){
+          const lus = [];
+          await q.evaluate(() => { state.screen = 'mode'; render(); openSettings(); installerJeu(); });
+          await q.waitForTimeout(600);
+          lus.push(...await q.evaluate(RAMASSER));
+          await q.evaluate(() => { closeModal(); openFsGuide(); });
+          await q.waitForTimeout(600);
+          lus.push(...await q.evaluate(RAMASSER));
+          p2.releve.set(nomGuide, lus);
+        } else if(installe === 'arrivee'){
+          const lus = [];
+          await q.waitForTimeout(900);
+          await q.evaluate(() => { const e = new Event('beforeinstallprompt', { cancelable:true });
+            e.prompt = () => Promise.resolve(); e.userChoice = Promise.resolve({ outcome:'dismissed' }); window.dispatchEvent(e); });
+          await q.waitForTimeout(900);
+          lus.push(...await q.evaluate(RAMASSER));
+          await q.evaluate(() => { closeModal(); window.dispatchEvent(new Event('appinstalled')); });
+          await q.waitForTimeout(500);
+          lus.push(...await q.evaluate(RAMASSER));
+          p2.releve.set(nomGuide, lus);
+        } else if(installe === 'diag'){
           /* (v326) LA CARTE « RAPPELS » : chaque panne qu'elle sait nommer, jouée
              par la vraie fonction du jeu ; on ne remplace que ce qui répond à
              sa place — la base (rappels_etat), la fonction (lireFonction), le
@@ -1322,6 +1352,11 @@ const ouvrirLaLangue = async (p, lg) => {
             await q.waitForTimeout(sc.copier ? 300 : 0);
             lus.push(...await q.evaluate(RAMASSER));
           }
+          /* (v328) La liste « Tous les groupes » qui ne se lit pas : la
+             Modération le dit. */
+          await q.evaluate(() => { grp.tous = []; tousEnEchec(null); });
+          await q.waitForTimeout(250);
+          lus.push(...await q.evaluate(RAMASSER));
           p2.releve.set(nomGuide, lus);
         } else if(installe){
           const vu = await q.evaluate(() => { state.screen='mode'; render(); openSettings(); return notifPossible(); });
@@ -1333,7 +1368,7 @@ const ouvrirLaLangue = async (p, lg) => {
         }
         /* La passe « carte Rappels » a déjà posé ses quatorze relevés : une
            capture finale ici les écrasait tous, sauf le dernier. */
-        if(installe !== 'diag') p2.releve.set(nomGuide, await q.evaluate(RAMASSER));
+        if(installe !== 'diag' && installe !== 'samsung' && installe !== 'arrivee') p2.releve.set(nomGuide, await q.evaluate(RAMASSER));
       } catch(e){ fautes.push(nomGuide + ' (' + lg + ') : ' + e.message.split('\n')[0]); }
       await ctx.close();
     }
