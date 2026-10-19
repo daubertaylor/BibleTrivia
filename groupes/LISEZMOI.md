@@ -153,10 +153,11 @@ exactement la même base qu'une installation neuve (vérifié par
   plus**. Ensuite, il voit ses groupes, avec un aperçu du dernier message, les
   non-lus et les groupes publics à découvrir.
 - **Créer un groupe** : un nom, une description facultative, privé (on y entre
-  avec un code) ou public (on le trouve dans « Découvrir »), une couleur — celle
-  de la discussion : mes bulles, le bouton d'envoi, l'invitation à jouer — et
-  son image : une photo, ou un des quinze logos (v322, étape 8). On la choisit
-  en touchant la grande pastille, à côté du nom.
+  avec un code) ou public (on le trouve dans « Découvrir »), une couleur —
+  celle de son icône, et elle seule (v333) : la discussion garde le corail du
+  jeu, la même dans tous les groupes — et son image : une photo, ou un des
+  quinze logos (v322, étape 8). On la choisit en touchant la grande pastille,
+  à côté du nom.
 - **Rejoindre** : un code à 6 caractères, ou le lien d'invitation (le bouton
   **Inviter** partage `…/BibleTrivia/?groupe=CODE`).
 - **La discussion** : les messages arrivent en direct, et restent sur le
