@@ -542,7 +542,7 @@
   /* Une hauteur explicite au repos, sinon il n'y a rien à faire glisser : de
      « tout l'écran » à --vvh, le voile sautait d'une image à l'autre. */
   .modal-veil{ height:100%; transition:height var(--tr-ouvre); }
-  html.kb .modal-veil{ bottom:auto; height:var(--vvh, 100%); }
+  html.kb .modal-veil{ bottom:auto; height:var(--vvh, 100%); top:var(--vvt, 0px); }
   /* ===== LES FEUILLES AUSSI S'ARRÊTENT AU BORD DU CLAVIER =====
      « Quand j'écris le nom du groupe ou la description, le clavier cache ce
      que je suis en train d'écrire. Pareil pour rejoindre avec un code. »
@@ -561,7 +561,9 @@
      discussion, page qui se recadre — prend donc le pas d'une page qui
      s'ouvre (--tr-ouvre, 0,52 s), au lieu de bondir en 0,28 s. */
   .sheet-veil{ height:100%; transition:height var(--tr-ouvre); }
-  html.kb .sheet-veil{ bottom:auto; height:var(--vvh, 100%); }
+  /* (v330) top : la zone visible a pu glisser vers le bas (voir --vvt dans
+     le module du clavier) — la feuille, la page, la fenêtre s'y posent. */
+  html.kb .sheet-veil{ bottom:auto; height:var(--vvh, 100%); top:var(--vvt, 0px); }
   html.kb, html.kb body{ overflow:hidden; }
   /* La discussion, clavier ouvert (voir le module du clavier) : l'écran prend
      la hauteur visible, sans cale ni défilement, et y glisse à la vitesse du
@@ -571,7 +573,7 @@
      passait devant cette règle, et la barre d'écriture redescendait sous le
      clavier. Clavier ouvert dans une discussion, c'est la hauteur visible qui
      décide, quoi qu'on ait épinglé avant. */
-  html.kb.kb-fil #app, html.tel-fige.kb.kb-fil #app, html.tel-fige.kb.kb-fil:not(.is-standalone) #app{ height:var(--vvh, 100%) !important; padding-bottom:0.45rem; }
+  html.kb.kb-fil #app, html.tel-fige.kb.kb-fil #app, html.tel-fige.kb.kb-fil:not(.is-standalone) #app{ height:var(--vvh, 100%) !important; padding-bottom:0.45rem; top:var(--vvt, 0px); }
   html.kb.kb-fil #app::after{ content:none; }
   /* ÉLÉVATION PAR DÉFAUT DE TOUTE SURFACE DE VERRE. --rim-cast est une propriété
      personnalisée, donc HÉRITÉE : sans cette déclaration, une puce posée dans une
@@ -9949,7 +9951,7 @@ const SUPABASE_ANON_KEY = "sb_publishable_FDJ_R0foC7uIeHmxVrj6rA_2NeIgW2a";
    remontée d'un téléphone ne vaut rien si on ne sait pas QUELLE version
    tournait. Elle doit rester égale au CACHE de sw.js — c'est ce que vérifie
    banc-essai/version.js, qui refuse de laisser publier les deux en désaccord. */
-const VERSION_JEU = "v329";
+const VERSION_JEU = "v330";
 
 /* ===================== QUAND ÇA CASSE CHEZ UN JOUEUR =====================
    « Si quelque chose casse chez cinq d'entre eux sur un modèle de téléphone
@@ -13363,6 +13365,8 @@ try{
      les champs restaient cachés dessous. La hauteur de repos, elle, est stable
      -> détection fiable sur iOS ET Android. */
   let restH = vv.height;
+  /* (v330) La hauteur de la FENÊTRE au repos (voir hauteurVisible). */
+  let restInner = innerHeight;
   let kbScrollTimer = null, kbScrollTimer2 = null;
   /* ===== SUR ANDROID, LE CLAVIER NE SE VOIT PAS DANS LA ZONE VISIBLE =====
      « Sur le truc pour se connecter, le clavier cache ce qu'on écrit. Règle
@@ -13442,10 +13446,38 @@ try{
      où sauf au-dessus du clavier. Un clavier de téléphone est toujours posé
      sur le bas de la fenêtre : ce qui reste visible, c'est la fenêtre moins
      sa hauteur. */
+  /* (v330) LE CLAVIER COMPTÉ UNE SEULE FOIS. Un navigateur qui dit son
+     clavier ET rétrécit quand même sa fenêtre (« Sur Android, le clavier
+     n'est pas du tout à la bonne taille ») : la fenêtre avait déjà perdu la
+     hauteur du clavier, et on la lui retirait une deuxième fois — la barre
+     d'écriture montait d'autant, un grand vide dessous. On part donc de la
+     fenêtre AU REPOS, sans clavier : là où elle a rétréci, le résultat est
+     la fenêtre elle-même ; là où elle n'a pas bougé (Chrome), rien ne
+     change. */
   const hauteurVisible = ()=>{
     const r = rectClavier();
     if(!r) return vv.height;
-    return Math.max(0, Math.min(vv.height, innerHeight - r.height));
+    return Math.max(0, Math.min(vv.height, Math.max(innerHeight, restInner) - r.height));
+  };
+  /* ===== (v330) LA ZONE VISIBLE PEUT ÊTRE DÉCALÉE VERS LE BAS =====
+     « Le clavier n'est pas du tout à la bonne taille pour Android » (photo :
+     la barre d'écriture très au-dessus du clavier, un grand vide de décor
+     entre les deux). Dans le mode ORDINAIRE (resizes-visual, celui des
+     navigateurs qui ne disent pas leur clavier), le navigateur ne fait pas
+     que rétrécir la zone visible : pour montrer le champ touché, posé tout
+     en bas, il la FAIT GLISSER vers le bas dans la page (visualViewport.
+     offsetTop). La discussion prenait la bonne hauteur, mais depuis le haut
+     de la page : sur l'écran, tout restait remonté de ce glissement — la
+     barre loin au-dessus du clavier, l'en-tête coupé en haut. Pareil pour
+     les pages et les fenêtres à champ. Ce qui doit tenir dans la zone
+     visible s'y pose donc à SA place : décalé de son glissement (--vvt). */
+  const decalageVisible = ()=> Math.max(0, Math.round(vv.offsetTop || 0));
+  let vvtPose = 0;
+  const poserDecalage = (v)=>{
+    if(v === vvtPose) return;
+    vvtPose = v;
+    de.style.setProperty("--vvt", v + "px");
+    try{ glassSuivre(300); }catch(e){}
   };
   /* Placement du champ actif : CONTRÔLÉ, jamais scrollIntoView.
      scrollIntoView({block:"center"}) avait deux défauts visibles à l'écran :
@@ -13932,6 +13964,8 @@ try{
   function apply(){
     if(!isField()){
       restH = Math.max(restH, vv.height); // pas de clavier -> c'est la hauteur de repos
+      restInner = innerHeight;
+      poserDecalage(0);
       if(retourAPrevoir()) de.classList.add("kb-cale");
       de.classList.remove("kb");
       if(de.classList.contains("kb-fil")){ de.classList.remove("kb-fil"); try{ glassSuivre(500); }catch(e){} }
@@ -13944,8 +13978,12 @@ try{
       if(cache > 90){
         de.style.setProperty("--vvh", Math.round(hauteurVisible()) + "px");
         de.style.setProperty("--kbh", Math.round(cache) + "px");
+        poserDecalage(decalageVisible());
         if(!de.classList.contains("kb-fil")){ de.classList.add("kb", "kb-fil"); try{ glassSuivre(500); }catch(e){} }
-      } else if(de.classList.contains("kb-fil")){ de.classList.remove("kb", "kb-fil"); try{ glassSuivre(500); }catch(e){} }
+      } else {
+        poserDecalage(0);
+        if(de.classList.contains("kb-fil")){ de.classList.remove("kb", "kb-fil"); try{ glassSuivre(500); }catch(e){} }
+      }
       if(window.scrollY){ try{ window.scrollTo(0, 0); }catch(e){} }   // le document ne bouge jamais
       return;
     }
@@ -13969,6 +14007,7 @@ try{
       }
       de.style.setProperty("--vvh", Math.round(hauteurVisible()) + "px");
       de.style.setProperty("--kbh", Math.round(hidden) + "px");  // de quoi remonter le champ
+      poserDecalage(decalageVisible());
       de.classList.add("kb");
       /* iOS fait parfois défiler le DOCUMENT lui-même sous le clavier -> #app
          (borné à --vvh) se retrouvait décalé vers le haut, coupé n'importe
@@ -14016,6 +14055,7 @@ try{
       clearTimeout(kbScrollTimer); clearTimeout(kbScrollTimer2);
       if(retourAPrevoir()) de.classList.add("kb-cale");
       de.classList.remove("kb");
+      poserDecalage(0);
       rendDefilementClavier();
     }
     fitScroll(); // le clavier change la hauteur utile -> re-décider défilement
@@ -14041,7 +14081,7 @@ try{
      recale le champ une fois la carte posée. Rien si le clavier est rangé. */
   window.recalerChampClavier = ()=>{ if(de.classList.contains("kb") && isField()){ clearTimeout(kbScrollTimer); kbScrollTimer = setTimeout(bringFieldIntoView, 40); } };
   document.addEventListener("focusin", ()=>setTimeout(apply, 60));
-  document.addEventListener("focusout", ()=>{ clearTimeout(kbScrollTimer); clearTimeout(kbScrollTimer2); setTimeout(()=>{ if(!isField()){ if(retourAPrevoir()) de.classList.add("kb-cale"); de.classList.remove("kb"); if(de.classList.contains("kb-fil")){ de.classList.remove("kb-fil"); try{ glassSuivre(500); }catch(e){} } fitScroll(); rendDefilementClavier(); } }, 60); });
+  document.addEventListener("focusout", ()=>{ clearTimeout(kbScrollTimer); clearTimeout(kbScrollTimer2); setTimeout(()=>{ if(!isField()){ poserDecalage(0); if(retourAPrevoir()) de.classList.add("kb-cale"); de.classList.remove("kb"); if(de.classList.contains("kb-fil")){ de.classList.remove("kb-fil"); try{ glassSuivre(500); }catch(e){} } fitScroll(); rendDefilementClavier(); } }, 60); });
 })();
 
 /* ===================== VERSET SURPRISE (5 touches sur l'icône) ===================== */
