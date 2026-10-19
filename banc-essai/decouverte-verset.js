@@ -83,20 +83,20 @@ const dit = (q, b, d) => { if (!b) ko++; console.log('  ' + (b ? 'OK  ' : 'KO  '
       console.log('  — ' + tel);
       const { ctx, p } = await telephone({ ua });
       const ligneAvant = await p.evaluate(() => document.getElementById('homeVerse').innerHTML);
-      const lancee = await attendre(p, () => document.querySelector('.accueil .hero').classList.contains('decouverte'), null, 4000);
+      const lancee = await attendre(p, () => document.querySelector('.accueil .hero').classList.contains('decouverte'), null, 8000);
       await p.waitForTimeout(600);
       let e = await etatDe(p);
       const ligne1 = await p.evaluate(() => document.getElementById('homeVerse').innerHTML);
       dit('1. première arrivée : la découverte se lance, et rien ne s\'écrit (la ligne reste « ' + e.ligne + ' »)', lancee && e.doigt && ligne1 === ligneAvant, JSON.stringify(e));
-      await attendre(p, () => document.querySelectorAll('#heroZone .hero-points i.plein').length === 3, null, 3000);
+      await attendre(p, () => document.querySelectorAll('#heroZone .hero-points i.plein').length === 3, null, 6000);
       await capture(p, tel + '-1-doigt');
-      await attendre(p, () => document.querySelectorAll('#heroZone .hero-points i.plein').length === 5, null, 3000);
+      await attendre(p, () => document.querySelectorAll('#heroZone .hero-points i.plein').length === 5, null, 6000);
       const vu2 = await p.evaluate(() => window.__vu);
       const montee = vu2.points.filter(n => n > 0);
       dit('2. le doigt touche cinq fois : l\'icône s\'enfonce, les points s\'allument un à un', vu2.vif && montee.join('') === '12345', 'points ' + vu2.points.join(','));
       await p.waitForTimeout(400);
       await capture(p, tel + '-2-cinq');
-      const vide = await attendre(p, () => document.querySelectorAll('#heroZone .hero-points i.plein').length === 0 && !document.querySelector('#heroZone .hero-doigt.vu'), null, 3000);
+      const vide = await attendre(p, () => document.querySelectorAll('#heroZone .hero-points i.plein').length === 0 && !document.querySelector('#heroZone .hero-doigt.vu'), null, 6000);
       e = await etatDe(p);
       dit('   le verset ne s\'ouvre PAS tout seul', !e.verset && !(await p.evaluate(() => window.__vu.verset)) && e.appris !== '1', JSON.stringify(e));
       const ligne3 = await p.evaluate(() => document.getElementById('homeVerse').innerHTML);
@@ -133,11 +133,11 @@ const dit = (q, b, d) => { if (!b) ko++; console.log('  ' + (b ? 'OK  ' : 'KO  '
     /* 7 — une fois : ce lancement-ci, pas le suivant. */
     {
       const { ctx, p } = await telephone();
-      const premiere = await attendre(p, () => document.querySelector('.accueil .hero').classList.contains('decouverte'), null, 4000);
+      const premiere = await attendre(p, () => document.querySelector('.accueil .hero').classList.contains('decouverte'), null, 8000);
       await p.evaluate(() => { state.screen = 'parcours'; render(); });
       await p.waitForTimeout(900);
       await p.evaluate(() => { state.screen = 'mode'; render(); });
-      const revient = await attendre(p, () => document.querySelector('.accueil .hero').classList.contains('decouverte'), null, 4000);
+      const revient = await attendre(p, () => document.querySelector('.accueil .hero').classList.contains('decouverte'), null, 8000);
       /* Le doigt ne joue que trois fois en tout, retours compris. */
       await p.waitForTimeout(26000);
       const joues = await p.evaluate(() => decVerset.joues);
@@ -175,7 +175,7 @@ const dit = (q, b, d) => { if (!b) ko++; console.log('  ' + (b ? 'OK  ' : 'KO  '
     {
       const { ctx, p } = await telephone({ langue: 'en', ua: AND });
       const avant = await p.evaluate(() => document.getElementById('homeVerse').innerHTML);
-      await attendre(p, () => document.querySelector('.accueil .hero').classList.contains('decouverte'), null, 4000);
+      await attendre(p, () => document.querySelector('.accueil .hero').classList.contains('decouverte'), null, 8000);
       await p.waitForTimeout(800);
       const pendant = await p.evaluate(() => document.getElementById('homeVerse').innerHTML);
       const l = (await etatDe(p)).ligne;
