@@ -1,6 +1,6 @@
 /* Yada — service worker : rend l'app jouable hors connexion.
    À déposer à côté de index.html (même dossier, nom exact "sw.js"). */
-const CACHE = "yada-v328";
+const CACHE = "yada-v329";
 /* ===== LES BANQUES DE QUESTIONS NE SONT PAS DANS LE SOCLE =====
    questions-en.js y était, et questions-es.js allait l'y rejoindre : six cent
    mille octets téléchargés à l'installation par TOUT LE MONDE, y compris les
@@ -94,9 +94,28 @@ function estLaPage(url) {
   const u = new URL(url); u.search = ""; u.hash = "";
   return u.href === PAGE || u.href === PAGE + "index.html";
 }
+/* ===== (v329) LES DONNÉES NE SONT PAS DES FICHIERS =====
+   La règle des ressources (cache d'abord) attrapait TOUTES les lectures,
+   celles du serveur comprises : la liste des messages d'un groupe, ses
+   membres et ce qu'ils ont lu, les profils, la sauvegarde du compte… Lue une
+   fois, chacune était resservie telle quelle jusqu'à la version suivante du
+   jeu. Mesuré (banc-essai/sw-donnees.js) : trois lectures, un seul appel au
+   serveur. D'où des discussions qui ne montraient pas les nouveaux messages
+   en revenant sur l'app (« mes messages ne s'affichent plus pour les
+   autres »), une relève qui relisait toujours la même réponse vide, des
+   coches « Vu » figées. Le service worker ne garde donc QUE les fichiers du
+   jeu (son origine) et la bibliothèque Supabase du CDN — de quoi jouer hors
+   ligne. Tout le reste va au réseau, comme si le service worker n'était pas
+   là. */
+const CDN = "cdn.jsdelivr.net";
+function aGarder(url) {
+  const u = new URL(url);
+  return u.origin === self.location.origin || u.hostname === CDN;
+}
 self.addEventListener("fetch", (e) => {
   if (e.request.method !== "GET") return;
   const req = e.request;
+  if (!aGarder(req.url)) return;
   /* LA SONDE DE RÉSEAU (voir sonderReseau dans index.html) : elle mesure le
      réseau, elle ne doit donc JAMAIS être servie par le cache — ni y entrer,
      sans quoi chaque mesure y laisserait une copie sous une adresse neuve. */
@@ -359,6 +378,72 @@ function remplir(t, val){
           .replace(/\{j\}/g, String(val.j))
           .replace(/\{s\}/g, val.n > 1 ? "s" : "");
 }
+/* ===== LES MESSAGES DES GROUPES (v329) =====
+   « Je veux aussi que tu fasses les notifications des messages. » Le serveur
+   écrit à chaque membre qui n'a pas lu, selon ce qu'il a choisi pour ce
+   groupe — Tout, Mentions, Muet (notifications/rappels.ts). Ici, on le montre
+   comme une messagerie : UNE notification par groupe (son étiquette), qui se
+   complète au lieu de s'empiler — le nom du groupe et le compte des nouveaux
+   en titre, le dernier message dessous —, et qui ne sonne qu'une fois par
+   rafale : dix messages en une minute, un seul son. La même sur iPhone et sur
+   Android. La toucher ouvre la discussion (notificationclick). Le jeu la
+   retire quand on lit le groupe (voir effacerNotifsGroupe dans index.html). */
+const MOTS_MESSAGE = {
+  fr: { ligne: "{de} : {texte}", partie: "{de} lance une partie", mention: "{de} te mentionne : {texte}",
+        titre: "{nom} · {n} nouveaux messages", quelquun: "Quelqu'un" },
+  en: { ligne: "{de}: {texte}", partie: "{de} is starting a game", mention: "{de} mentioned you: {texte}",
+        titre: "{nom} · {n} new messages", quelquun: "Someone" },
+  es: { ligne: "{de}: {texte}", partie: "{de} inicia una partida", mention: "{de} te menciona: {texte}",
+        titre: "{nom} · {n} mensajes nuevos", quelquun: "Alguien" },
+};
+/* Une rafale : un message arrivé moins de 20 s après le précédent du même
+   groupe complète la notification sans la refaire sonner. */
+const RAFALE = 20000;
+function motsMessage(c, langue){
+  const mots = MOTS_MESSAGE[langue] || MOTS_MESSAGE.fr;
+  const dire = (t, v) => t.replace(/\{(\w+)\}/g, (_, k) => (v[k] == null ? "" : String(v[k])));
+  const de = String(c.de || "").trim() || mots.quelquun;
+  const texte = String(c.texte || "");
+  if(c.partie) return dire(mots.partie, { de });
+  return dire(c.mention ? mots.mention : mots.ligne, { de, texte });
+}
+async function montrerMessage(c, langue){
+  const groupe = String(c.groupe || "");
+  const tag = "grp-" + groupe;
+  const mots = MOTS_MESSAGE[langue] || MOTS_MESSAGE.fr;
+  /* Ce que la notification du groupe disait déjà, si elle est encore là (un
+     joueur qui l'a balayée l'a vue : on repart de un). */
+  let avant = null;
+  try {
+    const l = await self.registration.getNotifications({ tag });
+    avant = l.length ? l[l.length - 1] : null;
+  } catch(x){}
+  const d0 = (avant && avant.data) || {};
+  const ids = Array.isArray(d0.ids) ? d0.ids.slice(-30) : [];
+  const dejaLa = c.id != null && ids.indexOf(c.id) >= 0;
+  const maintenant = Date.now();
+  const sonDernier = +d0.son || 0;
+  /* Le même message deux fois (un envoi rejoué) ne compte qu'une fois : la
+     notification est reposée telle quelle, sans bruit. (Ne rien montrer du
+     tout, un iPhone le compterait contre l'abonnement.) */
+  if(dejaLa && avant){
+    await self.registration.showNotification(avant.title, {
+      body: avant.body, icon: "./icon-192.png", badge: "./icon-192.png",
+      tag, renotify: false, requireInteraction: false, data: d0,
+    });
+    return;
+  }
+  if(c.id != null) ids.push(c.id);
+  const n = (d0.n | 0) + 1;
+  const sonne = !avant || !(maintenant - sonDernier < RAFALE);
+  const nom = String(c.nom || "").trim() || "Yada";
+  const titre = n > 1 ? mots.titre.replace("{nom}", nom).replace("{n}", String(n)) : nom;
+  await self.registration.showNotification(titre, {
+    body: motsMessage(c, langue), icon: "./icon-192.png", badge: "./icon-192.png",
+    tag, renotify: sonne, requireInteraction: false,
+    data: { url: "./?discussion=" + encodeURIComponent(groupe), groupe, n, ids, son: sonne ? maintenant : sonDernier },
+  });
+}
 self.addEventListener("push", (e) => {
   e.waitUntil((async () => {
     let charge = {};
@@ -371,6 +456,15 @@ self.addEventListener("push", (e) => {
       body: m[1], icon: "./icon-192.png", badge: "./icon-192.png",
       tag: genre, renotify: false, requireInteraction: false, data: { url: "./" },
     });
+    /* (v329) UN MESSAGE DE GROUPE. Pas un rappel du jeu : ni « actif », ni le
+       plafond d'un par jour. Il se tait seulement si le joueur a éteint les
+       messages ICI (false) — un miroir absent ou ancien ne dit rien contre le
+       serveur, qui ne l'envoie qu'aux téléphones qui les ont demandés. */
+    if(charge.genre === "message"){
+      if(etat && etat.messages === false) return;
+      await montrerMessage(charge, langue);
+      return;
+    }
     /* ===== « ESSAYER CHAQUE RAPPEL » (v327) =====
        Demandé par la Modération pour CE téléphone : chaque sorte de rappel,
        avec ses vrais mots et des valeurs d'exemple (une flamme de 3 jours,
@@ -428,8 +522,8 @@ self.addEventListener("push", (e) => {
     if(etat.prevenu === aujourdhui) return;      // un seul rappel par jour, tous motifs confondus
 
     /* (v326) priere, lecture, essai et bienvenue sont servis plus haut ; ils restent nommés
-       ici pour que la liste dise tout ce que le serveur peut envoyer. */
-    const CONNUS = ["serie", "defi", "revoir", "absence", "verset", "priere", "lecture", "essai", "bienvenue"];
+       ici pour que la liste dise tout ce que le serveur peut envoyer. (v329) message aussi. */
+    const CONNUS = ["serie", "defi", "revoir", "absence", "verset", "priere", "lecture", "essai", "bienvenue", "message"];
     const genre = CONNUS.indexOf(charge.genre) >= 0 ? charge.genre : "serie";
     let titre = "", corps = "";
     const val = { n: 0, j: 0 };
@@ -503,9 +597,17 @@ self.addEventListener("push", (e) => {
 });
 self.addEventListener("notificationclick", (e) => {
   e.notification.close();
-  const cible = (e.notification.data && e.notification.data.url) || "./";
+  const d = e.notification.data || {};
+  const cible = d.url || "./";
   e.waitUntil(clients.matchAll({ type:"window", includeUncontrolled:true }).then((liste) => {
-    for(const c of liste){ if("focus" in c) return c.focus(); }   // l'app est déjà ouverte
+    for(const c of liste){
+      if(!("focus" in c)) continue;
+      /* (v329) Un message : l'app déjà ouverte va à la discussion. Le mot
+         part AVANT de passer au premier plan — une page qu'on réveille lit
+         ses messages en arrivant. */
+      if(d.groupe){ try { c.postMessage({ ouvrirGroupe: d.groupe }); } catch(x){} }
+      return c.focus().catch(() => (clients.openWindow ? clients.openWindow(cible) : null));   // l'app est déjà ouverte
+    }
     if(clients.openWindow) return clients.openWindow(cible);
   }));
 });

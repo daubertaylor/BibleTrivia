@@ -18,7 +18,12 @@
      5. la clé interne ne change pas quand on recolle ;
      6. rappels_etat() dit au jeu ce qu'il faut, et jamais la clé ;
      7. une base neuve, sans pg_cron ni pg_net : tout le reste s'installe
-        quand même, et rappels_etat() le dit.
+        quand même, et rappels_etat() le dit ;
+     8. (v329) chaque téléphone rattaché au compte connecté (auth.uid(),
+        personne après une déconnexion), « messages » vide tant qu'un jeu
+        d'avant la v329 n'en dit rien ; une seule signature de
+        push_enregistrer ; sans les groupes, le déclencheur des messages
+        attend (et rappels_etat le dit).
    Usage : node banc-essai/installer-sql.js */
 const fs = require('fs'), path = require('path'), os = require('os');
 const { execFile, execFileSync } = require('child_process');
@@ -50,8 +55,12 @@ const sh = (cmd, args) => new Promise((res, rej) => execFile(cmd, args, { maxBuf
       return (r.err || '').split('\n').filter(l => /NOTICE:\s+(pg_cron|pg_net|pas de pg_cron)/.test(l)).map(l => l.replace(/^.*NOTICE:\s+/, '')); };
     /* Le décor de Supabase : ses trois rôles (service_role passe la sécurité
        des lignes, comme chez Supabase), et les droits par défaut. */
+    /* (v329) auth.uid(), comme chez Supabase : le compte qui appelle. */
+    const AUTH = `create schema auth;
+      create function auth.uid() returns uuid language sql stable as $f$ select nullif(current_setting('essai.moi', true), '')::uuid $f$;
+      grant usage on schema auth to anon, authenticated, service_role;`;
     await sql(`create role anon nologin; create role authenticated nologin; create role service_role nologin bypassrls;
-      grant usage on schema public to anon, authenticated, service_role;
+      grant usage on schema public to anon, authenticated, service_role; ${AUTH}
       alter default privileges in schema public grant all on tables to anon, authenticated;`);
     console.log('  pg_cron : ' + (VRAI_CRON ? 'le vrai (extension 16)' : "imité (postgresql-16-cron n'est pas installé ici)") + ' ; pg_net : imité');
 
@@ -126,15 +135,29 @@ const sh = (cmd, args) => new Promise((res, rej) => execFile(cmd, args, { maxBuf
 
     /* ===== 6. CE QUE LE JEU LIT ===== */
     const etat = JSON.parse(await sql("set role anon; select public.rappels_etat('https://web.push.apple.com/neuf-0002')"));
-    dit('rappels_etat : version 326, 2 abonnés, ce téléphone inscrit, clé interne, pg_cron, pg_net',
-      etat.version === 326 && etat.abonnes === 2 && etat.inscrit === true && etat.cle_interne === true && etat.cron === true && etat.net === true, JSON.stringify(etat).slice(0, 160));
+    dit('rappels_etat : version 329, 2 abonnés, ce téléphone inscrit, clé interne, pg_cron, pg_net',
+      etat.version === 329 && etat.abonnes === 2 && etat.inscrit === true && etat.cle_interne === true && etat.cron === true && etat.net === true, JSON.stringify(etat).slice(0, 160));
     dit('rappels_etat : la tâche (*/5, active) et la dernière réponse de la fonction',
       etat.tache && etat.tache.schedule === '*/5 * * * *' && etat.tache.active === true && etat.reponse && etat.reponse.status_code === 200 && /"version":326/.test(etat.reponse.contenu));
     dit('rappels_etat ne dit jamais la clé', !JSON.stringify(etat).includes(cle));
     dit('rappels_etat : un inconnu n\'est pas inscrit', JSON.parse(await sql("set role anon; select public.rappels_etat('https://inconnu.exemple/zzzzzzzzzzzzzzzzzzzz')")).inscrit === false);
 
+    /* ===== 8. (v329) LE COMPTE DE CHAQUE TÉLÉPHONE ===== */
+    const MOI = '0b0b0b0b-0000-4000-8000-00000000c329';
+    await sql("begin; set local role authenticated; set local essai.moi = '" + MOI + "'; select public.push_enregistrer(p_endpoint => 'https://web.push.apple.com/neuf-0002', p_jeu => true, p_messages => true); commit;");
+    const lie = await sql("select coalesce(membre::text, '-') || ' ' || coalesce(messages::text, '-') from push_subs where endpoint like '%neuf-0002'");
+    await sql("set role anon; select public.push_enregistrer(p_endpoint => 'https://fcm.exemple/abonnement-de-taylor-0001', p_serie => 12, p_dernier => current_date - 1, p_vu => current_date, p_decalage => 120, p_jeu => true, p_priere => -1, p_lecture => -1)");
+    const ancien = await sql("select coalesce(membre::text, '-') || ' ' || coalesce(messages::text, '-') from push_subs where endpoint like '%taylor-0001'");
+    dit('8. un téléphone connecté est rattaché à son compte, messages voulus', lie === MOI + ' true', lie);
+    dit('   un jeu d\'avant la v329 (sans p_messages, sans compte) : ni compte, ni « messages »', ancien === '- -', ancien);
+    await sql("begin; set local role anon; select public.push_enregistrer(p_endpoint => 'https://web.push.apple.com/neuf-0002', p_jeu => true); commit;");
+    dit('   déconnecté : détaché, et son choix des messages gardé', await sql("select coalesce(membre::text, '-') || ' ' || coalesce(messages::text, '-') from push_subs where endpoint like '%neuf-0002'") === '- true');
+    dit('   une seule signature de push_enregistrer (la v329)', await sql("select count(*) || ' ' || max(pronargs) from pg_proc where proname = 'push_enregistrer'") === '1 11');
+    dit('   sans les groupes, le déclencheur attend, et rappels_etat le dit',
+      await sql("select count(*) from pg_trigger where tgname = 'messages_a_prevenir'") === '0' && JSON.parse(await sql('set role anon; select public.rappels_etat()')).messages_branches === false);
+
     /* ===== 7. UNE BASE NEUVE, SANS pg_cron NI pg_net ===== */
-    await sql('grant usage on schema public to anon, authenticated, service_role', 'neuve');
+    await sql('grant usage on schema public to anon, authenticated, service_role; ' + AUTH, 'neuve');
     let avisNeuve = [];
     erreur = '';
     try { avisNeuve = await coller('neuve'); } catch (e) { erreur = String(e.stderr || e.message || e).split('\n').filter(Boolean).slice(0, 2).join(' / '); }

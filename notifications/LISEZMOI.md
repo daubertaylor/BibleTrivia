@@ -1,5 +1,33 @@
 # Les rappels
 
+> ## 🔔 LES MESSAGES DES GROUPES (v329) — DEUX COLLAGES, DANS CET ORDRE
+>
+> 1. **SQL Editor → New query → recolle `groupes/table.sql` en entier →
+>    Run.** Le serveur apprend à **céder un groupe** (le propriétaire le
+>    donne à un membre et en reste admin) et laisse un admin nommer
+>    d'autres admins, comme sur WhatsApp.
+> 2. **New query → recolle `notifications/installer.sql` en entier →
+>    Run.**
+>
+> C'est tout. Ni l'un ni l'autre ne perd rien (aucun groupe, aucun
+> message, aucun joueur ne perd ses rappels, sa série, son abonnement).
+> Le second ajoute ce que les notifications des messages attendent :
+> chaque téléphone sait à quel compte il appartient, et un **déclencheur**
+> sur les messages appelle la fonction `rappels` (avec la même clé interne
+> que la tâche) à chaque message posté. La fonction, elle, part toute seule
+> de GitHub. Ce qu'elle fait : elle laisse **4 s** à ceux qui ont la
+> discussion ouverte (leur téléphone dit « lu »), puis écrit aux membres qui
+> ne l'ont pas lu — selon **Tout / Mentions / Muet**, jamais à l'auteur,
+> jamais à qui l'a bloqué, et seulement aux téléphones dont le joueur a les
+> **Rappels** (Réglages → Rappels : les messages en font partie, il n'y a
+> pas de ligne à part). Une notification par groupe, qui se complète ; la
+> toucher ouvre la discussion.
+>
+> **Pour vérifier** : Modération → carte **« Rappels »** → les lignes
+> « Messages des groupes branchés · n téléphones rattachés à un compte » et
+> « Dernier message : … ». Rien de tout cela ne peut empêcher un message de
+> partir : sans pg_net, sur une panne, le déclencheur se tait.
+>
 > ## ✅ CE QU'IL FAUT FAIRE, DANS L'ORDRE (à jour au 18/10/2026)
 >
 > 1. **La base — FAIT le 18/10/2026.** SQL Editor → New query → colle

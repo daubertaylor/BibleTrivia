@@ -77,9 +77,22 @@ const ABSENCES = [3, 7, 30];
 const FENETRE = 60;
 /* La version de ce code, dans chaque réponse : la page « Rappels » de la
    Modération dit ainsi si la fonction déployée est bien celle-ci. */
-const VERSION = 327;
+const VERSION = 329;
 /* Un essai demandé par un téléphone pour lui-même : un par minute au plus. */
 const ESSAI_DELAI = 60000;
+/* ===== LES MESSAGES DES GROUPES (v329) =====
+   Un message posté appelle la fonction (le déclencheur de installer.sql, E).
+   On laisse d'abord QUATRE SECONDES à ceux qui ont la discussion ouverte :
+   leur téléphone le reçoit en direct et dit au serveur qu'ils l'ont lu
+   (marquer_lu) — les prévenir en plus serait les déranger pour rien. Puis on
+   écrit à chaque membre qui ne l'a pas lu, selon ce qu'il a choisi pour ce
+   groupe : Tout, Mentions (seulement s'il est nommé, ou « tout le monde »),
+   Muet (jamais). Jamais à l'auteur, jamais à qui l'a bloqué, et seulement aux
+   téléphones rattachés à son compte qui ont DIT oui aux messages (un jeu
+   d'avant la v329 ne le dit jamais : son service worker ne saurait pas les
+   montrer). */
+const ATTENTE_MESSAGE = 4000;
+const TEXTE_MAX = 140;
 /* ===== « ESSAYER CHAQUE RAPPEL » (v327) =====
    « La prière et la lecture ne sonnent pas, et le rappel pour jouer doit
    marcher aussi. » Les rappels du jeu ne partent qu'à leur heure (19 h, midi,
@@ -303,6 +316,62 @@ Deno.serve(async (req: Request) => {
     return repondre({ erreur: "accès", details: [sansCle
       ? "la clé interne est introuvable : colle notifications/installer.sql dans l'éditeur SQL"
       : "appel sans la clé interne : la tâche « rappels » doit être celle de notifications/installer.sql"] }, 401);
+  }
+
+  /* ===== UN MESSAGE DE GROUPE (v329) ===== */
+  if (corpsRecu.message != null) {
+    const id = Number(corpsRecu.message);
+    if (!(id > 0)) return repondre({ sorte: "message", erreur: "message", envoyes: 0 }, 400);
+    if (!corpsRecu.sans_attente) await new Promise((r) => setTimeout(r, ATTENTE_MESSAGE));
+    const lire = async (table: string, colonnes: string, filtre: (q: any) => any) => {
+      const { data, error } = await filtre(db.from(table).select(colonnes));
+      if (error) throw new Error(table + " : " + error.message);
+      return (data ?? []) as any[];
+    };
+    try {
+      const m = (await lire("messages", "id,groupe,auteur,genre,texte,donnees,masque,supprime_le", (q) => q.eq("id", id)))[0];
+      if (!m || m.supprime_le || m.masque || !["texte", "partie"].includes(m.genre)) return repondre({ sorte: "message", envoyes: 0, rien: "message absent, retiré ou du jeu" });
+      const g = (await lire("groupes", "id,nom,supprime_le", (q) => q.eq("id", m.groupe)))[0];
+      if (!g || g.supprime_le) return repondre({ sorte: "message", envoyes: 0, rien: "groupe absent" });
+      const membres = await lire("membres", "membre,notifs,lu_jusqu", (q) => q.eq("groupe", m.groupe));
+      const bloqueurs = new Set((await lire("blocages", "par", (q) => q.eq("bloque", m.auteur))).map((b) => b.par));
+      const d = m.donnees ?? {};
+      const nommes = new Set(Array.isArray(d.mentions) ? d.mentions : []);
+      const pourTous = d.tous === true;
+      const dest = membres.filter((x) => {
+        const mode = x.notifs ?? "tout";
+        if (x.membre === m.auteur || bloqueurs.has(x.membre)) return false;
+        if ((+x.lu_jusqu || 0) >= m.id) return false;            // déjà lu : la discussion était ouverte
+        if (mode === "rien") return false;
+        return mode === "tout" || pourTous || nommes.has(x.membre);
+      });
+      if (!dest.length) return repondre({ sorte: "message", envoyes: 0, membres: membres.length });
+      const de = (await lire("profils", "nom", (q) => q.eq("id", m.auteur)))[0]?.nom ?? "";
+      const abos = await lire("push_subs", "*", (q) => q.in("membre", dest.map((x) => x.membre)));
+      let envoyesM = 0, retiresM = 0, echecsM = 0;
+      let dernierEchecM: Record<string, unknown> | null = null;
+      for (const a of abos) {
+        if (a.messages !== true || !a.abonnement || !a.abonnement.endpoint) continue;
+        const texte = m.genre === "texte" ? String(m.texte ?? "").replace(/\s+/g, " ").trim() : "";
+        const charge = {
+          genre: "message", groupe: g.id, nom: g.nom, de, id: m.id,
+          texte: texte.length > TEXTE_MAX ? texte.slice(0, TEXTE_MAX - 1) + "…" : texte,
+          partie: m.genre === "partie", mention: nommes.has(a.membre),
+          decalage: a.decalage | 0,
+        };
+        try {
+          await webpush.sendNotification(a.abonnement, JSON.stringify(charge));
+          envoyesM++;
+        } catch (e: any) {
+          if (e?.statusCode === 404 || e?.statusCode === 410) { await db.from("push_subs").delete().eq("endpoint", a.endpoint); retiresM++; }
+          else { echecsM++; if (!dernierEchecM) dernierEchecM = { code: e?.statusCode | 0, raison: raison(e) }; }
+        }
+      }
+      return repondre({ sorte: "message", envoyes: envoyesM, destinataires: dest.length, telephones: abos.length,
+                        retires: retiresM, echecs: echecsM, dernier_echec: dernierEchecM });
+    } catch (e: any) {
+      return repondre({ sorte: "message", erreur: "table", details: [String(e?.message || e).slice(0, 200)] }, 500);
+    }
   }
 
   /* On ne filtre plus sur la série : un joueur absent depuis un mois a

@@ -24,6 +24,10 @@
         parti) ; différentes, on le dit et le téléphone les renvoie aussitôt
     14. (v327) « Essayer chaque rappel » : les sept sortes, d'un coup ; une
         fonction d'avant la v327 le dit au lieu de faire semblant
+    15. (v329) les messages des groupes : le déclencheur posé et les
+        téléphones rattachés, ce qu'a donné le dernier message ; une base
+        d'avant la v329 → « recolle installer.sql » ; une fonction d'avant la
+        v329 → « sa mise à jour part de GitHub » ; un envoi refusé, nommé
    Usage : node banc-essai/rappels-diag.js [url] */
 const { chromium } = require('/opt/node22/lib/node_modules/playwright');
 const fs = require('fs');
@@ -114,9 +118,12 @@ const scenario = async (p, sc) => {
     invoke: window.__banc.invoke.slice(),
   }));
 };
-const VERSION_OK = { version: 326, abonnes: 3, inscrit: true, cle_interne: true, cron: true, net: true,
+const VERSION_OK = { version: 329, abonnes: 3, inscrit: true, cle_interne: true, cron: true, net: true,
   tache: { active: true, schedule: '*/5 * * * *' }, passage: { status: 'succeeded', start_time: new Date().toISOString(), message: '1 row' },
-  reponse: { status_code: 200, contenu: JSON.stringify({ version: 326, envoyes: 2, serie: 1, defi: 1, retires: 0, echecs: 0, dernier_echec: null, examines: 3 }), error_msg: null, created: new Date().toISOString() } };
+  reponse: { status_code: 200, contenu: JSON.stringify({ version: 329, envoyes: 2, serie: 1, defi: 1, retires: 0, echecs: 0, dernier_echec: null, examines: 3 }), error_msg: null, created: new Date().toISOString() },
+  /* (v329) les messages des groupes */
+  lies: 2, messages_branches: true,
+  reponse_message: { status_code: 200, contenu: JSON.stringify({ version: 329, sorte: 'message', envoyes: 2, destinataires: 2, telephones: 2, retires: 0, echecs: 0, dernier_echec: null }), error_msg: null, created: new Date().toISOString() } };
 const avec = (base, plus) => Object.assign({}, base, plus);
 const compte = (r, k) => r.lignes.filter(l => l.k === k).length;
 const porte = (r, re) => r.lignes.some(l => re.test(l.t.replace(/\u00a0/g, ' ')));
@@ -126,7 +133,7 @@ const porte = (r, re) => r.lignes.some(l => re.test(l.t.replace(/\u00a0/g, ' '))
   const { ctx, p, errs } = await telephone(nav);
   const PUB = await p.evaluate(() => VAPID_PUBLIC);
   await ouvrirModeration(p);
-  const FONCTION_OK = { st: 200, c: { version: 326, vapid: 'ok', pub: PUB } };
+  const FONCTION_OK = { st: 200, c: { version: 329, vapid: 'ok', pub: PUB } };
 
   /* 1. rien d'installé */
   let r = await scenario(p, { etat: null, fonction: { st: 404, c: { code: 'NOT_FOUND', message: 'Requested function was not found' } } });
@@ -136,8 +143,9 @@ const porte = (r, re) => r.lignes.some(l => re.test(l.t.replace(/\u00a0/g, ' '))
 
   /* 2. tout en ordre */
   r = await scenario(p, { etat: VERSION_OK, fonction: FONCTION_OK });
-  dire(compte(r, 'non') === 0 && compte(r, 'att') === 0 && compte(r, 'ok') === 5, 'tout en ordre : cinq lignes vertes, aucune rouge (' + r.lignes.map(l => l.k + ':' + l.t.slice(0, 38)).join(' | ') + ')');
-  dire(porte(r, /3 téléphones inscrits/) && porte(r, /2 rappels envoyés/) && porte(r, /La fonction répond \(v326\)/), 'tout en ordre : le compte des téléphones et des envois, la version');
+  dire(compte(r, 'non') === 0 && compte(r, 'att') === 0 && compte(r, 'ok') === 7, 'tout en ordre : sept lignes vertes, aucune rouge (' + r.lignes.map(l => l.k + ':' + l.t.slice(0, 38)).join(' | ') + ')');
+  dire(porte(r, /3 téléphones inscrits/) && porte(r, /2 rappels envoyés/) && porte(r, /La fonction répond \(v329\)/), 'tout en ordre : le compte des téléphones et des envois, la version');
+  dire(porte(r, /Messages des groupes branchés · 2 téléphones rattachés à un compte/) && porte(r, /Dernier message \(.+\) : 2 téléphones prévenus\./), 'tout en ordre : les messages des groupes, branchés, et le dernier message (v329)');
   dire(r.invoke.length === 1 && r.invoke[0].corps.etat === true && /^Bearer sb_publishable_/.test(r.invoke[0].auth || ''),
     "la fonction est appelée avec la clé publishable, jamais la session (" + (r.invoke[0] && r.invoke[0].auth || 'aucune').slice(0, 24) + '…)');
   const rpcEtat = await p.evaluate(() => window.__banc.rpc.filter(x => x.nom === 'rappels_etat').pop());
@@ -240,6 +248,19 @@ const porte = (r, re) => r.lignes.some(l => re.test(l.t.replace(/\u00a0/g, ' '))
   dire(e.essai && e.essai.k === 'att' && /ne sait pas encore envoyer chaque sorte/.test(e.vu), "    une fonction d'avant la v327 : dit, au lieu de faire semblant");
   e = await chaque({ st: 429, c: { version: 327, erreur: 'patience' } });
   dire(e.essai && e.essai.k === 'att' && /Un essai par minute/.test(e.vu), '    dans la minute d\'un autre essai : « un essai par minute »');
+
+  /* 15. (v329) LES MESSAGES DES GROUPES */
+  const sansMessages = avec(VERSION_OK, { version: 326, lies: undefined, messages_branches: undefined, reponse_message: undefined });
+  r = await scenario(p, { etat: sansMessages, fonction: FONCTION_OK });
+  dire(compte(r, 'non') === 1 && porte(r, /Les messages des groupes ne préviennent encore personne : Supabase → SQL Editor → recolle notifications\/installer\.sql → Run\./),
+    '15. base d\'avant la v329 : UNE ligne rouge, « recolle installer.sql » (' + r.lignes.filter(l => l.k === 'non').map(l => l.t.slice(0, 50)).join(' | ') + ')');
+  r = await scenario(p, { etat: VERSION_OK, fonction: { st: 200, c: { version: 328, vapid: 'ok', pub: PUB } } });
+  dire(compte(r, 'non') === 0 && porte(r, /ne sait pas encore prévenir des messages : sa mise à jour part toute seule de GitHub/), '    fonction d\'avant la v329 : dit, en orange, que sa mise à jour part de GitHub');
+  r = await scenario(p, { etat: avec(VERSION_OK, { reponse_message: { status_code: 200, created: new Date().toISOString(),
+    contenu: JSON.stringify({ version: 329, sorte: 'message', envoyes: 0, echecs: 1, dernier_echec: { code: 403, raison: 'the VAPID credentials do not correspond' } }) } }), fonction: FONCTION_OK });
+  dire(porte(r, /Dernier message \(.+\) : personne à prévenir\./) && porte(r, /1 envoi refusé par le service d'envoi \(code 403\) : the VAPID credentials/), '    un envoi refusé au dernier message : le code et la raison');
+  r = await scenario(p, { etat: avec(VERSION_OK, { reponse_message: { status_code: 500, created: new Date().toISOString(), contenu: '{"version":329,"sorte":"message","erreur":"table"}' } }), fonction: FONCTION_OK });
+  dire(porte(r, /La fonction a répondu 500/), '    une fonction en panne sur un message : son code, tel quel');
 
   /* 12. la carte tient : rien ne déborde, à 393 px */
   r = await scenario(p, { etat: null, fonction: { st: 0 } });
