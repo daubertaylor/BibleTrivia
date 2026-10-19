@@ -810,6 +810,20 @@ const ouvrirLaLangue = async (p, lg) => {
        refusé appelle). */
     ['Groupes · insulte refusée', async () => { alerteCompo(motRefusMessage({ ok:false, erreur:'mot_interdit' }));
       await new Promise(r => setTimeout(r, 400)); }],
+    /* (v332) TOUCHER UN MESSAGE POUR Y RÉPONDRE : la citation se pose
+       au-dessus de la barre d'écriture, avec sa croix (« Annuler la
+       réponse »). Puis deux réponses dans le fil : l'une à un message
+       supprimé depuis, l'autre à un message plus ancien que ce qui est
+       chargé — toucher sa citation le dit. */
+    ['Groupes · répondre', () => { cacherAlerteCompo(); grp.etat.reponses = true; toucherMessage('7'); }],
+    ['Groupes · réponses dans le fil', async () => { annulerReponse();
+      const il = new Date(Date.now() - 86400000).toISOString(), maint = new Date().toISOString();
+      citesConnus[501] = { id:501, groupe:'g-1', auteur:'u-4', genre:'texte', texte:'Amen', donnees:{}, cree_le:il, masque:false, supprime_le:null };
+      grp.fils['g-1'].messages.push(
+        { id:16, groupe:'g-1', auteur:'u-2', genre:'texte', texte:'Amen', donnees:{ reponse:9 }, cree_le:maint, masque:false, supprime_le:null },
+        { id:17, groupe:'g-1', auteur:'u-3', genre:'texte', texte:'Amen', donnees:{ reponse:501 }, cree_le:maint, masque:false, supprime_le:null });
+      majFil(); await new Promise(r => setTimeout(r, 60));
+      allerAuMessage('501'); await new Promise(r => setTimeout(r, 120)); }],
     ['Groupes · sourdine', () => { cacherAlerteCompo(); grp.membres['g-1'][0].muet_jusqu = new Date(Date.now() + 3600000).toISOString(); majCompo(); }],
     ['Groupes · fil vide', () => { __fermerTout(); __grpDecor(); grp.fils['g-1'] = { charge:true, tout:true, messages:[] }; grp.courant = 'g-1';
       state.screen='groupe'; render(); }],
@@ -911,6 +925,8 @@ const ouvrirLaLangue = async (p, lg) => {
         /* Une partie à la fois (v314) : la sienne encore ouverte, ou relancée trop vite. */
         'partie_en_cours', 'parties_trop_vite'].map(code =>
       ['Groupes · erreur ' + code, (c) => { __fermerTout(); __grpDecor(); grp.message = motErreurGroupe({ erreur:c }); state.screen='groupes'; render(); }, code]),
+    /* (v332) Un groupe plein dit combien il en tient : 120 au plus. */
+    ['Groupes · groupe complet', () => { __fermerTout(); __grpDecor(); grp.message = motErreurGroupe({ ok:false, erreur:'groupe_plein', max:120 }); state.screen='groupes'; render(); }],
     /* LA PHOTO DU GROUPE (v311) : la feuille « Changer / Retirer », puis le
        salon d'une partie lancée depuis un groupe, chez l'hôte et chez
        l'invité. */

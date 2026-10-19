@@ -231,7 +231,8 @@ const dit = (quoi, bon, detail) => { console.log('  ' + (bon ? 'OK  ' : 'KO  ') 
     await m.rpc(A, 'envoyer_message', { p_groupe: (await m.sql("select id from public.groupes where nom = 'Les amis du jeudi'")), p_texte: 'un message à signaler', p_genre: 'texte', p_donnees: null });
     await pb.evaluate((id) => ouvrirGroupe(id), await m.sql("select id from public.groupes where nom = 'Les amis du jeudi'"));
     dit('Benoît voit le message de Taylor', await attendre(pb, () => [...document.querySelectorAll('.b-eux .b-bulle')].some(b => /signaler/.test(b.textContent)), null, 8000));
-    await pb.evaluate(() => { const b = [...document.querySelectorAll('.b-eux .b-bulle')].find(x => /signaler/.test(x.textContent)); b.click(); });
+    /* (v332) Le menu d'un message est à l'appui long (toucher prépare une réponse). */
+    await pb.evaluate(() => { const b = [...document.querySelectorAll('.b-eux .b-bulle')].find(x => /signaler/.test(x.textContent)); actionsMessage(b.getAttribute('data-m')); });
     await pb.waitForTimeout(500);
     await pb.evaluate(() => { const l = [...document.querySelectorAll('#grpActionsVeil .grp-act-l')].find(x => /Signaler/.test(x.textContent)); l.click(); });
     await pb.waitForTimeout(700);
@@ -273,7 +274,7 @@ const dit = (quoi, bon, detail) => { console.log('  ' + (bon ? 'OK  ' : 'KO  ') 
     dit('Benoît voit « Message masqué » en direct', await attendre(pb, () => [...document.querySelectorAll('.b-vide')].some(b => /masqué/.test(b.textContent)), null, 8000));
 
     /* ---- 10. bloquer ---- */
-    await pb.evaluate(() => { const b = [...document.querySelectorAll('.b-eux .b-bulle')][0]; b.click(); });
+    await pb.evaluate(() => { const b = [...document.querySelectorAll('.b-eux .b-bulle')][0]; actionsMessage(b.getAttribute('data-m')); });
     await pb.waitForTimeout(500);
     await pb.evaluate(() => { const l = [...document.querySelectorAll('#grpActionsVeil .grp-act-l')].find(x => /Bloquer/.test(x.textContent)); l.click(); });
     await pb.waitForTimeout(500);

@@ -61,7 +61,8 @@ const dit = (quoi, bon, detail) => { console.log('  ' + (bon ? 'OK  ' : 'KO  ') 
     await p.evaluate((id) => ouvrirGroupe(id), g.id);
     await attendre(p, () => [...document.querySelectorAll('.b-bulle')].some(b => /Trois/.test(b.textContent)), null, 9000);
     await p.waitForTimeout(700);
-    await p.evaluate(() => [...document.querySelectorAll('.b-moi .b-bulle')].find(b => /Deux/.test(b.textContent)).click());
+    /* (v332) Le menu d'un message est à l'appui long (toucher prépare une réponse). */
+    await p.evaluate(() => actionsMessage([...document.querySelectorAll('.b-moi .b-bulle')].find(b => /Deux/.test(b.textContent)).getAttribute('data-m')));
     await p.waitForTimeout(500);
     await p.evaluate(() => [...document.querySelectorAll('#grpActionsVeil .grp-act-l')].find(x => /Supprimer/.test(x.textContent)).click());
     await p.waitForTimeout(400);
@@ -70,7 +71,8 @@ const dit = (quoi, bon, detail) => { console.log('  ' + (bon ? 'OK  ' : 'KO  ') 
     dit('… sans laisser de bulle « Message supprimé »', await p.evaluate(() => !/Message supprimé/.test(document.getElementById('fil').textContent)));
     await m.rpc(A, 'envoyer_message', { p_groupe: g.id, p_texte: 'Quatre', p_genre: 'texte', p_donnees: null });
     await attendre(p, () => [...document.querySelectorAll('.b-bulle')].some(b => /Quatre/.test(b.textContent)), null, 8000);
-    await p.evaluate(() => [...document.querySelectorAll('.b-moi .b-bulle')].find(b => /Quatre/.test(b.textContent)).click());
+    /* (v332) Le menu d'un message est à l'appui long (toucher prépare une réponse). */
+    await p.evaluate(() => actionsMessage([...document.querySelectorAll('.b-moi .b-bulle')].find(b => /Quatre/.test(b.textContent)).getAttribute('data-m')));
     await p.waitForTimeout(500);
     await p.evaluate(() => [...document.querySelectorAll('#grpActionsVeil .grp-act-l')].find(x => /Supprimer/.test(x.textContent)).click());
     await p.waitForTimeout(400);

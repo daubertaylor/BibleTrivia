@@ -473,8 +473,12 @@
      d'écriture : le retirer fluidifierait le jeu, et ça resterait plus
      minimaliste. » Juste : le curseur qui clignote dit déjà où l'on écrit,
      comme dans toutes les applications du téléphone. Le champ actif devient
-     seulement un peu plus blanc — sans couleur, sans animation. */
-  .text-input:focus, .code-input:focus{ box-shadow:none; background-color:rgba(255,255,255,0.9); }
+     seulement un peu plus blanc — sans couleur, sans animation.
+     (v332) BLANC PLEIN, PAS UN VOILE. « Quand je clique pour ouvrir le
+     clavier, la barre d'écriture devient transparente. » Ce « plus blanc »
+     était un blanc à 90 % : posé sur la photo (le nom du Profil), il laissait
+     passer le décor flouté — le champ se vidait au moment où l'on écrit. */
+  .text-input:focus, .code-input:focus{ box-shadow:none; background-color:#fff; }
 
   #app{ position:relative; z-index:1; width:100%; max-width:430px; margin:0 auto; height:100%; overflow-y:auto; overflow-x:hidden; overscroll-behavior:none; display:flex; flex-direction:column; padding:calc(env(safe-area-inset-top) + 0.35rem) calc(env(safe-area-inset-right) + 0.7rem) max(calc(env(safe-area-inset-bottom) + 0.35rem), var(--air-bas)) calc(env(safe-area-inset-left) + 0.7rem); }
   /* GRANDS ÉCRANS (tablette, iPad, PC) : l'app GRANDIT pour exploiter l'espace
@@ -2387,6 +2391,12 @@
      règle exactement sa spécificité d'avant pour tous les autres boutons. */
   button:active:not(:disabled):where(:not(.chip, .len-chip, .bk)),
   .mode-card:active{ transform:translateZ(0) scale(0.968); transition-duration:0.09s; transition-timing-function:cubic-bezier(0.3,0,0.45,1); }
+  /* ===== (v332) UN VISAGE NE SE TEINTE PAS (voir enfoncerVisage) =====
+     Le visage qu'on touche s'enfonce, avec le même ressort qu'un bouton ; la
+     ligne qui le porte ne bouge pas — c'est le visage qu'on a touché. */
+  .avatar{ transition:scale 0.44s cubic-bezier(0.2,1,0.3,1); }
+  .avatar.enfonce{ scale:0.92; transition-duration:0.09s; transition-timing-function:cubic-bezier(0.3,0,0.45,1); }
+  button.sans-appui:active:not(:disabled){ transform:none; }
   /* ===== CE QUI VIT EN RANGÉE NE S'ENFONCE PAS : ÇA SE REMPLIT =====
      « Le remplissage ne se fait pas à 100 %. » Mesuré sur la rangée Testament,
      les trois puces au même instant, doigt posé sur celle du milieu :
@@ -2554,10 +2564,14 @@
   .code-input{ text-align:center; font-family:'Poppins',sans-serif; font-weight:700; font-size:1.7rem; letter-spacing:0.42rem; text-transform:uppercase; }
   /* Champ centré et vide : iOS pose le curseur AU MILIEU, donc au milieu du
      code d'exemple — on lisait « ABC|234 », comme un code à moitié tapé
-     (capture de Taylor, v318). Tant que l'exemple est là, le curseur ne se
-     dessine pas : la lueur corail du champ dit déjà qu'il attend. Il
-     réapparaît dès la première lettre, derrière elle. */
-  .code-input:placeholder-shown{ caret-color:transparent; }
+     (capture de Taylor, v318). On cachait donc le curseur tant que l'exemple
+     était là, la lueur du champ disant qu'il attendait. (v332) Mais la lueur
+     est partie en v329 : « Lorsque j'ouvre le clavier, je n'ai pas le petit
+     trait qui me dit que je suis en train d'écrire. » C'est maintenant
+     l'EXEMPLE qui s'efface quand on touche le champ : le curseur clignote
+     seul, au milieu, là où la première lettre va s'écrire. Champ quitté
+     vide, l'exemple revient. */
+  .code-input:focus::placeholder{ color:transparent; }
   /* LA COULEUR EST UNE COULEUR, PAS UNE PLAQUE.
      Deux essais ont raté pour la même raison, invisible dans la feuille de
      style : background-clip:content-box était bien écrit ici, mais l'attribut
@@ -2845,7 +2859,19 @@
     transform: translateZ(0);
     -webkit-transform: translateZ(0);
   }
-  #bg-overlay, #bg-grain, .ov-vignette, .ov-grain{ transform: translateZ(0); -webkit-transform: translateZ(0); }
+  /* (v332) LE DÉCOR NE BOUGE JAMAIS AVEC LE CLAVIER. « Sur Android, quand
+     j'ouvre ou que je ferme le clavier, le décor se décale. Je veux que ce
+     soit exactement pareil qu'iOS. » Deux façons de le décaler, selon le
+     navigateur : rétrécir la fenêtre (le décor, posé haut et bas sur elle,
+     rapetissait — et « cover » recadrait la photo), ou faire GLISSER la zone
+     visible vers le bas (le décor, accroché à la page, remontait avec elle).
+     Le décor garde donc la hauteur de l'écran AU REPOS (--decor-h, relevée
+     sans clavier), et suit la zone visible quand elle glisse (--vvt-d, posé
+     à CHAQUE mouvement de la zone visible, avant même que le clavier soit
+     reconnu) : il ne bouge plus d'un pixel à l'écran, comme sur iPhone. */
+  #bg-layer, #bg-overlay, #bg-grain, .ov-fond, .ov-vignette, .ov-grain{ bottom:auto; height:var(--decor-h, 100%); }
+  #bg-layer, .ov-fond{ transform:translateY(var(--vvt-d, 0px)); }
+  #bg-overlay, #bg-grain, .ov-vignette, .ov-grain{ transform:translateY(var(--vvt-d, 0px)) translateZ(0); -webkit-transform:translateY(var(--vvt-d, 0px)) translateZ(0); }
 
   /* Safari : jamais de backdrop-filter imbriqué dans un parent qui en a déjà un */
   .searching-card .btn-ghost, .modal-card .text-input, .modal-card .code-input{ backdrop-filter:none; -webkit-backdrop-filter:none; }
@@ -5445,7 +5471,7 @@
   .grp-carte .grp-cherche{ margin:0.7rem 0.7rem 0.4rem; width:calc(100% - 1.4rem); }
   .grp-ligne{ width:100%; display:flex; align-items:center; gap:0.75rem; padding:0.6rem 0.6rem; border:0; background:none;
     border-radius:var(--r-m); text-align:left; color:var(--ink); -webkit-tap-highlight-color:transparent; }
-  button.grp-ligne:active{ background:rgba(42,36,30,0.06); }
+  button.grp-ligne:active:not(.sans-appui){ background:rgba(42,36,30,0.06); }
   .grp-ligne:disabled{ opacity:1; }
   .grp-av{ width:2.75rem; height:2.75rem; border-radius:var(--r-ico); flex-shrink:0; display:flex; align-items:center; justify-content:center;
     color:#fff; font-family:'Poppins',sans-serif; font-weight:700; font-size:1.12rem;
@@ -5790,6 +5816,34 @@
   .b-bulle .mention{ font-weight:700; color:var(--grp-fonce, var(--primary-dark)); }
   .b-moi .b-bulle .mention{ color:inherit; }
   .b-eux .b-bulle.me-nomme{ background:rgb(255,239,204); }
+  /* (v332) LA RÉPONSE À UN MESSAGE (voir RÉPONDRE À UN MESSAGE). En tête de
+     la bulle, le message cité : un fond teinté de la couleur du groupe (sur
+     le crème) ou un voile clair (sur ma bulle colorée) — jamais un trait.
+     Le nom en gras, le début du texte sur deux lignes au plus. */
+  .b-cite{ display:flex; flex-direction:column; gap:0.05rem; margin:-0.2rem -0.45rem 0.45rem; padding:0.4rem 0.65rem 0.45rem;
+    border-radius:14px; background:rgba(var(--grp-rgb, 214,60,34),0.1); cursor:pointer; white-space:normal; }
+  .b-cite b{ font-family:'Poppins',sans-serif; font-size:0.76rem; font-weight:700; color:var(--grp-fonce, var(--primary-dark)); }
+  .b-cite > span{ font-size:0.84rem; line-height:1.32; color:var(--ink-soft);
+    display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical; overflow:hidden; }
+  .b-moi .b-cite{ background:rgba(255,255,255,0.2); }
+  .b-moi .b-cite b{ color:inherit; }
+  .b-moi .b-cite > span{ color:inherit; opacity:0.86; }
+  .b-cite.attente{ min-height:2.4rem; }
+  /* Le message d'origine, retrouvé : il s'éclaire un instant. */
+  .b-bulle.eclat{ animation:bEclat 1.3s ease-out; }
+  @keyframes bEclat{ 0%, 35%{ filter:brightness(1.12) saturate(1.1); transform:scale(1.02); } 100%{ filter:none; transform:none; } }
+  /* Et au-dessus de la barre d'écriture, le message auquel on répond. */
+  .compo-cite{ display:flex; align-items:center; gap:0.4rem; margin:0 0 0.4rem; padding:0.4rem 0.3rem 0.4rem 0.8rem;
+    border-radius:calc(var(--r-l) - 2px); background:rgba(var(--grp-rgb, 214,60,34),0.1); }
+  .compo-cite.arrive{ animation:ccArrive 0.24s cubic-bezier(0.2,0.85,0.3,1) both; }
+  @keyframes ccArrive{ from{ opacity:0; transform:translateY(0.35rem); } to{ opacity:1; transform:none; } }
+  .compo-cite .cc-t{ flex:1; min-width:0; display:flex; flex-direction:column; gap:0.02rem; }
+  .compo-cite .cc-t b{ font-family:'Poppins',sans-serif; font-size:0.78rem; font-weight:700; color:var(--grp-fonce, var(--primary-dark)); }
+  .compo-cite .cc-t span{ font-size:0.86rem; color:var(--ink-soft); white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+  .compo-cite .cc-x{ flex-shrink:0; width:2.2rem; height:2.2rem; display:flex; align-items:center; justify-content:center; border:0; border-radius:50%;
+    background:rgba(42,36,30,0.07); color:var(--ink-soft); -webkit-tap-highlight-color:transparent; }
+  .compo-cite .cc-x .ico{ width:0.95rem; height:0.95rem; display:inline-flex; }
+  .compo-cite .cc-x .ico svg{ width:100%; height:100%; }
   /* LES NOMS PROPOSÉS APRÈS « @ » : posés au-dessus du bas du fil, sans rien
      pousser — le fil ne bouge pas d'un pixel quand ils paraissent. */
   .compo-noms{ position:absolute; left:0.45rem; right:0.45rem; bottom:0.45rem; z-index:3; display:flex; flex-direction:column;
@@ -6724,6 +6778,10 @@ const TEXTES = {
     "Le nom doit faire entre 3 et 40 caractères.":"The name must be 3 to 40 characters long.",
     "La description est trop longue.":"The description is too long.",
     "Ce texte contient une insulte ou un mot grossier.":"This text contains an insult or a rude word.",
+    "Annuler la réponse":"Cancel reply",
+    "Message supprimé":"Message deleted",
+    "Ce message est plus ancien que la discussion affichée.":"This message is older than the conversation shown.",
+    "Ce groupe est complet : {n} membres au plus.":"This group is full: {n} members at most.",
     "Ce message contient une insulte ou un mot grossier : il ne peut pas être envoyé.":"This message contains an insult or a rude word, so it can't be sent.",
     "Pas d'adresse, de numéro ni de lien dans un groupe public.":"No addresses, phone numbers or links in a public group.",
     "Tu as atteint le nombre maximum de groupes.":"You've reached the maximum number of groups.",
@@ -7473,6 +7531,10 @@ const TEXTES = {
     "Le nom doit faire entre 3 et 40 caractères.":"El nombre debe tener entre 3 y 40 caracteres.",
     "La description est trop longue.":"La descripción es demasiado larga.",
     "Ce texte contient une insulte ou un mot grossier.":"Este texto contiene un insulto o una palabra grosera.",
+    "Annuler la réponse":"Cancelar la respuesta",
+    "Message supprimé":"Mensaje eliminado",
+    "Ce message est plus ancien que la discussion affichée.":"Este mensaje es más antiguo que la conversación mostrada.",
+    "Ce groupe est complet : {n} membres au plus.":"Este grupo está completo: {n} miembros como máximo.",
     "Ce message contient une insulte ou un mot grossier : il ne peut pas être envoyé.":"Este mensaje contiene un insulto o una palabra grosera: no se puede enviar.",
     "Pas d'adresse, de numéro ni de lien dans un groupe public.":"Nada de direcciones, números ni enlaces en un grupo público.",
     "Tu as atteint le nombre maximum de groupes.":"Has alcanzado el número máximo de grupos.",
@@ -7930,10 +7992,44 @@ function ondeRanger(){
    course jusqu'au toucher suivant (son animation ne finissait jamais sous la
    page). Un lien pâlit sous le doigt, c'est tout. */
 const LIENS_TEXTE = ".lien-conf, .grp-lien, .compte-supprimer";
+/* ===== (v332) UN VISAGE NE SE TEINTE PAS =====
+   « Supprimer le halo rose lorsque je clique sur ma photo de profil ou sur
+   la photo de quelqu'un d'autre. » C'était l'onde du bouton qui porte le
+   visage : un voile corail posé sur la photo, le temps du toucher. Un
+   visage s'enfonce sous le doigt, comme tout ce qu'on touche, mais ne prend
+   jamais de couleur — le sien (Profil, accueil, Groupes), comme celui d'un
+   autre qu'on touche pour l'ouvrir en grand (une ligne de membre, la
+   discussion, un salon). Le reste de la ligne garde son onde. */
+const VISAGES = ".avatar-tap, .hero-profile, .grp-profil";
+let visageEnfonce = null;
+function enfoncerVisage(a, b){
+  lacherVisage(true);
+  a.classList.add("enfonce");
+  if(b) b.classList.add("sans-appui");
+  visageEnfonce = { a, b, t:performance.now() };
+}
+function lacherVisage(tout){
+  const v = visageEnfonce;
+  if(!v) return;
+  visageEnfonce = null;
+  const fin = ()=>{ v.a.classList.remove("enfonce"); if(v.b) v.b.classList.remove("sans-appui"); };
+  /* Un tapotement se voit : le visage reste enfoncé le temps d'y arriver. */
+  const reste = tout === true ? 0 : Math.max(0, 110 - (performance.now() - v.t));
+  if(reste) setTimeout(fin, reste); else fin();
+}
+document.addEventListener("pointerup", ()=> lacherVisage(), { passive:true, capture:true });
+document.addEventListener("pointercancel", ()=> lacherVisage(), { passive:true, capture:true });
 document.addEventListener("pointerdown", (e)=>{
   const b = e.target && e.target.closest ? e.target.closest("button, .mode-card") : null;
+  /* Une photo qui va s'ouvrir en grand : c'est elle qui s'enfonce. */
+  const photo = e.target && e.target.closest ? e.target.closest(".avatar.a-photo[data-pid]") : null;
+  if(photo && !(b && b.matches(VISAGES))){
+    if(ondeCourante) ondeRanger();
+    enfoncerVisage(photo, b && !b.disabled ? b : null);
+    return;
+  }
   if(!b || b.disabled) return;
-  if(b.matches(LIENS_TEXTE)) return;
+  if(b.matches(LIENS_TEXTE) || b.matches(VISAGES)) return;
   if(ondeCourante && ondeCourante !== b) ondeRanger();
   b.classList.remove("onde-part");        // il repart plein, pas en train de s'effacer
   /* Ré-appuyer sur le même bouton doit relancer l'onde depuis le début. */
@@ -10014,7 +10110,7 @@ const SUPABASE_ANON_KEY = "sb_publishable_FDJ_R0foC7uIeHmxVrj6rA_2NeIgW2a";
    remontée d'un téléphone ne vaut rien si on ne sait pas QUELLE version
    tournait. Elle doit rester égale au CACHE de sw.js — c'est ce que vérifie
    banc-essai/version.js, qui refuse de laisser publier les deux en désaccord. */
-const VERSION_JEU = "v331";
+const VERSION_JEU = "v332";
 
 /* ===================== QUAND ÇA CASSE CHEZ UN JOUEUR =====================
    « Si quelque chose casse chez cinq d'entre eux sur un modèle de téléphone
@@ -13542,6 +13638,30 @@ try{
      les pages et les fenêtres à champ. Ce qui doit tenir dans la zone
      visible s'y pose donc à SA place : décalé de son glissement (--vvt). */
   const decalageVisible = ()=> Math.max(0, Math.round(vv.offsetTop || 0));
+  /* (v332) La hauteur du décor : celle de l'écran SANS clavier, relevée au
+     repos (voir « LE DÉCOR NE BOUGE JAMAIS AVEC LE CLAVIER »). */
+  let decorPose = 0, sondeLvh = null;
+  const poserDecor = ()=>{
+    /* Le plus GRAND viewport compte aussi (lvh : barres du navigateur
+       rentrées) — c'est lui que le décor couvrait déjà au repos. */
+    let lvh = 0;
+    try{
+      if(!sondeLvh && CSS.supports && CSS.supports("height", "100lvh")){
+        sondeLvh = document.createElement("div");
+        sondeLvh.style.cssText = "position:fixed;top:0;left:0;width:0;height:100lvh;visibility:hidden;pointer-events:none";
+        document.body.appendChild(sondeLvh);
+      }
+      if(sondeLvh) lvh = sondeLvh.offsetHeight;
+    }catch(e){}
+    const h = Math.round(Math.max(innerHeight, vv.height || 0, lvh));
+    if(h > 200 && h !== decorPose){ decorPose = h; de.style.setProperty("--decor-h", h + "px"); }
+  };
+  poserDecor();
+  /* Et sa place : la zone visible glisse, le décor glisse avec elle — à
+     chaque image, sans attendre de savoir s'il y a un clavier (seul un
+     clavier fait glisser la zone visible : le zoom est bloqué). */
+  let vvdPose = 0;
+  const suivreDecor = ()=>{ const v = decalageVisible(); if(v !== vvdPose){ vvdPose = v; de.style.setProperty("--vvt-d", v + "px"); } };
   let vvtPose = 0;
   const poserDecalage = (v)=>{
     if(v === vvtPose) return;
@@ -14032,9 +14152,11 @@ try{
      sous les yeux, et le champ monte avec le clavier. Rien d'autre ne bouge. */
   const champDeDiscussion = ()=>{ const el = document.activeElement; return !!el && el.id === "compoTexte"; };
   function apply(){
+    suivreDecor();
     if(!isField()){
       restH = Math.max(restH, vv.height); // pas de clavier -> c'est la hauteur de repos
       restInner = innerHeight;
+      poserDecor();
       poserDecalage(0);
       if(retourAPrevoir()) de.classList.add("kb-cale");
       de.classList.remove("kb");
@@ -22100,6 +22222,8 @@ function motErreurGroupe(r){
   /* Aucune phrase ne suppose le genre du joueur : « t'a mis en sourdine »
      aurait été faux pour une joueuse. On dit l'état, pas l'accord. */
   if(code === "muet" && r.jusqu) return Tf("Tu es en sourdine jusqu'à {h}.", { h:heureCourte(r.jusqu) });
+  /* (v332) Plein : on dit jusqu'où (120, voir groupes/table.sql). */
+  if(code === "groupe_plein"){ const n = +(r && r.max) || +(grp.etat && grp.etat.membres_max) || 0; if(n) return Tf("Ce groupe est complet : {n} membres au plus.", { n }); }
   return T(textes[code] || "Pas de réseau. Réessaie dans un instant.");
 }
 /* Un appel au serveur qui ne lève JAMAIS : réseau coupé, fonction absente,
@@ -22221,6 +22345,7 @@ async function chargerEtatGroupes(){
     else { desabonnerGroupes(); desabonnerPerso(); }
     if(r.participe === "ok"){
       ecrireBase("meta", "etat", { participe:r.participe, moderateur:!!r.moderateur, ouverts:r.ouverts, photos:r.photos === true, logos:r.logos === true,
+                                   reponses:r.reponses === true, membres_max:+r.membres_max || 0,
                                    regles_version:r.regles_version, a_traiter:+r.a_traiter || 0 });
       marquerMemoire();
     }
@@ -22258,7 +22383,7 @@ function groupesSurCompte(){
   });
   grp.nonLus = 0; grp.message = ""; grp.bloques = new Set(); grp.ageOk = false; grp.reglesOk = false;
   if(!compteConnecte()){ grp.modoMemo = false; memoriserGroupes(); }
-  desabonnerGroupes(); desabonnerPerso();
+  desabonnerGroupes(); desabonnerPerso(); desabonnerLus();
   if(compteConnecte() && grp.installe === true){
     chargerEtatGroupes().then(()=>{
       if(state.screen === "groupes"){ chargerListes(); render(); }
@@ -23145,6 +23270,12 @@ async function apercuCode(c){
   if(j !== apercuJeton) return;
   if(z) z.innerHTML = `<div class="grp-ligne">${pastilleGroupe(r)}<span class="grp-txt"><b>${escapeHtml(r.nom)}</b><small>${escapeHtml(r.description || nbMembres(r.nb_membres))}</small></span></div>`;
   if(b){ b.disabled = false; b.textContent = r.membre ? T("Ouvrir") : T("Rejoindre"); }
+  /* (v332) Un groupe plein se dit AVANT qu'on touche « Rejoindre ». */
+  const max = +(grp.etat && grp.etat.membres_max) || 0;
+  if(max && !r.membre && +r.nb_membres >= max){
+    if(b) b.disabled = true;
+    motFeuille("grpCodeVeil", Tf("Ce groupe est complet : {n} membres au plus.", { n:max }));
+  }
   try{ glassRelayout(); queueGlassSync(); }catch(e){}
 }
 async function rejoindreParCode(){
@@ -23323,6 +23454,7 @@ async function ouvrirGroupe(id){
   majBarre();
   state.screen = "groupe";
   render();
+  abonnerLus(id);                     // (v332) les coches « Vu », tout de suite
   chargerGroupe(id);
   chargerMembres(id);
   await chargerFil(id);
@@ -23336,6 +23468,8 @@ function retourGroupes(){
   const deModeration = enLecture() || (!!grp.courant && grp.depuis === "moderation");
   grp.depuis = null;
   grp.courant = null;
+  grp.reponse = null;
+  desabonnerLus();
   state.screen = deModeration ? "moderation" : "groupes";
   render();
   if(!deModeration) chargerListes();
@@ -23845,8 +23979,60 @@ function marquerLu(id){
   majBarre();
   if(grp.courant === id && state.screen === "groupe" && !document.hidden) effacerNotifsGroupe(id);
   if(dernier <= (f.lu || 0)) return;
+  const avant = f.lu || 0;
   f.lu = dernier;
-  appelGroupe("marquer_lu", { p_groupe:id, p_message:dernier });
+  /* (v332) Ce qu'on vient de lire vient de quelqu'un d'autre : une fois le
+     serveur à jour, on le dit (voir « VU », TOUT DE SUITE). */
+  const deQuelquUn = f.messages.some(m => m.id > avant && m.id <= dernier && m.auteur && m.auteur !== monId());
+  appelGroupe("marquer_lu", { p_groupe:id, p_message:dernier }).then(r => { if(r && r.ok && deQuelquUn) signalerLu(id); });
+}
+/* ===== (v332) « VU », TOUT DE SUITE =====
+   « Si quelqu'un voit ton message, je veux que tu sois informé quasiment
+   instantanément qu'il l'a vu. » Les coches suivaient la relève de la
+   discussion (10 s), ou la réponse de celui qui lisait. Maintenant, celui
+   qui lit le dit dès que le serveur l'a noté : un signal sur le petit canal
+   de la discussion (« yada-lus-<groupe> »), et ceux qui l'ont ouverte
+   relisent aussitôt qui a lu quoi. Le serveur reste juge : un signal
+   inventé ne ferait que relire la vérité. La relève reste le filet. */
+let lusCanal = null, lusGroupe = null, lusT = null;
+function nomCanalLus(id){ return "yada-lus-" + id; }
+function abonnerLus(id){
+  if(lusCanal && lusGroupe === id) return;
+  desabonnerLus();
+  const supa = initSupa();
+  if(!supa || !supa.channel || !compteConnecte() || !id) return;
+  try{
+    const c = supa.channel(nomCanalLus(id), { config:{ broadcast:{ self:false } } })
+      .on("broadcast", { event:"lu" }, ()=>{
+        if(lusCanal !== c || grp.courant !== id || state.screen !== "groupe") return;
+        clearTimeout(lusT); lusT = setTimeout(()=>{ lusT = null; relireLus(id); }, 120);
+      });
+    lusCanal = c; lusGroupe = id;
+    c.subscribe();
+  }catch(e){ lusCanal = null; lusGroupe = null; }
+}
+function desabonnerLus(){
+  clearTimeout(lusT); lusT = null;
+  const c = lusCanal; lusCanal = null; lusGroupe = null;
+  if(c){ try{ Promise.resolve(initSupa().removeChannel(c)).catch(()=>{}); }catch(e){} }
+}
+function signalerLu(id){
+  const supa = initSupa();
+  if(!supa || !supa.channel) return;
+  try{
+    /* Déjà sur le canal de cette discussion (c'est le cas de qui la lit) :
+       le signal part par lui. Sinon, d'un simple appel, sans s'y abonner. */
+    const dedans = !!lusCanal && lusGroupe === id;
+    const c = dedans ? lusCanal : supa.channel(nomCanalLus(id));
+    const charge = { m:monId() };
+    let p;
+    if(dedans && c.state === "joined") p = c.send({ type:"broadcast", event:"lu", payload:charge });
+    else {
+      try{ p = (typeof c.httpSend === "function") ? c.httpSend("lu", charge) : c.send({ type:"broadcast", event:"lu", payload:charge }); }
+      catch(e){ p = c.send({ type:"broadcast", event:"lu", payload:charge }); }
+    }
+    if(!dedans){ const fin = ()=>{ try{ Promise.resolve(supa.removeChannel(c)).catch(()=>{}); }catch(e){} }; Promise.resolve(p).then(fin, fin); }
+  }catch(e){}
 }
 
 /* ---------- L'ÉCRAN D'UNE DISCUSSION ---------- */
@@ -23875,7 +24061,7 @@ function renderGroupe(){
     </div>
     ${enLecture()
       ? `<div class="compo compo-lecture" id="compo"><div class="compo-in"><span class="ico">${ICONS.bouclier}</span><span>${T("Lecture seule · modération")}</span></div></div>`
-      : `<div class="compo" id="compo"><div class="compo-in">${compoHtml()}</div></div>`}`;
+      : `<div class="compo" id="compo">${compoCiteHtml()}<div class="compo-in">${compoHtml()}</div></div>`}`;
   const t = el.querySelector("#compoTexte");
   if(t && brouillons[g.id]){ t.value = brouillons[g.id]; const b = el.querySelector("#compoEnvoi"); if(b) b.disabled = !t.value.trim(); }
   /* ===== LE FIL S'OUVRE EN BAS, SANS GLISSER =====
@@ -24056,14 +24242,14 @@ function bulleHtml(m){
     /* Fermée par celui qui l'a lancée, ou vieille de plus de quarante-cinq
        minutes (la règle du serveur) : on ne la rejoint plus. */
     const finie = !!(m.donnees && m.donnees.fermee) || (Date.now() - new Date(m.cree_le || 0).getTime() > 45 * 60000);
-    return `<div class="b-bulle b-partie${finie ? " finie" : ""}" data-m="${m.id}" onclick="actionsMessage('${m.id}')">
+    return `<div class="b-bulle b-partie${finie ? " finie" : ""}" data-m="${m.id}" onclick="toucherMessage('${m.id}')">
         <span class="bp-ico">${ICONS.manette}</span>
         <b>${moi ? T("Tu lances une partie") : escapeHtml(Tf("{nom} lance une partie", { nom }))}</b>
         ${finie ? `<small>${T("Partie terminée")}</small>` : (moi ? `<small>${escapeHtml(Tf("Code {code}", { code }))}</small>` : "")}
         ${code && !finie ? `<button class="grp-pill" onclick="event.stopPropagation(); rejoindrePartieGroupe('${code}')">${T("Rejoindre la partie")}</button>` : ""}
       </div>`;
   }
-  return `<button class="b-bulle${m.id < 0 ? " envoi" : ""}${mentionneMoi(m) ? " me-nomme" : ""}" data-m="${m.id}" onclick="actionsMessage('${m.id}')">${texteAvecMentions(m)}</button>`;
+  return `<button class="b-bulle${m.id < 0 ? " envoi" : ""}${mentionneMoi(m) ? " me-nomme" : ""}${citeDe(m) ? " a-cite" : ""}" data-m="${m.id}" onclick="toucherMessage('${m.id}')">${citeHtml(m)}${texteAvecMentions(m)}</button>`;
 }
 function descendreFil(doux){
   const z = document.getElementById("fil");
@@ -24481,9 +24667,14 @@ async function envoyerMessageGroupe(){
   }
   const f = grp.fils[g.id];
   const id = -(++grp.enCours);
-  const donnees = mentionsDuTexte(texte);
+  let donnees = mentionsDuTexte(texte);
+  /* (v332) La réponse part avec le message ; la citation quitte la barre
+     tout de suite — elle y revient si le serveur refuse le message. */
+  const rep = reponsesServeur() ? reponseEnCours(g.id) : null;
+  if(rep) donnees = Object.assign({}, donnees || {}, { reponse:rep });
   if(f) f.messages.push({ id, groupe:g.id, auteur:monId(), genre:"texte", texte, donnees:donnees || {}, cree_le:new Date().toISOString(), masque:false, supprime_le:null });
   t.value = ""; surSaisie(t);
+  if(rep){ grp.reponse = null; majReponseCompo(); }
   majFil(); descendreFil(true);
   const r = await appelGroupe("envoyer_message", { p_groupe:g.id, p_texte:texte, p_genre:"texte", p_donnees:donnees });
   if(!r.ok){
@@ -24501,6 +24692,7 @@ async function envoyerMessageGroupe(){
     setTimeout(()=>{ if(grp.replier) grp.replier.delete(String(id)); }, 2000);
     const z = document.getElementById("compoTexte");
     if(z && !z.value.trim()){ z.value = texte; surSaisie(z); }
+    if(rep && !grp.reponse){ grp.reponse = { g:g.id, id:rep }; majReponseCompo(); }
     alerteCompo(motRefusMessage(r));
     if(r.erreur === "pas_membre" || r.erreur === "groupe_ferme"){ grp.liste = null; chargerListes(); }
     if(r.erreur === "muet") chargerMembres(g.id);
@@ -25031,6 +25223,116 @@ function actionsMessage(id){
   if(moi && !m.masque) h = vusHtml(m) + h;
   ouvrirFeuilleGroupe("grpActionsVeil", nom, avatarHtml(nom, moi ? (profile.color || "#4C86E8") : (p.couleur || "#8A8F98"), 1.5, moi ? true : "u:" + m.auteur), h);
 }
+/* ===================== RÉPONDRE À UN MESSAGE (v332) =====================
+   « Je veux pouvoir cliquer sur un message et que ça fasse en sorte de
+   répondre au message directement. » Toucher une bulle prépare la réponse :
+   le message cité se pose au-dessus de la barre d'écriture (le nom, le début
+   du texte, et × pour renoncer), le clavier s'ouvre. Le message parti porte
+   sa citation : dans la bulle, le message d'origine en tête, en plus petit —
+   la toucher ramène à lui. Le serveur ne garde la référence que vers un
+   message visible du même groupe (groupes/table.sql) ; un serveur qui ne
+   sait pas encore les réponses (grp.etat.reponses) garde l'ancien geste :
+   toucher ouvre le menu. Rien de tout cela n'a de trait : des fonds. */
+function reponsesServeur(){ return !!(grp.etat && grp.etat.reponses === true); }
+function toucherMessage(id){
+  const m = trouverMessage(id);
+  if(!m || m.id < 0 || m.supprime_le) return;
+  const peut = reponsesServeur() && !m.masque && (m.genre === "texte" || m.genre === "partie")
+            && !enLecture() && !monMuetJusqu() && !!document.getElementById("compoTexte");
+  if(!peut){ actionsMessage(id); return; }
+  grp.reponse = { g:grp.courant, id:m.id };
+  majReponseCompo(true);
+  const z = document.getElementById("compoTexte");
+  if(z){ try{ z.focus({ preventScroll:true }); }catch(e){ try{ z.focus(); }catch(e2){} } }
+  try{ if(navigator.vibrate) navigator.vibrate(8); }catch(e){}
+}
+function reponseEnCours(gid){ return (grp.reponse && grp.reponse.g === gid) ? grp.reponse.id : null; }
+function annulerReponse(){
+  grp.reponse = null;
+  majReponseCompo();
+  const z = document.getElementById("compoTexte");
+  if(z && document.activeElement !== z){ try{ z.focus({ preventScroll:true }); }catch(e){} }
+}
+/* Le nom et le début d'un message, pour une citation. */
+function resumeCite(o){
+  if(!o) return null;
+  const moi = !!o.auteur && o.auteur === monId();
+  const nom = moi ? T("Toi") : (((grp.profils[o.auteur] || {}).nom) || T("Quelqu'un"));
+  let texte;
+  if(o.supprime_le) texte = T("Message supprimé");
+  else if(o.masque) texte = T("Message masqué");
+  else if(o.genre === "partie") texte = moi ? T("Tu lances une partie") : Tf("{nom} lance une partie", { nom });
+  else texte = String(o.texte || "").replace(/\s+/g, " ").trim();
+  if(texte.length > 140) texte = texte.slice(0, 139) + "…";
+  return { nom, texte, moi };
+}
+function compoCiteHtml(arrive){
+  const id = reponseEnCours(grp.courant);
+  const o = id ? (trouverMessage(id) || citeConnu(id)) : null;
+  const r = o ? resumeCite(o) : null;
+  if(!r) return "";
+  return `<div class="compo-cite${arrive ? " arrive" : ""}"><span class="cc-t"><b>${escapeHtml(r.nom)}</b><span>${escapeHtml(r.texte)}</span></span>`
+    + `<button class="cc-x" onpointerdown="event.preventDefault()" onmousedown="event.preventDefault()" onclick="annulerReponse()" aria-label="${T("Annuler la réponse")}"><span class="ico">${ICONS.close}</span></button></div>`;
+}
+function majReponseCompo(arrive){
+  const c = document.getElementById("compo");
+  if(!c) return;
+  const z = document.getElementById("fil");
+  const enBas = !!z && z.scrollHeight - z.scrollTop - z.clientHeight < 40;
+  const q = c.querySelector(".compo-cite");
+  const h = compoCiteHtml(arrive && !q);
+  if(q) q.remove();
+  if(h) c.insertAdjacentHTML("afterbegin", h);
+  if(!q && !h) return;
+  try{ glassRelayout(); queueGlassSync(); }catch(e){}
+  if(enBas) requestAnimationFrame(()=> descendreFil(false));
+}
+/* La citation dans la bulle. Le message cité est dans le fil, ou on va le
+   chercher (un message plus ancien que ce qui est chargé). */
+const citesConnus = {}, citesEnRoute = new Set(), citesEssayes = {};
+function citeDe(m){ const d = m && m.donnees; const r = d && d.reponse; return (r && /^\d+$/.test(String(r))) ? +r : 0; }
+function citeConnu(id){
+  for(const k in grp.fils){ const f = grp.fils[k]; const x = f && f.messages && f.messages.find(y => String(y.id) === String(id)); if(x) return x; }
+  return citesConnus[id] || null;
+}
+function citeHtml(m){
+  const rid = citeDe(m);
+  if(!rid) return "";
+  const o = citeConnu(rid);
+  if(!o){ chargerCite(rid); return `<span class="b-cite attente" data-cite="${rid}"><b>…</b></span>`; }
+  const r = resumeCite(o);
+  return `<span class="b-cite" data-cite="${rid}" onclick="event.stopPropagation(); allerAuMessage('${rid}')"><b>${escapeHtml(r.nom)}</b><span>${escapeHtml(r.texte)}</span></span>`;
+}
+async function chargerCite(id){
+  if(citesEnRoute.has(id) || citesConnus[id]) return;
+  /* Un message introuvable (retiré, hors d'accès) n'est pas redemandé à
+     chaque image : une fois par minute au plus. */
+  if(citesEssayes[id] && Date.now() - citesEssayes[id] < 60000) return;
+  citesEssayes[id] = Date.now();
+  citesEnRoute.add(id);
+  try{
+    const supa = initSupa(); if(!supa || !supa.from) return;
+    const r = await supa.from("messages").select(COLONNES_FIL).eq("id", id).maybeSingle();
+    if(!r.error && r.data){
+      citesConnus[id] = r.data;
+      if(r.data.auteur && !grp.profils[r.data.auteur]) await chargerProfils([r.data.auteur]);
+      if(state.screen === "groupe") majFil();
+    }
+  }catch(e){}
+  finally{ citesEnRoute.delete(id); }
+}
+/* Toucher la citation : on remonte au message d'origine, qui s'éclaire un
+   instant (un fond, jamais un trait). */
+function allerAuMessage(id){
+  const z = document.getElementById("fil");
+  const b = z && z.querySelector('[data-m="' + id + '"]');
+  if(!b){ showMiniToast(T("Ce message est plus ancien que la discussion affichée.")); return; }
+  const rz = z.getBoundingClientRect(), rb = b.getBoundingClientRect();
+  const cible = Math.max(0, Math.min(z.scrollHeight - z.clientHeight, z.scrollTop + (rb.top - rz.top) - (z.clientHeight - rb.height) / 2));
+  try{ z.scrollTo({ top:cible, behavior:"smooth" }); }catch(e){ z.scrollTop = cible; }
+  b.classList.remove("eclat"); void b.offsetWidth; b.classList.add("eclat");
+  setTimeout(()=> b.classList.remove("eclat"), 1400);
+}
 /* ===== L'APPUI LONG OUVRE SOUS LE DOIGT =====
    « Quand je reste appuyé, au bout d'un certain délai, j'aimerais que ça
    s'ouvre — supprimer le message par exemple — avant que j'aie eu le temps
@@ -25038,9 +25340,14 @@ function actionsMessage(id){
    C'est juste : partout ailleurs sur un téléphone, ce qu'on tient finit par
    répondre. La bulle n'ouvrait son menu qu'au CLIC — donc au lâcher. Elle
    l'ouvre maintenant au bout de 0,42 s de maintien, doigt toujours posé
-   (le temps que prennent iOS et Android). Le simple toucher l'ouvre encore,
-   comme avant. Un doigt qui bouge de plus de 9 px fait défiler la discussion
-   et n'ouvre rien.
+   (le temps que prennent iOS et Android). Un doigt qui bouge de plus de
+   9 px fait défiler la discussion et n'ouvre rien.
+   (v332) LE TOUCHER RÉPOND, L'APPUI LONG OUVRE LE MENU. « Je veux pouvoir
+   cliquer sur un message pour y répondre directement ; et quand on reste
+   appuyé, on affiche les informations pour supprimer, etc. » Le simple
+   toucher ouvrait aussi le menu ; il prépare maintenant la réponse (voir
+   toucherMessage). Le menu — « Vu par », copier, signaler, supprimer — est
+   à l'appui long.
    LE LÂCHER QUI SUIT NE COMPTE PAS. La feuille vient de monter sous le doigt :
    le clic que le navigateur envoie en le levant tomberait sur elle ou sur
    son voile — et le voile, touché, referme la feuille. Ce clic-là, et lui
@@ -25062,7 +25369,8 @@ function actionsMessage(id){
       if(!c || !c.isConnected) return;
       tenu = true;
       try{ if(navigator.vibrate) navigator.vibrate(10); }catch(err){}
-      c.click();
+      const id = c.getAttribute("data-m");
+      if(id) actionsMessage(id); else c.click();
     }, DELAI);
   }, { capture:true, passive:true });
   document.addEventListener("pointermove", (e)=>{

@@ -452,6 +452,11 @@ begin
     'photos', true,
     -- Et les logos (v322) : le jeu ne propose d'en choisir un qu'ici.
     'logos', true,
+    -- Et les réponses à un message (v332) : le jeu ne les propose qu'ici —
+    -- un serveur d'avant les perdrait en route.
+    'reponses', true,
+    -- La taille d'un groupe (v332) : le jeu la dit quand un groupe est plein.
+    'membres_max', 120,
     -- Pour un modérateur : combien de choses attendent une décision (une par
     -- objet signalé, comme dans la file). Le jeu en fait une pastille : c'est
     -- ainsi qu'un signalement arrive jusqu'à lui sans qu'il aille le chercher.
@@ -557,7 +562,14 @@ begin
   if public._membre(g.id, moi) then return jsonb_build_object('ok', true, 'id', g.id, 'deja', true); end if;
   if exists (select 1 from public.bannis where groupe = g.id and membre = moi) then
     return jsonb_build_object('ok', false, 'erreur', 'banni_du_groupe'); end if;
-  if g.nb_membres >= 200 then return jsonb_build_object('ok', false, 'erreur', 'groupe_plein'); end if;
+  -- CENT VINGT (v332). « Le nombre de personnes maximal par groupe :
+  -- quelque chose de cohérent et d'intéressant. » C'était 200, sans que le
+  -- jeu sache le dire. Cent vingt : le nombre des disciples réunis après
+  -- l'Ascension (Actes 1:15) — une assemblée, pas une foule. Assez pour une
+  -- église, une classe, un camp ; assez peu pour que « Vu par » se lise, que
+  -- « @tout le monde » reste une sonnette, et que les admins connaissent
+  -- chacun.
+  if g.nb_membres >= 120 then return jsonb_build_object('ok', false, 'erreur', 'groupe_plein', 'max', 120); end if;
   if (select count(*) from public.membres where membre = moi) >= 30 then
     return jsonb_build_object('ok', false, 'erreur', 'trop_de_groupes'); end if;
   insert into public.membres (groupe, membre, role, lu_jusqu)
@@ -612,6 +624,7 @@ declare
   id_ bigint;
   ouverte bigint;
   nommes jsonb;
+  rep bigint;
 begin
   if etat <> 'ok' then return jsonb_build_object('ok', false, 'erreur', etat); end if;
   select * into m from public.membres where groupe = p_groupe and membre = moi;
@@ -655,6 +668,17 @@ begin
              and x.cree_le > now() - interval '1 hour') >= 3 then
         return jsonb_build_object('ok', false, 'erreur', 'tous_trop_souvent'); end if;
       d := d || jsonb_build_object('tous', true);
+    end if;
+    -- RÉPONDRE À UN MESSAGE (v332). « Cliquer sur un message pour y répondre
+    -- directement. » Le téléphone dit à quel message il répond ; le serveur
+    -- ne garde la référence que si c'est bien un message de CE groupe,
+    -- visible (ni masqué, ni supprimé), et pas une ligne du jeu. Sinon le
+    -- message part sans elle : on ne cite jamais ce qu'on ne peut plus lire.
+    if p_donnees is not null and coalesce(p_donnees->>'reponse', '') ~ '^[0-9]{1,18}$' then
+      select x.id into rep from public.messages x
+       where x.id = (p_donnees->>'reponse')::bigint and x.groupe = p_groupe
+         and x.genre in ('texte','partie') and not coalesce(x.masque, false) and x.supprime_le is null;
+      if rep is not null then d := d || jsonb_build_object('reponse', rep); end if;
     end if;
   elsif genre = 'partie' then
     -- Une invitation à jouer : seulement le code d'un salon en ligne. Aucun
