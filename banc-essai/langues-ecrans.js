@@ -805,7 +805,12 @@ const ouvrirLaLangue = async (p, lg) => {
       showMiniToast(motErreurGroupe({ ok:false, erreur:'tous_reserve' })); await new Promise(r => setTimeout(r, 120)); }],
     ['Groupes · prévenir trop souvent', async () => {
       showMiniToast(motErreurGroupe({ ok:false, erreur:'tous_trop_souvent' })); await new Promise(r => setTimeout(r, 120)); }],
-    ['Groupes · sourdine', () => { grp.membres['g-1'][0].muet_jusqu = new Date(Date.now() + 3600000).toISOString(); majCompo(); }],
+    /* (v331) Une insulte ne part pas, et la raison se dit au-dessus de la
+       barre d'écriture, au bas de la discussion (alerteCompo, ce que l'envoi
+       refusé appelle). */
+    ['Groupes · insulte refusée', async () => { alerteCompo(motRefusMessage({ ok:false, erreur:'mot_interdit' }));
+      await new Promise(r => setTimeout(r, 400)); }],
+    ['Groupes · sourdine', () => { cacherAlerteCompo(); grp.membres['g-1'][0].muet_jusqu = new Date(Date.now() + 3600000).toISOString(); majCompo(); }],
     ['Groupes · fil vide', () => { __fermerTout(); __grpDecor(); grp.fils['g-1'] = { charge:true, tout:true, messages:[] }; grp.courant = 'g-1';
       state.screen='groupe'; render(); }],
     ['Groupes · infos',    () => { __fermerTout(); __grpDecor(); grp.courant = 'g-1'; state.screen='groupe'; render(); ouvrirInfosGroupe(true); }],
@@ -1266,6 +1271,10 @@ const ouvrirLaLangue = async (p, lg) => {
       { etat:avecBase({ reponse:{ status_code:200, contenu:'{"version":327,"envoyes":0}', created:quand } }),
         f:{ st:200, c:{ version:327, vapid:'ok', pub:'@JEU', moi:{ inscrit:true, decalage:-999, jeu:true, priere:420, lecture:null, priere_le:null, lecture_le:null, jeu_le:null } } },
         essai:{ st:200, c:{ envoye:true } }, chaque:true },
+      /* (v331) Les rappels annoncent aussi les messages des groupes : aucun
+         téléphone ne peut encore les recevoir, puis trois. */
+      { etat:avecBase({ messages_branches:true, lies:0, reponse:{ status_code:200, contenu:'{"version":331,"envoyes":0}', created:quand } }), f:F_OK },
+      { etat:avecBase({ messages_branches:true, lies:3, reponse:{ status_code:200, contenu:'{"version":331,"envoyes":0}', created:quand } }), f:F_OK },
     ];
     const INSTALLE = () => {
       const vraiMM = window.matchMedia ? window.matchMedia.bind(window) : null;

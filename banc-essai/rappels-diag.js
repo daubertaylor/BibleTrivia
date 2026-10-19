@@ -27,7 +27,9 @@
     15. (v329) les messages des groupes : le déclencheur posé et les
         téléphones rattachés, ce qu'a donné le dernier message ; une base
         d'avant la v329 → « recolle installer.sql » ; une fonction d'avant la
-        v329 → « sa mise à jour part de GitHub » ; un envoi refusé, nommé
+        v329 → « sa mise à jour part de GitHub » ; un envoi refusé, nommé ;
+        (v331) dit avec les mots des RAPPELS (les messages y passent), et
+        aucun téléphone encore rattaché → ce qu'il faut faire, en orange
    Usage : node banc-essai/rappels-diag.js [url] */
 const { chromium } = require('/opt/node22/lib/node_modules/playwright');
 const fs = require('fs');
@@ -145,7 +147,11 @@ const porte = (r, re) => r.lignes.some(l => re.test(l.t.replace(/\u00a0/g, ' '))
   r = await scenario(p, { etat: VERSION_OK, fonction: FONCTION_OK });
   dire(compte(r, 'non') === 0 && compte(r, 'att') === 0 && compte(r, 'ok') === 7, 'tout en ordre : sept lignes vertes, aucune rouge (' + r.lignes.map(l => l.k + ':' + l.t.slice(0, 38)).join(' | ') + ')');
   dire(porte(r, /3 téléphones inscrits/) && porte(r, /2 rappels envoyés/) && porte(r, /La fonction répond \(v329\)/), 'tout en ordre : le compte des téléphones et des envois, la version');
-  dire(porte(r, /Messages des groupes branchés · 2 téléphones rattachés à un compte/) && porte(r, /Dernier message \(.+\) : 2 téléphones prévenus\./), 'tout en ordre : les messages des groupes, branchés, et le dernier message (v329)');
+  dire(porte(r, /Les rappels annoncent aussi les messages des groupes · 2 téléphones peuvent les recevoir/) && porte(r, /Dernier message \(.+\) : 2 téléphones prévenus\./), 'tout en ordre : les rappels annoncent aussi les messages des groupes, et le dernier message (v331)');
+  dire(!porte(r, /branchés/), '    (v331) plus de « messages des groupes branchés » : ils passent par les rappels');
+  r = await scenario(p, { etat: avec(VERSION_OK, { lies: 0 }), fonction: FONCTION_OK });
+  dire(compte(r, 'non') === 0 && r.lignes.some(l => l.k === 'att' && /aucun téléphone ne peut encore les recevoir : chacun doit rouvrir Yada, connecté, rappels allumés\./.test(l.t.replace(/\u00a0/g, ' '))),
+    '    (v331) aucun téléphone rattaché : dit, en orange, ce qu\'il faut faire');
   dire(r.invoke.length === 1 && r.invoke[0].corps.etat === true && /^Bearer sb_publishable_/.test(r.invoke[0].auth || ''),
     "la fonction est appelée avec la clé publishable, jamais la session (" + (r.invoke[0] && r.invoke[0].auth || 'aucune').slice(0, 24) + '…)');
   const rpcEtat = await p.evaluate(() => window.__banc.rpc.filter(x => x.nom === 'rappels_etat').pop());
@@ -252,7 +258,7 @@ const porte = (r, re) => r.lignes.some(l => re.test(l.t.replace(/\u00a0/g, ' '))
   /* 15. (v329) LES MESSAGES DES GROUPES */
   const sansMessages = avec(VERSION_OK, { version: 326, lies: undefined, messages_branches: undefined, reponse_message: undefined });
   r = await scenario(p, { etat: sansMessages, fonction: FONCTION_OK });
-  dire(compte(r, 'non') === 1 && porte(r, /Les messages des groupes ne préviennent encore personne : Supabase → SQL Editor → recolle notifications\/installer\.sql → Run\./),
+  dire(compte(r, 'non') === 1 && porte(r, /Les rappels n'annoncent pas encore les messages des groupes : Supabase → SQL Editor → recolle notifications\/installer\.sql → Run\./),
     '15. base d\'avant la v329 : UNE ligne rouge, « recolle installer.sql » (' + r.lignes.filter(l => l.k === 'non').map(l => l.t.slice(0, 50)).join(' | ') + ')');
   r = await scenario(p, { etat: VERSION_OK, fonction: { st: 200, c: { version: 328, vapid: 'ok', pub: PUB } } });
   dire(compte(r, 'non') === 0 && porte(r, /ne sait pas encore prévenir des messages : sa mise à jour part toute seule de GitHub/), '    fonction d\'avant la v329 : dit, en orange, que sa mise à jour part de GitHub');

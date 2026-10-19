@@ -19,7 +19,8 @@
      7. rouvrir la discussion : rien n'arrive ;
      8. quelqu'un qu'on débloque : ses anciens messages reviennent sans
         « arriver » ;
-     9. « réduire les animations » : la bulle est là tout de suite ;
+     9. « réduire les animations » du téléphone n'y change rien : le jeu est
+        le même pour tout le monde, la bulle arrive comme ailleurs ;
     10. aucune erreur.
    Usage : node banc-essai/fil-arrivee.js */
 const { chromium } = require('/opt/node22/lib/node_modules/playwright');
@@ -169,7 +170,7 @@ const dit = (quoi, bon, detail) => { console.log('  ' + (bon ? 'OK  ' : 'KO  ') 
     const s9 = sonder('À ce soir', 4500);
     await m.rpc(B, 'envoyer_message', { p_groupe: g.id, p_texte: 'À ce soir alors', p_genre: 'texte', p_donnees: {} });
     const pts9 = await s9;
-    dit('9. « réduire les animations » : la bulle est là tout de suite', pts9.length > 0 && pts9.every(x => x.op === 1), resume(pts9));
+    dit('9. « réduire les animations » n\'y change rien : la bulle arrive comme pour tout le monde', pts9.length > 0 && pts9[0].op < 0.6 && monte(pts9) && pts9[pts9.length - 1].op === 1, resume(pts9));
 
     dit('10. aucune erreur', !erreurs.length, erreurs.slice(0, 3).join(' | '));
   } catch (e) {

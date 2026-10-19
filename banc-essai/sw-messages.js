@@ -21,7 +21,10 @@
         qui sait à qui écrire) ; les rappels du jeu éteints n'y font rien ;
     10. la toucher : le jeu ouvert reçoit « ouvre ce groupe » puis passe au
         premier plan ; fermé, il s'ouvre sur ./?discussion=<groupe> ; un
-        rappel touché garde l'ancien chemin (premier plan, rien d'autre).
+        rappel touché garde l'ancien chemin (premier plan, rien d'autre) ;
+    11. (v331) le jeu à l'écran sur ce téléphone : la notification se pose
+        SANS SONNER (silencieuse) — jamais rien du tout, un iPhone le
+        compterait contre l'abonnement ; le jeu derrière (caché) : elle sonne.
    Usage : node banc-essai/sw-messages.js */
 const fs = require('fs');
 const path = require('path');
@@ -40,7 +43,7 @@ function bac(miroir, fenetres) {
     transaction() { return { objectStore() { return { get() { const g = {}; setTimeout(() => { g.result = miroir; g.onsuccess && g.onsuccess(); }, 0); return g; }, put() { return {}; } }; } }; } };
     r.onsuccess && r.onsuccess(); }, 0); return r; } };
   /* Le tiroir du téléphone : une étiquette déjà là est REMPLACÉE. */
-  const notif = (titre, o) => { const n = { title: titre, body: o.body, tag: o.tag, data: o.data, renotify: !!o.renotify,
+  const notif = (titre, o) => { const n = { title: titre, body: o.body, tag: o.tag, data: o.data, renotify: !!o.renotify, silent: !!o.silent,
     close(){ const i = affichees.indexOf(n); if (i >= 0) affichees.splice(i, 1); } }; return n; };
   const ouvertes = [];
   const clients = {
@@ -182,6 +185,16 @@ const MIROIR = { actif: false, priere: -1, lecture: -1, messages: true, langue: 
   const n12 = (await b.recevoir(msg({ id: 703 })))[0];
   const ouv3 = await b.toucher(n12);
   dire(ouv3.length === 1 && ouv3[0] === './?discussion=' + G1, '    premier plan refusé : une fenêtre sur la discussion (' + ouv3[0] + ')');
+
+  /* 11. (v331) le jeu à l'écran : sans sonner ; derrière : il sonne */
+  const aLEcran = { visibilityState: 'visible', postMessage(){}, focus: () => Promise.resolve() };
+  const derriere = { visibilityState: 'hidden', postMessage(){}, focus: () => Promise.resolve() };
+  b = bac(MIROIR, [aLEcran]);
+  const s1 = (await b.recevoir(msg({ id: 801 })))[0];
+  dire(!!s1 && s1.silent === true && s1.renotify === false, '11. le jeu à l\'écran : la notification se pose, sans sonner (' + (s1 && JSON.stringify({ silent: s1.silent, renotify: s1.renotify })) + ')');
+  b = bac(MIROIR, [derriere]);
+  const s2 = (await b.recevoir(msg({ id: 802 })))[0];
+  dire(!!s2 && s2.silent === false && s2.renotify === true, '    le jeu derrière (caché) : elle sonne');
 
   console.log(ko === 0 ? '\n  OK — un message arrive comme dans une messagerie : une notification par groupe, un son par rafale, et la toucher ouvre la discussion' : '\n  ' + ko + ' défaut(s)');
   process.exit(ko === 0 ? 0 : 1);

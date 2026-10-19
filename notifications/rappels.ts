@@ -77,22 +77,32 @@ const ABSENCES = [3, 7, 30];
 const FENETRE = 60;
 /* La version de ce code, dans chaque réponse : la page « Rappels » de la
    Modération dit ainsi si la fonction déployée est bien celle-ci. */
-const VERSION = 329;
+const VERSION = 331;
 /* Un essai demandé par un téléphone pour lui-même : un par minute au plus. */
 const ESSAI_DELAI = 60000;
 /* ===== LES MESSAGES DES GROUPES (v329) =====
    Un message posté appelle la fonction (le déclencheur de installer.sql, E).
-   On laisse d'abord QUATRE SECONDES à ceux qui ont la discussion ouverte :
-   leur téléphone le reçoit en direct et dit au serveur qu'ils l'ont lu
-   (marquer_lu) — les prévenir en plus serait les déranger pour rien. Puis on
-   écrit à chaque membre qui ne l'a pas lu, selon ce qu'il a choisi pour ce
-   groupe : Tout, Mentions (seulement s'il est nommé, ou « tout le monde »),
-   Muet (jamais). Jamais à l'auteur, jamais à qui l'a bloqué, et seulement aux
-   téléphones rattachés à son compte qui ont DIT oui aux messages (un jeu
-   d'avant la v329 ne le dit jamais : son service worker ne saurait pas les
-   montrer). */
-const ATTENTE_MESSAGE = 4000;
+   On écrit à chaque membre qui ne l'a pas lu, selon ce qu'il a choisi pour
+   ce groupe : Tout, Mentions (seulement s'il est nommé, ou « tout le
+   monde »), Muet (jamais). Jamais à l'auteur, jamais à qui l'a bloqué, et
+   seulement aux téléphones rattachés à son compte qui ont DIT oui aux
+   messages (un jeu d'avant la v329 ne le dit jamais : son service worker ne
+   saurait pas les montrer).
+   (v331) TOUT DE SUITE. « Je veux que la notification arrive très très
+   rapidement, quasi instantané. » On attendait quatre secondes que ceux qui
+   avaient la discussion ouverte disent l'avoir lue. Plus besoin : un
+   téléphone où le jeu est à l'écran le dit lui-même — son inscription porte
+   « ecran » (dans l'abonnement, que l'envoi ignore), redite toutes les 20 s
+   — : il n'est pas prévenu, ni sonné, et les autres le sont sans attendre.
+   Un « à l'écran » de plus de PRESENT_MS ne compte plus : un jeu fermé sans
+   avoir pu le dire est prévenu comme les autres. « messages » garde son seul
+   sens : le choix du joueur. Et l'envoi part en priorité haute (urgency
+   « high ») : Android et Apple le livrent sans attendre que le téléphone se
+   réveille de lui-même. */
+const PRESENT_MS = 45000;
 const TEXTE_MAX = 140;
+/* Un message reste à livrer un jour au plus à un téléphone éteint. */
+const OPTIONS_MESSAGE = { urgency: "high" as const, TTL: 86400 };
 /* ===== « ESSAYER CHAQUE RAPPEL » (v327) =====
    « La prière et la lecture ne sonnent pas, et le rappel pour jouer doit
    marcher aussi. » Les rappels du jeu ne partent qu'à leur heure (19 h, midi,
@@ -322,7 +332,6 @@ Deno.serve(async (req: Request) => {
   if (corpsRecu.message != null) {
     const id = Number(corpsRecu.message);
     if (!(id > 0)) return repondre({ sorte: "message", erreur: "message", envoyes: 0 }, 400);
-    if (!corpsRecu.sans_attente) await new Promise((r) => setTimeout(r, ATTENTE_MESSAGE));
     const lire = async (table: string, colonnes: string, filtre: (q: any) => any) => {
       const { data, error } = await filtre(db.from(table).select(colonnes));
       if (error) throw new Error(table + " : " + error.message);
@@ -331,10 +340,16 @@ Deno.serve(async (req: Request) => {
     try {
       const m = (await lire("messages", "id,groupe,auteur,genre,texte,donnees,masque,supprime_le", (q) => q.eq("id", id)))[0];
       if (!m || m.supprime_le || m.masque || !["texte", "partie"].includes(m.genre)) return repondre({ sorte: "message", envoyes: 0, rien: "message absent, retiré ou du jeu" });
-      const g = (await lire("groupes", "id,nom,supprime_le", (q) => q.eq("id", m.groupe)))[0];
+      /* Les quatre lectures en même temps : chacune attendait la précédente. */
+      const [gs, membres, blocs, auteurs] = await Promise.all([
+        lire("groupes", "id,nom,supprime_le", (q) => q.eq("id", m.groupe)),
+        lire("membres", "membre,notifs,lu_jusqu", (q) => q.eq("groupe", m.groupe)),
+        lire("blocages", "par", (q) => q.eq("bloque", m.auteur)),
+        lire("profils", "nom", (q) => q.eq("id", m.auteur)),
+      ]);
+      const g = gs[0];
       if (!g || g.supprime_le) return repondre({ sorte: "message", envoyes: 0, rien: "groupe absent" });
-      const membres = await lire("membres", "membre,notifs,lu_jusqu", (q) => q.eq("groupe", m.groupe));
-      const bloqueurs = new Set((await lire("blocages", "par", (q) => q.eq("bloque", m.auteur))).map((b) => b.par));
+      const bloqueurs = new Set(blocs.map((b) => b.par));
       const d = m.donnees ?? {};
       const nommes = new Set(Array.isArray(d.mentions) ? d.mentions : []);
       const pourTous = d.tous === true;
@@ -346,13 +361,20 @@ Deno.serve(async (req: Request) => {
         return mode === "tout" || pourTous || nommes.has(x.membre);
       });
       if (!dest.length) return repondre({ sorte: "message", envoyes: 0, membres: membres.length });
-      const de = (await lire("profils", "nom", (q) => q.eq("id", m.auteur)))[0]?.nom ?? "";
+      const de = auteurs[0]?.nom ?? "";
       const abos = await lire("push_subs", "*", (q) => q.in("membre", dest.map((x) => x.membre)));
-      let envoyesM = 0, retiresM = 0, echecsM = 0;
+      let envoyesM = 0, retiresM = 0, echecsM = 0, presentsM = 0;
       let dernierEchecM: Record<string, unknown> | null = null;
-      for (const a of abos) {
-        if (a.messages !== true || !a.abonnement || !a.abonnement.endpoint) continue;
-        const texte = m.genre === "texte" ? String(m.texte ?? "").replace(/\s+/g, " ").trim() : "";
+      const texte = m.genre === "texte" ? String(m.texte ?? "").replace(/\s+/g, " ").trim() : "";
+      const maintenant = Date.now();
+      /* Tous les téléphones à la fois : chacun attendait la réponse du
+         précédent. */
+      await Promise.all(abos.map(async (a) => {
+        if (a.messages !== true || !a.abonnement || !a.abonnement.endpoint) return;
+        /* (v331) Le jeu à l'écran sur ce téléphone, il y a moins de
+           PRESENT_MS : il montre déjà le message, on ne le fait pas sonner. */
+        const vu = Date.parse(a.maj ?? "") || 0;
+        if (a.abonnement.ecran === true && maintenant - vu < PRESENT_MS) { presentsM++; return; }
         const charge = {
           genre: "message", groupe: g.id, nom: g.nom, de, id: m.id,
           texte: texte.length > TEXTE_MAX ? texte.slice(0, TEXTE_MAX - 1) + "…" : texte,
@@ -360,15 +382,15 @@ Deno.serve(async (req: Request) => {
           decalage: a.decalage | 0,
         };
         try {
-          await webpush.sendNotification(a.abonnement, JSON.stringify(charge));
+          await webpush.sendNotification(a.abonnement, JSON.stringify(charge), OPTIONS_MESSAGE);
           envoyesM++;
         } catch (e: any) {
           if (e?.statusCode === 404 || e?.statusCode === 410) { await db.from("push_subs").delete().eq("endpoint", a.endpoint); retiresM++; }
           else { echecsM++; if (!dernierEchecM) dernierEchecM = { code: e?.statusCode | 0, raison: raison(e) }; }
         }
-      }
+      }));
       return repondre({ sorte: "message", envoyes: envoyesM, destinataires: dest.length, telephones: abos.length,
-                        retires: retiresM, echecs: echecsM, dernier_echec: dernierEchecM });
+                        presents: presentsM, retires: retiresM, echecs: echecsM, dernier_echec: dernierEchecM });
     } catch (e: any) {
       return repondre({ sorte: "message", erreur: "table", details: [String(e?.message || e).slice(0, 200)] }, 500);
     }

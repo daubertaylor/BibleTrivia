@@ -1,5 +1,18 @@
 # Les rappels
 
+> ## ⚡ v331 — RIEN À COLLER
+>
+> Les notifications des messages partent **tout de suite** (plus
+> d'attente de 4 s) et en priorité haute. Un téléphone où le jeu est **à
+> l'écran** le dit lui-même au serveur, toutes les 20 s (« ecran », rangé
+> dans son abonnement — aucune colonne nouvelle) : il n'est ni prévenu ni
+> sonné, le jeu lui montre déjà tout (un petit bandeau en haut pour ce qui
+> arrive dans un autre groupe). Passé derrière, il le dit aussitôt ; un
+> jeu fermé sans avoir pu le dire est prévenu comme les autres après
+> 45 s. La fonction part toute seule de GitHub (version 331). Dans la
+> Modération, la carte « Rappels » dit maintenant « Les rappels annoncent
+> aussi les messages des groupes · n téléphones peuvent les recevoir ».
+>
 > ## 🔔 LES MESSAGES DES GROUPES (v329) — DEUX COLLAGES, DANS CET ORDRE
 >
 > 1. **SQL Editor → New query → recolle `groupes/table.sql` en entier →
@@ -15,17 +28,17 @@
 > chaque téléphone sait à quel compte il appartient, et un **déclencheur**
 > sur les messages appelle la fonction `rappels` (avec la même clé interne
 > que la tâche) à chaque message posté. La fonction, elle, part toute seule
-> de GitHub. Ce qu'elle fait : elle laisse **4 s** à ceux qui ont la
-> discussion ouverte (leur téléphone dit « lu »), puis écrit aux membres qui
-> ne l'ont pas lu — selon **Tout / Mentions / Muet**, jamais à l'auteur,
+> de GitHub. Ce qu'elle fait : elle écrit aux membres qui ne l'ont pas
+> lu (v331 : tout de suite, sauf aux téléphones où le jeu est à l'écran)
+> — selon **Tout / Mentions / Muet**, jamais à l'auteur,
 > jamais à qui l'a bloqué, et seulement aux téléphones dont le joueur a les
 > **Rappels** (Réglages → Rappels : les messages en font partie, il n'y a
 > pas de ligne à part). Une notification par groupe, qui se complète ; la
 > toucher ouvre la discussion.
 >
 > **Pour vérifier** : Modération → carte **« Rappels »** → les lignes
-> « Messages des groupes branchés · n téléphones rattachés à un compte » et
-> « Dernier message : … ». Rien de tout cela ne peut empêcher un message de
+> « Les rappels annoncent aussi les messages des groupes · n téléphones
+> peuvent les recevoir » et « Dernier message : … ». Rien de tout cela ne peut empêcher un message de
 > partir : sans pg_net, sur une panne, le déclencheur se tait.
 >
 > ## ✅ CE QU'IL FAUT FAIRE, DANS L'ORDRE (à jour au 18/10/2026)

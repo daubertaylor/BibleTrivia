@@ -35,9 +35,9 @@ async function brancherFonction(sql, src){
   const envois = [], disparus = new Set();
   const webpush = {
     setVapidDetails(){},
-    sendNotification(abo, corps){
+    sendNotification(abo, corps, options){
       if (disparus.has(abo.endpoint)) { const e = new Error('gone'); e.statusCode = 410; return Promise.reject(e); }
-      envois.push({ qui: abo.endpoint, charge: JSON.parse(corps) }); return Promise.resolve();
+      envois.push({ qui: abo.endpoint, charge: JSON.parse(corps), options: options || null }); return Promise.resolve();
     },
   };
   const executer = async (e) => {
