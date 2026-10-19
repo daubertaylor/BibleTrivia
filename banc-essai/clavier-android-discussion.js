@@ -16,7 +16,16 @@
        navigateur pose quand même le clavier par-dessus (on soupçonne
        Samsung Internet) ;
      — pas d'interface du tout, et le clavier par-dessus (Firefox) ;
-   exigé : la barre d'écriture ENTIÈREMENT au-dessus du clavier (pour les
+     — (v330) le mode ordinaire de Chrome (une interface muette, puis
+       resizes-visual) où la zone visible GLISSE vers le bas pour montrer
+       le champ touché (visualViewport.offsetTop) — « le clavier n'est pas
+       du tout à la bonne taille », photo : la barre très au-dessus du
+       clavier, un grand vide dessous ;
+     — (v330) une fenêtre qui RÉTRÉCIT avec le clavier ET un navigateur qui
+       dit quand même son clavier : il ne doit pas compter deux fois ;
+   tout se mesure SUR L'ÉCRAN (la zone visible, glissement compris) ;
+   exigé : la barre d'écriture ENTIÈREMENT au-dessus du clavier, et JUSTE
+   au-dessus (24 px au plus, pas de vide), l'en-tête entier sur l'écran (pour les
    deux derniers, une fois que le jeu a compris — 1,5 s au plus — puis TOUT
    DE SUITE au lancement suivant, le téléphone s'en souvenant), l'en-tête de
    la discussion toujours là, la discussion rendue entière quand le clavier
@@ -28,7 +37,10 @@ const URL = process.argv[2] || 'http://127.0.0.1:8099/index.html';
 const AND = 'Mozilla/5.0 (Linux; Android 15; Pixel 9) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/130.0.0.0 Mobile Safari/537.36';
 const TEL = [['Pixel 9', 412, 915, 330], ['Petit Android', 360, 740, 290]];
 const POSITIONS = [['position juste', null], ['position fausse de Chrome (y = 66)', 66], ['sans position (y = 0)', 0],
-  ['clavier muet (Samsung Internet ?)', 'muet'], ['sans interface du clavier (Firefox)', 'absent']];
+  ['clavier muet (Samsung Internet ?)', 'muet'], ['sans interface du clavier (Firefox)', 'absent'],
+  ['zone visible qui glisse (mode ordinaire de Chrome)', 'pan'], ['fenêtre qui rétrécit ET clavier dit', 'contenu']];
+/* Les navigateurs qui ne disent pas leur clavier : le jeu passe au mode ordinaire. */
+const SILENCIEUX = ['muet', 'absent', 'pan'];
 let ko = 0;
 const dire = (bon, txt) => { if (!bon) ko++; console.log('  ' + (bon ? 'OK  ' : 'KO  ') + txt); };
 
@@ -44,7 +56,10 @@ const FAUX = (mode) => {
   const redim = () => { const m = document.querySelector('meta[name="viewport"]'); return !!m && /resizes-visual/.test(m.getAttribute('content') || ''); };
   const fauxVV = {
     get width(){ return innerWidth; }, get height(){ return redim() ? innerHeight - etat.kb : innerHeight; },
-    get offsetTop(){ return 0; }, get offsetLeft(){ return 0; }, get pageTop(){ return 0; }, get pageLeft(){ return 0; }, get scale(){ return 1; },
+    /* (v330) « pan » : dans le mode ordinaire, la zone visible glisse vers le
+       bas pour montrer le champ touché, posé au bas de la page. */
+    get offsetTop(){ return (mode === 'pan' && redim() && etat.kb > 0) ? Math.round(etat.kb * 0.8) : 0; },
+    get offsetLeft(){ return 0; }, get pageTop(){ return 0; }, get pageLeft(){ return 0; }, get scale(){ return 1; },
     addEventListener: ev.addEventListener.bind(ev), removeEventListener: ev.removeEventListener.bind(ev), dispatchEvent: ev.dispatchEvent.bind(ev),
   };
   Object.defineProperty(window, 'visualViewport', { configurable: true, get(){ return fauxVV; } });
@@ -56,7 +71,7 @@ const FAUX = (mode) => {
   /* h : la hauteur du clavier ; y : la position qu'il annonce (null = la juste). */
   window.__clavier = (h, y) => {
     etat.kb = h;
-    if (mode !== 'muet' && mode !== 'absent' && vk.overlaysContent !== false) {
+    if (mode !== 'muet' && mode !== 'absent' && mode !== 'pan' && vk.overlaysContent !== false) {
       rect = h > 0 ? new DOMRect(0, y == null ? innerHeight - h : y, innerWidth, h) : new DOMRect(0, 0, 0, 0);
       vk.dispatchEvent(new Event('geometrychange'));
     }
@@ -96,26 +111,40 @@ const FAUX = (mode) => {
       await p.waitForTimeout(900);
       await p.locator('#compoTexte').tap();
       await p.waitForTimeout(120);
+      const silencieux = SILENCIEUX.includes(y), contenu = y === 'contenu';
       const pos = typeof y === 'string' ? null : y;
-      for (const f of [0.25, 0.5, 0.75, 1]) { await p.evaluate(([h, y]) => window.__clavier(h, y), [Math.round(KB * f), pos]); await p.waitForTimeout(40); }
-      await p.waitForTimeout(typeof y === 'string' ? 1500 : 700);
-      const ouvert = await p.evaluate((KB) => {
+      /* Le clavier monte. « contenu » : la fenêtre elle-même rétrécit d'autant. */
+      const clavier = async (h) => {
+        if (contenu) await p.setViewportSize({ width: W, height: H - h });
+        await p.evaluate(([h, y]) => window.__clavier(h, y), [h, pos]);
+      };
+      for (const f of [0.25, 0.5, 0.75, 1]) { await clavier(Math.round(KB * f)); await p.waitForTimeout(40); }
+      await p.waitForTimeout(silencieux ? 1500 : 700);
+      /* Tout se mesure SUR L'ÉCRAN : ce que montre la zone visible, glissement
+         compris. Le haut du clavier y est à H − clavier. */
+      const mesurer = () => p.evaluate(([KB, H]) => {
+        const dv = (window.visualViewport && window.visualViewport.offsetTop) || 0;
         const c = document.getElementById('compo').getBoundingClientRect();
         const t = document.querySelector('.grp-fil-tete').getBoundingClientRect();
-        const haut = innerHeight - KB;
-        return { compoBas: Math.round(c.bottom), compoHaut: Math.round(c.top), hautClavier: haut, tete: Math.round(t.top), teteBas: Math.round(t.bottom), focus: document.activeElement && document.activeElement.id };
-      }, KB);
-      dire(ouvert.compoBas <= ouvert.hautClavier + 1 && ouvert.compoHaut >= ouvert.teteBas && ouvert.tete >= 0 && ouvert.focus === 'compoTexte',
-        tel + ', ' + nomPos + ' : la barre d\'écriture au-dessus du clavier (bas ' + ouvert.compoBas + ' ≤ ' + ouvert.hautClavier + '), l\'en-tête en place (' + ouvert.tete + ')');
+        return { compoBas: Math.round(c.bottom - dv), compoHaut: Math.round(c.top - dv), hautClavier: H - KB, tete: Math.round(t.top - dv), teteBas: Math.round(t.bottom - dv), dv,
+          focus: document.activeElement && document.activeElement.id,
+          meta: (document.querySelector('meta[name="viewport"]').getAttribute('content').match(/interactive-widget=[a-z-]+/) || [''])[0] };
+      }, [KB, H]);
+      const juste = (o) => o.compoBas <= o.hautClavier + 1 && o.compoBas >= o.hautClavier - 24;
+      const ouvert = await mesurer();
+      dire(juste(ouvert) && ouvert.compoHaut >= ouvert.teteBas && ouvert.tete >= 0 && ouvert.focus === 'compoTexte',
+        tel + ', ' + nomPos + ' : la barre d\'écriture JUSTE au-dessus du clavier (bas ' + ouvert.compoBas + ', clavier à ' + ouvert.hautClavier + (ouvert.dv ? ', zone visible glissée de ' + ouvert.dv : '') + '), l\'en-tête entier (' + ouvert.tete + ')');
       const memoire = await p.evaluate(() => localStorage.getItem('bt_clavier_redim'));
-      if (typeof y !== 'string') dire(memoire !== '1', '   … Chrome dit son clavier : le jeu garde son mode (pas de bascule)');
+      if (!silencieux) dire(memoire !== '1', '   … ' + (contenu ? 'le navigateur dit son clavier' : 'Chrome dit son clavier') + ' : le jeu garde son mode (pas de bascule)');
       /* Le clavier redescend (bouton retour d'Android, champ toujours actif). */
-      for (const f of [0.66, 0.33, 0]) { await p.evaluate(([h, y]) => window.__clavier(h, y), [Math.round(KB * f), y]); await p.waitForTimeout(40); }
+      for (const f of [0.66, 0.33, 0]) { await clavier(Math.round(KB * f)); await p.waitForTimeout(40); }
       await p.waitForTimeout(800);
-      const ferme = await p.evaluate(() => { const c = document.getElementById('compo').getBoundingClientRect(); return { bas: Math.round(c.bottom), H: innerHeight, kb: document.documentElement.classList.contains('kb-fil') }; });
-      dire(!ferme.kb && ferme.bas > ferme.H - 140, '   … clavier redescendu : la discussion reprend toute la hauteur (barre à ' + ferme.bas + ' / ' + ferme.H + ')');
+      const ferme = await p.evaluate(() => { const c = document.getElementById('compo').getBoundingClientRect(); return { bas: Math.round(c.bottom), H: innerHeight, kb: document.documentElement.classList.contains('kb-fil'),
+        vvt: getComputedStyle(document.documentElement).getPropertyValue('--vvt').trim(), top: getComputedStyle(document.getElementById('app')).top }; });
+      dire(!ferme.kb && ferme.bas > ferme.H - 140 && (ferme.vvt === '' || ferme.vvt === '0px') && (ferme.top === '0px' || ferme.top === 'auto'),
+        '   … clavier redescendu : la discussion reprend toute la hauteur, à sa place (barre à ' + ferme.bas + ' / ' + ferme.H + ', décalage ' + (ferme.vvt || '—') + ')');
       /* Le lancement suivant, sur ce téléphone : le jeu se souvient, tout de suite. */
-      if (typeof y === 'string') {
+      if (silencieux) {
         await p.reload();
         await p.waitForFunction(() => { try { return state.screen === 'mode'; } catch (e) { return false; } }, null, { timeout: 25000 });
         await p.waitForTimeout(500);
@@ -127,11 +156,10 @@ const FAUX = (mode) => {
         });
         await p.waitForTimeout(700);
         await p.locator('#compoTexte').tap();
-        for (const f of [0.5, 1]) { await p.evaluate(([h]) => window.__clavier(h, null), [Math.round(KB * f)]); await p.waitForTimeout(40); }
+        for (const f of [0.5, 1]) { await clavier(Math.round(KB * f)); await p.waitForTimeout(40); }
         await p.waitForTimeout(350);
-        const ensuite = await p.evaluate((KB) => ({ bas: Math.round(document.getElementById('compo').getBoundingClientRect().bottom), haut: innerHeight - KB,
-          meta: (document.querySelector('meta[name="viewport"]').getAttribute('content').match(/interactive-widget=[a-z-]+/) || [''])[0] }), KB);
-        dire(ensuite.bas <= ensuite.haut + 1 && /resizes-visual/.test(ensuite.meta), '   … au lancement suivant, tout de suite : barre au-dessus du clavier (' + ensuite.bas + ' ≤ ' + ensuite.haut + ', ' + ensuite.meta + ')');
+        const ensuite = await mesurer();
+        dire(juste(ensuite) && ensuite.tete >= 0 && /resizes-visual/.test(ensuite.meta), '   … au lancement suivant, tout de suite : barre juste au-dessus du clavier (' + ensuite.compoBas + ', clavier à ' + ensuite.hautClavier + ', ' + ensuite.meta + ')');
       }
       if (errs.length) dire(false, '   erreurs : ' + errs.slice(0, 2).join(' | '));
       await ctx.close();
