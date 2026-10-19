@@ -15,10 +15,11 @@
         v329 ne dit rien des messages (vide), une déconnexion détache ;
      3. les lignes du jeu (X a rejoint, X est parti) n'appellent personne ;
      4. un message appelle la fonction, une fois, avec la clé interne ;
-     5. la fonction attend que ceux qui lisent déjà le disent (Hugo lit
-        pendant l'attente), puis n'écrit qu'à Benoît — à ses deux appareils
-        vivants ; l'appareil disparu (410) est retiré de la table ; personne
-        d'autre, ni l'auteur ;
+     5. (v331) la fonction écrit TOUT DE SUITE — plus d'attente — et en
+        priorité haute ; Hugo a le jeu à l'écran (son téléphone l'a dit) :
+        il n'est pas prévenu ; elle n'écrit qu'à Benoît — à ses deux
+        appareils vivants ; l'appareil disparu (410) est retiré de la table ;
+        personne d'autre, ni l'auteur ;
      6. ce qui part : le groupe, son nom, l'auteur, le texte — rien d'autre ;
      7. une mention : Jean Paul (Mentions) est prévenu, « mention » vraie ;
         Dora (Muet) jamais, même nommée ;
@@ -26,7 +27,10 @@
      9. un long texte sur plusieurs lignes : une ligne, 140 caractères ;
     10. une partie lancée : « partie », sans texte ;
     11. masqué avant l'envoi, groupe supprimé : personne ;
-    12. un appareil qui éteint les messages ne reçoit plus rien ;
+    12. un appareil où le jeu est à l'écran ne reçoit rien ; s'il ne l'a
+        plus redit depuis 45 s (fermé sans avoir pu le dire), il est prévenu ;
+        un appareil qui a COUPÉ les messages n'est jamais prévenu, même sans
+        nouvelles depuis longtemps ;
     13. sans la clé interne : refusé, rien ne part ;
     14. pg_net en panne : le message part quand même ;
     15. rappels_etat : version 329, téléphones rattachés, déclencheur posé,
@@ -101,15 +105,19 @@ const EP = (x) => 'https://push.exemple/appareil-' + x;
     await appel(E, 'bloquer(p_cible => ' + lit(A) + '::uuid)');
 
     /* ===== 2 : les téléphones ===== */
-    const inscrire = (moi, x, messages, sans) => vide(moi, 'push_enregistrer(p_endpoint => ' + lit(EP(x)) + ', p_abonnement => ' + lit(JSON.stringify({ endpoint: EP(x), keys: { p256dh: 'p', auth: 'a' } }))
+    /* « ecran » : le jeu est à l'écran sur ce téléphone (v331, dans l'abonnement). */
+    const inscrire = (moi, x, messages, sans, ecran) => vide(moi, 'push_enregistrer(p_endpoint => ' + lit(EP(x)) + ', p_abonnement => '
+      + lit(JSON.stringify(Object.assign({ endpoint: EP(x), keys: { p256dh: 'p', auth: 'a' } }, ecran == null ? {} : { ecran })))
       + '::jsonb, p_decalage => 120, p_jeu => true, p_priere => -1, p_lecture => -1' + (sans ? '' : ', p_messages => ' + messages) + ')');
     await inscrire(A, 'A', true);
     for (const x of ['B-tel', 'B-tablette', 'B-ancien']) await inscrire(B, x, true);
-    await inscrire(C, 'C', true); await inscrire(D, 'D', true); await inscrire(E, 'E', true); await inscrire(H, 'H', true);
+    await inscrire(C, 'C', true); await inscrire(D, 'D', true); await inscrire(E, 'E', true);
+    await inscrire(H, 'H', true, false, true);           // (v331) Hugo a le jeu à l'écran : son téléphone le dit
     await inscrire(F, 'F', null, true);                  // le jeu d'avant la v329 : pas de p_messages
     await inscrire(G, 'G', true); await inscrire(null, 'G', true);   // Gaby se déconnecte : le téléphone s'inscrit sans compte
-    const lignes = JSON.parse(await sql("select jsonb_object_agg(replace(endpoint, 'https://push.exemple/appareil-', ''), jsonb_build_object('m', membre, 'msg', messages)) from public.push_subs"));
-    dit('2. chaque téléphone rattaché à son compte', lignes.A.m === A && lignes['B-tel'].m === B && lignes.C.m === C && lignes.H.m === H && lignes.A.msg === true, JSON.stringify(lignes.A));
+    const lignes = JSON.parse(await sql("select jsonb_object_agg(replace(endpoint, 'https://push.exemple/appareil-', ''), jsonb_build_object('m', membre, 'msg', messages, 'e', abonnement->'ecran')) from public.push_subs"));
+    dit('2. chaque téléphone rattaché à son compte', lignes.A.m === A && lignes['B-tel'].m === B && lignes.C.m === C && lignes.H.m === H && lignes.A.msg === true && lignes.H.msg === true, JSON.stringify(lignes.A));
+    dit('   « le jeu est à l\'écran » voyage dans l\'abonnement, le choix des messages reste le choix', lignes.H.e === true && lignes.A.e == null, JSON.stringify(lignes.H));
     dit('   un jeu d\'avant la v329 ne dit rien des messages (vide), une déconnexion détache', lignes.F.msg === null && lignes.F.m === F && lignes.G.m === null, 'F ' + JSON.stringify(lignes.F) + ' · G ' + JSON.stringify(lignes.G));
 
     /* ===== 3 : les lignes du jeu ===== */
@@ -121,14 +129,15 @@ const EP = (x) => 'https://push.exemple/appareil-' + x;
     const r1 = await nouveaux();
     dit('4. un message appelle la fonction, une fois, avec la clé interne', r1.length === 1 && r1[0].body.message === id1 && r1[0].headers['x-rappels'] === cle
       && r1[0].url === 'https://chyuckryusxzssezesuw.supabase.co/functions/v1/rappels' && r1[0].delai === 25000, JSON.stringify(r1[0] && r1[0].body));
-    /* Hugo a la discussion ouverte : son téléphone dit « lu » une seconde après. */
+    /* (v331) Plus d'attente : Hugo a le jeu à l'écran, son téléphone l'a dit. */
     const t0 = Date.now();
-    setTimeout(() => { vide(H, 'marquer_lu(p_groupe => ' + lit(G1) + '::uuid, p_message => ' + id1 + ')').catch(() => {}); }, 1000);
     let rep = await servir(r1[0]);
     const attente = Date.now() - t0;
-    dit('5. la fonction attend 4 s que ceux qui lisent le disent', attente >= 3900, attente + ' ms');
-    dit('   puis n\'écrit qu\'à Benoît — ses deux appareils vivants ; ni Hugo (lu), ni l\'auteur, ni Mentions, Muet, bloqué, ancien jeu, déconnectée',
-      qui() === 'B-tablette,B-tel', qui());
+    dit('5. la fonction écrit tout de suite (plus d\'attente de 4 s)', attente < 1500, attente + ' ms');
+    dit('   en priorité haute (urgency « high »), à livrer un jour au plus', envois.length > 0 && envois.every(x => x.options && x.options.urgency === 'high' && x.options.TTL === 86400),
+      JSON.stringify(envois[0] && envois[0].options));
+    dit('   et n\'écrit qu\'à Benoît — ses deux appareils vivants ; ni Hugo (jeu à l\'écran), ni l\'auteur, ni Mentions, Muet, bloqué, ancien jeu, déconnectée',
+      qui() === 'B-tablette,B-tel' && rep.c.presents === 1, qui() + ' · présents ' + rep.c.presents);
     dit('   l\'appareil disparu (410) est retiré de la table', await sql("select count(*) from public.push_subs where endpoint = " + lit(EP('B-ancien'))) === '0' && rep.c.retires === 1);
     dit('   la réponse dit ce qui s\'est passé', rep.st === 200 && rep.c.sorte === 'message' && rep.c.envoyes === 2 && rep.c.version === fn.version && fn.version >= 329, JSON.stringify(rep.c));
     /* ===== 6 ===== */
@@ -138,8 +147,9 @@ const EP = (x) => 'https://push.exemple/appareil-' + x;
         && ch.genre === 'message' && ch.groupe === G1 && ch.nom === 'Les amis' && ch.de === 'Taylor' && ch.texte === 'Salut tout le monde !' && ch.mention === false && ch.partie === false && ch.decalage === 120,
       JSON.stringify(ch));
 
-    /* ===== 7 : une mention ===== (Hugo a refermé la discussion : il est
-       prévenu des suivants, comme Benoît) */
+    /* ===== 7 : une mention ===== (Hugo a quitté le jeu : son téléphone l'a
+       dit, il est prévenu des suivants, comme Benoît) */
+    await inscrire(H, 'H', true);
     envois.length = 0;
     const id2 = await ecrire('@Jean Paul et @Dora vous venez ?', { mentions: [C, D] });
     rep = await servir((await nouveaux())[0], { sans_attente: true });
@@ -175,12 +185,23 @@ const EP = (x) => 'https://push.exemple/appareil-' + x;
     rep = await servir(r5, { sans_attente: true });
     dit('11. masqué avant l\'envoi : personne', !envois.length && rep.c.envoyes === 0, JSON.stringify(rep.c));
 
-    /* ===== 12 : un appareil éteint les messages ===== */
-    await inscrire(B, 'B-tablette', false);
+    /* ===== 12 : le jeu à l'écran, puis sans nouvelles ===== */
+    await inscrire(B, 'B-tablette', true, false, true);
     envois.length = 0;
     await ecrire('Et maintenant ?');
     rep = await servir((await nouveaux())[0], { sans_attente: true });
-    dit('12. la tablette de Benoît éteint les messages : seul son téléphone', qui() === 'B-tel,H', qui());
+    dit('12. la tablette de Benoît a le jeu à l\'écran : seul son téléphone', qui() === 'B-tel,H', qui());
+    await sql("update public.push_subs set maj = now() - interval '50 seconds' where endpoint = " + lit(EP('B-tablette')));
+    envois.length = 0;
+    await ecrire('Et là ?');
+    rep = await servir((await nouveaux())[0], { sans_attente: true });
+    dit('    plus de nouvelles depuis 45 s (jeu fermé sans avoir pu le dire) : la tablette est prévenue', qui() === 'B-tablette,B-tel,H', qui());
+    await inscrire(B, 'B-tablette', false, false, false);
+    await sql("update public.push_subs set maj = now() - interval '10 minutes' where endpoint = " + lit(EP('B-tablette')));
+    envois.length = 0;
+    await ecrire('Et sans les messages ?');
+    rep = await servir((await nouveaux())[0], { sans_attente: true });
+    dit('    la tablette coupe les messages : jamais prévenue, même sans nouvelles depuis 10 min', qui() === 'B-tel,H', qui());
 
     /* ===== 13 : sans la clé ===== */
     envois.length = 0;

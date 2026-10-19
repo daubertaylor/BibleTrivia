@@ -656,7 +656,6 @@
   .icon-btn.hero-reseau.part{ animation:reseauPart 0.26s ease-in both; pointer-events:none; }
   @keyframes reseauArrive{ from{ opacity:0; transform:scale(0.6); } to{ opacity:1; transform:none; } }
   @keyframes reseauPart{ to{ opacity:0; transform:scale(0.6); } }
-  @media (prefers-reduced-motion: reduce){ .icon-btn.hero-reseau.arrive, .icon-btn.hero-reseau.part{ animation-duration:0.01s; } }
   .icon-btn.hero-profile{ position:absolute; top:calc(0.5rem + 1px); left:calc(0.55rem + 1px); padding:0; overflow:visible; background:transparent; border:none; box-shadow:none; }
   /* Le même profil, en tête des Groupes, pour qui n'est pas modérateur
      (voir enteteGroupes) : posé dans l'en-tête au lieu d'être en absolu. */
@@ -3944,6 +3943,22 @@
   .ach-toast .at-txt{ display:flex; flex-direction:column; gap:0.04rem; min-width:0; }
   .ach-toast .at-txt b{ font-family:'Poppins',sans-serif; font-weight:700; font-size:0.68rem; letter-spacing:0.06em; text-transform:uppercase; color:#F5C453; }
   .ach-toast .at-txt small{ font-size:0.92rem; color:#fff; font-weight:600; }
+  /* (v331) LE BANDEAU D'UN AUTRE GROUPE (voir annoncerDansLeJeu) : le dessin
+     du bandeau des succès — la capsule sombre, la pastille, le nom en petites
+     capitales dorées —, qu'on peut toucher. Sans aucun trait. Plus couvrant
+     que lui : il passe sur l'en-tête d'une discussion, dont le titre ne doit
+     pas transparaître. */
+  .bandeau-msg{ position:fixed; left:50%; top:calc(var(--vvt, 0px) + env(safe-area-inset-top) + 0.6rem); z-index:9000; display:flex; align-items:center; gap:0.6rem;
+    width:max-content; max-width:min(88vw, 24rem); padding:0.55rem 0.95rem 0.55rem 0.58rem; margin:0; border:0; border-radius:var(--r-m); text-align:left; font:inherit;
+    background:rgba(30,22,14,0.96); color:#fff; box-shadow:0 10px 30px rgba(0,0,0,0.45); cursor:pointer; -webkit-tap-highlight-color:transparent; --press-tint:rgba(255,255,255,0.14);
+    transform:translate(-50%,-150%); opacity:0; pointer-events:none; transition:transform 0.42s cubic-bezier(0.2,1.3,0.35,1), opacity 0.35s ease; }
+  .bandeau-msg.vu{ transform:translate(-50%,0); opacity:1; pointer-events:auto; }
+  .bandeau-msg.part{ transition:transform 0.3s ease, opacity 0.25s ease; }
+  .bandeau-msg .grp-av{ width:2.2rem; height:2.2rem; border-radius:var(--r-s); font-size:0.92rem; }
+  .bandeau-msg .bm-t{ display:flex; flex-direction:column; gap:0.04rem; min-width:0; }
+  .bandeau-msg .bm-t b{ font-family:'Poppins',sans-serif; font-weight:700; font-size:0.68rem; letter-spacing:0.06em; text-transform:uppercase; color:#F5C453;
+    white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+  .bandeau-msg .bm-t small{ font-size:0.92rem; color:#fff; font-weight:600; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
   /* ---------- Inviter des amis (salon) ---------- */
   /* 44 px POUR DE BON. Ces trois-là sont des surfaces de verre : leur
      découpe avale l'agrandisseur, il faut donc que la BOÎTE fasse la taille.
@@ -4947,6 +4962,33 @@
      arrive à la ligne. Un verset court la laisse où elle est. */
   .hero:has(.hero-zone.show-verse.verse-basse) .home-verse{ opacity:0; pointer-events:none; }
   .home-verse{ transition:opacity var(--tr-voile-in); }
+  /* ===== (v331) LA DÉCOUVERTE DU VERSET SURPRISE (voir lancerDecouverte) =====
+     Un doigt fantôme — un disque de verre clair — et cinq points posés au bas
+     de l'icône. Rien d'autre : ni bulle, ni flèche, ni trait. Les points sont
+     DANS l'icône (ils s'enfoncent avec elle sous le doigt) ; le doigt est à
+     côté, dans son bouton (un doigt ne bascule pas avec ce qu'il touche).
+     Tous deux flottent avec elle (heroFlotte : le même souffle que
+     heroFloat, au même instant) — l'icône ne glisse jamais sous eux. Le
+     doigt flotte par « translate », s'enfonce par « scale » : deux
+     propriétés à part, qui ne se marchent pas dessus. */
+  .hero-points{ position:absolute; left:0; right:0; bottom:4.5%; z-index:2; display:flex; justify-content:center; gap:0.36rem;
+    opacity:0; transition:opacity 0.4s ease; pointer-events:none; animation:heroFlotte 5s ease-in-out infinite; }
+  .hero.decouverte .hero-points{ opacity:1; }
+  .hero-zone.show-verse .hero-points{ opacity:0; }
+  .hero-points i{ width:0.42rem; height:0.42rem; border-radius:50%; background:rgba(255,248,236,0.4);
+    box-shadow:0 1px 3px rgba(10,8,6,0.35); transition:background-color 0.16s ease, transform 0.24s cubic-bezier(0.2,0.9,0.3,1.4); }
+  .hero-points i.plein{ background:#FFF6E6; transform:scale(1.25); }
+  .hero-doigt{ position:absolute; left:64%; top:62%; z-index:3; width:2.3rem; height:2.3rem; margin:-1.15rem 0 0 -1.15rem; border-radius:50%;
+    background:radial-gradient(circle at 50% 42%, rgba(255,255,255,0.94), rgba(255,255,255,0.66) 58%, rgba(255,255,255,0.44));
+    box-shadow:0 2px 10px rgba(10,8,6,0.16); opacity:0; transform:scale(0.7); pointer-events:none;
+    transition:opacity 0.3s ease, transform 0.36s cubic-bezier(0.2,0.85,0.3,1), scale 0.09s ease-out;
+    animation:heroFlotte 5s ease-in-out infinite; }
+  .hero-doigt.vu{ opacity:1; transform:scale(1); }
+  .hero-doigt.appuie{ scale:0.84; }
+  .hero-doigt::after{ content:""; position:absolute; inset:0; border-radius:50%; background:rgba(255,255,255,0.5); opacity:0; pointer-events:none; }
+  .hero-doigt.tape::after{ animation:doigtOnde 0.5s ease-out; }
+  @keyframes doigtOnde{ from{ opacity:0.5; transform:scale(1); } to{ opacity:0; transform:scale(2); } }
+  @keyframes heroFlotte{ 0%,100%{ translate:0 0; } 50%{ translate:0 -6px; } }
   /* UN VERSET SE LIT, DONC IL RESTE LISIBLE.
      La carte était plafonnée à 9,5 rem et c'est le TEXTE qui rétrécissait pour
      y entrer : mesuré sur les 992 versets des quatre versions, 80 % tombaient
@@ -5249,7 +5291,6 @@
   /* Un fondu qui part VITE (courbe de sortie, 0,2 s) : la page qu'on quitte
      disparaît à l'instant, la barre ne doit pas traîner derrière elle. */
   .barre-bas.part-cote{ animation:barrePart 0.2s cubic-bezier(0.2,0.8,0.2,1) forwards; pointer-events:none; }
-  @media (prefers-reduced-motion: reduce){ .barre-bas.arrive-g, .barre-bas.arrive-d, .barre-bas.part-cote{ animation-duration:0.01s; } }
   /* Le clavier monte (une recherche, une adresse) : la barre s'efface. Sur
      Android elle remonterait avec la page et se poserait sur le champ. */
   html.kb .barre-bas{ transform:translate3d(-50%, calc(100% + var(--bb-bas) + 1rem), 0); pointer-events:none; }
@@ -5732,7 +5773,6 @@
   .b-moi .b-arrive{ transform-origin:100% 100%; }
   .b-eux .b-arrive{ transform-origin:0 100%; }
   @keyframes bArrive{ from{ opacity:0; transform:translateY(0.5rem) scale(0.96); } to{ opacity:1; transform:none; } }
-  @media (prefers-reduced-motion: reduce){ .b-arrive{ animation:none; } }
   /* La couleur du groupe (voir BULLES_GROUPE) ; le corail reste le repli. */
   .groupe-ecran .b-moi .b-bulle:not(.b-partie):not(.b-vide){ background:var(--grp-c, var(--primary)); color:var(--grp-txt, #fff);
     box-shadow:0 1px 2px rgba(var(--grp-rgb, 214,60,34),0.18), 0 4px 12px rgba(var(--grp-rgb, 214,60,34),0.24); }
@@ -5801,6 +5841,23 @@
   .fil-bas[hidden]{ display:none; }
   /* LE COMPOSITEUR : une capsule de verre, un bouton partie à gauche, l'envoi à droite. */
   .compo{ flex-shrink:0; border-radius:calc(var(--r-l) + 6px); padding:0.45rem; margin-bottom:0.1rem; }
+  /* (v331) POURQUOI UN MESSAGE N'EST PAS PARTI (voir alerteCompo) : juste
+     au-dessus de la barre d'écriture — clavier ouvert, c'est là qu'on
+     regarde —, du ton des petits messages du jeu, sans aucun trait. Posé au
+     bas de la carte de la discussion, comme « Nouveaux messages » : la
+     capsule de verre de la barre coupe tout ce qui dépasse d'elle. */
+  .compo-alerte{ position:absolute; left:50%; bottom:0.6rem; z-index:4; display:flex; align-items:center; gap:0.5rem;
+    width:max-content; max-width:calc(100% - 1.2rem); padding:0.55rem 0.95rem 0.55rem 0.75rem; border-radius:1.1rem;
+    background:rgba(30,22,14,0.92); color:#fff; font-family:'Poppins',sans-serif; font-weight:600; font-size:0.8rem; line-height:1.35;
+    box-shadow:0 6px 18px rgba(20,12,6,0.22); pointer-events:none;
+    opacity:0; transform:translate(-50%, 0.4rem); transition:opacity 0.22s ease, transform 0.24s cubic-bezier(0.2,0.85,0.3,1); }
+  .compo-alerte.vue{ opacity:1; transform:translate(-50%, 0); }
+  .compo-alerte .ico{ flex-shrink:0; width:1rem; height:1rem; display:inline-flex; color:#FFB59E; }
+  .compo-alerte .ico svg{ width:100%; height:100%; }
+  .compo-alerte .ca-t{ text-wrap:balance; }
+  /* (v331) Clavier ouvert, le bas de l'écran est sous le clavier : un petit
+     message s'y perdait. Il se pose alors en haut de la zone visible. */
+  html.kb .mini-toast{ bottom:auto; top:calc(var(--vvt, 0px) + env(safe-area-inset-top) + 0.9rem); }
   .compo-in{ display:flex; align-items:flex-end; gap:0.45rem; width:100%; }
   .compo-texte{ flex:1; min-width:0; min-height:2.6rem; max-height:7.5rem; resize:none; border:0; outline:none; background:transparent;
     font-family:'Inter',sans-serif; font-size:16px; line-height:1.35; color:var(--ink); padding:0.62rem 0.3rem; }
@@ -6666,7 +6723,8 @@ const TEXTES = {
     "Les groupes sont réservés aux 13 ans et plus.":"Groups are for ages 13 and up.",
     "Le nom doit faire entre 3 et 40 caractères.":"The name must be 3 to 40 characters long.",
     "La description est trop longue.":"The description is too long.",
-    "Ce texte contient un mot interdit dans les groupes.":"This text contains a word that isn't allowed in groups.",
+    "Ce texte contient une insulte ou un mot grossier.":"This text contains an insult or a rude word.",
+    "Ce message contient une insulte ou un mot grossier : il ne peut pas être envoyé.":"This message contains an insult or a rude word, so it can't be sent.",
     "Pas d'adresse, de numéro ni de lien dans un groupe public.":"No addresses, phone numbers or links in a public group.",
     "Tu as atteint le nombre maximum de groupes.":"You've reached the maximum number of groups.",
     "Aucun groupe avec ce code.":"No group has this code.",
@@ -6705,6 +6763,7 @@ const TEXTES = {
     "{nom} lance une partie":"{nom} is starting a game",
     "Toi : {texte}":"You: {texte}",
     "{nom} : {texte}":"{nom}: {texte}",
+    "{nom} te mentionne : {texte}":"{nom} mentioned you: {texte}",
     "{n} membre":"{n} member",
     "{n} membres":"{n} members",
     "Quelqu'un":"Someone",
@@ -6783,9 +6842,10 @@ const TEXTES = {
     "{nom} en devient propriétaire, et tu en restes admin.":"{nom} becomes its owner, and you stay an admin.",
     "Céder":"Hand over",
     "Ta session s'est fermée. Reconnecte-toi : ta progression est intacte.":"Your session has closed. Sign in again: your progress is safe.",
-    "Les messages des groupes ne préviennent encore personne : Supabase → SQL Editor → recolle notifications/installer.sql → Run.":"Group messages don't notify anyone yet: Supabase → SQL Editor → paste notifications/installer.sql again → Run.",
-    "Messages des groupes branchés · {n} téléphone rattaché à un compte":"Group messages connected · {n} phone linked to an account",
-    "Messages des groupes branchés · {n} téléphones rattachés à un compte":"Group messages connected · {n} phones linked to an account",
+    "Les rappels n'annoncent pas encore les messages des groupes : Supabase → SQL Editor → recolle notifications/installer.sql → Run.":"Reminders don't announce group messages yet: Supabase → SQL Editor → paste notifications/installer.sql again → Run.",
+    "Les rappels annoncent aussi les messages des groupes · aucun téléphone ne peut encore les recevoir : chacun doit rouvrir Yada, connecté, rappels allumés.":"Reminders also announce group messages · no phone can receive them yet: each person needs to reopen Yada, signed in, with reminders on.",
+    "Les rappels annoncent aussi les messages des groupes · {n} téléphone peut les recevoir":"Reminders also announce group messages · {n} phone can receive them",
+    "Les rappels annoncent aussi les messages des groupes · {n} téléphones peuvent les recevoir":"Reminders also announce group messages · {n} phones can receive them",
     "La fonction en ligne ne sait pas encore prévenir des messages : sa mise à jour part toute seule de GitHub.":"The online function can't send message notifications yet: its update goes out from GitHub on its own.",
     "Le dernier message n'a pas pu joindre la fonction : {m}":"The last message couldn't reach the function: {m}",
     "Dernier message ({quand}) : personne à prévenir.":"Last message ({quand}): nobody to notify.",
@@ -7412,7 +7472,8 @@ const TEXTES = {
     "Les groupes sont réservés aux 13 ans et plus.":"Los grupos son para personas de 13 años o más.",
     "Le nom doit faire entre 3 et 40 caractères.":"El nombre debe tener entre 3 y 40 caracteres.",
     "La description est trop longue.":"La descripción es demasiado larga.",
-    "Ce texte contient un mot interdit dans les groupes.":"Este texto contiene una palabra prohibida en los grupos.",
+    "Ce texte contient une insulte ou un mot grossier.":"Este texto contiene un insulto o una palabra grosera.",
+    "Ce message contient une insulte ou un mot grossier : il ne peut pas être envoyé.":"Este mensaje contiene un insulto o una palabra grosera: no se puede enviar.",
     "Pas d'adresse, de numéro ni de lien dans un groupe public.":"Nada de direcciones, números ni enlaces en un grupo público.",
     "Tu as atteint le nombre maximum de groupes.":"Has alcanzado el número máximo de grupos.",
     "Aucun groupe avec ce code.":"Ningún grupo tiene este código.",
@@ -7451,6 +7512,7 @@ const TEXTES = {
     "{nom} lance une partie":"{nom} inicia una partida",
     "Toi : {texte}":"Tú: {texte}",
     "{nom} : {texte}":"{nom}: {texte}",
+    "{nom} te mentionne : {texte}":"{nom} te menciona: {texte}",
     "{n} membre":"{n} miembro",
     "{n} membres":"{n} miembros",
     "Quelqu'un":"Alguien",
@@ -7529,9 +7591,10 @@ const TEXTES = {
     "{nom} en devient propriétaire, et tu en restes admin.":"El grupo pasa a ser de {nom}, y tú sigues como admin.",
     "Céder":"Ceder",
     "Ta session s'est fermée. Reconnecte-toi : ta progression est intacte.":"Tu sesión se ha cerrado. Vuelve a iniciar sesión: tu progreso está intacto.",
-    "Les messages des groupes ne préviennent encore personne : Supabase → SQL Editor → recolle notifications/installer.sql → Run.":"Los mensajes de los grupos aún no avisan a nadie: Supabase → SQL Editor → vuelve a pegar notifications/installer.sql → Run.",
-    "Messages des groupes branchés · {n} téléphone rattaché à un compte":"Mensajes de los grupos conectados · {n} teléfono vinculado a una cuenta",
-    "Messages des groupes branchés · {n} téléphones rattachés à un compte":"Mensajes de los grupos conectados · {n} teléfonos vinculados a una cuenta",
+    "Les rappels n'annoncent pas encore les messages des groupes : Supabase → SQL Editor → recolle notifications/installer.sql → Run.":"Los recordatorios aún no anuncian los mensajes de los grupos: Supabase → SQL Editor → vuelve a pegar notifications/installer.sql → Run.",
+    "Les rappels annoncent aussi les messages des groupes · aucun téléphone ne peut encore les recevoir : chacun doit rouvrir Yada, connecté, rappels allumés.":"Los recordatorios también anuncian los mensajes de los grupos · ningún teléfono puede recibirlos todavía: cada persona debe volver a abrir Yada, con la sesión iniciada y los recordatorios activados.",
+    "Les rappels annoncent aussi les messages des groupes · {n} téléphone peut les recevoir":"Los recordatorios también anuncian los mensajes de los grupos · {n} teléfono puede recibirlos",
+    "Les rappels annoncent aussi les messages des groupes · {n} téléphones peuvent les recevoir":"Los recordatorios también anuncian los mensajes de los grupos · {n} teléfonos pueden recibirlos",
     "La fonction en ligne ne sait pas encore prévenir des messages : sa mise à jour part toute seule de GitHub.":"La función en línea aún no sabe avisar de los mensajes: su actualización sale sola desde GitHub.",
     "Le dernier message n'a pas pu joindre la fonction : {m}":"El último mensaje no pudo llegar a la función: {m}",
     "Dernier message ({quand}) : personne à prévenir.":"Último mensaje ({quand}): nadie a quien avisar.",
@@ -9951,7 +10014,7 @@ const SUPABASE_ANON_KEY = "sb_publishable_FDJ_R0foC7uIeHmxVrj6rA_2NeIgW2a";
    remontée d'un téléphone ne vaut rien si on ne sait pas QUELLE version
    tournait. Elle doit rester égale au CACHE de sw.js — c'est ce que vérifie
    banc-essai/version.js, qui refuse de laisser publier les deux en désaccord. */
-const VERSION_JEU = "v330";
+const VERSION_JEU = "v331";
 
 /* ===================== QUAND ÇA CASSE CHEZ UN JOUEUR =====================
    « Si quelque chose casse chez cinq d'entre eux sur un modèle de téléphone
@@ -10222,6 +10285,13 @@ const net = {
    deconnexionImprevue). */
 let suiviJeton = null;
 function fetchSuivi(entree, init){
+  /* (v331) L'inscription des rappels part même si le téléphone endort la
+     page dans la foulée : c'est elle qui dit « le jeu n'est plus à l'écran »
+     au moment où on le quitte (voir notifPartir). */
+  try{
+    const u0 = typeof entree === "string" ? entree : ((entree && entree.url) || "");
+    if(/\/rest\/v1\/rpc\/push_enregistrer/.test(u0)) init = Object.assign({}, init || {}, { keepalive:true });
+  }catch(e){}
   const p = fetch(entree, init);
   try{
     const u = typeof entree === "string" ? entree : ((entree && entree.url) || "");
@@ -17502,12 +17572,107 @@ function heroIconTap(){
   if(zone.classList.contains("show-verse")){ hideHeroVerse(); return; }
   heroTaps += 1;
   clearTimeout(heroTapReset);
-  heroTapReset = setTimeout(()=>{ heroTaps = 0; }, 1500);
+  heroTapReset = setTimeout(()=>{ heroTaps = 0; pointsDecouverte(0); }, 1500);
+  pointsDecouverte(heroTaps);
   if(heroTaps >= 5){
     heroTaps = 0;
     heroArreter();
     showHeroVerse();
   }
+}
+/* ===== (v331) LE VERSET SURPRISE SE DÉCOUVRE — UNE FOIS =====
+   « Fais en sorte que la personne qui arrive pour la première fois comprenne
+   qu'en appuyant plusieurs fois sur l'icône du petit bonhomme qui prie, ça
+   affiche un verset — de manière interactive, dans la DA du jeu, ultra
+   propre, sans gros message — et qu'une fois qu'elle le sait, ça ne
+   s'affiche plus. »
+   Pas de bulle d'aide, pas de flèche : le geste lui-même. Un doigt fantôme —
+   un disque de verre clair — se pose sur l'icône et la touche cinq fois, au
+   rythme du vrai geste ; l'icône s'enfonce à chaque fois avec son vrai
+   ressort, et cinq points s'allument un à un sous elle. Puis le doigt s'en
+   va, les points se vident et attendent : ce sont maintenant les touches du
+   joueur qui les allument, et la cinquième ouvre le verset. Pas une phrase :
+   « sans le message » — le geste suffit. Personne ne touche ? Le doigt
+   rejoue (trois fois au plus) ; un doigt du joueur sur l'icône, et il
+   s'efface aussitôt.
+   UNE FOIS. Elle paraît pendant un seul lancement — le premier — et revient
+   sur l'accueil tant qu'on y repasse pendant ce lancement (le doigt ne joue
+   que trois fois en tout). Dès qu'un verset s'ouvre, par ce chemin ou seul,
+   elle s'en va, et plus rien ne s'affiche jamais (bt_verset_appris) ; qui
+   passe son chemin ne la revoit pas non plus (bt_verset_montre). */
+const CLE_VERSET_APPRIS = "bt_verset_appris", CLE_VERSET_MONTRE = "bt_verset_montre";
+const decVerset = { t:null, demo:[], joues:0, ici:false, active:false };
+function versetAppris(){ try{ return localStorage.getItem(CLE_VERSET_APPRIS) === "1"; }catch(e){ return false; } }
+function armerDecouverte(){
+  clearTimeout(decVerset.t); decVerset.t = null;
+  arreterDoigt();
+  decVerset.active = false;
+  if(versetAppris()) return;
+  decVerset.t = setTimeout(lancerDecouverte, 1800);
+}
+function lancerDecouverte(){
+  decVerset.t = null;
+  if(versetAppris() || state.screen !== "mode" || document.hidden) return;
+  /* Les bancs photographient l'accueil au pixel près dans un navigateur
+     piloté (navigator.webdriver, qu'un vrai téléphone n'a jamais) : la
+     découverte n'y paraît que pour le banc qui l'éprouve. */
+  if(navigator.webdriver && !window.__essaiDecouverte) return;
+  const hero = document.querySelector(".accueil .hero"), zone = document.getElementById("heroZone");
+  if(!hero || !zone || zone.classList.contains("show-verse")) return;
+  /* Une fenêtre, une page, un message par-dessus : on attend qu'ils partent. */
+  if(document.querySelector(".modal-veil, .sheet-veil")){ decVerset.t = setTimeout(lancerDecouverte, 2500); return; }
+  if(!decVerset.ici){
+    let deja = false; try{ deja = !!localStorage.getItem(CLE_VERSET_MONTRE); }catch(e){}
+    if(deja) return;
+    decVerset.ici = true;
+    try{ localStorage.setItem(CLE_VERSET_MONTRE, "1"); }catch(e){}
+  }
+  decVerset.active = true;
+  hero.classList.add("decouverte");
+  if(decVerset.joues < 3) jouerDoigt();
+}
+function jouerDoigt(){
+  arreterDoigt();
+  const zone = document.getElementById("heroZone"), d = zone && zone.querySelector(".hero-doigt");
+  if(!d || !decVerset.active) return;
+  decVerset.joues++;
+  const pas = (f, ms)=> decVerset.demo.push(setTimeout(f, ms));
+  const DEBUT = 560, ECART = 190;
+  d.classList.add("vu");
+  for(let i = 0; i < 5; i++){
+    pas(()=>{
+      if(!decVerset.active) return;
+      d.classList.remove("tape"); void d.offsetWidth; d.classList.add("tape", "appuie");
+      const r = d.getBoundingClientRect(); heroIconPress({ clientX:r.left + r.width / 2, clientY:r.top + r.height / 2 });
+      pointsDecouverte(i + 1, true);
+    }, DEBUT + i * ECART);
+    pas(()=>{ d.classList.remove("appuie"); heroIconRelease(); }, DEBUT + i * ECART + 85);
+  }
+  /* Le doigt s'en va, les points se vident : à toi. */
+  pas(()=>{ d.classList.remove("vu"); }, DEBUT + 5 * ECART + 380);
+  pas(()=>{ if(heroTaps === 0) pointsDecouverte(0, true); }, DEBUT + 5 * ECART + 700);
+  /* Personne n'a touché : il rejoue — trois fois en tout, au plus. */
+  pas(()=>{ if(decVerset.active && heroTaps === 0 && decVerset.joues < 3) jouerDoigt(); }, DEBUT + 5 * ECART + 6500);
+}
+function arreterDoigt(){
+  decVerset.demo.forEach(clearTimeout); decVerset.demo = [];
+  const d = document.querySelector("#heroZone .hero-doigt");
+  if(d) d.classList.remove("vu", "tape", "appuie");
+}
+/* Les points : n allumés sur cinq. « demo » : c'est le doigt qui les allume. */
+function pointsDecouverte(n, demo){
+  if(!demo && decVerset.demo.length) arreterDoigt();          // le joueur a pris la main
+  document.querySelectorAll("#heroZone .hero-points i").forEach((x, i) => x.classList.toggle("plein", i < n));
+}
+/* Un verset s'est ouvert : c'est appris, pour toujours. */
+function versetDecouvert(){
+  try{ localStorage.setItem(CLE_VERSET_APPRIS, "1"); }catch(e){}
+  clearTimeout(decVerset.t); decVerset.t = null;
+  if(!decVerset.active) return;
+  decVerset.active = false;
+  arreterDoigt();
+  const hero = document.querySelector(".accueil .hero");
+  if(hero) hero.classList.remove("decouverte");
 }
 /* Espaces insécables « à la française » : aucune ponctuation haute (! ? : ;)
    ni le chevron fermant ne peut se retrouver SEUL en début de ligne — la
@@ -17608,6 +17773,7 @@ function poserPlafondVerset(zone, card){
 function showHeroVerse(){
   const zone = document.getElementById("heroZone");
   if(!zone) return;
+  versetDecouvert();
 
   let i;
   do { i = (Math.random()*HERO_VERSES.length)|0; } while(HERO_VERSES.length > 1 && i === lastVerseIdx);
@@ -20277,7 +20443,8 @@ function notifEcrireEnOrdre(supa, endpoint, abonnement){
   if(notifAttente && notifAttente.endpoint === endpoint) return notifAttente;
   const p = notifFile.catch(() => {}).then(() => {
     if(notifAttente === p) notifAttente = null;
-    return notifEcrire(supa, endpoint, abonnement);
+    notifEnVol++;
+    return notifEcrire(supa, endpoint, abonnement).finally(() => { notifEnVol--; });
   });
   p.endpoint = endpoint;
   notifAttente = p; notifFile = p;
@@ -20330,6 +20497,19 @@ function notifEtatCourant(){
    l'adresse et qui ne renvoie rien (notifications/verrouiller.sql).
    AVEC UN REPLI, pour que l'ordre des deux mises à jour n'ait pas
    d'importance : tant que la fonction n'existe pas, on écrit comme avant. */
+function corpsEnregistrer(endpoint, abonnement){
+  const e = notifEtatCourant();
+  /* (v331) L'abonnement dit aussi si le jeu est à l'écran (voir
+     jeuALEcran) : l'envoi n'en lit que l'adresse et les clés. */
+  if(abonnement) abonnement = Object.assign({}, abonnement, { ecran:jeuALEcran() });
+  const corps = {
+    p_endpoint: endpoint, p_abonnement: abonnement || null,
+    p_dernier: e.dernier, p_serie: e.serie, p_vu: e.vu,
+    p_revoir: e.revoir, p_decalage: e.decalage };
+  if(!notifSansHeures) Object.assign(corps, { p_jeu: e.jeu, p_priere: e.priere, p_lecture: e.lecture });
+  if(!notifSansHeures && !notifSansMessages) corps.p_messages = e.messages;
+  return corps;
+}
 async function notifEcrire(supa, endpoint, abonnement){
   const e = notifEtatCourant();
   if(!notifSansRpc){
@@ -20343,12 +20523,7 @@ async function notifEcrire(supa, endpoint, abonnement){
        serveur ; le reste répond « pas fait », et la relance s'en charge. */
     let r = null;
     try{
-      const corps = {
-        p_endpoint: endpoint, p_abonnement: abonnement || null,
-        p_dernier: e.dernier, p_serie: e.serie, p_vu: e.vu,
-        p_revoir: e.revoir, p_decalage: e.decalage };
-      if(!notifSansHeures) Object.assign(corps, { p_jeu: e.jeu, p_priere: e.priere, p_lecture: e.lecture });
-      if(!notifSansHeures && !notifSansMessages) corps.p_messages = e.messages;
+      const corps = corpsEnregistrer(endpoint, abonnement);
       r = await supa.rpc("push_enregistrer", corps);
       if(r && r.error && "p_messages" in corps && r.error.code === "PGRST202"){
         /* (v329) Une fonction d'avant la v329 ne connaît pas p_messages :
@@ -20424,7 +20599,10 @@ function notifSync(){
        vaut réinscription. */
     navigator.serviceWorker.ready
       .then(reg => reg.pushManager.getSubscription())
-      .then(sub => sub ? notifEcrireEnOrdre(supa, sub.endpoint, sub.toJSON()) : null)
+      .then(sub => {
+        notifEndpoint = (sub && sub.endpoint) || null; notifAbonnement = sub ? sub.toJSON() : null;
+        return sub ? notifEcrireEnOrdre(supa, sub.endpoint, notifAbonnement) : null;
+      })
       .then(fait => {
         if(fait === false) notifRelancer();
         else if(fait){ notifRates = 0; if(notifRelance){ clearTimeout(notifRelance); notifRelance = null; } }
@@ -20502,7 +20680,8 @@ async function notifActiver(){
     /* (v326) Allumé AVANT d'écrire : l'état envoyé dit « jeu : oui » dès le
        premier appel (il disait « non », et c'était le second qui corrigeait). */
     settings.notif = true; saveSettings();
-    if(!(await notifEcrireEnOrdre(supa, sub.endpoint, sub.toJSON()))){
+    notifEndpoint = sub.endpoint; notifAbonnement = sub.toJSON();
+    if(!(await notifEcrireEnOrdre(supa, sub.endpoint, notifAbonnement))){
       /* Message TECHNIQUE, jamais montré : il est rattrapé juste en dessous et
          remplacé par une phrase traduite. Il ne doit donc pas être en français,
          sinon le banc des traductions le réclame à juste titre. */
@@ -20603,6 +20782,49 @@ function rappelsAllumes(){ return !!(settings.notif || settings.priere || settin
    connecté (push_enregistrer note auth.uid()) : qui se déconnecte ne reçoit
    plus rien, qui se connecte reçoit les siens. */
 function messagesVoulus(){ return !!settings.notif; }
+/* ===== (v331) LE JEU EST À L'ÉCRAN : PAS DE NOTIFICATION DES MESSAGES ICI =====
+   « Fais en sorte que le téléphone ne sonne pas lorsqu'on est sur le jeu. »
+   Tant que le jeu est à l'écran, ce téléphone dit au serveur « le jeu est à
+   l'écran ici » (« ecran » dans son abonnement) — le jeu montre déjà tout,
+   en direct —, et il le redit toutes les vingt secondes. Dès qu'il passe
+   derrière (on change d'app, on verrouille l'écran), il dit le contraire,
+   d'un envoi qui part même si le téléphone endort la page aussitôt
+   (keepalive, voir fetchSuivi). Le serveur ne croit un « à l'écran » que
+   s'il date de moins de 45 s : un jeu fermé sans avoir pu le dire est
+   prévenu comme tout le monde (rappels.ts, PRESENT_MS). Le choix du joueur
+   (messages) n'est jamais touché : qui a coupé les messages n'en reçoit
+   aucun, à l'écran ou pas. */
+function jeuALEcran(){ return document.visibilityState !== "hidden"; }
+let notifEndpoint = null, notifAbonnement = null, presenceT = null, notifEnVol = 0;
+const PRESENCE_MS = 20000;
+function presenceBattre(){
+  clearTimeout(presenceT); presenceT = null;
+  if(document.visibilityState === "hidden") return;
+  presenceT = setTimeout(()=>{
+    presenceT = null;
+    if(document.visibilityState === "hidden") return;
+    if(messagesVoulus() && compteConnecte()) notifSync();
+    presenceBattre();
+  }, PRESENCE_MS);
+}
+function notifPartir(){
+  try{
+    if(!notifEndpoint || !notifAbonnement || notifSansRpc || !messagesVoulus() || !compteConnecte()) return;
+    if(!rappelsAllumes() || notifEtat() !== "granted") return;
+    const supa = initSupa(); if(!supa || typeof supa.rpc !== "function") return;
+    const p = supa.rpc("push_enregistrer", corpsEnregistrer(notifEndpoint, notifAbonnement));   // la page est cachée : plus « à l'écran »
+    if(p && typeof p.then === "function") p.then(()=>{}, ()=>{});
+    /* Une inscription « à l'écran » encore en route arriverait APRÈS
+       celle-ci et la contredirait : on redit derrière elle. */
+    if(notifEnVol > 0) notifFile.then(()=>{ if(document.visibilityState === "hidden") notifPartir(); }, ()=>{});
+  }catch(e){}
+}
+document.addEventListener("visibilitychange", ()=>{
+  if(document.visibilityState === "hidden"){ clearTimeout(presenceT); presenceT = null; notifPartir(); }
+  else { if(messagesVoulus() && compteConnecte()) notifSync(); presenceBattre(); }
+});
+window.addEventListener("pagehide", notifPartir);
+presenceBattre();
 const idRappel = (k) => k === "priere" ? "Priere" : "Lecture";
 function rangeeRappelHeure(k){
   const r = RAPPELS_HEURE[k], id = idRappel(k);
@@ -20643,7 +20865,8 @@ async function rappelHeureAllumer(k){
     const supa = initSupa();
     if(!supa) throw new Error("push:serveur");
     settings[k] = true; saveSettings();
-    const ok = await notifEcrireEnOrdre(supa, sub.endpoint, sub.toJSON());
+    notifEndpoint = sub.endpoint; notifAbonnement = sub.toJSON();
+    const ok = await notifEcrireEnOrdre(supa, sub.endpoint, notifAbonnement);
     if(!ok) throw new Error("push:refus");
     if(notifSansHeures) throw new Error("push:ancien");   // le serveur ne garde pas l'heure : ne pas promettre
     notifMiroir(); rafraichirRappelsHeure();
@@ -21850,7 +22073,7 @@ function motErreurGroupe(r){
     age:"Les groupes sont réservés aux 13 ans et plus.",
     nom_longueur:"Le nom doit faire entre 3 et 40 caractères.",
     description_longueur:"La description est trop longue.",
-    mot_interdit:"Ce texte contient un mot interdit dans les groupes.",
+    mot_interdit:"Ce texte contient une insulte ou un mot grossier.",
     coordonnees:"Pas d'adresse, de numéro ni de lien dans un groupe public.",
     trop_de_groupes:"Tu as atteint le nombre maximum de groupes.",
     code_inconnu:"Aucun groupe avec ce code.",
@@ -21994,8 +22217,8 @@ async function chargerEtatGroupes(){
        l'onglet : c'est elle qui donne les non-lus de la pastille de l'accueil. */
     /* Une liste venue de la mémoire de ce téléphone se relit quand même :
        elle montre tout de suite, le serveur dit ce qui a changé depuis. */
-    if(r.participe === "ok"){ abonnerGroupes(); suivreNomGroupes(); if(!grp.liste || grp.listeDeMemoire) chargerListes(); if(invitationEnAttente) setTimeout(servirInvitation, 300); if(discussionEnAttente) setTimeout(servirDiscussion, 300); }
-    else desabonnerGroupes();
+    if(r.participe === "ok"){ abonnerGroupes(); abonnerPerso(); suivreNomGroupes(); if(!grp.liste || grp.listeDeMemoire) chargerListes(); if(invitationEnAttente) setTimeout(servirInvitation, 300); if(discussionEnAttente) setTimeout(servirDiscussion, 300); }
+    else { desabonnerGroupes(); desabonnerPerso(); }
     if(r.participe === "ok"){
       ecrireBase("meta", "etat", { participe:r.participe, moderateur:!!r.moderateur, ouverts:r.ouverts, photos:r.photos === true, logos:r.logos === true,
                                    regles_version:r.regles_version, a_traiter:+r.a_traiter || 0 });
@@ -22035,7 +22258,7 @@ function groupesSurCompte(){
   });
   grp.nonLus = 0; grp.message = ""; grp.bloques = new Set(); grp.ageOk = false; grp.reglesOk = false;
   if(!compteConnecte()){ grp.modoMemo = false; memoriserGroupes(); }
-  desabonnerGroupes();
+  desabonnerGroupes(); desabonnerPerso();
   if(compteConnecte() && grp.installe === true){
     chargerEtatGroupes().then(()=>{
       if(state.screen === "groupes"){ chargerListes(); render(); }
@@ -22202,6 +22425,12 @@ function chargerListes(){
     if(listesARefaire){ listesARefaire = false; chargerListes(); }
   });
   return listesEnCours;
+}
+/* (v331) Une liste lue APRÈS cet appel : une relecture déjà en route a pu
+   partir avant ce qui vient de changer — on attend aussi celle qui la reprend. */
+async function listesAJour(){
+  try{ await chargerListes(); while(listesEnCours) await listesEnCours; }catch(e){}
+  return grp.liste;
 }
 async function chargerListesUneFois(){
   const [mes, pub] = await Promise.all([
@@ -23795,12 +24024,27 @@ function majVus(){
 async function relireLus(id){
   const supa = initSupa(); if(!supa || !supa.from || !grp.membres[id]) return;
   try{
-    const r = await supa.from("membres").select("membre,lu_jusqu").eq("groupe", id);
+    const r = await supa.from("membres").select("membre,lu_jusqu,role,muet_jusqu").eq("groupe", id);
     if(r.error || !Array.isArray(r.data)) return;
     const l = grp.membres[id] || [];
-    let change = false;
-    r.data.forEach(x => { const y = l.find(z => z.membre === x.membre); if(y && +y.lu_jusqu !== +x.lu_jusqu){ y.lu_jusqu = x.lu_jusqu; change = true; } });
-    if(change && grp.courant === id) majVus();
+    let change = false, droits = false, monRang = false;
+    r.data.forEach(x => {
+      const y = l.find(z => z.membre === x.membre); if(!y) return;
+      if(+y.lu_jusqu !== +x.lu_jusqu){ y.lu_jusqu = x.lu_jusqu; change = true; }
+      /* (v331) Le filet du canal personnel : une sourdine, une parole rendue,
+         un rôle dont le signal s'est perdu se rattrapent ici (10 s au plus). */
+      if((y.muet_jusqu || null) !== (x.muet_jusqu || null) || y.role !== x.role){
+        if(x.membre === monId() && y.role !== x.role) monRang = true;
+        y.muet_jusqu = x.muet_jusqu; y.role = x.role; droits = true;
+      }
+    });
+    if(grp.courant !== id) return;
+    if(change) majVus();
+    if(droits){
+      majCompo(); majInfosMembres();
+      const v = document.getElementById("grpInfosVeil");
+      if(monRang && v && !v.classList.contains("closing")) ouvrirInfosGroupe();
+    }
   }catch(e){}
 }
 function bulleHtml(m){
@@ -23947,7 +24191,8 @@ function partantsDuFil(z, html){
   const reste = new Set();
   t.content.querySelectorAll("[data-m]").forEach(e => reste.add(e.getAttribute("data-m")));
   t.content.querySelectorAll("[data-j]").forEach(e => reste.add("j" + e.getAttribute("data-j")));
-  const part = (e)=>{ const k = e.getAttribute("data-m"); return +k > 0 && !reste.has(k); };
+  /* (v331) …et la bulle « en route » que le serveur a refusée (grp.replier). */
+  const part = (e)=>{ const k = e.getAttribute("data-m"); return (+k > 0 || !!(grp.replier && grp.replier.has(k))) && !reste.has(k); };
   const out = [];
   z.querySelectorAll(":scope > .b").forEach(b => {
     const ms = b.querySelectorAll("[data-m]"), vont = [];
@@ -23982,6 +24227,34 @@ function replierDansLeFil(z, els){
 }
 
 /* ---------- ÉCRIRE ---------- */
+/* (v331) Pourquoi un message n'est pas parti, dit au-dessus de la barre
+   d'écriture : visible clavier ouvert, effacé dès qu'on corrige le texte
+   (ou au bout de sept secondes). */
+function motRefusMessage(r){
+  if(r && r.erreur === "mot_interdit") return T("Ce message contient une insulte ou un mot grossier : il ne peut pas être envoyé.");
+  return motErreurGroupe(r);
+}
+function alerteCompo(texte){
+  const f = document.getElementById("fil"), c = f && f.parentNode;
+  if(!c || !document.getElementById("compo")){ showMiniToast(texte); return; }
+  let a = c.querySelector(".compo-alerte");
+  if(!a){
+    a = document.createElement("div");
+    a.className = "compo-alerte"; a.setAttribute("role", "alert");
+    a.innerHTML = `<span class="ico">${ICONS.bouclier}</span><span class="ca-t"></span>`;
+    c.appendChild(a);
+  }
+  a.querySelector(".ca-t").textContent = texte;
+  requestAnimationFrame(()=>{ requestAnimationFrame(()=> a.classList.add("vue")); });
+  clearTimeout(a._t); a._t = setTimeout(cacherAlerteCompo, 7000);
+}
+function cacherAlerteCompo(){
+  const a = document.querySelector(".fil-carte .compo-alerte");
+  if(!a || !a.classList.contains("vue")) return;
+  clearTimeout(a._t);
+  a.classList.remove("vue");
+  setTimeout(()=>{ if(!a.classList.contains("vue")) a.remove(); }, 260);
+}
 function monMuetJusqu(){
   const l = grp.membres[grp.courant] || [];
   const m = l.find(x => x.membre === monId());
@@ -23992,20 +24265,31 @@ function compoHtml(){
   if(muet) return `<div class="compo-muet">${escapeHtml(Tf("Tu es en sourdine jusqu'à {h}.", { h:heureCourte(muet) }))}</div>`;
   return `<button class="compo-jeu" onclick="lancerPartieGroupe(this)" aria-label="${T("Lancer une partie")}">${ICONS.manette}</button>
     <textarea class="compo-texte" id="compoTexte" rows="1" maxlength="500" placeholder="${T("Écris un message…")}" enterkeyhint="send"
-      oninput="surSaisie(this)" onkeydown="toucheCompo(event)" onclick="majNoms(this)" onkeyup="if(/^Arrow|^Home|^End/.test(event.key)) majNoms(this)" onblur="setTimeout(cacherNoms, 150)"></textarea>
+      oninput="surSaisie(this); cacherAlerteCompo()" onkeydown="toucheCompo(event)" onclick="majNoms(this)" onkeyup="if(/^Arrow|^Home|^End/.test(event.key)) majNoms(this)" onblur="setTimeout(cacherNoms, 150)"></textarea>
     <button class="compo-envoi" id="compoEnvoi" onpointerdown="event.preventDefault()" onmousedown="event.preventDefault()" onclick="envoyerMessageGroupe()" aria-label="${T("Envoyer")}" disabled>${ICONS.envoyer}</button>`;
 }
 /* Le compositeur suit l'état de sourdine sans perdre ce qui est en cours de
    frappe : on ne le redessine que si l'état change. */
+let finSourdineT = null;
 function majCompo(){
   const c = document.querySelector("#compo .compo-in");
   if(!c) return;
-  const muet = !!monMuetJusqu(), etait = !!c.querySelector(".compo-muet");
+  const jusqu = monMuetJusqu();
+  /* (v331) La sourdine finit à son heure : la barre revient d'elle-même,
+     sans avoir à rouvrir le groupe. */
+  clearTimeout(finSourdineT); finSourdineT = null;
+  if(jusqu){
+    const d = new Date(jusqu).getTime() - Date.now() + 400;
+    if(d > 0 && d < 2147483000) finSourdineT = setTimeout(majCompo, d);
+  }
+  const muet = !!jusqu, etait = !!c.querySelector(".compo-muet");
   if(!muet && !etait) return;
   const t = c.querySelector("#compoTexte"), v = t ? t.value : "";
   c.innerHTML = compoHtml();
-  const n = c.querySelector("#compoTexte");
-  if(n && v){ n.value = v; surSaisie(n); }
+  /* La parole rendue rend aussi ce qu'on avait commencé d'écrire (gardé
+     avec les brouillons pendant la sourdine). */
+  const n = c.querySelector("#compoTexte"), garde = v || (grp.courant && brouillons[grp.courant]) || "";
+  if(n && garde){ n.value = garde; surSaisie(n); }
 }
 function surSaisie(t){
   t.style.height = "auto";
@@ -24203,11 +24487,21 @@ async function envoyerMessageGroupe(){
   majFil(); descendreFil(true);
   const r = await appelGroupe("envoyer_message", { p_groupe:g.id, p_texte:texte, p_genre:"texte", p_donnees:donnees });
   if(!r.ok){
-    if(f) f.messages = f.messages.filter(m => m.id !== id);
+    /* (v331) UN MESSAGE REFUSÉ NE DISPARAÎT PLUS SANS UN MOT. « Pour les
+       mots qui contiennent des insultes, affiche un petit message comme quoi
+       c'est une insulte et qu'on ne peut pas l'envoyer, plutôt que de juste
+       effacer le message. » La raison partait dans le petit message du bas
+       de l'écran — DERRIÈRE le clavier ouvert, et pour deux secondes : on ne
+       voyait que la bulle s'effacer. La bulle se replie maintenant comme
+       un message qui s'en va, le texte revient dans la barre pour être
+       corrigé, et la raison s'écrit JUSTE AU-DESSUS de la barre, là où l'on
+       regarde (alerteCompo). */
+    if(f){ (grp.replier || (grp.replier = new Set())).add(String(id)); f.messages = f.messages.filter(m => m.id !== id); }
     majFil();
+    setTimeout(()=>{ if(grp.replier) grp.replier.delete(String(id)); }, 2000);
     const z = document.getElementById("compoTexte");
     if(z && !z.value.trim()){ z.value = texte; surSaisie(z); }
-    showMiniToast(motErreurGroupe(r));
+    alerteCompo(motRefusMessage(r));
     if(r.erreur === "pas_membre" || r.erreur === "groupe_ferme"){ grp.liste = null; chargerListes(); }
     if(r.erreur === "muet") chargerMembres(g.id);
     return;
@@ -24347,7 +24641,7 @@ function abonnerGroupes(){
         const m = p && p.new;
         if(!m || !m.groupe) return;
         if(grp.canal === canal) grp.directVu = Date.now();
-        surMessageDirect(m, p.eventType);
+        surMessageDirect(m, p.eventType, true);
       });
     grp.canal = canal;
     canal.subscribe((statut)=>{
@@ -24379,6 +24673,7 @@ function relancerDirect(){
 /* Un canal qui n'est ni ouvert ni en train de s'ouvrir est rouvert tout de suite. */
 function verifierDirect(){
   if(!participeGroupes()) return;
+  verifierPerso();
   if(!grp.canal){ grp.directPerdu = true; abonnerGroupes(); return; }
   const s = grp.canal.state;
   if(s && s !== "joined" && s !== "joining"){
@@ -24393,6 +24688,103 @@ function desabonnerGroupes(){
   const c = grp.canal;
   grp.canal = null; grp.direct = null;           // d'abord : la fermeture de c ne relance rien
   try{ Promise.resolve(initSupa().removeChannel(c)).catch(()=>{}); }catch(e){}
+}
+/* ===== (v331) LE CANAL PERSONNEL : CE QU'ON VIENT DE CHANGER POUR MOI =====
+   « Lorsque je mets quelqu'un en sourdine et que je lui rends la parole, ça
+   doit être instantané pour qu'il puisse avoir la parole. » Une sourdine ne
+   s'annonce pas dans la discussion (personne d'autre n'a à le savoir) : le
+   téléphone de la personne ne l'apprenait qu'en rouvrant le groupe — elle
+   restait muette, ou le restait encore une fois la parole rendue.
+   Chaque joueur écoute maintenant un petit canal à son nom. Quand un
+   modérateur ou un admin change quelque chose pour lui — sourdine, parole
+   rendue, rôle, groupe cédé, retrait —, son propre téléphone y dépose un
+   signal : « relis tes droits dans ce groupe ». La barre d'écriture et les
+   infos du groupe suivent dans la seconde. Ce n'est qu'un signal : c'est le
+   serveur qui dit ce qui est vrai — un signal inventé ne ferait que relire
+   la vérité.
+   UN SEUL CANAL DE CE NOM À LA FOIS. La bibliothèque rend le canal qui porte
+   déjà un nom, même mourant (voir LE DIRECT SE PERD) : avant de le rouvrir,
+   on attend que l'ancien soit entièrement parti. */
+let persoCanal = null, persoRelance = null, persoNo = 0;
+function persoNom(id){ return "yada-perso-" + id; }
+async function abonnerPerso(){
+  if(persoCanal || !compteConnecte()) return;
+  const supa = initSupa(); if(!supa || !supa.channel) return;
+  const moi = monId(), nom = persoNom(moi), no = ++persoNo;
+  persoCanal = { reserve:true };
+  try{
+    const vieux = (typeof supa.getChannels === "function" ? supa.getChannels() : []).filter(c => c && c.topic === "realtime:" + nom);
+    for(const c of vieux){ try{ await supa.removeChannel(c); }catch(e){} }
+  }catch(e){}
+  if(no !== persoNo || !compteConnecte() || monId() !== moi){ if(persoCanal && persoCanal.reserve) persoCanal = null; return; }
+  try{
+    const c = supa.channel(nom, { config:{ broadcast:{ self:false } } })
+      .on("broadcast", { event:"membres" }, (m)=>{ surSignalMembres(m && m.payload); });
+    persoCanal = c;
+    c.subscribe((st)=>{
+      if(persoCanal !== c) return;
+      if(st === "CHANNEL_ERROR" || st === "TIMED_OUT" || st === "CLOSED"){
+        persoCanal = null;
+        try{ Promise.resolve(supa.removeChannel(c)).catch(()=>{}); }catch(e){}
+        clearTimeout(persoRelance);
+        persoRelance = setTimeout(()=>{ persoRelance = null; if(participeGroupes()) abonnerPerso(); }, 5000);
+      }
+    });
+  }catch(e){ persoCanal = null; }
+}
+function desabonnerPerso(){
+  clearTimeout(persoRelance); persoRelance = null; persoNo++;
+  const c = persoCanal; persoCanal = null;
+  if(c && typeof c.subscribe === "function"){ try{ Promise.resolve(initSupa().removeChannel(c)).catch(()=>{}); }catch(e){} }
+}
+function verifierPerso(){
+  if(!persoCanal){ abonnerPerso(); return; }
+  if(persoCanal.reserve) return;
+  const s = persoCanal.state;
+  if(s && s !== "joined" && s !== "joining"){ desabonnerPerso(); abonnerPerso(); }
+}
+/* Le signal reçu : on relit ce que le serveur dit de moi dans ce groupe. */
+const signauxVus = {};
+function surSignalMembres(p){
+  const g = p && typeof p.g === "string" ? p.g : null;
+  if(!g || !participeGroupes()) return;
+  const t = Date.now();
+  if(signauxVus[g] && t - signauxVus[g] < 600) return;     // une rafale ne relit qu'une fois
+  signauxVus[g] = t;
+  /* Retiré, banni : le groupe quitte ma liste — et l'écran, si j'y étais.
+     Seulement si la liste relue le dit : un signal inventé ne fait sortir
+     personne d'une discussion. */
+  if(p.a === "exclure" || p.a === "bannir"){
+    listesAJour().then(()=>{
+      if((grp.liste || []).some(x => x.id === g)) return;
+      if(state.screen === "groupe" && grp.courant === g){ retourGroupes(); showMiniToast(T("Tu ne fais plus partie de ce groupe.")); }
+    });
+    return;
+  }
+  if(!(grp.liste || []).some(x => x.id === g)) return;
+  chargerMembres(g).then(()=>{
+    /* Un rôle qui change (admin, propriétaire) change ce que les infos
+       proposent : elles se redessinent si elles sont ouvertes. */
+    if(grp.courant === g && (p.a === "promouvoir" || p.a === "retrograder" || p.a === "ceder")){
+      const v = document.getElementById("grpInfosVeil");
+      if(v && !v.classList.contains("closing")) ouvrirInfosGroupe();
+    }
+  });
+}
+/* Et le signal envoyé, par celui qui vient d'agir. Pas besoin d'être sur le
+   canal de l'autre : la bibliothèque l'envoie d'un simple appel. */
+function signalerMembre(qui, gid, action){
+  const supa = initSupa();
+  if(!supa || !supa.channel || !qui || qui === monId()) return;
+  try{
+    const c = supa.channel(persoNom(qui));
+    const fin = ()=>{ try{ Promise.resolve(supa.removeChannel(c)).catch(()=>{}); }catch(e){} };
+    const charge = { g:gid, a:action };
+    let p;
+    try{ p = (typeof c.httpSend === "function") ? c.httpSend("membres", charge) : c.send({ type:"broadcast", event:"membres", payload:charge }); }
+    catch(e){ p = c.send({ type:"broadcast", event:"membres", payload:charge }); }
+    Promise.resolve(p).then(fin, fin);
+  }catch(e){}
 }
 /* ===== (v328) ET TANT QU'UNE DISCUSSION EST OUVERTE, ON RELÈVE =====
    Le direct reste le chemin rapide ; la relève est le filet. Discussion
@@ -24457,7 +24849,7 @@ window.addEventListener("online", ()=>{
    une reconnexion, un rattrapage qui croise le direct — et chaque doublon
    ajoutait un non-lu de plus. On retient les identifiants déjà comptés. */
 const dejaComptes = new Set();
-async function surMessageDirect(m, evt){
+async function surMessageDirect(m, evt, direct){
   if(m.auteur && !grp.profils[m.auteur]){ try{ await chargerProfils([m.auteur]); }catch(e){} }
   recevoirMessage(m);
   if(evt === "INSERT"){
@@ -24485,6 +24877,7 @@ async function surMessageDirect(m, evt){
       if(mentionneMoi(m)) g.mentions = (+g.mentions || 0) + 1;
     }
     if(lu) marquerLu(m.groupe);
+    else if(direct) annoncerDansLeJeu(m, g);
     grp.liste.sort((a, b)=> String(b.dernier_message || "").localeCompare(String(a.dernier_message || "")));
     /* Quelqu'un arrive, part, change de rôle : la liste des membres suit. */
     if(m.genre === "systeme" && m.texte !== "cree"){
@@ -24506,6 +24899,85 @@ async function surMessageDirect(m, evt){
   majBarre();
   majListes();
   memoriserListe();
+}
+/* ===== (v331) DANS LE JEU, UN BANDEAU QUI NE SONNE PAS =====
+   « Fais en sorte que le téléphone ne sonne pas lorsqu'on est sur le jeu. »
+   Le jeu à l'écran, le serveur ne prévient plus ce téléphone (voir
+   jeuALEcran) : une partie lancée, un message dans un AUTRE groupe ne se
+   seraient plus vus que sur la pastille de « Messages ». Ils se posent
+   maintenant en haut de l'écran, le temps de les lire, du dessin du bandeau
+   des succès : le groupe, qui, quoi. Le toucher ouvre la discussion ; le
+   pousser vers le haut le range. Même règle que la notification : Tout,
+   Mentions, Muet ; jamais l'auteur, jamais quelqu'un de bloqué. Jamais
+   pendant une partie, ni sur la liste des groupes (elle le montre déjà).
+   Seulement ce qui arrive en direct : un rattrapage, au retour sur l'app,
+   ne déballe pas une rafale d'anciens messages. */
+let bandeauT = null, bandeauAttente = 0;
+function annoncerDansLeJeu(m, g){
+  if(!m || !g || document.hidden) return;
+  if(m.genre !== "texte" && m.genre !== "partie") return;
+  if(m.masque || m.supprime_le || !m.auteur || m.auteur === monId()) return;
+  if(grp.bloques && grp.bloques.has(m.auteur)) return;
+  if(state.screen === "splash" || state.screen === "groupes" || ECRANS_DE_PARTIE.indexOf(state.screen) >= 0) return;
+  if(state.screen === "groupe" && grp.courant === g.id) return;
+  const mode = modeNotifs(g), nomme = mentionneMoi(m);
+  if(mode === "rien" || (mode === "mentions" && !nomme)) return;
+  const nom = (grp.profils[m.auteur] || {}).nom || T("Quelqu'un");
+  const texte = String(m.texte || "").replace(/\s+/g, " ").trim();
+  const ligne = m.genre === "partie" ? Tf("{nom} lance une partie", { nom })
+              : Tf(nomme ? "{nom} te mentionne : {texte}" : "{nom} : {texte}", { nom, texte });
+  montrerBandeau(g, ligne);
+}
+function montrerBandeau(g, ligne){
+  /* Un succès s'affiche à la même place : le bandeau attend qu'il parte. */
+  if(document.querySelector(".ach-toast")){
+    if(++bandeauAttente < 16){ setTimeout(()=> montrerBandeau(g, ligne), 500); }
+    else bandeauAttente = 0;
+    return;
+  }
+  bandeauAttente = 0;
+  let b = document.getElementById("bandeauMsg");
+  if(!b){
+    b = document.createElement("button");
+    b.id = "bandeauMsg"; b.type = "button"; b.className = "bandeau-msg";
+    b.setAttribute("aria-live", "polite");
+    let y0 = null, dy = 0;
+    b.addEventListener("pointerdown", (e)=>{ y0 = e.clientY; dy = 0; });
+    b.addEventListener("pointermove", (e)=>{
+      if(y0 == null) return;
+      dy = Math.min(0, e.clientY - y0);
+      if(dy < -4){ b.style.transition = "none"; b.style.transform = "translate(-50%," + dy + "px)"; }
+    });
+    const lacher = ()=>{
+      if(y0 == null) return;
+      y0 = null; b.style.transition = ""; b.style.transform = "";
+      if(dy < -18){ b._glisse = true; cacherBandeau(); }
+    };
+    b.addEventListener("pointerup", lacher); b.addEventListener("pointercancel", lacher);
+    b.addEventListener("click", ()=>{
+      if(b._glisse){ b._glisse = false; return; }
+      const id = b.dataset.g;
+      cacherBandeau();
+      if(id){ discussionEnAttente = id; servirDiscussion(); }
+    });
+    document.body.appendChild(b);
+  }
+  b.dataset.g = g.id;
+  b.setAttribute("aria-label", (g.nom || "") + " · " + ligne);
+  b.innerHTML = `${pastilleGroupe(g, true)}<span class="bm-t"><b></b><small></small></span>`;
+  b.querySelector("b").textContent = g.nom || "";
+  b.querySelector("small").textContent = ligne;
+  b.classList.remove("part");
+  requestAnimationFrame(()=>{ requestAnimationFrame(()=> b.classList.add("vu")); });
+  /* Le temps de le lire, comme un succès (voir pumpAchToast). */
+  const lu = ligne.length + String(g.nom || "").length;
+  clearTimeout(bandeauT); bandeauT = setTimeout(cacherBandeau, Math.min(6500, Math.max(4200, 1400 + 60 * lu)));
+}
+function cacherBandeau(){
+  clearTimeout(bandeauT); bandeauT = null;
+  const b = document.getElementById("bandeauMsg");
+  if(!b || !b.classList.contains("vu")) return;
+  b.classList.add("part"); b.classList.remove("vu");
 }
 /* Un message arrive (ou change : masqué, supprimé, rendu) : il prend sa place
    dans le fil s'il est chargé. La bulle « en attente » du même texte, posée à
@@ -24883,6 +25355,7 @@ async function modererMembre(qui, action){
   const faire = async ()=>{
     const r = await appelGroupe("moderer_membre", { p_groupe:g.id, p_membre:qui, p_action:action, p_minutes:action === "muet" ? 60 : null });
     if(!r.ok){ motFeuille("grpMembreVeil", motErreurGroupe(r)); return; }
+    signalerMembre(qui, g.id, action);           // (v331) son téléphone le sait tout de suite
     fermerFeuilleGroupe("grpMembreVeil");
     /* Ce qui vient de se passer, en une phrase — sans accord de genre. */
     const dits = {
@@ -25375,10 +25848,16 @@ async function diagnosticRappels(force){
       if(e.cron && e.net && e.tache && e.tache.active) lireReponseTache(e.reponse, ok, non, att);
       /* (v329) les messages des groupes : le déclencheur, les téléphones
          rattachés à un compte, et ce qu'a donné le dernier message. */
-      if(e.messages_branches !== true) non(T("Les messages des groupes ne préviennent encore personne : Supabase → SQL Editor → recolle notifications/installer.sql → Run."));
+      /* (v331) « J'ai toujours l'ancien message, Messages des groupes
+         branchés. Je ne comprends pas : les notifications passent par les
+         rappels. » La ligne le dit maintenant comme ça : les rappels
+         annoncent AUSSI les messages, et combien de téléphones peuvent les
+         recevoir (rappels allumés, et quelqu'un de connecté dessus). */
+      if(e.messages_branches !== true) non(T("Les rappels n'annoncent pas encore les messages des groupes : Supabase → SQL Editor → recolle notifications/installer.sql → Run."));
       else {
         const n = e.lies | 0;
-        ok(Tf(n === 1 ? "Messages des groupes branchés · {n} téléphone rattaché à un compte" : "Messages des groupes branchés · {n} téléphones rattachés à un compte", { n }));
+        if(!n) att(T("Les rappels annoncent aussi les messages des groupes · aucun téléphone ne peut encore les recevoir : chacun doit rouvrir Yada, connecté, rappels allumés."));
+        else ok(Tf(n === 1 ? "Les rappels annoncent aussi les messages des groupes · {n} téléphone peut les recevoir" : "Les rappels annoncent aussi les messages des groupes · {n} téléphones peuvent les recevoir", { n }));
         lireReponseMessage(e.reponse_message, ok, non);
       }
     }
@@ -26428,7 +26907,8 @@ function renderModeSelect(){
       ${indicateurReseauHtml()}
       <div class="hero-zone" id="heroZone">
         <button class="hero-icon-btn" onclick="heroIconTap()" onpointerdown="heroIconPress(event)" onpointerup="heroIconRelease()" onpointerleave="heroIconRelease()" onpointercancel="heroIconRelease()" aria-label="${NOM_DU_JEU}">
-          <span class="hero-icon-wrap"><img class="hero-icon" src="${DOVE_ICON}" alt="${NOM_DU_JEU}" draggable="false"></span>
+          <span class="hero-icon-wrap"><img class="hero-icon" src="${DOVE_ICON}" alt="${NOM_DU_JEU}" draggable="false"><span class="hero-points" aria-hidden="true"><i></i><i></i><i></i><i></i><i></i></span></span>
+          <span class="hero-doigt" aria-hidden="true"></span>
         </button>
         <button class="hero-verse-card" onclick="hideHeroVerse()" aria-label="${T('Fermer le verset')}">
           <span class="hero-verse-text"></span>
@@ -26565,6 +27045,7 @@ function renderModeSelect(){
      félicitations resteraient coincées. */
   relacherToasts(500);
   setTimeout(annoncerGel, 700);
+  armerDecouverte();
   return el;
 }
 

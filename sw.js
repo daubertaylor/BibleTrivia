@@ -1,6 +1,6 @@
 /* Yada — service worker : rend l'app jouable hors connexion.
    À déposer à côté de index.html (même dossier, nom exact "sw.js"). */
-const CACHE = "yada-v330";
+const CACHE = "yada-v331";
 /* ===== LES BANQUES DE QUESTIONS NE SONT PAS DANS LE SOCLE =====
    questions-en.js y était, et questions-es.js allait l'y rejoindre : six cent
    mille octets téléchargés à l'installation par TOUT LE MONDE, y compris les
@@ -407,7 +407,7 @@ function motsMessage(c, langue){
   if(c.partie) return dire(mots.partie, { de });
   return dire(c.mention ? mots.mention : mots.ligne, { de, texte });
 }
-async function montrerMessage(c, langue){
+async function montrerMessage(c, langue, discret){
   const groupe = String(c.groupe || "");
   const tag = "grp-" + groupe;
   const mots = MOTS_MESSAGE[langue] || MOTS_MESSAGE.fr;
@@ -435,12 +435,14 @@ async function montrerMessage(c, langue){
   }
   if(c.id != null) ids.push(c.id);
   const n = (d0.n | 0) + 1;
-  const sonne = !avant || !(maintenant - sonDernier < RAFALE);
+  /* (v331) « discret » : le jeu est à l'écran, il montre déjà le message —
+     la notification se pose sans sonner. */
+  const sonne = !discret && (!avant || !(maintenant - sonDernier < RAFALE));
   const nom = String(c.nom || "").trim() || "Yada";
   const titre = n > 1 ? mots.titre.replace("{nom}", nom).replace("{n}", String(n)) : nom;
   await self.registration.showNotification(titre, {
     body: motsMessage(c, langue), icon: "./icon-192.png", badge: "./icon-192.png",
-    tag, renotify: sonne, requireInteraction: false,
+    tag, renotify: sonne, requireInteraction: false, silent: !!discret,
     data: { url: "./?discussion=" + encodeURIComponent(groupe), groupe, n, ids, son: sonne ? maintenant : sonDernier },
   });
 }
@@ -462,7 +464,14 @@ self.addEventListener("push", (e) => {
        serveur, qui ne l'envoie qu'aux téléphones qui les ont demandés. */
     if(charge.genre === "message"){
       if(etat && etat.messages === false) return;
-      await montrerMessage(charge, langue);
+      /* (v331) Le jeu est à l'écran sur ce téléphone (un envoi parti juste
+         avant qu'on l'ouvre) : le serveur ne prévient plus un téléphone où
+         le jeu est ouvert, mais si celui-ci arrive quand même, il se pose
+         sans sonner. Ne rien montrer du tout, un iPhone le compterait contre
+         l'abonnement. */
+      let ecran = false;
+      try { ecran = (await clients.matchAll({ type:"window", includeUncontrolled:true })).some((f) => f.visibilityState === "visible"); } catch(x){}
+      await montrerMessage(charge, langue, ecran);
       return;
     }
     /* ===== « ESSAYER CHAQUE RAPPEL » (v327) =====

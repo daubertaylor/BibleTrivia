@@ -12,10 +12,14 @@
         les rappels, UNE fois (la phrase dit les messages) ; « D'accord » :
         la permission, l'abonnement, et le serveur rattache ce téléphone au
         compte de Benoît, messages voulus ; la proposition ne revient pas ;
+        (v331) tant que le jeu est à l'écran, le téléphone le dit au serveur
+        (« ecran », dans son abonnement) ; passé derrière, il dit le
+        contraire aussitôt ; « messages » ne bouge jamais ;
      3. Taylor écrit pendant que Benoît a la discussion ouverte : personne
         n'est prévenu (il l'a lue) ;
-     4. Benoît revenu à la liste : Taylor écrit, le téléphone de Benoît est
-        prévenu — le groupe, son nom, Taylor, le texte ;
+     4. (v331) Benoît dans le jeu, sur la liste : rien ne sonne — le jeu
+        montre déjà le message ; Benoît quitte le jeu : Taylor écrit, son
+        téléphone est prévenu — le groupe, son nom, Taylor, le texte ;
      5. la notification touchée, jeu ouvert à l'accueil : la discussion
         s'ouvre, et la notification du groupe s'en va du téléphone ;
      6. le jeu fermé, ouvert par la notification (./?discussion=…) : il va
@@ -67,7 +71,14 @@ const dit = (quoi, bon, detail) => { console.log('  ' + (bon ? 'OK  ' : 'KO  ') 
       const rep = l.length ? await fn.servir(l[0]) : null;
       return { id: r.data.id, appels: l.length, rep, pourB: fn.envois.filter(x => x.qui === EP_B) };
     };
-    const ligneB = async () => JSON.parse(await m.sql("select coalesce((select to_jsonb(x) from (select membre, messages from public.push_subs where endpoint = " + lit(EP_B) + ") x), 'null'::jsonb)"));
+    const ligneB = async () => JSON.parse(await m.sql("select coalesce((select to_jsonb(x) from (select membre, messages, abonnement->'ecran' as ecran from public.push_subs where endpoint = " + lit(EP_B) + ") x), 'null'::jsonb)"));
+    const attendreLigne = async (f) => { for (let i = 0; i < 30; i++){ const l = await ligneB(); if (f(l)) return l; await new Promise(r => setTimeout(r, 150)); } return null; };
+    /* (v331) Le jeu passe derrière (on change d'app, on verrouille) ou revient. */
+    const cacher = (pg, oui) => pg.evaluate((oui) => {
+      Object.defineProperty(document, 'visibilityState', { configurable: true, get: () => oui ? 'hidden' : 'visible' });
+      Object.defineProperty(document, 'hidden', { configurable: true, get: () => oui });
+      document.dispatchEvent(new Event('visibilitychange'));
+    }, oui);
 
     const telephone = async (suite, regles) => {
       const ctx = await nav.newContext({ viewport: { width: 412, height: 915 }, deviceScaleFactor: 2.625, isMobile: true, hasTouch: true, userAgent: AND, serviceWorkers: 'block' });
@@ -136,7 +147,12 @@ const dit = (quoi, bon, detail) => { console.log('  ' + (bon ? 'OK  ' : 'KO  ') 
     await attendre(p, () => settings.notif === true, null, 6000);
     await p.waitForTimeout(1200);
     const l2 = await ligneB();
-    dit('   « D\'accord » : le serveur rattache ce téléphone au compte de Benoît, messages voulus', !!l2 && l2.membre === B && l2.messages === true, JSON.stringify(l2));
+    dit('   « D\'accord » : le serveur rattache ce téléphone au compte de Benoît, messages voulus, jeu à l\'écran', !!l2 && l2.membre === B && l2.messages === true && l2.ecran === true, JSON.stringify(l2));
+    await cacher(p, true);
+    const l2b = await attendreLigne((l) => l && l.ecran === false && l.messages === true);
+    await cacher(p, false);
+    const l2c = await attendreLigne((l) => l && l.ecran === true && l.messages === true);
+    dit('   (v331) le jeu passe derrière : le téléphone le dit aussitôt ; il revient : « à l\'écran » — les messages restent voulus', !!l2b && !!l2c, JSON.stringify(l2b) + ' → ' + JSON.stringify(l2c));
     await p.evaluate((id) => ouvrirGroupe(id), g.id);
     await attendre(p, () => state.screen === 'groupe', null, 6000);
     await m.sql("update public.messages set cree_le = cree_le - interval '10 seconds'");
@@ -157,10 +173,15 @@ const dit = (quoi, bon, detail) => { console.log('  ' + (bon ? 'OK  ' : 'KO  ') 
     /* ===== 4 ===== */
     await p.evaluate(() => retourGroupes());
     await p.waitForTimeout(700);
+    t = await taylorEcrit('Tu nous rejoins ?');
+    dit('4. Benoît dans le jeu, sur la liste : rien ne sonne (le jeu montre déjà le message)', t.appels === 1 && !t.pourB.length && t.rep && t.rep.c.presents === 1, JSON.stringify(t.rep && t.rep.c));
+    await cacher(p, true);
+    await attendreLigne((l) => l && l.ecran === false);
     t = await taylorEcrit('On joue ce soir ?');
     const c4 = t.pourB[0] && t.pourB[0].charge;
-    dit('4. Benoît revenu à la liste : son téléphone est prévenu', t.pourB.length === 1 && c4.genre === 'message' && c4.groupe === g.id && c4.nom === 'Les amis' && c4.de === 'Taylor' && c4.texte === 'On joue ce soir ?',
+    dit('   Benoît quitte le jeu : son téléphone est prévenu', t.pourB.length === 1 && c4.genre === 'message' && c4.groupe === g.id && c4.nom === 'Les amis' && c4.de === 'Taylor' && c4.texte === 'On joue ce soir ?',
       JSON.stringify(c4));
+    await cacher(p, false);
 
     /* ===== 5 ===== */
     await p.evaluate(() => allerOnglet('accueil'));
