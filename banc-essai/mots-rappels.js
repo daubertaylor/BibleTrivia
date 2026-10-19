@@ -100,9 +100,15 @@ const swConnus = (src.match(/const CONNUS = \[([^\]]+)\]/) || [,''])[1]
   .split(',').map(x=>x.trim().replace(/"/g,'')).filter(Boolean).sort();
 dire(JSON.stringify(serveur) === JSON.stringify(swConnus),
   'motifs : le serveur envoie ' + JSON.stringify(serveur) + ', l\'appareil connaît ' + JSON.stringify(swConnus));
-/* Et chaque motif du serveur a bien des mots, dans chaque langue. */
+/* Et chaque motif du serveur a bien des mots, dans chaque langue. (v329) Les
+   messages des groupes ont les leurs (MOTS_MESSAGE) : pas des formulations
+   qui tournent, une ligne de messagerie — banc-essai/sw-messages.js les rend. */
+const MOTS_MESSAGE = new Function(morceau('const MOTS_MESSAGE = {', '\n};\n') + '\nreturn MOTS_MESSAGE;')();
 for(const g of serveur) for(const lg of LANGUES)
-  dire(!!MOTS_LANGUE[lg][g], 'motif « ' + g +' » envoyé par le serveur mais sans formulation en ' + lg + ' dans sw.js');
+  dire(g === 'message'
+         ? !!MOTS_MESSAGE[lg] && ['ligne', 'partie', 'mention', 'titre', 'quelquun'].every(k => typeof MOTS_MESSAGE[lg][k] === 'string' && MOTS_MESSAGE[lg][k].length > 3)
+         : !!MOTS_LANGUE[lg][g],
+       'motif « ' + g +' » envoyé par le serveur mais sans formulation en ' + lg + ' dans sw.js');
 console.log('  motifs : ' + serveur.join(', ') + ' — serveur et appareil d\'accord');
 
 /* 5. LES VERSETS SONT CEUX DU JEU, AU MOT PRÈS. Deux copies d'un même texte

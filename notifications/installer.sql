@@ -1,5 +1,5 @@
 -- ============================================================================
---  LES RAPPELS — TOUT LE SERVEUR, EN UN SEUL COLLAGE (v326)
+--  LES RAPPELS — TOUT LE SERVEUR, EN UN SEUL COLLAGE (v326, messages v329)
 -- ============================================================================
 --  Supabase → SQL Editor → New query → colle ce fichier EN ENTIER → Run.
 --  Une fois suffit ; il se recolle sans risque, autant de fois qu'on veut, par-
@@ -14,7 +14,12 @@
 --       tâche des cinq minutes qui appelle la fonction « rappels » avec elle :
 --       plus aucune clé « service_role » à recopier nulle part ;
 --    D. il pose rappels_etat(), que le jeu interroge pour dire, depuis le
---       téléphone, ce qui marche et ce qui manque (Modération → Rappels).
+--       téléphone, ce qui marche et ce qui manque (Modération → Rappels) ;
+--    E. (v329) les MESSAGES DES GROUPES : chaque téléphone sait à quel compte
+--       il appartient, et un message posté dans un groupe prévient ceux qui
+--       ne l'ont pas encore lu — selon ce que chacun a choisi pour ce groupe
+--       (Tout, Mentions, Muet). Rien de cette partie n'empêche jamais un
+--       message de partir.
 --
 --  CE QUI RESTE À FAIRE DANS SUPABASE, UNE FOIS :
 --    Edge Functions → « rappels » → remplacer son code par
@@ -79,7 +84,18 @@ alter table public.push_subs enable row level security;
 --    v326 ne les envoie pas, et ne doit rien éteindre). L'ancienne signature
 --    est retirée d'abord : deux fonctions du même nom rendraient l'appel
 --    ambigu.
+--    (v329) Et le COMPTE : la fonction note qui est connecté sur ce téléphone
+--    (auth.uid(), nul si personne) — c'est à lui qu'iront les messages de ses
+--    groupes ; et s'il veut les recevoir (p_messages ; absent = on n'y touche
+--    pas). Un jeu d'avant la v329 n'envoie pas p_messages : sa ligne reste à
+--    « messages » vide, et la fonction ne lui écrit AUCUN message — son
+--    service worker ne saurait pas les montrer. Seul un « oui » posé par un
+--    jeu qui les connaît les ouvre.
+alter table public.push_subs add column if not exists membre   uuid;
+alter table public.push_subs add column if not exists messages boolean;
+create index if not exists push_subs_membre on public.push_subs (membre);
 drop function if exists public.push_enregistrer(text, jsonb, date, int, date, int, int);
+drop function if exists public.push_enregistrer(text, jsonb, date, int, date, int, int, boolean, int, int);
 create or replace function public.push_enregistrer(
   p_endpoint   text,
   p_abonnement jsonb   default null,
@@ -90,7 +106,8 @@ create or replace function public.push_enregistrer(
   p_decalage   int     default 0,
   p_jeu        boolean default null,
   p_priere     int     default null,
-  p_lecture    int     default null
+  p_lecture    int     default null,
+  p_messages   boolean default null
 ) returns void
 language plpgsql security definer set search_path = public as $$
 declare
@@ -106,12 +123,16 @@ begin
     raise exception 'adresse d''envoi invalide';
   end if;
   insert into public.push_subs (endpoint, abonnement, dernier, serie, vu, revoir, decalage, maj,
-                                jeu, priere, lecture, priere_le, lecture_le)
+                                jeu, priere, lecture, priere_le, lecture_le, membre, messages)
   values (p_endpoint, coalesce(p_abonnement, '{}'::jsonb), p_dernier,
           coalesce(p_serie, 0), p_vu, coalesce(p_revoir, 0), coalesce(p_decalage, 0), now(),
           coalesce(p_jeu, true), pr, le,
-          case when pr <= mn then jour end, case when le <= mn then jour end)
+          case when pr <= mn then jour end, case when le <= mn then jour end,
+          auth.uid(), p_messages)
   on conflict (endpoint) do update set
+    -- le compte connecté MAINTENANT sur ce téléphone (personne : plus aucun)
+    membre     = auth.uid(),
+    messages   = coalesce(p_messages, public.push_subs.messages),
     -- un appel qui ne porte pas l'abonnement ne l'efface pas
     abonnement = case when p_abonnement is null then public.push_subs.abonnement else p_abonnement end,
     dernier    = p_dernier,
@@ -139,9 +160,9 @@ language sql security definer set search_path = public as $$
 $$;
 
 -- 5. Ces deux portes-là, et rien d'autre.
-revoke all on function public.push_enregistrer(text, jsonb, date, int, date, int, int, boolean, int, int) from public;
+revoke all on function public.push_enregistrer(text, jsonb, date, int, date, int, int, boolean, int, int, boolean) from public;
 revoke all on function public.push_oublier(text) from public;
-grant execute on function public.push_enregistrer(text, jsonb, date, int, date, int, int, boolean, int, int) to anon, authenticated;
+grant execute on function public.push_enregistrer(text, jsonb, date, int, date, int, int, boolean, int, int, boolean) to anon, authenticated;
 grant execute on function public.push_oublier(text) to anon, authenticated;
 
 -- ============================================================================
@@ -222,14 +243,18 @@ create or replace function public.rappels_etat(p_endpoint text default null)
 returns jsonb
 language plpgsql security definer set search_path = public as $$
 declare
-  r jsonb := jsonb_build_object('version', 326);
+  r jsonb := jsonb_build_object('version', 329);
   t jsonb;
 begin
   r := r || jsonb_build_object(
     'abonnes', (select count(*) from public.push_subs),
     'inscrit', case when p_endpoint is null then null
                     else exists (select 1 from public.push_subs where endpoint = p_endpoint) end,
-    'cle_interne', exists (select 1 from public.rappels_reglage));
+    'cle_interne', exists (select 1 from public.rappels_reglage),
+    -- (v329) les téléphones rattachés à un compte : ceux que les messages
+    -- des groupes peuvent prévenir
+    'lies', (select count(*) from public.push_subs where membre is not null),
+    'messages_branches', exists (select 1 from pg_trigger where tgname = 'messages_a_prevenir'));
   -- Chaque lecture dans son propre filet : un droit qui manque sur le schéma
   -- de pg_cron ou de pg_net ne doit pas faire tomber tout le diagnostic.
   r := r || jsonb_build_object('cron', to_regclass('cron.job') is not null,
@@ -255,10 +280,20 @@ begin
   end if;
   if to_regclass('net._http_response') is not null then
     begin
+      -- La dernière réponse de la TÂCHE : celles des messages (v329, « sorte »
+      -- message) parlent d'autre chose, on les lit à part.
       execute $q$select to_jsonb(x) from (
                    select status_code, left(content, 400) as contenu, error_msg, created
-                     from net._http_response order by created desc limit 1) x$q$ into t;
+                     from net._http_response
+                    where coalesce(content, '') not like '%"sorte":"message"%'
+                    order by created desc limit 1) x$q$ into t;
       r := r || jsonb_build_object('reponse', t);
+      execute $q$select to_jsonb(x) from (
+                   select status_code, left(content, 300) as contenu, error_msg, created
+                     from net._http_response
+                    where coalesce(content, '') like '%"sorte":"message"%'
+                    order by created desc limit 1) x$q$ into t;
+      r := r || jsonb_build_object('reponse_message', t);
     exception when others then
       r := r || jsonb_build_object('reponse', jsonb_build_object('erreur', sqlerrm));
     end;
@@ -267,3 +302,47 @@ begin
 end; $$;
 revoke all on function public.rappels_etat(text) from public;
 grant execute on function public.rappels_etat(text) to anon, authenticated;
+
+-- ============================================================================
+--  E. LES MESSAGES DES GROUPES (v329)
+-- ============================================================================
+--  « Je veux aussi que tu fasses les notifications des messages. » Un message
+--  posté dans un groupe (un texte, ou une partie lancée — jamais une ligne du
+--  jeu comme « X a rejoint ») appelle la fonction « rappels » avec la clé
+--  interne. C'est ELLE qui décide qui prévenir : les membres qui ne l'ont pas
+--  encore lu, selon Tout / Mentions / Muet, sauf l'auteur et ceux qui l'ont
+--  bloqué. L'appel part de pg_net, en arrière-plan : le message est déjà posé,
+--  et RIEN ici ne peut le faire échouer — sans pg_net, sans clé, sur une
+--  panne, on se tait.
+create or replace function public._messages_a_prevenir() returns trigger
+language plpgsql security definer set search_path = public as $$
+begin
+  if new.genre in ('texte', 'partie') and to_regnamespace('net') is not null then
+    begin
+      perform net.http_post(
+        url     := 'https://chyuckryusxzssezesuw.supabase.co/functions/v1/rappels',
+        headers := jsonb_build_object('Content-Type', 'application/json',
+                                      'x-rappels', (select cle from public.rappels_reglage where id = 1)),
+        body    := jsonb_build_object('message', new.id),
+        timeout_milliseconds := 25000);
+    exception when others then
+      null;   -- une notification ne vaut pas un message perdu
+    end;
+  end if;
+  return new;
+end $$;
+revoke all on function public._messages_a_prevenir() from public, anon, authenticated;
+do $$
+begin
+  if to_regclass('public.messages') is null then
+    raise notice 'pas encore de groupes (public.messages) : colle groupes/table.sql, puis recolle ce fichier';
+    return;
+  end if;
+  drop trigger if exists messages_a_prevenir on public.messages;
+  create trigger messages_a_prevenir after insert on public.messages
+    for each row execute function public._messages_a_prevenir();
+end $$;
+
+-- Et PostgREST relit les fonctions tout de suite (la nouvelle signature de
+-- push_enregistrer) : sans cela, il peut garder l'ancienne quelques minutes.
+notify pgrst, 'reload schema';

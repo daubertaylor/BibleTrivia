@@ -469,7 +469,12 @@
      celui-ci ne visitait que des écrans au repos. Ce qui reste est un halo
      FLOU — aucune arête à voir, et il tire quand même le rouge du décor de
      +35 unités sous le champ actif : ça se voit, et ce n'est pas un bord. */
-  .text-input:focus, .code-input:focus{ box-shadow:0 0 14px 3px rgba(238,74,40,0.62); }
+  /* (v329) PLUS DE HALO DU TOUT. « Le petit halo rose autour de la barre
+     d'écriture : le retirer fluidifierait le jeu, et ça resterait plus
+     minimaliste. » Juste : le curseur qui clignote dit déjà où l'on écrit,
+     comme dans toutes les applications du téléphone. Le champ actif devient
+     seulement un peu plus blanc — sans couleur, sans animation. */
+  .text-input:focus, .code-input:focus{ box-shadow:none; background-color:rgba(255,255,255,0.9); }
 
   #app{ position:relative; z-index:1; width:100%; max-width:430px; margin:0 auto; height:100%; overflow-y:auto; overflow-x:hidden; overscroll-behavior:none; display:flex; flex-direction:column; padding:calc(env(safe-area-inset-top) + 0.35rem) calc(env(safe-area-inset-right) + 0.7rem) max(calc(env(safe-area-inset-bottom) + 0.35rem), var(--air-bas)) calc(env(safe-area-inset-left) + 0.7rem); }
   /* GRANDS ÉCRANS (tablette, iPad, PC) : l'app GRANDIT pour exploiter l'espace
@@ -902,7 +907,7 @@
      ligne, aux coins différents, qui n'apparaissait qu'au moment de taper :
      on voyait naître une boîte dans une boîte. La ligne, elle, est déjà là ;
      elle s'éclaire, elle se pose un peu plus haut, et c'est tout. */
-  .team-row:focus-within{ background:rgb(255,253,249); box-shadow:var(--rebord-pose), 0 0 12px 2px rgba(238,74,40,0.45); }
+  .team-row:focus-within{ background:rgb(255,253,249); box-shadow:var(--rebord-pose); }
   .team-row input:focus{ background:transparent; }
   /* L'ONDE D'APPUI A LA FORME DU BOUTON — ET CELUI-CI N'EN AVAIT AUCUNE.
      La croix de retrait était le seul bouton du jeu sans arrondi : l'onde
@@ -5386,6 +5391,10 @@
      prennent l'arrondi de la carte. Rien n'a bougé d'un pixel au repos. */
   .grp-carte{ padding:0; }
   .grp-carte .grp-ligne{ padding:0.6rem 0.95rem; border-radius:var(--r-m); }
+  /* (v329) « Mes groupes : espace-les légèrement, pour pas que ça fasse
+     pavé. » Les lignes des deux listes de groupes respirent : un peu plus de
+     hauteur chacune, sans séparateur (jamais de trait). */
+  #grpMes > .grp-ligne, #grpPublics > .grp-ligne{ padding-top:0.82rem; padding-bottom:0.82rem; }
   #grpMes > .grp-ligne:first-child{ padding-top:0.95rem; border-top-left-radius:var(--r-l); border-top-right-radius:var(--r-l); }
   .grp-carte .grp-ligne:last-child{ padding-bottom:0.95rem; border-bottom-left-radius:var(--r-l); border-bottom-right-radius:var(--r-l); }
   .grp-carte .grp-vide{ padding:1.1rem 1.15rem 1.45rem; }
@@ -5498,6 +5507,12 @@
   .grp-feuille-corps > .text-input{ margin:0; }
   .grp-aide{ margin:0; font-size:0.84rem; line-height:1.45; color:var(--ink-soft); }
   .grp-desc{ margin:0; font-size:0.9rem; line-height:1.45; color:var(--ink); }
+  /* (v329) La carte de la description : celle du code d'invitation, avec
+     le texte seul, centré, entier — sans titre : « pas besoin du mot
+     Description, simple et efficace ». */
+  .grp-desc-carte{ display:flex; flex-direction:column; align-items:center; padding:0.9rem 1.1rem; border-radius:var(--r-l);
+    background:rgb(252,248,241); box-shadow:0 3px 12px rgba(34,26,16,0.08); }
+  .grp-desc-carte .grp-desc{ text-align:center; font-size:0.95rem; white-space:pre-line; overflow-wrap:anywhere; }
   .grp-types{ display:grid; grid-template-columns:1fr 1fr; gap:0.6rem; }
   /* LA PHOTO DU GROUPE, À CÔTÉ DU NOM ET DE LA DESCRIPTION. Les deux champs
      prennent une hauteur fixe, et la pastille exactement la leur plus l'écart :
@@ -5506,6 +5521,11 @@
   .grp-ident{ display:flex; gap:0.6rem; align-items:flex-start; }
   .grp-ident-ch{ flex:1; min-width:0; display:flex; flex-direction:column; gap:0.6rem; }
   .grp-ident-ch > .text-input{ margin:0; height:2.9rem; }
+  /* (v329) La description va à la ligne et grandit (voir ajusterDescription).
+     Une ligne : 1,25 × la police + le rembourrage tient sous 2,9 rem, que le
+     minimum complète — la hauteur exacte du nom. */
+  .grp-desc-ch{ display:block; min-height:2.9rem; resize:none; overflow:hidden; line-height:1.25; }
+  .grp-ident-ch > .grp-desc-ch{ height:auto; }
   .grp-photo-b{ position:relative; flex-shrink:0; width:6.4rem; height:6.4rem; border:0; padding:0; background:none;
     border-radius:var(--r-l); -webkit-tap-highlight-color:transparent; }
   .grp-photo-b .grp-av{ width:100%; height:100%; border-radius:var(--r-l); font-size:2.3rem; }
@@ -5703,6 +5723,14 @@
   .b-bulle{ min-height:44px; }
   span.b-bulle{ display:inline-flex; align-items:center; }
   .b-moi .b-bulle{ background:var(--primary); color:#fff; box-shadow:0 1px 2px rgba(120,30,14,0.16), 0 4px 12px rgba(214,60,34,0.22); }
+  /* (v329) Une bulle qui arrive : quelques pixels de montée en se posant,
+     depuis son coin (le bas à droite pour les miennes, à gauche pour les
+     autres). Un quart de seconde, une seule fois. */
+  .b-arrive{ animation:bArrive 0.26s cubic-bezier(0.2,0.85,0.3,1) both; }
+  .b-moi .b-arrive{ transform-origin:100% 100%; }
+  .b-eux .b-arrive{ transform-origin:0 100%; }
+  @keyframes bArrive{ from{ opacity:0; transform:translateY(0.5rem) scale(0.96); } to{ opacity:1; transform:none; } }
+  @media (prefers-reduced-motion: reduce){ .b-arrive{ animation:none; } }
   /* La couleur du groupe (voir BULLES_GROUPE) ; le corail reste le repli. */
   .groupe-ecran .b-moi .b-bulle:not(.b-partie):not(.b-vide){ background:var(--grp-c, var(--primary)); color:var(--grp-txt, #fff);
     box-shadow:0 1px 2px rgba(var(--grp-rgb, 214,60,34),0.18), 0 4px 12px rgba(var(--grp-rgb, 214,60,34),0.24); }
@@ -5710,7 +5738,10 @@
     box-shadow:0 1px 2px rgba(var(--grp-rgb, 214,60,34),0.18), 0 4px 12px rgba(var(--grp-rgb, 214,60,34),0.3); }
   .groupe-ecran .compo-jeu, .groupe-ecran .b-partie .bp-ico{ color:var(--grp-fonce, var(--primary)); }
   .groupe-ecran .b-partie .grp-pill:not(.calme){ background:var(--grp-c, var(--primary)); color:var(--grp-txt, #fff); }
-  .b-bulle.envoi{ opacity:0.62; }
+  /* (v329) Une bulle en route n'est plus pâlie : « Envoi… » le dit dessous,
+     comme l'horloge de WhatsApp. Pâlie, elle arrivait pleine, retombait à
+     62 % quand le réseau tardait, puis remontait à la confirmation. (Un
+     envoi refusé, lui, retire la bulle et rend le texte à la barre.) */
   /* LES MENTIONS (v317). Le nom nommé en gras, dans la couleur du groupe sur
      le crème, dans celle du texte sur ma propre bulle. Une bulle qui me nomme
      prend un fond doré — un fond, jamais un trait. */
@@ -5736,6 +5767,22 @@
   .cn-nom.off .cn-ico{ background:rgba(58,42,26,0.15); color:var(--ink-soft); }
   .cn-nom .cn-ico svg{ width:100%; height:100%; }
   .b-heure{ font-size:0.72rem; color:var(--ink-soft); margin:0.05rem 0.85rem 0.35rem; }
+  /* ===== (v329) VU, COMME SUR WHATSAPP =====
+     « Un petit détail, comme sur WhatsApp, pour que les gens voient qui a vu
+       les messages. » Sous MES messages, à côté de l'heure : une coche quand
+     le serveur l'a reçu, deux coches quand quelqu'un l'a vu, deux coches à la
+     couleur du groupe quand TOUT le groupe l'a vu. Toucher son message dit
+     qui (« Vu par », « Pas encore vu »). Une icône, jamais un contour. */
+  .b-moi .b-heure{ display:inline-flex; align-items:center; gap:0.22rem; }
+  .b-vu{ display:inline-flex; width:1.05rem; height:0.82rem; color:var(--ink-soft); opacity:0.75; transition:color 0.3s ease, opacity 0.3s ease; }
+  .b-vu svg{ width:100%; height:100%; }
+  .b-vu.tous{ color:var(--grp-fonce, var(--primary)); opacity:1; }
+  .grp-vus{ display:flex; flex-direction:column; margin:0.1rem 0 0.35rem; }
+  .grp-vus .gv-h{ font-family:'Poppins',sans-serif; font-size:0.74rem; font-weight:700; letter-spacing:0.06em; text-transform:uppercase; color:var(--ink-soft); margin:0.35rem 0.6rem 0.25rem; }
+  .grp-vus .gv-l{ display:flex; align-items:center; gap:0.6rem; padding:0.32rem 0.6rem; }
+  .grp-vus .gv-l b{ flex:1; min-width:0; font-family:'Poppins',sans-serif; font-weight:600; font-size:0.95rem; color:var(--ink); white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+  .grp-vus .gv-l.pas b{ color:var(--ink-soft); font-weight:500; }
+  .grp-vus .gv-rien{ font-size:0.88rem; color:var(--ink-soft); margin:0.15rem 0.6rem 0.3rem; }
   .b-vide{ font-style:italic; color:var(--ink-soft) !important; background:rgba(252,248,241,0.6) !important; box-shadow:none !important; }
   .b-partie{ display:flex; flex-direction:column; align-items:flex-start; gap:0.45rem; padding:0.85rem 0.9rem 0.95rem; }
   .b-partie .bp-ico{ width:1.6rem; height:1.6rem; color:var(--primary); display:inline-flex; }
@@ -5806,6 +5853,7 @@
      des portes qu'on doit pouvoir trouver, pas des invitations. Discrets à
      l'œil, pas au doigt : 44 px de haut en pixels, pas en rem — sur un petit
      écran la racine descend à 14,6 px, et 2,75rem n'y ferait plus que 40. */
+  .compte-supprimer:active, .lien-conf:active, .grp-lien:active{ opacity:0.55; }
   .compte-supprimer, .lien-conf{ align-self:center; border:0; background:none; color:var(--ink-soft); font-size:0.78rem; font-weight:600;
     text-decoration:underline; text-underline-offset:3px; padding:0.55rem 0.8rem; min-height:44px;
     border-radius:var(--r-full); }   /* l'onde d'appui en prend la forme : sans arrondi, elle était carrée */
@@ -5966,7 +6014,7 @@
   .sheet-veil.page :is(.regles, .conf-liste){ padding:0.95rem 1rem; }
   .sheet-veil.page .mc-qui{ padding:1rem; }
   .sheet-veil.page .flam-tete{ padding:0.9rem 1rem; }
-  .sheet-veil.page .grp-code-carte{ background:var(--page-carte); box-shadow:var(--ombre-pose); }
+  .sheet-veil.page .grp-code-carte, .sheet-veil.page .grp-desc-carte{ background:var(--page-carte); box-shadow:var(--ombre-pose); }
   /* LA FLAMME, MOIS PAR MOIS : une carte blanche par mois, le titre et le
      compte au-dessus, les sept colonnes dessous. Les cases sans flamme
      portent leur numéro. */
@@ -6393,7 +6441,7 @@ const TEXTES = {
     "Le service d'envoi refuse la signature (403) : les secrets VAPID ne vont pas avec la clé publique du jeu.":"The push service refuses the signature (403): the VAPID secrets don't match the game's public key.",
     "Le service d'envoi a refusé (code {code}) : {raison}":"The push service refused (code {code}): {raison}",
     "Bloquées dans les réglages du téléphone":"Blocked in the phone settings",
-    "Ta série sur le point de s'éteindre, tes erreurs à revoir, un verset le dimanche, et un mot si tu t'absentes. Au plus UN rappel par jour, et jamais si tu as déjà joué.":"Your streak about to go out, your mistakes to review, a verse on Sunday, and a word if you stay away. At most ONE reminder a day, and never if you have already played.",
+    "Les messages de tes groupes. Et pour le jeu, au plus UN rappel par jour, jamais si tu as déjà joué : ta série sur le point de s'éteindre, tes erreurs à revoir, un verset le dimanche, un mot si tu t'absentes.":"Messages from your groups. And for the game, at most ONE reminder a day, never if you have already played: your streak about to go out, your mistakes to review, a verse on Sunday, a word if you stay away.",
     "Impossible d'activer le rappel pour le moment.":"Cannot turn the reminder on right now.",
     /* le partage */
     "Partager le résultat":"Share the result",
@@ -6496,16 +6544,6 @@ const TEXTES = {
     "D'accord":"Yes, please",
     "Non merci":"No thanks",
     "Installer":"Install",
-    "{jeu} est installé : ouvre-le depuis ton écran d'accueil.":"{jeu} is installed: open it from your home screen.",
-    "Samsung Internet installe {jeu} avec un avertissement d'Android. Chrome l'installe sans : {jeu} s'ouvre dans Chrome, tu n'as plus qu'à toucher « Installer ».":"Samsung Internet installs {jeu} with an Android warning. Chrome installs it without one: {jeu} opens in Chrome, then just tap “Install”.",
-    "Ouvrir dans Chrome":"Open in Chrome",
-    "Installer {jeu}":"Install {jeu}",
-    "Plus tard":"Later",
-    "Les trois traits, en bas":"The three lines, at the bottom",
-    "« Ajouter la page à »":"“Add page to”",
-    "Puis « Écran d'accueil »":"Then “Home screen”",
-    "Si Android avertit":"If Android shows a warning",
-    "Touche « Installer quand même »":"Tap “Install anyway”",
     "Retirer 10 points":"Remove 10 points",
     "Ajouter 10 points":"Add 10 points",
     "★ Nouveau record personnel\u00a0!":"★ New personal best!",
@@ -6730,6 +6768,27 @@ const TEXTES = {
     "Tous les groupes":"All groups",
     "Voir le groupe":"View group",
     "Aucun groupe pour l'instant.":"No groups yet.",
+    "Vu par tout le monde":"Seen by everyone",
+    "Vu par certains":"Seen by some",
+    "Envoyé":"Sent",
+    "Vu par":"Seen by",
+    "Pas encore vu":"Not seen yet",
+    "Personne ne l'a encore vu.":"Nobody has seen it yet.",
+    "Céder le groupe":"Hand over the group",
+    "{nom} est maintenant propriétaire du groupe.":"{nom} now owns the group.",
+    "{nom} est maintenant propriétaire du groupe":"{nom} now owns the group",
+    "Céder le groupe à {nom} ?":"Hand the group over to {nom}?",
+    "{nom} en devient propriétaire, et tu en restes admin.":"{nom} becomes its owner, and you stay an admin.",
+    "Céder":"Hand over",
+    "Ta session s'est fermée. Reconnecte-toi : ta progression est intacte.":"Your session has closed. Sign in again: your progress is safe.",
+    "Les messages des groupes ne préviennent encore personne : Supabase → SQL Editor → recolle notifications/installer.sql → Run.":"Group messages don't notify anyone yet: Supabase → SQL Editor → paste notifications/installer.sql again → Run.",
+    "Messages des groupes branchés · {n} téléphone rattaché à un compte":"Group messages connected · {n} phone linked to an account",
+    "Messages des groupes branchés · {n} téléphones rattachés à un compte":"Group messages connected · {n} phones linked to an account",
+    "La fonction en ligne ne sait pas encore prévenir des messages : sa mise à jour part toute seule de GitHub.":"The online function can't send message notifications yet: its update goes out from GitHub on its own.",
+    "Le dernier message n'a pas pu joindre la fonction : {m}":"The last message couldn't reach the function: {m}",
+    "Dernier message ({quand}) : personne à prévenir.":"Last message ({quand}): nobody to notify.",
+    "Dernier message ({quand}) : 1 téléphone prévenu.":"Last message ({quand}): 1 phone notified.",
+    "Dernier message ({quand}) : {n} téléphones prévenus.":"Last message ({quand}): {n} phones notified.",
     "La liste des groupes ne se lit pas : {m}":"The group list can't be read: {m}",
     "pas de réseau":"no network",
     "Ce groupe n'existe plus.":"This group no longer exists.",
@@ -7124,7 +7183,7 @@ const TEXTES = {
     "Le service d'envoi refuse la signature (403) : les secrets VAPID ne vont pas avec la clé publique du jeu.":"El servicio de envío rechaza la firma (403): los secretos VAPID no coinciden con la clave pública del juego.",
     "Le service d'envoi a refusé (code {code}) : {raison}":"El servicio de envío rechazó (código {code}): {raison}",
     "Bloquées dans les réglages du téléphone":"Bloqueados en los ajustes del teléfono",
-    "Ta série sur le point de s'éteindre, tes erreurs à revoir, un verset le dimanche, et un mot si tu t'absentes. Au plus UN rappel par jour, et jamais si tu as déjà joué.":"Tu racha a punto de apagarse, tus errores por repasar, un versículo el domingo, y un mensaje si te ausentas. Como máximo UN recordatorio al día, y nunca si ya jugaste.",
+    "Les messages de tes groupes. Et pour le jeu, au plus UN rappel par jour, jamais si tu as déjà joué : ta série sur le point de s'éteindre, tes erreurs à revoir, un verset le dimanche, un mot si tu t'absentes.":"Los mensajes de tus grupos. Y para el juego, como máximo UN recordatorio al día, nunca si ya jugaste: tu racha a punto de apagarse, tus errores por repasar, un versículo el domingo, un mensaje si te ausentas.",
     "Impossible d'activer le rappel pour le moment.":"No se puede activar el recordatorio ahora mismo.",
     "Partager le résultat":"Compartir el resultado",
     "Lien copié\u00a0!":"¡Enlace copiado!",
@@ -7223,16 +7282,6 @@ const TEXTES = {
     "D'accord":"Sí, claro",
     "Non merci":"No, gracias",
     "Installer":"Instalar",
-    "{jeu} est installé : ouvre-le depuis ton écran d'accueil.":"{jeu} está instalado: ábrelo desde tu pantalla de inicio.",
-    "Samsung Internet installe {jeu} avec un avertissement d'Android. Chrome l'installe sans : {jeu} s'ouvre dans Chrome, tu n'as plus qu'à toucher « Installer ».":"Samsung Internet instala {jeu} con un aviso de Android. Chrome lo instala sin aviso: {jeu} se abre en Chrome y solo tienes que tocar “Instalar”.",
-    "Ouvrir dans Chrome":"Abrir en Chrome",
-    "Installer {jeu}":"Instalar {jeu}",
-    "Plus tard":"Más tarde",
-    "Les trois traits, en bas":"Las tres rayas, abajo",
-    "« Ajouter la page à »":"“Añadir página a”",
-    "Puis « Écran d'accueil »":"Luego “Pantalla de inicio”",
-    "Si Android avertit":"Si Android muestra un aviso",
-    "Touche « Installer quand même »":"Toca “Instalar de todos modos”",
     "Retirer 10 points":"Quitar 10 puntos",
     "Ajouter 10 points":"Añadir 10 puntos",
     "★ Nouveau record personnel\u00a0!":"★ ¡Nuevo récord personal!",
@@ -7465,6 +7514,27 @@ const TEXTES = {
     "Tous les groupes":"Todos los grupos",
     "Voir le groupe":"Ver el grupo",
     "Aucun groupe pour l'instant.":"Todavía no hay grupos.",
+    "Vu par tout le monde":"Visto por todos",
+    "Vu par certains":"Visto por algunos",
+    "Envoyé":"Enviado",
+    "Vu par":"Visto por",
+    "Pas encore vu":"Aún no visto",
+    "Personne ne l'a encore vu.":"Nadie lo ha visto todavía.",
+    "Céder le groupe":"Ceder el grupo",
+    "{nom} est maintenant propriétaire du groupe.":"El grupo es ahora de {nom}.",
+    "{nom} est maintenant propriétaire du groupe":"El grupo es ahora de {nom}",
+    "Céder le groupe à {nom} ?":"¿Ceder el grupo a {nom}?",
+    "{nom} en devient propriétaire, et tu en restes admin.":"El grupo pasa a ser de {nom}, y tú sigues como admin.",
+    "Céder":"Ceder",
+    "Ta session s'est fermée. Reconnecte-toi : ta progression est intacte.":"Tu sesión se ha cerrado. Vuelve a iniciar sesión: tu progreso está intacto.",
+    "Les messages des groupes ne préviennent encore personne : Supabase → SQL Editor → recolle notifications/installer.sql → Run.":"Los mensajes de los grupos aún no avisan a nadie: Supabase → SQL Editor → vuelve a pegar notifications/installer.sql → Run.",
+    "Messages des groupes branchés · {n} téléphone rattaché à un compte":"Mensajes de los grupos conectados · {n} teléfono vinculado a una cuenta",
+    "Messages des groupes branchés · {n} téléphones rattachés à un compte":"Mensajes de los grupos conectados · {n} teléfonos vinculados a una cuenta",
+    "La fonction en ligne ne sait pas encore prévenir des messages : sa mise à jour part toute seule de GitHub.":"La función en línea aún no sabe avisar de los mensajes: su actualización sale sola desde GitHub.",
+    "Le dernier message n'a pas pu joindre la fonction : {m}":"El último mensaje no pudo llegar a la función: {m}",
+    "Dernier message ({quand}) : personne à prévenir.":"Último mensaje ({quand}): nadie a quien avisar.",
+    "Dernier message ({quand}) : 1 téléphone prévenu.":"Último mensaje ({quand}): 1 teléfono avisado.",
+    "Dernier message ({quand}) : {n} téléphones prévenus.":"Último mensaje ({quand}): {n} teléfonos avisados.",
     "La liste des groupes ne se lit pas : {m}":"La lista de grupos no se puede leer: {m}",
     "pas de réseau":"sin red",
     "Ce groupe n'existe plus.":"Este grupo ya no existe.",
@@ -7788,9 +7858,17 @@ function ondeRanger(){
   setTimeout(()=>{ b.removeEventListener("animationend", partie); b.classList.remove("onde-part"); rendreLaTeinte(); }, 900);
   ondeCourante = null; ondePleine = false; ondeTenue = false;
 }
+/* (v329) LES LIENS TEXTE N'ONT PAS D'ONDE. « Le petit halo rose sur le texte
+   — Confidentialité, Les règles de la communauté — ça fait pas propre du
+   tout. » C'était l'onde d'appui, une pastille corail sous un mot souligné :
+   et quand le lien ouvrait une page par-dessus, l'onde restait figée à mi-
+   course jusqu'au toucher suivant (son animation ne finissait jamais sous la
+   page). Un lien pâlit sous le doigt, c'est tout. */
+const LIENS_TEXTE = ".lien-conf, .grp-lien, .compte-supprimer";
 document.addEventListener("pointerdown", (e)=>{
   const b = e.target && e.target.closest ? e.target.closest("button, .mode-card") : null;
   if(!b || b.disabled) return;
+  if(b.matches(LIENS_TEXTE)) return;
   if(ondeCourante && ondeCourante !== b) ondeRanger();
   b.classList.remove("onde-part");        // il repart plein, pas en train de s'effacer
   /* Ré-appuyer sur le même bouton doit relancer l'onde depuis le début. */
@@ -7828,7 +7906,15 @@ document.addEventListener("pointerdown", (e)=>{
   b.addEventListener("animationend", ondeFinie);
   b.classList.add("onde");
 }, { passive:true, capture:true });
-const ondeLache = ()=>{ ondeTenue = false; if(ondePleine) ondeRanger(); };
+/* (v329) ET UNE ONDE NE RESTE JAMAIS ALLUMÉE. Si son animation ne finit pas
+   — le bouton a ouvert une page qui le couvre, l'app est passée derrière —,
+   elle s'efface quand même, peu après le lâcher. */
+const ondeLache = ()=>{
+  ondeTenue = false;
+  if(ondePleine){ ondeRanger(); return; }
+  const b = ondeCourante;
+  if(b) setTimeout(()=>{ if(ondeCourante === b && !ondeTenue) ondeRanger(); }, 650);
+};
 document.addEventListener("pointerup", ondeLache, { passive:true, capture:true });
 document.addEventListener("pointercancel", ondeLache, { passive:true, capture:true });
 /* ===================== ICONS (hand-built, no emoji) ===================== */
@@ -7883,6 +7969,9 @@ const ICONS = {
   retirer: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><circle cx="9.6" cy="8" r="3.6"/><path d="M3.4 19.6c0-3.4 2.8-5.6 6.2-5.6 1.6 0 3 .5 4.1 1.3"/><line x1="15.6" y1="15.4" x2="21" y2="15.4"/></svg>`,
   bannir: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><circle cx="9.6" cy="8" r="3.6"/><path d="M3.4 19.6c0-3.4 2.8-5.6 6.2-5.6 1.6 0 3 .5 4.1 1.3"/><line x1="16" y1="13.4" x2="20.6" y2="18"/><line x1="20.6" y1="13.4" x2="16" y2="18"/></svg>`,
   etoile: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3.6l2.5 5.2 5.7.8-4.1 4 1 5.6-5.1-2.7-5.1 2.7 1-5.6-4.1-4 5.7-.8L12 3.6Z"/></svg>`,
+  /* (v329) « Céder le groupe » : la couronne au trait, comme ses voisines de
+     la liste (la pleine reste celle du podium et des badges). */
+  couronne: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M3.6 8.2l4.1 3.9L12 5.4l4.3 6.7 4.1-3.9-1.7 10H5.3l-1.7-10Z"/></svg>`,
   close: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><line x1="6" y1="6" x2="18" y2="18"/><line x1="18" y1="6" x2="6" y2="18"/></svg>`,
   chevronLeft: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 5.5 8.5 12 15 18.5"/></svg>`,
   chevronRight: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 5.5 15.5 12 9 18.5"/></svg>`,
@@ -9860,7 +9949,7 @@ const SUPABASE_ANON_KEY = "sb_publishable_FDJ_R0foC7uIeHmxVrj6rA_2NeIgW2a";
    remontée d'un téléphone ne vaut rien si on ne sait pas QUELLE version
    tournait. Elle doit rester égale au CACHE de sw.js — c'est ce que vérifie
    banc-essai/version.js, qui refuse de laisser publier les deux en désaccord. */
-const VERSION_JEU = "v328";
+const VERSION_JEU = "v329";
 
 /* ===================== QUAND ÇA CASSE CHEZ UN JOUEUR =====================
    « Si quelque chose casse chez cinq d'entre eux sur un modèle de téléphone
@@ -10121,11 +10210,37 @@ const net = {
   iWantReplay:false, oppWantReplay:false, replayDeclined:false,
   depuisGroupe:null               // le groupe d'où la partie est partie (voir sortirVersGroupe)
 };
+/* ===== (v329) CE QUE LE SERVEUR DE CONNEXION A RÉPONDU EN DERNIER =====
+   « J'ai été déconnecté sans raison. » Le jeu ne ferme jamais une session de
+   lui-même (seulement « Se déconnecter » et « Supprimer mon compte ») : c'est
+   la bibliothèque de Supabase qui la ferme quand le serveur refuse de la
+   renouveler. On note donc la dernière réponse du renouvellement — son
+   statut et son code d'erreur, JAMAIS les jetons —, et une déconnexion
+   imprévue part dans les rapports de bug avec sa vraie raison (voir
+   deconnexionImprevue). */
+let suiviJeton = null;
+function fetchSuivi(entree, init){
+  const p = fetch(entree, init);
+  try{
+    const u = typeof entree === "string" ? entree : ((entree && entree.url) || "");
+    if(/\/auth\/v1\/token/.test(u)){
+      p.then((r)=>{
+        const note = { quand:Date.now(), statut:r.status, code:"" };
+        suiviJeton = note;
+        if(r.status >= 400) r.clone().json().then((j)=>{
+          note.code = String((j && (j.error_code || j.code || j.error)) || "").slice(0, 60);
+          note.msg = String((j && (j.msg || j.message || j.error_description)) || "").slice(0, 120);
+        }).catch(()=>{});
+      }, ()=>{ suiviJeton = { quand:Date.now(), statut:0, code:"reseau" }; });
+    }
+  }catch(e){}
+  return p;
+}
 function initSupa(){
   if(net.supa) return net.supa;
   if(SUPABASE_URL && SUPABASE_ANON_KEY && window.supabase && window.supabase.createClient){
     try {
-      net.supa = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY, { realtime:{ params:{ eventsPerSecond:10 } } });
+      net.supa = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY, { realtime:{ params:{ eventsPerSecond:10 } }, global:{ fetch:fetchSuivi } });
       /* Le client existe : ce qui attendait depuis la dernière fois peut partir.
          Après le premier écran, jamais pendant — une remontée d'erreur ne doit
          pas coûter une image au démarrage. */
@@ -11351,6 +11466,9 @@ function loadSettings(){
   if(typeof s.lecture !== "boolean") s.lecture = false;
   if(!/^\d\d:\d\d$/.test(s.priereH || "")) s.priereH = "07:00";
   if(!/^\d\d:\d\d$/.test(s.lectureH || "")) s.lectureH = "21:00";
+  /* (v329) Les messages des groupes n'ont pas de réglage à eux : ils sont
+     des rappels (voir messagesVoulus). */
+  delete s.messages;
   /* ALLUMÉ PAR DÉFAUT, ET C'EST LE POINT. Un rapport d'erreur qu'il faut aller
      activer ne remonte rien : celui à qui le jeu casse est justement celui qui
      n'ira pas dans les Réglages. Ce qui part ne dit rien de lui (voir
@@ -13113,7 +13231,7 @@ function reglagesHtml(){
       </div>
       <div class="set-groupe">
       ${(IS_PHONE && !isStandalone) ? `
-      <button class="set-row set-lien" id="setInstaller" onclick="installerJeu()">
+      <button class="set-row set-lien" onclick="openFsGuide()">
         <span class="set-ico fsx">${ICONS.telecharger}</span>
         <span class="set-txt"><b>${T("Installer le jeu")}</b></span>
         <span class="set-chev">${ICONS.chevronRight}</span>
@@ -20067,6 +20185,9 @@ function notifMiroir(){
            la langue du joueur, pour que le rappel lui parle dans la sienne. */
         priere:  settings.priere ? minutesHeure(settings.priereH) : -1,
         lecture: settings.lecture ? minutesHeure(settings.lectureH) : -1,
+        /* (v329) les messages des groupes : éteints ici, le service worker
+           se tait même si un envoi passait encore. */
+        messages: messagesVoulus(),
         langue:  LANGUE,
         maj:     Date.now(),
       }, "serie");
@@ -20099,6 +20220,10 @@ let notifSansRpc = false;
    p_lecture) : on lui écrit sans, et la prière et la lecture répondent
    « Pas encore disponible » au lieu de faire semblant. */
 let notifSansHeures = false;
+/* (v329) Vrai si la fonction du serveur est d'avant la v329 (sans
+   p_messages) : on lui écrit sans — les rappels marchent, les messages des
+   groupes attendent que installer.sql soit recollé (la Modération le dit). */
+let notifSansMessages = false;
 /* ===== (v327) UNE ÉCRITURE À LA FOIS, ET LA PLUS RÉCENTE GAGNE =====
    Sur iPhone, la roue de l'heure annonce chaque cran : « 15:00 », puis
    « 15:50 »… Chaque annonce lançait sa propre écriture, et rien ne disait
@@ -20146,6 +20271,9 @@ function notifEtatCourant(){
     jeu: !!settings.notif,
     priere: settings.priere ? minutesHeure(settings.priereH) : -1,
     lecture: settings.lecture ? minutesHeure(settings.lectureH) : -1,
+    /* (v329) veut-il les messages de ses groupes sur ce téléphone ? Le
+       serveur rattache le téléphone au compte connecté (auth.uid()). */
+    messages: messagesVoulus(),
   };
 }
 
@@ -20180,7 +20308,15 @@ async function notifEcrire(supa, endpoint, abonnement){
         p_dernier: e.dernier, p_serie: e.serie, p_vu: e.vu,
         p_revoir: e.revoir, p_decalage: e.decalage };
       if(!notifSansHeures) Object.assign(corps, { p_jeu: e.jeu, p_priere: e.priere, p_lecture: e.lecture });
+      if(!notifSansHeures && !notifSansMessages) corps.p_messages = e.messages;
       r = await supa.rpc("push_enregistrer", corps);
+      if(r && r.error && "p_messages" in corps && r.error.code === "PGRST202"){
+        /* (v329) Une fonction d'avant la v329 ne connaît pas p_messages :
+           on réessaie sans — les rappels n'en souffrent pas. */
+        notifSansMessages = true;
+        delete corps.p_messages;
+        r = await supa.rpc("push_enregistrer", corps);
+      }
       if(r && r.error && !notifSansHeures && r.error.code === "PGRST202"){
         /* Une fonction d'avant la v326 ne connaît pas ces trois noms : on
            réessaie sans. (Si elle n'existe pas du tout, ce second essai
@@ -20264,12 +20400,14 @@ function notifSync(){
    un joueur revenu de lui-même — et on lui explique AVANT d'ouvrir la demande
    du système. S'il dit non à notre explication, la vraie demande n'est jamais
    posée : elle reste disponible pour plus tard. */
-function notifProposer(){
+function notifProposer(groupe){
   if(!notifPossible()) return;
   if(settings.notif) return;                       // déjà accepté
   if(notifEtat() !== "default") return;            // déjà répondu au système
   if(localStorage.getItem("bt_notif_ask") === "1") return;   // déjà proposé une fois
-  if(dailyStreakShown() < 2) return;               // rien à protéger encore
+  /* Rien à protéger encore — sauf (v329) qu'on vient d'écrire dans un
+     groupe : des réponses vont arriver, et c'est là qu'on les attend. */
+  if(!groupe && dailyStreakShown() < 2) return;
   try { localStorage.setItem("bt_notif_ask", "1"); } catch(e){}
   setTimeout(() => {
     showModal({
@@ -20278,7 +20416,7 @@ function notifProposer(){
          deux. C'est sur cette phrase que le joueur donne le seul « oui » qu'on
          ait le droit de lui demander : elle doit couvrir tout ce qui peut
          arriver, et surtout la borne, qui est ce qui compte vraiment. */
-      message: T("Ta série sur le point de s'éteindre, tes erreurs à revoir, un verset le dimanche, et un mot si tu t'absentes. Au plus UN rappel par jour, et jamais si tu as déjà joué."),
+      message: T("Les messages de tes groupes. Et pour le jeu, au plus UN rappel par jour, jamais si tu as déjà joué : ta série sur le point de s'éteindre, tes erreurs à revoir, un verset le dimanche, un mot si tu t'absentes."),
       okLabel: T("D'accord"),
       cancelLabel: T("Non merci"),
       onOk: () => { notifActiver(); },
@@ -20343,8 +20481,9 @@ async function notifCouper(){
   settings.notif = false; saveSettings(); notifMiroir(); notifRafraichir();
   /* (v326) La prière ou la lecture sonnent encore : l'abonnement reste, et
      le serveur apprend seulement que les rappels du jeu sont éteints
-     (notifMiroir -> notifSync l'a écrit : jeu = false). */
-  if(settings.priere || settings.lecture) return;
+     (notifMiroir -> notifSync l'a écrit : jeu = false). (v329) Les messages
+     des groupes aussi. */
+  if(rappelsAllumes()) return;
   try {
     const reg = await navigator.serviceWorker.ready;
     const sub = await reg.pushManager.getSubscription();
@@ -20412,6 +20551,18 @@ function heureLisible(h){
   try{ return new Date(2000, 0, 1, +m[1], +m[2]).toLocaleTimeString([], { hour:"2-digit", minute:"2-digit" }); }catch(e){ return h; }
 }
 function rappelsAllumes(){ return !!(settings.notif || settings.priere || settings.lecture); }
+/* ===== LES MESSAGES DES GROUPES SONT DES RAPPELS (v329) =====
+   « Je veux aussi que tu fasses les notifications des messages. » Un
+   message posté dans un groupe prévient, sur leur téléphone, les membres qui
+   ne l'ont pas lu — selon ce que chacun a choisi pour ce groupe (Tout,
+   Mentions, Muet), jamais son auteur, jamais qui l'a bloqué. Le serveur
+   décide (notifications/rappels.ts), le service worker montre (sw.js).
+   « Compte les messages de groupe comme des rappels, pas comme un rappel
+   spécifique. » Pas d'interrupteur à eux : l'interrupteur « Rappels » les
+   allume et les éteint avec les autres. Le téléphone est rattaché au compte
+   connecté (push_enregistrer note auth.uid()) : qui se déconnecte ne reçoit
+   plus rien, qui se connecte reçoit les siens. */
+function messagesVoulus(){ return !!settings.notif; }
 const idRappel = (k) => k === "priere" ? "Priere" : "Lecture";
 function rangeeRappelHeure(k){
   const r = RAPPELS_HEURE[k], id = idRappel(k);
@@ -21145,12 +21296,18 @@ async function compteDemarrer(){
   const supa = initSupa();
   if(!supa || !supa.auth) return;
   compteDemarre = true;
+  const rangee = sessionRangee();
   try{
     const { data } = await supa.auth.getSession();
     compte.session = (data && data.session) || null;
   }catch(e){}
+  /* Une session était rangée sur ce téléphone, et le serveur n'a pas voulu
+     la renouveler pendant que le jeu dormait. */
+  if(rangee && !compte.session) deconnexionImprevue("start");
   try{
     supa.auth.onAuthStateChange((evt, sess)=>{
+      if(evt === "SIGNED_OUT" && compteConnecte() && !compte.sortieVoulue) deconnexionImprevue("play");
+      if(evt === "SIGNED_OUT" || evt === "SIGNED_IN") compte.sortieVoulue = false;
       compte.session = sess || null;
       if(compte.session){ compte.etape = "connecte"; compte.message = ""; synchroniser(); }
       else { compte.etape = "repos"; }
@@ -21162,6 +21319,25 @@ async function compteDemarrer(){
   armerSynchro();
   surChangementDeCompte();
 }
+/* (v329) UNE DÉCONNEXION QUE PERSONNE N'A DEMANDÉE est dite au joueur — sa
+   progression ne bouge pas, il suffit de se reconnecter, et l'adresse est
+   déjà écrite — et part dans les rapports de bug avec la dernière réponse
+   du serveur de connexion (voir fetchSuivi). */
+function deconnexionImprevue(quand){
+  const d = suiviJeton;
+  /* Le rapport est TECHNIQUE (jamais montré) : en anglais, comme les autres
+     lignes qui ne passent pas par T(). */
+  const detail = d ? ("status " + d.statut + (d.code ? " " + d.code : "") + (d.msg ? " - " + d.msg : "")
+                      + ", " + Math.max(0, Math.round((Date.now() - d.quand) / 1000)) + " s ago") : "no token refresh seen";
+  noterErreur("auth: unexpected sign-out (" + quand + "): " + detail, "compte");
+  compte.message = T("Ta session s'est fermée. Reconnecte-toi : ta progression est intacte.");
+  try{ showMiniToast(compte.message); }catch(e){}
+  try{ majCarteCompte(); }catch(e){}
+}
+/* L'adresse du dernier compte ouvert sur ce téléphone : rien qu'ici, pour
+   que se reconnecter ne demande pas de la retaper. */
+const CLE_COURRIEL = "bt_compte_courriel";
+function courrielMemorise(){ try{ return localStorage.getItem(CLE_COURRIEL) || ""; }catch(e){ return ""; } }
 /* LES GROUPES SUIVENT LE COMPTE : une connexion, une déconnexion, un autre
    compte — pas un simple renouvellement de jeton, qui arrive toutes les
    heures et remettrait tout à zéro pour rien. */
@@ -21171,6 +21347,10 @@ function surChangementDeCompte(){
   if(id === compteVuParGroupes) return;
   compteVuParGroupes = id;
   try{ groupesSurCompte(); }catch(e){}
+  /* (v329) Ce téléphone change de main : le serveur apprend tout de suite à
+     quel compte il appartient (personne, après une déconnexion) — les
+     messages des groupes suivent le compte, jamais l'ancien. */
+  try{ notifSync(); }catch(e){}
 }
 /* Une synchro quand on revient sur l'app, et pas plus : c'est le moment où
    l'écart avec le serveur a pu se creuser. Rien pendant qu'on joue. */
@@ -21282,6 +21462,7 @@ async function verifierCode(){
     const { error } = await supa.auth.verifyOtp({ email:compte.courriel, token:c, type:"email" });
     compte.occupe = false;
     if(error){ compte.message = raisonAuth(error, false); majCarteCompte(); return; }
+    try{ localStorage.setItem(CLE_COURRIEL, compte.courriel); }catch(e){}
     await adopterSession();
   }catch(e){ compte.occupe = false; compte.message = T("Ce code ne correspond pas, ou il a expiré."); majCarteCompte(); }
 }
@@ -21304,6 +21485,7 @@ async function connexionGoogle(){
 async function deconnexion(){
   const supa = initSupa(); if(!supa) return;
   try{ fermerFeuilleGroupe("compteVeil"); }catch(e){}
+  compte.sortieVoulue = true;
   try{ await supa.auth.signOut(); }catch(e){}
   compte.session = null; compte.etape = "repos"; compte.message = ""; majCarteCompte();
   surChangementDeCompte();
@@ -21406,7 +21588,7 @@ function carteCompteHtml(){
       <div class="compte-tete"><span class="compte-ico">${ICONS.bouclier}</span><b>${T("Sauvegarder ma progression")}</b></div>
       <div class="compte-sous">${T("Changer de téléphone ne te fera alors rien perdre.")}</div>
       ${googleUtile() ? `<button class="btn-ghost compte-google" onclick="connexionGoogle()"${compte.occupe?" disabled":""}>${T("Continuer avec Google")}</button>` : ""}
-      <input class="text-input" id="compteMail" type="email" inputmode="email" autocomplete="email" value="${escapeHtml(compte.saisie || "")}" placeholder="${T("Ton adresse e-mail")}" enterkeyhint="go" onkeydown="if(event.key==='Enter'){event.preventDefault();envoyerCode();}">
+      <input class="text-input" id="compteMail" type="email" inputmode="email" autocomplete="email" value="${escapeHtml(compte.saisie || courrielMemorise())}" placeholder="${T("Ton adresse e-mail")}" enterkeyhint="go" onkeydown="if(event.key==='Enter'){event.preventDefault();envoyerCode();}">
       ${msg}
       <button class="btn-primary" onclick="envoyerCode()"${compte.occupe?" disabled":""}>${T("Recevoir un code")}</button>
       <button class="btn-ghost compte-sortir" onclick="compteRetour()">${T("Annuler")}</button>
@@ -21772,7 +21954,7 @@ async function chargerEtatGroupes(){
        l'onglet : c'est elle qui donne les non-lus de la pastille de l'accueil. */
     /* Une liste venue de la mémoire de ce téléphone se relit quand même :
        elle montre tout de suite, le serveur dit ce qui a changé depuis. */
-    if(r.participe === "ok"){ abonnerGroupes(); suivreNomGroupes(); if(!grp.liste || grp.listeDeMemoire) chargerListes(); if(invitationEnAttente) setTimeout(servirInvitation, 300); }
+    if(r.participe === "ok"){ abonnerGroupes(); suivreNomGroupes(); if(!grp.liste || grp.listeDeMemoire) chargerListes(); if(invitationEnAttente) setTimeout(servirInvitation, 300); if(discussionEnAttente) setTimeout(servirDiscussion, 300); }
     else desabonnerGroupes();
     if(r.participe === "ok"){
       ecrireBase("meta", "etat", { participe:r.participe, moderateur:!!r.moderateur, ouverts:r.ouverts, photos:r.photos === true, logos:r.logos === true,
@@ -22097,6 +22279,7 @@ function texteSysteme(m){
     exclu:"{nom} ne fait plus partie du groupe",
     banni:"{nom} ne peut plus revenir dans le groupe",
     admin:"{nom} devient admin du groupe",
+    proprietaire:"{nom} est maintenant propriétaire du groupe",
     photo:"{nom} a changé la photo du groupe",
     photo_retiree:"{nom} a retiré la photo du groupe"
   };
@@ -22458,7 +22641,7 @@ let creation = { type:"prive", teinte:2 };
 function formulaireGroupeHtml(g){
   const image = photosServeur() || logosServeur();
   const champs = `<input class="text-input" id="grpNom" maxlength="40" placeholder="${T("Nom du groupe")}" value="${g ? escapeHtml(g.nom || "") : ""}" autocomplete="off" enterkeyhint="next"${image ? ` oninput="majPastilleFormulaire()"` : ""}>
-    <input class="text-input" id="grpDesc" maxlength="160" placeholder="${T("Description (facultatif)")}" value="${g ? escapeHtml(g.description || "") : ""}" autocomplete="off" enterkeyhint="done">`;
+    <textarea class="text-input grp-desc-ch" id="grpDesc" rows="1" maxlength="160" placeholder="${T("Description (facultatif)")}" autocomplete="off" enterkeyhint="done" oninput="ajusterDescription(this)" onkeydown="descriptionTouche(event)">${g ? escapeHtml(g.description || "") : ""}</textarea>`;
   /* LA PHOTO DU GROUPE se pose À CÔTÉ du nom et de la description, à leur
      hauteur exacte : la feuille ne grandit pas d'un pixel. Sans photo, la
      pastille montre la couleur choisie plus bas et l'initiale du nom tapé —
@@ -22600,6 +22783,40 @@ function ouvrirCreation(){
     formulaireGroupeHtml(null) + `<button class="btn-primary" onclick="creerGroupe(this)">${T("Créer")}</button>`);
 }
 function valeurChamp(id){ const c = document.getElementById(id); return String((c && c.value) || "").trim(); }
+/* ===== (v329) LA DESCRIPTION SUIT CE QU'ON ÉCRIT =====
+   « Sur la description, si j'écris trop, le texte ne suit plus. » C'était
+   un champ d'une ligne : passé sa largeur, le texte filait hors de vue — et
+   sur iPhone il ne défilait même plus avec le curseur. Elle va maintenant à
+   la ligne, et le champ grandit avec elle : tout ce qu'on a écrit reste
+   sous les yeux. D'une seule ligne, il a exactement la hauteur du nom (la
+   photo du groupe, à côté, reste alignée). « OK » au clavier le referme,
+   comme avant : une description ne garde pas de retour à la ligne — collés
+   avec un texte, ils deviennent des espaces. */
+function ajusterDescription(t){
+  if(!t) return;
+  if(/[\r\n]/.test(t.value)){
+    const p = t.selectionStart;
+    t.value = t.value.replace(/[ \t]*[\r\n]+[ \t]*/g, " ");
+    try{ t.setSelectionRange(Math.min(p, t.value.length), Math.min(p, t.value.length)); }catch(e){}
+  }
+  /* Mesurer demande de replier le champ un instant : la page qui défile
+     autour garde sa place (sinon, repliée, elle pourrait remonter d'un
+     cran). */
+  let sc = t.parentElement;
+  while(sc && !(sc.scrollHeight > sc.clientHeight + 1 && /auto|scroll/.test(getComputedStyle(sc).overflowY))) sc = sc.parentElement;
+  const haut = sc ? sc.scrollTop : 0;
+  /* Tant qu'elle tient sur une ligne, le minimum du style fait la hauteur
+     — exactement celle du nom, sans arrondi. */
+  t.style.height = "auto";
+  if(t.scrollHeight > t.clientHeight + 1){
+    const cs = getComputedStyle(t);
+    t.style.height = (t.scrollHeight + (parseFloat(cs.borderTopWidth) || 0) + (parseFloat(cs.borderBottomWidth) || 0)) + "px";
+  }
+  if(sc && sc.scrollTop !== haut) sc.scrollTop = haut;
+}
+function descriptionTouche(e){
+  if(e.key === "Enter" && !e.isComposing){ e.preventDefault(); e.target.blur(); }
+}
 /* « Entre 3 et 40 caractères » : trois SIGNES au moins (deux emojis ne font
    pas un nom, un drapeau compte pour un) et quarante points de code au plus,
    ce que compte le serveur. Le champ (maxlength, en unités UTF-16) ne laisse
@@ -22708,6 +22925,60 @@ function servirInvitation(){
   if(state.screen !== "groupes"){ state.screen = "groupes"; render(); ouvrirGroupes(); }
   ouvrirCode(c);
 }
+/* ===== LA NOTIFICATION D'UN MESSAGE OUVRE SA DISCUSSION (v329) =====
+   La toucher : le jeu déjà ouvert reçoit un mot du service worker
+   ({ ouvrirGroupe }) ; fermé, il s'ouvre sur …/?discussion=<groupe>. Dans les
+   deux cas la discussion attend, comme une invitation, que le compte et les
+   groupes soient là. Une partie en cours ne s'interrompt pas : la pastille
+   des Groupes dit qu'un message attend. Une feuille ouverte (les infos d'un
+   autre groupe, les Réglages…) se referme : on va lire. */
+let discussionEnAttente = null;
+try{
+  const m = /[?&]discussion=([0-9a-f-]{36})(?:&|$)/i.exec(location.search || "");
+  if(m) discussionEnAttente = m[1].toLowerCase();
+}catch(e){}
+const ECRANS_DE_PARTIE = ["play", "online-play", "online-room"];
+function servirDiscussion(){
+  const id = discussionEnAttente;
+  if(!id || grp.installe !== true) return;
+  if(state.screen === "splash"){ setTimeout(servirDiscussion, 700); return; }
+  if(!compteConnecte() || !participeGroupes()) return;      // chargerEtatGroupes la resservira
+  discussionEnAttente = null;
+  try{ if(/[?&]discussion=/.test(location.search || "")) history.replaceState(null, "", location.pathname + location.hash); }catch(e){}
+  if(ECRANS_DE_PARTIE.indexOf(state.screen) >= 0) return;
+  fermerFeuillesOuvertes();
+  if(state.screen === "groupe" && grp.courant === id){ effacerNotifsGroupe(id); return; }
+  ouvrirGroupe(id);
+}
+function fermerFeuillesOuvertes(){
+  try{ closeModal(); }catch(e){}
+  document.querySelectorAll(".sheet-veil").forEach((v)=>{
+    if(v.classList.contains("closing")) return;
+    if(v.id === "settingsVeil"){ closeSettings(); return; }
+    v.classList.add("closing");
+    setTimeout(()=>{ if(v.parentNode) v.remove(); }, msFerme() + 20);
+  });
+  try{ queueGlassSync(); }catch(e){}
+}
+try{
+  if("serviceWorker" in navigator) navigator.serviceWorker.addEventListener("message", (e)=>{
+    const id = e.data && e.data.ouvrirGroupe;
+    if(typeof id !== "string" || !/^[0-9a-f-]{36}$/i.test(id)) return;
+    discussionEnAttente = id.toLowerCase();
+    servirDiscussion();
+  });
+}catch(e){}
+/* LUE, ELLE S'EN VA. La notification d'un groupe disparaît du téléphone dès
+   qu'on lit ce groupe dans le jeu — comme dans une messagerie. */
+function effacerNotifsGroupe(id){
+  try{
+    if(!id || !("serviceWorker" in navigator)) return;
+    navigator.serviceWorker.getRegistration()
+      .then(reg => (reg && reg.getNotifications) ? reg.getNotifications({ tag:"grp-" + id }) : [])
+      .then(l => (l || []).forEach(n => { try{ n.close(); }catch(e){} }))
+      .catch(()=>{});
+  }catch(e){}
+}
 function lienInvitation(g){ return GAME_URL + "?groupe=" + encodeURIComponent(g.code || ""); }
 function copierDansPressePapier(texte, dit){
   if(navigator.clipboard && navigator.clipboard.writeText){
@@ -22778,6 +23049,7 @@ async function ouvrirGroupe(id){
   if(state.screen !== "groupe") grp.depuis = state.screen === "moderation" ? "moderation" : null;
   grp.courant = id;
   g.non_lus = 0; g.mentions = 0;
+  effacerNotifsGroupe(id);
   recompterNonLus(id);
   majBarre();
   state.screen = "groupe";
@@ -22787,6 +23059,11 @@ async function ouvrirGroupe(id){
   await chargerFil(id);
 }
 function retourGroupes(){
+  /* (v329) On vient d'écrire dans ce groupe : des réponses vont arriver. Le
+     bon moment pour proposer les rappels (une fois sur ce téléphone, et
+     jamais à qui a déjà répondu) — en quittant la discussion, pas pendant
+     qu'on écrit. */
+  if(grp.aEcrit){ grp.aEcrit = false; try{ notifProposer(true); }catch(e){} }
   const deModeration = enLecture() || (!!grp.courant && grp.depuis === "moderation");
   grp.depuis = null;
   grp.courant = null;
@@ -23150,10 +23427,24 @@ function vignetteCadree(src, sx, sy, cote){
     return jpegSousPlafond(c);
   }catch(e){ return null; }
 }
+/* (v329) Une photo très détaillée (un feuillage, du sable) dépassait encore
+   le plafond du serveur à la qualité la plus basse : la photo était dite
+   « illisible ». On réduit alors son côté, cran par cran — elle passe
+   toujours. */
 function jpegSousPlafond(c){
-  for(const q of [0.8, 0.72, 0.64, 0.56, 0.48]){
-    const d = c.toDataURL("image/jpeg", q);
-    if(d.indexOf("data:image/jpeg;base64,") === 0 && d.length <= PHOTO_SRV_MAX) return d;
+  for(const cote of [c.width, 320, 272, 224, 176]){
+    let src = c;
+    if(cote !== c.width){
+      src = document.createElement("canvas");
+      src.width = src.height = cote;
+      const g = src.getContext("2d"); if(!g) break;
+      try{ g.imageSmoothingQuality = "high"; }catch(e){}
+      g.drawImage(c, 0, 0, cote, cote);
+    }
+    for(const q of [0.8, 0.72, 0.64, 0.56, 0.48]){
+      const d = src.toDataURL("image/jpeg", q);
+      if(d.indexOf("data:image/jpeg;base64,") === 0 && d.length <= PHOTO_SRV_MAX) return d;
+    }
   }
   return null;
 }
@@ -23199,13 +23490,13 @@ function majTeteGroupe(g){
 async function chargerMembres(id){
   const supa = initSupa(); if(!supa || !supa.from) return;
   try{
-    const r = await supa.from("membres").select("membre,role,muet_jusqu").eq("groupe", id);
+    const r = await supa.from("membres").select("membre,role,muet_jusqu,lu_jusqu,rejoint_le").eq("groupe", id);
     if(r.error || !Array.isArray(r.data)) return;
     grp.membres[id] = r.data;
     await chargerProfils(r.data.map(x => x.membre), photosServeur());
   }catch(e){ return; }
   if(grp.courant === id){
-    majCompo(); majInfosMembres();
+    majCompo(); majInfosMembres(); majVus();
     /* (v328) Un « @ » tapé avant que les membres soient connus : la liste se
        propose dès qu'ils arrivent. */
     const ta = document.getElementById("compoTexte");
@@ -23283,6 +23574,7 @@ function marquerLu(id){
   const g = groupeCourant(); if(g){ g.non_lus = 0; g.mentions = 0; }
   recompterNonLus();
   majBarre();
+  if(grp.courant === id && state.screen === "groupe" && !document.hidden) effacerNotifsGroupe(id);
   if(dernier <= (f.lu || 0)) return;
   f.lu = dernier;
   appelGroupe("marquer_lu", { p_groupe:id, p_message:dernier });
@@ -23394,9 +23686,82 @@ function suiteHtml(suite){
       <div class="b-pile">
         ${moi ? "" : `<span class="b-nom" style="color:${couleurLisible(couleur)}">${escapeHtml(nom)}</span>`}
         ${suite.map(bulleHtml).join("")}
-        <span class="b-heure">${escapeHtml(der.id < 0 ? T("Envoi…") : heureCourte(der.cree_le))}</span>
+        <span class="b-heure"${moi && der.id > 0 ? ` data-der="${der.id}"` : ""}>${escapeHtml(der.id < 0 ? T("Envoi…") : heureCourte(der.cree_le))}${moi && der.id > 0 ? cochesHtml(der) : ""}</span>
       </div>
     </div>`;
+}
+/* ===== (v329) QUI A VU CE MESSAGE ? =====
+   Le serveur garde, pour chaque membre, le dernier message qu'il a lu
+   (membres.lu_jusqu, mis à jour par marquer_lu quand il ouvre la discussion
+   ou y reçoit un message). Un membre qui a ÉCRIT après un message l'a vu,
+   même si sa lecture n'est pas encore remontée. Ne comptent que ceux qui
+   étaient déjà là quand le message est parti : un arrivant ne doit pas
+   empêcher les deux coches. Moi exclu, bien sûr. */
+function vusDe(m){
+  const g = m && m.groupe, f = g && grp.fils[g], moi = monId();
+  const membres = (grp.membres[g] || []).filter(x => x.membre !== m.auteur && x.membre !== moi);
+  const ecrits = {};
+  ((f && f.messages) || []).forEach(x => { if(x.id > 0 && x.auteur) ecrits[x.auteur] = Math.max(ecrits[x.auteur] || 0, x.id); });
+  const dEnvoi = new Date(m.cree_le || 0).getTime();
+  const vus = [], pas = [];
+  membres.forEach(x => {
+    if(x.rejoint_le && new Date(x.rejoint_le).getTime() > dEnvoi) return;
+    const lu = Math.max(+x.lu_jusqu || 0, ecrits[x.membre] || 0);
+    (lu >= m.id ? vus : pas).push(x.membre);
+  });
+  return { vus, pas };
+}
+const COCHE_UNE = `<svg viewBox="0 0 20 16" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><polyline points="3.5 8.6 7.4 12.4 15.6 3.8"/></svg>`;
+const COCHE_DEUX = `<svg viewBox="0 0 20 16" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><polyline points="1.6 8.6 5.4 12.4 13.6 3.8"/><polyline points="9.2 12.1 9.5 12.4 17.7 3.8"/></svg>`;
+function etatVu(m){
+  const v = vusDe(m);
+  if(!v.vus.length) return "envoye";
+  return v.pas.length ? "certains" : "tous";
+}
+function cochesHtml(m){
+  /* Tant que les membres ne sont pas arrivés, on ne sait rien : pas de coche
+     plutôt qu'une coche fausse (majVus la pose à leur arrivée). */
+  if(!grp.membres[m.groupe]) return "";
+  const e = etatVu(m);
+  const dit = e === "tous" ? T("Vu par tout le monde") : (e === "certains" ? T("Vu par certains") : T("Envoyé"));
+  return `<span class="b-vu ${e}" role="img" aria-label="${escapeHtml(dit)}">${e === "envoye" ? COCHE_UNE : COCHE_DEUX}</span>`;
+}
+function vusHtml(m){
+  const v = vusDe(m);
+  const ligne = (id, pas) => { const p = grp.profils[id] || {}; const n = p.nom || T("Quelqu'un");
+    return `<div class="gv-l${pas ? " pas" : ""}">${avatarHtml(n, p.couleur || "#8A8F98", 1.75, "u:" + id)}<b>${escapeHtml(n)}</b></div>`; };
+  if(!v.vus.length && !v.pas.length) return "";
+  let h = `<div class="grp-vus">`;
+  h += `<span class="gv-h">${v.pas.length ? T("Vu par") : T("Vu par tout le monde")}</span>`;
+  h += v.vus.length ? v.vus.map(id => ligne(id, false)).join("") : `<p class="gv-rien">${T("Personne ne l'a encore vu.")}</p>`;
+  if(v.pas.length && v.vus.length){ h += `<span class="gv-h">${T("Pas encore vu")}</span>` + v.pas.map(id => ligne(id, true)).join(""); }
+  return h + `</div>`;
+}
+/* Les coches se mettent à jour SUR PLACE : rien d'autre du fil ne bouge. */
+function majVus(){
+  const z = document.getElementById("fil");
+  if(!z || !grp.courant || state.screen !== "groupe") return;
+  const f = grp.fils[grp.courant]; if(!f) return;
+  z.querySelectorAll(".b-moi .b-heure[data-der]").forEach(h => {
+    const m = f.messages.find(x => String(x.id) === h.getAttribute("data-der"));
+    if(!m) return;
+    const neuf = cochesHtml(m), ancien = h.querySelector(".b-vu");
+    if(!neuf || (ancien && ancien.outerHTML === neuf)) return;
+    if(ancien) ancien.outerHTML = neuf; else h.insertAdjacentHTML("beforeend", neuf);
+  });
+}
+/* Ce que les autres ont lu, relu sans tout recharger (la relève de la
+   discussion ouverte, toutes les 10 s). */
+async function relireLus(id){
+  const supa = initSupa(); if(!supa || !supa.from || !grp.membres[id]) return;
+  try{
+    const r = await supa.from("membres").select("membre,lu_jusqu").eq("groupe", id);
+    if(r.error || !Array.isArray(r.data)) return;
+    const l = grp.membres[id] || [];
+    let change = false;
+    r.data.forEach(x => { const y = l.find(z => z.membre === x.membre); if(y && +y.lu_jusqu !== +x.lu_jusqu){ y.lu_jusqu = x.lu_jusqu; change = true; } });
+    if(change && grp.courant === id) majVus();
+  }catch(e){}
 }
 function bulleHtml(m){
   const moi = !!m.auteur && m.auteur === monId();
@@ -23472,10 +23837,65 @@ function majFil(){
 function poserFil(z, html){
   const enBas = z.scrollHeight - z.scrollTop - z.clientHeight < 90;
   const haut = z.scrollTop;
-  z.innerHTML = html;
+  poserSurPlace(z, html);
   if(enBas) descendreFil(false);
   else { z.scrollTop = haut; const b = document.getElementById("filBas"); if(b) b.hidden = false; }
   voilerFil(z);
+}
+/* ===== (v329) UN MESSAGE ARRIVE, LE RESTE NE BOUGE PAS =====
+   « Vérifie l'animation des messages lorsqu'ils apparaissent. » Chaque
+   message reçu ou envoyé redessinait TOUTE la discussion d'un bloc —
+   avatars et photos recréés, que l'iPhone repeint en clignant — et la
+   nouvelle bulle, elle, surgissait sans transition. Maintenant on ne
+   remplace que ce qui a changé (la suite qui reçoit une bulle, une ligne
+   nouvelle) : ce qui est identique reste le même élément, à sa place. Et
+   la bulle nouvelle arrive : elle monte de quelques pixels en se posant,
+   un quart de seconde. Celle qu'on vient d'envoyer arrive au toucher ;
+   confirmée par le serveur, elle ne repart pas de zéro (son mouvement
+   continue où il en est). Un fil qu'on ouvre : rien n'arrive, tout est
+   déjà là. */
+function poserSurPlace(z, html){
+  const t = document.createElement("template");
+  t.innerHTML = html;
+  const neufs = Array.from(t.content.children), anciens = Array.from(z.children);
+  const connus = new Set(Array.from(z.querySelectorAll("[data-m]"), e => e.getAttribute("data-m")));
+  /* Le message le plus récent jamais posé dans CETTE discussion : celui qu'on
+     a caché un moment (quelqu'un qu'on bloque puis débloque) compte aussi. */
+  const plusHaut = Math.max(z._haut && z._haut[0] === grp.courant ? z._haut[1] : 0, ...Array.from(connus, k => +k));
+  const vide = !anciens.length;
+  for(let i = 0; i < neufs.length; i++){
+    const a = anciens[i], n = neufs[i];
+    if(a && a.outerHTML === n.outerHTML) continue;
+    /* Une arrivée en cours dans l'ancienne suite continue dans la nouvelle,
+       à la même place (le message en attente devenu message confirmé). */
+    const enCours = a ? Array.from(a.querySelectorAll("[data-m]"), e => e._arrive || 0) : [];
+    if(a) z.replaceChild(n, a); else z.appendChild(n);
+    n.querySelectorAll("[data-m]").forEach((e, k)=>{
+      if(enCours[k] && performance.now() - enCours[k] < ARRIVEE_MS) arriver(e, enCours[k]);
+    });
+  }
+  for(let i = anciens.length - 1; i >= neufs.length; i--) anciens[i].remove();
+  z._haut = [grp.courant, Math.max(plusHaut, ...Array.from(z.querySelectorAll("[data-m]"), e => +e.getAttribute("data-m")))];
+  if(vide) return;
+  /* Ce qui arrive : une bulle des autres plus récente que tout ce qui était
+     là (pas un ancien message qui réapparaît, comme ceux de quelqu'un qu'on
+     débloque), ou la mienne en attente du serveur (identifiant négatif). */
+  z.querySelectorAll(".b-eux [data-m], .b-moi [data-m^='-']").forEach(e => {
+    const k = e.getAttribute("data-m");
+    if(!connus.has(k) && !e._arrive && (+k < 0 || +k > plusHaut)) arriver(e, performance.now());
+  });
+}
+const ARRIVEE_MS = 260;
+function arriver(e, depuis){
+  e._arrive = depuis;
+  e.style.animationDelay = (-(performance.now() - depuis)) + "ms";
+  e.classList.add("b-arrive");
+  e.addEventListener("animationend", function fin(ev){
+    if(ev.animationName !== "bArrive") return;
+    e.removeEventListener("animationend", fin);
+    e.classList.remove("b-arrive"); e.style.animationDelay = "";
+    if(!e.getAttribute("style")) e.removeAttribute("style");
+  });
 }
 /* Ce qui est à l'écran et n'aura plus sa place : une bulle seule, ou sa suite
    entière si toutes ses bulles partent (l'avatar, le nom et l'heure avec
@@ -23752,6 +24172,7 @@ async function envoyerMessageGroupe(){
     if(r.erreur === "muet") chargerMembres(g.id);
     return;
   }
+  grp.aEcrit = true;     // (v329) voir retourGroupes : la proposition des rappels
   const m = f && f.messages.find(x => x.id === id);
   if(m && r.id){
     if(f.messages.some(x => x.id === r.id)) f.messages = f.messages.filter(x => x.id !== id);
@@ -23955,7 +24376,7 @@ function releverFil(){
     if(state.screen !== "groupe" || grp.courant !== id) return;
     if(!document.hidden && navigator.onLine !== false){
       try{ await rattraperFil(id); }catch(e){}
-      if(!enLecture()) chargerGroupe(id);       // son nom, sa couleur : peut-être changés ailleurs
+      if(!enLecture()){ chargerGroupe(id); relireLus(id); }   // son nom, sa couleur, qui a lu : peut-être changés ailleurs
       verifierDirect();
     }
     releverFil();
@@ -24052,6 +24473,11 @@ async function surMessageDirect(m, evt){
 function recevoirMessage(m){
   const f = grp.fils[m.groupe];
   if(!f || !f.charge) return;
+  /* (v329) Qui écrit a lu ce qui précède : ses coches suivent tout de suite. */
+  if(m.id > 0 && m.auteur && m.auteur !== monId()){
+    const x = (grp.membres[m.groupe] || []).find(y => y.membre === m.auteur);
+    if(x && !(+x.lu_jusqu >= m.id)) x.lu_jusqu = m.id;
+  }
   if(m.auteur && grp.bloques.has(m.auteur)) return;
   const i = f.messages.findIndex(x => x.id === m.id);
   if(i >= 0) f.messages[i] = Object.assign({}, f.messages[i], m);
@@ -24062,7 +24488,7 @@ function recevoirMessage(m){
     f.messages.sort((a, b)=> rang(a) - rang(b));
   }
   if(m.id > 0 && m.auteur === monId()) f.lu = Math.max(f.lu || 0, m.id);
-  if(grp.courant === m.groupe && state.screen === "groupe") majFil();
+  if(grp.courant === m.groupe && state.screen === "groupe"){ majFil(); majVus(); }
   memoriserFil(m.groupe);
 }
 
@@ -24088,6 +24514,9 @@ function actionsMessage(id){
   }
   if(moi || admin) h += ligneAction(ICONS.corbeille, T("Supprimer le message"), `supprimerMessageGroupe('${m.id}')`, true);
   h += `</div><div class="grp-mot"><span></span></div>`;
+  /* (v329) Mon message : qui l'a vu, qui pas encore — comme « Infos » sur
+     WhatsApp. En tête du menu : c'est ce qu'on vient chercher. */
+  if(moi && !m.masque) h = vusHtml(m) + h;
   ouvrirFeuilleGroupe("grpActionsVeil", nom, avatarHtml(nom, moi ? (profile.color || "#4C86E8") : (p.couleur || "#8A8F98"), 1.5, moi ? true : "u:" + m.auteur), h);
 }
 /* ===== L'APPUI LONG OUVRE SOUS LE DOIGT =====
@@ -24251,7 +24680,7 @@ function ouvrirInfosGroupe(invitation){
   const admin = suisAdmin() || !!(grp.etat && grp.etat.moderateur);
   const proprio = monRole() === "proprietaire";
   ouvrirFeuilleGroupe("grpInfosVeil", g.nom, pastilleGroupe(g, true), `
-    ${g.description ? `<p class="grp-desc">${escapeHtml(g.description)}</p>` : ""}
+    ${descriptionHtml(g)}
     <div class="grp-code-carte">
       <span class="gc-l">${T("Code d'invitation")}</span>
       <b class="gc-code">${escapeHtml(g.code || "")}</b>
@@ -24273,6 +24702,17 @@ function ouvrirInfosGroupe(invitation){
       ${proprio || (grp.etat && grp.etat.moderateur) ? ligneAction(ICONS.corbeille, T("Supprimer le groupe"), "supprimerGroupeCourant()", true) : ""}
     </div>`);
 }
+/* ===== (v329) LA DESCRIPTION DANS SA CARTE =====
+   « C'est censé être la description du groupe — ça déjà j'aime pas, et en
+   plus elle n'est même pas visible sur iOS. » Elle flottait seule en haut de
+   la page, alignée à gauche sous le bouton retour. Et sur iPhone, la fiche du
+   groupe était relue depuis le cache du service worker, figée avant que la
+   description existe (voir sw.js, v329) : elle n'arrivait jamais. Elle a
+   maintenant sa carte, comme le code d'invitation — le texte seul, sans le
+   mot « Description » : « simple et efficace ». */
+function descriptionHtml(g){
+  return g && g.description ? `<div class="grp-desc-carte"><p class="grp-desc">${escapeHtml(g.description)}</p></div>` : "";
+}
 /* Trois puces, le même geste que Privé / Public : l'encre part du doigt. Les
    trois phrases d'aide sont posées l'une sur l'autre dans la même case — on
    ne voit que la bonne, et rien en dessous ne bouge quand on change. */
@@ -24287,6 +24727,7 @@ function choixNotifsHtml(g){
       `<button class="len-chip${mode === k ? " sel" : ""}" data-ngroup="notifs" data-k="${k}" role="radio" aria-checked="${mode === k}" onclick="reglerNotifs(${i})">${noms[i]}</button>`).join("")}</div>
     <p class="grp-aide grp-aide-type" id="grpNotifsAide">${NOTIFS_MODES.map((k, i)=> `<span class="${mode === k ? "vu" : ""}" data-t="${k}">${aides[i]}</span>`).join("")}</p>`;
 }
+
 /* Le choix se voit tout de suite ; si le serveur ne le prend pas, il revient
    à l'ancien, et la page dit pourquoi.
    (v328) UNE DEMANDE À LA FOIS, ET LA DERNIÈRE GAGNE. Trois touchers rapides
@@ -24381,10 +24822,13 @@ function ouvrirMembre(qui){
   if(peutModerer){
     h += sourdine ? ligneAction(ICONS.parler, T("Rendre la parole"), `modererMembre('${qui}', 'parler')`)
                   : ligneAction(ICONS.sourdine, T("Mettre en sourdine une heure"), `modererMembre('${qui}', 'muet')`);
-    if(modo || mon === "proprietaire"){
-      h += m.role === "admin" ? ligneAction(ICONS.etoile, T("Retirer le rôle d'admin"), `modererMembre('${qui}', 'retrograder')`)
-                              : ligneAction(ICONS.etoile, T("Nommer admin"), `modererMembre('${qui}', 'promouvoir')`);
-    }
+    /* (v329) Comme sur WhatsApp : un admin nomme d'autres admins parmi les
+       membres ; retirer le rôle d'un admin reste au propriétaire. Et le
+       propriétaire peut CÉDER le groupe — il en reste admin. */
+    if(m.role === "admin"){
+      if(modo || mon === "proprietaire") h += ligneAction(ICONS.etoile, T("Retirer le rôle d'admin"), `modererMembre('${qui}', 'retrograder')`);
+    } else h += ligneAction(ICONS.etoile, T("Nommer admin"), `modererMembre('${qui}', 'promouvoir')`);
+    if(mon === "proprietaire") h += ligneAction(ICONS.couronne, T("Céder le groupe"), `modererMembre('${qui}', 'ceder')`);
     h += ligneAction(ICONS.retirer, T("Retirer du groupe"), `modererMembre('${qui}', 'exclure')`, true);
     h += ligneAction(ICONS.bannir, T("Bannir du groupe"), `modererMembre('${qui}', 'bannir')`, true);
   }
@@ -24407,12 +24851,25 @@ async function modererMembre(qui, action){
       promouvoir:"{nom} devient admin du groupe.",
       retrograder:"{nom} n'est plus admin.",
       exclure:"{nom} ne fait plus partie du groupe.",
-      bannir:"{nom} ne peut plus revenir dans le groupe."
+      bannir:"{nom} ne peut plus revenir dans le groupe.",
+      ceder:"{nom} est maintenant propriétaire du groupe."
     };
     if(dits[action]) showMiniToast(Tf(dits[action], { nom }));
     if(action === "exclure" || action === "bannir") g.nb_membres = Math.max(1, (+g.nb_membres || 1) - 1);
     await chargerMembres(g.id);
+    /* Le groupe vient de changer de main : la page des infos, restée
+       dessous, montre ce que je peux faire MAINTENANT. */
+    if(action === "ceder" && document.getElementById("grpInfosVeil")) ouvrirInfosGroupe();
   };
+  if(action === "ceder"){
+    showModal({
+      title:Tf("Céder le groupe à {nom} ?", { nom }),
+      message:Tf("{nom} en devient propriétaire, et tu en restes admin.", { nom }),
+      okLabel:T("Céder"), cancelLabel:T("Annuler"),
+      onOk:()=>{ faire(); return true; }
+    });
+    return;
+  }
   if(action === "exclure" || action === "bannir"){
     showModal({
       title:action === "bannir" ? Tf("Bannir {nom} du groupe ?", { nom }) : Tf("Retirer {nom} du groupe ?", { nom }),
@@ -24437,6 +24894,7 @@ function ouvrirModifGroupe(){
   creation = { type:g.ouvert ? "public" : "prive", teinte:+g.teinte || 0, logo:+g.logo || 0, photo:undefined, gid:g.id };
   ouvrirFeuilleGroupe("grpModifVeil", T("Modifier le groupe"), ICONS.crayon,
     formulaireGroupeHtml(g) + `<button class="btn-primary" onclick="enregistrerGroupe(this)">${T("Enregistrer")}</button>`);
+  ajusterDescription(document.getElementById("grpDesc"));   // une longue description s'ouvre entière
 }
 async function enregistrerGroupe(btn){
   const g = groupeCourant(); if(!g) return;
@@ -24465,10 +24923,11 @@ function majInfosGroupe(g){
   const ico = v.querySelector(".sheet-title .st-ico"); if(ico) ico.innerHTML = pastilleGroupe(g, true);
   const f = v.querySelector(".settings-sheet"); if(f) f.setAttribute("aria-label", g.nom);
   const corps = v.querySelector(".grp-feuille-corps");
-  let d = corps && corps.querySelector(":scope > .grp-desc");
+  const d = corps && corps.querySelector(":scope > .grp-desc-carte");
   if(g.description){
-    if(!d && corps){ d = document.createElement("p"); d.className = "grp-desc"; corps.insertBefore(d, corps.firstChild); }
-    if(d) d.textContent = g.description;
+    const t = d && d.querySelector(".grp-desc");
+    if(t) t.textContent = g.description;
+    else if(corps) corps.insertAdjacentHTML("afterbegin", descriptionHtml(g));
   } else if(d) d.remove();
   try{ majAvatarsPhoto(); }catch(e){}
 }
@@ -24770,6 +25229,25 @@ function lireReponseTache(r, ok, non, att){
   else if(c && c.erreur === "table") non(RAP_TABLE());
   else non(Tf("La fonction a répondu {s} : {m}", { s:st, m:String(r.contenu || "").slice(0, 160) }));
 }
+/* (v329) Le dernier message d'un groupe : combien de téléphones il a
+   prévenus, ou pourquoi il n'a prévenu personne. */
+function lireReponseMessage(r, ok, non){
+  if(!r || r.erreur) return;
+  let c = null; try{ c = JSON.parse(r.contenu || ""); }catch(_){}
+  const st = r.status_code | 0, quand = quandCourt(r.created) || "";
+  if(r.error_msg){ non(Tf("Le dernier message n'a pas pu joindre la fonction : {m}", { m:String(r.error_msg).slice(0, 120) })); return; }
+  if(st === 200 && c){
+    const n = c.envoyes | 0;
+    ok(n === 0 ? Tf("Dernier message ({quand}) : personne à prévenir.", { quand })
+       : Tf(n === 1 ? "Dernier message ({quand}) : 1 téléphone prévenu." : "Dernier message ({quand}) : {n} téléphones prévenus.", { quand, n }));
+    const e = c.echecs | 0, d = c.dernier_echec || {};
+    const code = d.code || "?", raison = d.raison || "";
+    if(e) non(Tf(e === 1 ? "{n} envoi refusé par le service d'envoi (code {code}) : {raison}" : "{n} envois refusés par le service d'envoi (code {code}) : {raison}",
+                 { n:e, code, raison }));
+  }
+  else if(st === 401) non(T("La fonction refuse la clé interne de la tâche : recolle installer.sql."));
+  else non(Tf("La fonction a répondu {s} : {m}", { s:st, m:String(r.contenu || "").slice(0, 160) }));
+}
 /* ===== (v327) CE QUE LE SERVEUR SAIT DE CE TÉLÉPHONE =====
    Relevé le 18/10/2026 : toute la carte était verte, et la prière ne sonnait
    pas. Le téléphone n'avait plus rien envoyé depuis 15 h 42 — et rien ne le
@@ -24855,6 +25333,14 @@ async function diagnosticRappels(force){
       else ok(T("La tâche passe toutes les cinq minutes."));
       if(e.passage && e.passage.status === "failed") non(Tf("Le dernier passage de la tâche a échoué : {m}", { m:String(e.passage.message || "?").slice(0, 120) }));
       if(e.cron && e.net && e.tache && e.tache.active) lireReponseTache(e.reponse, ok, non, att);
+      /* (v329) les messages des groupes : le déclencheur, les téléphones
+         rattachés à un compte, et ce qu'a donné le dernier message. */
+      if(e.messages_branches !== true) non(T("Les messages des groupes ne préviennent encore personne : Supabase → SQL Editor → recolle notifications/installer.sql → Run."));
+      else {
+        const n = e.lies | 0;
+        ok(Tf(n === 1 ? "Messages des groupes branchés · {n} téléphone rattaché à un compte" : "Messages des groupes branchés · {n} téléphones rattachés à un compte", { n }));
+        lireReponseMessage(e.reponse_message, ok, non);
+      }
     }
     /* 3. LA FONCTION, interrogée par le jeu lui-même : sa version, ses clés */
     const f = await lireFonction(ep ? { etat:true, moi:ep } : { etat:true });
@@ -24866,6 +25352,7 @@ async function diagnosticRappels(force){
         non(T("Le secret VAPID_PUBLIQUE n'est pas la clé publique du jeu : copie-la ci-dessous, remets-la dans ce secret, avec la clé privée de la même paire."));
       }
       else ok(Tf("La fonction répond (v{v}) et ses clés vont avec celles du jeu.", { v:f.c.version }));
+      if((+f.c.version || 0) < 329) att(T("La fonction en ligne ne sait pas encore prévenir des messages : sa mise à jour part toute seule de GitHub."));
     }
     else if(f.st === 200) non(RAP_ANCIENNE());
     else if(f.st === 401) non(RAP_VERIFY());
@@ -25030,6 +25517,7 @@ async function supprimerMonCompte(){
     compte.message = T("La suppression n'a pas abouti. Réessaie dans un instant.");
     majCarteCompte(); return;
   }
+  compte.sortieVoulue = true;
   try{ await initSupa().auth.signOut(); }catch(e){}
   compte.session = null; compte.etape = "repos"; compte.derniere = 0;
   compte.message = T("Ton compte a été supprimé. Ta progression est toujours sur ce téléphone.");
@@ -26582,13 +27070,63 @@ async function imagePhoto(fichier){
   if(typeof createImageBitmap === "function"){
     try{ return await createImageBitmap(fichier, { imageOrientation:"from-image" }); }catch(e){}
   }
-  return await new Promise((res, rej)=>{
+  try{ return await imageParBalise(fichier); }
+  catch(e){
+    if(await estHeic(fichier)) return await imageHeic(fichier);
+    throw e;
+  }
+}
+function imageParBalise(fichier){
+  return new Promise((res, rej)=>{
     let u = "";
     const im = new Image();
     im.onload = ()=>{ try{ URL.revokeObjectURL(u); }catch(e){} res(im); };
     im.onerror = ()=>{ try{ URL.revokeObjectURL(u); }catch(e){} rej(new Error("image")); };
     try{ u = URL.createObjectURL(fichier); im.src = u; }catch(e){ rej(e); }
   });
+}
+/* ===== (v329) LES PHOTOS QUE LE NAVIGATEUR NE SAIT PAS LIRE =====
+   « Il y a des images qui ne peuvent pas être lues. » Les photos d'iPhone
+   sont en HEIC : Safari les lit, Chrome — Android, ordinateur — non (mesuré :
+   « The source image could not be decoded »). Une photo venue d'un iPhone
+   restait donc « illisible » sur Android. Le jeu charge alors, et alors
+   seulement, un décodeur HEIC (libheif, figé à sa version, 1,2 Mo) et refait
+   l'image lui-même : aucune autre photo n'en paie le prix. */
+const HEIC_DECODEUR = "https://cdn.jsdelivr.net/npm/libheif-js@1.18.2/libheif-wasm/libheif-bundle.js";
+let heicEnRoute = null;
+function chargerHeic(){
+  if(heicEnRoute) return heicEnRoute;
+  heicEnRoute = new Promise((res, rej)=>{
+    if(window.libheif) return res(window.libheif);
+    const sc = document.createElement("script");
+    sc.src = HEIC_DECODEUR; sc.async = true;
+    sc.onload = ()=> window.libheif ? res(window.libheif) : rej(new Error("heic"));
+    sc.onerror = ()=> rej(new Error("heic"));
+    document.head.appendChild(sc);
+  }).then(lib => typeof lib === "function" ? lib() : lib);
+  heicEnRoute.catch(()=>{ heicEnRoute = null; });     // un réseau tombé : on réessaiera
+  return heicEnRoute;
+}
+async function estHeic(fichier){
+  if(/^image\/hei[cf]/i.test((fichier && fichier.type) || "") || /\.hei[cf]$/i.test((fichier && fichier.name) || "")) return true;
+  try{
+    const t = new Uint8Array(await fichier.slice(4, 12).arrayBuffer());
+    return /^ftyp(heic|heix|hevc|hevx|heim|heis|mif1|msf1)$/.test(String.fromCharCode.apply(null, t));
+  }catch(e){ return false; }
+}
+async function imageHeic(fichier){
+  const lib = await chargerHeic();
+  const images = new lib.HeifDecoder().decode(new Uint8Array(await fichier.arrayBuffer()));
+  const im = images && images[0];
+  if(!im) throw new Error("heic");
+  const w = im.get_width(), h = im.get_height();
+  const c = document.createElement("canvas");
+  c.width = w; c.height = h;
+  const g = c.getContext("2d");
+  const donnees = g.createImageData(w, h);
+  await new Promise((res, rej)=> im.display(donnees, (x)=> x ? res() : rej(new Error("heic"))));
+  g.putImageData(donnees, 0, 0);
+  return c;
 }
 /* Découper un carré de la source et le rendre en 256 px. Le seul endroit du
    jeu qui fabrique une photo de profil — que le carré vienne du centre (par
@@ -29853,93 +30391,8 @@ let invitePWA = null;
 window.addEventListener("beforeinstallprompt", (e)=>{
   try{ e.preventDefault(); }catch(err){}
   invitePWA = e;
-  if(installerArrivee) installerArrivee();
 });
-window.addEventListener("appinstalled", ()=>{
-  invitePWA = null;
-  const r = document.getElementById("setInstaller"); if(r) r.remove();
-  try{ showMiniToast(Tf("{jeu} est installé : ouvre-le depuis ton écran d'accueil.", { jeu:NOM_DU_JEU })); }catch(e){}
-});
-/* ===== (v328) « INSTALLER » INSTALLE, SANS DÉTOUR =====
-   « Le mieux, ce serait un bouton dans les Réglages : on clique sur
-     télécharger, et ça ouvre directement le truc pour télécharger. » Et :
-   « Sur un Android récent, il m'a dit que le jeu avait été conçu pour les
-     vieux téléphones — il a fallu que je clique sur Installer quand même. »
-   — Chrome (et ceux qui font comme lui) : le bouton ouvre DIRECTEMENT la
-     fenêtre d'installation du téléphone — plus de page intermédiaire.
-   — Samsung Internet, le navigateur des Galaxy : c'est LUI qui fabrique une
-     application « pour une ancienne version d'Android », et Play Protect
-     l'arrête (« conçue pour une ancienne version… »). Chrome installe le
-     même jeu sans aucun avertissement. Le bouton rouvre donc Yada dans
-     Chrome, où il n'y a plus qu'à toucher « Installer ».
-   — iPhone : Apple ne laisse aucun site ouvrir l'installation ; c'est le
-     guide le plus court qui reste (deux gestes). */
-const IS_SAMSUNG = /SamsungBrowser/i.test(navigator.userAgent || "");
-let installerArrivee = null;
-function installerJeu(){
-  if(IS_ANDROID && IS_SAMSUNG){ proposerChrome(); return; }
-  if(invitePWA){ lancerInstallation(); return; }
-  openFsGuide();
-}
-function lancerInstallation(){
-  const invitation = invitePWA;
-  if(!invitation){ openFsGuide(); return; }
-  invitePWA = null;          // une invitation ne sert qu'une fois
-  try{
-    const p = invitation.prompt();
-    if(p && p.catch) p.catch(()=>{ openFsGuide(); });
-  }catch(e){ openFsGuide(); }
-}
-function lienChrome(sorte){
-  const u = new URL(location.href); u.hash = ""; u.search = ""; u.searchParams.set("installer", sorte);
-  return u;
-}
-function proposerChrome(){
-  const cible = lienChrome("1"), repli = lienChrome("guide");
-  showModal({
-    title:T("Installer le jeu"),
-    message:Tf("Samsung Internet installe {jeu} avec un avertissement d'Android. Chrome l'installe sans : {jeu} s'ouvre dans Chrome, tu n'as plus qu'à toucher « Installer ».", { jeu:NOM_DU_JEU }),
-    cardClass:"guide", okLabel:T("Ouvrir dans Chrome"), cancelLabel:T("Annuler"),
-    onOk:()=>{
-      ouvrirLien("intent://" + cible.href.replace(/^https?:\/\//, "") + "#Intent;scheme=https;package=com.android.chrome;S.browser_fallback_url=" + encodeURIComponent(repli.href) + ";end");
-      return true;
-    }
-  });
-}
-function ouvrirLien(u){ location.href = u; }
-/* Arrivé dans Chrome par ce lien (?installer=1) : dès que Chrome dit le jeu
-   installable, une seule question, un seul bouton. S'il ne le dit pas (déjà
-   installé, ou un navigateur qui ne sait pas), le guide. Revenu sans Chrome
-   (?installer=guide), le guide aussi, avec ce que dira Android. */
-(function(){
-  let sorte = null;
-  try{ sorte = new URL(location.href).searchParams.get("installer"); }catch(e){}
-  if(!sorte) return;
-  try{ const u = new URL(location.href); u.searchParams.delete("installer"); history.replaceState(history.state, "", u.pathname + u.search + u.hash); }catch(e){}
-  if(isStandalone) return;
-  const demander = ()=>{
-    installerArrivee = null;
-    showModal({
-      title:Tf("Installer {jeu}", { jeu:NOM_DU_JEU }),
-      message:Tf("{jeu} s'ajoute à ton écran d'accueil et démarre en plein écran. Un seul geste.", { jeu:NOM_DU_JEU }),
-      cardClass:"guide", okLabel:T("Installer"), cancelLabel:T("Plus tard"),
-      onOk:()=>{ lancerInstallation(); return true; }
-    });
-  };
-  /* Chrome dit le jeu installable une à quelques secondes après le
-     chargement — plus sur un téléphone lent. Sans nouvelle au bout de 8 s, le
-     guide ; et si l'invitation arrive APRÈS, elle le remplace. */
-  const attendre = ()=>{
-    if(sorte !== "1"){ openFsGuide(); return; }
-    if(invitePWA){ demander(); return; }
-    installerArrivee = demander;
-    setTimeout(()=>{ if(installerArrivee === demander) openFsGuide(); }, 8000);
-  };
-  /* Sans attendre « load » : une image ou une police qui traîne le
-     retarderait d'autant, et l'invitation de Chrome, arrivée entre-temps,
-     resterait sans réponse. */
-  setTimeout(attendre, 700);
-})();
+window.addEventListener("appinstalled", ()=>{ invitePWA = null; });
 /* Pas de plein écran forcé sur le web : l'utilisateur passe par « écran d'accueil ».
    Le bandeau qui expliquait ça EN HAUT DE L'ACCUEIL a été retiré : la même chose
    est déjà dans les Réglages (« Installer le jeu », bouton Guide), rangée avec
@@ -30015,15 +30468,11 @@ function openFsGuide(){
     });
     return;
   }
-  const etapes = IS_IOS ? etapesIphone() : (IS_SAMSUNG ? [
-    { c:"fsx", i:ICO_MENU_NAV,     t:T("Ouvre le menu du navigateur"), s:T("Les trois traits, en bas") },
-    { c:"scn", i:ICONS.plusCircle, t:T("« Ajouter la page à »"),        s:T("Puis « Écran d'accueil »") },
-    { c:"vol", i:ICONS.expand,     t:T("Si Android avertit"),          s:T("Touche « Installer quand même »") },
-  ] : [
+  const etapes = IS_IOS ? etapesIphone() : [
     { c:"fsx", i:ICO_MENU_NAV,     t:T("Ouvre le menu du navigateur"), s:T("Les trois points, en haut") },
     { c:"scn", i:ICONS.plusCircle, t:T("« Installer l'application »"), s:T("Ou « Ajouter à l'écran d'accueil »") },
     { c:"vol", i:ICONS.expand,     t:T("Ouvre le jeu par son icône"),  s:T("Il démarre en plein écran") },
-  ]);
+  ];
   const corps = `<div class="guide-steps">${etapes.map(e=>`
       <div class="set-row">
         <span class="set-ico ${e.c}">${e.i}</span>
@@ -30238,7 +30687,9 @@ function sessionRangee(){
   return false;
 }
 if(retourDeConnexion() || sessionRangee()){
-  setTimeout(()=>{ try{ compteDemarrer(); }catch(e){} }, 3000);
+  /* (v329) Une notification de message a ouvert le jeu : on va droit à la
+     discussion, le compte se réveille tout de suite. */
+  setTimeout(()=>{ try{ compteDemarrer(); }catch(e){} }, discussionEnAttente ? 400 : 3000);
   /* Les visages des groupes sont prêts AVANT qu'on ouvre les groupes : la
      base de ce téléphone se lit en quelques millisecondes, une fois l'accueil
      posé (voir LES PHOTOS DANS LES GROUPES). */
@@ -30253,8 +30704,8 @@ if(retourDeConnexion() || sessionRangee()){
    pendant l'écran d'ouverture, pour que la barre soit là dès la première
    image de l'accueil au lieu d'arriver dessus (et de le redessiner). */
 setTimeout(()=>{
-  try{ sonderGroupes().then(()=>{ try{ servirInvitation(); }catch(e){} }); }catch(e){}
-}, invitationEnAttente ? 600 : (grp.installe === null ? 200 : 2500));
+  try{ sonderGroupes().then(()=>{ try{ servirInvitation(); }catch(e){} try{ servirDiscussion(); }catch(e){} }); }catch(e){}
+}, (invitationEnAttente || discussionEnAttente) ? 600 : (grp.installe === null ? 200 : 2500));
 document.addEventListener("visibilitychange", ()=>{ if(!document.hidden && state.screen !== "splash") sonderGroupes(); });
 
 const _savedGame = loadSavedGame();

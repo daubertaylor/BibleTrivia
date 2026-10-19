@@ -39,7 +39,6 @@ const IOS = 'Mozilla/5.0 (iPhone; CPU iPhone OS 17_5 like Mac OS X) AppleWebKit/
 const ANDROID = 'Mozilla/5.0 (Linux; Android 14; Pixel 8) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/126.0.0.0 Mobile Safari/537.36';
 /* Safari d'iOS 26 : la version du système est gelée (18_6), celle de Safari dit 26. */
 const IOS26 = 'Mozilla/5.0 (iPhone; CPU iPhone OS 18_6 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/26.0 Mobile/15E148 Safari/604.1';
-const SAMSUNG = 'Mozilla/5.0 (Linux; Android 15; SM-S931B) AppleWebKit/537.36 (KHTML, like Gecko) SamsungBrowser/28.0 Chrome/130.0.0.0 Mobile Safari/537.36';
 const DANS_APPLI = 'Mozilla/5.0 (iPhone; CPU iPhone OS 18_6 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Mobile/15E148 Instagram 350.0.0.30.97 (iPhone14,2; iOS 18_6; fr_FR; fr; scale=3.00; 1170x2532)';
 const CHROME_IOS = 'Mozilla/5.0 (iPhone; CPU iPhone OS 18_6 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) CriOS/131.0.6778.73 Mobile/15E148 Safari/604.1';
 const URL = process.argv[2] || process.env.URL_ESSAI || 'http://127.0.0.1:8099/index.html';
@@ -720,7 +719,7 @@ const ouvrirLaLangue = async (p, lg) => {
         grp.profils = { 'moi-0':{ nom:'Taylor', couleur:'#4C86E8' }, 'u-2':{ nom:'Sam', couleur:'#E8574C' },
                         'u-3':{ nom:'Lee', couleur:'#4CE88A' }, 'u-4':{ nom:'Kim', couleur:'#E8C84C' } };
         grp.liste = [
-          { id:'g-1', nom:'Lee', teinte:2, ouvert:false, code:'ABC234', nb_membres:4, non_lus:2, dernier_message:il(1),
+          { id:'g-1', nom:'Lee', teinte:2, ouvert:false, code:'ABC234', nb_membres:4, non_lus:2, dernier_message:il(1), description:'Amen',
             apercu:{ id:9, auteur:'u-2', genre:'texte', texte:'Amen', nom:'Sam', le:il(1) } },
           { id:'g-2', nom:'Sam', teinte:0, ouvert:true, code:'DEF567', nb_membres:2, non_lus:0, dernier_message:hier(),
             apercu:{ id:7, auteur:'moi-0', genre:'texte', texte:'Amen', nom:'Taylor', le:il(26) } },
@@ -731,10 +730,12 @@ const ouvrirLaLangue = async (p, lg) => {
         ];
         grp.publics = [ { id:'g-2', nom:'Sam', description:'', nb_membres:2, teinte:0, membre:true },
                         { id:'g-5', nom:'Ruth', description:'', nb_membres:1, teinte:3, membre:false } ];
-        grp.membres = { 'g-1':[ { membre:'moi-0', role:'proprietaire', muet_jusqu:null },
-                                { membre:'u-2', role:'admin', muet_jusqu:null },
-                                { membre:'u-3', role:'membre', muet_jusqu:new Date(Date.now() + 3600000).toISOString() },
-                                { membre:'u-4', role:'membre', muet_jusqu:null } ] };
+        /* (v329) Ce que chacun a lu : Sam a tout vu, Lee jusqu'au 7, Kim rien —
+           les coches de « Vu » sous mon dernier message. */
+        grp.membres = { 'g-1':[ { membre:'moi-0', role:'proprietaire', muet_jusqu:null, lu_jusqu:99, rejoint_le:il(5) },
+                                { membre:'u-2', role:'admin', muet_jusqu:null, lu_jusqu:99, rejoint_le:il(5) },
+                                { membre:'u-3', role:'membre', muet_jusqu:new Date(Date.now() + 3600000).toISOString(), lu_jusqu:7, rejoint_le:il(5) },
+                                { membre:'u-4', role:'membre', muet_jusqu:null, lu_jusqu:0, rejoint_le:il(5) } ] };
         const m = (id, auteur, genre, texte, extra) => Object.assign({ id, groupe:'g-1', auteur, genre, texte, donnees:{},
           cree_le:il(0.5), masque:false, supprime_le:null }, extra || {});
         grp.fils = { 'g-1':{ charge:true, tout:false, messages:[
@@ -746,6 +747,7 @@ const ouvrirLaLangue = async (p, lg) => {
           m(6, null, 'systeme', 'admin',  { donnees:{ nom:'Sam' } }),
           m(13, null, 'systeme', 'photo', { donnees:{ nom:'Sam' } }),
           m(14, null, 'systeme', 'photo_retiree', { donnees:{ nom:'Sam' } }),
+          m(15, null, 'systeme', 'proprietaire', { donnees:{ nom:'Sam' } }),
           m(7, 'u-2', 'texte', 'Amen'),
           m(8, 'u-3', 'texte', '', { masque:true }),
           m(9, 'u-3', 'texte', '', { supprime_le:il(0.2) }),
@@ -819,6 +821,17 @@ const ouvrirLaLangue = async (p, lg) => {
     ['Groupes · admin',    () => { __fermerTout(); ouvrirMembre('u-2'); }],
     ['Groupes · en sourdine', () => { __fermerTout(); ouvrirMembre('u-3'); }],
     ['Groupes · un message', () => { __fermerTout(); actionsMessage('7'); }],
+    /* (v329) « VU », comme sur WhatsApp : sous mon message, les coches ; en
+       le touchant, qui l'a vu et qui pas encore — puis tout le monde, puis
+       personne. */
+    ['Groupes · vu par',   () => { __fermerTout(); __grpDecor(); grp.courant = 'g-1'; state.screen='groupe'; render(); actionsMessage('12'); }],
+    ['Groupes · vu par tout le monde', () => { __fermerTout(); grp.membres['g-1'].forEach(x => { x.lu_jusqu = 99; }); majVus(); actionsMessage('12'); }],
+    ['Groupes · personne n\'a vu', () => { __fermerTout(); grp.membres['g-1'].forEach(x => { x.lu_jusqu = 0; }); majVus(); actionsMessage('12'); }],
+    /* (v329) Le propriétaire peut céder le groupe. */
+    ['Groupes · céder',    () => { __fermerTout(); __grpDecor(); grp.courant = 'g-1'; state.screen='groupe'; render(); ouvrirMembre('u-4'); }],
+    ['Groupes · céder ?',  () => { __fermerTout(); modererMembre('u-4', 'ceder'); }],
+    /* (v329) Une session que personne n'a fermée : le jeu le dit. */
+    ['Compte · session fermée', async () => { __fermerTout(); deconnexionImprevue('play'); await new Promise(r => setTimeout(r, 120)); }],
     ['Groupes · signaler', () => { __fermerTout(); signalerMessage(null, null, null); signalerMessage('7'); }],
     ['Groupes · signaler quelqu\'un', () => { __fermerTout(); signalerMessage(null, 'u-2', 'g-1'); }],
     ['Groupes · signaler le groupe', () => { __fermerTout(); signalerMessage(null, null, 'g-1'); }],
@@ -832,7 +845,7 @@ const ouvrirLaLangue = async (p, lg) => {
       bloquerQuelquUn('u-4'); await new Promise(r => setTimeout(r, 60)); appelGroupe = a; showModal = m; chargerListes = l; }],
     ['Groupes · retirer',  () => { __fermerTout(); __grpDecor(); grp.courant = 'g-1'; state.screen='groupe'; render(); modererMembre('u-4', 'exclure'); }],
     ['Groupes · bannir',   () => { __fermerTout(); modererMembre('u-4', 'bannir'); }],
-    ...['muet', 'parler', 'promouvoir', 'retrograder', 'exclure', 'bannir'].map(action =>
+    ...['muet', 'parler', 'promouvoir', 'retrograder', 'exclure', 'bannir', 'ceder'].map(action =>
       ['Groupes · ' + action + ' (fait)', async (a) => { __fermerTout(); __grpDecor(); grp.courant = 'g-1'; state.screen='groupe'; render();
         const x = appelGroupe, m = showModal, c = chargerMembres;
         appelGroupe = async () => ({ ok:true }); showModal = (o) => { o.onOk && o.onOk(); }; chargerMembres = async () => {};
@@ -1082,7 +1095,7 @@ const ouvrirLaLangue = async (p, lg) => {
       quitDuel(); }],
     ['Rappels proposés',   () => { __fermerTout();
       showModal({ title:T('Recevoir les rappels\u00a0?'),
-        message:T("Ta série sur le point de s'éteindre, tes erreurs à revoir, un verset le dimanche, et un mot si tu t'absentes. Au plus UN rappel par jour, et jamais si tu as déjà joué."),
+        message:T("Les messages de tes groupes. Et pour le jeu, au plus UN rappel par jour, jamais si tu as déjà joué : ta série sur le point de s'éteindre, tes erreurs à revoir, un verset le dimanche, un mot si tu t'absentes."),
         okLabel:T("D'accord"), cancelLabel:T('Non merci') }); }],
     ...FICHES,
     ...FLAMMES,
@@ -1267,45 +1280,19 @@ const ouvrirLaLangue = async (p, lg) => {
                                       ['Guide iPhone · dans une appli', DANS_APPLI, { width:393, height:852 }],
                                       ['Guide iPhone · Chrome', CHROME_IOS, { width:393, height:852 }],
                                       ['Réglages · jeu installé', IOS, { width:393, height:852 }, true],
-                                      ['Modération · rappels', IOS, { width:393, height:852 }, 'diag'],
-                                      /* (v328) « Installer » : Samsung Internet passe par Chrome (et
-                                         son guide, sans Chrome) ; l'arrivée dans Chrome par ce lien,
-                                         puis « installé ». */
-                                      ['Installer · Samsung Internet', SAMSUNG, { width:412, height:915 }, 'samsung'],
-                                      ['Installer · arrivée dans Chrome', ANDROID, { width:412, height:915 }, 'arrivee']]){
+                                      ['Modération · rappels', IOS, { width:393, height:852 }, 'diag']]){
       const ctx = await nav.newContext({ viewport:vue, deviceScaleFactor:2,
         userAgent:ua, hasTouch:true, serviceWorkers:'block' });
       const q = await ctx.newPage();
       if(installe === 'diag') await ctx.grantPermissions(['clipboard-read', 'clipboard-write'], { origin:URL.match(/^https?:\/\/[^/]+/)[0] });
       await ouvrirLaLangue(q, lg);
-      /* Les passes d'installation (v328) jouent un jeu PAS encore installé. */
-      if(installe === true || installe === 'diag') await q.addInitScript(INSTALLE);
+      if(installe) await q.addInitScript(INSTALLE);
       await q.addInitScript(PREP, lg);
-      await q.goto(installe === 'arrivee' ? URL + (URL.indexOf('?') >= 0 ? '&' : '?') + 'installer=1' : URL);
+      await q.goto(URL);
       await q.waitForFunction((l) => { try { return typeof render === 'function' && LANGUE === l; } catch(e){ return false; } }, lg, { timeout:20000 });
       await q.waitForFunction(() => { try { return state.screen === 'mode'; } catch(e){ return false; } }, null, { timeout:20000 });
       try {
-        if(installe === 'samsung'){
-          const lus = [];
-          await q.evaluate(() => { state.screen = 'mode'; render(); openSettings(); installerJeu(); });
-          await q.waitForTimeout(600);
-          lus.push(...await q.evaluate(RAMASSER));
-          await q.evaluate(() => { closeModal(); openFsGuide(); });
-          await q.waitForTimeout(600);
-          lus.push(...await q.evaluate(RAMASSER));
-          p2.releve.set(nomGuide, lus);
-        } else if(installe === 'arrivee'){
-          const lus = [];
-          await q.waitForTimeout(900);
-          await q.evaluate(() => { const e = new Event('beforeinstallprompt', { cancelable:true });
-            e.prompt = () => Promise.resolve(); e.userChoice = Promise.resolve({ outcome:'dismissed' }); window.dispatchEvent(e); });
-          await q.waitForTimeout(900);
-          lus.push(...await q.evaluate(RAMASSER));
-          await q.evaluate(() => { closeModal(); window.dispatchEvent(new Event('appinstalled')); });
-          await q.waitForTimeout(500);
-          lus.push(...await q.evaluate(RAMASSER));
-          p2.releve.set(nomGuide, lus);
-        } else if(installe === 'diag'){
+        if(installe === 'diag'){
           /* (v326) LA CARTE « RAPPELS » : chaque panne qu'elle sait nommer, jouée
              par la vraie fonction du jeu ; on ne remplace que ce qui répond à
              sa place — la base (rappels_etat), la fonction (lireFonction), le
@@ -1368,7 +1355,7 @@ const ouvrirLaLangue = async (p, lg) => {
         }
         /* La passe « carte Rappels » a déjà posé ses quatorze relevés : une
            capture finale ici les écrasait tous, sauf le dernier. */
-        if(installe !== 'diag' && installe !== 'samsung' && installe !== 'arrivee') p2.releve.set(nomGuide, await q.evaluate(RAMASSER));
+        if(installe !== 'diag') p2.releve.set(nomGuide, await q.evaluate(RAMASSER));
       } catch(e){ fautes.push(nomGuide + ' (' + lg + ') : ' + e.message.split('\n')[0]); }
       await ctx.close();
     }

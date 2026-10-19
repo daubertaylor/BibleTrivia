@@ -821,8 +821,21 @@ begin
   if p_membre = moi then return jsonb_build_object('ok', false, 'erreur', 'soi_meme'); end if;
   if not modo and coalesce(mon_role, '') not in ('proprietaire','admin') then return jsonb_build_object('ok', false, 'erreur', 'interdit'); end if;
   if not modo and mon_role = 'admin' and coalesce(son_role, 'membre') <> 'membre' then return jsonb_build_object('ok', false, 'erreur', 'interdit'); end if;
-  if p_action in ('promouvoir','retrograder') and not (modo or mon_role = 'proprietaire') then
+  -- (v329) COMME SUR WHATSAPP, un admin peut nommer d'autres admins parmi
+  -- les membres (la règle ci-dessus le borne aux simples membres) ; retirer
+  -- le rôle d'un admin reste au propriétaire.
+  if p_action = 'retrograder' and not (modo or mon_role = 'proprietaire') then
     return jsonb_build_object('ok', false, 'erreur', 'interdit'); end if;
+  -- (v329) CÉDER LE GROUPE : le propriétaire, et lui seul, le donne à un
+  -- membre ; il en reste admin.
+  if p_action = 'ceder' then
+    if mon_role is distinct from 'proprietaire' then return jsonb_build_object('ok', false, 'erreur', 'interdit'); end if;
+    if son_role is null then return jsonb_build_object('ok', false, 'erreur', 'pas_membre'); end if;
+    update public.membres set role = 'admin' where groupe = p_groupe and membre = moi;
+    update public.membres set role = 'proprietaire', muet_jusqu = null where groupe = p_groupe and membre = p_membre;
+    perform public._annoncer(p_groupe, 'proprietaire', jsonb_build_object('qui', p_membre, 'nom', public._nom(p_membre)));
+    return jsonb_build_object('ok', true);
+  end if;
   if p_action = 'muet' then
     update public.membres set muet_jusqu = now() + make_interval(mins => greatest(5, least(60*24*30, coalesce(p_minutes, 60))))
      where groupe = p_groupe and membre = p_membre;

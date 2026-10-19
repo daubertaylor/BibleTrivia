@@ -11,6 +11,8 @@
 #      chose pour leurs cousins des groupes, shim-groupes.js (le client) et
 #      faux-serveur-groupes.js (un vrai PostgreSQL derrière un faux Supabase),
 #      et brouillon.js, qui dit seulement aux autres où poser leurs fichiers.
+#      fonction-rappels.js non plus (v329) : il branche la vraie fonction des
+#      rappels sur un vrai PostgreSQL, pour les bancs des messages.
 #      faux-supabase.js non plus : c'est le faux serveur des comptes, un TEXTE
 #      que comptes.js injecte dans la page — lancé seul, il ne vérifiait rien.
 #
@@ -40,7 +42,7 @@ RACINE="$(cd "$(dirname "$0")/.." && pwd)"
 URL="${1:-http://127.0.0.1:8099/index.html}"
 NODE=/opt/node22/bin/node
 SORTIE="$(mktemp -d /tmp/bancs-XXXX)"
-PAS_DES_BANCS="shim hub extraire-questions faux-serveur-groupes shim-groupes brouillon faux-supabase"
+PAS_DES_BANCS="shim hub extraire-questions faux-serveur-groupes shim-groupes brouillon faux-supabase fonction-rappels"
 # CHANTIERS : des bancs commencés dont la MESURE n'est pas encore fiable. Ils
 # ne gardent rien tant qu'ils se trompent, et un banc qui crie à tort finit
 # par être ignoré — c'est exactement ce qui est arrivé à lisible et fondu.

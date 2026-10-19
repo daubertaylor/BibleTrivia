@@ -29,7 +29,11 @@ function sh(cmd, args, opts){
     (e, out, err) => e ? rej(Object.assign(e, { stderr: err, stdout: out })) : res({ out, err })));
 }
 
-async function demarrerPG(port){
+/* (v329) opts.rappels : notifications/installer.sql collé par-dessus les
+   groupes, avec le décor de Supabase qu'il attend (service_role, pg_net
+   imité — voir fonction-rappels.js) : push_enregistrer, rappels_etat et le
+   déclencheur des messages sont alors les vrais. */
+async function demarrerPG(port, opts){
   const D = fs.mkdtempSync(path.join(os.tmpdir(), 'pggroupes-'));
   fs.chmodSync(D, 0o777);
   const pg = (args) => sh('runuser', ['-u', 'postgres', '--'].concat(args));
@@ -54,6 +58,11 @@ async function demarrerPG(port){
   for (const f of ['comptes/table.sql', 'groupes/table.sql']) {
     await sh(BIN + '/psql', ['-h', D, '-p', String(port), '-U', 'postgres', '-d', 'essai', '-v', 'ON_ERROR_STOP=1', '-qX',
       '-f', path.join(RACINE, f)]);
+  }
+  if (opts && opts.rappels) {
+    await psql('drop table public.push_subs;' + require('./fonction-rappels.js').DECOR_SUPABASE);
+    await sh(BIN + '/psql', ['-h', D, '-p', String(port), '-U', 'postgres', '-d', 'essai', '-v', 'ON_ERROR_STOP=1', '-qX',
+      '-f', path.join(RACINE, 'notifications/installer.sql')]);
   }
   /* LE JOURNAL DU DIRECT. Supabase lit le journal de réplication ; on pose à
      la place un déclencheur qui note chaque insertion et mise à jour de
@@ -251,8 +260,8 @@ function creerServeur(base){
 }
 
 /* Tout monter d'un coup : la base, le serveur, et de quoi semer des comptes. */
-async function monter(portHttp, portPG){
-  const base = await demarrerPG(portPG || 5436);
+async function monter(portHttp, portPG, opts){
+  const base = await demarrerPG(portPG || 5436, opts);
   const serveur = creerServeur(base);
   await new Promise(r => serveur.listen(portHttp || 8250, '127.0.0.1', r));
   const sql = async (q) => (await base.psql(q)).out.trim();
@@ -267,7 +276,8 @@ async function monter(portHttp, portPG){
       const r = await fetch('http://127.0.0.1:' + (portHttp || 8250) + '/faux/rpc', { method: 'POST', headers: { 'x-moi': moi }, body: JSON.stringify({ nom, args }) });
       return r.json();
     },
-    arreter: async () => { serveur.fermer(); await base.arreter(); }
+    arreter: async () => { serveur.fermer(); await base.arreter(); },
+    base
   };
 }
 module.exports = { monter, demarrerPG, creerServeur };
