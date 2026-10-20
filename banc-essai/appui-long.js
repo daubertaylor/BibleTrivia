@@ -6,7 +6,10 @@
         déjà ouvert ;
      2. on lâche : il reste ouvert (le clic du lâcher ne referme rien) ;
      3. une action du menu, touchée ensuite, répond (« Copier » le referme) ;
-     4. un simple toucher ouvre toujours le menu ;
+     4. (v332) un simple toucher prépare la RÉPONSE — le message cité au-dessus
+        de la barre d'écriture — et n'ouvre pas le menu ; l'appui long, lui,
+        ne prépare aucune réponse ; un serveur qui ne sait pas encore les
+        réponses garde l'ancien geste (le toucher ouvre le menu) ;
      5. un doigt qui glisse (on fait défiler) n'ouvre rien ;
      6. aucune erreur.
    Usage : node banc-essai/appui-long.js [url] */
@@ -29,7 +32,7 @@ const attends = (ms) => new Promise(r => setTimeout(r, ms));
   await p.evaluate(() => {
     document.documentElement.classList.add('is-standalone');
     compte.dispo = true; compte.session = { user: { id: 'moi-0', email: 'j@e.net' } }; compte.etape = 'connecte';
-    grp.installe = true; grp.ouverts = true; grp.etat = { participe: 'ok', moderateur: false };
+    grp.installe = true; grp.ouverts = true; grp.etat = { participe: 'ok', moderateur: false, reponses: true };
     grp.liste = [{ id: 'g1', nom: 'Les amis du jeudi', teinte: 2, non_lus: 0, nb_membres: 2, code: '7UHF5T', role: 'membre' }];
     grp.membres = { g1: [{ membre: 'moi-0', role: 'membre', muet_jusqu: null }, { membre: 'u-2', role: 'proprietaire', muet_jusqu: null }] };
     grp.profils = { 'moi-0': { nom: 'Taylor', couleur: '#4C86E8' }, 'u-2': { nom: 'Sam', couleur: '#E8574C' } };
@@ -43,7 +46,7 @@ const attends = (ms) => new Promise(r => setTimeout(r, ms));
   const pose = (x, y) => cdp.send('Input.dispatchTouchEvent', { type: 'touchStart', touchPoints: [{ x, y }] });
   const glisse = (x, y) => cdp.send('Input.dispatchTouchEvent', { type: 'touchMove', touchPoints: [{ x, y }] });
   const leve = () => cdp.send('Input.dispatchTouchEvent', { type: 'touchEnd', touchPoints: [] });
-  const feuille = () => p.evaluate(() => { const v = document.querySelectorAll('#grpActionsVeil'); return { n: v.length, ouverte: v.length === 1 && !v[0].classList.contains('closing') }; });
+  const feuille = () => p.evaluate(() => { const v = document.querySelectorAll('#grpActionsVeil'); return { n: v.length, ouverte: v.length === 1 && !v[0].classList.contains('closing'), cite: !!document.querySelector('#compo .compo-cite') }; });
   const fermer = async () => { await p.evaluate(() => { try { fermerFeuilleGroupe('grpActionsVeil'); } catch (e) {} }); await attends(700); };
 
   /* 1-2 : l'appui long */
@@ -55,7 +58,7 @@ const attends = (ms) => new Promise(r => setTimeout(r, ms));
   await leve();
   await attends(500);
   const apres = await feuille();
-  dit('… on lâche : il reste ouvert, une seule fois', apres.ouverte && apres.n === 1, JSON.stringify(apres));
+  dit('… on lâche : il reste ouvert, une seule fois — et aucune réponse ne se prépare', apres.ouverte && apres.n === 1 && !apres.cite, JSON.stringify(apres));
   /* 3 : une action du menu répond */
   const copier = await p.evaluate(() => { const r = [...document.querySelectorAll('#grpActionsVeil .grp-liste-act > *')][0].getBoundingClientRect(); return { x: r.left + r.width / 2, y: r.top + r.height / 2 }; });
   await pose(copier.x, copier.y); await attends(60); await leve();
@@ -63,12 +66,24 @@ const attends = (ms) => new Promise(r => setTimeout(r, ms));
   dit('une action touchée ensuite répond (« Copier » referme le menu)', !(await feuille()).ouverte);
   await fermer();
 
-  /* 4 : le simple toucher */
+  /* 4 : le simple toucher prépare la réponse */
   b = await bulle();
   await pose(b.x, b.y); await attends(80); await leve();
   await attends(500);
-  dit('un simple toucher ouvre toujours le menu', (await feuille()).ouverte);
+  const t4 = await feuille();
+  const cite4 = await p.evaluate(() => { const q = document.querySelector('#compo .compo-cite'); return q ? q.textContent : null; });
+  dit('(v332) un simple toucher prépare la réponse (le message cité au-dessus de la barre), sans ouvrir le menu', !t4.ouverte && t4.cite && /Message numéro 11/.test(cite4 || ''), JSON.stringify(t4) + ' · ' + cite4);
+  await p.evaluate(() => annulerReponse());
+  await attends(300);
+  dit('   « × » la retire', !(await feuille()).cite);
+  await p.evaluate(() => { grp.etat.reponses = false; });
+  b = await bulle();
+  await pose(b.x, b.y); await attends(80); await leve();
+  await attends(500);
+  const t4b = await feuille();
+  dit('   un serveur qui ne sait pas encore les réponses : le toucher ouvre le menu, comme avant', t4b.ouverte && !t4b.cite, JSON.stringify(t4b));
   await fermer();
+  await p.evaluate(() => { grp.etat.reponses = true; });
 
   /* 5 : on fait défiler */
   b = await bulle();
@@ -77,7 +92,7 @@ const attends = (ms) => new Promise(r => setTimeout(r, ms));
   await attends(600);
   const defile = await feuille();
   await leve(); await attends(400);
-  dit('un doigt qui glisse fait défiler, et n\'ouvre rien', !defile.ouverte && !(await feuille()).ouverte, JSON.stringify(defile));
+  dit('un doigt qui glisse fait défiler, et n\'ouvre rien (ni menu, ni réponse)', !defile.ouverte && !defile.cite && !(await feuille()).ouverte, JSON.stringify(defile));
 
   dit('aucune erreur', errs.length === 0, errs.slice(0, 2).join(' | '));
   await nav.close();

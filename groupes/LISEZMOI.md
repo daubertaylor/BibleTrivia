@@ -116,7 +116,26 @@ qui existent gardent leur initiale tant que personne ne leur choisit un logo.
 Tant que ce n'est pas fait, le jeu ne propose aucun logo, et crée et modifie
 les groupes exactement comme avant.
 
-**Une seule fois suffit pour les étapes 6, 7 et 8 ensemble**, quelle que soit
+### 9. Répondre à un message, et 120 membres par groupe (v332) — recoller le fichier une fois
+
+La v332 apporte la **réponse à un message**, comme sur WhatsApp : on touche
+une bulle, elle se pose au-dessus de la barre d'écriture, et la réponse part
+avec sa citation — la toucher remonte au message d'origine, qui s'éclaire un
+instant. L'appui long ouvre toujours le menu (copier, signaler, supprimer,
+« Vu par »). Et un groupe compte désormais **120 membres au plus** (c'était
+200, sans que le jeu sache le dire) : le nombre des disciples réunis en
+Actes 1:15, une assemblée et pas une foule. Le jeu le dit dès qu'on tape le
+code d'un groupe plein, avant même « Rejoindre ». Personne n'est jamais retiré
+d'un groupe : seules les nouvelles entrées attendent une place.
+
+Comme aux étapes 6, 7 et 8 : recoller `groupes/table.sql` **en entier** dans
+**SQL Editor** → **Run**.
+
+Tant que ce n'est pas fait, toucher un message ouvre le menu, exactement comme
+avant (un serveur d'avant perdrait la citation en route), et un groupe reste
+plein à 200.
+
+**Une seule fois suffit pour les étapes 6, 7, 8 et 9 ensemble**, quelle que soit
 la version déjà installée : le fichier d'aujourd'hui se colle par-dessus
 n'importe laquelle de ses versions passées sans rien perdre, et donne
 exactement la même base qu'une installation neuve (vérifié par
@@ -144,8 +163,9 @@ exactement la même base qu'une installation neuve (vérifié par
   téléphone (relance, changement de langue, réseau lent). Le bouton manette
   lance une partie en ligne et l'annonce dans le groupe : les autres n'ont qu'à
   toucher **Rejoindre la partie** ; quitter la partie ramène à la discussion.
-  Toucher une bulle permet de la copier, la signaler, bloquer son auteur ou la
-  supprimer si c'est la sienne — supprimée, elle disparaît pour tout le monde.
+  Toucher une bulle y répond (v332, étape 9) ; la tenir permet de la copier,
+  la signaler, bloquer son auteur ou la supprimer si c'est la sienne —
+  supprimée, elle disparaît pour tout le monde.
 - **Les photos** (v311, étape 6) : chacun voit la photo de profil des membres
   de ses groupes ; toucher un visage l'agrandit.
 - **Les admins** (propriétaire, et ceux qu'il nomme) peuvent mettre en

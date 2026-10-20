@@ -17,9 +17,11 @@
      2. le corps de la page s'arrête au bord du clavier, et le champ reste
         visible au-dessus ;
      3. clavier fermé, le corps reprend toute la hauteur ;
-     4. le champ du code : tant que l'exemple « ABC234 » est affiché, le
-        curseur ne se dessine pas au milieu ; il revient dès la première
-        lettre ;
+     4. le champ du code : (v332) touché vide, l'exemple « ABC234 »
+        s'efface et le curseur se dessine, seul, au milieu — « je n'ai pas
+        le petit trait qui me dit que je suis en train d'écrire » ; il reste
+        à la première lettre (avant la v332 : le curseur caché tant que
+        l'exemple restait affiché) ;
      5. aucune erreur.
    Usage : node banc-essai/page-clavier.js [url] */
 const { chromium } = require('/opt/node22/lib/node_modules/playwright');
@@ -80,12 +82,15 @@ const dit = (q, b, d) => { if (!b) ko++; console.log('  ' + (b ? 'OK  ' : 'KO  '
         dit(champNom + ' : 2. le corps s\'arrête au bord du clavier, le champ visible', Math.abs(r.corpsBas - (H - KB)) <= 1 && r.champBas <= H - KB && r.champHaut >= 0,
           'corps jusqu\'à ' + r.corpsBas + ' px, bord du clavier à ' + (H - KB) + ', champ ' + r.champHaut + '–' + r.champBas);
         if (champ === 'grpCode') {
-          const avant = await p.evaluate((c) => getComputedStyle(document.getElementById(c)).caretColor, champ);
+          const lire = (c) => p.evaluate((c) => { const e = document.getElementById(c); return { curseur: getComputedStyle(e).caretColor, exemple: getComputedStyle(e, '::placeholder').color }; }, c);
+          const avant = await lire(champ);
           await p.keyboard.type('A');
           await p.waitForTimeout(150);
-          const apres = await p.evaluate((c) => getComputedStyle(document.getElementById(c)).caretColor, champ);
-          const transparent = (x) => /rgba\(0, 0, 0, 0\)|transparent/.test(x);
-          dit(champNom + ' : 4. l\'exemple affiché, pas de curseur au milieu ; il revient à la première lettre', transparent(avant) && !transparent(apres), avant + ' -> ' + apres);
+          const apres = await lire(champ);
+          const transparent = (x) => /rgba\(\d+, \d+, \d+, 0\)|transparent/.test(x);
+          dit(champNom + ' : 4. touché vide, l\'exemple s\'efface et le curseur se voit ; il reste à la première lettre',
+            transparent(avant.exemple) && !transparent(avant.curseur) && !transparent(apres.curseur),
+            'exemple ' + avant.exemple + ', curseur ' + avant.curseur + ' -> ' + apres.curseur);
         }
         /* Le clavier redescend. */
         await p.evaluate(([c, h]) => {
