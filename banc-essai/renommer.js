@@ -4,10 +4,12 @@
    règles. Taylor (propriétaire, iPhone) et Benoît (membre, Android), tous
    deux DANS la discussion. Taylor renomme le groupe et change sa couleur.
    CE QU'IL EXIGE :
-     1. chez Taylor, tout de suite : l'en-tête de la discussion, la couleur de
-        l'écran, la page des infos ;
+     1. chez Taylor, tout de suite : l'en-tête de la discussion (le nom, et
+        l'icône à sa nouvelle couleur), la page des infos — et la discussion
+        elle-même ne change pas de couleur (v333 : elle garde celle du jeu) ;
      2. chez Benoît, sans rien toucher, la discussion restée ouverte : le
-        nouveau nom dans l'en-tête et la nouvelle couleur, en 12 s au plus ;
+        nouveau nom dans l'en-tête et l'icône à la nouvelle couleur, en 12 s
+        au plus ;
      3. Benoît revient à la liste : le nouveau nom ;
      4. Taylor relance l'app : le nouveau nom, dès la liste (la mémoire du
         téléphone le garde) ;
@@ -58,8 +60,11 @@ const dit = (quoi, bon, detail) => { console.log('  ' + (bon ? 'OK  ' : 'KO  ') 
       await attendre(p, () => state.screen === 'groupe' && !!document.getElementById('grpTete'), null, 9000);
     }
     await pa.waitForTimeout(800);
+    /* L'icône de l'en-tête porte la couleur du groupe (TEINTES[5] : #2FC1C6,
+       #14989E) ; l'écran, lui, n'en porte aucune. */
     const tete = (p) => p.evaluate(() => { const t = document.querySelector('#grpTete .grp-txt b'); const e = document.querySelector('#app > .screen.groupe-ecran:not(.screen-exit)');
-      return { nom: t ? t.textContent : '', style: e ? e.getAttribute('style') || '' : '' }; });
+      const av = document.querySelector('#grpTete .grp-av');
+      return { nom: t ? t.textContent : '', icone: av ? av.getAttribute('style') || '' : '', ecran: e ? e.getAttribute('style') || '' : '' }; });
     const avantB = await tete(pb);
     dit('au départ, les deux voient « Ancien nom »', avantB.nom === 'Ancien nom' && (await tete(pa)).nom === 'Ancien nom', avantB.nom);
 
@@ -77,14 +82,15 @@ const dit = (quoi, bon, detail) => { console.log('  ' + (bon ? 'OK  ' : 'KO  ') 
     const serveur = await m.sql(`select nom || ' / ' || teinte from public.groupes where id = '${g.id}'`);
     const ta = await tete(pa);
     const infos = await pa.evaluate(() => { const v = document.getElementById('grpInfosVeil'); const t = v && v.querySelector('.sheet-title .st-mot'); return t ? t.textContent : ''; });
-    dit('1. chez Taylor, tout de suite : l\'en-tête, la couleur, la page des infos', ta.nom === 'Les veilleurs' && /18A0A6|0E7F84/.test(ta.style) && infos === 'Les veilleurs',
-      'serveur « ' + serveur + ' », en-tête « ' + ta.nom + ' », infos « ' + infos + ' »');
+    dit('1. chez Taylor, tout de suite : l\'en-tête, l\'icône à sa couleur, la page des infos ; la discussion garde la couleur du jeu',
+      ta.nom === 'Les veilleurs' && /2FC1C6|14989E/i.test(ta.icone) && !ta.ecran && infos === 'Les veilleurs',
+      'serveur « ' + serveur + ' », en-tête « ' + ta.nom + ' », icône « ' + ta.icone.slice(0, 60) + ' », écran « ' + ta.ecran.slice(0, 40) + ' », infos « ' + infos + ' »');
 
     /* ---- Benoît, sans rien toucher ---- */
     const t0 = Date.now();
     const vu = await attendre(pb, () => { const t = document.querySelector('#grpTete .grp-txt b'); return !!t && t.textContent === 'Les veilleurs'; }, null, 12500);
     const tb = await tete(pb);
-    dit('2. chez Benoît, la discussion restée ouverte : le nouveau nom et la nouvelle couleur', vu && /18A0A6|0E7F84/.test(tb.style),
+    dit('2. chez Benoît, la discussion restée ouverte : le nouveau nom et l\'icône à la nouvelle couleur', vu && /2FC1C6|14989E/i.test(tb.icone) && !tb.ecran,
       (vu ? (Date.now() - t0) + ' ms' : 'jamais') + ' · « ' + tb.nom + ' »');
 
     /* ---- Benoît revient à la liste ---- */

@@ -2601,18 +2601,16 @@
      celui de n'importe quel réglage plus court que sa colonne.
      Le retrait de 0,18rem est exactement le remplissage de la pastille
      RETENUE : elle vient donc s'aligner au pixel sur le bord du champ, et
-     aucune ne déborde jamais de la colonne. */
-  .color-row{ display:flex; gap:0.12rem; justify-content:flex-start; align-items:center; margin-left:-0.18rem; }
-  .color-dot{ width:2.65rem; height:2.65rem; border-radius:50%; border:0 solid transparent;
-    padding:0.4rem; background-clip:content-box;
-    display:flex; align-items:center; justify-content:center;
-    box-shadow:none; filter:drop-shadow(0 1px 2px rgba(24,16,10,0.3));
-    transition:padding 0.24s cubic-bezier(0.32,0.72,0,1); }
+     aucune ne déborde jamais de la colonne.
+     (v333) La pastille du Profil est devenue celle des groupes (voir UNE
+     SEULE PASTILLE DE COULEUR) : un bouton de 2,45rem, son disque en retrait
+     de 0,3rem, 0,08 retenu. La rangée garde au pixel la place des disques
+     d'avant : même pas de 2,77rem (2,45 + 0,32), et le disque retenu
+     toujours aligné sur le bord du champ (0,08rem de retrait). */
+  .color-row{ display:flex; gap:0.32rem; justify-content:flex-start; align-items:center; margin-left:-0.08rem; }
   .cd-ck{ width:1.15rem; height:1.15rem; color:#fff; display:inline-flex; opacity:0; transform:scale(0.5);
     transition:opacity 0.16s ease-out, transform var(--tr-ouvre); pointer-events:none; }
   .cd-ck svg{ width:100%; height:100%; }
-  .color-dot.sel{ padding:0.18rem; }
-  .color-dot.sel .cd-ck{ opacity:1; transform:scale(1); }
   .btn-ghost{ width:100%; border:0; color:var(--ink); border-radius:var(--r-m); padding:calc(0.8rem + 1px); font-weight:700; font-size:0.9rem; }
 
   .online-hero{ text-align:center; padding:0.7rem 1rem var(--e-3); }
@@ -5303,8 +5301,9 @@
      traînant derrière le premier. Comme la barre d'onglets d'iOS, elle fait
      désormais partie de sa page : elle arrive de côté, du même pas
      (--tr-ouvre), avec elle ; et quand on quitte l'accueil pour une page
-     qui la cache, elle part avec lui, d'un fondu court vers le côté — la
-     page qu'on quitte disparaît elle aussi tout de suite. Au démarrage
+     qui la cache, elle part avec lui — dans la MÊME image (v333 : voir ELLE
+     PART AU MÊME INSTANT QUE SA PAGE), puisque la page qu'on quitte
+     disparaît net avec le verre du jeu. Au démarrage
      (l'accueil monte du bas), elle monte du bas : toujours le sens de sa
      page. Entre Accueil et Groupes elle ne bouge pas : seule la pastille
      glisse. */
@@ -5312,11 +5311,15 @@
   @keyframes barreArriveG{ from{ transform:translate3d(calc(-50% - 28vw),0,0); } to{ transform:translate3d(-50%,0,0); } }
   @keyframes barreArriveD{ from{ transform:translate3d(calc(-50% + 28vw),0,0); } to{ transform:translate3d(-50%,0,0); } }
   @keyframes barrePart{ from{ opacity:1; transform:translate3d(-50%,0,0); } to{ opacity:0; transform:translate3d(calc(-50% - 10vw),0,0); } }
+  @keyframes barrePartG{ from{ opacity:1; transform:translate3d(-50%,0,0); } to{ opacity:0; transform:translate3d(calc(-50% + 10vw),0,0); } }
   .barre-bas.arrive-g{ animation:barreArriveG var(--tr-ouvre) both; }
   .barre-bas.arrive-d{ animation:barreArriveD var(--tr-ouvre) both; }
-  /* Un fondu qui part VITE (courbe de sortie, 0,2 s) : la page qu'on quitte
-     disparaît à l'instant, la barre ne doit pas traîner derrière elle. */
-  .barre-bas.part-cote{ animation:barrePart 0.2s cubic-bezier(0.2,0.8,0.2,1) forwards; pointer-events:none; }
+  /* (v333) Avec le verre peint seulement (voir majBarre) : le même fondu de
+     côté que la page qu'on quitte (screenOutD/G), à la même horloge, et
+     SOUS la page qui arrive (#app est au plan 1). Avec le verre du jeu, la
+     barre disparaît net, dans la même image que sa page. */
+  .barre-bas.part-cote{ animation:barrePart var(--tr-ferme) forwards; pointer-events:none; z-index:0; }
+  .barre-bas.part-cote.part-g{ animation-name:barrePartG; }
   /* Le clavier monte (une recherche, une adresse) : la barre s'efface. Sur
      Android elle remonterait avec la page et se poserait sur le champ. */
   html.kb .barre-bas{ transform:translate3d(-50%, calc(100% + var(--bb-bas) + 1rem), 0); pointer-events:none; }
@@ -5649,17 +5652,28 @@
      marge qui s'ouvre. (Les pastilles du Profil, en couleur unie, n'ont pas
      ce défaut : mesurées rondes, elles ne changent pas.) */
   .grp-teintes{ display:flex; justify-content:space-between; gap:0.2rem; }
-  .grp-teinte{ position:relative; width:2.45rem; height:2.45rem; border-radius:50%; border:0; padding:0; flex-shrink:0; background:none;
+  /* ===== (v333) UNE SEULE PASTILLE DE COULEUR, PARTOUT =====
+     « Vérifie que l'animation, quand je touche les couleurs, dans le profil
+     ou dans les groupes, soit exactement pareille. » Elle ne l'était pas :
+     au Profil, le disque était encore le fond du bouton, découpé et ombré
+     par un filtre (ce que la v328 avait retiré aux groupes), et le bouton
+     plus large (2,65rem contre 2,45) — son voile d'appui blanc débordait le
+     disque de 0,4rem, contre 0,3 dans un groupe. Les deux rangées ont
+     maintenant LE MÊME bouton : même taille, même disque à lui, même ombre,
+     même ouverture du disque retenu, même coche, même voile, même ressort.
+     Seule la rangée diffère : six pastilles calées à gauche au Profil, huit
+     réparties dans un groupe. */
+  .color-dot, .grp-teinte{ position:relative; width:2.45rem; height:2.45rem; border-radius:50%; border:0; padding:0; flex-shrink:0; background:none;
     display:flex; align-items:center; justify-content:center; color:#fff;
     box-shadow:none; -webkit-tap-highlight-color:transparent; --press-tint: rgba(255,255,255,0.55); }
   .gt-disque{ position:absolute; top:0.3rem; right:0.3rem; bottom:0.3rem; left:0.3rem; border-radius:50%; pointer-events:none;
     box-shadow:0 1px 2px rgba(24,16,10,0.3);
     transition:top 0.24s cubic-bezier(0.32,0.72,0,1), right 0.24s cubic-bezier(0.32,0.72,0,1),
       bottom 0.24s cubic-bezier(0.32,0.72,0,1), left 0.24s cubic-bezier(0.32,0.72,0,1); }
-  .grp-teinte .cd-ck{ position:relative; }
-  .grp-teinte::after{ content:""; position:absolute; left:50%; top:50%; width:44px; height:44px; transform:translate(-50%,-50%); }
-  .grp-teinte.choisie .gt-disque{ top:0.08rem; right:0.08rem; bottom:0.08rem; left:0.08rem; }
-  .grp-teinte.choisie .cd-ck{ opacity:1; transform:scale(1); }
+  .color-dot .cd-ck, .grp-teinte .cd-ck{ position:relative; }
+  .color-dot::after, .grp-teinte::after{ content:""; position:absolute; left:50%; top:50%; width:44px; height:44px; transform:translate(-50%,-50%); }
+  .color-dot.sel .gt-disque, .grp-teinte.choisie .gt-disque{ top:0.08rem; right:0.08rem; bottom:0.08rem; left:0.08rem; }
+  .color-dot.sel .cd-ck, .grp-teinte.choisie .cd-ck{ opacity:1; transform:scale(1); }
   .grp-code-carte{ display:flex; flex-direction:column; align-items:center; gap:0.35rem; padding:0.9rem 0.8rem 1rem; border-radius:var(--r-l);
     background:rgb(252,248,241); box-shadow:0 3px 12px rgba(34,26,16,0.08); }
   .gc-l{ font-family:'Poppins',sans-serif; font-size:0.74rem; font-weight:700; letter-spacing:0.09em; text-transform:uppercase; color:var(--ink-soft); }
@@ -5799,30 +5813,41 @@
   .b-moi .b-arrive{ transform-origin:100% 100%; }
   .b-eux .b-arrive{ transform-origin:0 100%; }
   @keyframes bArrive{ from{ opacity:0; transform:translateY(0.5rem) scale(0.96); } to{ opacity:1; transform:none; } }
-  /* La couleur du groupe (voir BULLES_GROUPE) ; le corail reste le repli. */
-  .groupe-ecran .b-moi .b-bulle:not(.b-partie):not(.b-vide){ background:var(--grp-c, var(--primary)); color:var(--grp-txt, #fff);
-    box-shadow:0 1px 2px rgba(var(--grp-rgb, 214,60,34),0.18), 0 4px 12px rgba(var(--grp-rgb, 214,60,34),0.24); }
-  .groupe-ecran .compo-envoi{ background:var(--grp-c, var(--primary)); color:var(--grp-txt, #fff);
-    box-shadow:0 1px 2px rgba(var(--grp-rgb, 214,60,34),0.18), 0 4px 12px rgba(var(--grp-rgb, 214,60,34),0.3); }
-  .groupe-ecran .compo-jeu, .groupe-ecran .b-partie .bp-ico{ color:var(--grp-fonce, var(--primary)); }
-  .groupe-ecran .b-partie .grp-pill:not(.calme){ background:var(--grp-c, var(--primary)); color:var(--grp-txt, #fff); }
+  /* ===== (v333) LA MESSAGERIE A UNE SEULE COULEUR : CELLE DU JEU =====
+     « Quand je modifie un groupe et que je choisis la couleur, je
+     préférerais que ce soit uniquement la couleur du logo, et pas celle de
+     tout le groupe, des messages… C'est moins compréhensible. » Depuis la
+     v311, chaque groupe peignait sa discussion à sa couleur — mes bulles, le
+     bouton d'envoi, la manette, l'invitation à jouer : huit groupes, huit
+     jeux différents. Toutes les discussions prennent maintenant le corail du
+     jeu, le dégradé qu'avaient déjà les groupes corail (mesuré pour le texte
+     blanc), et la couleur choisie ne colore plus que l'icône du groupe : sa
+     pastille, dans la liste, l'en-tête et la page du groupe. */
+  :root{ --msg-c:linear-gradient(150deg, #F04A26, #DA3414); --msg-fonce:#DA3414; --msg-rgb:214,60,34; }
+  .groupe-ecran .b-moi .b-bulle:not(.b-partie):not(.b-vide){ background:var(--msg-c); color:#fff;
+    box-shadow:0 1px 2px rgba(var(--msg-rgb),0.18), 0 4px 12px rgba(var(--msg-rgb),0.24); }
+  .groupe-ecran .compo-envoi{ background:var(--msg-c); color:#fff;
+    box-shadow:0 1px 2px rgba(var(--msg-rgb),0.18), 0 4px 12px rgba(var(--msg-rgb),0.3); }
+  .groupe-ecran .compo-jeu, .groupe-ecran .b-partie .bp-ico{ color:var(--msg-fonce); }
+  .groupe-ecran .b-partie .grp-pill:not(.calme){ background:var(--msg-c); color:#fff; }
   /* (v329) Une bulle en route n'est plus pâlie : « Envoi… » le dit dessous,
      comme l'horloge de WhatsApp. Pâlie, elle arrivait pleine, retombait à
      62 % quand le réseau tardait, puis remontait à la confirmation. (Un
      envoi refusé, lui, retire la bulle et rend le texte à la barre.) */
-  /* LES MENTIONS (v317). Le nom nommé en gras, dans la couleur du groupe sur
-     le crème, dans celle du texte sur ma propre bulle. Une bulle qui me nomme
+  /* LES MENTIONS (v317). Le nom nommé en gras, dans le corail de la
+     messagerie sur le crème (v333 : plus la couleur du groupe), dans celle du
+     texte sur ma propre bulle. Une bulle qui me nomme
      prend un fond doré — un fond, jamais un trait. */
-  .b-bulle .mention{ font-weight:700; color:var(--grp-fonce, var(--primary-dark)); }
+  .b-bulle .mention{ font-weight:700; color:var(--msg-fonce); }
   .b-moi .b-bulle .mention{ color:inherit; }
   .b-eux .b-bulle.me-nomme{ background:rgb(255,239,204); }
   /* (v332) LA RÉPONSE À UN MESSAGE (voir RÉPONDRE À UN MESSAGE). En tête de
-     la bulle, le message cité : un fond teinté de la couleur du groupe (sur
-     le crème) ou un voile clair (sur ma bulle colorée) — jamais un trait.
+     la bulle, le message cité : un fond teinté du corail de la messagerie
+     (sur le crème) ou un voile clair (sur ma bulle colorée) — jamais un trait.
      Le nom en gras, le début du texte sur deux lignes au plus. */
   .b-cite{ display:flex; flex-direction:column; gap:0.05rem; margin:-0.2rem -0.45rem 0.45rem; padding:0.4rem 0.65rem 0.45rem;
-    border-radius:14px; background:rgba(var(--grp-rgb, 214,60,34),0.1); cursor:pointer; white-space:normal; }
-  .b-cite b{ font-family:'Poppins',sans-serif; font-size:0.76rem; font-weight:700; color:var(--grp-fonce, var(--primary-dark)); }
+    border-radius:14px; background:rgba(var(--msg-rgb),0.1); cursor:pointer; white-space:normal; }
+  .b-cite b{ font-family:'Poppins',sans-serif; font-size:0.76rem; font-weight:700; color:var(--msg-fonce); }
   .b-cite > span{ font-size:0.84rem; line-height:1.32; color:var(--ink-soft);
     display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical; overflow:hidden; }
   .b-moi .b-cite{ background:rgba(255,255,255,0.2); }
@@ -5834,11 +5859,11 @@
   @keyframes bEclat{ 0%, 35%{ filter:brightness(1.12) saturate(1.1); transform:scale(1.02); } 100%{ filter:none; transform:none; } }
   /* Et au-dessus de la barre d'écriture, le message auquel on répond. */
   .compo-cite{ display:flex; align-items:center; gap:0.4rem; margin:0 0 0.4rem; padding:0.4rem 0.3rem 0.4rem 0.8rem;
-    border-radius:calc(var(--r-l) - 2px); background:rgba(var(--grp-rgb, 214,60,34),0.1); }
+    border-radius:calc(var(--r-l) - 2px); background:rgba(var(--msg-rgb),0.1); }
   .compo-cite.arrive{ animation:ccArrive 0.24s cubic-bezier(0.2,0.85,0.3,1) both; }
   @keyframes ccArrive{ from{ opacity:0; transform:translateY(0.35rem); } to{ opacity:1; transform:none; } }
   .compo-cite .cc-t{ flex:1; min-width:0; display:flex; flex-direction:column; gap:0.02rem; }
-  .compo-cite .cc-t b{ font-family:'Poppins',sans-serif; font-size:0.78rem; font-weight:700; color:var(--grp-fonce, var(--primary-dark)); }
+  .compo-cite .cc-t b{ font-family:'Poppins',sans-serif; font-size:0.78rem; font-weight:700; color:var(--msg-fonce); }
   .compo-cite .cc-t span{ font-size:0.86rem; color:var(--ink-soft); white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
   .compo-cite .cc-x{ flex-shrink:0; width:2.2rem; height:2.2rem; display:flex; align-items:center; justify-content:center; border:0; border-radius:50%;
     background:rgba(42,36,30,0.07); color:var(--ink-soft); -webkit-tap-highlight-color:transparent; }
@@ -5859,20 +5884,20 @@
   .cn-nom small{ flex-shrink:0; font-family:'Inter',sans-serif; font-size:0.76rem; font-weight:600; color:var(--ink-soft); }
   .cn-nom.off b{ color:var(--ink-soft); }
   .cn-nom .cn-ico{ width:1.85rem; height:1.85rem; flex-shrink:0; border-radius:50%; display:flex; align-items:center; justify-content:center;
-    padding:0.4rem; background:var(--grp-c, var(--primary)); color:var(--grp-txt, #fff); }
+    padding:0.4rem; background:var(--msg-c); color:#fff; }
   .cn-nom.off .cn-ico{ background:rgba(58,42,26,0.15); color:var(--ink-soft); }
   .cn-nom .cn-ico svg{ width:100%; height:100%; }
   .b-heure{ font-size:0.72rem; color:var(--ink-soft); margin:0.05rem 0.85rem 0.35rem; }
   /* ===== (v329) VU, COMME SUR WHATSAPP =====
      « Un petit détail, comme sur WhatsApp, pour que les gens voient qui a vu
        les messages. » Sous MES messages, à côté de l'heure : une coche quand
-     le serveur l'a reçu, deux coches quand quelqu'un l'a vu, deux coches à la
-     couleur du groupe quand TOUT le groupe l'a vu. Toucher son message dit
+     le serveur l'a reçu, deux coches quand quelqu'un l'a vu, deux coches
+     corail (la couleur de la messagerie) quand TOUT le groupe l'a vu. Toucher son message dit
      qui (« Vu par », « Pas encore vu »). Une icône, jamais un contour. */
   .b-moi .b-heure{ display:inline-flex; align-items:center; gap:0.22rem; }
   .b-vu{ display:inline-flex; width:1.05rem; height:0.82rem; color:var(--ink-soft); opacity:0.75; transition:color 0.3s ease, opacity 0.3s ease; }
   .b-vu svg{ width:100%; height:100%; }
-  .b-vu.tous{ color:var(--grp-fonce, var(--primary)); opacity:1; }
+  .b-vu.tous{ color:var(--msg-fonce); opacity:1; }
   .grp-vus{ display:flex; flex-direction:column; margin:0.1rem 0 0.35rem; }
   .grp-vus .gv-h{ font-family:'Poppins',sans-serif; font-size:0.74rem; font-weight:700; letter-spacing:0.06em; text-transform:uppercase; color:var(--ink-soft); margin:0.35rem 0.6rem 0.25rem; }
   .grp-vus .gv-l{ display:flex; align-items:center; gap:0.6rem; padding:0.32rem 0.6rem; }
@@ -10110,7 +10135,7 @@ const SUPABASE_ANON_KEY = "sb_publishable_FDJ_R0foC7uIeHmxVrj6rA_2NeIgW2a";
    remontée d'un téléphone ne vaut rien si on ne sait pas QUELLE version
    tournait. Elle doit rester égale au CACHE de sw.js — c'est ce que vérifie
    banc-essai/version.js, qui refuse de laisser publier les deux en désaccord. */
-const VERSION_JEU = "v332";
+const VERSION_JEU = "v333";
 
 /* ===================== QUAND ÇA CASSE CHEZ UN JOUEUR =====================
    « Si quelque chose casse chez cinq d'entre eux sur un modèle de téléphone
@@ -22410,6 +22435,14 @@ function barreHtml(){
     + `<button class="bb-onglet" data-o="groupes" onclick="allerOnglet('groupes')"><span class="bb-ico">${ICONS.bulles}<i class="bb-pastille" hidden></i></span><span class="bb-mot">${T("Groupes")}</span></button>`;
 }
 let barreDispoAvant = null;
+/* La page qu'on quitte disparaît-elle net ? Avec le verre du jeu (gl-xf,
+   par défaut sur tous les téléphones, ou gl-native), un écran qui sort n'a
+   pas d'animation : il disparaît dans la même image (voir LES DEUX MOTEURS
+   DE VERRE). Seul le verre peint (#paintedglass) le fait glisser en fondu. */
+function sortieNette(){
+  const de = document.documentElement;
+  return !!document.querySelector("#app > .screen.screen-exit") && (de.classList.contains("gl-xf") || de.classList.contains("gl-native"));
+}
 function majBarre(){
   let b = document.getElementById("barreBas");
   const dispo = groupesVisibles();
@@ -22484,25 +22517,45 @@ function majBarre(){
     clearTimeout(b._finMouvement);
     /* Elle arrive de côté, avec sa page : on la pose d'abord à sa place,
        sans transition, et c'est l'animation qui la fait venir. */
-    b.classList.remove("part-cote", "arrive-g", "arrive-d");
+    b.classList.remove("part-cote", "part-g", "arrive-g", "arrive-d");
     b.classList.add("sans-transition"); b.classList.remove("cachee");
     void b.offsetWidth;
     b.classList.remove("sans-transition");
     b.classList.add(sens === "g" ? "arrive-g" : "arrive-d");
     b._finMouvement = setTimeout(()=>{ b.classList.remove("arrive-g", "arrive-d"); }, msPli() + 60);
     try{ glassTrack(); }catch(e){}
+  } else if(!etait && !montre && sortieNette()){
+    /* ===== (v333) ELLE PART AU MÊME INSTANT QUE SA PAGE =====
+       « Lorsque je change de page, la barre du bas ne disparaît pas
+         parfaitement bien. » Capture de Taylor, de l'accueil au Profil : la
+       barre encore là, à moitié fondue, glissée de côté, PAR-DESSUS la page
+       qui arrive — « Enregistrer » passait dessous. Le verre du jeu (gl-xf,
+       sur tous les téléphones) fait disparaître net la page qu'on quitte ;
+       la barre, elle, prenait encore 0,2 s de fondu, seule, au-dessus de la
+       nouvelle. Elle fait maintenant partie de sa page jusqu'au bout : elle
+       disparaît avec elle, dans la même image, et se range sous le bord sans
+       qu'on la voie y descendre. (Elle revient toujours AVEC la page qui
+       revient : voir LA BARRE ARRIVE AVEC SA PAGE.) */
+    clearTimeout(b._finMouvement);
+    b.classList.remove("arrive-g", "arrive-d", "part-cote", "part-g");
+    b.classList.add("sans-transition", "cachee");
+    void b.offsetWidth;
+    b.classList.remove("sans-transition");
   } else if(!etait && !montre && sens){
     clearTimeout(b._finMouvement);
-    /* Elle part avec la page qu'on quitte : un fondu court vers le côté,
+    /* Avec le verre peint (#paintedglass), la page qu'on quitte s'efface de
+       côté (screenOutD/G, à l'horloge de fermeture) : la barre s'efface avec
+       elle, du même mouvement, du même pas, et SOUS la page qui arrive ;
        puis on la range sous le bord, sans qu'on la voie y descendre. */
     b.classList.remove("arrive-g", "arrive-d");
+    b.classList.toggle("part-g", sens === "g");
     b.classList.add("part-cote");
     b._finMouvement = setTimeout(()=>{
-      b.classList.add("sans-transition", "cachee"); b.classList.remove("part-cote");
+      b.classList.add("sans-transition", "cachee"); b.classList.remove("part-cote", "part-g");
       void b.offsetWidth; b.classList.remove("sans-transition");
-    }, 230);
+    }, msFerme() + 20);
   } else {
-    if(montre) b.classList.remove("part-cote");
+    if(montre) b.classList.remove("part-cote", "part-g");
     /* Cachée sans mouvement de côté : aucune animation retenue ne doit la
        garder à l'écran. */
     else b.classList.remove("arrive-g", "arrive-d");
@@ -22599,25 +22652,9 @@ const TEINTES = [
   ["#F4512C", "#DE3616"], ["#FBBF3C", "#F29A16"], ["#5B9BF0", "#3A76DD"], ["#3DBB7E", "#22955C"],
   ["#A884F2", "#7F58DD"], ["#2FC1C6", "#14989E"], ["#F26AA6", "#D84687"], ["#7D8A9C", "#5A6678"]
 ];
-/* ===== LA COULEUR D'UN GROUPE, C'EST CELLE DE SA DISCUSSION =====
-   « Les couleurs de groupe doivent servir à quelque chose. Sinon, ça sert à
-   rien d'en avoir. » Elle ne colorait que la pastille de la liste. Elle
-   colore maintenant, dans le groupe, mes bulles, le bouton d'envoi, la
-   manette et l'invitation à jouer : chaque groupe a sa couleur, on sait où
-   l'on écrit avant d'avoir lu le nom.
-   Des dégradés un cran plus profonds que ceux des pastilles : du texte blanc
-   y garde le contraste des bulles d'aujourd'hui (au moins 3,9 au milieu,
-   mesuré) — sauf le jaune, qui prend une encre sombre (7,5). */
-const BULLES_GROUPE = [
-  ["#F04A26", "#DA3414", "#fff", "214,60,34"],   ["#FBC244", "#F3A21E", "#3B2A10", "214,140,20"],
-  ["#4D8DEA", "#336ED6", "#fff", "45,100,205"],  ["#2BA26A", "#1C8350", "#fff", "28,120,75"],
-  ["#9670EA", "#734DD4", "#fff", "105,70,200"],  ["#18A0A6", "#0E7F84", "#fff", "14,120,125"],
-  ["#E4559A", "#C93B7B", "#fff", "190,55,115"],  ["#6E7B8D", "#546072", "#fff", "70,80,100"]
-];
-function couleurGroupe(i){
-  const b = BULLES_GROUPE[(((+i || 0) % 8) + 8) % 8];
-  return "--grp-c:linear-gradient(150deg, " + b[0] + ", " + b[1] + ");--grp-fonce:" + b[1] + ";--grp-txt:" + b[2] + ";--grp-rgb:" + b[3] + ";";
-}
+/* (v333) La couleur d'un groupe ne colore plus que son icône : de la v311
+   à la v332, elle peignait aussi sa discussion (BULLES_GROUPE). Voir « LA
+   MESSAGERIE A UNE SEULE COULEUR ». */
 function teinte(i){
   const t = TEINTES[(((+i || 0) % TEINTES.length) + TEINTES.length) % TEINTES.length];
   return "background:linear-gradient(150deg, " + t[0] + ", " + t[1] + ");";
@@ -23875,7 +23912,7 @@ async function chargerGroupe(id){
    téléphones — et les autres appareils du même joueur — ne l'apprenaient
    qu'en relisant leur liste, et une discussion déjà ouverte ne relisait
    jamais son en-tête, même quand la liste, elle, arrivait à jour. Maintenant
-   l'en-tête, la couleur de l'écran et la page des infos suivent le groupe
+   l'en-tête (et l'icône à sa couleur) et la page des infos suivent le groupe
    chaque fois qu'il est relu : à l'entrée, à chaque relève de la discussion
    ouverte (toutes les 10 s, voir releverFil), et à chaque relecture de la
    liste. Rien ne se redessine si rien n'a changé. */
@@ -23885,9 +23922,6 @@ function majTeteGroupe(g){
   const t = document.getElementById("grpTete");
   const sig = signatureGroupe(g) + "|" + (valeurPhotoSrv("g:" + g.id) || "");
   if(t && t._sig !== sig){ t.innerHTML = teteGroupeHtml(g); t._sig = sig; }
-  const ecran = document.querySelector("#app > .screen.groupe-ecran:not(.screen-exit)");
-  const style = couleurGroupe(g.teinte);
-  if(ecran && ecran.getAttribute("style") !== style) ecran.setAttribute("style", style);
   majInfosGroupe(g);
 }
 async function chargerMembres(id){
@@ -24043,7 +24077,6 @@ function renderGroupe(){
   const el = document.createElement("div");
   el.className = "screen groupe-ecran";
   const g = groupeCourant();
-  if(g) el.setAttribute("style", couleurGroupe(g.teinte));
   if(!g){
     el.innerHTML = `${renderHeader(T("Groupes"), true, "retourGroupes()")}<div class="card grp-vide"><span class="spinner"></span></div>`;
     return el;
@@ -28349,7 +28382,7 @@ function setProfileColor(c){
   if(net.lobby) net.lobby.track(meMeta({searching:net.searching}));
   if(net.room) net.room.track(meMeta());
   /* Mise à jour en place, sans re-rendu : le champ garde son texte et son focus. */
-  document.querySelectorAll(".color-dot").forEach(d=>d.classList.toggle("sel", d.dataset.c===c));
+  document.querySelectorAll(".color-dot").forEach(d=>{ d.classList.toggle("sel", d.dataset.c===c); d.setAttribute("aria-checked", String(d.dataset.c===c)); });
   /* background-COLOR : le raccourci effacerait la photo posée par-dessus
      (voir avatarHtml). */
   document.querySelectorAll("[data-avatar-preview] .avatar").forEach(av=>{ av.style.backgroundColor = c; });
@@ -28377,8 +28410,8 @@ function renderProfile(){
     <label class="field-label">${T("Nom affiché")}</label>
     <input class="text-input" id="profileName" maxlength="18" value="${escapeHtml(profile.name)}" placeholder="${T("Ton prénom")}" autocomplete="off" enterkeyhint="done" oninput="onProfileNameInput(this)" onkeydown="if(event.key==='Enter'){event.preventDefault();this.blur();}">
     <label class="field-label" style="margin-top:var(--e-3)">${T("Couleur")}</label>
-    <div class="color-row">
-      ${TEAM_COLORS.map(c=>`<button class="color-dot${c===profile.color?' sel':''}" style="background-color:${c}" data-c="${c}" onclick="setProfileColor('${c}')" aria-label="${T('couleur')}"><span class="cd-ck">${ACH_CHECK}</span></button>`).join("")}
+    <div class="color-row" role="radiogroup" aria-label="${T("Couleur")}">
+      ${TEAM_COLORS.map(c=>`<button class="color-dot${c===profile.color?' sel':''}" data-c="${c}" onclick="setProfileColor('${c}')" role="radio" aria-checked="${c===profile.color}" aria-label="${T('couleur')}"><span class="gt-disque" style="background:${c}"></span><span class="cd-ck">${ACH_CHECK}</span></button>`).join("")}
     </div>
     <div class="flex-sp"></div>
     <!-- LA SAUVEGARDE SE RANGE SOUS LE PROFIL, ET C'EST SA PLACE. C'est ici
@@ -28426,8 +28459,8 @@ function renderOnlineName(){
     </div>
     <input class="text-input" id="nameInput" maxlength="18" placeholder="${T("Ton prénom")}" value="${escapeHtml(profile.name)}" autocomplete="off" enterkeyhint="go" oninput="profile.name=this.value.slice(0,18)" onkeydown="if(event.key==='Enter'){event.preventDefault();this.blur();saveName(this.value);}">
     <label class="field-label" style="margin-top:var(--e-3)">${T("Couleur")}</label>
-    <div class="color-row">
-      ${TEAM_COLORS.map(c=>`<button class="color-dot${c===profile.color?' sel':''}" style="background-color:${c}" data-c="${c}" onclick="setProfileColor('${c}')" aria-label="${T('couleur')}"><span class="cd-ck">${ACH_CHECK}</span></button>`).join("")}
+    <div class="color-row" role="radiogroup" aria-label="${T("Couleur")}">
+      ${TEAM_COLORS.map(c=>`<button class="color-dot${c===profile.color?' sel':''}" data-c="${c}" onclick="setProfileColor('${c}')" role="radio" aria-checked="${c===profile.color}" aria-label="${T('couleur')}"><span class="gt-disque" style="background:${c}"></span><span class="cd-ck">${ACH_CHECK}</span></button>`).join("")}
     </div>
     <div class="flex-sp"></div>
     <button class="btn-primary" onclick="saveName(document.getElementById('nameInput').value)">${T("Continuer")}</button>
@@ -28581,7 +28614,6 @@ function renderOnlineRoom(){
      pastille, son nom, sa couleur —, et les membres arrivent par la bulle de
      la discussion : ni grand code à recopier, ni « Inviter des amis ». */
   const gs = net.depuisGroupe ? (grp.liste || []).find(x => x.id === net.depuisGroupe) : null;
-  if(gs) el.setAttribute("style", couleurGroupe(gs.teinte));
   const hero = gs ? `
     <div class="code-hero salon-groupe">
       ${pastilleGroupe(gs)}
