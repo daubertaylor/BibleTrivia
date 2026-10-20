@@ -84,6 +84,10 @@ const COULEURS = () => {
       await p.goto(URL);
       await p.waitForFunction(() => { try { return state.screen === 'mode'; } catch (e) { return false; } }, null, { timeout: 25000 });
       await p.evaluate(DECOR);
+      /* Les couleurs attendues sont lues dans le jeu (TEINTES), pas recopiées :
+         la v334 a harmonisé la palette, et le banc la suit. */
+      const T = await p.evaluate(() => TEINTES.map(t => t.join('|')));
+      const jade = new RegExp(T[5], 'i'), or = new RegExp(T[1], 'i'), ciel = new RegExp(T[2], 'i');
       const lire = async (g) => {
         await p.evaluate((g) => { __grpDecor(); grp.courant = g; state.screen = 'groupe'; render(); }, g);
         await p.waitForTimeout(900);
@@ -103,7 +107,7 @@ const COULEURS = () => {
       await p.evaluate(() => { state.screen = 'groupes'; render(); });
       await p.waitForTimeout(800);
       const liste = await p.evaluate(() => [...document.querySelectorAll('#grpMes .grp-ligne .grp-av')].map(e => e.getAttribute('style') || ''));
-      const icone = /2FC1C6|14989E/i.test(a.icone) && /FBBF3C|F29A16/i.test(b.icone) && liste.length === 2 && /2FC1C6|14989E/i.test(liste.join(' ')) && /FBBF3C|F29A16/i.test(liste.join(' '));
+      const icone = jade.test(a.icone) && or.test(b.icone) && liste.length === 2 && jade.test(liste.join(' ')) && or.test(liste.join(' '));
       dit('3. l\'icône porte la couleur du groupe : en-tête de la discussion et liste', icone, 'en-tête ' + a.icone.slice(0, 50) + ' / ' + b.icone.slice(0, 50) + ' · liste ' + liste.map(x => x.slice(0, 50)).join(' / '));
 
       /* 4 — « Modifier le groupe », depuis la discussion. */
@@ -120,7 +124,7 @@ const COULEURS = () => {
       const f1 = await p.evaluate(() => (document.getElementById('grpFormAv') || {}).getAttribute ? document.getElementById('grpFormAv').getAttribute('style') : 'ABSENT');
       const pendant = await p.evaluate(COULEURS);
       const bouge = Object.keys(avant).filter(k => k !== 'icone' && avant[k] !== pendant[k]);
-      dit('4. Modifier le groupe : toucher une couleur ne change que l\'icône du formulaire', /2FC1C6|14989E/i.test(f0) && /5B9BF0|3A76DD/i.test(f1) && !bouge.length,
+      dit('4. Modifier le groupe : toucher une couleur ne change que l\'icône du formulaire', jade.test(f0) && ciel.test(f1) && !bouge.length,
         'icône ' + f0.slice(0, 50) + ' → ' + f1.slice(0, 50) + (bouge.length ? ' · a bougé : ' + bouge.join(', ') : ''));
       await p.evaluate(() => { document.querySelectorAll('[id$="Veil"]').forEach(v => { try { fermerFeuilleGroupe(v.id); } catch (e) {} try { v.remove(); } catch (e) {} }); });
 

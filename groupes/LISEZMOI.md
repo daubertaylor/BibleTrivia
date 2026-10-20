@@ -135,7 +135,23 @@ Tant que ce n'est pas fait, toucher un message ouvre le menu, exactement comme
 avant (un serveur d'avant perdrait la citation en route), et un groupe reste
 plein à 200.
 
-**Une seule fois suffit pour les étapes 6, 7, 8 et 9 ensemble**, quelle que soit
+### 10. La modération écrit dans un groupe (v334) — recoller le fichier une fois
+
+La v334 permet à un **modérateur d'écrire dans un groupe dont il n'est pas
+membre** : depuis la Modération (« Voir le groupe », ou « Tous les groupes »),
+la barre d'écriture est là, un bouclier à la place de la manette, « Au nom de
+la modération… ». Le message part **signé « La modération »** chez les
+membres, partout — la bulle (un bouclier ardoise à la place d'un visage),
+l'aperçu de la liste, la citation, le bandeau dans le jeu, la notification —,
+**jamais du nom de la personne qui modère**. Du texte seulement (une partie ne
+se lance pas de l'extérieur), aux mêmes règles que tout le monde (mots,
+coordonnées, débit). On ne peut ni le bloquer ni le signaler.
+
+Comme aux étapes 6 à 9 : recoller `groupes/table.sql` **en entier** dans
+**SQL Editor** → **Run**. Tant que ce n'est pas fait, le modérateur garde
+« Lecture seule », exactement comme avant.
+
+**Une seule fois suffit pour les étapes 6, 7, 8, 9 et 10 ensemble**, quelle que soit
 la version déjà installée : le fichier d'aujourd'hui se colle par-dessus
 n'importe laquelle de ses versions passées sans rien perdre, et donne
 exactement la même base qu'une installation neuve (vérifié par
@@ -203,7 +219,9 @@ contourne rien) :
 
 **Ce que tu fais, toi** : le bouclier de l'écran des groupes ouvre la file des
 signalements, une carte par message (ou personne, ou groupe) signalé, avec le
-nombre de personnes qui l'ont signalé. Pour chacune :
+nombre de personnes qui l'ont signalé. (Depuis la v334, « Voir le groupe » te
+laisse aussi **y écrire**, signé « La modération » — voir l'étape 10.) Pour
+chacune :
 
 - **Rien de mal** : le signalement est classé, et un message masqué
   réapparaît ;

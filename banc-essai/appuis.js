@@ -40,6 +40,12 @@ const ECRANS = [
   ['parcours', () => { state.screen='parcours'; render(); }],
   ['reglages', () => { state.screen='mode'; render(); openSettings(); }],
   ['bibles',   () => { state.screen='mode'; render(); openSettings(); setTimeout(()=>openBibles(),300); }],
+  /* (v334) LES GROUPES, que le banc ne visitait pas : c'est là que
+     « Rejoindre » (corail) recevait une onde corail invisible — 2,6 unités.
+     Le décor est posé dans la page avant le parcours (window.__decorAppuis). */
+  ['groupes',  () => { __decorAppuis(); state.screen='groupes'; render(); }],
+  ['discussion', () => { __decorAppuis(); grp.courant='g-1'; state.screen='groupe'; render();
+                         const t=document.getElementById('compoTexte'); if(t){ t.value='Amen'; surSaisie(t); } }],
   ['revoir',   () => { state.screen='end'; state.soloScore=110; state.questions=new Array(15); state.soloMissed=new Array(3); render();
                        var f=[]; for(var i=0;i<4;i++) f.push({q:"Question ?",correct:"A",chosen:"B",fact:"Genese 1."});
                        setTimeout(function(){ openMissedReview(f); }, 350); }],
@@ -51,6 +57,18 @@ const ECRANS = [
   await p.addInitScript(() => { localStorage.setItem('bt_profile', JSON.stringify({name:'Taylor',color:'#4C86E8',isCreator:true})); localStorage.setItem('bt_fs_hint','1'); });
   await p.goto('http://127.0.0.1:8099/index.html');
   await p.waitForFunction(() => { try { return state.screen==='mode'; } catch(e){ return false; } }, null, { timeout:20000 });
+  await p.evaluate(() => { window.__decorAppuis = () => {
+    const il = (h) => new Date(Date.now() - h * 3600000).toISOString();
+    compte.dispo = true; compte.session = { user:{ id:'moi-0', email:'j@e.net' } }; compte.etape = 'connecte';
+    grp.installe = true; grp.ouverts = true; grp.message = ''; grp.etat = { participe:'ok', moderateur:false, ouverts:true };
+    grp.profils = { 'moi-0':{ nom:'Taylor', couleur:'#4C86E8' }, 'u-2':{ nom:'Sam', couleur:'#E8574C' } };
+    grp.liste = [{ id:'g-1', nom:'Lee', teinte:2, ouvert:false, code:'ABC234', nb_membres:2, non_lus:0, dernier_message:il(1), apercu:null }];
+    grp.publics = [{ id:'g-5', nom:'Ruth', description:'', nb_membres:3, teinte:3, membre:false }];
+    grp.membres = { 'g-1':[ { membre:'moi-0', role:'proprietaire', muet_jusqu:null, lu_jusqu:9 }, { membre:'u-2', role:'membre', muet_jusqu:null, lu_jusqu:9 } ] };
+    grp.fils = { 'g-1':{ charge:true, tout:true, messages:[
+      { id:7, groupe:'g-1', auteur:'u-2', genre:'texte', texte:'Amen', donnees:{}, cree_le:il(0.5), masque:false, supprime_le:null },
+      { id:8, groupe:'g-1', auteur:'u-2', genre:'partie', texte:'', donnees:{ code:'ABCD' }, cree_le:new Date(Date.now() - 60000).toISOString(), masque:false, supprime_le:null } ] } };
+  }; });
   const vus = {};
   for (const [nom, aller] of ECRANS) {
     try { await p.evaluate(`(${aller.toString()})()`); } catch(e) { console.log('  !! '+nom+' : '+e.message); continue; }
@@ -67,6 +85,11 @@ const ECRANS = [
         const fond = lum(cs.backgroundColor);
         if(!fond || fond.a < 0.9) continue;             /* fond translucide : on ne sait pas juger */
         const t = (cs.getPropertyValue('--press-tint')||'').trim() || 'rgba(238,74,40,0.18)';
+        /* (v334) SANS HALO, ET C'EST VOULU : un interrupteur, un onglet, un
+           badge… déclarent une onde transparente (voir LE HALO CORAIL, LÀ OÙ
+           IL A UN SENS). Ce banc cherche les ondes qu'on croit voir et qu'on
+           ne voit pas — pas celles qu'on a retirées exprès. */
+        if (t === 'transparent' || /^rgba\([^)]*,\s*0\)$/.test(t)) continue;
         const te = lum(t); if(!te) continue;
         /* la teinte est peinte PAR-DESSUS le fond du bouton */
         const mel = { r: te.r*te.a + fond.r*(1-te.a), g: te.g*te.a + fond.g*(1-te.a), b: te.b*te.a + fond.b*(1-te.a) };

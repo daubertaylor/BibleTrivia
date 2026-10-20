@@ -59,10 +59,12 @@ const CIBLES = [
      pour ne pas déclencher le clic du bouton — mais un relâchement sur le voile
      produit un clic sur le voile, qui REFERME la feuille. La cible suivante ne
      trouvait donc plus rien. */
-  ['réglages',     "state.screen='mode'; render(); openSettings();",                                            '.switch'],
+  /* (v334) L'INTERRUPTEUR N'A PLUS DE HALO (voir LE HALO CORAIL, LÀ OÙ IL A
+     UN SENS) : il a son mouvement à lui. La première cible des Réglages est
+     donc la ligne de partage, qui ouvre la feuille. */
   /* (v319) la pastille « LSG » / « Guide » des Réglages n'existe plus : la ligne entière
      se touche, sans verre ni onde (voir UNE LIGNE QUI OUVRE QUELQUE CHOSE). */
-  ['réglages',     "closeSettings(); openSettings();",                                                          '.share-btn'],
+  ['réglages',     "state.screen='mode'; render(); openSettings();",                                            '.share-btn'],
   ['en-tête',      "closeSettings(); state.screen='parcours'; render();",                                      '.icon-btn'],
   /* LES PASTILLES DE LIVRE — la dernière famille du jeu à porter encore une
      vraie bordure de 1 px, donc le dernier endroit où l'onde s'arrêtait un

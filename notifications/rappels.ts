@@ -77,7 +77,7 @@ const ABSENCES = [3, 7, 30];
 const FENETRE = 60;
 /* La version de ce code, dans chaque réponse : la page « Rappels » de la
    Modération dit ainsi si la fonction déployée est bien celle-ci. */
-const VERSION = 331;
+const VERSION = 334;
 /* Un essai demandé par un téléphone pour lui-même : un par minute au plus. */
 const ESSAI_DELAI = 60000;
 /* ===== LES MESSAGES DES GROUPES (v329) =====
@@ -376,10 +376,15 @@ Deno.serve(async (req: Request) => {
         const vu = Date.parse(a.maj ?? "") || 0;
         if (a.abonnement.ecran === true && maintenant - vu < PRESENT_MS) { presentsM++; return; }
         const charge = {
-          genre: "message", groupe: g.id, nom: g.nom, de, id: m.id,
+          /* (v334) Pour la modération, son nom ne quitte pas le serveur. */
+          genre: "message", groupe: g.id, nom: g.nom, de: d.moderation === true ? "" : de, id: m.id,
           texte: texte.length > TEXTE_MAX ? texte.slice(0, TEXTE_MAX - 1) + "…" : texte,
           partie: m.genre === "partie", mention: nommes.has(a.membre),
           decalage: a.decalage | 0,
+          /* (v334) La modération parle : le téléphone signe « La modération »
+             (dans la langue du joueur), pas du nom de la personne. La marque
+             ne voyage que pour elle : un message ordinaire part tel qu'avant. */
+          ...(d.moderation === true ? { moderation: true } : {}),
         };
         try {
           await webpush.sendNotification(a.abonnement, JSON.stringify(charge), OPTIONS_MESSAGE);

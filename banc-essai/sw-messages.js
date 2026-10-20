@@ -24,7 +24,14 @@
         rappel touché garde l'ancien chemin (premier plan, rien d'autre) ;
     11. (v331) le jeu à l'écran sur ce téléphone : la notification se pose
         SANS SONNER (silencieuse) — jamais rien du tout, un iPhone le
-        compterait contre l'abonnement ; le jeu derrière (caché) : elle sonne.
+        compterait contre l'abonnement ; le jeu derrière (caché) : elle sonne ;
+    12. (v334) un nom de groupe de quarante lettres : seul, le titre est le
+        nom entier ; en rafale, le titre tient sur une ligne d'iPhone (36
+        caractères au plus, dans les trois langues) et c'est le nom qui se
+        raccourcit — « · 2 nouveaux messages » reste entier ;
+    13. (v334) un message de la modération : signé « La modération » (en
+        anglais « Moderators », en espagnol « La moderación »), jamais du nom
+        de la personne qui modère — même quand elle mentionne quelqu'un.
    Usage : node banc-essai/sw-messages.js */
 const fs = require('fs');
 const path = require('path');
@@ -195,6 +202,31 @@ const MIROIR = { actif: false, priere: -1, lecture: -1, messages: true, langue: 
   b = bac(MIROIR, [derriere]);
   const s2 = (await b.recevoir(msg({ id: 802 })))[0];
   dire(!!s2 && s2.silent === false && s2.renotify === true, '    le jeu derrière (caché) : elle sonne');
+
+  /* 12. (v334) un nom long */
+  const LONG = 'Les amis de la paroisse Saint-Jean-Bapt';
+  for (const [langue, suite] of [['fr', ' · 2 nouveaux messages'], ['en', ' · 2 new messages'], ['es', ' · 2 mensajes nuevos']]) {
+    b = bac(Object.assign({}, MIROIR, { langue }));
+    const l1 = (await b.recevoir(msg({ id: 901, nom: LONG })))[0] || {};
+    HORLOGE += 3000;
+    const l2 = (await b.recevoir(msg({ id: 902, nom: LONG })))[0] || {};
+    const debut = l2.title ? l2.title.slice(0, l2.title.length - suite.length).replace(/…$/, '') : '';
+    dire(l1.title === LONG && Array.from(l2.title || '').length <= 36 && (l2.title || '').endsWith(suite) && LONG.startsWith(debut) && debut.length >= 8,
+      (langue === 'fr' ? '12. un nom de quarante lettres : seul « ' + l1.title + ' » ; en rafale ' : '    ' + langue + ' : ') + '« ' + l2.title + ' » (' + Array.from(l2.title || '').length + ' caractères)');
+  }
+
+  /* 13. (v334) la modération parle */
+  b = bac(MIROIR);
+  const mo1 = (await b.recevoir(msg({ id: 1001, de: 'Taylor', texte: 'Merci de rester bienveillants', moderation: true })))[0] || {};
+  b = bac(MIROIR);
+  const mo2 = (await b.recevoir(msg({ id: 1002, de: 'Taylor', texte: '@Benoît merci', moderation: true, mention: true })))[0] || {};
+  b = bac(Object.assign({}, MIROIR, { langue: 'en' }));
+  const mo3 = (await b.recevoir(msg({ id: 1003, de: 'Taylor', texte: 'Be kind', moderation: true })))[0] || {};
+  b = bac(Object.assign({}, MIROIR, { langue: 'es' }));
+  const mo4 = (await b.recevoir(msg({ id: 1004, de: 'Taylor', texte: 'Sed amables', moderation: true })))[0] || {};
+  dire(mo1.body === 'La modération : Merci de rester bienveillants' && mo2.body === 'La modération te mentionne : @Benoît merci'
+    && mo3.body === 'Moderators: Be kind' && mo4.body === 'La moderación: Sed amables' && ![mo1, mo2, mo3, mo4].some(x => /Taylor/.test(x.body || '')),
+    '13. la modération : « ' + mo1.body + ' », « ' + mo2.body + ' », « ' + mo3.body + ' », « ' + mo4.body + ' »');
 
   console.log(ko === 0 ? '\n  OK — un message arrive comme dans une messagerie : une notification par groupe, un son par rafale, et la toucher ouvre la discussion' : '\n  ' + ko + ' défaut(s)');
   process.exit(ko === 0 ? 0 : 1);

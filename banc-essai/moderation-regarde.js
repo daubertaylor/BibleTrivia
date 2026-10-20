@@ -5,8 +5,11 @@
    Le décor de groupes.js — un VRAI PostgreSQL. Benoît et Chloé ont un groupe
    privé dont Taylor, modérateur, ne fait pas partie :
      1. un signalement arrive ; sa carte propose « Voir le groupe » ;
-     2. la discussion s'ouvre telle que les membres la voient, en LECTURE
-        SEULE : pas de champ pour écrire, et Taylor n'en devient pas membre ;
+     2. la discussion s'ouvre telle que les membres la voient, DE
+        L'EXTÉRIEUR : Taylor n'en devient pas membre. (v334 : la barre qu'il
+        y trouve est celle de la modération — le bouclier à la place de la
+        manette —, voir moderation-ecrit.js ; jusqu'à la v333, rien pour
+        écrire) ;
      3. un nouveau message y arrive en direct ;
      4. les infos montrent les membres, sans « Quitter le groupe » ;
      5. le retour ramène à la modération, où « Tous les groupes » liste aussi
@@ -70,7 +73,7 @@ const dit = (quoi, bon, detail) => { console.log('  ' + (bon ? 'OK  ' : 'KO  ') 
     dit('la discussion s\'ouvre, telle que les membres la voient', await attendre(p, () => state.screen === 'groupe'
       && [...document.querySelectorAll('#fil .b-bulle')].some(b => /Bonjour le club/.test(b.textContent))
       && [...document.querySelectorAll('#fil .b-bulle')].some(b => /douteux|masqué/.test(b.textContent)), null, 9000));
-    dit('… en lecture seule : pas de champ pour écrire', await p.evaluate(() => !document.getElementById('compoTexte') && !!document.querySelector('.compo-lecture')));
+    dit('… de l\'extérieur : la barre de la modération, pas celle d\'un membre (ni manette, ni « Lecture seule »)', await p.evaluate(() => !!document.querySelector('#compo .compo-mod') && !document.querySelector('#compo .compo-jeu') && !document.querySelector('.compo-lecture')));
     dit('… et Taylor n\'en devient pas membre', (await m.sql(`select count(*) from public.membres where groupe = '${g.id}' and membre = '${A}'`)) === '0');
 
     /* ---- 3. le direct ---- */
@@ -92,7 +95,7 @@ const dit = (quoi, bon, detail) => { console.log('  ' + (bon ? 'OK  ' : 'KO  ') 
     dit('le retour ramène à la modération', await attendre(p, () => state.screen === 'moderation', null, 4000));
     await p.waitForTimeout(600);
     await p.evaluate(() => [...document.querySelectorAll('#modGroupes .grp-ligne')].find(l => /club de Benoît/.test(l.textContent)).click());
-    dit('« Tous les groupes » ouvre aussi la discussion, en lecture seule', await attendre(p, () => state.screen === 'groupe' && !!document.querySelector('.compo-lecture')
+    dit('« Tous les groupes » ouvre aussi la discussion, de l\'extérieur', await attendre(p, () => state.screen === 'groupe' && !!document.querySelector('#compo .compo-mod')
       && [...document.querySelectorAll('#fil .b-bulle')].some(b => /Encore là/.test(b.textContent)), null, 9000));
 
     /* ---- 6. rien n'a été « lu » au nom des membres ---- */
