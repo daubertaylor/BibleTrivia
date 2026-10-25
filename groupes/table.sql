@@ -455,6 +455,10 @@ begin
     -- Et les réponses à un message (v332) : le jeu ne les propose qu'ici —
     -- un serveur d'avant les perdrait en route.
     'reponses', true,
+    -- Et la parole de la modération (v334) : un modérateur peut écrire dans
+    -- un groupe qu'il n'a pas rejoint. Le jeu ne lui ouvre la barre d'écriture
+    -- qu'ici — un serveur d'avant refuserait son message (« pas_membre »).
+    'moderation_ecrit', true,
     -- La taille d'un groupe (v332) : le jeu la dit quand un groupe est plein.
     'membres_max', 120,
     -- Pour un modérateur : combien de choses attendent une décision (une par
@@ -625,10 +629,23 @@ declare
   ouverte bigint;
   nommes jsonb;
   rep bigint;
+  moderation boolean := false;
 begin
   if etat <> 'ok' then return jsonb_build_object('ok', false, 'erreur', etat); end if;
   select * into m from public.membres where groupe = p_groupe and membre = moi;
-  if m.groupe is null then return jsonb_build_object('ok', false, 'erreur', 'pas_membre'); end if;
+  if m.groupe is null then
+    -- LA MODÉRATION ÉCRIT DANS UN GROUPE QU'ELLE N'A PAS REJOINT (v334).
+    -- « Avoir la possibilité d'écrire dans un groupe lorsqu'on n'est pas
+    -- dedans mais qu'on est modérateur. » Un modérateur du jeu, qui peut déjà
+    -- tout lire, peut y écrire : du TEXTE seulement (jamais une partie), aux
+    -- mêmes règles que tout le monde (débit, mots, coordonnées). Son message
+    -- porte la marque « moderation » : chez les membres, il est signé
+    -- « Modération », pas du nom de la personne — c'est la modération qui
+    -- parle, et c'est elle qu'on doit reconnaître.
+    if not public._moderateur(moi) or genre <> 'texte' then
+      return jsonb_build_object('ok', false, 'erreur', 'pas_membre'); end if;
+    moderation := true;
+  end if;
   if m.muet_jusqu is not null and m.muet_jusqu > now() then
     return jsonb_build_object('ok', false, 'erreur', 'muet', 'jusqu', m.muet_jusqu); end if;
   select * into g from public.groupes where id = p_groupe and supprime_le is null;
@@ -708,6 +725,7 @@ begin
   else
     return jsonb_build_object('ok', false, 'erreur', 'genre');
   end if;
+  if moderation then d := d || jsonb_build_object('moderation', true); end if;
   insert into public.messages (groupe, auteur, genre, texte, donnees) values (p_groupe, moi, genre, t, d) returning id into id_;
   update public.groupes set dernier_message = now() where id = p_groupe;
   update public.membres set lu_jusqu = id_ where groupe = p_groupe and membre = moi;
@@ -1020,7 +1038,10 @@ language sql stable security definer set search_path = '' as $$
            'apercu', (select jsonb_build_object('id', x.id, 'auteur', x.auteur, 'genre', x.genre, 'texte', x.texte,
                                                 'donnees', x.donnees,
                                                 'masque', x.masque, 'supprime', x.supprime_le is not null, 'le', x.cree_le,
-                                                'nom', (select p.nom from public.profils p where p.id = x.auteur))
+                                                -- (v334) La modération n'a pas de nom dans un groupe : le
+                                                -- jeu la signe « La modération ».
+                                                'nom', case when x.donnees->>'moderation' = 'true' then null
+                                                            else (select p.nom from public.profils p where p.id = x.auteur) end)
                         from public.messages x
                        -- Un message supprimé n'est plus l'aperçu de rien (v311) : on montre
                        -- celui d'avant, comme si l'autre n'avait jamais existé.

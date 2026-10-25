@@ -1,6 +1,6 @@
 /* Yada — service worker : rend l'app jouable hors connexion.
    À déposer à côté de index.html (même dossier, nom exact "sw.js"). */
-const CACHE = "yada-v333";
+const CACHE = "yada-v334";
 /* ===== LES BANQUES DE QUESTIONS NE SONT PAS DANS LE SOCLE =====
    questions-en.js y était, et questions-es.js allait l'y rejoindre : six cent
    mille octets téléchargés à l'installation par TOUT LE MONDE, y compris les
@@ -390,19 +390,43 @@ function remplir(t, val){
    retire quand on lit le groupe (voir effacerNotifsGroupe dans index.html). */
 const MOTS_MESSAGE = {
   fr: { ligne: "{de} : {texte}", partie: "{de} lance une partie", mention: "{de} te mentionne : {texte}",
-        titre: "{nom} · {n} nouveaux messages", quelquun: "Quelqu'un" },
+        titre: "{nom} · {n} nouveaux messages", quelquun: "Quelqu'un", moderation: "La modération" },
   en: { ligne: "{de}: {texte}", partie: "{de} is starting a game", mention: "{de} mentioned you: {texte}",
-        titre: "{nom} · {n} new messages", quelquun: "Someone" },
+        titre: "{nom} · {n} new messages", quelquun: "Someone", moderation: "Moderators" },
   es: { ligne: "{de}: {texte}", partie: "{de} inicia una partida", mention: "{de} te menciona: {texte}",
-        titre: "{nom} · {n} mensajes nuevos", quelquun: "Alguien" },
+        titre: "{nom} · {n} mensajes nuevos", quelquun: "Alguien", moderation: "La moderación" },
 };
 /* Une rafale : un message arrivé moins de 20 s après le précédent du même
    groupe complète la notification sans la refaire sonner. */
 const RAFALE = 20000;
+/* (v334) LE TITRE TIENT SUR UNE LIGNE D'IPHONE. Un iPhone n'en montre qu'une
+   et coupe la fin : « Les amis de la paroisse Saint-Jean · 3 n… » — le
+   compte, qui est toute la nouvelle, disparaissait derrière un nom de
+   quarante lettres (le jeu en permet quarante). Le titre d'une rafale garde
+   donc 36 caractères au plus — une ligne sur le plus petit iPhone —, et
+   c'est le NOM qui se raccourcit, jamais le compte. Un nom court ne bouge
+   pas ; pour un seul message, le titre est le nom, entier. Le texte, lui,
+   tient déjà : 140 caractères au plus (notifications/rappels.ts), les
+   quatre lignes qu'un iPhone montre. */
+const TITRE_MAX = 36;
+function titreRafale(modele, nom, n){
+  const suite = Array.from(modele.replace("{nom}", "").replace("{n}", String(n))).length;
+  const lettres = Array.from(nom), place = TITRE_MAX - suite;
+  if(lettres.length <= place) return modele.replace("{nom}", () => nom).replace("{n}", String(n));
+  /* Coupé entre deux mots quand c'est possible : « Les amis de… », pas
+     « Les amis de l… ». */
+  const k = Math.max(8, place - 1);
+  let pris = lettres.slice(0, k);
+  const blanc = pris.lastIndexOf(" ");
+  if(lettres[k] !== " " && blanc >= 8) pris = pris.slice(0, blanc);
+  return modele.replace("{nom}", () => pris.join("").trimEnd() + "…").replace("{n}", String(n));
+}
 function motsMessage(c, langue){
   const mots = MOTS_MESSAGE[langue] || MOTS_MESSAGE.fr;
   const dire = (t, v) => t.replace(/\{(\w+)\}/g, (_, k) => (v[k] == null ? "" : String(v[k])));
-  const de = String(c.de || "").trim() || mots.quelquun;
+  /* (v334) Un message de la modération est signé « La modération », jamais
+     du nom de la personne qui modère. */
+  const de = c.moderation === true ? mots.moderation : (String(c.de || "").trim() || mots.quelquun);
   const texte = String(c.texte || "");
   if(c.partie) return dire(mots.partie, { de });
   return dire(c.mention ? mots.mention : mots.ligne, { de, texte });
@@ -439,7 +463,7 @@ async function montrerMessage(c, langue, discret){
      la notification se pose sans sonner. */
   const sonne = !discret && (!avant || !(maintenant - sonDernier < RAFALE));
   const nom = String(c.nom || "").trim() || "Yada";
-  const titre = n > 1 ? mots.titre.replace("{nom}", nom).replace("{n}", String(n)) : nom;
+  const titre = n > 1 ? titreRafale(mots.titre, nom, n) : nom;
   await self.registration.showNotification(titre, {
     body: motsMessage(c, langue), icon: "./icon-192.png", badge: "./icon-192.png",
     tag, renotify: sonne, requireInteraction: false, silent: !!discret,

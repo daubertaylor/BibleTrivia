@@ -60,8 +60,9 @@ const dit = (quoi, bon, detail) => { console.log('  ' + (bon ? 'OK  ' : 'KO  ') 
       await attendre(p, () => state.screen === 'groupe' && !!document.getElementById('grpTete'), null, 9000);
     }
     await pa.waitForTimeout(800);
-    /* L'icône de l'en-tête porte la couleur du groupe (TEINTES[5] : #2FC1C6,
-       #14989E) ; l'écran, lui, n'en porte aucune. */
+    /* L'icône de l'en-tête porte la couleur du groupe (TEINTES[5], lue dans le
+       jeu : la v334 a harmonisé la palette) ; l'écran, lui, n'en porte aucune. */
+    const jade = new RegExp(await pa.evaluate(() => TEINTES[5].join('|')), 'i');
     const tete = (p) => p.evaluate(() => { const t = document.querySelector('#grpTete .grp-txt b'); const e = document.querySelector('#app > .screen.groupe-ecran:not(.screen-exit)');
       const av = document.querySelector('#grpTete .grp-av');
       return { nom: t ? t.textContent : '', icone: av ? av.getAttribute('style') || '' : '', ecran: e ? e.getAttribute('style') || '' : '' }; });
@@ -83,14 +84,14 @@ const dit = (quoi, bon, detail) => { console.log('  ' + (bon ? 'OK  ' : 'KO  ') 
     const ta = await tete(pa);
     const infos = await pa.evaluate(() => { const v = document.getElementById('grpInfosVeil'); const t = v && v.querySelector('.sheet-title .st-mot'); return t ? t.textContent : ''; });
     dit('1. chez Taylor, tout de suite : l\'en-tête, l\'icône à sa couleur, la page des infos ; la discussion garde la couleur du jeu',
-      ta.nom === 'Les veilleurs' && /2FC1C6|14989E/i.test(ta.icone) && !ta.ecran && infos === 'Les veilleurs',
+      ta.nom === 'Les veilleurs' && jade.test(ta.icone) && !ta.ecran && infos === 'Les veilleurs',
       'serveur « ' + serveur + ' », en-tête « ' + ta.nom + ' », icône « ' + ta.icone.slice(0, 60) + ' », écran « ' + ta.ecran.slice(0, 40) + ' », infos « ' + infos + ' »');
 
     /* ---- Benoît, sans rien toucher ---- */
     const t0 = Date.now();
     const vu = await attendre(pb, () => { const t = document.querySelector('#grpTete .grp-txt b'); return !!t && t.textContent === 'Les veilleurs'; }, null, 12500);
     const tb = await tete(pb);
-    dit('2. chez Benoît, la discussion restée ouverte : le nouveau nom et l\'icône à la nouvelle couleur', vu && /2FC1C6|14989E/i.test(tb.icone) && !tb.ecran,
+    dit('2. chez Benoît, la discussion restée ouverte : le nouveau nom et l\'icône à la nouvelle couleur', vu && jade.test(tb.icone) && !tb.ecran,
       (vu ? (Date.now() - t0) + ' ms' : 'jamais') + ' · « ' + tb.nom + ' »');
 
     /* ---- Benoît revient à la liste ---- */

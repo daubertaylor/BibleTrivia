@@ -34,7 +34,11 @@
     13. sans la clé interne : refusé, rien ne part ;
     14. pg_net en panne : le message part quand même ;
     15. rappels_etat : version 329, téléphones rattachés, déclencheur posé,
-        et la réponse du dernier message lue à part de celle de la tâche.
+        et la réponse du dernier message lue à part de celle de la tâche ;
+    16. (v334) la modération écrit de l'extérieur : les membres sont
+        prévenus, la charge porte « moderation » et pas le nom de la personne
+        qui modère (le téléphone signe « La modération ») ; un message
+        ordinaire, lui, part avec exactement les mêmes champs qu'avant (6).
    Usage : node banc-essai/messages-serveur.js [rappels.ts] */
 const path = require('path');
 const { execFile } = require('child_process');
@@ -211,6 +215,21 @@ const EP = (x) => 'https://push.exemple/appareil-' + x;
     dit('13. sans la clé interne : refusé, rien ne part', sans.st === 401 && !envois.length, sans.st + ' ' + JSON.stringify(sans.c).slice(0, 80));
     const mauvais = await servir(r7, { message: 'pas un nombre', sans_attente: true });
     dit('    un identifiant qui n\'en est pas un : refusé', mauvais.st === 400 && !envois.length, String(mauvais.st));
+
+    /* ===== 16 : la modération écrit de l'extérieur (v334) ===== */
+    const M = '77777777-0000-4000-8000-000000000077';
+    await sql("insert into auth.users values ('" + M + "', 'modo@essai'); insert into public.moderateurs values ('" + M + "')");
+    await appel(M, "poser_profil(p_nom => 'Modo', p_couleur => '#4C86E8')");
+    await appel(M, 'accepter_regles(p_version => 1, p_age_ok => true)');
+    await sql("update public.messages set cree_le = cree_le - interval '10 seconds'");
+    const rm = await appel(M, 'envoyer_message(p_groupe => ' + lit(G1) + "::uuid, p_texte => 'Merci de rester bienveillants', p_genre => 'texte', p_donnees => '{}'::jsonb)");
+    envois.length = 0;
+    rep = await servir((await nouveaux())[0], { sans_attente: true });
+    const chm = envois[0] && envois[0].charge;
+    dit('16. la modération écrit de l\'extérieur : les membres prévenus, « moderation » dans la charge, et pas son nom',
+      rm && rm.ok === true && envois.length > 0 && envois.every(x => x.charge.moderation === true && x.charge.de === '' && x.charge.texte === 'Merci de rester bienveillants')
+        && !JSON.stringify(envois.map(x => x.charge)).includes('Modo'),
+      qui() + ' · ' + JSON.stringify(chm));
 
     /* Groupe supprimé entre le message et l'envoi */
     const id8 = await ecrire('Dernier message avant fermeture');

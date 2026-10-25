@@ -910,6 +910,11 @@ const ouvrirLaLangue = async (p, lg) => {
     ['Modération · lecture seule', () => { __fermerTout(); __grpDecor(); grp.vus = { 'g-9':{ id:'g-9', nom:'Ruth', ouvert:true, teinte:3, nb_membres:4 } };
       grp.fils['g-9'] = { charge:true, tout:true, messages:[] }; grp.courant = 'g-9'; state.screen = 'groupe'; render();
       showMiniToast(T("Ce groupe n'existe plus.")); }],
+    /* LA MODÉRATION ÉCRIT (v334) : le même groupe, vu de l'extérieur, quand
+       le serveur le permet (moderation_ecrit) — la barre d'écriture, son
+       bouclier, et l'invite « Au nom de la modération… ». */
+    ['Modération · écrire', () => { grp.etat = Object.assign({ participe:'ok' }, grp.etat || {}, { moderateur:true, moderation_ecrit:true });
+      render(); }],
     /* LES PAGES QUE LES STORES DEMANDENT */
     ['Confidentialité',    () => { __fermerTout(); state.screen='mode'; render(); ouvrirConfidentialite(); }],
     ['Compte · supprimer', () => { __fermerTout(); __grpDecor(); state.screen='profile'; render(); demanderSuppressionCompte(); }],
