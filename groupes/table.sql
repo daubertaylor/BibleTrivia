@@ -832,6 +832,36 @@ begin
   return jsonb_build_object('ok', true);
 end $$;
 
+-- (v335) UN SIGNALEMENT PRÉVIENT LA MODÉRATION. « Vérifie aussi que je
+-- reçois bien les notifs sur la modération. » Un signalement attendait que le
+-- modérateur ouvre le jeu et voie la pastille du bouclier. Chaque nouveau
+-- signalement appelle maintenant la fonction « rappels », avec la même clé
+-- interne que les messages (notifications/installer.sql) : c'est elle qui
+-- prévient les téléphones des modérateurs. L'appel part de pg_net, en
+-- arrière-plan : RIEN ici ne peut faire échouer le signalement — sans pg_net,
+-- sans clé, sur une panne, on se tait.
+create or replace function public._signalement_a_prevenir() returns trigger
+language plpgsql security definer set search_path = public as $$
+begin
+  if to_regnamespace('net') is not null and to_regclass('public.rappels_reglage') is not null then
+    begin
+      perform net.http_post(
+        url     := 'https://chyuckryusxzssezesuw.supabase.co/functions/v1/rappels',
+        headers := jsonb_build_object('Content-Type', 'application/json',
+                                      'x-rappels', (select cle from public.rappels_reglage where id = 1)),
+        body    := jsonb_build_object('signalement', new.id),
+        timeout_milliseconds := 25000);
+    exception when others then
+      null;   -- une notification ne vaut pas un signalement perdu
+    end;
+  end if;
+  return new;
+end $$;
+revoke all on function public._signalement_a_prevenir() from public, anon, authenticated;
+drop trigger if exists signalement_a_prevenir on public.signalements;
+create trigger signalement_a_prevenir after insert on public.signalements
+  for each row execute function public._signalement_a_prevenir();
+
 create or replace function public.bloquer(p_cible uuid) returns jsonb
 language plpgsql volatile security definer set search_path = '' as $$
 declare moi uuid := auth.uid();
@@ -901,6 +931,12 @@ begin
     end if;
   elsif p_action = 'retrograder' then
     update public.membres set role = 'membre' where groupe = p_groupe and membre = p_membre and role = 'admin';
+    -- (v335) « Lorsque je retire quelqu'un admin, il n'est pas mentionné dans
+    -- le chat. » Nommer un admin s'annonçait ; le retirer se faisait en
+    -- silence, et le groupe ne savait plus qui le gardait. Les deux se disent.
+    if found then
+      perform public._annoncer(p_groupe, 'plus_admin', jsonb_build_object('qui', p_membre, 'nom', public._nom(p_membre)));
+    end if;
   else
     return jsonb_build_object('ok', false, 'erreur', 'action');
   end if;

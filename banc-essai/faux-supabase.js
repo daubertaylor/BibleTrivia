@@ -51,7 +51,7 @@ module.exports = `
   function lecture(table, F, id){
     if(!F.table) return { data:null, error:{ code:"42P01", message:"relation does not exist" } };
     if(!F.ligne) return { data:null, error:null };
-    return { data:{ donnees:F.ligne.donnees, revision:F.ligne.revision }, error:null };
+    return { data:{ donnees:F.ligne.donnees, revision:F.ligne.revision, maj:F.ligne.maj }, error:null };
   }
 
   window.supabase = {
@@ -74,7 +74,9 @@ module.exports = `
           if(rev !== (args.p_revision|0)){
             return promesse({ data:{ ecrit:false, revision:rev, donnees:(F.ligne?F.ligne.donnees:null) }, error:null });
           }
-          F.ligne = { id:session.user.id, donnees:args.p_donnees, revision:rev + 1 };
+          /* La vraie table date chaque écriture (maj = now()) : le faux aussi.
+             Les données passent par JSON, comme sur le réseau. */
+          F.ligne = { id:session.user.id, donnees:JSON.parse(JSON.stringify(args.p_donnees)), revision:rev + 1, maj:new Date().toISOString() };
           return promesse({ data:{ ecrit:true, revision:F.ligne.revision }, error:null });
         },
         channel:function(){ var c={ on:function(){return c;}, subscribe:function(cb){ if(cb) cb("SUBSCRIBED"); return c; },

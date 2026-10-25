@@ -77,7 +77,7 @@ const ABSENCES = [3, 7, 30];
 const FENETRE = 60;
 /* La version de ce code, dans chaque réponse : la page « Rappels » de la
    Modération dit ainsi si la fonction déployée est bien celle-ci. */
-const VERSION = 334;
+const VERSION = 335;
 /* Un essai demandé par un téléphone pour lui-même : un par minute au plus. */
 const ESSAI_DELAI = 60000;
 /* ===== LES MESSAGES DES GROUPES (v329) =====
@@ -398,6 +398,55 @@ Deno.serve(async (req: Request) => {
                         presents: presentsM, retires: retiresM, echecs: echecsM, dernier_echec: dernierEchecM });
     } catch (e: any) {
       return repondre({ sorte: "message", erreur: "table", details: [String(e?.message || e).slice(0, 200)] }, 500);
+    }
+  }
+
+  /* ===== (v335) UN SIGNALEMENT PRÉVIENT LA MODÉRATION =====
+     « Vérifie aussi que je reçois bien les notifs sur la modération. » Un
+     signalement ne prévenait personne : il attendait que le modérateur
+     ouvre le jeu et voie la pastille du bouclier. Chaque nouveau
+     signalement appelle maintenant cette fonction (groupes/table.sql,
+     signalement_a_prevenir), qui prévient les téléphones des modérateurs —
+     sauf celui qui signale, s'il l'est. Même jeu ouvert : il n'y a pas de
+     direct pour les signalements, et c'est une chose à décider. Rien de ce
+     qui est signalé ne quitte le serveur : la notification dit seulement
+     combien de choses attendent une décision (une par objet signalé, comme
+     la pastille). */
+  if (corpsRecu.signalement != null) {
+    const id = Number(corpsRecu.signalement);
+    if (!(id > 0)) return repondre({ sorte: "signalement", erreur: "signalement", envoyes: 0 }, 400);
+    const lire = async (table: string, colonnes: string, filtre: (q: any) => any) => {
+      const { data, error } = await filtre(db.from(table).select(colonnes));
+      if (error) throw new Error(table + " : " + error.message);
+      return (data ?? []) as any[];
+    };
+    try {
+      const s = (await lire("signalements", "id,par,traite_le", (q) => q.eq("id", id)))[0];
+      if (!s || s.traite_le) return repondre({ sorte: "signalement", envoyes: 0, rien: "signalement absent ou déjà traité" });
+      const [mods, tous] = await Promise.all([
+        lire("moderateurs", "id", (q) => q),
+        lire("signalements", "message,cible,groupe,traite_le", (q) => q),
+      ]);
+      const ids = mods.map((x) => x.id).filter((x) => x && x !== s.par);
+      if (!ids.length) return repondre({ sorte: "signalement", envoyes: 0, rien: "aucun modérateur à prévenir" });
+      const n = new Set(tous.filter((x) => !x.traite_le).map((x) => [x.message ?? "", x.cible ?? "", x.groupe ?? ""].join("|"))).size || 1;
+      const abos = await lire("push_subs", "*", (q) => q.in("membre", ids));
+      let envoyesS = 0, retiresS = 0, echecsS = 0;
+      let dernierEchecS: Record<string, unknown> | null = null;
+      await Promise.all(abos.map(async (a) => {
+        if (a.messages !== true || !a.abonnement || !a.abonnement.endpoint) return;
+        try {
+          await webpush.sendNotification(a.abonnement, JSON.stringify({ genre: "signalement", n, decalage: a.decalage | 0 }), OPTIONS_MESSAGE);
+          envoyesS++;
+        } catch (e: any) {
+          if (e?.statusCode === 404 || e?.statusCode === 410) { await db.from("push_subs").delete().eq("endpoint", a.endpoint); retiresS++; }
+          else { echecsS++; if (!dernierEchecS) dernierEchecS = { code: e?.statusCode | 0, raison: raison(e) }; }
+        }
+      }));
+      return repondre({ sorte: "signalement", envoyes: envoyesS, moderateurs: ids.length, telephones: abos.length, a_traiter: n,
+                        retires: retiresS, echecs: echecsS, dernier_echec: dernierEchecS });
+    } catch (e: any) {
+      return repondre({ sorte: "signalement", erreur: "table", details: [String(e?.message || e).slice(0, 200)] }, 500);
     }
   }
 

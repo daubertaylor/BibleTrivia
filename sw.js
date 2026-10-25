@@ -1,6 +1,6 @@
 /* Yada — service worker : rend l'app jouable hors connexion.
    À déposer à côté de index.html (même dossier, nom exact "sw.js"). */
-const CACHE = "yada-v334";
+const CACHE = "yada-v335";
 /* ===== LES BANQUES DE QUESTIONS NE SONT PAS DANS LE SOCLE =====
    questions-en.js y était, et questions-es.js allait l'y rejoindre : six cent
    mille octets téléchargés à l'installation par TOUT LE MONDE, y compris les
@@ -378,6 +378,32 @@ function remplir(t, val){
           .replace(/\{j\}/g, String(val.j))
           .replace(/\{s\}/g, val.n > 1 ? "s" : "");
 }
+/* ===== (v335) LES DEUX IMAGES D'UNE NOTIFICATION, SUR ANDROID =====
+   « Regarde sur Android lorsqu'ils reçoivent les notifications : je t'ai
+     mis du crayon rouge sur les problèmes. » Deux images, deux défauts :
+   — LA PETITE (badge). Android n'en garde que la forme : Chrome la peint
+     en blanc. On lui donnait l'icône du jeu, un carré plein — un carré
+     blanc dans la barre d'état, et dans le rond de la notification sur la
+     plupart des Android. C'est maintenant la silhouette de l'icône,
+     l'enfant qui lit, en blanc sur transparent (notifications/icones/
+     badge.py).
+   — LA GRANDE (icon), à droite : la même icône une seconde fois, à côté de
+     celle qu'Android pose déjà à gauche. On ne peut pas l'enlever : sans
+     image, Chrome en dessine une, une pastille grise avec la première
+     lettre de l'adresse (un « D »). Elle dit donc maintenant DE QUOI parle
+     la notification, avec la pastille du jeu (notifications/icones/
+     fabriquer.js) : la flamme, la cible d'À revoir, la coupe de la
+     Progression, le parchemin du verset, la bougie de la prière, le livre
+     de la lecture, la cloche des rappels, les bulles d'un message, la
+     manette d'une partie, le bouclier de la modération.
+   Un iPhone ne montre ni l'une ni l'autre — il pose l'icône de l'app :
+   rien n'y change. */
+const ICONES = "./notifications/icones/";
+const BADGE = ICONES + "badge.png";
+const VIGNETTES = { serie: "flamme", defi: "flamme", revoir: "revoir", absence: "absence", verset: "verset",
+  priere: "priere", lecture: "lecture", essai: "rappels", bienvenue: "rappels" };
+function vignette(genre){ return ICONES + (VIGNETTES[genre] || "rappels") + ".png"; }
+function vignetteMessage(c){ return ICONES + (c.moderation === true ? "moderation" : (c.partie ? "partie" : "message")) + ".png"; }
 /* ===== LES MESSAGES DES GROUPES (v329) =====
    « Je veux aussi que tu fasses les notifications des messages. » Le serveur
    écrit à chaque membre qui n'a pas lu, selon ce qu'il a choisi pour ce
@@ -395,6 +421,13 @@ const MOTS_MESSAGE = {
         titre: "{nom} · {n} new messages", quelquun: "Someone", moderation: "Moderators" },
   es: { ligne: "{de}: {texte}", partie: "{de} inicia una partida", mention: "{de} te menciona: {texte}",
         titre: "{nom} · {n} mensajes nuevos", quelquun: "Alguien", moderation: "La moderación" },
+};
+/* (v335) Un signalement, pour la modération : combien de choses attendent
+   une décision — jamais ce qui est signalé. */
+const MOTS_SIGNALEMENT = {
+  fr: { titre: "Modération", un: "Un signalement à traiter.", n: "{n} signalements à traiter." },
+  en: { titre: "Moderation", un: "One report to review.", n: "{n} reports to review." },
+  es: { titre: "Moderación", un: "Una denuncia por revisar.", n: "{n} denuncias por revisar." },
 };
 /* Une rafale : un message arrivé moins de 20 s après le précédent du même
    groupe complète la notification sans la refaire sonner. */
@@ -452,7 +485,7 @@ async function montrerMessage(c, langue, discret){
      tout, un iPhone le compterait contre l'abonnement.) */
   if(dejaLa && avant){
     await self.registration.showNotification(avant.title, {
-      body: avant.body, icon: "./icon-192.png", badge: "./icon-192.png",
+      body: avant.body, icon: d0.icone || vignetteMessage(c), badge: BADGE,
       tag, renotify: false, requireInteraction: false, data: d0,
     });
     return;
@@ -464,10 +497,13 @@ async function montrerMessage(c, langue, discret){
   const sonne = !discret && (!avant || !(maintenant - sonDernier < RAFALE));
   const nom = String(c.nom || "").trim() || "Yada";
   const titre = n > 1 ? titreRafale(mots.titre, nom, n) : nom;
+  /* (v335) Sa vignette part avec elle : un envoi rejoué la repose telle
+     qu'elle était, image comprise. */
+  const icone = vignetteMessage(c);
   await self.registration.showNotification(titre, {
-    body: motsMessage(c, langue), icon: "./icon-192.png", badge: "./icon-192.png",
+    body: motsMessage(c, langue), icon: icone, badge: BADGE,
     tag, renotify: sonne, requireInteraction: false, silent: !!discret,
-    data: { url: "./?discussion=" + encodeURIComponent(groupe), groupe, n, ids, son: sonne ? maintenant : sonDernier },
+    data: { url: "./?discussion=" + encodeURIComponent(groupe), groupe, n, ids, son: sonne ? maintenant : sonDernier, icone },
   });
 }
 self.addEventListener("push", (e) => {
@@ -479,7 +515,7 @@ self.addEventListener("push", (e) => {
     const aujourdhui = jourLocal(dec);
     const langue = etat && etat.langue;
     const montrer = (genre, m) => self.registration.showNotification(m[0], {
-      body: m[1], icon: "./icon-192.png", badge: "./icon-192.png",
+      body: m[1], icon: vignette(genre), badge: BADGE,
       tag: genre, renotify: false, requireInteraction: false, data: { url: "./" },
     });
     /* (v329) UN MESSAGE DE GROUPE. Pas un rappel du jeu : ni « actif », ni le
@@ -498,6 +534,23 @@ self.addEventListener("push", (e) => {
       await montrerMessage(charge, langue, ecran);
       return;
     }
+    /* ===== (v335) UN SIGNALEMENT, POUR LA MODÉRATION =====
+       Le serveur ne l'envoie qu'aux téléphones des modérateurs. Il se
+       montre même jeu ouvert (il n'y a pas de direct pour les
+       signalements), sonne, et la pastille du bouclier se met à jour dans
+       le jeu ouvert. Toucher la notification ouvre la Modération. */
+    if(charge.genre === "signalement"){
+      if(etat && etat.messages === false) return;
+      const n = Math.max(1, charge.n | 0);
+      const m = MOTS_SIGNALEMENT[langue] || MOTS_SIGNALEMENT.fr;
+      await self.registration.showNotification(m.titre, {
+        body: n > 1 ? m.n.replace("{n}", String(n)) : m.un, icon: ICONES + "moderation.png", badge: BADGE,
+        tag: "signalement", renotify: true, requireInteraction: false,
+        data: { url: "./?moderation=1", moderation: true, icone: ICONES + "moderation.png" },
+      });
+      try { (await clients.matchAll({ type:"window", includeUncontrolled:true })).forEach((f) => { try { f.postMessage({ signalements: n }); } catch(x){} }); } catch(x){}
+      return;
+    }
     /* ===== « ESSAYER CHAQUE RAPPEL » (v327) =====
        Demandé par la Modération pour CE téléphone : chaque sorte de rappel,
        avec ses vrais mots et des valeurs d'exemple (une flamme de 3 jours,
@@ -509,7 +562,7 @@ self.addEventListener("push", (e) => {
       const val = { n: (charge.n | 0) || 3, j: (charge.jours | 0) || 7 };
       const m = motsDuJour(charge.genre, aujourdhui, langue);
       await self.registration.showNotification(remplir(m[0], val), {
-        body: remplir(m[1], val), icon: "./icon-192.png", badge: "./icon-192.png",
+        body: remplir(m[1], val), icon: vignette(charge.genre), badge: BADGE,
         tag: "essai-" + charge.genre, renotify: true, requireInteraction: false, data: { url: "./" },
       });
       return;
@@ -555,8 +608,9 @@ self.addEventListener("push", (e) => {
     if(etat.prevenu === aujourdhui) return;      // un seul rappel par jour, tous motifs confondus
 
     /* (v326) priere, lecture, essai et bienvenue sont servis plus haut ; ils restent nommés
-       ici pour que la liste dise tout ce que le serveur peut envoyer. (v329) message aussi. */
-    const CONNUS = ["serie", "defi", "revoir", "absence", "verset", "priere", "lecture", "essai", "bienvenue", "message"];
+       ici pour que la liste dise tout ce que le serveur peut envoyer. (v329) message aussi,
+       (v335) et signalement. */
+    const CONNUS = ["serie", "defi", "revoir", "absence", "verset", "priere", "lecture", "essai", "bienvenue", "message", "signalement"];
     const genre = CONNUS.indexOf(charge.genre) >= 0 ? charge.genre : "serie";
     let titre = "", corps = "";
     const val = { n: 0, j: 0 };
@@ -639,6 +693,8 @@ self.addEventListener("notificationclick", (e) => {
          part AVANT de passer au premier plan — une page qu'on réveille lit
          ses messages en arrivant. */
       if(d.groupe){ try { c.postMessage({ ouvrirGroupe: d.groupe }); } catch(x){} }
+      /* (v335) Un signalement : l'app déjà ouverte va à la Modération. */
+      if(d.moderation === true){ try { c.postMessage({ ouvrirModeration: true }); } catch(x){} }
       return c.focus().catch(() => (clients.openWindow ? clients.openWindow(cible) : null));   // l'app est déjà ouverte
     }
     if(clients.openWindow) return clients.openWindow(cible);

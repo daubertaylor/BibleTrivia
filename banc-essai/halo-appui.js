@@ -10,7 +10,9 @@
         bas, un succès, le verset ouvert, l'en-tête d'une discussion, une
         photo, un lien, la poignée d'une page —, AUCUN halo : ni rose, ni
         blanc ;
-     2. un message s'assombrit à peine, sans rosir ;
+     2. un message s'assombrit à peine, sans rosir — et (v335) une LIGNE de
+        liste aussi (un groupe, une ligne des Réglages, une action d'une
+        page) : « la lueur rose qui sélectionne les groupes… fais mieux » ;
      3. partout ailleurs, le halo se voit (au moins 4 unités de différence
         moyenne dans la boîte) ; sur un bouton corail, il est blanc ;
      4. aucune erreur.
@@ -98,6 +100,7 @@ const PLUS = [
 const SANS = /^button\.(switch|bb-onglet|ach|hero-verse-card|grp-tete|avatar-tap|lien-conf|grp-lien|sheet-grab|icon-btn\.hero-profile|icon-btn\.grp-profil)\b/;
 const IGNORE = /^button\.hero-icon-btn\b/;
 const BULLE = /^button\.b-bulle\b/;
+const LIGNE = /^button\.(grp-ligne|grp-act-l|set-row\.set-lien)\b/;
 
 (async () => {
   const nav = await chromium.launch({ executablePath: '/opt/pw-browsers/chromium' });
@@ -128,7 +131,7 @@ const BULLE = /^button\.b-bulle\b/;
           return [R / n, G / n, B / n];
         }, png);
       };
-      const combien = {}, sans = [], bulles = [], invisibles = [];
+      const combien = {}, sans = [], bulles = [], lignes = [], invisibles = [];
       let total = 0;
       for (const [nom, prep] of ECRANS.concat(PLUS)) {
         try { await p.evaluate((q) => { new Function(q)(); }, prep); } catch (e) { continue; }
@@ -167,11 +170,13 @@ const BULLE = /^button\.b-bulle\b/;
           const fiche = nom + ' ' + c.cle + ' : ' + sorte + ' ' + fort.toFixed(1);
           if (SANS.test(c.cle)) { if (sorte !== 'rien' && !(sorte === 'sombre' && fort < 6)) sans.push(fiche); }
           else if (BULLE.test(c.cle)) { if (sorte !== 'sombre' || fort < 2) bulles.push(fiche); }
+          else if (LIGNE.test(c.cle)) { if (sorte !== 'sombre' || fort < 4) lignes.push(fiche); }
           else if (fort < 4) invisibles.push(fiche);
         }
       }
       dit('1. aucun halo là où il n\'a pas de sens (interrupteur, onglets, succès, verset, en-tête, photos, liens)', !sans.length, sans.join(' · ') || total + ' familles visitées');
       dit('2. un message s\'assombrit à peine, sans rosir', !bulles.length, bulles.join(' · '));
+      dit('2b. une ligne de liste (groupe, Réglages, action) s\'assombrit, sans rosir', !lignes.length, lignes.join(' · '));
       dit('3. partout ailleurs, le halo se voit (blanc sur le corail)', !invisibles.length, invisibles.join(' · '));
       await ctx.close();
     }

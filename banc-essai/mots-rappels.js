@@ -104,9 +104,16 @@ dire(JSON.stringify(serveur) === JSON.stringify(swConnus),
    messages des groupes ont les leurs (MOTS_MESSAGE) : pas des formulations
    qui tournent, une ligne de messagerie — banc-essai/sw-messages.js les rend. */
 const MOTS_MESSAGE = new Function(morceau('const MOTS_MESSAGE = {', '\n};\n') + '\nreturn MOTS_MESSAGE;')();
+/* (v335) Un signalement, pour la modération, a aussi les siens
+   (MOTS_SIGNALEMENT) : un titre, et le compte de ce qui attend, au singulier
+   et au pluriel — banc-essai/signalement-notif.js les rend. */
+const MOTS_SIGNALEMENT = new Function(morceau('const MOTS_SIGNALEMENT = {', '\n};\n') + '\nreturn MOTS_SIGNALEMENT;')();
+const motsPropres = (t, k) => !!t && k.every(x => typeof t[x] === 'string' && t[x].length > 3);
 for(const g of serveur) for(const lg of LANGUES)
   dire(g === 'message'
-         ? !!MOTS_MESSAGE[lg] && ['ligne', 'partie', 'mention', 'titre', 'quelquun'].every(k => typeof MOTS_MESSAGE[lg][k] === 'string' && MOTS_MESSAGE[lg][k].length > 3)
+         ? motsPropres(MOTS_MESSAGE[lg], ['ligne', 'partie', 'mention', 'titre', 'quelquun'])
+         : g === 'signalement'
+         ? motsPropres(MOTS_SIGNALEMENT[lg], ['titre', 'un', 'n']) && /\{n\}/.test(MOTS_SIGNALEMENT[lg].n) && !/[{}]/.test(MOTS_SIGNALEMENT[lg].un)
          : !!MOTS_LANGUE[lg][g],
        'motif « ' + g +' » envoyé par le serveur mais sans formulation en ' + lg + ' dans sw.js');
 console.log('  motifs : ' + serveur.join(', ') + ' — serveur et appareil d\'accord');

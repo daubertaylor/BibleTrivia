@@ -151,7 +151,23 @@ Comme aux étapes 6 à 9 : recoller `groupes/table.sql` **en entier** dans
 **SQL Editor** → **Run**. Tant que ce n'est pas fait, le modérateur garde
 « Lecture seule », exactement comme avant.
 
-**Une seule fois suffit pour les étapes 6, 7, 8, 9 et 10 ensemble**, quelle que soit
+### 11. Retirer un admin se dit dans la discussion ; un signalement prévient la modération (v335) — recoller le fichier une fois
+
+Nommer un admin s'annonçait déjà (« Chloé devient admin du groupe ») ; le lui
+**retirer** se faisait en silence. Depuis la v335, la discussion le dit aussi :
+« Chloé n'est plus admin du groupe ».
+
+Et **chaque signalement prévient les modérateurs** sur leur téléphone :
+« Modération — Un signalement à traiter. » (ou « 3 signalements à
+traiter. »), même jeu ouvert ; la toucher ouvre la Modération. Rien de ce qui
+est signalé ne part dans la notification. Il faut pour cela que les
+notifications des messages marchent déjà (`notifications/installer.sql`, la
+clé interne) : c'est la même fonction « rappels » qui envoie.
+
+Même geste qu'aux étapes 6 à 10 ; tant que le fichier n'est pas recollé, le
+retrait reste silencieux et les signalements ne sonnent pas, comme avant.
+
+**Une seule fois suffit pour les étapes 6, 7, 8, 9, 10 et 11 ensemble**, quelle que soit
 la version déjà installée : le fichier d'aujourd'hui se colle par-dessus
 n'importe laquelle de ses versions passées sans rien perdre, et donne
 exactement la même base qu'une installation neuve (vérifié par

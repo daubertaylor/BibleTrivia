@@ -679,7 +679,7 @@ self.BANQUE_EN = [
 ["Who gave away Samson's secret?", ["Delilah", "Ruth", "Esther", "Rahab"], "Delilah drew from Samson the secret of his strength (Judges 16).", 0],
 ["Which prophet saw the Lord surrounded by seraphim?", ["Isaiah", "Ezekiel", "Daniel", "Zechariah"], "Isaiah saw seraphim crying “Holy, holy, holy” (Isaiah 6).", 0],
 ["Which apostle was exiled on the isle of Patmos?", ["John", "Peter", "Paul", "James"], "It was in exile on Patmos that John received the visions of Revelation (Revelation 1:9).", 0],
-["Which man was taken without dying, walking with God?", ["Enoch", "Elijah", "Noah", "Methuselah"], "Enoch walked with God, then God took him and he did not see death (Genesis 5:24).", 0],
+["Before the Flood, which man did God take away without his dying?", ["Enoch", "Seth", "Noah", "Methuselah"], "Enoch walked with God: “and he was not; for God took him” (Genesis 5:24).", 0],
 ["Which man wrestled a night with God and was named Israel?", ["Jacob", "Abraham", "Isaac", "Joseph"], "After wrestling till dawn, Jacob received the name Israel (Genesis 32).", 0],
 ["Which king judged between two women claiming one child?", ["Solomon", "David", "Rehoboam", "Jehoshaphat"], "Solomon offered to divide the child to reveal the true mother (1 Kings 3).", 0],
 ["Which king was the first of Israel?", ["Saul", "David", "Solomon", "Samuel"], "Saul, a tall man, was made the first king of Israel (1 Samuel 10).", 0],

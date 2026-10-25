@@ -675,7 +675,7 @@ self.BANQUE_ES = [
 ["¿Quién traicionó el secreto de Sansón?", ["Dalila", "Rut", "Ester", "Rahab"], "Dalila le arrancó a Sansón el secreto de su fuerza (Jueces 16).", 0],
 ["¿Qué profeta vio al Señor rodeado de serafines?", ["Isaías", "Ezequiel", "Daniel", "Zacarías"], "Isaías vio serafines clamar “Santo, santo, santo” (Isaías 6).", 0],
 ["¿Qué apóstol fue desterrado a la isla de Patmos?", ["Juan", "Pedro", "Pablo", "Jacobo"], "Desterrado en Patmos, Juan recibió las visiones del Apocalipsis (Apocalipsis 1:9).", 0],
-["¿Qué hombre fue arrebatado sin morir, caminando con Dios?", ["Enoc", "Elías", "Noé", "Matusalén"], "Enoc caminó con Dios, y Dios lo llevó sin que conociera la muerte (Génesis 5:24).", 0],
+["Antes del diluvio, ¿qué hombre fue llevado por Dios sin morir?", ["Enoc", "Set", "Noé", "Matusalén"], "Enoc caminó con Dios, “y desapareció, porque le llevó Dios” (Génesis 5:24).", 0],
 ["¿Qué hombre luchó una noche con Dios y fue llamado Israel?", ["Jacob", "Abraham", "Isaac", "José"], "Tras luchar hasta el alba, Jacob recibió el nombre de Israel (Génesis 32).", 0],
 ["¿Qué rey juzgó entre dos mujeres que reclamaban un niño?", ["Salomón", "David", "Roboam", "Josafat"], "Salomón propuso partir al niño para descubrir a la verdadera madre (1 Reyes 3).", 0],
 ["¿Qué rey fue el primero de Israel?", ["Saúl", "David", "Salomón", "Samuel"], "Saúl, de gran estatura, fue puesto como primer rey de Israel (1 Samuel 10).", 0],
