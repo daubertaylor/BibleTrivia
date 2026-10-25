@@ -506,6 +506,26 @@
   ::selection{ background:rgba(241,80,47,0.22); }
   input::placeholder{ color:rgba(42,36,30,0.32); }
   :root{ accent-color:var(--primary); }
+  /* ===== (v335) LE JEU NE SUIT PAS LE MODE SOMBRE DU TÉLÉPHONE =====
+     « Sur Android, le jeu ne doit pas être en mode sombre en fonction du
+       téléphone : le jeu ne doit pas changer. » Le jeu a UN visage, le
+     même pour tout le monde. Il n'a jamais suivi le réglage du téléphone
+     lui-même (aucune règle ne le lit) ; ce sont les NAVIGATEURS d'Android
+     qui « assombrissent » d'office les sites qu'ils croient clairs —
+     l'assombrissement automatique de Chrome, et surtout le mode sombre
+     forcé de Samsung Internet, le navigateur des Galaxy. Ils s'abstiennent
+     devant un site qui déclare son propre schéma de couleurs et fournit
+     LUI-MÊME ses styles sombres. Le jeu le déclare donc partout :
+     — la balise color-scheme (dans <head>), comme avant ;
+     — la même chose en CSS, sur la racine, avec « only » : interdit au
+       navigateur d'en choisir un autre (un navigateur qui ne connaît pas
+       « only » garde la ligne d'avant, « dark ») ;
+     — et la règle « styles sombres » que Samsung Internet cherche avant
+       de forcer quoi que ce soit : elle redit exactement la même chose.
+     Rien ne change à l'écran, ni au clair, ni au sombre
+     (banc-essai/sombre-android.js le photographie dans les deux). */
+  :root{ color-scheme:dark; color-scheme:only dark; }
+  @media (prefers-color-scheme: dark){ :root{ color-scheme:only dark; } }
   #app::-webkit-scrollbar{ display:none; }
   #app{ scrollbar-width:none; position:relative; }
   /* Défilement piloté par JS (Android, voir module "customScroll") : coupe le
@@ -1480,11 +1500,19 @@
   .ecran-salon .salle-liste::-webkit-scrollbar{ display:none; }
   .salle-ligne{ margin-bottom:0.45rem; }
   .salle-ligne.moi{ --rim-edge:0 0 0 1px rgba(150,30,14,0.28); --rim-cast:0 4px 12px rgba(241,80,47,0.24); }
-  .salle-ligne.vide{ opacity:0.55; }
   .salle-tag{ font-family:'Poppins',sans-serif; font-weight:600; font-size:0.66rem; letter-spacing:0.05em; text-transform:uppercase; color:var(--ink-soft); flex-shrink:0; }
   .salle-ligne.moi .salle-tag{ color:var(--primary); }
   .rank-row.moi{ --rim-edge:0 0 0 1px rgba(150,30,14,0.28); --rim-cast:0 4px 12px rgba(241,80,47,0.24); }
-  .rank-row.gone{ opacity:0.55; }
+  /* (v335) UNE PLACE LIBRE A UN VERRE ENTIER. « À certains moments, il ne
+     s'affiche pas pareil » (la ligne « En attente… » du salon). Elle était
+     rendue à 55 % d'opacité, VERRE COMPRIS : le verre du jeu est une photo
+     floutée peinte dans la ligne (le calque .gs) ; à 55 %, le décor NET
+     passait au travers à 45 % — le désert, ses falaises, bien visibles dans
+     une ligne censée être dépolie, et plus ou moins selon l'instant où le
+     verre se recale. Le verre reste donc entier, celui de toutes les
+     lignes ; seul ce qu'elle porte — le « ? », « En attente… », les places
+     — se met en retrait. Même chose pour un joueur parti. */
+  .salle-ligne.vide > :not(.gs):not(.glass-rim), .rank-row.gone > :not(.gs):not(.glass-rim){ opacity:0.55; }
   .rank-online .rank-score{ min-width:3.4rem; }
   /* Le bandeau de score, version à plusieurs : les pastilles défilent
      horizontalement plutôt que de rétrécir jusqu'à l'illisible. */
@@ -2474,8 +2502,8 @@
   /* ===== (v332) UN VISAGE NE SE TEINTE PAS (voir enfoncerVisage) =====
      Le visage qu'on touche s'enfonce, avec le même ressort qu'un bouton ; la
      ligne qui le porte ne bouge pas — c'est le visage qu'on a touché. */
-  .avatar{ transition:scale 0.44s cubic-bezier(0.2,1,0.3,1); }
-  .avatar.enfonce{ scale:0.92; transition-duration:0.09s; transition-timing-function:cubic-bezier(0.3,0,0.45,1); }
+  .avatar, .grp-av.a-photo[data-gid]{ transition:scale 0.44s cubic-bezier(0.2,1,0.3,1); }
+  .avatar.enfonce, .grp-av.enfonce{ scale:0.92; transition-duration:0.09s; transition-timing-function:cubic-bezier(0.3,0,0.45,1); }
   button.sans-appui:active:not(:disabled){ transform:none; }
   /* ===== CE QUI VIT EN RANGÉE NE S'ENFONCE PAS : ÇA SE REMPLIT =====
      « Le remplissage ne se fait pas à 100 %. » Mesuré sur la rangée Testament,
@@ -2621,6 +2649,9 @@
     background-size:cover; background-position:50% 50%; background-repeat:no-repeat;
     box-shadow:0 18px 60px rgba(0,0,0,0.55); }
   .photo-veil .pv-nom{ color:#fff; font-family:'Poppins',sans-serif; font-weight:700; font-size:1.1rem; text-shadow:0 1px 12px rgba(0,0,0,0.6); }
+  /* (v335) La photo d'un groupe garde en grand la forme de sa pastille : un
+     carré aux coins arrondis, pas un rond. */
+  .photo-veil .pv-img.pv-groupe{ border-radius:calc(var(--r-l) * 2.2); }
   /* ===== AJUSTER SA PHOTO =====
      UN CARRÉ, ET UN TROU ROND DEDANS. On voit EXACTEMENT ce qui sera gardé —
      le disque clair — et ce qu'on perd reste visible en plus sombre autour.
@@ -2983,6 +3014,27 @@
   .timer-chip .ico{ width:1rem; height:1rem; color:var(--ink-soft); display:inline-flex; }
   .timer-chip.low{ background:linear-gradient(180deg, rgba(251,106,69,0.95), rgba(234,74,40,0.95)); color:#fff; border-color:transparent; animation:timerPulse 1s ease-in-out infinite; box-shadow:inset 0 1px 0 rgba(255,255,255,0.3), 0 3px 12px rgba(241,80,47,0.45); }
   .timer-chip.low .ico{ color:rgba(255,255,255,0.9); }
+  /* ===== RÉVÉLÉE, LA QUESTION GARDE SON CHRONO, ARRÊTÉ (v335) =====
+     Le chrono disparaissait à la réponse, et les pastilles d'à côté se
+     répartissaient aussitôt autrement : « 1/15 » sautait d'une quarantaine
+     de pixels vers le milieu en Solo, jusqu'au bord en Groupe et En ligne,
+     puis revenait à la question suivante. Il reste à sa place, arrêté sur
+     le temps qui restait, ses chiffres adoucis : on voit qu'il ne court plus. */
+  .timer-chip.fige{ color:var(--ink-soft); }
+  /* ===== ET IL GARDE SA LARGEUR (v335) =====
+     « 9 s » est plus étroit que « 10 s » : en passant sous les dix secondes,
+     le chrono rétrécissait, et les pastilles d'à côté glissaient de trois
+     pixels. Son gabarit — l'horloge et « 00 s », invisibles — est posé dans
+     la même case que lui : la pastille a toujours la largeur de deux
+     chiffres, et ce qu'elle montre y reste centré, l'horloge collée à ses
+     secondes. */
+  .timer-chip .tg{ display:inline-grid; }
+  .timer-chip .tc{ grid-area:1 / 1; justify-self:center; display:inline-flex; align-items:center; gap:0.3rem; }
+  .timer-chip .tc-m{ visibility:hidden; }
+  /* La série aussi : « 1 » était plus étroit que « 0 », et la première bonne
+     réponse faisait glisser les pastilles d'à côté. Des chiffres de même
+     largeur, comme ceux du chrono et du compteur. */
+  .streak-chip{ font-variant-numeric:tabular-nums; }
   @keyframes timerPulse{ 0%,100%{ box-shadow:inset 0 1px 0 rgba(255,255,255,0.3), 0 3px 12px rgba(241,80,47,0.45); } 50%{ box-shadow:inset 0 1px 0 rgba(255,255,255,0.3), 0 3px 20px rgba(241,80,47,0.85); } }
   .timeout-note{ display:flex; align-items:center; justify-content:center; gap:0.4rem; background:linear-gradient(180deg, rgba(251,106,69,0.92), rgba(234,74,40,0.92)); color:#fff; font-weight:700; font-size:0.85rem; border:1px solid var(--bord); border-radius:var(--r-s); padding:0.55rem 0.8rem; margin-bottom:0.7rem; box-shadow:inset 0 1px 0 rgba(255,255,255,0.3), 0 4px 14px rgba(241,80,47,0.35); }
   .timeout-note .ico{ width:1.1rem; height:1.1rem; display:inline-flex; }
@@ -3804,7 +3856,16 @@
   .ach-tile.c-gold{ background:var(--pal-or); box-shadow:inset 0 1px 0 rgba(255,255,255,0.26), 0 2px 7px var(--pal-or-o); }
   .ach-tile.c-blue{ background:var(--pal-ciel); box-shadow:inset 0 1px 0 rgba(255,255,255,0.26), 0 2px 7px var(--pal-ciel-o); }
   .ach-tile.c-green{ background:var(--pal-vert); box-shadow:inset 0 1px 0 rgba(255,255,255,0.26), 0 2px 7px var(--pal-vert-o); }
-  .ach-nm{ font-family:'Poppins',sans-serif; font-weight:600; font-size:0.66rem; color:var(--ink); line-height:1.16; display:flex; align-items:center; justify-content:center; min-height:1.55rem; }
+  /* (v335) LA PLACE DU NOM SUIT SA RANGÉE. Chaque nom se réservait deux
+     lignes, partout : dans une rangée où aucun ne passe à la ligne (trois
+     rangées sur quatre), « Débloqué » flottait à 18 px de son nom, plus
+     loin que le nom de son icône — une ligne vide sous chaque objectif.
+     La tuile s'étire maintenant sur la hauteur de SA rangée (la grille le
+     fait d'elle-même) et le nom prend la place qui reste, centré : une
+     rangée de noms courts reste serrée, une rangée où un nom passe sur deux
+     lignes s'agrandit, et dans les deux cas les chiffres d'une même rangée
+     restent alignés en bas. */
+  .ach-nm{ font-family:'Poppins',sans-serif; font-weight:600; font-size:0.66rem; color:var(--ink); line-height:1.16; display:flex; align-items:center; justify-content:center; flex:1 0 auto; }
   .ach-nm > span{ display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical; overflow:hidden; }
   .ach-prog{ font-size:0.6rem; font-weight:700; color:var(--ink-soft); font-variant-numeric:tabular-nums; letter-spacing:0.01em; }
   .ach.on .ach-prog{ color:#1f7a4d; }
@@ -3856,6 +3917,13 @@
   .tst-bar{ flex:1; height:6px; border-radius:var(--r-full); background:rgba(120,90,50,0.18); overflow:hidden; }
   .tst-bar i{ display:block; height:100%; border-radius:var(--r-full); background:linear-gradient(90deg, var(--pal-or-a), var(--pal-vert-a)); }
   .tst-count{ font-family:'Poppins',sans-serif; font-size:0.8rem; font-weight:700; color:var(--ink); font-variant-numeric:tabular-nums; white-space:nowrap; flex-shrink:0; }
+  /* (v335) Le nom et le compteur : leur texte, et sous lui, invisibles, les
+     cales qui leur donnent la largeur commune aux deux rangées (voir
+     tstBlock). Le compteur se range à droite de sa place. */
+  .tst-name, .tst-count{ display:inline-grid; }
+  .tst-name > span, .tst-count > span{ grid-area:1 / 1; }
+  .tst-count > span{ justify-self:end; }
+  .tst-cale{ visibility:hidden; }
   /* Le chevron ne tourne plus : depuis la v316, la rangée ouvre une PAGE
      (voir LES TESTAMENTS DEVIENNENT DES PAGES), et « › » dit exactement ça. */
   .tst-chev{ width:1.1rem; height:1.1rem; color:var(--ink-soft); flex-shrink:0; display:inline-flex; }
@@ -3883,7 +3951,6 @@
     .ach-tile svg{ width:1.3rem; height:1.3rem; }
     .ach-grid{ gap:0.85rem 0.3rem; }
     .ach{ gap:0.26rem; }
-    .ach-nm{ min-height:1.4rem; }
     .ach-card{ padding:calc(0.6rem + 1px) calc(0.65rem + 1px) calc(0.5rem + 1px); }
     .parcours-sum{ padding:calc(0.6rem + 1px) calc(0.9rem + 1px); }
     .tst{ margin-top:0.42rem; }
@@ -5214,6 +5281,24 @@
      flamme) gardent le verre, et l'en-tête aussi puisque c'est la barre de
      l'app, présente sur tous les écrans. */
   .question-card, .solo-score-bar, .duel-scorebar, .award-btn, .score-pane{ --glass-tint: rgb(252,248,241); }
+  /* ===== (v335) LES PASTILLES DU HAUT DE LA PARTIE SONT PLEINES, ELLES AUSSI =====
+     « Ici c'est mal formé » (capture d'iPhone : « 1/7 », son bout droit
+     tranché net au milieu de l'arrondi). Ces pastilles portaient le verre
+     « scène » : une couche de photo floutée grande comme l'écran (550 x
+     1 700 px), recalée image par image et découpée par l'arrondi de la
+     pastille. Sur iPhone, la découpe d'une couche composée peut rester celle
+     d'une boîte d'avant : la pastille s'arrête alors sur un bord droit. Le
+     navigateur des bancs, lui, la découpe juste, et je ne peux pas filmer un
+     iPhone ici : on retire donc la mécanique elle-même. Comme la question, les
+     réponses et le score, la difficulté, le compteur et le chrono deviennent
+     des pastilles pleines, peintes par elles-mêmes (le moteur de verre ne les
+     prend plus, voir GLASS_VIVANT) : plus aucune couche à découper, la forme
+     ne peut plus être fausse. Sur la capture elles étaient déjà d'un blanc
+     plein — à l'œil, rien ne change, et Android les voit enfin comme l'iPhone.
+     La flamme garde sa teinte, le chrono rouge son dégradé. */
+  .play-meta > :is(.tier-chip, .q-counter, .timer-chip){ --glass-tint: rgb(252,248,241); }
+  .play-meta > :is(.tier-chip, .q-counter, .timer-chip:not(.low), .streak-chip){
+    background-image:none; background-color:var(--glass-tint); -webkit-backdrop-filter:none; backdrop-filter:none; }
   /* CARTES « Revoir mes erreurs » : même raison exactement que la carte
      question — ce sont des blocs qu'on LIT (question, mauvaise réponse, bonne
      réponse, anecdote). En verre, empilées dans une feuille elle-même en verre,
@@ -5972,9 +6057,21 @@
   .compo-noms{ position:absolute; left:0.45rem; right:0.45rem; bottom:0.45rem; z-index:3; display:flex; flex-direction:column;
     max-height:calc(4 * 44px + 0.7rem); overflow-y:auto; overscroll-behavior:contain; padding:0.35rem; border-radius:var(--r-l);
     background:rgb(252,248,241); box-shadow:0 2px 6px rgba(34,26,16,0.10), 0 10px 28px rgba(34,26,16,0.18);
-    animation:cnArrive 0.2s cubic-bezier(0.2,0.9,0.3,1) both; }
+    transform-origin:50% 100%; animation:cnArrive 0.26s cubic-bezier(0.2,0.85,0.3,1) both; }
   .compo-noms[hidden]{ display:none; }
-  @keyframes cnArrive{ from{ opacity:0; transform:translateY(0.35rem); } to{ opacity:1; transform:none; } }
+  /* (v335) LA LISTE SORT DE LA BARRE COMME UNE BULLE ARRIVE. « Vérifie
+     l'animation d'ouverture pour qu'elle soit cohérente avec le reste du
+     jeu. » Elle fondait en entier, fond compris, en 0,2 s : pendant plus de
+     100 ms, les messages de la discussion se lisaient AU TRAVERS des noms.
+     Elle prend maintenant le geste d'une bulle qui arrive (bArrive : la même
+     montée, la même échelle, la même courbe, le même quart de seconde),
+     depuis son bas, là où l'on écrit — mais elle est opaque au premier tiers
+     du mouvement : on ne lit jamais deux choses l'une sur l'autre. Elle se
+     retire au pas d'une fermeture (cnPart), et quand on tape, sa hauteur
+     suit au lieu de sauter (voir majNoms). */
+  @keyframes cnArrive{ 0%{ opacity:0; transform:translateY(0.5rem) scale(0.96); } 35%{ opacity:1; } 100%{ opacity:1; transform:none; } }
+  .compo-noms.part{ animation:cnPart 0.16s cubic-bezier(0.4,0,1,1) forwards; pointer-events:none; }
+  @keyframes cnPart{ from{ opacity:1; transform:none; } to{ opacity:0; transform:translateY(0.3rem) scale(0.98); } }
   .cn-nom{ display:flex; align-items:center; gap:0.6rem; width:100%; min-height:44px; flex-shrink:0; padding:0.3rem 0.55rem; border:0; border-radius:var(--r-m);
     background:none; text-align:left; color:var(--ink); font-family:'Poppins',sans-serif; font-size:0.95rem; -webkit-tap-highlight-color:transparent; }
   .cn-nom:active{ background:rgba(42,36,30,0.06); }
@@ -6263,6 +6360,57 @@
   .sheet-veil.page :is(.regles, .conf-liste){ padding:0.95rem 1rem; }
   .sheet-veil.page .mc-qui{ padding:1rem; }
   .sheet-veil.page .flam-tete{ padding:0.9rem 1rem; }
+  /* ===== (v335) UNE LIGNE DE LISTE S'ÉCLAIRE EN GRIS, D'UN BORD À L'AUTRE =====
+     « La lueur rose qui sélectionne les groupes… je sais pas trop, mais fais
+       mieux que ça » ; et dans les Réglages : « vérifie la sélection pour
+       que ça se sélectionne parfaitement — la couleur, tout ce qui va
+       avec ». Les deux mêmes défauts aux deux endroits :
+     — LA COULEUR. Le voile d'appui corail est fait pour les SURFACES qu'on
+       choisit : un bouton, une puce, une carte, une réponse. Posé sur une
+       ligne de liste, il teintait toute la rangée de rose, l'icône comprise,
+       qui virait au brun dessous. Une ligne de liste s'éclaire comme dans
+       les réglages d'un iPhone et dans toutes les messageries : un voile
+       neutre, à peine plus sombre que la carte ;
+     — LA FORME. La ligne s'arrêtait à la marge intérieure de sa carte, ou
+       gardait ses coins arrondis au milieu de la carte : le voile flottait
+       en pastille à l'intérieur. Il va désormais d'un bord à l'autre — carré
+       au milieu de la carte, arrondi comme elle à ses deux bouts. Au repos,
+       rien n'a bougé d'un pixel : la marge passe de la carte à la ligne.
+     Une surface qu'on choisit garde son onde corail, une surface corail son
+     onde blanche : rien d'autre ne change. */
+  button.grp-ligne, .grp-act-l, .set-lien{ --press-tint: rgba(52,36,22,0.075); }
+  button.grp-ligne:active:not(.sans-appui), .grp-act-l:active, .set-lien:active{ background:none; }
+  /* Et une ligne se remplit, elle ne s'enfonce pas (voir .grp-carte plus
+     haut) : rétrécie de 3 %, elle décollait son voile des bords de la carte. */
+  button.grp-ligne:active:not(:disabled), .grp-act-l:active:not(:disabled), .set-lien:active:not(:disabled){ transform:none; }
+  .grp-carte .grp-ligne{ border-radius:0; }
+  .sheet-veil.page .set-groupe > .set-lien{ margin-left:-0.95rem; margin-right:-0.95rem; width:calc(100% + 1.9rem);
+    padding-left:1.05rem; padding-right:1.05rem; border-radius:0; }
+  .sheet-veil.page .set-groupe > .set-lien:first-child{ margin-top:-0.15rem; padding-top:0.73rem;
+    border-top-left-radius:var(--r-l); border-top-right-radius:var(--r-l); }
+  .sheet-veil.page .set-groupe > .set-lien:last-child{ margin-bottom:-0.15rem; padding-bottom:0.73rem;
+    border-bottom-left-radius:var(--r-l); border-bottom-right-radius:var(--r-l); }
+  .sheet-veil.page :is(.grp-liste-act, .grp-defile){ padding:0; }
+  .sheet-veil.page :is(.grp-liste-act, .grp-defile) > :is(.grp-act-l, .grp-ligne){ border-radius:0; padding-left:0.95rem; padding-right:0.95rem; }
+  .sheet-veil.page .grp-liste-act > .grp-act-l:first-child{ padding-top:1.1rem; }
+  .sheet-veil.page .grp-liste-act > .grp-act-l:last-child{ padding-bottom:1.1rem; }
+  .sheet-veil.page .grp-defile > .grp-ligne:first-child{ padding-top:0.9rem; }
+  .sheet-veil.page .grp-defile > .grp-ligne:last-child{ padding-bottom:0.9rem; }
+  .sheet-veil.page :is(.grp-liste-act, .grp-defile) > :is(.grp-act-l, .grp-ligne):first-child{ border-top-left-radius:var(--r-l); border-top-right-radius:var(--r-l); }
+  .sheet-veil.page :is(.grp-liste-act, .grp-defile) > :is(.grp-act-l, .grp-ligne):last-child{ border-bottom-left-radius:var(--r-l); border-bottom-right-radius:var(--r-l); }
+  /* ===== (v335) UN LOGO S'ENFONCE SOUS LE DOIGT, ET SE SOULÈVE CHOISI =====
+     « Cette icône que j'ai sélectionnée, elle fait vraiment cheap. » Sous le
+     doigt, un voile blanc à 55 % couvrait la vignette ET la marge autour
+     d'elle : un carré délavé dans un anneau blanc, qui restait le temps que
+     la page se referme — c'est lui, sur les deux captures. Une vignette est
+     une icône d'app : sous le doigt elle s'enfonce, sans voile ; choisie,
+     elle prend sa pleine taille, se soulève (son ombre se porte plus loin),
+     et la coche arrive dans son rond blanc. */
+  .grp-logo-b{ --press-tint: transparent; }
+  .grp-logo-b > .grp-av{ transition:transform 0.24s cubic-bezier(0.32,0.72,0,1), box-shadow 0.24s ease; }
+  .grp-logo-b:active > .grp-av{ transform:scale(0.8); }
+  .grp-logo-b.choisi > .grp-av{ box-shadow:inset 0 1px 0 rgba(255,255,255,0.26), 0 7px 18px rgba(24,16,10,0.24); }
+  .grp-logo-b.choisi:active > .grp-av{ transform:scale(0.93); }
   .sheet-veil.page .grp-code-carte, .sheet-veil.page .grp-desc-carte{ background:var(--page-carte); box-shadow:var(--ombre-pose); }
   /* LA FLAMME, MOIS PAR MOIS : une carte blanche par mois, le titre et le
      compte au-dessus, les sept colonnes dessous. Les cases sans flamme
@@ -6755,6 +6903,7 @@ const TEXTES = {
     "Sauvegardé à l'instant":"Saved just now",
     "Sauvegardé il y a {n} min":"Saved {n} min ago",
     "Sauvegardé il y a {n} h":"Saved {n}h ago",
+    "Sauvegardé le {date}":"Saved on {date}",
     "Envoyés seuls, rien à faire":"Sent on their own, nothing to do",
     "{n} h":"{n}h",
     "{n} min":"{n} min",
@@ -6947,6 +7096,7 @@ const TEXTES = {
     "Ouvrir":"Open",
     "Tu n'es encore dans aucun groupe. Crée le tien, ou entre avec un code.":"You're not in any group yet. Create your own, or join with a code.",
     "Aucun groupe public pour l'instant.":"No public groups yet.",
+    "Aucun autre groupe public pour l'instant.":"No other public groups yet.",
     "Aucun groupe ne correspond.":"No group matches.",
     "Groupe public":"Public group",
     "Groupe privé":"Private group",
@@ -6968,6 +7118,7 @@ const TEXTES = {
     "{nom} ne fait plus partie du groupe":"{nom} is no longer in the group",
     "{nom} ne peut plus revenir dans le groupe":"{nom} can no longer rejoin the group",
     "{nom} devient admin du groupe":"{nom} is now a group admin",
+    "{nom} n'est plus admin du groupe":"{nom} is no longer a group admin",
     "Parle et joue avec tes amis":"Talk and play with your friends",
     "Les groupes demandent un compte : c'est lui qui permet de te reconnaître, et de bloquer quelqu'un si besoin.":"Groups need an account: it's how others recognize you, and how someone can be blocked if needed.",
     "La modération l'a retiré après un signalement. Le reste du jeu ne change pas.":"Moderators removed it after a report. The rest of the game doesn't change.",
@@ -7503,6 +7654,7 @@ const TEXTES = {
     "Sauvegardé à l'instant":"Guardado ahora mismo",
     "Sauvegardé il y a {n} min":"Guardado hace {n} min",
     "Sauvegardé il y a {n} h":"Guardado hace {n} h",
+    "Sauvegardé le {date}":"Guardado el {date}",
     "Envoyés seuls, rien à faire":"Se envían solos, nada que hacer",
     "{n} h":"{n} h",
     "{n} min":"{n} min",
@@ -7701,6 +7853,7 @@ const TEXTES = {
     "Ouvrir":"Abrir",
     "Tu n'es encore dans aucun groupe. Crée le tien, ou entre avec un code.":"Aún no estás en ningún grupo. Crea el tuyo o entra con un código.",
     "Aucun groupe public pour l'instant.":"Todavía no hay grupos públicos.",
+    "Aucun autre groupe public pour l'instant.":"Todavía no hay otros grupos públicos.",
     "Aucun groupe ne correspond.":"Ningún grupo coincide.",
     "Groupe public":"Grupo público",
     "Groupe privé":"Grupo privado",
@@ -7722,6 +7875,7 @@ const TEXTES = {
     "{nom} ne fait plus partie du groupe":"{nom} ya no forma parte del grupo",
     "{nom} ne peut plus revenir dans le groupe":"{nom} ya no puede volver al grupo",
     "{nom} devient admin du groupe":"{nom} ahora es admin del grupo",
+    "{nom} n'est plus admin du groupe":"{nom} ya no es admin del grupo",
     "Parle et joue avec tes amis":"Habla y juega con tus amigos",
     "Les groupes demandent un compte : c'est lui qui permet de te reconnaître, et de bloquer quelqu'un si besoin.":"Los grupos necesitan una cuenta: es lo que permite reconocerte y bloquear a alguien si hace falta.",
     "La modération l'a retiré après un signalement. Le reste du jeu ne change pas.":"La moderación lo retiró tras una denuncia. El resto del juego no cambia.",
@@ -8160,7 +8314,7 @@ document.addEventListener("pointercancel", ()=> lacherVisage(), { passive:true, 
 document.addEventListener("pointerdown", (e)=>{
   const b = e.target && e.target.closest ? e.target.closest("button, .mode-card") : null;
   /* Une photo qui va s'ouvrir en grand : c'est elle qui s'enfonce. */
-  const photo = e.target && e.target.closest ? e.target.closest(".avatar.a-photo[data-pid]") : null;
+  const photo = e.target && e.target.closest ? e.target.closest(".avatar.a-photo[data-pid], .grp-av.a-photo[data-gid]") : null;
   if(photo && !(b && b.matches(VISAGES))){
     if(ondeCourante) ondeRanger();
     enfoncerVisage(photo, b && !b.disabled ? b : null);
@@ -8854,7 +9008,7 @@ const BANK = {
     { q:"Quel patriarche vécut 950 ans, le plus longtemps après le déluge annoncé ?", options:["Noé","Sem","Abraham","Héber"], correct:"Noé", fact:"Il mourut 350 ans après le déluge (Genèse 9:29)." },
     { q:"Combien de personnes furent baptisées le jour de la Pentecôte ?", options:["Environ trois mille","Environ cent","Douze","Cinq mille"], correct:"Environ trois mille", fact:"L'Église naissante grandit d'un coup (Actes 2:41)." },
     { q:"Quel âge avait Noé au début du déluge ?", options:["600 ans","500 ans","700 ans","480 ans"], correct:"600 ans", fact:"Il vécut encore 350 ans après (Genèse 7:6)." },
-    { q:"Quel homme marcha avec Dieu puis « ne fut plus, car Dieu le prit » ?", options:["Hénoc","Élie","Mathusalem","Noé"], correct:"Hénoc", fact:"Il ne connut pas la mort (Genèse 5:24)." },
+    { q:"Quel homme marcha avec Dieu puis « ne fut plus, parce que Dieu le prit » ?", options:["Hénoc","Élie","Mathusalem","Noé"], correct:"Hénoc", fact:"Il ne connut pas la mort (Genèse 5:24)." },
     { q:"Quel roi ordonna un recensement suivi d'une peste sur Israël ?", options:["David","Salomon","Saül","Ézéchias"], correct:"David", fact:"Il choisit de tomber « entre les mains de l'Éternel » (2 Samuel 24)." },
     { q:"Quel psaume est le plus long chapitre de la Bible ?", options:["Le Psaume 119","Le Psaume 23","Le Psaume 51","Le Psaume 150"], correct:"Le Psaume 119", fact:"Cent soixante-seize versets sur la Parole de Dieu (Psaume 119)." },
     { q:"Quel disciple, percepteur, offrit un grand festin à Jésus chez lui ?", options:["Matthieu (Lévi)","Zachée","Simon le lépreux","Nicodème"], correct:"Matthieu (Lévi)", fact:"« Je ne suis pas venu appeler des justes » (Luc 5:29)." },
@@ -9016,7 +9170,7 @@ const BANK = {
     { q:"Qui trahit le secret de Samson ?", options:["Dalila","Ruth","Esther","Rahab"], correct:"Dalila", fact:"Dalila arracha à Samson le secret de sa force (Juges 16)." },
     { q:"Quel prophète vit le Seigneur entouré de séraphins ?", options:["Ésaïe","Ézéchiel","Daniel","Zacharie"], correct:"Ésaïe", fact:"Ésaïe vit des séraphins crier « Saint, saint, saint » (Ésaïe 6)." },
     { q:"Quel apôtre fut exilé sur l'île de Patmos ?", options:["Jean","Pierre","Paul","Jacques"], correct:"Jean", fact:"C'est exilé à Patmos que Jean reçut les visions de l'Apocalypse (Apocalypse 1:9)." },
-    { q:"Quel homme fut enlevé sans mourir, marchant avec Dieu ?", options:["Hénoc","Élie","Noé","Mathusalem"], correct:"Hénoc", fact:"Hénoc marcha avec Dieu, puis Dieu le prit sans qu'il connaisse la mort (Genèse 5:24)." },
+    { q:"Avant le déluge, quel homme fut enlevé par Dieu sans connaître la mort ?", options:["Hénoc","Seth","Noé","Mathusalem"], correct:"Hénoc", fact:"Hénoc marcha avec Dieu ; puis il « ne fut plus, parce que Dieu le prit » (Genèse 5:24)." },
     { q:"Quel homme lutta une nuit avec Dieu et fut nommé Israël ?", options:["Jacob","Abraham","Isaac","Joseph"], correct:"Jacob", fact:"Après avoir lutté jusqu'à l'aube, Jacob reçut le nom d'Israël (Genèse 32)." },
     { q:"Quel roi trancha entre deux femmes revendiquant un enfant ?", options:["Salomon","David","Roboam","Josaphat"], correct:"Salomon", fact:"Salomon proposa de partager l'enfant pour révéler la vraie mère (1 Rois 3)." },
     { q:"Quel roi fut le premier d'Israël ?", options:["Saül","David","Salomon","Samuel"], correct:"Saül", fact:"Saül, de haute taille, fut établi premier roi d'Israël (1 Samuel 10)." },
@@ -9551,7 +9705,7 @@ const BANK = {
     { q:"Quel scribe écrivit les paroles de Jérémie ?", options:["Baruc","Séraja","Guedalia","Schaphan"], correct:"Baruc", fact:"Baruc mit par écrit, sur un rouleau, les paroles de Jérémie (Jérémie 36)." },
     { q:"Quel roi de Juda brûla le rouleau de Jérémie au canif ?", options:["Jojakim","Sédécias","Josias","Joachin"], correct:"Jojakim", fact:"Le roi Jojakim brûla au canif le rouleau de Jérémie (Jérémie 36)." },
     { q:"Quel prophète fut « fils de Buzi », prêtre exilé ?", options:["Ézéchiel","Jérémie","Daniel","Ésaïe"], correct:"Ézéchiel", fact:"Ézéchiel, prêtre déporté, prophétisa près du fleuve Kebar (Ézéchiel 1:3)." },
-    { q:"Quels quatre visages avaient les êtres vivants d'Ézéchiel ?", options:["Homme, lion, taureau, aigle","Homme, cheval, aigle, bœuf","Lion, agneau, aigle, homme","Bœuf, lion, cerf, homme"], correct:"Homme, lion, taureau, aigle", fact:"Les êtres vivants d'Ézéchiel avaient quatre faces : homme, lion, taureau, aigle (Ézéchiel 1:10)." },
+    { q:"Quels quatre visages avaient les êtres vivants d'Ézéchiel ?", options:["Homme, lion, bœuf, aigle","Homme, cheval, aigle, bœuf","Lion, agneau, aigle, homme","Bœuf, lion, cerf, homme"], correct:"Homme, lion, bœuf, aigle", fact:"Les êtres vivants d'Ézéchiel avaient quatre faces : homme, lion, bœuf, aigle (Ézéchiel 1:10)." },
     { q:"Combien de semaines Daniel annonce-t-il dans sa prophétie ?", options:["Soixante-dix","Soixante-deux","Sept","Douze"], correct:"Soixante-dix", fact:"Daniel reçut la célèbre prophétie des soixante-dix semaines (Daniel 9:24)." },
     { q:"Comment furent renommés Daniel et ses amis à Babylone ? (Daniel)", options:["Beltschatsar","Abed-Nego","Schadrak","Méschak"], correct:"Beltschatsar", fact:"À Babylone, on renomma Daniel « Beltschatsar » (Daniel 1:7)." },
     { q:"Quel prophète mineur ne contient qu'un seul chapitre et vise Édom ?", options:["Abdias","Nahum","Habacuc","Aggée"], correct:"Abdias", fact:"Livre d'Abdias." },
@@ -10122,7 +10276,7 @@ function startQTimer(seconds, onExpire){
 function updateTimerChip(){
   const chip = document.getElementById("qTimerChip");
   if(!chip) return;
-  const val = chip.querySelector(".tv");
+  const val = chip.querySelector(".tv-n");
   if(val) val.textContent = Math.max(qTimerLeft,0) + " s";
   chip.classList.toggle("low", qTimerLeft <= 5);
 }
@@ -10135,7 +10289,18 @@ function questionsBadge(){
 }
 function timerChipHtml(seconds){
   if(!seconds) return "";
-  return `<span class="timer-chip" id="qTimerChip"><span class="ico">${ICONS.clock}</span><span class="tv">${seconds} s</span></span>`;
+  return `<span class="timer-chip" id="qTimerChip">${contenuChrono(seconds)}</span>`;
+}
+/* Le même, arrêté sur ce qui restait (voir .timer-chip.fige). Sans id : le
+   décompte ne le touche plus. */
+function timerFigeHtml(seconds){
+  if(!seconds) return "";
+  return `<span class="timer-chip fige">${contenuChrono(Math.max(qTimerLeft, 0))}</span>`;
+}
+/* L'horloge et les secondes, sur leur gabarit invisible (voir ET IL GARDE
+   SA LARGEUR). */
+function contenuChrono(n){
+  return `<span class="tg"><span class="tc"><span class="ico">${ICONS.clock}</span><span class="tv-n">${n} s</span></span><span class="tc tc-m" aria-hidden="true"><span class="ico"></span><span>00 s</span></span></span>`;
 }
 function soloTimeUp(){
   if(state.revealed) return;
@@ -10256,7 +10421,7 @@ const SUPABASE_ANON_KEY = "sb_publishable_FDJ_R0foC7uIeHmxVrj6rA_2NeIgW2a";
    remontée d'un téléphone ne vaut rien si on ne sait pas QUELLE version
    tournait. Elle doit rester égale au CACHE de sw.js — c'est ce que vérifie
    banc-essai/version.js, qui refuse de laisser publier les deux en désaccord. */
-const VERSION_JEU = "v334";
+const VERSION_JEU = "v335";
 
 /* ===================== QUAND ÇA CASSE CHEZ UN JOUEUR =====================
    « Si quelque chose casse chez cinq d'entre eux sur un modèle de téléphone
@@ -10445,7 +10610,9 @@ let monArrivee = 0;
 /* « livres » : ce téléphone sait construire une partie sur un seul livre
    (v316). Un joueur resté sur une version d'avant ne l'annonce pas — voir
    UN SEUL LIVRE, EN LIGNE. */
-function meMeta(extra){ return Object.assign({ id:myId, name: profile.name || T("Invité"), color: profile.color, arrive: monArrivee || (monArrivee = Date.now()), livres:1 }, extra||{}); }
+/* (v335) « hote » : celui qui a ouvert le salon se dit hôte dans sa
+   présence — les invités savent ainsi QUI s'en va (voir L'HÔTE QUI S'EN VA). */
+function meMeta(extra){ return Object.assign({ id:myId, name: profile.name || T("Invité"), color: profile.color, arrive: monArrivee || (monArrivee = Date.now()), livres:1, hote: net.isHost ? 1 : 0 }, extra||{}); }
 
 /* ===================== LES JOUEURS DU SALON =====================
    Le mode en ligne ne savait compter que jusqu'à deux : un seul adversaire,
@@ -11206,6 +11373,10 @@ function bindRoom(ch){
       Object.keys(net.joueurs).forEach(id=>{ if(!restants.some(k=>k===id || (st[k]&&st[k][0]&&st[k][0].id===id))) delete net.joueurs[id]; });
     }
     majAdversaire();
+    /* (v335) L'hôte n'est plus là, mais d'autres invités oui : personne ne
+       pourra plus lancer. On lui laisse le temps de revenir (une application
+       passée derrière retire sa présence), puis le salon se ferme. */
+    if(restants.length && !net.isHost && !net.deck.length && (leftPresences||[]).some(m => m && m.hote)) guetterHote(ch);
     if(!restants.length){
       if(state.screen==="online-play" || state.screen==="online-end"){ markOppGone(); }
       else if(state.screen==="online-room" && !net.isHost){
@@ -11220,6 +11391,11 @@ function bindRoom(ch){
   ch.on("broadcast", { event:"photo" }, ({ payload })=>{
     if(!payload || !payload.id) return;
     recevoirPhoto(payload.id, payload.u);
+  });
+  /* (v335) L'hôte a fermé le salon avant de lancer : tout le monde sort. */
+  ch.on("broadcast", { event:"ferme" }, ()=>{
+    if(net.room !== ch || net.isHost || net.deck.length) return;
+    salonFermeParHote();
   });
   ch.on("broadcast", { event:"start" }, ({ payload })=>{
     if(!payload) return;
@@ -11530,13 +11706,61 @@ function quitDuel(){
     quitterFinEnLigne();
   }
 }
+/* ===== (v335) L'HÔTE QUI S'EN VA AVANT D'AVOIR LANCÉ FERME LE SALON =====
+   « En mode groupe, lorsque je quitte la partie et que je suis l'hôte, mais
+     que je ne l'ai pas lancée, il faut que la partie se ferme, pour que les
+     joueurs ne restent pas dedans. » Seul l'hôte peut lancer. Les invités ne
+   sortaient que lorsque PLUS PERSONNE n'était là : à deux invités, chacun
+   voyait encore l'autre, et ils attendaient ensemble, pour toujours, une
+   partie que personne ne pouvait plus lancer.
+   L'hôte qui quitte son salon avant de lancer le dit donc à tous (« ferme »)
+   avant de raccrocher, et chacun sort — ramené à son groupe, ou à l'écran En
+   ligne, avec le mot « L'hôte a quitté le salon. ». S'il disparaît sans rien
+   dire (application fermée, réseau perdu), sa présence s'en va : seul
+   invité, on sortait déjà ; à plusieurs, on lui laisse trente secondes pour
+   revenir, puis le salon se ferme de la même façon. Une partie LANCÉE, elle,
+   continue sans lui : son score reste au tableau. */
+const HOTE_GRACE = 30000;
+function salonFermeParHote(){
+  if(state.screen !== "online-room") { cleanupRoom(); return; }
+  cleanupRoom();
+  net.error = T("L'hôte a quitté le salon.");
+  if(sortirVersGroupe(net.error)){ net.error = ""; return; }
+  state.screen = "online"; render();
+}
+function hotePresent(ch){
+  try{
+    const st = ch.presenceState();
+    return Object.keys(st).some(k => k !== myId && (st[k] || []).some(m => m && m.hote));
+  }catch(e){ return true; }
+}
+function guetterHote(ch){
+  clearTimeout(net.hoteT);
+  net.hoteT = setTimeout(()=>{
+    net.hoteT = null;
+    if(net.room !== ch || net.isHost || net.deck.length || hotePresent(ch)) return;
+    salonFermeParHote();
+  }, HOTE_GRACE);
+}
 function cleanupRoom(){
   if(net.partieGroupe && net.partieGroupe.code === net.code) clorePartieGroupe();
   stopDuelHeartbeat();
   clearTimeout(net.matchGuard); net.autoMatch = false;
+  clearTimeout(net.hoteT); net.hoteT = null;
   if(net.joinTimer){ clearTimeout(net.joinTimer); net.joinTimer=null; }
   if(net.subTimer){ clearTimeout(net.subTimer); net.subTimer=null; }
-  if(net.room){ try { net.room.untrack(); net.supa.removeChannel(net.room); } catch(e){} net.room=null; }
+  if(net.room){
+    const ch = net.room;
+    net.room = null;
+    const raccrocher = ()=>{ try { ch.untrack(); net.supa.removeChannel(ch); } catch(e){} };
+    if(net.isHost && !(net.deck && net.deck.length)){
+      /* le mot part d'abord, on raccroche ensuite (au plus tard 0,6 s après) */
+      let fait = false;
+      const fin = ()=>{ if(!fait){ fait = true; raccrocher(); } };
+      try { Promise.resolve(ch.send({ type:"broadcast", event:"ferme", payload:{ id:myId } })).then(fin, fin); } catch(e){ fin(); }
+      setTimeout(fin, 600);
+    } else raccrocher();
+  }
   net.code=null; net.isHost=false; net.opp=null; net.oppPresent=false; net.oppGone=false; videJoueurs();
   oublierPhotos();
   clearTimeout(photoTimer); photoTimer = null;
@@ -12123,8 +12347,21 @@ function majPages(){
   const ouvertes = pagesOuvertes();
   /* Le dessous redevient visible dès qu'aucune page ne le couvre plus — au
      DÉBUT de la sortie de la dernière, pour qu'elle reparte en le découvrant. */
-  if(!ouvertes.some(v => v.classList.contains("page") && v.classList.contains("posee")))
-    document.documentElement.classList.remove("sous-page");
+  /* ===== LE DESSOUS SE DÉDUIT DES PAGES, IL NE SE POSE PLUS À LA MAIN (v335) =====
+     « À certains moments, lorsque je ferme la page, ça fait ça. » (capture de
+     Taylor : « Les règles » qui part vers la droite, et à gauche le désert
+     nu, sans l'écran des groupes.) Trois endroits posaient ou ôtaient
+     « sous-page » chacun de son côté, et deux le faisaient en RETARD : le
+     filet de l'arrivée (une demi-seconde après l'ouverture) et le retour en
+     place d'une page lâchée trop tôt (un tiers de seconde après). Tirer la
+     page du bord pendant l'un de ces délais — juste après l'avoir ouverte,
+     ou juste après l'avoir laissée revenir — et le délai, en tombant,
+     cachait l'écran du dessous sous le doigt : la page s'en allait sur le
+     décor seul. Il n'y a plus qu'une règle, relue à chaque changement de
+     page : le dessous est caché tant qu'une page POSÉE le couvre, et une
+     page qu'on tire (« tiree ») ne le couvre plus. */
+  const couvre = ouvertes.some(v => v.classList.contains("page") && v.classList.contains("posee") && !v.classList.contains("tiree"));
+  document.documentElement.classList.toggle("sous-page", couvre);
   retourTelephone(ouvertes.length);
 }
 /* ===== LE BOUTON « RETOUR » DU TÉLÉPHONE REFERME LA PAGE =====
@@ -12180,7 +12417,7 @@ function pageOuverte(veil){
   const posee = ()=>{
     if(!veil.isConnected || veil.classList.contains("closing") || veil.classList.contains("posee")) return;
     veil.classList.add("posee");
-    de.classList.add("sous-page");
+    majPages();
   };
   veil.addEventListener("animationend", (e)=>{ if(e.target === veil && e.animationName === "pageIn") posee(); });
   /* Filet : onglet caché pendant l'arrivée, animation coupée. */
@@ -12218,7 +12455,7 @@ try{ new MutationObserver(majPages).observe(document.body, { childList:true }); 
    tiers de l'écran (ou lancée), la page part ; sinon elle revient se poser. */
 function attacherRetourPage(veil, fermer){
   const BORD = 26;
-  let x0 = 0, y0 = 0, dx = 0, t0 = 0, id = null, suivi = false, decide = false;
+  let x0 = 0, y0 = 0, dx = 0, t0 = 0, id = null, suivi = false, decide = false, retour = 0;
   veil.addEventListener("pointerdown", (e)=>{
     if(e.pointerType === "mouse" || veil.classList.contains("closing") || e.clientX > BORD) return;
     /* Là où le doigt appartient déjà à quelque chose — l'image qu'on cadre,
@@ -12233,9 +12470,15 @@ function attacherRetourPage(veil, fermer){
       if(Math.abs(mx) < 8 && Math.abs(my) < 8) return;
       if(mx <= 0 || Math.abs(my) > Math.abs(mx)){ suivi = false; return; }
       decide = true;
-      veil.classList.add("tiree");
-      /* Ce qui est dessous doit se voir pendant qu'on tire. */
-      document.documentElement.classList.remove("sous-page");
+      /* Ce qui est dessous doit se voir pendant qu'on tire : « tiree » le
+         rend (majPages). Une page reprise au vol pendant qu'elle revient se
+         poser garde le doigt : son retour en place est annulé. Et une page
+         saisie avant la fin de son arrivée est arrivée — le doigt la tient,
+         elle ne rejouera pas son entrée en étant lâchée. */
+      clearTimeout(retour); retour = 0;
+      veil.style.transition = "";
+      veil.classList.add("posee", "tiree");
+      majPages();
       try{ veil.setPointerCapture(id); }catch(err){}
     }
     dx = Math.max(0, mx);
@@ -12246,18 +12489,23 @@ function attacherRetourPage(veil, fermer){
     suivi = false;
     if(!decide) return;
     const vitesse = dx / Math.max(1, performance.now() - t0);
-    veil.classList.remove("tiree");
     if(dx > veil.clientWidth / 3 || vitesse > 0.65){
       /* La sortie part de là où le doigt l'a laissée : l'animation de
          fermeture n'a pas de point de départ, elle prend la position du moment. */
+      veil.classList.remove("tiree");
       fermer();
       return;
     }
+    /* Elle revient se poser en restant « tirée » : le dessous se voit
+       jusqu'à ce qu'elle le recouvre en entier. (La transition écrite sur
+       elle passe avant le « transition:none » de .tiree.) */
     veil.style.transition = "transform 0.3s cubic-bezier(0.22,1,0.3,1)";
     veil.style.transform = "translate3d(0,0,0)";
-    setTimeout(()=>{
+    retour = setTimeout(()=>{
+      retour = 0;
       veil.style.transition = ""; veil.style.transform = "";
-      if(!veil.classList.contains("closing") && veil.classList.contains("posee")) document.documentElement.classList.add("sous-page");
+      veil.classList.remove("tiree");
+      majPages();
     }, 320);
   };
   veil.addEventListener("pointerup", lacher, { passive:true });
@@ -12682,6 +12930,74 @@ function playVerse(){
   chime(523.25, 0.09, 1.8, 0.010);  // Do5
   chime(659.25, 0.26, 1.9, 0.009);  // Mi5
   chime(1046.50, 0.46, 2.4, 0.006); // Do6 — scintillement paisible
+}
+/* ===== (v335) LE SON DES MESSAGES, DANS LE JEU =====
+   « Je reviens sur ce que j'ai dit : je veux le son des notifications à
+     l'intérieur du jeu. Comme Telegram et d'autres applications très
+     connues : même si tu es dans l'appli, tu reçois la notification. Le son,
+     je l'aimais beaucoup, il est bien — mais je le veux moins métallique. »
+   Le téléphone, lui, ne sonne toujours pas pour un jeu ouvert (le serveur
+   se tait, sinon deux bandeaux pour un seul message) : c'est le JEU qui
+   sonne, avec son propre son, comme Telegram — voir annoncerDansLeJeu.
+   POURQUOI IL N'EST PLUS MÉTALLIQUE. Ce que l'oreille appelle « métal »
+   dans un son de notification, ce sont des partiels aigus qui tiennent
+   longtemps : une cloche, un verre qu'on tinte. Celui-ci est un BOIS — deux
+   lames de marimba : le corps (un sinus), le claquement de la lame
+   (l'harmonique 4 d'un marimba, éteinte en 60 ms) et un souffle à l'octave
+   grave ; la quarte Ya-da (mi → la) dans le médium, une extinction courte
+   (moins d'une demi-seconde), sous le filtre chaud de tous les sons du jeu.
+   Et dans la discussion ouverte, une goutte : une seule note qui monte d'un
+   souffle, plus bas, comme dans toutes les messageries. Les « Effets
+   sonores » éteints, ils se taisent avec le reste. */
+function noteBois(freq, start, dur, vol){
+  const ctx = getCtx();
+  reveiller(ctx);
+  const t0 = ctx.currentTime + start, v = vol * SFX_GAIN;
+  const o = ctx.createOscillator(), g = ctx.createGain();
+  o.type = "sine"; o.frequency.value = freq;
+  g.gain.setValueAtTime(0.0001, t0);
+  g.gain.linearRampToValueAtTime(v, t0 + 0.005);
+  g.gain.exponentialRampToValueAtTime(0.0001, t0 + dur);
+  o.connect(g); g.connect(masterFilter); o.start(t0); o.stop(t0 + dur + 0.05);
+  const l = ctx.createOscillator(), lg = ctx.createGain();
+  l.type = "sine"; l.frequency.value = freq * 4;
+  lg.gain.setValueAtTime(0.0001, t0);
+  lg.gain.linearRampToValueAtTime(v * 0.2, t0 + 0.002);
+  lg.gain.exponentialRampToValueAtTime(0.0001, t0 + 0.06);
+  l.connect(lg); lg.connect(masterFilter); l.start(t0); l.stop(t0 + 0.09);
+  const b = ctx.createOscillator(), bg = ctx.createGain();
+  b.type = "sine"; b.frequency.value = freq * 0.5;
+  bg.gain.setValueAtTime(0.0001, t0);
+  bg.gain.linearRampToValueAtTime(v * 0.16, t0 + 0.01);
+  bg.gain.exponentialRampToValueAtTime(0.0001, t0 + dur * 0.6);
+  b.connect(bg); bg.connect(masterFilter); b.start(t0); b.stop(t0 + dur * 0.6 + 0.05);
+}
+let dernierSonMessage = 0;
+function sonMessage(){
+  if(!settings.sfx || document.hidden) return;
+  /* une rafale ne sonne qu'une fois (comme la notification : voir sw.js) */
+  const t = performance.now();
+  if(t - dernierSonMessage < 2000) return;
+  dernierSonMessage = t;
+  noteBois(659.25, 0, 0.42, 0.012);
+  noteBois(880.00, 0.105, 0.5, 0.011);
+}
+function sonGoutte(){
+  if(!settings.sfx || document.hidden) return;
+  const t = performance.now();
+  if(t - dernierSonMessage < 900) return;
+  dernierSonMessage = t;
+  const ctx = getCtx();
+  reveiller(ctx);
+  const t0 = ctx.currentTime, v = 0.013 * SFX_GAIN;
+  const o = ctx.createOscillator(), g = ctx.createGain();
+  o.type = "sine";
+  o.frequency.setValueAtTime(560, t0);
+  o.frequency.exponentialRampToValueAtTime(940, t0 + 0.05);
+  g.gain.setValueAtTime(0.0001, t0);
+  g.gain.linearRampToValueAtTime(v, t0 + 0.006);
+  g.gain.exponentialRampToValueAtTime(0.0001, t0 + 0.16);
+  o.connect(g); g.connect(masterFilter); o.start(t0); o.stop(t0 + 0.2);
 }
 function ensureAudioAwake(){ if(actx) reveiller(actx); }
 /* Verrou : on ne ranime JAMAIS l'audio si l'app n'est pas au premier plan.
@@ -14420,6 +14736,68 @@ try{
   window.recalerChampClavier = ()=>{ if(de.classList.contains("kb") && isField()){ clearTimeout(kbScrollTimer); kbScrollTimer = setTimeout(bringFieldIntoView, 40); } };
   document.addEventListener("focusin", ()=>setTimeout(apply, 60));
   document.addEventListener("focusout", ()=>{ clearTimeout(kbScrollTimer); clearTimeout(kbScrollTimer2); setTimeout(()=>{ if(!isField()){ poserDecalage(0); if(retourAPrevoir()) de.classList.add("kb-cale"); de.classList.remove("kb"); if(de.classList.contains("kb-fil")){ de.classList.remove("kb-fil"); try{ glassSuivre(500); }catch(e){} } fitScroll(); rendDefilementClavier(); } }, 60); });
+  /* ===== (v335) SUR iPHONE, LE CLAVIER S'OUVRE SANS FAIRE SAUTER L'ÉCRAN =====
+     « Lorsque j'ouvre le clavier, je ne veux pas que le haut de l'écran
+       saute : juste le clavier qui s'ouvre proprement. » (vidéo d'une
+     discussion, sur iPhone). Image par image, au toucher de la barre
+     d'écriture : iOS fait GLISSER toute la vue de 314 pt vers le haut pour
+     montrer le champ au-dessus du clavier — un glissement animé avec le
+     clavier. La zone visible, elle, annonce d'un coup sa position d'arrivée
+     (visualViewport.offsetTop), et le jeu s'y recalait d'un coup (--vvt, voir
+     plus haut) pendant qu'iOS glissait encore : l'écran entier tombait d'une
+     hauteur de clavier, une bande sombre au-dessus de l'en-tête, puis
+     remontait en 150 ms.
+     Ce module n'a besoin d'aucun glissement d'iOS : la discussion prend la
+     hauteur visible (kb-fil), les pages et les fenêtres aussi, et #app se
+     fait défiler lui-même jusqu'au champ. Or WebKit renonce à son glissement
+     quand c'est la page qui donne le foyer, avec preventScroll (WKContentView,
+     _zoomToRevealFocusedElement — depuis Safari 15.5) : c'est déjà ainsi que
+     s'ouvre le clavier quand on touche une bulle pour y répondre, et là rien
+     ne sautait. Un toucher BREF sur un champ qui n'a pas le foyer le lui donne
+     donc de la même façon, le curseur au bout de ce qui est écrit (là où iOS
+     le pose lui-même au premier toucher d'un champ). Rien ne change pour le
+     doigt qui fait défiler, pour l'appui long (coller), ni pour un champ qui
+     a déjà le foyer (placer le curseur). Android n'est pas concerné : Chrome
+     pose son clavier par-dessus la page sans rien faire glisser. */
+  const IOS_TACTILE = /iP(hone|od|ad)/.test(navigator.userAgent || "") || (navigator.platform === "MacIntel" && navigator.maxTouchPoints > 1);
+  if(IOS_TACTILE){
+    const TYPES_TEXTE = /^(text|search|email|url|tel|password|number)$/;
+    const champTexte = (el)=>{
+      if(!el || el.disabled || el.readOnly) return false;
+      if(el.tagName === "TEXTAREA") return true;
+      return el.tagName === "INPUT" && TYPES_TEXTE.test(el.type || "text");
+    };
+    let toucher = null;
+    document.addEventListener("touchstart", (e)=>{
+      toucher = null;
+      if(!e.touches || e.touches.length !== 1) return;
+      const el = e.target && e.target.closest ? e.target.closest("input, textarea") : null;
+      if(!champTexte(el) || el === document.activeElement) return;
+      const t = e.touches[0];
+      toucher = { el, x:t.clientX, y:t.clientY, t:performance.now() };
+    }, { capture:true, passive:true });
+    document.addEventListener("touchmove", (e)=>{
+      if(!toucher || !e.touches || !e.touches.length) return;
+      const t = e.touches[0];
+      if(Math.abs(t.clientX - toucher.x) > 10 || Math.abs(t.clientY - toucher.y) > 10) toucher = null;
+    }, { capture:true, passive:true });
+    document.addEventListener("touchcancel", ()=>{ toucher = null; }, { capture:true, passive:true });
+    document.addEventListener("touchend", (e)=>{
+      const tc = toucher; toucher = null;
+      if(!tc || !e.cancelable || (e.touches && e.touches.length)) return;
+      const el = tc.el;
+      if(!el.isConnected || el === document.activeElement || performance.now() - tc.t > 450) return;
+      /* le doigt s'est levé sur le champ, pas à côté */
+      const f = e.changedTouches && e.changedTouches[0];
+      if(f){ const o = document.elementFromPoint(f.clientX, f.clientY); if(!o || (o !== el && !el.contains(o))) return; }
+      e.preventDefault();
+      try{ el.focus({ preventScroll:true }); }catch(err){ return; }
+      if(document.activeElement !== el) return;
+      try{ const n = el.value.length; el.setSelectionRange(n, n); }catch(err){}
+      /* le clic que le toucher aurait donné (la liste des @ s'y règle) */
+      try{ el.dispatchEvent(new MouseEvent("click", { bubbles:true, cancelable:true, view:window })); }catch(err){}
+    }, { capture:true, passive:false });
+  }
 })();
 
 /* ===================== VERSET SURPRISE (5 touches sur l'icône) ===================== */
@@ -19946,13 +20324,23 @@ function renderParcours(){
       /* Chaque testament est une PORTE (v316, voir LES TESTAMENTS DEVIENNENT
          DES PAGES) : la rangée ne se déplie plus, elle ouvre la page de ses
          livres. La flèche dit enfin ce que fait le toucher. */
+      /* (v335) LES DEUX BARRES COMMENCENT ET FINISSENT AU MÊME PIXEL.
+         « Vérifie l'espacement des différents éléments pour que tout soit
+           vraiment parfait. » Chaque rangée mesurait son nom : « Nouveau
+         Testament », plus long, poussait sa barre 16 px plus à droite que
+         celle de l'Ancien, et les compteurs ne tombaient pas l'un sous
+         l'autre. Chaque nom réserve maintenant la place du plus long des
+         deux (les deux noms sont posés dessous, invisibles), chaque compteur
+         celle du plus grand — dans toutes les langues, sans rien mesurer. */
+      const cales = [T("Ancien Testament"), T("Nouveau Testament")].map(n => `<span class="tst-cale" aria-hidden="true">${n}</span>`).join("");
+      const totMax = Math.max(at.length, nt.length);
       const tstBlock = (k, name, list)=>{
         const nm = nMastered(list, d), tot = list.length, pct = tot ? Math.round((nm/tot)*100) : 0;
         return `<div class="tst">
           <button class="tst-head${nm >= tot && tot ? ' done' : ''}" onclick="ouvrirTestament('${k}')">
-            <span class="tst-name">${T(name)}</span>
+            <span class="tst-name"><span>${T(name)}</span>${cales}</span>
             <span class="tst-bar"><i style="width:${pct}%"></i></span>
-            <span class="tst-count">${nm}/${tot}</span>
+            <span class="tst-count"><span>${nm}/${tot}</span><span class="tst-cale" aria-hidden="true">${totMax}/${totMax}</span></span>
             <span class="tst-chev">${ICONS.chevronRight}</span>
           </button>
         </div>`;
@@ -20508,20 +20896,39 @@ function animerLaBarre(node){
     requestAnimationFrame(()=>{ requestAnimationFrame(()=>{ try{ f.style.setProperty("--p", cible); }catch(e){} }); });
   }catch(e){}
 }
-/* La jauge du carnet se remplit à l'ouverture de l'écran, toujours depuis
-   zéro : on la pose à sa valeur à l'image suivante, et la transition CSS fait
-   le reste. Elle n'a pas de mémoire entre deux ouvertures — contrairement à la
-   barre de partie, qui doit repartir d'où elle en était — parce qu'ici le
-   geste utile est justement de REVOIR son avance, chaque fois qu'on ouvre. */
+/* ===== (v335) LA JAUGE NE BOUGE QUE QUAND ON A AVANCÉ =====
+   « Lors de l'ouverture de cette page, j'ai la barre de progression qui se
+     remplit. Fais en sorte que ça se passe de la meilleure façon : soit elle
+     doit se remplir, soit elle doit rester fixe, un ou l'autre. » Elle
+   repartait de zéro à CHAQUE ouverture — et à chaque redessin de l'écran —,
+   pendant que l'écran lui-même arrivait : un mouvement qui ne disait rien.
+   Elle s'affiche maintenant à sa valeur, FIXE (dès le balisage : un calcul
+   de mise en page fait avant elle n'y voit pas de zéro). Elle ne bouge que
+   si l'on a rattrapé des erreurs depuis la dernière fois qu'on l'a vue :
+   elle part alors de là où on l'avait laissée et avance jusqu'à la
+   nouvelle valeur, une fois l'écran posé — le seul mouvement qui ait un
+   sens : « tu as avancé ». Ce qu'elle a montré est noté sur ce téléphone
+   (bt_revoir_jauge, un nombre et rien d'autre). Une semaine qui glisse (des
+   erreurs trop anciennes qui en sortent) ne la fait pas reculer en
+   mouvement : elle se pose à sa valeur. */
+const CLE_JAUGE = "bt_revoir_jauge";
 function animerLaJauge(node){
   try{
     const j = node && node.querySelectorAll ? node.querySelectorAll(".rv-jauge i[data-m]") : null;
     if(!j || !j.length) return;
-    requestAnimationFrame(()=>{ requestAnimationFrame(()=>{
-      for(let i=0;i<j.length;i++){
-        try{ j[i].style.setProperty("--m", Math.max(0, Math.min(1, parseFloat(j[i].dataset.m) || 0))); }catch(e){}
-      }
-    }); });
+    let vu = null;
+    try{ const v = parseFloat(localStorage.getItem(CLE_JAUGE)); if(Number.isFinite(v)) vu = v; }catch(e){}
+    const m = Math.max(0, Math.min(1, parseFloat(j[0].dataset.m) || 0));
+    try{ localStorage.setItem(CLE_JAUGE, String(m)); }catch(e){}
+    if(vu === null || !(m > vu + 0.004)) return;
+    /* On a avancé : elle repart de là où on l'avait laissée… */
+    for(let i=0;i<j.length;i++){ j[i].style.transition = "none"; j[i].style.setProperty("--m", vu); }
+    void j[0].offsetWidth;
+    for(let i=0;i<j.length;i++) j[i].style.transition = "";
+    /* …et avance une fois l'écran posé (son arrivée finie). */
+    const arrivee = (node.getAnimations ? node.getAnimations() : []).filter(a => a.playState === "running");
+    const avancer = ()=> setTimeout(()=>{ for(let i=0;i<j.length;i++){ if(j[i].isConnected) j[i].style.setProperty("--m", m); } }, 90);
+    if(arrivee.length) Promise.all(arrivee.map(a => a.finished.catch(()=>{}))).then(avancer); else avancer();
   }catch(e){}
 }
 /* Un gel dépensé pendant que le jeu dormait doit se DIRE. Sans ça, le joueur
@@ -22040,13 +22447,28 @@ async function synchroniser(){
   let fait = null;
   try{
     for(let essai = 0; essai < SYNCHRO_ESSAIS; essai++){
-      const lu = await supa.from("sauvegardes").select("donnees,revision").eq("id", moi).maybeSingle();
+      const lu = await supa.from("sauvegardes").select("donnees,revision,maj").eq("id", moi).maybeSingle();
       if(lu.error && lu.error.code !== "PGRST116"){ compte.message = T("Pas de réseau. La sauvegarde reprendra toute seule."); break; }
       const distant = (lu.data && lu.data.donnees) || null;
       const revision = (lu.data && +lu.data.revision) || 0;
       /* LE SEUL POINT OÙ LE DISTANT ENTRE : par la fusion, jamais autrement. */
       const sur = appliquerSauvegarde(distant || {});
       if(!sur) break;
+      /* (v335) RIEN DE NOUVEAU, RIEN À RÉÉCRIRE. « Lorsque j'ouvre la
+         progression sauvegardée, ça me dit toujours sauvegardé à
+         l'instant — ça doit forcément être faux. » Ça l'était, dans ce
+         qu'il voulait dire : chaque retour sur l'app reposait la même
+         sauvegarde, et c'est cette repose qu'on datait. Une sauvegarde que
+         la fusion laisse IDENTIQUE à celle du serveur n'est plus reposée
+         (le serveur a déjà tout, au caractère près) ; l'heure affichée est
+         celle que le serveur a gardée de la dernière vraie écriture (maj). */
+      if(distant && memeSauvegarde(sur, distant)){
+        fait = sur;
+        const t = Date.parse((lu.data && lu.data.maj) || "");
+        compte.derniere = Number.isFinite(t) ? Math.min(t, Date.now()) : (compte.derniere || Date.now());
+        compte.message = "";
+        break;
+      }
       const pose = await supa.rpc("poser_sauvegarde", { p_donnees: sur, p_revision: revision });
       if(pose.error){ compte.message = T("Pas de réseau. La sauvegarde reprendra toute seule."); break; }
       const rendu = (Array.isArray(pose.data) ? pose.data[0] : pose.data) || {};
@@ -22068,13 +22490,32 @@ async function synchroniser(){
 /* Après une partie, la progression vient de bouger : c'est le moment utile. */
 function synchroApresPartie(){ if(compteConnecte()) setTimeout(()=>synchroniser(), 400); }
 
+/* Deux sauvegardes disent-elles exactement la même chose ? Le serveur
+   (jsonb) range les clés d'un objet à sa façon et oublie celles qui ne
+   valent rien : on compare donc clés triées, sans les « undefined ». L'ordre
+   des listes, lui, compte (le carnet). Un doute vaut « différentes » : on
+   repose, comme avant — jamais l'inverse. */
+function sauvegardeCanonique(v){
+  if(Array.isArray(v)) return "[" + v.map(x => x === undefined ? "null" : sauvegardeCanonique(x)).join(",") + "]";
+  if(v && typeof v === "object") return "{" + Object.keys(v).filter(k => v[k] !== undefined).sort()
+    .map(k => JSON.stringify(k) + ":" + sauvegardeCanonique(v[k])).join(",") + "}";
+  return JSON.stringify(v === undefined ? null : v);
+}
+function memeSauvegarde(a, b){
+  try{ return sauvegardeCanonique(a) === sauvegardeCanonique(b); }catch(e){ return false; }
+}
+
 /* ---------- CE QU'ON VOIT ---------- */
 function quandSauvegarde(){
   if(!compte.derniere) return "";
   const min = Math.floor((Date.now() - compte.derniere) / 60000);
   if(min < 1)  return T("Sauvegardé à l'instant");
   if(min < 60) return Tf("Sauvegardé il y a {n} min", { n:min });
-  return Tf("Sauvegardé il y a {n} h", { n:Math.floor(min/60) });
+  if(min < 1440) return Tf("Sauvegardé il y a {n} h", { n:Math.floor(min/60) });
+  /* Au-delà d'un jour, la date : « il y a 53 h » ne se lit pas. */
+  let jour = "";
+  try{ jour = new Date(compte.derniere).toLocaleDateString(LANGUE, { day:"numeric", month:"long" }); }catch(e){}
+  return jour ? Tf("Sauvegardé le {date}", { date:jour }) : Tf("Sauvegardé il y a {n} h", { n:Math.floor(min/60) });
 }
 function carteCompteHtml(){
   /* LE BOUCLIER, PAS « shield ». La carte appelait ICONS.shield, qui n'a
@@ -22491,7 +22932,7 @@ async function chargerEtatGroupes(){
        l'onglet : c'est elle qui donne les non-lus de la pastille de l'accueil. */
     /* Une liste venue de la mémoire de ce téléphone se relit quand même :
        elle montre tout de suite, le serveur dit ce qui a changé depuis. */
-    if(r.participe === "ok"){ abonnerGroupes(); abonnerPerso(); suivreNomGroupes(); if(!grp.liste || grp.listeDeMemoire) chargerListes(); if(invitationEnAttente) setTimeout(servirInvitation, 300); if(discussionEnAttente) setTimeout(servirDiscussion, 300); }
+    if(r.participe === "ok"){ abonnerGroupes(); abonnerPerso(); suivreNomGroupes(); if(!grp.liste || grp.listeDeMemoire) chargerListes(); if(invitationEnAttente) setTimeout(servirInvitation, 300); if(discussionEnAttente) setTimeout(servirDiscussion, 300); if(moderationEnAttente) setTimeout(servirModeration, 300); }
     else { desabonnerGroupes(); desabonnerPerso(); }
     if(r.participe === "ok"){
       ecrireBase("meta", "etat", { participe:r.participe, moderateur:!!r.moderateur, ouverts:r.ouverts, photos:r.photos === true, logos:r.logos === true,
@@ -22838,6 +23279,7 @@ function texteSysteme(m){
     exclu:"{nom} ne fait plus partie du groupe",
     banni:"{nom} ne peut plus revenir dans le groupe",
     admin:"{nom} devient admin du groupe",
+    plus_admin:"{nom} n'est plus admin du groupe",
     proprietaire:"{nom} est maintenant propriétaire du groupe",
     photo:"{nom} a changé la photo du groupe",
     photo_retiree:"{nom} a retiré la photo du groupe"
@@ -22918,10 +23360,16 @@ function lignesMes(){
 }
 function lignesPublics(){
   if(!grp.publics) return `<div class="grp-vide"><span class="spinner"></span></div>`;
-  if(!grp.publics.length){
-    return `<div class="grp-vide">${grp.recherche ? T("Aucun groupe ne correspond.") : T("Aucun groupe public pour l'instant.")}</div>`;
+  /* (v335) « Quelque chose fait bizarre… peut-être les groupes qui
+     s'ouvrent séparément » : un groupe dont on est membre se voyait deux
+     fois sur l'écran — dans Mes groupes, et dans Découvrir avec « Ouvrir ».
+     Découvrir propose ce qu'on n'a pas encore. Une recherche, elle, trouve
+     tout (le sien avec « Ouvrir ») : on y cherche un nom précis. */
+  const l = grp.recherche ? grp.publics : grp.publics.filter(g => !g.membre);
+  if(!l.length){
+    return `<div class="grp-vide">${grp.recherche ? T("Aucun groupe ne correspond.") : (grp.publics.length ? T("Aucun autre groupe public pour l'instant.") : T("Aucun groupe public pour l'instant."))}</div>`;
   }
-  return grp.publics.map(g=>`<div class="grp-ligne">
+  return l.map(g=>`<div class="grp-ligne">
       ${pastilleGroupe(g)}
       <span class="grp-txt"><b>${escapeHtml(g.nom)}</b>${g.description ? `<small>${escapeHtml(g.description)}</small>` : ""}<small class="grp-nb">${escapeHtml(nbMembres(g.nb_membres))}</small></span>
       ${g.membre ? `<button class="grp-pill calme" onclick="ouvrirGroupe('${g.id}')">${T("Ouvrir")}</button>`
@@ -23391,15 +23839,18 @@ async function creerGroupe(btn){
   if(logosServeur()) params.p_logo = +creation.logo || 0;
   const r = await appelGroupe("creer_groupe", params);
   if(!r.ok){ if(btn) btn.disabled = false; motFeuille("grpCreerVeil", motErreurGroupe(r)); return; }
-  const prive = creation.type !== "public";
   await envoyerPhotoGroupe(r.id);
   fermerFeuilleGroupe("grpCreerVeil");
   grp.liste = null;
   await chargerListes();
   await ouvrirGroupe(r.id);
-  /* Un groupe privé ne sert à rien tant que personne n'a le code : on le
-     montre tout de suite, avec de quoi l'envoyer. */
-  if(prive) setTimeout(()=>{ if(grp.courant === r.id && state.screen === "groupe") ouvrirInfosGroupe(true); }, 650);
+  /* Un groupe tout neuf n'a personne : on montre tout de suite son code,
+     avec de quoi l'envoyer. (v335) « Les groupes privés, à la création,
+     nous emmènent directement dans les réglages, sauf que les groupes
+     publics ne font pas ça. Il faut que ce soit le même fonctionnement,
+     identique. » Un groupe public a lui aussi son code, et il est vide lui
+     aussi : il s'ouvre donc de la même façon. */
+  setTimeout(()=>{ if(grp.courant === r.id && state.screen === "groupe") ouvrirInfosGroupe(true); }, 650);
 }
 
 /* ===================== ENTRER AVEC UN CODE ===================== */
@@ -23527,12 +23978,43 @@ function fermerFeuillesOuvertes(){
 }
 try{
   if("serviceWorker" in navigator) navigator.serviceWorker.addEventListener("message", (e)=>{
+    /* (v335) Un signalement : la pastille du bouclier dit tout de suite ce
+       qui attend ; la notification touchée ouvre la Modération. */
+    if(e.data && typeof e.data.signalements === "number"){ signalementsArrives(e.data.signalements); return; }
+    if(e.data && e.data.ouvrirModeration === true){ moderationEnAttente = true; servirModeration(); return; }
     const id = e.data && e.data.ouvrirGroupe;
     if(typeof id !== "string" || !/^[0-9a-f-]{36}$/i.test(id)) return;
     discussionEnAttente = id.toLowerCase();
     servirDiscussion();
   });
 }catch(e){}
+/* ===== (v335) LA NOTIFICATION D'UN SIGNALEMENT OUVRE LA MODÉRATION =====
+   Comme celle d'un message ouvre sa discussion : le jeu déjà ouvert reçoit
+   un mot du service worker ({ ouvrirModeration }) ; fermé, il s'ouvre sur
+   …/?moderation=1, et la Modération attend que le compte et l'état des
+   groupes soient là. Une partie en cours ne s'interrompt pas. */
+let moderationEnAttente = /[?&]moderation=1(?:&|$)/.test(location.search || "");
+function servirModeration(){
+  if(!moderationEnAttente || grp.installe !== true) return;
+  if(state.screen === "splash"){ setTimeout(servirModeration, 700); return; }
+  if(!compteConnecte() || !grp.etat) return;                // chargerEtatGroupes la resservira
+  moderationEnAttente = false;
+  try{ if(/[?&]moderation=/.test(location.search || "")) history.replaceState(null, "", location.pathname + location.hash); }catch(e){}
+  if(!grp.etat.moderateur || ECRANS_DE_PARTIE.indexOf(state.screen) >= 0) return;
+  fermerFeuillesOuvertes();
+  if(state.screen !== "groupes" && state.screen !== "moderation"){ state.screen = "groupes"; render(); try{ ouvrirGroupes(); }catch(e){} }
+  moderation = null;
+  ouvrirModeration();
+}
+/* Un signalement vient d'arriver (le service worker l'a montré) : la
+   pastille prend le nouveau compte, la file se relit derrière. */
+function signalementsArrives(n){
+  if(!(grp.etat && grp.etat.moderateur)) return;
+  grp.etat.a_traiter = Math.max(+grp.etat.a_traiter || 0, n | 0);
+  try{ majBouclier(); }catch(e){}
+  try{ chargerModeration(); }catch(e){}
+  if(state.screen === "moderation"){ try{ render(); }catch(e){} }
+}
 /* LUE, ELLE S'EN VA. La notification d'un groupe disparaît du téléphone dès
    qu'on lit ce groupe dans le jeu — comme dans une messagerie. */
 function effacerNotifsGroupe(id){
@@ -24737,17 +25219,42 @@ function majNoms(t){
     else if(tous && q.length >= 2) l.push({ id:"*", nom:T("@tout le monde"), off:true });
   }
   nomsProposes = l;
-  if(!l.length){ if(!z.hidden){ z.hidden = true; z.innerHTML = ""; } return; }
+  if(!l.length){ fermerNoms(z); return; }
+  /* (v335) Ouverte, ou en train de se retirer : on note sa hauteur pour la
+     faire suivre ; fermée, elle s'ouvrira par son animation (cnArrive). */
+  const ouverte = !z.hidden && !z.classList.contains("part");
+  const avant = ouverte ? z.getBoundingClientRect().height : 0;
+  if(z.classList.contains("part")){ z.classList.remove("part"); z.style.animation = "none"; void z.offsetWidth; z.style.animation = ""; }
   /* pointerdown et mousedown sans suite : le champ garde le focus, et le
      clavier reste levé. */
   z.innerHTML = l.map((x, i)=> `<button class="cn-nom${x.off ? " off" : ""}" onpointerdown="event.preventDefault()" onmousedown="event.preventDefault()" onclick="choisirNom(${i})">${
       x.id === "*" ? `<span class="cn-ico">${ICONS.users}</span>` : avatarHtml(x.nom, (grp.profils[x.id] || {}).couleur || "#8A8F98", 1.85, "u:" + x.id)
     }<b>${escapeHtml(x.nom)}</b>${x.off ? `<small>${T("Réservé aux admins")}</small>` : ""}</button>`).join("");
   z.hidden = false;
+  /* (v335) Un nom de moins, un nom de plus : la carte change de hauteur
+     sur la courbe de son arrivée, son bas restant posé sur la barre. */
+  if(ouverte && avant){
+    const apres = z.getBoundingClientRect().height;
+    if(Math.abs(apres - avant) > 1){
+      try{ z.animate([{ height:avant + "px" }, { height:apres + "px" }], { duration:220, easing:"cubic-bezier(0.2,0.85,0.3,1)" }); }catch(e){}
+    }
+  }
+}
+/* (v335) La liste se retire (cnPart), puis se cache. Plus rien ne se choisit
+   pendant qu'elle part ; si elle est rappelée entre-temps (une lettre
+   tapée), majNoms la rouvre d'où elle en est. */
+function fermerNoms(z){
+  z = z || document.getElementById("compoNoms");
+  nomsProposes = [];
+  if(!z || z.hidden || z.classList.contains("part")) return;
+  z.classList.add("part");
+  const fin = ()=>{ if(z.classList.contains("part")){ z.classList.remove("part"); z.hidden = true; z.innerHTML = ""; } };
+  z.addEventListener("animationend", fin, { once:true });
+  setTimeout(fin, 260);
 }
 function cacherNoms(){
   const t = document.getElementById("compoTexte"), z = document.getElementById("compoNoms");
-  if(z && !z.hidden && document.activeElement !== t){ z.hidden = true; z.innerHTML = ""; nomsProposes = []; }
+  if(z && !z.hidden && document.activeElement !== t) fermerNoms(z);
 }
 function choisirNom(i){
   const t = document.getElementById("compoTexte"), x = nomsProposes[i];
@@ -24774,7 +25281,7 @@ function toucheCompo(e){
   const ouverte = !!(z && !z.hidden && nomsProposes.length);
   const j = ouverte ? jetonSousCurseur(t) : null;
   if(ouverte && (e.key === "Tab" || (e.key === "Enter" && !e.shiftKey && j && j.q))){ e.preventDefault(); choisirNom(0); return; }
-  if(ouverte && e.key === "Escape"){ e.preventDefault(); z.hidden = true; z.innerHTML = ""; nomsProposes = []; return; }
+  if(ouverte && e.key === "Escape"){ e.preventDefault(); fermerNoms(z); return; }
   if(e.key === "Enter" && !e.shiftKey){ e.preventDefault(); envoyerMessageGroupe(); }
 }
 /* Qui ce texte nomme-t-il ? À chaque « @ » qui commence un mot, le nom le
@@ -25251,7 +25758,7 @@ async function surMessageDirect(m, evt, direct){
       g.non_lus = (+g.non_lus || 0) + 1;
       if(mentionneMoi(m)) g.mentions = (+g.mentions || 0) + 1;
     }
-    if(lu) marquerLu(m.groupe);
+    if(lu){ marquerLu(m.groupe); if(direct) gouttePourLaDiscussion(m, g); }
     else if(direct) annoncerDansLeJeu(m, g);
     grp.liste.sort((a, b)=> String(b.dernier_message || "").localeCompare(String(a.dernier_message || "")));
     /* Quelqu'un arrive, part, change de rôle : la liste des membres suit. */
@@ -25275,8 +25782,10 @@ async function surMessageDirect(m, evt, direct){
   majListes();
   memoriserListe();
 }
-/* ===== (v331) DANS LE JEU, UN BANDEAU QUI NE SONNE PAS =====
+/* ===== (v331) DANS LE JEU, UN BANDEAU (QUI SONNE DEPUIS LA v335) =====
    « Fais en sorte que le téléphone ne sonne pas lorsqu'on est sur le jeu. »
+   (v335) « Je reviens sur ce que j'ai dit » : le téléphone se tait toujours,
+   mais le jeu sonne, de son propre son — voir LE SON DES MESSAGES.
    Le jeu à l'écran, le serveur ne prévient plus ce téléphone (voir
    jeuALEcran) : une partie lancée, un message dans un AUTRE groupe ne se
    seraient plus vus que sur la pastille de « Messages ». Ils se posent
@@ -25293,15 +25802,31 @@ function annoncerDansLeJeu(m, g){
   if(m.genre !== "texte" && m.genre !== "partie") return;
   if(m.masque || m.supprime_le || !m.auteur || m.auteur === monId()) return;
   if(grp.bloques && grp.bloques.has(m.auteur)) return;
-  if(state.screen === "splash" || state.screen === "groupes" || ECRANS_DE_PARTIE.indexOf(state.screen) >= 0) return;
+  if(state.screen === "splash" || ECRANS_DE_PARTIE.indexOf(state.screen) >= 0) return;
   if(state.screen === "groupe" && grp.courant === g.id) return;
   const mode = modeNotifs(g), nomme = mentionneMoi(m);
   if(mode === "rien" || (mode === "mentions" && !nomme)) return;
+  /* (v335) Et il sonne, du son du jeu (voir LE SON DES MESSAGES) ; sur la
+     liste des groupes, le son seul : elle montre déjà le message. */
+  sonMessage();
+  if(state.screen === "groupes") return;
   const nom = nomAuteur(m);
   const texte = String(m.texte || "").replace(/\s+/g, " ").trim();
   const ligne = m.genre === "partie" ? Tf("{nom} lance une partie", { nom })
               : Tf(nomme ? "{nom} te mentionne : {texte}" : "{nom} : {texte}", { nom, texte });
   montrerBandeau(g, ligne);
+}
+/* (v335) Le message arrive dans la discussion qu'on lit : une goutte, la
+   même règle que le bandeau (ni soi, ni bloqué, ni Muet ; en Mentions,
+   seulement quand on est nommé). */
+function gouttePourLaDiscussion(m, g){
+  if(!m || !g || document.hidden) return;
+  if(m.genre !== "texte" && m.genre !== "partie") return;
+  if(m.masque || m.supprime_le || !m.auteur || m.auteur === monId()) return;
+  if(grp.bloques && grp.bloques.has(m.auteur)) return;
+  const mode = modeNotifs(g);
+  if(mode === "rien" || (mode === "mentions" && !mentionneMoi(m))) return;
+  sonGoutte();
 }
 function montrerBandeau(g, ligne){
   /* Un succès s'affiche à la même place : le bandeau attend qu'il parte. */
@@ -26618,7 +27143,7 @@ function renderRevoir(){
          ${semaine ? `<div class="rv-prog">
            <span class="rv-lbl">${T("Cette semaine")}</span>
            <span class="rv-pct">${Tf(faites > 1 ? "{n} rattrapées sur {t}" : "{n} rattrapée sur {t}", { n:faites, t:semaine })}</span>
-           <span class="rv-jauge"><i data-m="${(faites / semaine).toFixed(4)}" style="--m:0"></i></span>
+           <span class="rv-jauge"><i data-m="${(faites / semaine).toFixed(4)}" style="--m:${(faites / semaine).toFixed(4)}"></i></span>
          </div>` : ""}
        </div>
        ${n ? `<div class="card rv-liste">
@@ -26860,7 +27385,9 @@ function saveState(){
         soloScore:state.soloScore, soloStreak:state.soloStreak, soloBestStreak:state.soloBestStreak, soloCorrect:state.soloCorrect, soloSelected:state.soloSelected,
         soloMissed:state.soloMissed, themeKey:state.themeKey, revision:state.revision, revisionDe:state.revisionDe,
         livre:state.livre || null,
-        questions:state.questions, currentIndex:state.currentIndex, revealed:state.revealed, awarded:state.awarded
+        questions:state.questions, currentIndex:state.currentIndex, revealed:state.revealed, awarded:state.awarded,
+        /* le chrono arrêté d'une question révélée (voir .timer-chip.fige) */
+        chronoReste:qTimerLeft
       };
       localStorage.setItem("bt_game", JSON.stringify(snap));
     }
@@ -27588,7 +28115,16 @@ function renderSetup(){
 }
 
 /* ===================== RENDER: PLAY ===================== */
-let lastPlayedQ = -1;
+/* ===== UNE QUESTION NOUVELLE SE RECONNAÎT À ELLE-MÊME, PAS À SON NUMÉRO (v335) =====
+   On comparait le NUMÉRO de la question à celui du dernier affichage. Quitter
+   une partie à la première question puis en commencer une autre : la
+   nouvelle première question portait le même numéro, 0 — le jeu la croyait
+   déjà affichée. Elle arrivait sans son entrée, et son chrono ne partait
+   pas : « 30 s », immobile, jusqu'à la réponse. Chaque partie tire ses
+   propres questions (des objets neufs) : c'est la question elle-même qu'on
+   compare. Un nouvel affichage de la même (la langue, la reprise) n'est
+   toujours pas une nouvelle question. */
+let lastPlayedQ = null;
 let justRevealed = false;
 let displayedSoloScore = 0;
 function animateCount(el, from, to, duration, suffix){
@@ -27613,8 +28149,8 @@ function renderPlay(){
   const info = TIER_INFO[q.tier];
   const total = state.questions.length;
 
-  const fresh = (state.currentIndex !== lastPlayedQ);
-  lastPlayedQ = state.currentIndex;
+  const fresh = (q !== lastPlayedQ);
+  lastPlayedQ = q;
   const pop = justRevealed;
   justRevealed = false;
 
@@ -27700,7 +28236,7 @@ function renderPlay(){
     <div class="play-meta">
       <span class="tier-chip ${info.cls}">${tierDotsHtml(info.level)}${T(info.label)} · ${info.pts} pts</span>
       <span class="q-counter">${state.currentIndex+1}/${total}</span>
-      ${!state.revealed && !state.revision ? timerChipHtml(timerSecondsFor(state.timerKey)) : ""}
+      ${state.revision ? "" : state.revealed ? timerFigeHtml(timerSecondsFor(state.timerKey)) : timerChipHtml(timerSecondsFor(state.timerKey))}
       ${state.mode==="solo" ? `<span class="streak-chip${streakHot?' hot':''}"><span class="ico">${ICONS.flame}</span>${state.soloStreak}</span>` : ""}
     </div>
     <div class="progress-track">
@@ -28054,13 +28590,37 @@ let champPhoto = null;
 /* À QUI VA LA PHOTO CADRÉE : null, c'est la mienne (le Profil) ; une
    fonction, c'est quelqu'un d'autre — la photo d'un groupe. */
 let photoCible = null;
+/* ===== (v335) LE MENU DE LA PHOTO S'OUVRE LÀ OÙ L'ON A TOUCHÉ =====
+   « Quand je clique sur Choisir une photo, le truc qui apparaît pour choisir
+     une photo ou prendre la photo s'affiche en bas : le positionnement n'est
+     pas cohérent. » Sur iPhone, « Photothèque / Prendre une photo / Choisir
+     un fichier » s'accroche au champ de fichier lui-même. Il était rangé hors
+     de l'écran, à gauche, et sans hauteur : iOS l'accrochait en bas à gauche,
+     sur le bouton Enregistrer. Le champ (invisible, un pixel) se pose donc,
+     juste avant de s'ouvrir, sous la photo qu'on change — le visage du
+     Profil, la grande pastille du groupe —, et le menu s'ouvre contre elle,
+     comme tous les menus d'un iPhone. Sans photo à l'écran, là où le doigt
+     vient de toucher. */
+let dernierDoigt = null;
+document.addEventListener("pointerdown", (e)=>{ dernierDoigt = { x:e.clientX, y:e.clientY, t:performance.now() }; }, { capture:true, passive:true });
+function poserChampPhoto(ancre){
+  let x, y;
+  const r = ancre && ancre.getBoundingClientRect ? ancre.getBoundingClientRect() : null;
+  if(r && r.width > 0 && r.bottom > 0 && r.top < innerHeight){ x = r.left + r.width / 2; y = r.bottom - 2; }
+  else {
+    const d = dernierDoigt && performance.now() - dernierDoigt.t < 5000 ? dernierDoigt : null;
+    x = d ? d.x : innerWidth / 2; y = d ? d.y : innerHeight / 3;
+  }
+  x = Math.round(Math.max(8, Math.min(innerWidth - 9, x)));
+  y = Math.round(Math.max(8, Math.min(innerHeight - 9, y)));
+  champPhoto.style.cssText = "position:fixed;left:" + x + "px;top:" + y + "px;width:1px;height:1px;opacity:0;pointer-events:none;z-index:-1";
+}
 function ouvrirPhoto(cible){
   photoCible = (typeof cible === "function") ? cible : null;
   if(!champPhoto){
     champPhoto = document.createElement("input");
     champPhoto.type = "file";
     champPhoto.accept = "image/*";
-    champPhoto.style.cssText = "position:fixed;left:-9999px;width:1px;height:1px;opacity:0";
     champPhoto.addEventListener("change", ()=>{
       const f = champPhoto.files && champPhoto.files[0];
       champPhoto.value = "";            // même photo deux fois de suite : l'événement doit repartir
@@ -28070,6 +28630,7 @@ function ouvrirPhoto(cible){
     });
     document.body.appendChild(champPhoto);
   }
+  poserChampPhoto(document.querySelector(photoCible ? ".grp-photo-b" : ".avatar-tap"));
   try{ champPhoto.click(); }catch(e){}
 }
 /* L'ORIENTATION EXIF N'EST PAS UN DÉTAIL : une photo prise en portrait sur un
@@ -28213,16 +28774,31 @@ function nomDuPid(pid){
   try{ if(net.opp && net.opp.id === pid && net.opp.name) return net.opp.name; }catch(e){}
   return T("Joueur");
 }
+/* ===== (v335) LA PHOTO D'UN GROUPE SE VOIT EN GRAND, ELLE AUSSI =====
+   « Pour la photo de profil de groupe, je veux qu'on puisse la voir en
+     cliquant quelque part. » Même geste que pour un visage, partout où elle
+   se montre : dans Mes groupes et Découvrir, en tête d'une discussion, sur
+   la page du groupe — on la touche, elle s'ouvre en grand. Comme pour un
+   visage, seulement s'il y a une photo : un logo, une initiale laissent le
+   toucher à la ligne ou au bouton qui les porte. (La pastille du
+   formulaire, elle, n'a pas de data-gid : la toucher change l'image.) */
+function nomDuGroupe(gid){
+  const l = [].concat(grp.liste || [], grp.publics || []);
+  const g = l.find(x => x && String(x.id) === String(gid)) || (grp.courant === gid ? groupeCourant() : null);
+  return (g && g.nom) || "";
+}
 function ouvrirPhotoGrand(pid){
   if(document.getElementById("photoGrandVeil")) return;
-  const v = photoValeur(pid === "moi" ? true : pid);
+  const groupe = typeof pid === "string" && pid.indexOf("g:") === 0;
+  const v = groupe ? valeurPhotoSrv(pid) : photoValeur(pid === "moi" ? true : pid);
   if(!v) return;
   const veil = document.createElement("div");
   veil.className = "photo-veil"; veil.id = "photoGrandVeil";
   veil.setAttribute("role", "dialog");
-  veil.setAttribute("aria-label", T("Photo de profil"));
-  veil.innerHTML = '<div class="pv-img" style="background-image:' + v + '"></div>'
-                 + '<div class="pv-nom">' + escapeHtml(nomDuPid(pid)) + '</div>';
+  veil.setAttribute("aria-label", groupe ? T("Photo du groupe") : T("Photo de profil"));
+  const nom = groupe ? nomDuGroupe(pid.slice(2)) : nomDuPid(pid);
+  veil.innerHTML = '<div class="pv-img' + (groupe ? ' pv-groupe' : '') + '" style="background-image:' + v + '"></div>'
+                 + (nom ? '<div class="pv-nom">' + escapeHtml(nom) + '</div>' : '');
   const fermer = ()=>{ try{ veil.remove(); }catch(e){} };
   veil.addEventListener("click", fermer);
   document.body.appendChild(veil);
@@ -28230,11 +28806,11 @@ function ouvrirPhotoGrand(pid){
 }
 document.addEventListener("click", (e)=>{
   try{
-    const a = e.target && e.target.closest ? e.target.closest(".avatar.a-photo[data-pid]") : null;
+    const a = e.target && e.target.closest ? e.target.closest(".avatar.a-photo[data-pid], .grp-av.a-photo[data-gid]") : null;
     if(!a) return;
     if(document.getElementById("photoGrandVeil")) return;
     e.preventDefault(); e.stopPropagation();
-    ouvrirPhotoGrand(a.dataset.pid);
+    ouvrirPhotoGrand(a.dataset.gid ? "g:" + a.dataset.gid : a.dataset.pid);
   }catch(err){}
 }, true);
 
@@ -28899,7 +29475,7 @@ function renderOnlinePlay(){
   el.innerHTML = `${renderHeader(titrePartie(), true, "quitDuel()")}
     ${goneBanner}
     ${scorebar}
-    <div class="play-meta"><span class="tier-chip ${info.cls}">${tierDotsHtml(info.level)}${T(info.label)} · ${info.pts} pts</span><span class="q-counter">${net.idx+1}/${total}</span>${!net.revealed ? timerChipHtml(timerSecondsFor(net.timerKey)) : ""}</div>
+    <div class="play-meta"><span class="tier-chip ${info.cls}">${tierDotsHtml(info.level)}${T(info.label)} · ${info.pts} pts</span><span class="q-counter">${net.idx+1}/${total}</span>${net.revealed ? timerFigeHtml(timerSecondsFor(net.timerKey)) : timerChipHtml(timerSecondsFor(net.timerKey))}</div>
     <div class="progress-track">
       ${devantPct > 0 ? `<div class="progress-ghost" style="width:${devantPct}%"></div>` : ""}
       <div class="progress-fill" style="--p:${moiPct / 100}" data-p="${moiPct / 100}"></div>
@@ -29552,7 +30128,9 @@ const GLASS_SEL = ".app-header,.card,.mode-card,.question-card,.solo-summary,.so
 /* LES PAGES NE SONT PAS EN VERRE (v315, voir LES VOLETS DEVIENNENT DES PAGES).
    Le moteur ne ramasse aucune surface DANS un voile : ni couche floutée, ni
    reflet, ni calage par image — la page est pleine, et ce qu'elle porte aussi. */
-const GLASS_VIVANT = ":is(" + GLASS_SEL + "):not(.sheet-veil *)";
+/* (v335) Ni les pastilles du haut d'une partie (voir LES PASTILLES DU HAUT DE
+   LA PARTIE SONT PLEINES) : elles se peignent elles-mêmes. */
+const GLASS_VIVANT = ":is(" + GLASS_SEL + "):not(.sheet-veil *):not(.play-meta > *)";
 const GLASS_SKIP = ".timer-chip.low,.btn-primary:disabled,.btn-next:disabled";
 /* LES SURFACES PLEINES (voir « UNE SURFACE PLEINE N'A PAS DE DÉCOR À
    MONTRER » dans la feuille de style). Ce sont les familles qui portent déjà
@@ -31701,7 +32279,7 @@ function sessionRangee(){
 if(retourDeConnexion() || sessionRangee()){
   /* (v329) Une notification de message a ouvert le jeu : on va droit à la
      discussion, le compte se réveille tout de suite. */
-  setTimeout(()=>{ try{ compteDemarrer(); }catch(e){} }, discussionEnAttente ? 400 : 3000);
+  setTimeout(()=>{ try{ compteDemarrer(); }catch(e){} }, (discussionEnAttente || moderationEnAttente) ? 400 : 3000);
   /* Les visages des groupes sont prêts AVANT qu'on ouvre les groupes : la
      base de ce téléphone se lit en quelques millisecondes, une fois l'accueil
      posé (voir LES PHOTOS DANS LES GROUPES). */
@@ -31716,8 +32294,8 @@ if(retourDeConnexion() || sessionRangee()){
    pendant l'écran d'ouverture, pour que la barre soit là dès la première
    image de l'accueil au lieu d'arriver dessus (et de le redessiner). */
 setTimeout(()=>{
-  try{ sonderGroupes().then(()=>{ try{ servirInvitation(); }catch(e){} try{ servirDiscussion(); }catch(e){} }); }catch(e){}
-}, (invitationEnAttente || discussionEnAttente) ? 600 : (grp.installe === null ? 200 : 2500));
+  try{ sonderGroupes().then(()=>{ try{ servirInvitation(); }catch(e){} try{ servirDiscussion(); }catch(e){} try{ servirModeration(); }catch(e){} }); }catch(e){}
+}, (invitationEnAttente || discussionEnAttente || moderationEnAttente) ? 600 : (grp.installe === null ? 200 : 2500));
 document.addEventListener("visibilitychange", ()=>{ if(!document.hidden && state.screen !== "splash") sonderGroupes(); });
 
 const _savedGame = loadSavedGame();
@@ -31725,7 +32303,11 @@ if(OUVERT_APRES_MAJ && state.screen === "splash") state.screen = "mode";
 render();
 if(_savedGame){
   // Reprise automatique : le jeu ne repart plus à zéro après une mise en arrière-plan
-  setTimeout(()=>{ Object.assign(state, _savedGame); if(!(state.timerKey in TIMER_OPTS)) state.timerKey = "30"; render(); }, 900);
+  setTimeout(()=>{
+    if(typeof _savedGame.chronoReste === "number") qTimerLeft = _savedGame.chronoReste;
+    delete _savedGame.chronoReste;
+    Object.assign(state, _savedGame); if(!(state.timerKey in TIMER_OPTS)) state.timerKey = "30"; render();
+  }, 900);
 } else if(state.screen==="splash"){
   /* ON NE QUITTE LE SPLASH QUE SI ON Y EST ENCORE. Le garde-fou était posé à
      l'ARMEMENT du minuteur, pas à son DÉCLENCHEMENT : quatre secondes plus

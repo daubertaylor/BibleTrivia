@@ -286,6 +286,7 @@ begin
                    select status_code, left(content, 400) as contenu, error_msg, created
                      from net._http_response
                     where coalesce(content, '') not like '%"sorte":"message"%'
+                      and coalesce(content, '') not like '%"sorte":"signalement"%'
                     order by created desc limit 1) x$q$ into t;
       r := r || jsonb_build_object('reponse', t);
       execute $q$select to_jsonb(x) from (

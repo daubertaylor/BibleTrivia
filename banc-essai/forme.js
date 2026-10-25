@@ -8,6 +8,13 @@
    Le banc parcourt les écrans, prend chaque bouton qui peint réellement une
    onde (certains la neutralisent, comme la poignée des feuilles) et vérifie
    deux choses : le bouton a un arrondi, et l'onde porte le même.
+   UNE EXCEPTION, ET UNE SEULE (v335) : la LIGNE D'UNE LISTE, qui s'éclaire
+   d'un bord à l'autre de sa carte, comme dans les réglages d'un iPhone. Au
+   milieu de la carte, son onde est carrée — ses coins sont posés sur les
+   bords droits de la carte, il n'y a rien à arrondir ; à un bout, ses deux
+   coins extérieurs sont ceux de la carte, et portent SON arrondi. Une onde
+   carrée qui ne touche pas les deux bords de sa carte reste un défaut : elle
+   flotterait en rectangle dedans.
    Usage : node banc-essai/forme.js [url]
 */
 const { chromium } = require('/opt/node22/lib/node_modules/playwright');
@@ -99,16 +106,35 @@ const ECRANS = [
         const m = fond.match(/rgba?\(([^)]+)\)/);
         const alpha = m ? (m[1].split(',')[3] === undefined ? 1 : parseFloat(m[1].split(',')[3])) : 0;
         if (!(alpha > 0.02)) return;
+        const coins = (st) => ['TopLeft', 'TopRight', 'BottomRight', 'BottomLeft'].map(k => +(parseFloat(st['border' + k + 'Radius'])||0).toFixed(1));
+        /* Sa carte : le premier parent arrondi. Une ligne qui en touche les
+           deux bords s'y éclaire d'un bord à l'autre (voir l'exception). */
+        let carte = null;
+        for (let a = e.parentElement; a && a !== document.body; a = a.parentElement) {
+          if ((parseFloat(getComputedStyle(a).borderTopLeftRadius)||0) >= 2) { carte = a; break; }
+        }
+        let ligne = null;
+        if (carte) {
+          const c = carte.getBoundingClientRect();
+          if (Math.abs(b.left - c.left) <= 1 && Math.abs(b.right - c.right) <= 1) {
+            const rc = coins(getComputedStyle(carte));
+            const haut = Math.abs(b.top - c.top) <= 1, bas = Math.abs(b.bottom - c.bottom) <= 1;
+            /* Les coins de la ligne posés sur ceux de la carte : leur arrondi
+               attendu, celui de la carte ; les autres peuvent être carrés. */
+            ligne = { attendu: [haut ? rc[0] : null, haut ? rc[1] : null, bas ? rc[2] : null, bas ? rc[3] : null] };
+          }
+        }
         out.push({
           cls: (e.className||'').toString().split(' ').filter(Boolean).slice(0,2).join('.') || e.tagName.toLowerCase(),
           w: Math.round(b.width), h: Math.round(b.height),
           rb: +(parseFloat(cs.borderTopLeftRadius)||0).toFixed(1),
           ro: +(parseFloat(av.borderTopLeftRadius)||0).toFixed(1),
+          cb: coins(cs), co: coins(av), ligne,
         });
       });
       return out;
     });
-    for (const e of l) { const k = e.cls + '|' + e.w + 'x' + e.h; if (!vus.has(k)) vus.set(k, { ...e, ecran:nom }); }
+    for (const e of l) { const k = e.cls + '|' + e.w + 'x' + e.h + '|' + e.cb.join(','); if (!vus.has(k)) vus.set(k, { ...e, ecran:nom }); }
   }
   const marges = await p.evaluate(() => {
     const out = {};
@@ -120,7 +146,15 @@ const ECRANS = [
   });
   await nav.close();
 
-  const fautifs = [...vus.values()].filter(e => e.rb < 2 || Math.abs(e.rb - e.ro) > 0.6);
+  /* Le jugement d'un bouton : l'onde a sa forme, coin par coin ; et il est
+     arrondi partout — sauf la ligne d'une liste, carrée là où elle touche
+     les bords droits de sa carte, arrondie comme elle à ses coins. */
+  const memeForme = (e) => e.cb.every((r, i) => Math.abs(r - e.co[i]) <= 0.6);
+  const ligneDeListe = (e) => !!e.ligne && e.cb.some(r => r < 2)
+    && e.cb.every((r, i) => e.ligne.attendu[i] === null || Math.abs(r - e.ligne.attendu[i]) <= 1);
+  const verdict = (e) => !memeForme(e) ? 'forme' : (e.cb.every(r => r >= 2) || ligneDeListe(e)) ? '' : 'carree';
+  for (const e of vus.values()) e.verdict = verdict(e);
+  const fautifs = [...vus.values()].filter(e => e.verdict);
   /* ===== ET RIEN NE DOIT DÉPASSER À CÔTÉ DE L'ONDE =====
      L'onde est bornée à la boîte du bouton. Si la couche de verre, elle, peint
      UN PIXEL PLUS LOIN (overflow-clip-margin), il reste tout autour un liseré
@@ -130,13 +164,15 @@ const ECRANS = [
      c'est-à-dire dehors. La marge de découpe doit donc rester nulle. */
   console.log('  boutons qui peignent une onde : ' + vus.size + '\n');
   console.log('  écran         bouton                      taille   arrondi   onde');
-  for (const e of [...vus.values()].sort((a,b) => a.rb - b.rb).slice(0, fautifs.length ? 999 : 6)) {
-    const mauvais = e.rb < 2 || Math.abs(e.rb - e.ro) > 0.6;
+  const lignes = [...vus.values()].filter(e => !e.verdict && ligneDeListe(e));
+  for (const e of [...vus.values()].sort((a,b) => a.rb - b.rb).filter(e => e.verdict || !ligneDeListe(e)).slice(0, fautifs.length ? 999 : 6)) {
     console.log('  ' + e.ecran.padEnd(13) + e.cls.padEnd(27) + (e.w + '×' + e.h).padStart(8) +
       (e.rb + ' px').padStart(10) + (e.ro + ' px').padStart(9) +
-      (mauvais ? (e.rb < 2 ? '   <-- ONDE CARRÉE' : '   <-- L ONDE N A PAS LA FORME DU BOUTON') : ''));
+      (e.verdict === 'carree' ? '   <-- ONDE CARRÉE' : e.verdict === 'forme' ? '   <-- L ONDE N A PAS LA FORME DU BOUTON' : ''));
   }
-  if (!fautifs.length) console.log('  …' + Math.max(0, vus.size - 6) + ' autres, tous arrondis');
+  if (!fautifs.length) console.log('  …' + Math.max(0, vus.size - 6 - lignes.length) + ' autres, tous arrondis');
+  console.log('\n  lignes de liste, d\'un bord à l\'autre de leur carte (carrées au milieu, arrondies comme elle aux bouts) : ' + lignes.length);
+  for (const e of lignes) console.log('    ' + e.ecran.padEnd(13) + e.cls.padEnd(27) + (e.w + '×' + e.h).padStart(8) + '   coins ' + e.cb.join(' / '));
   const cles = Object.keys(marges);
   console.log('\n  marge de découpe des surfaces de verre : ' +
     (cles.length ? cles.map(k => k + ' sur ' + marges[k] + ' surface(s)') .join(', ') + '   <-- UN LISERÉ DÉPASSE À CÔTÉ DE L\'ONDE' : 'nulle partout'));

@@ -1,21 +1,29 @@
-/* ====== BANC « DANS LE JEU, UN BANDEAU QUI NE SONNE PAS » (v331) ======
+/* ====== BANC « DANS LE JEU, UN BANDEAU — ET LE SON DU JEU » (v331, v335) ======
    « Fais en sorte que le téléphone ne sonne pas lorsqu'on est sur le jeu. »
+   (v335) « Je reviens sur ce que j'ai dit : je veux le son des notifications
+   à l'intérieur du jeu, comme Telegram. » Le téléphone se tait toujours ;
+   c'est le JEU qui sonne, de son propre son (sonMessage, et une goutte dans
+   la discussion ouverte — sonGoutte) : chaque étape dit aussi ce qui a
+   sonné.
    « Quand je lance une partie, la personne doit le voir rapidement. » Le jeu
    à l'écran, le serveur ne prévient plus le téléphone : ce qui arrive dans
    un AUTRE groupe se pose en haut de l'écran, sans bruit. Le décor de
    groupes.js — un VRAI PostgreSQL, le vrai direct. Taylor écrit ; Benoît a
    le jeu ouvert.
      1. Benoît sur l'accueil : le bandeau arrive (moins de 2 s) — le groupe,
-        « Taylor : … » —, entier sur l'écran, sans aucun trait ;
+        « Taylor : … » —, entier sur l'écran, sans aucun trait ; et le jeu
+        sonne (v335) ;
      2. il s'en va de lui-même ;
      3. une partie lancée : « Taylor lance une partie » ;
      4. le toucher ouvre la discussion du groupe ;
-     5. dans cette discussion : pas de bandeau (le message est sous ses yeux) ;
+     5. dans cette discussion : pas de bandeau (le message est sous ses yeux),
+        une goutte (v335) ;
      6. dans la discussion d'un AUTRE groupe : le bandeau ;
-     7. sur la liste des groupes : pas de bandeau (elle le montre déjà) ;
-     8. un groupe en Muet : rien ; en Mentions : rien, sauf quand on le
-        nomme (« Taylor te mentionne : … ») ;
-     9. pendant une partie : rien ;
+     7. sur la liste des groupes : pas de bandeau (elle le montre déjà), le
+        son seul (v335) ;
+     8. un groupe en Muet : rien, pas un son ; en Mentions : rien, sauf quand
+        on le nomme (« Taylor te mentionne : … »), et là il sonne ;
+     9. pendant une partie : rien, pas un son ;
     10. poussé vers le haut, il se range (sans ouvrir la discussion) ;
     11. un rattrapage (retour sur l'app) ne déballe rien ; quelqu'un de
         bloqué non plus ;
@@ -86,6 +94,21 @@ const dit = (quoi, bon, detail) => { console.log('  ' + (bon ? 'OK  ' : 'KO  ') 
 
     const { ctx, p } = await telephone();
     await p.waitForTimeout(600);
+    /* (v335) Ce qui sonne : on note chaque son, et l'on vérifie qu'il passe
+       vraiment par la carte son du jeu (des oscillateurs créés). */
+    await p.evaluate(() => {
+      window.__sons = []; window.__osc = 0;
+      const a = window.sonMessage, b = window.sonGoutte;
+      /* un son ne compte que s'il a vraiment créé ses oscillateurs (une
+         rafale ne sonne qu'une fois : l'appel muet se note à part) */
+      const note = (nom, f) => function(){ const n0 = window.__osc; const r = f.apply(this, arguments); __sons.push(window.__osc > n0 ? nom : nom + '(muet)'); return r; };
+      window.sonMessage = note('message', a);
+      window.sonGoutte = note('goutte', b);
+      const P = (window.AudioContext || window.webkitAudioContext).prototype, o = P.createOscillator;
+      P.createOscillator = function(){ window.__osc++; return o.apply(this, arguments); };
+      audioUnlocked = true;
+    });
+    const sons = () => p.evaluate(() => ({ l: window.__sons.splice(0) }));
 
     /* 1 */
     let t0 = Date.now();
@@ -95,6 +118,8 @@ const dit = (quoi, bon, detail) => { console.log('  ' + (bon ? 'OK  ' : 'KO  ') 
     const b1 = await bandeau(p);
     dit('1. Benoît sur l\'accueil : le bandeau arrive en moins de 2 s', v1 && d1 < 2000 && b1 && b1.groupe === 'Les amis' && b1.ligne === 'Taylor : On joue ce soir ?', d1 + ' ms · ' + JSON.stringify(b1));
     dit('   entier sur l\'écran, en haut, sans aucun trait', b1 && b1.haut >= 0 && b1.haut < 90 && b1.gauche >= 0 && b1.droite <= b1.largeur && b1.trait === '0px 0px', JSON.stringify(b1));
+    const s1 = await sons();
+    dit('   et le jeu sonne, de son propre son (v335)', s1.l.join() === 'message', JSON.stringify(s1));
     if (CAPT) await p.screenshot({ path: CAPT + '/bandeau-accueil.png' });
 
     /* 2 */
@@ -116,7 +141,14 @@ const dit = (quoi, bon, detail) => { console.log('  ' + (bon ? 'OK  ' : 'KO  ') 
     /* 5 */
     await ecrit(A, amis, 'Tu es là ?');
     await attendre(p, () => [...document.querySelectorAll('#fil .b-bulle')].some(b => /Tu es là/.test(b.textContent)), null, 5000);
-    dit('5. dans cette discussion : pas de bandeau (le message est sous ses yeux)', await aucun(p, 1200));
+    /* (deux messages à moins d'une seconde ne font qu'un son : on laisse
+       passer la goutte du précédent) */
+    await p.waitForTimeout(1100);
+    await sons();
+    await ecrit(A, amis, 'Et maintenant ?');
+    await attendre(p, () => [...document.querySelectorAll('#fil .b-bulle')].some(b => /Et maintenant/.test(b.textContent)), null, 5000);
+    const sansBandeau5 = await aucun(p, 1200), s5 = await sons();
+    dit('5. dans cette discussion : pas de bandeau (le message est sous ses yeux), une goutte', sansBandeau5 && s5.l.join() === 'goutte', JSON.stringify(s5));
 
     /* 6 */
     await p.evaluate(() => retourGroupes());
@@ -135,30 +167,39 @@ const dit = (quoi, bon, detail) => { console.log('  ' + (bon ? 'OK  ' : 'KO  ') 
     await p.evaluate(() => retourGroupes());
     await attendre(p, () => state.screen === 'groupes', null, 4000);
     await p.waitForTimeout(500);
+    await p.waitForTimeout(2100);
+    await sons();
     await ecrit(A, amis, 'Et sur la liste ?');
-    dit('7. sur la liste des groupes : pas de bandeau (elle le montre déjà)', await aucun(p));
+    const sansBandeau7 = await aucun(p), s7 = await sons();
+    dit('7. sur la liste des groupes : pas de bandeau (elle le montre déjà), le son seul', sansBandeau7 && s7.l.join() === 'message', JSON.stringify(s7));
 
     /* 8 */
     await p.evaluate(() => { state.screen = 'mode'; render(); });
-    await p.waitForTimeout(700);
+    await p.waitForTimeout(2200);
+    await sons();
     await ecrit(A, priere, 'Prions ensemble');
     const muet = await aucun(p);
     await ecrit(A, chorale, 'Répétition jeudi');
     const sansNom = await aucun(p);
+    const s8a = await sons();
     await ecrit(A, chorale, '@Benoît tu chantes avec nous ?', { mentions: [B] });
     const v8 = await vient(p);
     const b8 = await bandeau(p);
-    dit('8. un groupe en Muet : rien ; en Mentions : rien, sauf quand on le nomme', muet && sansNom && v8 && b8 && b8.ligne === 'Taylor te mentionne : @Benoît tu chantes avec nous ?',
-      'muet ' + muet + ' · mentions sans nom ' + sansNom + ' · ' + JSON.stringify(b8 && b8.ligne));
+    const s8b = await sons();
+    dit('8. un groupe en Muet : rien, pas un son ; en Mentions : rien, sauf quand on le nomme — et là il sonne', muet && sansNom && !s8a.l.length && v8 && b8 && b8.ligne === 'Taylor te mentionne : @Benoît tu chantes avec nous ?' && s8b.l.join() === 'message',
+      'muet ' + muet + ' · mentions sans nom ' + sansNom + ' · sons ' + JSON.stringify([s8a.l, s8b.l]) + ' · ' + JSON.stringify(b8 && b8.ligne));
     await ranger(p);
     await p.waitForTimeout(500);
 
     /* 9 */
+    await p.waitForTimeout(2200);
+    await sons();
     await p.evaluate(() => { window.__ecran = state.screen; state.screen = 'play'; });
     await ecrit(A, amis, 'Pendant ta partie');
     const pendant = await aucun(p);
+    const s9 = await sons();
     await p.evaluate(() => { state.screen = window.__ecran; });
-    dit('9. pendant une partie : rien', pendant);
+    dit('9. pendant une partie : rien, pas un son', pendant && !s9.l.length, JSON.stringify(s9));
 
     /* 10 */
     await ecrit(A, amis, 'Encore moi');
@@ -223,6 +264,6 @@ const dit = (quoi, bon, detail) => { console.log('  ' + (bon ? 'OK  ' : 'KO  ') 
     await nav.close();
     await m.arreter();
   }
-  console.log(ko === 0 ? '\n  OK — dans le jeu, ce qui arrive ailleurs se pose en haut de l\'écran, sans un bruit' : '\n  ' + ko + ' défaut(s)');
+  console.log(ko === 0 ? '\n  OK — dans le jeu, ce qui arrive ailleurs se pose en haut de l\'écran, avec le son du jeu' : '\n  ' + ko + ' défaut(s)');
   process.exit(ko === 0 ? 0 : 1);
 })();
