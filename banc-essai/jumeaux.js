@@ -45,7 +45,9 @@ const ECRANS = [
   ["reglages",    "state.screen='mode'; render(); openSettings();"],
   ["versions",    "openBibles();"],
   ["guide",       "closeBibles(); openFsGuide();"],
-  ["enligne",     "document.querySelectorAll('.modal-back,.modal-veil').forEach(function(m){m.remove();}); closeSettings(); state.screen='online'; render();"],
+  /* (v338) « Installer le jeu » est une page, comme « Version de la Bible » :
+     on la referme comme on referme celle-ci (closeBibles, plus haut). */
+  ["enligne",     "document.querySelectorAll('.modal-back,.modal-veil').forEach(function(m){m.remove();}); if(typeof closeFsGuide==='function') closeFsGuide(); closeSettings(); state.screen='online'; render();"],
   ["salon",       "net.isHost=true; net.code='42CJ'; net.joueurs={}; majAdversaire(); state.screen='online-room'; render();"],
 ];
 

@@ -27103,9 +27103,9 @@ async function modererMembre(qui, action){
     if(surProprio){
       const nouveau = (grp.membres[g.id] || []).find(x => x.role === "proprietaire");
       const suivant = nouveau ? ((grp.profils[nouveau.membre] || {}).nom || T("Quelqu'un")) : "";
-      showMiniToast(suivant ? Tf(action === "bannir" ? "{nom} ne peut plus revenir dans le groupe : {suivant} en est maintenant propriétaire."
-                                                     : "{nom} ne fait plus partie du groupe : {suivant} en est maintenant propriétaire.", { nom, suivant })
-                            : Tf(dits[action], { nom }));
+      showMiniToast(!suivant ? Tf(dits[action], { nom })
+                  : action === "bannir" ? Tf("{nom} ne peut plus revenir dans le groupe : {suivant} en est maintenant propriétaire.", { nom, suivant })
+                  : Tf("{nom} ne fait plus partie du groupe : {suivant} en est maintenant propriétaire.", { nom, suivant }));
     }
     /* Le groupe vient de changer de main : la page des infos, restée
        dessous, montre ce que je peux faire MAINTENANT. */
@@ -27125,8 +27125,9 @@ async function modererMembre(qui, action){
   if(action === "exclure" || action === "bannir"){
     showModal({
       title:action === "bannir" ? Tf("Bannir {nom} du groupe ?", { nom }) : Tf("Retirer {nom} du groupe ?", { nom }),
-      message:surProprio ? Tf(action === "bannir" ? "{nom} ne pourra plus revenir, même avec le code. Le groupe passera à son plus ancien admin encore actif, sinon à son plus ancien membre encore actif."
-                                                  : "{nom} pourra revenir avec le code. Le groupe passera à son plus ancien admin encore actif, sinon à son plus ancien membre encore actif.", { nom })
+      message:surProprio ? (action === "bannir"
+                 ? Tf("{nom} ne pourra plus revenir, même avec le code. Le groupe passera à son plus ancien admin encore actif, sinon à son plus ancien membre encore actif.", { nom })
+                 : Tf("{nom} pourra revenir avec le code. Le groupe passera à son plus ancien admin encore actif, sinon à son plus ancien membre encore actif.", { nom }))
              : action === "bannir" ? T("Cette personne ne pourra plus revenir, même avec le code.") : T("Cette personne pourra revenir avec le code."),
       okLabel:action === "bannir" ? T("Bannir") : T("Retirer"), cancelLabel:T("Annuler"),
       onOk:()=>{ faire(); return true; }
