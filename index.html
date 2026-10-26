@@ -5687,14 +5687,14 @@
     font-style:normal; font-size:0.72rem; font-weight:700; display:flex; align-items:center; justify-content:center; }
   .grp-nl.vide{ visibility:hidden; }
   /* v317 : un groupe qui se tait compte en gris ; un « @ » en couleur quand
-     quelqu'un m'a nommé. La marque du réglage vit à côté de l'heure. */
+     quelqu'un m'a nommé. La cloche barrée d'un groupe muet vit à côté de
+     l'heure. */
   .grp-nls{ display:flex; align-items:center; gap:0.25rem; }
   .grp-nl.calme{ background:rgba(58,42,26,0.15); color:var(--ink-soft); }
   .grp-nl.grp-at{ padding:0; width:1.3rem; font-size:0.78rem; }
   .grp-droite small{ display:inline-flex; align-items:center; gap:0.22rem; }
   .grp-mode{ display:inline-flex; width:0.86rem; height:0.86rem; flex-shrink:0; color:var(--ink-soft); }
   .grp-mode svg{ width:100%; height:100%; }
-  .grp-mode-at{ width:auto; height:auto; font-weight:700; font-size:0.74rem; line-height:1; }
   /* LES PILULES. Discrètes à l'œil (2,2 rem), pas au doigt : une zone
      invisible et centrée de 44 px attrape le toucher. Possible ici parce
      qu'une pilule ne porte pas de verre, donc pas de découpe. */
@@ -5893,6 +5893,25 @@
   .grp-logo-b.choisi .glb-ck{ opacity:1; transform:scale(1); }
   .grp-ligne .chev{ width:1.1rem; height:1.1rem; }
   .grp-apercu .grp-ligne{ background:rgb(252,248,241); }
+  /* ===== (v339) LA PRÉSENTATION D'UN GROUPE PUBLIC (voir apercuPublic) =====
+     Dans Découvrir, la ligne entière s'ouvre : une zone — un vrai bouton,
+     avec l'onde de toutes les lignes — couvre la ligne ; la pilule et une
+     photo passent devant elle, chacune garde son geste. */
+  .grp-pub{ position:relative; }
+  .grp-pub-zone{ position:absolute; inset:0; z-index:1; width:auto; margin:0; padding:0; border:0; background:none;
+    border-radius:inherit; -webkit-tap-highlight-color:transparent; --press-tint: rgba(52,36,22,0.075); }
+  .grp-pub-zone:active:not(:disabled){ transform:none; }
+  .grp-pub > .grp-pill{ z-index:2; }
+  .grp-pub > .grp-av.a-photo{ position:relative; z-index:2; }
+  /* La page : la pastille en grand, le nom, les membres et la vie du groupe,
+     au centre — comme le haut d'un profil. */
+  .grp-ap-tete{ display:flex; flex-direction:column; align-items:center; text-align:center; padding:0.55rem 0.6rem 0.45rem; }
+  .grp-ap-tete > .grp-av{ width:5.6rem; height:5.6rem; border-radius:28px; font-size:2.25rem; margin-bottom:0.85rem; }
+  .grp-ap-nom{ font-family:'Poppins',sans-serif; font-weight:700; font-size:1.3rem; line-height:1.25; color:var(--ink);
+    max-width:100%; overflow-wrap:anywhere; }
+  .grp-ap-meta{ margin:0.32rem 0 0; font-size:0.86rem; line-height:1.4; color:var(--ink-soft); text-wrap:balance; }
+  .grp-ap-meta > span{ white-space:nowrap; }
+  .grp-ap-tete ~ .btn-primary{ margin-top:0.2rem; }
   .grp-merci{ display:flex; flex-direction:column; align-items:center; text-align:center; gap:0.6rem; padding:0.6rem 0 0.4rem; }
   .grp-merci b{ font-family:'Poppins',sans-serif; font-weight:600; font-size:1.02rem; }
   .grp-merci p{ margin:0; color:var(--ink-soft); font-size:0.86rem; line-height:1.5; }
@@ -6137,6 +6156,19 @@
   .b-partie.finie .bp-ico{ opacity:0.45; }
   /* (v336) Qui a rejoint : les visages, un peu chevauchés, et les noms. */
   .b-partie .bp-venus{ display:flex; align-items:center; gap:0.5rem; min-width:0; }
+  /* (v339) Terminée, avec des scores : qui l'a emporté, et le chevron d'une
+     page à ouvrir (voir LE RÉCAP D'UNE PARTIE DE GROUPE). */
+  .b-partie .bp-recap{ display:flex; align-items:center; gap:0.42rem; width:100%; min-width:0; }
+  .b-partie .bp-recap .bp-coupe{ width:1.05rem; height:1.05rem; flex-shrink:0; display:inline-flex; color:#E3A21A; }
+  .b-partie .bp-recap .bp-coupe svg, .b-partie .bp-recap .bp-chev svg{ width:100%; height:100%; }
+  .b-partie .bp-recap small{ flex:1; min-width:0; color:var(--ink); font-weight:600; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+  .b-partie .bp-recap .bp-chev{ width:0.95rem; height:0.95rem; flex-shrink:0; display:inline-flex; color:var(--ink-soft); }
+  .rp-tete .rp-coupe{ width:3.5rem; height:3.8rem; display:inline-flex; margin-bottom:0.7rem; }
+  .rp-tete .rp-coupe svg{ width:100%; height:100%; }
+  .rp-tete .grp-ap-meta + .grp-ap-meta{ margin-top:0.12rem; }
+  .rp-rangs .rp-rang .rank-badge{ flex-shrink:0; }
+  .rp-rangs .rp-pts{ flex-shrink:0; font-family:'Poppins',sans-serif; font-weight:700; font-variant-numeric:tabular-nums; color:var(--primary); }
+  .rp-rangs .rp-rang.pas-fini{ opacity:0.6; }
   .bp-visages{ display:inline-flex; flex-shrink:0; }
   .bp-visages .avatar{ box-shadow:0 0 0 2px rgb(252,248,241); }
   .bp-visages .avatar + .avatar{ margin-left:-0.42rem; }
@@ -7268,6 +7300,19 @@ const TEXTES = {
     "Lecture seule · modération":"Read only · moderation",
     "Tous les groupes":"All groups",
     "Voir le groupe":"View group",
+    "Récap de la partie":"Game recap",
+    "{nom} l'emporte":"{nom} wins",
+    "Tu l'emportes":"You win",
+    "Ex æquo : {noms}":"Tie: {noms}",
+    "Lancée par {nom}":"Started by {nom}",
+    "Lancée par toi":"Started by you",
+    "{b}/{t} bonnes réponses":"{b}/{t} correct answers",
+    "N'a pas fini":"Didn't finish",
+    "{n} questions":"{n} questions",
+    "Dernière activité aujourd'hui":"Last active today",
+    "Dernière activité hier":"Last active yesterday",
+    "Dernière activité il y a {n} jours":"Last active {n} days ago",
+    "Dernière activité le {date}":"Last active on {date}",
     "Aucun groupe pour l'instant.":"No groups yet.",
     "Envoyé":"Sent",
     "Distribué":"Delivered",
@@ -8062,6 +8107,19 @@ const TEXTES = {
     "Lecture seule · modération":"Solo lectura · moderación",
     "Tous les groupes":"Todos los grupos",
     "Voir le groupe":"Ver el grupo",
+    "Récap de la partie":"Resumen de la partida",
+    "{nom} l'emporte":"{nom} gana",
+    "Tu l'emportes":"Ganas tú",
+    "Ex æquo : {noms}":"Empate: {noms}",
+    "Lancée par {nom}":"Iniciada por {nom}",
+    "Lancée par toi":"Iniciada por ti",
+    "{b}/{t} bonnes réponses":"{b}/{t} respuestas correctas",
+    "N'a pas fini":"No terminó",
+    "{n} questions":"{n} preguntas",
+    "Dernière activité aujourd'hui":"Última actividad hoy",
+    "Dernière activité hier":"Última actividad ayer",
+    "Dernière activité il y a {n} jours":"Última actividad hace {n} días",
+    "Dernière activité le {date}":"Última actividad el {date}",
     "Aucun groupe pour l'instant.":"Todavía no hay grupos.",
     "Envoyé":"Enviado",
     "Distribué":"Entregado",
@@ -10556,7 +10614,7 @@ const SUPABASE_ANON_KEY = "sb_publishable_FDJ_R0foC7uIeHmxVrj6rA_2NeIgW2a";
    remontée d'un téléphone ne vaut rien si on ne sait pas QUELLE version
    tournait. Elle doit rester égale au CACHE de sw.js — c'est ce que vérifie
    banc-essai/version.js, qui refuse de laisser publier les deux en désaccord. */
-const VERSION_JEU = "v338";
+const VERSION_JEU = "v339";
 
 /* ===================== QUAND ÇA CASSE CHEZ UN JOUEUR =====================
    « Si quelque chose casse chez cinq d'entre eux sur un modèle de téléphone
@@ -11763,6 +11821,7 @@ function onlineNext(){
     /* Un sans-faute est un sans-faute, quel que soit le mode. */
     if(net.deck.length > 0 && net.correct === net.deck.length) progressFlawless();
     broadcastProgress(true);
+    envoyerResultatPartie();   // (v339) le récap d'une partie de groupe
     /* On attend que TOUT LE MONDE ait fini — un joueur comme sept. Ceux qui
        sont partis ne retiennent personne. */
     majAdversaire();
@@ -14839,9 +14898,11 @@ try{
      place, le fil se raccourcit par le bas en gardant ses derniers messages
      sous les yeux, et le champ monte avec le clavier. Rien d'autre ne bouge. */
   const champDeDiscussion = ()=>{ const el = document.activeElement; return !!el && el.id === "compoTexte"; };
+  let fhPose = 0;   // (v339) la hauteur visible de la discussion au dernier pas (voir apply)
   function apply(){
     suivreDecor();
     if(!isField()){
+      fhPose = 0;
       restH = Math.max(restH, vv.height); // pas de clavier -> c'est la hauteur de repos
       restInner = innerHeight;
       poserDecor();
@@ -14861,11 +14922,16 @@ try{
         poserDecalage(decalageVisible());
         if(!de.classList.contains("kb-fil")){
           de.classList.add("kb", "kb-fil"); try{ glassSuivre(500); }catch(e){}
-          /* (v337) La barre d'écriture monte avec l'écran (0,52 s) : arrivée,
-             iOS y replace son curseur (voir LE CURSEUR, LÀ OÙ L'ON ÉCRIT). */
-          try{ recalerCurseurApres(580); }catch(e){}
         }
+        /* (v337) La barre d'écriture monte avec l'écran (0,52 s) : arrivée,
+           iOS y replace son curseur (voir LE CURSEUR, LÀ OÙ L'ON ÉCRIT).
+           (v339) Arrivée VRAIMENT : un clavier d'iPhone monte en plusieurs
+           pas, et chaque pas relance les 0,52 s. Le rendez-vous se reprend
+           donc à chaque pas — et la fin du mouvement le donne aussi (voir
+           transitionend, plus bas). */
+        if(hauteurVisible() !== fhPose){ fhPose = hauteurVisible(); try{ recalerCurseurApres(620); }catch(e){} }
       } else {
+        fhPose = 0;
         poserDecalage(0);
         if(de.classList.contains("kb-fil")){ de.classList.remove("kb", "kb-fil"); try{ glassSuivre(500); }catch(e){} }
       }
@@ -15028,6 +15094,83 @@ try{
       /* le clic que le toucher aurait donné (la liste des @ s'y règle) */
       try{ el.dispatchEvent(new MouseEvent("click", { bubbles:true, cancelable:true, view:window })); }catch(err){}
     }, { capture:true, passive:false });
+  }
+  /* ===== (v339) CLAVIER OUVERT, LA PAGE NE GLISSE PLUS SOUS LE DOIGT =====
+     « Regarde : lorsque je glisse le doigt vers le bas depuis là où j'ai
+       écrit, ça fait un bug de saccade. » (vidéo, iPhone, une discussion.)
+     Image par image : toute la discussion — en-tête, messages, barre —
+     tremble de haut en bas, de quelques pixels, tant que le doigt bouge ; le
+     clavier, lui, ne bouge pas. Clavier ouvert, la page est plus haute que la
+     zone visible : iOS laisse le doigt la faire glisser (ou rebondir, en
+     haut). Le jeu, qui pose la discussion sur la zone visible et garde le
+     document à zéro (voir apply : --vvt, scrollTo), la remettait en place —
+     une image trop tard, à chaque image. Deux mains sur la même page.
+     Ce glissement ne montre rien : clavier ouvert, tout tient déjà dans la
+     zone visible. On ne le laisse donc plus partir. Un geste garde son
+     cours s'il fait défiler quelque chose dans son sens — le fil, un long
+     message, une page —, s'il est horizontal (le retour au bord, répondre),
+     ou s'il suit un appui long (le curseur, la sélection). Et, comme dans
+     les messageries, tirer la barre d'écriture vers le bas range le clavier.
+     L'écoute bloquante (passive:false) n'existe que clavier ouvert : sans
+     clavier, rien n'attend le jeu pour défiler. */
+  {
+    const defileVers = (el, dy)=>{
+      for(let n = el; n && n.nodeType === 1 && n !== document.body && n !== de; n = n.parentElement){
+        if(n.scrollHeight <= n.clientHeight + 1) continue;
+        const oy = getComputedStyle(n).overflowY;
+        /* un champ de plusieurs lignes défile toujours, sauf s'il est coupé */
+        if(oy !== "auto" && oy !== "scroll" && !(n.tagName === "TEXTAREA" && oy !== "hidden" && oy !== "clip")) continue;
+        if(dy > 0 ? n.scrollTop > 0.5 : n.scrollTop + n.clientHeight < n.scrollHeight - 0.5) return true;
+      }
+      return false;
+    };
+    let geste = null, ecoute = false, branche = false;
+    document.addEventListener("touchstart", (e)=>{
+      geste = null;
+      if(!ecoute || !e.touches || e.touches.length !== 1) return;
+      const t = e.touches[0];
+      geste = { el:e.target, x:t.clientX, y:t.clientY, t:performance.now(), sort:null, compo:false };
+    }, { capture:true, passive:true });
+    const bouge = (e)=>{
+      const g = geste;
+      if(!g) return;
+      if(e.touches && e.touches.length > 1){ geste = null; return; }
+      const t = e.touches && e.touches[0]; if(!t) return;
+      if(g.sort === null){
+        if(!ecoute){ geste = null; return; }
+        const dx = t.clientX - g.x, dy = t.clientY - g.y;
+        if(Math.abs(dx) < 4 && Math.abs(dy) < 4) return;
+        const libre = performance.now() - g.t > 450 || Math.abs(dx) > Math.abs(dy) || defileVers(g.el, dy);
+        g.sort = libre ? "libre" : "retenu";
+        g.compo = !libre && de.classList.contains("kb-fil") && !!(g.el && g.el.closest && g.el.closest("#compo"));
+      }
+      if(g.sort !== "retenu") return;
+      if(e.cancelable) e.preventDefault();
+      if(g.compo && t.clientY - g.y > 28){
+        g.compo = false;
+        const a = document.activeElement;
+        if(a && a.id === "compoTexte"){ try{ a.blur(); }catch(err){} }
+      }
+    };
+    const brancher = (oui)=>{
+      if(oui === branche) return;
+      branche = oui;
+      if(oui) document.addEventListener("touchmove", bouge, { capture:true, passive:false });
+      else document.removeEventListener("touchmove", bouge, { capture:true });
+    };
+    /* Un geste retenu le reste jusqu'au bout, même si le clavier part en
+       route (la barre tirée vers le bas) : lâché à mi-course, le reste du
+       geste ferait glisser la page pendant que le clavier descend. */
+    const fin = ()=>{ geste = null; if(!ecoute) brancher(false); };
+    document.addEventListener("touchend", fin, { capture:true, passive:true });
+    document.addEventListener("touchcancel", fin, { capture:true, passive:true });
+    const suivre = ()=>{
+      ecoute = de.classList.contains("kb");
+      if(ecoute) brancher(true);
+      else if(!(geste && geste.sort === "retenu")){ brancher(false); geste = null; }
+    };
+    try{ new MutationObserver(suivre).observe(de, { attributes:true, attributeFilter:["class"] }); }catch(e){}
+    suivre();
   }
 })();
 
@@ -23594,14 +23737,18 @@ function mentionneMoi(m){
 }
 /* LA LIGNE D'UN GROUPE. Le compte des non-lus en couleur quand le groupe les
    signale, en gris quand il se tait ; un « @ » en couleur quand quelqu'un
-   m'a nommé ; et, à côté de l'heure, la cloche barrée d'un groupe en muet ou
-   le « @ » d'un groupe qui ne signale que les mentions. */
+   m'a nommé ; et, à côté de l'heure, la cloche barrée d'un groupe en muet.
+   (v339) « Je ne comprends pas pourquoi certains groupes ont un arrobase et
+   d'autres non. » Un groupe réglé sur « Mentions » portait lui aussi un « @ »,
+   gris, à côté de l'heure : un « @ » seul se lit partout « on t'a nommé » —
+   c'est d'ailleurs ce que dit celui en couleur. Le réglage ne s'écrit donc
+   plus que par son compte gris (le groupe se tait), et le « @ » ne veut plus
+   dire qu'une chose. */
 function ligneGroupe(g){
   const n = +g.non_lus || 0, mode = modeNotifs(g);
   const nomme = mode === "rien" ? 0 : (+g.mentions || 0);
   const vif = mode === "tout";
-  const marque = mode === "rien" ? `<span class="grp-mode">${ICONS.clocheMuette}</span>`
-               : (mode === "mentions" ? `<span class="grp-mode grp-mode-at">@</span>` : "");
+  const marque = mode === "rien" ? `<span class="grp-mode">${ICONS.clocheMuette}</span>` : "";
   return `<button class="grp-ligne${(n && mode !== "rien") || nomme ? " a-lire" : ""}" onclick="ouvrirGroupe('${g.id}')">
       ${pastilleGroupe(g)}
       <span class="grp-txt"><b>${escapeHtml(g.nom)}</b><small>${escapeHtml(apercuGroupe(g))}</small></span>
@@ -23629,7 +23776,13 @@ function lignesPublics(){
   if(!l.length){
     return `<div class="grp-vide">${grp.recherche ? T("Aucun groupe ne correspond.") : T("Aucun groupe public pour l'instant.")}</div>`;
   }
-  return l.map(g=>`<div class="grp-ligne">
+  /* (v339) TOUTE LA LIGNE OUVRE LA PRÉSENTATION DU GROUPE (voir
+     apercuPublic). Une ligne ne peut pas être un bouton qui en contient un
+     autre : elle porte donc une zone, un vrai bouton posé dessous les deux
+     choses qu'on touche pour autre chose — la pilule, qui rejoint ou ouvre
+     tout de suite comme avant, et la photo, qui s'ouvre en grand. */
+  return l.map(g=>`<div class="grp-ligne grp-pub">
+      <button class="grp-pub-zone" onclick="apercuPublic('${g.id}')" aria-label="${escapeHtml(g.nom)}"></button>
       ${pastilleGroupe(g)}
       <span class="grp-txt"><b>${escapeHtml(g.nom)}</b>${g.description ? `<small>${escapeHtml(g.description)}</small>` : ""}<small class="grp-nb">${escapeHtml(nbMembres(g.nb_membres))}</small></span>
       ${g.membre ? `<button class="grp-pill calme" onclick="ouvrirGroupe('${g.id}')">${T("Ouvrir")}</button>`
@@ -24176,6 +24329,66 @@ async function rejoindrePublic(id, btn){
   grp.liste = null; await chargerListes();
   ouvrirGroupe(r.id || id);
 }
+/* ===== (v339) LA PRÉSENTATION D'UN GROUPE PUBLIC =====
+   « Lorsque je vais pour cliquer sur un groupe public, pour rejoindre, je
+     voudrais pouvoir voir le groupe. Peut-être pas voir l'intérieur, mais
+     voir le groupe : ce qu'est ce groupe, le descriptif, ce genre de
+     choses. » Dans Découvrir, la description tient sur une ligne, coupée.
+   Toucher la ligne ouvre maintenant la page du groupe, telle qu'on la
+   montre à qui n'en est pas : sa photo ou son logo en grand, son nom, ses
+   membres, sa dernière activité (un message, une arrivée : tout ce qui
+   s'écrit dans la discussion), et sa description entière.
+   Rien de l'intérieur — ni messages ni noms des membres : le serveur ne les
+   donne qu'à qui y entre. Puis « Rejoindre » (ou « Ouvrir » pour qui en
+   est), et « Signaler le groupe ». La modération peut aussi y regarder
+   (« Voir le groupe », au bouclier) ; la flèche ramène alors à Découvrir. */
+function derniereActivite(iso){
+  if(!iso) return "";
+  const d = new Date(iso), maintenant = new Date();
+  if(isNaN(d.getTime())) return "";
+  const jour = (x)=> new Date(x.getFullYear(), x.getMonth(), x.getDate()).getTime();
+  const ecart = Math.round((jour(maintenant) - jour(d)) / 86400000);
+  if(ecart <= 0) return T("Dernière activité aujourd'hui");
+  if(ecart === 1) return T("Dernière activité hier");
+  if(ecart < 7) return Tf("Dernière activité il y a {n} jours", { n:ecart });
+  let date = "";
+  try{
+    date = d.toLocaleDateString(LANGUE, d.getFullYear() === maintenant.getFullYear()
+      ? { day:"numeric", month:"long" } : { day:"numeric", month:"long", year:"numeric" });
+  }catch(e){}
+  return date ? Tf("Dernière activité le {date}", { date }) : "";
+}
+function apercuPublic(id){
+  const g = (grp.publics || []).find(x => String(x.id) === String(id));
+  if(!g) return;
+  const max = +(grp.etat && grp.etat.membres_max) || 0;
+  const complet = !g.membre && max > 0 && +g.nb_membres >= max;
+  const quand = derniereActivite(g.dernier_message);
+  const voir = estModo() && !g.membre;
+  ouvrirFeuilleGroupe("grpApercuVeil", T("Groupe public"), ICONS.globe, `
+    <div class="grp-ap-tete">
+      ${pastilleGroupe(g)}
+      <b class="grp-ap-nom">${escapeHtml(g.nom)}</b>
+      <p class="grp-ap-meta"><span>${escapeHtml(nbMembres(g.nb_membres))}${quand ? "\u00A0·" : ""}</span>${quand ? ` <span>${escapeHtml(quand)}</span>` : ""}</p>
+    </div>
+    ${descriptionHtml(g)}
+    ${motHtml(complet ? Tf("Ce groupe est complet : {n} membres au plus.", { n:max }) : "")}
+    <button class="btn-primary" id="grpApercuGo" onclick="rejoindreDepuisApercu('${g.id}', this)"${complet ? " disabled" : ""}>${g.membre ? T("Ouvrir") : T("Rejoindre")}</button>
+    <div class="grp-liste-act">
+      ${voir ? ligneAction(ICONS.bouclier, T("Voir le groupe"), `fermerFeuilleGroupe('grpApercuVeil'); regarderGroupe('${g.id}')`) : ""}
+      ${ligneAction(ICONS.drapeau, T("Signaler le groupe"), `signalerMessage(null, null, '${g.id}')`)}
+    </div>`);
+}
+async function rejoindreDepuisApercu(id, btn){
+  const g = (grp.publics || []).find(x => String(x.id) === String(id));
+  if(g && g.membre){ fermerFeuilleGroupe("grpApercuVeil"); ouvrirGroupe(id); return; }
+  if(btn) btn.disabled = true;
+  const r = await appelGroupe("rejoindre_groupe", { p_groupe:id, p_code:null });
+  if(!r.ok){ if(btn) btn.disabled = false; motFeuille("grpApercuVeil", motErreurGroupe(r)); return; }
+  fermerFeuilleGroupe("grpApercuVeil");
+  grp.liste = null; await chargerListes();
+  ouvrirGroupe(r.id || id);
+}
 
 /* ===================== LE LIEN D'INVITATION =====================
    …/BibleTrivia/?groupe=CODE. Celui qui le touche arrive dans le jeu, et le
@@ -24435,7 +24648,7 @@ function retourGroupes(){
      jamais à qui a déjà répondu) — en quittant la discussion, pas pendant
      qu'on écrit. */
   if(grp.aEcrit){ grp.aEcrit = false; try{ notifProposer(true); }catch(e){} }
-  const deModeration = enLecture() || (!!grp.courant && grp.depuis === "moderation");
+  const deModeration = grp.depuis !== "groupes" && (enLecture() || (!!grp.courant && grp.depuis === "moderation"));
   grp.depuis = null;
   grp.courant = null;
   grp.reponse = null;
@@ -24577,7 +24790,9 @@ async function voirPhotos(couples){
   await chargerCachePhotos();
   let change = false;
   const moi = compteConnecte() ? "u:" + monId() : "";
-  couples.forEach(([cle, maj])=>{
+  couples.forEach((c)=>{
+    if(!Array.isArray(c)) return;
+    let [cle, maj] = c;
     if(!cle || /:(null|undefined)?$/.test(cle)) return;
     if(cle === moi) return;                      // ma photo, ce téléphone l'a déjà (voir photoValeur)
     maj = +maj || 0;
@@ -25275,11 +25490,17 @@ function bulleHtml(m){
     const venus = Array.isArray(d.venus) ? d.venus.filter(v => v && v.id) : [];
     const moiVenu = venus.some(v => v.id === monId());
     const ici = !!net.room && net.code === code;
-    return `<div class="b-bulle b-partie${finie ? " finie" : ""}${lancee ? " lancee" : ""}" data-m="${m.id}" onclick="toucherMessage('${m.id}')">
+    /* (v339) Terminée, avec des scores : la bulle dit qui l'a emporté, et se
+       touche pour le récap (voir LE RÉCAP D'UNE PARTIE DE GROUPE). */
+    const rangs = finie ? rangsPartie(m) : null;
+    const recap = !!(rangs && rangs.finis.length);
+    const geste = recap ? "ouvrirRecapPartie" : "toucherMessage";
+    return `<div class="b-bulle b-partie${finie ? " finie" : ""}${lancee ? " lancee" : ""}${recap ? " recap" : ""}" data-m="${m.id}" onclick="${geste}('${m.id}')">
         <span class="bp-ico">${ICONS.manette}</span>
         <b>${moi ? T("Tu as lancé une partie") : escapeHtml(Tf("{nom} a lancé une partie", { nom }))}</b>
         ${venus.length ? `<span class="bp-venus">${visagesVenus(venus)}<small>${escapeHtml(avecQui(venus))}</small></span>` : ""}
-        ${finie ? `<small>${T("Partie terminée")}</small>` : lancee ? `<small>${T("Partie en cours")}</small>` : (moi ? `<small>${escapeHtml(Tf("Code {code}", { code }))}</small>` : "")}
+        ${recap ? `<span class="bp-recap"><span class="bp-coupe">${ICONS.trophy}</span><small>${escapeHtml(vainqueurDit(rangs, true))}</small><span class="bp-chev">${ICONS.chevronRight}</span></span>`
+          : finie ? `<small>${T("Partie terminée")}</small>` : lancee ? `<small>${T("Partie en cours")}</small>` : (moi ? `<small>${escapeHtml(Tf("Code {code}", { code }))}</small>` : "")}
         ${code && !finie && !lancee && !ici ? `<button class="grp-pill" onclick="event.stopPropagation(); rejoindrePartieGroupe('${code}')">${moiVenu ? T("Revenir dans la partie") : T("Rejoindre la partie")}</button>` : ""}
       </div>`;
   }
@@ -25684,16 +25905,30 @@ function choisirNom(i){
   if(x.off){ showMiniToast(T("Seuls les admins du groupe peuvent prévenir tout le monde.")); return; }
   const j = jetonSousCurseur(t);
   if(!j) return;
-  const apres = t.value.slice(t.selectionStart);
+  const avant = t.value, fin = t.selectionStart, apres = avant.slice(fin);
   /* Le curseur se pose APRÈS l'espace qui suit le nom — sinon le nom, encore
      sous le curseur, rouvrirait aussitôt la liste. */
   const espace = /^\s/.test(apres);
   const pose = (x.id === "*" ? x.nom : "@" + x.nom) + (espace ? "" : " ");
-  t.value = (t.value.slice(0, j.debut) + pose + apres).slice(0, 500);
-  const pos = Math.min(t.value.length, j.debut + pose.length + (espace ? 1 : 0));
   if(document.activeElement !== t){ try{ t.focus({ preventScroll:true }); }catch(e){ t.focus(); } }
+  /* (v339) « Lorsque je mentionne quelqu'un, le curseur d'écriture se met au
+     mauvais endroit. » Le nom remplaçait le texte d'un coup (t.value = …) :
+     sur iPhone, le clavier — ses suggestions, sa correction, son curseur —
+     n'en sait rien, il croit encore le mot « @Ben » en cours. Le nom s'écrit
+     maintenant comme une saisie : « @Ben » choisi, puis remplacé par
+     insertText, le chemin même d'une lettre tapée (et Annuler le défait).
+     Un navigateur qui ne le sait pas garde l'ancien chemin. */
+  let fait = false;
+  try{
+    t.setSelectionRange(j.debut, fin);
+    fait = !!(document.execCommand && document.execCommand("insertText", false, pose));
+  }catch(e){ fait = false; }
+  if(!fait || t.value !== (avant.slice(0, j.debut) + pose + apres).slice(0, 500)) t.value = (avant.slice(0, j.debut) + pose + apres).slice(0, 500);
+  const pos = Math.min(t.value.length, j.debut + pose.length + (espace ? 1 : 0));
   try{ t.setSelectionRange(pos, pos); }catch(e){}
   surSaisie(t);
+  /* et iOS redessine son curseur une fois le champ à sa nouvelle hauteur */
+  recalerCurseurApres(60);
 }
 /* Entrée envoie — sauf quand un nom est proposé pour ce qu'on écrit : elle
    le choisit, comme Tab. Échap referme la liste. */
@@ -25960,6 +26195,86 @@ async function direPartieVenue(venu){
     m.donnees.venus = (m.donnees.venus || []).filter(v => v.id !== monId());
     if(grp.courant === m.groupe && state.screen === "groupe") majFil();
   }
+}
+/* ===== (v339) LE RÉCAP D'UNE PARTIE DE GROUPE =====
+   « Pour les parties dans les groupes, une fois que la partie est terminée,
+     qu'on puisse cliquer dessus pour avoir un récap de la partie, qui a
+     gagné, etc. » La partie ne laissait derrière elle que « Partie
+   terminée ». Chaque joueur, en finissant ses questions, inscrit maintenant
+   son score sur l'invitation (resultat_partie : le sien seulement, une fois,
+   s'il était de la partie — voir groupes/table.sql). La bulle terminée dit
+   qui l'a emporté ; on la touche, et une page donne le classement : les
+   rangs comme à la fin d'une partie (or, argent, bronze ; même score, même
+   rang), les points, les bonnes réponses, ceux qui n'ont pas fini, et ce
+   qu'on a joué. La première partie seule : « Rejouer » dans le même salon
+   n'y touche plus. Un serveur d'avant (sans « recaps ») : rien ne part, et
+   la bulle dit « Partie terminée », comme avant. */
+function recapsServeur(){ return !!(grp.etat && grp.etat.recaps === true); }
+function envoyerResultatPartie(){
+  if(!recapsServeur() || !net.deck || !net.deck.length) return;
+  const pg = net.partieGroupe, pv = net.partieVenue;
+  const id = (pg && pg.message && pg.code === net.code) ? +pg.message : (pv && pv.message ? +pv.message : 0);
+  if(!id) return;
+  net.resultats = net.resultats || {};
+  if(net.resultats[id]) return;
+  net.resultats[id] = true;
+  appelGroupe("resultat_partie", { p_message:id, p_points:net.score | 0, p_bonnes:net.correct | 0, p_total:net.deck.length,
+    p_theme:net.themeKey || "tout", p_livre:net.livreJeu || null });
+}
+function rangsPartie(m){
+  const d = (m && m.donnees) || {};
+  const sc = d.scores && typeof d.scores === "object" && !Array.isArray(d.scores) ? d.scores : {};
+  const moi = monId();
+  const nomDe = (id, nom)=> id === moi ? (String(profile.name || "").trim() || T("Toi")) : (nom || (grp.profils[id] || {}).nom || T("Quelqu'un"));
+  const joueurs = [];
+  const ajouter = (id, nom)=>{ if(id && !joueurs.some(j => j.id === id)) joueurs.push({ id, nom:nomDe(id, nom), moi:id === moi }); };
+  ajouter(m && m.auteur, null);
+  (Array.isArray(d.venus) ? d.venus : []).forEach(v => { if(v && v.id) ajouter(v.id, v.nom); });
+  Object.keys(sc).forEach(k => ajouter(k, null));
+  const finis = joueurs.filter(j => Array.isArray(sc[j.id]))
+    .map(j => Object.assign(j, { pts:Math.max(0, +sc[j.id][0] || 0), bonnes:Math.max(0, +sc[j.id][1] || 0) }))
+    .sort((a, b)=> b.pts - a.pts || b.bonnes - a.bonnes || String(a.nom).localeCompare(String(b.nom)));
+  /* Même score, même rang — la règle de la fin d'une partie. */
+  let avant = null, rg = 0;
+  finis.forEach((j, i)=>{ if(j.pts !== avant){ rg = i + 1; avant = j.pts; } j.rg = rg; });
+  return { finis, pasFini:joueurs.filter(j => !Array.isArray(sc[j.id])), total:+d.total || 0, theme:d.theme || null, livre:d.livre || null };
+}
+function vainqueurDit(r, avecPoints){
+  const tete = r.finis.filter(j => j.rg === 1);
+  if(!tete.length) return "";
+  const dit = tete.length > 1 ? Tf("Ex æquo : {noms}", { noms:enumerer(tete.map(j => j.moi ? T("toi") : j.nom)) })
+            : (tete[0].moi ? T("Tu l'emportes") : Tf("{nom} l'emporte", { nom:tete[0].nom }));
+  return avecPoints ? dit + " · " + tete[0].pts + " pts" : dit;
+}
+function ouvrirRecapPartie(id){
+  const m = trouverMessage(id);
+  if(!m || m.genre !== "partie") return;
+  const r = rangsPartie(m);
+  if(!r.finis.length){ toucherMessage(id); return; }
+  const moi = monId();
+  const lanceur = m.auteur === moi ? T("Lancée par toi") : Tf("Lancée par {nom}", { nom:(grp.profils[m.auteur] || {}).nom || T("Quelqu'un") });
+  const quand = m.cree_le ? [jourDuFil(m.cree_le), heureCourte(m.cree_le)].filter(Boolean).join(" · ") : "";
+  const quoi = r.livre ? nomLivre(r.livre)
+             : r.theme === "at" ? T("Ancien Testament") : r.theme === "nt" ? T("Nouveau Testament") : r.theme === "tout" ? T("Toute la Bible") : "";
+  const jeu = [r.total ? Tf("{n} questions", { n:r.total }) : "", quoi].filter(Boolean).join(" · ");
+  const visage = (j)=> avatarHtml(j.nom, j.moi ? (profile.color || "#4C86E8") : ((grp.profils[j.id] || {}).couleur || "#8A8F98"), 2.2, j.moi ? true : "u:" + j.id);
+  const fini = (j)=> `<div class="grp-ligne rp-rang${j.moi ? " moi" : ""}">
+      <span class="rank-badge${j.rg <= 3 ? " g" + j.rg : ""}">${j.rg}</span>${visage(j)}
+      <span class="grp-txt"><b>${escapeHtml(j.nom)}</b>${r.total ? `<small>${escapeHtml(Tf("{b}/{t} bonnes réponses", { b:j.bonnes, t:r.total }))}</small>` : ""}</span>
+      <span class="rp-pts">${j.pts} pts</span>
+    </div>`;
+  const absent = (j)=> `<div class="grp-ligne rp-rang pas-fini">
+      <span class="rank-badge">–</span>${visage(j)}
+      <span class="grp-txt"><b>${escapeHtml(j.nom)}</b><small>${T("N'a pas fini")}</small></span>
+    </div>`;
+  ouvrirFeuilleGroupe("grpRecapVeil", T("Récap de la partie"), ICONS.manette, `
+    <div class="grp-ap-tete rp-tete">
+      <span class="rp-coupe" aria-hidden="true">${TROPHY_GOLD}</span>
+      <b class="grp-ap-nom">${escapeHtml(vainqueurDit(r, false))}</b>
+      <p class="grp-ap-meta">${escapeHtml([lanceur, quand].filter(Boolean).join(" · "))}</p>
+      ${jeu ? `<p class="grp-ap-meta">${escapeHtml(jeu)}</p>` : ""}
+    </div>
+    <div class="grp-defile rp-rangs">${r.finis.map(fini).join("")}${r.pasFini.map(absent).join("")}</div>`);
 }
 function avecQui(venus){
   const moi = monId();
@@ -26422,14 +26737,19 @@ function actionsMessage(id){
   if(m.genre === "texte" && m.texte && !m.masque) h += ligneAction(ICONS.copier, T("Copier"), `copierMessage('${m.id}')`);
   /* (v334) La modération ne se bloque ni ne se signale. (v336) Et elle ne
      signale ni ne bloque elle-même : elle agit — depuis le message, elle va
-     droit à son auteur (la sourdine, le rôle, le retrait). */
+     droit à son auteur (la sourdine, le rôle, le retrait).
+     (v339) « Je crois que je n'ai plus la possibilité de signaler
+     quelqu'un. » Avec son profil, un modérateur est un membre comme les
+     autres (v336) : il signale donc comme eux — hors du mode modération, où
+     il agit lui-même. Bloquer, non : la personne bloquée disparaîtrait de
+     tout ce qu'il voit, jusqu'à ce qu'il doit modérer. */
   const sonRole = !moi && m.auteur && !mod ? ((grp.membres[grp.courant] || []).find(x => x.membre === m.auteur) || {}).role : null;
   const mon = monRole();
   const peutGerer = !!sonRole && ((estModo() && (moderationPleine() || sonRole !== "proprietaire"))
                                  || (mon === "proprietaire") || (mon === "admin" && sonRole === "membre"));
-  if(!moi && m.auteur && !mod && !estModo()){
-    if(!m.masque) h += ligneAction(ICONS.drapeau, T("Signaler"), `signalerMessage('${m.id}')`);
-    h += ligneAction(ICONS.bloquer, Tf("Bloquer {nom}", { nom }), `bloquerQuelquUn('${m.auteur}')`, true);
+  if(!moi && m.auteur && !mod){
+    if(!m.masque && !modeModeration()) h += ligneAction(ICONS.drapeau, T("Signaler"), `signalerMessage('${m.id}')`);
+    if(!estModo()) h += ligneAction(ICONS.bloquer, Tf("Bloquer {nom}", { nom }), `bloquerQuelquUn('${m.auteur}')`, true);
   }
   if(peutGerer) h += ligneAction(ICONS.personne, Tf("Gérer {nom}", { nom }), `fermerFeuilleGroupe('grpActionsVeil'); ouvrirMembre('${m.auteur}')`);
   if(moi || admin) h += ligneAction(ICONS.corbeille, T("Supprimer le message"), `supprimerMessageGroupe('${m.id}')`, true);
@@ -26471,6 +26791,13 @@ function toucherMessage(id){
   }
   try{ if(navigator.vibrate) navigator.vibrate(8); }catch(e){}
 }
+/* (v339) La discussion a fini de prendre sa hauteur (le clavier monté, ou
+   reparti à moitié) : le curseur se recale là, pas à une heure fixe. */
+document.addEventListener("transitionend", (e)=>{
+  if(!e.target || e.target.id !== "app" || e.propertyName !== "height") return;
+  const t = document.activeElement;
+  if(t && t.id === "compoTexte") recalerCurseurApres(30);
+}, true);
 /* ===== (v337) LE CURSEUR, LÀ OÙ L'ON ÉCRIT =====
    « Lorsque je clique sur un message pour lui répondre, le curseur
      d'écriture se met au mauvais endroit. » Sur iPhone, le curseur n'est pas
@@ -26774,8 +27101,12 @@ async function envoyerSignalement(raison){
   const r = await appelGroupe("signaler", { p_message:s.message, p_cible:s.cible, p_groupe:s.groupe, p_raison:k, p_details:valeurChamp("grpPrecision") });
   if(!r.ok){ if(envoi) envoi.disabled = false; boutons.forEach(b => b.disabled = false); motFeuille("grpSignalerVeil", motErreurGroupe(r)); return; }
   const corps = document.querySelector("#grpSignalerVeil .grp-feuille-corps");
+  /* (v339) Un groupe public se signale aussi depuis sa présentation, sans en
+     être : « quitter ce groupe » n'aurait alors aucun sens. */
+  const conseil = (s.message || s.cible) ? (estModo() ? "" : T("Tu peux aussi bloquer cette personne : tu ne verras plus ses messages."))
+                : ((grp.liste || []).some(x => x.id === s.groupe) ? T("Tu peux aussi quitter ce groupe.") : "");
   if(corps) corps.innerHTML = `<div class="grp-merci"><span class="gi-ico vert">${ICONS.coche}</span><b>${T("Merci. La modération va regarder.")}</b>
-      <p>${(s.message || s.cible) ? T("Tu peux aussi bloquer cette personne : tu ne verras plus ses messages.") : T("Tu peux aussi quitter ce groupe.")}</p></div>
+      ${conseil ? `<p>${conseil}</p>` : ""}</div>
     <button class="modal-btn ok grp-fermer" onclick="fermerFeuilleGroupe('grpSignalerVeil')">${T("Fermer")}</button>`;
   /* Un modérateur qui signale lui-même : sa pastille compte ce signalement. */
   if(grp.etat && grp.etat.moderateur) chargerEtatGroupes();
@@ -26832,7 +27163,7 @@ function ouvrirInfosGroupe(invitation){
     <div class="grp-liste-act">
       ${admin ? ligneAction(ICONS.crayon, T("Modifier le groupe"), "ouvrirModifGroupe()") : ""}
       ${admin && bannisServeur() ? ligneAction(ICONS.bannir, T("Personnes bannies"), "ouvrirBannis()") : ""}
-      ${estModo() ? "" : ligneAction(ICONS.drapeau, T("Signaler le groupe"), `signalerMessage(null, null, '${g.id}')`)}
+      ${modeModeration() ? "" : ligneAction(ICONS.drapeau, T("Signaler le groupe"), `signalerMessage(null, null, '${g.id}')`)}
       ${enLecture() ? "" : ligneAction(ICONS.sortir, T("Quitter le groupe"), "quitterGroupeCourant()", true)}
       ${proprio || modeModeration() ? ligneAction(ICONS.corbeille, T("Supprimer le groupe"), "supprimerGroupeCourant()", true) : ""}
     </div>`);
@@ -27055,11 +27386,10 @@ function membreHtml(qui){
   if(estModo() && pleine && !modo) h += ligneAction(ICONS.bouclier, T("Agir au nom de la modération"), `passerEnModeration('${qui}')`);
   /* (v336) La modération ne signale pas — les signalements arrivent chez
      elle — et ne bloque pas, même avec son profil : elle doit voir ce
-     qu'elle modère. */
-  if(!estModo()){
-    h += ligneAction(ICONS.drapeau, T("Signaler"), `signalerMessage(null, '${qui}', '${g.id}')`);
-    h += ligneAction(ICONS.bloquer, T("Bloquer"), `bloquerQuelquUn('${qui}')`, true);
-  }
+     qu'elle modère. (v339) Avec son profil, elle signale comme tout membre ;
+     en mode modération, elle agit. Bloquer lui reste fermé. */
+  if(!modo) h += ligneAction(ICONS.drapeau, T("Signaler"), `signalerMessage(null, '${qui}', '${g.id}')`);
+  if(!estModo()) h += ligneAction(ICONS.bloquer, T("Bloquer"), `bloquerQuelquUn('${qui}')`, true);
   h += `</div><div class="grp-mot"><span></span></div>`;
   return h;
 }
@@ -27259,10 +27589,15 @@ function chargerModeration(){
     const l = await listeGroupe("moderation_ouverte");
     if(l) moderation = l; else if(!moderation) moderation = [];
     /* Les photos en cause arrivent AVANT que la carte se dessine : on ne
-       décide pas sur une initiale. */
+       décide pas sur une initiale.
+       (v339) Le tri des cases vides se fait APRÈS la mise à plat. Fait avant,
+       il ne retirait rien : un groupe signalé (sans personne en cause)
+       glissait un vide dans la liste, voirPhotos s'y arrêtait, et toute la
+       suite tombait avec lui — les photos des cartes, la file redessinée,
+       la pastille. */
     if(l && photosServeur()) await voirPhotos([].concat(...l.map(x => [
       x.cible ? ["u:" + x.cible, x.cible_photo_maj] : null,
-      x.groupe ? ["g:" + x.groupe, x.groupe_photo_maj] : null]).filter(Boolean)));
+      x.groupe ? ["g:" + x.groupe, x.groupe_photo_maj] : null])).filter(Boolean));
     /* La file relue EST le compte (une carte par chose à décider) : la
        pastille suit sans rien redemander au serveur. */
     if(l && grp.etat){ grp.etat.a_traiter = l.length; majBarre(); majBouclier(); }
@@ -27396,7 +27731,9 @@ async function regarderGroupe(id){
   }
   if(!g){ showMiniToast(T("Ce groupe n'existe plus.")); return; }
   grp.vus[id] = Object.assign({}, g);
-  if(state.screen !== "groupe") grp.depuis = "moderation";
+  /* (v339) Regardé depuis la présentation d'un groupe public (Découvrir),
+     la flèche y ramène — pas à la Modération, où l'on n'était pas. */
+  if(state.screen !== "groupe") grp.depuis = state.screen === "groupes" ? "groupes" : "moderation";
   grp.courant = id;
   state.screen = "groupe";
   render();

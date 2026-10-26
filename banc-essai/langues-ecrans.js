@@ -785,6 +785,16 @@ const ouvrirLaLangue = async (p, lg) => {
                                                      { id:'g-5', nom:'Ruth', description:'', nb_membres:1, teinte:3, membre:false } ];
                                      grp.recherche = 'a'; render(); }],
     ['Groupes · Découvrir, un groupe rejoint', () => { grp.recherche = ''; grp.publics = [ { id:'g-2', nom:'Sam', description:'', nb_membres:2, teinte:0, membre:true } ]; render(); }],
+    /* (v339) La présentation d'un groupe public : à qui n'en est pas (sa
+       description, sa dernière activité), à qui en est, et un groupe plein. */
+    ['Groupes · présentation d\'un groupe public', () => { grp.recherche = ''; grp.publics = [ { id:'g-5', nom:'Ruth', description:'Amen', nb_membres:1, teinte:3, membre:false,
+        dernier_message:new Date(Date.now() - 3 * 86400000).toISOString() } ]; render(); apercuPublic('g-5'); }],
+    ['Groupes · présentation, un groupe rejoint', () => { __fermerTout(); grp.publics = [ { id:'g-2', nom:'Sam', description:'', nb_membres:2, teinte:0, membre:true,
+        dernier_message:new Date().toISOString() } ]; render(); apercuPublic('g-2'); }],
+    ['Groupes · présentation, active hier', () => { __fermerTout(); const h = new Date(); h.setDate(h.getDate() - 1); h.setHours(12, 0, 0, 0);
+      grp.publics = [ { id:'g-5', nom:'Ruth', description:'', nb_membres:1, teinte:3, membre:false, dernier_message:h.toISOString() } ]; render(); apercuPublic('g-5'); }],
+    ['Groupes · présentation, un groupe plein', () => { __fermerTout(); grp.etat.membres_max = 1; grp.publics = [ { id:'g-5', nom:'Ruth', description:'', nb_membres:1, teinte:3, membre:false,
+        dernier_message:new Date(Date.now() - 20 * 86400000).toISOString() } ]; render(); apercuPublic('g-5'); delete grp.etat.membres_max; }],
     ['Groupes · créer',    () => { grp.recherche = ''; __fermerTout(); __grpDecor(); state.screen='groupes'; render(); ouvrirCreation(); }],
     ['Groupes · créer public', () => { choisirTypeGroupe('public'); }],
     ['Groupes · code',     () => { __fermerTout(); ouvrirCode(); }],
@@ -798,6 +808,22 @@ const ouvrirLaLangue = async (p, lg) => {
        au-dessus de la discussion (voir sortirVersGroupe). */
     ['Groupes · partie finie', async () => { showMiniToast(T("Cette partie n'est plus ouverte."));
       await new Promise(r => setTimeout(r, 120)); }],
+    /* (v339) Des parties de groupe terminées, avec leurs scores : chaque bulle
+       dit qui l'a emporté (un autre, un ex æquo, soi) ; puis deux récaps —
+       gagné par un autre, gagné par soi —, et tout se referme. */
+    ['Groupes · parties terminées', async () => { __fermerTout(); __grpDecor();
+      const il = (mn) => new Date(Date.now() - mn * 60000).toISOString();
+      const p = (id, auteur, venus, scores, theme, mn) => ({ id, groupe:'g-1', auteur, genre:'partie', texte:'', cree_le:il(mn), masque:false, supprime_le:null,
+        donnees:{ code:'JKLM', fermee:true, venus, scores, total:3, theme } });
+      grp.fils['g-1'].messages.push(
+        p(30, 'u-2', [ { id:'moi-0', nom:'Taylor' }, { id:'u-3', nom:'Lee' } ], { 'u-2':[60, 3], 'moi-0':[40, 2] }, 'nt', 50),
+        p(31, 'moi-0', [ { id:'u-2', nom:'Sam' } ], { 'moi-0':[50, 2], 'u-2':[50, 2] }, 'tout', 40),
+        p(32, 'moi-0', [ { id:'u-3', nom:'Lee' } ], { 'moi-0':[70, 3], 'u-3':[30, 1] }, 'at', 30));
+      grp.courant = 'g-1'; state.screen = 'groupe'; render();
+      await new Promise(r => setTimeout(r, 60)); descendreFil(); }],
+    ['Groupes · récap d\'une partie', () => { ouvrirRecapPartie('30'); }],
+    ['Groupes · récap, gagné', () => { __fermerTout(); ouvrirRecapPartie('32'); }],
+    ['Groupes · récap refermé', () => { __fermerTout(); grp.fils['g-1'].messages = grp.fils['g-1'].messages.filter(x => x.id < 30 || x.id > 32); majFil(); }],
     /* LES MENTIONS (v317). Taper « @ » propose les membres et, à qui peut
        s'en servir, « @tout le monde » ; un simple membre qui commence à
        l'écrire lit qu'il est réservé. Par majNoms, la fonction que la frappe
@@ -866,8 +892,11 @@ const ouvrirLaLangue = async (p, lg) => {
     ['Groupes · signaler', () => { __fermerTout(); signalerMessage(null, null, null); signalerMessage('7'); }],
     ['Groupes · signaler quelqu\'un', () => { __fermerTout(); signalerMessage(null, 'u-2', 'g-1'); }],
     ['Groupes · signaler le groupe', () => { __fermerTout(); signalerMessage(null, null, 'g-1'); }],
-    ['Groupes · merci',    async () => { __fermerTout(); const a = appelGroupe; appelGroupe = async () => ({ ok:true });
-      signalerMessage('7'); await new Promise(r => setTimeout(r, 60)); await envoyerSignalement('spam'); appelGroupe = a; }],
+    /* (v339) Le merci d'un membre : il propose de bloquer — à un modérateur,
+       non (bloquer lui cacherait ce qu'il modère). */
+    ['Groupes · merci',    async () => { __fermerTout(); const a = appelGroupe, mo = grp.etat.moderateur; appelGroupe = async () => ({ ok:true });
+      grp.etat.moderateur = false;
+      signalerMessage('7'); await new Promise(r => setTimeout(r, 60)); await envoyerSignalement('spam'); appelGroupe = a; grp.etat.moderateur = mo; }],
     ['Groupes · merci (groupe)', async () => { __fermerTout(); const a = appelGroupe; appelGroupe = async () => ({ ok:true });
       signalerMessage(null, null, 'g-1'); await new Promise(r => setTimeout(r, 60)); await envoyerSignalement('autre'); appelGroupe = a; }],
     ['Groupes · bloquer',  () => { __fermerTout(); bloquerQuelquUn('u-2'); }],

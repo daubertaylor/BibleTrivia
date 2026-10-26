@@ -114,6 +114,7 @@ const dit = (quoi, bon, detail) => { console.log('  ' + (bon ? 'OK  ' : 'KO  ') 
       const nls = l ? [...l.querySelectorAll('.grp-nl')] : [];
       return { at: nls.some(x => x.classList.contains('grp-at')), compte: (nls.find(x => !x.classList.contains('grp-at')) || {}).textContent || '',
         gris: nls.some(x => !x.classList.contains('grp-at') && x.classList.contains('calme')), cloche: !!(l && l.querySelector('.grp-mode svg')),
+        heure: l && l.querySelector('.grp-droite small') ? l.querySelector('.grp-droite small').textContent : '',
         pastille: p && !p.hidden ? p.textContent : '0' }; });
     const ok4 = await attendre(pb, () => { const l = document.querySelector('#grpMes .grp-ligne .grp-at'); return !!l; }, null, 6000);
     const l4 = await ligneB();
@@ -146,7 +147,9 @@ const dit = (quoi, bon, detail) => { console.log('  ' + (bon ? 'OK  ' : 'KO  ') 
     await attendre(pb, () => { const n = document.querySelector('#grpMes .grp-ligne .grp-nl:not(.grp-at)'); return n && n.textContent === '1'; }, null, 6000);
     await pb.waitForTimeout(300);
     const l5 = await ligneB();
-    dit('un message ordinaire : compté en gris sur la ligne, pas dans la pastille', l5.compte === '1' && l5.gris && !l5.at && l5.pastille === '0', JSON.stringify(l5));
+    /* (v339) Le réglage « Mentions » ne met plus de « @ » gris à côté de
+       l'heure : un « @ » seul veut dire « on t'a nommé », rien d'autre. */
+    dit('un message ordinaire : compté en gris sur la ligne, pas dans la pastille — et pas de « @ » à côté de l\'heure', l5.compte === '1' && l5.gris && !l5.at && l5.pastille === '0' && !/@/.test(l5.heure), JSON.stringify(l5));
     await vieillir();
     await pa.locator('#compoTexte').pressSequentially('@tout');
     await pa.waitForTimeout(250);
