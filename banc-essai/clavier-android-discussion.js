@@ -23,6 +23,12 @@
        clavier, un grand vide dessous ;
      — (v330) une fenêtre qui RÉTRÉCIT avec le clavier ET un navigateur qui
        dit quand même son clavier : il ne doit pas compter deux fois ;
+     — (v338) Chrome « bord à bord » (viewport-fit=cover) : clavier ouvert,
+       la fenêtre perd la barre de navigation d'Android (48 px) et Chrome
+       annonce un clavier qui ne la compte pas, posé au bas de la fenêtre
+       raccourcie — « la petite barre au-dessus du clavier se superpose au
+       truc d'écriture » ; la même chose avec l'ancienne position fausse
+       (y = 66) ; et une fenêtre qui perd le clavier ET la barre ;
    tout se mesure SUR L'ÉCRAN (la zone visible, glissement compris) ;
    exigé : la barre d'écriture ENTIÈREMENT au-dessus du clavier, et JUSTE
    au-dessus (24 px au plus, pas de vide), l'en-tête entier sur l'écran (pour les
@@ -36,9 +42,14 @@ const { chromium } = require('/opt/node22/lib/node_modules/playwright');
 const URL = process.argv[2] || 'http://127.0.0.1:8099/index.html';
 const AND = 'Mozilla/5.0 (Linux; Android 15; Pixel 9) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/130.0.0.0 Mobile Safari/537.36';
 const TEL = [['Pixel 9', 412, 915, 330], ['Petit Android', 360, 740, 290]];
+/* [nom, façon de dire le clavier, barre de navigation que la fenêtre perd clavier ouvert (v338)] */
+const BARRE = 48;
 const POSITIONS = [['position juste', null], ['position fausse de Chrome (y = 66)', 66], ['sans position (y = 0)', 0],
   ['clavier muet (Samsung Internet ?)', 'muet'], ['sans interface du clavier (Firefox)', 'absent'],
-  ['zone visible qui glisse (mode ordinaire de Chrome)', 'pan'], ['fenêtre qui rétrécit ET clavier dit', 'contenu']];
+  ['zone visible qui glisse (mode ordinaire de Chrome)', 'pan'], ['fenêtre qui rétrécit ET clavier dit', 'contenu'],
+  ['Chrome bord à bord : la fenêtre perd la barre de navigation, clavier dit sans elle', null, BARRE],
+  ['bord à bord, position fausse (y = 66)', 66, BARRE],
+  ['fenêtre qui perd le clavier ET la barre de navigation', 'contenu', BARRE]];
 /* Les navigateurs qui ne disent pas leur clavier : le jeu passe au mode ordinaire. */
 const SILENCIEUX = ['muet', 'absent', 'pan'];
 let ko = 0;
@@ -87,7 +98,7 @@ const FAUX = (mode) => {
 (async () => {
   const nav = await chromium.launch({ executablePath: '/opt/pw-browsers/chromium' });
   for (const [tel, W, H, KB] of TEL) {
-    for (const [nomPos, y] of POSITIONS) {
+    for (const [nomPos, y, barre = 0] of POSITIONS) {
       const ctx = await nav.newContext({ viewport: { width: W, height: H }, deviceScaleFactor: 2.625, isMobile: true, hasTouch: true, userAgent: AND, serviceWorkers: 'block' });
       const p = await ctx.newPage();
       const errs = []; p.on('pageerror', e => errs.push(e.message));
@@ -113,15 +124,19 @@ const FAUX = (mode) => {
       await p.waitForTimeout(120);
       const silencieux = SILENCIEUX.includes(y), contenu = y === 'contenu';
       const pos = typeof y === 'string' ? null : y;
-      /* Le clavier monte. « contenu » : la fenêtre elle-même rétrécit d'autant. */
+      /* Le clavier monte. « contenu » : la fenêtre elle-même rétrécit d'autant.
+         (v338) « barre » : clavier ouvert, la fenêtre perd en plus la barre de
+         navigation d'Android, que le clavier annoncé ne compte pas. */
       const clavier = async (h) => {
-        if (contenu) await p.setViewportSize({ width: W, height: H - h });
+        const perte = h > 0 ? (contenu ? h : 0) + barre : 0;
+        if (contenu || barre) await p.setViewportSize({ width: W, height: H - perte });
         await p.evaluate(([h, y]) => window.__clavier(h, y), [h, pos]);
       };
       for (const f of [0.25, 0.5, 0.75, 1]) { await clavier(Math.round(KB * f)); await p.waitForTimeout(40); }
       await p.waitForTimeout(silencieux ? 1500 : 700);
       /* Tout se mesure SUR L'ÉCRAN : ce que montre la zone visible, glissement
-         compris. Le haut du clavier y est à H − clavier. */
+         compris. Le haut du clavier y est à H − clavier (− la barre de
+         navigation qui passe dessous, v338). */
       const mesurer = () => p.evaluate(([KB, H]) => {
         const dv = (window.visualViewport && window.visualViewport.offsetTop) || 0;
         const c = document.getElementById('compo').getBoundingClientRect();
@@ -129,7 +144,7 @@ const FAUX = (mode) => {
         return { compoBas: Math.round(c.bottom - dv), compoHaut: Math.round(c.top - dv), hautClavier: H - KB, tete: Math.round(t.top - dv), teteBas: Math.round(t.bottom - dv), dv,
           focus: document.activeElement && document.activeElement.id,
           meta: (document.querySelector('meta[name="viewport"]').getAttribute('content').match(/interactive-widget=[a-z-]+/) || [''])[0] };
-      }, [KB, H]);
+      }, [KB + barre, H]);
       const juste = (o) => o.compoBas <= o.hautClavier + 1 && o.compoBas >= o.hautClavier - 24;
       const ouvert = await mesurer();
       dire(juste(ouvert) && ouvert.compoHaut >= ouvert.teteBas && ouvert.tete >= 0 && ouvert.focus === 'compoTexte',

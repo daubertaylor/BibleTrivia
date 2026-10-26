@@ -38,7 +38,8 @@
     16. (v334) la modération écrit de l'extérieur : les membres sont
         prévenus, la charge porte « moderation » et pas le nom de la personne
         qui modère (le téléphone signe « La modération ») ; un message
-        ordinaire, lui, part avec exactement les mêmes champs qu'avant (6).
+        ordinaire, lui, part avec exactement les mêmes champs qu'avant (6) —
+        plus, depuis la v338, le jeton d'arrivée.
    Usage : node banc-essai/messages-serveur.js [rappels.ts] */
 const path = require('path');
 const { execFile } = require('child_process');
@@ -146,9 +147,15 @@ const EP = (x) => 'https://push.exemple/appareil-' + x;
     dit('   la réponse dit ce qui s\'est passé', rep.st === 200 && rep.c.sorte === 'message' && rep.c.envoyes === 2 && rep.c.version === fn.version && fn.version >= 329, JSON.stringify(rep.c));
     /* ===== 6 ===== */
     const ch = envois[0] && envois[0].charge;
-    dit('6. ce qui part : le groupe, son nom, l\'auteur, le texte — rien d\'autre',
-      ch && JSON.stringify(Object.keys(ch).sort()) === JSON.stringify(['de', 'decalage', 'genre', 'groupe', 'id', 'mention', 'nom', 'partie', 'texte'])
-        && ch.genre === 'message' && ch.groupe === G1 && ch.nom === 'Les amis' && ch.de === 'Taylor' && ch.texte === 'Salut tout le monde !' && ch.mention === false && ch.partie === false && ch.decalage === 120,
+    /* (v338) Et le jeton d'arrivée : le téléphone le renvoie à la fonction en
+       recevant la notification (coches-whatsapp.js) — un par membre, le même
+       pour ses deux appareils. */
+    const ch2 = envois[1] && envois[1].charge;
+    dit('6. ce qui part : le groupe, son nom, l\'auteur, le texte, le jeton d\'arrivée — rien d\'autre',
+      ch && JSON.stringify(Object.keys(ch).sort()) === JSON.stringify(['accuse', 'de', 'decalage', 'genre', 'groupe', 'id', 'mention', 'nom', 'partie', 'texte'])
+        && ch.genre === 'message' && ch.groupe === G1 && ch.nom === 'Les amis' && ch.de === 'Taylor' && ch.texte === 'Salut tout le monde !' && ch.mention === false && ch.partie === false && ch.decalage === 120
+        && ch.accuse && ch.accuse.u === 'https://laboratoire.exemple/functions/v1/rappels' && /^[0-9a-f-]{36}$/.test(ch.accuse.j || '')
+        && !!ch2 && ch2.accuse && ch2.accuse.j === ch.accuse.j,
       JSON.stringify(ch));
 
     /* ===== 7 : une mention ===== (Hugo a quitté le jeu : son téléphone l'a

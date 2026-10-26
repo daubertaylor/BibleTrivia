@@ -848,11 +848,16 @@ const ouvrirLaLangue = async (p, lg) => {
     ['Groupes · en sourdine', () => { __fermerTout(); ouvrirMembre('u-3'); }],
     ['Groupes · un message', () => { __fermerTout(); actionsMessage('7'); }],
     /* (v329) « VU », comme sur WhatsApp : sous mon message, les coches ; en
-       le touchant, qui l'a vu et qui pas encore — puis tout le monde, puis
-       personne. */
-    ['Groupes · vu par',   () => { __fermerTout(); __grpDecor(); grp.courant = 'g-1'; state.screen='groupe'; render(); actionsMessage('12'); }],
-    ['Groupes · vu par tout le monde', () => { __fermerTout(); grp.membres['g-1'].forEach(x => { x.lu_jusqu = 99; }); majVus(); actionsMessage('12'); }],
-    ['Groupes · personne n\'a vu', () => { __fermerTout(); grp.membres['g-1'].forEach(x => { x.lu_jusqu = 0; }); majVus(); actionsMessage('12'); }],
+       le touchant, qui l'a lu et qui pas encore — puis tout le monde, puis
+       personne. (v338) Sur un serveur qui sait l'arrivée : « Distribué à »,
+       « Pas encore distribué », et les deux coches grises. */
+    ['Groupes · lu par',   () => { __fermerTout(); __grpDecor(); grp.courant = 'g-1'; state.screen='groupe'; render(); actionsMessage('12'); }],
+    ['Groupes · lu par tout le monde', () => { __fermerTout(); grp.membres['g-1'].forEach(x => { x.lu_jusqu = 99; }); majVus(); actionsMessage('12'); }],
+    ['Groupes · personne ne l\'a lu', () => { __fermerTout(); grp.membres['g-1'].forEach(x => { x.lu_jusqu = 0; }); majVus(); actionsMessage('12'); }],
+    ['Groupes · distribué', () => { __fermerTout(); grp.etat.distribues = true;
+      const l = grp.membres['g-1']; l.forEach(x => { x.lu_jusqu = 0; x.recu_jusqu = 0; });
+      l.find(x => x.membre === 'u-2').lu_jusqu = 99; l.find(x => x.membre === 'u-3').recu_jusqu = 99; majVus(); actionsMessage('12'); }],
+    ['Groupes · distribué à tous', () => { __fermerTout(); grp.membres['g-1'].forEach(x => { x.recu_jusqu = 99; }); majVus(); actionsMessage('12'); }],
     /* (v329) Le propriétaire peut céder le groupe. */
     ['Groupes · céder',    () => { __fermerTout(); __grpDecor(); grp.courant = 'g-1'; state.screen='groupe'; render(); ouvrirMembre('u-4'); }],
     ['Groupes · céder ?',  () => { __fermerTout(); modererMembre('u-4', 'ceder'); }],
@@ -926,20 +931,33 @@ const ouvrirLaLangue = async (p, lg) => {
        (moderation_pleine). Un modérateur, simple membre d'un de ses groupes :
        sa voix à côté du champ, puis d'un toucher celle de la modération et
        ses pouvoirs (le mode modération) ; la page d'un admin (ce qu'il y fait
-       au nom de la modération) et celle du propriétaire (la sourdine seule :
-       un groupe ne change de main que par son propriétaire, ou par son
-       absence) ; de nouveau son profil, et la page d'un membre qui ne
+       au nom de la modération, (v338) confier le groupe compris) et celle du
+       propriétaire ((v338) la sourdine, le retrait, le bannissement : la
+       modération a le dernier mot) ; les fenêtres qui le retirent, le
+       bannissent, confient le groupe, et la phrase qui dit à qui il passe ;
+       de nouveau son profil, et la page d'un membre qui ne
        propose plus que le passage en modération ; les personnes bannies, aucune
        puis une, et le bannissement levé ; les lignes de la discussion au nom
        de la modération, et celle d'un groupe passé à un autre faute de
        nouvelles du propriétaire. Puis ce que voit un joueur qui n'est pas
        modérateur : « Signaler » et « Bloquer », qu'un modérateur n'a plus. */
-    ['Modération pleine · ma voix', () => { __fermerTout(); __grpDecor(); grp.etat.moderation_pleine = true;
+    ['Modération pleine · ma voix', () => { __fermerTout(); __grpDecor(); grp.etat.moderation_pleine = true; grp.etat.modo_proprietaire = true;
       grp.membres['g-1'][0].role = 'membre'; grp.membres['g-1'][1].role = 'proprietaire';
       grp.courant = 'g-1'; state.screen = 'groupe'; render(); }],
     ['Modération pleine · la voix de la modération', async () => { changerVoix(); await new Promise(r => setTimeout(r, 120)); }],
     ['Modération pleine · un admin', () => { __fermerTout(); grp.membres['g-1'][2].role = 'admin'; ouvrirMembre('u-3'); }],
     ['Modération pleine · le propriétaire', () => { __fermerTout(); ouvrirMembre('u-2'); }],
+    /* (v338) La modération a le dernier mot sur le propriétaire. */
+    ['Modération pleine · retirer le propriétaire ?', () => { __fermerTout(); modererMembre('u-2', 'exclure'); }],
+    ['Modération pleine · bannir le propriétaire ?', () => { __fermerTout(); modererMembre('u-2', 'bannir'); }],
+    ['Modération pleine · confier ?', () => { __fermerTout(); modererMembre('u-3', 'ceder'); }],
+    ['Modération pleine · propriétaire retiré', async () => { __fermerTout(); const x = appelGroupe, mm = showModal, c = chargerMembres;
+      appelGroupe = async () => ({ ok:true }); showModal = (o) => { o.onOk && o.onOk(); };
+      chargerMembres = async (gid) => { const l = grp.membres[gid] || []; const a = l.find(y => y.membre === 'u-3'); if (a) a.role = 'proprietaire';
+        grp.membres[gid] = l.filter(y => y.membre !== 'u-2'); };
+      await modererMembre('u-2', 'exclure'); await new Promise(r => setTimeout(r, 60));
+      appelGroupe = x; showModal = mm; chargerMembres = c; }],
+    ['Modération pleine · groupe seul', () => { __fermerTout(); ouvrirMembre('u-3'); motFeuille('grpMembreVeil', motErreurGroupe({ ok:false, erreur:'seul' })); }],
     /* (v336) LE MODE MODÉRATION : un toucher sur le bouclier, et de nouveau
        son profil — le mot le dit ; la page d'un membre ne propose plus que
        le passage en modération. */
@@ -956,7 +974,7 @@ const ouvrirLaLangue = async (p, lg) => {
       appelGroupe = async () => ({ ok:true }); showModal = (o) => { o.onOk && o.onOk(); };
       leverBannissement('u-9'); await new Promise(r => setTimeout(r, 60)); appelGroupe = a; showModal = m; }],
     ['Modération pleine · la discussion', () => { __fermerTout(); const le = new Date().toISOString(); const f = grp.fils['g-1']; let id = 100;
-      for (const [t, n] of [['exclu', 'Kim'], ['banni', 'Kim'], ['admin', 'Sam'], ['plus_admin', 'Sam'], ['photo', ''], ['photo_retiree', '']])
+      for (const [t, n] of [['exclu', 'Kim'], ['banni', 'Kim'], ['admin', 'Sam'], ['plus_admin', 'Sam'], ['photo', ''], ['photo_retiree', ''], ['proprietaire', 'Sam']])
         f.messages.push({ id:id++, groupe:'g-1', auteur:null, genre:'systeme', texte:t, donnees:{ nom:n, moderation:true }, cree_le:le, masque:false, supprime_le:null });
       /* (v336) L'absence du propriétaire : le groupe est passé au suivant. */
       f.messages.push({ id:id++, groupe:'g-1', auteur:null, genre:'systeme', texte:'proprietaire', donnees:{ nom:'Sam', ancien:'Kim', absence:true }, cree_le:le, masque:false, supprime_le:null });

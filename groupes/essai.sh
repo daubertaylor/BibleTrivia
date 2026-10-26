@@ -255,7 +255,12 @@ dit "  ... C ne peut plus écrire" "$(envoie $C $GP 'je parle')" "muet"
 dit "B lui rend la parole" "$(F_ $B "moderer_membre('$GP', '$C', 'parler', null)")" "ok"
 dit "  ... C écrit" "$(envoie $C $GP 'merci')" "ok"
 dit "B (admin) ne peut pas exclure A (propriétaire)" "$(F_ $B "moderer_membre('$GP', '$A', 'exclure', null)")" "interdit"
-dit "B (admin) ne nomme pas d'admin" "$(F_ $B "moderer_membre('$GP', '$C', 'promouvoir', null)")" "interdit"
+# (v329) Comme sur WhatsApp, un admin nomme d'autres admins ; retirer ce rôle
+# reste au propriétaire, et un admin ne touche pas à un autre admin.
+dit "B (admin) nomme C admin, comme sur WhatsApp" "$(F_ $B "moderer_membre('$GP', '$C', 'promouvoir', null)")" "ok"
+dit "  ... mais ne lui retire pas ce rôle" "$(F_ $B "moderer_membre('$GP', '$C', 'retrograder', null)")" "interdit"
+dit "  ... ni n'exclut un autre admin" "$(F_ $B "moderer_membre('$GP', '$C', 'exclure', null)")" "interdit"
+dit "A (propriétaire) retire à C son rôle d'admin" "$(F_ $A "moderer_membre('$GP', '$C', 'retrograder', null)")" "ok"
 dit "C (membre) ne modère pas" "$(F_ $C "moderer_membre('$GP', '$B', 'muet', 10)")" "interdit"
 dit "personne ne se modère soi-même" "$(F_ $B "moderer_membre('$GP', '$B', 'muet', 10)")" "soi_meme"
 dit "B exclut C" "$(F_ $B "moderer_membre('$GP', '$C', 'exclure', null)")" "ok"

@@ -77,7 +77,7 @@ const ABSENCES = [3, 7, 30];
 const FENETRE = 60;
 /* La version de ce code, dans chaque réponse : la page « Rappels » de la
    Modération dit ainsi si la fonction déployée est bien celle-ci. */
-const VERSION = 335;
+const VERSION = 338;
 /* Un essai demandé par un téléphone pour lui-même : un par minute au plus. */
 const ESSAI_DELAI = 60000;
 /* ===== LES MESSAGES DES GROUPES (v329) =====
@@ -188,6 +188,25 @@ function cleServeur(): string {
     return String(o.default ?? Object.values(o)[0] ?? "").trim();
   } catch { return ""; }
 }
+/* ===== (v338) « ARRIVÉ », LE SIGNAL =====
+   Une arrivée notée, ceux qui ont la discussion ouverte relisent leurs coches
+   dans la seconde : le même signal que le jeu envoie quand quelqu'un lit
+   (« yada-lus-<groupe> », événement « lu »), posé par l'API de diffusion de
+   Supabase. Ce n'est qu'un raccourci : faute de lui, la relève de la
+   discussion (10 s) rattrape. */
+async function signalerArrivee(groupe: string, membre: string) {
+  try {
+    const base = (Deno.env.get("SUPABASE_URL") ?? "").replace(/\/+$/, "");
+    const k = cleServeur();
+    if (!base || !k) return;
+    const h: Record<string, string> = { "Content-Type": "application/json", apikey: k };
+    if (/^eyJ/.test(k)) h.Authorization = "Bearer " + k;
+    await fetch(base + "/realtime/v1/api/broadcast", {
+      method: "POST", headers: h, signal: AbortSignal.timeout(4000),
+      body: JSON.stringify({ messages: [{ topic: "yada-lus-" + groupe, event: "lu", payload: { m: membre } }] }),
+    });
+  } catch { /* la relève rattrape */ }
+}
 /* Ce qu'un service d'envoi répond quand il refuse, sans adresse dedans (une
    adresse d'envoi est propre à un téléphone). */
 const raison = (e: any) =>
@@ -217,6 +236,33 @@ Deno.serve(async (req: Request) => {
   let corpsRecu: any = {};
   try { corpsRecu = (await req.json()) ?? {}; } catch { /* pas de corps : passage normal */ }
   const essai = !!corpsRecu.essai;
+
+  /* ===== (v338) « ARRIVÉ » : UNE NOTIFICATION EST LÀ =====
+     Le téléphone qui reçoit la notification d'un message renvoie son jeton
+     (sw.js, accuserReception) : le message est arrivé chez ce membre. Le
+     jeton est à usage unique ; il ne permet rien d'autre que cela, et un
+     jeton inconnu n'apprend rien. Ouvert à tous, comme l'état et l'essai :
+     c'est le jeton qui fait foi. L'arrivée n'avance jamais à reculons. */
+  if (typeof corpsRecu.accuse === "string") {
+    const j = corpsRecu.accuse;
+    if (!/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(j)) return repondre({ accuse: false }, 400);
+    try {
+      const db0 = createClient(Deno.env.get("SUPABASE_URL")!, cleServeur());
+      const { data, error } = await db0.from("accuses").select("groupe,membre,message").eq("jeton", j);
+      if (error) return repondre({ accuse: false, erreur: "table" }, 500);
+      const a = (data ?? [])[0];
+      if (!a) return repondre({ accuse: false }, 404);
+      const { error: e2 } = await db0.from("membres").update({ recu_jusqu: a.message }).eq("groupe", a.groupe).eq("membre", a.membre).lt("recu_jusqu", a.message);
+      if (e2) return repondre({ accuse: false, erreur: "table" }, 500);
+      await db0.from("accuses").delete().eq("jeton", j);
+      /* Les jetons qui ne reviendront pas (un téléphone éteint pour de bon). */
+      await db0.from("accuses").delete().lt("cree_le", new Date(Date.now() - 2 * 86400000).toISOString());
+      await signalerArrivee(a.groupe, a.membre);
+      return repondre({ accuse: true });
+    } catch {
+      return repondre({ accuse: false, erreur: "table" }, 500);
+    }
+  }
 
   /* Les espaces au bout sont invisibles et suffisent à tout casser. */
   const sujet = (Deno.env.get("VAPID_SUJET") ?? "").trim();
@@ -367,6 +413,23 @@ Deno.serve(async (req: Request) => {
       let dernierEchecM: Record<string, unknown> | null = null;
       const texte = m.genre === "texte" ? String(m.texte ?? "").replace(/\s+/g, " ").trim() : "";
       const maintenant = Date.now();
+      /* (v338) UN JETON PAR MEMBRE PRÉVENU : son téléphone le renverra en
+         recevant la notification, et le message sera « arrivé » chez lui
+         (voir « ARRIVÉ » : UNE NOTIFICATION EST LÀ). Une table absente (le
+         fichier des groupes pas encore recollé) n'empêche aucun envoi : la
+         notification part sans jeton. */
+      const prevenu = (a: any) => a.messages === true && !!a.abonnement?.endpoint
+        && !(a.abonnement.ecran === true && maintenant - (Date.parse(a.maj ?? "") || 0) < PRESENT_MS);
+      const jetons: Record<string, string> = {};
+      const aJeton = [...new Set(abos.filter(prevenu).map((a) => a.membre).filter(Boolean))] as string[];
+      if (aJeton.length) {
+        const lignes = aJeton.map((mb) => ({ jeton: crypto.randomUUID(), groupe: g.id, membre: mb, message: m.id }));
+        try {
+          const { error: eJ } = await db.from("accuses").insert(lignes);
+          if (!eJ) lignes.forEach((l) => { jetons[l.membre] = l.jeton; });
+        } catch { /* sans jeton */ }
+      }
+      const urlAccuse = (Deno.env.get("SUPABASE_URL") ?? "").replace(/\/+$/, "") + "/functions/v1/rappels";
       /* Tous les téléphones à la fois : chacun attendait la réponse du
          précédent. */
       await Promise.all(abos.map(async (a) => {
@@ -385,6 +448,7 @@ Deno.serve(async (req: Request) => {
              (dans la langue du joueur), pas du nom de la personne. La marque
              ne voyage que pour elle : un message ordinaire part tel qu'avant. */
           ...(d.moderation === true ? { moderation: true } : {}),
+          ...(jetons[a.membre] ? { accuse: { u: urlAccuse, j: jetons[a.membre] } } : {}),
         };
         try {
           await webpush.sendNotification(a.abonnement, JSON.stringify(charge), OPTIONS_MESSAGE);

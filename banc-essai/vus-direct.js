@@ -3,12 +3,15 @@
      instantanément qu'il a vu ton message. » Les coches suivaient la relève
    de la discussion (10 s). Le décor de groupes.js — un VRAI PostgreSQL.
    Taylor (iPhone) écrit ; Benoît (Android) et Chloé lisent.
-     1. Benoît a la discussion ouverte : le message de Taylor est vu chez
-        Taylor en moins de 1,5 s (deux coches) ;
-     2. Chloé ouvre la discussion plus tard : « vu par tout le monde » chez
-        Taylor en moins de 1,5 s ;
+   (v338) Les coches de WhatsApp : deux grises quand le message est arrivé
+   chez tous, deux bleues quand tous l'ont lu.
+     1. Benoît a la discussion ouverte (il le lit), Chloé a le jeu ouvert
+        (il arrive chez elle) : deux coches grises chez Taylor en moins de
+        1,5 s ;
+     2. Chloé ouvre la discussion plus tard : deux coches bleues chez Taylor
+        en moins de 1,5 s ;
      3. le signal n'est qu'un signal : un « lu » inventé ne fait rien passer
-        à « vu » (Taylor relit le serveur, qui dit la vérité) ;
+        au bleu (Taylor relit le serveur, qui dit la vérité) ;
      4. Taylor hors de la discussion ne relit rien (pas de requête pour
         rien) ;
      5. aucune erreur.
@@ -51,11 +54,12 @@ const dit = (quoi, bon, detail) => { console.log('  ' + (bon ? 'OK  ' : 'KO  ') 
       return { ctx, p };
     };
     const ouvrir = async (p) => { await p.evaluate((id) => ouvrirGroupe(id), g.id); return attendre(p, () => state.screen === 'groupe' && !!document.getElementById('compoTexte'), null, 9000); };
-    const sorte = (p, id) => p.evaluate((id) => { const v = document.querySelector('#fil .b-moi .b-heure[data-der="' + id + '"] .b-vu'); return v ? ['envoye', 'certains', 'tous'].find(k => v.classList.contains(k)) : null; }, id);
+    const sorte = (p, id) => p.evaluate((id) => { const v = document.querySelector('#fil .b-moi .b-heure[data-der="' + id + '"] .b-vu'); return v ? ['envoye', 'distribue', 'lu'].find(k => v.classList.contains(k)) : null; }, id);
     const devient = (p, id, s, ms) => attendre(p, ([id, s]) => { const v = document.querySelector('#fil .b-moi .b-heure[data-der="' + id + '"] .b-vu'); return !!v && v.classList.contains(s); }, [id, s], ms);
 
     const { p: pa } = await telephone(A, 'Taylor', '#4C86E8', IOS);
     const { p: pb } = await telephone(B, 'Benoît', '#E8734C', AND);
+    const { p: pc } = await telephone(C, 'Chloé', '#7BC86B', AND);
     await ouvrir(pa); await ouvrir(pb);
     await pa.waitForTimeout(1200);
     /* Les relèves de Taylor ne comptent pas : on mesure le chemin direct. */
@@ -67,17 +71,16 @@ const dit = (quoi, bon, detail) => { console.log('  ' + (bon ? 'OK  ' : 'KO  ') 
     await attendre(pa, () => [...document.querySelectorAll('#fil .b-moi .b-heure[data-der]')].some(h => +h.getAttribute('data-der') > 0), null, 6000);
     const id1 = +(await m.sql("select max(id) from public.messages where texte = 'Vous êtes là ?'"));
     let t0 = Date.now();
-    const vu1 = await devient(pa, id1, 'certains', 6000);
+    const vu1 = await devient(pa, id1, 'distribue', 6000);
     const d1 = Date.now() - t0;
-    dit('1. Benoît a la discussion ouverte : vu chez Taylor en moins de 1,5 s', vu1 && d1 < 1500, d1 + ' ms · ' + await sorte(pa, id1));
+    dit('1. Benoît le lit, il arrive chez Chloé : deux coches grises chez Taylor en moins de 1,5 s', vu1 && d1 < 1500, d1 + ' ms · ' + await sorte(pa, id1));
 
     /* 2 */
-    const { p: pc } = await telephone(C, 'Chloé', '#7BC86B', AND);
     t0 = Date.now();
     await ouvrir(pc);
-    const vu2 = await devient(pa, id1, 'tous', 6000);
+    const vu2 = await devient(pa, id1, 'lu', 6000);
     const d2 = Date.now() - t0;
-    dit('2. Chloé ouvre la discussion : « vu par tout le monde » chez Taylor en moins de 1,5 s', vu2 && d2 < 1500, d2 + ' ms (ouverture comprise)');
+    dit('2. Chloé ouvre la discussion : deux coches bleues chez Taylor en moins de 1,5 s', vu2 && d2 < 1500, d2 + ' ms (ouverture comprise)');
 
     /* 3 */
     await m.sql("update public.messages set cree_le = cree_le - interval '5 seconds'");
@@ -90,7 +93,7 @@ const dit = (quoi, bon, detail) => { console.log('  ' + (bon ? 'OK  ' : 'KO  ') 
     await pb.evaluate((gid) => signalerLu(gid), g.id);          // un « lu » sans avoir rien lu
     await pa.waitForTimeout(1200);
     const s3 = await sorte(pa, id3);
-    dit('3. un « lu » inventé ne fait rien passer à « vu » (le serveur dit la vérité)', s3 === 'envoye', s3);
+    dit('3. arrivé chez tous, un « lu » inventé ne fait rien passer au bleu (le serveur dit la vérité)', s3 === 'distribue', s3);
 
     /* 4 */
     await pa.evaluate(() => retourGroupes());
@@ -108,6 +111,6 @@ const dit = (quoi, bon, detail) => { console.log('  ' + (bon ? 'OK  ' : 'KO  ') 
     await nav.close();
     await m.arreter();
   }
-  console.log(ko === 0 ? '\n  OK — « Vu » arrive dans la seconde où l\'autre lit' : '\n  ' + ko + ' défaut(s)');
+  console.log(ko === 0 ? '\n  OK — les coches suivent dans la seconde où le message arrive, et où l\'autre lit' : '\n  ' + ko + ' défaut(s)');
   process.exit(ko === 0 ? 0 : 1);
 })();
