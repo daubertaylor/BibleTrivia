@@ -922,6 +922,59 @@ const ouvrirLaLangue = async (p, lg) => {
        bouclier, et l'invite « Au nom de la modération… ». */
     ['Modération · écrire', () => { grp.etat = Object.assign({ participe:'ok' }, grp.etat || {}, { moderateur:true, moderation_ecrit:true });
       render(); }],
+    /* LA MODÉRATION PLEINE (v336), quand le serveur la sait
+       (moderation_pleine). Un modérateur, simple membre d'un de ses groupes :
+       sa voix à côté du champ, puis d'un toucher celle de la modération et
+       ses pouvoirs (le mode modération) ; la page d'un admin (ce qu'il y fait
+       au nom de la modération) et celle du propriétaire (la sourdine seule :
+       un groupe ne change de main que par son propriétaire, ou par son
+       absence) ; de nouveau son profil, et la page d'un membre qui ne
+       propose plus que le passage en modération ; les personnes bannies, aucune
+       puis une, et le bannissement levé ; les lignes de la discussion au nom
+       de la modération, et celle d'un groupe passé à un autre faute de
+       nouvelles du propriétaire. Puis ce que voit un joueur qui n'est pas
+       modérateur : « Signaler » et « Bloquer », qu'un modérateur n'a plus. */
+    ['Modération pleine · ma voix', () => { __fermerTout(); __grpDecor(); grp.etat.moderation_pleine = true;
+      grp.membres['g-1'][0].role = 'membre'; grp.membres['g-1'][1].role = 'proprietaire';
+      grp.courant = 'g-1'; state.screen = 'groupe'; render(); }],
+    ['Modération pleine · la voix de la modération', async () => { changerVoix(); await new Promise(r => setTimeout(r, 120)); }],
+    ['Modération pleine · un admin', () => { __fermerTout(); grp.membres['g-1'][2].role = 'admin'; ouvrirMembre('u-3'); }],
+    ['Modération pleine · le propriétaire', () => { __fermerTout(); ouvrirMembre('u-2'); }],
+    /* (v336) LE MODE MODÉRATION : un toucher sur le bouclier, et de nouveau
+       son profil — le mot le dit ; la page d'un membre ne propose plus que
+       le passage en modération. */
+    ['Modération pleine · mon profil', async () => { __fermerTout(); changerVoix(); ouvrirMembre('u-4'); await new Promise(r => setTimeout(r, 120)); }],
+    ['Modération pleine · les infos', () => { __fermerTout(); __grpDecor(); grp.etat.moderation_pleine = true;
+      grp.courant = 'g-1'; state.screen = 'groupe'; render(); ouvrirInfosGroupe(); }],
+    ['Modération pleine · personne de banni', async () => { __fermerTout(); const l = listeGroupe; listeGroupe = async () => [];
+      ouvrirBannis(); await new Promise(r => setTimeout(r, 60)); listeGroupe = l; }],
+    ['Modération pleine · des bannis', async () => { __fermerTout(); const l = listeGroupe;
+      listeGroupe = async () => [{ id:'u-9', nom:'Ruth', couleur:'#8E5BD8', le:new Date(Date.now() - 3 * 86400000).toISOString() }];
+      ouvrirBannis(); await new Promise(r => setTimeout(r, 60)); listeGroupe = l; }],
+    ['Modération pleine · lever ?', () => { leverBannissement('u-9'); }],
+    ['Modération pleine · levé', async () => { __fermerTout(); const a = appelGroupe, m = showModal;
+      appelGroupe = async () => ({ ok:true }); showModal = (o) => { o.onOk && o.onOk(); };
+      leverBannissement('u-9'); await new Promise(r => setTimeout(r, 60)); appelGroupe = a; showModal = m; }],
+    ['Modération pleine · la discussion', () => { __fermerTout(); const le = new Date().toISOString(); const f = grp.fils['g-1']; let id = 100;
+      for (const [t, n] of [['exclu', 'Kim'], ['banni', 'Kim'], ['admin', 'Sam'], ['plus_admin', 'Sam'], ['photo', ''], ['photo_retiree', '']])
+        f.messages.push({ id:id++, groupe:'g-1', auteur:null, genre:'systeme', texte:t, donnees:{ nom:n, moderation:true }, cree_le:le, masque:false, supprime_le:null });
+      /* (v336) L'absence du propriétaire : le groupe est passé au suivant. */
+      f.messages.push({ id:id++, groupe:'g-1', auteur:null, genre:'systeme', texte:'proprietaire', donnees:{ nom:'Sam', ancien:'Kim', absence:true }, cree_le:le, masque:false, supprime_le:null });
+      majFil(); }],
+    ['Groupes · ce qu\'un joueur peut signaler', () => { __fermerTout(); __grpDecor(); grp.etat.moderateur = false;
+      grp.courant = 'g-1'; state.screen = 'groupe'; render(); actionsMessage('7'); }],
+    ['Groupes · un joueur regarde un membre', () => { __fermerTout(); ouvrirMembre('u-4'); }],
+    ['Groupes · un joueur regarde le groupe', () => { __fermerTout(); ouvrirInfosGroupe(); }],
+    /* (v336) L'INVITATION DIT QUI A REJOINT : la partie de Sam, rejointe
+       puis quittée avant le départ (« Avec Lee et toi », « Revenir dans la
+       partie ») ; la mienne, commencée à six (« Partie en cours », « Avec
+       Sam, Lee, Kim et 3 autres »). */
+    ['Groupes · l\'invitation suivie', () => { __fermerTout(); __grpDecor(); grp.etat.parties_suivies = true;
+      const f = grp.fils['g-1'].messages;
+      f.find(x => x.id === 10).donnees = { code:'ABCD', venus:[{ id:'u-3', nom:'Lee' }, { id:'moi-0', nom:'Taylor' }] };
+      f.find(x => x.id === 11).donnees = { code:'EFGH', lancee:true,
+        venus:['Sam', 'Lee', 'Kim', 'Ruth', 'Amos', 'Job'].map((nom, i) => ({ id:'u-' + (i + 2), nom })) };
+      grp.courant = 'g-1'; state.screen = 'groupe'; render(); }],
     /* LES PAGES QUE LES STORES DEMANDENT */
     ['Confidentialité',    () => { __fermerTout(); state.screen='mode'; render(); ouvrirConfidentialite(); }],
     ['Compte · supprimer', () => { __fermerTout(); __grpDecor(); state.screen='profile'; render(); demanderSuppressionCompte(); }],
@@ -1505,8 +1558,19 @@ const ouvrirLaLangue = async (p, lg) => {
        sa justification « ne sert plus ». Un banc qui change d'avis avec la
        date ne dit rien du jeu : les textes des versets ne créditent aucune
        phrase. */
+    /* ===== UNE QUESTION NON PLUS =====
+       Les questions d'une partie sont tirées au hasard, et sept textes de
+       questions-es.js portent « pronto » (« Apagaron sus lámparas demasiado
+       pronto »…) : le 25/10/2026, un passage déclarait le mot VU — et sa
+       justification « ne sert plus » —, le suivant non. Un banc qui change
+       d'avis avec le tirage ne dit rien du jeu : le texte d'une question ne
+       crédite aucune phrase PAR MORCEAU. Une valeur affichée telle quelle à
+       une place de question (l'étiquette du « Le savais-tu ? ») compte
+       toujours. */
+    const lusHorsQuestions = new Set();
+    for(const [, textes] of p2.releve) for(const { t, ou } of textes) if(!LIEUX_QUESTION.test(String(ou))) lusHorsQuestions.add(aplat(t));
     const debutsVersets = dico.versets.map(x => aplat(x).slice(0, 24)).filter(x => x.length >= 12);
-    const lusHorsVersets = [...lus].filter(t => !debutsVersets.some(d => t.includes(d)));
+    const lusHorsVersets = [...lusHorsQuestions].filter(t => !debutsVersets.some(d => t.includes(d)));
     const valeurs = new Set(dico.textes.map(aplat));
     const dansUnTexteComposé = (v) => {
       for(const t of lusHorsVersets) if(t !== v && t.indexOf(v) >= 0 && !valeurs.has(t)) return true;

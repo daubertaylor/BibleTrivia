@@ -222,6 +222,24 @@ begin
     check (photo is null or (char_length(photo) <= 60000 and photo ~ '^data:image/jpeg;base64,[A-Za-z0-9+/]+={0,2}$'));
 exception when duplicate_object then null;
 end $$;
+-- ===== (v336) LE JOUR OÙ CHACUN EST VENU POUR LA DERNIÈRE FOIS =====
+-- « Si le joueur reste inactif vraiment trop longtemps, le groupe changera
+--   de propriétaire — mais que par inactivité, pas par la modération. Et ça
+--   ne doit pas se choisir au hasard. » Le serveur note le jour où chacun a
+-- ouvert le jeu (voir mon_etat_groupes), et rien d'autre. Une table à part,
+-- que les règles d'accès ferment à tous : ce n'est pas un « vu à » que les
+-- autres liraient — seul le serveur s'en sert, pour savoir si le propriétaire
+-- d'un groupe est parti (voir L'ABSENCE DU PROPRIÉTAIRE).
+-- À l'installation, chacun est noté « vu aujourd'hui » : personne ne perd un
+-- groupe parce que le serveur ne l'avait pas encore vu. Recoller le fichier
+-- ne remet rien à zéro (une ligne déjà là ne bouge pas).
+create table if not exists public.activite (
+  membre  uuid primary key references public.profils(id) on delete cascade,
+  vu_le   timestamptz not null default now()
+);
+alter table public.activite enable row level security;
+revoke all on public.activite from anon, authenticated;
+insert into public.activite (membre) select id from public.profils on conflict (membre) do nothing;
 
 
 -- ============================================================================
@@ -433,12 +451,23 @@ revoke all on public.mots_interdits from anon, authenticated;
 -- Une erreur attendue (mot interdit, trop vite) n'est pas une panne : le jeu
 -- la traduit en phrase pour le joueur.
 
+-- (v336) Le jeu relit cet état à chaque ouverture et à l'entrée dans les
+-- groupes : c'est là que le serveur note que le joueur est venu (une fois
+-- l'heure au plus), puis regarde si l'un de ses groupes a perdu son
+-- propriétaire (voir L'ABSENCE DU PROPRIÉTAIRE). Seulement s'il peut se
+-- servir des groupes : un compte suspendu ne « vient » pas.
 create or replace function public.mon_etat_groupes() returns jsonb
-language plpgsql stable security definer set search_path = '' as $$
+language plpgsql volatile security definer set search_path = '' as $$
 declare
   moi uuid := auth.uid();
   r public.reglages_jeu;
 begin
+  if moi is not null and public._peut_participer(moi) = 'ok' then
+    insert into public.activite (membre, vu_le) values (moi, now())
+      on conflict (membre) do update set vu_le = excluded.vu_le
+      where public.activite.vu_le < now() - interval '1 hour';
+    perform public._veiller_absences(moi);
+  end if;
   select * into r from public.reglages_jeu limit 1;
   return jsonb_build_object(
     'ouverts', coalesce(r.groupes_ouverts, false),
@@ -459,6 +488,16 @@ begin
     -- un groupe qu'il n'a pas rejoint. Le jeu ne lui ouvre la barre d'écriture
     -- qu'ici — un serveur d'avant refuserait son message (« pas_membre »).
     'moderation_ecrit', true,
+    -- Et la modération pleine (v336) : le mode modération (moderer_membre,
+    -- p_moderation) — avec son profil, un modérateur n'a que son rôle ; en
+    -- mode modération, il écrit et agit au nom de la modération, aussi dans
+    -- ses propres groupes, met aussi le propriétaire en sourdine (sans jamais
+    -- lui retirer son groupe) ; la liste des bannis se lit. Le jeu n'ouvre
+    -- tout cela qu'ici.
+    'moderation_pleine', true,
+    -- Et les parties suivies (v336) : l'invitation dit qui a rejoint, et
+    -- qu'elle a commencé. Le jeu ne s'y inscrit qu'ici.
+    'parties_suivies', true,
     -- La taille d'un groupe (v332) : le jeu la dit quand un groupe est plein.
     'membres_max', 120,
     -- Pour un modérateur : combien de choses attendent une décision (une par
@@ -583,20 +622,92 @@ begin
   return jsonb_build_object('ok', true, 'id', g.id);
 end $$;
 
--- Quitter. Le propriétaire qui part passe la main au plus ancien admin, à
--- défaut au plus ancien membre ; un groupe vide s'éteint.
+-- (v336) PARTI DEPUIS PLUS DE TROIS MOIS ? Seulement si le serveur l'a vu, et
+-- pas depuis quatre-vingt-dix jours (voir « activite ») : sans trace, on ne
+-- conclut rien.
+create or replace function public._absent(u uuid) returns boolean
+language sql stable security definer set search_path = '' as $$
+  select coalesce((select a.vu_le < now() - interval '90 days' from public.activite a where a.membre = u), false)
+$$;
+
+-- (v336) QUI PREND LA MAIN quand le propriétaire s'en va ou ne vient plus.
+-- « Ça ne doit pas se choisir au hasard. » Une règle, toujours la même, dans
+-- cet ordre :
+--   1. quelqu'un qui vient encore (pas absent depuis trois mois) ;
+--   2. pas suspendu des groupes par la modération, pas en sourdine ;
+--   3. un admin plutôt qu'un simple membre ;
+--   4. le plus ancien dans le groupe — et, à la seconde près, toujours le même.
+create or replace function public._successeur(g uuid, partant uuid) returns uuid
+language sql stable security definer set search_path = '' as $$
+  select m.membre from public.membres m left join public.profils p on p.id = m.membre
+   where m.groupe = g and m.membre <> partant
+   order by public._absent(m.membre) asc,
+            (p.banni_le is not null) asc,
+            (m.muet_jusqu is not null and m.muet_jusqu > now()) asc,
+            (m.role = 'admin') desc,
+            m.rejoint_le asc, m.membre asc
+   limit 1
+$$;
+
+-- Quitter. Le propriétaire qui part passe la main au suivant, selon la règle
+-- (_successeur) ; un groupe vide s'éteint.
 create or replace function public._passer_la_main(g uuid, partant uuid) returns void
 language plpgsql volatile security definer set search_path = '' as $$
-declare suivant uuid;
+declare suivant uuid := public._successeur(g, partant);
 begin
-  select membre into suivant from public.membres
-   where groupe = g and membre <> partant
-   order by (role = 'admin') desc, rejoint_le asc limit 1;
   if suivant is null then
     update public.groupes set supprime_le = now() where id = g;
   else
-    update public.membres set role = 'proprietaire' where groupe = g and membre = suivant;
+    update public.membres set role = 'proprietaire', muet_jusqu = null where groupe = g and membre = suivant;
   end if;
+end $$;
+
+-- ===== (v336) L'ABSENCE DU PROPRIÉTAIRE =====
+-- Un groupe ne change de main que de deux façons : son propriétaire le cède
+-- ou s'en va — ou il ne vient plus. Jamais par la modération. Un propriétaire
+-- que le serveur n'a pas vu depuis quatre-vingt-dix jours laisse son groupe
+-- au suivant (_successeur), s'il y a quelqu'un qui vient encore, n'est ni
+-- suspendu ni en sourdine ; sinon rien ne bouge. Il en reste admin : revenu,
+-- il retrouve son groupe en membre de confiance. La discussion le dit :
+-- « Le groupe passe à Chloé : sans nouvelles de Benoît depuis trois mois. »
+-- Le passage se fait à la première visite d'un membre (mon_etat_groupes) :
+-- pas de tâche planifiée à installer, et rien ne bouge tant que personne ne
+-- vient. Deux membres au même instant : un seul passage (le second ne trouve
+-- plus de propriétaire absent à remplacer).
+create or replace function public._veiller_absences(u uuid) returns void
+language plpgsql volatile security definer set search_path = '' as $$
+declare x record; suivant uuid;
+begin
+  for x in select p.groupe, p.membre as proprio
+             from public.membres moi
+             join public.membres p on p.groupe = moi.groupe and p.role = 'proprietaire' and p.membre <> u
+             join public.groupes g on g.id = moi.groupe and g.supprime_le is null
+            where moi.membre = u and public._absent(p.membre)
+  loop
+    suivant := public._successeur(x.groupe, x.proprio);
+    if suivant is null or public._absent(suivant)
+       or exists (select 1 from public.profils where id = suivant and banni_le is not null)
+       or exists (select 1 from public.membres where groupe = x.groupe and membre = suivant and muet_jusqu > now()) then
+      continue;
+    end if;
+    update public.membres set role = 'admin' where groupe = x.groupe and membre = x.proprio and role = 'proprietaire';
+    if not found then continue; end if;
+    update public.membres set role = 'proprietaire', muet_jusqu = null where groupe = x.groupe and membre = suivant;
+    perform public._annoncer(x.groupe, 'proprietaire', jsonb_build_object('qui', suivant, 'nom', public._nom(suivant),
+                                                                         'absence', true, 'ancien', public._nom(x.proprio)));
+  end loop;
+end $$;
+
+-- (v336) Le groupe sait qui le garde désormais : « Chloé est maintenant
+-- propriétaire du groupe », après le départ de l'ancien.
+-- Rien si le groupe s'est éteint avec lui (personne d'autre n'y était).
+create or replace function public._annoncer_proprietaire(g uuid, ancien uuid) returns void
+language plpgsql volatile security definer set search_path = '' as $$
+declare qui uuid;
+begin
+  select m.membre into qui from public.membres m join public.groupes x on x.id = m.groupe and x.supprime_le is null
+   where m.groupe = g and m.role = 'proprietaire' and m.membre <> ancien limit 1;
+  if qui is not null then perform public._annoncer(g, 'proprietaire', jsonb_build_object('qui', qui, 'nom', public._nom(qui))); end if;
 end $$;
 
 create or replace function public.quitter_groupe(p_groupe uuid) returns jsonb
@@ -609,6 +720,7 @@ begin
   delete from public.membres where groupe = p_groupe and membre = moi;
   update public.groupes set nb_membres = greatest(0, nb_membres - 1) where id = p_groupe;
   perform public._annoncer(p_groupe, 'parti', jsonb_build_object('par', moi, 'nom', public._nom(moi)));
+  if r = 'proprietaire' then perform public._annoncer_proprietaire(p_groupe, moi); end if;
   return jsonb_build_object('ok', true);
 end $$;
 
@@ -645,8 +757,20 @@ begin
     if not public._moderateur(moi) or genre <> 'texte' then
       return jsonb_build_object('ok', false, 'erreur', 'pas_membre'); end if;
     moderation := true;
+  elsif genre = 'texte' and p_donnees is not null and p_donnees->'moderation' = 'true'::jsonb
+        and public._moderateur(moi) then
+    -- (v336) LA MODÉRATION PARLE AUSSI DANS SES PROPRES GROUPES. « Je veux
+    -- pouvoir écrire dans les groupes avec le truc de modération, même si je
+    -- suis déjà présent dans le groupe. » Un modérateur membre choisit,
+    -- message par message, au nom de qui il écrit : le téléphone le dit
+    -- (donnees.moderation), et le serveur ne le croit que d'un modérateur,
+    -- pour du texte. La marque d'un autre membre reste ignorée : son message
+    -- part à son nom, comme avant.
+    moderation := true;
   end if;
-  if m.muet_jusqu is not null and m.muet_jusqu > now() then
+  -- La sourdine est celle des admins du groupe : elle ne fait pas taire la
+  -- modération (v336).
+  if not moderation and m.muet_jusqu is not null and m.muet_jusqu > now() then
     return jsonb_build_object('ok', false, 'erreur', 'muet', 'jusqu', m.muet_jusqu); end if;
   select * into g from public.groupes where id = p_groupe and supprime_le is null;
   if g.id is null then return jsonb_build_object('ok', false, 'erreur', 'groupe_ferme'); end if;
@@ -745,6 +869,61 @@ begin
   if m.auteur is distinct from moi then return jsonb_build_object('ok', false, 'erreur', 'interdit'); end if;
   if not coalesce((m.donnees->>'fermee')::boolean, false) then
     update public.messages set donnees = donnees || jsonb_build_object('fermee', true) where id = p_message;
+  end if;
+  return jsonb_build_object('ok', true);
+end $$;
+
+-- ===== (v336) QUI A REJOINT LA PARTIE =====
+-- « Quand un joueur crée une partie, il faut un message comme quoi il a
+-- lancé une partie, et les joueurs qui rejoignent ensuite : de cette façon,
+-- les autres peuvent décider d'entrer ou pas. » L'invitation dit maintenant
+-- qui est déjà dans le salon. Chaque membre qui y entre s'y inscrit lui-même
+-- — son nom vient d'ici, pas de son téléphone — et s'en retire s'il ressort
+-- avant le départ (p_venu = false). Celui qui a lancé la partie n'est pas
+-- « venu » : c'est déjà lui que l'invitation nomme. Douze noms au plus.
+-- Une partie commencée, terminée ou vieille de plus de quarante-cinq minutes
+-- ne se rejoint plus. Le direct porte chaque changement à tous les membres :
+-- c'est une mise à jour du message, qui ne sonne jamais.
+create or replace function public.venir_partie(p_message bigint, p_venu boolean) returns jsonb
+language plpgsql volatile security definer set search_path = '' as $$
+declare moi uuid := auth.uid(); x public.messages; l jsonb; deja boolean;
+begin
+  if moi is null then return jsonb_build_object('ok', false, 'erreur', 'non_connecte'); end if;
+  select * into x from public.messages where id = p_message;
+  if x.id is null or x.genre <> 'partie' or x.supprime_le is not null then
+    return jsonb_build_object('ok', false, 'erreur', 'introuvable'); end if;
+  if not public._membre(x.groupe, moi) then return jsonb_build_object('ok', false, 'erreur', 'pas_membre'); end if;
+  if x.auteur = moi then return jsonb_build_object('ok', true); end if;
+  if coalesce((x.donnees->>'fermee')::boolean, false) or coalesce((x.donnees->>'lancee')::boolean, false)
+     or x.cree_le < now() - interval '45 minutes' then
+    return jsonb_build_object('ok', false, 'erreur', 'partie_finie'); end if;
+  select coalesce(jsonb_agg(e), '[]'::jsonb) into l
+    from jsonb_array_elements(coalesce(x.donnees->'venus', '[]'::jsonb)) e where e->>'id' is distinct from moi::text;
+  -- Rien ne change (déjà inscrit, ou déjà retiré) : rien ne s'écrit, rien ne
+  -- part en direct, et qui revient garde sa place dans la liste.
+  deja := jsonb_array_length(l) < jsonb_array_length(coalesce(x.donnees->'venus', '[]'::jsonb));
+  if coalesce(p_venu, true) = deja then return jsonb_build_object('ok', true); end if;
+  if coalesce(p_venu, true) then
+    if jsonb_array_length(l) >= 12 then return jsonb_build_object('ok', true); end if;
+    l := l || jsonb_build_array(jsonb_build_object('id', moi, 'nom', coalesce(public._nom(moi), '')));
+  end if;
+  update public.messages set donnees = coalesce(donnees, '{}'::jsonb) || jsonb_build_object('venus', l) where id = x.id;
+  return jsonb_build_object('ok', true);
+end $$;
+
+-- LA PARTIE COMMENCE (v336) : celui qui l'a lancée, et lui seul, le dit au
+-- départ. La liste ne bouge plus, et l'invitation ne se rejoint plus — un
+-- salon dont la partie est partie n'accueille personne.
+create or replace function public.commencer_partie(p_message bigint) returns jsonb
+language plpgsql volatile security definer set search_path = '' as $$
+declare moi uuid := auth.uid(); x public.messages;
+begin
+  if moi is null then return jsonb_build_object('ok', false, 'erreur', 'non_connecte'); end if;
+  select * into x from public.messages where id = p_message;
+  if x.id is null or x.genre <> 'partie' then return jsonb_build_object('ok', false, 'erreur', 'introuvable'); end if;
+  if x.auteur is distinct from moi then return jsonb_build_object('ok', false, 'erreur', 'interdit'); end if;
+  if not coalesce((x.donnees->>'fermee')::boolean, false) and not coalesce((x.donnees->>'lancee')::boolean, false) then
+    update public.messages set donnees = donnees || jsonb_build_object('lancee', true) where id = x.id;
   end if;
   return jsonb_build_object('ok', true);
 end $$;
@@ -881,31 +1060,68 @@ $$;
 -- MODÉRER UN MEMBRE. Le propriétaire peut tout ; un admin peut faire taire,
 -- exclure ou bannir un simple membre, jamais un autre admin ni le
 -- propriétaire. Seul le propriétaire nomme ou retire un admin.
-create or replace function public.moderer_membre(p_groupe uuid, p_membre uuid, p_action text, p_minutes int) returns jsonb
+-- ===== (v336) LE MODE MODÉRATION =====
+-- « Vu que je suis modérateur, je me demande s'il n'est pas juste d'avoir
+-- des permissions qu'en modération, et pas simplement avec mon profil
+-- classique. » Si : un modérateur n'agit au-delà de son rôle dans le groupe
+-- que s'il le dit (p_moderation — le jeu le dit en mode modération). Sans
+-- cela, son compte n'est qu'un membre comme les autres. Un jeu d'avant ne le
+-- dit jamais : il n'a plus que son rôle.
+drop function if exists public.moderer_membre(uuid, uuid, text, int);
+create or replace function public.moderer_membre(p_groupe uuid, p_membre uuid, p_action text, p_minutes int, p_moderation boolean default false) returns jsonb
 language plpgsql volatile security definer set search_path = '' as $$
 declare
   moi uuid := auth.uid();
   mon_role text := public._role(p_groupe, moi);
   son_role text := public._role(p_groupe, p_membre);
-  modo boolean := public._moderateur(moi);
+  modo boolean := coalesce(p_moderation, false) and public._moderateur(moi);
+  permis boolean;
+  d jsonb;
 begin
   if moi is null then return jsonb_build_object('ok', false, 'erreur', 'non_connecte'); end if;
   if p_membre = moi then return jsonb_build_object('ok', false, 'erreur', 'soi_meme'); end if;
-  if not modo and coalesce(mon_role, '') not in ('proprietaire','admin') then return jsonb_build_object('ok', false, 'erreur', 'interdit'); end if;
-  if not modo and mon_role = 'admin' and coalesce(son_role, 'membre') <> 'membre' then return jsonb_build_object('ok', false, 'erreur', 'interdit'); end if;
-  -- (v329) COMME SUR WHATSAPP, un admin peut nommer d'autres admins parmi
-  -- les membres (la règle ci-dessus le borne aux simples membres) ; retirer
-  -- le rôle d'un admin reste au propriétaire.
-  if p_action = 'retrograder' and not (modo or mon_role = 'proprietaire') then
+  if coalesce(p_action, '') not in ('muet','parler','exclure','bannir','debannir','promouvoir','retrograder','ceder') then
+    return jsonb_build_object('ok', false, 'erreur', 'action'); end if;
+  -- CE QUE SON RÔLE DANS LE GROUPE PERMET, sans la modération. Le propriétaire
+  -- agit sur tous les autres ; un admin, sur les simples membres — (v329) comme
+  -- sur WhatsApp, il en nomme d'autres admins ; retirer le rôle d'un admin et
+  -- (v329) céder le groupe restent au propriétaire, qui en reste admin.
+  permis := coalesce(case
+    when p_action in ('retrograder','ceder') then mon_role = 'proprietaire'
+    when p_action = 'debannir' then mon_role in ('proprietaire','admin')
+    when mon_role = 'proprietaire' then true
+    when mon_role = 'admin' then coalesce(son_role, 'membre') = 'membre'
+    else false end, false);
+  -- ===== (v336) UN GROUPE NE CHANGE DE MAIN QUE PAR SON PROPRIÉTAIRE, OU
+  -- PAR SON ABSENCE =====
+  -- « Il sera changé de propriétaire, mais que par inactivité, pas par la
+  -- modération. » Le propriétaire cède son groupe ou s'en va ; s'il ne vient
+  -- plus, le groupe passe au suivant (voir L'ABSENCE DU PROPRIÉTAIRE).
+  -- Personne d'autre ne le donne, ne le retire ni ne le bannit — pas même la
+  -- modération.
+  if p_action = 'ceder' and mon_role is distinct from 'proprietaire' then
     return jsonb_build_object('ok', false, 'erreur', 'interdit'); end if;
-  -- (v329) CÉDER LE GROUPE : le propriétaire, et lui seul, le donne à un
-  -- membre ; il en reste admin.
+  if son_role = 'proprietaire' and p_action in ('exclure','bannir') then
+    return jsonb_build_object('ok', false, 'erreur', 'interdit'); end if;
+  -- ===== (v336) LA MODÉRATION AGIT PARTOUT, ET LE DIT =====
+  -- « Vérifie les possibilités que j'ai au niveau des droits — retirer,
+  -- nommer administrateur, etc. — sur les groupes, en sachant que je suis
+  -- dans la modération : je veux que tout soit cohérent. » En mode
+  -- modération, un modérateur agit dans tout groupe, qu'il en soit membre ou
+  -- non, sur tous ses membres : sourdine (le propriétaire compris), rôle
+  -- d'admin, retrait, bannissement. Et tout ce qu'il fait alors, c'est la
+  -- modération qui le fait : la ligne de la discussion le dit (« La
+  -- modération a retiré… »), jamais avec son nom — sauf céder son groupe,
+  -- qui reste le geste d'un propriétaire.
+  if not permis and not modo then return jsonb_build_object('ok', false, 'erreur', 'interdit'); end if;
+  d := jsonb_build_object('qui', p_membre, 'nom', public._nom(p_membre));
+  if modo and p_action <> 'ceder' then d := d || jsonb_build_object('moderation', true); end if;
   if p_action = 'ceder' then
-    if mon_role is distinct from 'proprietaire' then return jsonb_build_object('ok', false, 'erreur', 'interdit'); end if;
     if son_role is null then return jsonb_build_object('ok', false, 'erreur', 'pas_membre'); end if;
+    -- (v329) Le propriétaire en reste admin.
     update public.membres set role = 'admin' where groupe = p_groupe and membre = moi;
     update public.membres set role = 'proprietaire', muet_jusqu = null where groupe = p_groupe and membre = p_membre;
-    perform public._annoncer(p_groupe, 'proprietaire', jsonb_build_object('qui', p_membre, 'nom', public._nom(p_membre)));
+    perform public._annoncer(p_groupe, 'proprietaire', d);
     return jsonb_build_object('ok', true);
   end if;
   if p_action = 'muet' then
@@ -914,31 +1130,23 @@ begin
   elsif p_action = 'parler' then
     update public.membres set muet_jusqu = null where groupe = p_groupe and membre = p_membre;
   elsif p_action in ('exclure','bannir') then
-    if son_role = 'proprietaire' then return jsonb_build_object('ok', false, 'erreur', 'interdit'); end if;
     delete from public.membres where groupe = p_groupe and membre = p_membre;
     if found then update public.groupes set nb_membres = greatest(0, nb_membres - 1) where id = p_groupe; end if;
     if p_action = 'bannir' then
       insert into public.bannis (groupe, membre, par) values (p_groupe, p_membre, moi) on conflict do nothing;
     end if;
-    perform public._annoncer(p_groupe, case when p_action = 'bannir' then 'banni' else 'exclu' end,
-                             jsonb_build_object('qui', p_membre, 'nom', public._nom(p_membre)));
+    perform public._annoncer(p_groupe, case when p_action = 'bannir' then 'banni' else 'exclu' end, d);
   elsif p_action = 'debannir' then
     delete from public.bannis where groupe = p_groupe and membre = p_membre;
   elsif p_action = 'promouvoir' then
     update public.membres set role = 'admin' where groupe = p_groupe and membre = p_membre and role = 'membre';
-    if found then
-      perform public._annoncer(p_groupe, 'admin', jsonb_build_object('qui', p_membre, 'nom', public._nom(p_membre)));
-    end if;
+    if found then perform public._annoncer(p_groupe, 'admin', d); end if;
   elsif p_action = 'retrograder' then
     update public.membres set role = 'membre' where groupe = p_groupe and membre = p_membre and role = 'admin';
     -- (v335) « Lorsque je retire quelqu'un admin, il n'est pas mentionné dans
     -- le chat. » Nommer un admin s'annonçait ; le retirer se faisait en
     -- silence, et le groupe ne savait plus qui le gardait. Les deux se disent.
-    if found then
-      perform public._annoncer(p_groupe, 'plus_admin', jsonb_build_object('qui', p_membre, 'nom', public._nom(p_membre)));
-    end if;
-  else
-    return jsonb_build_object('ok', false, 'erreur', 'action');
+    if found then perform public._annoncer(p_groupe, 'plus_admin', d); end if;
   end if;
   return jsonb_build_object('ok', true);
 end $$;
@@ -1032,8 +1240,12 @@ begin
   if g.photo_maj > t - 3000 then return jsonb_build_object('ok', false, 'erreur', 'trop_vite'); end if;
   update public.groupes set photo = p_photo, photo_maj = t where id = p_groupe;
   if g.nb_membres > 1 then
+    -- (v336) La modération qui change la photo d'un groupe où elle n'a pas de
+    -- rôle le fait en son nom à elle, pas en celui de la personne.
     perform public._annoncer(p_groupe, case when p_photo is null then 'photo_retiree' else 'photo' end,
-                             jsonb_build_object('nom', public._nom(moi)));
+                             case when coalesce(public._role(p_groupe, moi), '') in ('proprietaire','admin')
+                                  then jsonb_build_object('nom', public._nom(moi))
+                                  else jsonb_build_object('moderation', true) end);
   end if;
   return jsonb_build_object('ok', true, 'photo_maj', t);
 end $$;
@@ -1098,6 +1310,25 @@ $$;
 -- triplet message · personne · groupe). On montre donc le premier
 -- signalement de chaque objet, le nombre de personnes qui l'ont fait, et
 -- leurs précisions (trois au plus).
+-- ===== (v336) LES PERSONNES BANNIES D'UN GROUPE =====
+-- Bannir sans pouvoir revenir sur sa décision n'était pas cohérent : le
+-- propriétaire, les admins et la modération voient qui est banni, et lèvent
+-- un bannissement (moderer_membre, « debannir »). Le nom vient d'ici : un
+-- banni ne partage plus de groupe avec eux, son profil ne se lirait plus.
+create or replace function public.bannis_du_groupe(p_groupe uuid) returns setof jsonb
+language plpgsql stable security definer set search_path = '' as $$
+declare moi uuid := auth.uid();
+begin
+  if moi is null or not (public._moderateur(moi) or coalesce(public._role(p_groupe, moi), '') in ('proprietaire','admin')) then
+    return; end if;
+  return query
+    select jsonb_build_object('id', b.membre, 'nom', coalesce(p.nom, ''), 'couleur', coalesce(p.couleur, '#8A8F98'), 'le', b.le)
+      from public.bannis b left join public.profils p on p.id = b.membre
+     where b.groupe = p_groupe
+     order by b.le desc
+     limit 200;
+end $$;
+
 create or replace function public.moderation_ouverte() returns setof jsonb
 language sql stable security definer set search_path = '' as $$
   select x.j from (
@@ -1192,6 +1423,7 @@ declare g record;
 begin
   for g in select groupe from public.membres where membre = u and role = 'proprietaire' loop
     perform public._passer_la_main(g.groupe, u);
+    perform public._annoncer_proprietaire(g.groupe, u);   -- (v336)
   end loop;
   update public.groupes x set nb_membres = greatest(0, nb_membres - 1)
     from public.membres m where m.groupe = x.id and m.membre = u;
@@ -1212,12 +1444,13 @@ begin
             where n.nspname = 'public'
               and p.proname in ('_moderateur','_role','_membre','_partage_un_groupe','_bloque','_normaliser','_interdit',
                                 '_coordonnees','_code','_peut_participer','_annoncer','_passer_la_main','_masquer','_quitter_tout','_nom',
+                                '_absent','_successeur','_veiller_absences','_annoncer_proprietaire',
                                 '_maintenant_ms','_photo_valide','poser_photo','poser_photo_groupe',
                                 'mon_etat_groupes','poser_profil','accepter_regles','creer_groupe','groupe_par_code',
                                 'rejoindre_groupe','quitter_groupe','envoyer_message','fermer_partie','marquer_lu','regler_notifs','supprimer_message',
                                 'signaler','bloquer','debloquer','moderer_membre','modifier_groupe','nouveau_code',
                                 'supprimer_groupe','groupes_publics','mes_groupes','moderation_ouverte',
-                                'traiter_signalement')
+                                'traiter_signalement','bannis_du_groupe','venir_partie','commencer_partie')
   loop
     execute format('revoke all on function %s from public, anon, authenticated', f.sig);
     if left(f.proname, 1) <> '_' then
