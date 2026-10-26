@@ -121,7 +121,7 @@ const dit = (quoi, bon, detail) => { console.log('  ' + (bon ? 'OK  ' : 'KO  ') 
     await attendre(dora.p, () => !!document.querySelector('#fil .b-partie'), null, 9000);
     const b2 = await dora.p.evaluate(BULLE);
     dit('2. Benoît lance la partie : chez Dora, l\'invitation — personne encore, « Rejoindre la partie »',
-      b2 && b2.titre === 'Benoît lance une partie' && !b2.avec && b2.visages === 0 && b2.bouton === 'Rejoindre la partie', JSON.stringify(b2));
+      b2 && b2.titre === 'Benoît a lancé une partie' && !b2.avec && b2.visages === 0 && b2.bouton === 'Rejoindre la partie', JSON.stringify(b2));
 
     /* 3 */
     await attendre(chl.p, () => !!document.querySelector('#fil .b-partie .grp-pill'), null, 9000);

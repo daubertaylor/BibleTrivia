@@ -6043,8 +6043,27 @@
   /* Et au-dessus de la barre d'écriture, le message auquel on répond. */
   .compo-cite{ display:flex; align-items:center; gap:0.4rem; margin:0 0 0.4rem; padding:0.4rem 0.3rem 0.4rem 0.8rem;
     border-radius:calc(var(--r-l) - 2px); background:rgba(var(--msg-rgb),0.1); }
-  .compo-cite.arrive{ animation:ccArrive 0.24s cubic-bezier(0.2,0.85,0.3,1) both; }
+  /* ===== (v337) LA RÉPONSE S'OUVRE ET SE REFERME, ELLE NE SAUTE PLUS =====
+     « Vérifie l'animation quand je clique pour répondre à un message, et sa
+     fermeture. » Mesuré image par image : à l'ouverture, la barre d'écriture
+     grandissait de 56 px d'une image à l'autre — et toute la discussion
+     sautait avec elle —, seule la citation venait en fondu, DANS une barre
+     déjà grande ; à la fermeture, tout repartait en une image, sans rien.
+     La citation vit maintenant dans un tiroir (.compo-cite-z) dont la hauteur
+     s'ouvre de 0 à la sienne sur l'horloge du jeu (--tr-ouvre, celle du
+     clavier qui monte au même moment) et se referme sur --tr-ferme : la
+     barre grandit et rapetisse en douceur, le fil, s'il était au bas, monte
+     et descend avec elle (son ResizeObserver), le verre suit (glassSuivre).
+     La citation entre en fondu et ressort de même. */
+  .compo-cite-z{ display:grid; grid-template-rows:0fr; transition:grid-template-rows var(--tr-ferme); }
+  .compo-cite-z.ouverte{ grid-template-rows:1fr; transition:grid-template-rows var(--tr-ouvre); }
+  /* La citation sort de DERRIÈRE la barre d'écriture (posée au bas du
+     tiroir), et y rentre : on ne la voit pas se dévoiler par le haut. */
+  .compo-cite-z > .ccz-in{ min-height:0; overflow:hidden; display:flex; flex-direction:column; justify-content:flex-end; }
+  .compo-cite.arrive{ animation:ccArrive var(--tr-ouvre) both; }
   @keyframes ccArrive{ from{ opacity:0; transform:translateY(0.35rem); } to{ opacity:1; transform:none; } }
+  .compo-cite.part{ animation:ccPart var(--tr-ferme) both; pointer-events:none; }
+  @keyframes ccPart{ from{ opacity:1; transform:none; } to{ opacity:0; transform:translateY(0.35rem); } }
   .compo-cite .cc-t{ flex:1; min-width:0; display:flex; flex-direction:column; gap:0.02rem; }
   .compo-cite .cc-t b{ font-family:'Poppins',sans-serif; font-size:0.78rem; font-weight:700; color:var(--msg-fonce); }
   .compo-cite .cc-t span{ font-size:0.86rem; color:var(--ink-soft); white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
@@ -6900,6 +6919,8 @@ const TEXTES = {
     "ton e-mail sert à te connecter ; ta progression et ta photo sont sauvegardées en ligne.":"your email is used to sign in; your progress and photo are saved online.",
     "Les autres voient":"Others see",
     "ton nom, ta couleur, ta photo et, dans tes groupes, tes messages.":"your name, color and photo — and, in your groups, your messages.",
+    "Ta dernière visite":"Your last visit",
+    "est notée, et seul le serveur s'en sert : après 90 jours sans toi, un groupe dont tu es propriétaire passe à quelqu'un d'autre.":"is recorded, and only the server uses it: after 90 days without you, a group you own passes to someone else.",
     "La modération":"Moderators",
     "peut lire les groupes et y écrire (signé « La modération »), pour faire respecter les règles.":"can read groups and write in them (signed “Moderators”) to enforce the rules.",
     "Au nom de la modération…":"On behalf of moderators…",
@@ -7152,16 +7173,15 @@ const TEXTES = {
     "Ouvrir":"Open",
     "Tu n'es encore dans aucun groupe. Crée le tien, ou entre avec un code.":"You're not in any group yet. Create your own, or join with a code.",
     "Aucun groupe public pour l'instant.":"No public groups yet.",
-    "Aucun autre groupe public pour l'instant.":"No other public groups yet.",
     "Aucun groupe ne correspond.":"No group matches.",
     "Groupe public":"Public group",
     "Groupe privé":"Private group",
     "Message masqué":"Message hidden",
-    "Tu lances une partie":"You're starting a game",
+    "Tu as lancé une partie":"You started a game",
     "Termine ou ferme ta partie avant d'en lancer une autre.":"Finish or close your game before starting another one.",
     "Doucement : attends un peu avant de lancer une autre partie.":"Easy: wait a little before starting another game.",
     "Attends {s} s avant de lancer une autre partie.":"Wait {s} s before starting another game.",
-    "{nom} lance une partie":"{nom} is starting a game",
+    "{nom} a lancé une partie":"{nom} started a game",
     "Toi : {texte}":"You: {texte}",
     "{nom} : {texte}":"{nom}: {texte}",
     "{nom} te mentionne : {texte}":"{nom} mentioned you: {texte}",
@@ -7675,6 +7695,8 @@ const TEXTES = {
     "ton e-mail sert à te connecter ; ta progression et ta photo sont sauvegardées en ligne.":"tu correo sirve para iniciar sesión; tu progreso y tu foto se guardan en línea.",
     "Les autres voient":"Los demás ven",
     "ton nom, ta couleur, ta photo et, dans tes groupes, tes messages.":"tu nombre, tu color, tu foto y, en tus grupos, tus mensajes.",
+    "Ta dernière visite":"Tu última visita",
+    "est notée, et seul le serveur s'en sert : après 90 jours sans toi, un groupe dont tu es propriétaire passe à quelqu'un d'autre.":"queda registrada y solo la usa el servidor: tras 90 días sin ti, un grupo del que eres titular pasa a otra persona.",
     "La modération":"La moderación",
     "peut lire les groupes et y écrire (signé « La modération »), pour faire respecter les règles.":"puede leer los grupos y escribir en ellos (firmado «La moderación») para hacer cumplir las reglas.",
     "Au nom de la modération…":"Como moderación…",
@@ -7933,16 +7955,15 @@ const TEXTES = {
     "Ouvrir":"Abrir",
     "Tu n'es encore dans aucun groupe. Crée le tien, ou entre avec un code.":"Aún no estás en ningún grupo. Crea el tuyo o entra con un código.",
     "Aucun groupe public pour l'instant.":"Todavía no hay grupos públicos.",
-    "Aucun autre groupe public pour l'instant.":"Todavía no hay otros grupos públicos.",
     "Aucun groupe ne correspond.":"Ningún grupo coincide.",
     "Groupe public":"Grupo público",
     "Groupe privé":"Grupo privado",
     "Message masqué":"Mensaje oculto",
-    "Tu lances une partie":"Inicias una partida",
+    "Tu as lancé une partie":"Iniciaste una partida",
     "Termine ou ferme ta partie avant d'en lancer une autre.":"Termina o cierra tu partida antes de lanzar otra.",
     "Doucement : attends un peu avant de lancer une autre partie.":"Con calma: espera un poco antes de lanzar otra partida.",
     "Attends {s} s avant de lancer une autre partie.":"Espera {s} s antes de lanzar otra partida.",
-    "{nom} lance une partie":"{nom} inicia una partida",
+    "{nom} a lancé une partie":"{nom} inició una partida",
     "Toi : {texte}":"Tú: {texte}",
     "{nom} : {texte}":"{nom}: {texte}",
     "{nom} te mentionne : {texte}":"{nom} te menciona: {texte}",
@@ -10503,7 +10524,7 @@ const SUPABASE_ANON_KEY = "sb_publishable_FDJ_R0foC7uIeHmxVrj6rA_2NeIgW2a";
    remontée d'un téléphone ne vaut rien si on ne sait pas QUELLE version
    tournait. Elle doit rester égale au CACHE de sw.js — c'est ce que vérifie
    banc-essai/version.js, qui refuse de laisser publier les deux en désaccord. */
-const VERSION_JEU = "v336";
+const VERSION_JEU = "v337";
 
 /* ===================== QUAND ÇA CASSE CHEZ UN JOUEUR =====================
    « Si quelque chose casse chez cinq d'entre eux sur un modèle de téléphone
@@ -14729,7 +14750,12 @@ try{
         de.style.setProperty("--vvh", Math.round(hauteurVisible()) + "px");
         de.style.setProperty("--kbh", Math.round(cache) + "px");
         poserDecalage(decalageVisible());
-        if(!de.classList.contains("kb-fil")){ de.classList.add("kb", "kb-fil"); try{ glassSuivre(500); }catch(e){} }
+        if(!de.classList.contains("kb-fil")){
+          de.classList.add("kb", "kb-fil"); try{ glassSuivre(500); }catch(e){}
+          /* (v337) La barre d'écriture monte avec l'écran (0,52 s) : arrivée,
+             iOS y replace son curseur (voir LE CURSEUR, LÀ OÙ L'ON ÉCRIT). */
+          try{ recalerCurseurApres(580); }catch(e){}
+        }
       } else {
         poserDecalage(0);
         if(de.classList.contains("kb-fil")){ de.classList.remove("kb", "kb-fil"); try{ glassSuivre(500); }catch(e){} }
@@ -23418,7 +23444,7 @@ function apercuGroupe(g){
   if(a.supprime) return g.ouvert ? T("Groupe public") : T("Groupe privé");
   if(a.masque) return T("Message masqué");
   const nom = deLaModeration(a) ? T("La modération") : (a.nom || ((grp.profils[a.auteur] || {}).nom) || T("Quelqu'un"));
-  if(a.genre === "partie") return moi ? T("Tu lances une partie") : Tf("{nom} lance une partie", { nom });
+  if(a.genre === "partie") return moi ? T("Tu as lancé une partie") : Tf("{nom} a lancé une partie", { nom });
   const texte = a.texte || "";
   return (moi && !deLaModeration(a)) ? Tf("Toi : {texte}", { texte }) : Tf("{nom} : {texte}", { nom, texte });
 }
@@ -23476,14 +23502,16 @@ function lignesMes(){
 }
 function lignesPublics(){
   if(!grp.publics) return `<div class="grp-vide"><span class="spinner"></span></div>`;
-  /* (v335) « Quelque chose fait bizarre… peut-être les groupes qui
-     s'ouvrent séparément » : un groupe dont on est membre se voyait deux
-     fois sur l'écran — dans Mes groupes, et dans Découvrir avec « Ouvrir ».
-     Découvrir propose ce qu'on n'a pas encore. Une recherche, elle, trouve
-     tout (le sien avec « Ouvrir ») : on y cherche un nom précis. */
-  const l = grp.recherche ? grp.publics : grp.publics.filter(g => !g.membre);
+  /* (v337) UN GROUPE PUBLIC LE RESTE, MÊME REJOINT. « Maintenant que j'ai
+     rejoint un groupe public, je ne le trouve plus dans les groupes publics :
+     je le trouve dans mes groupes, mais plus là — un peu comme si c'était un
+     groupe privé. » La v335 l'en retirait, pour qu'un groupe ne se voie pas
+     deux fois sur l'écran. Mais Découvrir est LA LISTE des groupes publics :
+     on y cherche, on y montre à un ami où il est. Il y reste donc, à sa
+     place, avec « Ouvrir » au lieu de « Rejoindre ». */
+  const l = grp.publics;
   if(!l.length){
-    return `<div class="grp-vide">${grp.recherche ? T("Aucun groupe ne correspond.") : (grp.publics.length ? T("Aucun autre groupe public pour l'instant.") : T("Aucun groupe public pour l'instant."))}</div>`;
+    return `<div class="grp-vide">${grp.recherche ? T("Aucun groupe ne correspond.") : T("Aucun groupe public pour l'instant.")}</div>`;
   }
   return l.map(g=>`<div class="grp-ligne">
       ${pastilleGroupe(g)}
@@ -25075,7 +25103,7 @@ function bulleHtml(m){
     const ici = !!net.room && net.code === code;
     return `<div class="b-bulle b-partie${finie ? " finie" : ""}${lancee ? " lancee" : ""}" data-m="${m.id}" onclick="toucherMessage('${m.id}')">
         <span class="bp-ico">${ICONS.manette}</span>
-        <b>${moi ? T("Tu lances une partie") : escapeHtml(Tf("{nom} lance une partie", { nom }))}</b>
+        <b>${moi ? T("Tu as lancé une partie") : escapeHtml(Tf("{nom} a lancé une partie", { nom }))}</b>
         ${venus.length ? `<span class="bp-venus">${visagesVenus(venus)}<small>${escapeHtml(avecQui(venus))}</small></span>` : ""}
         ${finie ? `<small>${T("Partie terminée")}</small>` : lancee ? `<small>${T("Partie en cours")}</small>` : (moi ? `<small>${escapeHtml(Tf("Code {code}", { code }))}</small>` : "")}
         ${code && !finie && !lancee && !ici ? `<button class="grp-pill" onclick="event.stopPropagation(); rejoindrePartieGroupe('${code}')">${moiVenu ? T("Revenir dans la partie") : T("Rejoindre la partie")}</button>` : ""}
@@ -26106,7 +26134,7 @@ function annoncerDansLeJeu(m, g){
   if(state.screen === "groupes") return;
   const nom = nomAuteur(m);
   const texte = String(m.texte || "").replace(/\s+/g, " ").trim();
-  const ligne = m.genre === "partie" ? Tf("{nom} lance une partie", { nom })
+  const ligne = m.genre === "partie" ? Tf("{nom} a lancé une partie", { nom })
               : Tf(nomme ? "{nom} te mentionne : {texte}" : "{nom} : {texte}", { nom, texte });
   montrerBandeau(g, ligne);
 }
@@ -26251,11 +26279,58 @@ function toucherMessage(id){
             && (!enLecture() || moderationEcrit()) && !monMuetJusqu() && !!document.getElementById("compoTexte");
   if(!peut){ actionsMessage(id); return; }
   grp.reponse = { g:grp.courant, id:m.id };
-  majReponseCompo(true);
+  majReponseCompo();
   const z = document.getElementById("compoTexte");
-  if(z){ try{ z.focus({ preventScroll:true }); }catch(e){ try{ z.focus(); }catch(e2){} } }
+  if(z){
+    const avait = document.activeElement === z;
+    try{ z.focus({ preventScroll:true }); }catch(e){ try{ z.focus(); }catch(e2){} }
+    /* (v337) Le foyer donné par le jeu pose le curseur au bout de ce qui est
+       écrit, comme un toucher dans le champ (voir le module du clavier) ; un
+       champ qui l'avait déjà garde le sien. Puis, tout posé, iOS le redessine
+       à sa place (voir LE CURSEUR, LÀ OÙ L'ON ÉCRIT). */
+    if(!avait && document.activeElement === z){ try{ const n = z.value.length; z.setSelectionRange(n, n); }catch(e){} }
+    recalerCurseurApres(620);
+  }
   try{ if(navigator.vibrate) navigator.vibrate(8); }catch(e){}
 }
+/* ===== (v337) LE CURSEUR, LÀ OÙ L'ON ÉCRIT =====
+   « Lorsque je clique sur un message pour lui répondre, le curseur
+     d'écriture se met au mauvais endroit. » Sur iPhone, le curseur n'est pas
+   peint par la page : iOS le dessine lui-même, par-dessus, à la place que
+   le champ occupait quand il a reçu le foyer. Or juste après, tout bouge
+   sous lui : le clavier monte et la discussion se rétrécit avec lui
+   (0,52 s), la citation s'ouvre au-dessus du champ. iOS ne replace son
+   curseur qu'au changement de sélection suivant — on tape une lettre, et il
+   rejoint le champ. On lui en donne un, une fois tout posé : la sélection
+   va d'un cran et revient (un champ vide reçoit un caractère sans largeur,
+   aussitôt retiré), dans la même tâche — rien ne se peint entre les deux,
+   rien ne s'écrit (aucun « input »), mais iOS recalcule la place de son
+   curseur. Jamais pendant une saisie en cours (une lettre accentuée, un mot
+   en composition). Android peint son curseur avec la page : rien à faire. */
+const IOS_CURSEUR = /iP(hone|od|ad)/.test(navigator.userAgent || "") || (navigator.platform === "MacIntel" && navigator.maxTouchPoints > 1);
+let curseurT = 0, compositionEnCours = false;
+document.addEventListener("compositionstart", ()=>{ compositionEnCours = true; }, true);
+document.addEventListener("compositionend", ()=>{ compositionEnCours = false; }, true);
+function recalerCurseur(){
+  curseurT = 0;
+  if(!IOS_CURSEUR || compositionEnCours) return;
+  const t = document.activeElement;
+  if(!t || t.id !== "compoTexte") return;
+  let s, e, sens;
+  try{ s = t.selectionStart; e = t.selectionEnd; sens = t.selectionDirection || "none"; }catch(err){ return; }
+  if(typeof s !== "number" || typeof e !== "number") return;
+  try{
+    if(t.value.length){
+      const a = s > 0 ? s - 1 : s + 1;
+      t.setSelectionRange(a, a);
+      t.setSelectionRange(s, e, sens);
+    } else {
+      t.value = "​"; t.setSelectionRange(1, 1);
+      t.value = ""; t.setSelectionRange(0, 0);
+    }
+  }catch(err){}
+}
+function recalerCurseurApres(ms){ clearTimeout(curseurT); curseurT = setTimeout(recalerCurseur, ms); }
 function reponseEnCours(gid){ return (grp.reponse && grp.reponse.g === gid) ? grp.reponse.id : null; }
 function annulerReponse(){
   grp.reponse = null;
@@ -26271,31 +26346,82 @@ function resumeCite(o){
   let texte;
   if(o.supprime_le) texte = T("Message supprimé");
   else if(o.masque) texte = T("Message masqué");
-  else if(o.genre === "partie") texte = moi ? T("Tu lances une partie") : Tf("{nom} lance une partie", { nom });
+  else if(o.genre === "partie") texte = moi ? T("Tu as lancé une partie") : Tf("{nom} a lancé une partie", { nom });
   else texte = String(o.texte || "").replace(/\s+/g, " ").trim();
   if(texte.length > 140) texte = texte.slice(0, 139) + "…";
   return { nom, texte, moi };
 }
-function compoCiteHtml(arrive){
+function resumeReponse(){
   const id = reponseEnCours(grp.courant);
   const o = id ? (trouverMessage(id) || citeConnu(id)) : null;
-  const r = o ? resumeCite(o) : null;
-  if(!r) return "";
+  return o ? resumeCite(o) : null;
+}
+function citeInterieur(r, arrive){
   return `<div class="compo-cite${arrive ? " arrive" : ""}"><span class="cc-t"><b>${escapeHtml(r.nom)}</b><span>${escapeHtml(r.texte)}</span></span>`
     + `<button class="cc-x" onpointerdown="event.preventDefault()" onmousedown="event.preventDefault()" onclick="annulerReponse()" aria-label="${T("Annuler la réponse")}"><span class="ico">${ICONS.close}</span></button></div>`;
 }
-function majReponseCompo(arrive){
+/* L'écran qui se dessine avec une réponse en cours : le tiroir déjà ouvert. */
+function compoCiteHtml(){
+  const r = resumeReponse();
+  return r ? `<div class="compo-cite-z ouverte"><div class="ccz-in">${citeInterieur(r)}</div></div>` : "";
+}
+/* (v337) Le tiroir de la citation (voir LA RÉPONSE S'OUVRE ET SE REFERME) :
+   il s'ouvre, change de message sur place, ou se referme puis s'en va. */
+function majReponseCompo(){
   const c = document.getElementById("compo");
   if(!c) return;
+  const r = resumeReponse();
+  let w = c.querySelector(".compo-cite-z");
+  if(!r && !w) return;
   const z = document.getElementById("fil");
   const enBas = !!z && z.scrollHeight - z.scrollTop - z.clientHeight < 40;
-  const q = c.querySelector(".compo-cite");
-  const h = compoCiteHtml(arrive && !q);
-  if(q) q.remove();
-  if(h) c.insertAdjacentHTML("afterbegin", h);
-  if(!q && !h) return;
-  try{ glassRelayout(); queueGlassSync(); }catch(e){}
-  if(enBas) requestAnimationFrame(()=> descendreFil(false));
+  if(r){
+    if(w){
+      /* Déjà là — ouvert, ou en train de se refermer : le nouveau message s'y
+         pose en fondu, et le tiroir (re)s'ouvre depuis où il en est. */
+      clearTimeout(w._fin);
+      w.firstElementChild.innerHTML = citeInterieur(r, true);
+      if(!w.classList.contains("ouverte")){ w.classList.add("ouverte"); glassSuivre(620); }
+      return;
+    }
+    c.insertAdjacentHTML("afterbegin", `<div class="compo-cite-z"><div class="ccz-in">${citeInterieur(r, true)}</div></div>`);
+    w = c.firstElementChild;
+    void w.offsetHeight;                  // fermé d'abord, pour s'ouvrir sous les yeux
+    w.classList.add("ouverte");
+    glassSuivre(620);
+    /* Le message auquel on répond reste en vue : lu plus haut dans le fil, il
+       pouvait finir sous la barre qui grandit. */
+    clearTimeout(w._vue);
+    w._vue = setTimeout(()=>{ if(!enBas) garderEnVue(grp.reponse && grp.reponse.id); }, 560);
+    return;
+  }
+  w.classList.remove("ouverte");
+  clearTimeout(w._vue);
+  const q = w.querySelector(".compo-cite");
+  if(q){ q.classList.remove("arrive"); q.classList.add("part"); }
+  glassSuivre(340);
+  const fin = ()=>{
+    clearTimeout(w._fin);
+    if(!w.isConnected || w.classList.contains("ouverte")) return;
+    w.remove();
+    try{ glassRelayout(); queueGlassSync(); }catch(e){}
+    if(enBas) descendreFil(false);
+  };
+  w.addEventListener("transitionend", function f(e){ if(e.target === w){ w.removeEventListener("transitionend", f); fin(); } });
+  /* Filet, si la fin de la transition ne venait pas : sa vraie durée, un peu
+     plus — jamais avant la fin du mouvement, même sur un téléphone lent. */
+  let duree = 240;
+  try{ duree = parseFloat(getComputedStyle(w).transitionDuration) * 1000 || 240; }catch(e){}
+  clearTimeout(w._fin);
+  w._fin = setTimeout(fin, duree + 160);
+}
+/* Le message d'id donné, s'il est sous le bas visible du fil, remonte juste
+   assez pour se voir. */
+function garderEnVue(id){
+  const z = document.getElementById("fil"), b = id && document.querySelector(`#fil .b-bulle[data-m="${id}"]`);
+  if(!z || !b) return;
+  const deborde = b.getBoundingClientRect().bottom - (z.getBoundingClientRect().bottom - 10);
+  if(deborde > 0){ try{ z.scrollBy({ top:deborde, behavior:"smooth" }); }catch(e){ z.scrollTop += deborde; } }
 }
 /* La citation dans la bulle. Le message cité est dans le fil, ou on va le
    chercher (un message plus ancien que ce qui est chargé). */
@@ -27415,11 +27541,16 @@ function ouvrirConfidentialite(){
      maintenant en UNE phrase, ouverte par ses mots-clés en gras : rien de ce
      qu'elle disait ne manque, et deux choses y entrent pour qu'elle reste
      vraie : la modération peut lire les groupes (v311), et « Supprimer mon
-     compte » se trouve dans « Mon compte » (v312). */
+     compte » se trouve dans « Mon compte » (v312). (v337) Et une ligne pour
+     ce que la v336 a ajouté : le serveur note la dernière visite de chacun
+     (la table « activite »), pour qu'un groupe dont le propriétaire ne vient
+     plus change de main. Personne d'autre ne la lit ; elle part avec le
+     compte. */
   const lignes = [
     ["Sans compte,", "ta progression et tes réglages restent sur ton téléphone."],
     ["Avec un compte,", "ton e-mail sert à te connecter ; ta progression et ta photo sont sauvegardées en ligne."],
     ["Les autres voient", "ton nom, ta couleur, ta photo et, dans tes groupes, tes messages."],
+    ["Ta dernière visite", "est notée, et seul le serveur s'en sert : après 90 jours sans toi, un groupe dont tu es propriétaire passe à quelqu'un d'autre."],
     ["La modération", "peut lire les groupes et y écrire (signé « La modération »), pour faire respecter les règles."],
     ["Les rapports de bug,", "s'ils sont activés, n'envoient que l'erreur, rien sur toi."],
     ["Jamais", "de publicité, de pistage ni de revente."],

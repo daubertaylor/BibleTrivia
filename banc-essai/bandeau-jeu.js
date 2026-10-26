@@ -14,7 +14,7 @@
         « Taylor : … » —, entier sur l'écran, sans aucun trait ; et le jeu
         sonne (v335) ;
      2. il s'en va de lui-même ;
-     3. une partie lancée : « Taylor lance une partie » ;
+     3. une partie lancée : « Taylor a lancé une partie » ;
      4. le toucher ouvre la discussion du groupe ;
      5. dans cette discussion : pas de bandeau (le message est sous ses yeux),
         une goutte (v335) ;
@@ -130,7 +130,7 @@ const dit = (quoi, bon, detail) => { console.log('  ' + (bon ? 'OK  ' : 'KO  ') 
     await ecrit(A, amis, '', { code: 'ABCD12' }, 'partie');
     await vient(p);
     const b3 = await bandeau(p);
-    dit('3. une partie lancée : « Taylor lance une partie »', b3 && b3.ligne === 'Taylor lance une partie' && b3.groupe === 'Les amis', JSON.stringify(b3));
+    dit('3. une partie lancée : « Taylor a lancé une partie »', b3 && b3.ligne === 'Taylor a lancé une partie' && b3.groupe === 'Les amis', JSON.stringify(b3));
 
     /* 4 */
     await p.locator('#bandeauMsg').tap();
@@ -254,7 +254,7 @@ const dit = (quoi, bon, detail) => { console.log('  ' + (bon ? 'OK  ' : 'KO  ') 
     await vient(p13);
     const b13 = await bandeau(p13);
     if (CAPT) await p13.screenshot({ path: CAPT + '/bandeau-anglais.png' });
-    dit('13. en anglais : « ' + (b13 && b13.ligne) + ' »', b13 && b13.ligne === 'Taylor is starting a game');
+    dit('13. en anglais : « ' + (b13 && b13.ligne) + ' »', b13 && b13.ligne === 'Taylor started a game');
     await c13.close();
 
     dit('14. aucune erreur', !erreurs.length, erreurs.slice(0, 3).join(' | '));
