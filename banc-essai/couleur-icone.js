@@ -64,7 +64,7 @@ const COULEURS = () => {
     mention: cs('.b-eux .b-bulle .mention', ['color']),
     citation: cs('.b-cite', ['backgroundColor']),
     citationNom: cs('.b-cite b', ['color']),
-    vus: cs('.b-vu.tous', ['color']),
+    vus: cs('.b-vu.lu', ['color']),
     styleEcran: ecran ? (ecran.getAttribute('style') || '') : 'PAS D\'ÉCRAN',
     icone: (document.querySelector('#grpTete .grp-av') || {}).getAttribute ? document.querySelector('#grpTete .grp-av').getAttribute('style') : '',
   };

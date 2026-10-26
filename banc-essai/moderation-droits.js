@@ -13,10 +13,14 @@
         celle de tous les jours ;
      2. Taylor met le propriétaire en sourdine : il ne peut plus écrire ;
         elle lui rend la parole ;
-     3. « Il sera changé de propriétaire, mais que par inactivité, pas par la
-        modération » : Taylor ne confie pas le groupe à Dora ;
-     4. … ni ne retire, ni ne bannit le propriétaire : rien ne bouge, rien
-        ne se dit ;
+     3. (v338) « Lorsque j'agis au nom de la modération, je dois pouvoir avoir
+        le plein contrôle sur le propriétaire du groupe. » Avec son profil,
+        Taylor ne confie pas le groupe ; en mode modération, elle le confie à
+        Dora (Benoît en reste admin, la ligne au nom de la modération), puis
+        le rend à Benoît ;
+     4. sans le mode modération, ni Taylor ni Dora (admin) ne retirent ni ne
+        bannissent le propriétaire : rien ne bouge, rien ne se dit (le retrait
+        en mode modération : banc modo-proprietaire) ;
     4b. le propriétaire, lui, cède toujours son groupe (Benoît à Dora, Dora
         le lui rend) : une ligne de tous les jours ;
      5. Taylor bannit Chloé : elle ne peut plus revenir avec le code ;
@@ -32,11 +36,11 @@
         au nom de la modération, même ce que son rôle permet ; Chloé, qui
         n'est pas modératrice, n'y gagne rien à le dire ;
    LE JEU (le téléphone de Taylor, modératrice, de l'extérieur)
-    11. la page du propriétaire : la sourdine seule — et « Ici, tu agis au
-        nom de la modération » ; ni retrait, ni bannissement, ni « Confier »,
-        ni « Signaler », ni « Bloquer » ;
-    12. la page d'un membre : nommer admin, retirer, bannir ; ni « Confier »,
-        ni « Signaler », ni « Bloquer » ;
+    11. la page du propriétaire : la sourdine, (v338) le retrait et le
+        bannissement — et « Ici, tu agis au nom de la modération » ; ni
+        « Confier », ni « Signaler », ni « Bloquer » ;
+    12. la page d'un membre : nommer admin, (v338) confier le groupe,
+        retirer, bannir ; ni « Céder », ni « Signaler », ni « Bloquer » ;
     13. la sourdine du propriétaire, par sa page : faite au serveur, et la
         page offre ensuite de lui rendre la parole — rendue ;
     14. les infos : « Personnes bannies », pas « Signaler le groupe » ; la
@@ -51,7 +55,8 @@
    de page des bannis). Le serveur refusait déjà de confier le groupe ou d'en
    retirer le propriétaire (3, 4) ; la sourdine du propriétaire (2) et la
    levée d'un bannissement (7) y existaient — rien, dans le jeu, ne
-   permettait de les faire.
+   permettait de les faire. Sur la v337 : 3, 11, 12, 13 et 16 rouges (la
+   modération ne pouvait que mettre le propriétaire en sourdine).
    Usage : node banc-essai/moderation-droits.js */
 const { chromium } = require('/opt/node22/lib/node_modules/playwright');
 const { monter } = require('./faux-serveur-groupes.js');
@@ -102,14 +107,18 @@ const PHOTO = 'data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAAAQABAAD/2wBDAAgGBgcGBQ
     dit('2. Taylor met le propriétaire en sourdine (il ne peut plus écrire), puis lui rend la parole',
       r2a.ok && e2a.ok === false && e2a.erreur === 'muet' && r2b.ok && e2b.ok === true, JSON.stringify({ r2a, e2a, r2b, e2b }));
 
-    /* 3 et 4 : jamais par la modération */
+    /* 3 : (v338) la modération confie le groupe */
     const nbLignes = async () => +(await m.sql(`select count(*) from public.messages where groupe = '${g.id}' and genre = 'systeme'`));
+    const r3z = await moderer(T_, D, 'ceder', null, false);
+    const r3a = await moderer(T_, D, 'ceder'); const l3a = await ligne('proprietaire'); const ro3a = [await role(D), await role(B)];
+    const r3b = await moderer(T_, B, 'ceder'); const l3b = await ligne('proprietaire');
+    dit('3. avec son profil, Taylor ne confie pas le groupe ; en mode modération, elle le confie à Dora (Benoît en reste admin), au nom de la modération, puis le rend à Benoît',
+      r3z.ok === false && r3z.erreur === 'interdit' && r3a.ok && ro3a.join() === 'proprietaire,admin' && l3a === 'true / Dora'
+        && r3b.ok && (await role(B)) === 'proprietaire' && (await role(D)) === 'admin' && l3b === 'true / Benoît', JSON.stringify({ r3z, r3a, l3a, ro3a, r3b, l3b }));
+    /* 4 : sans le mode modération, personne ne retire le propriétaire */
     const n3 = await nbLignes();
-    const r3 = await moderer(T_, D, 'ceder');
-    dit('3. Taylor ne confie pas le groupe à Dora : le serveur refuse, Benoît reste propriétaire',
-      r3.ok === false && r3.erreur === 'interdit' && (await role(B)) === 'proprietaire' && (await role(D)) === 'admin', JSON.stringify({ r3 }));
-    const r4 = [await moderer(T_, B, 'exclure'), await moderer(T_, B, 'bannir')];
-    dit('4. … ni ne retire, ni ne bannit le propriétaire : rien ne bouge, rien ne se dit',
+    const r4 = [await moderer(T_, B, 'exclure', null, false), await moderer(T_, B, 'bannir', null, false), await moderer(D, B, 'exclure'), await moderer(D, B, 'bannir')];
+    dit('4. sans le mode modération, ni Taylor ni Dora (admin) ne retirent ni ne bannissent le propriétaire : rien ne bouge, rien ne se dit',
       r4.every(r => r.ok === false && r.erreur === 'interdit') && (await role(B)) === 'proprietaire' && (await nbLignes()) === n3
         && +(await m.sql(`select count(*) from public.bannis where groupe = '${g.id}'`)) === 0, JSON.stringify({ r4 }));
 
@@ -191,16 +200,16 @@ const PHOTO = 'data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAAAQABAAD/2wBDAAgGBgcGBQ
     await p.evaluate((b) => ouvrirMembre(b), B);
     await p.waitForTimeout(900);
     const l11 = await lignesPage('grpMembreVeil'), a11 = await aide('grpMembreVeil');
-    dit('11. la page du propriétaire : la sourdine seule, « au nom de la modération » ; ni retrait, ni bannissement, ni Confier, ni Signaler, ni Bloquer',
-      JSON.stringify(l11) === JSON.stringify(['Mettre en sourdine une heure']) && a11 === 'Ici, tu agis au nom de la modération.', JSON.stringify({ l11, a11 }));
+    dit('11. la page du propriétaire : la sourdine, le retrait et le bannissement, « au nom de la modération » ; ni Confier, ni Signaler, ni Bloquer',
+      JSON.stringify(l11) === JSON.stringify(['Mettre en sourdine une heure', 'Retirer du groupe', 'Bannir du groupe']) && a11 === 'Ici, tu agis au nom de la modération.', JSON.stringify({ l11, a11 }));
     await p.evaluate(() => fermerFeuilleGroupe('grpMembreVeil')); await p.waitForTimeout(500);
 
     /* 12 */
     await p.evaluate((c) => ouvrirMembre(c), C);
     await p.waitForTimeout(900);
     const l12 = await lignesPage('grpMembreVeil');
-    dit('12. la page d\'un membre : nommer admin, retirer, bannir ; ni Confier, ni Signaler, ni Bloquer',
-      JSON.stringify(l12) === JSON.stringify(['Mettre en sourdine une heure', 'Nommer admin', 'Retirer du groupe', 'Bannir du groupe']), JSON.stringify(l12));
+    dit('12. la page d\'un membre : nommer admin, confier le groupe, retirer, bannir ; ni Céder, ni Signaler, ni Bloquer',
+      JSON.stringify(l12) === JSON.stringify(['Mettre en sourdine une heure', 'Nommer admin', 'Confier le groupe', 'Retirer du groupe', 'Bannir du groupe']), JSON.stringify(l12));
     await p.evaluate(() => fermerFeuilleGroupe('grpMembreVeil')); await p.waitForTimeout(500);
 
     /* 13 : la sourdine du propriétaire, par sa page */
@@ -215,7 +224,7 @@ const PHOTO = 'data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAAAQABAAD/2wBDAAgGBgcGBQ
     await p.waitForTimeout(1500);
     const parle13 = await m.sql(`select (muet_jusqu is null)::text from public.membres where groupe = '${g.id}' and membre = '${B}'`);
     dit('13. la sourdine du propriétaire, par sa page : faite, puis la page offre de lui rendre la parole — rendue ; il reste propriétaire',
-      muet13 === 'true' && JSON.stringify(l13) === JSON.stringify(['Rendre la parole']) && parle13 === 'true' && (await role(B)) === 'proprietaire',
+      muet13 === 'true' && JSON.stringify(l13) === JSON.stringify(['Rendre la parole', 'Retirer du groupe', 'Bannir du groupe']) && parle13 === 'true' && (await role(B)) === 'proprietaire',
       JSON.stringify({ muet13, l13, parle13 }));
 
     /* 14 */
@@ -246,7 +255,7 @@ const PHOTO = 'data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAAAQABAAD/2wBDAAgGBgcGBQ
     /* 16 */
     const l16 = await p.evaluate(() => {
       const avant = LANGUE, r = {};
-      const cas = [['exclu', 'Chloé'], ['banni', 'Chloé'], ['admin', 'Chloé'], ['plus_admin', 'Chloé'], ['photo', ''], ['photo_retiree', '']];
+      const cas = [['exclu', 'Chloé'], ['banni', 'Chloé'], ['admin', 'Chloé'], ['plus_admin', 'Chloé'], ['photo', ''], ['photo_retiree', ''], ['proprietaire', 'Chloé']];
       for (const l of ['fr', 'en', 'es']) { LANGUE = l; r[l] = cas.map(([t, n]) => texteSysteme({ texte: t, donnees: { nom: n, moderation: true } })); }
       LANGUE = avant;
       r.fil = [...document.querySelectorAll('#fil .b-sys')].map(e => e.textContent.trim());
@@ -254,11 +263,11 @@ const PHOTO = 'data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAAAQABAAD/2wBDAAgGBgcGBQ
     });
     const attendu = {
       fr: ['La modération a retiré Chloé du groupe', 'La modération a banni Chloé du groupe', 'La modération a nommé Chloé admin du groupe', 'La modération a retiré le rôle d\'admin de Chloé',
-           'La modération a changé la photo du groupe', 'La modération a retiré la photo du groupe'],
+           'La modération a changé la photo du groupe', 'La modération a retiré la photo du groupe', 'La modération a confié le groupe à Chloé'],
       en: ['Moderators removed Chloé from the group', 'Moderators banned Chloé from the group', 'Moderators made Chloé a group admin', 'Moderators removed Chloé\'s admin role',
-           'Moderators changed the group photo', 'Moderators removed the group photo'],
+           'Moderators changed the group photo', 'Moderators removed the group photo', 'Moderators entrusted the group to Chloé'],
       es: ['La moderación quitó a Chloé del grupo', 'La moderación expulsó a Chloé del grupo', 'La moderación nombró admin del grupo a Chloé', 'La moderación le quitó el rol de admin a Chloé',
-           'La moderación cambió la foto del grupo', 'La moderación quitó la foto del grupo'] };
+           'La moderación cambió la foto del grupo', 'La moderación quitó la foto del grupo', 'La moderación confió el grupo a Chloé'] };
     dit('16. les lignes de la discussion au nom de la modération, en français, en anglais et en espagnol — et dans le fil',
       ['fr', 'en', 'es'].every(l => JSON.stringify(l16[l]) === JSON.stringify(attendu[l])) && l16.fil.includes('La modération a banni Chloé du groupe') && l16.fil.includes('La modération a changé la photo du groupe'),
       JSON.stringify(l16).slice(0, 300));
@@ -270,6 +279,6 @@ const PHOTO = 'data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAAAQABAAD/2wBDAAgGBgcGBQ
     await nav.close().catch(() => {});
     await m.arreter().catch(() => {});
   }
-  console.log(ko ? '\n  ' + ko + ' KO' : '\n  OK — la modération agit partout, le dit en son nom, et ne prend jamais un groupe à son propriétaire');
+  console.log(ko ? '\n  ' + ko + ' KO' : '\n  OK — la modération agit partout, le dit en son nom, et a le dernier mot sur le propriétaire');
   process.exit(ko ? 1 : 0);
 })();

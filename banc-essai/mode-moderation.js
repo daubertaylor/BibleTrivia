@@ -115,7 +115,7 @@ const dit = (quoi, bon, detail) => { console.log('  ' + (bon ? 'OK  ' : 'KO  ') 
     const v5 = await bouclier();
     const memePage = await p.evaluate(() => document.querySelectorAll('#grpMembreVeil').length);
     dit('5. « Agir au nom de la modération » : la page se refait sur place, avec ses pouvoirs et « Ici, tu agis au nom de la modération » ; le bouclier à côté du champ ; le mot le dit',
-      memePage === 1 && JSON.stringify(p5.l) === JSON.stringify(['Mettre en sourdine une heure', 'Nommer admin', 'Retirer du groupe', 'Bannir du groupe'])
+      memePage === 1 && JSON.stringify(p5.l) === JSON.stringify(['Mettre en sourdine une heure', 'Nommer admin', 'Confier le groupe', 'Retirer du groupe', 'Bannir du groupe'])
         && p5.a === 'Ici, tu agis au nom de la modération.' && v5 === 'bouclier' && mot5 === 'Tu agis au nom de la modération.', JSON.stringify({ p5, v5, mot5 }));
 
     /* 6 */

@@ -6,11 +6,17 @@
    ce que son téléphone fait en un seul, et Chrome posait par-dessus sa propre
    bannière. Le banc vérifie les trois situations :
 
-     Android, invitation reçue  -> une fenêtre qui INSTALLE (deux lignes,
+     Android, invitation reçue  -> une page qui INSTALLE (deux lignes,
                                    bouton « Installer », bannière de Chrome
                                    rangée par preventDefault)
-     Android, aucune invitation -> le guide en trois gestes, inchangé
-     iPhone                     -> le guide Safari, inchangé
+     Android, aucune invitation -> le guide en trois gestes
+     iPhone                     -> le guide Safari
+
+   (v338) « Le truc Installer le jeu n'est pas cohérent avec la page des
+   Réglages » : ce n'est plus une fenêtre de verre posée sur les Réglages,
+   c'est une PAGE, comme « Version de la Bible » — l'en-tête et sa flèche,
+   les Réglages qui reculent dessous, les gestes dans une carte ; la flèche
+   la referme et les Réglages reviennent.
 
    Et deux règles : l'invitation ne sert QU'UNE FOIS (la deuxième ouverture
    retombe sur le guide), et le manifeste doit remplir les critères de Chrome
@@ -74,25 +80,32 @@ const BASE = URL.replace(/[^/]*$/, '');
     }
     await p.evaluate(() => { openSettings(); }); await p.waitForTimeout(600);
     await p.evaluate(() => { openFsGuide(); }); await p.waitForTimeout(800);
-    const t = await p.evaluate(() => { const m = document.querySelector('.modal-card'); if (!m) return null;
-      return { gestes:[...m.querySelectorAll('.set-row b')].map(x=>x.textContent),
-        ok:(m.querySelector('#modalOk')||{}).textContent||'', range: window.__range === true }; });
+    const lirePage = () => p.evaluate(() => { const v = document.getElementById('installVeil'); if (!v || v.classList.contains('closing')) return null;
+      return { gestes:[...v.querySelectorAll('.set-row b')].map(x=>x.textContent), page: v.classList.contains('page') && !!v.querySelector('.page-tete .sheet-grab'),
+        bouton:(v.querySelector('.install-go')||{}).textContent||'', recule: !!document.querySelector('#settingsVeil .settings-sheet.feuille-recule'),
+        fenetre: !!document.querySelector('.modal-card'), range: window.__range === true }; });
+    const t = await lirePage();
     console.log('\n  ' + nom);
-    if (!t) { dire(false, 'aucune fenêtre ne s\'ouvre'); await ctx.close(); return; }
+    if (!t) { dire(false, 'aucune page ne s\'ouvre'); await ctx.close(); return; }
     console.log('      ' + t.gestes.length + ' geste(s) : ' + t.gestes.join(' / '));
+    dire(t.page && t.recule && !t.fenetre, 'une page, comme les versions : en-tête et flèche, les Réglages reculent dessous, aucune fenêtre');
     if (invite) {
-      dire(t.gestes.length === 2 && t.ok === 'Installer', 'bouton « ' + t.ok +' »');
+      dire(t.gestes.length === 2 && t.bouton === 'Installer', 'bouton « ' + t.bouton +' »');
       dire(t.range, 'la bannière de Chrome est rangée (preventDefault)');
-      await p.click('#modalOk'); await p.waitForTimeout(400);
-      const r = await p.evaluate(() => ({ n: window.__prompt, ouvert: !!document.querySelector('.modal-card') }));
+      await p.click('#installVeil .install-go'); await p.waitForTimeout(700);
+      const r = await p.evaluate(() => ({ n: window.__prompt, ouvert: !!document.querySelector('#installVeil:not(.closing)'),
+        recule: !!document.querySelector('#settingsVeil .settings-sheet.feuille-recule') }));
       dire(r.n === 1, 'invitation du système déclenchée ' + r.n + ' fois');
-      dire(!r.ouvert, 'la fenêtre se referme');
+      dire(!r.ouvert && !r.recule, 'la page se referme, les Réglages reviennent');
       await p.evaluate(() => { openFsGuide(); }); await p.waitForTimeout(700);
-      const r2 = await p.evaluate(() => { const m = document.querySelector('.modal-card');
-        return m ? { ok:(m.querySelector('#modalOk')||{}).textContent, n:m.querySelectorAll('.set-row').length } : null; });
-      dire(!!r2 && r2.n === 3 && r2.ok === 'Compris', 'une invitation ne sert qu\'une fois : retour au guide (' + (r2 ? r2.n + ' gestes, « ' + r2.ok + ' »' : 'rien') + ')');
+      const r2 = await lirePage();
+      dire(!!r2 && r2.gestes.length === 3 && r2.bouton === '', 'une invitation ne sert qu\'une fois : retour au guide (' + (r2 ? r2.gestes.length + ' gestes, ' + (r2.bouton ? '« ' + r2.bouton + ' »' : 'sans bouton') : 'rien') + ')');
     } else {
-      dire(t.gestes.length === 3 && t.ok === 'Compris', 'guide en trois gestes, bouton « ' + t.ok + ' »');
+      dire(t.gestes.length === 3 && t.bouton === '', 'guide en trois gestes, sans bouton : la flèche ramène aux Réglages');
+      await p.click('#installVeil .page-tete .sheet-grab'); await p.waitForTimeout(700);
+      const r = await p.evaluate(() => ({ ouvert: !!document.querySelector('#installVeil:not(.closing)'), recule: !!document.querySelector('#settingsVeil .settings-sheet.feuille-recule'),
+        reglages: !!document.querySelector('#settingsVeil:not(.closing)') }));
+      dire(!r.ouvert && !r.recule && r.reglages, 'la flèche referme la page : les Réglages reviennent au premier plan');
       /* (v325) le premier geste est celui que CE téléphone peut faire */
       /* les espaces insécables de la typographie française ne comptent pas */
       const plat = (x) => String(x || '').replace(/[\u00a0\u202f]/g, ' ');

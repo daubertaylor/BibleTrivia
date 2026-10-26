@@ -1,6 +1,6 @@
 /* Yada — service worker : rend l'app jouable hors connexion.
    À déposer à côté de index.html (même dossier, nom exact "sw.js"). */
-const CACHE = "yada-v337";
+const CACHE = "yada-v338";
 /* ===== LES BANQUES DE QUESTIONS NE SONT PAS DANS LE SOCLE =====
    questions-en.js y était, et questions-es.js allait l'y rejoindre : six cent
    mille octets téléchargés à l'installation par TOUT LE MONDE, y compris les
@@ -506,6 +506,27 @@ async function montrerMessage(c, langue, discret){
     data: { url: "./?discussion=" + encodeURIComponent(groupe), groupe, n, ids, son: sonne ? maintenant : sonDernier, icone },
   });
 }
+/* ===== (v338) « ARRIVÉ », COMME SUR WHATSAPP =====
+   Les deux coches grises disent que le message est arrivé sur le téléphone
+   de chacun. Jeu fermé, c'est cette notification qui l'apporte : en la
+   recevant, le téléphone renvoie à la fonction des rappels le jeton qu'elle
+   y a glissé (notifications/rappels.ts), et la fonction note l'arrivée.
+   Même si la notification ne se montre pas (les messages éteints ici) : le
+   message est bien arrivé. Le jeton ne dit rien de plus que lui-même ; on ne
+   l'envoie qu'à l'adresse de la fonction, et sans attendre de réponse (une
+   panne ne retient pas la notification : le jeu, à sa prochaine ouverture,
+   dira l'arrivée lui-même). */
+function accuserReception(c){
+  const a = c && c.accuse;
+  if(!a || typeof a.j !== "string" || typeof a.u !== "string" || !/^https:\/\/[^/?#]+\/functions\/v1\/rappels$/.test(a.u)) return Promise.resolve();
+  let fin = null;
+  try {
+    const ctl = typeof AbortController === "function" ? new AbortController() : null;
+    if(ctl) fin = setTimeout(() => ctl.abort(), 8000);
+    return fetch(a.u, { method:"POST", mode:"no-cors", body: JSON.stringify({ accuse: a.j }), signal: ctl ? ctl.signal : undefined })
+      .catch(() => {}).then(() => { if(fin) clearTimeout(fin); });
+  } catch(x){ if(fin) clearTimeout(fin); return Promise.resolve(); }
+}
 self.addEventListener("push", (e) => {
   e.waitUntil((async () => {
     let charge = {};
@@ -523,7 +544,8 @@ self.addEventListener("push", (e) => {
        messages ICI (false) — un miroir absent ou ancien ne dit rien contre le
        serveur, qui ne l'envoie qu'aux téléphones qui les ont demandés. */
     if(charge.genre === "message"){
-      if(etat && etat.messages === false) return;
+      const accuse = accuserReception(charge);
+      if(etat && etat.messages === false){ await accuse; return; }
       /* (v331) Le jeu est à l'écran sur ce téléphone (un envoi parti juste
          avant qu'on l'ouvre) : le serveur ne prévient plus un téléphone où
          le jeu est ouvert, mais si celui-ci arrive quand même, il se pose
@@ -532,6 +554,7 @@ self.addEventListener("push", (e) => {
       let ecran = false;
       try { ecran = (await clients.matchAll({ type:"window", includeUncontrolled:true })).some((f) => f.visibilityState === "visible"); } catch(x){}
       await montrerMessage(charge, langue, ecran);
+      await accuse;
       return;
     }
     /* ===== (v335) UN SIGNALEMENT, POUR LA MODÉRATION =====

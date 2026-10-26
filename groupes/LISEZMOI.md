@@ -204,7 +204,34 @@ qu'un membre du groupe, et seulement tant que la partie n'a pas commencé.
 Même geste qu'aux étapes 6 à 11 ; tant que le fichier n'est pas recollé, tout
 reste comme en v335.
 
-**Une seule fois suffit pour les étapes 6, 7, 8, 9, 10, 11 et 12 ensemble**, quelle que soit
+### 13. Les coches de WhatsApp, et la modération maîtresse du propriétaire (v338) — recoller le fichier une fois
+
+Sous tes messages, les coches disent maintenant exactement ce que dit
+WhatsApp : une petite horloge tant que le message part ; **une coche
+grise**, envoyé ; **deux coches grises**, distribué — arrivé sur le
+téléphone de chacun ; **deux coches bleues**, lu par chacun. Toucher son
+message dit qui l'a lu, chez qui il est arrivé, et chez qui pas encore.
+Pour « distribué », le serveur note le dernier message arrivé sur le
+téléphone de chaque membre (colonne `recu_jusqu`) : reçu en direct, vu dans
+la liste des groupes, ou apporté par une notification — le téléphone renvoie
+alors à la fonction des rappels un jeton à usage unique (table `accuses`,
+que personne d'autre ne lit ; un jeton qui ne revient pas s'efface au bout
+de deux jours). La fonction des rappels se met à jour toute seule depuis
+GitHub.
+
+En mode modération, la page du propriétaire d'un groupe propose aussi
+**Retirer du groupe** et **Bannir du groupe** : le groupe passe alors au
+suivant, selon la même règle qu'au départ d'un propriétaire (un admin
+d'abord, sinon le membre le plus ancien), et la discussion le dit. La page
+de n'importe quel autre membre propose **Confier le groupe** : il en devient
+propriétaire, l'ancien en reste admin, et la ligne le dit au nom de la
+modération. Avec son profil, un modérateur n'a toujours que son rôle.
+
+Même geste qu'aux étapes 6 à 12 ; tant que le fichier n'est pas recollé, le
+jeu ne dit qu'« envoyé » et « lu » — une coche grise, puis deux bleues — et
+la modération ne peut que mettre le propriétaire en sourdine.
+
+**Une seule fois suffit pour les étapes 6 à 13 ensemble**, quelle que soit
 la version déjà installée : le fichier d'aujourd'hui se colle par-dessus
 n'importe laquelle de ses versions passées sans rien perdre, et donne
 exactement la même base qu'une installation neuve (vérifié par
