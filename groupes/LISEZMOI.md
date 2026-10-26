@@ -167,7 +167,44 @@ clé interne) : c'est la même fonction « rappels » qui envoie.
 Même geste qu'aux étapes 6 à 10 ; tant que le fichier n'est pas recollé, le
 retrait reste silencieux et les signalements ne sonnent pas, comme avant.
 
-**Une seule fois suffit pour les étapes 6, 7, 8, 9, 10 et 11 ensemble**, quelle que soit
+### 12. Le mode modération ; un groupe abandonné change de main ; l'invitation dit qui a rejoint (v336) — recoller le fichier une fois
+
+**Le mode modération.** Avec son profil, un modérateur est, dans ses
+groupes, un membre comme les autres : son rôle dans le groupe, rien de plus
+— le serveur ne lui ouvre ses pouvoirs que si le jeu dit qu'il est en mode
+modération. Un toucher sur son visage, en tête de la barre d'écriture, et
+c'est le bouclier : il écrit **et** agit au nom de la modération (la manette
+s'efface : on ne lance pas une partie au nom de la modération) ; il y est d'office
+en arrivant de la Modération, et toujours dans un groupe dont il n'est pas
+membre (en sourdine aussi, il garde la parole de la modération). En mode
+modération, il agit sur tous les membres : sourdine, rôle d'admin, retrait,
+bannissement ; sur le propriétaire, **la sourdine seule** ; et tout ce qu'il
+fait se dit dans la discussion au nom de la modération (« La modération a
+retiré… »), jamais avec son nom. La page du groupe montre les **personnes
+bannies** (au propriétaire, aux admins, à la modération) : un toucher lève
+un bannissement.
+
+**Un groupe ne change de main que par son propriétaire, ou par son
+absence — jamais par la modération.** Le propriétaire cède son groupe ou
+s'en va ; s'il n'ouvre plus le jeu pendant **90 jours**, le groupe passe, à
+la visite suivante d'un membre, au suivant selon une règle fixe (jamais au
+hasard) : un admin qui vient encore plutôt qu'un simple membre, le plus
+ancien dans le groupe d'abord, jamais quelqu'un en sourdine ou suspendu. La
+discussion le dit (« Le groupe passe à Chloé : sans nouvelles de Benoît
+depuis trois mois ») ; l'ancien propriétaire en reste admin. Pour cela, le
+serveur note le jour où chacun ouvre le jeu (table `activite`, que personne
+d'autre ne peut lire) ; au premier collage, tout le monde est noté « vu
+aujourd'hui » : aucun groupe ne change de main avant 90 jours.
+
+L'invitation d'une partie lancée depuis un groupe montre, en direct, qui l'a
+rejointe (les visages, « Avec Chloé et Émile »), puis « Partie en cours » une
+fois la manche partie : chacun décide d'y entrer ou non. Le serveur n'inscrit
+qu'un membre du groupe, et seulement tant que la partie n'a pas commencé.
+
+Même geste qu'aux étapes 6 à 11 ; tant que le fichier n'est pas recollé, tout
+reste comme en v335.
+
+**Une seule fois suffit pour les étapes 6, 7, 8, 9, 10, 11 et 12 ensemble**, quelle que soit
 la version déjà installée : le fichier d'aujourd'hui se colle par-dessus
 n'importe laquelle de ses versions passées sans rien perdre, et donne
 exactement la même base qu'une installation neuve (vérifié par

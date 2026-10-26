@@ -6108,6 +6108,11 @@
   /* Une partie terminée : la manette s'éteint, la ligne le dit, plus de bouton. */
   .b-partie small{ color:var(--ink-soft); font-size:0.8rem; }
   .b-partie.finie .bp-ico{ opacity:0.45; }
+  /* (v336) Qui a rejoint : les visages, un peu chevauchés, et les noms. */
+  .b-partie .bp-venus{ display:flex; align-items:center; gap:0.5rem; min-width:0; }
+  .bp-visages{ display:inline-flex; flex-shrink:0; }
+  .bp-visages .avatar{ box-shadow:0 0 0 2px rgb(252,248,241); }
+  .bp-visages .avatar + .avatar{ margin-left:-0.42rem; }
   .fil-bas{ position:absolute; left:50%; bottom:0.6rem; transform:translateX(-50%); z-index:2; border:0; border-radius:var(--r-full);
     padding:0.5rem 0.95rem; min-height:2.2rem; background:rgba(30,22,14,0.86); color:#fff; font-family:'Poppins',sans-serif; font-weight:600; font-size:0.8rem;
     box-shadow:0 4px 14px rgba(15,12,10,0.28); }
@@ -6132,6 +6137,9 @@
   /* (v331) Clavier ouvert, le bas de l'écran est sous le clavier : un petit
      message s'y perdait. Il se pose alors en haut de la zone visible. */
   html.kb .mini-toast{ bottom:auto; top:calc(var(--vvt, 0px) + env(safe-area-inset-top) + 0.9rem); }
+  /* (v336) Dans une discussion, clavier fermé, le mot se pose au-dessus de la
+     barre d'écriture (--toast-bas, mesuré par showMiniToast), pas sur elle. */
+  html.ecran-discussion:not(.kb) .mini-toast{ bottom:var(--toast-bas, calc(env(safe-area-inset-bottom) + 2.2rem)); }
   .compo-in{ display:flex; align-items:flex-end; gap:0.45rem; width:100%; }
   .compo-texte{ flex:1; min-width:0; min-height:2.6rem; max-height:7.5rem; resize:none; border:0; outline:none; background:transparent;
     font-family:'Inter',sans-serif; font-size:16px; line-height:1.35; color:var(--ink); padding:0.62rem 0.3rem; }
@@ -6153,6 +6161,30 @@
   .compo-mod svg{ width:100%; height:100%; display:block; }
   .avatar.a-mod{ background:var(--pal-ardoise); color:#fff; }
   .avatar.a-mod svg{ width:54%; height:54%; display:block; }
+  /* ===== (v336) LA VOIX, À CÔTÉ DU CHAMP =====
+     Le visage du modérateur — ou, d'un toucher, le bouclier de la
+     modération — tient dans un disque un peu plus petit que la manette : ce
+     n'est pas une action, c'est une identité. Sous le doigt il s'enfonce, et
+     le nouveau visage arrive en se posant. L'invite et le bouton d'envoi
+     suivent ; mes bulles au nom de la modération prennent l'ardoise, assez
+     sombre pour un texte blanc, et « La modération » au-dessus. */
+  .compo-jeu[hidden]{ display:none; }
+  .compo-voix{ width:2.6rem; height:2.6rem; flex-shrink:0; border:0; padding:0; border-radius:50%; background:none; position:relative;
+    display:flex; align-items:center; justify-content:center; --press-tint:transparent; -webkit-tap-highlight-color:transparent; }
+  .compo-voix::after{ content:""; position:absolute; left:50%; top:50%; width:44px; height:44px; transform:translate(-50%,-50%); }
+  .compo-voix .avatar{ transition:transform 0.24s cubic-bezier(0.32,0.72,0,1); box-shadow:0 0 0 2px rgb(252,248,241), 0 3px 10px rgba(34,26,16,0.14); }
+  .compo-voix:active .avatar{ transform:scale(0.86); }
+  .compo-voix.bascule .avatar{ animation:voixPose 0.26s cubic-bezier(0.2,0.85,0.3,1); }
+  @keyframes voixPose{ from{ transform:scale(0.6); opacity:0.4; } to{ transform:none; opacity:1; } }
+  .groupe-ecran .compo-envoi.mod{ background:linear-gradient(150deg, var(--pal-ardoise-b), #56647A); box-shadow:0 1px 2px rgba(60,72,90,0.2), 0 4px 12px rgba(86,100,122,0.3); }
+  .groupe-ecran .b-mod .b-bulle:not(.b-partie):not(.b-vide){ background:linear-gradient(150deg, var(--pal-ardoise-b), #56647A); color:#fff;
+    box-shadow:0 1px 2px rgba(60,72,90,0.18), 0 4px 12px rgba(86,100,122,0.24); }
+  .b-nom-mod{ display:inline-flex; align-items:center; gap:0.3rem; margin:0.45rem 0.85rem 0.05rem 0; color:var(--pal-ardoise-b); }
+  .b-nom-mod .ico{ width:0.85rem; height:0.85rem; display:inline-flex; }
+  .b-nom-mod .ico svg{ width:100%; height:100%; }
+  .grp-modo-aide{ display:flex; align-items:center; justify-content:flex-start; gap:0.35rem; text-align:left; color:var(--pal-ardoise-b); font-size:0.86rem; margin:0 0 0.75rem; }
+  .grp-modo-aide .ico{ width:0.95rem; height:0.95rem; display:inline-flex; flex-shrink:0; }
+  .grp-modo-aide .ico svg{ width:100%; height:100%; }
   .compo-envoi{ background:var(--primary); color:#fff; box-shadow:0 1px 2px rgba(120,30,14,0.16), 0 4px 12px rgba(214,60,34,0.3); transition:opacity 0.15s ease, transform 0.15s ease; }
   .compo-envoi:disabled{ opacity:0.4; transform:scale(0.92); }
   .compo-jeu svg, .compo-envoi svg{ width:100%; height:100%; }
@@ -6871,6 +6903,30 @@ const TEXTES = {
     "La modération":"Moderators",
     "peut lire les groupes et y écrire (signé « La modération »), pour faire respecter les règles.":"can read groups and write in them (signed “Moderators”) to enforce the rules.",
     "Au nom de la modération…":"On behalf of moderators…",
+    "Avec {noms}":"With {noms}",
+    "toi":"you",
+    "{n} autres":"{n} others",
+    "et":"and",
+    "Partie en cours":"Game in progress",
+    "Revenir dans la partie":"Back to the game",
+    "Agir au nom de la modération":"Act on behalf of moderators",
+    "Tu agis au nom de la modération.":"You're acting on behalf of moderators.",
+    "Tu agis en ton nom.":"You're acting as yourself.",
+    "Ici, tu agis au nom de la modération.":"Here, you act on behalf of moderators.",
+    "Le groupe passe à {nom} : sans nouvelles de {ancien} depuis trois mois":"The group now belongs to {nom}: no sign of {ancien} for three months",
+    "Personnes bannies":"Banned people",
+    "Personne n'est banni de ce groupe.":"No one is banned from this group.",
+    "Depuis le {date}":"Since {date}",
+    "Lever le bannissement de {nom} ?":"Lift {nom}'s ban?",
+    "Lever":"Lift",
+    "{nom} peut de nouveau rejoindre le groupe.":"{nom} can join the group again.",
+    "Gérer {nom}":"Manage {nom}",
+    "La modération a retiré {nom} du groupe":"Moderators removed {nom} from the group",
+    "La modération a banni {nom} du groupe":"Moderators banned {nom} from the group",
+    "La modération a nommé {nom} admin du groupe":"Moderators made {nom} a group admin",
+    "La modération a retiré le rôle d'admin de {nom}":"Moderators removed {nom}'s admin role",
+    "La modération a changé la photo du groupe":"Moderators changed the group photo",
+    "La modération a retiré la photo du groupe":"Moderators removed the group photo",
     "Les rapports de bug,":"Bug reports,",
     "s'ils sont activés, n'envoient que l'erreur, rien sur toi.":"if turned on, send only the error, nothing about you.",
     "Jamais":"Never",
@@ -7255,7 +7311,7 @@ const TEXTES = {
     "Bannir":"Ban",
     "Groupe modifié":"Group updated",
     "Quitter « {nom} » ?":"Leave “{nom}”?",
-    "Tu en es propriétaire : le groupe passera à son plus ancien admin, ou à son plus ancien membre.":"You own it: the group will pass to its longest-standing admin, or else its longest-standing member.",
+    "Tu en es propriétaire : le groupe passera à son plus ancien admin encore actif, sinon à son plus ancien membre encore actif.":"You own it: the group will pass to its longest-standing active admin, or else its longest-standing active member.",
     "Tu pourras revenir quand tu veux.":"You can come back whenever you like.",
     "Tu pourras revenir avec le code.":"You can come back with the code.",
     "Supprimer « {nom} » ?":"Delete “{nom}”?",
@@ -7621,7 +7677,31 @@ const TEXTES = {
     "ton nom, ta couleur, ta photo et, dans tes groupes, tes messages.":"tu nombre, tu color, tu foto y, en tus grupos, tus mensajes.",
     "La modération":"La moderación",
     "peut lire les groupes et y écrire (signé « La modération »), pour faire respecter les règles.":"puede leer los grupos y escribir en ellos (firmado «La moderación») para hacer cumplir las reglas.",
-    "Au nom de la modération…":"En nombre de la moderación…",
+    "Au nom de la modération…":"Como moderación…",
+    "Avec {noms}":"Con {noms}",
+    "toi":"contigo",
+    "{n} autres":"{n} más",
+    "et":"y",
+    "Partie en cours":"Partida en curso",
+    "Revenir dans la partie":"Volver a la partida",
+    "Agir au nom de la modération":"Actuar en nombre de la moderación",
+    "Tu agis au nom de la modération.":"Actúas en nombre de la moderación.",
+    "Tu agis en ton nom.":"Actúas en tu propio nombre.",
+    "Ici, tu agis au nom de la modération.":"Aquí actúas en nombre de la moderación.",
+    "Le groupe passe à {nom} : sans nouvelles de {ancien} depuis trois mois":"El grupo pasa a {nom}: sin noticias de {ancien} desde hace tres meses",
+    "Personnes bannies":"Personas expulsadas",
+    "Personne n'est banni de ce groupe.":"Nadie está expulsado de este grupo.",
+    "Depuis le {date}":"Desde el {date}",
+    "Lever le bannissement de {nom} ?":"¿Levantar la expulsión de {nom}?",
+    "Lever":"Levantar",
+    "{nom} peut de nouveau rejoindre le groupe.":"{nom} puede volver a unirse al grupo.",
+    "Gérer {nom}":"Gestionar a {nom}",
+    "La modération a retiré {nom} du groupe":"La moderación quitó a {nom} del grupo",
+    "La modération a banni {nom} du groupe":"La moderación expulsó a {nom} del grupo",
+    "La modération a nommé {nom} admin du groupe":"La moderación nombró admin del grupo a {nom}",
+    "La modération a retiré le rôle d'admin de {nom}":"La moderación le quitó el rol de admin a {nom}",
+    "La modération a changé la photo du groupe":"La moderación cambió la foto del grupo",
+    "La modération a retiré la photo du groupe":"La moderación quitó la foto del grupo",
     "Les rapports de bug,":"Los informes de errores,",
     "s'ils sont activés, n'envoient que l'erreur, rien sur toi.":"si están activados, solo envían el error, nada sobre ti.",
     "Jamais":"Nunca",
@@ -8012,7 +8092,7 @@ const TEXTES = {
     "Bannir":"Expulsar",
     "Groupe modifié":"Grupo actualizado",
     "Quitter « {nom} » ?":"¿Salir de «{nom}»?",
-    "Tu en es propriétaire : le groupe passera à son plus ancien admin, ou à son plus ancien membre.":"Eres titular: el grupo pasará a su admin más antiguo o, si no lo hay, a su miembro más antiguo.",
+    "Tu en es propriétaire : le groupe passera à son plus ancien admin encore actif, sinon à son plus ancien membre encore actif.":"Eres titular: el grupo pasará a su admin activo más antiguo o, si no lo hay, a su miembro activo más antiguo.",
     "Tu pourras revenir quand tu veux.":"Podrás volver cuando quieras.",
     "Tu pourras revenir avec le code.":"Podrás volver con el código.",
     "Supprimer « {nom} » ?":"¿Eliminar «{nom}»?",
@@ -8421,6 +8501,8 @@ const ICONS = {
   parler: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M6.2 5h11.6A2.2 2.2 0 0 1 20 7.2v6.4a2.2 2.2 0 0 1-2.2 2.2H11l-4.4 3.4v-3.4H6.2A2.2 2.2 0 0 1 4 13.6V7.2A2.2 2.2 0 0 1 6.2 5Z"/></svg>`,
   retirer: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><circle cx="9.6" cy="8" r="3.6"/><path d="M3.4 19.6c0-3.4 2.8-5.6 6.2-5.6 1.6 0 3 .5 4.1 1.3"/><line x1="15.6" y1="15.4" x2="21" y2="15.4"/></svg>`,
   bannir: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><circle cx="9.6" cy="8" r="3.6"/><path d="M3.4 19.6c0-3.4 2.8-5.6 6.2-5.6 1.6 0 3 .5 4.1 1.3"/><line x1="16" y1="13.4" x2="20.6" y2="18"/><line x1="20.6" y1="13.4" x2="16" y2="18"/></svg>`,
+  /* (v336) Une personne, au trait — de la famille de retirer et bannir : « Gérer … ». */
+  personne: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="3.6"/><path d="M5.6 19.6c0-3.4 2.9-5.6 6.4-5.6s6.4 2.2 6.4 5.6"/></svg>`,
   etoile: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3.6l2.5 5.2 5.7.8-4.1 4 1 5.6-5.1-2.7-5.1 2.7 1-5.6-4.1-4 5.7-.8L12 3.6Z"/></svg>`,
   /* (v329) « Céder le groupe » : la couronne au trait, comme ses voisines de
      la liste (la pleine reste celle du podium et des badges). */
@@ -10421,7 +10503,7 @@ const SUPABASE_ANON_KEY = "sb_publishable_FDJ_R0foC7uIeHmxVrj6rA_2NeIgW2a";
    remontée d'un téléphone ne vaut rien si on ne sait pas QUELLE version
    tournait. Elle doit rester égale au CACHE de sw.js — c'est ce que vérifie
    banc-essai/version.js, qui refuse de laisser publier les deux en désaccord. */
-const VERSION_JEU = "v335";
+const VERSION_JEU = "v336";
 
 /* ===================== QUAND ÇA CASSE CHEZ UN JOUEUR =====================
    « Si quelque chose casse chez cinq d'entre eux sur un modèle de téléphone
@@ -11351,6 +11433,10 @@ function bindRoom(ch){
         return;
       }
     }
+    /* (v336) Entré par une invitation, l'hôte est là et j'ai ma place (pas
+       avant : un neuvième, ressorti aussitôt, ne paraîtrait qu'un instant) :
+       je m'y inscris. */
+    if(net.partieVenue && !net.partieVenue.dit && !net.isHost && Object.keys(vus).length){ net.partieVenue.dit = true; direPartieVenue(true); }
     if(joueursPresents().length){
       if(net.joinTimer){ clearTimeout(net.joinTimer); net.joinTimer = null; }
       // L'adversaire du match automatique est bien là : la garde anti-limbo
@@ -11513,7 +11599,11 @@ function createRoom(code, host, _retry){
 function joinRoom(code, host){
   code = (code||"").toUpperCase().trim();
   if(code.length<4){ net.error=T("Code invalide."); render(); return; }
+  /* (v336) Le salon d'une invitation de mes groupes : j'y serai inscrit
+     (voir LA PARTIE SUIVIE). */
+  const inv = !host && partiesSuivies() ? invitationDuCode(code) : null;
   createRoom(code, !!host);
+  net.partieVenue = inv ? { message:inv.id, dit:false } : null;
 }
 function hostStart(){
   if(!net.isHost || !net.room || !net.oppPresent) return;
@@ -11547,6 +11637,10 @@ function lancerLaManche(){
     try{ showMiniToast(T("Un joueur doit mettre le jeu à jour pour jouer sur un livre : la partie porte sur son testament.")); }catch(e){}
   }
   net.room.send({ type:"broadcast", event:"start", payload:{ seed, lengthKey: net.lengthKey, timerKey: net.timerKey, theme, livre } });
+  /* (v336) Ma partie de groupe commence : l'invitation le dit, et ne se
+     rejoint plus (voir LA PARTIE SUIVIE). */
+  const pg = net.partieGroupe;
+  if(pg && pg.message && pg.code === net.code && !pg.commencee && partiesSuivies()){ pg.commencee = true; appelGroupe("commencer_partie", { p_message:+pg.message }); }
   beginDuel(seed, net.lengthKey, net.timerKey, theme, livre);
 }
 function beginDuel(seed, lengthKey, timerKey, theme, livre){
@@ -11744,6 +11838,8 @@ function guetterHote(ch){
 }
 function cleanupRoom(){
   if(net.partieGroupe && net.partieGroupe.code === net.code) clorePartieGroupe();
+  /* (v336) Ressorti avant le départ : je ne suis plus dans la partie. */
+  if(net.partieVenue){ if(net.partieVenue.dit && !(net.deck && net.deck.length)) direPartieVenue(false); net.partieVenue = null; }
   stopDuelHeartbeat();
   clearTimeout(net.matchGuard); net.autoMatch = false;
   clearTimeout(net.hoteT); net.hoteT = null;
@@ -18544,6 +18640,10 @@ function showMiniToast(msg){
   let el = document.querySelector(".mini-toast");
   if(!el){ el = document.createElement("div"); el.className = "mini-toast"; document.body.appendChild(el); }
   el.textContent = msg;
+  /* (v336) Dans une discussion : juste au-dessus de la barre d'écriture. */
+  const compo = document.getElementById("compo"), haut = compo ? compo.getBoundingClientRect().top : 0;
+  if(haut > 0) el.style.setProperty("--toast-bas", Math.round(window.innerHeight - haut + 10) + "px");
+  else el.style.removeProperty("--toast-bas");
   requestAnimationFrame(()=>el.classList.add("show"));
   clearTimeout(el._t);
   /* (v334) Le temps de le lire. 2,1 s pour « Lien copié ! » comme pour une
@@ -23284,6 +23384,22 @@ function texteSysteme(m){
     photo:"{nom} a changé la photo du groupe",
     photo_retiree:"{nom} a retiré la photo du groupe"
   };
+  /* (v336) Ce que la modération a fait au-delà du rôle de la personne se dit
+     en son nom à elle — jamais du nom de qui l'a fait. */
+  const deLaModo = {
+    exclu:"La modération a retiré {nom} du groupe",
+    banni:"La modération a banni {nom} du groupe",
+    admin:"La modération a nommé {nom} admin du groupe",
+    plus_admin:"La modération a retiré le rôle d'admin de {nom}",
+    photo:"La modération a changé la photo du groupe",
+    photo_retiree:"La modération a retiré la photo du groupe"
+  };
+  if(d.moderation === true && deLaModo[m.texte]) return Tf(deLaModo[m.texte], { nom });
+  /* (v336) L'ABSENCE DU PROPRIÉTAIRE : le groupe est passé au suivant parce
+     que l'ancien ne venait plus (voir groupes/table.sql) — la ligne dit
+     pourquoi, et à qui. */
+  if(m.texte === "proprietaire" && d.absence === true)
+    return Tf("Le groupe passe à {nom} : sans nouvelles de {ancien} depuis trois mois", { nom, ancien:d.ancien || T("Quelqu'un") });
   return phrases[m.texte] ? Tf(phrases[m.texte], { nom }) : "";
 }
 /* Le zéro et le un commandent le singulier en français ; l'anglais et
@@ -23304,7 +23420,7 @@ function apercuGroupe(g){
   const nom = deLaModeration(a) ? T("La modération") : (a.nom || ((grp.profils[a.auteur] || {}).nom) || T("Quelqu'un"));
   if(a.genre === "partie") return moi ? T("Tu lances une partie") : Tf("{nom} lance une partie", { nom });
   const texte = a.texte || "";
-  return moi ? Tf("Toi : {texte}", { texte }) : Tf("{nom} : {texte}", { nom, texte });
+  return (moi && !deLaModeration(a)) ? Tf("Toi : {texte}", { texte }) : Tf("{nom} : {texte}", { nom, texte });
 }
 /* ===== CE QUE CHACUN VEUT ENTENDRE D'UN GROUPE (v317) =====
    « Pour les groupes, je veux la possibilité de mettre le groupe en muet, et
@@ -24085,6 +24201,47 @@ function enLecture(){ return !!grp.courant && !(grp.liste || []).some(x => x.id 
    ardoise, jamais du nom de la personne. On ne peut ni le bloquer ni le
    signaler : c'est la modération qui parle. */
 function moderationEcrit(){ return !!(grp.etat && grp.etat.moderateur && grp.etat.moderation_ecrit === true); }
+/* ===== (v336) LA MODÉRATION PARLE AUSSI DANS SES GROUPES, ET PEUT TOUT =====
+   « Je veux pouvoir écrire dans les groupes avec le truc de modération, et
+   cela même si je suis déjà présent dans le groupe. Et vérifie les
+   possibilités que j'ai au niveau des droits — retirer, nommer
+   administrateur, etc. — sur les groupes, en sachant que je suis dans la
+   modération : je veux que tout soit cohérent et top. » Si le serveur le
+   sait (moderation_pleine, groupes/table.sql) :
+   — dans un groupe dont il est membre, un modérateur choisit au nom de qui il
+     écrit : son visage, à gauche du champ, devient d'un toucher le bouclier
+     de la modération (voir LA VOIX) ;
+   — il agit sur tous les membres (le propriétaire, seulement par la
+     sourdine : « il sera changé de propriétaire, mais que par inactivité,
+     pas par la modération ») ; ce que son rôle dans le groupe ne permettrait
+     pas se dit dans la discussion au nom de la modération, jamais du sien ;
+   — il ne signale ni ne bloque : les signalements arrivent chez lui, et il
+     doit voir ce qu'il modère ;
+   — les bannis d'un groupe se voient, et un bannissement se lève (aussi pour
+     le propriétaire et les admins).
+   Un serveur d'avant garde tout comme en v335. */
+function moderationPleine(){ return !!(grp.etat && grp.etat.moderateur && grp.etat.moderation_pleine === true); }
+function bannisServeur(){ return !!(grp.etat && grp.etat.moderation_pleine === true); }
+function estModo(){ return !!(grp.etat && grp.etat.moderateur); }
+/* LA VOIX. De l'extérieur, la modération parle seule (v334) ; en sourdine
+   aussi — la sourdine est celle des admins du groupe, pas la sienne. Dans un
+   de ses groupes, un modérateur choisit, et le choix revient à « en son
+   nom » chaque fois qu'il rouvre le groupe : jamais un message de la
+   modération par mégarde. */
+function voixImposee(){ return enLecture() || (moderationPleine() && !!monMuetJusqu()); }
+function voixModeration(){ return voixImposee() || (moderationPleine() && !!grp.courant && grp.voix === grp.courant); }
+/* ===== (v336) LE MODE MODÉRATION =====
+   « Vu que je suis modérateur, je me demande s'il n'est pas juste d'avoir
+   des permissions qu'en modération, et pas simplement avec mon profil
+   classique. » Si. Dans un de ses groupes, un modérateur est un membre comme
+   les autres : son rôle dans le groupe, rien de plus. Ses pouvoirs ne
+   s'ouvrent qu'en mode modération, et sa voix va avec : le bouclier à côté
+   du champ, d'un toucher — d'office quand il arrive de la Modération, et
+   toujours dans un groupe dont il n'est pas membre. Tout ce qu'il y fait
+   alors se fait au nom de la modération (le serveur ne lui ouvre ses
+   pouvoirs que si le jeu le dit : moderer_membre, p_moderation). Un serveur
+   d'avant ne connaît pas le mode : tout reste comme en v335. */
+function modeModeration(){ return estModo() && (!moderationPleine() || voixModeration()); }
 function deLaModeration(m){ return !!(m && m.donnees && m.donnees.moderation === true); }
 function nomAuteur(m){ return deLaModeration(m) ? T("La modération") : (((grp.profils[m.auteur] || {}).nom) || T("Quelqu'un")); }
 const COULEUR_MODERATION = "#6C7A8D";   // l'ardoise de LA PALETTE DE YADA (--pal-ardoise-b)
@@ -24111,6 +24268,9 @@ async function ouvrirGroupe(id){
      lecture seule, y ramenait déjà : voir enLecture.) */
   if(state.screen !== "groupe") grp.depuis = state.screen === "moderation" ? "moderation" : null;
   grp.courant = id;
+  /* (v336) On rouvre un groupe en son nom — sauf en arrivant de la
+     Modération : on y vient pour modérer. */
+  grp.voix = grp.depuis === "moderation" && moderationPleine() ? id : null;
   g.non_lus = 0; g.mentions = 0;
   effacerNotifsGroupe(id);
   recompterNonLus(id);
@@ -24132,6 +24292,7 @@ function retourGroupes(){
   grp.depuis = null;
   grp.courant = null;
   grp.reponse = null;
+  grp.voix = null;
   desabonnerLus();
   state.screen = deModeration ? "moderation" : "groupes";
   render();
@@ -24795,10 +24956,12 @@ function suiteHtml(suite){
   const p = grp.profils[m0.auteur] || {};
   const nom = mod ? T("La modération") : (p.nom || T("Quelqu'un")), couleur = mod ? COULEUR_MODERATION : (p.couleur || "#8A8F98");
   const der = suite[suite.length - 1];
-  return `<div class="b ${moi ? "b-moi" : "b-eux"}">
+  /* (v336) Mes messages au nom de la modération se reconnaissent chez moi
+     aussi : « La modération » au-dessus, l'ardoise au lieu du corail. */
+  return `<div class="b ${moi ? "b-moi" : "b-eux"}${moi && mod ? " b-mod" : ""}">
       ${moi ? "" : `<span class="b-av">${mod ? avatarModeration(2.05) : avatarHtml(nom, couleur, 2.05, "u:" + m0.auteur)}</span>`}
       <div class="b-pile">
-        ${moi ? "" : `<span class="b-nom" style="color:${couleurLisible(couleur)}">${escapeHtml(nom)}</span>`}
+        ${moi ? (mod ? `<span class="b-nom b-nom-mod"><span class="ico">${ICONS.bouclier}</span>${escapeHtml(nom)}</span>` : "") : `<span class="b-nom" style="color:${couleurLisible(couleur)}">${escapeHtml(nom)}</span>`}
         ${suite.map(bulleHtml).join("")}
         <span class="b-heure"${moi && der.id > 0 ? ` data-der="${der.id}"` : ""}>${escapeHtml(der.id < 0 ? T("Envoi…") : heureCourte(der.cree_le))}${moi && der.id > 0 ? cochesHtml(der) : ""}</span>
       </div>
@@ -24896,16 +25059,26 @@ function bulleHtml(m){
   const moi = !!m.auteur && m.auteur === monId();
   if(m.masque) return `<button class="b-bulle b-vide" data-m="${m.id}" onclick="actionsMessage('${m.id}')">${T("Message masqué")}</button>`;
   if(m.genre === "partie"){
-    const code = String((m.donnees && m.donnees.code) || "").replace(/[^A-Z0-9]/g, "");
+    const d = m.donnees || {};
+    const code = String(d.code || "").replace(/[^A-Z0-9]/g, "");
     const nom = (grp.profils[m.auteur] || {}).nom || T("Quelqu'un");
     /* Fermée par celui qui l'a lancée, ou vieille de plus de quarante-cinq
        minutes (la règle du serveur) : on ne la rejoint plus. */
-    const finie = !!(m.donnees && m.donnees.fermee) || (Date.now() - new Date(m.cree_le || 0).getTime() > 45 * 60000);
-    return `<div class="b-bulle b-partie${finie ? " finie" : ""}" data-m="${m.id}" onclick="toucherMessage('${m.id}')">
+    const finie = !!d.fermee || (Date.now() - new Date(m.cree_le || 0).getTime() > 45 * 60000);
+    /* (v336) QUI A REJOINT, ET SI ELLE A COMMENCÉ (voir LA PARTIE SUIVIE) :
+       les visages et les noms de ceux qui sont déjà dans le salon, « Partie
+       en cours » une fois partie — on ne la rejoint plus. Déjà dans ce
+       salon : pas de bouton ; inscrit mais ressorti : on y revient. */
+    const lancee = !finie && d.lancee === true;
+    const venus = Array.isArray(d.venus) ? d.venus.filter(v => v && v.id) : [];
+    const moiVenu = venus.some(v => v.id === monId());
+    const ici = !!net.room && net.code === code;
+    return `<div class="b-bulle b-partie${finie ? " finie" : ""}${lancee ? " lancee" : ""}" data-m="${m.id}" onclick="toucherMessage('${m.id}')">
         <span class="bp-ico">${ICONS.manette}</span>
         <b>${moi ? T("Tu lances une partie") : escapeHtml(Tf("{nom} lance une partie", { nom }))}</b>
-        ${finie ? `<small>${T("Partie terminée")}</small>` : (moi ? `<small>${escapeHtml(Tf("Code {code}", { code }))}</small>` : "")}
-        ${code && !finie ? `<button class="grp-pill" onclick="event.stopPropagation(); rejoindrePartieGroupe('${code}')">${T("Rejoindre la partie")}</button>` : ""}
+        ${venus.length ? `<span class="bp-venus">${visagesVenus(venus)}<small>${escapeHtml(avecQui(venus))}</small></span>` : ""}
+        ${finie ? `<small>${T("Partie terminée")}</small>` : lancee ? `<small>${T("Partie en cours")}</small>` : (moi ? `<small>${escapeHtml(Tf("Code {code}", { code }))}</small>` : "")}
+        ${code && !finie && !lancee && !ici ? `<button class="grp-pill" onclick="event.stopPropagation(); rejoindrePartieGroupe('${code}')">${moiVenu ? T("Revenir dans la partie") : T("Rejoindre la partie")}</button>` : ""}
       </div>`;
   }
   return `<button class="b-bulle${m.id < 0 ? " envoi" : ""}${mentionneMoi(m) ? " me-nomme" : ""}${citeDe(m) ? " a-cite" : ""}" data-m="${m.id}" onclick="toucherMessage('${m.id}')">${citeHtml(m)}${texteAvecMentions(m)}</button>`;
@@ -25107,14 +25280,57 @@ function monMuetJusqu(){
 }
 function compoHtml(){
   const muet = monMuetJusqu();
-  if(muet) return `<div class="compo-muet">${escapeHtml(Tf("Tu es en sourdine jusqu'à {h}.", { h:heureCourte(muet) }))}</div>`;
+  /* (v336) En sourdine, un modérateur garde la parole de la modération. */
+  if(muet && !moderationPleine()) return `<div class="compo-muet">${escapeHtml(Tf("Tu es en sourdine jusqu'à {h}.", { h:heureCourte(muet) }))}</div>`;
   /* (v334) La modération, de l'extérieur : le bouclier à la place de la
-     manette, et la barre dit au nom de qui l'on écrit. */
-  const mod = enLecture();
-  return `${mod ? `<span class="compo-mod" aria-hidden="true">${ICONS.bouclier}</span>` : `<button class="compo-jeu" onclick="lancerPartieGroupe(this)" aria-label="${T("Lancer une partie")}">${ICONS.manette}</button>`}
-    <textarea class="compo-texte" id="compoTexte" rows="1" maxlength="500" placeholder="${mod ? T("Au nom de la modération…") : T("Écris un message…")}" enterkeyhint="send"
+     manette, et la barre dit au nom de qui l'on écrit. (v336) Dans un de ses
+     groupes, un modérateur a sa voix en tête de barre — son visage, ou le
+     bouclier —, puis la manette. En mode modération, la manette s'efface (on
+     ne lance pas une partie au nom de la modération) : la barre est alors
+     celle de la modération, et l'invite a sa place. La voix, elle, ne bouge
+     pas : un second toucher au même endroit rend la parole en son nom. */
+  const mod = voixImposee(), voix = voixModeration();
+  return `${moderationPleine() && !mod ? voixHtml(voix) : ""}
+    ${mod ? `<span class="compo-mod" aria-hidden="true">${ICONS.bouclier}</span>` : `<button class="compo-jeu" onclick="lancerPartieGroupe(this)" aria-label="${T("Lancer une partie")}"${voix ? " hidden" : ""}>${ICONS.manette}</button>`}
+    <textarea class="compo-texte" id="compoTexte" rows="1" maxlength="500" placeholder="${voix ? T("Au nom de la modération…") : T("Écris un message…")}" enterkeyhint="send"
       oninput="surSaisie(this); cacherAlerteCompo()" onkeydown="toucheCompo(event)" onclick="majNoms(this)" onkeyup="if(/^Arrow|^Home|^End/.test(event.key)) majNoms(this)" onblur="setTimeout(cacherNoms, 150)"></textarea>
-    <button class="compo-envoi" id="compoEnvoi" onpointerdown="event.preventDefault()" onmousedown="event.preventDefault()" onclick="envoyerMessageGroupe()" aria-label="${T("Envoyer")}" disabled>${ICONS.envoyer}</button>`;
+    <button class="compo-envoi${voix ? " mod" : ""}" id="compoEnvoi" onpointerdown="event.preventDefault()" onmousedown="event.preventDefault()" onclick="envoyerMessageGroupe()" aria-label="${T("Envoyer")}" disabled>${ICONS.envoyer}</button>`;
+}
+/* ===== (v336) LA VOIX : AU NOM DE QUI J'ÉCRIS =====
+   Un modérateur, dans un de ses groupes, voit son visage à gauche du champ :
+   il écrit en son nom. Un toucher, et le visage devient le bouclier de la
+   modération — l'invite le dit, le bouton d'envoi passe à l'ardoise, et ses
+   bulles aussi : il voit, avant d'envoyer comme après, au nom de qui il a
+   parlé. Le geste ne prend pas le foyer du champ : le clavier reste ouvert. */
+function voixHtml(voix){
+  return `<button class="compo-voix${voix ? " mod" : ""}" id="compoVoix" onpointerdown="event.preventDefault()" onmousedown="event.preventDefault()" onclick="changerVoix()" aria-pressed="${voix}" aria-label="${T("Agir au nom de la modération")}">${visageVoix(voix)}</button>`;
+}
+function visageVoix(voix){
+  return voix ? avatarModeration(2.05) : avatarHtml(String(profile.name || "").trim() || "?", profile.color || "#4C86E8", 2.05, true);
+}
+function changerVoix(){
+  if(!moderationPleine() || voixImposee() || !grp.courant) return;
+  grp.voix = grp.voix === grp.courant ? null : grp.courant;
+  majVoix(true);
+  /* (v336) La voix et les pouvoirs vont ensemble (voir LE MODE MODÉRATION) :
+     le mot le dit. */
+  showMiniToast(grp.voix ? T("Tu agis au nom de la modération.") : T("Tu agis en ton nom."));
+  try{ if(navigator.vibrate) navigator.vibrate(8); }catch(e){}
+}
+function majVoix(geste){
+  const voix = voixModeration();
+  const b = document.getElementById("compoVoix");
+  if(b && b.classList.contains("mod") !== voix){
+    b.classList.toggle("mod", voix); b.setAttribute("aria-pressed", String(voix));
+    b.innerHTML = visageVoix(voix);
+    if(geste){ b.classList.remove("bascule"); void b.offsetWidth; b.classList.add("bascule"); }
+  }
+  const t = document.getElementById("compoTexte");
+  if(t) t.placeholder = voix ? T("Au nom de la modération…") : T("Écris un message…");
+  const e = document.getElementById("compoEnvoi");
+  if(e) e.classList.toggle("mod", voix);
+  const j = document.querySelector("#compo .compo-jeu");
+  if(j) j.hidden = voix;
 }
 /* Le compositeur suit l'état de sourdine sans perdre ce qui est en cours de
    frappe : on ne le redessine que si l'état change. */
@@ -25130,8 +25346,12 @@ function majCompo(){
     const d = new Date(jusqu).getTime() - Date.now() + 400;
     if(d > 0 && d < 2147483000) finSourdineT = setTimeout(majCompo, d);
   }
-  const muet = !!jusqu, etait = !!c.querySelector(".compo-muet");
-  if(!muet && !etait) return;
+  /* (v336) Trois formes de barre : la sourdine, la parole de la modération
+     seule (de l'extérieur, ou un modérateur en sourdine), la barre de tout
+     le monde. On ne la redessine que si sa forme change. */
+  const voulue = (jusqu && !moderationPleine()) ? "muet" : (voixImposee() ? "mod" : "libre");
+  const montree = c.querySelector(".compo-muet") ? "muet" : (c.querySelector(".compo-mod") ? "mod" : "libre");
+  if(voulue === montree) return;
   const t = c.querySelector("#compoTexte"), v = t ? t.value : "";
   c.innerHTML = compoHtml();
   /* La parole rendue rend aussi ce qu'on avait commencé d'écrire (gardé
@@ -25166,7 +25386,7 @@ function jetonsTous(){
   const k = "@tout le monde";
   return [k].concat(Object.keys(TEXTES).map(l => TEXTES[l][k]).filter(Boolean));
 }
-function peutNommerTous(){ return suisAdmin() || !!(grp.etat && grp.etat.moderateur); }
+function peutNommerTous(){ return suisAdmin() || modeModeration(); }
 function sansAccents(x){ return String(x || "").normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLocaleLowerCase(); }
 /* Mon propre nom se connaît avant que le serveur n'ait rendu les profils : une
    bulle qui me nomme se dessine dès l'ouverture, souvent avant eux. */
@@ -25360,8 +25580,11 @@ async function envoyerMessageGroupe(){
   const rep = reponsesServeur() ? reponseEnCours(g.id) : null;
   if(rep) donnees = Object.assign({}, donnees || {}, { reponse:rep });
   /* (v334) Écrit de l'extérieur par la modération : le serveur y pose la
-     marque ; la bulle posée tout de suite la porte déjà. */
-  const marque = enLecture() ? { moderation:true } : {};
+     marque ; la bulle posée tout de suite la porte déjà. (v336) Dans un de
+     ses groupes, la voix choisie part avec le message — le serveur ne croit
+     la marque que d'un modérateur. */
+  const marque = voixModeration() ? { moderation:true } : {};
+  if(marque.moderation) donnees = Object.assign({}, donnees || {}, marque);
   if(f) f.messages.push({ id, groupe:g.id, auteur:monId(), genre:"texte", texte, donnees:Object.assign({}, donnees || {}, marque), cree_le:new Date().toISOString(), masque:false, supprime_le:null });
   t.value = ""; surSaisie(t);
   if(rep){ grp.reponse = null; majReponseCompo(); }
@@ -25488,6 +25711,77 @@ function rejoindrePartieGroupe(code){
   net.autoMatch = false; clearTimeout(net.matchGuard);
   net.depuisGroupe = grp.courant;
   joinRoom(code, false);
+}
+/* ===== (v336) LA PARTIE SUIVIE =====
+   « Quand un joueur crée une partie, il faut un message comme quoi il a
+   lancé une partie, et les joueurs qui rejoignent ensuite : de cette façon,
+   les autres peuvent décider d'entrer ou pas. » L'invitation disait qui
+   lançait la partie, jamais qui y était déjà. Maintenant :
+   — un membre qui entre dans le salon d'une invitation de ses groupes (par la
+     bulle, ou en tapant son code) s'y inscrit, une fois l'hôte vu — le
+     serveur y met son nom (venir_partie) ; ressorti avant le départ, il s'en
+     retire ;
+   — au départ, l'hôte la dit commencée (commencer_partie) : la liste ne
+     bouge plus, et la bulle dit « Partie en cours » ;
+   — chez tous, la bulle suit, en direct : les visages, et « Avec Sarah,
+     Jonas et toi ».
+   Un serveur d'avant (sans « parties_suivies ») : la bulle de toujours. */
+function partiesSuivies(){ return !!(grp.etat && grp.etat.parties_suivies === true); }
+/* L'invitation encore ouverte de ce code, dans un de mes fils : ni fermée,
+   ni commencée, ni plus vieille que la règle du serveur (45 minutes). */
+function invitationDuCode(code){
+  if(!code) return null;
+  for(const gid of Object.keys(grp.fils || {})){
+    const f = grp.fils[gid];
+    const m = f && (f.messages || []).find(x => x.genre === "partie" && x.id > 0 && x.donnees && x.donnees.code === code
+      && !x.donnees.fermee && x.donnees.lancee !== true && Date.now() - new Date(x.cree_le || 0).getTime() <= 45 * 60000);
+    if(m) return m;
+  }
+  return null;
+}
+async function direPartieVenue(venu){
+  const pv = net.partieVenue; if(!pv || !partiesSuivies()) return;
+  const m = trouverMessage(String(pv.message));
+  /* La bulle suit tout de suite ; le direct confirmera chez tout le monde. */
+  if(m){
+    const d = m.donnees = Object.assign({}, m.donnees || {});
+    const l = (Array.isArray(d.venus) ? d.venus : []).filter(v => v && v.id !== monId());
+    if(venu) l.push({ id:monId(), nom:String(profile.name || "").trim() });
+    d.venus = l;
+    if(grp.courant === m.groupe && state.screen === "groupe") majFil();
+  }
+  let r = null;
+  try{ r = await appelGroupe("venir_partie", { p_message:+pv.message, p_venu:!!venu }); }catch(e){}
+  /* Refusé (la partie a commencé entre-temps) : la bulle reprend la liste
+     du serveur, sans moi. */
+  if(venu && m && !(r && r.ok)){
+    m.donnees.venus = (m.donnees.venus || []).filter(v => v.id !== monId());
+    if(grp.courant === m.groupe && state.screen === "groupe") majFil();
+  }
+}
+function avecQui(venus){
+  const moi = monId();
+  const noms = venus.filter(v => v.id !== moi).map(v => v.nom || (grp.profils[v.id] || {}).nom || T("Quelqu'un"));
+  const montres = noms.length > 4 ? noms.slice(0, 3).concat([Tf("{n} autres", { n:noms.length - 3 })]) : noms;
+  if(venus.some(v => v.id === moi)) montres.push(T("toi"));
+  return Tf("Avec {noms}", { noms:enumerer(montres) });
+}
+function enumerer(l){
+  let s = "";
+  try{ if(typeof Intl !== "undefined" && Intl.ListFormat) s = new Intl.ListFormat(LANGUE, { style:"long", type:"conjunction" }).format(l); }catch(e){}
+  if(!s) s = l.length < 2 ? (l[0] || "") : l.slice(0, -1).join(", ") + " " + T("et") + " " + l[l.length - 1];
+  /* La fin se tient : « et 3 autres » passe à la ligne d'un seul bloc,
+     jamais « et 3 » d'un côté et « autres » de l'autre. */
+  const fin = l.length > 1 ? String(l[l.length - 1]) : "", i = fin ? s.lastIndexOf(fin) : -1;
+  if(i > 0 && s[i - 1] === " ") s = s.slice(0, i - 1) + "\u00A0" + fin.replace(/ /g, "\u00A0") + s.slice(i + fin.length);
+  return s;
+}
+function visagesVenus(venus){
+  return `<span class="bp-visages" aria-hidden="true">${venus.slice(0, 4).map(v => {
+    const p = grp.profils[v.id] || {}, moi = v.id === monId();
+    const n = moi ? (String(profile.name || "").trim() || "?") : (v.nom || p.nom || "?");
+    return avatarHtml(n, moi ? (profile.color || "#4C86E8") : (p.couleur || "#8A8F98"), 1.45, moi ? true : "u:" + v.id);
+  }).join("")}</span>`;
 }
 
 /* ===================== LE DIRECT =====================
@@ -25917,14 +26211,21 @@ function actionsMessage(id){
   const moi = !!m.auteur && m.auteur === monId(), mod = deLaModeration(m);
   const p = grp.profils[m.auteur] || {};
   const nom = moi ? (String(profile.name || "").trim() || T("Toi")) : (mod ? T("La modération") : (p.nom || T("Quelqu'un")));
-  const admin = suisAdmin() || !!(grp.etat && grp.etat.moderateur);
+  const admin = suisAdmin() || modeModeration();
   let h = `<div class="grp-liste-act">`;
   if(m.genre === "texte" && m.texte && !m.masque) h += ligneAction(ICONS.copier, T("Copier"), `copierMessage('${m.id}')`);
-  /* (v334) La modération ne se bloque ni ne se signale. */
-  if(!moi && m.auteur && !mod){
+  /* (v334) La modération ne se bloque ni ne se signale. (v336) Et elle ne
+     signale ni ne bloque elle-même : elle agit — depuis le message, elle va
+     droit à son auteur (la sourdine, le rôle, le retrait). */
+  const sonRole = !moi && m.auteur && !mod ? ((grp.membres[grp.courant] || []).find(x => x.membre === m.auteur) || {}).role : null;
+  const mon = monRole();
+  const peutGerer = !!sonRole && ((estModo() && (moderationPleine() || sonRole !== "proprietaire"))
+                                 || (mon === "proprietaire") || (mon === "admin" && sonRole === "membre"));
+  if(!moi && m.auteur && !mod && !estModo()){
     if(!m.masque) h += ligneAction(ICONS.drapeau, T("Signaler"), `signalerMessage('${m.id}')`);
     h += ligneAction(ICONS.bloquer, Tf("Bloquer {nom}", { nom }), `bloquerQuelquUn('${m.auteur}')`, true);
   }
+  if(peutGerer) h += ligneAction(ICONS.personne, Tf("Gérer {nom}", { nom }), `fermerFeuilleGroupe('grpActionsVeil'); ouvrirMembre('${m.auteur}')`);
   if(moi || admin) h += ligneAction(ICONS.corbeille, T("Supprimer le message"), `supprimerMessageGroupe('${m.id}')`, true);
   h += `</div><div class="grp-mot"><span></span></div>`;
   /* (v329) Mon message : qui l'a vu, qui pas encore — comme « Infos » sur
@@ -26206,7 +26507,7 @@ function ouvrirInfosGroupe(invitation){
     const ordre = { proprietaire:0, admin:1, membre:2 };
     return (ordre[a.role] - ordre[b.role]) || String((grp.profils[a.membre] || {}).nom || "").localeCompare(String((grp.profils[b.membre] || {}).nom || ""));
   });
-  const admin = suisAdmin() || !!(grp.etat && grp.etat.moderateur);
+  const admin = suisAdmin() || modeModeration();
   const proprio = monRole() === "proprietaire";
   ouvrirFeuilleGroupe("grpInfosVeil", g.nom, pastilleGroupe(g, true), `
     ${descriptionHtml(g)}
@@ -26226,10 +26527,60 @@ function ouvrirInfosGroupe(invitation){
     <div class="grp-mot"><span></span></div>
     <div class="grp-liste-act">
       ${admin ? ligneAction(ICONS.crayon, T("Modifier le groupe"), "ouvrirModifGroupe()") : ""}
-      ${ligneAction(ICONS.drapeau, T("Signaler le groupe"), `signalerMessage(null, null, '${g.id}')`)}
+      ${admin && bannisServeur() ? ligneAction(ICONS.bannir, T("Personnes bannies"), "ouvrirBannis()") : ""}
+      ${estModo() ? "" : ligneAction(ICONS.drapeau, T("Signaler le groupe"), `signalerMessage(null, null, '${g.id}')`)}
       ${enLecture() ? "" : ligneAction(ICONS.sortir, T("Quitter le groupe"), "quitterGroupeCourant()", true)}
-      ${proprio || (grp.etat && grp.etat.moderateur) ? ligneAction(ICONS.corbeille, T("Supprimer le groupe"), "supprimerGroupeCourant()", true) : ""}
+      ${proprio || modeModeration() ? ligneAction(ICONS.corbeille, T("Supprimer le groupe"), "supprimerGroupeCourant()", true) : ""}
     </div>`);
+}
+/* ===== (v336) LES PERSONNES BANNIES =====
+   Bannir sans pouvoir revenir sur sa décision n'était pas cohérent. Le
+   propriétaire, les admins et la modération voient qui est banni du groupe
+   (bannis_du_groupe : le nom vient du serveur, le profil d'un banni ne se
+   lirait plus) ; toucher quelqu'un lève son bannissement — il pourra revenir
+   avec le code. */
+async function ouvrirBannis(){
+  const g = groupeCourant(); if(!g) return;
+  const veil = ouvrirFeuilleGroupe("grpBannisVeil", T("Personnes bannies"), ICONS.bannir,
+    `<div class="grp-defile" id="grpBannis"><div class="grp-vide"><span class="spinner"></span></div></div><div class="grp-mot"><span></span></div>`);
+  const l = await listeGroupe("bannis_du_groupe", { p_groupe:g.id });
+  const z = veil && veil.isConnected ? veil.querySelector("#grpBannis") : null;
+  if(!z) return;
+  if(!l){ z.innerHTML = `<div class="grp-vide">${T("Pas de réseau. Réessaie dans un instant.")}</div>`; return; }
+  grp.bannis = l;
+  z.innerHTML = lignesBannis();
+  try{ glassRelayout(); queueGlassSync(); }catch(e){}
+}
+function lignesBannis(){
+  const l = grp.bannis || [];
+  if(!l.length) return `<div class="grp-vide">${T("Personne n'est banni de ce groupe.")}</div>`;
+  return l.map(b => {
+    const nom = b.nom || T("Quelqu'un");
+    let jour = "";
+    try{ jour = new Date(b.le).toLocaleDateString(LANGUE, { day:"numeric", month:"long" }); }catch(e){}
+    return `<button class="grp-ligne" onclick="leverBannissement('${escapeHtml(String(b.id))}')">
+      ${avatarHtml(nom, b.couleur || "#8A8F98", 2.4)}
+      <span class="grp-txt"><b>${escapeHtml(nom)}</b>${jour ? `<small>${escapeHtml(Tf("Depuis le {date}", { date:jour }))}</small>` : ""}</span>
+      <span class="chev">${ICONS.chevronRight}</span>
+    </button>`;
+  }).join("");
+}
+function leverBannissement(qui){
+  const g = groupeCourant(); if(!g) return;
+  const b = (grp.bannis || []).find(x => String(x.id) === String(qui)); if(!b) return;
+  const nom = b.nom || T("Quelqu'un");
+  showModal({
+    title:Tf("Lever le bannissement de {nom} ?", { nom }),
+    message:T("Cette personne pourra revenir avec le code."),
+    okLabel:T("Lever"), cancelLabel:T("Annuler"),
+    onOk:()=>{ (async ()=>{
+      const r = await appelGroupe("moderer_membre", argsModerer({ p_groupe:g.id, p_membre:b.id, p_action:"debannir", p_minutes:null }));
+      if(!r.ok){ motFeuille("grpBannisVeil", motErreurGroupe(r)); return; }
+      grp.bannis = (grp.bannis || []).filter(x => String(x.id) !== String(qui));
+      const z = document.getElementById("grpBannis"); if(z) z.innerHTML = lignesBannis();
+      showMiniToast(Tf("{nom} peut de nouveau rejoindre le groupe.", { nom }));
+    })(); return true; }
+  });
 }
 /* ===== (v329) LA DESCRIPTION DANS SA CARTE =====
    « C'est censé être la description du groupe — ça déjà j'aime pas, et en
@@ -26339,38 +26690,80 @@ function majInfosMembres(){
 }
 function ouvrirMembre(qui){
   const p = grp.profils[qui] || {};
-  const l = grp.membres[grp.courant] || []; const m = l.find(x => x.membre === qui) || {};
   const g = groupeCourant(); if(!g || !qui || qui === monId()) return;
   const nom = p.nom || T("Quelqu'un");
-  const mon = monRole(), modo = !!(grp.etat && grp.etat.moderateur);
+  ouvrirFeuilleGroupe("grpMembreVeil", nom, avatarHtml(nom, p.couleur || "#8A8F98", 1.5, "u:" + qui), membreHtml(qui));
+}
+/* (v336) Avec son profil, un modérateur n'a ici que son rôle — et de quoi
+   passer en mode modération, d'un toucher : la page se refait sur place,
+   avec ses pouvoirs, et le bouclier prend place à côté du champ. */
+function passerEnModeration(qui){
+  if(!moderationPleine() || !grp.courant) return;
+  grp.voix = grp.courant;
+  majVoix(true);
+  showMiniToast(T("Tu agis au nom de la modération."));
+  const c = document.querySelector("#grpMembreVeil .grp-feuille-corps");
+  if(c){ c.innerHTML = membreHtml(qui); try{ glassRelayout(); queueGlassSync(); }catch(e){} }
+}
+function membreHtml(qui){
+  const l = grp.membres[grp.courant] || []; const m = l.find(x => x.membre === qui) || {};
+  const g = groupeCourant(); if(!g) return "";
+  const mon = monRole(), modo = modeModeration(), pleine = moderationPleine();
   /* Le propriétaire peut tout ; un admin ne touche qu'aux simples membres.
-     Le serveur refuserait le reste — on ne propose donc que ce qu'il accepte. */
-  const peutModerer = m.role !== "proprietaire" && (modo || mon === "proprietaire" || (mon === "admin" && m.role === "membre"));
+     Le serveur refuserait le reste — on ne propose donc que ce qu'il accepte.
+     (v336) En mode modération, un modérateur agit sur tous les membres ; le
+     propriétaire, il ne peut que le mettre en sourdine : un groupe ne change
+     de main que par son propriétaire, ou par son absence (voir L'ABSENCE DU
+     PROPRIÉTAIRE, groupes/table.sql). Avec son profil, il n'a que son rôle. */
+  const parRole = m.role !== "proprietaire" && (mon === "proprietaire" || (mon === "admin" && m.role === "membre"));
+  const peutModerer = parRole || (modo && (pleine || m.role !== "proprietaire"));
   const sourdine = sourdineDe(m);
-  let h = `<p class="grp-membre-role">${escapeHtml([roleDe(m) || T("Membre"), sourdine].filter(Boolean).join(" · "))}</p><div class="grp-liste-act">`;
+  let h = `<p class="grp-membre-role">${escapeHtml([roleDe(m) || T("Membre"), sourdine].filter(Boolean).join(" · "))}</p>`;
+  /* (v336) En mode modération, tout ce qui se fait ici se fait au nom de la
+     modération — et la page le dit avant le geste. */
+  if(peutModerer && modo && pleine) h += `<p class="grp-aide grp-modo-aide"><span class="ico">${ICONS.bouclier}</span>${T("Ici, tu agis au nom de la modération.")}</p>`;
+  h += `<div class="grp-liste-act">`;
   if(peutModerer){
     h += sourdine ? ligneAction(ICONS.parler, T("Rendre la parole"), `modererMembre('${qui}', 'parler')`)
                   : ligneAction(ICONS.sourdine, T("Mettre en sourdine une heure"), `modererMembre('${qui}', 'muet')`);
     /* (v329) Comme sur WhatsApp : un admin nomme d'autres admins parmi les
        membres ; retirer le rôle d'un admin reste au propriétaire. Et le
        propriétaire peut CÉDER le groupe — il en reste admin. */
-    if(m.role === "admin"){
-      if(modo || mon === "proprietaire") h += ligneAction(ICONS.etoile, T("Retirer le rôle d'admin"), `modererMembre('${qui}', 'retrograder')`);
-    } else h += ligneAction(ICONS.etoile, T("Nommer admin"), `modererMembre('${qui}', 'promouvoir')`);
-    if(mon === "proprietaire") h += ligneAction(ICONS.couronne, T("Céder le groupe"), `modererMembre('${qui}', 'ceder')`);
-    h += ligneAction(ICONS.retirer, T("Retirer du groupe"), `modererMembre('${qui}', 'exclure')`, true);
-    h += ligneAction(ICONS.bannir, T("Bannir du groupe"), `modererMembre('${qui}', 'bannir')`, true);
+    if(m.role !== "proprietaire"){
+      if(m.role === "admin"){
+        if(modo || mon === "proprietaire") h += ligneAction(ICONS.etoile, T("Retirer le rôle d'admin"), `modererMembre('${qui}', 'retrograder')`);
+      } else h += ligneAction(ICONS.etoile, T("Nommer admin"), `modererMembre('${qui}', 'promouvoir')`);
+      /* (v336) Céder son groupe est le geste d'un propriétaire, pas de la
+         modération : avec son profil seulement. */
+      if(mon === "proprietaire" && !(modo && pleine)) h += ligneAction(ICONS.couronne, T("Céder le groupe"), `modererMembre('${qui}', 'ceder')`);
+      h += ligneAction(ICONS.retirer, T("Retirer du groupe"), `modererMembre('${qui}', 'exclure')`, true);
+      h += ligneAction(ICONS.bannir, T("Bannir du groupe"), `modererMembre('${qui}', 'bannir')`, true);
+    }
   }
-  h += ligneAction(ICONS.drapeau, T("Signaler"), `signalerMessage(null, '${qui}', '${g.id}')`);
-  h += ligneAction(ICONS.bloquer, T("Bloquer"), `bloquerQuelquUn('${qui}')`, true);
+  if(estModo() && pleine && !modo) h += ligneAction(ICONS.bouclier, T("Agir au nom de la modération"), `passerEnModeration('${qui}')`);
+  /* (v336) La modération ne signale pas — les signalements arrivent chez
+     elle — et ne bloque pas, même avec son profil : elle doit voir ce
+     qu'elle modère. */
+  if(!estModo()){
+    h += ligneAction(ICONS.drapeau, T("Signaler"), `signalerMessage(null, '${qui}', '${g.id}')`);
+    h += ligneAction(ICONS.bloquer, T("Bloquer"), `bloquerQuelquUn('${qui}')`, true);
+  }
   h += `</div><div class="grp-mot"><span></span></div>`;
-  ouvrirFeuilleGroupe("grpMembreVeil", nom, avatarHtml(nom, p.couleur || "#8A8F98", 1.5, "u:" + qui), h);
+  return h;
+}
+/* (v336) Le serveur n'ouvre les pouvoirs de la modération qu'en mode
+   modération (voir LE MODE MODÉRATION) ; céder reste le geste du
+   propriétaire. Un serveur d'avant ne connaît pas ce mot : on ne le lui dit
+   pas. */
+function argsModerer(a){
+  if(moderationPleine()) a.p_moderation = a.p_action !== "ceder" && modeModeration();
+  return a;
 }
 async function modererMembre(qui, action){
   const g = groupeCourant(); if(!g) return;
   const nom = (grp.profils[qui] || {}).nom || T("Quelqu'un");
   const faire = async ()=>{
-    const r = await appelGroupe("moderer_membre", { p_groupe:g.id, p_membre:qui, p_action:action, p_minutes:action === "muet" ? 60 : null });
+    const r = await appelGroupe("moderer_membre", argsModerer({ p_groupe:g.id, p_membre:qui, p_action:action, p_minutes:action === "muet" ? 60 : null }));
     if(!r.ok){ motFeuille("grpMembreVeil", motErreurGroupe(r)); return; }
     signalerMembre(qui, g.id, action);           // (v331) son téléphone le sait tout de suite
     fermerFeuilleGroupe("grpMembreVeil");
@@ -26466,7 +26859,9 @@ function quitterGroupeCourant(){
   const proprio = monRole() === "proprietaire";
   showModal({
     title:Tf("Quitter « {nom} » ?", { nom:g.nom }),
-    message:proprio ? T("Tu en es propriétaire : le groupe passera à son plus ancien admin, ou à son plus ancien membre.")
+    /* (v336) La règle du serveur (_successeur) : jamais au hasard, et pas à
+       quelqu'un qui ne vient plus. */
+    message:proprio ? T("Tu en es propriétaire : le groupe passera à son plus ancien admin encore actif, sinon à son plus ancien membre encore actif.")
                     : (g.ouvert ? T("Tu pourras revenir quand tu veux.") : T("Tu pourras revenir avec le code.")),
     okLabel:T("Quitter"), cancelLabel:T("Rester"), danger:true,
     onOk:()=>{ (async ()=>{
