@@ -778,13 +778,13 @@ const ouvrirLaLangue = async (p, lg) => {
        l'écran se relisent d'elles-mêmes (toutes les 30 s), et une relecture
        tombée entre le dessin et le relevé repeignait la liste sans elle. */
     ['Groupes · recherche vaine', () => { grp.recherche = 'Zzz'; render(); }],
-    /* (v335) Découvrir ne propose plus les groupes dont on est membre : on ne
-       voit plus « Ouvrir » qu'en cherchant un nom, et Découvrir peut n'avoir
-       plus rien d'autre à montrer. */
+    /* (v337) Découvrir montre de nouveau TOUS les groupes publics, ceux dont
+       on est membre compris (avec « Ouvrir ») — en cherchant un nom, et sans
+       rien chercher. */
     ['Groupes · recherche',  () => { grp.publics = [ { id:'g-2', nom:'Sam', description:'', nb_membres:2, teinte:0, membre:true },
                                                      { id:'g-5', nom:'Ruth', description:'', nb_membres:1, teinte:3, membre:false } ];
                                      grp.recherche = 'a'; render(); }],
-    ['Groupes · rien d\'autre à découvrir', () => { grp.recherche = ''; grp.publics = [ { id:'g-2', nom:'Sam', description:'', nb_membres:2, teinte:0, membre:true } ]; render(); }],
+    ['Groupes · Découvrir, un groupe rejoint', () => { grp.recherche = ''; grp.publics = [ { id:'g-2', nom:'Sam', description:'', nb_membres:2, teinte:0, membre:true } ]; render(); }],
     ['Groupes · créer',    () => { grp.recherche = ''; __fermerTout(); __grpDecor(); state.screen='groupes'; render(); ouvrirCreation(); }],
     ['Groupes · créer public', () => { choisirTypeGroupe('public'); }],
     ['Groupes · code',     () => { __fermerTout(); ouvrirCode(); }],

@@ -1,6 +1,6 @@
 /* Yada — service worker : rend l'app jouable hors connexion.
    À déposer à côté de index.html (même dossier, nom exact "sw.js"). */
-const CACHE = "yada-v336";
+const CACHE = "yada-v337";
 /* ===== LES BANQUES DE QUESTIONS NE SONT PAS DANS LE SOCLE =====
    questions-en.js y était, et questions-es.js allait l'y rejoindre : six cent
    mille octets téléchargés à l'installation par TOUT LE MONDE, y compris les
@@ -415,11 +415,11 @@ function vignetteMessage(c){ return ICONES + (c.moderation === true ? "moderatio
    Android. La toucher ouvre la discussion (notificationclick). Le jeu la
    retire quand on lit le groupe (voir effacerNotifsGroupe dans index.html). */
 const MOTS_MESSAGE = {
-  fr: { ligne: "{de} : {texte}", partie: "{de} lance une partie", mention: "{de} te mentionne : {texte}",
+  fr: { ligne: "{de} : {texte}", partie: "{de} a lancé une partie", mention: "{de} te mentionne : {texte}",
         titre: "{nom} · {n} nouveaux messages", quelquun: "Quelqu'un", moderation: "La modération" },
-  en: { ligne: "{de}: {texte}", partie: "{de} is starting a game", mention: "{de} mentioned you: {texte}",
+  en: { ligne: "{de}: {texte}", partie: "{de} started a game", mention: "{de} mentioned you: {texte}",
         titre: "{nom} · {n} new messages", quelquun: "Someone", moderation: "Moderators" },
-  es: { ligne: "{de}: {texte}", partie: "{de} inicia una partida", mention: "{de} te menciona: {texte}",
+  es: { ligne: "{de}: {texte}", partie: "{de} inició una partida", mention: "{de} te menciona: {texte}",
         titre: "{nom} · {n} mensajes nuevos", quelquun: "Alguien", moderation: "La moderación" },
 };
 /* (v335) Un signalement, pour la modération : combien de choses attendent

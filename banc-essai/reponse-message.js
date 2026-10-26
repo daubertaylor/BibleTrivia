@@ -110,8 +110,11 @@ const dit = (quoi, bon, detail) => { console.log('  ' + (bon ? 'OK  ' : 'KO  ') 
     await pa.evaluate(() => { const z = document.getElementById('compoTexte'); surSaisie(z); envoyerMessageGroupe(); });
     const parti = await attendre(pa, () => [...document.querySelectorAll('#fil .b-moi .b-bulle')].some(b => +b.getAttribute('data-m') > 0 && /20 h/.test(b.textContent) && !!b.querySelector('.b-cite')), null, 6000);
     const enBase = await m.sql("select donnees->>'reponse' from public.messages where texte like 'Oui, à 20 h%'");
+    /* (v337) La citation ne disparaît plus d'un coup : elle se referme en
+       0,24 s (.part) pendant que la bulle arrive. Une citation qui part compte
+       donc comme partie ; reponse-tiroir.js vérifie qu'elle s'en va bien. */
     const b4 = await pa.evaluate(() => { const b = [...document.querySelectorAll('#fil .b-moi .b-bulle')].find(x => /20 h/.test(x.textContent)); const q = b && b.querySelector('.b-cite');
-      return q ? { nom: q.querySelector('b').textContent, texte: q.querySelector('span').textContent, enTete: b.firstElementChild === q, barre: !!document.querySelector('#compo .compo-cite') } : null; });
+      return q ? { nom: q.querySelector('b').textContent, texte: q.querySelector('span').textContent, enTete: b.firstElementChild === q, barre: !!document.querySelector('#compo .compo-cite:not(.part)') } : null; });
     dit('4. la réponse part : le serveur garde la référence, la bulle porte la citation en tête', parti && enBase === String(original) && b4 && b4.nom === 'Benoît' && b4.enTete && !b4.barre, enBase + ' · ' + JSON.stringify(b4));
     if (CAPT) await pa.screenshot({ path: CAPT + '/reponse-bulle.png' });
 

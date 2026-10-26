@@ -15,7 +15,7 @@
      5. balayée par le joueur : le message suivant repart de un ;
      6. un autre groupe : sa notification à lui, à côté ;
      7. une mention, une partie, un nom vide : « Benoît te mentionne : … »,
-        « Benoît lance une partie », « Quelqu'un : … » ;
+        « Benoît a lancé une partie », « Quelqu'un : … » ;
      8. dans la langue du joueur (anglais, espagnol) ;
      9. messages éteints ICI : rien ; miroir vide : montré (c'est le serveur
         qui sait à qui écrire) ; les rappels du jeu éteints n'y font rien ;
@@ -141,7 +141,7 @@ const MIROIR = { actif: false, priere: -1, lecture: -1, messages: true, langue: 
   b = bac(MIROIR);
   const vide = (await b.recevoir(msg({ id: 303, de: '', nom: '' })))[0] || {};
   dire(men.body === 'Benoît te mentionne : @Taylor tu viens ?', '7. une mention : « ' + men.body + ' »');
-  dire(par.body === 'Benoît lance une partie', '   une partie : « ' + par.body + ' »');
+  dire(par.body === 'Benoît a lancé une partie', '   une partie : « ' + par.body + ' »');
   dire(vide.body === "Quelqu'un : Salut !" && vide.title === 'Yada', '   sans nom : « ' + vide.title + ' » / « ' + vide.body + ' »');
 
   /* 8. la langue du joueur */
@@ -153,7 +153,7 @@ const MIROIR = { actif: false, priere: -1, lecture: -1, messages: true, langue: 
   const es1 = (await b.recevoir(msg({ id: 501 })))[0] || {};
   HORLOGE += 3000;
   const es2 = (await b.recevoir(msg({ id: 502 })))[0] || {};
-  dire(en1.body === 'Benoît mentioned you: hi' && en2.body === 'Benoît is starting a game' && en2.title === 'Les amis · 2 new messages',
+  dire(en1.body === 'Benoît mentioned you: hi' && en2.body === 'Benoît started a game' && en2.title === 'Les amis · 2 new messages',
     '8. en anglais : « ' + en1.body + ' », « ' + en2.title + ' » / « ' + en2.body + ' »');
   dire(es1.body === 'Benoît: Salut !' && es2.title === 'Les amis · 2 mensajes nuevos', '   en espagnol : « ' + es1.body + ' », « ' + es2.title + ' »');
   const tout = [n1, n2, n3, n4, n5, men, par, vide, en1, en2, es1, es2];
