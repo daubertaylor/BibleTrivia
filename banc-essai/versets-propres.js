@@ -20,6 +20,11 @@
      3. aucune césure mal recollée (« Jésus- Christ ») ;
      4. aucun des mots collés déjà relevés (« suisdoux », « etla vérité ») ni
         des coquilles des sources (« aujourd’hu1 », un chiffre pour un i) ;
+        ni un « œ » perdu : l'Ostervald d'eBible écrit « humble de cour »,
+        « vos bonnes ouvres » — trois versets d'accueil EN LIGNE ainsi jusqu'à
+        la v340 (Matthieu 5:16, 6:21, 11:29), trouvés le 27/10/2026. « cour »
+        et « ouvre » sont aussi de vrais mots : seules les tournures où ils ne
+        peuvent pas l'être sont cherchées ;
      5. aucun texte vide, aucune ponctuation collée au mot qui suit (« je
         vous dis :Demandez », Luc 11:9 — l'espace manquait dans la source) ;
      6. aucune lettre d'acrostiche en tête (« Scin. La grâce trompe… ») ;
@@ -62,6 +67,7 @@ const URL = process.argv[2] || 'http://127.0.0.1:8099/index.html';
       ['crochet d\'appareil critique', /[\[\]]/],
       ['césure mal recollée', /[A-Za-zÀ-ÿ]- [A-Za-zÀ-ÿ]/],
       ['mot collé déjà relevé', /suisdoux|servirDieu|\betla|aujourd[’']hu1/],
+      ['« œ » perdu dans la source', /\b(?:de|ton|mon|son|votre|notre|leur) cour\b|\b(?:bonnes|ses|vos|nos|leurs|tes|mes) ouvres\b/],
       ['ponctuation collée au mot suivant', /[:;!?…][A-Za-zÀ-ÖØ-öø-ÿ]/],
     ];
     const FR = ['Segond (recueil)', 'martin1744', 'darby', 'ostervald', 'ba'];
@@ -99,7 +105,7 @@ const URL = process.argv[2] || 'http://127.0.0.1:8099/index.html';
   const parRegle = {};
   r.fautes.forEach(f => { (parRegle[f[0]] = parRegle[f[0]] || []).push(f); });
   let ko = 0;
-  for (const nom of ['débris de page web', 'crochet d\'appareil critique', 'césure mal recollée', 'mot collé déjà relevé',
+  for (const nom of ['débris de page web', 'crochet d\'appareil critique', 'césure mal recollée', 'mot collé déjà relevé', '« œ » perdu dans la source',
                      'ponctuation collée au mot suivant', 'texte vide',
                      'lettre d\'acrostiche en tête', 'verset voisin sous l\'étiquette']) {
     const l = parRegle[nom] || [];
