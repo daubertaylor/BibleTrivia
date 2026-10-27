@@ -57,7 +57,10 @@ SRC_FR = json.load(io.open(os.path.join(ICI, "sources.json"), encoding="utf-8"))
 # martin.py se lance tout seul (main() sans garde) : on exécute son source
 # privé de ce dernier appel, pour garder UNE seule définition du score.
 def charge_martin():
-    src = io.open(os.path.join(SP, "martin.py"), encoding="utf-8").read()
+    # Celui du dépôt d'abord : la copie du scratchpad a déjà disparu une fois.
+    chemin = os.path.join(ICI, "martin.py")
+    if not os.path.exists(chemin): chemin = os.path.join(SP, "martin.py")
+    src = io.open(chemin, encoding="utf-8").read()
     src = re.sub(r"\nmain\(\)\s*$", "\n", src)
     ns = {"__name__": "martin_importe"}
     exec(compile(src, "martin.py", "exec"), ns)
@@ -192,7 +195,17 @@ COQUILLES = [(re.compile(r"\betla"), "et la"), (re.compile(r"aujourd’hu1"), "a
              # « Si tu peux!...Tout » (Marc 9:23) : l'espace APRÈS la ponctuation
              # manque dans la source. typo.normalise pose celle d'avant ; on pose
              # celle d'après. Aucune langue n'écrit une lettre collée à un deux-points.
-             (re.compile(r"([:;!?…])(?=[A-Za-zÀ-ÖØ-öø-ÿ])"), r"\1 ")]
+             (re.compile(r"([:;!?…])(?=[A-Za-zÀ-ÖØ-öø-ÿ])"), r"\1 "),
+             # L'OSTERVALD D'EBIBLE A PERDU LE « Œ » dans une partie du Nouveau
+             # Testament : « humble de cour » (Matthieu 11:29), « vos bonnes
+             # ouvres » (5:16), « là sera aussi votre cour » (6:21) — trois
+             # versets d'accueil EN LIGNE ainsi jusqu'à la v340, trouvés le
+             # 27/10/2026. « cour » et « ouvre » sont aussi de vrais mots (la
+             # cour du parvis, il ouvre la porte) : une entrée par tournure
+             # relevée, jamais une règle générale.
+             (re.compile(r"\bhumble de cour\b"), "humble de cœur"),
+             (re.compile(r"\bbonnes ouvres\b"), "bonnes œuvres"),
+             (re.compile(r"\baussi votre cour\b"), "aussi votre cœur")]
 def decolle(t):
     for a, b in COLLES.items(): t = t.replace(a, b)
     for motif, b in COQUILLES: t = motif.sub(b, t)

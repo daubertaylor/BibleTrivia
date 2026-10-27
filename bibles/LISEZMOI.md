@@ -211,6 +211,42 @@ convertit d'abord au format « un verset par ligne ».
 Une version **incomplète fonctionne** : ce qui manque retombe sur le Segond,
 donc jamais de trou à l'écran.
 
+## Rebâtir l'atelier des versets sur une machine neuve
+
+`ajoute_versets.py` lit les **dix** versions à chaque verset ajouté. Sur un
+conteneur neuf, rien de tout cela n'existe ; le 27/10/2026, il a fallu tout
+rapatrier, et l'outil de la Martin (`martin.py`) avait disparu avec le
+scratchpad — il vit désormais dans `bibles/`. `$SP` est le scratchpad.
+
+| clé | source | où la poser |
+|---|---|---|
+| `lsg1910`, `darby`, `ostervald` | eBible `fraLSG`, `frajnd`, `fra_fob` | chemins dans `bibles/sources.json` |
+| `ba` | SWORD `FreBA`, converti par `sword2vpl.py` | chemin dans `bibles/sources.json` |
+| `martin1744` | SWORD `FreBDM1744`, lu tel quel | `$SP/sword/FreBDM1744/` |
+| `kjv1769`, `asv1901`, `web` | eBible `eng-kjv2006`, `eng-asv`, `engwebp` | `$SP/en-bibles/<code>_vpl.txt` |
+| `rv1909` | eBible `spaRV1909` | `$SP/es/rv1909/spaRV1909_vpl.txt` |
+| `rv1865` | SWORD `SpaRV1865`, converti par `sword2vpl.py` | `$SP/es/rv1865_vpl.txt` |
+
+Les modules SWORD se prennent sur
+`https://www.crosswire.org/ftpmirror/pub/sword/packages/rawzip/<module>.zip`.
+**pysword** ne s'installe pas par pip ici (la construction de la roue échoue) :
+`pip download pysword --no-deps --no-binary :all:`, puis copier le dossier
+`pysword/` de l'archive dans `$SP` — c'est là que les scripts le cherchent.
+
+**La preuve que l'atelier est juste avant d'ajouter quoi que ce soit :**
+`python3 bibles/ajoute_versets.py --temoin` doit relire TOUS les versets en
+ligne, dans les dix versions, avec **0 écart**. C'est ce témoin qui a choisi la
+formule de ressemblance de `martin.py` (voir son en-tête) et qui a trouvé, en
+passant, une coquille déjà en ligne (« ÉternelDieu », Darby, 2 Samuel 7:22).
+
+**Et relire chaque lot, version par version.** Le témoin ne juge que les
+versets déjà vus ; un verset neuf peut tomber sur un piège qu'il ne connaît
+pas. Le premier lot de v341 en a montré trois : une Martin lue au verset
+voisin (Psaume 121:8), des versets qui finissent sur un reproche ou un
+« Extermine ! » — pas un verset du jour —, et des phrases coupées par une
+virgule (Jean 1:12 finit sur « lesquels sont nés, ») : on prend alors le
+passage entier (« Éphésiens 3:20-21 ») ou on renonce.
+
 ## Les citations des explications
 
 Une explication qui ouvre des guillemets promet le texte biblique. Beaucoup
@@ -340,3 +376,19 @@ minute — et c'est comme ça qu'ont été trouvés les deux seuls vrais défaut
 | Darby | Matthieu 6:24 | `servirDieu` | `servir Dieu` |
 
 À relancer après toute nouvelle extraction de texte biblique.
+
+**Ce que ce relevé ne voit pas : un mot vrai à la place d'un autre.**
+L'Ostervald d'eBible a perdu le « œ » dans une partie du Nouveau Testament.
+« cour » et « ouvres » sont de vrais mots ; aucun dictionnaire ne les signale.
+Trouvés le 27/10/2026 en relisant un lot à la main, trois versets d'accueil
+étaient en ligne ainsi :
+
+| version | référence | était | corrigé en |
+|---|---|---|---|
+| Ostervald | Matthieu 5:16 | `vos bonnes ouvres` | `vos bonnes œuvres` |
+| Ostervald | Matthieu 6:21 | `votre cour` | `votre cœur` |
+| Ostervald | Matthieu 11:29 | `humble de cour` | `humble de cœur` |
+
+La correction vit dans `COQUILLES` (`ajoute_versets.py`), une entrée par
+tournure ; `banc-essai/versets-propres.js` cherche désormais les tournures où
+« cour » et « ouvres » ne peuvent pas être de vrais mots.
