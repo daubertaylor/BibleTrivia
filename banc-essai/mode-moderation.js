@@ -6,13 +6,13 @@
    téléphone de Taylor :
      1. le groupe ouvert depuis « Mes groupes » : son profil — son visage à
         côté du champ ; la page de Chloé ne lui propose rien qu'un simple
-        membre n'ait, sauf « Agir au nom de la modération » (ni « Signaler »
-        ni « Bloquer » : les signalements arrivent chez elle, et elle doit
-        voir ce qu'elle modère) ;
-     2. le menu d'un message de Chloé : « Gérer Chloé », pas « Supprimer le
-        message » ;
+        membre n'ait, sauf « Agir au nom de la modération » : « Signaler »
+        comme tout membre (v339), mais pas « Bloquer » (elle doit voir ce
+        qu'elle modère) ;
+     2. le menu d'un message de Chloé : « Gérer Chloé » et « Signaler », pas
+        « Supprimer le message », pas « Bloquer » ;
      3. les infos : ni « Modifier le groupe », ni « Personnes bannies », ni
-        « Supprimer le groupe » ;
+        « Supprimer le groupe » ; « Signaler le groupe », comme tout membre ;
      4. « @tout le monde » lui est réservé, comme à tout membre ;
      5. « Agir au nom de la modération » : la page se refait sur place, avec
         ses pouvoirs et « Ici, tu agis au nom de la modération » ; le
@@ -90,17 +90,17 @@ const dit = (quoi, bon, detail) => { console.log('  ' + (bon ? 'OK  ' : 'KO  ') 
 
     /* 1 */
     const v1 = await bouclier(); const p1 = await page(C); await fermer('grpMembreVeil');
-    dit('1. avec son profil : son visage à côté du champ ; la page de Chloé ne propose que « Agir au nom de la modération » (ni pouvoirs, ni Signaler, ni Bloquer)',
-      v1 === 'visage' && JSON.stringify(p1.l) === JSON.stringify(['Agir au nom de la modération']) && p1.a === '', JSON.stringify({ v1, p1 }));
+    dit('1. avec son profil : son visage à côté du champ ; la page de Chloé : « Agir au nom de la modération » et « Signaler » (ni pouvoirs, ni Bloquer)',
+      v1 === 'visage' && JSON.stringify(p1.l) === JSON.stringify(['Agir au nom de la modération', 'Signaler']) && p1.a === '', JSON.stringify({ v1, p1 }));
 
     /* 2 */
     const l2 = await menu();
-    dit('2. le menu d\'un message de Chloé : « Gérer Chloé », pas « Supprimer le message »', l2.includes('Gérer Chloé') && !l2.includes('Supprimer le message') && !l2.some(t => /^Signaler|^Bloquer/.test(t)), JSON.stringify(l2));
+    dit('2. le menu d\'un message de Chloé : « Gérer Chloé » et « Signaler », ni « Supprimer le message » ni « Bloquer »', l2.includes('Gérer Chloé') && l2.includes('Signaler') && !l2.includes('Supprimer le message') && !l2.some(t => /^Bloquer/.test(t)), JSON.stringify(l2));
 
     /* 3 */
     const l3 = await infos();
-    dit('3. les infos : ni Modifier, ni Personnes bannies, ni Supprimer le groupe (ni Signaler)',
-      !l3.includes('Modifier le groupe') && !l3.includes('Personnes bannies') && !l3.includes('Supprimer le groupe') && !l3.includes('Signaler le groupe') && l3.includes('Quitter le groupe'), JSON.stringify(l3));
+    dit('3. les infos : ni Modifier, ni Personnes bannies, ni Supprimer le groupe ; Signaler le groupe, comme tout membre',
+      !l3.includes('Modifier le groupe') && !l3.includes('Personnes bannies') && !l3.includes('Supprimer le groupe') && l3.includes('Signaler le groupe') && l3.includes('Quitter le groupe'), JSON.stringify(l3));
 
     /* 4 */
     const t4 = await p.evaluate(() => peutNommerTous());
@@ -137,8 +137,8 @@ const dit = (quoi, bon, detail) => { console.log('  ' + (bon ? 'OK  ' : 'KO  ') 
     /* 8 */
     await p.evaluate(() => changerVoix()); await p.waitForTimeout(300);
     const mot8 = await mot(), v8 = await bouclier(); const p8 = await page(C); await fermer('grpMembreVeil');
-    dit('8. un toucher sur le bouclier : de nouveau son profil — le mot le dit, la page de Chloé ne propose plus que le passage en modération',
-      v8 === 'visage' && mot8 === 'Tu agis en ton nom.' && JSON.stringify(p8.l) === JSON.stringify(['Agir au nom de la modération']) && p8.a === '', JSON.stringify({ v8, mot8, p8 }));
+    dit('8. un toucher sur le bouclier : de nouveau son profil — le mot le dit, la page de Chloé ne propose plus que le passage en modération (et Signaler)',
+      v8 === 'visage' && mot8 === 'Tu agis en ton nom.' && JSON.stringify(p8.l) === JSON.stringify(['Agir au nom de la modération', 'Signaler']) && p8.a === '', JSON.stringify({ v8, mot8, p8 }));
 
     /* 9 : arrivée de la Modération */
     await p.evaluate(() => { retourGroupes(); });
@@ -158,7 +158,7 @@ const dit = (quoi, bon, detail) => { console.log('  ' + (bon ? 'OK  ' : 'KO  ') 
     await attendre(p, () => state.screen === 'moderation' || state.screen === 'groupes', null, 5000);
     await ouvrir();
     const v10 = await bouclier(); const p10 = await page(C); await fermer('grpMembreVeil');
-    dit('10. rouvert depuis « Mes groupes » : de nouveau son profil', v10 === 'visage' && JSON.stringify(p10.l) === JSON.stringify(['Agir au nom de la modération']), JSON.stringify({ v10, p10 }));
+    dit('10. rouvert depuis « Mes groupes » : de nouveau son profil', v10 === 'visage' && JSON.stringify(p10.l) === JSON.stringify(['Agir au nom de la modération', 'Signaler']), JSON.stringify({ v10, p10 }));
 
     /* 11 : un serveur d'avant */
     await p.evaluate(() => { grp.etat.moderation_pleine = false; render(); });

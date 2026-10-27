@@ -533,6 +533,9 @@ begin
     -- retirer ou bannir le propriétaire (le groupe passe au suivant, selon la
     -- règle), ou confier le groupe à un membre. Le jeu ne le propose qu'ici.
     'modo_proprietaire', true,
+    -- Et le récap des parties de groupe (v339) : chaque joueur inscrit son
+    -- score sur l'invitation (resultat_partie). Le jeu ne l'envoie qu'ici.
+    'recaps', true,
     -- La taille d'un groupe (v332) : le jeu la dit quand un groupe est plein.
     'membres_max', 120,
     -- Pour un modérateur : combien de choses attendent une décision (une par
@@ -960,6 +963,52 @@ begin
   if not coalesce((x.donnees->>'fermee')::boolean, false) and not coalesce((x.donnees->>'lancee')::boolean, false) then
     update public.messages set donnees = donnees || jsonb_build_object('lancee', true) where id = x.id;
   end if;
+  return jsonb_build_object('ok', true);
+end $$;
+
+-- ===== (v339) LE RÉCAP D'UNE PARTIE DE GROUPE =====
+-- « Pour les parties dans les groupes, une fois la partie terminée, qu'on
+-- puisse cliquer dessus pour avoir un récap de la partie, qui a gagné. »
+-- Chaque joueur, en finissant ses questions, inscrit SON score sur
+-- l'invitation — jamais celui d'un autre : celui qui l'a lancée, ou un
+-- « venu » (venir_partie). Une seule fois, pour la première partie
+-- (« Rejouer », dans le même salon, n'y touche plus) ; trois heures au plus
+-- après l'invitation. Un score se tient dans la partie : pas plus de bonnes
+-- réponses que de questions, pas plus de 30 points par question (la plus
+-- difficile). Le nombre de questions, le testament et le livre viennent du
+-- premier qui finit — la même partie pour tous. Le direct porte le récap à
+-- tous les membres : une mise à jour du message, qui ne sonne jamais. Le
+-- calcul se fait dans l'UPDATE même : deux joueurs qui finissent ensemble
+-- ne s'effacent pas l'un l'autre.
+create or replace function public.resultat_partie(p_message bigint, p_points int, p_bonnes int, p_total int, p_theme text, p_livre text)
+returns jsonb
+language plpgsql volatile security definer set search_path = '' as $$
+declare moi uuid := auth.uid(); x public.messages;
+begin
+  if moi is null then return jsonb_build_object('ok', false, 'erreur', 'non_connecte'); end if;
+  select * into x from public.messages where id = p_message;
+  if x.id is null or x.genre <> 'partie' or x.supprime_le is not null then
+    return jsonb_build_object('ok', false, 'erreur', 'introuvable'); end if;
+  if not public._membre(x.groupe, moi) then return jsonb_build_object('ok', false, 'erreur', 'pas_membre'); end if;
+  if not (x.auteur = moi or exists (select 1 from jsonb_array_elements(coalesce(x.donnees->'venus', '[]'::jsonb)) e
+                                      where e->>'id' = moi::text)) then
+    return jsonb_build_object('ok', false, 'erreur', 'interdit'); end if;
+  if x.cree_le < now() - interval '3 hours' then return jsonb_build_object('ok', false, 'erreur', 'partie_finie'); end if;
+  if p_total is null or p_total < 1 or p_total > 60 or p_bonnes is null or p_bonnes < 0 or p_bonnes > p_total
+     or p_points is null or p_points < 0 or p_points > p_total * 30 then
+    return jsonb_build_object('ok', false, 'erreur', 'valeur'); end if;
+  if coalesce(x.donnees->'scores', '{}'::jsonb) ? moi::text then return jsonb_build_object('ok', true, 'deja', true); end if;
+  update public.messages
+     set donnees = coalesce(donnees, '{}'::jsonb)
+                 || jsonb_build_object('scores', coalesce(donnees->'scores', '{}'::jsonb)
+                                                 || jsonb_build_object(moi::text, jsonb_build_array(p_points, p_bonnes)))
+                 || case when coalesce(donnees, '{}'::jsonb) ? 'total' then '{}'::jsonb
+                         else jsonb_strip_nulls(jsonb_build_object(
+                                'total', p_total,
+                                'theme', case when p_theme in ('tout','at','nt') then p_theme end,
+                                'livre', case when char_length(coalesce(p_livre, '')) between 1 and 40
+                                               and p_livre !~ '[<>&"]' then p_livre end)) end
+   where id = x.id and not (coalesce(donnees->'scores', '{}'::jsonb) ? moi::text);
   return jsonb_build_object('ok', true);
 end $$;
 
@@ -1545,7 +1594,7 @@ begin
                                 'regler_notifs','supprimer_message',
                                 'signaler','bloquer','debloquer','moderer_membre','modifier_groupe','nouveau_code',
                                 'supprimer_groupe','groupes_publics','mes_groupes','moderation_ouverte',
-                                'traiter_signalement','bannis_du_groupe','venir_partie','commencer_partie')
+                                'traiter_signalement','bannis_du_groupe','venir_partie','commencer_partie','resultat_partie')
   loop
     execute format('revoke all on function %s from public, anon, authenticated', f.sig);
     if left(f.proname, 1) <> '_' then

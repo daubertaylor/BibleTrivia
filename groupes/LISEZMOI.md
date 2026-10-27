@@ -231,7 +231,17 @@ Même geste qu'aux étapes 6 à 12 ; tant que le fichier n'est pas recollé, le
 jeu ne dit qu'« envoyé » et « lu » — une coche grise, puis deux bleues — et
 la modération ne peut que mettre le propriétaire en sourdine.
 
-**Une seule fois suffit pour les étapes 6 à 13 ensemble**, quelle que soit
+### 14. Le récap des parties de groupe (v339) — recoller le fichier une fois
+
+Une partie de groupe terminée se touche : une page dit qui l'a emporté, le
+classement complet (points, bonnes réponses), qui n'a pas fini, et ce
+qu'on a joué (nombre de questions, testament ou livre). Chaque joueur, en
+finissant ses questions, inscrit son propre score sur l'invitation
+(fonction `resultat_partie`) — jamais celui d'un autre, une seule fois, et
+seulement s'il était de la partie. Tant que le fichier n'est pas recollé,
+la bulle dit seulement « Partie terminée », comme avant.
+
+**Une seule fois suffit pour les étapes 6 à 14 ensemble**, quelle que soit
 la version déjà installée : le fichier d'aujourd'hui se colle par-dessus
 n'importe laquelle de ses versions passées sans rien perdre, et donne
 exactement la même base qu'une installation neuve (vérifié par
