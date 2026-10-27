@@ -29,6 +29,26 @@
    On prend donc deux images, au repos puis pressée, et on ne retient d'un
    pixel que ce que l'appui a AJOUTÉ à son sommet.
 
+   L'OMBRE PORTÉE N'EST PAS MESURÉE ICI (v342), ET VOICI POURQUOI.
+   Le relief a donné à chaque puce une ombre douce, en bas à droite. Le banc a
+   aussitôt vu un sommet de 2,4 au coin de « 15 s » et de 1,9 au bord de
+   « Louis Segond » — pour un plafond de 1,5. Ce n'était PAS une couture :
+       - le pixel fautif a la saturation du rose pressé (64 contre 65), pas
+         celle du crème (38) — ce n'est pas le fond du bouton qui passe ;
+       - même écran, ombre retirée : 1,0 et 0,0 ;
+       - même ombre dessinée en filtre (peinte AUSSI sous le bouton) : le
+         sommet disparaît au même pixel.
+   C'est l'ombre elle-même. Une ombre portée est peinte autour du bouton et
+   jamais dessous ; au pixel du bord, à moitié dedans, elle n'est donc
+   appliquée qu'à moitié, et un soupçon de carte NON ombrée reste dans ce
+   pixel. Au repos ça ne se voit pas (le crème est plus clair que tout) ;
+   pressé, le rose est plus foncé que la carte, et ce soupçon devient un
+   sommet d'un pixel appareil. Toutes les ombres arrondies du web font ça.
+   Ce banc garde ce pour quoi il a été écrit : les couches DU BOUTON (son fond,
+   son verre, son onde). On retire donc l'ombre portée du seul bouton pressé,
+   au repos comme à l'appui — les ombres intérieures (la lèvre) restent.
+   L'ombre, elle, a son banc : banc-essai/relief.js.
+
    Usage : node banc-essai/couture.js [url]
 */
 const { chromium } = require('/opt/node22/lib/node_modules/playwright');
@@ -90,6 +110,23 @@ const CIBLES = [
     await p.waitForTimeout(1500);
     const el = p.locator(sel).first();
     if (!(await el.count())) { console.log('  ' + nom + ' : introuvable'); continue; }
+    /* L'ombre portée du bouton mesuré s'en va (voir l'en-tête) ; les ombres
+       intérieures restent. On découpe la valeur calculée aux virgules de
+       premier niveau : celles de rgba(…) ne séparent pas deux ombres. */
+    await el.evaluate(e => {
+      const v = getComputedStyle(e).boxShadow;
+      if (!v || v === 'none') return;
+      const parts = []; let prof = 0, cur = '';
+      for (const ch of v) {
+        if (ch === '(') prof++;
+        if (ch === ')') prof--;
+        if (ch === ',' && prof === 0) { parts.push(cur.trim()); cur = ''; } else cur += ch;
+      }
+      if (cur.trim()) parts.push(cur.trim());
+      const dedans = parts.filter(x => /\binset\b/.test(x));
+      e.style.setProperty('box-shadow', dedans.length ? dedans.join(', ') : 'none', 'important');
+    });
+    await p.waitForTimeout(100);
     const b = await el.boundingBox();
     const cadre = { x: Math.round(b.x - 4), y: Math.round(b.y - 4), width: Math.round(b.width + 8), height: Math.round(b.height + 8) };
     const r = SC + '/couture-' + nom + '-repos.png';

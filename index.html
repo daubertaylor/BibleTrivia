@@ -166,12 +166,11 @@
        Les deux jetons restent déclarés — transparents — pour que le
        box-shadow garde exactement sa forme et que rien ne se déplace. */
     --filet:transparent;
-    /* TROIS RÔLES, UN SEUL SYSTÈME. Une surface POSÉE sur le décor porte une
-       ombre douce (c'est l'ombre qui dit « posée », pas un trait). Une
-       surface PLATE, imbriquée dans une autre, ne porte rien : elle ne
-       flotte au-dessus de rien, et son propre fond la détache déjà de 28 à
-       55 unités de la carte qui la porte. Une surface PLEINE et colorée
-       porte une ombre de sa propre couleur. */
+    /* DEUX RÔLES, UN SEUL SYSTÈME (v342, voir LE RELIEF juste en dessous).
+       Ce qui est posé — sur le décor ou dans une carte, clair ou plein —
+       tient en relief, et toujours par la MÊME ombre ; ce qui est fondu dans
+       son support (un compteur « − / + », un badge) ne porte rien. Jamais un
+       trait, jamais une ombre colorée. */
     --filet-plat:transparent;
     /* PLUS AUCUNE LIGNE DESSINÉE NULLE PART.
        Ce trait-ci était le dernier. Sa justification tenait en un mot :
@@ -185,10 +184,38 @@
        La déclaration reste (transparente) : la géométrie ne bouge pas d'un
        pixel, et le rôle continue de se lire dans la feuille. */
     --separateur:transparent;
-    --ombre-pose:0 1px 2px rgba(24,16,10,0.06), 0 6px 18px rgba(24,16,10,0.10);
+    /* ========================= LE RELIEF (v342) =========================
+       « Sur certains de nos boutons, il serait mieux d'avoir le même effet de
+       bordure que sur ces images », puis : « ajoute-le partout, pas seulement
+       aux boutons ». Les images : des tuiles et des puces blanches sur une
+       page crème, qui tiennent en relief sans le moindre trait.
+       MESURÉ, PAS IMITÉ À L'ŒIL. Les captures viennent du téléphone de Taylor
+       (402 pt rendus en 919 px : 2,286 px par px CSS, étalonné sur la barre
+       du bas du jeu, photographiée par le même téléphone). Le profil de
+       l'ombre y a été relevé sur les quatre côtés de six tuiles :
+         bas et droite    −26 de luminance au contact, −12 à 4 px, −2 à 10 px
+         haut et gauche   −7 au contact, plus rien au-delà de 6 px
+       Une ombre courte, concentrée sur l'arête, et DÉCALÉE vers le bas ET
+       vers la droite (la lumière vient d'en haut à gauche) : c'est elle qui
+       fait lire un bord sans en dessiner un. 800 ombres candidates, rendues
+       à la même échelle et comparées point par point : celle-ci colle à la
+       référence à 0,98 unité près, l'ordre du bruit du JPEG.
+       Les captures mettent la même ombre sous une tuile blanche, une puce
+       choisie sombre et le gros bouton « Next » : le relief ne dépend pas de
+       la couleur de ce qu'il porte. La teinte reste celle du jeu (24,16,10,
+       un brun chaud et neutre) : celle des captures tirait sur le rose de
+       leur marque, et une ombre qui tire vers une couleur est un liseré de
+       couleur. Rien ailleurs ne la règle : tout ce qui tient en relief la lit
+       ici. */
+    --relief:2.5px 2.5px 9px -1px rgba(24,16,10,0.17);
+    --ombre-pose:var(--relief);
     --rebord:0 0 0 1px var(--filet-plat);
-    --rebord-pose:0 0 0 1px var(--filet), var(--ombre-pose);
-    --rebord-plein:0 1px 2px rgba(120,30,14,0.16), 0 8px 20px rgba(214,60,34,0.26);
+    --rebord-pose:0 0 0 1px var(--filet), var(--relief);
+    /* Jusqu'à la v341, une surface pleine portait une ombre de SA couleur :
+       un halo corail de 20 px sous chaque bouton principal — ce que halo.js
+       appelait, sous une puce choisie, « littéralement une bordure de
+       couleur ». Elle prend le relief commun. */
+    --rebord-plein:0 0 0 1px var(--filet), var(--relief);
     /* L'ÉLÉVATION DES FEUILLES. Une feuille n'est pas une carte : c'est le seul
        élément qui flotte vraiment au-dessus de tout l'écran, donc le seul qui
        mérite une ombre — et sans elle elle se confondait avec le décor (« un
@@ -283,7 +310,6 @@
        le rouge de sa pointe. Les sept jours gardent l'or ; le feu, lui,
        chauffe. */
     --feu:#ED6F1F;
-    --feu-ombre:rgba(190,85,20,0.26);
     --feu-encre:rgba(120,44,6,0.38);
     --gold-soft:#FFF2D6;
     --green:#2FA96E;
@@ -477,8 +503,10 @@
      (v332) BLANC PLEIN, PAS UN VOILE. « Quand je clique pour ouvrir le
      clavier, la barre d'écriture devient transparente. » Ce « plus blanc »
      était un blanc à 90 % : posé sur la photo (le nom du Profil), il laissait
-     passer le décor flouté — le champ se vidait au moment où l'on écrit. */
-  .text-input:focus, .code-input:focus{ box-shadow:none; background-color:#fff; }
+     passer le décor flouté — le champ se vidait au moment où l'on écrit.
+     (v342) Il garde son relief : le champ ne change pas de forme quand on y
+     écrit, il blanchit, c'est tout. */
+  .text-input:focus, .code-input:focus{ background-color:#fff; }
 
   #app{ position:relative; z-index:1; width:100%; max-width:430px; margin:0 auto; height:100%; overflow-y:auto; overflow-x:hidden; overscroll-behavior:none; display:flex; flex-direction:column; padding:calc(env(safe-area-inset-top) + 0.35rem) calc(env(safe-area-inset-right) + 0.7rem) max(calc(env(safe-area-inset-bottom) + 0.35rem), var(--air-bas)) calc(env(safe-area-inset-left) + 0.7rem); }
   /* GRANDS ÉCRANS (tablette, iPad, PC) : l'app GRANDIT pour exploiter l'espace
@@ -638,7 +666,7 @@
     --rim-cast:0 10px 34px rgba(15,12,10,0.2), 0 2px 8px rgba(15,12,10,0.08);
   }
   .question-card .qtext, .hero-tag, .end-title, .online-hero-title, .online-hero-sub, .modal-title, .modal-msg{ text-wrap:balance; }
-  .btn-primary:disabled, .btn-next:disabled{ opacity:1; background-image:linear-gradient(180deg, #6E6254, #55483A); box-shadow:inset 0 0 0 1px rgba(255,255,255,0.16), inset 0 1px 0 rgba(255,255,255,0.22); color:rgba(255,255,255,0.95); }
+  .btn-primary:disabled, .btn-next:disabled{ opacity:1; background-image:linear-gradient(180deg, #6E6254, #55483A); box-shadow:none; color:rgba(255,255,255,0.95); }
 
   /* ---------- Header ---------- */
   .app-header{ display:flex; align-items:center; justify-content:space-between; gap:0.75rem; margin-bottom:var(--e-3); border-radius:var(--r-l); padding:calc(0.5rem + 1px) calc(0.55rem + 1px); }
@@ -791,7 +819,7 @@
      c'est le prix de la zone tactile, et on le paie. Mais une pilule de 44 px
      de haut pour 60 de large est un pavé, pas une pilule — on l'allonge pour
      que la forme reste lisible comme une pastille de compteur. */
-  .sem-flamme{ display:inline-flex; align-items:center; justify-content:center; gap:0.3rem; font-family:inherit; font-weight:800; font-size:1rem; font-variant-numeric:tabular-nums; color:#fff; text-shadow:0 1px 2px var(--feu-encre); --glass-tint: var(--feu); border:0; border-radius:var(--r-full); min-height:2.75rem; padding:0 calc(1.1rem + 1px); flex-shrink:0; box-shadow:0 2px 8px var(--feu-ombre); cursor:pointer; -webkit-tap-highlight-color:transparent; position:relative; }
+  .sem-flamme{ display:inline-flex; align-items:center; justify-content:center; gap:0.3rem; font-family:inherit; font-weight:800; font-size:1rem; font-variant-numeric:tabular-nums; color:#fff; text-shadow:0 1px 2px var(--feu-encre); --glass-tint: var(--feu); border:0; border-radius:var(--r-full); min-height:2.75rem; padding:0 calc(1.1rem + 1px); flex-shrink:0; box-shadow:var(--relief); cursor:pointer; -webkit-tap-highlight-color:transparent; position:relative; }
   .sem-flamme svg{ width:1.05rem; height:1.05rem; display:block; }
   .sem-flamme b{ font-weight:800; }
   .sem-flamme .sf-chev{ display:inline-flex; width:0.85rem; height:0.85rem; margin:0 -0.3rem 0 0.02rem; opacity:0.88; }
@@ -1126,7 +1154,7 @@
   .btn-primary:disabled{ opacity:0.4; box-shadow:none; }
   /* Bouton d'attente : simple pastille de statut, non pressable → aucun
      repaint au toucher (c'est ce repaint qui le faisait « blanchir »). */
-  .btn-primary.is-waiting, .btn-replay.is-waiting{ --glass-tint: rgb(252,248,241); color:var(--ink-soft); cursor:default; pointer-events:none; box-shadow:inset 0 1px 0 rgba(255,255,255,0.45), 0 4px 14px rgba(15,12,10,0.12); }
+  .btn-primary.is-waiting, .btn-replay.is-waiting{ --glass-tint: rgb(252,248,241); color:var(--ink-soft); cursor:default; pointer-events:none; box-shadow:var(--relief); }
   #roomStartBtn{ margin-top:0.9rem; }
   .error-msg{ color:#ff8a76; font-size:0.82rem; text-align:center; margin-top:var(--e-2); min-height:1.2em; text-shadow:0 1px 6px rgba(0,0,0,0.35); }
 
@@ -1237,16 +1265,14 @@
      pixel, la mauvaise un trait rouge : les deux dernières bordures colorées
      du jeu. Elles ne servaient à rien — le remplissage vert se détache déjà de
      45 unités des réponses voisines, et l'icône dit le reste. Ce qui remplace
-     le trait, c'est l'ÉLÉVATION : chacune reçoit une ombre de sa propre
-     couleur, exactement comme les surfaces pleines du reste du jeu. La couleur
-     sans le trait. (--rim-cast ne peignait rien : il est porté par .glass-rim,
-     rogné par overflow:clip — d'où une ombre écrite trois fois et jamais vue.) */
-  .option-btn.correct{ --glass-tint: rgb(198,242,216);
-    --mon-rebord:0 1px 2px rgba(18,88,58,0.12), 0 7px 18px rgba(47,169,110,0.24); }
+     le trait, c'est l'ÉLÉVATION. (v342 : plus une ombre de leur couleur — un
+     halo vert, un halo rouge — mais le relief de toutes les réponses : le
+     fond et l'icône disent déjà tout.) (--rim-cast ne peignait rien : il est
+     porté par .glass-rim, rogné par overflow:clip.) */
+  .option-btn.correct{ --glass-tint: rgb(198,242,216); }
   .option-btn.correct .letter{ color:var(--green); opacity:1; }
   .option-btn.correct .opt-icon{ color:var(--green); filter:drop-shadow(0 1px 3px rgba(47,169,110,0.55)); }
-  .option-btn.incorrect{ --glass-tint: rgb(255,220,214);
-    --mon-rebord:0 1px 2px rgba(118,32,22,0.12), 0 7px 18px rgba(226,75,55,0.22); }
+  .option-btn.incorrect{ --glass-tint: rgb(255,220,214); }
   .option-btn.incorrect .letter{ color:var(--error); opacity:1; }
   .option-btn.incorrect .opt-icon{ color:var(--error); filter:drop-shadow(0 1px 3px rgba(226,75,55,0.5)); }
   /* UNE FOIS RÉPONDU, LE RESTE RECULE. Avant, seul le TEXTE des réponses non
@@ -1287,7 +1313,7 @@
   .aw-token{ width:1.7rem; height:1.7rem; font-size:0.84rem; }
   .aw-check{ width:1.16rem; height:1.16rem; flex-shrink:0; }
   .aw-name{ flex:1; min-width:0; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; text-align:left; color:var(--ink); font-weight:700; }
-  .award-btn.awarded{ border-color:transparent; --glass-tint: rgb(255,247,238); box-shadow:inset 0 1px 0 rgba(255,255,255,0.5), 0 3px 10px rgba(15,12,10,0.16); font-weight:700; }
+  .award-btn.awarded{ border-color:transparent; --glass-tint: rgb(255,247,238); font-weight:700; }
   .award-btn .pts{ font-variant-numeric:tabular-nums; color:var(--ink-soft); }
   /* SIX JOUEURS (voir renderPlay) : une grille à colonnes égales — deux, ou
      trois à partir de cinq joueurs —, le score de l'équipe sous son nom, et
@@ -1860,7 +1886,8 @@
   .puce-bk .pl-mot{ min-width:0; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
   .bk-carte{ background:var(--page-carte, #fff); border-radius:var(--r-l); box-shadow:var(--ombre-pose); padding:0.85rem 0.8rem 0.9rem; margin-top:0.75rem; }
   .bk-sec{ font-family:'Poppins',sans-serif; font-size:0.74rem; font-weight:700; letter-spacing:0.06em; text-transform:uppercase; color:var(--ink-soft); margin:0 0.15rem 0.6rem; }
-  .bk-carte .bk{ background:rgb(246,241,233); box-shadow:none; }
+  /* (v342) Les tuiles des livres tiennent en relief, ici comme dans la Progression. */
+  .bk-carte .bk{ background:rgb(246,241,233); }
   .bk-carte .bk .lt-n{ display:block; margin-top:0.08rem; font-size:0.64rem; font-weight:600; color:var(--ink-soft); font-variant-numeric:tabular-nums; }
   .bk-carte .bk.sel{ background-image:linear-gradient(150deg, #F44E2C, #DE3616); }
   .bk-carte .bk.sel .bk-nm{ color:#fff; font-weight:700; }
@@ -2472,7 +2499,7 @@
      petits objets posés SUR une photo, souvent chargée. Sans un liseré clair
      ils s'y fondent. Les boutons pleins sont sortis de cette liste : sur un
      corail saturé le même blanc devenait le trait que Taylor voyait, et leur
-     arête est désormais une ombre de leur propre couleur (--rebord-plein). */
+     arête est désormais leur seul relief (--rebord-plein, voir LE RELIEF). */
   /* (Le badge « Créateur » sortait de cette liste ; il a été retiré du jeu en
      v287. La règle reste vraie pour les pastilles qui restent.) Son
      anneau clair, mesuré à 14 unités au-dessus de son fond, était le
@@ -2949,10 +2976,10 @@
   .dr-side{ flex:1; display:flex; flex-direction:column; align-items:center; gap:0.4rem; background:rgba(255,255,255,0.55); backdrop-filter:blur(16px) saturate(180%); -webkit-backdrop-filter:blur(16px) saturate(180%); border:0; border-radius:var(--r-l); padding:calc(0.95rem + 1px) calc(0.55rem + 1px); }
   /* Le vainqueur portait un LISERÉ OR plus une lèvre blanche à 0,6 — les deux
      choses retirées partout ailleurs, oubliées ici parce que l'écran ne
-     s'atteint qu'en finissant un duel en ligne. L'or reste, en ombre : c'est
-     la règle des surfaces qui comptent, la couleur sans le trait. */
-  .dr-side.winner{ --glass-tint: rgb(255,240,203);
-    box-shadow:0 2px 4px rgba(120,84,10,0.14), 0 10px 26px rgba(239,173,38,0.42); }
+     s'atteint qu'en finissant un duel en ligne. (v342) Puis un halo or, la
+     même chose en flou : il prend le relief commun, et l'or reste là où il
+     dit quelque chose — dans le fond de sa carte. */
+  .dr-side.winner{ --glass-tint: rgb(255,240,203); }
   .dr-name{ font-weight:600; font-size:0.85rem; color:var(--ink); white-space:nowrap; overflow:hidden; text-overflow:ellipsis; max-width:100%; }
   .dr-score{ font-family:'Poppins',sans-serif; font-weight:700; font-size:1.65rem; color:var(--primary); }
   .dr-vs{ display:flex; align-items:center; font-family:'Poppins',sans-serif; font-weight:700; color:var(--ink-soft); }
@@ -3036,7 +3063,7 @@
      largeur, comme ceux du chrono et du compteur. */
   .streak-chip{ font-variant-numeric:tabular-nums; }
   @keyframes timerPulse{ 0%,100%{ box-shadow:inset 0 1px 0 rgba(255,255,255,0.3), 0 3px 12px rgba(241,80,47,0.45); } 50%{ box-shadow:inset 0 1px 0 rgba(255,255,255,0.3), 0 3px 20px rgba(241,80,47,0.85); } }
-  .timeout-note{ display:flex; align-items:center; justify-content:center; gap:0.4rem; background:linear-gradient(180deg, rgba(251,106,69,0.92), rgba(234,74,40,0.92)); color:#fff; font-weight:700; font-size:0.85rem; border:1px solid var(--bord); border-radius:var(--r-s); padding:0.55rem 0.8rem; margin-bottom:0.7rem; box-shadow:inset 0 1px 0 rgba(255,255,255,0.3), 0 4px 14px rgba(241,80,47,0.35); }
+  .timeout-note{ display:flex; align-items:center; justify-content:center; gap:0.4rem; background:linear-gradient(180deg, rgba(251,106,69,0.92), rgba(234,74,40,0.92)); color:#fff; font-weight:700; font-size:0.85rem; border:1px solid var(--bord); border-radius:var(--r-s); padding:0.55rem 0.8rem; margin-bottom:0.7rem; box-shadow:var(--relief); }
   .timeout-note .ico{ width:1.1rem; height:1.1rem; display:inline-flex; }
 
   /* ---------- Astuce plein écran ---------- */
@@ -3698,7 +3725,7 @@
      verre pâle (brun sur beige clair) restait fade à côté du .dc-ico.
      Teinte dorée saturée + texte blanc -> même impact visuel, cohérent avec
      l'icône flamme repalettée juste au-dessus. */
-  .daily-card .dc-streak{ display:inline-flex; align-items:center; gap:0.22rem; font-weight:800; font-size:0.9rem; font-variant-numeric:tabular-nums; color:#fff; text-shadow:0 1px 2px rgba(122,78,4,0.35); --glass-tint: rgb(240,163,26); border:0; border-radius:var(--r-full); padding:calc(0.24rem + 1px) calc(0.6rem + 1px); flex-shrink:0; box-shadow:0 2px 8px rgba(196,144,32,0.24); }
+  .daily-card .dc-streak{ display:inline-flex; align-items:center; gap:0.22rem; font-weight:800; font-size:0.9rem; font-variant-numeric:tabular-nums; color:#fff; text-shadow:0 1px 2px rgba(122,78,4,0.35); --glass-tint: rgb(240,163,26); border:0; border-radius:var(--r-full); padding:calc(0.24rem + 1px) calc(0.6rem + 1px); flex-shrink:0; box-shadow:var(--relief); }
   .daily-card .dc-streak svg{ width:0.92rem; height:0.92rem; }
   /* La carte terminée ne porte plus de disque vert : la coche occupe
      EXACTEMENT la place du chevron, dans la même encre douce. Le défi fini se
@@ -4789,9 +4816,9 @@
      leur propre liseré : neutre à l'arrêt, VERT allumé, comme toute surface
      colorée du jeu. Le galet reçoit sa lèvre de lumière, pour qu'il ait l'air
      taillé dans la même matière. */
-  .switch{ position:relative; width:3.2rem; height:1.9rem; border-radius:var(--r-full); border:none; background:rgba(42,36,30,0.18); transition:background 0.28s ease, box-shadow 0.28s ease; flex-shrink:0; padding:0; --rim-edge:0 0 0 1px rgba(30,22,14,0.14); --rim-cast:0 2px 6px rgba(15,12,10,0.14); }
+  .switch{ position:relative; width:3.2rem; height:1.9rem; border-radius:var(--r-full); border:none; background:rgba(42,36,30,0.18); transition:background 0.28s ease, box-shadow 0.28s ease; flex-shrink:0; padding:0; --rim-edge:0 0 0 1px rgba(30,22,14,0.14); --rim-cast:var(--relief); }
   .switch::after{ content:""; position:absolute; top:0.18rem; left:0.18rem; width:1.54rem; height:1.54rem; border-radius:50%; background:#fff; box-shadow:inset 0 1.5px 0 rgba(255,255,255,0.9), 0 0 0 1px rgba(30,22,14,0.1), 0 2px 6px rgba(0,0,0,0.25); transition:transform 0.32s cubic-bezier(0.17,1.32,0.32,1); }
-  .switch.on{ background:linear-gradient(180deg, var(--pal-vert-a), var(--pal-vert-b)); --rim-edge:0 0 0 1px transparent; --rim-cast:0 3px 10px rgba(42,143,77,0.38); }
+  .switch.on{ background:linear-gradient(180deg, var(--pal-vert-a), var(--pal-vert-b)); --rim-edge:0 0 0 1px transparent; --rim-cast:var(--relief); }
   .switch.on::after{ transform:translateX(1.3rem); }
   .vol-row{ display:flex; align-items:center; gap:0.7rem; padding:0.15rem 0.1rem 0.4rem; }
   .vol-row .vr-ico{ width:1.05rem; height:1.05rem; color:var(--ink-soft); flex-shrink:0; display:inline-flex; }
@@ -5369,17 +5396,29 @@
      demain la recevra sans qu'on ait à y penser. C'est ce qui rend la
      cohérence structurelle au lieu d'être à retenir. */
   /* ════════════ LE REBORD DES SURFACES — LE DERNIER MOT ════════════
-     Une surface n'est pas encadrée, elle est POSÉE. Trois rôles, et rien
-     d'autre dans tout le jeu :
+     Une surface n'est pas encadrée, elle est POSÉE. Deux rôles, et rien
+     d'autre dans tout le jeu (v342) :
 
-       posée   sur le décor            filet + ombre douce
-       plate   dans une autre surface  filet seul (elle ne flotte au-dessus
-                                       de rien : lui donner une ombre serait
-                                       mentir sur sa profondeur)
-       pleine  et colorée              ombre de sa propre couleur (un filet
-                                       sombre salirait le corail, un liseré
-                                       blanc ferait le trait que Taylor
-                                       voyait sur les boutons rouges)
+       en relief   tout ce qu'on touche et tout ce qui est posé — carte,
+                   bouton, puce, tuile, ligne de joueur, pastille du jeu —,
+                   sur le décor ou dans une carte, clair ou plein : la MÊME
+                   ombre (--relief), jamais colorée
+       plate       ce qui est fondu dans son support — un compteur « − / + »,
+                   une case du calendrier des flammes, un badge posé dans une
+                   carte : rien
+
+     Les champs où l'on écrit sont en relief eux aussi, comme le champ de
+     recherche des captures : un champ blanc sans relief, entre deux tuiles
+     en relief, avait l'air d'un morceau de page oublié.
+
+     Il y en avait trois jusqu'à la v341 : une puce ou un bouton clair posé
+     DANS une carte restait plat (« lui donner une ombre serait mentir sur
+     sa profondeur »), et une surface pleine portait une ombre de sa couleur.
+     Les captures que Taylor a montrées disent le contraire, et elles ont
+     raison : une puce dans une carte est une touche, elle dépasse de ce qui
+     la porte comme une touche dépasse d'un clavier. Et le halo corail des
+     boutons pleins était exactement ce que halo.js chasse sur les puces
+     choisies.
 
      Chaque surface déclare son rôle dans UN jeton, et une seule règle le
      peint. Ajouter une famille demain, c'est l'écrire dans le bon rôle ;
@@ -5393,11 +5432,19 @@
   .rules, .btn-review, .daily-card, .parcours-card, .parcours-sum, .tst-head,
   .presence-card, .searching-card, .waiting-card, .waiting-note,
   .online-action, .btn-newgame, .btn-invite,
-  .award-btn, .leave-banner, .barre-bas, .compo{ --mon-rebord:var(--rebord-pose); }
+  .award-btn, .leave-banner, .barre-bas, .compo,
   .chip, .len-chip, .q-counter, .timer-chip, .tier-chip, .streak-chip,
-  .rev-item, .bible-item, .me-row, .rank-row, .team-row, .add-team,
-  .text-input, .code-input, .bk, .dc-streak, .adj-btn, .sj,
-  .share-btn, .btn-ghost, .modal-btn.cancel{ --mon-rebord:var(--rebord); }
+  .rev-item, .me-row, .rank-row, .team-row, .add-team, .bk,
+  .text-input, .code-input,
+  .share-btn, .btn-ghost, .modal-btn.cancel,
+  /* (v342) Deux surfaces de verre n'étaient dans AUCUN rôle : la barre des
+     scores du duel en ligne et les deux cartes de son résultat. Elles
+     portaient une ombre le temps que leur verre se pose (règle
+     :not(.has-gs)), puis plus rien. */
+  .duel-scorebar, .dr-side{ --mon-rebord:var(--rebord-pose); }
+  /* (.bible-item ne vit que dans la page des versions, qui le pose elle-même
+     en relief : voir « .sheet-veil.page .bible-item ».) */
+  .bible-item, .dc-streak, .adj-btn, .sj{ --mon-rebord:var(--rebord); }
   /* ===== UNE PUCE CHOISIE EST « PLATE », PAS « PLEINE » =====
      « Lorsque je sélectionne, c'est toujours pas plein dans les bords. »
      Reproche répété quatre fois, et j'ai cherché DEDANS les quatre fois. Le
@@ -5420,9 +5467,9 @@
      carte : elle est plate. Elle était rangée avec les boutons pleins, qui
      eux flottent sur le décor — et elle en a hérité leur halo.
      Les trois puces rejoignent donc leurs sœurs non choisies, juste au-dessus :
-     même filet, même coin, même absence d'ombre. Seule la couleur de fond
-     distingue une puce choisie d'une puce libre, et c'est tout ce qui doit les
-     distinguer. */
+     même filet, même coin, même ombre (v342 : le relief commun, pour les unes
+     comme pour les autres). Seule la couleur de fond distingue une puce
+     choisie d'une puce libre, et c'est tout ce qui doit les distinguer. */
   .btn-primary, .btn-next, .btn-replay, .btn-reveal, .sheet-done, .set-go,
   .online-action.primary,
   .modal-btn.ok, .modal-btn.cancel.keep{ --mon-rebord:var(--rebord-plein); --levre:var(--levre-pleine); }
@@ -5438,7 +5485,8 @@
   .text-input, .code-input, .bk, .dc-streak, .adj-btn, .sj,
   .btn-primary, .btn-next, .btn-replay, .btn-reveal, .sheet-done, .set-go,
   .chip.active, .len-chip.sel, .streak-chip.hot, .online-action.primary,
-  .modal-btn.ok, .modal-btn.cancel.keep, .barre-bas, .compo{
+  .modal-btn.ok, .modal-btn.cancel.keep, .barre-bas, .compo,
+  .duel-scorebar, .dr-side{
     box-shadow:var(--mon-rebord);
   }
 
@@ -5461,7 +5509,7 @@
     transform:translate3d(-50%,0,0); display:grid; grid-template-columns:1fr 1fr; padding:0.3rem; gap:0;
     border-radius:var(--r-full); border:0; background:transparent;
     -webkit-backdrop-filter:blur(28px) saturate(185%); backdrop-filter:blur(28px) saturate(185%);
-    --rim-cast:0 10px 34px rgba(15,12,10,0.24), 0 2px 8px rgba(15,12,10,0.1); box-shadow:none;
+    --rim-cast:0 10px 34px rgba(15,12,10,0.24), 0 2px 8px rgba(15,12,10,0.1); box-shadow:var(--relief);
     transition:transform var(--tr-ouvre), opacity 0.22s ease; }
   .barre-bas.cachee{ transform:translate3d(-50%, calc(100% + var(--bb-bas) + 1rem), 0); pointer-events:none; }
   /* ===== LA BARRE ARRIVE AVEC SA PAGE =====
@@ -5496,7 +5544,7 @@
   html.kb .barre-bas{ transform:translate3d(-50%, calc(100% + var(--bb-bas) + 1rem), 0); pointer-events:none; }
   .bb-curseur{ position:absolute; top:0.3rem; bottom:0.3rem; left:0.3rem; width:calc((100% - 0.6rem) / 2);
     border-radius:var(--r-full); background:var(--primary);
-    box-shadow:0 1px 2px rgba(120,30,14,0.16), 0 6px 16px rgba(214,60,34,0.32);
+    box-shadow:var(--relief);
     transition:transform var(--tr-ouvre); }
   /* ===== LA PASTILLE N'A PAS DE COUCHE À ELLE (v318) =====
      « Lorsque je quitte une page, ça s'affiche pas directement. » Capture de
@@ -5590,9 +5638,9 @@
      début, pas une faute). */
   .parcours-card .pc-feu{ display:inline-flex; align-items:center; gap:0.22rem; font-weight:800; font-size:0.9rem; font-variant-numeric:tabular-nums;
     color:#fff; text-shadow:0 1px 2px var(--feu-encre); --glass-tint: var(--feu); border:0; border-radius:var(--r-full);
-    padding:calc(0.24rem + 1px) calc(0.6rem + 1px); flex-shrink:0; box-shadow:0 2px 8px var(--feu-ombre); }
+    padding:calc(0.24rem + 1px) calc(0.6rem + 1px); flex-shrink:0; box-shadow:var(--relief); }
   .parcours-card .pc-feu svg{ width:0.92rem; height:0.92rem; display:block; }
-  .parcours-card .pc-feu.eteinte{ --glass-tint: rgb(252,248,241); color:var(--ink); text-shadow:none; box-shadow:0 2px 6px rgba(34,26,16,0.1); }
+  .parcours-card .pc-feu.eteinte{ --glass-tint: rgb(252,248,241); color:var(--ink); text-shadow:none; }
   /* Le petit mot peut être une phrase entière (« Pas d'adresse… ») : il passe
      à la ligne au lieu de sortir de l'écran.
      (v334) MAIS IL N'AVAIT QUE LA MOITIÉ DE L'ÉCRAN. Posé en « left:50% »
@@ -5699,9 +5747,11 @@
      invisible et centrée de 44 px attrape le toucher. Possible ici parce
      qu'une pilule ne porte pas de verre, donc pas de découpe. */
   .grp-pill{ position:relative; flex-shrink:0; border:0; border-radius:var(--r-full); padding:0.5rem 0.95rem; min-height:2.2rem; font-weight:700; font-size:0.82rem;
-    background:var(--primary); color:#fff; box-shadow:0 1px 2px rgba(120,30,14,0.16), 0 5px 14px rgba(214,60,34,0.26); }
+    background:var(--primary); color:#fff; box-shadow:var(--relief); }
   .grp-pill::after{ content:""; position:absolute; left:0; right:0; top:50%; height:44px; transform:translateY(-50%); }
-  .grp-pill.calme{ background:rgb(252,248,241); color:var(--ink); box-shadow:0 0 0 1px rgba(58,42,26,0.14), 0 3px 10px rgba(34,26,16,0.10); }
+  /* (v342) « Ouvrir » portait un anneau d'un pixel — un contour dessiné, celui
+     que Taylor a entouré. Il prend le relief de toutes les pilules. */
+  .grp-pill.calme{ background:rgb(252,248,241); color:var(--ink); }
   /* « Rejoindre » est une pilule dans la liste et un grand bouton dans la page
      du code : la même couleur, le même dégradé, juste en plus petit (v322). */
   .grp-pill:not(.calme){ background-image:linear-gradient(180deg, #FB6A45, #EA4A28); }
@@ -5763,7 +5813,7 @@
      le texte seul, centré, entier — sans titre : « pas besoin du mot
      Description, simple et efficace ». */
   .grp-desc-carte{ display:flex; flex-direction:column; align-items:center; padding:0.9rem 1.1rem; border-radius:var(--r-l);
-    background:rgb(252,248,241); box-shadow:0 3px 12px rgba(34,26,16,0.08); }
+    background:rgb(252,248,241); box-shadow:var(--relief); }
   .grp-desc-carte .grp-desc{ text-align:center; font-size:0.95rem; white-space:pre-line; overflow-wrap:anywhere; }
   .grp-types{ display:grid; grid-template-columns:1fr 1fr; gap:0.6rem; }
   /* LA PHOTO DU GROUPE, À CÔTÉ DU NOM ET DE LA DESCRIPTION. Les deux champs
@@ -5855,7 +5905,7 @@
   .color-dot.sel .gt-disque, .grp-teinte.choisie .gt-disque{ top:0.08rem; right:0.08rem; bottom:0.08rem; left:0.08rem; }
   .color-dot.sel .cd-ck, .grp-teinte.choisie .cd-ck{ opacity:1; transform:scale(1); }
   .grp-code-carte{ display:flex; flex-direction:column; align-items:center; gap:0.35rem; padding:0.9rem 0.8rem 1rem; border-radius:var(--r-l);
-    background:rgb(252,248,241); box-shadow:0 3px 12px rgba(34,26,16,0.08); }
+    background:rgb(252,248,241); box-shadow:var(--relief); }
   .gc-l{ font-family:'Poppins',sans-serif; font-size:0.74rem; font-weight:700; letter-spacing:0.09em; text-transform:uppercase; color:var(--ink-soft); }
   .gc-code{ font-family:'Poppins',sans-serif; font-weight:700; font-size:1.65rem; letter-spacing:0.38rem; color:var(--ink); padding-left:0.38rem; }
   .gc-code.gc-neuf{ animation:gcNeuf 0.46s cubic-bezier(0.2,0.9,0.3,1) both; }
@@ -5999,12 +6049,12 @@
   .b-nom{ font-family:'Poppins',sans-serif; font-size:0.8rem; font-weight:700; margin:0.45rem 0 0.05rem 0.85rem; }
   .b-bulle{ position:relative; max-width:100%; padding:0.6rem 0.85rem; border-radius:20px; border:0; font:inherit; font-size:0.95rem; line-height:1.4;
     text-align:left; white-space:pre-wrap; overflow-wrap:anywhere; word-break:normal; color:var(--ink); background:rgb(252,248,241);
-    box-shadow:0 1px 2px rgba(34,26,16,0.08), 0 3px 10px rgba(34,26,16,0.06); -webkit-tap-highlight-color:transparent; -webkit-user-select:text; user-select:text; }
+    box-shadow:var(--relief); -webkit-tap-highlight-color:transparent; -webkit-user-select:text; user-select:text; }
   /* 44 px au doigt, même pour une bulle d'un mot : c'est elle qu'on touche
      pour copier, signaler ou bloquer. En pixels, pas en rem (voir les liens). */
   .b-bulle{ min-height:44px; }
   span.b-bulle{ display:inline-flex; align-items:center; }
-  .b-moi .b-bulle{ background:var(--primary); color:#fff; box-shadow:0 1px 2px rgba(120,30,14,0.16), 0 4px 12px rgba(214,60,34,0.22); }
+  .b-moi .b-bulle{ background:var(--primary); color:#fff; box-shadow:var(--relief); }
   /* (v329) Une bulle qui arrive : quelques pixels de montée en se posant,
      depuis son coin (le bas à droite pour les miennes, à gauche pour les
      autres). Un quart de seconde, une seule fois. */
@@ -6024,9 +6074,9 @@
      pastille, dans la liste, l'en-tête et la page du groupe. */
   :root{ --msg-c:linear-gradient(150deg, #F04A26, #DA3414); --msg-fonce:#DA3414; --msg-rgb:214,60,34; }
   .groupe-ecran .b-moi .b-bulle:not(.b-partie):not(.b-vide){ background:var(--msg-c); color:#fff;
-    box-shadow:0 1px 2px rgba(var(--msg-rgb),0.18), 0 4px 12px rgba(var(--msg-rgb),0.24); }
+    box-shadow:var(--relief); }
   .groupe-ecran .compo-envoi{ background:var(--msg-c); color:#fff;
-    box-shadow:0 1px 2px rgba(var(--msg-rgb),0.18), 0 4px 12px rgba(var(--msg-rgb),0.3); }
+    box-shadow:var(--relief); }
   .groupe-ecran .compo-jeu, .groupe-ecran .b-partie .bp-ico{ color:var(--msg-fonce); }
   .groupe-ecran .b-partie .grp-pill:not(.calme){ background:var(--msg-c); color:#fff; }
   /* (v329) Une bulle en route n'est plus pâlie : « Envoi… » le dit dessous,
@@ -6150,7 +6200,7 @@
   .b-partie .bp-ico{ width:1.6rem; height:1.6rem; color:var(--primary); display:inline-flex; }
   .b-partie .bp-ico svg{ width:100%; height:100%; }
   .b-partie b{ font-family:'Poppins',sans-serif; font-weight:600; font-size:0.98rem; }
-  .b-moi .b-partie{ background:rgb(252,248,241); color:var(--ink); box-shadow:0 1px 2px rgba(34,26,16,0.08), 0 3px 10px rgba(34,26,16,0.06); }
+  .b-moi .b-partie{ background:rgb(252,248,241); color:var(--ink); box-shadow:var(--relief); }
   /* Une partie terminée : la manette s'éteint, la ligne le dit, plus de bouton. */
   .b-partie small{ color:var(--ink-soft); font-size:0.8rem; }
   .b-partie.finie .bp-ico{ opacity:0.45; }
@@ -6174,7 +6224,7 @@
   .bp-visages .avatar + .avatar{ margin-left:-0.42rem; }
   .fil-bas{ position:absolute; left:50%; bottom:0.6rem; transform:translateX(-50%); z-index:2; border:0; border-radius:var(--r-full);
     padding:0.5rem 0.95rem; min-height:2.2rem; background:rgba(30,22,14,0.86); color:#fff; font-family:'Poppins',sans-serif; font-weight:600; font-size:0.8rem;
-    box-shadow:0 4px 14px rgba(15,12,10,0.28); }
+    box-shadow:var(--relief); }
   .fil-bas::after{ content:""; position:absolute; left:0; right:0; top:50%; height:44px; transform:translateY(-50%); }
   .fil-bas[hidden]{ display:none; }
   /* LE COMPOSITEUR : une capsule de verre, un bouton partie à gauche, l'envoi à droite. */
@@ -6209,14 +6259,14 @@
   .compo-jeu, .compo-envoi{ width:2.6rem; height:2.6rem; flex-shrink:0; border:0; border-radius:50%; display:flex; align-items:center; justify-content:center; padding:0.62rem; }
   .compo-jeu, .compo-envoi{ position:relative; }
   .compo-jeu::after, .compo-envoi::after{ content:""; position:absolute; left:50%; top:50%; width:44px; height:44px; transform:translate(-50%,-50%); }
-  .compo-jeu{ background:rgb(252,248,241); color:var(--primary); box-shadow:0 0 0 1px rgba(58,42,26,0.1), 0 3px 10px rgba(34,26,16,0.1); }
+  .compo-jeu{ background:rgb(252,248,241); color:var(--primary); box-shadow:var(--relief); }
   /* (v334) LA MODÉRATION ÉCRIT DE L'EXTÉRIEUR (voir LA MODÉRATION PARLE) : le
      bouclier tient la place de la manette — même disque, même taille —, en
      ardoise, et il ne se touche pas. Ses messages, chez les membres, portent
      le même bouclier, blanc sur l'ardoise de la palette, à la place d'un
      visage. */
   .compo-mod{ width:2.6rem; height:2.6rem; flex-shrink:0; border-radius:50%; display:flex; align-items:center; justify-content:center; padding:0.62rem;
-    background:rgb(252,248,241); color:var(--pal-ardoise-b); box-shadow:0 0 0 1px rgba(58,42,26,0.1), 0 3px 10px rgba(34,26,16,0.1); }
+    background:rgb(252,248,241); color:var(--pal-ardoise-b); box-shadow:var(--relief); }
   .compo-mod svg{ width:100%; height:100%; display:block; }
   .avatar.a-mod{ background:var(--pal-ardoise); color:#fff; }
   .avatar.a-mod svg{ width:54%; height:54%; display:block; }
@@ -6235,16 +6285,16 @@
   .compo-voix:active .avatar{ transform:scale(0.86); }
   .compo-voix.bascule .avatar{ animation:voixPose 0.26s cubic-bezier(0.2,0.85,0.3,1); }
   @keyframes voixPose{ from{ transform:scale(0.6); opacity:0.4; } to{ transform:none; opacity:1; } }
-  .groupe-ecran .compo-envoi.mod{ background:linear-gradient(150deg, var(--pal-ardoise-b), #56647A); box-shadow:0 1px 2px rgba(60,72,90,0.2), 0 4px 12px rgba(86,100,122,0.3); }
+  .groupe-ecran .compo-envoi.mod{ background:linear-gradient(150deg, var(--pal-ardoise-b), #56647A); box-shadow:var(--relief); }
   .groupe-ecran .b-mod .b-bulle:not(.b-partie):not(.b-vide){ background:linear-gradient(150deg, var(--pal-ardoise-b), #56647A); color:#fff;
-    box-shadow:0 1px 2px rgba(60,72,90,0.18), 0 4px 12px rgba(86,100,122,0.24); }
+    box-shadow:var(--relief); }
   .b-nom-mod{ display:inline-flex; align-items:center; gap:0.3rem; margin:0.45rem 0.85rem 0.05rem 0; color:var(--pal-ardoise-b); }
   .b-nom-mod .ico{ width:0.85rem; height:0.85rem; display:inline-flex; }
   .b-nom-mod .ico svg{ width:100%; height:100%; }
   .grp-modo-aide{ display:flex; align-items:center; justify-content:flex-start; gap:0.35rem; text-align:left; color:var(--pal-ardoise-b); font-size:0.86rem; margin:0 0 0.75rem; }
   .grp-modo-aide .ico{ width:0.95rem; height:0.95rem; display:inline-flex; flex-shrink:0; }
   .grp-modo-aide .ico svg{ width:100%; height:100%; }
-  .compo-envoi{ background:var(--primary); color:#fff; box-shadow:0 1px 2px rgba(120,30,14,0.16), 0 4px 12px rgba(214,60,34,0.3); transition:opacity 0.15s ease, transform 0.15s ease; }
+  .compo-envoi{ background:var(--primary); color:#fff; box-shadow:var(--relief); transition:opacity 0.15s ease, transform 0.15s ease; }
   .compo-envoi:disabled{ opacity:0.4; transform:scale(0.92); }
   .compo-jeu svg, .compo-envoi svg{ width:100%; height:100%; }
   .compo-muet{ flex:1; text-align:center; font-size:0.86rem; line-height:1.4; color:var(--ink-soft); padding:0.6rem 0.4rem; }
@@ -9935,6 +9985,7 @@ const BANK = {
     { q:"Complète la dernière phrase du livre des Juges : « Il n'y avait point de roi en Israël. Chacun faisait ce qui lui semblait … »", options:["bon","saint","sage","caché"], correct:"bon", fact:"Le livre se clôt sur ce constat, qui revient comme un refrain dans ses derniers chapitres (Juges 21:25)." },
     { q:"Complète la complainte de David sur Saül et Jonathan : « Comment des … sont-ils tombés ? »", options:["héros","rois","géants","frères"], correct:"héros", fact:"« L'élite d'Israël a succombé sur tes collines ! » (2 Samuel 1:19)." },
     { q:"Selon 2 Samuel 7:13, que fera le fils promis à David ?", options:["Il bâtira une maison au nom de l'Éternel","Il reprendra l'arche aux Philistins","Il ramènera le peuple d'exil","Il fera la guerre à Moab"], correct:"Il bâtira une maison au nom de l'Éternel", fact:"« Et j'affermirai pour toujours le trône de son royaume », promet l'Éternel par Nathan (2 Samuel 7:13)." },
+    { q:"Selon Jean 1:46, quelle question Nathanaël posa-t-il quand Philippe lui parla de Jésus ?", options:["Peut-il venir de Nazareth quelque chose de bon ?","Que dois-je faire pour hériter la vie éternelle ?","Es-tu celui qui doit venir ?","Qui est mon prochain ?"], correct:"Peut-il venir de Nazareth quelque chose de bon ?", fact:"Philippe lui répondit : « Viens, et vois » (Jean 1:46)." },
   ],
   difficile: [
     { q:"Quelle était la longueur de l'arche de Noé, selon la Genèse ?", options:["300 coudées","150 coudées","500 coudées","100 coudées"], correct:"300 coudées", fact:"50 de large, 30 de haut (Genèse 6:15)." },
@@ -10497,6 +10548,10 @@ const BANK = {
     { q:"Selon Juges 3:9, quel libérateur l'Éternel suscita-t-il le premier, frère cadet de Caleb ?", options:["Othniel","Éhud","Schamgar","Jaïr"], correct:"Othniel", fact:"« Othniel, fils de Kenaz, frère cadet de Caleb » (Juges 3:9)." },
     { q:"Selon Juges 12:6, quel mot les hommes d'Éphraïm ne parvenaient-ils pas à bien prononcer ?", options:["Schibboleth","Hosanna","Maranatha","Alléluia"], correct:"Schibboleth", fact:"« Et il disait Sibboleth, car il ne pouvait pas bien prononcer » (Juges 12:6)." },
     { q:"Selon 2 Samuel 23:16, que fit David de l'eau de Bethléhem que trois vaillants hommes lui rapportèrent ?", options:["Il la répandit devant l'Éternel","Il la but d'un trait","Il la donna à ses soldats","Il la garda pour le Temple"], correct:"Il la répandit devant l'Éternel", fact:"Les trois avaient traversé le camp des Philistins pour la puiser, mais « il ne voulut pas la boire » (2 Samuel 23:15-16)." },
+    { q:"Selon Jean 5:2, comment s'appelait la piscine aux cinq portiques, près de la porte des brebis ?", options:["Béthesda","Siloé","Guihon","Bethphagé"], correct:"Béthesda", fact:"Là se trouvait un homme malade depuis trente-huit ans, que Jésus guérit (Jean 5:2)." },
+    { q:"Selon Jean 19:39, combien de myrrhe et d'aloès Nicodème apporta-t-il pour ensevelir Jésus ?", options:["Environ cent livres","Environ dix livres","Environ trente livres","Environ mille livres"], correct:"Environ cent livres", fact:"« Nicodème, qui auparavant était allé de nuit vers Jésus, vint aussi » (Jean 19:39)." },
+    { q:"Selon Jean 4:6, vers quelle heure Jésus, fatigué du voyage, s'assit-il au bord du puits de Jacob ?", options:["Vers la sixième heure","Vers la troisième heure","Vers la neuvième heure","Au coucher du soleil"], correct:"Vers la sixième heure", fact:"C'est alors qu'une femme de Samarie vint puiser de l'eau (Jean 4:6)." },
+    { q:"Selon Jean 21:17, combien de fois Jésus demanda-t-il à Pierre : « m'aimes-tu ? »", options:["Trois fois","Deux fois","Sept fois","Une seule fois"], correct:"Trois fois", fact:"« Seigneur, tu sais toutes choses, tu sais que je t'aime. » Jésus lui dit : « Pais mes brebis » (Jean 21:17)." },
   ]
 };
 
@@ -10817,7 +10872,7 @@ const SUPABASE_ANON_KEY = "sb_publishable_FDJ_R0foC7uIeHmxVrj6rA_2NeIgW2a";
    remontée d'un téléphone ne vaut rien si on ne sait pas QUELLE version
    tournait. Elle doit rester égale au CACHE de sw.js — c'est ce que vérifie
    banc-essai/version.js, qui refuse de laisser publier les deux en désaccord. */
-const VERSION_JEU = "v341";
+const VERSION_JEU = "v342";
 
 /* ===================== QUAND ÇA CASSE CHEZ UN JOUEUR =====================
    « Si quelque chose casse chez cinq d'entre eux sur un modèle de téléphone
@@ -15920,6 +15975,42 @@ const VERSETS_ALT = {
     "Matthieu 11:30":"Car mon joug est aisé, et mon fardeau est léger.",
     "Jean 3:17":"Car Dieu n’a point envoyé son Fils au monde pour condamner le monde, mais afin que le monde soit sauvé par lui.",
     "Jean 6:68":"Mais Simon Pierre lui répondit : Seigneur ! auprès de qui nous en irons-nous ? tu as les paroles de la vie éternelle :",
+    "Genèse 1:27":"Dieu donc créa l’homme à son image, il le créa à l’image de Dieu, il les créa mâle et femelle.",
+    "Psaume 23:4":"Même quand je marcherais par la vallée de l’ombre de la mort, je ne craindrais aucun mal ; car tu es avec moi ; ton bâton et ta houlette sont ceux qui me consolent.",
+    "Psaume 25:4":"Eternel ! fais-moi connaître tes voies, enseigne-moi tes sentiers.",
+    "Psaume 73:26":"Ma chair et mon coeur étaient consumés ; mais Dieu est le rocher de mon coeur, et mon partage à toujours.",
+    "Psaume 90:2":"Avant que les montagnes fussent nées, et que tu eusses formé la terre, la terre, dis-je, habitable, même de siècle en siècle, tu es le Dieu Fort.",
+    "Psaume 103:13":"De telle compassion qu’un père est ému envers ses enfants, de telle compassion l’Eternel est ému envers ceux qui le craignent.",
+    "Psaume 119:18":"Dessille mes yeux, afin que je regarde aux merveilles de ta Loi.",
+    "Psaume 145:3":"L’Eternel est grand et très-digne de louange, il n’est pas possible de sonder sa grandeur.",
+    "Psaume 147:5":"Notre Seigneur est grand et d’une grande puissance, son intelligence est incompréhensible.",
+    "Proverbes 10:12":"La haine excite les querelles ; mais la charité couvre tous les forfaits.",
+    "Proverbes 16:24":"Les paroles agréables sont des rayons de miel, douceur à l’âme, et santé aux os.",
+    "Proverbes 19:17":"Celui qui a pitié du pauvre, prête à l’Eternel, et il lui rendra son bienfait.",
+    "Ésaïe 40:29":"C’est lui qui donne de la force à celui qui est las, et qui multiplie la force de celui qui n’a aucune vigueur.",
+    "Ésaïe 43:19":"Voici, je m’en vais faire une chose nouvelle qui paraîtra bientôt, ne la connaîtrez-vous pas ? C’est que je mettrai un chemin au désert, et des fleuves au lieu désolé.",
+    "Ésaïe 54:10":"Car quand les montagnes se remueraient, et que les coteaux crouleraient, ma gratuité ne se retirera point de toi, et l’alliance de ma paix ne bougera point, a dit l’Eternel, qui a compassion de toi.",
+    "Ésaïe 60:1":"Lève-toi, sois illuminée ; car ta lumière est venue, et la gloire de l’Eternel s’est levée sur toi.",
+    "Lamentations 3:24":"L’Eternel est ma portion, dit mon âme, c’est pourquoi j’aurai espérance en lui.",
+    "Matthieu 4:4":"Mais Jésus répondit, et dit : Il est écrit : L’homme ne vivra point de pain seulement, mais de toute parole qui sort de la bouche de Dieu.",
+    "Matthieu 5:5":"Bienheureux sont les débonnaires ; car ils hériteront la terre.",
+    "Matthieu 5:7":"Bienheureux sont les miséricordieux ; car la miséricorde leur sera faite.",
+    "Matthieu 10:31":"Ne craignez donc point ; vous valez mieux que beaucoup de passereaux.",
+    "Marc 10:45":"Car aussi le Fils de l’homme n’est pas venu pour être servi, mais pour servir, et pour donner sa vie en rançon pour plusieurs.",
+    "Marc 11:24":"C’est pourquoi je vous dis : tout ce que vous demanderez en priant, croyez que vous le recevrez, et il vous sera fait.",
+    "Luc 2:14":"Gloire soit à Dieu dans les lieux très-hauts, que la paix soit sur la terre et la bonne volonté dans les hommes !",
+    "Jean 4:24":"Dieu est esprit ; et il faut que ceux qui l’adorent, l’adorent en esprit et en vérité.",
+    "Jean 13:35":"En ceci tous connaîtront que vous êtes mes Disciples, si vous avez de l’amour l’un pour l’autre.",
+    "Jean 17:17":"Sanctifie-les par ta vérité ; ta parole est la vérité.",
+    "Romains 8:37":"Au contraire, en toutes ces choses nous sommes plus que vainqueurs par celui qui nous a aimés.",
+    "Romains 12:10":"Etant portés par la charité fraternelle à vous aimer mutuellement ; vous prévenant l’un l’autre par honneur.",
+    "Philippiens 1:21":"Car Christ m’est gain à vivre et à mourir.",
+    "Colossiens 3:17":"Et quelque chose que vous fassiez, soit par parole ou par oeuvre, faites tout au Nom du Seigneur Jésus, rendant grâces par lui à notre Dieu et Père.",
+    "1 Thessaloniciens 5:11":"C’est pourquoi exhortez-vous l’un l’autre, et édifiez-vous tous l’un l’autre, comme aussi vous le faites.",
+    "1 Thessaloniciens 5:24":"Celui qui vous appelle est fidèle, c’est pourquoi il fera ces choses en vous.",
+    "1 Timothée 4:12":"Que personne ne méprise ta jeunesse ; mais sois le modèle des fidèles en paroles, en conduite, en charité, en esprit, en foi, en pureté.",
+    "Hébreux 13:6":"De sorte que nous pouvons dire avec assurance : le Seigneur m’est en aide ; et je ne craindrai point ce que l’homme me pourrait faire.",
+    "1 Jean 4:7":"Mes bien-aimés, aimons-nous l’un l’autre ; car la charité est de Dieu ; et quiconque aime son prochain est né de Dieu, et connaît Dieu.",
   },
   darby: {
     "1 Chroniques 16:11":"Recherchez l'Éternel et sa force, cherchez continuellement sa face ;",
@@ -16279,6 +16370,42 @@ const VERSETS_ALT = {
     "Matthieu 11:30":"Car mon joug est aisé et mon fardeau est léger.",
     "Jean 3:17":"Car Dieu n'a pas envoyé son Fils dans le monde afin qu'il juge le monde, mais afin que le monde soit sauvé par lui.",
     "Jean 6:68":"Simon Pierre lui répondit : Seigneur, auprès de qui nous en irions-nous ? Tu as les paroles de la vie éternelle ;",
+    "Genèse 1:27":"Et Dieu créa l'homme à son image ; il le créa à l'image de Dieu ; il les créa mâle et femelle.",
+    "Psaume 23:4":"Même quand je marcherais par la vallée de l'ombre de la mort, je ne craindrai aucun mal ; car tu es avec moi : ta houlette et ton bâton, ce sont eux qui me consolent.",
+    "Psaume 25:4":"Fais-moi connaître tes voies, ô Éternel ! enseigne-moi tes sentiers.",
+    "Psaume 73:26":"Ma chair et mon cœur sont consumés ; Dieu est le rocher de mon cœur, et mon partage pour toujours.",
+    "Psaume 90:2":"Avant que les montagnes soient nées et que tu aies formé la terre et le monde, d'éternité en éternité tu es ✶Dieu.",
+    "Psaume 103:13":"Comme un père a compassion de ses fils, l'Éternel a compassion de ceux qui le craignent.",
+    "Psaume 119:18":"Ouvre mes yeux, et je verrai les merveilles qui sont dans ta loi.",
+    "Psaume 145:3":"L'Éternel est grand et fort digne de louange ; et sa grandeur est insondable.",
+    "Psaume 147:5":"Notre Seigneur est grand et d'une grande puissance ; son intelligence est sans bornes.",
+    "Proverbes 10:12":"La haine excite les querelles, mais l'amour couvre toutes les transgressions.",
+    "Proverbes 16:24":"Les paroles agréables sont un rayon de miel, douceur pour l'âme et santé pour les os.",
+    "Proverbes 19:17":"Qui use de grâce envers le pauvre prête à l'Éternel, et il lui rendra son bienfait.",
+    "Ésaïe 40:29":"Il donne de la force à celui qui est las, et il augmente l'énergie à celui qui n'a pas de vigueur.",
+    "Ésaïe 43:19":"Voici, je fais une chose nouvelle ; maintenant elle va germer : ne la connaîtrez-vous pas ? Oui, je mettrai un chemin dans le désert, des rivières dans le lieu désolé.",
+    "Ésaïe 54:10":"Car les montagnes se retireraient et les collines seraient ébranlées, que ma bonté ne se retirerait pas d'avec toi, et que mon alliance de paix ne serait pas ébranlée, dit l'Éternel, qui a compassion de toi.",
+    "Ésaïe 60:1":"Lève-toi, resplendis, car ta lumière est venue, et la gloire de l'Éternel s'est levée sur toi.",
+    "Lamentations 3:24":"L'Éternel est ma portion, dit mon âme ; c'est pourquoi j'espérerai en lui.",
+    "Matthieu 4:4":"Mais lui, répondant, dit : Il est écrit : « L'homme ne vivra pas de pain seulement, mais de toute parole qui sort de la bouche de Dieu ».",
+    "Matthieu 5:5":"bienheureux les débonnaires, car c'est eux qui hériteront de la terre ;",
+    "Matthieu 5:7":"bienheureux les miséricordieux, car c'est à eux que miséricorde sera faite ;",
+    "Matthieu 10:31":"Ne craignez donc pas : vous valez mieux que beaucoup de passereaux.",
+    "Marc 10:45":"Car aussi le fils de l'homme n'est pas venu pour être servi, mais pour servir et pour donner sa vie en rançon pour plusieurs.",
+    "Marc 11:24":"C'est pourquoi je vous dis : Tout ce que vous demanderez en priant, croyez que vous le recevez, et il vous sera fait.",
+    "Luc 2:14":"Gloire à Dieu dans les lieux très hauts ; et sur la terre, paix ; et bon plaisir dans les hommes !",
+    "Jean 4:24":"Dieu est esprit, et il faut que ceux qui l'adorent, l'adorent en esprit et en vérité.",
+    "Jean 13:35":"À ceci tous connaîtront que vous êtes mes disciples, si vous avez de l'amour entre vous.",
+    "Jean 17:17":"Sanctifie-les par la vérité ; ta parole est la vérité.",
+    "Romains 8:37":"Au contraire, dans toutes ces choses, nous sommes plus que vainqueurs par celui qui nous a aimés.",
+    "Romains 12:10":"quant à l'amour fraternel, soyez pleins d'affection les uns pour les autres ; quant à l'honneur, étant les premiers à le rendre aux autres ;",
+    "Philippiens 1:21":"Car pour moi, vivre c'est Christ ; et mourir, un gain ;",
+    "Colossiens 3:17":"Et quelque chose que vous fassiez, en parole ou en œuvre, faites tout au nom du seigneur Jésus, rendant grâces par lui à Dieu le Père.",
+    "1 Thessaloniciens 5:11":"C'est pourquoi exhortez-vous l'un l'autre et édifiez-vous l'un l'autre, chacun en particulier, comme aussi vous le faites.",
+    "1 Thessaloniciens 5:24":"Celui qui vous appelle est fidèle, qui aussi le fera.",
+    "1 Timothée 4:12":"Que personne ne méprise ta jeunesse ; mais sois le modèle des fidèles, en parole, en conduite, en amour, en foi, en pureté.",
+    "Hébreux 13:6":"en sorte que, pleins de confiance, nous disions : « Le ✶Seigneur est mon aide et je ne craindrai point : que me fera l'homme ? ».",
+    "1 Jean 4:7":"Bien-aimés, aimons-nous l'un l'autre, car l'amour est de Dieu, et quiconque aime est né de Dieu et connaît Dieu.",
   },
   ostervald: {
     "1 Chroniques 16:11":"Recherchez l'Éternel et sa force ; cherchez continuellement sa face !",
@@ -16638,6 +16765,42 @@ const VERSETS_ALT = {
     "Matthieu 11:30":"car mon joug est aisé, et mon fardeau léger.",
     "Jean 3:17":"Car Dieu n'a point envoyé son Fils dans le monde, pour condamner le monde, mais afin que le monde soit sauvé par lui.",
     "Jean 6:68":"Simon Pierre lui répondit : Seigneur, à qui irions-nous ? Tu as les paroles de la vie éternelle ;",
+    "Genèse 1:27":"Et Dieu créa l'homme à son image ; il le créa à l'image de Dieu ; il les créa mâle et femelle.",
+    "Psaume 23:4":"Même quand je marcherais dans la vallée de l'ombre de la mort, je ne craindrais aucun mal ; car tu es avec moi ; c'est ton bâton et ta houlette qui me consolent.",
+    "Psaume 25:4":"Éternel, fais-moi connaître tes voies, enseigne-moi tes sentiers !",
+    "Psaume 73:26":"Ma chair et mon cœur défaillaient ; mais Dieu est le rocher de mon cœur et mon partage à toujours.",
+    "Psaume 90:2":"Avant que les montagnes fussent nées et que tu eusses formé la terre et le monde, d'éternité en éternité, tu es Dieu.",
+    "Psaume 103:13":"Comme un père est ému de compassion envers ses enfants, l'Éternel est ému de compassion envers ceux qui le craignent.",
+    "Psaume 119:18":"Dessille mes yeux, afin que je voie les merveilles de ta loi.",
+    "Psaume 145:3":"L'Éternel est grand et très digne de louange, et l'on ne saurait sonder sa grandeur.",
+    "Psaume 147:5":"Notre Seigneur est grand, et d'une grande puissance ; son intelligence est infinie.",
+    "Proverbes 10:12":"La haine excite les querelles ; mais la charité couvre toutes les fautes.",
+    "Proverbes 16:24":"Les paroles agréables sont des rayons de miel, une douceur à l'âme, et la santé aux os.",
+    "Proverbes 19:17":"Celui qui a pitié du pauvre, prête à l'Éternel, et il lui rendra son bienfait.",
+    "Ésaïe 40:29":"Il donne de la force à celui qui est lassé ; il accroît la vigueur de celui qui est affaibli.",
+    "Ésaïe 43:19":"Voici, je vais faire une chose nouvelle ; maintenant elle va se produire : ne la connaîtrez-vous pas ? C'est que je mettrai un chemin dans le désert, des fleuves dans la solitude.",
+    "Ésaïe 54:10":"Quand les montagnes s'éloigneraient, quand les collines s'ébranleraient, ma bonté ne s'éloignera pas de toi, et mon alliance de paix ne sera point ébranlée, dit l'Éternel, qui a compassion de toi.",
+    "Ésaïe 60:1":"Lève-toi, sois illuminée ! Car ta lumière est venue, et la gloire de l'Éternel s'est levée sur toi !",
+    "Lamentations 3:24":"L'Éternel est mon partage, dit mon âme ; c'est pourquoi j'espérerai en lui !",
+    "Matthieu 4:4":"Mais Jésus répondit : Il est écrit : L'homme ne vivra pas de pain seulement, mais de toute parole qui sort de la bouche de Dieu.",
+    "Matthieu 5:5":"Heureux les débonnaires ; car ils hériteront de la terre.",
+    "Matthieu 5:7":"Heureux les miséricordieux ; car ils obtiendront miséricorde.",
+    "Matthieu 10:31":"Ne craignez donc rien ; vous valez mieux que beaucoup de passereaux.",
+    "Marc 10:45":"Car le Fils de l'homme est venu, non pour être servi, mais pour servir et pour donner sa vie en rançon pour plusieurs.",
+    "Marc 11:24":"C'est pourquoi je vous dis : Tout ce que vous demanderez en priant, croyez que vous le recevrez ; et cela vous sera accordé.",
+    "Luc 2:14":"Gloire à Dieu, dans les lieux très hauts ; paix sur la terre, bonne volonté envers les hommes !",
+    "Jean 4:24":"Dieu est esprit, et il faut que ceux qui l'adorent, l'adorent en esprit et en vérité.",
+    "Jean 13:35":"C'est à ceci que tous reconnaîtront que vous êtes mes disciples, si vous avez de l'amour les uns pour les autres.",
+    "Jean 17:17":"Sanctifie-les par ta vérité ; ta parole est la vérité.",
+    "Romains 8:37":"Au contraire, dans toutes ces choses nous sommes plus que vainqueurs, par celui qui nous a aimés.",
+    "Romains 12:10":"Quant à l'amour fraternel, soyez pleins de tendresse les uns pour les autres. Quant à l'honneur, prévenez-vous les uns les autres.",
+    "Philippiens 1:21":"Car pour moi Christ est ma vie, et la mort m'est un gain.",
+    "Colossiens 3:17":"Et quoi que vous fassiez, en paroles, ou en œuvres, faites tout au nom du Seigneur Jésus, rendant grâces par lui à Dieu le Père.",
+    "1 Thessaloniciens 5:11":"C'est pourquoi exhortez-vous les uns les autres, et édifiez-vous l'un l'autre, comme vous le faites aussi.",
+    "1 Thessaloniciens 5:24":"Celui qui vous a appelés, est fidèle, et il le fera.",
+    "1 Timothée 4:12":"Que personne ne méprise ta jeunesse ; mais sois le modèle des fidèles par la parole, par la conduite, par la charité, par l'esprit, par la foi, par la pureté.",
+    "Hébreux 13:6":"De sorte que nous disons avec assurance : Le Seigneur est mon aide, et je ne craindrai point ; que me fera l'homme ?",
+    "1 Jean 4:7":"Bien-aimés, aimons-nous les uns les autres ; car la charité vient de Dieu, et quiconque aime, est né de Dieu, et connaît Dieu.",
   },
   ba: {
     "1 Chroniques 16:11":"Recherchez l'Éternel et sa force, Cherchez continuellement sa face !",
@@ -16996,6 +17159,42 @@ const VERSETS_ALT = {
     "Matthieu 11:30":"car mon joug est doux et mon fardeau est léger.",
     "Jean 3:17":"Car Dieu n'a point envoyé son Fils dans le monde pour qu'il juge le monde ; mais pour que le monde soit sauvé par lui.",
     "Jean 6:68":"Simon Pierre lui répondit : Seigneur, à qui irons-nous ? Tu as des paroles de vie éternelle ;",
+    "Genèse 1:27":"Et Dieu créa l'homme à son image. Il l'a créé à l'image de Dieu. Il les a créés mâle et femelle.",
+    "Psaume 23:4":"Même quand je marcherais par la vallée de l'ombre de la mort, Je ne craindrais aucun mal, car tu es avec moi. Ta houlette et ton bâton, voilà ce qui me console.",
+    "Psaume 25:4":"Éternel ! Fais-moi connaître tes voies, Enseigne-moi tes sentiers !",
+    "Psaume 73:26":"Ma chair et mon cœur peuvent se consumer, Dieu est le rocher de mon cœur et mon partage à toujours.",
+    "Psaume 90:2":"Avant que les montagnes fussent nées, Et que tu eusses formé la terre, la terre habitable, D'éternité en éternité, tu es le Dieu fort.",
+    "Psaume 103:13":"Comme un père est ému de compassion envers ses enfants, L'Éternel est ému de compassion envers ceux qui le craignent ;",
+    "Psaume 119:18":"Dessille mes yeux, Afin que je voie les merveilles de ta loi.",
+    "Psaume 145:3":"Grand est l'Éternel ; il est digne de toutes les louanges, Et sa grandeur est insondable.",
+    "Psaume 147:5":"Grand est notre Seigneur, et puissant en force ! Il n'est point de limite à son intelligence.",
+    "Proverbes 10:12":"La haine excite des disputes, Mais l'amour couvre tous les péchés.",
+    "Proverbes 16:24":"Les paroles bienveillantes sont un rayon de miel, Douces à l'âme, salutaires aux os.",
+    "Proverbes 19:17":"Celui qui a pitié du pauvre prête à l'Éternel, Qui lui rendra son bienfait.",
+    "Ésaïe 40:29":"qui donne de la force à celui qui est fatigué et redouble la vigueur de celui qui est défaillant.",
+    "Ésaïe 43:19":"voici, je vais en faire une nouvelle ; elle est près d'éclore ; ne la reconnaîtrez-vous pas ? Je mettrai un chemin dans le désert, des fleuves dans la terre aride ;",
+    "Ésaïe 54:10":"Quand les montagnes se retireraient et que les collines s'ébranleraient, ma grâce ne se retirera point d'avec toi, et mon alliance de paix ne sera point ébranlée, dit celui qui a compassion de toi, l'Éternel.",
+    "Ésaïe 60:1":"Lève-toi, et resplendis ! Car ta lumière paraît, et la gloire de l'Éternel s'est levée sur toi !",
+    "Lamentations 3:24":"L'Éternel est ma part, a dit mon âme, C'est pourquoi je m'attendrai à lui.",
+    "Matthieu 4:4":"Mais lui, répondant, dit : Il est écrit : Ce n'est pas de pain seulement que l'homme vivra, mais de toute parole qui sort de la bouche de Dieu.",
+    "Matthieu 5:5":"Heureux ceux qui sont doux, parce qu'ils hériteront la terre.",
+    "Matthieu 5:7":"Heureux les miséricordieux, parce qu'ils obtiendront miséricorde.",
+    "Matthieu 10:31":"Ne craignez donc point ; vous valez mieux que beaucoup de passereaux.",
+    "Marc 10:45":"Car aussi le fils de l'homme n'est pas venu pour être servi, mais pour servir et donner sa vie en rançon pour plusieurs.",
+    "Marc 11:24":"C'est pourquoi je vous dis : Tout ce que vous demandez en priant, croyez que vous le recevez, et cela vous sera fait.",
+    "Luc 2:14":"Gloire à Dieu, dans les lieux très hauts et paix sur la terre ! Bienveillance envers les hommes !",
+    "Jean 4:24":"Dieu est esprit, et il faut que ceux qui l'adorent, l'adorent en esprit et en vérité.",
+    "Jean 13:35":"À ceci tous connaîtront que vous êtes mes disciples, si vous avez de l'amour les uns pour les autres.",
+    "Jean 17:17":"Sanctifie-les dans la vérité ; ta parole est la vérité.",
+    "Romains 8:37":"Au contraire, dans toutes ces choses, nous sommes plus que vainqueurs par Celui qui nous a aimés.",
+    "Romains 12:10":"Quant à l'amour fraternel, soyez pleins d'affection les uns pour les autres ; quant à l'estime, faisant chacun passer les autres avant lui ;",
+    "Philippiens 1:21":"car Christ est ma vie, et la mort m'est un gain.",
+    "Colossiens 3:17":"Et quelque chose que vous fassiez, en parole ou en œuvre, faites tout au nom du Seigneur Jésus, rendant grâces par lui à Dieu le Père.",
+    "1 Thessaloniciens 5:11":"C'est pourquoi exhortez-vous les uns les autres, et édifiez-vous l'un l'autre, comme aussi vous le faites.",
+    "1 Thessaloniciens 5:24":"Celui qui vous appelle est fidèle, et c'est lui aussi qui le fera.",
+    "1 Timothée 4:12":"Que personne ne méprise ta jeunesse ; mais sois le modèle des fidèles, en parole, en conduite, en charité, en foi, en pureté.",
+    "Hébreux 13:6":"De sorte que nous pouvons dire avec assurance : Le Seigneur est mon aide, je ne craindrai point ; que me fera un homme ?",
+    "1 Jean 4:7":"Bien-aimés, aimons-nous les uns les autres ; car l'amour est de Dieu, et quiconque aime est né de Dieu et connaît Dieu.",
   },
   /* King James Version, 1769 — eBible « eng-kjv2006 » */
   kjv1769: {
@@ -17356,6 +17555,42 @@ const VERSETS_ALT = {
     "Matthieu 11:30":"For my yoke is easy, and my burden is light.",
     "Jean 3:17":"For God sent not his Son into the world to condemn the world; but that the world through him might be saved.",
     "Jean 6:68":"Then Simon Peter answered him, Lord, to whom shall we go? thou hast the words of eternal life.",
+    "Genèse 1:27":"So God created man in his own image, in the image of God created he him; male and female created he them.",
+    "Psaume 23:4":"Yea, though I walk through the valley of the shadow of death, I will fear no evil: for thou art with me; thy rod and thy staff they comfort me.",
+    "Psaume 25:4":"Shew me thy ways, O LORD; teach me thy paths.",
+    "Psaume 73:26":"My flesh and my heart faileth: but God is the strength of my heart, and my portion for ever.",
+    "Psaume 90:2":"Before the mountains were brought forth, or ever thou hadst formed the earth and the world, even from everlasting to everlasting, thou art God.",
+    "Psaume 103:13":"Like as a father pitieth his children, so the LORD pitieth them that fear him.",
+    "Psaume 119:18":"Open thou mine eyes, that I may behold wondrous things out of thy law.",
+    "Psaume 145:3":"Great is the LORD, and greatly to be praised; and his greatness is unsearchable.",
+    "Psaume 147:5":"Great is our Lord, and of great power: his understanding is infinite.",
+    "Proverbes 10:12":"Hatred stirreth up strifes: but love covereth all sins.",
+    "Proverbes 16:24":"Pleasant words are as an honeycomb, sweet to the soul, and health to the bones.",
+    "Proverbes 19:17":"He that hath pity upon the poor lendeth unto the LORD; and that which he hath given will he pay him again.",
+    "Ésaïe 40:29":"He giveth power to the faint; and to them that have no might he increaseth strength.",
+    "Ésaïe 43:19":"Behold, I will do a new thing; now it shall spring forth; shall ye not know it? I will even make a way in the wilderness, and rivers in the desert.",
+    "Ésaïe 54:10":"For the mountains shall depart, and the hills be removed; but my kindness shall not depart from thee, neither shall the covenant of my peace be removed, saith the LORD that hath mercy on thee.",
+    "Ésaïe 60:1":"Arise, shine; for thy light is come, and the glory of the LORD is risen upon thee.",
+    "Lamentations 3:24":"The LORD is my portion, saith my soul; therefore will I hope in him.",
+    "Matthieu 4:4":"But he answered and said, It is written, Man shall not live by bread alone, but by every word that proceedeth out of the mouth of God.",
+    "Matthieu 5:5":"Blessed are the meek: for they shall inherit the earth.",
+    "Matthieu 5:7":"Blessed are the merciful: for they shall obtain mercy.",
+    "Matthieu 10:31":"Fear ye not therefore, ye are of more value than many sparrows.",
+    "Marc 10:45":"For even the Son of man came not to be ministered unto, but to minister, and to give his life a ransom for many.",
+    "Marc 11:24":"Therefore I say unto you, What things soever ye desire, when ye pray, believe that ye receive them, and ye shall have them.",
+    "Luc 2:14":"Glory to God in the highest, and on earth peace, good will toward men.",
+    "Jean 4:24":"God is a Spirit: and they that worship him must worship him in spirit and in truth.",
+    "Jean 13:35":"By this shall all men know that ye are my disciples, if ye have love one to another.",
+    "Jean 17:17":"Sanctify them through thy truth: thy word is truth.",
+    "Romains 8:37":"Nay, in all these things we are more than conquerors through him that loved us.",
+    "Romains 12:10":"Be kindly affectioned one to another with brotherly love; in honour preferring one another;",
+    "Philippiens 1:21":"For to me to live is Christ, and to die is gain.",
+    "Colossiens 3:17":"And what soever ye do in word or deed, do all in the name of the Lord Jesus, giving thanks to God and the Father by him.",
+    "1 Thessaloniciens 5:11":"Wherefore comfort yourselves together, and edify one another, even as also ye do.",
+    "1 Thessaloniciens 5:24":"Faithful is he that calleth you, who also will do it.",
+    "1 Timothée 4:12":"Let no man despise thy youth; but be thou an example of the believers, in word, in conversation, in charity, in spirit, in faith, in purity.",
+    "Hébreux 13:6":"So that we may boldly say, The Lord is my helper, and I will not fear what man shall do unto me.",
+    "1 Jean 4:7":"Beloved, let us love one another: for love is of God; and every one that loveth is born of God, and knoweth God.",
   },
   /* American Standard Version, 1901 — eBible « eng-asv » */
   asv1901: {
@@ -17716,6 +17951,42 @@ const VERSETS_ALT = {
     "Matthieu 11:30":"For my yoke is easy, and my burden is light.",
     "Jean 3:17":"For God sent not the Son into the world to judge the world; but that the world should be saved through him.",
     "Jean 6:68":"Simon Peter answered him, Lord, to whom shall we go? thou hast the words of eternal life.",
+    "Genèse 1:27":"And God created man in his own image, in the image of God created he him; male and female created he them.",
+    "Psaume 23:4":"Yea, though I walk through the valley of the shadow of death, I will fear no evil; for thou art with me; Thy rod and thy staff, they comfort me.",
+    "Psaume 25:4":"Show me thy ways, O Jehovah; Teach me thy paths.",
+    "Psaume 73:26":"My flesh and my heart faileth; But God is the strength of my heart and my portion for ever.",
+    "Psaume 90:2":"Before the mountains were brought forth, Or ever thou hadst formed the earth and the world, Even from everlasting to everlasting, thou art God.",
+    "Psaume 103:13":"Like as a father pitieth his children, So Jehovah pitieth them that fear him.",
+    "Psaume 119:18":"Open thou mine eyes, that I may behold Wondrous things out of thy law.",
+    "Psaume 145:3":"Great is Jehovah, and greatly to be praised; And his greatness is unsearchable.",
+    "Psaume 147:5":"Great is our Lord, and mighty in power; His understanding is infinite.",
+    "Proverbes 10:12":"Hatred stirreth up strifes; But love covereth all transgressions.",
+    "Proverbes 16:24":"Pleasant words are as a honeycomb, Sweet to the soul, and health to the bones.",
+    "Proverbes 19:17":"He that hath pity upon the poor lendeth unto Jehovah, And his good deed will he pay him again.",
+    "Ésaïe 40:29":"He giveth power to the faint; and to him that hath no might he increaseth strength.",
+    "Ésaïe 43:19":"Behold, I will do a new thing; now shall it spring forth; shall ye not know it? I will even make a way in the wilderness, and rivers in the desert.",
+    "Ésaïe 54:10":"For the mountains may depart, and the hills be removed; but my lovingkindness shall not depart from thee, neither shall my covenant of peace be removed, saith Jehovah that hath mercy on thee.",
+    "Ésaïe 60:1":"Arise, shine; for thy light is come, and the glory of Jehovah is risen upon thee.",
+    "Lamentations 3:24":"Jehovah is my portion, saith my soul; therefore will I hope in him.",
+    "Matthieu 4:4":"But he answered and said, It is written, Man shall not live by bread alone, but by every word that proceedeth out of the mouth of God.",
+    "Matthieu 5:5":"Blessed are the meek: for they shall inherit the earth.",
+    "Matthieu 5:7":"Blessed are the merciful: for they shall obtain mercy.",
+    "Matthieu 10:31":"Fear not therefore: ye are of more value than many sparrows.",
+    "Marc 10:45":"For the Son of man also came not to be ministered unto, but to minister, and to give his life a ransom for many.",
+    "Marc 11:24":"Therefore I say unto you, All things whatsoever ye pray and ask for, believe that ye receive them, and ye shall have them.",
+    "Luc 2:14":"Glory to God in the highest, And on earth peace among men in whom he is well pleased.",
+    "Jean 4:24":"God is a Spirit: and they that worship him must worship in spirit and truth.",
+    "Jean 13:35":"By this shall all men know that ye are my disciples, if ye have love one to another.",
+    "Jean 17:17":"Sanctify them in the truth: thy word is truth.",
+    "Romains 8:37":"Nay, in all these things we are more than conquerors through him that loved us.",
+    "Romains 12:10":"In love of the brethren be tenderly affectioned one to another; in honor preferring one another;",
+    "Philippiens 1:21":"For to me to live is Christ, and to die is gain.",
+    "Colossiens 3:17":"And whatsoever ye do, in word or in deed, do all in the name of the Lord Jesus, giving thanks to God the Father through him.",
+    "1 Thessaloniciens 5:11":"Wherefore exhort one another, and build each other up, even as also ye do.",
+    "1 Thessaloniciens 5:24":"Faithful is he that calleth you, who will also do it.",
+    "1 Timothée 4:12":"Let no man despise thy youth; but be thou an ensample to them that believe, in word, in manner of life, in love, in faith, in purity.",
+    "Hébreux 13:6":"So that with good courage we say, The Lord is my helper; I will not fear: What shall man do unto me?",
+    "1 Jean 4:7":"Beloved, let us love one another: for love is of God; and every one that loveth is begotten of God, and knoweth God.",
   },
   /* World English Bible — eBible « engwebp », canon protestant */
   web: {
@@ -18076,6 +18347,42 @@ const VERSETS_ALT = {
     "Matthieu 11:30":"For my yoke is easy, and my burden is light.”",
     "Jean 3:17":"For God didn't send his Son into the world to judge the world, but that the world should be saved through him.",
     "Jean 6:68":"Simon Peter answered him, “Lord, to whom would we go? You have the words of eternal life.",
+    "Genèse 1:27":"God created man in his own image. In God's image he created him; male and female he created them.",
+    "Psaume 23:4":"Even though I walk through the valley of the shadow of death, I will fear no evil, for you are with me. Your rod and your staff, they comfort me.",
+    "Psaume 25:4":"Show me your ways, LORD. Teach me your paths.",
+    "Psaume 73:26":"My flesh and my heart fails, but God is the strength of my heart and my portion forever.",
+    "Psaume 90:2":"Before the mountains were born, before you had formed the earth and the world, even from everlasting to everlasting, you are God.",
+    "Psaume 103:13":"Like a father has compassion on his children, so the LORD has compassion on those who fear him.",
+    "Psaume 119:18":"Open my eyes, that I may see wondrous things out of your law.",
+    "Psaume 145:3":"Great is the LORD, and greatly to be praised! His greatness is unsearchable.",
+    "Psaume 147:5":"Great is our Lord, and mighty in power. His understanding is infinite.",
+    "Proverbes 10:12":"Hatred stirs up strife, but love covers all wrongs.",
+    "Proverbes 16:24":"Pleasant words are a honeycomb, sweet to the soul, and health to the bones.",
+    "Proverbes 19:17":"He who has pity on the poor lends to the LORD; he will reward him.",
+    "Ésaïe 40:29":"He gives power to the weak. He increases the strength of him who has no might.",
+    "Ésaïe 43:19":"Behold, I will do a new thing. It springs out now. Don't you know it? I will even make a way in the wilderness, and rivers in the desert.",
+    "Ésaïe 54:10":"For the mountains may depart, and the hills be removed, but my loving kindness will not depart from you, and my covenant of peace will not be removed,” says the LORD who has mercy on you.",
+    "Ésaïe 60:1":"“Arise, shine; for your light has come, and the LORD's glory has risen on you!",
+    "Lamentations 3:24":"“The LORD is my portion,” says my soul. “Therefore I will hope in him.”",
+    "Matthieu 4:4":"But he answered, “It is written, ‘Man shall not live by bread alone, but by every word that proceeds out of God's mouth.'”",
+    "Matthieu 5:5":"Blessed are the gentle, for they shall inherit the earth.",
+    "Matthieu 5:7":"Blessed are the merciful, for they shall obtain mercy.",
+    "Matthieu 10:31":"Therefore don't be afraid. You are of more value than many sparrows.",
+    "Marc 10:45":"For the Son of Man also came not to be served but to serve, and to give his life as a ransom for many.”",
+    "Marc 11:24":"Therefore I tell you, all things whatever you pray and ask for, believe that you have received them, and you shall have them.",
+    "Luc 2:14":"“Glory to God in the highest, on earth peace, good will toward men.”",
+    "Jean 4:24":"God is spirit, and those who worship him must worship in spirit and truth.”",
+    "Jean 13:35":"By this everyone will know that you are my disciples, if you have love for one another.”",
+    "Jean 17:17":"Sanctify them in your truth. Your word is truth.",
+    "Romains 8:37":"No, in all these things we are more than conquerors through him who loved us.",
+    "Romains 12:10":"In love of the brothers be tenderly affectionate to one another; in honor prefer one another,",
+    "Philippiens 1:21":"For to me to live is Christ, and to die is gain.",
+    "Colossiens 3:17":"Whatever you do, in word or in deed, do all in the name of the Lord Jesus, giving thanks to God the Father through him.",
+    "1 Thessaloniciens 5:11":"Therefore exhort one another, and build each other up, even as you also do.",
+    "1 Thessaloniciens 5:24":"He who calls you is faithful, who will also do it.",
+    "1 Timothée 4:12":"Let no man despise your youth; but be an example to those who believe, in word, in your way of life, in love, in spirit, in faith, and in purity.",
+    "Hébreux 13:6":"So that with good courage we say, “The Lord is my helper. I will not fear. What can man do to me?”",
+    "1 Jean 4:7":"Beloved, let's love one another, for love is of God; and everyone who loves has been born of God and knows God.",
   },
 
   rv1909: {
@@ -18436,6 +18743,42 @@ const VERSETS_ALT = {
     "Matthieu 11:30":"Porque mi yugo es fácil, y ligera mi carga.",
     "Jean 3:17":"Porque no envió Dios á su Hijo al mundo para que condene al mundo, mas para que el mundo sea salvo por él.",
     "Jean 6:68":"Y respondióle Simón Pedro: Señor, ¿á quién iremos? tú tienes palabras de vida eterna.",
+    "Genèse 1:27":"Y crió Dios al hombre á su imagen, á imagen de Dios lo crió; varón y hembra los crió.",
+    "Psaume 23:4":"Aunque ande en valle de sombra de muerte, no temeré mal alguno; porque tú estarás conmigo: tu vara y tu cayado me infundirán aliento.",
+    "Psaume 25:4":"Muéstrame, oh Jehová, tus caminos; enséñame tus sendas.",
+    "Psaume 73:26":"Mi carne y mi corazón desfallecen: mas la roca de mi corazón y mi porción es Dios para siempre.",
+    "Psaume 90:2":"Antes que naciesen los montes, y formases la tierra y el mundo, y desde el siglo y hasta el siglo, tú eres Dios.",
+    "Psaume 103:13":"Como el padre se compadece de los hijos, se compadece Jehová de los que le temen.",
+    "Psaume 119:18":"Abre mis ojos, y miraré las maravillas de tu ley.",
+    "Psaume 145:3":"Grande es Jehová y digno de suprema alabanza: y su grandeza es inescrutable.",
+    "Psaume 147:5":"Grande es el Señor nuestro, y de mucha potencia; y de su entendimiento no hay número.",
+    "Proverbes 10:12":"El odio despierta rencillas: mas la caridad cubrirá todas las faltas.",
+    "Proverbes 16:24":"Panal de miel son los dichos suaves: suavidad al alma y medicina á los huesos.",
+    "Proverbes 19:17":"A Jehová empresta el que da al pobre, y él le dará su paga.",
+    "Ésaïe 40:29":"El da esfuerzo al cansado, y multiplica las fuerzas al que no tiene ningunas.",
+    "Ésaïe 43:19":"He aquí que yo hago cosa nueva: presto saldrá á luz: ¿no la sabréis? Otra vez pondré camino en el desierto, y ríos en la soledad.",
+    "Ésaïe 54:10":"Porque los montes se moverán, y los collados temblarán; mas no se apartará de ti mi misericordia, ni el pacto de mi paz vacilará, dijo Jehová, el que tiene misericordia de ti.",
+    "Ésaïe 60:1":"Levántate, resplandece; que ha venido tu lumbre, y la gloria de Jehová ha nacido sobre ti.",
+    "Lamentations 3:24":"Mi parte es Jehová, dijo mi alma; por tanto en él esperaré.",
+    "Matthieu 4:4":"Mas él respondiendo, dijo: Escrito está: No con solo el pan vivirá el hombre, mas con toda palabra que sale de la boca de Dios.",
+    "Matthieu 5:5":"Bienaventurados los mansos: porque ellos recibirán la tierra por heredad.",
+    "Matthieu 5:7":"Bienaventurados los misericordiosos: porque ellos alcanzarán misericordia.",
+    "Matthieu 10:31":"Así que, no temáis: más valéis vosotros que muchos pajarillos.",
+    "Marc 10:45":"Porque el Hijo del hombre tampoco vino para ser servido, mas para servir, y dar su vida en rescate por muchos.",
+    "Marc 11:24":"Por tanto, os digo que todo lo que orando pidiereis, creed que lo recibiréis, y os vendrá.",
+    "Luc 2:14":"Gloria en las alturas á Dios, y en la tierra paz, buena voluntad para con los hombres.",
+    "Jean 4:24":"Dios es Espíritu; y los que le adoran, en espíritu y en verdad es necesario que adoren.",
+    "Jean 13:35":"En esto conocerán todos que sois mis discípulos, si tuviereis amor los unos con los otros.",
+    "Jean 17:17":"Santifícalos en tu verdad: tu palabra es verdad.",
+    "Romains 8:37":"Antes, en todas estas cosas hacemos más que vencer por medio de aquel que nos amó.",
+    "Romains 12:10":"Amándoos los unos á los otros con caridad fraternal; previniéndoos con honra los unos á los otros;",
+    "Philippiens 1:21":"Porque para mí el vivir es Cristo, y el morir es ganancia.",
+    "Colossiens 3:17":"Y todo lo que hacéis, sea de palabra, ó de hecho, hacedlo todo en el nombre del Señor Jesús, dando gracias á Dios Padre por él.",
+    "1 Thessaloniciens 5:11":"Por lo cual, consolaos los unos á los otros, y edificaos los unos á los otros, así como lo hacéis.",
+    "1 Thessaloniciens 5:24":"Fiel es el que os ha llamado; el cual también lo hará.",
+    "1 Timothée 4:12":"Ninguno tenga en poco tu juventud; pero sé ejemplo de los fieles en palabra, en conversación, en caridad, en espíritu, en fe, en limpieza.",
+    "Hébreux 13:6":"De tal manera que digamos confiadamente: El Señor es mi ayudador; no temeré lo que me hará el hombre.",
+    "1 Jean 4:7":"Carísimos, amémonos unos á otros; porque el amor es de Dios. Cualquiera que ama, es nacido de Dios, y conoce á Dios.",
   },
 
   rv1865: {
@@ -18796,6 +19139,42 @@ const VERSETS_ALT = {
     "Matthieu 11:30":"Porque mi yugo es suave, y ligera mi carga.",
     "Jean 3:17":"Porque no envió Dios a su Hijo al mundo, para que condene al mundo; sino para que el mundo sea salvo por él.",
     "Jean 6:68":"Respondióle entonces Simón Pedro: ¿Señor, a quién iremos? tú tienes las palabras de vida eterna.",
+    "Genèse 1:27":"Y creó Dios al hombre a su imagen, a imagen de Dios le creó: macho y hembra los creó.",
+    "Psaume 23:4":"Aunque ande en valle de sombra de muerte, no temeré algún mal, porque tú estarás conmigo: tu vara, y tu cayado ellos me confortarán.",
+    "Psaume 25:4":"Tus caminos, oh Jehová, házme saber: enséñame tus sendas.",
+    "Psaume 73:26":"Desmáyase mi carne y mi corazón, ¡o roca de mi corazón! que mi porción es Dios para siempre.",
+    "Psaume 90:2":"Antes que naciesen los montes, y formases la tierra y el mundo, y desde el siglo, y hasta el siglo, tú eres Dios.",
+    "Psaume 103:13":"Como el padre tiene misericordia de los hijos, tiene misericordia Jehová de los que le temen.",
+    "Psaume 119:18":"Destapa mis ojos; y miraré las maravillas de tu ley.",
+    "Psaume 145:3":"Grande es Jehová, y digno de alabanza en gran manera; y su grandeza no puede ser comprendida.",
+    "Psaume 147:5":"Grande es el Señor nuestro, y de mucho poder; y de su entendimiento no hay número.",
+    "Proverbes 10:12":"El odio despierta las rencillas: mas la caridad cubrirá todas las maldades.",
+    "Proverbes 16:24":"Panal de miel son las hablas suaves, suavidad al alma, y medicina a los huesos.",
+    "Proverbes 19:17":"A Jehová empresta el que da al pobre; y él le dará su paga.",
+    "Ésaïe 40:29":"El da esfuerzo al cansado, y multiplica las fuerzas al que no tiene ningunas.",
+    "Ésaïe 43:19":"He aquí que yo hago cosa nueva: presto saldrá a luz: ¿No la sabréis? Otra vez, pondré camino en el desierto, y ríos en la soledad.",
+    "Ésaïe 54:10":"Porque los montes se moverán, y los collados temblarán: mas mi misericordia no se apartará de ti, ni el concierto de mi paz vacilará, dijo Jehová, el que ha misericordia de ti.",
+    "Ésaïe 60:1":"Levántate, resplandece: que viene tu lumbre, y la gloria de Jehová ha nacido sobre ti.",
+    "Lamentations 3:24":"Mi parte es Jehová, dijo mi alma: por tanto a él esperaré.",
+    "Matthieu 4:4":"Mas él respondiendo, dijo: Escrito está: No con solo el pan vivirá el hombre; mas con toda palabra que sale por la boca de Dios.",
+    "Matthieu 5:5":"Bienaventurados los mansos; porque ellos recibirán la tierra por heredad.",
+    "Matthieu 5:7":"Bienaventurados los misericordiosos; porque ellos alcanzarán misericordia.",
+    "Matthieu 10:31":"No temáis pues: más valéis vosotros que muchos pajarillos.",
+    "Marc 10:45":"Porque el Hijo del hombre tampoco vino para ser servido, sino para servir, y dar su vida en rescate por muchos.",
+    "Marc 11:24":"Por tanto os digo, que todo lo que orando pidiereis, creéd que lo recibiréis, y os vendrá.",
+    "Luc 2:14":"Gloria en las alturas a Dios, y en la tierra paz, y a los hombres buena voluntad.",
+    "Jean 4:24":"Dios es Espíritu, y los que le adoran, en espíritu y en verdad es menester que le adoren.",
+    "Jean 13:35":"En esto conocerán todos que sois mis discípulos, si tuviereis amor los unos hacia los otros.",
+    "Jean 17:17":"Santifícalos por tu verdad: tu palabra es la verdad.",
+    "Romains 8:37":"Antes en todas estas cosas vencemos, y aun más, por aquel que nos amó.",
+    "Romains 12:10":"Amándoos los unos a los otros con amor de hermanos; en la honra prefiriéndoos los unos a los otros.",
+    "Philippiens 1:21":"Porque para mí el vivir es Cristo, y el morir es ganancia.",
+    "Colossiens 3:17":"Y todo lo que hiciereis, en palabra, o en obra, hacédlo todo en el nombre del Señor Jesús, dando gracias a Dios y al Padre por medio de él.",
+    "1 Thessaloniciens 5:11":"Por lo cual consoláos los unos a los otros, y edificáos uno a otro, así como lo hacéis.",
+    "1 Thessaloniciens 5:24":"Fiel es el que os ha llamado, el cual también lo hará.",
+    "1 Timothée 4:12":"Ninguno tenga en poco tu juventud; mas sé ejemplo de los fieles en palabra, en conversación, en caridad, en espíritu, en fe, en pureza.",
+    "Hébreux 13:6":"De tal manera que digamos confiadamente: El Señor es mi ayudador: no temeré lo que me pueda hacer hombre.",
+    "1 Jean 4:7":"Carísimos, amémonos unos a otros; porque el amor es de Dios. Y cualquiera que ama, es nacido de Dios, y conoce a Dios.",
   },
 };
 /* LES CITATIONS DES EXPLICATIONS, DANS CHAQUE VERSION.
@@ -19346,6 +19725,42 @@ const HERO_VERSES = [
   { t:"Car mon joug est doux, et mon fardeau léger.", r:"Matthieu 11:30" },
   { t:"Dieu, en effet, n'a pas envoyé son Fils dans le monde pour qu'il juge le monde, mais pour que le monde soit sauvé par lui.", r:"Jean 3:17" },
   { t:"Simon Pierre lui répondit : Seigneur, à qui irions-nous ? Tu as les paroles de la vie éternelle.", r:"Jean 6:68" },
+  { t:"Dieu créa l'homme à son image, il le créa à l'image de Dieu, il créa l'homme et la femme.", r:"Genèse 1:27" },
+  { t:"Quand je marche dans la vallée de l'ombre de la mort, Je ne crains aucun mal, car tu es avec moi : Ta houlette et ton bâton me rassurent.", r:"Psaume 23:4" },
+  { t:"Éternel ! fais-moi connaître tes voies, Enseigne-moi tes sentiers.", r:"Psaume 25:4" },
+  { t:"Ma chair et mon cœur peuvent se consumer : Dieu sera toujours le rocher de mon cœur et mon partage.", r:"Psaume 73:26" },
+  { t:"Avant que les montagnes fussent nées, Et que tu eusses créé la terre et le monde, D'éternité en éternité tu es Dieu.", r:"Psaume 90:2" },
+  { t:"Comme un père a compassion de ses enfants, L'Éternel a compassion de ceux qui le craignent.", r:"Psaume 103:13" },
+  { t:"Ouvre mes yeux, pour que je contemple Les merveilles de ta loi !", r:"Psaume 119:18" },
+  { t:"L'Éternel est grand et très digne de louange, Et sa grandeur est insondable.", r:"Psaume 145:3" },
+  { t:"Notre Seigneur est grand, puissant par sa force, Son intelligence n'a point de limite.", r:"Psaume 147:5" },
+  { t:"La haine excite des querelles, Mais l'amour couvre toutes les fautes.", r:"Proverbes 10:12" },
+  { t:"Les paroles agréables sont un rayon de miel, Douces pour l'âme et salutaires pour le corps.", r:"Proverbes 16:24" },
+  { t:"Celui qui a pitié du pauvre prête à l'Éternel, Qui lui rendra selon son œuvre.", r:"Proverbes 19:17" },
+  { t:"Il donne de la force à celui qui est fatigué, Et il augmente la vigueur de celui qui tombe en défaillance.", r:"Ésaïe 40:29" },
+  { t:"Voici, je vais faire une chose nouvelle, sur le point d'arriver : Ne la connaîtrez-vous pas ? Je mettrai un chemin dans le désert, Et des fleuves dans la solitude.", r:"Ésaïe 43:19" },
+  { t:"Quand les montagnes s'éloigneraient, Quand les collines chancelleraient, Mon amour ne s'éloignera point de toi, Et mon alliance de paix ne chancellera point, Dit l'Éternel, qui a compassion de toi.", r:"Ésaïe 54:10" },
+  { t:"Lève-toi, sois éclairée, car ta lumière arrive, Et la gloire de l'Éternel se lève sur toi.", r:"Ésaïe 60:1" },
+  { t:"L'Éternel est mon partage, dit mon âme ; C'est pourquoi je veux espérer en lui.", r:"Lamentations 3:24" },
+  { t:"Jésus répondit : Il est écrit : L'homme ne vivra pas de pain seulement, mais de toute parole qui sort de la bouche de Dieu.", r:"Matthieu 4:4" },
+  { t:"Heureux les débonnaires, car ils hériteront la terre !", r:"Matthieu 5:5" },
+  { t:"Heureux les miséricordieux, car ils obtiendront miséricorde !", r:"Matthieu 5:7" },
+  { t:"Ne craignez donc point : vous valez plus que beaucoup de passereaux.", r:"Matthieu 10:31" },
+  { t:"Car le Fils de l'homme est venu, non pour être servi, mais pour servir et donner sa vie comme la rançon de plusieurs.", r:"Marc 10:45" },
+  { t:"C'est pourquoi je vous dis : Tout ce que vous demanderez en priant, croyez que vous l'avez reçu, et vous le verrez s'accomplir.", r:"Marc 11:24" },
+  { t:"Gloire à Dieu dans les lieux très hauts, Et paix sur la terre parmi les hommes qu'il agrée !", r:"Luc 2:14" },
+  { t:"Dieu est Esprit, et il faut que ceux qui l'adorent l'adorent en esprit et en vérité.", r:"Jean 4:24" },
+  { t:"A ceci tous connaîtront que vous êtes mes disciples, si vous avez de l'amour les uns pour les autres.", r:"Jean 13:35" },
+  { t:"Sanctifie-les par ta vérité : ta parole est la vérité.", r:"Jean 17:17" },
+  { t:"Mais dans toutes ces choses nous sommes plus que vainqueurs par celui qui nous a aimés.", r:"Romains 8:37" },
+  { t:"Par amour fraternel, soyez pleins d'affection les uns pour les autres ; par honneur, usez de prévenances réciproques.", r:"Romains 12:10" },
+  { t:"car Christ est ma vie, et la mort m'est un gain.", r:"Philippiens 1:21" },
+  { t:"Et quoi que vous fassiez, en parole ou en œuvre, faites tout au nom du Seigneur Jésus, en rendant par lui des actions de grâces à Dieu le Père.", r:"Colossiens 3:17" },
+  { t:"C'est pourquoi exhortez-vous réciproquement, et édifiez-vous les uns les autres, comme en réalité vous le faites.", r:"1 Thessaloniciens 5:11" },
+  { t:"Celui qui vous a appelés est fidèle, et c'est lui qui le fera.", r:"1 Thessaloniciens 5:24" },
+  { t:"Que personne ne méprise ta jeunesse ; mais sois un modèle pour les fidèles, en parole, en conduite, en charité, en foi, en pureté.", r:"1 Timothée 4:12" },
+  { t:"C'est donc avec assurance que nous pouvons dire : Le Seigneur est mon aide, je ne craindrai rien ; Que peut me faire un homme ?", r:"Hébreux 13:6" },
+  { t:"Bien-aimés, aimons-nous les uns les autres ; car l'amour est de Dieu, et quiconque aime est né de Dieu et connaît Dieu.", r:"1 Jean 4:7" },
 ];
 let heroTaps = 0, heroTapReset = null, lastVerseIdx = -1;
 /* ENFONCEMENT DE L'ICÔNE — piloté par pointerdown/up (voir le commentaire CSS
