@@ -10614,7 +10614,7 @@ const SUPABASE_ANON_KEY = "sb_publishable_FDJ_R0foC7uIeHmxVrj6rA_2NeIgW2a";
    remontée d'un téléphone ne vaut rien si on ne sait pas QUELLE version
    tournait. Elle doit rester égale au CACHE de sw.js — c'est ce que vérifie
    banc-essai/version.js, qui refuse de laisser publier les deux en désaccord. */
-const VERSION_JEU = "v339";
+const VERSION_JEU = "v340";
 
 /* ===================== QUAND ÇA CASSE CHEZ UN JOUEUR =====================
    « Si quelque chose casse chez cinq d'entre eux sur un modèle de téléphone
@@ -12930,6 +12930,9 @@ function setScene(key){
 
 /* ===================== SOUND — cloches douces, chaudes et très légères ===================== */
 let actx = null;
+/* (v340) La fenêtre a perdu le premier plan (bascule vers une autre app,
+   accueil du téléphone) : voir QUITTER ET REVENIR SANS UN BRUIT. */
+let sonFlou = false;
 let masterGain = null, masterFilter = null;
 /* Courbe perceptuelle : l'oreille entend le volume en log — un gain
    quadratique donne un curseur qui baisse VRAIMENT quand on le baisse. */
@@ -13021,7 +13024,9 @@ function getCtx(){
            C'est le cas d'une bannière d'appel entrant, de Siri, d'une autre
            app qui prend la sortie, d'un casque qui se connecte : l'app reste
            AU PREMIER PLAN tout du long. */
-        if(audioUnlocked && audioActive()) relancerSon();
+        /* (v340) Sauf si c'est NOUS qui l'avons arrêté en quittant le premier
+           plan : la reprise attend le retour (voir audioHidden). */
+        if(audioUnlocked && audioActive() && !masterCoupe) relancerSon();
       }
       else if(s === "running"){ wakeAudio(); }
     }); } catch(e){}
@@ -13215,7 +13220,7 @@ function ensureAudioAwake(){ if(actx) reveiller(actx); }
 /* Verrou : on ne ranime JAMAIS l'audio si l'app n'est pas au premier plan.
    Sinon, en fermant l'app (blur/statechange déclenchés pendant la mise en
    veille), on relançait le son au pire moment -> « bruit bizarre ». */
-function audioActive(){ return document.visibilityState === "visible" && !document.hidden; }
+function audioActive(){ return document.visibilityState === "visible" && !document.hidden && !sonFlou; }
 /* Ré-amorce la nappe musicale UNIQUEMENT si le planificateur est réellement
    mort (interruption). Quand la musique tourne bien, on ne touche à RIEN :
    réinitialiser musicNextBar en pleine lecture reprogrammait des notes
@@ -13264,7 +13269,14 @@ function reviveAudioHard(){
   const rebatir = ()=>{
     audioReviving = false;
     if(!audioActive()) return;
-    try { getCtx(); applyVolume(); if(settings.music) startMusic(); } catch(e){}
+    try {
+      getCtx(); applyVolume();
+      /* (v340) Le contexte neuf monte lui aussi en fondu, comme une reprise. */
+      const now = actx.currentTime;
+      masterGain.gain.setValueAtTime(0.0001, now);
+      masterGain.gain.linearRampToValueAtTime(0.92, now + SON_FONDU_ENTREE);
+      if(settings.music) startMusic();
+    } catch(e){}
   };
   if(ancien){
     try { const pr = ancien.close(); if(pr && pr.then){ pr.then(rebatir, rebatir); } else { rebatir(); } }
@@ -13279,23 +13291,96 @@ function reviveAudioHard(){
    on casse la ré-injection de l'écho (le peigne ne sonne plus et ne rejoue pas
    son contenu gelé au retour) et on éteint net le bus musique (les notes déjà
    programmées, gelées par la veille, ne resurgissent pas au réveil). */
+/* ===== (v340) QUITTER ET REVENIR SANS UN BRUIT =====
+   « Lorsque je suis sur le jeu et que je change de page pour aller sur une
+     autre appli ou retourner à l'accueil de mon téléphone, ou même quand je
+     retourne sur le jeu, ça fait un bruit de bug, de son robotisé. »
+   Le son se calcule par petits paquets de quelques millisecondes, que le
+   téléphone joue l'un après l'autre. S'il en manque un, il rejoue le dernier
+   — ce grésillement de robot. Deux moments en manquaient :
+   - EN PARTANT. On baissait le son en 30 ms et on laissait tourner le
+     contexte : c'est le téléphone qui l'arrêtait, à l'heure qu'il voulait,
+     parfois avant la fin du fondu, au milieu d'un paquet encore sonore. Et
+     on ne s'y prenait qu'à « visibilitychange », quand l'app est déjà en
+     train de disparaître. On coupe maintenant dès que la fenêtre perd le
+     premier plan (« blur » : le geste vers l'accueil ou une autre app
+     commence par là), puis, le silence atteint, on débranche la musique et
+     on ARRÊTE NOUS-MÊMES le contexte (suspend) : il s'arrête sur du silence,
+     et il n'y a plus de paquet sonore à rejouer ;
+   - EN REVENANT. On rendait le son en 0,12 s, à la seconde même du retour —
+     celle où le téléphone redessine tout l'écran, où le jeu relit ses
+     groupes, ses messages, sa journée. Le moment du plus gros effort, celui
+     où les paquets manquent : le grésillement s'entendait, et sur la
+     musique de la veille, que l'arrêt avait gelée (écho compris). On
+     attend maintenant que l'app se soit posée (SON_CALME_MS) pour rendre le
+     son, en fondu, sur une musique refaite à neuf.
+   Pendant ce temps calme, rien ne démarre la musique en douce (startMusic
+   attend la reprise) : un seul départ, propre. */
+const SON_FONDU_SORTIE = 0.025, SON_CALME_MS = 500, SON_FONDU_ENTREE = 0.3;
+let sonCoupeGen = 0, sonReprendreT = 0;
+function jeterMusique(bus, echo){
+  try { if(bus) bus.disconnect(); } catch(e){}
+  try { if(echo) echo.disconnect(); } catch(e){}
+  if(bus && musicBusNode === bus){ musicBusNode = null; musicDelayIn = null; musicFb = null; qVoies = new Map(); }
+}
 function audioHidden(){
   if(!actx) return;
-  const now = actx.currentTime;
+  clearTimeout(sonReprendreT); sonReprendreT = 0;
+  const gen = ++sonCoupeGen, c = actx, now = c.currentTime;
   if(masterGain){
     masterGain.gain.cancelScheduledValues(now);
     masterGain.gain.setValueAtTime(Math.max(masterGain.gain.value, 0.0001), now);
-    masterGain.gain.linearRampToValueAtTime(0.0001, now + 0.03);
+    masterGain.gain.linearRampToValueAtTime(0.0001, now + SON_FONDU_SORTIE);
   }
   if(musicFb){ try{ musicFb.gain.cancelScheduledValues(now); musicFb.gain.setValueAtTime(0.0001, now); }catch(e){} }
   if(musicBusNode){
     musicBusNode.gain.cancelScheduledValues(now);
     musicBusNode.gain.setValueAtTime(Math.max(musicBusNode.gain.value, 0.0001), now);
-    musicBusNode.gain.linearRampToValueAtTime(0.0001, now + 0.03);
+    musicBusNode.gain.linearRampToValueAtTime(0.0001, now + SON_FONDU_SORTIE);
   }
   musicPlaying = false;
   if(musicTimer){ clearInterval(musicTimer); musicTimer = null; }
   audioWasHidden = true; masterCoupe = true;
+  /* Le silence atteint : la musique s'en va, et le contexte s'arrête sur lui. */
+  const bus = musicBusNode, echo = musicDelayIn;
+  setTimeout(()=>{
+    if(gen !== sonCoupeGen) return;             // revenu entre-temps : la reprise décide
+    jeterMusique(bus, echo);
+    if(c === actx && !audioActive() && c.state === "running"){
+      try{ const p = c.suspend(); if(p && p.catch) p.catch(()=>{}); }catch(e){}
+    }
+  }, 60);
+}
+/* Le retour : le contexte d'abord, puis le temps calme, puis le son. Appelée
+   par wakeAudio, donc par tout ce qui signale le retour (visibilité, focus,
+   pageshow, un toucher, le contexte qui repart) — un seul rendez-vous à la
+   fois. */
+function reprendreApresCoupure(){
+  if(!actx || !audioActive()) return;
+  if(actx.state !== "running"){
+    try{ const p = actx.resume(); if(p && p.catch) p.catch(()=>{}); }catch(e){}
+    /* même règle qu'avant : on relit l'état, et si le contexte ne repart pas
+       on le rebâtit (voir wakeAudio) ; repartant, il rappelle wakeAudio */
+    setTimeout(()=>{ if(actx && actx.state !== "running" && audioActive()) reviveAudioHard(); }, 400);
+    return;
+  }
+  if(sonReprendreT) return;
+  const gen = sonCoupeGen;
+  sonReprendreT = setTimeout(()=>{
+    sonReprendreT = 0;
+    if(gen !== sonCoupeGen || !actx || !masterCoupe || !audioActive() || actx.state !== "running") return;
+    masterCoupe = false; audioWasHidden = false; audioInterrupted = false;
+    jeterMusique(musicBusNode, musicDelayIn);   // si la coupure n'a pas eu le temps de le faire
+    musicPlaying = false;
+    if(musicTimer){ clearInterval(musicTimer); musicTimer = null; }
+    const now = actx.currentTime;
+    if(masterGain){
+      masterGain.gain.cancelScheduledValues(now);
+      masterGain.gain.setValueAtTime(0.0001, now);
+      masterGain.gain.linearRampToValueAtTime(0.92, now + SON_FONDU_ENTREE);
+    }
+    if(settings.music) startMusic();
+  }, SON_CALME_MS);
 }
 /* Reprise musicale PROPRE après une interruption (appel, veille, arrière-plan) :
    pendant l'interruption, iOS a GELÉ les notes déjà programmées et le contenu
@@ -13327,29 +13412,17 @@ function restartMusicClean(){
   musicBusNode = null; musicDelayIn = null; musicFb = null; qVoies = new Map();
   startMusic();
 }
-/* Retour au premier plan : rétablit le master et la ré-injection d'écho coupés
-   par audioHidden — INDISPENSABLE, sinon même les effets sonores resteraient
-   muets. La musique est relancée proprement par restartMusicClean/startMusic. */
-/* (v338) Seulement s'il a été coupé : chaque toucher passe par ici (wakeAudio),
-   deux fois ; sans rien à rétablir, on ne touche plus à rien. */
+/* Le master a-t-il été coupé par audioHidden ? Tant qu'il l'est, le retour
+   passe par reprendreApresCoupure, qui le rend en fondu, sur une musique
+   neuve, une fois l'app posée. (v340 : il remontait ici en 0,12 s, à la
+   seconde même du retour, avec l'écho de la veille.) */
 let masterCoupe = false;
-function restoreAudioBus(){
-  if(!actx || !masterCoupe) return;
-  masterCoupe = false;
-  const now = actx.currentTime;
-  if(masterGain){
-    masterGain.gain.cancelScheduledValues(now);
-    masterGain.gain.setValueAtTime(Math.max(masterGain.gain.value, 0.0001), now);
-    masterGain.gain.linearRampToValueAtTime(0.92, now + 0.12);
-  }
-  if(musicFb){ try{ musicFb.gain.setTargetAtTime(0.36, now, 0.05); }catch(e){} }
-}
 /* Réveil audio complet : à rappeler dès que l'app redevient active (retour
    d'appel, de veille, d'arrière-plan). Tente resume(), puis, si le contexte
    ne repart pas, le recrée de zéro. */
 function wakeAudio(){
   if(!actx || !audioActive()){ return; } // uniquement au premier plan
-  restoreAudioBus(); // rétablit master + écho coupés à la mise en arrière-plan
+  if(masterCoupe){ reprendreApresCoupure(); return; }   // retour d'arrière-plan : voir QUITTER ET REVENIR SANS UN BRUIT
   /* Après une VRAIE interruption (appel/veille/arrière-plan), on relance la
      musique À NEUF (restartMusicClean) pour ne JAMAIS dégeler de son parasite.
      Sinon (le contexte n'a fait que « tousser »), on préserve la boucle en
@@ -13720,7 +13793,9 @@ function musicTick(){
    pouvait sinon relancer le son dès l'ouverture, avant tout toucher). */
 let audioUnlocked = false;
 function startMusic(){
-  if(musicPlaying || !audioUnlocked) return;
+  /* (v340) Master coupé : c'est la reprise qui lancera la musique, une fois
+     l'app posée — pas un toucher ni un guetteur en avance sur elle. */
+  if(musicPlaying || !audioUnlocked || masterCoupe) return;
   const ctx = getCtx();
   ensureAudioAwake();
   musicPlaying = true;
@@ -14199,20 +14274,29 @@ function setVolume(v, el){
 function volPreview(){ if(settings.sfx){ chime(659.25, 0, 0.55, 0.018); } }
 
 document.addEventListener("visibilitychange", ()=>{
-  if(document.visibilityState==="visible"){ relancerSon(); }
+  if(document.visibilityState==="visible"){ sonFlou = false; relancerSon(); }
   else { clearTimeout(relanceSonT); audioHidden(); }
 });
-window.addEventListener("pageshow", relancerSon);
+window.addEventListener("pageshow", ()=>{ sonFlou = false; relancerSon(); });
 /* pagehide : l'événement FIABLE quand l'app part (fermeture/arrière-plan iOS).
    Coupe audio en fondu express -> plus aucun « métallique » à la fermeture. */
 window.addEventListener("pagehide", audioHidden);
+/* (v340) « freeze » : Android peut geler une page sans autre préavis. */
+document.addEventListener("freeze", audioHidden);
+/* (v340) « blur » COUPE, il ne rallume jamais : c'est le premier signe que
+   l'app quitte le premier plan (le geste vers l'accueil ou une autre app
+   commence par là), avant même « visibilitychange » — voir QUITTER ET
+   REVENIR SANS UN BRUIT. Il rallumait autrefois le son à la fermeture ; ici
+   il fait le contraire. Seul le blur de la FENÊTRE compte : celui d'un champ
+   de saisie n'arrive pas jusqu'ici (il ne remonte pas). */
+window.addEventListener("blur", (e)=>{ if(e.target !== window) return; sonFlou = true; clearTimeout(relanceSonT); audioHidden(); });
 /* focus/pointer : uniquement quand l'app est réellement au premier plan
-   (wakeAudio se protège lui-même). PAS de « blur » : il se déclenche aussi à
-   la fermeture et rallumait le son au mauvais moment. */
-window.addEventListener("focus", relancerSon);
+   (wakeAudio se protège lui-même). */
+window.addEventListener("focus", (e)=>{ if(e.target !== window) return; sonFlou = false; relancerSon(); });
 /* La musique ne peut démarrer qu'après un premier geste : on s'accroche au tout
-   premier — et ce même geste ranime l'audio si un appel l'avait interrompu. */
-document.addEventListener("pointerdown", ()=>{ audioUnlocked = true; wakeAudio(); maybeStartMusic(); }, { capture:true, passive:true });
+   premier — et ce même geste ranime l'audio si un appel l'avait interrompu.
+   Un toucher, c'est aussi la preuve que la fenêtre a le premier plan. */
+document.addEventListener("pointerdown", ()=>{ sonFlou = false; audioUnlocked = true; wakeAudio(); maybeStartMusic(); }, { capture:true, passive:true });
 /* Un geste est la SEULE chose qu'iOS accepte à coup sûr pour rouvrir l'audio :
    on retente donc aussi au relâchement, et cette fois avec toute la série —
    si le premier essai échoue encore (session pas rendue), les suivants
