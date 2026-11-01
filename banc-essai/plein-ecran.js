@@ -78,7 +78,7 @@ const etat = (p) => p.evaluate(() => { const a = document.getElementById('app');
     const cdp = await ctx.newCDPSession(p);
     /* ---- 1 ---- */
     await toucher(cdp, p, await centre(p, '[data-group="len"][data-k="courte"]'));
-    await toucher(cdp, p, await centre(p, '#teamCard .team-remove', 2));
+    await toucher(cdp, p, await centre(p, '#teamCard .pl-x', 2));
     const e1 = await etat(p);
     const pris = await p.evaluate(() => ({ courte: state.lengthKey, noms: state.teams.map(t => t.name).join(',') }));
     dit('1. une puce et une croix : choisies, retirée — et aucune demande de plein écran', pris.courte === 'courte' && pris.noms === 'Anne,Benoît' && e1.demandes === 0 && !e1.fs,
@@ -122,16 +122,16 @@ const etat = (p) => p.evaluate(() => { const a = document.getElementById('app');
     await q.evaluate(() => { state.teams = [{ name: 'Anne' }, { name: 'Benoît' }, { name: 'Chloé' }, { name: 'Damien' }]; selectMode('group'); });
     await q.waitForTimeout(1800);
     const c2 = await ctx2.newCDPSession(q);
-    const croix = await q.evaluate(() => { window.__carte = document.getElementById('teamCard'); const b = document.querySelectorAll('#teamCard .team-remove')[2].getBoundingClientRect(); return { x: b.left + b.width / 2, y: b.top + b.height / 2 }; });
+    const croix = await q.evaluate(() => { window.__carte = document.getElementById('teamCard'); const b = document.querySelectorAll('#teamCard .pl-x')[2].getBoundingClientRect(); return { x: b.left + b.width / 2, y: b.top + b.height / 2 }; });
     /* le film de la carte pendant le repli : sa hauteur, image par image */
     const film = q.evaluate(() => new Promise(res => { const l = []; const t0 = performance.now(); const tic = () => { const c = document.getElementById('teamCard'); l.push(c ? c.getBoundingClientRect().height : -1); if (performance.now() - t0 < 1400) requestAnimationFrame(tic); else res(l); }; requestAnimationFrame(tic); }));
     await c2.send('Input.dispatchTouchEvent', { type: 'touchStart', touchPoints: [{ x: croix.x, y: croix.y }] });
     await q.waitForTimeout(70);
     await c2.send('Input.dispatchTouchEvent', { type: 'touchEnd', touchPoints: [] });
     const h = await film;
-    const fin = await q.evaluate(() => ({ meme: document.contains(window.__carte), noms: state.teams.map(t => t.name).join(','), lignes: document.querySelectorAll('#teamCard .team-row:not([data-partie])').length, fs: !!document.fullscreenElement, demandes: window.__demandes }));
+    const fin = await q.evaluate(() => ({ meme: document.contains(window.__carte), noms: state.teams.map(t => t.name).join(','), lignes: document.querySelectorAll('#teamCard .pl-joueur').length, fs: !!document.fullscreenElement, demandes: window.__demandes }));
     let remonte = 0; for (let i = 1; i < h.length; i++) if (h[i] > h[i - 1] + 0.5) remonte = Math.max(remonte, h[i] - h[i - 1]);
-    dit('8. premier toucher sur la croix d\'un joueur : CE joueur part, la carte se replie sans être reconstruite ni rebondir, sans plein écran',
+    dit('8. premier toucher sur la croix d\'un joueur : CE joueur part, la carte reste la même (sans être reconstruite ni bouger), sans plein écran',
       fin.noms === 'Anne,Benoît,Damien' && fin.lignes === 3 && fin.meme && remonte === 0 && !fin.fs && fin.demandes === 0,
       fin.noms + ', même carte ' + fin.meme + ', plus grand rebond ' + remonte.toFixed(1) + ' px, demandes ' + fin.demandes);
     await ctx2.close();

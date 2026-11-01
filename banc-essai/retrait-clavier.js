@@ -18,7 +18,12 @@
    CE BANC SIMULE LE VRAI CLAVIER (un focus() ne fait rien monter en headless :
    « html.kb » ne s'allume jamais et on ne teste rien), puis retire un joueur
    pendant qu'il est levé. Il exige que la hauteur de #app ne bouge pas d'un
-   pixel, et que les lignes restantes ne sautent pas.
+   pixel, et que les places restantes ne sautent pas.
+   (v344) On ne tape plus dans la carte : le nom s'écrit dans la page du
+   joueur (voir LES SIX PLACES). Le geste d'aujourd'hui, c'est donc : clavier
+   levé dans cette page, « Retirer de la partie ». La page repart, le champ
+   perd le foyer pendant que le clavier redescend encore — le même piège que
+   la croix d'autrefois.
    Usage : node banc-essai/retrait-clavier.js [url]
 */
 const { chromium } = require('/opt/node22/lib/node_modules/playwright');
@@ -42,7 +47,9 @@ const H = 852, W = 393, CLAVIER = 336, PALIERS = 12;
     state.screen='setup'; render(); });
   await p.waitForTimeout(1200);
 
-  await p.evaluate(()=>{ const l=document.querySelectorAll('.team-row input'); l[l.length-1].focus(); });
+  await p.evaluate(()=>{ ouvrirJoueur(5); });
+  await p.waitForTimeout(900);
+  await p.evaluate(()=>{ document.getElementById('joueurNom').focus(); });
   for(let i=1;i<=PALIERS;i++){
     await p.setViewportSize({ width:W, height: Math.round(H - CLAVIER*i/PALIERS) });
     await p.waitForTimeout(22);
@@ -52,18 +59,17 @@ const H = 852, W = 393, CLAVIER = 336, PALIERS = 12;
 
   const cap = p.evaluate(()=> new Promise(res=>{
     const app=document.getElementById('app');
-    document.querySelectorAll('.team-row').forEach((r,i)=>{ r.dataset.s='r'+i; });
     const rel=[]; const t0=performance.now();
     const tic=()=>{
       const lignes={};
-      document.querySelectorAll('.team-row[data-s]').forEach(r=>{ lignes[r.dataset.s]=+r.getBoundingClientRect().top.toFixed(1); });
-      rel.push({ t:+(performance.now()-t0).toFixed(0), ch:app.clientHeight, lignes });
+      document.querySelectorAll('#teamCard .place').forEach(r=>{ lignes['p' + r.dataset.p]=+r.getBoundingClientRect().top.toFixed(1); });
+      rel.push({ t:+(performance.now()-t0).toFixed(0), ch:app.clientHeight, lignes, n:state.teams.length });
       if(performance.now()-t0<1200) requestAnimationFrame(tic); else res(rel);
     };
     requestAnimationFrame(tic);
   }));
   await p.waitForTimeout(50);
-  await p.evaluate(()=>{ const l=[...document.querySelectorAll('.team-remove')]; l[l.length-1].click(); });
+  await p.evaluate(()=>{ const b=[...document.querySelectorAll('#joueurVeil .grp-act-l')].find(x=>/Retirer de la partie/.test(x.textContent)); b.click(); });
   const rel = await cap;
 
   let ko = 0;
@@ -73,9 +79,8 @@ const H = 852, W = 393, CLAVIER = 336, PALIERS = 12;
   const hauteurs = [...new Set(rel.map(r=>r.ch))];
   v("la hauteur de #app ne bouge pas", hauteurs.length === 1, hauteurs.length + ' valeur(s) : ' + hauteurs.join(' · '));
 
-  /* le pire saut d'UNE ligne, suivie par son identité — jamais par son rang :
-     quand la ligne retirée quitte le DOM, les rangs glissent d'un cran et on
-     comparerait une ligne à sa voisine, soit 65 px d'écart inventés. */
+  /* le pire saut d'UNE place (elles ne bougent jamais : le joueur retiré est
+     le dernier, personne n'a à glisser). */
   let pire = 0, quand = 0;
   for(let i=1;i<rel.length;i++){
     const a = rel[i-1].lignes, b = rel[i].lignes;
@@ -85,11 +90,15 @@ const H = 852, W = 393, CLAVIER = 336, PALIERS = 12;
       if(d > pire){ pire = d; quand = rel[i].t; }
     }
   }
-  v("aucune ligne ne saute", pire <= 12, 'plus grand saut ' + pire.toFixed(1) + ' px' + (pire>0.5 ? ' (à ' + quand + 'ms)' : ''));
+  v("aucune place ne bouge", pire <= 0.5, 'plus grand saut ' + pire.toFixed(1) + ' px' + (pire>0.5 ? ' (à ' + quand + 'ms)' : ''));
+  /* (le retrait se pose après le départ de la page : on le lit à la fin) */
+  await p.waitForTimeout(400);
+  const n = await p.evaluate(()=>state.teams.length);
+  v("le joueur est bien parti", n === 5, n + ' joueurs');
 
   if(errs.length){ ko++; console.log('  erreurs JS : ' + [...new Set(errs)].slice(0,3).join(' | ')); }
   await nav.close();
-  console.log(ko === 0 ? '\n  OK — retirer un joueur clavier levé ne fait rien tomber'
+  console.log(ko === 0 ? '\n  OK — retirer un joueur clavier levé (depuis sa page) ne fait rien tomber'
                        : '\n  ' + ko + ' défaut(s)');
   process.exit(ko === 0 ? 0 : 1);
 })();

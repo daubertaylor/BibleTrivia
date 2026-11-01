@@ -35,6 +35,11 @@ const dit = (quoi, bon, detail) => { console.log('  ' + (bon ? 'OK  ' : 'KO  ') 
   const p = await ctx.newPage(); const errs = []; p.on('pageerror', e => errs.push(e.message));
   await p.route('**/supabase-js@2*', (route) => route.fulfill({ status: 200, contentType: 'application/javascript', body: '' }));
   await p.addInitScript(() => {
+    /* (v343) LE JOUR EST DÉJÀ JOUÉ : la première partie du jour fait fêter la
+       flamme, et sa fenêtre couvrirait ce que ce banc touche ensuite (la fête
+       a son banc, fete-flamme.js). */
+    { const d = new Date(), z = n => String(n).padStart(2, '0'), k = d.getFullYear() + '-' + z(d.getMonth() + 1) + '-' + z(d.getDate());
+      localStorage.setItem('bt_daily', JSON.stringify({ last:k, streak:1, score:0, total:0, jours:[k], geles:[], palier:0 })); }
     localStorage.setItem('bt_profile', JSON.stringify({ name: 'Taylor', color: '#4C86E8' })); localStorage.setItem('bt_fs_hint', '1');
     localStorage.setItem('bt_progress', JSON.stringify({ books: { 'Genèse': 9, 'Exode': 3, 'Matthieu': 10, 'Jonas': 2 }, totalCorrect: 360, bestStreak: 21, flawless: 1, ach: { 'premiers-pas': 1 } }));
   });

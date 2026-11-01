@@ -31,23 +31,22 @@ const PALIERS = 12, DUREE_CLAVIER = 260;    // il glisse, il ne saute pas
   await p.goto(URL);
   await p.waitForFunction(()=>{ try{ return state.screen==='mode'; }catch(e){ return false; } }, null, { timeout:20000 });
 
+  /* (v344) Il n'y a plus de champ sur l'écran du Mode Groupe : le nom d'un
+     joueur s'écrit dans SA page (voir LES SIX PLACES). Le recadrage, lui,
+     existe toujours pour un champ posé bas sur un écran : « Rejoindre » (En
+     ligne), son code à 537 px — le clavier le couvre. L'écran est seulement
+     dessiné : aucun salon n'est ouvert, aucun serveur n'est touché. */
   const CAS = [
-    ['3 joueurs', 3, 0],   // le champ du dernier joueur
-    ['6 joueurs', 6, 0],
-    ['8 joueurs', 8, 0],
+    ['rejoindre', "state.screen='online-join'; render();", '#joinCode'],
   ];
   let ok = true;
   console.log('  cas          course  attente   images   pas médian   rampe de fin   reprise de vitesse');
-  for (const [nom, n, quel] of CAS) {
+  for (const [nom, prep, sel] of CAS) {
     await p.setViewportSize({ width:W, height:H });
-    await p.evaluate((n)=>{
-      state.mode='group';
-      state.teams = Array.from({length:n}, (_,i)=>({ name:'Joueur ' + (i+1) }));
-      state.screen='setup'; render();
-    }, n);
+    await p.evaluate((c)=>{ new Function(c)(); }, prep);
     await p.waitForTimeout(900);
-    /* on met le champ le plus bas au point : c'est celui qui oblige à recadrer */
-    await p.evaluate(()=>{ const l = document.querySelectorAll('.team-row input'); l[l.length-1].focus(); });
+    /* le champ posé bas : c'est lui qui oblige à recadrer */
+    await p.evaluate((sel)=>{ document.querySelector(sel).focus(); }, sel);
     await p.waitForTimeout(160);
     const cap = p.evaluate((ms)=> new Promise(res=>{
       const app = document.getElementById('app'); const t0 = performance.now(); const rel = [];
@@ -73,11 +72,11 @@ const PALIERS = 12, DUREE_CLAVIER = 260;    // il glisse, il ne saute pas
        Ce qu'on exige vraiment tient en une phrase : le champ finit ENTIÈREMENT
        visible, avec l'air que le code lui promet — marge = min(28, 6 % de la
        hauteur visible), plancher 12. On vérifie donc ce plancher. */
-    const vu = await p.evaluate(()=>{
-      const l = document.querySelectorAll('.team-row input'); const e = l[l.length-1];
+    const vu = await p.evaluate((sel)=>{
+      const e = document.querySelector(sel);
       const r = e.getBoundingClientRect();
       return { haut:+r.top.toFixed(1), bas:+r.bottom.toFixed(1), vvh:Math.round(visualViewport.height) };
-    });
+    }, sel);
     const air = +(vu.vvh - vu.bas).toFixed(1);
     const visible = vu.haut >= 0 && air >= 12;
     /* DEUX HORLOGES NE SE COMPARENT PAS. La fin du clavier était prise côté

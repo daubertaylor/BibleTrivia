@@ -6,10 +6,13 @@
         déjà ouvert ;
      2. on lâche : il reste ouvert (le clic du lâcher ne referme rien) ;
      3. une action du menu, touchée ensuite, répond (« Copier » le referme) ;
-     4. (v332) un simple toucher prépare la RÉPONSE — le message cité au-dessus
-        de la barre d'écriture — et n'ouvre pas le menu ; l'appui long, lui,
-        ne prépare aucune réponse ; un serveur qui ne sait pas encore les
-        réponses garde l'ancien geste (le toucher ouvre le menu) ;
+     4. (v343) un simple toucher ne fait RIEN — ni menu, ni réponse : c'est
+        l'appui long qui ouvre le menu, « Répondre » en tête (« ça suit la
+        norme, ce qui est fait partout sur les réseaux »). Pareil avec un
+        serveur qui ne sait pas encore les réponses. (En v332, le toucher
+        préparait la réponse ; ce banc touchait alors « la première action
+        du menu » pour toucher « Copier » — c'est maintenant « Répondre » :
+        il cherche « Copier » par son nom.) ;
      5. un doigt qui glisse (on fait défiler) n'ouvre rien ;
      6. aucune erreur.
    Usage : node banc-essai/appui-long.js [url] */
@@ -60,28 +63,26 @@ const attends = (ms) => new Promise(r => setTimeout(r, ms));
   const apres = await feuille();
   dit('… on lâche : il reste ouvert, une seule fois — et aucune réponse ne se prépare', apres.ouverte && apres.n === 1 && !apres.cite, JSON.stringify(apres));
   /* 3 : une action du menu répond */
-  const copier = await p.evaluate(() => { const r = [...document.querySelectorAll('#grpActionsVeil .grp-liste-act > *')][0].getBoundingClientRect(); return { x: r.left + r.width / 2, y: r.top + r.height / 2 }; });
+  const copier = await p.evaluate(() => { const l = [...document.querySelectorAll('#grpActionsVeil .grp-liste-act > *')].find(x => /Copier/.test(x.textContent)); const r = l.getBoundingClientRect(); return { x: r.left + r.width / 2, y: r.top + r.height / 2 }; });
   await pose(copier.x, copier.y); await attends(60); await leve();
   await attends(700);
   dit('une action touchée ensuite répond (« Copier » referme le menu)', !(await feuille()).ouverte);
   await fermer();
 
-  /* 4 : le simple toucher prépare la réponse */
+  /* 4 : (v343) le simple toucher ne fait rien */
+  await p.evaluate(() => { try { annulerReponse(); } catch (e) {} });
+  await attends(300);
   b = await bulle();
   await pose(b.x, b.y); await attends(80); await leve();
   await attends(500);
   const t4 = await feuille();
-  const cite4 = await p.evaluate(() => { const q = document.querySelector('#compo .compo-cite'); return q ? q.textContent : null; });
-  dit('(v332) un simple toucher prépare la réponse (le message cité au-dessus de la barre), sans ouvrir le menu', !t4.ouverte && t4.cite && /Message numéro 11/.test(cite4 || ''), JSON.stringify(t4) + ' · ' + cite4);
-  await p.evaluate(() => annulerReponse());
-  await attends(300);
-  dit('   « × » la retire', !(await feuille()).cite);
+  dit('(v343) un simple toucher ne fait rien : ni menu, ni réponse', !t4.ouverte && !t4.cite, JSON.stringify(t4));
   await p.evaluate(() => { grp.etat.reponses = false; });
   b = await bulle();
   await pose(b.x, b.y); await attends(80); await leve();
   await attends(500);
   const t4b = await feuille();
-  dit('   un serveur qui ne sait pas encore les réponses : le toucher ouvre le menu, comme avant', t4b.ouverte && !t4b.cite, JSON.stringify(t4b));
+  dit('   un serveur qui ne sait pas encore les réponses : pareil, rien', !t4b.ouverte && !t4b.cite, JSON.stringify(t4b));
   await fermer();
   await p.evaluate(() => { grp.etat.reponses = true; });
 

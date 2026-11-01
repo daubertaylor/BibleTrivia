@@ -224,7 +224,10 @@ function verifier(nom, obtenu, attendu){
         setTimeout(()=>{ const b = document.querySelector('#modalVeil .fete-flamme #modalOk'); if(b) b.click(); }, 300);
       }
       if(tBandeau === null && document.querySelector('.ach-toast')) tBandeau = performance.now()-t0;
-      if(performance.now()-t0 < 4500) requestAnimationFrame(tic); else res({ tFin, tFete, tBandeau });
+      /* Jusqu'au bandeau, et sept secondes au plus : sous la charge de la
+         batterie (deux bancs de front), la fin, la fête et le bandeau
+         s'étirent — quatre secondes et demie ne suffisaient plus. */
+      if(tBandeau === null && performance.now()-t0 < 7000) requestAnimationFrame(tic); else res({ tFin, tFete, tBandeau });
     };
     requestAnimationFrame(tic);
     setTimeout(()=>{ nextQuestion(); }, 80);

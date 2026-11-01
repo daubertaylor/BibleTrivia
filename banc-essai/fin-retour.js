@@ -42,6 +42,11 @@ const dit = (quoi, bon, detail) => { console.log('  ' + (bon ? 'OK  ' : 'KO  ') 
     await p.addInitScript(() => {
       localStorage.setItem('bt_profile', JSON.stringify({ name: 'Taylor', color: '#4C86E8' }));
       localStorage.setItem('bt_fs_hint', '1');
+      /* (v343) LE JOUR EST DÉJÀ JOUÉ : la première partie du jour fait fêter
+         la flamme, et sa fenêtre couvrirait les boutons que ce banc touche au
+         doigt (la fête a son banc, fete-flamme.js). */
+      const d = new Date(), z = n => String(n).padStart(2, '0'), k = d.getFullYear() + '-' + z(d.getMonth() + 1) + '-' + z(d.getDate());
+      localStorage.setItem('bt_daily', JSON.stringify({ last:k, streak:1, score:0, total:0, jours:[k], geles:[], palier:0 }));
     });
     await p.goto(URL);
     await p.waitForFunction(() => { try { return state.screen === 'mode'; } catch (e) { return false; } }, null, { timeout: 25000 });
@@ -153,7 +158,9 @@ const dit = (quoi, bon, detail) => { console.log('  ' + (bon ? 'OK  ' : 'KO  ') 
       const c = await nav.newContext({ viewport: { width: 402, height: 874 }, userAgent: AND, isMobile: true, hasTouch: true, serviceWorkers: 'block' });
       const pg = await c.newPage(); const errs = [];
       pg.on('pageerror', e => errs.push(nom + ': ' + e.message.slice(0, 110)));
-      await pg.addInitScript(([n, col]) => { localStorage.setItem('bt_profile', JSON.stringify({ name: n, color: col })); localStorage.setItem('bt_fs_hint', '1'); }, [nom, couleur]);
+      await pg.addInitScript(([n, col]) => { localStorage.setItem('bt_profile', JSON.stringify({ name: n, color: col })); localStorage.setItem('bt_fs_hint', '1');
+        const d = new Date(), z = x => String(x).padStart(2, '0'), k = d.getFullYear() + '-' + z(d.getMonth() + 1) + '-' + z(d.getDate());
+        localStorage.setItem('bt_daily', JSON.stringify({ last:k, streak:1, score:0, total:0, jours:[k], geles:[], palier:0 })); }, [nom, couleur]);
       await pg.goto('http://localhost:8245/');
       await pg.waitForFunction(() => { try { return state.screen === 'mode'; } catch (e) { return false; } }, null, { timeout: 25000 });
       return { c, p: pg, errs };

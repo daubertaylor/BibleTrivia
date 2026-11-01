@@ -1,8 +1,9 @@
 /* TOUT LE JEU TOURNE-T-IL SUR LA MÊME HORLOGE ?
 
    Un PLI, c'est ce qui s'ouvre, se ferme ou se remplit SUR PLACE : un
-   testament qui se déplie, une ligne de joueur qui naît ou s'en va, une barre
-   de progression, l'anneau des résultats, un compteur qui monte.
+   testament qui se déplie, une place de joueur qui glisse (v344 ; avant, une
+   ligne de joueur qui naissait ou s'en allait), une barre de progression,
+   l'anneau des résultats, un compteur qui monte.
 
    Ils tournaient sur SIX horloges : 0,26s le chevron, 0,34s la ligne de
    joueur, 0,52s le pli du testament, 0,55s la barre, 1s l'anneau, et
@@ -17,7 +18,7 @@
 
    Le test lit la durée ET la courbe RÉELLEMENT appliquées à chacun, sur son
    propre écran, puis mesure image par image les deux seuls qui déplacent la
-   mise en page (le testament et la ligne de joueur) : course, saut maximum
+   mise en page (le testament et la place de joueur) : course, saut maximum
    par image, et instant où 80 % du chemin est fait.
 
        node plis.js        (jeu servi en HTTP sur 8099)
@@ -115,23 +116,25 @@ const norme = (s) => (s || '').replace(/\s+/g, '');
   await lire('page poussée (dessous)', "openSettings();", '#settingsVeil .settings-sheet', 'transform');
   await p.evaluate(() => closeSettings());
   await attente(400);
-  /* La ligne de joueur : son pli est posé en style EN LIGNE, au moment du geste. */
+  /* (v344) La place de joueur : son glissement est posé en style EN LIGNE, au
+     moment du geste — les suivants glissent d'une place quand un joueur part
+     (voir LES SIX PLACES). Il n'y a plus de ligne qui naît ou s'en va. */
   const ligne = await p.evaluate(() => {
-    state.screen = 'setup'; state.mode = 'group'; state.teams = [{name:'Taylor'},{name:'Sarah'}]; render();
+    state.screen = 'setup'; state.mode = 'group'; state.teams = [{name:'Taylor'},{name:'Sarah'},{name:'Noé'},{name:'Lou'}]; render();
     return new Promise(res => setTimeout(() => {
-      addTeam();
-      requestAnimationFrame(() => {
-        const rows = document.querySelectorAll('.team-row');
-        const r = rows[rows.length - 1];
+      retirerJoueur(1);
+      setTimeout(() => {
+        const r = document.querySelector('#teamCard .place.pl-glisse');
+        if (!r) return res({ manquant: 'aucune place ne glisse' });
         const cs = getComputedStyle(r);
-        const i = cs.transitionProperty.split(',').map(s => s.trim()).indexOf('height');
+        const i = cs.transitionProperty.split(',').map(s => s.trim()).indexOf('transform');
         res(i < 0 ? { manquant: cs.transitionProperty } : {
           d: cs.transitionDuration.split(',')[i].trim(),
           c: cs.transitionTimingFunction.split(/,(?![^()]*\))/)[i].trim() });
-      });
+      }, 240);
     }, 400));
   });
-  releves.push(['ligne de joueur', ligne]);
+  releves.push(['place de joueur', ligne]);
   /* Les compteurs (points, pourcentage, scores du duel) sont animés en JS.
      Sur la version d'avant, msPli() n'existe pas : chaque appel portait sa
      propre durée écrite à la main. On le dit au lieu de planter. */
@@ -247,11 +250,12 @@ const norme = (s) => (s || '').replace(/\s+/g, '');
   const profil = async (nom, prep, cible) => {
     const suite = await p.evaluate(({ prep, cible }) => new Promise(res => {
       new Function(prep)();
-      const el = document.querySelector(cible);
-      if (!el) return res(null);
+      const trouve = () => typeof cible === 'string' ? document.querySelector(cible)
+        : [...document.querySelectorAll('#teamCard .place')].find(x => { const n = x.querySelector('.pl-joueur .pl-nom'); return n && n.textContent === cible.nom && !x.classList.contains('pl-part'); });
+      if (!trouve()) return res(null);
       const releve = []; const t0 = performance.now();
-      const tic = () => { const t = performance.now() - t0;
-        releve.push([Math.round(t), Math.round(el.getBoundingClientRect().top * 10) / 10]);
+      const tic = () => { const t = performance.now() - t0; const el = trouve();
+        if (el) releve.push([Math.round(t), Math.round(el.getBoundingClientRect().top * 10) / 10]);
         if (t < 900) requestAnimationFrame(tic); else res(releve); };
       requestAnimationFrame(tic);
     }), { prep, cible });
@@ -268,9 +272,13 @@ const norme = (s) => (s || '').replace(/\s+/g, '');
       saut.toFixed(1).padStart(5) + ' px/image  |  80 % à ' + String(t80).padStart(4) + ' ms' + (bon ? '' : '   <-- SECOUSSE'));
   };
   console.log('');
-  await p.evaluate(() => { state.screen = 'setup'; state.mode = 'group'; state.teams = [{name:'Taylor'},{name:'Sarah'}]; render(); });
+  /* (v344) Le joueur qui glisse d'une rangée à l'autre : Lou, quatrième,
+     prend la place de Noé — de la deuxième rangée au bout de la première. On
+     suit LOU (son nom), pas l'élément : au départ du glissement, la place de
+     Noé se met à porter Lou, posée là où il était. */
+  await p.evaluate(() => { state.screen = 'setup'; state.mode = 'group'; state.teams = [{name:'Taylor'},{name:'Sarah'},{name:'Noé'},{name:'Lou'}]; render(); });
   await attente(700);
-  await profil('naissance d\'une ligne', "addTeam();", '.add-team');
+  await profil('glissement d\'une place', "retirerJoueur(2);", { nom: 'Lou' });
 
   if (errs.length) { console.log('\n  ERREURS JS : ' + [...new Set(errs)].slice(0,3).join(' | ')); ok = false; }
   console.log(ok ? '\n  OK — une seule horloge pour TOUT le jeu' : '\n  ECHEC');

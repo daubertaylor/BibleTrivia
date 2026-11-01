@@ -84,7 +84,11 @@ const FAUX = (sys) => {
     await p.waitForFunction(() => { try { return state.screen === 'mode'; } catch (e) { return false; } }, null, { timeout: 20000 });
     await p.waitForTimeout(800);
     const cas = [['profile', 'choix', '#compteMail'], ['profile', 'code', '#compteCode'], ['groupes', 'choix', '#compteMail'], ['groupes', 'code', '#compteCode'],
-                 ['profile', 'nom', '#profileName, .profile-name-input, input.text-input'], ['setup', 'joueur', '.team-row:nth-last-child(1 of .team-row) input'],
+                 ['profile', 'nom', '#profileName, .profile-name-input, input.text-input'],
+                 /* (v344) Le nom d'un joueur s'écrit dans SA page (voir LES SIX
+                    PLACES) ; et le code d'un salon reste un champ posé bas sur
+                    son écran (dessiné seulement : aucun salon n'est ouvert). */
+                 ['setup', 'joueur', '#joueurNom'], ['online-join', 'salon', '#joinCode'],
                  /* Ce qui se règle sur la même mesure : une feuille posée en bas
                     (« J'ai un code »), et le champ d'une discussion. */
                  ['groupes', 'feuille', '#grpCode'], ['groupe', 'fil', '#compoTexte']];
@@ -99,6 +103,7 @@ const FAUX = (sys) => {
         state.screen = ou; render();
         if (ou === 'groupes' && etape !== 'feuille') ouvrirGroupes();
         if (etape === 'feuille') ouvrirCode();
+        if (etape === 'joueur') setTimeout(() => ouvrirJoueur(5), 300);
         if (etape === 'fil') majCompo();
         if (etape === 'choix' || etape === 'code') setTimeout(() => { if (etape === 'code') { compte.etape = 'code'; compte.courriel = 'taylor@exemple.net'; } else compte.etape = 'choix'; majCarteCompte(); }, 500);
       }, [ou, etape]);

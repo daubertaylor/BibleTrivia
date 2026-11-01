@@ -94,7 +94,7 @@ const EN_RELIEF = ['.app-header', '.icon-btn:not(.hero-profile)', '.card', '.mod
   '.solo-summary', '.solo-score-bar', '.score-pane', '.option-btn', '.info-card', '.rules', '.btn-review', '.daily-card',
   '.parcours-card', '.parcours-sum', '.tst-head', '.presence-card', '.online-action', '.btn-newgame', '.btn-invite',
   '.award-btn', '.barre-bas', '.compo', '.chip', '.len-chip', '.q-counter', '.timer-chip:not(.low)', '.tier-chip',
-  '.streak-chip', '.rev-item', '.me-row', '.rank-row', '.team-row', '.add-team', '.bk', '.text-input', '.code-input',
+  '.streak-chip', '.rev-item', '.me-row', '.rank-row', '.pl-btn:not(.pl-libre)', '.bk', '.text-input', '.code-input',
   '.share-btn', '.btn-ghost', '.modal-btn.cancel', '.modal-btn.ok', '.btn-primary:not(:disabled)', '.btn-next:not(:disabled)',
   '.btn-replay', '.btn-reveal', '.grp-pill', '.bb-curseur', '.b-bulle:not(.b-vide)', '.compo-jeu', '.compo-mod',
   '.compo-envoi', '.grp-desc-carte', '.grp-code-carte', '.set-groupe', '.sheet-grab', '.hero-verse-card', '.switch',

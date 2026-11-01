@@ -1,377 +1,202 @@
-/* ====== BANC « AJOUTER ET RETIRER UN JOUEUR, SANS UN SEUL CRAN » ======
-   Taylor : « vérifie que sur Android les joueurs ajoutés ou retirés du mode
-   groupe fonctionne à la perfection, et sur iOS ça marche bien mais DES FOIS au
-   moment de les retirer ça fait comme un cran qui ne devrait pas avoir. »
-
-   « DES FOIS » EST L'INFORMATION PRINCIPALE. banc-essai/lignes.js joue un seul
-   retrait, sur un seul écran, au repos : il est vert, et il l'était déjà quand
-   Taylor voyait le cran. Un défaut intermittent ne se trouve pas en refaisant
-   la même mesure plus fort — il se trouve en faisant VARIER ce que le geste
-   rencontre. Ce banc rejoue donc le geste dans douze situations, sur trois
-   écrans, y compris celles que le code signale comme les plus risquées : le
-   sixième joueur (où « Ajouter » renaît du même geste), le retrait lancé
-   pendant qu'une autre animation court encore, et la page défilée en bas.
-
-   UN CRAN, C'EST DEUX CHOSES BIEN DIFFÉRENTES, ET ON MESURE LES DEUX.
-   1) UNE MARCHE dans le mouvement : quelque chose bondit ou repart en arrière.
-      - demi-tours    : combien de fois le mouvement change de sens. Un retrait
-                        pur doit en faire ZÉRO. Un retrait lancé PENDANT un
-                        ajout en fait UN, et c'est le geste de Taylor lui-même
-                        qui s'inverse : c'est permis, et déclaré cas par cas.
-                        (Ma première version comptait ce demi-tour comme un
-                        défaut et criait au cran sur huit situations parfaites.)
-      - marche finale : ce que change l'image où la ligne QUITTE le DOM. Zéro.
-      - plus grand pas: un seul bond d'une image à l'autre.
-      - chevauchement : deux lignes qui se marchent dessus une image.
-   2) UN TEMPS D'ARRÊT : le fil principal bloqué au moment du toucher. Rien ne
-      bondit, mais l'image se fige — et l'oeil lit exactement « un cran ». On
-      chronomètre donc le gestionnaire du clic ET la plus longue image du geste,
-      à vitesse normale puis avec le processeur bridé six fois (un téléphone
-      Android d'entrée de gamme). Une image à 50 ms, c'est trois images perdues.
-
-   CE QUE CE BANC NE PEUT PAS FAIRE, ET IL FAUT LE DIRE. Le conteneur n'a que
-   Chromium. Android, c'est Chrome : la mesure vaut pour de vrai. iOS, c'est
-   WebKit, absent d'ici — on joue donc les CHEMINS DE CODE d'iOS (dimensions et
-   UA d'iPhone), pas son moteur de rendu. Un cran propre à WebKit passerait à
-   travers ce banc.
-   Usage : node banc-essai/joueurs.js [url]
-*/
+/* ====== BANC « LES SIX PLACES » (v344) ======
+   « Revois toute la partie où on ajoute les membres, totalement : sur
+     Android elle bug toujours. Fais en sorte qu'elle soit mieux, et
+     parfaitement identique sur tous les OS. »
+   Avant la v344, ce banc chassait le « cran » des LIGNES qui naissaient et se
+   repliaient : marches finales, demi-tours, chevauchements, sur douze
+   situations. Il était vert, et Taylor voyait encore le défaut sur Android —
+   parce que la carte changeait de hauteur et que tout ce qui était dessous
+   bougeait avec elle. La v344 retire la cause : six places fixes, le nom dans
+   une page. Ce banc vérifie donc ce qui ne doit PLUS JAMAIS arriver, et que
+   les gestes restent justes :
+     1. six places, toujours ; la carte garde la même hauteur de deux à six
+        joueurs, sur trois téléphones ;
+     2. ajouter : la place « Ajouter » devient le joueur (son numéro sur la
+        pastille, « Joueur n »), la suivante devient « Ajouter » ; à six, il
+        n'y a plus d'« Ajouter » ;
+     3. retirer (au milieu, en tête, en dernier) : les suivants glissent d'une
+        place, dans l'ordre, sans jamais repartir en arrière ; la dernière
+        place occupée redevient « Ajouter » ; à deux, plus de croix ;
+     4. IMAGE PAR IMAGE, RIEN NE BOUGE SOUS LA CARTE pendant les gestes (la
+        durée, le chrono, le testament, « Commencer ») — ni la carte
+        elle-même ;
+     5. des gestes enchaînés vite (deux retraits, un ajout pendant un retrait)
+        finissent dans le bon état, sans transformation ni classe oubliée ;
+     6. le toucher ne tient pas le fil : médiane de cinq retraits, processeur
+        bridé six fois (un Android d'entrée de gamme) ;
+     7. la page d'un joueur : le nom s'écrit, la place suit en direct ; un nom
+        vide rend le numéro ; un emoji donne sa pastille ; « Retirer de la
+        partie » referme la page puis retire la place ;
+     7b. la croix puis « Commencer » (ou un rendu) dans le même instant : la
+        partie part sans le joueur retiré, et rien ne coupe plus dans sa liste ;
+     8. aucune erreur.
+   Usage : node banc-essai/joueurs.js [url] */
 const { chromium } = require('/opt/node22/lib/node_modules/playwright');
 const URL = process.argv[2] || 'http://127.0.0.1:8099/index.html';
 const UA_IOS = 'Mozilla/5.0 (iPhone; CPU iPhone OS 17_5 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.5 Mobile/15E148 Safari/604.1';
 const UA_AND = 'Mozilla/5.0 (Linux; Android 13; Redmi Note 12) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Mobile Safari/537.36';
-/* LES DEUX SEUILS, ET D'OÙ ILS VIENNENT. Avant la correction (la marge haute
-   d'« Ajouter un joueur », voir index.html) : saut 6,6 px et deux demi-tours
-   dès le DEUXIÈME retrait, sur les trois appareils. Après : saut 0,05 à
-   0,55 px, secousse 0,10 à 0,50 px, dans les vingt situations. Les seuils sont
-   posés à environ deux fois le mesuré — ils attrapent un doublement franc, ils
-   ne prétendent pas trancher un dixième. */
-const S_SAUT     = 1.2;    // px : écart à la tendance à l'image où la ligne s'en va
-const S_SECOUSSE = 1.5;    // px : plus grand écart à la tendance, hors démarrages
-const S_CHEVAU = 1.0;      // px : deux lignes qui se marchent dessus
-/* LE SEUIL DU TEMPS D'ARRÊT, ET D'OÙ IL VIENT. Avant la correction de la v286,
-   le clic sur la croix tenait le fil 3 à 6 ms à vitesse normale et 22 à 47 ms
-   avec le processeur bridé six fois — jusqu'à trois images perdues, et c'est ça
-   que l'oeil lit comme « un cran ». Après (le recalage du verre sorti du
-   gestionnaire) : 2 à 4 ms et 17 à 24 ms. Les seuils sont posés juste au-dessus
-   du mesuré. ON JUGE SUR LA MÉDIANE DE CINQ TOUCHERS, pas sur le pire : avec
-   deux bancs en parallèle, un toucher isolé peut doubler parce qu'un autre
-   navigateur démarre au même instant — mesuré 35,7 ms une fois sur neuf, sur
-   une médiane de 20. Le pire est affiché quand même, pour qu'on le voie.
-   CE QUE CES DEUX SEUILS SONT, EXACTEMENT : des garde-fous contre une
-   RÉGRESSION, pas la preuve du gain. La médiane bridée est passée de 23-33 à
-   18-25 ms selon l'écran, et le gain se voit surtout sur le PIRE toucher (47 ->
-   25 ms). Mais ce conteneur n'est pas un banc de mesure isolé : d'une exécution
-   à l'autre, la même médiane varie de 18 à 25 ms et un toucher isolé monte à 40.
-   Un seuil calé au ras du mesuré serait donc rouge un jour sur trois sans
-   qu'une seule ligne du jeu ait changé — et un banc qui crie pour rien, on
-   finit par ne plus le lire. Ils sont posés à environ le double de la médiane
-   observée : ils attrapent un doublement franc, ils ne prétendent pas trancher
-   un dixième. Les chiffres, eux, sont imprimés à chaque passage : c'est en les
-   relisant qu'on voit une dérive lente, pas en durcissant le seuil. */
-const S_FIL      = 10.0;   // ms, processeur normal (médiane de cinq touchers)
-const S_FIL_LENT = 45.0;   // ms, processeur bridé x6 (médiane de cinq touchers)
+const S_FIL = 25;          // ms : médiane du toucher, processeur bridé six fois
+let ko = 0;
+const dit = (q, b, d) => { if (!b) ko++; console.log('  ' + (b ? 'OK  ' : 'KO  ') + q + (d !== undefined ? '   (' + String(d).slice(0, 260) + ')' : '')); };
 
-const SUIVRE = function(ms){
-  return new Promise((res)=>{
-    const t0 = performance.now(); const rel = [];
-    window.__t0 = t0; window.__clics = [];
-    const tic = ()=>{
-      const t = performance.now() - t0;
-      const c = document.getElementById('teamCard');
-      const rows = c ? [].slice.call(c.querySelectorAll('.team-row')) : [];
-      const add = c ? c.querySelector('.add-team') : null;
-      const r = (x)=> Math.round(x * 10) / 10;
-      /* TOUT EST RELATIF AU HAUT DE LA CARTE. Mesurer des positions dans la
-         fenêtre mêlait au mouvement de la liste celui du DÉFILEMENT : quand la
-         page est en bas, elle se réajuste, et mon compteur de demi-tours voyait
-         neuf changements de sens qui n'étaient que le glissement de la page.
-         Ici, le défilement n'entre plus dans la mesure. */
-      const b0 = c ? c.getBoundingClientRect() : null;
-      const y0 = b0 ? b0.top : 0;
-      rel.push({ t: r(t),
-        h: b0 ? r(b0.height) : null,
-        n: rows.length,
-        tops: rows.map(x => r(x.getBoundingClientRect().top - y0)),
-        bots: rows.map(x => r(x.getBoundingClientRect().bottom - y0)),
-        addTop: add ? r(add.getBoundingClientRect().top - y0) : null });
-      if(t < ms) requestAnimationFrame(tic); else res({ rel, clics: window.__clics.slice() });
-    };
-    requestAnimationFrame(tic);
-  });
-};
+const ECRANS = [['iPhone 393x852', 393, 852, UA_IOS, 3], ['Android 412x915', 412, 915, UA_AND, 2.625], ['petit 360x740', 360, 740, UA_AND, 3]];
 
-function serie(rel, cle){ return rel.map(f => f[cle]).filter(v => v !== null && v !== undefined); }
-/* UN DEMI-TOUR NE COMPTE QUE S'IL PARCOURT QUELQUE CHOSE. Compter tout
-   changement de sens revenait à compter le tremblement sous-pixel d'une valeur
-   posée : jusqu'à dix-huit « demi-tours » sur une animation parfaite. On
-   découpe donc le relevé en COURSES monotones, on fond dans la précédente
-   toute course qui parcourt moins de deux pixels — c'est du bruit, pas un
-   mouvement — et on compte les changements de sens qui restent. Deux pixels,
-   c'est le tiers du plus grand pas normal de cette animation (6 à 7 px) : bien
-   au-dessus du bruit, bien en dessous d'une marche visible. */
-const BRUIT = 2.0;
-function demiTours(rel, cle){
-  const v = serie(rel, cle);
-  if(v.length < 3) return 0;
-  const courses = [];                 // [sens, parcours]
-  let sens = 0, parcours = 0;
-  for(let i = 1; i < v.length; i++){
-    const d = v[i] - v[i-1];
-    if(Math.abs(d) < 0.15) continue;
-    const s = d > 0 ? 1 : -1;
-    if(s === sens){ parcours += Math.abs(d); }
-    else { if(sens) courses.push([sens, parcours]); sens = s; parcours = Math.abs(d); }
-  }
-  if(sens) courses.push([sens, parcours]);
-  const gardees = [];
-  for(const c of courses){
-    if(c[1] < BRUIT) continue;        // course insignifiante : on l'oublie
-    if(gardees.length && gardees[gardees.length-1][0] === c[0]) gardees[gardees.length-1][1] += c[1];
-    else gardees.push([c[0], c[1]]);
-  }
-  return Math.max(0, gardees.length - 1);
-}
-/* ===== MESURER UNE MARCHE QUAND TOUT BOUGE DÉJÀ =====
-   marcheFinale lisait le PAS de l'image où la ligne quitte le DOM. C'est juste
-   tant qu'un seul repli court : il finit à l'arrêt, donc tout pas est une
-   marche. Avec quatre replis qui se chevauchent, la carte descend
-   légitimement de 3,5 px par image au moment où la première ligne s'en va —
-   et l'ancienne mesure criait « marche de 3,5 px » sur un mouvement parfait.
-   ON MESURE DONC L'ÉCART À LA TENDANCE, pas le pas : un pas qui vaut la
-   moyenne de ses deux voisins est la continuation du mouvement ; un pas qui
-   s'en écarte est une marche. Sur le défaut corrigé, l'écart valait 6,3 px ;
-   sur le mouvement d'après, 0,12. */
-function ecartTendance(v, i){
-  if(i < 1 || i + 1 >= v.length) return 0;
-  const d0 = v[i] - v[i-1], dm = v[i-1] - v[i-2 < 0 ? 0 : i-2], dp = v[i+1] - v[i];
-  return Math.abs(d0 - (dm + dp) / 2);
-}
-function saut(rel){
-  const v = serie(rel, 'h');
-  let pire = 0;
-  for(let i = 1; i < rel.length; i++) if(rel[i].n < rel[i-1].n) pire = Math.max(pire, ecartTendance(v, i));
-  return pire;
-}
-/* LA SECOUSSE : le plus grand écart à la tendance de toute l'animation. Elle
-   remplace « plus grand pas », qui punissait la VITESSE : quatre replis
-   simultanés font légitimement quatre fois le chemin par image (mesuré 6,7 px
-   seul, 16,9 px à quatre) sans que rien ne saute. Un ressort n'a pas de
-   secousse, quel que soit leur nombre.
-   ON NE COMPTE PAS LE DÉMARRAGE, ET C'EST UNE CORRECTION DU BANC. Une
-   animation qui part du repos change forcément de vitesse d'un coup : c'est ce
-   que « démarrer » veut dire. Localisé image par image, le pire écart tombe
-   exactement sur l'image du toucher — 1,25 px pour un repli seul, 3,20 px
-   quand un second repli s'ajoute à un premier qui court déjà. Compter ça comme
-   un cran reviendrait à interdire au jeu de réagir au doigt. On ignore donc
-   les trois images qui suivent chaque toucher, et on mesure tout le reste. */
-/* EN IMAGES, PAS EN MILLISECONDES — ET C'EST UNE CORRECTION DU BANC.
-   La première version ignorait 50 ms après chaque toucher, en pensant « trois
-   images ». C'est vrai à 60 images par seconde, et faux dès qu'une image dure :
-   rejoué seul, « 4 fois la PREMIÈRE à 90 ms » sur Android petit est à 0,12 -
-   0,17 px neuf fois sur dix, et la dixième montre pourquoi elle crie :
-       t=211  image de 32 ms   pas  -4,59 px   (la carte avance à peine)
-       t=251  image de 20 ms   pas -13,45 px   (et rattrape d'un coup)
-   C'est le DÉMARRAGE du troisième repli, touché à 191 ms, repoussé par une
-   image longue du conteneur hors de la fenêtre de 50 ms. Ramené en vitesse,
-   cet essai est dans la norme des neuf autres. On compte donc des IMAGES :
-   l'écart à la tendance d'un démarrage à l'image k touche les indices k-1, k
-   et k+1 (il lit le pas d'avant et celui d'après) ; on laisse deux images de
-   plus pour un démarrage retardé. Le reste de l'animation est mesuré comme
-   avant, et le saut au départ de la ligne n'est concerné par rien de tout ça. */
-const AVANT = 1, APRES = 3;       // images ignorées autour de chaque toucher
-function secousse(rel, clics){
-  const v = serie(rel, 'h');
-  const muets = new Set();
-  for(const c of (clics || [])){
-    const k = rel.findIndex(f => f.t >= c);
-    if(k < 0) continue;
-    for(let j = k - AVANT; j <= k + APRES; j++) muets.add(j);
-  }
-  let pire = 0;
-  for(let i = 2; i + 1 < v.length; i++){
-    if(muets.has(i)) continue;
-    pire = Math.max(pire, ecartTendance(v, i));
-  }
-  return pire;
-}
-function chevauchement(rel){
-  let pire = 0;
-  for(const f of rel) for(let i = 1; i < f.tops.length; i++) pire = Math.max(pire, f.bots[i-1] - f.tops[i]);
-  return pire;
-}
-function pireImage(rel){
-  let pire = 0;
-  for(let i = 1; i < rel.length; i++) pire = Math.max(pire, rel[i].t - rel[i-1].t);
-  return pire;
-}
-
-(async()=>{
-  const b = await chromium.launch({ executablePath:'/opt/pw-browsers/chromium' });
-  let ko = 0;
-  for (const [appareil, ua, vp] of [
-    ['Android petit', UA_AND, {width:360,height:640}],
-    ['Android grand', UA_AND, {width:412,height:915}],
-    ['iOS (chemins)', UA_IOS, {width:393,height:852}],
-  ]){
-    const ctx = await b.newContext({ viewport:vp, deviceScaleFactor:2, isMobile:true, hasTouch:true, serviceWorkers:'block', userAgent:ua });
-    const p = await ctx.newPage(); const errs=[]; p.on('pageerror',e=>errs.push(e.message));
-    await p.addInitScript(()=>{ localStorage.setItem('bt_profile',JSON.stringify({name:'T',color:'#4C86E8'})); localStorage.setItem('bt_fs_hint','1'); });
+(async () => {
+  const nav = await chromium.launch({ executablePath: '/opt/pw-browsers/chromium' });
+  for (const [nom, W, H, ua, dpr] of ECRANS) {
+    console.log('\n  — ' + nom);
+    const ctx = await nav.newContext({ viewport: { width: W, height: H }, deviceScaleFactor: dpr, userAgent: ua, isMobile: true, hasTouch: true, serviceWorkers: 'block' });
+    const p = await ctx.newPage(); const errs = []; p.on('pageerror', e => errs.push(e.message));
+    await p.route('**/supabase-js@2*', r => r.fulfill({ status: 200, contentType: 'application/javascript', body: '' }));
+    await p.addInitScript(() => { localStorage.setItem('bt_profile', JSON.stringify({ name: 'Taylor', color: '#4C86E8' })); localStorage.setItem('bt_fs_hint', '1'); });
     await p.goto(URL);
-    await p.waitForFunction(()=>{ try{ return state.screen==='mode'; }catch(e){ return false; } }, null, {timeout:20000});
-    /* Le contexte audio naît AVANT les mesures : sinon le premier toucher paie
-       sa construction (mesuré 27 ms) et on attribuerait au retrait un coût qui
-       n'est pas le sien. */
-    await p.evaluate(()=>{ try{ getCtx(); }catch(e){} });
-    await p.waitForTimeout(400);
-    await p.evaluate((src)=>{ window.__suivre = eval('(' + src + ')'); }, SUIVRE.toString());
-    console.log('\n  ' + appareil + '   ' + vp.width + 'x' + vp.height);
-    console.log('  situation                        demi-tours       saut     secousse  chevauch.  gestes');
-
-    const poser = async (n, bas)=>{
-      await p.evaluate((nn)=>{
-        state.mode='group';
-        state.teams = Array.from({length:nn}, (_,k)=>({ name:'Joueur '+(k+1) }));
-        state.screen='setup'; render();
-      }, n);
-      await p.waitForTimeout(700);
-      if(bas) await p.evaluate(()=>{ const a=document.getElementById('app'); a.scrollTop = a.scrollHeight; });
-      await p.waitForTimeout(250);
-    };
-    /* ===== UNE LIGNE QUI MEURT N'EST PLUS UNE LIGNE =====
-       Ma première version prenait document.querySelectorAll('.team-row'). Or une
-       ligne retirée RESTE dans le DOM pendant les 0,34 s de son repli, marquée
-       data-partie — et removeTeam refuse aussitôt un clic sur elle. « Deux
-       retraits coup sur coup » recliquait donc sur la MÊME ligne mourante : le
-       deuxième retrait n'avait jamais lieu. Le banc était vert parce qu'il ne
-       faisait qu'un seul retrait, pendant que Taylor voyait le cran sur deux.
-       LE RELEVÉ LE DISAIT, ET JE NE L'AVAIS PAS LU : « plus grand pas » valait
-       6,7 px à toutes les cadences, exactement comme le contrôle à un seul
-       retrait. Un banc qui donne le même nombre pour un retrait et pour quatre
-       ne mesure pas quatre retraits. On compte donc désormais les retraits
-       RÉELLEMENT obtenus, et on les imprime : un banc doit dire ce qu'il a
-       fait, pas seulement ce qu'on lui a demandé. */
-    const croix = (k)=> p.evaluate((kk)=>{
-      try{ window.__clics.push(performance.now() - window.__t0); }catch(e){}
-      const r = document.querySelectorAll('.team-row:not([data-partie])');
-      if(!r.length) return 0;
-      const row = kk < 0 ? r[r.length + kk] : r[Math.min(kk, r.length - 1)];
-      const b = row.querySelector('.team-remove');
-      if(!b || b.disabled) return 0;
-      b.click(); return 1;
-    }, k);
-
-    /* ===== LE MARTELAGE =====
-       « Le cran se produit uniquement lorsque je retire les joueurs
-       RAPIDEMENT. » Le repli d'une ligne dure 0,34 s : à 90 ms d'intervalle,
-       quatre replis se chevauchent, et chacun repose sur une mise en page que
-       le suivant modifie sous lui. Le banc ne dépassait pas deux retraits à
-       140 ms — et ces deux-là n'en faisaient qu'un (voir croix). */
-    let faits = 0;
-    const martele = (n, pause)=> async ()=>{
-      faits = 0;
-      for(let k = 0; k < n; k++){ faits += await croix(-1); if(k < n - 1) await p.waitForTimeout(pause); }
-    };
-    const un = (g)=> async ()=>{ faits = 1; await g(); };
-
-    /* [nom, joueurs, page en bas, demi-tours permis, geste] */
-    const cas = [
-      ['retirer la dernière (4)',        4, false, 0, un(()=>croix(-1))],
-      ['retirer la première (4)',        4, false, 0, un(()=>croix(0))],
-      ['retirer au milieu (5)',          5, false, 0, un(()=>croix(2))],
-      ['retirer le 6e (bouton renaît)',  6, false, 0, un(()=>croix(-1))],
-      ['6 joueurs, page en bas',         6, true,  1, un(()=>croix(-1))],
-      ['5 joueurs, page en bas',         5, true,  1, un(()=>croix(-1))],
-      ['retirer 120 ms après ajout',     4, false, 1, un(async()=>{ await p.evaluate(()=>{ try{ window.__clics.push(performance.now() - window.__t0); }catch(e){} addTeam(); }); await p.waitForTimeout(120); await croix(-1); })],
-      ['retirer 300 ms après ajout',     4, false, 1, un(async()=>{ await p.evaluate(()=>{ try{ window.__clics.push(performance.now() - window.__t0); }catch(e){} addTeam(); }); await p.waitForTimeout(300); await croix(-1); })],
-      ['ajout au 6e puis retrait',       5, false, 1, un(async()=>{ await p.evaluate(()=>{ try{ window.__clics.push(performance.now() - window.__t0); }catch(e){} addTeam(); }); await p.waitForTimeout(160); await croix(-1); })],
-      ['retirer, clavier ouvert',        5, false, 0, un(async()=>{ await p.evaluate(()=>{ document.querySelector('.team-row input').focus(); }); await p.waitForTimeout(260); await croix(-1); })],
-      ['ajouter (contrôle)',             3, false, 0, un(()=>p.evaluate(()=>{ try{ window.__clics.push(performance.now() - window.__t0); }catch(e){} addTeam(); }))],
-      ['2 retraits à 140 ms',            6, false, 0, martele(2, 140)],
-      ['3 retraits à 120 ms',            6, false, 0, martele(3, 120)],
-      ['3 retraits à 90 ms',             6, false, 0, martele(3,  90)],
-      ['4 retraits à 90 ms',             6, false, 0, martele(4,  90)],
-      ['4 retraits à 70 ms',             6, false, 0, martele(4,  70)],
-      ['4 retraits à 50 ms',             6, false, 0, martele(4,  50)],
-      ['4 retraits à 90 ms, page en bas',6, true,  1, martele(4,  90)],
-      ['4 fois la PREMIÈRE à 90 ms',     6, false, 0, async()=>{ faits = 0; for(let k=0;k<4;k++){ faits += await croix(0); if(k<3) await p.waitForTimeout(90); } }],
-      ['ajout puis 3 retraits à 90 ms',  5, false, 1, async()=>{ faits = 0; await p.evaluate(()=>{ try{ window.__clics.push(performance.now() - window.__t0); }catch(e){} addTeam(); }); await p.waitForTimeout(90); for(let k=0;k<3;k++){ faits += await croix(-1); if(k<2) await p.waitForTimeout(90); } }],
-    ];
-
-    /* ===== UN CAS ROUGE EST REJOUÉ UNE FOIS AVANT D'ÊTRE CRU =====
-       C'est la règle de la batterie entière (tous.sh rejoue seul tout banc
-       tombé), appliquée ici cas par cas, et pour la même raison.
-       Rejouée seule, cette batterie tombait à chaque passage sur un cas
-       DIFFÉRENT : secousse 18,85 px sur « 4 fois la PREMIÈRE » un jour, saut
-       14,4 px sur « 3 retraits à 120 ms » le lendemain. Isolés et rejoués dix
-       fois, ces mêmes cas donnaient 0,10 à 0,17 px, dix fois sur dix, sans une
-       seule image longue. Ce qui les faisait crier : une image de 30 ou 50 ms
-       au mauvais moment — un ramasse-miettes, un conteneur partagé — pendant
-       laquelle la carte parcourt deux ou trois fois son chemin habituel.
-       UN CRAN DU JEU EST DÉTERMINISTE. Celui qu'avait signalé Taylor sortait à
-       6,5 - 6,65 px dans TOUS les retraits multiples, à CHAQUE passage : il
-       ressortirait aussi au rejeu. On rejoue donc une fois tout cas rouge ; il
-       n'est compté que s'il retombe, et la première mesure est imprimée quand
-       même — pour qu'on voie si les hoquets deviennent fréquents. */
-    const mesurer = async (n, bas, geste)=>{
-      await poser(n, bas);
-      const suivi = p.evaluate(()=>window.__suivre(2200));
-      await geste();
-      const { rel, clics } = await suivi;
-      return { dt: Math.max(demiTours(rel,'h'), demiTours(rel,'addTop')),
-               sa: saut(rel), sec: secousse(rel, clics), ch: chevauchement(rel), faits };
-    };
-    let hoquets = 0;
-    for (const [nom, n, bas, dtOK, geste] of cas){
-      const juge = (m)=> m.dt <= dtOK && m.sa <= S_SAUT && m.sec <= S_SECOUSSE && m.ch <= S_CHEVAU;
-      let m = await mesurer(n, bas, geste);
-      let note = '';
-      if(!juge(m)){
-        const premier = m;
-        m = await mesurer(n, bas, geste);
-        if(juge(m)){ hoquets++; note = '  (hoquet au 1er passage : saut ' + premier.sa.toFixed(2)
-          + ', secousse ' + premier.sec.toFixed(2) + ', demi-tours ' + premier.dt + ')'; }
-        else note = '  (rejoué : retombe)';
-      }
-      const vert = juge(m);
-      if(!vert) ko++;
-      console.log('  %s %s %s %s %s %s  %s%s',
-        (vert?'OK  ':'CRAN').padEnd(5), nom.padEnd(32),
-        (m.dt + '/' + dtOK).padStart(8), (m.sa.toFixed(2)+' px').padStart(11),
-        (m.sec.toFixed(2)+' px').padStart(12), (m.ch.toFixed(1)+' px').padStart(10),
-        m.faits + ' retrait' + (m.faits > 1 ? 's' : ''), note);
-    }
-    if(hoquets) console.log('  ' + hoquets + ' hoquet(s) du conteneur, non reproduit(s) au rejeu');
-
-    /* ===== LE TEMPS D'ARRÊT ===== */
-    const cdp = await ctx.newCDPSession(p);
-    for (const bridage of [1, 6]){
-      await cdp.send('Emulation.setCPUThrottlingRate', { rate: bridage });
-      const fils = [];
-      for (let k = 0; k < 5; k++){
-        await poser(6, false);
-        const ms = await p.evaluate(()=>{
-          const r = document.querySelectorAll('.team-row');
-          const bt = r[r.length-1].querySelector('.team-remove');
-          const a = performance.now(); bt.click(); return performance.now() - a;
-        });
-        fils.push(ms);
+    await p.waitForFunction(() => { try { return state.screen === 'mode'; } catch (e) { return false; } }, null, { timeout: 20000 });
+    const poser = (noms) => p.evaluate((noms) => { state.mode = 'group'; state.teams = noms.map(n => ({ name: n })); state.screen = 'setup'; render(); }, noms);
+    const etat = () => p.evaluate(() => {
+      const g = document.querySelector('#teamCard .places');
+      const pl = [...g.querySelectorAll('.place')].map(el => { const b = el.querySelector('.pl-btn'); const t = b.querySelector('.team-token');
+        return { k: b.classList.contains('pl-joueur') ? 'joueur' : b.classList.contains('pl-ajout') ? 'ajout' : b.classList.contains('pl-libre') ? 'libre' : '?',
+          signe: t ? t.textContent : '', nom: (b.querySelector('.pl-nom') || {}).textContent || '', x: !!el.querySelector('.pl-x'),
+          xVisible: !!el.querySelector('.pl-x') && getComputedStyle(el.querySelector('.pl-x')).opacity !== '0',
+          reste: el.style.transform || el.className.replace('place', '').trim() }; });
+      return { pl, h: +document.getElementById('teamCard').getBoundingClientRect().height.toFixed(2), noms: state.teams.map(t => t.name) }; });
+    /* 1 */
+    const hauteurs = [];
+    for (const n of [2, 3, 4, 5, 6]) { await poser(['Taylor', 'Joueur 2', 'Joueur 3', 'Joueur 4', 'Joueur 5', 'Joueur 6'].slice(0, n)); await p.waitForTimeout(250); const e = await etat(); hauteurs.push(e.h); if (e.pl.length !== 6) dit('six places à ' + n + ' joueurs', false, e.pl.length); }
+    dit('1. six places, et la carte garde sa hauteur de deux à six joueurs', Math.max(...hauteurs) - Math.min(...hauteurs) < 0.5, hauteurs.join(' / '));
+    /* 2 */
+    await poser(['Taylor', 'Joueur 2', 'Joueur 3']); await p.waitForTimeout(300);
+    await p.evaluate(() => document.querySelector('#teamCard .pl-ajout').click()); await p.waitForTimeout(800);
+    let e = await etat();
+    dit('2. « Ajouter » devient le joueur 4 (pastille 4), la place suivante devient « Ajouter »',
+      e.pl[3].k === 'joueur' && e.pl[3].signe === '4' && e.pl[3].nom === 'Joueur 4' && e.pl[4].k === 'ajout' && e.pl[5].k === 'libre' && e.noms.length === 4, JSON.stringify(e.pl.map(x => x.k + ':' + x.signe)));
+    await p.evaluate(() => { ajouterJoueur(); }); await p.waitForTimeout(700);
+    await p.evaluate(() => { ajouterJoueur(); }); await p.waitForTimeout(700);
+    e = await etat();
+    dit('   à six : six joueurs, plus d\'« Ajouter »', e.pl.every(x => x.k === 'joueur') && e.noms.length === 6, JSON.stringify(e.pl.map(x => x.k)));
+    await p.evaluate(() => { ajouterJoueur(); }); await p.waitForTimeout(300);
+    dit('   un septième n\'entre pas', (await etat()).noms.length === 6);
+    /* 3 + 4 : retirer, en mesurant chaque image */
+    const filmer = (geste, ms) => p.evaluate(([geste, ms]) => new Promise(res => {
+      const dessous = [...document.querySelectorAll('#app .screen > .card, #app .screen > .rules, #app .screen > .btn-primary')].filter(x => x.id !== 'teamCard');
+      const carte = document.getElementById('teamCard');
+      const places = [...document.querySelectorAll('#teamCard .place')];
+      const pos0 = dessous.map(x => x.getBoundingClientRect().top), c0 = carte.getBoundingClientRect();
+      /* On suit chaque JOUEUR, pas chaque place : au moment du glissement,
+         une place se met à porter le joueur suivant, posée là où il était —
+         elle « saute », lui ne bouge pas. Ni par son nom : « Joueur 3 »
+         devient « Joueur 2 » en glissant. Par son identité. */
+      state.teams.forEach((t, i) => { t.__id = 'j' + i; });
+      let pireDessous = 0, pireCarte = 0; const traces = {};
+      const t0 = performance.now();
+      const tic = () => {
+        dessous.forEach((x, i) => { pireDessous = Math.max(pireDessous, Math.abs(x.getBoundingClientRect().top - pos0[i])); });
+        const c = carte.getBoundingClientRect(); pireCarte = Math.max(pireCarte, Math.abs(c.top - c0.top), Math.abs(c.height - c0.height));
+        places.forEach((pl, j) => { const b = pl.querySelector('.pl-joueur'); const t = state.teams[j]; if (!b || !t || pl.classList.contains('pl-part')) return; const r = pl.getBoundingClientRect(); (traces[t.__id] = traces[t.__id] || []).push([r.left, r.top]); });
+        if (performance.now() - t0 < ms) requestAnimationFrame(tic);
+        else {
+          /* un glissement va toujours vers sa place : la distance qui reste ne
+             remonte jamais (aucun demi-tour) */
+          let demiTours = 0, saut = 0;
+          Object.values(traces).forEach((t) => { const fin = t[t.length - 1]; let prec = Infinity, avant = null;
+            t.forEach(([x, y]) => { const d = Math.hypot(x - fin[0], y - fin[1]); if (d > prec + 0.3) demiTours++; prec = d;
+              if (avant) saut = Math.max(saut, Math.hypot(x - avant[0], y - avant[1])); avant = [x, y]; }); });
+          res({ pireDessous: +pireDessous.toFixed(2), pireCarte: +pireCarte.toFixed(2), demiTours, saut: +saut.toFixed(1), images: Object.values(traces)[0].length });
+        }
+      };
+      requestAnimationFrame(tic);
+      new Function(geste)();
+    }), [geste, ms]);
+    let f = await filmer('retirerJoueur(1);', 1000);
+    e = await etat();
+    dit('3. retirer le 2e : les suivants glissent d\'une place, la 6e redevient « Ajouter »',
+      JSON.stringify(e.noms) === JSON.stringify(['Taylor', 'Joueur 2', 'Joueur 3', 'Joueur 4', 'Joueur 5']) && e.pl[5].k === 'ajout' && e.pl.every(x => !x.reste), JSON.stringify(e.pl.map(x => x.k + ':' + x.signe + (x.reste ? '!' + x.reste : ''))));
+    dit('4. image par image, rien ne bouge sous la carte, ni la carte (et aucun demi-tour)', f.pireDessous === 0 && f.pireCarte === 0 && f.demiTours === 0, JSON.stringify(f));
+    f = await filmer('retirerJoueur(0);', 1000); e = await etat();
+    dit('   retirer le premier : idem', e.noms[0] === 'Joueur 1' && e.noms.length === 4 && f.pireDessous === 0 && f.pireCarte === 0 && f.demiTours === 0, JSON.stringify([e.noms, f]));
+    f = await filmer('retirerJoueur(state.teams.length - 1);', 1000); e = await etat();
+    dit('   retirer le dernier : sa place redevient « Ajouter » sur place', e.noms.length === 3 && e.pl[3].k === 'ajout' && e.pl[4].k === 'libre' && f.pireDessous === 0 && f.pireCarte === 0, JSON.stringify([e.pl.map(x => x.k), f]));
+    f = await filmer('retirerJoueur(2);', 900); e = await etat();
+    dit('   à deux : plus de croix (elles s\'effacent)', e.noms.length === 2 && e.pl.filter(x => x.k === 'joueur').every(x => !x.xVisible), JSON.stringify(e.pl.map(x => x.k + (x.xVisible ? '×' : ''))));
+    await p.evaluate(() => retirerJoueur(1)); await p.waitForTimeout(500);
+    dit('   à deux, on ne retire plus personne', (await etat()).noms.length === 2);
+    /* 5 : gestes enchaînés */
+    await poser(['A', 'B', 'C', 'D', 'E', 'F']); await p.waitForTimeout(300);
+    /* B part ; C part pendant que les autres glissent encore ; un ajout tombe
+       pendant que C s'efface (le retrait de C se pose d'abord) ; puis F. Le
+       joueur visé est celui qu'on touche — pas un numéro qui aurait glissé. */
+    await p.evaluate(() => { retirerJoueur(1); setTimeout(() => retirerJoueur(1), 250); setTimeout(() => ajouterJoueur(), 330); setTimeout(() => retirerJoueur(3), 420); });
+    await p.waitForTimeout(1300);
+    e = await etat();
+    dit('5. deux retraits, un ajout, un retrait, enchaînés vite : le bon état, rien d\'oublié',
+      JSON.stringify(e.noms) === JSON.stringify(['A', 'D', 'E', 'Joueur 4']) && e.pl[4].k === 'ajout' && e.pl[5].k === 'libre' && e.pl.every(x => !x.reste), JSON.stringify([e.noms, e.pl.map(x => x.k + (x.reste ? '!' + x.reste : ''))]));
+    /* 6 : le fil, processeur bridé */
+    if (ua === UA_AND && W === 412) {
+      const cdp = await ctx.newCDPSession(p); await cdp.send('Emulation.setCPUThrottlingRate', { rate: 6 });
+      const durees = [];
+      for (let k = 0; k < 5; k++) {
+        await poser(['A', 'B', 'C', 'D']); await p.waitForTimeout(400);
+        durees.push(await p.evaluate(() => { const x = document.querySelectorAll('#teamCard .pl-x')[1]; const t = performance.now(); x.click(); return +(performance.now() - t).toFixed(1); }));
         await p.waitForTimeout(900);
       }
-      const tri = [...fils].sort((a,b)=>a-b);
-      const med = tri[Math.floor(tri.length/2)];
-      const seuil = bridage > 1 ? S_FIL_LENT : S_FIL;
-      const vert = med <= seuil;
-      if(!vert) ko++;
-      console.log('  %s %s  clic sur la croix : mediane %s ms, pire %s ms   (seuil %s ms)',
-        (vert?'OK  ':'CRAN').padEnd(5), (bridage>1?('processeur bridé x'+bridage):'processeur normal   ').padEnd(29),
-        med.toFixed(1).padStart(5), tri[tri.length-1].toFixed(1).padStart(5), seuil.toFixed(0));
+      await cdp.send('Emulation.setCPUThrottlingRate', { rate: 1 });
+      const med = durees.slice().sort((a, b) => a - b)[2];
+      dit('6. le toucher de la croix ne tient pas le fil (médiane, bridé ×6)', med < S_FIL, durees.join(' / ') + ' ms');
     }
-    await cdp.send('Emulation.setCPUThrottlingRate', { rate: 1 });
-    if(errs.length){ console.log('  ERREURS JS : ' + [...new Set(errs)].slice(0,3).join(' | ')); ko++; }
+    /* 7 : la page d'un joueur */
+    await poser(['Taylor', 'Joueur 2', 'Joueur 3']); await p.waitForTimeout(300);
+    await p.evaluate(() => document.querySelectorAll('#teamCard .pl-joueur')[1].click());
+    await p.waitForTimeout(900);
+    const page = await p.evaluate(() => { const v = document.getElementById('joueurVeil'); const z = document.getElementById('joueurNom');
+      return { ouverte: !!v && !v.classList.contains('closing'), page: !!v && v.classList.contains('page'), valeur: z ? z.value : null, jeton: (document.querySelector('#joueurVeil .jp-jeton') || {}).textContent, retirer: !!document.querySelector('#joueurVeil .jp-retirer') }; });
+    dit('7. toucher un joueur ouvre SA page : champ vide pour un numéro, pastille 2, « Retirer de la partie »', page.ouverte && page.page && page.valeur === '' && page.jeton === '2' && page.retirer, JSON.stringify(page));
+    await p.locator('#joueurNom').fill('Marie');
+    await p.waitForTimeout(200);
+    e = await etat();
+    const jp = await p.evaluate(() => document.querySelector('#joueurVeil .jp-jeton').textContent);
+    dit('   on écrit : la place suit en direct (M, « Marie »), la pastille de la page aussi', e.pl[1].signe === 'M' && e.pl[1].nom === 'Marie' && jp === 'M', JSON.stringify([e.pl[1], jp]));
+    await p.evaluate(() => validerJoueur()); await p.waitForTimeout(700);
+    dit('   « Enregistrer » referme la page, le nom reste', !(await p.evaluate(() => { const v = document.getElementById('joueurVeil'); return v && !v.classList.contains('closing'); })) && (await etat()).noms[1] === 'Marie');
+    await p.evaluate(() => document.querySelectorAll('#teamCard .pl-joueur')[1].click()); await p.waitForTimeout(800);
+    await p.locator('#joueurNom').fill(''); await p.waitForTimeout(150);
+    await p.evaluate(() => validerJoueur()); await p.waitForTimeout(700);
+    e = await etat();
+    dit('   un nom vidé rend le numéro (« Joueur 2 », pastille 2)', e.noms[1] === 'Joueur 2' && e.pl[1].signe === '2', JSON.stringify(e.pl[1]));
+    await p.evaluate(() => document.querySelectorAll('#teamCard .pl-joueur')[2].click()); await p.waitForTimeout(800);
+    await p.locator('#joueurNom').fill('🦁 Les Lions'); await p.waitForTimeout(150);
+    e = await etat();
+    dit('   un emoji en tête donne sa pastille, entière', e.pl[2].signe === '🦁', JSON.stringify(e.pl[2]));
+    await p.evaluate(() => { const b = [...document.querySelectorAll('#joueurVeil .grp-act-l')].find(x => /Retirer de la partie/.test(x.textContent)); b.click(); });
+    await p.waitForTimeout(250);
+    const pendant = await p.evaluate(() => ({ page: !!document.querySelector('#joueurVeil:not(.closing)'), n: state.teams.length }));
+    await p.waitForTimeout(1100);
+    e = await etat();
+    dit('   « Retirer de la partie » : la page repart d\'abord, puis la place s\'efface', !pendant.page && pendant.n === 3 && e.noms.length === 2 && !e.noms.includes('🦁 Les Lions'), JSON.stringify([pendant, e.noms]));
+    /* 7b : la croix, puis « Commencer » dans le même instant. La partie part
+       avec ceux qui restent — et le retrait, qui se posait 170 ms plus tard,
+       ne coupe plus dans la liste de la partie lancée (v344). Sans chrono :
+       aucune minuterie de jeu ne court après le retour à l'écran du mode. */
+    await poser(['A', 'B', 'C', 'D']); await p.evaluate(() => { state.timerKey = 'off'; }); await p.waitForTimeout(300);
+    const vite = await p.evaluate(() => new Promise(res => {
+      retirerJoueur(1);
+      setTimeout(() => {
+        startGame();
+        const a = { ecran: state.screen, noms: state.teams.map(t => t.name), scores: state.scores.length };
+        setTimeout(() => res({ a, b: { noms: state.teams.map(t => t.name), scores: state.scores.length } }), 900);
+      }, 40);
+    }));
+    dit('7b. une croix puis « Commencer » aussitôt : la partie part sans le joueur retiré, et sa liste n\'est plus touchée',
+      vite.a.ecran === 'play' && JSON.stringify(vite.a.noms) === '["A","C","D"]' && vite.a.scores === 3 && JSON.stringify(vite.b.noms) === '["A","C","D"]' && vite.b.scores === 3, JSON.stringify(vite));
+    /* un rendu complet pendant le retrait : l'écran neuf montre la liste posée */
+    await poser(['A', 'B', 'C', 'D']); await p.waitForTimeout(300);
+    await p.evaluate(() => { retirerJoueur(1); setTimeout(() => render(), 60); }); await p.waitForTimeout(900);
+    e = await etat();
+    dit('    un rendu pendant le retrait : la carte montre la liste posée, rien d\'oublié',
+      JSON.stringify(e.noms) === '["A","C","D"]' && e.pl.filter(x => x.k === 'joueur').map(x => x.nom).join() === 'A,C,D' && e.pl[3].k === 'ajout' && e.pl.every(x => !x.reste), JSON.stringify([e.noms, e.pl.map(x => x.k + ':' + x.nom + (x.reste ? '!' + x.reste : ''))]));
+    dit('8. aucune erreur', errs.length === 0, errs.join(' | '));
     await ctx.close();
   }
-  console.log(ko ? '\n  ECHEC — ' + ko + ' situation(s) avec un cran' : '\n  OK — aucun cran, dans aucune des situations');
-  await b.close();
+  await nav.close();
+  console.log(ko ? `\n  ECHEC — ${ko} point(s)` : '\n  OK — six places fixes : rien ne bouge sous la carte, les gestes restent justes');
   process.exit(ko ? 1 : 0);
-})();
+})().catch(e => { console.error(e); process.exit(2); });
