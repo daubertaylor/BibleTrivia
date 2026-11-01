@@ -205,7 +205,11 @@ COQUILLES = [(re.compile(r"\betla"), "et la"), (re.compile(r"aujourd’hu1"), "a
              # relevée, jamais une règle générale.
              (re.compile(r"\bhumble de cour\b"), "humble de cœur"),
              (re.compile(r"\bbonnes ouvres\b"), "bonnes œuvres"),
-             (re.compile(r"\baussi votre cour\b"), "aussi votre cœur")]
+             (re.compile(r"\baussi votre cour\b"), "aussi votre cœur"),
+             # LE SEGOND D'EBIBLE PERD UN TRAIT D'UNION en 1 Jean 4:7 : « aimons
+             # nous les uns les autres » (trouvé le 27/10/2026, en relisant le
+             # lot avant de l'injecter). Même règle : une tournure, une entrée.
+             (re.compile(r"\baimons nous les uns\b"), "aimons-nous les uns")]
 def decolle(t):
     for a, b in COLLES.items(): t = t.replace(a, b)
     for motif, b in COQUILLES: t = motif.sub(b, t)

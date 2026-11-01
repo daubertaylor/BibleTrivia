@@ -120,13 +120,28 @@ function verifier(nom, obtenu, attendu){
     /* La grille : une case par jour, du plus ancien au plus récent. Les cases
        « horschamp » ne sont que le calage des colonnes sur les jours de la
        semaine — elles ne comptent pas. */
-    const l = Array.from(document.querySelectorAll('#flammeVeil .fj'))
-      .filter(c => !c.classList.contains('horschamp') && !c.closest('.flam-leg'));
+    /* LES MOIS SONT AFFICHÉS DU PLUS RÉCENT AU PLUS ANCIEN. Cinq jours qui
+       enjambent la fin d'un mois (le 1er novembre, par exemple) tombent dans
+       DEUX cartes : on les relit de la plus ancienne à la plus récente. Et le
+       calage des colonnes se vérifie carte par carte : les cases vides du
+       début valent le jour de la semaine du 1er — la règle d'avant, « un
+       multiple de sept », ne tenait que les mois où le compte tombait juste
+       (octobre 2026 : 4 + 31 = 35 ; novembre : 0 + 30). */
+    const cartes = Array.from(document.querySelectorAll('#flammeVeil .flam-mois')).reverse();
+    const l = [].concat(...cartes.map(m => Array.from(m.querySelectorAll('.fg-cases .fj'))))
+      .filter(c => !c.classList.contains('horschamp'));
     const etats = l.map(c => c.classList.contains('fait') ? 'fait'
                           : c.classList.contains('gele') ? 'gele' : 'vide');
+    const MOIS = ['janvier','février','mars','avril','mai','juin','juillet','août','septembre','octobre','novembre','décembre'];
+    const cales = cartes.map(m => {
+      const nom = (m.querySelector('.fg-cases').getAttribute('aria-label') || '').split(' ');
+      const premier = new Date(+nom[1], MOIS.indexOf(nom[0]), 1);
+      const vides = Array.from(m.querySelectorAll('.fg-cases .fj')).findIndex(c => !(c.classList.contains('horschamp') && !c.querySelector('i')));
+      return vides === premier.getDay();
+    });
     const res = { etats, auj: l.filter(c=>c.classList.contains('auj')).length,
       colonnes: getComputedStyle(document.querySelector('#flammeVeil .fg-cases')).gridTemplateColumns.split(' ').length,
-      total: document.querySelectorAll('#flammeVeil .fg-cases .fj').length,
+      cales: cales.every(Boolean) && cales.length > 0,
       gele:(document.querySelector('#flammeVeil .ft-g')||{}).textContent,
       regle:(document.querySelector('#flammeVeil .flam-regle')||{}).textContent,
       dates: l.map(c=>c.getAttribute('aria-label')).filter(Boolean).length };
@@ -135,7 +150,7 @@ function verifier(nom, obtenu, attendu){
   });
   verifier("la grille : cinq jours, du plus ancien au plus récent", feuille.etats, ["fait","fait","gele","fait","fait"]);
   verifier("sept colonnes, une par jour de la semaine", feuille.colonnes, 7);
-  verifier("les colonnes sont calées (multiple de sept)", feuille.total % 7, 0);
+  verifier("les colonnes sont calées (le 1er sous son jour de la semaine)", feuille.cales, true);
   verifier("une seule case marquée aujourd'hui", feuille.auj, 1);
   verifier("chaque case garde sa date au toucher", feuille.dates, 5);
   verifier("elle dit la réserve", (feuille.gele||'').trim(), "1 gel en réserve");
