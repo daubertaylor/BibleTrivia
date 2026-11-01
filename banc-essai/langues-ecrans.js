@@ -194,6 +194,16 @@ const JAMAIS_A_L_ECRAN = [
      échoue. */
   { lg:'en', quoi:'Blocked in the phone settings', car:'idem, et seulement si le téléphone a refusé' },
   { lg:'en', quoi:'Cannot turn the reminder on right now.', car:"idem, et seulement si l'abonnement échoue" },
+  /* (v345) Le relevé du clavier, dans la Modération : la façon dont le jeu
+     est affiché se lit sur le TÉLÉPHONE qui a ouvert le clavier — le banc
+     tourne dans un onglet de navigateur, ni installé, ni en plein écran — et
+     « copié » ne se dit qu'après avoir touché « Copier le relevé ». */
+  { lg:'en', quoi:'installed app', car:"le relevé d'un téléphone où le jeu est INSTALLÉ ; le banc tourne dans un onglet" },
+  { lg:'en', quoi:'browser full screen', car:"le relevé d'un navigateur passé en plein écran ; le banc ne l'est pas" },
+  { lg:'en', quoi:'Reading copied', car:"le petit mot après « Copier le relevé », seulement quand on l'a touché" },
+  { lg:'es', quoi:'app instalada', car:"le relevé d'un téléphone où le jeu est INSTALLÉ ; le banc tourne dans un onglet" },
+  { lg:'es', quoi:'pantalla completa del navegador', car:"le relevé d'un navigateur passé en plein écran ; le banc ne l'est pas" },
+  { lg:'es', quoi:'Medición copiada', car:"le petit mot après « Copier le relevé », seulement quand on l'a touché" },
 ];
 
 const MEME_DANS_LES_DEUX = [
@@ -484,6 +494,10 @@ const ouvrirLaLangue = async (p, lg) => {
        SIX PLACES). */
     ['Groupe · la page d\'un joueur', () => { __fermerTout(); state.mode='group';
       state.teams=[{name:'Taylor'},{name:'Joueur 2'},{name:'Joueur 3'}]; state.screen='setup'; render(); ouvrirJoueur(1); }],
+    /* (v345) Le déroulé du Mode Groupe vit dans sa page, « Comment jouer »,
+       ouverte par le rond (i) de la carte des joueurs. */
+    ['Groupe · comment jouer', () => { __fermerTout(); state.mode='group';
+      state.teams=[{name:'Taylor'},{name:'Joueur 2'}]; state.screen='setup'; render(); ouvrirDeroule(); }],
   ];
 
   /* ===== LE DUEL, DE SON DÉBUT À SES CINQ FINS =====
@@ -1645,8 +1659,22 @@ const ouvrirLaLangue = async (p, lg) => {
     const debutsVersets = dico.versets.map(x => aplat(x).slice(0, 24)).filter(x => x.length >= 12);
     const lusHorsVersets = [...lusHorsQuestions].filter(t => !debutsVersets.some(d => t.includes(d)));
     const valeurs = new Set(dico.textes.map(aplat));
+    /* (v345) UN MORCEAU EST UN MOT ENTIER. « Win » (le « Victoire » du texte
+       partagé) était déclaré VU dans « Window: 915 px at rest… », la ligne du
+       relevé du clavier : trois lettres au début d'un autre mot ne sont pas
+       une phrase affichée. Le morceau doit commencer et finir là où un mot
+       commence et finit. */
+    const motEntier = (t, v) => {
+      let i = t.indexOf(v);
+      while(i >= 0){
+        const avant = i > 0 ? t[i - 1] : '', apres = t[i + v.length] || '';
+        if(!/[\p{L}\p{N}]/u.test(avant) && !/[\p{L}\p{N}]/u.test(apres)) return true;
+        i = t.indexOf(v, i + 1);
+      }
+      return false;
+    };
     const dansUnTexteComposé = (v) => {
-      for(const t of lusHorsVersets) if(t !== v && t.indexOf(v) >= 0 && !valeurs.has(t)) return true;
+      for(const t of lusHorsVersets) if(t !== v && motEntier(t, v) && !valeurs.has(t)) return true;
       return false;
     };
     const jamais = [...new Set(dico.textes)].filter(v => !/\{/.test(v)

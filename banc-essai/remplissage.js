@@ -85,7 +85,8 @@ const LENT = 6;
       l.push({ t: performance.now() - t0, ech: m ? parseFloat(m[1]) : (a.transform === 'none' ? 1 : 0),
                teinte: cs.getPropertyValue('--glass-tint').trim(), couleur: cs.color,
                x: parseFloat(c.style.getPropertyValue('--encre-x')), y: parseFloat(c.style.getPropertyValue('--encre-y')),
-               r: parseFloat(c.style.getPropertyValue('--encre-r')), remplit: c.classList.contains('remplit') });
+               r: parseFloat(c.style.getPropertyValue('--encre-r')), rx: parseFloat(c.style.getPropertyValue('--encre-rx')), ry: parseFloat(c.style.getPropertyValue('--encre-ry')),
+               remplit: c.classList.contains('remplit') });
       if (performance.now() - t0 < dureeMax) requestAnimationFrame(tic); else res(l);
     };
     requestAnimationFrame(tic);
@@ -137,8 +138,11 @@ const LENT = 6;
   /* 3. elle couvre tout */
   const geo = pendant.length ? pendant[pendant.length - 1] : null;
   if (geo) {
-    const loin = Math.max(...[[0, 0], [cible.w, 0], [0, cible.h], [cible.w, cible.h]].map(([a, b]) => Math.hypot(a - geo.x, b - geo.y)));
-    if (0.82 * geo.r < loin) soucis.push('à pleine taille, le cœur de l\'encre (' + (0.82 * geo.r).toFixed(1) + ' px) n\'atteint pas le coin le plus éloigné (' + loin.toFixed(1) + ' px)');
+    /* (v345) La goutte est une ellipse aux proportions de la puce (rx, ry) :
+       on mesure dans l'espace où elle est un cercle (largeurs divisées par k). */
+    const k = (geo.rx > 0 && geo.ry > 0) ? geo.rx / geo.ry : 1, ry = geo.ry > 0 ? geo.ry : geo.r;
+    const loin = Math.max(...[[0, 0], [cible.w, 0], [0, cible.h], [cible.w, cible.h]].map(([a, b]) => Math.hypot((a - geo.x) / k, b - geo.y)));
+    if (0.82 * ry < loin) soucis.push('à pleine taille, le cœur de l\'encre (' + (0.82 * ry).toFixed(1) + ' px) n\'atteint pas le coin le plus éloigné (' + loin.toFixed(1) + ' px)');
   }
 
   /* 4. la teinte n'arrive qu'à la fin */
@@ -162,8 +166,9 @@ const LENT = 6;
       }
       return { g, h, d, b };
     });
-    const besoin = Math.max(...[[libelle.g, libelle.h], [libelle.d, libelle.h], [libelle.g, libelle.b], [libelle.d, libelle.b]].map(([a, b]) => Math.hypot(a - bascule.x, b - bascule.y)));
-    const coeur = 0.82 * bascule.r * bascule.ech;
+    const kb = (bascule.rx > 0 && bascule.ry > 0) ? bascule.rx / bascule.ry : 1, ryb = bascule.ry > 0 ? bascule.ry : bascule.r;
+    const besoin = Math.max(...[[libelle.g, libelle.h], [libelle.d, libelle.h], [libelle.g, libelle.b], [libelle.d, libelle.b]].map(([a, b]) => Math.hypot((a - bascule.x) / kb, b - bascule.y)));
+    const coeur = 0.82 * ryb * bascule.ech;
     if (coeur + 0.5 < besoin) soucis.push('le mot blanchit avant d\'être couvert : cœur ' + coeur.toFixed(1) + ' px, il en faut ' + besoin.toFixed(1));
     console.log('  le mot blanchit à ' + Math.round(bascule.t / LENT) + ' ms (temps réel) — cœur de l\'encre ' + coeur.toFixed(1) + ' px pour ' + besoin.toFixed(1) + ' px de libellé');
   }

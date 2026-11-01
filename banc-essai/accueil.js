@@ -33,6 +33,14 @@
    l'accueil, la dernière carte au moins 6 px AU-DESSUS de la barre (jamais
    dessous), et la barre entière dans l'écran.
 
+   (v345) LA BARRE TOUJOURS LÀ. « Je ne veux plus jamais avoir ça en bas :
+   le jeu doit être toujours comme sur l'image 2, peu importe le joueur. »
+   L'accueil a maintenant la barre (Accueil, Groupes) et la flamme dans la
+   carte Progression POUR TOUS — groupes installés ou non. Il n'y a donc plus
+   qu'un régime, celui de la barre, et les deux balayages le vérifient :
+   d'abord sans que les groupes aient répondu (le joueur qui n'a rien
+   ouvert), puis avec.
+
    Usage : node banc-essai/accueil.js [url] [--neuf]
 */
 const { chromium } = require('/opt/node22/lib/node_modules/playwright');
@@ -143,20 +151,19 @@ const RELEVE = () => {
          n'existait que pour allumer la flamme, et la flamme s'allume désormais
          en jouant, quel que soit le mode. Restent cinq vraies destinations —
          Groupe, Solo, En ligne, À revoir, Progression. */
+      /* (v345) Un seul régime : la barre, toujours (voir LA BARRE TOUJOURS LÀ). */
       if (r.cartes !== 5) pires.push(ou + r.cartes + ' cartes au lieu de 5');
       else if (r.deb > 0) pires.push(ou + 'débord ' + r.deb + (r.semVue ? '' : ' (bande masquée)'));
-      else if (!avecBarre && !r.semVue) pires.push(ou + 'la bande des sept jours a disparu sans barre');
-      else if (!avecBarre && r.semBas > r.ih) pires.push(ou + 'bande sous le pli (' + r.semBas + ' > ' + r.ih + ')');
-      else if (avecBarre && !r.barre) pires.push(ou + 'la barre ne s\'affiche pas');
-      else if (avecBarre && r.semVue) pires.push(ou + 'la bande des sept jours est restée sur l\'accueil');
-      else if (avecBarre && r.derniere > r.barreHaut - 6) pires.push(ou + 'la dernière carte touche la barre (' + r.derniere + ' > ' + (r.barreHaut - 6) + ')');
-      else if (avecBarre && r.barreBas > r.ih) pires.push(ou + 'la barre sort de l\'écran (' + r.barreBas + ' > ' + r.ih + ')');
+      else if (!r.barre) pires.push(ou + 'la barre ne s\'affiche pas');
+      else if (r.semVue) pires.push(ou + 'la bande des sept jours est restée sur l\'accueil');
+      else if (r.derniere > r.barreHaut - 6) pires.push(ou + 'la dernière carte touche la barre (' + r.derniere + ' > ' + (r.barreHaut - 6) + ')');
+      else if (r.barreBas > r.ih) pires.push(ou + 'la barre sort de l\'écran (' + r.barreBas + ' > ' + r.ih + ')');
     }
   }
   if (errs.length) pires.push('erreurs JS : ' + [...new Set(errs)].slice(0,3).join(' | '));
   await nav.close();
   if (pires.length) { console.log('  HAUTEURS EN DÉFAUT :'); pires.forEach(x => console.log('   ' + x)); process.exit(1); }
   console.log('  OK — ' + HAUTEURS.length + ' hauteurs de ' + HAUTEURS[0] + ' à ' + HAUTEURS[HAUTEURS.length-1]
-    + ' px, sans et avec la barre : cinq cartes, aucun débord, la bande des sept jours au-dessus du pli,'
-    + ' et la dernière carte au-dessus de la barre');
+    + ' px, groupes ouverts ou non : cinq cartes, aucun débord, la barre toujours là et entière,'
+    + ' et la dernière carte au-dessus d\'elle');
 })();

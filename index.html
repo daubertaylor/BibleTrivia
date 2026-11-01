@@ -508,7 +508,15 @@
      écrit, il blanchit, c'est tout. */
   .text-input:focus, .code-input:focus{ background-color:#fff; }
 
-  #app{ position:relative; z-index:1; width:100%; max-width:430px; margin:0 auto; height:100%; overflow-y:auto; overflow-x:hidden; overscroll-behavior:none; display:flex; flex-direction:column; padding:calc(env(safe-area-inset-top) + 0.35rem) calc(env(safe-area-inset-right) + 0.7rem) max(calc(env(safe-area-inset-bottom) + 0.35rem), var(--air-bas)) calc(env(safe-area-inset-left) + 0.7rem); }
+  /* ===== (v345) LA MARGE DU BAS NE BOUGE PAS QUAND ON ÉCRIT =====
+     Toute la mise en page lit la marge sûre du bas à travers --sab. Au
+     repos, c'est celle du téléphone. Un champ en main (html.sab-fige, voir
+     LES BOUTONS D'ANDROID QUI ARRIVENT AVEC LE CLAVIER), elle reste celle
+     d'avant le clavier : en plein écran, Android fait revenir ses boutons
+     avec le clavier et la marge grandissait d'un coup — l'écran sautait. */
+  :root{ --sab:env(safe-area-inset-bottom, 0px); }
+  html.sab-fige{ --sab:var(--sab-repos, env(safe-area-inset-bottom, 0px)); }
+  #app{ position:relative; z-index:1; width:100%; max-width:430px; margin:0 auto; height:100%; overflow-y:auto; overflow-x:hidden; overscroll-behavior:none; display:flex; flex-direction:column; padding:calc(env(safe-area-inset-top) + 0.35rem) calc(env(safe-area-inset-right) + 0.7rem) max(calc(var(--sab) + 0.35rem), var(--air-bas)) calc(env(safe-area-inset-left) + 0.7rem); }
   /* GRANDS ÉCRANS (tablette, iPad, PC) : l'app GRANDIT pour exploiter l'espace
      au lieu d'une colonne téléphone perdue dans un vide noir. Le décor Canyon
      remplit désormais TOUT l'écran autour (plus de bande noire / « bandes
@@ -561,8 +569,8 @@
      avec le verre. Le défilement PROGRAMMATIQUE (scrollTop, mise au point d'un
      champ) reste possible. Absent sur iOS/desktop. */
   html.js-scroll #app{ touch-action:none; overflow:hidden; overflow-anchor:none; }
-  html.is-fs #app{ padding-top:max(calc(env(safe-area-inset-top) + 0.35rem), 3.4rem); padding-bottom:max(calc(env(safe-area-inset-bottom) + 0.2rem), var(--air-bas)); }
-  html.is-standalone #app{ padding-top:max(calc(env(safe-area-inset-top) + 0.4rem), 0.7rem); padding-bottom:max(calc(env(safe-area-inset-bottom) + 0.35rem), var(--air-bas)); }
+  html.is-fs #app{ padding-top:max(calc(env(safe-area-inset-top) + 0.35rem), 3.4rem); padding-bottom:max(calc(var(--sab) + 0.2rem), var(--air-bas)); }
+  html.is-standalone #app{ padding-top:max(calc(env(safe-area-inset-top) + 0.4rem), 0.7rem); padding-bottom:max(calc(var(--sab) + 0.35rem), var(--air-bas)); }
   /* LE CLAVIER SE POSE PAR-DESSUS. IL NE REFAIT PAS LA PAGE.
      Avant, on rétrécissait #app à la hauteur restante : toute la colonne se
      recomposait dans un espace deux fois plus petit — les cartes se
@@ -960,6 +968,26 @@
   /* ---------- Cards / setup ---------- */
   .card{ background:var(--surface); border:0; border-radius:var(--r-l); padding:calc(1.1rem + 1px) calc(1rem + 1px); margin-bottom:var(--e-3); }
   .card h2{ font-family:'Poppins',sans-serif; font-size:0.78rem; font-weight:700; letter-spacing:0.09em; text-transform:uppercase; color:var(--ink-soft); margin:0 0 0.65rem 0.1rem; }
+  /* ===== (v345) L'ÉCRAN DU MODE GROUPE TIENT DANS L'ÉCRAN, COMME LE SOLO =====
+     « Sur Android, je veux la durée de la partie et le testament exactement
+       pareils que ceux du Mode Solo : en Solo ça marche parfaitement, en
+       Groupe ça saute un peu quand je clique sur un bouton. » Les cartes
+       sont les mêmes, au code près — ce qui changeait, c'est l'écran autour :
+       celui du Solo tient dans le téléphone, celui du Groupe dépassait de
+       290 px (mesuré sur un Android de 384 × 832) et DÉFILAIT. Un écran qui
+       défile se laisse déplacer sous le doigt ; et « Commencer la partie »
+       n'était même pas visible sans descendre. Le « Déroulé » du Groupe
+       (quatre lignes, 164 px) passe derrière un « ? » posé à côté de
+       « Joueurs ou équipes », et la ligne d'erreur, vide sauf exception, ne
+       réserve plus sa hauteur : l'écran tient, comme celui du Solo, et ce qui
+       reste se règle comme partout (voir UN ÉCRAN QUI TIENT PRESQUE). */
+  .card h2.h2-aide{ display:flex; align-items:center; justify-content:space-between; gap:0.5rem; }
+  .aide-btn{ position:relative; flex-shrink:0; width:1.7rem; height:1.7rem; margin:-0.35rem 0 -0.35rem 0; padding:0.3rem; border:0; border-radius:50%;
+    display:inline-flex; align-items:center; justify-content:center; background:rgb(252,248,241); color:var(--ink-soft); box-shadow:var(--relief);
+    -webkit-tap-highlight-color:transparent; }
+  .aide-btn .ico{ width:100%; height:100%; display:inline-flex; }
+  .aide-btn::after{ content:""; position:absolute; left:50%; top:50%; width:44px; height:44px; transform:translate(-50%,-50%); }
+  .error-msg:empty{ display:none; }
 
   /* LIGNES JOUEURS : la carte est la SEULE surface de verre ; les lignes sont un
      fond crème PLEIN (même matière que les chips et les boutons blancs) avec le
@@ -989,17 +1017,17 @@
   .places{ display:grid; grid-template-columns:repeat(3, minmax(0, 1fr)); gap:0.55rem; }
   .place{ position:relative; min-width:0; }
   .place.pl-glisse{ z-index:1; }
-  .pl-btn{ width:100%; height:5.7rem; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:0.36rem;
-    padding:calc(0.45rem + 1px) calc(0.32rem + 1px); border:0; border-radius:var(--r-s); background:rgb(252,248,241); color:var(--ink);
+  .pl-btn{ width:100%; height:5.2rem; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:0.3rem;
+    padding:calc(0.36rem + 1px) calc(0.32rem + 1px); border:0; border-radius:var(--r-s); background:rgb(252,248,241); color:var(--ink);
     font:inherit; text-align:center;
     transition:transform 0.44s cubic-bezier(0.2,1,0.3,1), background-color var(--tr-onde), color var(--tr-onde), opacity var(--tr-onde), box-shadow var(--tr-onde); }
-  .pl-btn .team-token{ width:2.35rem; height:2.35rem; font-size:1rem; }
+  .pl-btn .team-token{ width:2.15rem; height:2.15rem; font-size:0.95rem; }
   /* Le nom tient sur deux lignes avant de se couper : vingt signes au plus
      (« Les Apôtres de Jean ») se lisent en entier. */
   .pl-nom{ display:-webkit-box; -webkit-box-orient:vertical; -webkit-line-clamp:2; overflow:hidden; max-width:100%;
     font-size:0.78rem; font-weight:600; line-height:1.2; overflow-wrap:anywhere; }
   .pl-ajout{ color:var(--primary); }
-  .pl-plus{ width:2.35rem; height:2.35rem; display:flex; align-items:center; justify-content:center; }
+  .pl-plus{ width:2.15rem; height:2.15rem; display:flex; align-items:center; justify-content:center; }
   .pl-plus svg{ width:1.6rem; height:1.6rem; }
   /* LES PLACES QUI ATTENDENT : la même plaque, à peine dessinée, sans
      relief et sans rien dedans. Elles disent combien on peut être (six) sans
@@ -1542,7 +1570,9 @@
   .ring-wrap{ position:relative; width:7.3rem; height:7.3rem; margin:0 auto 0.7rem; }
   .ring-wrap svg{ width:100%; height:100%; transform:rotate(-90deg); }
   .ring-bg{ fill:none; stroke:var(--surface-alt); stroke-width:7.5; }
-  .ring-fg{ fill:none; stroke:url(#ringGrad); stroke-width:7.5; stroke-linecap:round; transition:stroke-dashoffset var(--tr-plie); }
+  /* (v345) Le dégradé de l'anneau est posé sur l'anneau lui-même, avec son
+     propre identifiant (voir idsPropres). */
+  .ring-fg{ fill:none; stroke-width:7.5; stroke-linecap:round; transition:stroke-dashoffset var(--tr-plie); }
   /* Le texte reste bien à l'intérieur de l'anneau, sans jamais le toucher. */
   .ring-center{ position:absolute; inset:0; display:flex; flex-direction:column; align-items:center; justify-content:center; text-align:center; padding:0 0.7rem; }
   .ring-score{ font-family:'Poppins',sans-serif; font-weight:700; font-size:1.9rem; line-height:1; color:var(--ink); }
@@ -1588,7 +1618,7 @@
          chose (voir majVoilesErreurs) ;
        - un CRAN par carte : on se pose toujours sur une carte entière,
          jamais au milieu d'une ligne. */
-  .settings-sheet.review-sheet, .settings-sheet.flam-sheet{ padding-bottom:calc(env(safe-area-inset-bottom) * 0.55 + 1.15rem + 220px); }
+  .settings-sheet.review-sheet, .settings-sheet.flam-sheet{ padding-bottom:calc(var(--sab) * 0.55 + 1.15rem + 220px); }
   /* ===== LA RAMPE DU VOILE : UNE COURBE, PAS UNE DROITE =====
      Une rampe LINÉAIRE d'opacité a deux coudes — là où elle démarre et là où
      elle s'arrête, la pente saute d'un coup de zéro à sa valeur puis revient
@@ -1828,6 +1858,21 @@
   .puce-bk{ min-width:0; }
   .puce-bk .pl-mot{ min-width:0; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
   .bk-carte{ background:var(--page-carte, #fff); border-radius:var(--r-l); box-shadow:var(--ombre-pose); padding:0.85rem 0.8rem 0.9rem; margin-top:0.75rem; }
+  /* ===== (v345) L'OMBRE DE LA CARTE, PORTÉE À PART =====
+     « Règle le petit défaut dans les bords, à certains moments. » (capture de
+     Taylor, iPhone, page « Un livre », en bas : aux deux coins du bas de la
+     carte, l'ombre dessinée CARRÉE sous l'arrondi.) Safari perd l'arrondi de
+     l'ombre d'une carte quand ce qu'elle contient passe sur des couches à part
+     — une tuile touchée, son encre qui s'étale —, et le garde jusqu'au
+     prochain dessin : « à certains moments ». L'ombre n'est plus portée par la
+     carte mais par un calque à elle, de la même forme (border-radius hérité),
+     posé dessous dans le plan de la carte : elle ne dépend plus de la façon
+     dont le navigateur range les tuiles. À l'écran, rien ne change : la même
+     ombre (--ombre-pose), au même endroit. Même chose pour les cartes des
+     testaments de la Progression, faites des mêmes tuiles. */
+  .bk-carte, .tp-carte{ position:relative; isolation:isolate; box-shadow:none !important; }
+  .bk-carte::before, .tp-carte::before{ content:""; position:absolute; inset:0; z-index:-1; border-radius:inherit;
+    box-shadow:var(--ombre-pose); pointer-events:none; }
   .bk-sec{ font-family:'Poppins',sans-serif; font-size:0.74rem; font-weight:700; letter-spacing:0.06em; text-transform:uppercase; color:var(--ink-soft); margin:0 0.15rem 0.6rem; }
   /* (v342) Les tuiles des livres tiennent en relief, ici comme dans la Progression. */
   .bk-carte .bk{ background:rgb(246,241,233); }
@@ -2327,10 +2372,22 @@
        des minutes, on ne paie pas ce prix ;
      — la teinte de verre arrive quand l'encre a FINI (sinon on verrait un
        fondu sous l'encre) et repart tout de suite sur la puce qu'on quitte. */
-  .chip, .len-chip, .bk-choix{ --encre-x:50%; --encre-y:50%; --encre-r:160px; --encre-duree:0.5s; --encre-sortie:0.3s; --encre-texte:0.2s; --encre-attente:20ms; }
+  /* ===== (v345) LA GOUTTE A LA FORME DE LA PUCE =====
+     « Quand je clique sur un bouton, au moment du remplissage, dans les
+       bords c'est pas bien rempli : on voit du blanc. » Filmé image par
+       image (iPhone, « Courte ») : la goutte était un DISQUE, et une puce est
+       deux fois plus large que haute. Le disque touchait le haut et le bas à
+       mi-course, puis mettait encore un bon dixième de seconde à atteindre
+       les deux bouts — deux croissants blanc rosé, de chaque côté, jusqu'à la
+       fin. La goutte est maintenant une ELLIPSE aux proportions de la puce
+       (--encre-rx, --encre-ry, voir rayonsEncre) : née sous le doigt, elle
+       atteint tous les bords au même instant, et la puce finit pleine d'un
+       seul mouvement. Le voile d'appui prend la même forme. */
+  .chip, .len-chip, .bk-choix{ --encre-x:50%; --encre-y:50%; --encre-r:160px; --encre-rx:var(--encre-r); --encre-ry:var(--encre-r);
+    --encre-duree:0.5s; --encre-sortie:0.3s; --encre-texte:0.2s; --encre-attente:20ms; }
   .chip::after, .len-chip::after, .bk-choix::after{ content:""; position:absolute; z-index:-1; pointer-events:none;
-    left:calc(var(--encre-x) - var(--encre-r)); top:calc(var(--encre-y) - var(--encre-r));
-    width:calc(var(--encre-r) * 2); height:calc(var(--encre-r) * 2); border-radius:50%;
+    left:calc(var(--encre-x) - var(--encre-rx)); top:calc(var(--encre-y) - var(--encre-ry));
+    width:calc(var(--encre-rx) * 2); height:calc(var(--encre-ry) * 2); border-radius:50%;
     /* Le cœur est plein jusqu'à 82 % du rayon ; au-delà, le bord se fond.
        encrerPuce() choisit le rayon pour que ce CŒUR couvre le coin le plus
        lointain : à la fin, la puce est rouge plein, bords et coins compris. */
@@ -2392,8 +2449,8 @@
      « button.has-gs::before ».) */
   button.chip::before, button.len-chip::before, button.bk-choix::before,
   button.chip.has-gs::before, button.len-chip.has-gs::before{ inset:auto;
-    left:calc(var(--onde-x, var(--encre-x)) - var(--onde-r, var(--encre-r))); top:calc(var(--onde-y, var(--encre-y)) - var(--onde-r, var(--encre-r)));
-    width:calc(var(--onde-r, var(--encre-r)) * 2); height:calc(var(--onde-r, var(--encre-r)) * 2); border-radius:50%;
+    left:calc(var(--onde-x, var(--encre-x)) - var(--onde-rx, var(--encre-rx))); top:calc(var(--onde-y, var(--encre-y)) - var(--onde-ry, var(--encre-ry)));
+    width:calc(var(--onde-rx, var(--encre-rx)) * 2); height:calc(var(--onde-ry, var(--encre-ry)) * 2); border-radius:50%;
     background:radial-gradient(closest-side, var(--press-tint, rgba(238,74,40,0.18)) 82%, transparent 100%); }
   /* Sur les surfaces DÉJÀ corail, l'onde se fait blanche : sinon rien ne se
      verrait. Même logique, feedback identique. */
@@ -3106,7 +3163,7 @@
      intact), le sortant disparaît net (pas de double composition), la modale
      zoome. iOS et Android jouent alors EXACTEMENT la même transition, fluide. */
   html.gl-native .screen-enter, html.gl-xf .screen-enter{ animation-name:screenInGl; }
-  html.gl-native .screen-exit, html.gl-xf .screen-exit{ animation:none; display:none; }
+  html.gl-native .screen-exit:not(.reste):not(.retire), html.gl-xf .screen-exit:not(.reste):not(.retire){ animation:none; display:none; }
   @keyframes modalInGl{ from{ transform:scale(0.9) translateY(16px); } to{ transform:scale(1) translateY(0); } }
   html.gl-native .modal-card, html.gl-xf .modal-card{ animation-name:modalInGl; }
   @keyframes modalIn{ from{ opacity:0; transform:scale(0.9) translateY(16px); } to{ opacity:1; transform:scale(1) translateY(0); } }
@@ -4381,7 +4438,7 @@
      l'app, le pixel passe de la BORDURE au PADDING : la boîte de padding
      devient la boîte entière, la découpe aussi, et le verre couvre tout.
      Taille extérieure et position du contenu inchangées au pixel près. */
-  .settings-sheet{ width:100%; max-width:430px; border:0; border-radius:var(--r-xl) var(--r-xl) 0 0; padding:calc(0.8rem + 1px) calc(1.25rem + 1px) calc(env(safe-area-inset-bottom) * 0.55 + 0.4rem + 220px); margin-bottom:-220px; transform:translateZ(0); -webkit-transform:translateZ(0); touch-action:none; --rim-cast:0 -6px 34px rgba(18,12,6,0.3); }
+  .settings-sheet{ width:100%; max-width:430px; border:0; border-radius:var(--r-xl) var(--r-xl) 0 0; padding:calc(0.8rem + 1px) calc(1.25rem + 1px) calc(var(--sab) * 0.55 + 0.4rem + 220px); margin-bottom:-220px; transform:translateZ(0); -webkit-transform:translateZ(0); touch-action:none; --rim-cast:0 -6px 34px rgba(18,12,6,0.3); }
   /* DEUX FEUILLES L'UNE SUR L'AUTRE — LA FAÇON DONT ELLES SE SUPERPOSENT.
      Avant : le choix de version arrivait avec EXACTEMENT la même matière, la
      même largeur et le même coin arrondi que les Réglages, simplement décalé
@@ -4752,7 +4809,7 @@
   .share-btn .share-ico svg, .share-result .share-ico svg{ width:100%; height:100%; }
   .share-btn .share-lbl{ padding-right:0.35rem; }
   /* (Rebord propre au bouton Partager retiré : il prend le rebord unique.) */
-  .mini-toast{ position:fixed; left:50%; bottom:calc(env(safe-area-inset-bottom) + 2.2rem); transform:translateX(-50%) translateY(8px); background:rgba(30,22,14,0.92); color:#fff; font-family:'Poppins',sans-serif; font-weight:600; font-size:0.82rem; padding:0.55rem 1.05rem; border-radius:var(--r-full); z-index:600; opacity:0; transition:opacity 0.25s ease, transform 0.25s ease; pointer-events:none; }
+  .mini-toast{ position:fixed; left:50%; bottom:calc(var(--sab) + 2.2rem); transform:translateX(-50%) translateY(8px); background:rgba(30,22,14,0.92); color:#fff; font-family:'Poppins',sans-serif; font-weight:600; font-size:0.82rem; padding:0.55rem 1.05rem; border-radius:var(--r-full); z-index:600; opacity:0; transition:opacity 0.25s ease, transform 0.25s ease; pointer-events:none; }
   .mini-toast.show{ opacity:1; transform:translateX(-50%) translateY(0); }
   .scn-thumb.sel::after{ content:""; position:absolute; top:0.28rem; right:0.28rem; width:0.95rem; height:0.95rem; border-radius:50%; background-color:#F2C94C; background-image:url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='white' stroke-width='4.5' stroke-linecap='round' stroke-linejoin='round'><path d='M5 13l4 4 10-10'/></svg>"); background-size:68%; background-position:center; background-repeat:no-repeat; box-shadow:0 1px 4px rgba(0,0,0,0.4); }
   /* « Guide » était la SEULE commande de la feuille peinte à plat : les
@@ -5503,7 +5560,7 @@
      quand la langue change la longueur des mots. Un onglet fait au moins
      44 px de haut : sur un petit écran la racine descend à 14,6 px, et
      3,55rem moins le rebord n'y laissait que 43 px au doigt. */
-  :root{ --bb-h:max(3.55rem, calc(44px + 0.6rem)); --bb-l:min(17.5rem, calc(100vw - 4rem)); --bb-bas:max(calc(env(safe-area-inset-bottom) + 0.25rem), 0.9rem); }
+  :root{ --bb-h:max(3.55rem, calc(44px + 0.6rem)); --bb-l:min(17.5rem, calc(100vw - 4rem)); --bb-bas:max(calc(var(--sab) + 0.25rem), 0.9rem); }
   .barre-bas{ position:fixed; z-index:60; left:50%; bottom:var(--bb-bas); width:var(--bb-l); height:var(--bb-h);
     transform:translate3d(-50%,0,0); display:grid; grid-template-columns:1fr 1fr; padding:0.3rem; gap:0;
     border-radius:var(--r-full); border:0; background:transparent;
@@ -5598,7 +5655,7 @@
      dernière carte ne passe jamais dessous. Seulement quand la barre existe —
      sans elle, rien ne change. */
   html.avec-barre .screen.accueil,
-  html.avec-barre .screen.groupes-ecran{ padding-bottom:calc(var(--bb-h) + var(--bb-bas) - max(calc(env(safe-area-inset-bottom) + 0.35rem), var(--air-bas, 0.8rem)) + 0.7rem); }
+  html.avec-barre .screen.groupes-ecran{ padding-bottom:calc(var(--bb-h) + var(--bb-bas) - max(calc(var(--sab) + 0.35rem), var(--air-bas, 0.8rem)) + 0.7rem); }
   /* ===== AVEC LA BARRE, L'ACCUEIL GARDE SON RYTHME JUSQU'EN BAS =====
      Mesuré sur six téléphones : l'écart entre la carte Progression et la
      barre allait de 13 px (iPhone 15) à 65 px (petit Android), pendant que
@@ -5617,7 +5674,7 @@
      boutons, qui ne bougent pas (ils sont posés en absolu dans le héros, et
      c'est le héros qui grandit, par le haut). Sans la barre, rien ne change :
      la rangée des sept jours a son propre équilibre (banc-essai/pied.js). */
-  html.avec-barre .screen.accueil{ padding-bottom:calc(var(--bb-h) + var(--bb-bas) - max(calc(env(safe-area-inset-bottom) + 0.35rem), var(--air-bas, 0.8rem))); }
+  html.avec-barre .screen.accueil{ padding-bottom:calc(var(--bb-h) + var(--bb-bas) - max(calc(var(--sab) + 0.35rem), var(--air-bas, 0.8rem))); }
   /* Le bloc d'abord, le héros ensuite : 100 000 contre 1, le héros ne reçoit
      rien tant que le bloc peut encore grandir ; dès que le bloc touche son
      plafond, il est gelé et le héros prend tout le reste. */
@@ -5679,6 +5736,52 @@
   html.gl-native .screen-enter.vers-gauche, html.gl-xf .screen-enter.vers-gauche{ animation-name:screenInG; }
   .screen-exit.vers-droite{ animation-name:screenOutD; }
   .screen-exit.vers-gauche{ animation-name:screenOutG; }
+  /* ===== (v345) UNE SEULE ANIMATION DE CHANGEMENT D'ÉCRAN : CELLE DES RÉGLAGES =====
+     « Je veux vraiment que toutes les animations de changement de fenêtre,
+       quelles qu'elles soient, soient exactement pareilles. J'aime beaucoup
+       l'animation d'ouverture des Réglages : je veux que tout le jeu ait
+       exactement la même animation, sur tous les téléphones. »
+     Les PAGES (les Réglages et toutes les autres) arrivent par la droite, de
+     toute la largeur, pleines, avec une ombre douce sur l'écran resté
+     immobile dessous, et repartent par la droite. Les ÉCRANS, eux, glissaient
+     d'un quart de largeur pendant que l'écran quitté disparaissait d'un coup
+     — ou montaient du bas. Deux langages pour un même geste.
+     Un écran qui arrive est maintenant une page : il entre par la droite, de
+     toute la largeur, à l'horloge et sur la courbe d'ouverture des pages
+     (--tr-ouvre), avec la même ombre ; l'écran qu'on quitte reste à sa place
+     dessous, immobile, jusqu'à être recouvert. On revient comme on ferme une
+     page (--tr-ferme) : l'écran repart vers la droite et découvre, déjà posé,
+     celui où l'on revient.
+     Un écran est transparent — le décor du jeu est derrière tous les écrans.
+     Pour arriver plein, comme une page, l'écran qui bouge emporte une copie
+     exacte du décor (.fond-pousse : la photo, la vignette et le grain, posés
+     au pixel près sur les originaux) qui glisse avec lui ; arrivée, elle
+     coïncide avec le décor et s'en va sans que rien ne change à l'écran. Le
+     verre des cartes est calculé sur leur place de repos : il voyage avec
+     l'écran, donc avec sa copie du décor, juste du premier au dernier
+     instant. Le mouvement est conduit en JS (voir PASSAGE D'UN ÉCRAN À
+     L'AUTRE) : il repart d'où l'écran se trouve si l'on rebrousse chemin en
+     route, et un rendu sur place le reprend au même instant. */
+  html .screen.screen-enter.pousse{ animation:none; }
+  html .screen.screen-exit.reste, html .screen.screen-exit.retire{ animation:none; opacity:1; }
+  /* CHAQUE ÉCRAN DANS SON PLAN. Ce qu'un écran pose au-dessus de lui-même
+     (l'icône de l'accueil, un bouton flottant) ne doit pas passer par-dessus
+     l'écran qui le recouvre : l'écran quitté et l'écran posé dessous forment
+     chacun leur propre plan pendant le passage (« isolation » ne déplace
+     rien : ni position, ni repère pour ce qu'ils contiennent). */
+  /* LES TROIS PLANS SONT DITS, PAS DÉDUITS DE L'ORDRE DU DOCUMENT. L'écran
+     qui arrive est rangé AVANT celui qui part (voir L'ÉCRAN VIVANT D'ABORD,
+     dans render) : c'est donc le plan qui dit qui passe devant — en
+     « pousse », l'écran quitté (0), la copie du décor (1), l'écran qui
+     arrive (2) ; en « retour », l'écran où l'on revient (0), la copie (1),
+     l'écran qui repart (2). */
+  html .screen.screen-exit.reste{ z-index:0; }
+  html .screen.screen-exit.retire{ z-index:2; }
+  html .screen.sous-retour{ isolation:isolate; z-index:0; }
+  html .screen.screen-enter.pousse:not(.screen-exit){ z-index:2; }
+  .fond-pousse{ position:absolute; z-index:1; overflow:hidden; pointer-events:none; box-shadow:-18px 0 42px rgba(24,16,10,0.22); }
+  .fond-pousse > div{ position:absolute !important; right:auto !important; bottom:auto !important; min-height:0 !important;
+    transform:none !important; -webkit-transform:none !important; }
 
   /* ---------- L'ÉCRAN DES GROUPES ---------- */
   .grp-h{ font-family:'Poppins',sans-serif; font-size:0.78rem; font-weight:700; letter-spacing:0.09em; text-transform:uppercase;
@@ -6247,7 +6350,7 @@
   html.kb .mini-toast{ bottom:auto; top:calc(var(--vvt, 0px) + env(safe-area-inset-top) + 0.9rem); }
   /* (v336) Dans une discussion, clavier fermé, le mot se pose au-dessus de la
      barre d'écriture (--toast-bas, mesuré par showMiniToast), pas sur elle. */
-  html.ecran-discussion:not(.kb) .mini-toast{ bottom:var(--toast-bas, calc(env(safe-area-inset-bottom) + 2.2rem)); }
+  html.ecran-discussion:not(.kb) .mini-toast{ bottom:var(--toast-bas, calc(var(--sab) + 2.2rem)); }
   .compo-in{ display:flex; align-items:flex-end; gap:0.45rem; width:100%; }
   .compo-texte{ flex:1; min-width:0; min-height:2.6rem; max-height:7.5rem; resize:none; border:0; outline:none; background:transparent;
     font-family:'Inter',sans-serif; font-size:16px; line-height:1.35; color:var(--ink); padding:0.62rem 0.3rem; }
@@ -6365,7 +6468,7 @@
      Seule cette feuille-ci est concernée (.reglages) : les autres feuilles
      qui partagent .set-row — langues, versions, entrée des groupes — gardent
      leur rythme. */
-  .settings-sheet.reglages{ padding-bottom:calc(env(safe-area-inset-bottom) * 0.45 + 0.15rem + 220px); }
+  .settings-sheet.reglages{ padding-bottom:calc(var(--sab) * 0.45 + 0.15rem + 220px); }
   .reglages .sheet-grab{ margin-bottom:0.35rem; }
   /* ===== ET À LEUR JUSTE MESURE =====
      « Je me demande si ce n'est pas un peu trop compressé. » Ça l'était
@@ -6430,7 +6533,7 @@
      (erreurs, flamme) s'allongent avec la page : plus de défilement dans un
      défilement. */
   .sheet-veil.page .settings-sheet.settings-sheet{ position:absolute; inset:0; width:auto; max-width:none; margin:0; border-radius:0;
-    padding:0 var(--page-marge) calc(env(safe-area-inset-bottom) + 1.75rem);
+    padding:0 var(--page-marge) calc(var(--sab) + 1.75rem);
     overflow-x:hidden; overflow-y:auto; overscroll-behavior:contain; -webkit-overflow-scrolling:touch; touch-action:pan-y;
     background:none; box-shadow:none; transform:none; animation:none !important; transition:transform var(--tr-ouvre), bottom var(--tr-ouvre); will-change:auto; }
   .sheet-veil.page .settings-sheet.settings-sheet.feuille-recule{ transform:translate3d(-22%,0,0); }
@@ -6894,6 +6997,7 @@ const TEXTES = {
     "Joueur":"Player",
     "Joueur {n}":"Player {n}",
     "Joueur ou équipe":"Player or team",
+    "Comment jouer":"How to play",
     "Ajouter":"Add",
     "Changer le nom de {nom}":"Rename {nom}",
     "Retirer {nom}":"Remove {nom}",
@@ -7395,6 +7499,21 @@ const TEXTES = {
     "Les rappels annoncent aussi les messages des groupes · aucun téléphone ne peut encore les recevoir : chacun doit rouvrir Yada, connecté, rappels allumés.":"Reminders also announce group messages · no phone can receive them yet: each person needs to reopen Yada, signed in, with reminders on.",
     "Les rappels annoncent aussi les messages des groupes · {n} téléphone peut les recevoir":"Reminders also announce group messages · {n} phone can receive them",
     "Les rappels annoncent aussi les messages des groupes · {n} téléphones peuvent les recevoir":"Reminders also announce group messages · {n} phones can receive them",
+    "Clavier de ce téléphone":"This phone's keyboard",
+    "Ouvre le clavier dans une discussion, puis reviens ici : le relevé s'affichera.":"Open the keyboard in a chat, then come back here: the reading will show up.",
+    "plein écran":"full screen",
+    "app installée":"installed app",
+    "navigateur":"browser",
+    "plein écran du navigateur":"browser full screen",
+    "Affichage : {m}":"Display: {m}",
+    "Fenêtre : {a} px au repos, {b} px clavier ouvert":"Window: {a} px at rest, {b} px with the keyboard open",
+    "Clavier annoncé : {h} px, haut à {y} px":"Reported keyboard: {h} px, top at {y} px",
+    "Clavier estimé : {h} px":"Estimated keyboard: {h} px",
+    "Clavier annoncé : aucun":"Reported keyboard: none",
+    "Marge du bas : {a} px au repos, {b} px clavier ouvert":"Bottom margin: {a} px at rest, {b} px with the keyboard open",
+    "Hauteur visible retenue : {v} px · champ de {h} à {b} px":"Visible height used: {v} px · field from {h} to {b} px",
+    "Copier le relevé":"Copy the reading",
+    "Relevé copié":"Reading copied",
     "La fonction en ligne ne sait pas encore prévenir des messages : sa mise à jour part toute seule de GitHub.":"The online function can't send message notifications yet: its update goes out from GitHub on its own.",
     "Le dernier message n'a pas pu joindre la fonction : {m}":"The last message couldn't reach the function: {m}",
     "Dernier message ({quand}) : personne à prévenir.":"Last message ({quand}): nobody to notify.",
@@ -7711,6 +7830,7 @@ const TEXTES = {
     "Joueur":"Jugador",
     "Joueur {n}":"Jugador {n}",
     "Joueur ou équipe":"Jugador o equipo",
+    "Comment jouer":"Cómo jugar",
     "Ajouter":"Añadir",
     "Changer le nom de {nom}":"Cambiar el nombre de {nom}",
     "Retirer {nom}":"Quitar a {nom}",
@@ -8215,6 +8335,21 @@ const TEXTES = {
     "Les rappels annoncent aussi les messages des groupes · aucun téléphone ne peut encore les recevoir : chacun doit rouvrir Yada, connecté, rappels allumés.":"Los recordatorios también anuncian los mensajes de los grupos · ningún teléfono puede recibirlos todavía: cada persona debe volver a abrir Yada, con la sesión iniciada y los recordatorios activados.",
     "Les rappels annoncent aussi les messages des groupes · {n} téléphone peut les recevoir":"Los recordatorios también anuncian los mensajes de los grupos · {n} teléfono puede recibirlos",
     "Les rappels annoncent aussi les messages des groupes · {n} téléphones peuvent les recevoir":"Los recordatorios también anuncian los mensajes de los grupos · {n} teléfonos pueden recibirlos",
+    "Clavier de ce téléphone":"Teclado de este teléfono",
+    "Ouvre le clavier dans une discussion, puis reviens ici : le relevé s'affichera.":"Abre el teclado en un chat y vuelve aquí: aparecerá la medición.",
+    "plein écran":"pantalla completa",
+    "app installée":"app instalada",
+    "navigateur":"navegador",
+    "plein écran du navigateur":"pantalla completa del navegador",
+    "Affichage : {m}":"Pantalla: {m}",
+    "Fenêtre : {a} px au repos, {b} px clavier ouvert":"Ventana: {a} px en reposo, {b} px con el teclado abierto",
+    "Clavier annoncé : {h} px, haut à {y} px":"Teclado indicado: {h} px, borde superior en {y} px",
+    "Clavier estimé : {h} px":"Teclado estimado: {h} px",
+    "Clavier annoncé : aucun":"Teclado indicado: ninguno",
+    "Marge du bas : {a} px au repos, {b} px clavier ouvert":"Margen inferior: {a} px en reposo, {b} px con el teclado abierto",
+    "Hauteur visible retenue : {v} px · champ de {h} à {b} px":"Altura visible usada: {v} px · campo de {h} a {b} px",
+    "Copier le relevé":"Copiar la medición",
+    "Relevé copié":"Medición copiada",
     "La fonction en ligne ne sait pas encore prévenir des messages : sa mise à jour part toute seule de GitHub.":"La función en línea aún no sabe avisar de los mensajes: su actualización sale sola desde GitHub.",
     "Le dernier message n'a pas pu joindre la fonction : {m}":"El último mensaje no pudo llegar a la función: {m}",
     "Dernier message ({quand}) : personne à prévenir.":"Último mensaje ({quand}): nadie a quien avisar.",
@@ -8419,7 +8554,7 @@ function ligneLangue(l){
   return `<button class="bible-item lang-item${retenue?' sel':''}${l.dispo?'':' indispo'}" data-langue="${l.cle}"`
     + ` ${l.dispo?`onclick="setLangue('${l.cle}')"`:'disabled'}`
     + ` aria-label="${l.natif}${l.dispo?'':' — ' + T('bientôt')}">`
-    + `<span class="lang-pav">${l.drapeau}</span>`
+    + `<span class="lang-pav">${idsPropres(l.drapeau)}</span>`
     /* LE NOM DANS SA PROPRE LANGUE, D'ABORD — c'est celui que reconnaît
        quelqu'un qui ne lit pas encore l'interface. Le second nom n'apparaît que
        s'il APPREND quelque chose : « Français Français » ne dit rien de plus. */
@@ -8504,7 +8639,7 @@ function voileRedemarrage(){
 function boutonLangue(){
   const l = langueActive();
   return `<button class="lang-btn" onclick="openLangues()" aria-label="${T("Langue")}" title="${T("Langue")}">
-      <span class="lang-dr">${l.drapeau}</span><span class="lang-cd">${l.code}</span>
+      <span class="lang-dr">${idsPropres(l.drapeau)}</span><span class="lang-cd">${l.code}</span>
     </button>`;
 }
 
@@ -8636,6 +8771,27 @@ const ondeLache = ()=>{
 };
 document.addEventListener("pointerup", ondeLache, { passive:true, capture:true });
 document.addEventListener("pointercancel", ondeLache, { passive:true, capture:true });
+/* ===== (v345) CHAQUE ICÔNE À DÉGRADÉ PORTE SES PROPRES IDENTIFIANTS =====
+   « Les flammes doivent être fixes, et pas réapparaître à chaque ouverture ou
+   fermeture. » La flamme peint son dégradé PAR RÉFÉRENCE : fill="url(#flA)".
+   Or, pour le navigateur, un identifiant n'existe qu'une fois : avec deux
+   flammes dans la page (l'accueil et la page qui s'ouvre, l'écran qui part et
+   celui qui arrive), toutes peignaient avec le dégradé de la PREMIÈRE du
+   document. Quand celle-ci est dans un écran masqué (display:none), le
+   dégradé ne se peint plus : la flamme perdait ses couleurs — il ne restait
+   que son cœur jaune — puis « réapparaissait » au départ de l'autre écran.
+   Filmé image par image : 450 ms sans flamme à chaque retour à l'accueil.
+   Chaque copie reçoit donc SES identifiants : ses références pointent sur
+   ses propres dégradés, et aucune autre copie ne peut les lui retirer. Même
+   règle pour la flamme gelée, la cible, la coupe, l'anneau du score et le
+   drapeau anglais (son découpage est lui aussi une référence). Le compteur
+   vit sur la fonction elle-même : elle est utilisable avant toute autre
+   ligne du script. */
+function idsPropres(svg){
+  const n = "i" + (idsPropres.n = (idsPropres.n || 0) + 1).toString(36);
+  return String(svg).replace(/\bid="([^"]+)"/g, (m, id) => 'id="' + id + '-' + n + '"')
+                    .replace(/url\(#([^)]+)\)/g, (m, id) => 'url(#' + id + '-' + n + ')');
+}
 /* ===================== ICONS (hand-built, no emoji) ===================== */
 const ICONS = {
   /* ===== LA FLAMME GELÉE =====
@@ -8774,6 +8930,13 @@ const ICONS = {
   reseauFaible: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M2.2 8.6a14.2 14.2 0 0 1 19.6 0" opacity="0.36"/><path d="M5.4 12a9.6 9.6 0 0 1 13.2 0" opacity="0.36"/><path d="M8.7 15.3a4.9 4.9 0 0 1 6.6 0"/><circle cx="12" cy="18.7" r="1.5" fill="currentColor" stroke="none"/></svg>`,
   reseauCoupe: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M2.2 8.6a14.2 14.2 0 0 1 19.6 0" opacity="0.36"/><path d="M5.4 12a9.6 9.6 0 0 1 13.2 0" opacity="0.36"/><path d="M8.7 15.3a4.9 4.9 0 0 1 6.6 0" opacity="0.36"/><circle cx="12" cy="18.7" r="1.5" fill="currentColor" stroke="none" opacity="0.36"/><path d="M4.2 3.8l15.6 16.2"/></svg>`,
 };
+/* (v345) Les icônes à dégradé se recopient avec leurs propres identifiants à
+   chaque emploi (voir idsPropres) : on lit ICONS.flame exactement comme
+   avant, et chaque lecture rend une copie autonome. */
+["flame", "flammeGelee", "target"].forEach(k => {
+  const brut = ICONS[k];
+  Object.defineProperty(ICONS, k, { get: () => idsPropres(brut), enumerable:true, configurable:true });
+});
 
 /* ===================== DATA ===================== */
 const BANK = {
@@ -10898,7 +11061,7 @@ const SUPABASE_ANON_KEY = "sb_publishable_FDJ_R0foC7uIeHmxVrj6rA_2NeIgW2a";
    remontée d'un téléphone ne vaut rien si on ne sait pas QUELLE version
    tournait. Elle doit rester égale au CACHE de sw.js — c'est ce que vérifie
    banc-essai/version.js, qui refuse de laisser publier les deux en désaccord. */
-const VERSION_JEU = "v344";
+const VERSION_JEU = "v345";
 
 /* ===================== QUAND ÇA CASSE CHEZ UN JOUEUR =====================
    « Si quelque chose casse chez cinq d'entre eux sur un modèle de téléphone
@@ -13253,13 +13416,36 @@ function sortieMuette(){
     return true;
   }catch(e){ return false; }
 }
+const SON_RESERVE = 0.05;   // secondes de son calculées d'avance (v345, voir getCtx)
+/* (v345) Un effet part 5 ms après « maintenant », jamais pile dessus : lu au
+   moment où le fil audio vient d'avancer, « maintenant » est déjà passé, et
+   la montée douce du son (5 à 6 ms) sauterait — un clic à l'attaque. Même
+   filet que pour les notes de la musique (qT). */
+function tEffet(ctx, start){ return ctx.currentTime + Math.max(start || 0, 0.005); }
 function getCtx(){
   if(!actx){
     const Ctx = window.AudioContext || window.webkitAudioContext;
-    /* (v338) Un tampon « équilibré » : voir LA MUSIQUE NE DOIT JAMAIS MANQUER
-       DE SOUFFLE. Un navigateur qui ne connaît pas l'option l'ignore ; un
-       vieux qui la refuserait garde le contexte d'avant. */
-    try{ actx = new Ctx({ latencyHint:"balanced" }); }catch(e){ actx = new Ctx(); }
+    /* ===== (v345) UNE RÉSERVE DE SON QUI TIENT PENDANT UN CHANGEMENT DE PAGE =====
+       « Le son du jeu qui bugue quand je change de page : c'est toujours le
+         même, corrige encore. »
+       Le son se calcule d'avance, par petites réserves, que le téléphone joue
+       pendant qu'on calcule la suivante. Si le calcul prend du retard — et un
+       changement de page est LE moment où le téléphone a le plus à faire —, la
+       réserve s'épuise, et la sortie hoquette : le bruit de robot.
+       La v338 avait demandé une réserve « équilibrée » plutôt que la plus
+       courte. Lu dans le code de Chrome (media/base/audio_latency.cc) : sur
+       Android, « équilibré » vaut 20 ms, et même « lecture » n'en vaut que
+       21 — un seul gros effort de 25 ms suffisait encore à la vider. On la
+       demande donc en CHIFFRE : 50 ms, deux fois et demie plus. Mesuré dans
+       Chromium : 52 ms obtenus. Ce qu'on y perd : un « toc » qui part 30 ms
+       plus tard sous le doigt, sous le seuil où l'oreille le remarque.
+       Le signal produit, lui, a été vérifié propre (prise sur le fil audio,
+       pendant dix changements de page) : c'est bien la RÉSERVE qui manquait.
+       Même réglage sur tous les téléphones. Un navigateur qui refuse le
+       chiffre garde la réserve « équilibrée », et un vieux qui refuse tout
+       garde celle d'origine. */
+    try{ actx = new Ctx({ latencyHint:SON_RESERVE }); }
+    catch(e){ try{ actx = new Ctx({ latencyHint:"balanced" }); }catch(e2){ actx = new Ctx(); } }
     masterFilter = actx.createBiquadFilter();
     masterFilter.type = "lowpass";
     masterFilter.frequency.value = 2400;   // arrondit les aigus -> chaud et doux
@@ -13338,7 +13524,7 @@ function blip(freq, start, dur, vol, type){
   osc.type = type || "sine";
   osc.frequency.value = freq;
   osc.connect(gain); gain.connect(masterFilter);
-  const t0 = ctx.currentTime + start;
+  const t0 = tEffet(ctx, start);
   gain.gain.setValueAtTime(0.0001, t0);
   gain.gain.exponentialRampToValueAtTime(vol, t0 + 0.012);   // 12ms, aucun clic
   gain.gain.exponentialRampToValueAtTime(0.0001, t0 + dur);  // queue douce
@@ -13359,7 +13545,7 @@ function blip(freq, start, dur, vol, type){
 function chime(freq, start, dur, vol){
   const ctx = getCtx();
   reveiller(ctx);
-  const t0 = ctx.currentTime + start + Math.random()*0.008;
+  const t0 = tEffet(ctx, start) + Math.random()*0.008;
   const v = vol * SFX_GAIN * (0.92 + Math.random()*0.16);
   // VOIX PURE FACON iOS : une sinusoide ronde et lisse. Aucune onde triangle,
   // aucune harmonique aigue, aucun desaccord -> plus de "ferraille" metallique.
@@ -13389,7 +13575,7 @@ function chime(freq, start, dur, vol){
 function tock(freq, start, vol){
   const ctx = getCtx();
   reveiller(ctx);
-  const t0 = ctx.currentTime + start;
+  const t0 = tEffet(ctx, start);
   const v = vol * SFX_GAIN * (0.85 + Math.random()*0.3);
   const b = ctx.createOscillator(), bg = ctx.createGain();
   b.type = "sine";
@@ -13453,7 +13639,7 @@ function playVerse(){
 function noteBois(freq, start, dur, vol){
   const ctx = getCtx();
   reveiller(ctx);
-  const t0 = ctx.currentTime + start, v = vol * SFX_GAIN;
+  const t0 = tEffet(ctx, start), v = vol * SFX_GAIN;
   const o = ctx.createOscillator(), g = ctx.createGain();
   o.type = "sine"; o.frequency.value = freq;
   g.gain.setValueAtTime(0.0001, t0);
@@ -13490,7 +13676,7 @@ function sonGoutte(){
   dernierSonMessage = t;
   const ctx = getCtx();
   reveiller(ctx);
-  const t0 = ctx.currentTime, v = 0.013 * SFX_GAIN;
+  const t0 = tEffet(ctx, 0), v = 0.013 * SFX_GAIN;
   const o = ctx.createOscillator(), g = ctx.createGain();
   o.type = "sine";
   o.frequency.setValueAtTime(560, t0);
@@ -13940,7 +14126,9 @@ function musicBus(){
    dans le vide. Mesuré : 4,5 % au lieu de 8 à 10 %, même niveau à 1 % près.
    Et le contexte audio demande au téléphone un tampon « équilibré »
    (latencyHint) au lieu du plus court possible : quelques millisecondes de
-   plus pour un toucher, et une marge pour ne plus hoqueter. */
+   plus pour un toucher, et une marge pour ne plus hoqueter. (v345 : cette
+   marge ne valait que 20 ms sur Android ; elle est maintenant de 50 ms —
+   voir UNE RÉSERVE DE SON QUI TIENT PENDANT UN CHANGEMENT DE PAGE.) */
 let qVoies = new Map();
 function qOut(node, pan, send){ node.connect(qVoie(pan, send)); }
 function qVoie(pan, send){
@@ -14625,6 +14813,70 @@ try{
   let restH = vv.height;
   /* (v330) La hauteur de la FENÊTRE au repos (voir hauteurVisible). */
   let restInner = innerHeight;
+  /* ===== (v345) LES BOUTONS D'ANDROID QUI ARRIVENT AVEC LE CLAVIER =====
+     « Sur Android, l'écran saute à cause des boutons du téléphone qui
+       apparaissent en même temps que le clavier, et il y a toujours la
+       barre au-dessus qui cache la barre d'écriture. »
+     En plein écran, Android range ses boutons (retour, accueil, rangement
+     du clavier). Quand le clavier monte, il les fait revenir, sous lui.
+     Deux conséquences, deux réponses :
+       — LE SAUT. La marge sûre du bas (env(safe-area-inset-bottom)) grandit
+         d'un coup de la hauteur de ces boutons, et tout ce qui s'y appuie —
+         le bas de l'écran, la barre du bas, les pages, les petits mots —
+         remontait d'un cran avant même que le clavier soit là. Tant qu'un
+         champ est en main, la mise en page garde la marge du REPOS (--sab,
+         html.sab-fige) : rien ne bouge quand les boutons arrivent ;
+       — LA BARRE D'ÉCRITURE SOUS LA BARRE D'OUTILS DU CLAVIER. Chrome
+         annonce un clavier qui ne compte pas ces boutons (sa hauteur, moins
+         celle des barres du système), alors que la fenêtre, elle, n'a pas
+         rétréci : posée sur ce clavier-là, la barre d'écriture restait
+         d'autant dessous — juste sous la rangée des suggestions et du
+         copier-coller. Ce que les boutons couvrent en plus (la marge
+         apparue, moins ce que la fenêtre a déjà rendu en rétrécissant) est
+         retiré de la hauteur visible : la barre se pose sur le vrai haut du
+         clavier, et nulle part ailleurs. Là où la fenêtre a rétréci d'autant
+         (le cas de la v338), il n'y a rien à retirer : rien ne change.
+     La marge se lit sur une sonde (un trait invisible posé au bas de la
+     fenêtre, haut de la marge VIVE), jamais sur --sab, qui est figée. */
+  let sondeSab = null, sabRepos = 0;
+  const sabVif = ()=>{
+    try{
+      if(!sondeSab){
+        sondeSab = document.createElement("div");
+        sondeSab.setAttribute("aria-hidden", "true");
+        sondeSab.style.cssText = "position:fixed;left:0;bottom:0;width:0;height:env(safe-area-inset-bottom, 0px);visibility:hidden;pointer-events:none";
+        document.body.appendChild(sondeSab);
+      }
+      return Math.round(sondeSab.getBoundingClientRect().height) || 0;
+    }catch(e){ return 0; }
+  };
+  const figerMarge = ()=>{
+    if(de.classList.contains("sab-fige")) return;
+    de.style.setProperty("--sab-repos", sabRepos + "px");
+    de.classList.add("sab-fige");
+  };
+  /* Rendue seulement quand les boutons sont repartis : sinon, à la fermeture
+     du clavier, l'écran sauterait dans l'autre sens. */
+  let rendreT = 0;
+  const rendreMarge = (essai)=>{
+    clearTimeout(rendreT);
+    if(isField()) return;
+    const v = sabVif();
+    if(de.classList.contains("sab-fige") && v > sabRepos + 1){
+      /* Les boutons redescendent après le clavier : on repasse voir, sans
+         événement pour nous prévenir. Au bout d'une seconde et demie, c'est
+         que la marge a vraiment changé : on la prend. */
+      if((essai || 0) < 6){ rendreT = setTimeout(()=>rendreMarge((essai || 0) + 1), 250); return; }
+    }
+    sabRepos = v;
+    de.classList.remove("sab-fige");
+  };
+  const boutonsEnPlus = (perdu)=> Math.max(0, sabVif() - sabRepos - (perdu || 0));
+  try{ sabRepos = sabVif(); }catch(e){}
+  document.addEventListener("focusin", (e)=>{
+    const el = e.target;
+    if(el && (el.tagName === "INPUT" || el.tagName === "TEXTAREA")) figerMarge();
+  }, true);
   let kbScrollTimer = null, kbScrollTimer2 = null;
   /* ===== SUR ANDROID, LE CLAVIER NE SE VOIT PAS DANS LA ZONE VISIBLE =====
      « Sur le truc pour se connecter, le clavier cache ce qu'on écrit. Règle
@@ -14784,14 +15036,52 @@ try{
   const hauteurVisible = ()=>{
     const r = rectClavier();
     if(!r){
-      /* (v343) Rien ne parle, mais un clavier est là (voir l'estimation). */
-      if(estime && isField() && vv.height >= restH - 90) return Math.max(0, restH - estime);
+      /* (v343) Rien ne parle, mais un clavier est là (voir l'estimation).
+         (v345) Les boutons arrivés avec lui sont sous lui : en plus. */
+      if(estime && isField() && vv.height >= restH - 90) return Math.max(0, restH - estime - boutonsEnPlus(Math.max(0, restInner - innerHeight)));
       return vv.height;
     }
     const fen = innerHeight;
     const perdu = Math.max(0, restInner - fen);
-    const bas = perdu >= r.height * 0.75 ? Math.min(fen, restInner - r.height) : fen - r.height;
+    const bas = (perdu >= r.height * 0.75 ? Math.min(fen, restInner - r.height) : fen - r.height) - boutonsEnPlus(perdu);
     return Math.max(0, Math.min(vv.height, bas));
+  };
+  /* ===== (v345) LE RELEVÉ DU CLAVIER, LU DANS LA MODÉRATION =====
+     Le clavier d'Android a été repris cinq fois sur des photos, sans jamais
+     voir ce que le téléphone dit vraiment au jeu : chaque navigateur, chaque
+     mode d'installation le dit à sa façon. Le jeu NOTE donc, à chaque
+     ouverture du clavier, ce qu'il a reçu et ce qu'il en a fait — fenêtre,
+     zone visible, clavier annoncé, marge du bas, hauteur retenue, place du
+     champ —, sur ce téléphone seulement (les trois derniers relevés). La
+     Modération les montre et sait les copier : la prochaine correction
+     partira des vrais chiffres. Rien de personnel, rien n'est envoyé. */
+  const CLE_RELEVE = "bt_clavier_diag";
+  let releveT = 0;
+  const relever = ()=>{
+    clearTimeout(releveT);
+    releveT = setTimeout(()=>{
+      try{
+        if(!isField() || document.hidden) return;
+        let r = null;
+        try{ const b = vk && vk.boundingRect; if(b && b.height > 0) r = { y:Math.round(b.y), h:Math.round(b.height) }; }catch(e){}
+        const champ = document.activeElement.getBoundingClientRect();
+        const mm = (q)=>{ try{ return !!(window.matchMedia && matchMedia(q).matches); }catch(e){ return false; } };
+        const rel = {
+          t: Date.now(), ua: String(navigator.userAgent || "").slice(0, 180),
+          mode: mm("(display-mode: fullscreen)") ? "fullscreen" : mm("(display-mode: standalone)") ? "standalone" : "browser",
+          fs: !!(document.fullscreenElement || document.webkitFullscreenElement),
+          vk: vk ? (redim ? "ordinaire" : "overlays") : "absent", estime,
+          repos: { fen:restInner, vv:Math.round(restH), sab:sabRepos },
+          ouvert: { fen:innerHeight, vv:Math.round(vv.height), vvTop:Math.round(vv.offsetTop || 0), sab:sabVif(), clavier:r },
+          visible: Math.round(hauteurVisible()), champ: { haut:Math.round(champ.top), bas:Math.round(champ.bottom) },
+          ecran: (typeof state !== "undefined" && state) ? state.screen : "" };
+        let l = [];
+        try{ l = JSON.parse(localStorage.getItem(CLE_RELEVE) || "[]"); }catch(e){}
+        if(!Array.isArray(l)) l = [];
+        l.unshift(rel);
+        localStorage.setItem(CLE_RELEVE, JSON.stringify(l.slice(0, 3)));
+      }catch(e){}
+    }, 900);
   };
   /* ===== (v330) LA ZONE VISIBLE PEUT ÊTRE DÉCALÉE VERS LE BAS =====
      « Le clavier n'est pas du tout à la bonne taille pour Android » (photo :
@@ -15326,6 +15616,7 @@ try{
       fhPose = 0;
       restH = Math.max(restH, vv.height); // pas de clavier -> c'est la hauteur de repos
       restInner = innerHeight;
+      rendreMarge();                      // (v345) la marge vive, une fois les boutons repartis
       poserDecor();
       poserDecalage(0);
       if(retourAPrevoir()) de.classList.add("kb-cale");
@@ -15448,12 +15739,16 @@ try{
   vv.addEventListener("resize", apply);
   vv.addEventListener("scroll", apply);
   if(vk){ try{ vk.addEventListener("geometrychange", apply); }catch(e){} }
+  /* (v345) Le relevé du clavier (voir LE RELEVÉ DU CLAVIER), une fois posé. */
+  vv.addEventListener("resize", ()=>{ if(isField()) relever(); });
+  if(vk){ try{ vk.addEventListener("geometrychange", ()=>{ if(isField()) relever(); }); }catch(e){} }
+  document.addEventListener("focusin", ()=>{ if(isField()) relever(); });
   /* Un contenu qui change de taille SOUS un champ actif (la carte de
      connexion qui grandit d'un mot, ou passe de l'adresse au code) : on
      recale le champ une fois la carte posée. Rien si le clavier est rangé. */
   window.recalerChampClavier = ()=>{ if(de.classList.contains("kb") && isField()){ clearTimeout(kbScrollTimer); kbScrollTimer = setTimeout(bringFieldIntoView, 40); } };
   document.addEventListener("focusin", ()=>setTimeout(apply, 60));
-  document.addEventListener("focusout", ()=>{ clearTimeout(kbScrollTimer); clearTimeout(kbScrollTimer2); setTimeout(()=>{ if(!isField()){ poserDecalage(0); if(retourAPrevoir()) de.classList.add("kb-cale"); de.classList.remove("kb"); if(de.classList.contains("kb-fil")){ de.classList.remove("kb-fil"); try{ glassSuivre(500); }catch(e){} } fitScroll(); rendDefilementClavier(); } }, 60); });
+  document.addEventListener("focusout", ()=>{ clearTimeout(kbScrollTimer); clearTimeout(kbScrollTimer2); setTimeout(()=>{ if(!isField()){ poserDecalage(0); if(retourAPrevoir()) de.classList.add("kb-cale"); de.classList.remove("kb"); if(de.classList.contains("kb-fil")){ de.classList.remove("kb-fil"); try{ glassSuivre(500); }catch(e){} } fitScroll(); rendDefilementClavier(); rendreMarge(); } }, 60); });
   /* ===== (v335) SUR iPHONE, LE CLAVIER S'OUVRE SANS FAIRE SAUTER L'ÉCRAN =====
      « Lorsque j'ouvre le clavier, je ne veux pas que le haut de l'écran
        saute : juste le clavier qui s'ouvre proprement. » (vidéo d'une
@@ -20554,7 +20849,7 @@ function teamCardInner(){
   t.innerHTML = `<div class="places">${h}</div>`;
   const grille = t.content.firstElementChild;
   majPlaces(grille);
-  return `<h2>${T("Joueurs ou équipes")}</h2>${grille.outerHTML}`;
+  return `<h2 class="h2-aide">${T("Joueurs ou équipes")}<button class="aide-btn" onclick="ouvrirDeroule()" aria-label="${T("Comment jouer")}"><span class="ico">${ICONS.info}</span></button></h2>${grille.outerHTML}`;
 }
 function placesGrille(){ return document.querySelector("#teamCard .places"); }
 /* UNE PLACE SE MET À JOUR SUR PLACE. Le bouton reste le même élément d'un
@@ -20859,6 +21154,17 @@ function pointPuce(c, clientX, clientY){
 }
 const lePlusLoin = (c, x, y)=>{ const W = c.offsetWidth, H = c.offsetHeight;
   return Math.max(Math.hypot(x, y), Math.hypot(W - x, y), Math.hypot(x, H - y), Math.hypot(W - x, H - y)); };
+/* (v345) LES DEUX RAYONS DE LA GOUTTE (voir LA GOUTTE A LA FORME DE LA
+   PUCE). Une ellipse aux proportions de la puce (k = largeur / hauteur) : on
+   mesure le coin le plus éloigné du doigt dans l'espace où cette ellipse est
+   un cercle (les largeurs divisées par k), et son cœur plein doit le
+   couvrir, plus un pixel. */
+function rayonsEncre(c, x, y, coeur){
+  const W = c.offsetWidth || 1, H = c.offsetHeight || 1, k = W / H;
+  const loin = Math.max(Math.hypot(x / k, y), Math.hypot((W - x) / k, y), Math.hypot(x / k, H - y), Math.hypot((W - x) / k, H - y));
+  const ry = loin / coeur + 1;
+  return { rx: ry * k, ry, k };
+}
 function encrerPuce(c, clientX, clientY){
   const o = pointPuce(c, clientX, clientY);
   return poserEncre(c, o.x, o.y);
@@ -20870,17 +21176,21 @@ function ondePuce(c, clientX, clientY){
   const o = pointPuce(c, clientX, clientY);
   c.style.setProperty("--onde-x", o.x.toFixed(1) + "px");
   c.style.setProperty("--onde-y", o.y.toFixed(1) + "px");
-  c.style.setProperty("--onde-r", (lePlusLoin(c, o.x, o.y) / ENCRE_COEUR + 1).toFixed(1) + "px");
+  const ro = rayonsEncre(c, o.x, o.y, ENCRE_COEUR);
+  c.style.setProperty("--onde-rx", ro.rx.toFixed(1) + "px");
+  c.style.setProperty("--onde-ry", ro.ry.toFixed(1) + "px");
   if(echelleEncre(c) == null) poserEncre(c, o.x, o.y);
 }
 function poserEncre(c, x, y){
   const W = c.offsetWidth, H = c.offsetHeight;
-  const loin = lePlusLoin(c, x, y);
   const coeur = coeurEncre(c);
-  const rayon = loin / coeur + 1;
+  const { rx, ry, k } = rayonsEncre(c, x, y, coeur);
+  const rayon = ry;
   c.style.setProperty("--encre-x", x.toFixed(1) + "px");
   c.style.setProperty("--encre-y", y.toFixed(1) + "px");
   c.style.setProperty("--encre-r", rayon.toFixed(1) + "px");
+  c.style.setProperty("--encre-rx", rx.toFixed(1) + "px");
+  c.style.setProperty("--encre-ry", ry.toFixed(1) + "px");
   /* LE DÉGRADÉ DE LA GOUTTE, CALÉ SUR CELUI DE LA PUCE. Dans une page, la puce
      choisie porte linear-gradient(150deg, …) sur SA boîte ; la goutte, elle,
      est un carré de 2 × rayon centré sur le doigt. Pour qu'à l'échelle 1 les
@@ -20889,11 +21199,13 @@ function poserEncre(c, x, y){
      direction (150° : vers (0,5 ; 0,866), y vers le bas). Ligne de dégradé
      d'une boîte L × H à 150° : 0,5·L + 0,866·H ; elle passe par le centre. */
   const sx = 0.5, sy = 0.8660254;
-  const lPuce = sx * W + sy * H, mi = rayon * (sx + sy);
+  /* La goutte est une boîte de 2·rx × 2·ry : la moitié de sa ligne de dégradé
+     vaut sx·rx + sy·ry. */
+  const lPuce = sx * W + sy * H, mi = sx * rx + sy * ry;
   const delta = (x - W / 2) * sx + (y - H / 2) * sy;
   c.style.setProperty("--encre-g0", (mi - lPuce / 2 - delta).toFixed(1) + "px");
   c.style.setProperty("--encre-g1", (mi + lPuce / 2 - delta).toFixed(1) + "px");
-  return { x, y, rayon, coeur };
+  return { x, y, rayon, k, coeur };
 }
 /* La courbe d'étalement de l'encre (la même que dans la feuille de style) :
    à quel instant le disque atteint-il une échelle donnée ? On résout la
@@ -20925,8 +21237,11 @@ function delaiLibelle(c, o, dureeMs){
     }
   }
   if(!isFinite(g)) return Math.round(dureeMs * 0.4);
-  const besoin = Math.max(Math.hypot(g - o.x, h - o.y), Math.hypot(d - o.x, h - o.y),
-                          Math.hypot(g - o.x, bas - o.y), Math.hypot(d - o.x, bas - o.y));
+  /* Mesuré dans l'espace où la goutte (une ellipse, voir rayonsEncre) est un
+     cercle : les largeurs divisées par k. */
+  const k = o.k || 1;
+  const besoin = Math.max(Math.hypot((g - o.x) / k, h - o.y), Math.hypot((d - o.x) / k, h - o.y),
+                          Math.hypot((g - o.x) / k, bas - o.y), Math.hypot((d - o.x) / k, bas - o.y));
   /* L'échelle à atteindre pour que le CŒUR plein couvre le libellé, ramenée
      à la progression de la courbe (l'encre part de l'échelle 0,03). */
   const echelle = besoin / (o.rayon * (o.coeur || ENCRE_COEUR));
@@ -20991,8 +21306,11 @@ function basculerChoix(selecteur, classe, k){
     let duree, avance = 0, attente = 0;
     /* Lu avant de toucher aux classes : où en est l'encre de CETTE puce. */
     const enVol = echelleEncre(c);
-    const geometrie = ()=>({ x: parseFloat(c.style.getPropertyValue("--encre-x")), y: parseFloat(c.style.getPropertyValue("--encre-y")),
-                             rayon: parseFloat(c.style.getPropertyValue("--encre-r")), coeur: coeurEncre(c) });
+    const geometrie = ()=>{
+      const rx = parseFloat(c.style.getPropertyValue("--encre-rx")), ry = parseFloat(c.style.getPropertyValue("--encre-ry"));
+      return { x: parseFloat(c.style.getPropertyValue("--encre-x")), y: parseFloat(c.style.getPropertyValue("--encre-y")),
+               rayon: parseFloat(c.style.getPropertyValue("--encre-r")), k: (rx > 0 && ry > 0) ? rx / ry : 1, coeur: coeurEncre(c) };
+    };
     const valide = (o)=> o && isFinite(o.x) && isFinite(o.y) && isFinite(o.rayon);
     try{
       if(apres){
@@ -23507,7 +23825,9 @@ function sauvegardeIci(){
     stats:   loadStats(),
     flamme:  { last:d.last, streak:d.streak, score:d.score, total:d.total,
                jours:[...joursFaits()], geles:(d.geles||[]).slice(), gels:d.gels,
-               palier:d.palier, parties:d.parties, palierParties:d.palierParties, annonce:d.annonce || "" },
+               /* (v345) L'annonce d'un gel ne monte pas dans le compte : voir
+                  L'ANNONCE D'UN GEL RESTE SUR LE TÉLÉPHONE, dans fusionner. */
+               palier:d.palier, parties:d.parties, palierParties:d.palierParties, annonce:"" },
     vues:    [...loadSeen()],
     carnet:  loadErrbook(),
     acquises:loadAcquises(),
@@ -23689,7 +24009,21 @@ function fusionner(ici, ailleurs){
               palier:        Math.max(nEntier(fa.palier),        nEntier(fb.palier)),
               parties:       Math.max(nEntier(fa.parties),       nEntier(fb.parties)),
               palierParties: Math.max(nEntier(fa.palierParties), nEntier(fb.palierParties)),
-              annonce: fa.annonce || fb.annonce || "" },
+              /* ===== (v345) L'ANNONCE D'UN GEL RESTE SUR LE TÉLÉPHONE =====
+                 « Sur Android, j'ai toujours le même message des gels qui
+                   s'affiche. » (« Yada a gelé ta série — le 29 octobre était
+                   manqué, il te reste 1 gel », à chaque ouverture.) L'annonce
+                   est un mot à dire UNE fois, sur l'appareil qui a posé le
+                   gel. Elle passait pourtant par le compte, fusionnée en
+                   « celle d'ici OU celle du serveur » : le téléphone
+                   l'effaçait après l'avoir montrée, la copie du serveur la
+                   gardait, et la synchronisation suivante la faisait
+                   renaître — puis la renvoyait au serveur. Pour toujours.
+                   Seule celle d'ICI compte désormais ; le serveur ne la
+                   reçoit plus (voir sauvegardeIci). Rien d'autre ne change :
+                   les gels, les jours gelés et la série fusionnent comme
+                   avant. */
+              annonce: fa.annonce || "" },
     vues:   unionDeCles(a.vues, b.vues),
     carnet: carnet,
     acquises: acquises,
@@ -23723,7 +24057,7 @@ function appliquerSauvegarde(recue){
               total:sur.flamme.total, jours:bornerJours(sur.flamme.jours),
               geles:bornerJours(sur.flamme.geles), gels:sur.flamme.gels,
               palier:sur.flamme.palier, parties:sur.flamme.parties,
-              palierParties:sur.flamme.palierParties, annonce:sur.flamme.annonce });
+              palierParties:sur.flamme.palierParties });   // l'annonce d'un gel n'est pas touchée : elle est à ce téléphone (v345)
   saveSeen(new Set(sur.vues));
   saveErrbook(sur.carnet);
   saveAcquises(sur.acquises);
@@ -24391,7 +24725,7 @@ const CLE_GROUPES = "bt_groupes_sonde";
 const GRP_SONDE_OUI = 1800000, GRP_SONDE_NON = 1800000;
 const grp = {
   installe:null,     // groupes/table.sql est-il là ? null = pas encore su
-  ouverts:false,     // ouverts à tous, ou seulement aux modérateurs ?
+  ouverts:true,      // ouverts à tous, ou seulement aux modérateurs ? (v345 : ils le sont ; la sonde dira si ça change)
   version:1,         // la version des règles de la communauté
   etat:null,         // mon_etat_groupes() : participe, moderateur, profil
   liste:null,        // mes_groupes()
@@ -24626,7 +24960,16 @@ async function chargerEtatGroupes(){
    L'écran des groupes dit ensuite à chacun où il en est : se connecter,
    accepter les règles — ou « arrivent bientôt » tant qu'ils ne sont pas
    ouverts (voir corpsGroupes). */
-function groupesVisibles(){ return grp.installe === true; }
+/* (v345) LA BARRE EST LÀ POUR TOUT LE MONDE, TOUJOURS. « Je ne veux plus
+   jamais avoir ça en bas : le jeu doit être toujours comme sur l'image 2,
+   peu importe le joueur. » (L'image 2 : l'accueil avec la barre Accueil /
+   Groupes et la flamme sur la carte Progression ; l'autre, sans barre, avec
+   « Plus que 8 h » et les sept jours.) Elle n'apparaissait qu'une fois la
+   sonde du serveur revenue — jamais chez un joueur dont la sonde n'avait pas
+   encore répondu (première ouverture, réseau capricieux). Les groupes sont
+   ouverts dans le jeu : l'accueil a sa barre dès la première image, chez
+   tout le monde ; l'écran des groupes dit ensuite à chacun où il en est. */
+function groupesVisibles(){ return true; }
 function participeGroupes(){ return !!(grp.etat && grp.etat.participe === "ok"); }
 /* Le compte vient de changer (connexion, déconnexion, compte supprimé). */
 function groupesSurCompte(){
@@ -24735,6 +25078,14 @@ function majBarre(){
         ? (lus > 0 ? Tf("Groupes, {n} non lus et {s} à modérer", { n:lus, s:sig }) : Tf("Groupes, {s} à modérer", { s:sig }))
         : (lus > 0 ? Tf("Groupes, {n} non lus", { n:lus }) : T("Groupes")));
     }
+  }
+  /* (v345) Un écran passe à un autre : la barre fait ce que fait sa page
+     (voir LA BARRE DU BAS SUIT LE PASSAGE), et rien ne la décroche en route. */
+  if(passage){
+    if(!passage.barre){
+      passage.barre = true;
+      if(barreSuitLePassage(b, b.classList.contains("cachee") || b.classList.contains("part-cote"), montre)) return;
+    } else if(passage.barreFin) return;
   }
   const etait = b.classList.contains("cachee") || b.classList.contains("part-cote");
   /* Le sens de la page qui arrive (voir LA BARRE ARRIVE AVEC SA PAGE). */
@@ -25139,6 +25490,9 @@ function corpsGroupes(){
       ${carteCompteHtml()}`;
   }
   const e = grp.etat;
+  if(!e && grp.installe === false){
+    return `<div class="card grp-intro"><span class="gi-ico">${ICONS.bulles}</span><b>${T("Les groupes arrivent bientôt.")}</b></div>`;
+  }
   if(!e){
     return grp.etatEchec
       ? `<div class="card grp-intro"><b>${T("Pas de réseau. Réessaie dans un instant.")}</b><button class="grp-pill calme" onclick="ouvrirGroupes()">${T("Réessayer")}</button></div>`
@@ -27584,7 +27938,7 @@ function ouvrirRecapPartie(id){
     </div>`;
   ouvrirFeuilleGroupe("grpRecapVeil", T("Récap de la partie"), ICONS.manette, `
     <div class="grp-ap-tete rp-tete">
-      <span class="rp-coupe" aria-hidden="true">${TROPHY_GOLD}</span>
+      <span class="rp-coupe" aria-hidden="true">${idsPropres(TROPHY_GOLD)}</span>
       <b class="grp-ap-nom">${escapeHtml(vainqueurDit(r, false))}</b>
       <p class="grp-ap-meta">${escapeHtml([lanceur, quand].filter(Boolean).join(" · "))}</p>
       ${jeu ? `<p class="grp-ap-meta">${escapeHtml(jeu)}</p>` : ""}
@@ -29432,6 +29786,29 @@ async function confirmerRappels(endpoint){
   const f = await lireFonction({ essai_moi:endpoint, genre:"bienvenue" });
   if(f.st === 200 && f.c && f.c.envoye){ try{ localStorage.setItem("bt_rappels_confirmes", marque); }catch(e){} }
 }
+/* ===== (v345) LE CLAVIER DE CE TÉLÉPHONE, VU DE LA MODÉRATION =====
+   Les relevés du module du clavier (voir LE RELEVÉ DU CLAVIER) : le dernier
+   en clair, et « Copier le relevé » emporte les trois, tels quels, pour
+   qu'on les lise ensemble. */
+function relevesClavier(){
+  try{ const l = JSON.parse(localStorage.getItem("bt_clavier_diag") || "[]"); return Array.isArray(l) ? l : []; }catch(e){ return []; }
+}
+function lignesClavierDiag(){
+  const ligne = (t) => `<div class="rd-l"><span class="rd-m att">${ICONS.info}</span><span class="rd-t">${escapeHtml(frSpace(t))}</span></div>`;
+  const l = relevesClavier();
+  if(!l.length) return ligne(T("Ouvre le clavier dans une discussion, puis reviens ici : le relevé s'affichera."));
+  const r = l[0], o = r.ouvert || {}, p = r.repos || {}, c = r.champ || {};
+  const modes = { fullscreen:T("plein écran"), standalone:T("app installée"), browser:T("navigateur") };
+  return [
+    Tf("Affichage : {m}", { m:(modes[r.mode] || r.mode || "?") + (r.fs ? " · " + T("plein écran du navigateur") : "") }),
+    Tf("Fenêtre : {a} px au repos, {b} px clavier ouvert", { a:p.fen, b:o.fen }),
+    o.clavier ? Tf("Clavier annoncé : {h} px, haut à {y} px", { h:o.clavier.h, y:o.clavier.y })
+      : (r.estime ? Tf("Clavier estimé : {h} px", { h:r.estime }) : T("Clavier annoncé : aucun")),
+    Tf("Marge du bas : {a} px au repos, {b} px clavier ouvert", { a:p.sab, b:o.sab }),
+    Tf("Hauteur visible retenue : {v} px · champ de {h} à {b} px", { v:r.visible, h:c.haut, b:c.bas })
+  ].map(ligne).join("")
+    + `<div class="mod-act"><button class="grp-pill calme" onclick="copierDansPressePapier(JSON.stringify(relevesClavier()), T('Relevé copié'))">${T("Copier le relevé")}</button></div>`;
+}
 function renderModeration(){
   setTimeout(rafraichirTousGroupes, 0);
   setTimeout(() => diagnosticRappels(false), 0);
@@ -29440,6 +29817,8 @@ function renderModeration(){
   el.innerHTML = `${renderHeader("Modération", true, "retourGroupes()")}<div id="modListe">${cartesModeration()}</div>
     <div class="grp-h" role="heading" aria-level="2">${T("Rappels")}</div>
     <div class="card rd-carte" id="modRappels">${lignesRappelsDiag()}</div>
+    <div class="grp-h" role="heading" aria-level="2">${T("Clavier de ce téléphone")}</div>
+    <div class="card rd-carte" id="modClavier">${lignesClavierDiag()}</div>
     <div class="grp-h" role="heading" aria-level="2">${T("Tous les groupes")} <span id="modGroupesNb">${grp.tous && grp.tous.length ? "· " + grp.tous.length : ""}</span></div>
     <div class="card grp-carte"><div id="modGroupes">${lignesTous()}</div></div>`;
   const z = el.querySelector("#modListe"); if(z && moderation) z._sig = JSON.stringify(moderation);
@@ -29475,6 +29854,12 @@ async function traiterSignalement(id, decision, btn){
    relire sans chercher : les règles depuis les groupes, la confidentialité
    depuis les Réglages. Courts, et vrais — chaque ligne correspond à ce que le
    jeu fait réellement, pas à un modèle copié. */
+/* (v345) Le déroulé du Mode Groupe, dans sa page (voir L'ÉCRAN DU MODE
+   GROUPE TIENT DANS L'ÉCRAN). */
+function ouvrirDeroule(){
+  ouvrirFeuilleGroupe("derouleVeil", T("Comment jouer"), ICONS.info, `
+    <p class="grp-aide"><b>${T("Déroulé :")}</b> ${T("lisez la question à voix haute → révélez la réponse → attribuez les points au bon joueur (ou à la bonne équipe). Avec le chrono, la réponse se révèle toute seule à la fin du temps. Une erreur ? Les boutons −/+ corrigent à tout moment.")}</p>`);
+}
 function ouvrirRegles(){
   ouvrirFeuilleGroupe("grpReglesVeil", T("Les règles de la communauté"), ICONS.bouclier, `
     ${reglesHtml()}
@@ -30555,6 +30940,7 @@ function renderSetup(){
   const el = document.createElement("div");
   el.className = "screen";
   if(state.mode==="group"){
+    el.classList.add("mise-groupe");
     el.innerHTML = `
       ${renderHeader(T("Mode Groupe"), true)}
       <div class="card" id="teamCard">${teamCardInner()}</div>
@@ -30568,7 +30954,6 @@ function renderSetup(){
           ${puceLivreLocaleHtml()}
         </div>
       </div>
-      <div class="rules"><b>${T("Déroulé :")}</b> ${T("lisez la question à voix haute → révélez la réponse → attribuez les points au bon joueur (ou à la bonne équipe). Avec le chrono, la réponse se révèle toute seule à la fin du temps. Une erreur ? Les boutons −/+ corrigent à tout moment.")}</div>
       <div class="flex-sp"></div>
       <button class="btn-primary" onclick="startGame()">${T("Commencer la partie")}</button>
       <div class="error-msg" id="setupError"></div>
@@ -30776,7 +31161,7 @@ function renderEndGroup(){
 
   return `
     <div class="end-hero">
-      <div class="end-medal"><span class="em-cup">${TROPHY_GOLD}</span></div>
+      <div class="end-medal"><span class="em-cup">${idsPropres(TROPHY_GOLD)}</span></div>
       <div class="end-eyebrow">${winners.length>1 ? T("Égalité") : T("Vainqueur")}</div>
       <h1 class="end-title">${winners.length>1 ? T("Ex æquo en tête !") : escapeHtml(winners[0])}</h1>
       <p class="end-sub">${T("Bravo à tous — continuez à explorer la Parole.")}</p>
@@ -30813,10 +31198,11 @@ function renderEndSolo(){
   const totalQ = state.questions.length;
   const st = loadStats();
   const R = 52, C = 2*Math.PI*R;
+  const anneauId = idsPropres('id="ringGrad"').slice(4, -1);   // un identifiant à cet anneau (v345)
   const offset = C * (1 - pct/100);
   return `
     <div class="end-hero">
-      <div class="end-medal"><span class="em-cup">${TROPHY_GOLD}</span></div>
+      <div class="end-medal"><span class="em-cup">${idsPropres(TROPHY_GOLD)}</span></div>
       <div class="end-eyebrow${state.soloIsRecord?' record':''}">${state.soloIsRecord?T("★ Nouveau record personnel !"):(state.revision?T("Seconde chance"):T("Partie terminée"))}</div>
       ${state.revision?(()=>{
           /* LA SECONDE CHANCE SE COMPTE EN ERREURS RATTRAPÉES, pas en points :
@@ -30835,11 +31221,11 @@ function renderEndSolo(){
     <div class="solo-summary">
       <div class="ring-wrap">
         <svg viewBox="0 0 120 120">
-          <defs><linearGradient id="ringGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+          <defs><linearGradient id="${anneauId}" x1="0%" y1="0%" x2="100%" y2="100%">
             <stop offset="0%" stop-color="#F1502F"/><stop offset="100%" stop-color="#EFAD26"/>
           </linearGradient></defs>
           <circle class="ring-bg" cx="60" cy="60" r="${R}"></circle>
-          <circle class="ring-fg" cx="60" cy="60" r="${R}" stroke-dasharray="${C.toFixed(1)}" stroke-dashoffset="${C.toFixed(1)}" data-target="${offset.toFixed(1)}"></circle>
+          <circle class="ring-fg" style="stroke:url(#${anneauId})" cx="60" cy="60" r="${R}" stroke-dasharray="${C.toFixed(1)}" stroke-dashoffset="${C.toFixed(1)}" data-target="${offset.toFixed(1)}"></circle>
         </svg>
         <div class="ring-center">
           <span class="ring-score" data-ring-pct data-target-pct="${pct}">0%</span>
@@ -32050,7 +32436,7 @@ function renderOnlineEnd(){
     ? (maPlace===1 ? (exaequo ? T("Ex \u00e6quo en t\u00eate\u00a0!") : T("Victoire\u00a0!")) : Tf("{p}\u1d49 sur {n}", {p:maPlace, n:rang.length}))
     : (net.oppGone ? T("Victoire par forfait") : (tie?T("Égalité !"):(win?T("Victoire !"):T("Défaite"))));
   el.innerHTML = `${renderHeader(T("Résultat"), false)}
-    <div class="end-hero"><div class="end-medal"><span class="em-cup">${TROPHY_GOLD}</span></div>
+    <div class="end-hero"><div class="end-medal"><span class="em-cup">${idsPropres(TROPHY_GOLD)}</span></div>
       <div class="end-eyebrow">${aPlusieurs?T("Partie terminée"):T("Duel terminé")}</div>
       <h1 class="end-title">${title}</h1></div>
     <div class="flex-sp"></div>
@@ -32102,6 +32488,179 @@ function renderOnlineEnd(){
    « Rejouer » depuis les résultats). Les feuilles, elles, montent comme avant.
    Seul l'écran d'ouverture (splash) garde sa montée : c'est une arrivée, pas
    un déplacement. */
+/* ===== (v345) PASSAGE D'UN ÉCRAN À L'AUTRE =====
+   (Voir UNE SEULE ANIMATION DE CHANGEMENT D'ÉCRAN, dans la feuille de style.)
+   « pousse » : l'écran qui arrive entre par la droite et recouvre celui
+   qu'on quitte, resté immobile. « retour » : l'écran qu'on quitte repart
+   vers la droite et découvre, déjà posé, celui où l'on revient.
+   Le mouvement est conduit ici (Web Animations) plutôt que par une classe :
+   il part d'une position MESURÉE — un retour demandé pendant qu'un écran
+   arrive le renvoie d'où il en est, sans saut — et un rendu sur place
+   pendant le mouvement le reprend au même instant, à la même horloge que
+   sa copie du décor. */
+let passage = null;
+function courbeDe(nom, defaut){
+  try{
+    const v = getComputedStyle(document.documentElement).getPropertyValue(nom);
+    const m = /cubic-bezier\([^)]*\)/.exec(v || "");
+    if(m) return m[0];
+  }catch(e){}
+  return defaut;
+}
+/* La copie du décor : la boîte visible de #app, et dedans la photo, la
+   vignette et le grain posés exactement là où sont les originaux. */
+function fondDuPassage(app){
+  const f = document.createElement("div");
+  f.className = "fond-pousse";
+  f.setAttribute("aria-hidden", "true");
+  const ra = app.getBoundingClientRect();
+  const ax = ra.left + app.clientLeft, ay = ra.top + app.clientTop;
+  f.style.left = app.scrollLeft + "px";
+  f.style.top = app.scrollTop + "px";
+  f.style.width = app.clientWidth + "px";
+  f.style.height = app.clientHeight + "px";
+  [["bg-layer", "ov-fond"], ["bg-overlay", "ov-vignette"], ["bg-grain", "ov-grain"]].forEach(([id, cl])=>{
+    const o = document.getElementById(id); if(!o) return;
+    const r = o.getBoundingClientRect();
+    const c = document.createElement("div");
+    c.className = cl;
+    c.style.left = (r.left - ax) + "px"; c.style.top = (r.top - ay) + "px";
+    c.style.width = r.width + "px"; c.style.height = r.height + "px";
+    f.appendChild(c);
+  });
+  return f;
+}
+function glisserX(el, de, a, ms, courbe){
+  try{ return el.animate([{ transform:"translate3d(" + de + "px,0,0)" }, { transform:"translate3d(" + a + "px,0,0)" }], { duration:ms, easing:courbe, fill:"both" }); }
+  catch(e){ return null; }
+}
+function xCourant(el){
+  try{ const t = getComputedStyle(el).transform; if(t && t !== "none") return new DOMMatrixReadOnly(t).m41; }catch(e){}
+  return 0;
+}
+function lancerPassage(app, entrant, sortant, retour, xDepart){
+  const W = app.clientWidth || window.innerWidth || 0;
+  const fond = fondDuPassage(app);
+  /* L'ordre de peinture : en « pousse », l'écran quitté, puis la copie du
+     décor, puis l'écran qui arrive ; en « retour », l'écran où l'on revient,
+     puis la copie, puis l'écran qui repart, au-dessus de tout. (v345) Ce sont
+     les plans qui le disent (voir LES TROIS PLANS SONT DITS), pas l'ordre du
+     document : la copie se range simplement à la fin. */
+  app.appendChild(fond);
+  const duree = retour ? msFerme() : msPli();
+  const courbe = retour ? courbeDe("--tr-ferme", "cubic-bezier(0.4,0,1,1)") : courbeDe("--tr-ouvre", "cubic-bezier(0.33,1,0.68,1)");
+  const p = { genre: retour ? "retour" : "pousse", debut: performance.now(), duree, courbe, dx: W, x0: 0, entrant, sortant, fond, anims: [] };
+  if(retour){
+    entrant.classList.add("sous-retour");
+    p.x0 = Math.max(0, Math.min(W, xDepart || 0));
+    p.anims.push(glisserX(sortant, p.x0, W, duree, courbe), glisserX(fond, p.x0, W, duree, courbe));
+  } else {
+    p.anims.push(glisserX(entrant, W, 0, duree, courbe), glisserX(fond, W, 0, duree, courbe));
+  }
+  p.anims = p.anims.filter(Boolean);
+  passage = p;
+  /* Fini quand le mouvement l'est VRAIMENT — une première image lente le
+     fait partir plus tard que prévu —, avec un filet s'il ne finissait pas. */
+  const fin = ()=>{ if(passage === p) finirPassage(true); };
+  Promise.all(p.anims.map(a => a.finished)).then(fin, ()=>{});
+  p.t = setTimeout(fin, duree + 1500);
+  if(!p.anims.length) fin();
+}
+/* Un rendu sur place pendant que l'écran arrive : le nœud neuf reprend le
+   mouvement à l'instant exact de l'ancien (même départ sur l'horloge). */
+function reprendrePassage(vieux, node){
+  const p = passage;
+  if(!p) return false;
+  const a0 = p.anims.find(a => { try{ return a.effect && a.effect.target === vieux; }catch(e){ return false; } });
+  node.classList.add("screen-enter", "arrivee", "pousse");
+  const a = glisserX(node, p.dx, 0, p.duree, p.courbe);
+  let t = 0;
+  if(a){
+    try{ if(a0 && a0.startTime !== null){ a.startTime = a0.startTime; t = a0.currentTime || 0; } }catch(e){}
+    p.anims.push(a);
+  }
+  p.entrant = node;
+  setTimeout(()=>{ node.classList.remove("arrivee"); fitScroll(); }, Math.max(60, apresEntree() - t));
+  return true;
+}
+/* Le passage se termine : la copie du décor s'en va (elle coïncide avec
+   l'original), l'écran quitté aussi, et plus aucune animation ne tient
+   l'écran posé. « fini » : le mouvement est allé au bout (la barre du bas se
+   recale alors sur l'écran) ; sinon un autre passage le remplace et décide. */
+function finirPassage(fini){
+  const p = passage; if(!p) return;
+  passage = null;
+  clearTimeout(p.t);
+  p.anims.forEach(a => { try{ a.cancel(); }catch(e){} });
+  if(p.fond && p.fond.parentNode) p.fond.remove();
+  if(p.sortant && p.sortant.parentNode) p.sortant.remove();
+  /* « pousse » reste avec « screen-enter » (elles partent ensemble, plus
+     bas dans render) : seule, « screen-enter » relancerait l'ancienne
+     entrée par le bas — mesuré : 122 px de saut sur l'écran du salon, à la
+     fin du glissement. */
+  if(p.entrant && p.entrant.classList) p.entrant.classList.remove("sous-retour");
+  /* Un rendu sur place a pu remplacer l'écran posé dessous : on retire la
+     marque de tout écran resté. */
+  try{ document.querySelectorAll("#app > .screen.sous-retour").forEach(e => e.classList.remove("sous-retour")); }catch(e){}
+  if(typeof p.barreFin === "function"){ try{ p.barreFin(); }catch(e){} }
+  if(fini){ try{ majBarre(); }catch(e){} }
+}
+/* LA BARRE DU BAS SUIT LE PASSAGE. Elle vit hors des écrans, posée
+   au-dessus : on lui fait faire ce que ferait sa page. Elle part avec
+   l'écran qu'on quitte en se laissant recouvrir par celui qui arrive —
+   rognée exactement au bord de la page qui glisse, ombre comprise —, elle
+   revient découverte par l'écran qui repart, ou elle arrive avec l'écran
+   qui la porte. Entre Accueil et Groupes elle reste : seule la pastille
+   glisse. « cachee » : elle est rangée ; « montre » : l'écran la veut. */
+function barreSuitLePassage(b, cachee, montre){
+  const p = passage, app = document.getElementById("app");
+  if(!p || !app || cachee !== montre) return false;
+  const ra = app.getBoundingClientRect(), ax = ra.left + app.clientLeft;
+  clearTimeout(b._finMouvement);
+  b.classList.remove("arrive-g", "arrive-d", "part-cote", "part-g");
+  if(!montre){
+    const a = p.genre === "pousse" ? rognerBarre(b, ax + p.dx, -p.dx, p) : glisserBarre(b, p.x0, p.dx, p);
+    p.barreFin = ()=>{
+      b.classList.add("sans-transition", "cachee");
+      if(a){ try{ a.cancel(); }catch(e){} }
+      void b.offsetWidth; b.classList.remove("sans-transition");
+    };
+  } else {
+    b.classList.add("sans-transition"); b.classList.remove("cachee");
+    void b.offsetWidth; b.classList.remove("sans-transition");
+    const a = p.genre === "retour" ? rognerBarre(b, ax + p.x0, p.dx - p.x0, p) : glisserBarre(b, p.dx, 0, p);
+    p.barreFin = ()=>{ if(a){ try{ a.cancel(); }catch(e){} } };
+  }
+  return true;
+}
+/* Rognée au bord de la page qui glisse : ce bord va de x0 à x0 + dx, sur la
+   courbe du passage ; la barre n'est visible qu'à sa gauche. Le rognage est
+   linéaire dans le bord, donc dans la progression adoucie : des étapes
+   placées dans cet espace (la courbe est celle de l'animation entière)
+   tombent juste, sans échantillonnage. */
+function rognerBarre(b, x0, dx, p){
+  try{
+    const r = b.getBoundingClientRect();
+    const S = 64;
+    const f = (e)=> Math.max(-S, Math.min(r.width + S, r.right - (x0 + dx * e)));
+    const pts = [0, 1];
+    if(dx) [(r.right - x0 + S) / dx, (r.left - x0 - S) / dx].forEach(e => { if(e > 0 && e < 1) pts.push(e); });
+    pts.sort((u, v) => u - v);
+    const kf = pts.map(e => ({ offset:e, clipPath:"inset(" + (-S) + "px " + f(e).toFixed(2) + "px " + (-S) + "px " + (-S) + "px)" }));
+    const a = b.animate(kf, { duration:p.duree, easing:p.courbe, fill:"both" });
+    const a0 = p.anims[0];
+    if(a0 && a0.startTime !== null) a.startTime = a0.startTime;
+    return a;
+  }catch(e){ return null; }
+}
+function glisserBarre(b, de, a, p){
+  try{
+    const x = b.animate([{ transform:"translate3d(calc(-50% + " + de + "px),0,0)" }, { transform:"translate3d(calc(-50% + " + a + "px),0,0)" }], { duration:p.duree, easing:p.courbe, fill:"both" });
+    const a0 = p.anims[0];
+    if(a0 && a0.startTime !== null) x.startTime = a0.startTime;
+    return x;
+  }catch(e){ return null; }
+}
 const PROFONDEUR = {
   mode:0,
   groupes:1, profile:1, parcours:1, revoir:1, setup:1, "online-name":1, online:1,
@@ -32109,12 +32668,38 @@ const PROFONDEUR = {
   groupe:3, end:3,
   "online-room":4, "online-play":5, "online-end":6
 };
+/* (v345) LE SENS, C'EST LE CHEMIN. Revenir à l'écran d'où l'on vient est
+   un RETOUR, quelle que soit sa profondeur : le Profil ouvert depuis les
+   Groupes y revient en repartant vers la droite, comme une page qu'on ferme
+   (les deux sont à la même profondeur : la carte seule en faisait un
+   « aller », l'écran arrivait par la droite au lieu de partir). Sinon, la
+   carte décide : moins profond, c'est un retour ; une partie qui commence
+   arrive toujours.
+   Et ses résultats aussi : après « Rejouer », le chemin passe déjà par la
+   fin de la partie d'avant (… fin, partie, fin), et la règle du chemin
+   faisait de la NOUVELLE fin un retour — révélée immobile sous la partie
+   qui repartait, sans la montée du podium. Une fin qui suit une partie est
+   toujours un écran neuf. */
+let cheminEcrans = [];
+const PARTIE_EN_COURS = { play:1, "online-play":1 }, FIN_DE_PARTIE = { end:1, "online-end":1 };
 function sensDuGlissement(de, vers){
   if(!de || de === "splash" || de === vers) return null;
-  if(vers === "play" || vers === "online-play") return "vers-droite";
-  const a = PROFONDEUR[de], b = PROFONDEUR[vers];
-  if(a === undefined || b === undefined) return null;
-  return b >= a ? "vers-droite" : "vers-gauche";
+  if(!cheminEcrans.length || cheminEcrans[cheminEcrans.length - 1] !== de) cheminEcrans = [de];
+  let sens;
+  if(vers === "play" || vers === "online-play" || (PARTIE_EN_COURS[de] && FIN_DE_PARTIE[vers])) sens = "vers-droite";
+  else if(cheminEcrans.length >= 2 && cheminEcrans[cheminEcrans.length - 2] === vers) sens = "vers-gauche";
+  else {
+    const a = PROFONDEUR[de], b = PROFONDEUR[vers];
+    sens = (a !== undefined && b !== undefined && b < a) ? "vers-gauche" : "vers-droite";
+  }
+  if(sens === "vers-gauche"){
+    const k = cheminEcrans.lastIndexOf(vers);
+    cheminEcrans = k >= 0 ? cheminEcrans.slice(0, k + 1) : [vers];
+  } else {
+    cheminEcrans.push(vers);
+    if(cheminEcrans.length > 12) cheminEcrans = cheminEcrans.slice(-12);
+  }
+  return sens;
 }
 /* ===== LE CHARGEMENT S'EFFACE, L'ACCUEIL EST DÉJÀ LÀ (v323) =====
    « Lors de la transition entre l'écran de chargement et l'écran d'accueil,
@@ -32205,13 +32790,28 @@ function render(){
   else node = renderEnd();
   /* Accueil, Groupes, un groupe : trois pièces côte à côte (voir sensDuGlissement). */
   const sens = sameScreen ? null : sensDuGlissement(lastScreen, state.screen);
+  /* (v345) On revient (vers la gauche de la carte des écrans) : l'écran
+     quitté repart vers la droite. Partout ailleurs, l'écran arrive comme une
+     page (voir PASSAGE D'UN ÉCRAN À L'AUTRE). */
+  const retour = sens === "vers-gauche";
+  /* Sous une page (ouverte, ou qui se referme), l'écran change sans
+     mouvement : c'est la page qui, en repartant vers la droite, découvre la
+     destination — un seul geste, pas deux en sens contraires. */
+  const sousPage = !sameScreen && !!document.querySelector(".sheet-veil.page");
+  /* Un passage encore en vol se pose d'abord — en relevant où en est l'écran
+     qui arrivait : si c'est lui qu'on quitte, il repart de là. */
+  let xDepart = 0;
+  if(!sameScreen && passage){
+    if(passage.genre === "pousse" && passage.entrant && passage.entrant.isConnected) xDepart = xCourant(passage.entrant);
+    finirPassage(false);
+  }
 
   if(!sameScreen){
     /* « arrivee » ne vit que le temps du mouvement (voir la règle CSS) ; on la
        retire aussi de tout écran resté en place, pour qu'elle ne traîne jamais. */
     Array.prototype.forEach.call(app.children, (c)=>{ if(c && c.classList) c.classList.remove("arrivee"); });
-    node.classList.add("screen-enter"); node.classList.add("arrivee");
-    if(sens) node.classList.add(sens);
+    node.classList.add("arrivee");
+    if(!retour && !sousPage) node.classList.add("screen-enter", "pousse");
     entreeDebut = (typeof performance!=="undefined" ? performance.now() : Date.now());
     setTimeout(()=>{ node.classList.remove("arrivee"); fitScroll(); }, apresEntree());
     Array.prototype.forEach.call(node.children, (c,i)=>{ if(c && c.style) c.style.setProperty("--i", i); });
@@ -32227,7 +32827,10 @@ function render(){
        à un délai négatif : le mouvement continue sans que rien ne saute, et
        n'importe quel rendu sur place (présence, minuterie, score) devient
        inoffensif pendant les cinq premiers dixièmes d'un écran. */
-    const vieux = Array.prototype.find.call(app.children, (c)=> c && c.classList && c.classList.contains("screen-enter"));
+    const vieux = Array.prototype.find.call(app.children, (c)=> c && c.classList && c.classList.contains("screen-enter") && !c.classList.contains("screen-exit"));
+    /* (v345) Un écran qui arrive en glissant : le nœud neuf reprend le même
+       mouvement, au même instant (voir PASSAGE D'UN ÉCRAN À L'AUTRE). */
+    const repris = !!(vieux && passage && passage.genre === "pousse" && passage.entrant === vieux) && reprendrePassage(vieux, node);
     /* On demande au navigateur OÙ EN EST l'animation plutôt que de le déduire
        d'une horloge : un écran lourd (le salon et ses avatars) met parfois
        50 ms à peindre sa première image, et l'horloge le croirait alors en
@@ -32259,11 +32862,11 @@ function render(){
       } catch(e){}
     }
     if(ecoule < 0) ecoule = (typeof performance!=="undefined" ? performance.now() : Date.now()) - entreeDebut;
-    if(vieux && ecoule >= 0 && ecoule < entreeMs()){
+    if(!repris && vieux && ecoule >= 0 && ecoule < entreeMs()){
       node.classList.add("screen-enter"); node.classList.add("arrivee");
       /* Une entrée DE CÔTÉ reprise par un rendu sur place reste de côté : sans
          sa classe, le nœud neuf repartirait en montant, au milieu du geste. */
-      ["vers-droite", "vers-gauche"].forEach(c=>{ if(vieux.classList.contains(c)) node.classList.add(c); });
+      ["vers-droite", "vers-gauche", "pousse"].forEach(c=>{ if(vieux.classList.contains(c)) node.classList.add(c); });
       node.style.animationDelay = (-ecoule) + "ms";
       /* ===== EFFACER LE DÉLAI RELANCE L'ANIMATION =====
          Ce nettoyage remettait animation-delay à zéro alors que la classe
@@ -32286,7 +32889,7 @@ function render(){
       Array.prototype.forEach.call(node.children, (c,i)=>{ if(c && c.style) c.style.setProperty("--i", i); });
     }
   }
-  const prevNode = !sameScreen ? Array.prototype.find.call(app.children, c=>c.classList && !c.classList.contains("screen-exit")) : null;
+  const prevNode = !sameScreen ? Array.prototype.find.call(app.children, c=>c.classList && c.classList.contains("screen") && !c.classList.contains("screen-exit")) : null;
   if(prevNode){
     // L'ancien écran reste visible et s'efface pendant que le nouveau entre.
     const cs = getComputedStyle(app);
@@ -32295,22 +32898,49 @@ function render(){
        le premier dans l'ordre du document était celui qui s'en va. Sans effet
        visible (la règle de sortie est écrite plus bas, elle l'emporte), mais
        un état faux qui trompe la lecture — et qui a d'abord trompé le banc. */
-    prevNode.classList.remove("screen-enter");
-    prevNode.classList.remove("vers-droite"); prevNode.classList.remove("vers-gauche");
-    if(sens) prevNode.classList.add(sens);
-    prevNode.classList.add("screen-exit");
+    /* (v345) L'écran quitté reste À SA PLACE, défilement compris : immobile
+       sous l'écran qui arrive, ou repartant vers la droite. (Sa hauteur de
+       défilement est rendue à zéro pour l'écran qui arrive : on le remonte
+       d'autant, il ne bouge pas à l'écran.) */
+    const yAvant = (CUSTOM_SCROLL ? customScrollY : app.scrollTop) || 0;
+    if(sousPage){
+      prevNode.remove();
+      app.appendChild(node);
+      if(CUSTOM_SCROLL){ customScrollY = 0; applyScrollTransform(); } else { app.scrollTop = 0; }
+      if(typeof node._posee === "function"){ try{ node._posee(); }catch(e){} }
+    } else {
+    prevNode.classList.remove("screen-enter", "pousse", "arrivee", "vers-droite", "vers-gauche");
+    prevNode.classList.add("screen-exit", retour ? "retire" : "reste");
     prevNode.style.position = "absolute";
-    prevNode.style.top = cs.paddingTop;
+    prevNode.style.top = ((parseFloat(cs.paddingTop) || 0) - yAvant) + "px";
     prevNode.style.left = cs.paddingLeft;
     prevNode.style.right = cs.paddingRight;
     prevNode.style.pointerEvents = "none";
+    prevNode.style.animationDelay = "";
     if(CUSTOM_SCROLL) prevNode.style.transform = ""; // laisse l'anim de sortie repartir proprement
-    app.appendChild(node);
+    /* ===== (v345) L'ÉCRAN VIVANT D'ABORD =====
+       Pendant le passage, l'écran quitté reste dans le document, avec ses
+       identifiants — les mêmes que ceux de l'écran qui arrive quand on va,
+       par exemple, du Profil aux Groupes (la carte du compte est dans les
+       deux). Une recherche par identifiant rend le PREMIER du document :
+       rangé après, l'écran qui arrive voyait ses mises à jour partir dans
+       l'écran qui s'en va (la carte de connexion restait à « Se connecter »,
+       le champ de l'adresse n'existait pas). Il est donc rangé AVANT : tout
+       ce qui le cherche le trouve, lui. Qui passe devant à l'écran ne
+       dépend plus de cet ordre (voir LES TROIS PLANS SONT DITS). */
+    app.insertBefore(node, prevNode);
     if(CUSTOM_SCROLL){ customScrollY = 0; applyScrollTransform(); } else { app.scrollTop = 0; }
+    lancerPassage(app, node, prevNode, retour, xDepart);
     if(typeof node._posee === "function"){ try{ node._posee(); }catch(e){} }
-    setTimeout(()=>{ if(prevNode.parentNode) prevNode.remove(); }, msFerme() + 220);
+    }
   } else {
-    app.replaceChildren(node);
+    /* (v345) Pendant un passage, l'écran quitté et la copie du décor restent :
+       seul l'écran est remplacé, à sa place. */
+    const cur = passage ? Array.prototype.find.call(app.children, c=>c.classList && c.classList.contains("screen") && !c.classList.contains("screen-exit")) : null;
+    if(cur){
+      if(passage.genre === "retour"){ node.classList.add("sous-retour"); passage.entrant = node; }
+      app.replaceChild(node, cur);
+    } else app.replaceChildren(node);
     if(CUSTOM_SCROLL){ customScrollY = sameScreen ? prevScroll : 0; applyScrollTransform(); }
     else if(sameScreen) app.scrollTop = prevScroll;
     if(typeof node._posee === "function"){ try{ node._posee(); }catch(e){} }
@@ -32327,7 +32957,7 @@ function render(){
   // iOS Safari : libérer les états d'animation résiduels, sinon le backdrop-filter
   // (effet verre) se coupe une fois l'animation figée. On retire les classes après coup.
   setTimeout(()=>{
-    node.classList.remove("screen-enter");
+    node.classList.remove("screen-enter", "pousse");
     node.querySelectorAll(".question-card.animate, .options-grid.animate").forEach(n=>n.classList.remove("animate"));
     node.querySelectorAll(".reveal-pop").forEach(n=>n.classList.remove("reveal-pop"));
     node.querySelectorAll(".reveal-shake").forEach(n=>n.classList.remove("reveal-shake"));
@@ -32378,6 +33008,10 @@ const SERRE_PLANCHER = 0.4;
    plus de la moitié), et les réponses un peu de leur hauteur — jamais sous
    44 px : c'est une zone qu'on touche. */
 const SERRE_INTERIEUR = [
+  /* (v345) L'écran du Mode Groupe : ses cartes cèdent un peu de leur
+     rembourrage pour tenir dans le téléphone, comme celui du Solo (voir
+     L'ÉCRAN DU MODE GROUPE TIENT DANS L'ÉCRAN). */
+  [".mise-groupe > .card", "padding", 0.55],
   [".question-card", "padding", 0.5], [".fact-card", "padding", 0.5], [".option-btn", "padding", 0.5],
   [".option-btn", "min-height", 0.82], [".question-card", "min-height", 0.75], [".options-grid", "row-gap", 0.5]
 ];
