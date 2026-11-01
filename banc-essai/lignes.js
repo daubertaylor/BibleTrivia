@@ -1,142 +1,70 @@
-/* ============ BANC « LES LIGNES DE JOUEURS » ============
-   « Lorsque j'ajoute un joueur, que je le retire, ou que je touche le champ
-   pour ouvrir le clavier, ça saute — une sorte de clignotement. »
-   Trois gestes, et trois façons de sauter :
-     ajout    la carte grandit — le mouvement doit être monotone, sans retour ;
-     retrait  la carte rétrécit, puis la ligne QUITTE le DOM. Ce dernier instant
-              ne doit rien changer du tout. Il changeait 2 px : en border-box,
-              une boîte qui porte 1 px de bordure en haut et en bas ne descend
-              pas sous 2 px, le repli s'arrêtait donc là et les 2 px partaient
-              d'un coup avec le noeud ;
-     clavier  la fenêtre rétrécit et le champ doit se dégager. Le défilement
-              était POSÉ (scrollTop = cible) : 45 px avalés en une image.
-   On vérifie aussi qu'aucune couche de verre n'est détruite puis recréée — une
-   surface qui perd son verre une image apparaît nue, et c'est un clignotement
-   que la géométrie ne montre pas.
-   Usage : node banc-essai/lignes.js [url]
-*/
+/* ============ BANC « LES PLACES NE TOUCHENT PAS AU VERRE » (v344) ============
+   Avant la v344 : « Lorsque j'ajoute un joueur, que je le retire, ou que je
+   touche le champ pour ouvrir le clavier, ça saute — une sorte de
+   clignotement. » Ce banc mesurait alors trois façons de sauter : la carte
+   qui grandit, la ligne qui quitte le DOM, le clavier qui se lève sur l'écran
+   de la partie. La v344 a retiré les trois causes (voir LES SIX PLACES dans
+   index.html) ; il vérifie maintenant qu'elles ne reviennent pas :
+     1. l'écran du Mode Groupe n'a plus AUCUN champ — le clavier ne peut plus
+        s'y lever ;
+     2. aucun geste ne détruit puis ne recrée une couche de verre (une surface
+        qui perd son verre une image apparaît nue : c'est un clignotement que
+        la géométrie ne montre pas) — ajouter, retirer au milieu, retirer le
+        dernier, passer par la page d'un joueur et revenir ;
+     3. la hauteur de la carte ne bouge pas d'une seule image pendant ces
+        gestes ;
+     4. aucune erreur.
+   (joueurs.js vérifie le reste : les places, les glissements, la page.)
+   Usage : node banc-essai/lignes.js [url] */
 const { chromium } = require('/opt/node22/lib/node_modules/playwright');
 const URL = process.argv[2] || 'http://127.0.0.1:8099/index.html';
 const IOS = 'Mozilla/5.0 (iPhone; CPU iPhone OS 17_5 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.5 Mobile/15E148 Safari/604.1';
-
-const suivre = (ms) => new Promise((res) => {
-  const app = document.getElementById('app');
-  const t0 = performance.now(); const rel = [];
-  const tic = () => {
-    const t = performance.now() - t0;
-    const c = document.getElementById('teamCard');
-    const b = c ? c.getBoundingClientRect() : null;
-    rel.push({ t: Math.round(t),
-      haut: b ? Math.round(b.top * 10) / 10 : null,
-      haute: b ? Math.round(b.height * 10) / 10 : null,
-      n: c ? c.querySelectorAll('.team-row').length : 0,
-      st: Math.round(app.scrollTop * 10) / 10 });
-    if (t < ms) requestAnimationFrame(tic); else res(rel);
-  };
-  requestAnimationFrame(tic);
-});
-
-/* Le plus grand retour en arrière d'une suite : un mouvement qui repart dans
-   l'autre sens, c'est ce que l'oeil lit comme un clignotement. */
-function retour(rel, cle) {
-  let sens = 0, pire = 0, quand = 0;
-  for (let i = 1; i < rel.length; i++) {
-    if (rel[i][cle] === null || rel[i-1][cle] === null) continue;
-    const d = rel[i][cle] - rel[i-1][cle];
-    if (Math.abs(d) < 0.15) continue;
-    const ns = Math.sign(d);
-    if (sens && ns !== sens && Math.abs(d) > pire) { pire = Math.abs(d); quand = rel[i].t; }
-    sens = ns;
-  }
-  return [pire, quand];
-}
-/* Le plus grand pas d'une seule image. */
-function pas(rel, cle) {
-  let pire = 0, quand = 0;
-  for (let i = 1; i < rel.length; i++) {
-    if (rel[i][cle] === null || rel[i-1][cle] === null) continue;
-    const d = Math.abs(rel[i][cle] - rel[i-1][cle]);
-    if (d > pire) { pire = d; quand = rel[i].t; }
-  }
-  return [pire, quand];
-}
+const AND = 'Mozilla/5.0 (Linux; Android 14; SM-S911B) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0.0.0 Mobile Safari/537.36';
+let ko = 0;
+const dit = (q, b, d) => { if (!b) ko++; console.log('  ' + (b ? 'OK  ' : 'KO  ') + q + (d !== undefined ? '   (' + d + ')' : '')); };
 
 (async () => {
   const nav = await chromium.launch({ executablePath: '/opt/pw-browsers/chromium' });
-  const ctx = await nav.newContext({ viewport:{ width:393, height:852 }, deviceScaleFactor:2,
-    userAgent:IOS, hasTouch:true, serviceWorkers:'block' });
-  const p = await ctx.newPage(); const errs = []; p.on('pageerror', e => errs.push(e.message));
-  await p.addInitScript(() => {
-    localStorage.setItem('bt_profile', JSON.stringify({ name:'Taylor', color:'#4C86E8' }));
-    localStorage.setItem('bt_fs_hint', '1');
-  });
-  await p.goto(URL, { waitUntil:'networkidle' });
-  await p.waitForFunction(() => { try { return state.screen === 'mode'; } catch(e){ return false; } }, null, { timeout:20000 });
-  await p.evaluate(() => { state.mode = 'group'; state.teams = [{name:'Taylor'},{name:'Bea'},{name:'Chris'}]; state.screen = 'setup'; render(); });
-  await p.waitForTimeout(1200);
-
-  const sceller = () => {
-    window.__n = window.__n || 0;
-    document.querySelectorAll('.gs, .glass-rim').forEach(e => { if (!e.dataset.sceau) e.dataset.sceau = 's' + (++window.__n); });
-    return [...document.querySelectorAll('.gs, .glass-rim')].map(e => e.dataset.sceau);
-  };
-
-  let ok = true;
-  console.log('  geste                retour en arrière   marche au retrait   plus grand pas   verre recréé');
-
-  /* ---------- AJOUT ---------- */
-  let avant = await p.evaluate(sceller);
-  let cap = p.evaluate(suivre, 1300);
-  await p.evaluate(() => addTeam());
-  let rel = await cap;
-  let apres = await p.evaluate(sceller);
-  let recrees = avant.filter(s => !apres.includes(s)).length;
-  let [r1] = retour(rel, 'haute');
-  let mauvais = r1 > 0.6 || recrees > 0;
-  if (mauvais) ok = false;
-  console.log('  ' + 'ajouter'.padEnd(20) + (r1.toFixed(1) + ' px').padStart(14) + '                 ' +
-    '—'.padStart(6) + '        ' + recrees + (mauvais ? '   <-- CLIGNOTEMENT' : ''));
-  await p.waitForTimeout(500);
-
-  /* ---------- RETRAIT ---------- */
-  avant = await p.evaluate(sceller);
-  cap = p.evaluate(suivre, 1300);
-  await p.evaluate(() => { removeTeam(document.querySelectorAll('.team-remove')[1]); });
-  rel = await cap;
-  apres = await p.evaluate(sceller);
-  /* Une ligne qui part emporte légitimement SA couche et son rebord : deux. */
-  recrees = Math.max(0, avant.filter(s => !apres.includes(s)).length - 2);
-  const [r2] = retour(rel, 'haute');
-  let marche = 0, quandM = 0;
-  for (let i = 1; i < rel.length; i++) {
-    if (rel[i].n !== rel[i-1].n && rel[i].haute !== null && rel[i-1].haute !== null) {
-      const d = Math.abs(rel[i].haute - rel[i-1].haute);
-      if (d > marche) { marche = d; quandM = rel[i].t; }
+  for (const [nom, ua, W, H] of [['iPhone', IOS, 393, 852], ['Android', AND, 412, 915]]) {
+    console.log('  — ' + nom);
+    const ctx = await nav.newContext({ viewport: { width: W, height: H }, deviceScaleFactor: 2, userAgent: ua, hasTouch: true, isMobile: true, serviceWorkers: 'block' });
+    const p = await ctx.newPage(); const errs = []; p.on('pageerror', e => errs.push(e.message));
+    await p.route('**/supabase-js@2*', r => r.fulfill({ status: 200, contentType: 'application/javascript', body: '' }));
+    await p.addInitScript(() => { localStorage.setItem('bt_profile', JSON.stringify({ name: 'Taylor', color: '#4C86E8' })); localStorage.setItem('bt_fs_hint', '1'); });
+    await p.goto(URL);
+    await p.waitForFunction(() => { try { return state.screen === 'mode'; } catch (e) { return false; } }, null, { timeout: 20000 });
+    await p.evaluate(() => { state.mode = 'group'; state.teams = [{ name: 'Taylor' }, { name: 'Bea' }, { name: 'Chris' }]; state.screen = 'setup'; render(); });
+    await p.waitForTimeout(1200);
+    /* 1 */
+    const champs = await p.evaluate(() => document.querySelectorAll('#app .screen input, #app .screen textarea').length);
+    dit('1. l\'écran du Mode Groupe n\'a aucun champ : le clavier ne peut plus s\'y lever', champs === 0, champs + ' champ(s)');
+    /* 2 + 3 */
+    const sceller = () => {
+      window.__n = window.__n || 0;
+      document.querySelectorAll('#app .gs, #app .gs-plein, #app .glass-rim').forEach(e => { if (!e.dataset.sceau) e.dataset.sceau = 's' + (++window.__n); });
+      return [...document.querySelectorAll('#app .gs, #app .gs-plein, #app .glass-rim')].map(e => e.dataset.sceau);
+    };
+    const hauteurs = (ms) => p.evaluate((ms) => new Promise(res => { const c = document.getElementById('teamCard'); const h0 = c.getBoundingClientRect().height; let pire = 0; const t0 = performance.now();
+      const tic = () => { pire = Math.max(pire, Math.abs(c.getBoundingClientRect().height - h0)); if (performance.now() - t0 < ms) requestAnimationFrame(tic); else res(+pire.toFixed(2)); }; requestAnimationFrame(tic); }), ms);
+    for (const [geste, code, ms] of [
+      ['ajouter', 'ajouterJoueur()', 900],
+      ['retirer au milieu', 'retirerJoueur(1)', 1000],
+      ['retirer le dernier', 'retirerJoueur(state.teams.length - 1)', 900],
+      ['la page d\'un joueur, aller et retour', 'ouvrirJoueur(1); setTimeout(() => { const z = document.getElementById("joueurNom"); z.value = "Noé"; nommerJoueur(z); validerJoueur(); }, 700)', 1700],
+    ]) {
+      const avant = await p.evaluate(sceller);
+      const mesure = hauteurs(ms);
+      await p.evaluate((c) => { new Function(c)(); }, code);
+      const pire = await mesure;
+      await p.waitForTimeout(300);
+      const apres = await p.evaluate(sceller);
+      const perdus = avant.filter(s => !apres.includes(s)).length;
+      dit('2-3. ' + geste + ' : aucune couche de verre recréée, la carte ne change pas de hauteur', perdus === 0 && pire === 0, perdus + ' couche(s) perdue(s) · ' + pire + ' px');
     }
+    dit('4. aucune erreur', errs.length === 0, errs.slice(0, 3).join(' | '));
+    await ctx.close();
   }
-  mauvais = r2 > 0.6 || marche > 0.6 || recrees > 0;
-  if (mauvais) ok = false;
-  console.log('  ' + 'retirer'.padEnd(20) + (r2.toFixed(1) + ' px').padStart(14) +
-    (marche.toFixed(1) + ' px').padStart(20) + '        ' + '—'.padStart(6) + '        ' + recrees +
-    (mauvais ? '   <-- ' + (marche > 0.6 ? 'MARCHE À ' + quandM + ' MS' : 'CLIGNOTEMENT') : ''));
-  await p.waitForTimeout(500);
-
-  /* ---------- CLAVIER ---------- */
-  await p.evaluate(() => { document.querySelector('.team-row input').focus(); });
-  await p.waitForTimeout(200);
-  cap = p.evaluate(suivre, 1400);
-  await p.setViewportSize({ width:393, height:516 });   // le clavier monte, et reste
-  rel = await cap;
-  const [r3] = retour(rel, 'haut');
-  const [p3, quandP] = pas(rel, 'haut');
-  mauvais = r3 > 0.6 || p3 > 20;
-  if (mauvais) ok = false;
-  console.log('  ' + 'clavier'.padEnd(20) + (r3.toFixed(1) + ' px').padStart(14) + '                 ' +
-    '—'.padStart(6) + (p3.toFixed(0) + ' px').padStart(9) + '        —' +
-    (mauvais ? '   <-- ' + (p3 > 20 ? 'SAUT DE ' + p3.toFixed(0) + ' PX À ' + quandP + ' MS' : 'CLIGNOTEMENT') : ''));
-
-  if (errs.length) { ok = false; console.log('  ERREURS JS : ' + [...new Set(errs)].slice(0,3).join(' | ')); }
   await nav.close();
-  console.log(ok ? '\n  OK — les lignes de joueurs ne sautent plus' : '\n  ÉCHEC');
-  process.exit(ok ? 0 : 1);
-})();
+  console.log(ko ? '\n  ÉCHEC' : '\n  OK — les places ne touchent ni au verre, ni à la hauteur, ni au clavier');
+  process.exit(ko ? 1 : 0);
+})().catch(e => { console.error(e); process.exit(2); });

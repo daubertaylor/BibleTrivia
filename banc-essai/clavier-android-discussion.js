@@ -37,6 +37,14 @@
    la discussion toujours là, la discussion rendue entière quand le clavier
    redescend ; et Chrome, qui dit son clavier, ne change jamais de mode.
    Aucune erreur.
+   (v343) Et un dernier navigateur, le pire : AVEUGLE. Installé en plein
+   écran, Android ne redimensionne plus rien quand le clavier monte, et
+   l'interface du clavier reste muette — même en mode ordinaire, ni la zone
+   visible ni la fenêtre ne bougent (« le problème du clavier qui cache la
+   barre d'écriture est toujours présent »). Le jeu ESTIME alors le clavier :
+   exigé, la barre ENTIÈREMENT au-dessus du clavier (un vide est permis —
+   personne ne dit sa vraie taille), l'en-tête sur l'écran ; et en quittant
+   le champ, la discussion reprend toute sa hauteur.
    Usage : node banc-essai/clavier-android-discussion.js [url] */
 const { chromium } = require('/opt/node22/lib/node_modules/playwright');
 const URL = process.argv[2] || 'http://127.0.0.1:8099/index.html';
@@ -49,9 +57,10 @@ const POSITIONS = [['position juste', null], ['position fausse de Chrome (y = 66
   ['zone visible qui glisse (mode ordinaire de Chrome)', 'pan'], ['fenêtre qui rétrécit ET clavier dit', 'contenu'],
   ['Chrome bord à bord : la fenêtre perd la barre de navigation, clavier dit sans elle', null, BARRE],
   ['bord à bord, position fausse (y = 66)', 66, BARRE],
-  ['fenêtre qui perd le clavier ET la barre de navigation', 'contenu', BARRE]];
+  ['fenêtre qui perd le clavier ET la barre de navigation', 'contenu', BARRE],
+  ['plein écran aveugle : ni interface, ni zone visible, ni fenêtre ne disent le clavier', 'aveugle']];
 /* Les navigateurs qui ne disent pas leur clavier : le jeu passe au mode ordinaire. */
-const SILENCIEUX = ['muet', 'absent', 'pan'];
+const SILENCIEUX = ['muet', 'absent', 'pan', 'aveugle'];
 let ko = 0;
 const dire = (bon, txt) => { if (!bon) ko++; console.log('  ' + (bon ? 'OK  ' : 'KO  ') + txt); };
 
@@ -66,7 +75,7 @@ const FAUX = (mode) => {
   const etat = { kb: 0 };
   const redim = () => { const m = document.querySelector('meta[name="viewport"]'); return !!m && /resizes-visual/.test(m.getAttribute('content') || ''); };
   const fauxVV = {
-    get width(){ return innerWidth; }, get height(){ return redim() ? innerHeight - etat.kb : innerHeight; },
+    get width(){ return innerWidth; }, get height(){ return (redim() && mode !== 'aveugle') ? innerHeight - etat.kb : innerHeight; },
     /* (v330) « pan » : dans le mode ordinaire, la zone visible glisse vers le
        bas pour montrer le champ touché, posé au bas de la page. */
     get offsetTop(){ return (mode === 'pan' && redim() && etat.kb > 0) ? Math.round(etat.kb * 0.8) : 0; },
@@ -82,7 +91,7 @@ const FAUX = (mode) => {
   /* h : la hauteur du clavier ; y : la position qu'il annonce (null = la juste). */
   window.__clavier = (h, y) => {
     etat.kb = h;
-    if (mode !== 'muet' && mode !== 'absent' && mode !== 'pan' && vk.overlaysContent !== false) {
+    if (mode !== 'muet' && mode !== 'absent' && mode !== 'pan' && mode !== 'aveugle' && vk.overlaysContent !== false) {
       rect = h > 0 ? new DOMRect(0, y == null ? innerHeight - h : y, innerWidth, h) : new DOMRect(0, 0, 0, 0);
       vk.dispatchEvent(new Event('geometrychange'));
     }
@@ -133,7 +142,8 @@ const FAUX = (mode) => {
         await p.evaluate(([h, y]) => window.__clavier(h, y), [h, pos]);
       };
       for (const f of [0.25, 0.5, 0.75, 1]) { await clavier(Math.round(KB * f)); await p.waitForTimeout(40); }
-      await p.waitForTimeout(silencieux ? 1500 : 700);
+      const aveugle = y === 'aveugle';
+      await p.waitForTimeout(aveugle ? 2600 : (silencieux ? 1500 : 700));
       /* Tout se mesure SUR L'ÉCRAN : ce que montre la zone visible, glissement
          compris. Le haut du clavier y est à H − clavier (− la barre de
          navigation qui passe dessous, v338). */
@@ -145,7 +155,9 @@ const FAUX = (mode) => {
           focus: document.activeElement && document.activeElement.id,
           meta: (document.querySelector('meta[name="viewport"]').getAttribute('content').match(/interactive-widget=[a-z-]+/) || [''])[0] };
       }, [KB + barre, H]);
-      const juste = (o) => o.compoBas <= o.hautClavier + 1 && o.compoBas >= o.hautClavier - 24;
+      /* (v343) Aveugle : personne ne dit la vraie taille du clavier ; la barre
+         doit être au-dessus, un vide est permis (130 px au plus). */
+      const juste = (o) => o.compoBas <= o.hautClavier + 1 && o.compoBas >= o.hautClavier - (aveugle ? 130 : 24);
       const ouvert = await mesurer();
       dire(juste(ouvert) && ouvert.compoHaut >= ouvert.teteBas && ouvert.tete >= 0 && ouvert.focus === 'compoTexte',
         tel + ', ' + nomPos + ' : la barre d\'écriture JUSTE au-dessus du clavier (bas ' + ouvert.compoBas + ', clavier à ' + ouvert.hautClavier + (ouvert.dv ? ', zone visible glissée de ' + ouvert.dv : '') + '), l\'en-tête entier (' + ouvert.tete + ')');
@@ -153,6 +165,9 @@ const FAUX = (mode) => {
       if (!silencieux) dire(memoire !== '1', '   … ' + (contenu ? 'le navigateur dit son clavier' : 'Chrome dit son clavier') + ' : le jeu garde son mode (pas de bascule)');
       /* Le clavier redescend (bouton retour d'Android, champ toujours actif). */
       for (const f of [0.66, 0.33, 0]) { await clavier(Math.round(KB * f)); await p.waitForTimeout(40); }
+      /* (v343) Aveugle, le clavier qui redescend ne se voit pas non plus : le
+         joueur touche la discussion, le champ perd le foyer. */
+      if (aveugle) await p.evaluate(() => { const z = document.getElementById('compoTexte'); if (z) z.blur(); });
       await p.waitForTimeout(800);
       const ferme = await p.evaluate(() => { const c = document.getElementById('compo').getBoundingClientRect(); return { bas: Math.round(c.bottom), H: innerHeight, kb: document.documentElement.classList.contains('kb-fil'),
         vvt: getComputedStyle(document.documentElement).getPropertyValue('--vvt').trim(), top: getComputedStyle(document.getElementById('app')).top }; });
@@ -172,7 +187,7 @@ const FAUX = (mode) => {
         await p.waitForTimeout(700);
         await p.locator('#compoTexte').tap();
         for (const f of [0.5, 1]) { await clavier(Math.round(KB * f)); await p.waitForTimeout(40); }
-        await p.waitForTimeout(350);
+        await p.waitForTimeout(aveugle ? 1300 : 350);
         const ensuite = await mesurer();
         dire(juste(ensuite) && ensuite.tete >= 0 && /resizes-visual/.test(ensuite.meta), '   … au lancement suivant, tout de suite : barre juste au-dessus du clavier (' + ensuite.compoBas + ', clavier à ' + ensuite.hautClavier + ', ' + ensuite.meta + ')');
       }

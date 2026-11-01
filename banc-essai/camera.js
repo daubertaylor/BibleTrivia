@@ -16,9 +16,14 @@ const { chromium } = require('/opt/node22/lib/node_modules/playwright');
 const URL = process.argv[2] || 'http://127.0.0.1:8099/index.html';
 const BRIDE = Number(process.argv[3] || 4);
 const IOS='Mozilla/5.0 (iPhone; CPU iPhone OS 17_5 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.5 Mobile/15E148 Safari/604.1';
+/* (v344) Il n'y a plus de champ sur l'écran du Mode Groupe : le nom d'un
+   joueur s'écrit dans SA page (voir LES SIX PLACES). Le recadrage, lui,
+   existe toujours pour un champ posé bas sur un écran : « Rejoindre » (En
+   ligne), son code à 537 px sur un iPhone de 852 — le clavier le couvre.
+   Le banc mesure donc ce recadrage-là ; l'écran est seulement dessiné,
+   aucun salon n'est ouvert (aucun serveur n'est touché). */
 const CAS = [
-  ['groupe', "state.mode='group'; state.teams=[{name:'Taylor'},{name:'B'},{name:'C'},{name:'D'},{name:'E'}]; state.screen='setup'; render();", '.team-row input'],
-  ['plein',  "state.mode='group'; state.teams=[{name:'Taylor'},{name:'B'},{name:'C'},{name:'D'},{name:'E'},{name:'F'},{name:'G'},{name:'H'}]; state.screen='setup'; render();", '.team-row:last-of-type input'],
+  ['rejoindre', "state.screen='online-join'; render();", '#joinCode'],
 ];
 (async()=>{
   const b = await chromium.launch({ executablePath:'/opt/pw-browsers/chromium' });

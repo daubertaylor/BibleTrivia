@@ -35,7 +35,7 @@ const VUES = [
 ];
 /* Toutes les surfaces du système : celles qui portent un rôle de rebord,
    plus toute surface de verre (.has-gs) — aucune ne doit échapper au test. */
-const SEL = '.has-gs,.app-header,.icon-btn,.card,.mode-card,.question-card,.fact-card,.solo-summary,.solo-score-bar,.score-pane,.option-btn,.info-card,.rules,.btn-review,.daily-card,.parcours-card,.parcours-sum,.tst-head,.presence-card,.searching-card,.waiting-card,.waiting-note,.online-action,.btn-ghost,.btn-newgame,.share-btn,.btn-invite,.award-btn,.leave-banner,.modal-btn,.chip,.len-chip,.q-counter,.timer-chip,.tier-chip,.streak-chip,.rev-item,.bible-item,.me-row,.vs-row,.rank-row,.team-row,.add-team,.text-input,.code-input,.bk,.dc-streak,.adj-btn,.sj,.btn-primary,.btn-next,.btn-replay,.btn-reveal,.sheet-done,.set-go';
+const SEL = '.has-gs,.app-header,.icon-btn,.card,.mode-card,.question-card,.fact-card,.solo-summary,.solo-score-bar,.score-pane,.option-btn,.info-card,.rules,.btn-review,.daily-card,.parcours-card,.parcours-sum,.tst-head,.presence-card,.searching-card,.waiting-card,.waiting-note,.online-action,.btn-ghost,.btn-newgame,.share-btn,.btn-invite,.award-btn,.leave-banner,.modal-btn,.chip,.len-chip,.q-counter,.timer-chip,.tier-chip,.streak-chip,.rev-item,.bible-item,.me-row,.vs-row,.rank-row,.pl-btn:not(.pl-libre),.text-input,.code-input,.bk,.dc-streak,.adj-btn,.sj,.btn-primary,.btn-next,.btn-replay,.btn-reveal,.sheet-done,.set-go';
 (async () => {
   fs.mkdirSync(D, { recursive: true });
   const b = await chromium.launch({ executablePath:'/opt/pw-browsers/chromium' });

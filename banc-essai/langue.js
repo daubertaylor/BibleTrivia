@@ -117,7 +117,7 @@ const FRANCAIS = /[àâäéèêëîïôöùûüçÀÂÄÉÈÊËÎÏÔÖÙÛÜÇ]
       while((node = w.nextNode())){
         const e = node.parentElement;
         if(!e || !e.offsetParent) continue;
-        if(e.closest('.hero-verse-card, .question-card, .option-btn, .fact-card, .team-row')) continue;
+        if(e.closest('.hero-verse-card, .question-card, .option-btn, .fact-card, .pl-joueur')) continue;
         const t = (node.textContent||'').trim();
         if(t.length > 2 && re.test(t)) vus.add(t.slice(0,60));
       }

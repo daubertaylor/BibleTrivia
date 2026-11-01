@@ -1068,13 +1068,17 @@ end $$;
 
 -- SUPPRIMER un message : son auteur, un admin du groupe, un modérateur. Le
 -- message reste à sa place (« message supprimé »), vidé de son contenu.
+-- (v343) « Lorsque quelqu'un envoie un message, il ne peut pas être supprimé
+-- par n'importe qui. » Son message, chacun le supprime ; celui d'un autre, la
+-- modération seule. Les admins d'un groupe ne le peuvent plus : ils ont la
+-- sourdine, l'exclusion et le signalement (trois signalements masquent).
 create or replace function public.supprimer_message(p_message bigint) returns jsonb
 language plpgsql volatile security definer set search_path = '' as $$
 declare moi uuid := auth.uid(); m public.messages;
 begin
   select * into m from public.messages where id = p_message;
   if m.id is null then return jsonb_build_object('ok', false, 'erreur', 'introuvable'); end if;
-  if not (m.auteur = moi or public._role(m.groupe, moi) in ('proprietaire','admin') or public._moderateur(moi)) then
+  if not (m.auteur = moi or public._moderateur(moi)) then
     return jsonb_build_object('ok', false, 'erreur', 'interdit'); end if;
   update public.messages set texte = '', donnees = '{}'::jsonb, supprime_le = now() where id = p_message;
   delete from public.messages_caches where message = p_message;

@@ -12,7 +12,10 @@
         l'heure ; tues seulement si elles ont été éteintes ICI (-1) ;
      3. les vrais rappels du jeu gardent leurs garde-fous : rappels du jeu
         éteints → rien ; déjà prévenu aujourd'hui → rien ;
-     4. l'essai et la bienvenue passent toujours.
+     4. l'essai et la bienvenue passent toujours ;
+     5. (v343) un rappel SONNE même quand il remplace celui d'hier, resté
+        dans le volet sous la même étiquette (renotify) : « sur Android je
+        veux que les notifications sonnent ».
    Usage : node banc-essai/sw-push.js */
 const fs = require('fs');
 const path = require('path');
@@ -40,7 +43,7 @@ function bac(miroir) {
     },
   };
   const self = {
-    registration: { scope: 'https://exemple.github.io/BibleTrivia/', showNotification: (t, o) => { montres.push({ titre: t, corps: o && o.body, tag: o && o.tag }); return Promise.resolve(); } },
+    registration: { scope: 'https://exemple.github.io/BibleTrivia/', showNotification: (t, o) => { montres.push({ titre: t, corps: o && o.body, tag: o && o.tag, sonne: !!(o && o.renotify) && !(o && o.silent) }); return Promise.resolve(); } },
     addEventListener: (nom, fn) => { ecoute[nom] = fn; },
     skipWaiting() {}, clients: { claim() {} },
   };
@@ -106,6 +109,16 @@ const AUJ = (dec) => { const d = new Date(Date.now() + dec * 60000); return d.ge
     const m = await b.recevoir({ genre, decalage: dec });
     dire(m.length === 1 && m[0].tag === genre, '4. ' + genre + ' : montré');
   }
+
+  /* 5. (v343) Chaque vrai rappel sonne, même s'il remplace celui d'hier */
+  b = bac({ actif: true, serie: 5, dernier: AUJ(dec - 1440), vu: AUJ(dec - 1440), langue: 'fr' });
+  const s1 = await b.recevoir({ genre: 'serie', decalage: dec });
+  b = bac({ priere: 420, langue: 'fr', actif: false });
+  const s2 = await b.recevoir({ genre: 'priere', decalage: dec });
+  b = bac(fermé);
+  const s3 = await b.recevoir({ genre: 'bienvenue', decalage: dec });
+  dire([s1, s2, s3].every(m => m.length === 1 && m[0].sonne),
+    '5. la flamme, la prière, la bienvenue : chacune SONNE, même en remplaçant celle d\'hier (' + [s1, s2, s3].map(m => m[0] && m[0].sonne).join(', ') + ')');
 
   console.log(ko === 0 ? '\n  OK — chaque rappel s\'affiche quand il le doit, et se tait seulement quand le joueur l\'a voulu' : '\n  ' + ko + ' défaut(s)');
   process.exit(ko === 0 ? 0 : 1);

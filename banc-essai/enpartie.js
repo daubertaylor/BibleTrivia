@@ -44,6 +44,13 @@ const GESTES = [
     localStorage.setItem('bt_profile', JSON.stringify({ name:'Taylor', color:'#4C86E8' }));
     localStorage.setItem('bt_fs_hint', '1');
     localStorage.setItem('bt_progress', JSON.stringify({ books:{'Genèse':12}, correct:126 }));
+    /* (v343) LE JOUR EST DÉJÀ JOUÉ. La première partie du jour fait fêter la
+       flamme (une fenêtre, une flamme qui vit) : ce banc la finissait sans
+       jamais toucher « Continuer », et la flamme bougeait encore pendant la
+       partie de groupe — ce n'est pas un mouvement de la partie. La fête a
+       son banc (fete-flamme.js) ; ici, la flamme du jour est déjà allumée. */
+    { const d = new Date(), z = n => String(n).padStart(2, '0'), k = d.getFullYear() + '-' + z(d.getMonth() + 1) + '-' + z(d.getDate());
+      localStorage.setItem('bt_daily', JSON.stringify({ last:k, streak:1, score:0, total:0, jours:[k], geles:[], palier:0 })); }
   });
   await p.goto(URL);
   await p.waitForFunction(() => { try { return state.screen === 'mode'; } catch(e){ return false; } }, null, { timeout:20000 });

@@ -30,7 +30,11 @@
         joueur qui part (sur la v311 : on touchait Chloé, Benoît partait — la
         page avait glissé sous le doigt), la carte se replie sans être
         reconstruite ni rebondir, et aucune demande de plein écran ;
-     9. aucune erreur.
+     9. aucune erreur ;
+    10. (v343) le plein écran attend que l'écran soit POSÉ : demandé pendant
+        le glissement, il agrandissait la page et tout l'écran sautait de
+        52 px au milieu de l'arrivée (« quand j'ouvre certains modes, ça
+        fait un peu bug »).
    Usage : node banc-essai/plein-ecran.js [url] */
 const { chromium } = require('/opt/node22/lib/node_modules/playwright');
 const URL = process.argv[2] || 'http://127.0.0.1:8099/index.html';
@@ -41,9 +45,10 @@ const dit = (q, b, d) => { if (!b) ko++; console.log('  ' + (b ? 'OK  ' : 'KO  '
 /* Les demandes de plein écran sont comptées, et elles passent quand même. */
 const preparer = () => {
   localStorage.setItem('bt_profile', JSON.stringify({ name: 'Taylor', color: '#4C86E8' })); localStorage.setItem('bt_fs_hint', '1');
-  window.__demandes = 0;
+  window.__demandes = 0; window.__quand = []; window.__clic = 0;
+  document.addEventListener('click', () => { window.__clic = performance.now(); }, true);
   const o = Element.prototype.requestFullscreen;
-  Element.prototype.requestFullscreen = function () { window.__demandes++; return o.apply(this, arguments); };
+  Element.prototype.requestFullscreen = function () { window.__demandes++; window.__quand.push(performance.now() - window.__clic); return o.apply(this, arguments); };
 };
 const centre = (p, sel, n) => p.evaluate(([s, i]) => { const el = document.querySelectorAll(s)[i || 0]; if (!el) return null; const b = el.getBoundingClientRect(); return { x: b.left + b.width / 2, y: b.top + b.height / 2 }; }, [sel, n || 0]);
 const toucher = async (cdp, p, pos, attente) => {
@@ -73,7 +78,7 @@ const etat = (p) => p.evaluate(() => { const a = document.getElementById('app');
     const cdp = await ctx.newCDPSession(p);
     /* ---- 1 ---- */
     await toucher(cdp, p, await centre(p, '[data-group="len"][data-k="courte"]'));
-    await toucher(cdp, p, await centre(p, '#teamCard .team-remove', 2));
+    await toucher(cdp, p, await centre(p, '#teamCard .pl-x', 2));
     const e1 = await etat(p);
     const pris = await p.evaluate(() => ({ courte: state.lengthKey, noms: state.teams.map(t => t.name).join(',') }));
     dit('1. une puce et une croix : choisies, retirée — et aucune demande de plein écran', pris.courte === 'courte' && pris.noms === 'Anne,Benoît' && e1.demandes === 0 && !e1.fs,
@@ -86,6 +91,8 @@ const etat = (p) => p.evaluate(() => { const a = document.getElementById('app');
       JSON.stringify({ ecran: e2.ecran, fs: e2.fs, cls: e2.cls, demandes: e2.demandes }));
     dit('3. … sans refaire l\'écran : un seul rendu, et le même accueil après l\'agrandissement', e2.rendus === 1 && e2.meme, 'rendus ' + e2.rendus + ', même objet ' + e2.meme);
     dit('4. … la marge du haut du plein écran s\'applique', e2.haut >= 3.4 * 16 * 0.9, e2.haut.toFixed(1) + ' px');
+    const pose = await p.evaluate(() => ({ q: window.__quand.slice(-1)[0], pli: msPli() }));
+    dit('10. … demandé une fois l\'écran posé, jamais pendant son arrivée', pose.q >= pose.pli, Math.round(pose.q) + ' ms après le toucher, arrivée ' + pose.pli + ' ms');
     /* ---- 5 ---- */
     await p.evaluate(() => { window.__ecran = document.querySelector('#app > .screen:not(.screen-exit)'); window.__rendus = 0; return document.exitFullscreen(); });
     await p.waitForTimeout(900);
@@ -115,16 +122,16 @@ const etat = (p) => p.evaluate(() => { const a = document.getElementById('app');
     await q.evaluate(() => { state.teams = [{ name: 'Anne' }, { name: 'Benoît' }, { name: 'Chloé' }, { name: 'Damien' }]; selectMode('group'); });
     await q.waitForTimeout(1800);
     const c2 = await ctx2.newCDPSession(q);
-    const croix = await q.evaluate(() => { window.__carte = document.getElementById('teamCard'); const b = document.querySelectorAll('#teamCard .team-remove')[2].getBoundingClientRect(); return { x: b.left + b.width / 2, y: b.top + b.height / 2 }; });
+    const croix = await q.evaluate(() => { window.__carte = document.getElementById('teamCard'); const b = document.querySelectorAll('#teamCard .pl-x')[2].getBoundingClientRect(); return { x: b.left + b.width / 2, y: b.top + b.height / 2 }; });
     /* le film de la carte pendant le repli : sa hauteur, image par image */
     const film = q.evaluate(() => new Promise(res => { const l = []; const t0 = performance.now(); const tic = () => { const c = document.getElementById('teamCard'); l.push(c ? c.getBoundingClientRect().height : -1); if (performance.now() - t0 < 1400) requestAnimationFrame(tic); else res(l); }; requestAnimationFrame(tic); }));
     await c2.send('Input.dispatchTouchEvent', { type: 'touchStart', touchPoints: [{ x: croix.x, y: croix.y }] });
     await q.waitForTimeout(70);
     await c2.send('Input.dispatchTouchEvent', { type: 'touchEnd', touchPoints: [] });
     const h = await film;
-    const fin = await q.evaluate(() => ({ meme: document.contains(window.__carte), noms: state.teams.map(t => t.name).join(','), lignes: document.querySelectorAll('#teamCard .team-row:not([data-partie])').length, fs: !!document.fullscreenElement, demandes: window.__demandes }));
+    const fin = await q.evaluate(() => ({ meme: document.contains(window.__carte), noms: state.teams.map(t => t.name).join(','), lignes: document.querySelectorAll('#teamCard .pl-joueur').length, fs: !!document.fullscreenElement, demandes: window.__demandes }));
     let remonte = 0; for (let i = 1; i < h.length; i++) if (h[i] > h[i - 1] + 0.5) remonte = Math.max(remonte, h[i] - h[i - 1]);
-    dit('8. premier toucher sur la croix d\'un joueur : CE joueur part, la carte se replie sans être reconstruite ni rebondir, sans plein écran',
+    dit('8. premier toucher sur la croix d\'un joueur : CE joueur part, la carte reste la même (sans être reconstruite ni bouger), sans plein écran',
       fin.noms === 'Anne,Benoît,Damien' && fin.lignes === 3 && fin.meme && remonte === 0 && !fin.fs && fin.demandes === 0,
       fin.noms + ', même carte ' + fin.meme + ', plus grand rebond ' + remonte.toFixed(1) + ' px, demandes ' + fin.demandes);
     await ctx2.close();

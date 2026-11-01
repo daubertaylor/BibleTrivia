@@ -639,9 +639,9 @@
   .option-btn, .btn-primary, .btn-next, .btn-replay, .fact-card, .tier-chip, .q-counter, .streak-chip,
   .chip, .icon-btn, .btn-reveal, .btn-newgame, .award-btn, .presence-card, .me-row, .online-action,
   .searching-card, .waiting-card, .info-card, .len-chip, .duel-scorebar, .timer-chip, .dr-side,
-  .rank-row, .text-input, .code-input, .fs-hint, .modal-card, .add-team, .btn-ghost, .fsh-close, .settings-sheet, .hero-verse-card, .end-medal, .modal-btn, .leave-banner, .adj-btn, .waiting-note,
+  .rank-row, .text-input, .code-input, .fs-hint, .modal-card, .pl-btn, .btn-ghost, .fsh-close, .settings-sheet, .hero-verse-card, .end-medal, .modal-btn, .leave-banner, .adj-btn, .waiting-note,
   .rules, .btn-review, .daily-card, .dc-streak, .sem-flamme, .btn-invite, .sheet-done, .set-go,
-  .share-btn, .rev-item, .parcours-card, .parcours-sum, .tst-head, .team-row, .bk, .barre-bas, .compo{
+  .share-btn, .rev-item, .parcours-card, .parcours-sum, .tst-head, .bk, .barre-bas, .compo{
     --rim-cast:0 5px 14px rgba(34,26,16,0.12);
   }
   /* L'ÉLÉVATION SUIT LA PROFONDEUR. Une surface posée DANS une carte est déjà
@@ -972,23 +972,6 @@
      champ, crème sur crème, où le fil à 0,12 disparaissait. Le rebord reste
      exactement le même partout — seule l'intensité du fil de 1px s'ajuste au
      contraste réel, pour que la bordure se VOIE autant qu'ailleurs. */
-  /* ===== LE PIXEL DE BORDURE EMPÊCHAIT LA LIGNE D'ATTEINDRE ZÉRO =====
-     Le repli anime la hauteur jusqu'à 0. Or en border-box, une boîte qui porte
-     1 px de bordure en haut et 1 px en bas ne peut PAS descendre sous 2 px : la
-     bordure, elle, ne se comprime pas. Le repli s'arrêtait donc à 2 px, y
-     restait deux dixièmes de seconde, et ces 2 px disparaissaient D'UN COUP au
-     moment où la ligne quittait le DOM. Mesuré image par image : la carte passe
-     de 303,9 à 301,9 en une seule image, tout à la fin. C'est le petit cran.
-     (La bordure s'animait bien, mais une largeur de bordure UTILISÉE est
-     arrondie au pixel entier : elle vaut 1 px tant qu'elle n'a pas franchi la
-     moitié, et tombe à 0 seulement à la toute dernière image.)
-     Le pixel passe donc dans le REMBOURRAGE, comme pour tous les boutons depuis
-     la v189 : le rembourrage, lui, s'interpole en continu et descend vraiment à
-     zéro. La bordure était transparente (--bord vaut transparent ici), et
-     box-sizing est en border-box : rien ne bouge à l'écran, la ligne fait le
-     même nombre de pixels au repos. */
-  .team-row{ display:flex; align-items:center; gap:0.55rem; margin-bottom:0.6rem; padding:calc(0.4rem + 1px) calc(0.5rem + 1px); border-radius:var(--r-s); border:0; background:rgb(252,248,241);
-    --rim-edge:0 0 0 1px rgba(58,42,26,0.26); --rim-cast:0 5px 14px rgba(34,26,16,0.12); }
   /* MÊME MATIÈRE QUE .avatar, AU DÉTAIL PRÈS : anneau clair de 2 px, initiale
      en gras, même ombre. Ces quatre lignes sont la copie exacte de la règle du
      profil ; seule la TAILLE distingue encore les places où la pastille
@@ -997,96 +980,56 @@
      vérifie sur les six emplacements. */
   .team-token{ width:1.9rem; height:1.9rem; border-radius:50%; color:#fff; font-family:'Poppins',sans-serif; font-weight:700; font-size:0.85rem; display:flex; align-items:center; justify-content:center; flex-shrink:0; border:2px solid var(--bord); --rim-edge:0 0 0 1px transparent; --rim-cast:0 4px 12px rgba(15,12,10,0.18); }
   .dot-sm{ display:inline-block; width:0.5rem; height:0.5rem; border-radius:50%; margin-right:0.4rem; vertical-align:middle; flex-shrink:0; }
-  /* LE NOM DU JOUEUR N'EST PAS DANS UNE BOÎTE — LA LIGNE EST LA BOÎTE.
-     Le champ portait son propre fond blanc, sa propre bordure et son propre
-     rebord, à l'intérieur de la plaque crème de la ligne : un rectangle dans
-     un rectangle, pour une seule information. C'est précisément ce que Taylor
-     voulait voir disparaître partout.
-     Au repos, le nom est donc simplement POSÉ sur la ligne : ni fond, ni
-     trait. Il ne redevient un champ qu'au moment où l'on écrit dedans —
-     c'est là, et seulement là, qu'il faut voir où l'on tape.
-     La bordure reste déclarée en 1px, transparente : box-sizing est en
-     border-box, et garder l'épaisseur fait de la mise au point un simple
-     changement de couleur, sans le moindre décalage du texte. */
-  .team-row input{ flex:1; min-width:0; background:transparent; border:1px solid transparent; box-shadow:none; color:var(--ink); padding:0.58rem 0.75rem; border-radius:var(--r-s); font-size:0.95rem; font-weight:600;
-    transition:background-color 0.18s ease, border-color 0.18s ease; }
-  /* LA MISE AU POINT PREND LA LIGNE, PAS UN RECTANGLE INVENTÉ DEDANS.
-     Le halo entourait le champ de saisie — une surface plus petite que la
-     ligne, aux coins différents, qui n'apparaissait qu'au moment de taper :
-     on voyait naître une boîte dans une boîte. La ligne, elle, est déjà là ;
-     elle s'éclaire, elle se pose un peu plus haut, et c'est tout. */
-  .team-row:focus-within{ background:rgb(255,253,249); box-shadow:var(--rebord-pose); }
-  .team-row input:focus{ background:transparent; }
-  /* L'ONDE D'APPUI A LA FORME DU BOUTON — ET CELUI-CI N'EN AVAIT AUCUNE.
-     La croix de retrait était le seul bouton du jeu sans arrondi : l'onde
-     (un ::before à border-radius:inherit) sortait donc en CARRÉ net sous le
-     doigt, au milieu d'une ligne blanche, elle, arrondie. Un rond de 1,8 rem
-     la remet dans la langue du jeu — c'est la forme de toutes les autres
-     pastilles qu'on touche (réglages, retour, couleurs du profil). Le bouton
-     n'a pas de fond au repos : seule l'onde change, la mise en page ne bouge
-     pas d'un pixel. */
-  .team-remove{ background:none; border:none; border-radius:50%; color:var(--ink-soft); width:1.8rem; height:1.8rem; padding:0.4rem; display:flex; align-items:center; justify-content:center; flex-shrink:0; }
-  .team-remove:disabled{ opacity:0.25; }
-
-  /* Bordure pointillée retirée : détonnait avec le rebord de verre cohérent
-     utilisé partout ailleurs (rendu « brouillon » à côté des autres cartes).
-     Même recette de liseré rouge que les autres accents primaires
-     (btn-primary, sheet-done…) + verre teinté très léger : reste identifiable
-     comme action d'ajout (icône + texte rouges) sans rompre la cohérence. */
-  /* Teinte relevée (0,14 -> 0,68) : le fond de la carte défile maintenant en
-     direct avec la scène derrière — un voile trop léger laissait parfois
-     passer une zone claire/foncée de la photo qui mangeait le contraste avec
-     le texte rouge. Un voile clair plus couvrant garde le bouton lisible
-     quel que soit ce qu'il y a derrière, à n'importe quel moment du scroll. */
-  /* IL TERMINE LA LISTE, IL EN PREND DONC LA MATIÈRE.
-     « Ajouter un joueur » passait par le moteur de verre — il recevait donc un
-     rebord de verre (une lèvre blanche interne) que les lignes de joueurs
-     juste au-dessus n'ont pas, et son rayon était celui des boutons (18px)
-     alors que les lignes sont à 14px. Posé sous trois lignes, dans la même
-     carte, il annonçait une autre famille pour une raison qui n'existe pas :
-     c'est une plaque crème OPAQUE dans une carte, comme elles.
-     Il sort donc du moteur (aucune couche de verre à calculer pour lui) et
-     reprend le rayon des lignes. Ce qui le distingue reste ce qui doit le
-     distinguer : le corail de son texte et son ⊕ — il agit, il ne liste pas. */
-  /* ===== PAS DE MARGE HAUTE ICI, ET C'EST LA CORRECTION D'UN CRAN =====
-     « Le cran se produit uniquement lorsque je retire les joueurs rapidement. »
-     Ce bouton portait margin-top:0.4rem — 6,4 px qui NE SE VOYAIENT JAMAIS :
-     la carte est un bloc, la ligne au-dessus porte 0,6rem de marge basse, et
-     deux marges voisines se fondent en une seule (9,6 > 6,4). Cette marge
-     n'existait donc que dans UN cas : quand une ligne en train de se replier
-     s'intercale entre les deux. Une ligne qui se replie porte overflow:hidden,
-     ce qui l'empêche de fondre les marges — les 6,4 px réapparaissaient d'un
-     coup, et removeTeam les annulait par une marge NÉGATIVE posée sur la ligne
-     mourante.
-     CETTE ANNULATION ÉTAIT JUSTE, PUIS CESSAIT DE L'ÊTRE. Elle est calculée à
-     l'instant du toucher, pour la mise en page de cet instant-là, et elle reste
-     en place jusqu'au départ de la ligne. Retirez un deuxième joueur pendant ce
-     temps : la ligne du dessus devient à son tour un bloc replié, la fusion sur
-     laquelle l'annulation reposait n'a plus lieu, et les −6,4 px tirent la
-     carte vers le haut sans plus rien annuler — puis la lâchent EN UNE IMAGE au
-     moment où la ligne quitte le DOM. Mesuré image par image : +5,54 px d'un
-     coup, et deux demi-tours dans le mouvement de la carte.
-     ON RETIRE DONC LA CAUSE, PAS LE SYMPTÔME. Sans cette marge, l'écart entre
-     la dernière ligne et le bouton reste exactement le même (9,6 px, celui de
-     la ligne), le résidu à corriger vaut zéro, et la marge négative ne se pose
-     plus jamais. Une déclaration invisible quand elle est juste et nuisible
-     quand elle ne l'est plus n'avait pas lieu d'être. */
-  .add-team{ width:100%; display:flex; align-items:center; justify-content:center; gap:0.5rem; color:var(--primary); border:0; border-radius:var(--r-s); padding:calc(0.6rem + 1px); font-size:0.85rem; font-weight:600; }
-  .add-team .ico{ width:1.12rem; height:1.12rem; }
-  /* CARTE PLEINE = SIX CASES, PAS SEPT. « Ajouter un joueur » restait affiché,
-     simplement grisé, une fois les six joueurs inscrits : la carte comptait
-     donc SEPT cases et se lisait comme sept places. Une place qu'on ne peut
-     plus prendre n'a rien à faire dans la liste — le bouton s'efface, et on
-     compte exactement autant de cases que de joueurs. Il revient dès qu'on
-     retire quelqu'un. */
-  .add-team:disabled{ display:none; }
-  /* SAUF LE TEMPS DE SE REPLIER. En atteignant six joueurs, le bouton passait
-     de 40,6px à zéro EN UNE IMAGE — la carte s'effondrait d'un bloc au moment
-     même où la sixième ligne s'ouvrait. Le retrait, lui, faisait déjà repousser
-     ce bouton au rythme de la ligne : il manquait juste le sens inverse.
-     display:none ne s'anime pas ; on le garde donc affiché pendant le repli,
-     tout en le laissant désactivé — il n'est plus cliquable une seule image. */
-  .add-team.se-plie:disabled{ display:flex; }
+  /* ===== (v344) LES SIX PLACES =====
+     (Voir LES SIX PLACES dans le script.) Deux rangées de trois, de la même
+     matière que les tuiles des livres : une plaque crème pleine, en relief,
+     posée dans la carte. Rien ne change de taille, ni la place, ni la carte.
+     L'écart est celui des tuiles des livres (0,55 rem) : l'ombre d'une place
+     ne touche jamais la suivante. */
+  .places{ display:grid; grid-template-columns:repeat(3, minmax(0, 1fr)); gap:0.55rem; }
+  .place{ position:relative; min-width:0; }
+  .place.pl-glisse{ z-index:1; }
+  .pl-btn{ width:100%; height:5.7rem; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:0.36rem;
+    padding:calc(0.45rem + 1px) calc(0.32rem + 1px); border:0; border-radius:var(--r-s); background:rgb(252,248,241); color:var(--ink);
+    font:inherit; text-align:center;
+    transition:transform 0.44s cubic-bezier(0.2,1,0.3,1), background-color var(--tr-onde), color var(--tr-onde), opacity var(--tr-onde), box-shadow var(--tr-onde); }
+  .pl-btn .team-token{ width:2.35rem; height:2.35rem; font-size:1rem; }
+  /* Le nom tient sur deux lignes avant de se couper : vingt signes au plus
+     (« Les Apôtres de Jean ») se lisent en entier. */
+  .pl-nom{ display:-webkit-box; -webkit-box-orient:vertical; -webkit-line-clamp:2; overflow:hidden; max-width:100%;
+    font-size:0.78rem; font-weight:600; line-height:1.2; overflow-wrap:anywhere; }
+  .pl-ajout{ color:var(--primary); }
+  .pl-plus{ width:2.35rem; height:2.35rem; display:flex; align-items:center; justify-content:center; }
+  .pl-plus svg{ width:1.6rem; height:1.6rem; }
+  /* LES PLACES QUI ATTENDENT : la même plaque, à peine dessinée, sans
+     relief et sans rien dedans. Elles disent combien on peut être (six) sans
+     rien demander. Une place qui le devient garde un instant ce qu'elle
+     portait, le temps de l'effacer (voir majPlace). */
+  .pl-btn.pl-libre{ background:rgba(252,248,241,0.3); box-shadow:none; cursor:default; }
+  .pl-btn.pl-libre > *{ opacity:0; transition:opacity 0.18s ease-out; }
+  /* La croix de retrait, au coin de la plaque, ronde comme toutes les
+     pastilles qu'on touche ; sa zone de toucher fait 44 px (voir TOUT CE QUI
+     SE TOUCHE DOIT FAIRE 44 PX). À deux joueurs, plus personne ne peut partir :
+     les croix s'effacent. */
+  .pl-x{ position:absolute; top:0.1rem; right:0.1rem; z-index:2; width:1.8rem; height:1.8rem; padding:0.48rem; border:0; border-radius:50%;
+    background:none; color:var(--ink-soft); display:flex; align-items:center; justify-content:center; transition:opacity var(--tr-onde); }
+  .places.a-deux .pl-x{ opacity:0; pointer-events:none; }
+  /* Les gestes (voir LES GESTES DES PLACES). La place retirée se resserre en
+     s'effaçant ; un joueur ajouté pose sa pastille avec un petit rebond, puis
+     son nom monte ; une place qui devient « Ajouter » allume son contenu. */
+  .place.pl-part .pl-btn, .place.pl-part .pl-x{ transition:transform 0.17s cubic-bezier(0.4,0,1,1), opacity 0.17s cubic-bezier(0.4,0,1,1); transform:scale(0.86); opacity:0; pointer-events:none; }
+  .place.pl-arrive .team-token{ animation:plPose 0.48s cubic-bezier(0.34,1.45,0.64,1) both; }
+  .place.pl-arrive .pl-nom{ animation:plMonte 0.3s ease-out 0.09s both; }
+  .place.pl-arrive .pl-x{ animation:plMonte 0.3s ease-out 0.16s both; }
+  .place.pl-vient .pl-plus, .place.pl-vient .pl-nom{ animation:plMonte 0.3s ease-out 0.12s both; }
+  @keyframes plPose{ from{ transform:scale(0.35); opacity:0; } to{ transform:scale(1); opacity:1; } }
+  @keyframes plMonte{ from{ opacity:0; transform:translateY(4px); } to{ opacity:1; transform:none; } }
+  /* LA PAGE D'UN JOUEUR : la pastille à côté du champ, à sa hauteur, comme
+     la photo d'un groupe à côté de son nom. */
+  .jp-ident{ align-items:center; margin-top:0.2rem; }
+  .jp-jeton.team-token{ width:3.1rem; height:3.1rem; font-size:1.25rem; }
+  .jp-ok{ margin-top:1rem; }
+  .jp-retirer{ margin-top:0.6rem; }
 
   .chip-row{ display:flex; gap:0.5rem; flex-wrap:wrap; }
   .chip{ flex:1; min-width:30%; text-align:center; --glass-tint: rgb(252,248,241); background:rgb(252,248,241); backdrop-filter:none; -webkit-backdrop-filter:none; border:0; color:var(--ink); padding:calc(0.62rem + 1px) calc(0.5rem + 1px); border-radius:var(--r-m); font-size:0.82rem; font-weight:600; }
@@ -2665,20 +2608,24 @@
   /* Le petit rond de l'appareil photo, posé sur le visage comme sur la
      pastille d'un groupe (v322, voir choisirPhotoProfil). */
   .avatar-tap{ position:relative; }
-  /* ===== LA PHOTO EN GRAND =====
-     On touche un avatar qui porte une photo — le sien ou celui d'un autre
-     joueur — et elle s'ouvre en grand. Rien de plus : un fond sombre, l'image,
-     le nom, et on touche n'importe où pour refermer. Pas de bouton : tout
-     l'écran est la sortie, c'est le geste que tout le monde connaît. */
-  .photo-veil{ position:fixed; inset:0; z-index:95; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:0.9rem;
-    background:rgba(12,9,6,0.82); animation:veilIn var(--tr-voile-in); padding:1.2rem; }
-  .photo-veil .pv-img{ width:min(84vw, 84 * var(--hu, 8px)); aspect-ratio:1 / 1; border-radius:50%;
-    background-size:cover; background-position:50% 50%; background-repeat:no-repeat;
-    box-shadow:0 18px 60px rgba(0,0,0,0.55); }
-  .photo-veil .pv-nom{ color:#fff; font-family:'Poppins',sans-serif; font-weight:700; font-size:1.1rem; text-shadow:0 1px 12px rgba(0,0,0,0.6); }
-  /* (v335) La photo d'un groupe garde en grand la forme de sa pastille : un
-     carré aux coins arrondis, pas un rond. */
-  .photo-veil .pv-img.pv-groupe{ border-radius:calc(var(--r-l) * 2.2); }
+  /* ===== LA PHOTO EN GRAND : UNE VRAIE PHOTO, CARRÉE, SUR UN FOND UNI (v343) =====
+     « Lorsque l'on clique pour afficher la photo, je veux que la photo
+       s'affiche au carré : en grand, une véritable photo au carré, pas une
+       petite bulle. » Puis : « Je veux que l'arrière-plan, le haut et le bas
+       de l'image soient blancs, ou d'une couleur du jeu — pas le décor
+       derrière. Un fond uni, très propre, comme la DA du jeu. »
+     C'est donc une PAGE, comme les Réglages : le crème des pages, l'en-tête
+     avec le retour et le nom, la même arrivée par la droite, le même retour
+     au doigt depuis le bord. Au milieu, la photo entière, carrée, aux coins
+     des cartes, avec le relief de tout ce qui est posé. Un visage comme la
+     photo d'un groupe. On touche n'importe où pour refermer, comme avant. */
+  .photo-page.settings-sheet.settings-sheet{ display:flex; flex-direction:column; }
+  .photo-page .page-tete{ margin-bottom:0; }
+  .photo-page .pp-zone{ flex:1 0 auto; display:flex; align-items:center; justify-content:center;
+    padding:0.4rem 0 calc(3.7rem + 0.4rem); }
+  .photo-page .pv-img{ width:min(100%, 30rem); aspect-ratio:1 / 1; border-radius:var(--r-l);
+    background-color:var(--page-carte); background-size:cover; background-position:50% 50%; background-repeat:no-repeat;
+    box-shadow:var(--relief); }
   /* ===== AJUSTER SA PHOTO =====
      UN CARRÉ, ET UN TROU ROND DEDANS. On voit EXACTEMENT ce qui sera gardé —
      le disque clair — et ce qu'on perd reste visible en plus sombre autour.
@@ -3377,7 +3324,7 @@
      sur les deux plateformes. Exception : <input> (.text-input/.code-input)
      ne peut pas porter d'enfant -> le rebord reste sur l'élément lui-même
      pour ces deux-là (regroupés dans le même sélecteur ci-dessous). */
-  .glass-rim, .text-input, .code-input, .switch, .team-token, .avatar, .scn-thumb, .team-row, .bk{
+  .glass-rim, .text-input, .code-input, .switch, .team-token, .avatar, .scn-thumb, .pl-btn, .bk{
     /* Plus aucun --rim-edge : c'était le dernier endroit d'où une couleur
        pouvait border une surface (or sur les livres, rouge sur les boutons,
        vert sur l'interrupteur). Le rebord ne dit plus que deux choses : la
@@ -3915,6 +3862,41 @@
   .ach-info-c{ font-family:'Poppins',sans-serif; font-weight:700; font-size:0.84rem; color:var(--ink-soft); font-variant-numeric:tabular-nums; }
   .ach-info-c.on{ color:#1f7a4d; }
   .modal-card.ach-info .modal-btn.ok{ margin-top:0.5rem; width:100%; }
+  /* ===== (v343) LA FLAMME DU JOUR, FÊTÉE ; L'INVITATION AUX RAPPELS =====
+     Deux cartes de la même famille que celle d'un objectif : une pastille
+     ronde en tête, le titre, une phrase, et le bouton pleine largeur. La
+     flamme s'allume (elle grandit en se posant, puis vacille doucement), le
+     compte passe d'hier à aujourd'hui (l'ancien monte et s'efface, le
+     nouveau arrive d'en bas), et la case du jour se remplit d'or au moment
+     où la flamme s'allume. Aucun trait : des fonds et le relief. */
+  .modal-card.fete-flamme, .modal-card.invit-rappels{ display:flex; flex-direction:column; align-items:center; gap:0.35rem; }
+  .fete-flamme .ff-feu, .invit-rappels .ir-cloche{ width:4.6rem; height:4.6rem; border-radius:50%; display:flex; align-items:center; justify-content:center;
+    color:#fff; box-shadow:var(--relief); margin-bottom:0.2rem; }
+  /* La flamme elle-même, en grand — celle du jeu, avec ses couleurs — sans
+     pastille autour : c'est elle qu'on vient de gagner. Aucune lueur
+     colorée (le relief n'est jamais coloré). */
+  .fete-flamme .ff-feu{ width:5.4rem; height:5.4rem; background:none; box-shadow:none; margin-bottom:0; animation:ffPose 0.62s cubic-bezier(0.2,1.35,0.4,1) 0.12s both; }
+  .fete-flamme .ff-ico{ display:flex; width:100%; height:100%; transform-origin:50% 90%; animation:flameFlicker 1.1s ease-in-out 0.8s infinite; }
+  .fete-flamme .ff-ico svg, .invit-rappels .ir-cloche svg{ width:100%; height:100%; }
+  @keyframes ffPose{ from{ transform:scale(0.35); opacity:0; } to{ transform:none; opacity:1; } }
+  .fete-flamme .ff-n{ position:relative; height:2.6rem; width:6rem; overflow:hidden; font-family:'Poppins',sans-serif; font-weight:800; font-size:2.2rem;
+    line-height:2.6rem; color:var(--feu); font-variant-numeric:tabular-nums; }
+  .fete-flamme .ff-n span{ position:absolute; left:0; right:0; text-align:center; }
+  .fete-flamme .ff-avant{ animation:ffPart 0.42s cubic-bezier(0.5,0,0.75,0) 0.5s both; }
+  .fete-flamme .ff-apres{ animation:ffVient 0.5s cubic-bezier(0.2,1.2,0.4,1) 0.62s both; }
+  @keyframes ffPart{ from{ transform:none; opacity:1; } to{ transform:translateY(-100%); opacity:0; } }
+  @keyframes ffVient{ from{ transform:translateY(100%); opacity:0; } to{ transform:none; opacity:1; } }
+  .fete-flamme .ff-sem{ display:flex; justify-content:center; gap:0.32rem; margin:0.55rem 0 0.15rem; --sj-l:2rem; }
+  .fete-flamme .ff-sem .sj{ backdrop-filter:none; -webkit-backdrop-filter:none; background:rgba(34,26,16,0.07); color:var(--ink-soft); height:2.5rem; }
+  .fete-flamme .ff-sem .sj.gele{ background:linear-gradient(160deg, #8FC3F2, #5E98D6); color:#fff; }
+  .fete-flamme .ff-sem .sj.fait{ background:linear-gradient(160deg, var(--pal-or-a), var(--pal-or-b)); color:#fff; text-shadow:0 1px 2px rgba(122,78,4,0.3); }
+  .fete-flamme .ff-sem .sj.neuf{ animation:ffCase 0.5s cubic-bezier(0.2,1.4,0.4,1) 0.6s both; }
+  @keyframes ffCase{ from{ transform:scale(0.6); filter:saturate(0) brightness(1.6); opacity:0.4; } to{ transform:none; filter:none; opacity:1; } }
+  .modal-card.fete-flamme .modal-actions, .modal-card.invit-rappels .modal-actions{ width:100%; margin-top:0.6rem; }
+  .modal-card.fete-flamme .modal-btn.ok{ width:100%; }
+  .invit-rappels .ir-cloche{ background:linear-gradient(160deg, var(--pal-corail-a), var(--pal-corail-b)); padding:1.05rem; animation:ffPose 0.55s cubic-bezier(0.2,1.35,0.4,1) both; }
+  .modal-card.invit-rappels .modal-actions.colonne{ display:flex; flex-direction:column; gap:0.5rem; }
+  .modal-card.invit-rappels .modal-actions.colonne .modal-btn{ width:100%; margin:0; }
   /* ===== TOUS LES « FERMER » SONT LE MÊME BOUTON (v322) =====
      « J'aime beaucoup le bouton Fermer du badge débloqué : il doit être
        cohérent avec tous les autres boutons Fermer du jeu. » Celui du
@@ -4051,7 +4033,27 @@
   /* Livres : CHIPS compacts (nom seul, sans barre) -> testaments beaucoup plus
      courts et nets. L'état se lit à la couleur : neutre (non touché), or (commencé),
      vert (maîtrisé) — cohérent avec le reste du jeu. */
-  .bk-grid{ display:grid; grid-template-columns:repeat(auto-fill, minmax(4.7rem, 1fr)); gap:0.36rem; }
+  /* (v343) « Vérifie l'espacement entre les boutons, comme au niveau des
+     livres dans les testaments, vu le nouveau système de bordure. » Avec le
+     relief, chaque tuile porte une ombre qui déborde vers le bas et la
+     droite : à 6 px d'écart, l'ombre d'une tuile touchait la suivante et la
+     grille paraissait tassée. Mesuré sur tous les écrans du jeu : c'était le
+     SEUL endroit sous 8 px (avec la liste des versions, 7,4). Les tuiles
+     prennent l'écart des autres grilles du jeu (les logos des groupes). */
+  /* La largeur mini d'une colonne baisse d'autant que l'écart monte, pour que
+     la grille se coupe EXACTEMENT aux mêmes largeurs qu'avant : 4 × 4,55 +
+     3 × 0,55 = 19,85 rem pour quatre colonnes (19,88 avant), 14,75 pour trois
+     (14,82). Quatre colonnes sur les téléphones courants (393, 412, 430),
+     trois sur les petits (360, 320) — comme en v342.
+     Le libellé, lui, manquait DÉJÀ de place en v342 : à quatre colonnes, une
+     tuile ne laissait que 3,8 rem au nom, et « Colosenses » (4,0 rem en
+     gras), « 2 Timothée » (3,86) finissaient en « … » sur un iPhone de
+     393 px. Les côtés de la tuile passent donc de 0,4 à 0,14 rem : le nom le
+     plus long du jeu, toutes langues, gras compris, tient avec au moins
+     1,5 px de reste à la plus petite tuile possible (4,55 rem). Les noms sont
+     centrés : l'air autour d'eux ne change pas à l'œil. */
+  .bk-grid{ display:grid; grid-template-columns:repeat(auto-fill, minmax(4.55rem, 1fr)); gap:0.55rem; }
+  .bk-grid .bk{ padding-left:calc(0.14rem + 1px); padding-right:calc(0.14rem + 1px); }
   /* Livres : l'EFFET DE VERRE est porté par la GRANDE carte (.bk-card, une
      par testament) — 1 surface de verre au lieu de 66, la Progression reste
      légère sur tous les appareils. Posées sur ce verre flouté, les puces
@@ -4114,7 +4116,7 @@
   .tp-aide{ margin:0.85rem 0.3rem 0.1rem; }
   .tp-carte{ background:var(--page-carte, #fff); border-radius:var(--r-l); box-shadow:var(--ombre-pose); padding:0.8rem 0.75rem 0.8rem; margin-top:0.75rem; }
   .tp-sec{ font-family:'Poppins',sans-serif; font-size:0.72rem; font-weight:700; letter-spacing:0.06em; text-transform:uppercase; color:var(--ink-soft); margin:0 0.2rem 0.55rem; }
-  .tp-carte .bk{ background:rgb(246,241,233); padding:calc(0.42rem + 1px) calc(0.4rem + 1px) calc(0.38rem + 1px); }
+  .tp-carte .bk{ background:rgb(246,241,233); padding:calc(0.42rem + 1px) calc(0.14rem + 1px) calc(0.38rem + 1px); }
   .tp-carte .bk.started{ background:rgb(255,241,212); }
   .tp-carte .bk.mastered{ background:rgb(198,242,216); }
   .bk .bk-pr{ display:flex; align-items:center; justify-content:center; height:0.95rem; margin-top:0.06rem; font-size:0.66rem; font-weight:600; color:var(--ink-soft); font-variant-numeric:tabular-nums; }
@@ -4479,9 +4481,8 @@
      l'exemple : le rond du Profil, seul .icon-btn en overflow:visible (son
      verre est masqué), est le seul que ce pseudo a suffi à corriger. */
   .sheet-grab::before,
-  .team-remove::after,
-  .icon-btn::after,
-  .add-team::after{
+  .pl-x::after,
+  .icon-btn::after{
     content:""; position:absolute; left:50%; top:50%;
     width:max(100%, 44px); height:max(100%, 44px);
     transform:translate(-50%, -50%);
@@ -4582,7 +4583,7 @@
      servait ; elle a été retirée à la demande de Taylor. Quatre versions que
      les évangéliques connaissent déjà n'ont pas besoin d'être présentées —
      leur sigle et leur année suffisent. */
-  .bible-list{ display:flex; flex-direction:column; gap:0.45rem; margin:0.9rem 0 0.2rem; }
+  .bible-list{ display:flex; flex-direction:column; gap:0.55rem; margin:0.9rem 0 0.2rem; }
   /* La feuille des versions n'a AUCUN bouton : la poignée ferme, une ligne
      choisit. C'est tout ce qu'on vient y faire. */
   .bibles-sheet .bible-list{ margin-top:0.75rem; }
@@ -5263,7 +5264,7 @@
   .app-header, .card, .mode-card, .question-card, .solo-summary, .solo-score-bar, .score-pane,
   .daily-card, .parcours-card, .parcours-sum, .chip, .tier-chip, .q-counter,
   .presence-card, .me-row, .online-action, .searching-card, .waiting-card, .info-card,
-  .len-chip, .duel-scorebar, .rank-row, .team-row, .add-team, .btn-ghost, .fsh-close,
+  .len-chip, .duel-scorebar, .rank-row, .btn-ghost, .fsh-close,
   .settings-sheet, .modal-card, .hero-verse-card, .end-medal, .waiting-note, .rules,
   .btn-review, .btn-invite, .rev-item, .tst-head, .icon-btn, .modal-btn.cancel,
   .text-input, .code-input, .fs-hint, .dr-side, .barre-bas, .compo{
@@ -5287,7 +5288,7 @@
      surfaces en verre d'un côté, boutons pleins de l'autre. Les états colorés
      (sélectionné, bonne/mauvaise réponse, option estompée, « Rester » corail)
      gardent la priorité grâce à leur spécificité plus forte. */
-  .chip, .len-chip, .add-team, .btn-ghost, .btn-invite, .btn-review, .adj-btn,
+  .chip, .len-chip, .btn-ghost, .btn-invite, .btn-review, .adj-btn,
   .fsh-close, .share-btn, .tst-head, .option-btn, .modal-btn.cancel,
   .btn-replay.is-waiting{ --glass-tint: rgb(252,248,241); }
   .bk{ background:rgb(252,248,241); }
@@ -5344,7 +5345,7 @@
      dessus, plus rien ne traverse, et l'intérieur ne bouge pas d'un pixel (la
      couche peint exactement la même couleur). Les surfaces en VERRE sont
      volontairement absentes : elles doivent, elles, laisser voir le décor. */
-  .chip, .len-chip, .add-team, .btn-ghost, .btn-invite, .btn-review, .adj-btn,
+  .chip, .len-chip, .btn-ghost, .btn-invite, .btn-review, .adj-btn,
   .fsh-close, .share-btn, .tst-head, .option-btn, .modal-btn, .btn-quit, .btn-newgame,
   .question-card, .solo-score-bar, .duel-scorebar, .btn-primary, .btn-next, .btn-replay,
   .sheet-done, .set-go, .streak-chip, .dc-streak, .btn-reveal,
@@ -5363,8 +5364,6 @@
      surfaces blanches du jeu, sur lequel la lèvre se lit. */
   /* (Le champ n'a plus de matière propre : voir « LE NOM DU JOUEUR N'EST PAS
      DANS UNE BOÎTE ». Il ne reprend un fond qu'à la mise au point.) */
-  .team-row input{ --glass-tint: transparent; background:transparent; }
-  .team-row input:focus{ background:transparent; }
   .text-input, .code-input{ --glass-tint: rgb(252,248,241); background:rgb(252,248,241); }
   /* PAS de bloc « prefers-reduced-motion » ici, volontairement : le jeu doit
      être STRICTEMENT le même pour tout le monde, quels que soient les réglages
@@ -5434,7 +5433,7 @@
   .online-action, .btn-newgame, .btn-invite,
   .award-btn, .leave-banner, .barre-bas, .compo,
   .chip, .len-chip, .q-counter, .timer-chip, .tier-chip, .streak-chip,
-  .rev-item, .me-row, .rank-row, .team-row, .add-team, .bk,
+  .rev-item, .me-row, .rank-row, .pl-btn, .bk,
   .text-input, .code-input,
   .share-btn, .btn-ghost, .modal-btn.cancel,
   /* (v342) Deux surfaces de verre n'étaient dans AUCUN rôle : la barre des
@@ -5481,7 +5480,7 @@
   .online-action, .btn-ghost, .btn-newgame, .share-btn, .btn-invite,
   .award-btn, .leave-banner, .modal-btn.cancel,
   .chip, .len-chip, .q-counter, .timer-chip, .tier-chip, .streak-chip,
-  .rev-item, .bible-item, .me-row, .rank-row, .team-row, .add-team,
+  .rev-item, .bible-item, .me-row, .rank-row, .pl-btn,
   .text-input, .code-input, .bk, .dc-streak, .adj-btn, .sj,
   .btn-primary, .btn-next, .btn-replay, .btn-reveal, .sheet-done, .set-go,
   .chip.active, .len-chip.sel, .streak-chip.hot, .online-action.primary,
@@ -6894,6 +6893,11 @@ const TEXTES = {
     "Ton adversaire a quitté la partie.":"Your opponent has left the game.",
     "Joueur":"Player",
     "Joueur {n}":"Player {n}",
+    "Joueur ou équipe":"Player or team",
+    "Ajouter":"Add",
+    "Changer le nom de {nom}":"Rename {nom}",
+    "Retirer {nom}":"Remove {nom}",
+    "Retirer de la partie":"Remove from the game",
     "a quitté":"gone",
     "terminé":"done",
     "Ton adversaire en est à {i}/{t}":"Your opponent is at {i}/{t}",
@@ -7155,7 +7159,7 @@ const TEXTES = {
     "Ouvre le menu du navigateur":"Open the browser menu",
     "Les trois points, en haut":"The three dots, at the top",
     "« Installer l'application »":"“Install app”",
-    "Ou « Ajouter à l'écran d'accueil »":"Or “Add to Home Screen”",
+    "Ou « Ajouter à l'écran d'accueil », puis « Installer »":"Or “Add to Home screen”, then “Install”",
     /* le mot de la fin, en solo */
     "Presque sans faute — c'est du solide.":"Almost flawless — that's solid work.",
     "Très impressionnant : peu de questions t'ont résisté.":"Very impressive: few questions gave you trouble.",
@@ -7333,6 +7337,14 @@ const TEXTES = {
     "Code d'invitation":"Invitation code",
     "Inviter":"Invite",
     "Copier":"Copy",
+    "Répondre":"Reply",
+    "Ta flamme est allumée !":"Your flame is lit!",
+    "{n} jours d'affilée !":"{n} days in a row!",
+    "Joue chaque jour pour la faire grandir.":"Play every day to make it grow.",
+    "Reviens demain pour la garder allumée.":"Come back tomorrow to keep it burning.",
+    "Ne laisse pas ta flamme s'éteindre":"Don't let your flame go out",
+    "Activer les rappels":"Turn on reminders",
+    "Plus tard":"Later",
     "Nouveau code":"New code",
     "Envoie ce code à tes amis : avec lui, ils entrent directement.":"Send this code to your friends: with it, they can join right away.",
     "Modifier le groupe":"Edit group",
@@ -7698,6 +7710,11 @@ const TEXTES = {
     "Ton adversaire a quitté la partie.":"Tu rival salió de la partida.",
     "Joueur":"Jugador",
     "Joueur {n}":"Jugador {n}",
+    "Joueur ou équipe":"Jugador o equipo",
+    "Ajouter":"Añadir",
+    "Changer le nom de {nom}":"Cambiar el nombre de {nom}",
+    "Retirer {nom}":"Quitar a {nom}",
+    "Retirer de la partie":"Quitar de la partida",
     "a quitté":"salió",
     "terminé":"terminó",
     "Ton adversaire en est à {i}/{t}":"Tu rival va por {i}/{t}",
@@ -7952,7 +7969,7 @@ const TEXTES = {
     "Ouvre le menu du navigateur":"Abre el menú del navegador",
     "Les trois points, en haut":"Los tres puntos, arriba",
     "« Installer l'application »":"“Instalar aplicación”",
-    "Ou « Ajouter à l'écran d'accueil »":"O “Añadir a pantalla de inicio”",
+    "Ou « Ajouter à l'écran d'accueil », puis « Installer »":"O “Añadir a pantalla de inicio”, luego “Instalar”",
     "Presque sans faute — c'est du solide.":"Casi sin fallos — eso es sólido.",
     "Très impressionnant : peu de questions t'ont résisté.":"Muy impresionante: pocas preguntas te dieron problemas.",
     "Belle partie — la Parole te devient familière.":"Bien jugado — la Palabra te va resultando familiar.",
@@ -8140,6 +8157,14 @@ const TEXTES = {
     "Code d'invitation":"Código de invitación",
     "Inviter":"Invitar",
     "Copier":"Copiar",
+    "Répondre":"Responder",
+    "Ta flamme est allumée !":"¡Tu llama está encendida!",
+    "{n} jours d'affilée !":"¡{n} días seguidos!",
+    "Joue chaque jour pour la faire grandir.":"Juega cada día para hacerla crecer.",
+    "Reviens demain pour la garder allumée.":"Vuelve mañana para mantenerla encendida.",
+    "Ne laisse pas ta flamme s'éteindre":"No dejes que tu llama se apague",
+    "Activer les rappels":"Activar los recordatorios",
+    "Plus tard":"Más tarde",
     "Nouveau code":"Código nuevo",
     "Envoie ce code à tes amis : avec lui, ils entrent directement.":"Envía este código a tus amigos: con él, entran directamente.",
     "Modifier le groupe":"Editar el grupo",
@@ -8656,6 +8681,7 @@ const ICONS = {
   sortir: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M14.4 4H6.6A1.6 1.6 0 0 0 5 5.6v12.8A1.6 1.6 0 0 0 6.6 20h7.8"/><line x1="10" y1="12" x2="20.2" y2="12"/><polyline points="16.6 8.4 20.2 12 16.6 15.6"/></svg>`,
   corbeille: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><line x1="4" y1="6.6" x2="20" y2="6.6"/><path d="M9.2 6.6V5a1.4 1.4 0 0 1 1.4-1.4h2.8A1.4 1.4 0 0 1 14.8 5v1.6"/><path d="M6.2 6.6l.9 12.4a1.6 1.6 0 0 0 1.6 1.4h6.6a1.6 1.6 0 0 0 1.6-1.4l.9-12.4"/><line x1="10.2" y1="10.6" x2="10.2" y2="16.4"/><line x1="13.8" y1="10.6" x2="13.8" y2="16.4"/></svg>`,
   coche: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><polyline points="5.2 12.6 9.8 17.2 18.8 7.4"/></svg>`,
+  repondre: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M9.6 6 4 11.4l5.6 5.4"/><path d="M4.6 11.4h9.2a6.2 6.2 0 0 1 6.2 6.2V19"/></svg>`,
   copier: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><rect x="8.6" y="8.6" width="11.4" height="11.4" rx="2.2"/><path d="M15.4 8.6V6.2A2.2 2.2 0 0 0 13.2 4H6.2A2.2 2.2 0 0 0 4 6.2v7a2.2 2.2 0 0 0 2.2 2.2h2.4"/></svg>`,
   bloquer: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="8.6"/><line x1="5.9" y1="5.9" x2="18.1" y2="18.1"/></svg>`,
   sourdine: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M8.4 5h9.4A2.2 2.2 0 0 1 20 7.2v6.4a2.2 2.2 0 0 1-1.4 2"/><path d="M15.6 15.8H11l-4.4 3.4v-3.4H6.2A2.2 2.2 0 0 1 4 13.6V7.2c0-.5.2-1 .5-1.4"/><line x1="3.4" y1="3.4" x2="20.6" y2="20.6"/></svg>`,
@@ -10872,7 +10898,7 @@ const SUPABASE_ANON_KEY = "sb_publishable_FDJ_R0foC7uIeHmxVrj6rA_2NeIgW2a";
    remontée d'un téléphone ne vaut rien si on ne sait pas QUELLE version
    tournait. Elle doit rester égale au CACHE de sw.js — c'est ce que vérifie
    banc-essai/version.js, qui refuse de laisser publier les deux en désaccord. */
-const VERSION_JEU = "v342";
+const VERSION_JEU = "v344";
 
 /* ===================== QUAND ÇA CASSE CHEZ UN JOUEUR =====================
    « Si quelque chose casse chez cinq d'entre eux sur un modèle de téléphone
@@ -14647,6 +14673,10 @@ try{
   if(redim) modeOrdinaire();
   else if(vk){ try{ vk.overlaysContent = true; }catch(e){} }
   const rectClavier = ()=>{ try{ const r = !redim && vk && vk.boundingRect; return (r && r.height > 0) ? r : null; }catch(e){ return null; } };
+  /* (v343) La hauteur ESTIMÉE d'un clavier dont rien ne parle (voir plus
+     bas, UN CLAVIER QUE PERSONNE N'ANNONCE). Zéro tant qu'on n'en a pas
+     besoin. */
+  let estime = 0;
   if(/Android/i.test(navigator.userAgent || "") && !redim){
     let toucheChamp = 0, guet = null;
     document.addEventListener("pointerdown", (e)=>{
@@ -14668,6 +14698,51 @@ try{
         setTimeout(apply, 60); setTimeout(apply, 400);
       }, 900);
     });
+  }
+  /* ===== (v343) UN CLAVIER QUE PERSONNE N'ANNONCE : ON L'ESTIME =====
+     « Sur Android, le problème du clavier qui cache la barre d'écriture est
+       toujours présent. » Le mode ordinaire (v328) suppose qu'un navigateur
+     muet rétrécit au moins sa zone visible. Ce n'est pas toujours vrai :
+     installé en plein écran, Android ne redimensionne plus rien quand le
+     clavier monte (le plein écran l'en empêche), et un navigateur qui ne dit
+     pas son clavier laisse alors le jeu complètement aveugle — ni
+     l'interface du clavier, ni la zone visible, ni la fenêtre ne bougent. La
+     barre d'écriture restait dessous.
+     En dernier recours : un champ touché du doigt, et toujours aucun signe
+     du clavier une fois le mode ordinaire essayé — on le suppose là, à la
+     hauteur d'un clavier de téléphone (42 % de l'écran au repos : le clavier
+     Samsung avec sa barre d'outils, Gboard avec ses suggestions), et la
+     barre se pose au-dessus. Un vrai signal reprend aussitôt la main ;
+     quitter le champ fait oublier l'estimation. Chrome, qui dit son clavier,
+     n'y passe jamais. */
+  if(/Android/i.test(navigator.userAgent || "")){
+    let doigtChamp = 0, guetAveugle = null, aParle = false, h0 = 0, i0 = 0;
+    /* A-t-il parlé, ne serait-ce qu'un instant, depuis que le champ a le
+       foyer ? Un clavier déjà redescendu (le retour d'Android) n'est pas un
+       clavier muet. */
+    const ecouter = ()=>{ if(rectClavier() || (h0 && vv.height < h0 - 90) || vv.height < restH - 90 || (i0 && innerHeight < i0 - 90)) aParle = true; };
+    vv.addEventListener("resize", ecouter);
+    if(vk){ try{ vk.addEventListener("geometrychange", ecouter); }catch(e){} }
+    window.addEventListener("resize", ecouter);
+    document.addEventListener("pointerdown", (e)=>{
+      const el = e.target && e.target.closest ? e.target.closest("input, textarea") : null;
+      if(el) doigtChamp = performance.now();
+    }, { capture:true, passive:true });
+    document.addEventListener("focusin", (e)=>{
+      const el = e.target;
+      if(!el || !(el.tagName === "INPUT" || el.tagName === "TEXTAREA")) return;
+      if(performance.now() - doigtChamp > 1200) return;
+      h0 = vv.height; i0 = innerHeight; aParle = false;
+      clearTimeout(guetAveugle);
+      guetAveugle = setTimeout(()=>{
+        if(!isField() || document.hidden) return;
+        ecouter();
+        if(aParle) return;                                     // il a parlé
+        estime = Math.round(restH * 0.42);
+        apply();
+      }, redim ? 900 : 1900);
+    });
+    document.addEventListener("focusout", ()=>{ setTimeout(()=>{ if(estime && !isField()){ estime = 0; apply(); } }, 80); });
   }
   /* (v328) LA HAUTEUR DU CLAVIER, PAS SA POSITION. « Sur Android, le
      clavier cache où l'on écrit, dans un groupe. » Chrome Android a rendu
@@ -14708,7 +14783,11 @@ try{
      retire le clavier une deuxième fois. */
   const hauteurVisible = ()=>{
     const r = rectClavier();
-    if(!r) return vv.height;
+    if(!r){
+      /* (v343) Rien ne parle, mais un clavier est là (voir l'estimation). */
+      if(estime && isField() && vv.height >= restH - 90) return Math.max(0, restH - estime);
+      return vv.height;
+    }
     const fen = innerHeight;
     const perdu = Math.max(0, restInner - fen);
     const bas = perdu >= r.height * 0.75 ? Math.min(fen, restInner - r.height) : fen - r.height;
@@ -14786,7 +14865,7 @@ try{
      qui fait retomber la coupure DANS un intervalle. On ne sort jamais de la
      fourchette où le champ actif reste lisible, et on ne bouge jamais de plus
      d'une hauteur de ligne : rien ne « saute ». */
-  const INSECABLES = ".team-row, .add-team, .len-chip, .bk, .rev-item, .scn-thumb, .opt-row, .tst-head, button, .text-input";
+  const INSECABLES = ".place, .len-chip, .bk, .rev-item, .scn-thumb, .opt-row, .tst-head, button, .text-input";
   function pliPropre(app, ar, H, cible, mini, maxi){
     const st = app.scrollTop;
     const bords = [];
@@ -20434,45 +20513,111 @@ function selectMode(m){ bumpModeUse(m); state.mode = m; state.screen = "setup"; 
 function goToModeSelect(){ state.screen = "mode"; render(); }
 
 /* ===================== SETUP (group) ===================== */
-/* Contenu de la carte « Joueurs ou équipes » (jetons + lignes + bouton Ajouter).
-   Isolé pour pouvoir le rafraîchir SEUL — sans reconstruire tout l'écran (voir
-   refreshTeamCard). */
-/* Contenu d'UNE ligne joueur. Les gestionnaires ne reçoivent PAS d'index figé :
-   ils le déduisent de la position réelle de la ligne -> ajouter/retirer un
-   joueur n'oblige à réécrire AUCUNE autre ligne.
-   LA TOUCHE DE CONFIRMATION DU CLAVIER. C'était le seul champ du jeu à ne pas
-   la gérer : sur Android, la flèche de validation ne faisait tout simplement
-   rien, le clavier restait posé sur l'écran et il fallait toucher ailleurs pour
-   s'en débarrasser. On demande maintenant une touche « OK » (enterkeyhint) et
-   on la traite comme partout ailleurs : elle quitte le champ, donc elle ferme
-   le clavier — et le nom se fixe au passage, puisque c'est ce que fait déjà la
-   sortie du champ. */
-function teamRowInner(i, t){
-  return `<span class="team-token" style="background:${TEAM_COLORS[i%6]}">${escapeHtml(premierSigne(t.name))||(i+1)}</span>
-        <input type="text" value="${escapeHtml(nomEquipe(t.name))}" maxlength="20" autocomplete="off" enterkeyhint="done" oninput="renameTeam(this)" onblur="renameSettle()" onkeydown="if(event.key==='Enter'){event.preventDefault();this.blur();}" placeholder="${T("Nom du joueur ou de l'équipe")}">
-        <button class="team-remove" onclick="removeTeam(this)" ${state.teams.length<=2?"disabled":""} aria-label="${T('Retirer')}"><span class="ico" style="width:0.9rem;height:0.9rem;">${ICONS.close}</span></button>`;
+/* ===================== (v344) LES SIX PLACES =====================
+   « Revois toute la partie où on ajoute les membres, totalement : sur
+     Android elle bug toujours. Fais en sorte qu'elle soit mieux, et
+     parfaitement identique sur tous les OS. »
+   Tout ce qui « buguait » ici venait d'une seule source : la carte CHANGEAIT
+   DE HAUTEUR. Une ligne qui naît ou s'en va pousse tout ce qui est dessous
+   — la durée, le chrono, le testament —, et Android repeignait ces cartes de
+   verre en plein mouvement : « Toute la Bible » qui clignote, le cran du
+   retrait, l'animation « pas comme sur iOS ». Des versions entières de
+   réglages fins (marges fondues, pixel de bordure, bouton qui se replie,
+   ouverture miroir du retrait, sonde sur le téléphone) n'en sont pas venues
+   à bout : c'est le mouvement lui-même qui était le défaut.
+   La carte a donc SIX PLACES, toujours les mêmes, en deux rangées de trois.
+   Les joueurs les occupent dans l'ordre, la suivante dit « Ajouter », les
+   autres attendent, à peine dessinées. Ajouter ou retirer quelqu'un ne
+   change plus la hauteur de RIEN : seules les places concernées s'animent,
+   et ce qui est dessous ne bouge plus jamais d'un pixel, sur aucun téléphone.
+   Le nom ne s'écrit plus dans la carte : toucher un joueur ouvre SA page (le
+   glissement des Réglages), où l'on écrit au calme. Le clavier ne se lève
+   plus sur l'écran de la partie — il n'y a plus rien à faire sauter. */
+/* Le signe d'un joueur, sur sa pastille : l'initiale de son nom — ou, tant
+   qu'il n'en a pas, son NUMÉRO. « Joueur 2 » et « Joueur 3 » portaient tous
+   deux un « J » (un « J » même en anglais, où ils s'appellent « Player ») :
+   deux pastilles pareilles pour deux places différentes. */
+function signeEquipe(i){
+  const t = state.teams[i];
+  const nom = String(t && t.name || "").trim();
+  const m = NUM_DEFAUT.exec(nom);
+  if(!nom || m) return String(m ? m[1] : i + 1);
+  return premierSigne(nom) || String(i + 1);
 }
 function teamCardInner(){
   normalizeTeams(); saveTeams();   // six au plus, numérotés dans l'ordre
-  return `<h2>${T("Joueurs ou équipes")}</h2>
-    ${state.teams.map((t,i)=>`<div class="team-row">${teamRowInner(i,t)}</div>`).join("")}
-    <button class="add-team" onclick="addTeam()" ${state.teams.length>=MAX_TEAMS?"disabled":""}><span class="ico">${ICONS.plusCircle}</span>${T("Ajouter un joueur ou une équipe")}</button>`;
+  let h = "";
+  for(let i = 0; i < MAX_TEAMS; i++) h += `<div class="place" data-p="${i}"><button class="pl-btn"></button></div>`;
+  /* Les six places sont posées vides, puis remplies par le même chemin que
+     tout le reste (majPlace) : il n'existe qu'UNE façon de dessiner une place. */
+  const t = document.createElement("template");
+  t.innerHTML = `<div class="places">${h}</div>`;
+  const grille = t.content.firstElementChild;
+  majPlaces(grille);
+  return `<h2>${T("Joueurs ou équipes")}</h2>${grille.outerHTML}`;
 }
-/* La ligne en cours de retrait est encore dans la page pendant qu'elle se replie :
-   on l'EXCLUT partout, sinon les jetons, les couleurs et surtout l'index visé
-   par un renommage seraient décalés d'un cran pendant ces deux dixièmes. */
-function teamRowEls(){
-  const c = document.getElementById("teamCard");
-  return c ? c.querySelectorAll(".team-row:not([data-partie])") : [];
+function placesGrille(){ return document.querySelector("#teamCard .places"); }
+/* UNE PLACE SE MET À JOUR SUR PLACE. Le bouton reste le même élément d'un
+   état à l'autre (joueur, ajout, libre) : l'onde du doigt qui vient de le
+   toucher continue, et son fond passe d'un état à l'autre en douceur au lieu
+   d'être remplacé d'un coup. */
+function majPlace(el, i){
+  const n = state.teams.length;
+  const etat = i < n ? "joueur" : (i === n ? "ajout" : "libre");
+  const b = el.querySelector(".pl-btn");
+  if(!b) return;
+  if(!b.classList.contains("pl-" + etat)){
+    b.classList.remove("pl-joueur", "pl-ajout", "pl-libre");
+    b.classList.add("pl-" + etat);
+  }
+  b.disabled = etat === "libre";
+  b.tabIndex = etat === "libre" ? -1 : 0;
+  if(etat === "libre") b.setAttribute("aria-hidden", "true"); else b.removeAttribute("aria-hidden");
+  let x = el.querySelector(".pl-x");
+  if(etat === "joueur"){
+    const nom = nomEquipe(state.teams[i].name);
+    b.setAttribute("onclick", "ouvrirJoueur(" + i + ")");
+    b.setAttribute("aria-label", Tf("Changer le nom de {nom}", { nom }));
+    let tok = b.querySelector(".team-token"), mot = b.querySelector(".pl-nom");
+    if(!tok || !mot){
+      b.textContent = "";
+      tok = document.createElement("span"); tok.className = "team-token";
+      mot = document.createElement("span"); mot.className = "pl-nom";
+      b.appendChild(tok); b.appendChild(mot);
+    }
+    const couleur = TEAM_COLORS[i % 6], signe = signeEquipe(i);
+    if(tok.dataset.c !== couleur){ tok.style.background = couleur; tok.dataset.c = couleur; }
+    if(tok.textContent !== signe) tok.textContent = signe;
+    if(mot.textContent !== nom) mot.textContent = nom;
+    if(!x){
+      x = document.createElement("button");
+      x.className = "pl-x";
+      x.innerHTML = `<span class="ico">${ICONS.close}</span>`;
+      el.appendChild(x);
+    }
+    x.setAttribute("onclick", "retirerJoueur(" + i + ")");
+    x.setAttribute("aria-label", Tf("Retirer {nom}", { nom }));
+  } else {
+    if(x) x.remove();
+    if(etat === "ajout"){
+      b.setAttribute("onclick", "ajouterJoueur()");
+      b.setAttribute("aria-label", T("Ajouter un joueur ou une équipe"));
+      if(!b.querySelector(".pl-plus")){
+        b.innerHTML = `<span class="pl-plus">${ICONS.plusCircle}</span><span class="pl-nom">${escapeHtml(T("Ajouter"))}</span>`;
+      }
+    } else {
+      b.removeAttribute("onclick"); b.removeAttribute("aria-label");
+      if(b.firstChild) b.textContent = "";
+    }
+  }
 }
-function teamIndexOf(el){
-  const row = el && el.closest ? el.closest(".team-row") : null;
-  if(!row) return -1;
-  return Array.prototype.indexOf.call(teamRowEls(), row);
+function majPlaces(grille){
+  const g = grille || placesGrille();
+  if(!g) return;
+  normalizeTeams(); saveTeams();
+  g.classList.toggle("a-deux", state.teams.length <= 2);
+  g.querySelectorAll(".place").forEach((el, i)=> majPlace(el, i));
 }
-/* Remet à jour ce qui dépend du RANG (couleur du jeton, initiale) et les états
-   désactivés — en ne modifiant que des attributs. Aucun nœud n'est détruit,
-   donc aucune couche de verre n'est recréée. */
 /* LE NUMÉRO, C'EST LA PLACE DANS LA LISTE. Rien d'autre.
    Deux erreurs corrigées d'un coup. La première : chaque joueur gardait à vie le
    numéro reçu à sa création — on retirait le 2e, on en rajoutait un, et le
@@ -20503,43 +20648,6 @@ function normalizeTeams(){
     if(nom !== voulu) t.name = voulu;
   }
 }
-function syncTeamRows(){
-  const c = document.getElementById("teamCard");
-  if(!c) return;
-  normalizeTeams(); saveTeams();   // le plafond de six est appliqué là-dedans
-  const rows = teamRowEls();
-  for(let i = 0; i < rows.length; i++){
-    const t = state.teams[i]; if(!t) continue;
-    /* Le champ suit la renumérotation — sauf celui qu'on est en train de
-       remplir, qu'on ne va évidemment pas réécrire sous les doigts. */
-    const inp = rows[i].querySelector("input");
-    if(inp && inp !== document.activeElement && inp.value !== t.name) inp.value = t.name;
-    const tok = rows[i].querySelector(".team-token");
-    if(tok){
-      tok.style.background = TEAM_COLORS[i%6];
-      tok.textContent = premierSigne(t.name) || (i+1);
-    }
-    const rm = rows[i].querySelector(".team-remove");
-    if(rm) rm.disabled = state.teams.length <= 2;
-  }
-  const add = c.querySelector(".add-team");
-  if(add) add.disabled = state.teams.length >= MAX_TEAMS;
-}
-/* ANDROID — POURQUOI ÇA SACCADAIT (vraie cause) : à chaque tap +/- on
-   reconstruisait le contenu de la carte (innerHTML), ce qui DÉTRUISAIT les
-   couches de verre (.gs) de la carte, de CHAQUE ligne et du bouton Ajouter —
-   soit 6 à 8 couches GPU à re-rastériser d'un coup. Or une couche .gs a une
-   taille FIXE (1,4 × largeur écran sur 2 × hauteur écran) : elle n'a JAMAIS
-   besoin d'être recréée quand une carte grandit — seul son transform change.
-   Désormais on n'ajoute/retire QU'UNE ligne, sans toucher aux autres, puis on
-   laisse le moteur recaler les transforms (un simple translate3d, gratuit).
-   Rendu strictement identique, coût divisé par ~8. */
-/* La carte est la SEULE surface dont la HAUTEUR change. Android peut garder sa
-   couche compositée « collée » à l'ancienne géométrie -> le verre du fond de
-   carte ne suit plus (visible surtout avec beaucoup de joueurs, quand la carte
-   devient haute). On force la reprise de CETTE SEULE couche (bascule brève de
-   will-change) : une couche au lieu de huit, coût négligeable, rendu identique.
-   Puis un dernier recalage au frame suivant, quand la mise en page est posée. */
 /* ===== UNE SEULE HORLOGE POUR TOUS LES PLIS DU JEU =====
    Un PLI, c'est tout ce qui s'ouvre, se ferme ou se remplit SUR PLACE en
    poussant le reste : un testament qui se déplie, une ligne de joueur qui
@@ -20580,500 +20688,136 @@ function msFerme(){
 }
 /* Le filet de sécurité de chaque pli : largement APRÈS la fin du mouvement. */
 function filetPli(){ return msPli() + 280; }
-function settleTeamCard(c){
-  /* PLUS DE BASCULE DE will-change ICI.
-     On faisait passer la couche de verre de « transform » à « auto » puis
-     retour, pour la « reprendre à la bonne taille ». Or éteindre will-change
-     DÉTRUIT la couche GPU, et la rallumer en recrée une : le navigateur doit
-     re-peindre toute la carte — 370 x 320 px de décor flouté — avant de
-     pouvoir la recomposer. Sur Android, ce délai se voit : l'écran cligne à
-     chaque joueur ajouté ou retiré. Et la reprise ne servait à rien, parce que
-     la couche .gs a une taille FIXE (celle de la scène floutée, iw x ih) qui
-     ne dépend pas de la hauteur de la carte : quand la carte grandit, c'est
-     son rognage qui change, pas la couche. Ce qu'il fallait vraiment, c'est
-     que le moteur RÉÉCRIVE le transform de la couche quand la hauteur bouge —
-     il ne le faisait pas, parce qu'il n'écrit que ce qui change et que le
-     transform, lui, ne changeait pas (voir queueGlassSync).
-     Et il ne suffit pas de recaler à la fin : la carte grandit pendant un
-     tiers de seconde, donc sa hauteur doit être relue à CHAQUE image de
-     l'animation — sans quoi son verre reste rogné à l'ancienne taille jusqu'au
-     dernier instant, puis se complète d'un coup. armGlass met le moteur en
-     suivi le temps du mouvement. */
-  try{ armGlass(700); }catch(e){}
-  requestAnimationFrame(()=>{ try{ glassRelayout(); queueGlassSync(); }catch(e){} });
+/* ===== LES GESTES DES PLACES =====
+   AJOUTER : la place « Ajouter » devient le joueur — sa pastille se pose avec
+   un petit rebond, son nom monte —, et la suivante s'allume en « Ajouter ».
+   RETIRER : la place s'efface en se resserrant, puis ceux qui la suivaient
+   glissent chacun d'une place, dans l'ordre, et la dernière place occupée
+   redevient « Ajouter ». Seules des TRANSFORMATIONS bougent : aucune hauteur,
+   aucune carte de verre à repeindre. Les six places ne se déplaçant jamais,
+   leurs positions se lisent une fois, au toucher. */
+var placesAnim = null;     // le retrait en vol, qu'on sait poser d'un coup (var : render() le lit, même avant cette ligne)
+const PL_PART = 170;       // le temps que la place retirée s'efface
+function placeEl(i){ const g = placesGrille(); return g ? g.querySelector('.place[data-p="' + i + '"]') : null; }
+function marquer(el, cl, ms){
+  if(!el) return;
+  el.classList.remove(cl); void el.offsetWidth; el.classList.add(cl);
+  clearTimeout(el["_t" + cl]);
+  el["_t" + cl] = setTimeout(()=> el.classList.remove(cl), ms);
 }
-function addTeam(){
+/* Un retrait encore en vol se pose d'un coup avant le geste suivant : deux
+   mouvements ne se croisent jamais sur la même place. */
+function finirPlaces(){ if(placesAnim){ const a = placesAnim; placesAnim = null; a.fin(); } }
+function ajouterJoueur(){
+  finirPlaces();
   if(state.teams.length >= MAX_TEAMS) return;
-  /* On pose un nom par défaut quelconque : normalizeTeams lui donne
-     aussitôt son vrai numéro, celui de sa place dans la liste. */
-  state.teams.push({ name: "Joueur 1" });
-  normalizeTeams();
-  saveTeams();
-  const c = document.getElementById("teamCard");
-  const add = c ? c.querySelector(".add-team") : null;
-  if(!c || !add){ render(); return; }
-  /* On note la taille du bouton AVANT que syncTeamRows ne le masque : au
-     sixième joueur il disparaît, et il doit se replier du même geste que la
-     ligne s'ouvre — exactement comme il repousse quand on redescend à cinq. */
-  const addEtaitVisible = !add.disabled;
-  const acs = getComputedStyle(add);
-  const addNat = { h: add.offsetHeight + "px", mt: acs.marginTop, pt: acs.paddingTop, bt: acs.borderTopWidth };
-  const row = document.createElement("div");
-  row.className = "team-row";
-  row.innerHTML = teamRowInner(state.teams.length - 1, state.teams[state.teams.length - 1]);
-  c.insertBefore(row, add);            // UNE seule couche de verre en plus
-  syncTeamRows();
-  if(addEtaitVisible && add.disabled) plieAjout(add, addNat);
-  glassRelayout(); queueGlassSync();   // recalage des transforms uniquement
-  ouvreLigne(row);
-  settleTeamCard(c);
+  state.teams.push({ name:"Joueur 1" });   // normalizeTeams lui donne son numéro
+  const k = state.teams.length - 1;
+  majPlaces();
+  marquer(placeEl(k), "pl-arrive", 700);
+  marquer(placeEl(k + 1), "pl-vient", 560);
 }
-/* LE BOUTON « AJOUTER » SE REPLIE, IL NE S'ÉVANOUIT PLUS.
-   Mesuré image par image en ajoutant le sixième joueur : la carte perdait
-   40,6px d'un coup — tout le bouton — sur la même image où la nouvelle ligne
-   commençait à s'ouvrir. Deux mouvements contraires dans la même image, c'est
-   précisément ce que l'œil lit comme un bug.
-   Il se replie donc avec la durée et la courbe de tout le reste. Il reste
-   DÉSACTIVÉ pendant ce temps (la classe ne fait que rendre le repli visible),
-   donc impossible d'ajouter un septième joueur à la faveur de l'animation. */
-function plieAjout(add, nat){
-  if(!add || !add.style) return;
-  const poser = (h, mt, p, bord, op)=>{
-    add.style.height = h; add.style.marginTop = mt;
-    add.style.paddingTop = p; add.style.paddingBottom = p;
-    add.style.borderTopWidth = bord; add.style.borderBottomWidth = bord;
-    add.style.opacity = op;
-  };
-  if(add._plieAnnule){ try{ add._plieAnnule(); }catch(e){} add._plieAnnule = null; }
-  add.classList.add("se-plie");
-  add.style.transition = "none";
-  add.style.overflow = "hidden";
-  poser(nat.h, nat.mt, nat.pt, nat.bt, "1");
-  void add.offsetHeight;                               // l'état de départ est posé
-  const RP = tempoPli();
-  add.style.transition = "height " + RP + ", margin-top " + RP +
-    ", padding-top " + RP + ", padding-bottom " + RP +
-    ", border-top-width " + RP + ", border-bottom-width " + RP +
-    ", opacity 0.15s cubic-bezier(0.4,0,0.6,1)";
-  poser("0px", "0px", "0px", "0px", "0");
-  let fini = false, filet = 0;
-  const surFin = (e)=>{ if(e.propertyName === "height") finir(); };
-  const ranger = ()=>{
-    clearTimeout(filet); add.removeEventListener("transitionend", surFin);
-    if(add._plieAnnule === annule) add._plieAnnule = null;
-  };
-  const finir = ()=>{
-    if(fini) return; fini = true; ranger();
-    add.classList.remove("se-plie");                   // il repasse en display:none
-    add.style.transition = ""; add.style.overflow = "";
-    add.style.height = ""; add.style.marginTop = ""; add.style.paddingTop = "";
-    add.style.paddingBottom = ""; add.style.borderTopWidth = ""; add.style.borderBottomWidth = "";
-    add.style.opacity = "";
-    try{ glassRelayout(); queueGlassSync(); }catch(e){}
-  };
-  /* Si un retrait le fait renaître pendant qu'il se replie, il reprend la main
-     sans que ce repli-ci ne vienne effacer ses styles derrière lui. */
-  const annule = ()=>{ if(fini) return; fini = true; ranger(); add.classList.remove("se-plie"); };
-  annule._estRepli = true;             // pour que le retrait sache à quoi il a affaire
-  add._plieAnnule = annule;
-  add.addEventListener("transitionend", surFin);
-  filet = setTimeout(finir, filetPli());
-}
-/* L'OUVERTURE EST LE MIROIR EXACT DE LA FERMETURE.
-   Elle n'existait tout simplement pas : la ligne apparaissait d'un bloc, 65,5px
-   avalés en UNE image — 100% de la course d'un coup, à pleine opacité. À côté
-   d'un retrait qui glisse en 0,34s, c'était le jour et la nuit.
-   La place s'ouvre donc maintenant avec la même durée et la même courbe que
-   celle avec laquelle elle se referme. Et le contenu suit le principe inverse
-   du retrait : là-bas il s'efface d'abord et l'espace se referme après ; ici
-   l'espace s'ouvre d'abord et le contenu se pose dedans, une fois qu'il a de la
-   place — il ne se superpose jamais à ce qui bouge encore.
-   On mesure la hauteur naturelle de la ligne AVANT de l'animer : la partir de
-   zéro sans la connaître obligerait à animer vers « auto », ce qu'aucun
-   navigateur ne sait faire. */
-function ouvreLigne(row){
-  if(!row || !row.style) return;
-  const cs = getComputedStyle(row);
-  const nat = { h: row.getBoundingClientRect().height, mb: cs.marginBottom,
-                pt: cs.paddingTop, pb: cs.paddingBottom,
-                bt: cs.borderTopWidth, bb: cs.borderBottomWidth };
-  const poser = (h, mb, p, bord)=>{
-    row.style.height = h; row.style.marginBottom = mb;
-    row.style.paddingTop = p; row.style.paddingBottom = p;
-    row.style.borderTopWidth = bord; row.style.borderBottomWidth = bord;
-  };
-  const enfants = [];
-  for(let k = 0; k < row.children.length; k++) if(row.children[k].style) enfants.push(row.children[k]);
-  /* départ : refermée, invisible, et sans transition pour que rien ne s'anime
-     vers l'état de départ lui-même. */
-  row.style.transition = "none";
-  row.style.overflow = "hidden";
-  poser("0px", "0px", "0px", "0px");
-  row.style.opacity = "0";
-  enfants.forEach(e => { e.style.transition = "none"; e.style.opacity = "0"; });
-  void row.offsetHeight;                               // le départ est appliqué
-  const R = tempoPli();
-  row.style.transition = "height " + R + ", margin-bottom " + R +
-    ", padding-top " + R + ", padding-bottom " + R +
-    ", border-top-width " + R + ", border-bottom-width " + R +
-    ", opacity 0.16s ease-out";
-  poser(nat.h + "px", nat.mb, nat.pt, nat.bt);
-  row.style.opacity = "1";
-  /* le contenu entre APRÈS, quand la place est faite aux deux tiers */
-  /* Le contenu entre quand la place est faite aux deux tiers — la fraction
-     suit l'horloge du pli, elle n'est plus un nombre écrit à la main. */
-  enfants.forEach(e => { e.style.transition = "opacity 0.18s ease-out " + Math.round(msPli() * 0.4) + "ms"; e.style.opacity = "1"; });
-  try{ glassSuivre(filetPli()); }catch(e){}
-  /* à l'arrivée on rend la ligne à elle-même : plus aucun style figé, sinon
-     elle ne suivrait plus les changements de taille de police ou d'écran. */
-  let fini = false, filet = 0;
-  /* PAS DE { once:true } ICI — c'était un piège. L'opacité se termine à 0,16s,
-     bien AVANT la hauteur à 0,34s : la première fin de transition consommait
-     donc l'écouteur unique sans rien déclencher (mauvaise propriété), et le
-     rangement ne se faisait plus qu'au filet de 620ms. La ligne gardait ses
-     styles figés 280ms de trop — et si on la retirait dans cet intervalle, le
-     filet tombait en plein repli et effaçait les styles du retrait : la ligne
-     rebondissait à sa taille pleine, mesuré à 37,8px. */
-  const surFin = (e)=>{ if(e.propertyName === "height") finir(); };
-  const ranger = ()=>{
-    clearTimeout(filet);
-    row.removeEventListener("transitionend", surFin);
-    if(row._animLigne === annule) row._animLigne = null;
-  };
-  const finir = ()=>{
-    if(fini) return; fini = true; ranger();
-    row.style.transition = ""; row.style.overflow = "";
-    row.style.height = ""; row.style.marginBottom = ""; row.style.paddingTop = "";
-    row.style.paddingBottom = ""; row.style.borderTopWidth = ""; row.style.borderBottomWidth = "";
-    row.style.opacity = "";
-    enfants.forEach(e => { e.style.transition = ""; e.style.opacity = ""; });
-    try{ glassRelayout(); queueGlassSync(); }catch(e){}
-  };
-  /* UN SEUL MAÎTRE PAR LIGNE. Le retrait appelle ceci pour congédier
-     l'ouverture avant de mesurer quoi que ce soit. On se retire SANS toucher
-     aux styles : la ligne reste exactement là où elle en est, et le repli part
-     de cette position — donc aucune marche, même en plein milieu du geste. */
-  const annule = ()=>{ if(fini) return; fini = true; ranger(); };
-  row._animLigne = annule;
-  row.addEventListener("transitionend", surFin);
-  filet = setTimeout(finir, filetPli());                      // filet si l'événement manque
-}
-/* RETRAIT SANS SAUT. Retirer une ligne d'un coup raccourcit la carte d'un coup :
-   si la page était défilée en bas (le cas dès qu'on a six joueurs), le
-   navigateur raboute le défilement au nouveau maximum et TOUT l'écran se
-   déplace d'un bloc — 66px mesurés, le « petit saut ». On replie donc la ligne
-   en 170ms : la page se réajuste en glissant, exactement comme elle le ferait
-   sous le doigt. La couche de verre de la carte n'a rien à recalculer pendant
-   ce temps (taille fixe, même position) ; on garde juste le moteur en éveil. */
-/* ===== LA SONDE DU RETRAIT, POUR MESURER SUR SON TÉLÉPHONE =====
-   « Au moment où je retire le quatrième joueur, ça fait un petit blocage lors
-   de la fermeture. » Je ne le reproduis pas : ici, les quatre retraits sont
-   identiques — même durée dans le doigt (2,7 à 3,1 ms, 17 à 19 avec le
-   processeur bridé six fois), même profil image par image, et les croix qui
-   restent s'éteignent en quatorze valeurs, pas d'un coup. Le défaut est donc
-   SUR L'APPAREIL, et mon instrument ne sait pas le voir — exactement comme le
-   saut du verre, dont la réponse est venue de son téléphone et pas du banc.
-   Alors on mesure là-bas. Elle ne s'allume qu'avec « ?sonde=1 », ne touche à
-   rien, et affiche à la fin du repli ce qu'un blocage laisserait forcément
-   derrière lui : une image beaucoup plus longue que les autres. */
-function sonderRetrait(c, combien){
-  if(!SONDE || !c) return function(){};
-  const t0 = performance.now(); const l = [];
-  let fil = 0;
-  const tic = ()=>{
-    const t = performance.now() - t0;
-    const b = c.getBoundingClientRect();
-    l.push([t, b.top, b.height]);
-    if(t < 1200) requestAnimationFrame(tic); else montrer();
-  };
-  const montrer = ()=>{
-    if(!l.length) return;
-    let pireImage = 0, quandImage = 0, pirePas = 0, quandPas = 0, demiTours = 0, sens = 0;
-    for(let i = 1; i < l.length; i++){
-      const dt = l[i][0] - l[i-1][0];
-      if(dt > pireImage){ pireImage = dt; quandImage = l[i][0]; }
-      const d = l[i][1] - l[i-1][1];
-      if(Math.abs(d) > pirePas){ pirePas = Math.abs(d); quandPas = l[i][0]; }
-      if(Math.abs(d) >= 0.5){ const sg = d > 0 ? 1 : -1; if(sens && sg !== sens) demiTours++; sens = sg; }
+function retirerJoueur(i){
+  /* Le joueur visé est celui qu'on a touché, pas un numéro : si un retrait
+     se pose d'abord (finirPlaces), les numéros glissent — lui, non. */
+  const vise = state.teams[i];
+  finirPlaces();
+  i = state.teams.indexOf(vise);
+  if(!vise || i < 0 || state.teams.length <= 2) return;
+  const g = placesGrille();
+  if(!g){ state.teams.splice(i, 1); normalizeTeams(); saveTeams(); return; }
+  const n = state.teams.length;
+  const places = [...g.querySelectorAll(".place")];
+  const rects = places.map(p => p.getBoundingClientRect());
+  const partante = places[i];
+  partante.classList.add("pl-part");
+  let pose = false, t1 = 0, t2 = 0;
+  const glisser = ()=>{
+    if(pose) return;
+    state.teams.splice(i, 1);
+    majPlaces(g);
+    const bougent = [];
+    for(let j = i; j < n - 1; j++){
+      const p = places[j], a = rects[j + 1], b = rects[j];
+      p.style.transition = "none";
+      p.style.transform = "translate(" + (a.left - b.left) + "px," + (a.top - b.top) + "px)";
+      p.classList.add("pl-glisse");
+      bougent.push(p);
     }
-    const box = document.createElement("div");
-    box.style.cssText = "position:fixed;z-index:99999;left:8px;right:8px;top:8px;background:#120E0A;color:#FFE9B8;"
-      + "font:600 11px/1.5 ui-monospace,SFMono-Regular,Menlo,monospace;padding:10px 12px;border-radius:12px;"
-      + "white-space:pre-wrap;box-shadow:0 8px 30px rgba(0,0,0,0.6)";
-    box.textContent = "SONDE RETRAIT — touche pour fermer\n"
-      + "retrait " + combien + " -> " + (combien - 1) + "   " + l.length + " images en "
-      + Math.round(l[l.length-1][0]) + " ms\n"
-      + "LE DOIGT TIENT LE FIL " + fil.toFixed(1) + " ms\n"
-      + "PIRE IMAGE " + pireImage.toFixed(0) + " ms @" + Math.round(quandImage) + " ms\n"
-      + "plus grand pas " + pirePas.toFixed(1) + " px @" + Math.round(quandPas) + " ms\n"
-      + "demi-tours " + demiTours + "   carte " + Math.round(l[0][2]) + " -> " + Math.round(l[l.length-1][2]) + " px";
-    box.addEventListener("click", ()=>{ try{ box.remove(); }catch(e){} });
-    document.body.appendChild(box);
+    /* La place retirée repart d'un coup à sa taille — elle porte maintenant
+       le joueur suivant, posé à l'endroit qu'il occupait —, sauf si c'était
+       la dernière : elle renaît alors doucement en « Ajouter ». */
+    if(bougent.length){
+      const ses = partante.querySelectorAll(".pl-btn, .pl-x");
+      ses.forEach(e => { e.style.transition = "none"; });
+      partante.classList.remove("pl-part");
+      void partante.offsetWidth;
+      ses.forEach(e => { e.style.transition = ""; });
+    } else partante.classList.remove("pl-part");
+    marquer(places[n - 1], "pl-vient", 620);
+    void g.offsetWidth;
+    const R = tempoPli();
+    bougent.forEach(p => { p.style.transition = "transform " + R; p.style.transform = ""; });
+    t2 = setTimeout(fin, msPli() + 60);
   };
-  requestAnimationFrame(tic);
-  return function(ms){ fil = ms || 0; };
+  const fin = ()=>{
+    if(pose) return; pose = true;
+    clearTimeout(t1); clearTimeout(t2);
+    if(state.teams.length === n){ state.teams.splice(i, 1); majPlaces(g); }   // posé avant d'avoir glissé
+    places.forEach(p => { p.classList.remove("pl-part", "pl-glisse"); p.style.transition = ""; p.style.transform = ""; });
+    if(placesAnim && placesAnim.fin === fin) placesAnim = null;
+  };
+  placesAnim = { fin };
+  t1 = setTimeout(glisser, PL_PART);
 }
-function removeTeam(btn){
-  if(state.teams.length <= 2) return;
-  const sondeDebut = SONDE ? performance.now() : 0;
-  const sondeFin = sonderRetrait(document.getElementById("teamCard"), state.teams.length);
-  const i = teamIndexOf(btn);
-  const row = btn && btn.closest ? btn.closest(".team-row") : null;
-  if(i < 0 || !row || row.dataset.partie) return;
-  const c = document.getElementById("teamCard");
-  /* ON CONGÉDIE L'OUVERTURE AVANT TOUT. Si cette ligne vient d'être ajoutée,
-     son animation d'ouverture — ou seulement son rangement de fin, encore en
-     attente — est toujours armée sur elle. Elle finirait par effacer les styles
-     que le retrait s'apprête à poser, en plein repli : mesuré, la ligne
-     rebondissait de 37,8px quand on la retirait 500ms après l'avoir ajoutée.
-     L'ouverture se retire sans rien toucher, donc la ligne reste où elle en
-     est et le repli démarre de là, sans la moindre marche. */
-  if(row._animLigne){ try{ row._animLigne(); }catch(e){} row._animLigne = null; }
-  state.teams.splice(i, 1); saveTeams();
-  row.dataset.partie = "1";            // exclue des calculs dès maintenant
-  /* Le clavier n'a plus lieu d'être : on venait de toucher une croix, pas un
-     champ. On le referme, comme le faisait l'ancien retrait qui reconstruisait
-     toute la carte. */
-  try{ const a = document.activeElement; if(a && a.tagName === "INPUT" && a.closest("#teamCard")) a.blur(); }catch(e){}
-  /* AVANT de mesurer quoi que ce soit : on remet la carte dans son état final.
-     C'est ici que « Ajouter un joueur » réapparaît quand on repasse sous six —
-     s'il réapparaissait APRÈS les mesures, la carte grandirait d'un coup en
-     plein repli et le saut qu'on vient d'éliminer reviendrait par la fenêtre. */
-  const add = c ? c.querySelector(".add-team") : null;
-  const addEtaitCache = !!add && add.disabled;
-  syncTeamRows();
-  /* LE CAS CROISÉ : on vient d'atteindre six, le bouton est en train de se
-     replier, et on retire déjà quelqu'un. On congédie ce repli et on rend au
-     bouton sa taille naturelle AVANT de la mesurer — sinon il renaîtrait à la
-     hauteur où le repli l'avait laissé, c'est-à-dire tronqué. */
-  let addDepart = null;
-  if(add && add._plieAnnule && add._plieAnnule._estRepli){
-    /* On note D'ABORD où en est le bouton : sa renaissance repartira
-       exactement de cette taille-là. Le forcer à zéro, comme on le fait quand
-       il était complètement absent, créait une marche — mesuré 28,6px d'un
-       coup en martelant les deux commandes autour du sixième joueur. */
-    const pcs = getComputedStyle(add);
-    addDepart = { h: add.getBoundingClientRect().height + "px", mt: pcs.marginTop,
-                  pt: pcs.paddingTop, bt: pcs.borderTopWidth, op: pcs.opacity };
-    try{ add._plieAnnule(); }catch(e){}
-    add._plieAnnule = null;
-    add.style.transition = ""; add.style.overflow = "";
-    add.style.height = ""; add.style.marginTop = ""; add.style.paddingTop = "";
-    add.style.paddingBottom = ""; add.style.borderTopWidth = ""; add.style.borderBottomWidth = "";
-    add.style.opacity = "";
-  }
-  /* Le bouton renaît : s'il surgissait tel quel, la carte grandirait de 40px À
-     L'INSTANT DU TOUCHER et tout ce qui est en dessous sauterait vers le bas
-     avant de remonter. Il s'ouvre donc DU MÊME GESTE que la ligne se replie.
-     On note sa taille naturelle maintenant (les mesures qui suivent portent
-     ainsi sur la carte telle qu'elle sera à l'arrivée), et on le remettra à
-     zéro juste avant de lancer le mouvement. */
-  const addRenait = !!add && addEtaitCache && !add.disabled;
-  let addNat = null;
-  /* CETTE RENAISSANCE AUSSI DOIT POUVOIR ÊTRE CONGÉDIÉE. Sans ça, son rangement
-     de fin effaçait les styles d'un repli démarré entre-temps, et le bouton
-     ressuscitait à sa taille pleine alors qu'il devait être plié — mesuré à
-     45,8px d'un coup en martelant les deux commandes. Le drapeau est lu au
-     moment du rangement, pas avant : c'est ce qui rend l'annulation possible
-     jusqu'au dernier instant. */
-  let renaitEncore = addRenait;
-  if(addRenait){
-    const acs = getComputedStyle(add);
-    addNat = { h: add.offsetHeight + "px", mt: acs.marginTop, pt: acs.paddingTop, bt: acs.borderTopWidth };
-    add._plieAnnule = ()=>{ renaitEncore = false; };
-  }
-  const poserAdd = (h, mt, p, bord, op)=>{
-    add.style.height = h; add.style.marginTop = mt;
-    add.style.paddingTop = p; add.style.paddingBottom = p;
-    add.style.borderTopWidth = bord; add.style.borderBottomWidth = bord;
-    add.style.opacity = op;
-  };
-  /* REPLI SANS LA MOINDRE MARCHE. Replier la hauteur ne suffit pas : une ligne
-     à zéro occupe encore quelques pixels (marges intérieures, bordures, ligne de
-     texte), et ces pixels-là disparaissaient d'un bloc AU RETRAIT — d'où le
-     petit saut en fin d'animation, mesuré à 9px de défilement rattrapé sur une
-     seule image. On mesure donc ce résidu pour de vrai, en deux essais muets
-     (ligne masquée, puis ligne repliée), et on l'annule avec une marge négative
-     exactement égale. À l'arrivée, retirer la ligne ne change plus RIEN à la
-     mise en page : il n'y a plus rien à rattraper. */
-  const cs = getComputedStyle(row);
-  const dep = { h: row.offsetHeight + "px", mb: cs.marginBottom, pt: cs.paddingTop, pb: cs.paddingBottom,
-                bt: cs.borderTopWidth, bb: cs.borderBottomWidth };
-  const poser = (h, mb, p, bord)=>{
-    row.style.height = h; row.style.marginBottom = mb;
-    row.style.paddingTop = p; row.style.paddingBottom = p;
-    row.style.borderTopWidth = bord; row.style.borderBottomWidth = bord;
-  };
-  /* Ces essais muets font, l'espace d'un instant, une mise en page où la ligne
-     n'existe plus. Le navigateur en profite pour ROGNER le défilement à la
-     nouvelle hauteur — mesuré : 66px avalés D'UN COUP au moment du toucher,
-     avant même que l'animation commence. C'était ÇA, le saut. On note donc où
-     en est chaque conteneur qui défile, et on le remet en place aussitôt. */
-  const defil = [];
-  for(let n = row.parentNode; n && n.nodeType === 1; n = n.parentNode) defil.push([n, n.scrollTop]);
-  try{ const se = document.scrollingElement; if(se) defil.push([se, se.scrollTop]); }catch(e){}
-  row.style.overflow = "hidden";
-  row.style.pointerEvents = "none";
-  row.style.transition = "none";
-  /* on mesure au sous-pixel près (getBoundingClientRect, pas offsetHeight qui
-     arrondit) : sinon il reste un demi-pixel de rattrapage au tout dernier
-     instant, juste assez pour se voir sur un écran dense. */
-  const hCarte = ()=> c ? c.getBoundingClientRect().height : 0;
-  const hAvecLigne = hCarte();
-  row.style.display = "none";
-  const hSansLigne = hCarte();                      // ce que ça donnera une fois retirée
-  row.style.display = "";
-  poser("0px", "0px", "0px", "0px");
-  const residu = Math.max(0, hCarte() - hSansLigne);   // ce qui resterait à tort
-  poser(dep.h, dep.mb, dep.pt, dep.bt);            // on revient à l'état de départ
-  /* Le bouton repart de zéro : la carte retrouve EXACTEMENT la hauteur qu'elle
-     avait avant le toucher, donc rien ne bouge au moment du doigt. */
-  if(addRenait){
-    add.style.transition = "none"; add.style.overflow = "hidden";
-    /* Il repart de zéro s'il était absent, ou de sa taille du moment s'il
-       était encore en train de se replier : dans les deux cas, la carte garde
-       EXACTEMENT la hauteur qu'elle avait à l'image précédente. */
-    if(addDepart) poserAdd(addDepart.h, addDepart.mt, addDepart.pt, addDepart.bt, addDepart.op);
-    else poserAdd("0px", "0px", "0px", "0px", "0");
-  }
-  void row.offsetHeight; void hAvecLigne;
-  for(let k = 0; k < defil.length; k++){ const [n, v] = defil[k]; if(n.scrollTop !== v) n.scrollTop = v; }
-  /* LE PLI. Deux défauts se voyaient, mesurés image par image sur les 65px que
-     parcourt la ligne du dessous :
-       - la courbe d'avant (0,19s, cubic-bezier(0.33,0,0.2,1)) restait plate puis
-         explosait : 13,9px avalés sur UNE SEULE image, soit un cinquième du
-         trajet d'un coup. C'est ce qui donnait le mouvement sec ;
-       - le contenu de la ligne s'effaçait en 0,13s alors que le repli durait
-         0,19s : pendant 85ms on regardait une BOÎTE BLANCHE VIDE se refermer.
-     La courbe est donc adoucie et allongée — elle démarre franchement puis
-     freine longuement, sans jamais de pointe — et le fondu dure EXACTEMENT
-     aussi longtemps que le pli : la ligne s'efface au moment même où elle
-     disparaît, il n'y a plus de boîte vide à voir.
-     Le couple retenu a été choisi en mesurant, pas au jugé : six réglages
-     essayés sur une copie du jeu, la pointe passe de 13,9px à 7,7px (de 2,7 à
-     2,1 fois le pas moyen). Les durées plus courtes remontent la pointe, et
-     0,32s s'est révélée instable d'un essai à l'autre — signe qu'une image
-     sautée la fait doubler, ce qui arrive tout le temps sur un vrai téléphone.
-     0,34s tient ses 7,7px à chaque fois.
-     LA LIGNE S'EFFACE VITE, LE VIDE SE REFERME LENTEMENT. C'était l'erreur
-     précédente : j'avais calé le fondu sur le pli, croyant éviter une « boîte
-     blanche vide ». Il n'y en avait jamais — l'opacité emporte aussi le fond de
-     la ligne, donc on voit la carte à travers, pas du blanc. Mais garder la
-     ligne lisible pendant 0,34s avait une vraie conséquence : la renumérotation
-     des joueurs s'applique dès le premier instant, si bien qu'on lisait DEUX
-     « Joueur 3 » côte à côte pendant tout le repli — celui qui part et son
-     successeur. Le fondu est donc redevenu bref : la ligne a disparu avant
-     qu'on ait le temps de lire le doublon, et l'espace, lui, se referme
-     tranquillement. */
-  const RESSORT = tempoPli();
-  const EFFACE = "0.15s cubic-bezier(0.4,0,0.6,1)";
-  row.style.transition = "height " + RESSORT + ", margin-bottom " + RESSORT +
-    ", padding-top " + RESSORT + ", padding-bottom " + RESSORT +
-    ", border-top-width " + RESSORT + ", border-bottom-width " + RESSORT + ", opacity " + EFFACE;
-  poser("0px", (-residu) + "px", "0px", "0px");
-  row.style.opacity = "0";
-  /* LE CONTENU PART ENCORE PLUS VITE QUE LA LIGNE. Les joueurs sont renumérotés
-     dès l'instant du toucher (c'est ce qui garde la liste juste), mais la ligne
-     qui s'en va porte encore l'ancien nom : pendant un court instant, deux
-     lignes affichent le même. À 0,15s de fondu on avait encore 140ms pour le
-     lire ; en effaçant d'abord le jeton, le champ et la croix, il n'en reste
-     plus assez pour qu'un mot se lise. La ligne, elle, garde son fond le temps
-     de s'effacer proprement. */
-  for(let k = 0; k < row.children.length; k++){
-    const enf = row.children[k];
-    if(!enf.style) continue;
-    enf.style.transition = "opacity 0.085s linear";
-    enf.style.opacity = "0";
-  }
-  if(addRenait){
-    add.style.transition = "height " + RESSORT + ", margin-top " + RESSORT +
-      ", padding-top " + RESSORT + ", padding-bottom " + RESSORT +
-      ", border-top-width " + RESSORT + ", border-bottom-width " + RESSORT + ", opacity " + RESSORT;
-    poserAdd(addNat.h, addNat.mt, addNat.pt, addNat.bt, "1");
-  }
-  /* le verre suit le réajustement du défilement — ET la mise en page qui bouge :
-     sans glassSuivre, la texture de décor des cartes situées SOUS la liste reste
-     figée pendant tout le repli et le flou glisse à l'intérieur d'elles. */
-  /* ===== LE RECALAGE DU VERRE NE SE FAIT PLUS DANS LE DOIGT =====
-     Il y avait ici glassTrack(), qui appelle queueGlassSync() de façon
-     SYNCHRONE — c'est-à-dire un parcours d'offsetParent sur chacune des
-     trente surfaces de verre de l'écran, au beau milieu du gestionnaire de
-     clic. Mesuré, jalons posés le long de removeTeam, processeur bridé six
-     fois (banc-essai/joueurs.js) :
-         entrée du gestionnaire            4 ms
-         syncTeamRows + bouton             4 ms
-         relevés de style                 11 ms
-         les trois essais muets            8 ms
-         pose du pli                      10 ms
-         >>> glassTrack + glassSuivre     15 ms  <<<
-         ------------------------------------------
-         le doigt tient le fil            52 ms  = trois images perdues
-     Quinze millisecondes sur cinquante, pour un travail que l'image SUIVANTE
-     refait de toute façon : glassSuivre ouvre une fenêtre pendant laquelle la
-     boucle relit la position de chaque surface à CHAQUE image (le drapeau
-     « suivre » dans queueGlassXF), et la boucle, elle, tourne à toutes les
-     images — armGlass ne fait qu'ouvrir sa fenêtre de travail. On garde donc
-     l'invalidation du cache et l'éveil de la boucle, et on laisse la première
-     image faire la lecture. Elle tombe alors sur la même image que le premier
-     pas de l'animation : le verre et la mise en page bougent ensemble, ce qui
-     est exactement ce qu'on veut. Rien ne bouge d'un pixel de plus ou de moins
-     — c'est le banc des lignes et celui des joueurs qui le disent. */
-  try{ glassRelayout(); armGlass(950); glassSuivre(filetPli()); }catch(e){}
-  /* LE MÉNAGE ATTEND QUE PLUS RIEN NE BOUGE.
-     Deux défauts se cachaient ici, et c'est ce qui rendait la fermeture moins
-     nette que l'ouverture.
-     1. Le filet de sécurité était à 300ms — hérité de l'époque où le repli
-        durait 0,19s. Depuis qu'il dure 0,34s, ce filet se déclenchait 40ms
-        AVANT la fin : le mouvement était donc tranché net à chaque fois, à
-        deux images de son terme. Il est reporté bien après, comme celui de
-        l'ouverture.
-     2. Le rangement (renumérotation des lignes, recalage du verre, reprise de
-        la couche de la carte) tombait sur les dernières images du mouvement —
-        mesuré à 308ms sur une animation qui finit à 345. Ce sont les
-        opérations les plus lourdes du lot, et elles se disputaient les
-        dernières images avec les pixels encore en train de glisser. On les
-        repousse de deux images après la fin : rien ne bouge plus, elles ne
-        gênent donc plus personne.
-     L'ouverture, elle, faisait déjà tout son travail AVANT de démarrer — c'est
-     pour ça qu'elle paraissait plus propre. */
-  let fini = false;
-  const finir = ()=>{
-    if(fini) return; fini = true;
-    row.remove();                      // léger : la ligne est déjà à hauteur nulle
-    /* On ne range QUE si cette renaissance est toujours la dernière en date :
-       un repli déclenché depuis a pris la main sur le bouton, et effacer ses
-       styles le ferait bondir à sa taille pleine en une image. */
-    if(renaitEncore){                  // le bouton reprend sa taille naturelle, sans style figé
-      if(add._plieAnnule) add._plieAnnule = null;
-      add.style.transition = ""; add.style.overflow = "";
-      add.style.height = ""; add.style.marginTop = ""; add.style.paddingTop = "";
-      add.style.paddingBottom = ""; add.style.borderTopWidth = ""; add.style.borderBottomWidth = "";
-      add.style.opacity = "";
-    }
-    requestAnimationFrame(()=>requestAnimationFrame(()=>{
-      syncTeamRows();                  // jetons et couleurs recalés sur la liste réelle
-      try{ glassRelayout(); queueGlassSync(); }catch(e){}
-      if(c) settleTeamCard(c);
-    }));
-  };
-  row.addEventListener("transitionend", (e)=>{ if(e.propertyName === "height") finir(); });
-  setTimeout(finir, filetPli());       // filet, largement APRÈS la fin du mouvement
-  try{ sondeFin(performance.now() - sondeDebut); }catch(e){}
+/* ===== LA PAGE D'UN JOUEUR =====
+   La même que « Modifier le groupe » : la pastille à côté du champ, à sa
+   hauteur, puis « Enregistrer ». Le nom s'écrit À CHAQUE LETTRE (rien ne se
+   perd si l'on revient par la flèche ou du bord de l'écran) ; la pastille
+   suit en direct. Un champ vide rend au joueur son numéro. */
+function ouvrirJoueur(i){
+  const vise = state.teams[i];
+  finirPlaces();
+  i = state.teams.indexOf(vise);
+  if(!vise || i < 0 || !pageLibre("joueurVeil")) return;
+  const nom = String(vise.name || "").trim();
+  const reel = nom && !NUM_DEFAUT.test(nom) ? nom : "";
+  const html = `<div class="grp-ident jp-ident">
+      <span class="team-token jp-jeton" style="background:${TEAM_COLORS[i % 6]}">${escapeHtml(signeEquipe(i))}</span>
+      <div class="grp-ident-ch"><input class="text-input" id="joueurNom" maxlength="20" value="${escapeHtml(reel)}" placeholder="${T("Nom du joueur ou de l'équipe")}" autocomplete="off" enterkeyhint="done" oninput="nommerJoueur(this)" onkeydown="if(event.key==='Enter'){event.preventDefault();validerJoueur();}"></div>
+    </div>
+    <button class="btn-primary jp-ok" onclick="validerJoueur()">${T("Enregistrer")}</button>
+    ${state.teams.length > 2 ? `<div class="grp-liste-act jp-retirer">${ligneAction(ICONS.close, T("Retirer de la partie"), "retirerDepuisPage()", true)}</div>` : ""}`;
+  const v = ouvrirFeuilleGroupe("joueurVeil", T("Joueur ou équipe"), ICONS.personne, html);
+  if(v) v._joueur = vise;
 }
-/* Renommage : mise à jour du jeton (1re lettre) EN DIRECT, sans aucun rendu —
-   plus de render() au blur (qui reconstruisait tout l'écran = saccade). */
-function renameTeam(inp){
-  const i = teamIndexOf(inp);
-  if(i < 0 || !state.teams[i]) return;
-  state.teams[i].name = inp.value; saveTeams();
-  const tok = inp.parentNode ? inp.parentNode.querySelector(".team-token") : null;
-  if(tok) tok.textContent = premierSigne(inp.value) || (i+1);
+function joueurDeLaPage(){
+  const v = document.getElementById("joueurVeil");
+  return v && v._joueur ? v._joueur : null;
 }
-/* Dès qu'un joueur reçoit un VRAI nom, il ne prend plus de numéro : les autres
-   se resserrent derrière lui (Taylor, puis Joueur 1 à 5 — six joueurs, et la
-   numérotation s'arrête à 5). On le fait à la FIN de la saisie, pas pendant :
-   voir les champs voisins se renuméroter lettre après lettre serait pénible. */
-function renameSettle(){ syncTeamRows(); }
+function nommerJoueur(z){
+  const t = joueurDeLaPage(), i = state.teams.indexOf(t);
+  if(i < 0) return;
+  t.name = z.value;
+  majPlaces();                      // la carte, sous la page, suit déjà
+  const j = document.querySelector("#joueurVeil .jp-jeton");
+  if(j){ const s = signeEquipe(i); if(j.textContent !== s) j.textContent = s; }
+}
+function validerJoueur(){
+  const z = document.getElementById("joueurNom");
+  if(z && document.activeElement === z){ try{ z.blur(); }catch(e){} }
+  fermerFeuilleGroupe("joueurVeil");
+}
+/* Retirer depuis sa page : la page repart d'abord, PUIS la place s'efface
+   sous les yeux — on voit ce qu'on vient de faire. */
+function retirerDepuisPage(){
+  const t = joueurDeLaPage();
+  validerJoueur();
+  setTimeout(()=>{
+    if(state.screen !== "setup" || state.mode !== "group") return;   // la partie est lancée : on n'y touche plus
+    const i = state.teams.indexOf(t); if(i >= 0) retirerJoueur(i);
+  }, msFerme() + 80);
+}
 function dureeOnde(){
   const v = getComputedStyle(document.documentElement).getPropertyValue("--onde-duree").trim();
   const n = parseFloat(v);
@@ -22035,7 +21779,67 @@ let achToastPause = false, achRelache = 0;
 function retenirToasts(){ clearTimeout(achRelache); achRelache = 0; achToastPause = true; }
 function relacherToasts(ms){
   clearTimeout(achRelache);
-  achRelache = setTimeout(()=>{ achRelache = 0; achToastPause = false; try{ pumpAchToast(); }catch(e){} }, ms || 1200);
+  achRelache = setTimeout(()=>{
+    achRelache = 0;
+    /* (v343) Une flamme gagnée passe AVANT les bandeaux : on la fête, puis
+       les rappels sont proposés, puis la file reprend. */
+    if(flammeAFeter && !document.getElementById("modalVeil")){
+      const n = flammeAFeter; flammeAFeter = 0;
+      try{ feterFlamme(n, ()=>{ achToastPause = false; try{ pumpAchToast(); }catch(e){} }); return; }catch(e){}
+    }
+    achToastPause = false; try{ pumpAchToast(); }catch(e){}
+  }, ms || 1200);
+}
+/* ===================== LA FLAMME DU JOUR, FÊTÉE (v343) =====================
+   « Lorsque je termine une série et que j'ai gagné une flamme, j'ai besoin de
+     le savoir directement, d'avoir l'info juste après ma partie, comme sur
+     Duolingo. » La première partie finie de la journée allume la flamme du
+   jour (marquerJourJoue). Les résultats posés, une carte s'ouvre : la flamme
+   qui s'allume, le compte qui passe de la veille à aujourd'hui, la semaine où
+   la case du jour se remplit d'or, et un seul bouton, « Continuer ». Une fois
+   par jour — c'est la première partie qui la gagne. Les félicitations
+   (objectifs, gels) attendent qu'elle soit refermée. */
+let flammeAFeter = 0;
+function feterFlamme(n, apres){
+  closeModal();
+  const faits = joursFaits(), gels = joursGeles(), cases = [];
+  for(let k = 6; k >= 0; k--){
+    const jour = new Date(Date.now() - k * 86400000), cle = dayKey(-k);
+    /* Aujourd'hui : la case qui se remplit (« neuf » l'anime). */
+    const cl = ["sj"];
+    if(k === 0) cl.push("auj", "fait", "neuf");
+    else if(faits.has(cle)) cl.push("fait");
+    else if(gels.has(cle)) cl.push("gele");
+    cases.push(`<span class="${cl.join(" ")}">` + SEM_LETTRES[jour.getDay()] + `</span>`);
+  }
+  const titre = n <= 1 ? T("Ta flamme est allumée !") : Tf("{n} jours d'affilée !", { n });
+  const mot = n <= 1 ? T("Joue chaque jour pour la faire grandir.") : T("Reviens demain pour la garder allumée.");
+  const veil = document.createElement("div");
+  veil.className = "modal-veil"; veil.id = "modalVeil";
+  veil.innerHTML = `<div class="modal-card fete-flamme" role="dialog" aria-label="${escapeHtml(titre)}">
+      <div class="ff-feu" aria-hidden="true"><span class="ff-ico">${ICONS.flame}</span></div>
+      <div class="ff-n" aria-hidden="true"><span class="ff-avant">${Math.max(0, n - 1)}</span><span class="ff-apres">${n}</span></div>
+      <div class="modal-title">${escapeHtml(titre)}</div>
+      <div class="modal-msg">${escapeHtml(mot)}</div>
+      <div class="ff-sem" aria-hidden="true">${cases.join("")}</div>
+      <div class="modal-actions"><button class="modal-btn ok" id="modalOk">${T("Continuer")}</button></div>
+    </div>`;
+  document.body.appendChild(veil);
+  glassTrack();
+  /* La flamme s'allume au moment où la case du jour se remplit : deux notes
+     du piano du jeu, montantes (seulement si les sons sont allumés). */
+  setTimeout(()=>{ try{ if(settings.sfx){ chime(523.25, 0, 0.7, 0.016); chime(783.99, 0.12, 1.1, 0.016); } }catch(e){} }, 520);
+  let fini = false;
+  const suite = ()=>{
+    if(fini) return; fini = true;
+    closeModal();
+    /* Les rappels se proposent ici : on vient de voir ce qu'on a à protéger. */
+    let propose = false;
+    try{ propose = notifProposer(false, apres); }catch(e){}
+    if(!propose && apres) apres();
+  };
+  veil.querySelector("#modalOk").onclick = suite;
+  veil.addEventListener("click", (e)=>{ if(e.target === veil) suite(); });
 }
 function checkAchievements(opts){
   const p = loadProgress(), d = achDerived(p), newly = [];
@@ -22624,14 +22428,21 @@ function ouvrirFlamme(){
      C'est maintenant une page, et l'histoire s'y lit comme un calendrier :
      une carte par mois, LE MOIS EN COURS EN HAUT, les plus anciens en
      descendant, jusqu'au premier jour dont on ait la trace. Chaque carte
-     porte ses sept colonnes (du dimanche au samedi) et le nombre de jours
+     porte ses sept colonnes (du lundi au dimanche ; en anglais, du dimanche
+     au samedi) et le nombre de jours
      joués. Un jour joué porte sa flamme, un jour couvert par un gel sa
      flamme gelée ; les autres portent leur numéro, sur un fond neutre s'il a
      été manqué. Avant la première trace et après aujourd'hui, le numéro seul
      — afficher des mois de « manqué » à quelqu'un qui vient d'arriver serait
      un reproche, pas une information. */
   const tAuj = dateDeCle(auj), tVieux = dateDeCle(plusVieux) || tAuj;
-  const lettres = `<div class="fg-sem">${SEM_LETTRES.map(l=>`<span>${l}</span>`).join("")}</div>`;
+  /* (v343) UN CALENDRIER FRANÇAIS COMMENCE LE LUNDI. Il commençait le
+     dimanche, à l'américaine : « D L M M J V S » sous « Novembre », la
+     semaine coupée en deux. En français et en espagnol, la semaine va du
+     lundi au dimanche ; en anglais, elle garde son dimanche en tête. */
+  const lundi = LANGUE !== "en";
+  const ordreSem = lundi ? [1, 2, 3, 4, 5, 6, 0] : [0, 1, 2, 3, 4, 5, 6];
+  const lettres = `<div class="fg-sem">${ordreSem.map(i=>`<span>${SEM_LETTRES[i]}</span>`).join("")}</div>`;
   const mois = [];
   for(let y = tAuj.getFullYear(), m = tAuj.getMonth(), n = 0; n < 36; n++){
     mois.push([y, m]);
@@ -22641,7 +22452,8 @@ function ouvrirFlamme(){
   const carteMois = ([y, m])=>{
     const premier = new Date(y, m, 1), nb = new Date(y, m + 1, 0).getDate();
     const cases = [];
-    for(let i = 0; i < premier.getDay(); i++) cases.push(`<span class="fj horschamp"></span>`);
+    const avant = lundi ? (premier.getDay() + 6) % 7 : premier.getDay();
+    for(let i = 0; i < avant; i++) cases.push(`<span class="fj horschamp"></span>`);
     let joues = 0;
     for(let j = 1; j <= nb; j++){
       const t = new Date(y, m, j), cle = cleDeDate(t);
@@ -22790,7 +22602,9 @@ function marquerJourJoue(){
               jours, geles:bornerJours(d.geles), palier });
   if(gagne) offrirGel(Tf("{n} jours d'affilée", {n:GEL_PALIER}));
   checkAchievements({ toast:true }); // objectifs de régularité (Fidèle, Assidu)
-  try { notifProposer(); } catch(e){}   /* il a maintenant une série à protéger */
+  /* (v343) La flamme du jour se FÊTE, juste après les résultats (voir
+     feterFlamme) — et c'est elle qui propose ensuite les rappels. */
+  flammeAFeter = streak;
 }
 /* ===================== LES NOTIFICATIONS =====================
    RÈGLE DU JEU : une notification n'est envoyée QUE si elle rend service. Ici,
@@ -23112,28 +22926,66 @@ function notifSync(){
    un joueur revenu de lui-même — et on lui explique AVANT d'ouvrir la demande
    du système. S'il dit non à notre explication, la vraie demande n'est jamais
    posée : elle reste disponible pour plus tard. */
-function notifProposer(groupe){
-  if(!notifPossible()) return;
-  if(settings.notif) return;                       // déjà accepté
-  if(notifEtat() !== "default") return;            // déjà répondu au système
-  if(localStorage.getItem("bt_notif_ask") === "1") return;   // déjà proposé une fois
-  /* Rien à protéger encore — sauf (v329) qu'on vient d'écrire dans un
-     groupe : des réponses vont arriver, et c'est là qu'on les attend. */
-  if(!groupe && dailyStreakShown() < 2) return;
-  try { localStorage.setItem("bt_notif_ask", "1"); } catch(e){}
-  setTimeout(() => {
-    showModal({
-      title: T("Recevoir les rappels ?"),
-      /* ON DIT EXACTEMENT CE QU'ON ENVERRA — et il y en a cinq maintenant, pas
-         deux. C'est sur cette phrase que le joueur donne le seul « oui » qu'on
-         ait le droit de lui demander : elle doit couvrir tout ce qui peut
-         arriver, et surtout la borne, qui est ce qui compte vraiment. */
-      message: T("Les messages de tes groupes. Et pour le jeu, au plus UN rappel par jour, jamais si tu as déjà joué : ta série sur le point de s'éteindre, tes erreurs à revoir, un verset le dimanche, un mot si tu t'absentes."),
-      okLabel: T("D'accord"),
-      cancelLabel: T("Non merci"),
-      onOk: () => { notifActiver(); },
-    });
-  }, 900);   // on laisse la fin de partie se poser avant de parler d'autre chose
+/* ===== (v343) L'INVITATION AUX RAPPELS =====
+   « La plupart n'activent pas les rappels, et du coup ils ne reçoivent pas
+     les notifications pour venir refaire leur partie et récupérer les
+     flammes. À un certain moment, il faut qu'ils aient un bouton pour
+     activer les rappels. »
+   LE MOMENT : juste après la flamme du jour, fêtée à la fin de la première
+   partie de la journée (voir feterFlamme) — on vient de voir ce qu'on a à
+   protéger. Elle attendait jusqu'ici une série de DEUX jours : la plupart
+   des joueurs n'y arrivaient jamais. Et après un premier message écrit dans
+   un groupe (des réponses vont arriver).
+   LE BOUTON : « Activer les rappels » demande l'autorisation au téléphone,
+   dans le même toucher. « Plus tard » ne brûle rien : c'est notre carte, pas
+   la question du système — elle revient, trois fois au plus en tout, à trois
+   jours d'écart au moins. Jamais si le téléphone a déjà répondu.
+   Rend vrai si la carte s'ouvre (et « apres » sera appelé à sa fermeture). */
+function notifProposer(groupe, apres){
+  if(!notifPossible()) return false;
+  if(settings.notif) return false;                        // déjà accepté
+  if(notifEtat() !== "default") return false;             // le téléphone a déjà répondu
+  let deja = { n:0, t:0 };
+  try{
+    const v = localStorage.getItem("bt_notif_ask");
+    if(v === "1") deja = { n:1, t:0 };                    // l'ancienne marque : une fois, il y a longtemps
+    else if(v){ const o = JSON.parse(v); if(o && typeof o === "object") deja = { n:o.n | 0, t:+o.t || 0 }; }
+  }catch(e){}
+  if(deja.n >= 3) return false;
+  if(deja.t && Date.now() - deja.t < 3 * 86400000) return false;
+  try { localStorage.setItem("bt_notif_ask", JSON.stringify({ n:deja.n + 1, t:Date.now() })); } catch(e){}
+  const montrer = ()=>{
+    closeModal();
+    const veil = document.createElement("div");
+    veil.className = "modal-veil"; veil.id = "modalVeil";
+    veil.innerHTML = `<div class="modal-card invit-rappels" role="dialog" aria-label="${escapeHtml(T("Recevoir les rappels ?"))}">
+        <div class="ir-cloche" aria-hidden="true">${ICONS.bell}</div>
+        <div class="modal-title">${escapeHtml(T(groupe ? "Recevoir les rappels ?" : "Ne laisse pas ta flamme s'éteindre"))}</div>
+        <div class="modal-msg">${escapeHtml(T("Les messages de tes groupes. Et pour le jeu, au plus UN rappel par jour, jamais si tu as déjà joué : ta série sur le point de s'éteindre, tes erreurs à revoir, un verset le dimanche, un mot si tu t'absentes."))}</div>
+        <div class="modal-actions colonne">
+          <button class="modal-btn ok" id="modalOk">${T("Activer les rappels")}</button>
+          <button class="modal-btn cancel" id="modalCancel">${T("Plus tard")}</button>
+        </div>
+      </div>`;
+    document.body.appendChild(veil);
+    glassTrack();
+    let fini = false;
+    const fin = (oui)=>{
+      if(fini) return; fini = true;
+      /* La demande au téléphone part DANS ce toucher : hors d'un geste, iOS
+         et Chrome la refusent sans rien montrer. */
+      if(oui){ try{ notifActiver(); }catch(e){} }
+      closeModal();
+      if(apres) setTimeout(apres, oui ? 600 : 250);
+    };
+    veil.querySelector("#modalOk").onclick = ()=> fin(true);
+    veil.querySelector("#modalCancel").onclick = ()=> fin(false);
+    veil.addEventListener("click", (e)=>{ if(e.target === veil) fin(false); });
+  };
+  /* Après la flamme : tout de suite (elle vient de se refermer). Après un
+     message : le temps que la bulle se pose. */
+  if(groupe) setTimeout(montrer, 900); else montrer();
+  return true;
 }
 
 /* --- activation ----------------------------------------------------------- */
@@ -26931,7 +26783,7 @@ function bulleHtml(m){
        touche pour le récap (voir LE RÉCAP D'UNE PARTIE DE GROUPE). */
     const rangs = finie ? rangsPartie(m) : null;
     const recap = !!(rangs && rangs.finis.length);
-    const geste = recap ? "ouvrirRecapPartie" : "toucherMessage";
+    const geste = recap ? "ouvrirRecapPartie" : "toucherBulle";
     return `<div class="b-bulle b-partie${finie ? " finie" : ""}${lancee ? " lancee" : ""}${recap ? " recap" : ""}" data-m="${m.id}" onclick="${geste}('${m.id}')">
         <span class="bp-ico">${ICONS.manette}</span>
         <b>${moi ? T("Tu as lancé une partie") : escapeHtml(Tf("{nom} a lancé une partie", { nom }))}</b>
@@ -26941,7 +26793,7 @@ function bulleHtml(m){
         ${code && !finie && !lancee && !ici ? `<button class="grp-pill" onclick="event.stopPropagation(); rejoindrePartieGroupe('${code}')">${moiVenu ? T("Revenir dans la partie") : T("Rejoindre la partie")}</button>` : ""}
       </div>`;
   }
-  return `<button class="b-bulle${m.id < 0 ? " envoi" : ""}${mentionneMoi(m) ? " me-nomme" : ""}${citeDe(m) ? " a-cite" : ""}" data-m="${m.id}" onclick="toucherMessage('${m.id}')">${citeHtml(m)}${texteAvecMentions(m)}</button>`;
+  return `<button class="b-bulle${m.id < 0 ? " envoi" : ""}${mentionneMoi(m) ? " me-nomme" : ""}${citeDe(m) ? " a-cite" : ""}" data-m="${m.id}" onclick="toucherBulle('${m.id}')">${citeHtml(m)}${texteAvecMentions(m)}</button>`;
 }
 function descendreFil(doux){
   const z = document.getElementById("fil");
@@ -27016,6 +26868,32 @@ function poserFil(z, html){
    confirmée par le serveur, elle ne repart pas de zéro (son mouvement
    continue où il en est). Un fil qu'on ouvre : rien n'arrive, tout est
    déjà là. */
+/* ===== (v343) UN DOIGT POSÉ N'EST PAS UN CHANGEMENT =====
+   L'onde d'appui écrit sur la bulle qu'on touche (la classe « onde », puis
+   « onde-part », et sa teinte figée dans un style). Le fil comparait ses
+   suites au texte près : un message ou un « Vu » arrivé pendant qu'on tenait
+   une bulle trouvait sa suite « changée » et la redessinait — la bulle sous
+   le doigt était remplacée par une copie, et l'appui long, qui attendait
+   l'ancienne, n'ouvrait plus rien (le menu « Répondre » ne venait pas).
+   L'état d'un appui n'est pas un changement du message : on l'ignore pour
+   comparer. Pareil pour l'éclat d'un message qu'on vient de retrouver en
+   touchant sa citation : il ne s'éteint plus d'un coup parce qu'un autre
+   message arrive. On compare une COPIE nettoyée des éléments, jamais le
+   texte réécrit : un message qui contient le mot « onde » reste un
+   message. */
+const APPUI_FIL = ".onde, .onde-part, .eclat, [style]";
+function memeSuite(a, n){
+  const h = n.outerHTML;
+  if(a.outerHTML === h) return true;
+  if(!a.matches(APPUI_FIL) && !a.querySelector(APPUI_FIL)) return false;
+  const c = a.cloneNode(true);
+  for(const e of [c, ...c.querySelectorAll(APPUI_FIL)]){
+    e.classList.remove("onde", "onde-part", "eclat");
+    e.style.removeProperty("--press-tint");
+    if(e.getAttribute("style") === "") e.removeAttribute("style");
+  }
+  return c.outerHTML === h;
+}
 function poserSurPlace(z, html){
   const t = document.createElement("template");
   t.innerHTML = html;
@@ -27027,7 +26905,7 @@ function poserSurPlace(z, html){
   const vide = !anciens.length;
   for(let i = 0; i < neufs.length; i++){
     const a = anciens[i], n = neufs[i];
-    if(a && a.outerHTML === n.outerHTML) continue;
+    if(a && memeSuite(a, n)) continue;
     /* Une arrivée en cours dans l'ancienne suite continue dans la nouvelle,
        à la même place (le message en attente devenu message confirmé). */
     const enCours = a ? Array.from(a.querySelectorAll("[data-m]"), e => e._arrive || 0) : [];
@@ -27687,7 +27565,7 @@ function ouvrirRecapPartie(id){
   const m = trouverMessage(id);
   if(!m || m.genre !== "partie") return;
   const r = rangsPartie(m);
-  if(!r.finis.length){ toucherMessage(id); return; }
+  if(!r.finis.length) return;
   const moi = monId();
   const lanceur = m.auteur === moi ? T("Lancée par toi") : Tf("Lancée par {nom}", { nom:(grp.profils[m.auteur] || {}).nom || T("Quelqu'un") });
   const quand = m.cree_le ? [jourDuFil(m.cree_le), heureCourte(m.cree_le)].filter(Boolean).join(" · ") : "";
@@ -28169,8 +28047,19 @@ function actionsMessage(id){
   const moi = !!m.auteur && m.auteur === monId(), mod = deLaModeration(m);
   const p = grp.profils[m.auteur] || {};
   const nom = moi ? (String(profile.name || "").trim() || T("Toi")) : (mod ? T("La modération") : (p.nom || T("Quelqu'un")));
-  const admin = suisAdmin() || modeModeration();
+  /* (v343) « Lorsque quelqu'un envoie un message, il ne peut pas être
+     supprimé par n'importe qui. » Son message, chacun le supprime ; celui
+     d'un autre, seule la modération le retire — en mode modération. Un
+     admin de groupe ne le peut plus : il a la sourdine, l'exclusion et le
+     signalement (trois signalements masquent un message tout de suite).
+     Le serveur dit la même chose (supprimer_message, groupes/table.sql). */
+  const retirer = moi || modeModeration();
   let h = `<div class="grp-liste-act">`;
+  /* (v343) RÉPONDRE, EN TÊTE DU MENU. « Je veux pouvoir rester appuyé
+     dessus, et la petite bulle qui s'affiche me propose de répondre — ça
+     suit la norme, ce qui est fait partout. » L'appui long ouvre ce menu ;
+     un simple toucher ne fait plus rien (voir toucherBulle). */
+  if(peutRepondre(m)) h += ligneAction(ICONS.repondre, T("Répondre"), `repondreMessage('${m.id}')`);
   if(m.genre === "texte" && m.texte && !m.masque) h += ligneAction(ICONS.copier, T("Copier"), `copierMessage('${m.id}')`);
   /* (v334) La modération ne se bloque ni ne se signale. (v336) Et elle ne
      signale ni ne bloque elle-même : elle agit — depuis le message, elle va
@@ -28189,30 +28078,44 @@ function actionsMessage(id){
     if(!estModo()) h += ligneAction(ICONS.bloquer, Tf("Bloquer {nom}", { nom }), `bloquerQuelquUn('${m.auteur}')`, true);
   }
   if(peutGerer) h += ligneAction(ICONS.personne, Tf("Gérer {nom}", { nom }), `fermerFeuilleGroupe('grpActionsVeil'); ouvrirMembre('${m.auteur}')`);
-  if(moi || admin) h += ligneAction(ICONS.corbeille, T("Supprimer le message"), `supprimerMessageGroupe('${m.id}')`, true);
+  if(retirer) h += ligneAction(ICONS.corbeille, T("Supprimer le message"), `supprimerMessageGroupe('${m.id}')`, true);
   h += `</div><div class="grp-mot"><span></span></div>`;
   /* (v329) Mon message : qui l'a vu, qui pas encore — comme « Infos » sur
      WhatsApp. En tête du menu : c'est ce qu'on vient chercher. */
   if(moi && !m.masque) h = vusHtml(m) + h;
   ouvrirFeuilleGroupe("grpActionsVeil", nom, (!moi && mod) ? avatarModeration(1.5) : avatarHtml(nom, moi ? (profile.color || "#4C86E8") : (p.couleur || "#8A8F98"), 1.5, moi ? true : "u:" + m.auteur), h);
 }
-/* ===================== RÉPONDRE À UN MESSAGE (v332) =====================
-   « Je veux pouvoir cliquer sur un message et que ça fasse en sorte de
-   répondre au message directement. » Toucher une bulle prépare la réponse :
-   le message cité se pose au-dessus de la barre d'écriture (le nom, le début
-   du texte, et × pour renoncer), le clavier s'ouvre. Le message parti porte
-   sa citation : dans la bulle, le message d'origine en tête, en plus petit —
-   la toucher ramène à lui. Le serveur ne garde la référence que vers un
-   message visible du même groupe (groupes/table.sql) ; un serveur qui ne
-   sait pas encore les réponses (grp.etat.reponses) garde l'ancien geste :
-   toucher ouvre le menu. Rien de tout cela n'a de trait : des fonds. */
+/* ===================== RÉPONDRE À UN MESSAGE (v332, v343) =====================
+   « Je veux pouvoir rester appuyé sur un message ; la petite bulle qui
+   s'affiche me propose de répondre directement. De cette façon, ça suit la
+   norme, ce qui est fait partout sur les réseaux. » (v343) C'est donc
+   l'APPUI LONG qui ouvre le menu du message, « Répondre » en tête ; le
+   simple toucher, qui répondait depuis la v332, ne fait plus rien — comme
+   sur WhatsApp, Messages ou Instagram, où l'on touche une bulle en
+   faisant défiler sans rien déclencher.
+   Répondre pose le message cité au-dessus de la barre d'écriture (le nom,
+   le début du texte, et × pour renoncer) et ouvre le clavier. Le message
+   parti porte sa citation : dans la bulle, le message d'origine en tête, en
+   plus petit — la toucher ramène à lui. Le serveur ne garde la référence
+   que vers un message visible du même groupe (groupes/table.sql) ; un
+   serveur qui ne sait pas encore les réponses (grp.etat.reponses) ne
+   propose pas « Répondre ». Rien de tout cela n'a de trait : des fonds. */
 function reponsesServeur(){ return !!(grp.etat && grp.etat.reponses === true); }
-function toucherMessage(id){
+function peutRepondre(m){
+  return !!m && m.id > 0 && !m.supprime_le && reponsesServeur() && !m.masque && (m.genre === "texte" || m.genre === "partie")
+      && (!enLecture() || moderationEcrit()) && !monMuetJusqu() && !!document.getElementById("compoTexte");
+}
+/* Le simple toucher d'une bulle : rien. Le doigt qui fait défiler la
+   discussion se pose sans cesse sur des bulles ; c'est l'appui long qui
+   ouvre le menu (voir L'APPUI LONG OUVRE SOUS LE DOIGT). */
+function toucherBulle(id){}
+/* « Répondre », touché dans le menu. Le foyer est donné DANS ce toucher,
+   avant de refermer le menu : sur iPhone, le clavier ne s'ouvre que si le
+   champ prend le foyer pendant le geste lui-même — une demi-seconde plus
+   tard, après la fermeture, il resterait baissé. */
+function repondreMessage(id){
   const m = trouverMessage(id);
-  if(!m || m.id < 0 || m.supprime_le) return;
-  const peut = reponsesServeur() && !m.masque && (m.genre === "texte" || m.genre === "partie")
-            && (!enLecture() || moderationEcrit()) && !monMuetJusqu() && !!document.getElementById("compoTexte");
-  if(!peut){ actionsMessage(id); return; }
+  if(!peutRepondre(m)){ fermerFeuilleGroupe("grpActionsVeil"); return; }
   grp.reponse = { g:grp.courant, id:m.id };
   majReponseCompo();
   const z = document.getElementById("compoTexte");
@@ -28226,7 +28129,14 @@ function toucherMessage(id){
     if(!avait && document.activeElement === z){ try{ const n = z.value.length; z.setSelectionRange(n, n); }catch(e){} }
     recalerCurseurApres(620);
   }
-  try{ if(navigator.vibrate) navigator.vibrate(8); }catch(e){}
+  fermerFeuilleGroupe("grpActionsVeil");
+}
+/* Le chemin direct, sans menu (les bancs du curseur, la partie de groupe) :
+   préparer la réponse à ce message, si on le peut. */
+function toucherMessage(id){
+  const m = trouverMessage(id);
+  if(!peutRepondre(m)) return;
+  repondreMessage(id);
 }
 /* (v339) La discussion a fini de prendre sa hauteur (le clavier monté, ou
    reparti à moitié) : le curseur se recale là, pas à une heure fixe. */
@@ -28271,8 +28181,66 @@ function recalerCurseur(){
       t.value = ""; t.setSelectionRange(0, 0);
     }
   }catch(err){}
+  /* La place où iOS vient de redessiner son curseur (voir UN SEUL RECALAGE
+     PAR PLACE). */
+  try{ placeRecalee = placeChamp(); }catch(err){}
 }
-function recalerCurseurApres(ms){ clearTimeout(curseurT); curseurT = setTimeout(recalerCurseur, ms); }
+function recalerCurseurApres(ms){ clearTimeout(curseurT); curseurT = setTimeout(recalerCurseur, ms); surveillerCurseur(Math.max(900, ms + 500)); }
+/* ===== (v343) LE CURSEUR NE RESTE JAMAIS EN ARRIÈRE =====
+   « Lorsque je mentionne quelqu'un, tu peux voir qu'à certains moments, ça
+     revient. Pas tout le temps, mais à certains moments. » (capture iPhone :
+   le trait bleu du curseur posé dans la citation, au-dessus du champ.) Il
+   était resté là où se trouvait le champ un instant plus tôt. Les rendez-vous
+   À HEURE FIXE (620 ms après une réponse, 60 ms après un nom) ratent ce qui
+   bouge plus tard ou plus longtemps : la citation qui s'ouvre pendant que le
+   clavier finit de monter, la barre « ˄ ˅ ✓ » d'iOS qui paraît, la liste des
+   noms qui se replie. On ne devine donc plus l'heure : tant que le champ a le
+   foyer et que quelque chose vient de bouger, on GUETTE sa place, image par
+   image ; dès qu'elle est posée, iOS reçoit son petit changement de
+   sélection (recalerCurseur) et redessine son curseur dans le champ.
+   UN SEUL RECALAGE PAR PLACE. Ma première version recalait dès trois images
+   de calme : un clavier d'iPhone monte en plusieurs pas, et chaque palier
+   comptait — cinq allers-retours de sélection pour une seule réponse (banc
+   curseur-mention, point 5), deux à treize millisecondes d'écart quand le
+   rendez-vous de la réponse tombait en même temps (curseur-reponse). Le guet
+   attend donc 0,2 s de calme, s'efface devant un recalage déjà prévu
+   (recalerCurseurApres), et ne recale jamais deux fois la même place. */
+let guetCurseur = 0, guetJusqu = 0, guetPlace = null, guetDepuis = 0, placeRecalee = null;
+const GUET_CALME = 200;
+function placeChamp(){
+  const t = document.activeElement;
+  if(!t || t.id !== "compoTexte") return null;
+  const r = t.getBoundingClientRect(), vv = window.visualViewport;
+  return [r.left, r.top, r.width, r.height, window.scrollY, vv ? vv.offsetTop : 0, vv ? vv.height : 0].map(v => Math.round(v * 2)).join(",");
+}
+function guetterCurseur(){
+  guetCurseur = 0;
+  const k = placeChamp();
+  if(k === null){ guetPlace = null; return; }
+  const t = performance.now();
+  if(k !== guetPlace){
+    guetPlace = k; guetDepuis = t;
+    guetJusqu = Math.max(guetJusqu, t + GUET_CALME + 250);   // ça bouge encore : on reste
+  } else if(t - guetDepuis >= GUET_CALME && !curseurT && k !== placeRecalee) recalerCurseur();
+  if(t < guetJusqu) guetCurseur = requestAnimationFrame(guetterCurseur);
+}
+function surveillerCurseur(ms){
+  if(!IOS_CURSEUR) return;
+  guetJusqu = Math.max(guetJusqu, performance.now() + (ms || 1200));
+  if(!guetCurseur){ guetPlace = null; guetDepuis = 0; guetCurseur = requestAnimationFrame(guetterCurseur); }
+}
+if(IOS_CURSEUR){
+  document.addEventListener("focusin", (e)=>{ if(e.target && e.target.id === "compoTexte") surveillerCurseur(1600); }, true);
+  if(window.visualViewport){
+    visualViewport.addEventListener("resize", ()=> surveillerCurseur(900));
+    visualViewport.addEventListener("scroll", ()=> surveillerCurseur(900));
+  }
+  /* Ce qui pousse le champ dans la barre : la citation qui s'ouvre ou se
+     referme, la liste des noms, le champ qui prend une ligne de plus. */
+  document.addEventListener("transitionrun", (e)=>{ const c = document.getElementById("compo"); if(c && e.target && c.contains(e.target)) surveillerCurseur(900); }, true);
+  document.addEventListener("transitionend", (e)=>{ const c = document.getElementById("compo"); if(c && e.target && c.contains(e.target)) surveillerCurseur(400); }, true);
+  document.addEventListener("animationend", (e)=>{ const c = document.getElementById("compo"); if(c && e.target && c.contains(e.target)) surveillerCurseur(400); }, true);
+}
 function reponseEnCours(gid){ return (grp.reponse && grp.reponse.g === gid) ? grp.reponse.id : null; }
 function annulerReponse(){
   grp.reponse = null;
@@ -28444,10 +28412,14 @@ function allerAuMessage(id){
     minuteur = setTimeout(()=>{
       minuteur = 0;
       const c = cible; cible = null;
-      if(!c || !c.isConnected) return;
+      if(!c) return;
+      /* (v343) La bulle a pu être redessinée sous le doigt (un message, un
+         « Vu » arrivé pendant qu'on la tenait, dans la même suite) : le
+         message, lui, est toujours là — c'est lui qu'on ouvre. */
+      const id = c.getAttribute("data-m");
+      if(!c.isConnected && !(id && trouverMessage(id))) return;
       tenu = true;
       try{ if(navigator.vibrate) navigator.vibrate(10); }catch(err){}
-      const id = c.getAttribute("data-m");
       if(id) actionsMessage(id); else c.click();
     }, DELAI);
   }, { capture:true, passive:true });
@@ -29811,6 +29783,10 @@ function buildQuestions(){
   state.questions = shuffle(list);
 }
 function startGame(){
+  /* Un retrait de joueur encore en vol (la croix touchée il y a moins d'un
+     dixième de seconde) se pose AVANT qu'on lise la liste : sinon il
+     couperait plus tard dans la liste de la partie déjà lancée. */
+  finirPlaces();
   /* Partie ordinaire : on sort TOUJOURS du contexte révision. Le livre, lui,
      est un réglage de l'écran du mode, comme la durée : il reste (voir UN
      LIVRE, DEPUIS L'ÉCRAN DU MODE). */
@@ -30704,7 +30680,7 @@ function renderPlay(){
         <div class="award-grid${colsPrix === 3 ? ' trois' : ''}${pop?' reveal-in':''}" style="--cols:${colsPrix}">
           ${state.teams.map((t,i)=>`
             <button class="award-btn ${state.awarded.includes(i)?'awarded':''}" onclick="toggleAward(${i})">
-              <span class="team-token aw-token" style="background:${TEAM_COLORS[i%6]}">${escapeHtml(premierSigne(t.name))||(i+1)}</span>
+              <span class="team-token aw-token" style="background:${TEAM_COLORS[i%6]}">${escapeHtml(signeEquipe(i))}</span>
               <span class="aw-txt"><span class="aw-name">${escapeHtml(nomEquipe(t.name))}</span><span class="aw-sc">${state.scores[i]}</span></span>
               ${state.awarded.includes(i)?`<span class="aw-check" style="color:${TEAM_COLORS[i%6]}">${ICONS.checkCircle}</span>`:""}
             </button>
@@ -30786,7 +30762,7 @@ function renderEndGroup(){
     <div class="card podium">
       ${podiumOrder.filter(i=>i<podiumTeams.length).map(i=>{
         const r = podiumTeams[i];
-        const initial = escapeHtml(premierSigne(state.teams[r.teamIdx].name));
+        const initial = escapeHtml(signeEquipe(r.teamIdx));
         return `
         <div class="podium-col" data-t="${r.teamIdx}">
           ${r.rank===1 ? `<span class="podium-crown">${ICONS.crown}</span>` : `<span class="podium-crown" style="visibility:hidden"></span>`}
@@ -30812,7 +30788,7 @@ function renderEndGroup(){
         return `
         <div class="rank-row" data-t="${r.teamIdx}">
           <span class="rank-badge ${g}">${r.rank}</span>
-          <span class="team-token rank-token" style="background:${TEAM_COLORS[r.teamIdx%6]}">${escapeHtml(premierSigne(state.teams[r.teamIdx].name))||"?"}</span>
+          <span class="team-token rank-token" style="background:${TEAM_COLORS[r.teamIdx%6]}">${escapeHtml(signeEquipe(r.teamIdx))}</span>
           <span class="rank-name">${escapeHtml(nomEquipe(state.teams[r.teamIdx].name))}</span>
           <span class="rank-score-wrap">
             <button class="adj-btn" onclick="adjustScore(${r.teamIdx},-10)" aria-label="${T("Retirer 10 points")}">−</button>
@@ -31294,27 +31270,40 @@ function nomDuGroupe(gid){
   return (g && g.nom) || "";
 }
 function ouvrirPhotoGrand(pid){
-  if(document.getElementById("photoGrandVeil")) return;
+  if(!pageLibre("photoGrandVeil")) return;
   const groupe = typeof pid === "string" && pid.indexOf("g:") === 0;
   const v = groupe ? valeurPhotoSrv(pid) : photoValeur(pid === "moi" ? true : pid);
   if(!v) return;
+  const titre = groupe ? T("Photo du groupe") : T("Photo de profil");
+  const nom = (groupe ? nomDuGroupe(pid.slice(2)) : nomDuPid(pid)) || titre;
   const veil = document.createElement("div");
-  veil.className = "photo-veil"; veil.id = "photoGrandVeil";
-  veil.setAttribute("role", "dialog");
-  veil.setAttribute("aria-label", groupe ? T("Photo du groupe") : T("Photo de profil"));
-  const nom = groupe ? nomDuGroupe(pid.slice(2)) : nomDuPid(pid);
-  veil.innerHTML = '<div class="pv-img' + (groupe ? ' pv-groupe' : '') + '" style="background-image:' + v + '"></div>'
-                 + (nom ? '<div class="pv-nom">' + escapeHtml(nom) + '</div>' : '');
-  const fermer = ()=>{ try{ veil.remove(); }catch(e){} };
-  veil.addEventListener("click", fermer);
+  veil.className = "sheet-veil page"; veil.id = "photoGrandVeil";
+  /* La valeur de l'image (« var(--phN) » ou « url('…') ») ne porte jamais
+     de guillemet double : elle tient dans l'attribut. */
+  veil.innerHTML = `<div class="settings-sheet photo-page" role="dialog" aria-label="${escapeHtml(titre)}">
+      <div class="page-tete"><button class="sheet-grab" aria-label="${T("Retour")}"><span class="pt-retour">${ICONS.chevronLeft}</span></button><div class="sheet-title sans-ico"><span class="st-ico"></span><span class="st-mot pv-nom">${escapeHtml(nom)}</span></div></div>
+      <div class="pp-zone"><div class="pv-img${groupe ? " pv-groupe" : ""}" role="img" aria-label="${escapeHtml(titre)}" style="background-image:${v}"></div></div>
+    </div>`;
+  /* Tout l'écran est la sortie : le retour, la photo, le fond. */
+  veil.addEventListener("click", fermerPhotoGrand);
   document.body.appendChild(veil);
-  try{ glassTrack(); }catch(e){}
+  monterLaFeuille(veil);
+  glassTrack();
+  attachSheetDrag(veil.querySelector(".settings-sheet"), fermerPhotoGrand);
 }
+function fermerPhotoGrand(){
+  const v = document.getElementById("photoGrandVeil");
+  if(!v || v.classList.contains("closing")) return;
+  v.classList.add("closing");
+  setTimeout(()=>{ if(v.parentNode) v.remove(); }, msFerme() + 20);
+}
+/* Une visionneuse est-elle ouverte (et pas en train de partir) ? */
+function photoGrandOuverte(){ const v = document.getElementById("photoGrandVeil"); return !!v && !v.classList.contains("closing"); }
 document.addEventListener("click", (e)=>{
   try{
     const a = e.target && e.target.closest ? e.target.closest(".avatar.a-photo[data-pid], .grp-av.a-photo[data-gid]") : null;
     if(!a) return;
-    if(document.getElementById("photoGrandVeil")) return;
+    if(photoGrandOuverte()) return;
     e.preventDefault(); e.stopPropagation();
     ouvrirPhotoGrand(a.dataset.gid ? "g:" + a.dataset.gid : a.dataset.pid);
   }catch(err){}
@@ -32181,6 +32170,9 @@ function fondreLeSplash(){
   return true;
 }
 function render(){
+  /* Un rendu redessine l'écran à partir de la liste : un retrait en vol se
+     pose d'abord, pour que l'écran neuf montre la liste telle qu'elle sera. */
+  finirPlaces();
   const app = document.getElementById("app");
   /* En quittant le chargement : l'écran suivant se pose SUR PLACE, sous le
      voile (voir fondreLeSplash) — aucun mouvement à construire en même temps. */
@@ -34448,9 +34440,23 @@ function tryAutoFullscreen(e){
   setTimeout(()=>{
     if(state.screen === avant) return;
     if(fsPending || !fsAvailable() || fsActive() || champEnCours()) return;
+    /* ===== (v343) PAS PENDANT LE GLISSEMENT =====
+       « Sur Android, lorsque j'ouvre certains modes, j'ai l'impression que
+         ça fait un peu bug. » Filmé image par image (Chrome, Android, le
+       Solo ouvert depuis l'accueil) : à mi-chemin de son arrivée, tout
+       l'écran SAUTAIT de 52 px vers le bas. C'était le plein écran : demandé
+       dans le même instant que le changement d'écran, il agrandit la page
+       (les barres du navigateur s'en vont) et tout se recale — au milieu du
+       mouvement. Sans plein écran, la même arrivée est parfaitement lisse.
+       On le demande donc une fois l'écran POSÉ. Le toucher du joueur vaut
+       encore : Chrome garde son accord quelques secondes après le geste. */
     fsPending = true;
-    setTimeout(()=>{ fsPending = false; }, 600);
-    toggleFullscreen();
+    setTimeout(()=>{
+      setTimeout(()=>{ fsPending = false; }, 600);
+      if(!fsAvailable() || fsActive() || champEnCours()) return;
+      if(navigator.userActivation && navigator.userActivation.isActive === false) return;
+      toggleFullscreen();
+    }, apresEntree());
   }, 0);
 }
 /* Android : au premier changement d'écran, on passe en plein écran immersif — la
@@ -34562,8 +34568,15 @@ function openFsGuide(){
     { c:"fsx", i:ICONS.telecharger, t:T("Touche Installer"),            s:T("Ton téléphone demande confirmation") },
     { c:"vol", i:ICONS.expand,      t:T("Ouvre le jeu par son icône"),  s:T("Il démarre en plein écran") }
   ] : IS_IOS ? etapesIphone() : [
+    /* (v343) JAMAIS « CRÉER UN RACCOURCI ». Sur Android, « Ajouter à l'écran
+       d'accueil » propose deux choix : « Installer » et « Créer un
+       raccourci ». Le raccourci n'est qu'un favori : le jeu s'ouvre dans un
+       onglet de Chrome, ses notifications arrivent avec l'icône de Chrome
+       (« c'est l'icône Google Chrome au lieu de l'icône de Yada »), et le
+       haut de l'écran n'est pas le sien. La consigne dit donc lequel
+       toucher. */
     { c:"fsx", i:ICO_MENU_NAV,     t:T("Ouvre le menu du navigateur"), s:T("Les trois points, en haut") },
-    { c:"scn", i:ICONS.plusCircle, t:T("« Installer l'application »"), s:T("Ou « Ajouter à l'écran d'accueil »") },
+    { c:"scn", i:ICONS.plusCircle, t:T("« Installer l'application »"), s:T("Ou « Ajouter à l'écran d'accueil », puis « Installer »") },
     { c:"vol", i:ICONS.expand,     t:T("Ouvre le jeu par son icône"),  s:T("Il démarre en plein écran") },
   ];
   const intro = invitation ? Tf("{jeu} s'ajoute à ton écran d'accueil et démarre en plein écran. Un seul geste.", {jeu:NOM_DU_JEU})

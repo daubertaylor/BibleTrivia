@@ -225,12 +225,22 @@ const MEME_DANS_LES_DEUX = [
      dimanche, lundi, mardi, mercredi, jeudi, vendredi, samedi. Il n'y a rien
      à traduire, et c'est vérifiable lettre par lettre. */
   { lg:'es', quoi:/^[DLMJVS]$/, ou:/\bsj\b|fg-sem/, car:'les sept initiales sont les mêmes des deux côtés' },
+  /* (v343) Le calendrier des flammes commence le LUNDI en français et le
+     DIMANCHE en anglais : L M M J V S D face à S M T W T F S. La deuxième
+     colonne porte donc « M » des deux côtés — mardi d'un côté, Monday de
+     l'autre. Une coïncidence de lettres, pas un mot oublié. */
+  { lg:'en', quoi:/^M$/, ou:/fg-sem/, car:'mardi et Monday commencent par la même lettre, à la même colonne' },
   /* Six livres s'écrivent pareil dans les deux langues. */
   { lg:'es', quoi:/^(Josué|Esdras|Habacuc|Job|Daniel|Joel|1 Cor\.|2 Cor\.)$/, ou:/bk-nm/,
     car:'le même nom, ou la même abréviation, en français et en espagnol' },
   /* Les lettres de repère : A B C D devant les options, l'initiale d'une
      équipe. Ce sont des numéros écrits en lettres, pas des mots. */
   { quoi:/^[A-Z]$/, ou:/letter|team-token/,    car:'une lettre de repère, pas un mot' },
+  /* (v344) LE NOM D'UN JOUEUR S'AFFICHE EN TEXTE dans sa place (il était la
+     valeur d'un champ, que ce relevé ne lisait pas). Il est écrit par les
+     joueurs : il ne se traduit pas. Sauf « Joueur 2 », le nom par défaut, qui
+     doit, lui, devenir « Player 2 » : il reste vérifié. */
+  { quoi:/^(?!(Joueur|Player|Jugador) \d+$).{1,20}$/, ou:/pl-nom pl-btn pl-joueur/, car:'un nom de joueur, écrit par les joueurs eux-mêmes' },
   /* L'ABRÉGÉ DE CERTAINS LIVRES EST LE MÊME DANS LES DEUX LANGUES.
      « 1 Corinthiens » et « 1 Corinthians » s'abrègent tous deux en « 1 Cor. » ;
      de même « 2 Chron. » et « Philip. ». Vérifié dans LIVRES_COURTS_EN, qui les
@@ -470,6 +480,10 @@ const ouvrirLaLangue = async (p, lg) => {
     ['Groupe · sans nom',  () => { __fermerTout(); state.mode='group';
       state.teams=[{name:''},{name:''}]; state.screen='setup'; render();
       const b = document.querySelector('.btn-start, .btn-primary'); if(b) b.click(); }],
+    /* (v344) La page d'un joueur : c'est là que son nom s'écrit (voir LES
+       SIX PLACES). */
+    ['Groupe · la page d\'un joueur', () => { __fermerTout(); state.mode='group';
+      state.teams=[{name:'Taylor'},{name:'Joueur 2'},{name:'Joueur 3'}]; state.screen='setup'; render(); ouvrirJoueur(1); }],
   ];
 
   /* ===== LE DUEL, DE SON DÉBUT À SES CINQ FINS =====
@@ -873,6 +887,9 @@ const ouvrirLaLangue = async (p, lg) => {
     ['Groupes · admin',    () => { __fermerTout(); ouvrirMembre('u-2'); }],
     ['Groupes · en sourdine', () => { __fermerTout(); ouvrirMembre('u-3'); }],
     ['Groupes · un message', () => { __fermerTout(); actionsMessage('7'); }],
+    /* (v343) Le menu d'un message, « Répondre » en tête (l'appui long) : il
+       faut la discussion ouverte et un serveur qui sait les réponses. */
+    ['Groupes · un message, Répondre', () => { __fermerTout(); __grpDecor(); grp.courant = 'g-1'; grp.etat.reponses = true; state.screen = 'groupe'; render(); actionsMessage('7'); }],
     /* (v329) « VU », comme sur WhatsApp : sous mon message, les coches ; en
        le touchant, qui l'a lu et qui pas encore — puis tout le monde, puis
        personne. (v338) Sur un serveur qui sait l'arrivée : « Distribué à »,
@@ -1226,6 +1243,15 @@ const ouvrirLaLangue = async (p, lg) => {
       net.myDone = false; net.oppGone = false;
       net.deck = seededDeck(12345, '9', null); net.idx = 2;
       quitDuel(); }],
+    /* (v343) LA FLAMME DU JOUR, FÊTÉE, et l'invitation aux rappels qui la
+       suit (voir feterFlamme et notifProposer). L'invitation ne se montre
+       qu'à un téléphone qui sait recevoir des notifications et ne s'est pas
+       encore prononcé : on le lui fait croire le temps de l'écran. */
+    ['Flamme fêtée · premier jour', () => { __fermerTout(); feterFlamme(1, null); }],
+    ['Flamme fêtée · série', () => { __fermerTout(); feterFlamme(5, null); }],
+    ['Rappels · après la flamme', () => { __fermerTout(); const a = notifPossible, b = notifEtat, c = settings.notif;
+      notifPossible = () => true; notifEtat = () => 'default'; settings.notif = false;
+      try { localStorage.removeItem('bt_notif_ask'); notifProposer(false, null); } finally { notifPossible = a; notifEtat = b; settings.notif = c; } }],
     ['Rappels proposés',   () => { __fermerTout();
       showModal({ title:T('Recevoir les rappels\u00a0?'),
         message:T("Les messages de tes groupes. Et pour le jeu, au plus UN rappel par jour, jamais si tu as déjà joué : ta série sur le point de s'éteindre, tes erreurs à revoir, un verset le dimanche, un mot si tu t'absentes."),

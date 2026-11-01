@@ -22,6 +22,10 @@
    CE QU'ON EXIGE : --hu ne prend QU'UNE SEULE valeur sur tout le cycle, la
    hauteur des cartes ne bouge pas, et l'écran revient exactement à sa place.
    C'est une propriété, pas un réglage : elle restera vraie quoi qu'on ajoute.
+   (v344) Le nom d'un joueur ne s'écrit plus dans la carte : il s'écrit dans
+   SA page, posée sur l'écran du Mode Groupe (voir LES SIX PLACES). Le banc
+   y ouvre donc le clavier — c'est là qu'il se lève désormais sur Android —
+   et mesure toujours l'écran du dessous : son en-tête, ses cartes, --hu.
    Usage : node banc-essai/androide.js [url]
 */
 const { chromium } = require('/opt/node22/lib/node_modules/playwright');
@@ -36,6 +40,8 @@ const URL = process.argv[2] || 'http://127.0.0.1:8099/index.html';
   await p.waitForFunction(()=>{ try{ return state.screen==='mode'; }catch(e){ return false; } }, null, {timeout:20000});
   await p.evaluate(()=>{ state.mode='group'; state.teams=[{name:'Taylor'},{name:'Joueur 2'},{name:'Joueur 3'}]; state.screen='setup'; render(); });
   await p.waitForTimeout(1300);
+  await p.evaluate(()=>{ ouvrirJoueur(1); });
+  await p.waitForTimeout(900);
   const cap = p.evaluate(()=> new Promise(res=>{
     const rel=[]; const t0=performance.now();
     const tic=()=>{
@@ -49,7 +55,7 @@ const URL = process.argv[2] || 'http://127.0.0.1:8099/index.html';
     };
     requestAnimationFrame(tic);
   }));
-  await p.evaluate(()=>{ const e=document.querySelector('.team-row input'); if(e) e.focus(); });
+  await p.evaluate(()=>{ const e=document.getElementById('joueurNom'); if(e) e.focus(); });
   for(const h of [780,700,630,575,540,516]){ await p.setViewportSize({width:393,height:h}); await p.waitForTimeout(45); }
   await p.waitForTimeout(500);
   await p.evaluate(()=>{ const e=document.activeElement; if(e&&e.blur) e.blur(); });

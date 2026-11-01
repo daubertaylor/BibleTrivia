@@ -50,7 +50,8 @@ const CIBLES = [
   ['accueil',      "",                                                                                        '.parcours-card'],
   ['groupe',       "state.mode='group'; state.teams=[{name:'Taylor'},{name:'B'},{name:'C'}]; state.screen='setup'; render();", '.chip'],
   ['groupe',       "",                                                                                        '.chip.active'],
-  ['groupe',       "",                                                                                        '.add-team'],
+  /* (v344) « Ajouter un joueur » est devenu une place (voir LES SIX PLACES). */
+  ['groupe',       "",                                                                                        '.pl-ajout'],
   ['groupe',       "",                                                                                        '.btn-primary'],
   ['jeu',          "state.mode='solo'; startGame();",                                                          '.option-btn'],
   ['progression',  "state.screen='parcours'; render();",                                                       '.tst-head'],

@@ -1,6 +1,6 @@
 /* Yada — service worker : rend l'app jouable hors connexion.
    À déposer à côté de index.html (même dossier, nom exact "sw.js"). */
-const CACHE = "yada-v342";
+const CACHE = "yada-v344";
 /* ===== LES BANQUES DE QUESTIONS NE SONT PAS DANS LE SOCLE =====
    questions-en.js y était, et questions-es.js allait l'y rejoindre : six cent
    mille octets téléchargés à l'installation par TOUT LE MONDE, y compris les
@@ -535,9 +535,17 @@ self.addEventListener("push", (e) => {
     const etat = await litEtat();
     const aujourdhui = jourLocal(dec);
     const langue = etat && etat.langue;
+    /* (v343) « Sur Android je veux que les notifications sonnent. » Un
+       rappel porte l'étiquette de son motif (« serie », « priere »…) : celui
+       d'hier, s'il est resté dans le volet, est REMPLACÉ par celui
+       d'aujourd'hui. Avec renotify:false, ce remplacement se faisait en
+       silence — sur Android, un joueur qui ne vide pas ses notifications ne
+       les entendait donc qu'une fois. Un rappel arrive au plus une fois par
+       jour : il sonne toujours. (Seule la rafale des messages d'un groupe
+       reste muette après le premier, comme une messagerie.) */
     const montrer = (genre, m) => self.registration.showNotification(m[0], {
       body: m[1], icon: vignette(genre), badge: BADGE,
-      tag: genre, renotify: false, requireInteraction: false, data: { url: "./" },
+      tag: genre, renotify: true, requireInteraction: false, data: { url: "./" },
     });
     /* (v329) UN MESSAGE DE GROUPE. Pas un rappel du jeu : ni « actif », ni le
        plafond d'un par jour. Il se tait seulement si le joueur a éteint les

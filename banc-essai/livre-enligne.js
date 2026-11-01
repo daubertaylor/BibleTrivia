@@ -36,7 +36,12 @@ const dit = (quoi, bon, detail) => { console.log('  ' + (bon ? 'OK  ' : 'KO  ') 
     const c = await nav.newContext({ viewport: { width: 393, height: 852 }, userAgent: AND, isMobile: true, hasTouch: true, serviceWorkers: 'block' });
     const p = await c.newPage();
     p.on('pageerror', e => errs.push(nom + ': ' + e.message.slice(0, 120)));
-    await p.addInitScript(([n, col]) => { localStorage.setItem('bt_profile', JSON.stringify({ name: n, color: col })); localStorage.setItem('bt_fs_hint', '1'); }, [nom, couleur]);
+    /* (v343) Le jour est déjà joué : la première partie du jour fait fêter
+       la flamme, et sa fenêtre couvrirait les puces que ce banc touche au
+       doigt après « Rejouer » (la fête a son banc, fete-flamme.js). */
+    await p.addInitScript(([n, col]) => { localStorage.setItem('bt_profile', JSON.stringify({ name: n, color: col })); localStorage.setItem('bt_fs_hint', '1');
+      const d = new Date(), z = x => String(x).padStart(2, '0'), k = d.getFullYear() + '-' + z(d.getMonth() + 1) + '-' + z(d.getDate());
+      localStorage.setItem('bt_daily', JSON.stringify({ last:k, streak:1, score:0, total:0, jours:[k], geles:[], palier:0 })); }, [nom, couleur]);
     await p.goto('http://localhost:8246/');
     await p.waitForFunction(() => { try { return state.screen === 'mode'; } catch (e) { return false; } }, null, { timeout: 25000 });
     /* Un téléphone d'avant la v316 : il n'annonce pas qu'il sait lire un livre. */

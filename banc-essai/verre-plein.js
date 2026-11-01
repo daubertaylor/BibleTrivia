@@ -80,11 +80,14 @@ const inventaire = () => [...document.querySelectorAll('.has-gs')].map(el => {
       let surPleines = 0, surVerre = 0;
       const obs = new MutationObserver(l => l.forEach(m => { if (m.target.classList.contains('gs-plein')) surPleines++; else surVerre++; }));
       document.querySelectorAll('.gs').forEach(g => obs.observe(g, { attributes: true, attributeFilter: ['style'] }));
-      addTeam();
-      setTimeout(() => removeTeam(document.querySelectorAll('#teamCard .team-remove')[3]), 900);
+      /* (v344) Les six places : la carte ne change plus de hauteur, les
+         cartes du dessous ne bougent plus — leur verre n'a même plus à être
+         recalé (la v319 vérifiait qu'il l'était bien). */
+      ajouterJoueur();
+      setTimeout(() => retirerJoueur(3), 900);
       setTimeout(() => { obs.disconnect(); res({ surPleines, surVerre, joueurs: state.teams.length }); }, 2000);
     }));
-    dit('3. ajouter puis retirer un joueur : aucune écriture sur une couche pleine, les cartes recalées', ecr.surPleines === 0 && ecr.surVerre > 0 && ecr.joueurs === 3,
+    dit('3. ajouter puis retirer un joueur : aucune écriture sur une couche pleine (ni sur le verre : rien ne bouge)', ecr.surPleines === 0 && ecr.surVerre === 0 && ecr.joueurs === 3,
       'couches pleines ' + ecr.surPleines + ' écriture(s), couches de verre ' + ecr.surVerre + ', joueurs ' + ecr.joueurs);
     /* ---- 4 ---- */
     const cdp = await ctx.newCDPSession(p);

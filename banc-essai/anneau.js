@@ -27,7 +27,7 @@ const VUES=[
  ['objectif', ()=>{state.screen='parcours';render();setTimeout(()=>openAchInfo('pas'),250);}],
  ['sortie',   ()=>{state.mode='solo';startGame();state.screen='play';render();confirmLeaveGame();}],
 ];
-const SEL='.app-header,.card,.mode-card,.question-card,.solo-summary,.solo-score-bar,.score-pane,.option-btn,.btn-primary,.btn-next,.btn-replay,.fact-card,.tier-chip,.q-counter,.streak-chip,.chip,.icon-btn,.btn-reveal,.btn-newgame,.award-btn,.presence-card,.me-row,.online-action,.info-card,.vs-row,.len-chip,.timer-chip,.rank-row,.text-input,.code-input,.modal-card,.btn-ghost,.settings-sheet,.hero-verse-card,.modal-btn,.end-medal,.adj-btn,.rules,.btn-review,.daily-card,.dc-streak,.btn-invite,.creator-badge,.set-go,.share-btn,.rev-item,.bible-item,.parcours-card,.parcours-sum,.tst-head,.bk,.sj,.team-row,.add-team,.ach-tile,.set-ico';
+const SEL='.app-header,.card,.mode-card,.question-card,.solo-summary,.solo-score-bar,.score-pane,.option-btn,.btn-primary,.btn-next,.btn-replay,.fact-card,.tier-chip,.q-counter,.streak-chip,.chip,.icon-btn,.btn-reveal,.btn-newgame,.award-btn,.presence-card,.me-row,.online-action,.info-card,.vs-row,.len-chip,.timer-chip,.rank-row,.text-input,.code-input,.modal-card,.btn-ghost,.settings-sheet,.hero-verse-card,.modal-btn,.end-medal,.adj-btn,.rules,.btn-review,.daily-card,.dc-streak,.btn-invite,.creator-badge,.set-go,.share-btn,.rev-item,.bible-item,.parcours-card,.parcours-sum,.tst-head,.bk,.sj,.pl-btn:not(.pl-libre),.ach-tile,.set-ico';
 (async()=>{
   const b=await chromium.launch({executablePath:'/opt/pw-browsers/chromium'});
   const out=[];
