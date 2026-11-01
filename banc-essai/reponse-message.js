@@ -1,28 +1,34 @@
-/* ====== BANC « TOUCHER UN MESSAGE POUR Y RÉPONDRE » (v332) ======
-   « Je veux la possibilité de cliquer sur un message et que ça fasse en sorte
-     de répondre au message directement. Et lorsqu'on reste appuyé, on
-     affiche les informations pour supprimer, etc. » Le décor de groupes.js —
-   un VRAI PostgreSQL, le vrai groupes/table.sql. Taylor (iPhone) répond ;
-   Benoît (Android) a la discussion ouverte ; Chloé écrit depuis le serveur.
-     1. Taylor touche le message de Benoît : il se cite au-dessus de la barre
-        d'écriture (le nom, le texte), la barre prend le clavier, aucun menu ;
+/* ====== BANC « TENIR UN MESSAGE, PUIS RÉPONDRE » (v332, v343) ======
+   (v343) « Pour pouvoir répondre à un message, je veux que je puisse rester
+     appuyé dessus. Ensuite, la petite bulle qui s'affiche me propose de
+     répondre directement. De cette façon, ça suit la norme. » (En v332, le
+     simple toucher répondait.) Le décor de groupes.js — un VRAI PostgreSQL,
+   le vrai groupes/table.sql. Taylor (iPhone) répond ; Benoît (Android) a la
+   discussion ouverte ; Chloé écrit depuis le serveur.
+     1. Taylor tient le message de Benoît : le menu s'ouvre, « Répondre » en
+        tête ; elle touche « Répondre » : le message se cite au-dessus de la
+        barre d'écriture (le nom, le texte), la barre prend le clavier, le
+        menu se referme ;
      2. la citation est entière dans la barre, au-dessus de tout, sans trait ;
      3. « × » la retire ;
      4. la réponse part : le serveur garde la référence, la bulle de Taylor
         porte la citation en tête ;
      5. chez Benoît, la réponse arrive avec sa citation ;
      6. toucher la citation ramène au message d'origine, qui s'éclaire ;
-     7. l'appui long ouvre le menu, et ne prépare aucune réponse ;
+     7. un simple toucher ne fait rien : ni menu, ni citation ;
      8. une réponse à un message trop ancien pour être chargé : il est cherché,
         et la citation se remplit ;
      9. le message d'origine supprimé ensuite : « Message supprimé » ;
     10. le serveur refuse de citer un message masqué (le message part sans
         la citation) ;
     11. une réponse refusée (une insulte) : le texte ET la citation reviennent ;
-    12. en sourdine, le toucher ouvre le menu (on ne peut pas écrire) ;
-    13. un serveur d'avant (sans les réponses) : le toucher ouvre le menu ;
-    14. en anglais, les mots de l'anglais ;
-    15. aucune erreur.
+    12. en sourdine, le menu n'a pas « Répondre » (on ne peut pas écrire) ;
+    13. un serveur d'avant (sans les réponses) : pas de « Répondre » ;
+    14. en anglais, les mots de l'anglais (« Reply », « Cancel reply ») ;
+    15. aucune erreur ;
+    16. (v343) « il ne peut pas être supprimé par n'importe qui » : Taylor,
+        propriétaire du groupe, ne se voit pas proposer de supprimer le
+        message de Benoît, et le serveur le lui refuse ; le sien, oui.
    Usage : node banc-essai/reponse-message.js [dossier des captures] */
 const { chromium } = require('/opt/node22/lib/node_modules/playwright');
 const { monter } = require('./faux-serveur-groupes.js');
@@ -73,7 +79,11 @@ const dit = (quoi, bon, detail) => { console.log('  ' + (bon ? 'OK  ' : 'KO  ') 
       await p.waitForTimeout(800);
       return { ctx, p, cdp: await ctx.newCDPSession(p) };
     };
-    const bulle = (p, re) => p.evaluate((re) => { const b = [...document.querySelectorAll('#fil .b-bulle')].reverse().find(x => new RegExp(re).test(x.textContent)); if (!b) return null;
+    /* (v343) Une bulle qui se REPLIE (l'envoi refusé du point 11, qui cite
+       le même message) reste 0,6 s dans le fil, invisible et intouchable :
+       on ne la prend pas pour cible. */
+    const bulle = (p, re) => p.evaluate((re) => { const vivante = (x) => { for (let e = x; e && e.id !== 'fil'; e = e.parentElement) if (e._plie) return false; return x.getBoundingClientRect().height > 4; };
+      const b = [...document.querySelectorAll('#fil .b-bulle')].reverse().find(x => vivante(x) && new RegExp(re).test(x.textContent)); if (!b) return null;
       b.scrollIntoView({ block: 'center' }); const r = b.getBoundingClientRect();
       /* Le TEXTE de la bulle : sa citation, en tête, ramène au message d'origine. */
       return { x: r.left + r.width / 2, y: r.bottom - 14, id: b.getAttribute('data-m') }; }, re);
@@ -86,15 +96,30 @@ const dit = (quoi, bon, detail) => { console.log('  ' + (bon ? 'OK  ' : 'KO  ') 
       return { nom: q.querySelector('b').textContent, texte: q.querySelector('.cc-t > span').textContent.replace(/\u00a0/g, ' '), dedans: r.left >= c.left - 0.5 && r.right <= c.right + 0.5 && r.top >= c.top - 0.5 && r.bottom <= c.bottom + 0.5,
         dessus: !!e && q.contains(e), trait: s.borderTopWidth + ' ' + s.borderLeftWidth, focus: document.activeElement && document.activeElement.id, menu: !!document.querySelector('#grpActionsVeil:not(.closing)') }; });
     const menu = (p) => p.evaluate(() => !!document.querySelector('#grpActionsVeil:not(.closing)'));
+    const lignes = (p) => p.evaluate(() => [...document.querySelectorAll('#grpActionsVeil:not(.closing) .grp-act-l .gal-t')].map(x => x.textContent.trim()));
+    /* (v343) Tenir la bulle, puis toucher « Répondre » dans le menu — du
+       doigt, comme Taylor : c'est ce toucher qui doit ouvrir le clavier. */
+    const repondre = async (p, cdp, re, mot) => {
+      await touche(p, cdp, re, 650);
+      await p.waitForTimeout(500);
+      const l = await lignes(p);
+      const r = await p.evaluate((mot) => { const b = [...document.querySelectorAll('#grpActionsVeil:not(.closing) .grp-act-l')].find(x => x.textContent.trim() === mot);
+        if (!b) return null; const q = b.getBoundingClientRect(); return { x: q.left + q.width / 2, y: q.top + q.height / 2 }; }, mot || 'Répondre');
+      if (!r) return { lignes: l, touche: false };
+      await cdp.send('Input.dispatchTouchEvent', { type: 'touchStart', touchPoints: [{ x: r.x, y: r.y }] }); await p.waitForTimeout(70);
+      await cdp.send('Input.dispatchTouchEvent', { type: 'touchEnd', touchPoints: [] }); await p.waitForTimeout(750);
+      return { lignes: l, touche: true };
+    };
     const fermerMenu = async (p) => { await p.evaluate(() => { try { fermerFeuilleGroupe('grpActionsVeil'); } catch (e) {} }); await p.waitForTimeout(600); };
 
     const { ctx: ca, p: pa, cdp: cdpa } = await telephone(A, 'Taylor', '#4C86E8', IOS);
     const { p: pb } = await telephone(B, 'Benoît', '#E8734C', AND);
 
     /* 1 */
-    await touche(pa, cdpa, 'On se voit jeudi');
+    const r1 = await repondre(pa, cdpa, 'On se voit jeudi');
     const c1 = await cite(pa);
-    dit('1. toucher le message de Benoît : il se cite au-dessus de la barre, la barre prend le clavier, aucun menu', c1 && c1.nom === 'Benoît' && c1.texte === 'On se voit jeudi ?' && c1.focus === 'compoTexte' && !c1.menu, JSON.stringify(c1));
+    dit('1. tenir le message de Benoît : le menu, « Répondre » en tête ; le toucher : la citation au-dessus de la barre, le clavier, le menu refermé',
+      r1.touche && r1.lignes[0] === 'Répondre' && c1 && c1.nom === 'Benoît' && c1.texte === 'On se voit jeudi ?' && c1.focus === 'compoTexte' && !c1.menu, JSON.stringify({ r1, c1 }));
     /* 2 */
     dit('2. la citation est entière dans la barre, au-dessus de tout, sans trait', c1 && c1.dedans && c1.dessus && c1.trait === '0px 0px', JSON.stringify(c1));
     if (CAPT) await pa.screenshot({ path: CAPT + '/reponse-barre.png' });
@@ -104,7 +129,7 @@ const dit = (quoi, bon, detail) => { console.log('  ' + (bon ? 'OK  ' : 'KO  ') 
     dit('3. « × » la retire', !(await cite(pa)));
 
     /* 4 */
-    await touche(pa, cdpa, 'On se voit jeudi');
+    await repondre(pa, cdpa, 'On se voit jeudi');
     await recule();
     await pa.locator('#compoTexte').fill('Oui, à 20 h !');
     await pa.evaluate(() => { const z = document.getElementById('compoTexte'); surSaisie(z); envoyerMessageGroupe(); });
@@ -134,9 +159,11 @@ const dit = (quoi, bon, detail) => { console.log('  ' + (bon ? 'OK  ' : 'KO  ') 
     dit('6. toucher la citation ramène au message d\'origine, qui s\'éclaire', eclat && vue6, 'éclat ' + eclat + ' · visible ' + vue6);
 
     /* 7 */
-    await touche(pa, cdpa, 'On se voit jeudi', 650);
+    await pa.evaluate(() => { try { document.activeElement && document.activeElement.blur(); } catch (e) {} });
+    await touche(pa, cdpa, 'On se voit jeudi');
+    await pa.waitForTimeout(300);
     const m7 = await menu(pa), c7 = await cite(pa);
-    dit('7. l\'appui long ouvre le menu, et ne prépare aucune réponse', m7 && !c7, 'menu ' + m7 + ' · citation ' + JSON.stringify(c7));
+    dit('7. un simple toucher ne fait rien : ni menu, ni citation', !m7 && !c7, 'menu ' + m7 + ' · citation ' + JSON.stringify(c7));
     await fermerMenu(pa);
 
     /* 8 — (le décor renvoie tout le fil quand le banc vieillit les dates
@@ -165,7 +192,7 @@ const dit = (quoi, bon, detail) => { console.log('  ' + (bon ? 'OK  ' : 'KO  ') 
 
     /* 11 */
     await pa.waitForTimeout(600);
-    await touche(pa, cdpa, 'Je réponds au tout début');
+    await repondre(pa, cdpa, 'Je réponds au tout début');
     await recule();
     await pa.locator('#compoTexte').fill('espèce de connard');
     await pa.evaluate(() => { const z = document.getElementById('compoTexte'); surSaisie(z); envoyerMessageGroupe(); });
@@ -179,9 +206,10 @@ const dit = (quoi, bon, detail) => { console.log('  ' + (bon ? 'OK  ' : 'KO  ') 
     await m.sql(`update public.membres set muet_jusqu = now() + interval '1 hour' where groupe = '${g.id}' and membre = '${A}'`);
     await pa.evaluate((gid) => chargerMembres(gid), g.id);
     await attendre(pa, () => !!document.querySelector('#compo .compo-muet'), null, 4000);
-    await touche(pa, cdpa, 'Je réponds au tout début');
-    const m12 = await menu(pa), c12 = await cite(pa);
-    dit('12. en sourdine, le toucher ouvre le menu (on ne peut pas écrire)', m12 && !c12, 'menu ' + m12);
+    await touche(pa, cdpa, 'Je réponds au tout début', 650);
+    await pa.waitForTimeout(500);
+    const m12 = await menu(pa), l12 = await lignes(pa), c12 = await cite(pa);
+    dit('12. en sourdine, le menu s\'ouvre sans « Répondre » (on ne peut pas écrire)', m12 && !l12.includes('Répondre') && !c12, JSON.stringify(l12));
     await fermerMenu(pa);
     await m.sql(`update public.membres set muet_jusqu = null where groupe = '${g.id}' and membre = '${A}'`);
     await pa.evaluate((gid) => chargerMembres(gid), g.id);
@@ -189,18 +217,37 @@ const dit = (quoi, bon, detail) => { console.log('  ' + (bon ? 'OK  ' : 'KO  ') 
 
     /* 13 */
     await pa.evaluate(() => { grp.etat.reponses = false; });
-    await touche(pa, cdpa, 'Je réponds au tout début');
-    const m13 = await menu(pa), c13 = await cite(pa);
-    dit('13. un serveur d\'avant (sans les réponses) : le toucher ouvre le menu', m13 && !c13, 'menu ' + m13);
+    await touche(pa, cdpa, 'Je réponds au tout début', 650);
+    await pa.waitForTimeout(500);
+    const m13 = await menu(pa), l13 = await lignes(pa), c13 = await cite(pa);
+    dit('13. un serveur d\'avant (sans les réponses) : le menu, sans « Répondre »', m13 && !l13.includes('Répondre') && !c13, JSON.stringify(l13));
+    await fermerMenu(pa);
+    await pa.evaluate(() => { grp.etat.reponses = true; });
+
+    /* 16 — Taylor a créé le groupe : elle en est la propriétaire. */
+    await touche(pa, cdpa, 'Je réponds au tout début', 650);
+    await pa.waitForTimeout(500);
+    const l16a = await lignes(pa);
+    await fermerMenu(pa);
+    await touche(pa, cdpa, '20 h', 650);
+    await pa.waitForTimeout(500);
+    const l16b = await lignes(pa);
+    const unAutre = +(await m.sql("select id from public.messages where texte = 'Je réponds au tout début'"));
+    const refus = await m.rpc(A, 'supprimer_message', { p_message: unAutre });
+    const reste = await m.sql(`select coalesce(supprime_le::text, 'là') from public.messages where id = ${unAutre}`);
+    dit('16. la propriétaire du groupe : pas de « Supprimer » sur le message de Chloé, et le serveur refuse ; sur le sien, si',
+      !l16a.includes('Supprimer le message') && l16b.includes('Supprimer le message') && refus && refus.data && refus.data.ok === false && reste === 'là',
+      JSON.stringify({ l16a, l16b, refus: refus && refus.data, reste }));
     await fermerMenu(pa);
     await ca.close();
 
     /* 14 */
     const { ctx: ce, p: pe, cdp: cdpe } = await telephone(A, 'Taylor', '#4C86E8', IOS, 'en');
-    await touche(pe, cdpe, 'Je réponds au tout début');
+    const r14 = await repondre(pe, cdpe, 'Je réponds au tout début', 'Reply');
     const e14 = await pe.evaluate(() => { const x = document.querySelector('#compo .cc-x'); const b = [...document.querySelectorAll('#fil .b-moi .b-bulle')].find(y => /20 h/.test(y.textContent));
       return { x: x && x.getAttribute('aria-label'), sup: b && b.querySelector('.b-cite') ? b.querySelector('.b-cite').textContent : null }; });
-    dit('14. en anglais : « ' + e14.x + ' », « ' + (e14.sup || '').replace(/^Benoît/, '') + ' »', e14.x === 'Cancel reply' && /Message deleted/.test(e14.sup || ''), JSON.stringify(e14));
+    dit('14. en anglais : « ' + (r14.lignes[0] || '') + ' », « ' + e14.x + ' », « ' + (e14.sup || '').replace(/^Benoît/, '') + ' »',
+      r14.touche && r14.lignes[0] === 'Reply' && e14.x === 'Cancel reply' && /Message deleted/.test(e14.sup || ''), JSON.stringify({ r14, e14 }));
     await ce.close();
 
     dit('15. aucune erreur', !erreurs.length, erreurs.slice(0, 3).join(' | '));
@@ -210,6 +257,6 @@ const dit = (quoi, bon, detail) => { console.log('  ' + (bon ? 'OK  ' : 'KO  ') 
     await nav.close();
     await m.arreter();
   }
-  console.log(ko === 0 ? '\n  OK — toucher un message y répond, l\'appui long ouvre le menu, et la citation suit le message partout' : '\n  ' + ko + ' défaut(s)');
+  console.log(ko === 0 ? '\n  OK — tenir un message ouvre le menu, « Répondre » en tête ; un toucher ne fait rien ; la citation suit le message partout' : '\n  ' + ko + ' défaut(s)');
   process.exit(ko === 0 ? 0 : 1);
 })();

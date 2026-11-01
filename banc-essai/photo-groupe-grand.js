@@ -50,7 +50,7 @@ const DECOR = () => {
 const ETAT = () => {
   const v = document.getElementById('photoGrandVeil');
   const im = v && v.querySelector('.pv-img');
-  return { ecran: state.screen, courant: grp.courant, grand: !!v, groupe: !!(im && im.classList.contains('pv-groupe')),
+  return { ecran: state.screen, courant: grp.courant, grand: !!v && !v.classList.contains('closing'), groupe: !!(im && im.classList.contains('pv-groupe')),
     rayon: im ? getComputedStyle(im).borderTopLeftRadius : '', nom: v ? (v.querySelector('.pv-nom') || {}).textContent || '' : '',
     infos: !!document.getElementById('grpInfosVeil'), image: !!document.getElementById('grpImageVeil') };
 };

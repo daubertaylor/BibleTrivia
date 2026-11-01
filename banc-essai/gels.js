@@ -120,13 +120,13 @@ function verifier(nom, obtenu, attendu){
     /* La grille : une case par jour, du plus ancien au plus récent. Les cases
        « horschamp » ne sont que le calage des colonnes sur les jours de la
        semaine — elles ne comptent pas. */
-    /* LES MOIS SONT AFFICHÉS DU PLUS RÉCENT AU PLUS ANCIEN. Cinq jours qui
-       enjambent la fin d'un mois (le 1er novembre, par exemple) tombent dans
-       DEUX cartes : on les relit de la plus ancienne à la plus récente. Et le
-       calage des colonnes se vérifie carte par carte : les cases vides du
-       début valent le jour de la semaine du 1er — la règle d'avant, « un
-       multiple de sept », ne tenait que les mois où le compte tombait juste
-       (octobre 2026 : 4 + 31 = 35 ; novembre : 0 + 30). */
+    /* (v343) LES MOIS SONT AFFICHÉS DU PLUS RÉCENT AU PLUS ANCIEN. Cinq jours
+       qui enjambent la fin d'un mois (le 1er novembre, par exemple) tombent
+       dans DEUX cartes : on les relit de la plus ancienne à la plus récente.
+       Et le calage des colonnes se vérifie carte par carte : les cases vides
+       du début valent le jour de la semaine du 1er (le lundi en tête, en
+       français) — la règle d'avant, « un multiple de sept », ne tenait que
+       les mois où le compte tombait juste (octobre 2026 : 4 + 31 = 35). */
     const cartes = Array.from(document.querySelectorAll('#flammeVeil .flam-mois')).reverse();
     const l = [].concat(...cartes.map(m => Array.from(m.querySelectorAll('.fg-cases .fj'))))
       .filter(c => !c.classList.contains('horschamp'));
@@ -137,11 +137,12 @@ function verifier(nom, obtenu, attendu){
       const nom = (m.querySelector('.fg-cases').getAttribute('aria-label') || '').split(' ');
       const premier = new Date(+nom[1], MOIS.indexOf(nom[0]), 1);
       const vides = Array.from(m.querySelectorAll('.fg-cases .fj')).findIndex(c => !(c.classList.contains('horschamp') && !c.querySelector('i')));
-      return vides === premier.getDay();
+      return vides === (premier.getDay() + 6) % 7;
     });
     const res = { etats, auj: l.filter(c=>c.classList.contains('auj')).length,
       colonnes: getComputedStyle(document.querySelector('#flammeVeil .fg-cases')).gridTemplateColumns.split(' ').length,
       cales: cales.every(Boolean) && cales.length > 0,
+      lundi: Array.from(document.querySelectorAll('#flammeVeil .flam-mois:first-child .fg-sem span, #flammeVeil .fg-sem span')).slice(0, 7).map(x => x.textContent).join(''),
       gele:(document.querySelector('#flammeVeil .ft-g')||{}).textContent,
       regle:(document.querySelector('#flammeVeil .flam-regle')||{}).textContent,
       dates: l.map(c=>c.getAttribute('aria-label')).filter(Boolean).length };
@@ -151,6 +152,7 @@ function verifier(nom, obtenu, attendu){
   verifier("la grille : cinq jours, du plus ancien au plus récent", feuille.etats, ["fait","fait","gele","fait","fait"]);
   verifier("sept colonnes, une par jour de la semaine", feuille.colonnes, 7);
   verifier("les colonnes sont calées (le 1er sous son jour de la semaine)", feuille.cales, true);
+  verifier("la semaine commence le lundi", feuille.lundi, "LMMJVSD");
   verifier("une seule case marquée aujourd'hui", feuille.auj, 1);
   verifier("chaque case garde sa date au toucher", feuille.dates, 5);
   verifier("elle dit la réserve", (feuille.gele||'').trim(), "1 gel en réserve");
@@ -211,17 +213,26 @@ function verifier(nom, obtenu, attendu){
     document.querySelectorAll('.ach-toast').forEach(e=>e.remove());
     state.mode='solo'; startGame();
     state.currentIndex = state.questions.length - 1; state.revealed = true; state.soloSelected = 0;
-    let tFin = null, tBandeau = null; const t0 = performance.now();
+    /* (v343) La première partie du jour allume la flamme, et la flamme se
+       FÊTE après les résultats (feterFlamme) : le bandeau attend qu'on l'ait
+       refermée. On la referme comme le joueur, 300 ms après son ouverture. */
+    let tFin = null, tFete = null, tBandeau = null; const t0 = performance.now();
     const tic=()=>{
       if(tFin === null && state.screen === 'end') tFin = performance.now()-t0;
+      if(tFete === null && document.querySelector('#modalVeil .fete-flamme')){
+        tFete = performance.now()-t0;
+        setTimeout(()=>{ const b = document.querySelector('#modalVeil .fete-flamme #modalOk'); if(b) b.click(); }, 300);
+      }
       if(tBandeau === null && document.querySelector('.ach-toast')) tBandeau = performance.now()-t0;
-      if(performance.now()-t0 < 3000) requestAnimationFrame(tic); else res({ tFin, tBandeau });
+      if(performance.now()-t0 < 4500) requestAnimationFrame(tic); else res({ tFin, tFete, tBandeau });
     };
     requestAnimationFrame(tic);
     setTimeout(()=>{ nextQuestion(); }, 80);
   }));
-  verifier("le bandeau du gel attend les résultats",
-    !!(quand.tBandeau !== null && quand.tFin !== null && quand.tBandeau > quand.tFin + 400), true);
+  verifier("la flamme du jour se fête après les résultats",
+    !!(quand.tFete !== null && quand.tFin !== null && quand.tFete > quand.tFin + 400), true);
+  verifier("le bandeau du gel attend les résultats, puis la fête",
+    !!(quand.tBandeau !== null && quand.tFin !== null && quand.tBandeau > quand.tFin + 400 && quand.tBandeau > quand.tFete + 300), true);
 
   await nav.close();
   console.log(ko === 0 ? '\n  OK' : '\n  ' + ko + ' règle(s) en défaut');

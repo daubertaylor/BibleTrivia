@@ -2665,20 +2665,24 @@
   /* Le petit rond de l'appareil photo, posé sur le visage comme sur la
      pastille d'un groupe (v322, voir choisirPhotoProfil). */
   .avatar-tap{ position:relative; }
-  /* ===== LA PHOTO EN GRAND =====
-     On touche un avatar qui porte une photo — le sien ou celui d'un autre
-     joueur — et elle s'ouvre en grand. Rien de plus : un fond sombre, l'image,
-     le nom, et on touche n'importe où pour refermer. Pas de bouton : tout
-     l'écran est la sortie, c'est le geste que tout le monde connaît. */
-  .photo-veil{ position:fixed; inset:0; z-index:95; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:0.9rem;
-    background:rgba(12,9,6,0.82); animation:veilIn var(--tr-voile-in); padding:1.2rem; }
-  .photo-veil .pv-img{ width:min(84vw, 84 * var(--hu, 8px)); aspect-ratio:1 / 1; border-radius:50%;
-    background-size:cover; background-position:50% 50%; background-repeat:no-repeat;
-    box-shadow:0 18px 60px rgba(0,0,0,0.55); }
-  .photo-veil .pv-nom{ color:#fff; font-family:'Poppins',sans-serif; font-weight:700; font-size:1.1rem; text-shadow:0 1px 12px rgba(0,0,0,0.6); }
-  /* (v335) La photo d'un groupe garde en grand la forme de sa pastille : un
-     carré aux coins arrondis, pas un rond. */
-  .photo-veil .pv-img.pv-groupe{ border-radius:calc(var(--r-l) * 2.2); }
+  /* ===== LA PHOTO EN GRAND : UNE VRAIE PHOTO, CARRÉE, SUR UN FOND UNI (v343) =====
+     « Lorsque l'on clique pour afficher la photo, je veux que la photo
+       s'affiche au carré : en grand, une véritable photo au carré, pas une
+       petite bulle. » Puis : « Je veux que l'arrière-plan, le haut et le bas
+       de l'image soient blancs, ou d'une couleur du jeu — pas le décor
+       derrière. Un fond uni, très propre, comme la DA du jeu. »
+     C'est donc une PAGE, comme les Réglages : le crème des pages, l'en-tête
+     avec le retour et le nom, la même arrivée par la droite, le même retour
+     au doigt depuis le bord. Au milieu, la photo entière, carrée, aux coins
+     des cartes, avec le relief de tout ce qui est posé. Un visage comme la
+     photo d'un groupe. On touche n'importe où pour refermer, comme avant. */
+  .photo-page.settings-sheet.settings-sheet{ display:flex; flex-direction:column; }
+  .photo-page .page-tete{ margin-bottom:0; }
+  .photo-page .pp-zone{ flex:1 0 auto; display:flex; align-items:center; justify-content:center;
+    padding:0.4rem 0 calc(3.7rem + 0.4rem); }
+  .photo-page .pv-img{ width:min(100%, 30rem); aspect-ratio:1 / 1; border-radius:var(--r-l);
+    background-color:var(--page-carte); background-size:cover; background-position:50% 50%; background-repeat:no-repeat;
+    box-shadow:var(--relief); }
   /* ===== AJUSTER SA PHOTO =====
      UN CARRÉ, ET UN TROU ROND DEDANS. On voit EXACTEMENT ce qui sera gardé —
      le disque clair — et ce qu'on perd reste visible en plus sombre autour.
@@ -3915,6 +3919,41 @@
   .ach-info-c{ font-family:'Poppins',sans-serif; font-weight:700; font-size:0.84rem; color:var(--ink-soft); font-variant-numeric:tabular-nums; }
   .ach-info-c.on{ color:#1f7a4d; }
   .modal-card.ach-info .modal-btn.ok{ margin-top:0.5rem; width:100%; }
+  /* ===== (v343) LA FLAMME DU JOUR, FÊTÉE ; L'INVITATION AUX RAPPELS =====
+     Deux cartes de la même famille que celle d'un objectif : une pastille
+     ronde en tête, le titre, une phrase, et le bouton pleine largeur. La
+     flamme s'allume (elle grandit en se posant, puis vacille doucement), le
+     compte passe d'hier à aujourd'hui (l'ancien monte et s'efface, le
+     nouveau arrive d'en bas), et la case du jour se remplit d'or au moment
+     où la flamme s'allume. Aucun trait : des fonds et le relief. */
+  .modal-card.fete-flamme, .modal-card.invit-rappels{ display:flex; flex-direction:column; align-items:center; gap:0.35rem; }
+  .fete-flamme .ff-feu, .invit-rappels .ir-cloche{ width:4.6rem; height:4.6rem; border-radius:50%; display:flex; align-items:center; justify-content:center;
+    color:#fff; box-shadow:var(--relief); margin-bottom:0.2rem; }
+  /* La flamme elle-même, en grand — celle du jeu, avec ses couleurs — sans
+     pastille autour : c'est elle qu'on vient de gagner. Aucune lueur
+     colorée (le relief n'est jamais coloré). */
+  .fete-flamme .ff-feu{ width:5.4rem; height:5.4rem; background:none; box-shadow:none; margin-bottom:0; animation:ffPose 0.62s cubic-bezier(0.2,1.35,0.4,1) 0.12s both; }
+  .fete-flamme .ff-ico{ display:flex; width:100%; height:100%; transform-origin:50% 90%; animation:flameFlicker 1.1s ease-in-out 0.8s infinite; }
+  .fete-flamme .ff-ico svg, .invit-rappels .ir-cloche svg{ width:100%; height:100%; }
+  @keyframes ffPose{ from{ transform:scale(0.35); opacity:0; } to{ transform:none; opacity:1; } }
+  .fete-flamme .ff-n{ position:relative; height:2.6rem; width:6rem; overflow:hidden; font-family:'Poppins',sans-serif; font-weight:800; font-size:2.2rem;
+    line-height:2.6rem; color:var(--feu); font-variant-numeric:tabular-nums; }
+  .fete-flamme .ff-n span{ position:absolute; left:0; right:0; text-align:center; }
+  .fete-flamme .ff-avant{ animation:ffPart 0.42s cubic-bezier(0.5,0,0.75,0) 0.5s both; }
+  .fete-flamme .ff-apres{ animation:ffVient 0.5s cubic-bezier(0.2,1.2,0.4,1) 0.62s both; }
+  @keyframes ffPart{ from{ transform:none; opacity:1; } to{ transform:translateY(-100%); opacity:0; } }
+  @keyframes ffVient{ from{ transform:translateY(100%); opacity:0; } to{ transform:none; opacity:1; } }
+  .fete-flamme .ff-sem{ display:flex; justify-content:center; gap:0.32rem; margin:0.55rem 0 0.15rem; --sj-l:2rem; }
+  .fete-flamme .ff-sem .sj{ backdrop-filter:none; -webkit-backdrop-filter:none; background:rgba(34,26,16,0.07); color:var(--ink-soft); height:2.5rem; }
+  .fete-flamme .ff-sem .sj.gele{ background:linear-gradient(160deg, #8FC3F2, #5E98D6); color:#fff; }
+  .fete-flamme .ff-sem .sj.fait{ background:linear-gradient(160deg, var(--pal-or-a), var(--pal-or-b)); color:#fff; text-shadow:0 1px 2px rgba(122,78,4,0.3); }
+  .fete-flamme .ff-sem .sj.neuf{ animation:ffCase 0.5s cubic-bezier(0.2,1.4,0.4,1) 0.6s both; }
+  @keyframes ffCase{ from{ transform:scale(0.6); filter:saturate(0) brightness(1.6); opacity:0.4; } to{ transform:none; filter:none; opacity:1; } }
+  .modal-card.fete-flamme .modal-actions, .modal-card.invit-rappels .modal-actions{ width:100%; margin-top:0.6rem; }
+  .modal-card.fete-flamme .modal-btn.ok{ width:100%; }
+  .invit-rappels .ir-cloche{ background:linear-gradient(160deg, var(--pal-corail-a), var(--pal-corail-b)); padding:1.05rem; animation:ffPose 0.55s cubic-bezier(0.2,1.35,0.4,1) both; }
+  .modal-card.invit-rappels .modal-actions.colonne{ display:flex; flex-direction:column; gap:0.5rem; }
+  .modal-card.invit-rappels .modal-actions.colonne .modal-btn{ width:100%; margin:0; }
   /* ===== TOUS LES « FERMER » SONT LE MÊME BOUTON (v322) =====
      « J'aime beaucoup le bouton Fermer du badge débloqué : il doit être
        cohérent avec tous les autres boutons Fermer du jeu. » Celui du
@@ -4051,7 +4090,27 @@
   /* Livres : CHIPS compacts (nom seul, sans barre) -> testaments beaucoup plus
      courts et nets. L'état se lit à la couleur : neutre (non touché), or (commencé),
      vert (maîtrisé) — cohérent avec le reste du jeu. */
-  .bk-grid{ display:grid; grid-template-columns:repeat(auto-fill, minmax(4.7rem, 1fr)); gap:0.36rem; }
+  /* (v343) « Vérifie l'espacement entre les boutons, comme au niveau des
+     livres dans les testaments, vu le nouveau système de bordure. » Avec le
+     relief, chaque tuile porte une ombre qui déborde vers le bas et la
+     droite : à 6 px d'écart, l'ombre d'une tuile touchait la suivante et la
+     grille paraissait tassée. Mesuré sur tous les écrans du jeu : c'était le
+     SEUL endroit sous 8 px (avec la liste des versions, 7,4). Les tuiles
+     prennent l'écart des autres grilles du jeu (les logos des groupes). */
+  /* La largeur mini d'une colonne baisse d'autant que l'écart monte, pour que
+     la grille se coupe EXACTEMENT aux mêmes largeurs qu'avant : 4 × 4,55 +
+     3 × 0,55 = 19,85 rem pour quatre colonnes (19,88 avant), 14,75 pour trois
+     (14,82). Quatre colonnes sur les téléphones courants (393, 412, 430),
+     trois sur les petits (360, 320) — comme en v342.
+     Le libellé, lui, manquait DÉJÀ de place en v342 : à quatre colonnes, une
+     tuile ne laissait que 3,8 rem au nom, et « Colosenses » (4,0 rem en
+     gras), « 2 Timothée » (3,86) finissaient en « … » sur un iPhone de
+     393 px. Les côtés de la tuile passent donc de 0,4 à 0,14 rem : le nom le
+     plus long du jeu, toutes langues, gras compris, tient avec au moins
+     1,5 px de reste à la plus petite tuile possible (4,55 rem). Les noms sont
+     centrés : l'air autour d'eux ne change pas à l'œil. */
+  .bk-grid{ display:grid; grid-template-columns:repeat(auto-fill, minmax(4.55rem, 1fr)); gap:0.55rem; }
+  .bk-grid .bk{ padding-left:calc(0.14rem + 1px); padding-right:calc(0.14rem + 1px); }
   /* Livres : l'EFFET DE VERRE est porté par la GRANDE carte (.bk-card, une
      par testament) — 1 surface de verre au lieu de 66, la Progression reste
      légère sur tous les appareils. Posées sur ce verre flouté, les puces
@@ -4114,7 +4173,7 @@
   .tp-aide{ margin:0.85rem 0.3rem 0.1rem; }
   .tp-carte{ background:var(--page-carte, #fff); border-radius:var(--r-l); box-shadow:var(--ombre-pose); padding:0.8rem 0.75rem 0.8rem; margin-top:0.75rem; }
   .tp-sec{ font-family:'Poppins',sans-serif; font-size:0.72rem; font-weight:700; letter-spacing:0.06em; text-transform:uppercase; color:var(--ink-soft); margin:0 0.2rem 0.55rem; }
-  .tp-carte .bk{ background:rgb(246,241,233); padding:calc(0.42rem + 1px) calc(0.4rem + 1px) calc(0.38rem + 1px); }
+  .tp-carte .bk{ background:rgb(246,241,233); padding:calc(0.42rem + 1px) calc(0.14rem + 1px) calc(0.38rem + 1px); }
   .tp-carte .bk.started{ background:rgb(255,241,212); }
   .tp-carte .bk.mastered{ background:rgb(198,242,216); }
   .bk .bk-pr{ display:flex; align-items:center; justify-content:center; height:0.95rem; margin-top:0.06rem; font-size:0.66rem; font-weight:600; color:var(--ink-soft); font-variant-numeric:tabular-nums; }
@@ -4582,7 +4641,7 @@
      servait ; elle a été retirée à la demande de Taylor. Quatre versions que
      les évangéliques connaissent déjà n'ont pas besoin d'être présentées —
      leur sigle et leur année suffisent. */
-  .bible-list{ display:flex; flex-direction:column; gap:0.45rem; margin:0.9rem 0 0.2rem; }
+  .bible-list{ display:flex; flex-direction:column; gap:0.55rem; margin:0.9rem 0 0.2rem; }
   /* La feuille des versions n'a AUCUN bouton : la poignée ferme, une ligne
      choisit. C'est tout ce qu'on vient y faire. */
   .bibles-sheet .bible-list{ margin-top:0.75rem; }
@@ -7155,7 +7214,7 @@ const TEXTES = {
     "Ouvre le menu du navigateur":"Open the browser menu",
     "Les trois points, en haut":"The three dots, at the top",
     "« Installer l'application »":"“Install app”",
-    "Ou « Ajouter à l'écran d'accueil »":"Or “Add to Home Screen”",
+    "Ou « Ajouter à l'écran d'accueil », puis « Installer »":"Or “Add to Home screen”, then “Install”",
     /* le mot de la fin, en solo */
     "Presque sans faute — c'est du solide.":"Almost flawless — that's solid work.",
     "Très impressionnant : peu de questions t'ont résisté.":"Very impressive: few questions gave you trouble.",
@@ -7333,6 +7392,14 @@ const TEXTES = {
     "Code d'invitation":"Invitation code",
     "Inviter":"Invite",
     "Copier":"Copy",
+    "Répondre":"Reply",
+    "Ta flamme est allumée !":"Your flame is lit!",
+    "{n} jours d'affilée !":"{n} days in a row!",
+    "Joue chaque jour pour la faire grandir.":"Play every day to make it grow.",
+    "Reviens demain pour la garder allumée.":"Come back tomorrow to keep it burning.",
+    "Ne laisse pas ta flamme s'éteindre":"Don't let your flame go out",
+    "Activer les rappels":"Turn on reminders",
+    "Plus tard":"Later",
     "Nouveau code":"New code",
     "Envoie ce code à tes amis : avec lui, ils entrent directement.":"Send this code to your friends: with it, they can join right away.",
     "Modifier le groupe":"Edit group",
@@ -7952,7 +8019,7 @@ const TEXTES = {
     "Ouvre le menu du navigateur":"Abre el menú del navegador",
     "Les trois points, en haut":"Los tres puntos, arriba",
     "« Installer l'application »":"“Instalar aplicación”",
-    "Ou « Ajouter à l'écran d'accueil »":"O “Añadir a pantalla de inicio”",
+    "Ou « Ajouter à l'écran d'accueil », puis « Installer »":"O “Añadir a pantalla de inicio”, luego “Instalar”",
     "Presque sans faute — c'est du solide.":"Casi sin fallos — eso es sólido.",
     "Très impressionnant : peu de questions t'ont résisté.":"Muy impresionante: pocas preguntas te dieron problemas.",
     "Belle partie — la Parole te devient familière.":"Bien jugado — la Palabra te va resultando familiar.",
@@ -8140,6 +8207,14 @@ const TEXTES = {
     "Code d'invitation":"Código de invitación",
     "Inviter":"Invitar",
     "Copier":"Copiar",
+    "Répondre":"Responder",
+    "Ta flamme est allumée !":"¡Tu llama está encendida!",
+    "{n} jours d'affilée !":"¡{n} días seguidos!",
+    "Joue chaque jour pour la faire grandir.":"Juega cada día para hacerla crecer.",
+    "Reviens demain pour la garder allumée.":"Vuelve mañana para mantenerla encendida.",
+    "Ne laisse pas ta flamme s'éteindre":"No dejes que tu llama se apague",
+    "Activer les rappels":"Activar los recordatorios",
+    "Plus tard":"Más tarde",
     "Nouveau code":"Código nuevo",
     "Envoie ce code à tes amis : avec lui, ils entrent directement.":"Envía este código a tus amigos: con él, entran directamente.",
     "Modifier le groupe":"Editar el grupo",
@@ -8656,6 +8731,7 @@ const ICONS = {
   sortir: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M14.4 4H6.6A1.6 1.6 0 0 0 5 5.6v12.8A1.6 1.6 0 0 0 6.6 20h7.8"/><line x1="10" y1="12" x2="20.2" y2="12"/><polyline points="16.6 8.4 20.2 12 16.6 15.6"/></svg>`,
   corbeille: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><line x1="4" y1="6.6" x2="20" y2="6.6"/><path d="M9.2 6.6V5a1.4 1.4 0 0 1 1.4-1.4h2.8A1.4 1.4 0 0 1 14.8 5v1.6"/><path d="M6.2 6.6l.9 12.4a1.6 1.6 0 0 0 1.6 1.4h6.6a1.6 1.6 0 0 0 1.6-1.4l.9-12.4"/><line x1="10.2" y1="10.6" x2="10.2" y2="16.4"/><line x1="13.8" y1="10.6" x2="13.8" y2="16.4"/></svg>`,
   coche: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><polyline points="5.2 12.6 9.8 17.2 18.8 7.4"/></svg>`,
+  repondre: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M9.6 6 4 11.4l5.6 5.4"/><path d="M4.6 11.4h9.2a6.2 6.2 0 0 1 6.2 6.2V19"/></svg>`,
   copier: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><rect x="8.6" y="8.6" width="11.4" height="11.4" rx="2.2"/><path d="M15.4 8.6V6.2A2.2 2.2 0 0 0 13.2 4H6.2A2.2 2.2 0 0 0 4 6.2v7a2.2 2.2 0 0 0 2.2 2.2h2.4"/></svg>`,
   bloquer: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="8.6"/><line x1="5.9" y1="5.9" x2="18.1" y2="18.1"/></svg>`,
   sourdine: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M8.4 5h9.4A2.2 2.2 0 0 1 20 7.2v6.4a2.2 2.2 0 0 1-1.4 2"/><path d="M15.6 15.8H11l-4.4 3.4v-3.4H6.2A2.2 2.2 0 0 1 4 13.6V7.2c0-.5.2-1 .5-1.4"/><line x1="3.4" y1="3.4" x2="20.6" y2="20.6"/></svg>`,
@@ -10872,7 +10948,7 @@ const SUPABASE_ANON_KEY = "sb_publishable_FDJ_R0foC7uIeHmxVrj6rA_2NeIgW2a";
    remontée d'un téléphone ne vaut rien si on ne sait pas QUELLE version
    tournait. Elle doit rester égale au CACHE de sw.js — c'est ce que vérifie
    banc-essai/version.js, qui refuse de laisser publier les deux en désaccord. */
-const VERSION_JEU = "v342";
+const VERSION_JEU = "v343";
 
 /* ===================== QUAND ÇA CASSE CHEZ UN JOUEUR =====================
    « Si quelque chose casse chez cinq d'entre eux sur un modèle de téléphone
@@ -14647,6 +14723,10 @@ try{
   if(redim) modeOrdinaire();
   else if(vk){ try{ vk.overlaysContent = true; }catch(e){} }
   const rectClavier = ()=>{ try{ const r = !redim && vk && vk.boundingRect; return (r && r.height > 0) ? r : null; }catch(e){ return null; } };
+  /* (v343) La hauteur ESTIMÉE d'un clavier dont rien ne parle (voir plus
+     bas, UN CLAVIER QUE PERSONNE N'ANNONCE). Zéro tant qu'on n'en a pas
+     besoin. */
+  let estime = 0;
   if(/Android/i.test(navigator.userAgent || "") && !redim){
     let toucheChamp = 0, guet = null;
     document.addEventListener("pointerdown", (e)=>{
@@ -14668,6 +14748,51 @@ try{
         setTimeout(apply, 60); setTimeout(apply, 400);
       }, 900);
     });
+  }
+  /* ===== (v343) UN CLAVIER QUE PERSONNE N'ANNONCE : ON L'ESTIME =====
+     « Sur Android, le problème du clavier qui cache la barre d'écriture est
+       toujours présent. » Le mode ordinaire (v328) suppose qu'un navigateur
+     muet rétrécit au moins sa zone visible. Ce n'est pas toujours vrai :
+     installé en plein écran, Android ne redimensionne plus rien quand le
+     clavier monte (le plein écran l'en empêche), et un navigateur qui ne dit
+     pas son clavier laisse alors le jeu complètement aveugle — ni
+     l'interface du clavier, ni la zone visible, ni la fenêtre ne bougent. La
+     barre d'écriture restait dessous.
+     En dernier recours : un champ touché du doigt, et toujours aucun signe
+     du clavier une fois le mode ordinaire essayé — on le suppose là, à la
+     hauteur d'un clavier de téléphone (42 % de l'écran au repos : le clavier
+     Samsung avec sa barre d'outils, Gboard avec ses suggestions), et la
+     barre se pose au-dessus. Un vrai signal reprend aussitôt la main ;
+     quitter le champ fait oublier l'estimation. Chrome, qui dit son clavier,
+     n'y passe jamais. */
+  if(/Android/i.test(navigator.userAgent || "")){
+    let doigtChamp = 0, guetAveugle = null, aParle = false, h0 = 0, i0 = 0;
+    /* A-t-il parlé, ne serait-ce qu'un instant, depuis que le champ a le
+       foyer ? Un clavier déjà redescendu (le retour d'Android) n'est pas un
+       clavier muet. */
+    const ecouter = ()=>{ if(rectClavier() || (h0 && vv.height < h0 - 90) || vv.height < restH - 90 || (i0 && innerHeight < i0 - 90)) aParle = true; };
+    vv.addEventListener("resize", ecouter);
+    if(vk){ try{ vk.addEventListener("geometrychange", ecouter); }catch(e){} }
+    window.addEventListener("resize", ecouter);
+    document.addEventListener("pointerdown", (e)=>{
+      const el = e.target && e.target.closest ? e.target.closest("input, textarea") : null;
+      if(el) doigtChamp = performance.now();
+    }, { capture:true, passive:true });
+    document.addEventListener("focusin", (e)=>{
+      const el = e.target;
+      if(!el || !(el.tagName === "INPUT" || el.tagName === "TEXTAREA")) return;
+      if(performance.now() - doigtChamp > 1200) return;
+      h0 = vv.height; i0 = innerHeight; aParle = false;
+      clearTimeout(guetAveugle);
+      guetAveugle = setTimeout(()=>{
+        if(!isField() || document.hidden) return;
+        ecouter();
+        if(aParle) return;                                     // il a parlé
+        estime = Math.round(restH * 0.42);
+        apply();
+      }, redim ? 900 : 1900);
+    });
+    document.addEventListener("focusout", ()=>{ setTimeout(()=>{ if(estime && !isField()){ estime = 0; apply(); } }, 80); });
   }
   /* (v328) LA HAUTEUR DU CLAVIER, PAS SA POSITION. « Sur Android, le
      clavier cache où l'on écrit, dans un groupe. » Chrome Android a rendu
@@ -14708,7 +14833,11 @@ try{
      retire le clavier une deuxième fois. */
   const hauteurVisible = ()=>{
     const r = rectClavier();
-    if(!r) return vv.height;
+    if(!r){
+      /* (v343) Rien ne parle, mais un clavier est là (voir l'estimation). */
+      if(estime && isField() && vv.height >= restH - 90) return Math.max(0, restH - estime);
+      return vv.height;
+    }
     const fen = innerHeight;
     const perdu = Math.max(0, restInner - fen);
     const bas = perdu >= r.height * 0.75 ? Math.min(fen, restInner - r.height) : fen - r.height;
@@ -22035,7 +22164,67 @@ let achToastPause = false, achRelache = 0;
 function retenirToasts(){ clearTimeout(achRelache); achRelache = 0; achToastPause = true; }
 function relacherToasts(ms){
   clearTimeout(achRelache);
-  achRelache = setTimeout(()=>{ achRelache = 0; achToastPause = false; try{ pumpAchToast(); }catch(e){} }, ms || 1200);
+  achRelache = setTimeout(()=>{
+    achRelache = 0;
+    /* (v343) Une flamme gagnée passe AVANT les bandeaux : on la fête, puis
+       les rappels sont proposés, puis la file reprend. */
+    if(flammeAFeter && !document.getElementById("modalVeil")){
+      const n = flammeAFeter; flammeAFeter = 0;
+      try{ feterFlamme(n, ()=>{ achToastPause = false; try{ pumpAchToast(); }catch(e){} }); return; }catch(e){}
+    }
+    achToastPause = false; try{ pumpAchToast(); }catch(e){}
+  }, ms || 1200);
+}
+/* ===================== LA FLAMME DU JOUR, FÊTÉE (v343) =====================
+   « Lorsque je termine une série et que j'ai gagné une flamme, j'ai besoin de
+     le savoir directement, d'avoir l'info juste après ma partie, comme sur
+     Duolingo. » La première partie finie de la journée allume la flamme du
+   jour (marquerJourJoue). Les résultats posés, une carte s'ouvre : la flamme
+   qui s'allume, le compte qui passe de la veille à aujourd'hui, la semaine où
+   la case du jour se remplit d'or, et un seul bouton, « Continuer ». Une fois
+   par jour — c'est la première partie qui la gagne. Les félicitations
+   (objectifs, gels) attendent qu'elle soit refermée. */
+let flammeAFeter = 0;
+function feterFlamme(n, apres){
+  closeModal();
+  const faits = joursFaits(), gels = joursGeles(), cases = [];
+  for(let k = 6; k >= 0; k--){
+    const jour = new Date(Date.now() - k * 86400000), cle = dayKey(-k);
+    /* Aujourd'hui : la case qui se remplit (« neuf » l'anime). */
+    const cl = ["sj"];
+    if(k === 0) cl.push("auj", "fait", "neuf");
+    else if(faits.has(cle)) cl.push("fait");
+    else if(gels.has(cle)) cl.push("gele");
+    cases.push(`<span class="${cl.join(" ")}">` + SEM_LETTRES[jour.getDay()] + `</span>`);
+  }
+  const titre = n <= 1 ? T("Ta flamme est allumée !") : Tf("{n} jours d'affilée !", { n });
+  const mot = n <= 1 ? T("Joue chaque jour pour la faire grandir.") : T("Reviens demain pour la garder allumée.");
+  const veil = document.createElement("div");
+  veil.className = "modal-veil"; veil.id = "modalVeil";
+  veil.innerHTML = `<div class="modal-card fete-flamme" role="dialog" aria-label="${escapeHtml(titre)}">
+      <div class="ff-feu" aria-hidden="true"><span class="ff-ico">${ICONS.flame}</span></div>
+      <div class="ff-n" aria-hidden="true"><span class="ff-avant">${Math.max(0, n - 1)}</span><span class="ff-apres">${n}</span></div>
+      <div class="modal-title">${escapeHtml(titre)}</div>
+      <div class="modal-msg">${escapeHtml(mot)}</div>
+      <div class="ff-sem" aria-hidden="true">${cases.join("")}</div>
+      <div class="modal-actions"><button class="modal-btn ok" id="modalOk">${T("Continuer")}</button></div>
+    </div>`;
+  document.body.appendChild(veil);
+  glassTrack();
+  /* La flamme s'allume au moment où la case du jour se remplit : deux notes
+     du piano du jeu, montantes (seulement si les sons sont allumés). */
+  setTimeout(()=>{ try{ if(settings.sfx){ chime(523.25, 0, 0.7, 0.016); chime(783.99, 0.12, 1.1, 0.016); } }catch(e){} }, 520);
+  let fini = false;
+  const suite = ()=>{
+    if(fini) return; fini = true;
+    closeModal();
+    /* Les rappels se proposent ici : on vient de voir ce qu'on a à protéger. */
+    let propose = false;
+    try{ propose = notifProposer(false, apres); }catch(e){}
+    if(!propose && apres) apres();
+  };
+  veil.querySelector("#modalOk").onclick = suite;
+  veil.addEventListener("click", (e)=>{ if(e.target === veil) suite(); });
 }
 function checkAchievements(opts){
   const p = loadProgress(), d = achDerived(p), newly = [];
@@ -22624,14 +22813,21 @@ function ouvrirFlamme(){
      C'est maintenant une page, et l'histoire s'y lit comme un calendrier :
      une carte par mois, LE MOIS EN COURS EN HAUT, les plus anciens en
      descendant, jusqu'au premier jour dont on ait la trace. Chaque carte
-     porte ses sept colonnes (du dimanche au samedi) et le nombre de jours
+     porte ses sept colonnes (du lundi au dimanche ; en anglais, du dimanche
+     au samedi) et le nombre de jours
      joués. Un jour joué porte sa flamme, un jour couvert par un gel sa
      flamme gelée ; les autres portent leur numéro, sur un fond neutre s'il a
      été manqué. Avant la première trace et après aujourd'hui, le numéro seul
      — afficher des mois de « manqué » à quelqu'un qui vient d'arriver serait
      un reproche, pas une information. */
   const tAuj = dateDeCle(auj), tVieux = dateDeCle(plusVieux) || tAuj;
-  const lettres = `<div class="fg-sem">${SEM_LETTRES.map(l=>`<span>${l}</span>`).join("")}</div>`;
+  /* (v343) UN CALENDRIER FRANÇAIS COMMENCE LE LUNDI. Il commençait le
+     dimanche, à l'américaine : « D L M M J V S » sous « Novembre », la
+     semaine coupée en deux. En français et en espagnol, la semaine va du
+     lundi au dimanche ; en anglais, elle garde son dimanche en tête. */
+  const lundi = LANGUE !== "en";
+  const ordreSem = lundi ? [1, 2, 3, 4, 5, 6, 0] : [0, 1, 2, 3, 4, 5, 6];
+  const lettres = `<div class="fg-sem">${ordreSem.map(i=>`<span>${SEM_LETTRES[i]}</span>`).join("")}</div>`;
   const mois = [];
   for(let y = tAuj.getFullYear(), m = tAuj.getMonth(), n = 0; n < 36; n++){
     mois.push([y, m]);
@@ -22641,7 +22837,8 @@ function ouvrirFlamme(){
   const carteMois = ([y, m])=>{
     const premier = new Date(y, m, 1), nb = new Date(y, m + 1, 0).getDate();
     const cases = [];
-    for(let i = 0; i < premier.getDay(); i++) cases.push(`<span class="fj horschamp"></span>`);
+    const avant = lundi ? (premier.getDay() + 6) % 7 : premier.getDay();
+    for(let i = 0; i < avant; i++) cases.push(`<span class="fj horschamp"></span>`);
     let joues = 0;
     for(let j = 1; j <= nb; j++){
       const t = new Date(y, m, j), cle = cleDeDate(t);
@@ -22790,7 +22987,9 @@ function marquerJourJoue(){
               jours, geles:bornerJours(d.geles), palier });
   if(gagne) offrirGel(Tf("{n} jours d'affilée", {n:GEL_PALIER}));
   checkAchievements({ toast:true }); // objectifs de régularité (Fidèle, Assidu)
-  try { notifProposer(); } catch(e){}   /* il a maintenant une série à protéger */
+  /* (v343) La flamme du jour se FÊTE, juste après les résultats (voir
+     feterFlamme) — et c'est elle qui propose ensuite les rappels. */
+  flammeAFeter = streak;
 }
 /* ===================== LES NOTIFICATIONS =====================
    RÈGLE DU JEU : une notification n'est envoyée QUE si elle rend service. Ici,
@@ -23112,28 +23311,66 @@ function notifSync(){
    un joueur revenu de lui-même — et on lui explique AVANT d'ouvrir la demande
    du système. S'il dit non à notre explication, la vraie demande n'est jamais
    posée : elle reste disponible pour plus tard. */
-function notifProposer(groupe){
-  if(!notifPossible()) return;
-  if(settings.notif) return;                       // déjà accepté
-  if(notifEtat() !== "default") return;            // déjà répondu au système
-  if(localStorage.getItem("bt_notif_ask") === "1") return;   // déjà proposé une fois
-  /* Rien à protéger encore — sauf (v329) qu'on vient d'écrire dans un
-     groupe : des réponses vont arriver, et c'est là qu'on les attend. */
-  if(!groupe && dailyStreakShown() < 2) return;
-  try { localStorage.setItem("bt_notif_ask", "1"); } catch(e){}
-  setTimeout(() => {
-    showModal({
-      title: T("Recevoir les rappels ?"),
-      /* ON DIT EXACTEMENT CE QU'ON ENVERRA — et il y en a cinq maintenant, pas
-         deux. C'est sur cette phrase que le joueur donne le seul « oui » qu'on
-         ait le droit de lui demander : elle doit couvrir tout ce qui peut
-         arriver, et surtout la borne, qui est ce qui compte vraiment. */
-      message: T("Les messages de tes groupes. Et pour le jeu, au plus UN rappel par jour, jamais si tu as déjà joué : ta série sur le point de s'éteindre, tes erreurs à revoir, un verset le dimanche, un mot si tu t'absentes."),
-      okLabel: T("D'accord"),
-      cancelLabel: T("Non merci"),
-      onOk: () => { notifActiver(); },
-    });
-  }, 900);   // on laisse la fin de partie se poser avant de parler d'autre chose
+/* ===== (v343) L'INVITATION AUX RAPPELS =====
+   « La plupart n'activent pas les rappels, et du coup ils ne reçoivent pas
+     les notifications pour venir refaire leur partie et récupérer les
+     flammes. À un certain moment, il faut qu'ils aient un bouton pour
+     activer les rappels. »
+   LE MOMENT : juste après la flamme du jour, fêtée à la fin de la première
+   partie de la journée (voir feterFlamme) — on vient de voir ce qu'on a à
+   protéger. Elle attendait jusqu'ici une série de DEUX jours : la plupart
+   des joueurs n'y arrivaient jamais. Et après un premier message écrit dans
+   un groupe (des réponses vont arriver).
+   LE BOUTON : « Activer les rappels » demande l'autorisation au téléphone,
+   dans le même toucher. « Plus tard » ne brûle rien : c'est notre carte, pas
+   la question du système — elle revient, trois fois au plus en tout, à trois
+   jours d'écart au moins. Jamais si le téléphone a déjà répondu.
+   Rend vrai si la carte s'ouvre (et « apres » sera appelé à sa fermeture). */
+function notifProposer(groupe, apres){
+  if(!notifPossible()) return false;
+  if(settings.notif) return false;                        // déjà accepté
+  if(notifEtat() !== "default") return false;             // le téléphone a déjà répondu
+  let deja = { n:0, t:0 };
+  try{
+    const v = localStorage.getItem("bt_notif_ask");
+    if(v === "1") deja = { n:1, t:0 };                    // l'ancienne marque : une fois, il y a longtemps
+    else if(v){ const o = JSON.parse(v); if(o && typeof o === "object") deja = { n:o.n | 0, t:+o.t || 0 }; }
+  }catch(e){}
+  if(deja.n >= 3) return false;
+  if(deja.t && Date.now() - deja.t < 3 * 86400000) return false;
+  try { localStorage.setItem("bt_notif_ask", JSON.stringify({ n:deja.n + 1, t:Date.now() })); } catch(e){}
+  const montrer = ()=>{
+    closeModal();
+    const veil = document.createElement("div");
+    veil.className = "modal-veil"; veil.id = "modalVeil";
+    veil.innerHTML = `<div class="modal-card invit-rappels" role="dialog" aria-label="${escapeHtml(T("Recevoir les rappels ?"))}">
+        <div class="ir-cloche" aria-hidden="true">${ICONS.bell}</div>
+        <div class="modal-title">${escapeHtml(T(groupe ? "Recevoir les rappels ?" : "Ne laisse pas ta flamme s'éteindre"))}</div>
+        <div class="modal-msg">${escapeHtml(T("Les messages de tes groupes. Et pour le jeu, au plus UN rappel par jour, jamais si tu as déjà joué : ta série sur le point de s'éteindre, tes erreurs à revoir, un verset le dimanche, un mot si tu t'absentes."))}</div>
+        <div class="modal-actions colonne">
+          <button class="modal-btn ok" id="modalOk">${T("Activer les rappels")}</button>
+          <button class="modal-btn cancel" id="modalCancel">${T("Plus tard")}</button>
+        </div>
+      </div>`;
+    document.body.appendChild(veil);
+    glassTrack();
+    let fini = false;
+    const fin = (oui)=>{
+      if(fini) return; fini = true;
+      /* La demande au téléphone part DANS ce toucher : hors d'un geste, iOS
+         et Chrome la refusent sans rien montrer. */
+      if(oui){ try{ notifActiver(); }catch(e){} }
+      closeModal();
+      if(apres) setTimeout(apres, oui ? 600 : 250);
+    };
+    veil.querySelector("#modalOk").onclick = ()=> fin(true);
+    veil.querySelector("#modalCancel").onclick = ()=> fin(false);
+    veil.addEventListener("click", (e)=>{ if(e.target === veil) fin(false); });
+  };
+  /* Après la flamme : tout de suite (elle vient de se refermer). Après un
+     message : le temps que la bulle se pose. */
+  if(groupe) setTimeout(montrer, 900); else montrer();
+  return true;
 }
 
 /* --- activation ----------------------------------------------------------- */
@@ -26931,7 +27168,7 @@ function bulleHtml(m){
        touche pour le récap (voir LE RÉCAP D'UNE PARTIE DE GROUPE). */
     const rangs = finie ? rangsPartie(m) : null;
     const recap = !!(rangs && rangs.finis.length);
-    const geste = recap ? "ouvrirRecapPartie" : "toucherMessage";
+    const geste = recap ? "ouvrirRecapPartie" : "toucherBulle";
     return `<div class="b-bulle b-partie${finie ? " finie" : ""}${lancee ? " lancee" : ""}${recap ? " recap" : ""}" data-m="${m.id}" onclick="${geste}('${m.id}')">
         <span class="bp-ico">${ICONS.manette}</span>
         <b>${moi ? T("Tu as lancé une partie") : escapeHtml(Tf("{nom} a lancé une partie", { nom }))}</b>
@@ -26941,7 +27178,7 @@ function bulleHtml(m){
         ${code && !finie && !lancee && !ici ? `<button class="grp-pill" onclick="event.stopPropagation(); rejoindrePartieGroupe('${code}')">${moiVenu ? T("Revenir dans la partie") : T("Rejoindre la partie")}</button>` : ""}
       </div>`;
   }
-  return `<button class="b-bulle${m.id < 0 ? " envoi" : ""}${mentionneMoi(m) ? " me-nomme" : ""}${citeDe(m) ? " a-cite" : ""}" data-m="${m.id}" onclick="toucherMessage('${m.id}')">${citeHtml(m)}${texteAvecMentions(m)}</button>`;
+  return `<button class="b-bulle${m.id < 0 ? " envoi" : ""}${mentionneMoi(m) ? " me-nomme" : ""}${citeDe(m) ? " a-cite" : ""}" data-m="${m.id}" onclick="toucherBulle('${m.id}')">${citeHtml(m)}${texteAvecMentions(m)}</button>`;
 }
 function descendreFil(doux){
   const z = document.getElementById("fil");
@@ -27016,6 +27253,32 @@ function poserFil(z, html){
    confirmée par le serveur, elle ne repart pas de zéro (son mouvement
    continue où il en est). Un fil qu'on ouvre : rien n'arrive, tout est
    déjà là. */
+/* ===== (v343) UN DOIGT POSÉ N'EST PAS UN CHANGEMENT =====
+   L'onde d'appui écrit sur la bulle qu'on touche (la classe « onde », puis
+   « onde-part », et sa teinte figée dans un style). Le fil comparait ses
+   suites au texte près : un message ou un « Vu » arrivé pendant qu'on tenait
+   une bulle trouvait sa suite « changée » et la redessinait — la bulle sous
+   le doigt était remplacée par une copie, et l'appui long, qui attendait
+   l'ancienne, n'ouvrait plus rien (le menu « Répondre » ne venait pas).
+   L'état d'un appui n'est pas un changement du message : on l'ignore pour
+   comparer. Pareil pour l'éclat d'un message qu'on vient de retrouver en
+   touchant sa citation : il ne s'éteint plus d'un coup parce qu'un autre
+   message arrive. On compare une COPIE nettoyée des éléments, jamais le
+   texte réécrit : un message qui contient le mot « onde » reste un
+   message. */
+const APPUI_FIL = ".onde, .onde-part, .eclat, [style]";
+function memeSuite(a, n){
+  const h = n.outerHTML;
+  if(a.outerHTML === h) return true;
+  if(!a.matches(APPUI_FIL) && !a.querySelector(APPUI_FIL)) return false;
+  const c = a.cloneNode(true);
+  for(const e of [c, ...c.querySelectorAll(APPUI_FIL)]){
+    e.classList.remove("onde", "onde-part", "eclat");
+    e.style.removeProperty("--press-tint");
+    if(e.getAttribute("style") === "") e.removeAttribute("style");
+  }
+  return c.outerHTML === h;
+}
 function poserSurPlace(z, html){
   const t = document.createElement("template");
   t.innerHTML = html;
@@ -27027,7 +27290,7 @@ function poserSurPlace(z, html){
   const vide = !anciens.length;
   for(let i = 0; i < neufs.length; i++){
     const a = anciens[i], n = neufs[i];
-    if(a && a.outerHTML === n.outerHTML) continue;
+    if(a && memeSuite(a, n)) continue;
     /* Une arrivée en cours dans l'ancienne suite continue dans la nouvelle,
        à la même place (le message en attente devenu message confirmé). */
     const enCours = a ? Array.from(a.querySelectorAll("[data-m]"), e => e._arrive || 0) : [];
@@ -27687,7 +27950,7 @@ function ouvrirRecapPartie(id){
   const m = trouverMessage(id);
   if(!m || m.genre !== "partie") return;
   const r = rangsPartie(m);
-  if(!r.finis.length){ toucherMessage(id); return; }
+  if(!r.finis.length) return;
   const moi = monId();
   const lanceur = m.auteur === moi ? T("Lancée par toi") : Tf("Lancée par {nom}", { nom:(grp.profils[m.auteur] || {}).nom || T("Quelqu'un") });
   const quand = m.cree_le ? [jourDuFil(m.cree_le), heureCourte(m.cree_le)].filter(Boolean).join(" · ") : "";
@@ -28169,8 +28432,19 @@ function actionsMessage(id){
   const moi = !!m.auteur && m.auteur === monId(), mod = deLaModeration(m);
   const p = grp.profils[m.auteur] || {};
   const nom = moi ? (String(profile.name || "").trim() || T("Toi")) : (mod ? T("La modération") : (p.nom || T("Quelqu'un")));
-  const admin = suisAdmin() || modeModeration();
+  /* (v343) « Lorsque quelqu'un envoie un message, il ne peut pas être
+     supprimé par n'importe qui. » Son message, chacun le supprime ; celui
+     d'un autre, seule la modération le retire — en mode modération. Un
+     admin de groupe ne le peut plus : il a la sourdine, l'exclusion et le
+     signalement (trois signalements masquent un message tout de suite).
+     Le serveur dit la même chose (supprimer_message, groupes/table.sql). */
+  const retirer = moi || modeModeration();
   let h = `<div class="grp-liste-act">`;
+  /* (v343) RÉPONDRE, EN TÊTE DU MENU. « Je veux pouvoir rester appuyé
+     dessus, et la petite bulle qui s'affiche me propose de répondre — ça
+     suit la norme, ce qui est fait partout. » L'appui long ouvre ce menu ;
+     un simple toucher ne fait plus rien (voir toucherBulle). */
+  if(peutRepondre(m)) h += ligneAction(ICONS.repondre, T("Répondre"), `repondreMessage('${m.id}')`);
   if(m.genre === "texte" && m.texte && !m.masque) h += ligneAction(ICONS.copier, T("Copier"), `copierMessage('${m.id}')`);
   /* (v334) La modération ne se bloque ni ne se signale. (v336) Et elle ne
      signale ni ne bloque elle-même : elle agit — depuis le message, elle va
@@ -28189,30 +28463,44 @@ function actionsMessage(id){
     if(!estModo()) h += ligneAction(ICONS.bloquer, Tf("Bloquer {nom}", { nom }), `bloquerQuelquUn('${m.auteur}')`, true);
   }
   if(peutGerer) h += ligneAction(ICONS.personne, Tf("Gérer {nom}", { nom }), `fermerFeuilleGroupe('grpActionsVeil'); ouvrirMembre('${m.auteur}')`);
-  if(moi || admin) h += ligneAction(ICONS.corbeille, T("Supprimer le message"), `supprimerMessageGroupe('${m.id}')`, true);
+  if(retirer) h += ligneAction(ICONS.corbeille, T("Supprimer le message"), `supprimerMessageGroupe('${m.id}')`, true);
   h += `</div><div class="grp-mot"><span></span></div>`;
   /* (v329) Mon message : qui l'a vu, qui pas encore — comme « Infos » sur
      WhatsApp. En tête du menu : c'est ce qu'on vient chercher. */
   if(moi && !m.masque) h = vusHtml(m) + h;
   ouvrirFeuilleGroupe("grpActionsVeil", nom, (!moi && mod) ? avatarModeration(1.5) : avatarHtml(nom, moi ? (profile.color || "#4C86E8") : (p.couleur || "#8A8F98"), 1.5, moi ? true : "u:" + m.auteur), h);
 }
-/* ===================== RÉPONDRE À UN MESSAGE (v332) =====================
-   « Je veux pouvoir cliquer sur un message et que ça fasse en sorte de
-   répondre au message directement. » Toucher une bulle prépare la réponse :
-   le message cité se pose au-dessus de la barre d'écriture (le nom, le début
-   du texte, et × pour renoncer), le clavier s'ouvre. Le message parti porte
-   sa citation : dans la bulle, le message d'origine en tête, en plus petit —
-   la toucher ramène à lui. Le serveur ne garde la référence que vers un
-   message visible du même groupe (groupes/table.sql) ; un serveur qui ne
-   sait pas encore les réponses (grp.etat.reponses) garde l'ancien geste :
-   toucher ouvre le menu. Rien de tout cela n'a de trait : des fonds. */
+/* ===================== RÉPONDRE À UN MESSAGE (v332, v343) =====================
+   « Je veux pouvoir rester appuyé sur un message ; la petite bulle qui
+   s'affiche me propose de répondre directement. De cette façon, ça suit la
+   norme, ce qui est fait partout sur les réseaux. » (v343) C'est donc
+   l'APPUI LONG qui ouvre le menu du message, « Répondre » en tête ; le
+   simple toucher, qui répondait depuis la v332, ne fait plus rien — comme
+   sur WhatsApp, Messages ou Instagram, où l'on touche une bulle en
+   faisant défiler sans rien déclencher.
+   Répondre pose le message cité au-dessus de la barre d'écriture (le nom,
+   le début du texte, et × pour renoncer) et ouvre le clavier. Le message
+   parti porte sa citation : dans la bulle, le message d'origine en tête, en
+   plus petit — la toucher ramène à lui. Le serveur ne garde la référence
+   que vers un message visible du même groupe (groupes/table.sql) ; un
+   serveur qui ne sait pas encore les réponses (grp.etat.reponses) ne
+   propose pas « Répondre ». Rien de tout cela n'a de trait : des fonds. */
 function reponsesServeur(){ return !!(grp.etat && grp.etat.reponses === true); }
-function toucherMessage(id){
+function peutRepondre(m){
+  return !!m && m.id > 0 && !m.supprime_le && reponsesServeur() && !m.masque && (m.genre === "texte" || m.genre === "partie")
+      && (!enLecture() || moderationEcrit()) && !monMuetJusqu() && !!document.getElementById("compoTexte");
+}
+/* Le simple toucher d'une bulle : rien. Le doigt qui fait défiler la
+   discussion se pose sans cesse sur des bulles ; c'est l'appui long qui
+   ouvre le menu (voir L'APPUI LONG OUVRE SOUS LE DOIGT). */
+function toucherBulle(id){}
+/* « Répondre », touché dans le menu. Le foyer est donné DANS ce toucher,
+   avant de refermer le menu : sur iPhone, le clavier ne s'ouvre que si le
+   champ prend le foyer pendant le geste lui-même — une demi-seconde plus
+   tard, après la fermeture, il resterait baissé. */
+function repondreMessage(id){
   const m = trouverMessage(id);
-  if(!m || m.id < 0 || m.supprime_le) return;
-  const peut = reponsesServeur() && !m.masque && (m.genre === "texte" || m.genre === "partie")
-            && (!enLecture() || moderationEcrit()) && !monMuetJusqu() && !!document.getElementById("compoTexte");
-  if(!peut){ actionsMessage(id); return; }
+  if(!peutRepondre(m)){ fermerFeuilleGroupe("grpActionsVeil"); return; }
   grp.reponse = { g:grp.courant, id:m.id };
   majReponseCompo();
   const z = document.getElementById("compoTexte");
@@ -28226,7 +28514,14 @@ function toucherMessage(id){
     if(!avait && document.activeElement === z){ try{ const n = z.value.length; z.setSelectionRange(n, n); }catch(e){} }
     recalerCurseurApres(620);
   }
-  try{ if(navigator.vibrate) navigator.vibrate(8); }catch(e){}
+  fermerFeuilleGroupe("grpActionsVeil");
+}
+/* Le chemin direct, sans menu (les bancs du curseur, la partie de groupe) :
+   préparer la réponse à ce message, si on le peut. */
+function toucherMessage(id){
+  const m = trouverMessage(id);
+  if(!peutRepondre(m)) return;
+  repondreMessage(id);
 }
 /* (v339) La discussion a fini de prendre sa hauteur (le clavier monté, ou
    reparti à moitié) : le curseur se recale là, pas à une heure fixe. */
@@ -28272,7 +28567,54 @@ function recalerCurseur(){
     }
   }catch(err){}
 }
-function recalerCurseurApres(ms){ clearTimeout(curseurT); curseurT = setTimeout(recalerCurseur, ms); }
+function recalerCurseurApres(ms){ clearTimeout(curseurT); curseurT = setTimeout(recalerCurseur, ms); surveillerCurseur(Math.max(900, ms + 500)); }
+/* ===== (v343) LE CURSEUR NE RESTE JAMAIS EN ARRIÈRE =====
+   « Lorsque je mentionne quelqu'un, tu peux voir qu'à certains moments, ça
+     revient. Pas tout le temps, mais à certains moments. » (capture iPhone :
+   le trait bleu du curseur posé dans la citation, au-dessus du champ.) Il
+   était resté là où se trouvait le champ un instant plus tôt. Les rendez-vous
+   À HEURE FIXE (620 ms après une réponse, 60 ms après un nom) ratent ce qui
+   bouge plus tard ou plus longtemps : la citation qui s'ouvre pendant que le
+   clavier finit de monter, la barre « ˄ ˅ ✓ » d'iOS qui paraît, la liste des
+   noms qui se replie. On ne devine donc plus l'heure : tant que le champ a le
+   foyer et que quelque chose vient de bouger, on GUETTE sa place, image par
+   image ; dès qu'elle ne change plus depuis trois images, iOS reçoit son
+   petit changement de sélection (recalerCurseur) et redessine son curseur
+   dans le champ. Un champ qui ne bouge pas n'est touché qu'une fois. */
+let guetCurseur = 0, guetJusqu = 0, guetPlace = null, guetStable = 0;
+function placeChamp(){
+  const t = document.activeElement;
+  if(!t || t.id !== "compoTexte") return null;
+  const r = t.getBoundingClientRect(), vv = window.visualViewport;
+  return [r.left, r.top, r.width, r.height, window.scrollY, vv ? vv.offsetTop : 0, vv ? vv.height : 0].map(v => Math.round(v * 2)).join(",");
+}
+function guetterCurseur(){
+  guetCurseur = 0;
+  const k = placeChamp();
+  if(k === null){ guetPlace = null; return; }
+  if(k !== guetPlace){
+    guetPlace = k; guetStable = 0;
+    guetJusqu = Math.max(guetJusqu, performance.now() + 400);   // ça bouge encore : on reste
+  } else if(++guetStable === 3) recalerCurseur();
+  if(performance.now() < guetJusqu) guetCurseur = requestAnimationFrame(guetterCurseur);
+}
+function surveillerCurseur(ms){
+  if(!IOS_CURSEUR) return;
+  guetJusqu = Math.max(guetJusqu, performance.now() + (ms || 1200));
+  if(!guetCurseur){ guetPlace = null; guetStable = 0; guetCurseur = requestAnimationFrame(guetterCurseur); }
+}
+if(IOS_CURSEUR){
+  document.addEventListener("focusin", (e)=>{ if(e.target && e.target.id === "compoTexte") surveillerCurseur(1600); }, true);
+  if(window.visualViewport){
+    visualViewport.addEventListener("resize", ()=> surveillerCurseur(900));
+    visualViewport.addEventListener("scroll", ()=> surveillerCurseur(900));
+  }
+  /* Ce qui pousse le champ dans la barre : la citation qui s'ouvre ou se
+     referme, la liste des noms, le champ qui prend une ligne de plus. */
+  document.addEventListener("transitionrun", (e)=>{ const c = document.getElementById("compo"); if(c && e.target && c.contains(e.target)) surveillerCurseur(900); }, true);
+  document.addEventListener("transitionend", (e)=>{ const c = document.getElementById("compo"); if(c && e.target && c.contains(e.target)) surveillerCurseur(400); }, true);
+  document.addEventListener("animationend", (e)=>{ const c = document.getElementById("compo"); if(c && e.target && c.contains(e.target)) surveillerCurseur(400); }, true);
+}
 function reponseEnCours(gid){ return (grp.reponse && grp.reponse.g === gid) ? grp.reponse.id : null; }
 function annulerReponse(){
   grp.reponse = null;
@@ -28444,10 +28786,14 @@ function allerAuMessage(id){
     minuteur = setTimeout(()=>{
       minuteur = 0;
       const c = cible; cible = null;
-      if(!c || !c.isConnected) return;
+      if(!c) return;
+      /* (v343) La bulle a pu être redessinée sous le doigt (un message, un
+         « Vu » arrivé pendant qu'on la tenait, dans la même suite) : le
+         message, lui, est toujours là — c'est lui qu'on ouvre. */
+      const id = c.getAttribute("data-m");
+      if(!c.isConnected && !(id && trouverMessage(id))) return;
       tenu = true;
       try{ if(navigator.vibrate) navigator.vibrate(10); }catch(err){}
-      const id = c.getAttribute("data-m");
       if(id) actionsMessage(id); else c.click();
     }, DELAI);
   }, { capture:true, passive:true });
@@ -31294,27 +31640,40 @@ function nomDuGroupe(gid){
   return (g && g.nom) || "";
 }
 function ouvrirPhotoGrand(pid){
-  if(document.getElementById("photoGrandVeil")) return;
+  if(!pageLibre("photoGrandVeil")) return;
   const groupe = typeof pid === "string" && pid.indexOf("g:") === 0;
   const v = groupe ? valeurPhotoSrv(pid) : photoValeur(pid === "moi" ? true : pid);
   if(!v) return;
+  const titre = groupe ? T("Photo du groupe") : T("Photo de profil");
+  const nom = (groupe ? nomDuGroupe(pid.slice(2)) : nomDuPid(pid)) || titre;
   const veil = document.createElement("div");
-  veil.className = "photo-veil"; veil.id = "photoGrandVeil";
-  veil.setAttribute("role", "dialog");
-  veil.setAttribute("aria-label", groupe ? T("Photo du groupe") : T("Photo de profil"));
-  const nom = groupe ? nomDuGroupe(pid.slice(2)) : nomDuPid(pid);
-  veil.innerHTML = '<div class="pv-img' + (groupe ? ' pv-groupe' : '') + '" style="background-image:' + v + '"></div>'
-                 + (nom ? '<div class="pv-nom">' + escapeHtml(nom) + '</div>' : '');
-  const fermer = ()=>{ try{ veil.remove(); }catch(e){} };
-  veil.addEventListener("click", fermer);
+  veil.className = "sheet-veil page"; veil.id = "photoGrandVeil";
+  /* La valeur de l'image (« var(--phN) » ou « url('…') ») ne porte jamais
+     de guillemet double : elle tient dans l'attribut. */
+  veil.innerHTML = `<div class="settings-sheet photo-page" role="dialog" aria-label="${escapeHtml(titre)}">
+      <div class="page-tete"><button class="sheet-grab" aria-label="${T("Retour")}"><span class="pt-retour">${ICONS.chevronLeft}</span></button><div class="sheet-title sans-ico"><span class="st-ico"></span><span class="st-mot pv-nom">${escapeHtml(nom)}</span></div></div>
+      <div class="pp-zone"><div class="pv-img${groupe ? " pv-groupe" : ""}" role="img" aria-label="${escapeHtml(titre)}" style="background-image:${v}"></div></div>
+    </div>`;
+  /* Tout l'écran est la sortie : le retour, la photo, le fond. */
+  veil.addEventListener("click", fermerPhotoGrand);
   document.body.appendChild(veil);
-  try{ glassTrack(); }catch(e){}
+  monterLaFeuille(veil);
+  glassTrack();
+  attachSheetDrag(veil.querySelector(".settings-sheet"), fermerPhotoGrand);
 }
+function fermerPhotoGrand(){
+  const v = document.getElementById("photoGrandVeil");
+  if(!v || v.classList.contains("closing")) return;
+  v.classList.add("closing");
+  setTimeout(()=>{ if(v.parentNode) v.remove(); }, msFerme() + 20);
+}
+/* Une visionneuse est-elle ouverte (et pas en train de partir) ? */
+function photoGrandOuverte(){ const v = document.getElementById("photoGrandVeil"); return !!v && !v.classList.contains("closing"); }
 document.addEventListener("click", (e)=>{
   try{
     const a = e.target && e.target.closest ? e.target.closest(".avatar.a-photo[data-pid], .grp-av.a-photo[data-gid]") : null;
     if(!a) return;
-    if(document.getElementById("photoGrandVeil")) return;
+    if(photoGrandOuverte()) return;
     e.preventDefault(); e.stopPropagation();
     ouvrirPhotoGrand(a.dataset.gid ? "g:" + a.dataset.gid : a.dataset.pid);
   }catch(err){}
@@ -34448,9 +34807,23 @@ function tryAutoFullscreen(e){
   setTimeout(()=>{
     if(state.screen === avant) return;
     if(fsPending || !fsAvailable() || fsActive() || champEnCours()) return;
+    /* ===== (v343) PAS PENDANT LE GLISSEMENT =====
+       « Sur Android, lorsque j'ouvre certains modes, j'ai l'impression que
+         ça fait un peu bug. » Filmé image par image (Chrome, Android, le
+       Solo ouvert depuis l'accueil) : à mi-chemin de son arrivée, tout
+       l'écran SAUTAIT de 52 px vers le bas. C'était le plein écran : demandé
+       dans le même instant que le changement d'écran, il agrandit la page
+       (les barres du navigateur s'en vont) et tout se recale — au milieu du
+       mouvement. Sans plein écran, la même arrivée est parfaitement lisse.
+       On le demande donc une fois l'écran POSÉ. Le toucher du joueur vaut
+       encore : Chrome garde son accord quelques secondes après le geste. */
     fsPending = true;
-    setTimeout(()=>{ fsPending = false; }, 600);
-    toggleFullscreen();
+    setTimeout(()=>{
+      setTimeout(()=>{ fsPending = false; }, 600);
+      if(!fsAvailable() || fsActive() || champEnCours()) return;
+      if(navigator.userActivation && navigator.userActivation.isActive === false) return;
+      toggleFullscreen();
+    }, apresEntree());
   }, 0);
 }
 /* Android : au premier changement d'écran, on passe en plein écran immersif — la
@@ -34562,8 +34935,15 @@ function openFsGuide(){
     { c:"fsx", i:ICONS.telecharger, t:T("Touche Installer"),            s:T("Ton téléphone demande confirmation") },
     { c:"vol", i:ICONS.expand,      t:T("Ouvre le jeu par son icône"),  s:T("Il démarre en plein écran") }
   ] : IS_IOS ? etapesIphone() : [
+    /* (v343) JAMAIS « CRÉER UN RACCOURCI ». Sur Android, « Ajouter à l'écran
+       d'accueil » propose deux choix : « Installer » et « Créer un
+       raccourci ». Le raccourci n'est qu'un favori : le jeu s'ouvre dans un
+       onglet de Chrome, ses notifications arrivent avec l'icône de Chrome
+       (« c'est l'icône Google Chrome au lieu de l'icône de Yada »), et le
+       haut de l'écran n'est pas le sien. La consigne dit donc lequel
+       toucher. */
     { c:"fsx", i:ICO_MENU_NAV,     t:T("Ouvre le menu du navigateur"), s:T("Les trois points, en haut") },
-    { c:"scn", i:ICONS.plusCircle, t:T("« Installer l'application »"), s:T("Ou « Ajouter à l'écran d'accueil »") },
+    { c:"scn", i:ICONS.plusCircle, t:T("« Installer l'application »"), s:T("Ou « Ajouter à l'écran d'accueil », puis « Installer »") },
     { c:"vol", i:ICONS.expand,     t:T("Ouvre le jeu par son icône"),  s:T("Il démarre en plein écran") },
   ];
   const intro = invitation ? Tf("{jeu} s'ajoute à ton écran d'accueil et démarre en plein écran. Un seul geste.", {jeu:NOM_DU_JEU})

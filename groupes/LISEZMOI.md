@@ -270,15 +270,17 @@ exactement la même base qu'une installation neuve (vérifié par
   téléphone (relance, changement de langue, réseau lent). Le bouton manette
   lance une partie en ligne et l'annonce dans le groupe : les autres n'ont qu'à
   toucher **Rejoindre la partie** ; quitter la partie ramène à la discussion.
-  Toucher une bulle y répond (v332, étape 9) ; la tenir permet de la copier,
-  la signaler, bloquer son auteur ou la supprimer si c'est la sienne —
-  supprimée, elle disparaît pour tout le monde.
+  Tenir une bulle ouvre son menu (v343) : **Répondre** en tête, puis la
+  copier, la signaler, bloquer son auteur, ou la supprimer si c'est la sienne
+  — supprimée, elle disparaît pour tout le monde. Un simple toucher ne fait
+  rien, comme dans toutes les messageries.
 - **Les photos** (v311, étape 6) : chacun voit la photo de profil des membres
   de ses groupes ; toucher un visage l'agrandit.
 - **Les admins** (propriétaire, et ceux qu'il nomme) peuvent mettre en
-  sourdine une heure, retirer ou bannir un membre, supprimer un message,
-  modifier le groupe et changer le code. Un admin ne peut jamais toucher au
-  propriétaire.
+  sourdine une heure, retirer ou bannir un membre, modifier le groupe et
+  changer le code. Un admin ne peut jamais toucher au propriétaire. Le message
+  d'un autre, seule la modération le supprime (v343) : un admin le signale —
+  trois signalements le masquent aussitôt.
 - **Les mentions** (v317, étape 7) : taper `@` propose les membres du groupe ;
   le nom choisi s'écrit en entier et ressort en gras dans la bulle, et la bulle
   qui me nomme prend un fond doré. `@tout le monde` (`@everyone`, `@todos`)

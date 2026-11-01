@@ -359,13 +359,16 @@ const URL = process.argv[2] || 'http://127.0.0.1:8099/index.html';
     await new Promise(r=>setTimeout(r,300));
     const tap = (sel)=>{ const el = document.querySelector(sel); if(el) el.click(); return !!el; };
     const ferme = ()=>{ const v = document.getElementById('photoGrandVeil'); if(v) v.click(); };
+    /* (v343) La visionneuse est une page : refermée, elle part vers la
+       droite le temps de son animation — « closing » dit qu'elle s'en va. */
+    const ouverte = ()=>{ const v = document.getElementById('photoGrandVeil'); return !!v && !v.classList.contains('closing'); };
 
     const aLui = tap('.avatar[data-pid="joueur-g"]');
-    const ouvertLui = !!document.getElementById('photoGrandVeil');
+    const ouvertLui = ouverte();
     const nomLui = ouvertLui ? (document.querySelector('#photoGrandVeil .pv-nom').textContent||'') : '';
     ferme();
     const sansPhoto = tap('.avatar[data-pid="joueur-h"]');
-    const ouvertSans = !!document.getElementById('photoGrandVeil');
+    const ouvertSans = ouverte();
     ferme();
 
     /* la mienne, depuis le profil */
@@ -373,10 +376,10 @@ const URL = process.argv[2] || 'http://127.0.0.1:8099/index.html';
     await new Promise(r=>setTimeout(r,250));
     const avantEcran = state.screen;
     tap('[data-avatar-preview] .avatar');
-    const ouvertMoi = !!document.getElementById('photoGrandVeil');
+    const ouvertMoi = ouverte();
     const pasDeSelecteur = (state.screen === avantEcran);
     ferme();
-    const referme = !document.getElementById('photoGrandVeil');
+    const referme = !ouverte();
     return { aLui, ouvertLui, nomLui, sansPhoto, ouvertSans, ouvertMoi, pasDeSelecteur, referme };
   });
   dire(grand.aLui && grand.ouvertLui, 'toucher l\'avatar d\'un autre joueur ouvre sa photo en grand', '');

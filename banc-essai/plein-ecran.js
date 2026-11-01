@@ -30,7 +30,11 @@
         joueur qui part (sur la v311 : on touchait Chloé, Benoît partait — la
         page avait glissé sous le doigt), la carte se replie sans être
         reconstruite ni rebondir, et aucune demande de plein écran ;
-     9. aucune erreur.
+     9. aucune erreur ;
+    10. (v343) le plein écran attend que l'écran soit POSÉ : demandé pendant
+        le glissement, il agrandissait la page et tout l'écran sautait de
+        52 px au milieu de l'arrivée (« quand j'ouvre certains modes, ça
+        fait un peu bug »).
    Usage : node banc-essai/plein-ecran.js [url] */
 const { chromium } = require('/opt/node22/lib/node_modules/playwright');
 const URL = process.argv[2] || 'http://127.0.0.1:8099/index.html';
@@ -41,9 +45,10 @@ const dit = (q, b, d) => { if (!b) ko++; console.log('  ' + (b ? 'OK  ' : 'KO  '
 /* Les demandes de plein écran sont comptées, et elles passent quand même. */
 const preparer = () => {
   localStorage.setItem('bt_profile', JSON.stringify({ name: 'Taylor', color: '#4C86E8' })); localStorage.setItem('bt_fs_hint', '1');
-  window.__demandes = 0;
+  window.__demandes = 0; window.__quand = []; window.__clic = 0;
+  document.addEventListener('click', () => { window.__clic = performance.now(); }, true);
   const o = Element.prototype.requestFullscreen;
-  Element.prototype.requestFullscreen = function () { window.__demandes++; return o.apply(this, arguments); };
+  Element.prototype.requestFullscreen = function () { window.__demandes++; window.__quand.push(performance.now() - window.__clic); return o.apply(this, arguments); };
 };
 const centre = (p, sel, n) => p.evaluate(([s, i]) => { const el = document.querySelectorAll(s)[i || 0]; if (!el) return null; const b = el.getBoundingClientRect(); return { x: b.left + b.width / 2, y: b.top + b.height / 2 }; }, [sel, n || 0]);
 const toucher = async (cdp, p, pos, attente) => {
@@ -86,6 +91,8 @@ const etat = (p) => p.evaluate(() => { const a = document.getElementById('app');
       JSON.stringify({ ecran: e2.ecran, fs: e2.fs, cls: e2.cls, demandes: e2.demandes }));
     dit('3. … sans refaire l\'écran : un seul rendu, et le même accueil après l\'agrandissement', e2.rendus === 1 && e2.meme, 'rendus ' + e2.rendus + ', même objet ' + e2.meme);
     dit('4. … la marge du haut du plein écran s\'applique', e2.haut >= 3.4 * 16 * 0.9, e2.haut.toFixed(1) + ' px');
+    const pose = await p.evaluate(() => ({ q: window.__quand.slice(-1)[0], pli: msPli() }));
+    dit('10. … demandé une fois l\'écran posé, jamais pendant son arrivée', pose.q >= pose.pli, Math.round(pose.q) + ' ms après le toucher, arrivée ' + pose.pli + ' ms');
     /* ---- 5 ---- */
     await p.evaluate(() => { window.__ecran = document.querySelector('#app > .screen:not(.screen-exit)'); window.__rendus = 0; return document.exitFullscreen(); });
     await p.waitForTimeout(900);
