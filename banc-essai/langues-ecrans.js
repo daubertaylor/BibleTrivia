@@ -214,6 +214,10 @@ const MEME_DANS_LES_DEUX = [
      en anglais (l'espagnol dit « Código »). */
   { quoi:/^Code [A-Z0-9]{4,8}$/,               car:'le mot « code » et un code de salon' },
   { quoi:/^\d+\s*(questions?|pts|points?|s|min)$/i, car:'un nombre et un mot écrit pareil' },
+  /* (v347) La fin d'un jeu écrit le nombre en gras, dans sa propre balise :
+     « pts » y arrive seul — l'abréviation que la barre de score écrit déjà
+     pareil dans les trois langues. Ici, et seulement ici. */
+  { quoi:/^pts$/, ou:/jx-chiffres/, car:'l\'unité des points, sous son nombre en gras' },
   { quoi:/^[^\p{L}]*$/u,                       car:'aucune lettre — chiffres, ponctuation, icône' },
   { quoi:/^(Français|English|Español|Português|Deutsch|Italiano)$/, car:'une langue s\'écrit dans sa langue' },
   /* Une adresse e-mail ne se traduit pas : c'est celle du joueur, il l'a
@@ -286,7 +290,11 @@ const MEME_DANS_LES_DEUX = [
    temps où il portait une légende fixe. Il porte maintenant l'échéance du jour
    — « Plus que 6 h », « Fait pour aujourd'hui » —, une vraie phrase qui doit
    se traduire comme les autres : on la surveille. */
-const LIEUX_LIBRES = /avatar|grp-av|code-big|rank-pts|scorebar|q-counter|timer|logo|st-ico|ficon|ico\b|opt-text|q-text|rev-q|rev-a|rev-fact|ftext|fact-|hero-verse/;
+/* (v347) Les jeux montrent l'Écriture mot à mot (« Trouve l'erreur ») et
+   morceau par morceau (« Verset en morceaux »), et des références : un mot,
+   un morceau ou « Job 1:21 » peuvent être les mêmes dans deux langues, pour
+   la même raison que le verset de l'accueil (hero-verse). */
+const LIEUX_LIBRES = /avatar|grp-av|code-big|rank-pts|scorebar|q-counter|timer|logo|st-ico|ficon|ico\b|opt-text|q-text|rev-q|rev-a|rev-fact|ftext|fact-|hero-verse|jx-mot|jx-pose|jx-cref|jx-ref/;
 
 /* ===== UNE LANGUE PAS ENCORE OUVERTE SE RELIT QUAND MÊME =====
    Le jeu refuse une langue déclarée « dispo:false » : elle s'affiche grisée
@@ -1109,6 +1117,45 @@ const ouvrirLaLangue = async (p, lg) => {
       grp.message = motErreurGroupe({ erreur:'muet', jusqu:new Date(Date.now() + 3600000).toISOString() }); state.screen='groupes'; render(); }],
   ];
 
+  /* ===== (v347) LES JEUX =====
+     L'onglet et son écran (sans record, puis avec), une manche de chaque jeu
+     — à jouer, jouée juste, jouée faux —, des morceaux déjà posés, la
+     question « Quitter la partie ? », et les trois fins : le record battu,
+     la belle partie, l'encouragement. Les tirages sont faits avec un hasard
+     fixé : le français et l'anglais voient les mêmes manches, place par
+     place. */
+  const JEUX_ETAPES = [
+    ['Jeux · l\'écran', () => { __fermerTout(); jeu = null; localStorage.removeItem('bt_jeux'); state.screen = 'jeux'; render(); majBarre(); }],
+    ['Jeux · records', () => { __fermerTout(); jeu = null; localStorage.setItem('bt_jeux', JSON.stringify({ ordre:{ record:83, parties:2 }, combien:{ record:100, parties:1 } }));
+      state.screen = 'jeux'; render(); }],
+  ];
+  for (const id of ['ordre', 'quiou', 'combien', 'erreur', 'morceaux']) {
+    const lancer = (id) => { __fermerTout(); let g = 4242; const r = Math.random;
+      Math.random = () => (g = (g * 16807) % 2147483647) / 2147483647;
+      try { lancerJeu(id); } finally { Math.random = r; } };
+    JEUX_ETAPES.push(['Jeux · ' + id, lancer, id]);
+    JEUX_ETAPES.push(['Jeux · ' + id + ' juste', () => { conclureManche(true); }]);
+    JEUX_ETAPES.push(['Jeux · ' + id + ' faux', (id) => { __fermerTout(); let g = 4242; const r = Math.random;
+      Math.random = () => (g = (g * 16807) % 2147483647) / 2147483647;
+      try { lancerJeu(id); } finally { Math.random = r; } conclureManche(false); }, id]);
+  }
+  JEUX_ETAPES.push(
+    ['Jeux · morceaux posés', () => { __fermerTout(); let g = 4242; const r = Math.random;
+      Math.random = () => (g = (g * 16807) % 2147483647) / 2147483647;
+      try { lancerJeu('morceaux'); } finally { Math.random = r; } const m = mancheCourante(); toucherMorceau(m.melange[0]); toucherMorceau(m.melange[1]); }],
+    ['Jeux · qui où reliés', () => { __fermerTout(); let g = 4242; const r = Math.random;
+      Math.random = () => (g = (g * 16807) % 2147483647) / 2147483647;
+      try { lancerJeu('quiou'); } finally { Math.random = r; } toucherQui(0); toucherOu(1); toucherQui(2); }],
+    ['Jeux · quitter ?', () => { __fermerTout(); lancerJeu('combien'); quitterJeu(); }],
+    ['Jeux · fin, record', () => { __fermerTout(); jeu = { id:'combien', manches:new Array(10).fill(0), i:9, revele:true, juste:true,
+      points:100, bons:10, serie:10, meilleure:10, vu:9, pct:100, nouveau:true, record:80 }; state.screen = 'jeu-fin'; render(); }],
+    ['Jeux · fin, belle partie', () => { __fermerTout(); jeu = { id:'ordre', manches:new Array(6).fill(0), i:5, revele:true, juste:false,
+      points:40, bons:4, serie:0, meilleure:3, vu:5, pct:67, nouveau:false, record:83 }; state.screen = 'jeu-fin'; render(); }],
+    ['Jeux · fin, à rejouer', () => { __fermerTout(); jeu = { id:'erreur', manches:new Array(8).fill(0), i:7, revele:true, juste:false,
+      points:20, bons:2, serie:0, meilleure:1, vu:7, pct:25, nouveau:false, record:null }; state.screen = 'jeu-fin'; render(); }],
+    ['Jeux · retour à l\'accueil', () => { __fermerTout(); jeu = null; state.screen = 'mode'; render(); majBarre(); }],
+  );
+
   const ETAPES = [
     ['Accueil',           () => { state.screen='mode'; render(); }],
     ['Réglages',          () => { openSettings(); }],
@@ -1362,6 +1409,7 @@ const ouvrirLaLangue = async (p, lg) => {
       await ouvrirCadrage(blob);
     }],
     ...GROUPES_SOCIAUX,
+    ...JEUX_ETAPES,
   ];
 
     const releve = new Map();

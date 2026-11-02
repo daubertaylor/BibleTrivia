@@ -44,6 +44,10 @@ const src = fs.readFileSync(SRC, 'utf8');
 let ko = 0;
 
 /* --- outils communs --- */
+/* (v347) UN LITTÉRAL SE LIT COMME JAVASCRIPT LE LIT. « Qui\u00a0? Où\u00a0? »
+   EST la clé « Qui ? Où ? » (avec ses espaces insécables) : comparé tel quel,
+   ses six signes « \u00a0 » le faisaient passer pour une phrase oubliée. */
+const sansEchap = (x) => String(x).replace(/\\u([0-9a-fA-F]{4})/g, (_, h) => String.fromCharCode(parseInt(h, 16)));
 const plat = (x) => String(x).replace(/[   ]/g, ' ');
 const blanc = (t) => t.replace(/[^\n]/g, ' ');
 function effacer(txt, debut, fin){
@@ -260,7 +264,14 @@ for(const [a, b] of [['const TEXTES = {', '\n};'], ['const BANK = {', '\n  ]\n};
                      ['const SONDE = (function(){', 'document.body.appendChild(box);'],
                      /* ACCUEIL_DEF n'est pas de l'interface : c'est le repli
                         du verset d'accueil, qui passe par texteVerset(). */
-                     ['const ACCUEIL_REF', 'function texteAccueil']])
+                     ['const ACCUEIL_REF', 'function texteAccueil'],
+                     /* (v347) Les données des jeux : chaque phrase y porte ses
+                        trois langues, [français, anglais, espagnol], relues sur
+                        le texte ; le jeu prend la sienne (langueIdx). Et les
+                        mots que « Trouve l'erreur » échange, langue par langue.
+                        Du contenu, comme la banque de questions. */
+                     ['const JEU_COMBIEN = [', '];\n'], ['const JEU_QUIOU = [', '];\n'],
+                     ['const JEU_ORDRE = [', '];\n'], ['const JEU_ECHANGES = {', '\n};']])
   net = effacer(net, a, b);
 
 const OUTILS = /\b(le|la|les|des|une|est|sont|pour|avec|sans|dans|votre|vos|pas|plus|que|qui|cette|ces|aux|mon|ma|mes|nous|tout|toute|du|au|ou|et|un|de|se|sur|par|je|tu|ton|ta|tes|il|elle|on)\b/gi;
@@ -332,6 +343,8 @@ const PAS_DU_TEXTE = new Map([
   ['screen ecran-salon',    'deux classes CSS'],
   ['ds-side me',            'deux classes CSS'],
   ['fj fait',               'deux classes CSS'],
+  ['card jx-verset',        'deux classes CSS (v347 : le verset des jeux)'],
+  ['btn-ghost jx-autres',   'deux classes CSS (v347 : « Autres jeux »)'],
   ['[data-count-me]',       'un sélecteur CSS'],
   ['<button class="sem-flamme', 'un début de balise'],
   [' data-langue=',         'le nom d\'un attribut, coupé par une interpolation'],
@@ -499,7 +512,7 @@ net.split('\n').forEach((ligne, n) => {
          présence de la clé. Cette règle a l'avantage d'être la bonne dans les
          deux sens : pour taire ce banc, il faut poser la traduction. */
       if(PAS_DU_TEXTE.has(txt)) continue;
-      if(clesPlates.has(plat(txt))) continue;
+      if(clesPlates.has(plat(txt)) || clesPlates.has(plat(sansEchap(txt)))) continue;
       if(!trainent.has(txt)) trainent.set(txt, n + 1);
     }
   }
@@ -654,7 +667,7 @@ for(const ligne of codeSeul.split('\n')){
        parfaitement traduites. Ce qu'on cherche ici, c'est une phrase de table
        SANS traduction : celles-là retombent en français, en silence. */
     if(PAS_DU_TEXTE.has(txt)) continue;
-    if(clesPlates.has(plat(txt))) continue;
+    if(clesPlates.has(plat(txt)) || clesPlates.has(plat(sansEchap(txt)))) continue;
     if(!enArg.has(txt)) enArg.set(txt, lg);
   }
   lg++; dl += ligne.length + 1;
