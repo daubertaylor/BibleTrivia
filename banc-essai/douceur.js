@@ -131,8 +131,16 @@ const med = a => { const b=[...a].sort((x,y)=>x-y); return b.length? b[b.length>
       const arrivee = avant.length ? pas[pas.length-1] / Math.max(0.01, med(avant)) : 0;
       let som = 0;
       for (let i=0;i<corps.length;i++) if (corps[i] > corps[som]) som = i;
+      /* (v346) UN PIXEL DE REMONTÉE N'EST PAS UN À-COUP. scrollTop est
+         entier : un geste dont le plus grand pas fait 4 px avance par pas de
+         3 ou de 4 selon l'arrondi et la durée de l'image — « 4 3 3 4 » valait
+         +25 %, donc condamné, sur la v344 en ligne comme sur la v346, une
+         fois sur trois. Aucun doigt ne sent un pixel ; un vrai coup en fait
+         plusieurs (0,17 de l'ancienne loi, c'était 3 px sur 19). On retire
+         donc ce pixel d'arrondi à chaque remontée avant de la juger. */
+      const ARRONDI = 1;
       let acoup = 0;
-      for (let i=som+1;i<pas.length;i++) acoup = Math.max(acoup, (pas[i]-pas[i-1]) / mx);
+      for (let i=som+1;i<pas.length;i++) acoup = Math.max(acoup, (pas[i]-pas[i-1]-ARRONDI) / mx);
       acoup = Math.max(0, acoup);
       const mauvais = (depart > S_DEPART) || (arrivee > S_ARRIVEE) || (acoup > S_ACOUP);
       if (mauvais) ko++;

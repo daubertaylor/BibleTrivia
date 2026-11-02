@@ -53,7 +53,10 @@ const MESURES = () => {
       const t = performance.now() - t0;
       const pa = window.__pastille(a), pn = window.__pastille(n);
       film.push({ t, nd: pn.disque, nck: pn.coche.op, nk: pn.coche.k, nv: pn.voile.op, nvk: pn.voile.k, ad: pa.disque, ack: pa.coche.op, ak: pa.coche.k });
-      if (t < ms) requestAnimationFrame(pas);
+      /* (v346) Le film dure « ms » APRÈS LE CONTACT, pas après le départ de
+         la caméra : un toucher transmis avec retard (1,3 s, une fois)
+         laissait un film fini avant le geste. */
+      if (t < (geste.doigt === undefined ? 5000 : geste.doigt + ms)) requestAnimationFrame(pas);
       else { document.removeEventListener('pointerdown', pd, true); document.removeEventListener('click', cl, true); ok({ film, geste }); }
     };
     requestAnimationFrame(pas);
@@ -143,9 +146,19 @@ const MESURES = () => {
          clic (c'est lui qui change la couleur retenue). */
       const a = (film, t, k) => { let i = film.findIndex(f => f.t >= t); if (i < 0) return film[film.length - 1][k]; if (i === 0) return film[0][k]; const f0 = film[i - 1], f1 = film[i]; return f0[k] + (f1[k] - f0[k]) * (t - f0.t) / (f1.t - f0.t || 1); };
       const TOL = { nd: 0.9, ad: 0.9, nck: 0.12, ack: 0.12, nk: 0.08, ak: 0.08, nv: 0.12, nvk: 0.1 };
-      const DEPUIS = { nv: 'doigt', nvk: 'doigt', nd: 'clic', ad: 'clic', nck: 'clic', ack: 'clic', nk: 'clic', ak: 'clic' };
+      /* (v346) LE VOILE SE LIT DEPUIS SA PREMIÈRE IMAGE, pas depuis
+         l'événement du contact. Il part à l'image qui SUIT le contact — tout
+         de suite, ou une à deux images plus tard selon ce que la page avait
+         à faire à cet instant. Calé sur l'événement, le même voile tombait
+         donc jusqu'à 35 ms plus tard dans un film que dans l'autre (« nvk@480ms
+         0,40≠1,00 » : l'un avait fini de s'effacer, l'autre pas encore), alors
+         que, relues depuis leur première image, les deux courbes sont
+         identiques au centième. Ce qui compte pour l'œil, c'est le voile, pas
+         l'instant où le navigateur a reçu le doigt. */
+      const DEPUIS = { nv: 'voile', nvk: 'voile', nd: 'clic', ad: 'clic', nck: 'clic', ack: 'clic', nk: 'clic', ak: 'clic' };
+      for (const X of [P, G]) { const f = X.film.film.find(f => f.nv > 0.005); if (f) X.film.geste.voile = f.t; }
       const ecarts = [], geste = [];
-      for (const [nom, X] of [['Profil', P], ['groupe', G]]) if (X.film.geste.doigt === undefined || X.film.geste.clic === undefined) geste.push(nom + ' : ' + JSON.stringify(X.film.geste));
+      for (const [nom, X] of [['Profil', P], ['groupe', G]]) if (X.film.geste.doigt === undefined || X.film.geste.clic === undefined || X.film.geste.voile === undefined) geste.push(nom + ' : ' + JSON.stringify(X.film.geste));
       /* À UNE IMAGE PRÈS. Deux films ne tombent jamais sur les mêmes images :
          l'animation part au contact, la caméra prend la suivante (16 ms plus
          tard, ou presque tout de suite). Sur la montée du voile — 0,2 de

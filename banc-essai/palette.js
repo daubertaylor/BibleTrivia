@@ -147,12 +147,16 @@ const ECRANS = [
     dit('2. le pictogramme blanc se lit sur chaque pastille', !faibles.length && or >= 2.25,
       bas.map(([n, c]) => n + ' ' + c.toFixed(2)).join(', ') + ' · or (milieu) ' + or.toFixed(2) + (faibles.length ? ' · trop faibles : ' + faibles.map(f => f[0]).join(', ') : ''));
 
-    /* 3 — la couleur moyenne d'un jour joué, photographiée. */
+    /* 3 — la couleur moyenne d'un jour joué, photographiée. (v345) La rangée
+       des sept jours vit dans la Progression, l'accueil ayant toujours la
+       barre du bas : on la photographie là. Le 4 revient à l'accueil seul. */
+    await p.evaluate(() => openParcours());
+    await p.waitForTimeout(1300);
     const jour = await p.evaluate(() => {
       const j = document.querySelector('.sj'); if (!j) return null;
       j.classList.add('fait'); return true;
     });
-    let ecartFeu = null, d3 = 'pas de jour sur l\'accueil';
+    let ecartFeu = null, d3 = 'pas de jour dans la Progression';
     if (jour) {
       await p.waitForTimeout(300);
       const boite = await p.evaluate(() => { const r = document.querySelector('.sj.fait').getBoundingClientRect(); return { x: r.left + r.width * 0.2, y: r.top + r.height * 0.15, width: r.width * 0.6, height: r.height * 0.25 }; });

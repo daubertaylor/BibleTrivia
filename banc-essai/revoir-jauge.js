@@ -34,9 +34,12 @@ const CARNET = ([n, f]) => {
 const FILMER = (redessiner) => new Promise((ok) => {
   const t0 = performance.now(), etapes = [];
   if (redessiner) render(); else { state.screen = 'mode'; render(); setTimeout(() => {}, 0); ouvrirRevoir(); }
-  /* la jauge de l'écran qui ARRIVE (celui qui part glisse encore un instant
-     sous lui, avec la sienne) */
-  const ecran = document.querySelector('#app > .screen:last-child');
+  /* la jauge de l'écran qui ARRIVE (celui qui part reste un instant sous
+     lui, avec la sienne). (v345) L'écran qui arrive est rangé AVANT l'écran
+     quitté, et la copie du décor se range à la fin (voir L'ÉCRAN VIVANT
+     D'ABORD) : on le cherche par ce qu'il est — le seul écran qui ne s'en va
+     pas —, plus par sa place. */
+  const ecran = document.querySelector('#app > .screen:not(.screen-exit)');
   const pas = () => {
     const i = ecran && ecran.querySelector('.rv-jauge i');
     if (i) etapes.push([Math.round(performance.now() - t0), +new DOMMatrix(getComputedStyle(i).transform).a.toFixed(3),

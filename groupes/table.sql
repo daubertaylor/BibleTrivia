@@ -141,13 +141,19 @@ create table if not exists public.signalements (
   groupe     uuid references public.groupes(id) on delete cascade,
   message    bigint references public.messages(id) on delete cascade,
   cible      uuid references auth.users(id) on delete cascade,
-  raison     text not null check (raison in ('harcelement','inapproprie','spam','danger','autre')),
+  raison     text not null check (raison in ('harcelement','inapproprie','spam','danger','photo','nom','usurpation','autre')),
   details    text not null default '' check (char_length(details) <= 300),
   cree_le    timestamptz not null default now(),
   traite_le  timestamptz,
   decision   text
 );
 create index if not exists signalements_ouverts on public.signalements (cree_le) where traite_le is null;
+-- (v346) SIGNALER UNE PERSONNE POUR CE QU'ELLE MONTRE D'ELLE : sa photo, son
+-- nom, ou qui elle prétend être. Une table déjà créée garde son ancienne
+-- règle (« create table if not exists » ne la touche pas) : on la remplace.
+alter table public.signalements drop constraint if exists signalements_raison_check;
+alter table public.signalements add constraint signalements_raison_check
+  check (raison in ('harcelement','inapproprie','spam','danger','photo','nom','usurpation','autre'));
 
 create table if not exists public.blocages (
   par     uuid not null references auth.users(id) on delete cascade,
@@ -1111,7 +1117,7 @@ declare
   v_cible uuid := p_cible;
 begin
   if moi is null then return jsonb_build_object('ok', false, 'erreur', 'non_connecte'); end if;
-  if p_raison not in ('harcelement','inapproprie','spam','danger','autre') then return jsonb_build_object('ok', false, 'erreur', 'raison'); end if;
+  if p_raison not in ('harcelement','inapproprie','spam','danger','photo','nom','usurpation','autre') then return jsonb_build_object('ok', false, 'erreur', 'raison'); end if;
   if (select count(*) from public.signalements where par = moi and cree_le > now() - interval '1 day') >= 30 then
     return jsonb_build_object('ok', false, 'erreur', 'trop_vite'); end if;
   if p_message is not null then

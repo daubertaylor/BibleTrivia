@@ -969,8 +969,12 @@ const ouvrirLaLangue = async (p, lg) => {
     ['Modération · rien',  async () => { __fermerTout(); __grpDecor(); const l = listeGroupe; listeGroupe = async () => [];
       ouvrirModeration(); await new Promise(r => setTimeout(r, 60)); listeGroupe = l; }],
     ['Modération · signalements', async () => { __fermerTout(); __grpDecor(); const l = listeGroupe;
+      /* (v346) Et une photo signalée : la carte dit « Photo inappropriée »
+         (la raison telle que la Modération la lit). */
       listeGroupe = async () => [{ id:1, raison:'harcelement', details:'Amen', le:new Date().toISOString(), groupe:'g-1', groupe_nom:'Lee',
-                                   message:7, texte:'Amen', cible:'u-2', cible_nom:'Sam', par_nom:'Kim', nb:2 }];
+                                   message:7, texte:'Amen', cible:'u-2', cible_nom:'Sam', par_nom:'Kim', nb:2 },
+                                 { id:2, raison:'photo', details:'', le:new Date().toISOString(), groupe:null, groupe_nom:null,
+                                   message:null, texte:null, cible:'u-3', cible_nom:'Lee', par_nom:'Kim', nb:1 }];
       ouvrirModeration(); await new Promise(r => setTimeout(r, 60)); listeGroupe = l; }],
     ['Modération · bannir', () => { traiterSignalement(1, 'bannir'); }],
     ['Modération · fermer', () => { __fermerTout(); traiterSignalement(1, 'fermer_groupe'); }],
@@ -1055,6 +1059,18 @@ const ouvrirLaLangue = async (p, lg) => {
       grp.courant = 'g-1'; state.screen = 'groupe'; render(); }],
     /* LES PAGES QUE LES STORES DEMANDENT */
     ['Confidentialité',    () => { __fermerTout(); state.screen='mode'; render(); ouvrirConfidentialite(); }],
+    /* (v346) LES MENTIONS LÉGALES, à côté de Confidentialité ; et LA PHOTO
+       D'UN JOUEUR, qu'on signale d'un geste (« Signaler cette photo »), puis
+       la page du signalement, la raison « photo » déjà cochée. Sans photo à
+       montrer, la visionneuse ne s'ouvre pas : on lui en prête une, le temps
+       de l'ouvrir. */
+    ['Mentions légales',   () => { __fermerTout(); state.screen='mode'; render(); ouvrirMentions(); }],
+    ['Groupes · la photo d\'un joueur', () => { __fermerTout(); __grpDecor(); grp.etat.moderateur = false;
+      state.screen = 'groupes'; render();
+      const pv = photoValeur; photoValeur = () => "url('data:image/gif;base64,R0lGODlhAQABAAAAACw=')";
+      try { ouvrirPhotoGrand('u:u-2'); } finally { photoValeur = pv; } }],
+    ['Groupes · signaler une photo', () => { __fermerTout(); __grpDecor(); grp.etat.moderateur = false;
+      state.screen = 'groupes'; render(); signalerMessage(null, 'u-2', null, 'photo'); }],
     ['Compte · supprimer', () => { __fermerTout(); __grpDecor(); state.screen='profile'; render(); demanderSuppressionCompte(); }],
     ['Compte · suppression ratée', async () => { __fermerTout(); __grpDecor(); state.screen='profile'; render();
       const a = appelGroupe; appelGroupe = async () => ({ ok:false, erreur:'reseau' }); await supprimerMonCompte(); appelGroupe = a; }],
@@ -1538,6 +1554,12 @@ const ouvrirLaLangue = async (p, lg) => {
     }
 
     /* ===== PREMIÈRE BARRIÈRE : du français reconnaissable dans le rendu ===== */
+    /* (v346) UN TITRE DE BIBLE AU MILIEU D'UNE PHRASE. Les mentions légales
+       nomment les traductions du jeu — « …, Ostervald, Bible Annotée, …: all
+       in the public domain. » Le titre est un nom propre (voir TOLERE), mais
+       la phrase qui l'entoure se juge comme les autres : on retire le titre,
+       on lit le reste. */
+    const SANS_TITRES = /Bible Annotée|La Sainte Bible|Louis Segond|David Martin/g;
     const vus = new Set();
     let compte = 0;
     for(const [nom, textes] of p2.releve){
@@ -1545,7 +1567,8 @@ const ouvrirLaLangue = async (p, lg) => {
       for(const { t, ou } of textes){
         if(sansBanque && LIEUX_QUESTION.test(String(ou))) continue;
         if(TOLERE.some(r => r.test(t))) continue;
-        if(!(cible.accent.test(t) || cible.re.test(t))) continue;
+        const tt = t.replace(SANS_TITRES, '');
+        if(!(cible.accent.test(tt) || cible.re.test(tt))) continue;
         const cle = 'fr:' + t.slice(0, 80);
         if(vus.has(cle)) continue;
         vus.add(cle);

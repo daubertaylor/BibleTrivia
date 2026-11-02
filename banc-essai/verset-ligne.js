@@ -1,4 +1,6 @@
-/* ====== LE VERSET OUVERT NE PASSE JAMAIS SUR LA LIGNE D'HÉBREUX 4:16 (v316) ======
+/* ====== LE VERSET OUVERT NE PASSE JAMAIS SUR LA LIGNE DU VERSET DE L'ACCUEIL (v316) ======
+   (Hébreux 4:16 jusqu'à la v345, Proverbes 23:12 depuis : la ligne est la
+   même, à la même place, de la même hauteur.)
    « Ça se superpose avec le verset, corrige ça. » (capture de Taylor :
    Colossiens 3:16, Segond, sur un iPhone — la carte du verset descendait sur
    la ligne « Approchons-nous donc avec assurance du trône de la grâce », qui
@@ -115,6 +117,6 @@ const dit = (quoi, bon, detail) => { console.log('  ' + (bon ? 'OK  ' : 'KO  ') 
   } finally {
     await nav.close().catch(() => {});
   }
-  console.log(ko ? '\n  ' + ko + ' KO' : '\n  OK — le verset ouvert ne passe jamais sur la ligne d\'Hébreux 4:16');
+  console.log(ko ? '\n  ' + ko + ' KO' : '\n  OK — le verset ouvert ne passe jamais sur la ligne du verset de l\'accueil');
   process.exit(ko ? 1 : 0);
 })();
