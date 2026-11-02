@@ -5778,7 +5778,27 @@
      l'écran, donc avec sa copie du décor, juste du premier au dernier
      instant. Le mouvement est conduit en JS (voir PASSAGE D'UN ÉCRAN À
      L'AUTRE) : il repart d'où l'écran se trouve si l'on rebrousse chemin en
-     route, et un rendu sur place le reprend au même instant. */
+     route, et un rendu sur place le reprend au même instant.
+     (v348 : la copie ne glisse plus avec l'écran — voir LE DÉCOR NE BOUGE
+     PAS, juste après.) */
+  /* ===== (v348) LE DÉCOR NE BOUGE PAS : SEULE LA PAGE GLISSE =====
+     « Corrige ça : je t'ai mis un trait rouge, lors d'une fermeture ou d'une
+       ouverture » (capture de Taylor, iPhone, de l'Accueil aux Jeux : le
+       trait suit le bord gauche de l'écran qui arrive).
+     La copie du décor glissait AVEC l'écran. Au bord de la page, la photo
+     de l'écran quitté et celle de l'écran qui arrive ne se raccordaient
+     donc pas : la même falaise deux fois, décalée de tout le chemin qui
+     restait à faire, coupée net par une ligne verticale. Une page unie (les
+     Réglages) peut emporter son fond avec elle : son crème est le même
+     partout. Une photo, non : c'est le monde du jeu, il ne bouge pas.
+     La copie est maintenant une FENÊTRE. Sa boîte (.fond-pousse) glisse avec
+     l'écran — c'est elle qui couvre l'écran quitté, et elle qui porte
+     l'ombre —, mais ce qu'elle montre (.fp-decor) fait le chemin inverse,
+     au même instant et sur la même courbe : la photo reste exactement où
+     elle est, et coïncide à chaque image avec le décor qu'elle recouvre. Le
+     verre des cartes qui glissent fait de même (voir LE VERRE DE L'ÉCRAN QUI
+     GLISSE) : il montre le décor qui est derrière lui là où il passe, pas
+     celui de sa place d'arrivée. */
   html .screen.screen-enter.pousse{ animation:none; }
   html .screen.screen-exit.reste, html .screen.screen-exit.retire{ animation:none; opacity:1; }
   /* CHAQUE ÉCRAN DANS SON PLAN. Ce qu'un écran pose au-dessus de lui-même
@@ -5797,7 +5817,8 @@
   html .screen.sous-retour{ isolation:isolate; z-index:0; }
   html .screen.screen-enter.pousse:not(.screen-exit){ z-index:2; }
   .fond-pousse{ position:absolute; z-index:1; overflow:hidden; pointer-events:none; box-shadow:-18px 0 42px rgba(24,16,10,0.22); }
-  .fond-pousse > div{ position:absolute !important; right:auto !important; bottom:auto !important; min-height:0 !important;
+  .fond-pousse > .fp-decor{ position:absolute; left:0; top:0; width:100%; height:100%; }
+  .fond-pousse > .fp-decor > div{ position:absolute !important; right:auto !important; bottom:auto !important; min-height:0 !important;
     transform:none !important; -webkit-transform:none !important; }
 
   /* ---------- L'ÉCRAN DES GROUPES ---------- */
@@ -11309,7 +11330,7 @@ const SUPABASE_ANON_KEY = "sb_publishable_FDJ_R0foC7uIeHmxVrj6rA_2NeIgW2a";
    remontée d'un téléphone ne vaut rien si on ne sait pas QUELLE version
    tournait. Elle doit rester égale au CACHE de sw.js — c'est ce que vérifie
    banc-essai/version.js, qui refuse de laisser publier les deux en désaccord. */
-const VERSION_JEU = "v347";
+const VERSION_JEU = "v348";
 
 /* ===================== QUAND ÇA CASSE CHEZ UN JOUEUR =====================
    « Si quelque chose casse chez cinq d'entre eux sur un modèle de téléphone
@@ -33363,11 +33384,17 @@ function courbeDe(nom, defaut){
   return defaut;
 }
 /* La copie du décor : la boîte visible de #app, et dedans la photo, la
-   vignette et le grain posés exactement là où sont les originaux. */
+   vignette et le grain posés exactement là où sont les originaux. (v348)
+   Ils sont rangés dans .fp-decor, qui fera le chemin inverse de la boîte
+   (voir LE DÉCOR NE BOUGE PAS) : f._decor. */
 function fondDuPassage(app){
   const f = document.createElement("div");
   f.className = "fond-pousse";
   f.setAttribute("aria-hidden", "true");
+  const d = document.createElement("div");
+  d.className = "fp-decor";
+  f.appendChild(d);
+  f._decor = d;
   const ra = app.getBoundingClientRect();
   const ax = ra.left + app.clientLeft, ay = ra.top + app.clientTop;
   f.style.left = app.scrollLeft + "px";
@@ -33381,7 +33408,7 @@ function fondDuPassage(app){
     c.className = cl;
     c.style.left = (r.left - ax) + "px"; c.style.top = (r.top - ay) + "px";
     c.style.width = r.width + "px"; c.style.height = r.height + "px";
-    f.appendChild(c);
+    d.appendChild(c);
   });
   return f;
 }
@@ -33404,13 +33431,16 @@ function lancerPassage(app, entrant, sortant, retour, xDepart){
   app.appendChild(fond);
   const duree = retour ? msFerme() : msPli();
   const courbe = retour ? courbeDe("--tr-ferme", "cubic-bezier(0.4,0,1,1)") : courbeDe("--tr-ouvre", "cubic-bezier(0.33,1,0.68,1)");
-  const p = { genre: retour ? "retour" : "pousse", debut: performance.now(), duree, courbe, dx: W, x0: 0, entrant, sortant, fond, anims: [] };
+  const p = { genre: retour ? "retour" : "pousse", debut: performance.now(), duree, courbe, dx: W, x0: 0, entrant, sortant, fond, anims: [], contre: [] };
+  /* (v348) La boîte de la copie glisse avec l'écran ; le décor qu'elle
+     montre fait le chemin inverse, à la même horloge : il ne bouge pas
+     (voir LE DÉCOR NE BOUGE PAS). */
   if(retour){
     entrant.classList.add("sous-retour");
     p.x0 = Math.max(0, Math.min(W, xDepart || 0));
-    p.anims.push(glisserX(sortant, p.x0, W, duree, courbe), glisserX(fond, p.x0, W, duree, courbe));
+    p.anims.push(glisserX(sortant, p.x0, W, duree, courbe), glisserX(fond, p.x0, W, duree, courbe), glisserX(fond._decor, -p.x0, -W, duree, courbe));
   } else {
-    p.anims.push(glisserX(entrant, W, 0, duree, courbe), glisserX(fond, W, 0, duree, courbe));
+    p.anims.push(glisserX(entrant, W, 0, duree, courbe), glisserX(fond, W, 0, duree, courbe), glisserX(fond._decor, -W, 0, duree, courbe));
   }
   p.anims = p.anims.filter(Boolean);
   passage = p;
@@ -33438,6 +33468,44 @@ function reprendrePassage(vieux, node){
   setTimeout(()=>{ node.classList.remove("arrivee"); fitScroll(); }, Math.max(60, apresEntree() - t));
   return true;
 }
+/* ===== (v348) LE VERRE DE L'ÉCRAN QUI GLISSE =====
+   Le verre d'une carte est une fenêtre sur le décor (la couche .gs, calée
+   sur la place de repos de la carte). Tant que le décor glissait avec
+   l'écran, il suffisait qu'elle glisse aussi. Le décor ne bouge plus (voir
+   LE DÉCOR NE BOUGE PAS) : la couche de chaque carte de l'écran qui bouge
+   fait donc, comme lui, le chemin inverse de l'écran — même horloge, même
+   courbe. Elle montre à chaque image le morceau de décor qui est
+   réellement derrière la carte, et arrive sur son calage de repos, exact :
+   au dégel, le moteur ne trouve rien à corriger.
+   Le moteur est gelé pendant le passage (glassFreezeForTransition) et ne
+   réécrit pas le calage : on part du calage écrit, tel quel, et l'on
+   ajoute la translation devant. Une couche pleine (.gs-plein) n'a pas de
+   décor : elle suit sa carte. Même chose pour la barre du bas quand elle
+   glisse avec sa page (glisserBarre). Appelé à la fin de chaque rendu,
+   une fois le verre posé : un écran repris en route (reprendrePassage)
+   reçoit le même contre-mouvement, à l'instant où en est le passage. */
+function contreGlisser(gs, de, a, p){
+  const t = gs.style.transform || "";
+  try{
+    const x = gs.animate([{ transform:"translate3d(" + de + "px,0,0) " + t }, { transform:"translate3d(" + a + "px,0,0) " + t }], { duration:p.duree, easing:p.courbe, fill:"both" });
+    const a0 = p.anims[0];
+    if(a0 && a0.startTime !== null) x.startTime = a0.startTime;
+    gs._passage = p;
+    p.contre.push(x);
+  }catch(e){}
+}
+function verreDuPassage(){
+  const p = passage;
+  if(!p || !p.contre) return;
+  const ecran = p.genre === "pousse" ? p.entrant : p.sortant;
+  const de = p.genre === "pousse" ? -p.dx : -p.x0, a = p.genre === "pousse" ? 0 : -p.dx;
+  if(ecran && ecran.isConnected){
+    ecran.querySelectorAll(".gs:not(.gs-plein)").forEach(gs => { if(gs._passage !== p) contreGlisser(gs, de, a, p); });
+  }
+  const g = p.barreGlisse, b = g && document.getElementById("barreBas");
+  const bgs = b && b._gs;
+  if(bgs && bgs.parentNode === b && !bgs.classList.contains("gs-plein") && bgs._passage !== p) contreGlisser(bgs, -g.de, -g.a, p);
+}
 /* Le passage se termine : la copie du décor s'en va (elle coïncide avec
    l'original), l'écran quitté aussi, et plus aucune animation ne tient
    l'écran posé. « fini » : le mouvement est allé au bout (la barre du bas se
@@ -33447,6 +33515,7 @@ function finirPassage(fini){
   passage = null;
   clearTimeout(p.t);
   p.anims.forEach(a => { try{ a.cancel(); }catch(e){} });
+  (p.contre || []).forEach(a => { try{ a.cancel(); }catch(e){} });
   if(p.fond && p.fond.parentNode) p.fond.remove();
   if(p.sortant && p.sortant.parentNode) p.sortant.remove();
   /* « pousse » reste avec « screen-enter » (elles partent ensemble, plus
@@ -33509,6 +33578,9 @@ function rognerBarre(b, x0, dx, p){
   }catch(e){ return null; }
 }
 function glisserBarre(b, de, a, p){
+  /* (v348) Son verre fera le chemin inverse (voir LE VERRE DE L'ÉCRAN QUI
+     GLISSE), une fois posé par le moteur. */
+  p.barreGlisse = { de, a };
   try{
     const x = b.animate([{ transform:"translate3d(calc(-50% + " + de + "px),0,0)" }, { transform:"translate3d(calc(-50% + " + a + "px),0,0)" }], { duration:p.duree, easing:p.courbe, fill:"both" });
     const a0 = p.anims[0];
@@ -33835,6 +33907,9 @@ function render(){
   // l'animation tourne en pur GPU (fluide sur Android) ; sinon (re-rendu sur
   // place) on recale normalement.
   if(prevNode){ glassFreezeForTransition(); } else { glassTrack(); }
+  /* (v348) Le verre posé, celui de l'écran qui glisse regarde le décor
+     immobile (voir LE VERRE DE L'ÉCRAN QUI GLISSE). */
+  if(passage){ try{ verreDuPassage(); }catch(e){} }
   requestAnimationFrame(fitScroll);
   syncSpinners();
   majVoilesScores();
@@ -34606,6 +34681,9 @@ function queueGlassXF(){
          celui des cartes de la page qui arrive avec elle — et il est juste à
          l'arrivée : le dégel ne trouve plus rien à corriger. Au repos, la
          place calculée EST la place réelle : rien ne change.
+         (v348) Pendant un passage d'écran, le décor ne bouge plus : quand la
+         barre glisse avec sa page, sa couche fait le chemin inverse, par
+         dessus ce calage (voir LE VERRE DE L'ÉCRAN QUI GLISSE).
          Son « bottom » n'est lu qu'une fois par mise en page (glassGen) :
          lire un style calculé à chaque passage forçait un recalcul de style
          au repos, ce que banc-essai/charge.js refuse (« 1 lecture forcée,
