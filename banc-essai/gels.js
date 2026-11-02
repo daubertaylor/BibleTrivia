@@ -237,6 +237,49 @@ function verifier(nom, obtenu, attendu){
   verifier("le bandeau du gel attend les résultats, puis la fête",
     !!(quand.tBandeau !== null && quand.tFin !== null && quand.tBandeau > quand.tFin + 400 && quand.tBandeau > quand.tFete + 300), true);
 
+  // ---------- 10. (v345) UNE ANNONCE DÉJÀ DITE NE RENAÎT PAS DU COMPTE ----------
+  /* « Sur Android, j'ai toujours le même message des gels qui s'affiche. »
+     (« Yada a gelé ta série — le 29 octobre était manqué, il te reste 1 gel »,
+     à chaque ouverture.) La copie du compte gardait l'annonce que le
+     téléphone venait d'effacer, et la synchronisation suivante la faisait
+     renaître. Le bandeau est retenu dans la file (achToastBusy) pour qu'on
+     puisse COMPTER ce qui serait dit. */
+  const compte = await ev(()=>{
+    document.querySelectorAll('.ach-toast').forEach(e=>e.remove());
+    achToastBusy = true; achToastPause = false; achToastQueue.length = 0;
+    __poser({ last: __cle(-2), streak: 12, jours:[__cle(-2)], geles:[], gels:1, palier:10 });
+    reglerFlamme();
+    const posee = loadDaily().annonce;
+    const monte = sauvegardeIci().flamme.annonce;
+    /* Le compte arrive AVANT le bandeau : l'annonce d'ici doit tenir. */
+    const sans = sauvegardeIci(); sans.flamme.annonce = "";
+    appliquerSauvegarde(sans);
+    const tient = loadDaily().annonce;
+    annoncerGel();
+    const dite = achToastQueue.length;
+    /* Le serveur garde une copie d'avant la v345, annonce comprise. */
+    const serveur = sauvegardeIci(); serveur.flamme.annonce = posee;
+    appliquerSauvegarde(serveur);
+    const apres = loadDaily().annonce;
+    achToastQueue.length = 0;
+    annoncerGel();
+    const redite = achToastQueue.length;
+    /* La fusion, dans un sens comme dans l'autre, ne la rend pas non plus. */
+    const f1 = fusionner(sauvegardeIci(), serveur).flamme.annonce;
+    const gels = loadDaily().gels, geles = loadDaily().geles;
+    achToastQueue.length = 0; achToastBusy = false;
+    return { posee: posee === __cle(-1), monte, tient: tient === posee, dite, apres, redite, f1,
+             gele: gels === 0 && geles.indexOf(__cle(-1)) >= 0 };
+  });
+  verifier("le gel posé attend d'être dit", compte.posee, true);
+  verifier("l'annonce ne monte pas dans le compte", compte.monte, "");
+  verifier("le compte arrivé avant le bandeau ne l'efface pas", compte.tient, true);
+  verifier("le bandeau passe une fois", compte.dite, 1);
+  verifier("la copie du compte ne la fait pas renaître", compte.apres, "");
+  verifier("à l'ouverture suivante, plus rien à dire", compte.redite, 0);
+  verifier("la fusion garde celle d'ici", compte.f1, "");
+  verifier("le gel, lui, reste dépensé et le jour gelé", compte.gele, true);
+
   await nav.close();
   console.log(ko === 0 ? '\n  OK' : '\n  ' + ko + ' règle(s) en défaut');
   process.exit(ko === 0 ? 0 : 1);

@@ -43,9 +43,8 @@ if __name__ == "__main__":
     chemin = os.path.join(ICI, "textes.json")
     tout = json.load(io.open(chemin, encoding="utf-8"))
     for cle, src in SOURCES.items():
-        out, absents = extrait_source(src, jeu)
-        if ACCUEIL in out:
-            out[ACCUEIL + "a"] = out[ACCUEIL].split(",")[0].strip()
+        # La ligne de l'accueil, entière (v346) : voir regenere.py.
+        out, absents = extrait_source(src, jeu + [(ACCUEIL, None)])
         tout[cle] = out
         print("%-10s %3d versets  (%d sans correspondance%s)"
               % (cle, len(out), len(absents), (" : " + ", ".join(absents)) if absents else ""))

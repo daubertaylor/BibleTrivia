@@ -41,7 +41,8 @@ const ATTENDU = JSON.parse(fs.readFileSync(path.join(__dirname, '..', 'bibles', 
     /* Les références que le jeu affiche vraiment : celles des versets de
        l'accueil, plus celle de la ligne signature. */
     for (const v of HERO_VERSES) out[v.r] = refLivre(v.r);
-    out["Hébreux 4:16"] = refLivre("Hébreux 4:16");
+    /* (v346) La ligne signature porte Proverbes 23:12. */
+    out[ACCUEIL_REF] = refLivre(ACCUEIL_REF);
     return out;
   });
 

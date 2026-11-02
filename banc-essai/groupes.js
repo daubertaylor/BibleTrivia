@@ -78,10 +78,16 @@ const dit = (quoi, bon, detail) => { console.log('  ' + (bon ? 'OK  ' : 'KO  ') 
 
     /* ---- 2. l'onglet glisse de côté ---- */
     await pb.evaluate(() => allerOnglet('groupes'));
-    dit('l\'onglet Groupes arrive par la droite', await pb.evaluate(() => !!document.querySelector('#app > .screen.groupes-ecran.vers-droite')));
+    /* (v345) Une seule animation de changement d'écran (celle des pages) :
+       les Groupes arrivent par la droite PAR-DESSUS l'accueil, qui reste
+       posé dessous ; au retour, ils repartent vers la droite et découvrent
+       l'accueil, déjà là. */
+    dit('l\'onglet Groupes arrive par la droite, par-dessus l\'accueil', await pb.evaluate(() => !!document.querySelector('#app > .screen.groupes-ecran.pousse:not(.screen-exit)')
+      && !!document.querySelector('#app > .screen.accueil.screen-exit.reste') && typeof passage !== 'undefined' && !!passage && passage.genre === 'pousse'));
     await pb.waitForTimeout(700);
     await pb.evaluate(() => allerOnglet('accueil'));
-    dit('… et l\'accueil revient par la gauche', await pb.evaluate(() => !!document.querySelector('#app > .screen.accueil.vers-gauche')));
+    dit('… et les Groupes repartent vers la droite, découvrant l\'accueil', await pb.evaluate(() => !!document.querySelector('#app > .screen.groupes-ecran.screen-exit.retire')
+      && !!document.querySelector('#app > .screen.accueil:not(.screen-exit)') && typeof passage !== 'undefined' && !!passage && passage.genre === 'retour'));
     dit('avec la barre, les sept jours ont quitté l\'accueil', await pb.evaluate(() => !document.querySelector('.accueil .semaine') && !!document.querySelector('.parcours-card .pc-feu')));
     await pb.waitForTimeout(700);
 

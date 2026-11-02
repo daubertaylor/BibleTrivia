@@ -19,6 +19,12 @@
      4. même chose au retour du Profil, sur l'onglet Groupes ;
      5. même chose au démarrage, quand elle monte du bas avec l'accueil ;
      6. aucune erreur.
+   (v345) AU RETOUR, LA BARRE NE BOUGE PLUS. L'écran quitté repart vers la
+   droite et DÉCOUVRE la barre, déjà posée à sa place (voir LA BARRE DU BAS
+   SUIT LE PASSAGE) : elle ne revient plus de côté. Une barre immobile est
+   jugée plus sévèrement — son décor doit être juste à CHAQUE image du film,
+   pas seulement une fois posée ; une barre qui bouge (le démarrage) l'est
+   comme avant.
    Usage : node banc-essai/barre-verre.js [url] */
 const { chromium } = require('/opt/node22/lib/node_modules/playwright');
 const URL = process.argv[2] || 'http://127.0.0.1:8099/index.html';
@@ -89,8 +95,8 @@ const dit = (q, b, d) => { if (!b) ko++; console.log('  ' + (b ? 'OK  ' : 'KO  '
     await p.evaluate(() => openParcours());
     await p.waitForTimeout(1200);
     const retour = juger(await p.evaluate(() => { window.__film = []; window.__filmer(1600); goToModeSelect(); return new Promise(r => setTimeout(() => r(window.__film), 1750)); }));
-    dit('2. retour de Progression : la barre posée, le décor est juste et ne bouge plus', retour.bouge > 3 && retour.ecartApres <= 1,
-      retour.images + ' images, barre posée à ' + retour.pose + ' ms, écart ensuite jusqu\'à ' + retour.ecartApres + ' px');
+    dit('2. retour de Progression : la barre posée, le décor est juste et ne bouge plus', retour.images > 3 && retour.ecartApres <= 1,
+      retour.images + ' images, ' + (retour.bouge ? 'barre posée à ' + retour.pose + ' ms, écart ensuite' : 'barre immobile (découverte), écart à chaque image') + ' jusqu\'à ' + retour.ecartApres + ' px');
     dit('3. pendant qu\'elle arrive, le décor ne fait jamais un pas plus grand que la barre', retour.pire <= 1, 'pire excès ' + retour.pire + ' px');
     /* ---- 4 ---- */
     await p.evaluate(() => allerOnglet('groupes'));
@@ -99,8 +105,8 @@ const dit = (q, b, d) => { if (!b) ko++; console.log('  ' + (b ? 'OK  ' : 'KO  '
     await p.waitForTimeout(1200);
     const profil = juger(await p.evaluate(() => { window.__film = []; window.__filmer(1600);
       const b = document.querySelector('.app-header [onclick*="saveProfileAndBack"]'); if (b) b.click(); return new Promise(r => setTimeout(() => r(window.__film), 1750)); }));
-    dit('4. retour du Profil, sur Groupes : le décor juste une fois posée, sans pas de trop', profil.bouge > 3 && profil.ecartApres <= 1 && profil.pire <= 1,
-      profil.images + ' images, posée à ' + profil.pose + ' ms, écart ensuite ' + profil.ecartApres + ' px, pire excès ' + profil.pire + ' px');
+    dit('4. retour du Profil, sur Groupes : le décor juste une fois posée, sans pas de trop', profil.images > 3 && profil.ecartApres <= 1 && profil.pire <= 1,
+      profil.images + ' images, ' + (profil.bouge ? 'posée à ' + profil.pose + ' ms, écart ensuite ' : 'barre immobile (découverte), écart à chaque image ') + profil.ecartApres + ' px, pire excès ' + profil.pire + ' px');
     dit('5. au démarrage, quand elle monte avec l\'accueil : même chose', demarrage.images > 10 && demarrage.ecartApres <= 1 && demarrage.pire <= 1,
       demarrage.images + ' images, posée à ' + demarrage.pose + ' ms, écart ensuite ' + demarrage.ecartApres + ' px, pire excès ' + demarrage.pire + ' px');
     dit('6. aucune erreur', errs.length === 0, errs.slice(0, 3).join(' | '));

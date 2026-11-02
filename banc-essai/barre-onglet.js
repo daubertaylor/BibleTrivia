@@ -159,7 +159,11 @@ const dit = (q, b, d) => { if (!b) ko++; console.log('  ' + (b ? 'OK  ' : 'KO  '
     await p.waitForTimeout(900);
     await p.evaluate(() => { const b = document.querySelector('.app-header [onclick*="saveProfileAndBack"]'); if (b) b.click(); });
     await p.waitForFunction(() => state.screen === 'groupes', null, { timeout: 5000 });
-    await p.waitForFunction(() => { const b = document.getElementById('barreBas'); return b && !/arrive|cachee|part-cote/.test(b.className); }, null, { timeout: 5000 });
+    /* (v345) Le Profil repart vers la droite et découvre les Groupes, barre
+       comprise : on lit l'onglet quand le passage est fini (plus rien de
+       rogné, plus d'animation sur la barre). */
+    await p.waitForFunction(() => { const b = document.getElementById('barreBas');
+      return b && !/arrive|cachee|part-cote/.test(b.className) && (typeof passage === 'undefined' || !passage) && !(b.getAnimations && b.getAnimations().length); }, null, { timeout: 5000 });
     const r4 = await onglet();
     const c4 = await couchesBarre();
     dit('4. retour du Profil : l\'onglet actif est entier dès que la barre est posée', r4.onglet === 'groupes' && r4.n >= ENTIER * ref.n, r4.n + ' pixels blancs contre ' + ref.n);

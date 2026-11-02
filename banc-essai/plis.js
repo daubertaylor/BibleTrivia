@@ -92,6 +92,24 @@ const norme = (s) => (s || '').replace(/\s+/g, '');
     }), { prep, sel });
     releves.push([nom, r]);
   };
+  /* (v345) UN ÉCRAN PASSE COMME UNE PAGE. Son glissement n'est plus une
+     @keyframes : il est joué par le script (element.animate), à l'horloge
+     des pages — il arrive sur --tr-plie, il repart sur --tr-ferme. On lit
+     donc la durée et la courbe de CETTE animation-là, sur l'écran qui
+     arrive, ou sur celui qui repart quand on revient. */
+  const lireGlisse = async (prep, sel) => p.evaluate(({ prep, sel }) => new Promise(res => {
+    // eslint-disable-next-line no-new-func
+    new Function(prep)();
+    setTimeout(() => {
+      const el = document.querySelector(sel);
+      if (!el) return res(null);
+      const a = (el.getAnimations ? el.getAnimations() : []).find(x => {
+        try { return !x.animationName && x.effect && x.effect.getKeyframes().some(k => k.transform); } catch (e) { return false; } });
+      if (!a) return res({ manquant: 'aucun glissement' });
+      const t = a.effect.getTiming();
+      res({ d: (Math.round(t.duration) / 1000) + 's', c: t.easing });
+    }, 60);
+  }), { prep, sel });
 
   /* (Le pli du testament et son chevron sont partis à la v316 : chaque
      testament ouvre sa page — voir pli.js.) */
@@ -143,7 +161,7 @@ const norme = (s) => (s || '').replace(/\s+/g, '');
   });
 
   /* ===== ce qui ARRIVE : même horloge que les plis ===== */
-  await lireAnim("changement d'écran", "state.screen='parcours'; render();", '#app > .screen-enter:not(.screen-exit)');
+  releves.push(["changement d'écran", await lireGlisse("state.screen='parcours'; render();", '#app > .screen.pousse:not(.screen-exit)')]);
   await attente(700);
   /* La carte ne s'anime que sur une question NEUVE (fresh) : une partie déjà
      lancée plus haut dans ce banc a laissé lastPlayedQ sur zéro, et la carte
@@ -152,7 +170,9 @@ const norme = (s) => (s || '').replace(/\s+/g, '');
   await lireAnim('carte de question', "state.screen='mode'; render(); state.mode='solo'; startGame(); lastPlayedQ=-1; render();", '.question-card.animate');
   await lireAnim('réponse (option)', "", '.options-grid.animate .option-btn');
   await attente(700);
-  await lireAnim("retour à l'accueil", "state.screen='mode'; render();", '#app > .screen-enter:not(.screen-exit)');
+  /* Revenir à l'accueil, c'est fermer : l'écran de la partie repart vers la
+     droite sur --tr-ferme (lu plus bas, avec ce qui s'en va). */
+  const retourAccueil = await lireGlisse("state.screen='mode'; render();", '#app > .screen.screen-exit.retire');
   await attente(700);
   await lireAnim('fenêtre modale', "showModal({title:'Test', message:'Test.', okLabel:'Oui', cancelLabel:'Non'});", '.modal-card');
   await p.evaluate(() => { document.querySelectorAll('.modal-veil, .modal-back').forEach(m => m.remove()); });
@@ -188,7 +208,7 @@ const norme = (s) => (s || '').replace(/\s+/g, '');
      regarde une chose qui arrive, on ne regarde pas une chose qui s'en va.
      Mais il n'en faut QU'UNE — le voile des feuilles s'effaçait sur sa propre
      courbe (ease) à côté de la nôtre, deux horloges pour un seul geste. */
-  const fermetures = [];
+  const fermetures = [["retour à l'accueil", retourAccueil]];
   const lireFerme = async (nom, prep, sel) => {
     const r = await p.evaluate(({ prep, sel }) => new Promise(res => {
       // eslint-disable-next-line no-new-func
@@ -206,10 +226,10 @@ const norme = (s) => (s || '').replace(/\s+/g, '');
   };
   await p.setViewportSize({ width:393, height:852 }); await attente(300);
   await p.evaluate(() => { state.screen='mode'; render(); }); await attente(700);
-  /* L'écran QUI SORT n'a pas d'animation, et c'est voulu : sur les deux
-     moteurs de verre il disparaît net (« display:none »), pour ne pas faire
-     composer au navigateur les couches floutées de DEUX écrans à la fois.
-     On le relève pour mémoire, sans le compter comme une horloge de plus. */
+  /* L'écran QU'ON QUITTE n'a pas d'animation, et c'est voulu : (v345) il
+     reste posé dessous, immobile, pendant que le nouveau le recouvre comme
+     une page. On le relève pour mémoire, sans le compter comme une horloge
+     de plus. */
   const sortieEcran = await p.evaluate(() => new Promise(res => {
     state.screen = 'parcours'; render();
     setTimeout(() => { const e = document.querySelector('.screen-exit');
@@ -237,7 +257,7 @@ const norme = (s) => (s || '').replace(/\s+/g, '');
   const refFD = (refF.match(/([\d.]+)s/) || [,''])[1] + 's';
   const refFC = norme(refF.replace(/^[\d.]+s\s*/, ''));
   console.log('\n  --tr-ferme = ' + refF + '   (msFerme() = ' + await p.evaluate(()=>{ try{ return msFerme(); }catch(e){ return null; } }) + ' ms)\n');
-  console.log('  ' + 'écran qui sort'.padEnd(26) + 'disparaît net, sans animation : ' + sortieEcran + '  (voulu)');
+  console.log('  ' + 'écran quitté'.padEnd(26) + 'reste posé dessous, sans animation : ' + sortieEcran + '  (voulu)');
   for (const [nom, r] of fermetures) {
     if (!r) { console.log('  ' + nom.padEnd(26) + ' INTROUVABLE'); ok = false; continue; }
     if (r.manquant) { console.log('  ' + nom.padEnd(26) + ' ' + r.manquant); ok = false; continue; }

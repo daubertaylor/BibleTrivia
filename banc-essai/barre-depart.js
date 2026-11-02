@@ -3,18 +3,23 @@
      ne disparaît pas parfaitement bien. » Capture de Taylor, de l'accueil au
    Profil : la barre encore là, à moitié fondue, glissée de côté, par-dessus
    la page qui arrive. Avec le verre du jeu (gl-xf, sur tous les téléphones),
-   la page qu'on quitte disparaît net ; la barre prenait encore 0,2 s de
-   fondu, seule. Filmé image par image, sur iPhone et sur Android :
-     1. Accueil → Profil : à la première image du changement, la page qu'on
-        quitte ET la barre ont disparu, et la barre ne reparaît à aucune
-        image pendant que le Profil arrive ;
+   la page qu'on quitte disparaissait net ; la barre prenait encore 0,2 s de
+   fondu, seule.
+   (v345) Une seule animation de changement d'écran, celle des Réglages : la
+   page qui arrive passe PAR-DESSUS celle qu'on quitte, qui reste posée
+   dessous jusqu'à être recouverte ; au retour, la page repart vers la
+   droite et découvre l'accueil, déjà là. La barre fait ce que fait sa page.
+   Ce qui ne change pas, c'est le fond de la plainte : la barre ne se voit
+   JAMAIS par-dessus la page qui arrive. Filmé image par image, sur iPhone
+   et sur Android :
+     1. Accueil → Profil : à chaque image, la barre s'arrête au bord de la
+        page qui arrive (jamais au-delà) ; l'accueil reste entier dessous
+        tant qu'il n'est pas recouvert ; à la fin, la barre est rangée ;
      2. Groupes → une discussion : pareil ;
      3. Accueil → une partie Solo (son réglage) : pareil ;
-     4. Profil → Accueil : la barre revient AVEC la page, au même pas (son
-        décalage suit celui de la page à chaque image), et se pose ;
-     5. avec le verre peint (#paintedglass), où la page qu'on quitte s'efface
-        de côté : la barre s'efface avec elle (même opacité à chaque image),
-        et sous la page qui arrive ;
+     4. Profil → Accueil : la barre est déjà à sa place, immobile, et ne se
+        voit qu'à gauche de la page qui repart ; elle est entière à la fin ;
+     5. avec le verre peint (#paintedglass) : comme au 1 ;
      6. aucune erreur.
    Usage : node banc-essai/barre-depart.js [url] */
 const { chromium } = require('/opt/node22/lib/node_modules/playwright');
@@ -65,9 +70,19 @@ const OUTILS = () => {
       const apres = [...app.children].find(c => c.classList && c.classList.contains('screen') && !c.classList.contains('screen-exit') && c !== avant);
       const rb = b ? b.getBoundingClientRect() : null;
       const dx = (e) => { if (!e) return null; const m = new DOMMatrixReadOnly(getComputedStyle(e).transform); return m.m41; };
+      /* (v345) Ce qu'on voit de la barre : son bord droit, rogné. Et les
+         bords des pages qui bougent : celle qui arrive, celle qui repart. */
+      const cp = b ? (getComputedStyle(b).clipPath || 'none') : 'none';
+      const mi = /inset\(\s*[-\d.]+px\s+([-\d.]+)px/.exec(cp);
+      const retire = app.querySelector('.screen.retire');
+      /* Le bord VISIBLE de la page qui glisse : sa copie du décor (pleine
+         largeur, ombre comprise) ; l'écran commence après la marge. */
+      const fond = app.querySelector('.fond-pousse');
       film.push({ t: Math.round(t), barre: +vu(b).toFixed(3), barreX: rb ? Math.round((rb.left + rb.width / 2 - innerWidth / 2) * 10) / 10 : null,
         barreZ: b ? getComputedStyle(b).zIndex : null, part: +vu(avant).toFixed(3), arrive: apres ? +vu(apres).toFixed(3) : 0,
-        arriveX: apres ? dx(apres) : null });
+        arriveX: apres ? dx(apres) : null, bordArrive: (apres && fond && !retire) ? fond.getBoundingClientRect().left : null,
+        bordPart: (retire && fond) ? fond.getBoundingClientRect().left : null,
+        barreG: rb ? rb.left : null, barreVisD: rb ? (mi ? rb.right - parseFloat(mi[1]) : rb.right) : null });
       if (t < ms) requestAnimationFrame(pas); else ok(film);
     };
     requestAnimationFrame(() => { t0 = performance.now(); agir(); pas(); });
@@ -91,12 +106,17 @@ const OUTILS = () => {
       await p.waitForTimeout(1300);
       return { ctx, p };
     };
-    /* Le départ : aucune image où la barre se voit après le changement. */
+    /* Le départ (v345) : à aucune image la barre ne dépasse le bord de la
+       page qui arrive ; la page quittée reste entière dessous tant qu'elle
+       n'est pas recouverte ; à la fin, la barre est rangée. */
     const depart = (film) => {
-      const premiere = film[1] || film[0];
-      const restes = film.slice(1).filter(f => f.barre > 0.01);
-      return { ok: premiere.part === 0 && premiere.barre === 0 && !restes.length,
-        d: 'image 1 : page ' + premiere.part + ', barre ' + premiere.barre + (restes.length ? ' · barre encore vue à ' + restes.slice(0, 4).map(f => f.t + ' ms (' + f.barre + ')').join(', ') : ' · jamais revue') };
+      const vues = film.slice(1).filter(f => f.barre > 0.01 && f.bordArrive !== null && f.barreVisD !== null);
+      const debord = vues.length ? Math.max(...vues.map(f => f.barreVisD - Math.max(f.bordArrive, f.barreG))) : 0;
+      const enRoute = film.slice(1).filter(f => f.bordArrive !== null && f.bordArrive > 2);
+      const quitteeEntiere = enRoute.every(f => f.part > 0.99);
+      const fin = film[film.length - 1];
+      return { ok: debord <= 1 && enRoute.length >= 3 && quitteeEntiere && fin.barre === 0,
+        d: 'la barre dépasse le bord de la page qui arrive de ' + debord.toFixed(1) + ' px au plus (' + vues.length + ' images vues) · page quittée entière dessous : ' + quitteeEntiere + ' (' + enRoute.length + ' images en route) · à la fin, barre ' + fin.barre };
     };
     for (const [tel, ua] of [['iPhone', IOS], ['Android', AND]]) {
       console.log('  — ' + tel);
@@ -107,16 +127,20 @@ const OUTILS = () => {
       /* 1 */
       let film = await p.evaluate(() => window.__filmerChangement(() => openProfile(), 700));
       let r = depart(film);
-      dit('1. Accueil → Profil : la barre disparaît dans la même image que l\'accueil, et ne reparaît jamais', r.ok, r.d);
+      dit('1. Accueil → Profil : la barre ne passe jamais devant la page qui arrive, l\'accueil reste dessous, puis tout se range', r.ok, r.d);
 
       /* 4 — le retour, avec la page. */
       await p.waitForTimeout(500);
       film = await p.evaluate(() => window.__filmerChangement(() => { state.screen = 'mode'; render(); }, 800));
-      const suivi = film.filter(f => f.arriveX !== null && f.barre > 0.5).map(f => Math.abs((f.barreX || 0) - f.arriveX));
+      /* (v345) La page repart : la barre, déjà posée, ne se voit qu'à sa
+         gauche, sans bouger d'un pixel. */
+      const decouvre = film.slice(1).filter(f => f.bordPart !== null && f.barre > 0.01 && f.barreVisD !== null);
+      const debordR = decouvre.length ? Math.max(...decouvre.map(f => f.barreVisD - Math.max(f.bordPart, f.barreG))) : 0;
+      const immobile = film.slice(1).filter(f => f.barre > 0.01 && f.barreX !== null).every(f => Math.abs(f.barreX) < 1);
       const fin = film[film.length - 1];
-      dit('4. Profil → Accueil : la barre revient avec la page, au même pas, et se pose',
-        suivi.length >= 5 && Math.max(...suivi) <= 3 && fin.barre > 0.99 && Math.abs(fin.barreX) < 1,
-        'écart page/barre au plus ' + (suivi.length ? Math.max(...suivi).toFixed(1) : '?') + ' px sur ' + suivi.length + ' images · posée à ' + (fin.barreX === null ? '?' : fin.barreX) + ' px');
+      dit('4. Profil → Accueil : la barre, déjà posée, n\'apparaît qu\'à gauche de la page qui repart, et finit entière',
+        decouvre.length >= 3 && debordR <= 1 && immobile && fin.barre > 0.99 && Math.abs(fin.barreX) < 1 && fin.bordPart === null,
+        decouvre.length + ' images · dépasse le bord de la page de ' + debordR.toFixed(1) + ' px au plus · immobile : ' + immobile + ' · posée à ' + (fin.barreX === null ? '?' : fin.barreX) + ' px');
 
       /* 2 */
       await p.evaluate(() => { __grpDecor(); state.screen = 'groupes'; render(); });
@@ -137,18 +161,13 @@ const OUTILS = () => {
       const v = await ouvrir(ua, '#paintedglass');
       const peint = await v.p.evaluate(() => !document.documentElement.classList.contains('gl-xf') && !document.documentElement.classList.contains('gl-native'));
       film = await v.p.evaluate(() => window.__filmerChangement(() => openProfile(), 700));
-      const pendant = film.filter(f => f.part > 0.02 || f.barre > 0.02);
-      const ecart = pendant.length ? Math.max(...pendant.map(f => Math.abs(f.barre - f.part))) : 1;
-      const dessous = film.filter(f => f.barre > 0.02).every(f => +f.barreZ < 1);
-      const finie = film[film.length - 1].barre === 0;
-      dit('5. verre peint : la barre s\'efface avec la page (même opacité à chaque image), sous la page qui arrive',
-        peint && pendant.length >= 3 && ecart <= 0.1 && dessous && finie,
-        (peint ? '' : 'verre peint non actif · ') + pendant.length + ' images · écart max ' + ecart.toFixed(2) + ' · sous la page ' + dessous + ' · finie ' + finie);
+      r = depart(film);
+      dit('5. verre peint : pareil', peint && r.ok, (peint ? '' : 'verre peint non actif · ') + r.d);
       await v.ctx.close();
     }
     dit('6. aucune erreur', !errs.length, errs.slice(0, 3).join(' | '));
   } catch (e) { console.error(e); ko++; }
   finally { await nav.close(); }
-  console.log(ko ? '\n  ' + ko + ' défaut(s)' : '\n  OK — la barre du bas part et revient avec sa page, à l\'image près');
+  console.log(ko ? '\n  ' + ko + ' défaut(s)' : '\n  OK — la barre du bas fait ce que fait sa page, et ne passe jamais devant celle qui arrive');
   process.exit(ko ? 1 : 0);
 })();

@@ -136,9 +136,22 @@ const dit = (q, b, d) => { if (!b) ko++; console.log('  ' + (b ? 'OK  ' : 'KO  '
             return true; };
           const nomDe = (e) => e.tagName.toLowerCase() + '.' + [...e.classList].filter(c => !/^(has-gs|screen-enter|arrivee|reveal-in)$/.test(c)).slice(0, 3).join('.');
           const fautes = [], ombres = {}; let n = 0;
+          /* (v345) Une carte peut porter son ombre sur un calque à elle (::before),
+             de SA forme exacte — posé à fleur de ses quatre bords, au même
+             arrondi —, pour que Safari ne la redessine jamais carrée aux coins
+             (« Un livre », les testaments). C'est la même ombre au même
+             endroit : on la lit là, et seulement si le calque épouse la carte. */
+          const ombreDe = (e) => {
+            const cs = getComputedStyle(e), c = couches(cs.boxShadow);
+            if (c.length) return c;
+            const av = getComputedStyle(e, '::before');
+            const epouse = av.content !== 'none' && av.position === 'absolute' && ['top', 'right', 'bottom', 'left'].every(k => av[k] === '0px')
+              && av.borderRadius === cs.borderRadius;
+            return epouse ? couches(av.boxShadow) : c;
+          };
           for (const sel of enRelief) for (const e of document.querySelectorAll(sel)) {
             if (!visible(e)) continue; n++;
-            const c = couches(getComputedStyle(e).boxShadow);
+            const c = ombreDe(e);
             ombres[nomDe(e)] = c.join(' | ');
             if (c.length !== 1 || c[0] !== RELIEF) fautes.push(nomDe(e) + ' → ' + (c.join(' | ') || 'aucune ombre'));
           }

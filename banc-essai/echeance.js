@@ -5,8 +5,10 @@
    de temps reste-t-il avant minuit. L'information ne vivait que dans l'attribut
    « title » d'une case du calendrier — c'est-à-dire nulle part sur un
    téléphone, où personne ne survole. Elle s'écrit désormais à deux endroits :
-   l'intitulé de la bande des sept jours, en bas de l'accueil, et une phrase
-   entière dans la feuille de la flamme.
+   l'intitulé de la bande des sept jours, en tête de la carte des chiffres de
+   la Progression (en bas de l'accueil avant la v345, quand l'accueil n'avait
+   pas toujours la barre du bas), et une phrase entière dans la feuille de la
+   flamme.
 
    Ce banc vérifie les trois choses qui peuvent la rendre fausse ou illisible :
 
@@ -46,12 +48,8 @@ const ouvrirLaLangue = async (p, lg) => {
 };
 const accueil = async (ctx, { heure, daily, langue }) => {
   const p = await ctx.newPage();
-  /* PAS DE RÉSEAU, PAS DE BARRE PAR SURPRISE (v314). La barre du bas est
-     maintenant pour tout le monde dès que la sonde trouve les groupes sur le
-     serveur — et depuis que le conteneur joint Supabase, elle les trouvait :
-     la bande des sept jours quittait l'accueil pour la Progression. Ce banc
-     choisit lui-même s'il y a une barre ; la bibliothèque du CDN est donc
-     servie vide, et la sonde ne décide rien. */
+  /* PAS DE RÉSEAU. Un banc ne touche jamais le vrai serveur : la
+     bibliothèque du CDN est servie vide. */
   await p.route('**/supabase-js@2*', (route) => route.fulfill({ status:200, contentType:'application/javascript', body:'' }));
   if(heure) await p.clock.install({ time:heure });
   await ouvrirLaLangue(p, langue || 'fr');
@@ -63,6 +61,14 @@ const accueil = async (ctx, { heure, daily, langue }) => {
   /* L'écran de chargement dure quatre secondes : tant qu'il est là, la bande
      n'existe pas encore. On attend l'accueil, pas un délai. */
   await p.waitForFunction(() => typeof state !== 'undefined' && state.screen === 'mode', null, { timeout:20000 });
+  /* (v345) LA BANDE VIT DANS LA PROGRESSION. L'accueil a maintenant la barre
+     du bas pour tout le monde ; la rangée des sept jours, son intitulé et sa
+     flamme sont donc toujours en tête de la carte des chiffres de la
+     Progression (v303). On va la lire là où le joueur la voit, une fois la
+     page posée. */
+  await p.evaluate(() => openParcours());
+  await p.waitForFunction(() => state.screen === 'parcours' && !!document.querySelector('.parcours-ecran .sem-t'), null, { timeout:10000 });
+  await p.waitForTimeout(900);
   return p;
 };
 

@@ -194,6 +194,16 @@ const JAMAIS_A_L_ECRAN = [
      échoue. */
   { lg:'en', quoi:'Blocked in the phone settings', car:'idem, et seulement si le téléphone a refusé' },
   { lg:'en', quoi:'Cannot turn the reminder on right now.', car:"idem, et seulement si l'abonnement échoue" },
+  /* (v345) Le relevé du clavier, dans la Modération : la façon dont le jeu
+     est affiché se lit sur le TÉLÉPHONE qui a ouvert le clavier — le banc
+     tourne dans un onglet de navigateur, ni installé, ni en plein écran — et
+     « copié » ne se dit qu'après avoir touché « Copier le relevé ». */
+  { lg:'en', quoi:'installed app', car:"le relevé d'un téléphone où le jeu est INSTALLÉ ; le banc tourne dans un onglet" },
+  { lg:'en', quoi:'browser full screen', car:"le relevé d'un navigateur passé en plein écran ; le banc ne l'est pas" },
+  { lg:'en', quoi:'Reading copied', car:"le petit mot après « Copier le relevé », seulement quand on l'a touché" },
+  { lg:'es', quoi:'app instalada', car:"le relevé d'un téléphone où le jeu est INSTALLÉ ; le banc tourne dans un onglet" },
+  { lg:'es', quoi:'pantalla completa del navegador', car:"le relevé d'un navigateur passé en plein écran ; le banc ne l'est pas" },
+  { lg:'es', quoi:'Medición copiada', car:"le petit mot après « Copier le relevé », seulement quand on l'a touché" },
 ];
 
 const MEME_DANS_LES_DEUX = [
@@ -484,6 +494,10 @@ const ouvrirLaLangue = async (p, lg) => {
        SIX PLACES). */
     ['Groupe · la page d\'un joueur', () => { __fermerTout(); state.mode='group';
       state.teams=[{name:'Taylor'},{name:'Joueur 2'},{name:'Joueur 3'}]; state.screen='setup'; render(); ouvrirJoueur(1); }],
+    /* (v345) Le déroulé du Mode Groupe vit dans sa page, « Comment jouer »,
+       ouverte par le rond (i) de la carte des joueurs. */
+    ['Groupe · comment jouer', () => { __fermerTout(); state.mode='group';
+      state.teams=[{name:'Taylor'},{name:'Joueur 2'}]; state.screen='setup'; render(); ouvrirDeroule(); }],
   ];
 
   /* ===== LE DUEL, DE SON DÉBUT À SES CINQ FINS =====
@@ -955,8 +969,12 @@ const ouvrirLaLangue = async (p, lg) => {
     ['Modération · rien',  async () => { __fermerTout(); __grpDecor(); const l = listeGroupe; listeGroupe = async () => [];
       ouvrirModeration(); await new Promise(r => setTimeout(r, 60)); listeGroupe = l; }],
     ['Modération · signalements', async () => { __fermerTout(); __grpDecor(); const l = listeGroupe;
+      /* (v346) Et une photo signalée : la carte dit « Photo inappropriée »
+         (la raison telle que la Modération la lit). */
       listeGroupe = async () => [{ id:1, raison:'harcelement', details:'Amen', le:new Date().toISOString(), groupe:'g-1', groupe_nom:'Lee',
-                                   message:7, texte:'Amen', cible:'u-2', cible_nom:'Sam', par_nom:'Kim', nb:2 }];
+                                   message:7, texte:'Amen', cible:'u-2', cible_nom:'Sam', par_nom:'Kim', nb:2 },
+                                 { id:2, raison:'photo', details:'', le:new Date().toISOString(), groupe:null, groupe_nom:null,
+                                   message:null, texte:null, cible:'u-3', cible_nom:'Lee', par_nom:'Kim', nb:1 }];
       ouvrirModeration(); await new Promise(r => setTimeout(r, 60)); listeGroupe = l; }],
     ['Modération · bannir', () => { traiterSignalement(1, 'bannir'); }],
     ['Modération · fermer', () => { __fermerTout(); traiterSignalement(1, 'fermer_groupe'); }],
@@ -1041,6 +1059,18 @@ const ouvrirLaLangue = async (p, lg) => {
       grp.courant = 'g-1'; state.screen = 'groupe'; render(); }],
     /* LES PAGES QUE LES STORES DEMANDENT */
     ['Confidentialité',    () => { __fermerTout(); state.screen='mode'; render(); ouvrirConfidentialite(); }],
+    /* (v346) LES MENTIONS LÉGALES, à côté de Confidentialité ; et LA PHOTO
+       D'UN JOUEUR, qu'on signale d'un geste (« Signaler cette photo »), puis
+       la page du signalement, la raison « photo » déjà cochée. Sans photo à
+       montrer, la visionneuse ne s'ouvre pas : on lui en prête une, le temps
+       de l'ouvrir. */
+    ['Mentions légales',   () => { __fermerTout(); state.screen='mode'; render(); ouvrirMentions(); }],
+    ['Groupes · la photo d\'un joueur', () => { __fermerTout(); __grpDecor(); grp.etat.moderateur = false;
+      state.screen = 'groupes'; render();
+      const pv = photoValeur; photoValeur = () => "url('data:image/gif;base64,R0lGODlhAQABAAAAACw=')";
+      try { ouvrirPhotoGrand('u:u-2'); } finally { photoValeur = pv; } }],
+    ['Groupes · signaler une photo', () => { __fermerTout(); __grpDecor(); grp.etat.moderateur = false;
+      state.screen = 'groupes'; render(); signalerMessage(null, 'u-2', null, 'photo'); }],
     ['Compte · supprimer', () => { __fermerTout(); __grpDecor(); state.screen='profile'; render(); demanderSuppressionCompte(); }],
     ['Compte · suppression ratée', async () => { __fermerTout(); __grpDecor(); state.screen='profile'; render();
       const a = appelGroupe; appelGroupe = async () => ({ ok:false, erreur:'reseau' }); await supprimerMonCompte(); appelGroupe = a; }],
@@ -1524,6 +1554,12 @@ const ouvrirLaLangue = async (p, lg) => {
     }
 
     /* ===== PREMIÈRE BARRIÈRE : du français reconnaissable dans le rendu ===== */
+    /* (v346) UN TITRE DE BIBLE AU MILIEU D'UNE PHRASE. Les mentions légales
+       nomment les traductions du jeu — « …, Ostervald, Bible Annotée, …: all
+       in the public domain. » Le titre est un nom propre (voir TOLERE), mais
+       la phrase qui l'entoure se juge comme les autres : on retire le titre,
+       on lit le reste. */
+    const SANS_TITRES = /Bible Annotée|La Sainte Bible|Louis Segond|David Martin/g;
     const vus = new Set();
     let compte = 0;
     for(const [nom, textes] of p2.releve){
@@ -1531,7 +1567,8 @@ const ouvrirLaLangue = async (p, lg) => {
       for(const { t, ou } of textes){
         if(sansBanque && LIEUX_QUESTION.test(String(ou))) continue;
         if(TOLERE.some(r => r.test(t))) continue;
-        if(!(cible.accent.test(t) || cible.re.test(t))) continue;
+        const tt = t.replace(SANS_TITRES, '');
+        if(!(cible.accent.test(tt) || cible.re.test(tt))) continue;
         const cle = 'fr:' + t.slice(0, 80);
         if(vus.has(cle)) continue;
         vus.add(cle);
@@ -1645,8 +1682,22 @@ const ouvrirLaLangue = async (p, lg) => {
     const debutsVersets = dico.versets.map(x => aplat(x).slice(0, 24)).filter(x => x.length >= 12);
     const lusHorsVersets = [...lusHorsQuestions].filter(t => !debutsVersets.some(d => t.includes(d)));
     const valeurs = new Set(dico.textes.map(aplat));
+    /* (v345) UN MORCEAU EST UN MOT ENTIER. « Win » (le « Victoire » du texte
+       partagé) était déclaré VU dans « Window: 915 px at rest… », la ligne du
+       relevé du clavier : trois lettres au début d'un autre mot ne sont pas
+       une phrase affichée. Le morceau doit commencer et finir là où un mot
+       commence et finit. */
+    const motEntier = (t, v) => {
+      let i = t.indexOf(v);
+      while(i >= 0){
+        const avant = i > 0 ? t[i - 1] : '', apres = t[i + v.length] || '';
+        if(!/[\p{L}\p{N}]/u.test(avant) && !/[\p{L}\p{N}]/u.test(apres)) return true;
+        i = t.indexOf(v, i + 1);
+      }
+      return false;
+    };
     const dansUnTexteComposé = (v) => {
-      for(const t of lusHorsVersets) if(t !== v && t.indexOf(v) >= 0 && !valeurs.has(t)) return true;
+      for(const t of lusHorsVersets) if(t !== v && motEntier(t, v) && !valeurs.has(t)) return true;
       return false;
     };
     const jamais = [...new Set(dico.textes)].filter(v => !/\{/.test(v)
