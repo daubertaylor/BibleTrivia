@@ -1173,6 +1173,27 @@ const ouvrirLaLangue = async (p, lg) => {
     ['Jeux · retour à l\'accueil', () => { __fermerTout(); jeu = null; state.screen = 'mode'; render(); majBarre(); }],
   );
 
+  /* (v353) LE PARCOURS, en dernier : ses leçons écrivent leur mémoire, et
+     rien de ce qui précède ne doit la voir. Le chemin neuf, une leçon et la
+     question avant de la quitter, la fin d'une leçon avec une erreur, puis
+     sans faute qui finit l'unité, le chemin après, et le Parcours fini (le
+     chemin, puis la carte de l'accueil). */
+  const PARCOURS_ETAPES = [
+    ['Parcours · le chemin', () => { __fermerTout(); localStorage.removeItem('bt_parcours'); state.screen = 'mode'; render(); ouvrirChemin(); }],
+    ['Parcours · une leçon', () => { __fermerTout(); commencerLecon(0, 0); }],
+    ['Parcours · quitter la leçon', () => { confirmLeaveGame(); }],
+    ['Parcours · fin de leçon', () => { __fermerTout(); commencerLecon(0, 0);
+      for(let i = 0; i < 20 && state.screen === 'play'; i++){ const q = currentQ(); soloAnswer(q.shuffledOptions.findIndex(o => i === 0 ? o !== q.correct : o === q.correct)); nextQuestion(); } }],
+    ['Parcours · unité finie, sans faute', () => { __fermerTout();
+      localStorage.setItem('bt_parcours', JSON.stringify({ v:1, faites:{ 'genese:1':'2026-01-01', 'genese:2':'2026-01-01', 'genese:3':'2026-01-01', 'genese:4':'2026-01-01' } }));
+      commencerLecon(0, 4);
+      for(let i = 0; i < 20 && state.screen === 'play'; i++){ const q = currentQ(); soloAnswer(q.shuffledOptions.findIndex(o => o === q.correct)); nextQuestion(); } }],
+    ['Parcours · le chemin après', () => { __fermerTout(); state.screen = 'chemin'; render(); }],
+    ['Parcours · tout fait', () => { __fermerTout();
+      const f = {}; PARCOURS.forEach((u, i) => { for(let l = 0; l < LECONS_PAR_UNITE; l++) f[cleLecon(i, l)] = '2026-01-01'; });
+      localStorage.setItem('bt_parcours', JSON.stringify({ v:1, faites:f })); state.screen = 'chemin'; render(); }],
+    ['Parcours · accueil, tout fait', () => { __fermerTout(); state.screen = 'mode'; render(); }],
+  ];
   const ETAPES = [
     ['Accueil',           () => { state.screen='mode'; render(); }],
     ['Réglages',          () => { openSettings(); }],
@@ -1430,6 +1451,7 @@ const ouvrirLaLangue = async (p, lg) => {
     }],
     ...GROUPES_SOCIAUX,
     ...JEUX_ETAPES,
+    ...PARCOURS_ETAPES,
   ];
 
     const releve = new Map();
