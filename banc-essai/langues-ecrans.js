@@ -106,6 +106,10 @@ const TOLERE = [
      détecteur y voit le français « tes » ; le français, lui, écrit
      « 1 Thess. ». Le motif est exact : ces deux abrégés-là, rien d'autre. */
   /^[12] Tes\.$/,
+  /* (v350) L'ADRESSE DE L'ÉDITEUR EST UN NOM PROPRE. Les mentions légales la
+     donnent telle que la Poste la connaît, en toutes langues (voir aussi
+     MEME_DANS_LES_DEUX). Le motif est exact : cette adresse, rien d'autre. */
+  /^Boulevard de la Résistance et de la Déportation, 49100 Angers$/,
 ];
 
 const PREP = (lg) => {
@@ -225,6 +229,8 @@ const MEME_DANS_LES_DEUX = [
   { quoi:/^pts$/, ou:/jx-chiffres/, car:'l\'unité des points, sous son nombre en gras' },
   { quoi:/^[^\p{L}]*$/u,                       car:'aucune lettre — chiffres, ponctuation, icône' },
   { quoi:/^Taylor Dauber$/, ou:/ment-nom/, car:"(v349) l'éditeur, dans les mentions légales : un nom propre, le même dans toutes les langues" },
+  { quoi:/^07 84 04 57 70$/, ou:/ment-tel/, car:"(v350) le téléphone de l'éditeur, dans les mentions légales : un numéro, le même dans toutes les langues" },
+  { quoi:/^Boulevard de la Résistance et de la Déportation, 49100 Angers$/, ou:/ment-adr/, car:"(v350) l'adresse de l'éditeur : la même dans toutes les langues" },
   { quoi:/^(Français|English|Español|Português|Deutsch|Italiano)$/, car:'une langue s\'écrit dans sa langue' },
   /* Une adresse e-mail ne se traduit pas : c'est celle du joueur, il l'a
      tapée lui-même. Elle s'affiche telle quelle sur la carte du compte. */
@@ -1242,6 +1248,9 @@ const ouvrirLaLangue = async (p, lg) => {
       const q = currentQ(); if (q) soloAnswer(q.shuffledOptions.indexOf(q.correct)); }],
     ['Fin de partie',     () => { state.screen='end'; render(); }],
     ['Nom en ligne',      () => { state.screen='online-name'; render(); }],
+    /* (v350) « Continuer » sans prénom : le petit message sous le champ.
+       saveName('') s'arrête au message, avant toute connexion. */
+    ['Nom en ligne · sans nom', () => { state.screen='online-name'; render(); saveName(''); }],
     ['Hub en ligne',      () => { net.connected=1; net.error=''; state.screen='online'; render(); }],
     ['Hub · erreur',      () => { net.error = T("La connexion au salon a échoué. Réessaie."); render(); }],
     /* La carte de recherche d'adversaire : un écran entier que le banc ne

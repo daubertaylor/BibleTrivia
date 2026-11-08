@@ -1166,6 +1166,9 @@
   .btn-primary.is-waiting, .btn-replay.is-waiting{ --glass-tint: rgb(252,248,241); color:var(--ink-soft); cursor:default; pointer-events:none; box-shadow:var(--relief); }
   #roomStartBtn{ margin-top:0.9rem; }
   .error-msg{ color:#ff8a76; font-size:0.82rem; text-align:center; margin-top:var(--e-2); min-height:1.2em; text-shadow:0 1px 6px rgba(0,0,0,0.35); }
+  /* (v350) Le champ du prénom refuse « Continuer » à vide : il dit non de la tête. */
+  .text-input.refus{ animation:champRefus 0.36s cubic-bezier(0.36,0.07,0.19,0.97); }
+  @keyframes champRefus{ 0%,100%{ transform:translateX(0); } 20%{ transform:translateX(-7px); } 40%{ transform:translateX(6px); } 60%{ transform:translateX(-4px); } 80%{ transform:translateX(2px); } }
 
   /* ---------- Play ---------- */
   /* Rangée d'infos de jeu : UNE seule ligne (nowrap) -> la flamme de série reste
@@ -5074,6 +5077,13 @@
      franche quand elle redescend) → le logo semble léviter. */
   .hero-zone::after{ content:""; position:absolute; left:50%; bottom:-0.15rem; width:46%; height:0.7rem; transform:translateX(-50%); background:radial-gradient(ellipse at center, rgba(10,8,6,0.42), rgba(10,8,6,0) 72%); filter:blur(3px); z-index:0; pointer-events:none; animation:heroShadow 5s ease-in-out infinite; }
   .hero-zone.show-verse::after{ opacity:0; transition:opacity var(--tr-ouvre); }
+  /* (v350) « L'ombre censée refléter l'icône est toujours à travers le
+     verset. » L'opacité ci-dessus ne suffisait pas : l'animation de
+     respiration (heroShadow) réécrit l'opacité à chaque image, et une
+     animation passe avant toute règle. Le filtre, lui, n'est pas animé :
+     c'est par lui que l'ombre s'efface, au pas du verset qui arrive. */
+  .hero-zone::after{ transition:filter var(--tr-ouvre); }
+  .hero-zone.show-verse::after{ filter:blur(3px) opacity(0); }
   @keyframes heroShadow{ 0%,100%{ transform:translateX(-50%) scale(1); opacity:0.5; } 50%{ transform:translateX(-50%) scale(0.78); opacity:0.26; } }
   .hero-icon-btn{ display:block; position:relative; z-index:1; background:none; border:none; padding:0; border-radius:26%; box-shadow:none; pointer-events:auto;
     -webkit-touch-callout:none; -webkit-user-select:none; user-select:none; touch-action:manipulation; }
@@ -6554,7 +6564,14 @@
   .grp-h.jx-h{ margin-top:0.1rem; }
   /* La grille : deux colonnes ; un jeu seul sur sa ligne la prend entière. */
   .jx-grille{ display:grid; grid-template-columns:1fr 1fr; gap:0.7rem; }
-  .mode-card.jx-tuile{ margin:0; flex-direction:column; align-items:flex-start; justify-content:flex-start; gap:0.6rem; padding:calc(0.95rem + 1px); min-height:9.6rem; }
+  /* (v350) « Je préférais l'ancienne version, juste adaptée pour que ce soit
+     plus cohérent en termes d'espacement. » Les tuiles restent ; elles ne
+     s'allongent plus pour rien : plus de hauteur minimale (elle laissait un
+     trou entre la phrase et le bas), la même marge que la carte du jeu du
+     jour, et une phrase coupée en deux lignes égales plutôt qu'un mot seul
+     sur la seconde. */
+  .mode-card.jx-tuile{ margin:0; flex-direction:column; align-items:flex-start; justify-content:flex-start; gap:0.6rem; padding:calc(1rem + 1px) calc(0.95rem + 1px); }
+  .jx-tuile .jx-desc{ text-wrap:balance; }
   .jx-tuile-txt{ display:flex; flex-direction:column; gap:0.2rem; min-width:0; }
   .mode-card.jx-tuile.large{ grid-column:1 / -1; flex-direction:row; align-items:center; min-height:0; }
   .mode-card.jx-tuile.large .jx-tuile-txt{ flex:1; }
@@ -7032,6 +7049,7 @@ const TEXTES = {
     "Avec le code reçu d'un ami":"With the code a friend sent you",
     "C'est parti…":"Here we go…",
     "Choisis ton nom":"Choose your name",
+    "Écris ton prénom pour continuer : c'est le nom que verront les autres joueurs.":"Write your first name to continue: it's the name other players will see.",
     "Code de la partie":"Game code",
     "Continuer":"Continue",
     "Couleur":"Color",
@@ -7827,6 +7845,8 @@ const TEXTES = {
     "Mentions légales":"Legal notice",
     "Éditeur et directeur de la publication :":"Publisher and publication director:",
     "Contact :":"Contact:",
+    "Téléphone :":"Phone:",
+    "Adresse :":"Address:",
     "Hébergeur :":"Host:",
     "Cloudflare, Inc., 101 Townsend Street, San Francisco, CA 94107, États-Unis — +1 888 993 5273.":"Cloudflare, Inc., 101 Townsend Street, San Francisco, CA 94107, United States — +1 888 993 5273.",
     "GitHub, Inc., 88 Colin P. Kelly Jr. Street, San Francisco, CA 94107, États-Unis — support.github.com.":"GitHub, Inc., 88 Colin P. Kelly Jr. Street, San Francisco, CA 94107, United States — support.github.com.",
@@ -7919,6 +7939,7 @@ const TEXTES = {
     "Avec le code reçu d'un ami":"Con el código que te pasó un amigo",
     "C'est parti…":"Allá vamos…",
     "Choisis ton nom":"Elige tu nombre",
+    "Écris ton prénom pour continuer : c'est le nom que verront les autres joueurs.":"Escribe tu nombre para continuar: es el nombre que verán los demás jugadores.",
     "Code de la partie":"Código de la partida",
     "Continuer":"Continuar",
     "Couleur":"Color",
@@ -8713,6 +8734,8 @@ const TEXTES = {
     "Mentions légales":"Aviso legal",
     "Éditeur et directeur de la publication :":"Editor y director de la publicación:",
     "Contact :":"Contacto:",
+    "Téléphone :":"Teléfono:",
+    "Adresse :":"Dirección:",
     "Hébergeur :":"Alojamiento:",
     "Cloudflare, Inc., 101 Townsend Street, San Francisco, CA 94107, États-Unis — +1 888 993 5273.":"Cloudflare, Inc., 101 Townsend Street, San Francisco, CA 94107, Estados Unidos — +1 888 993 5273.",
     "GitHub, Inc., 88 Colin P. Kelly Jr. Street, San Francisco, CA 94107, États-Unis — support.github.com.":"GitHub, Inc., 88 Colin P. Kelly Jr. Street, San Francisco, CA 94107, Estados Unidos — support.github.com.",
@@ -11352,7 +11375,7 @@ const SUPABASE_ANON_KEY = "sb_publishable_FDJ_R0foC7uIeHmxVrj6rA_2NeIgW2a";
    remontée d'un téléphone ne vaut rien si on ne sait pas QUELLE version
    tournait. Elle doit rester égale au CACHE de sw.js — c'est ce que vérifie
    banc-essai/version.js, qui refuse de laisser publier les deux en désaccord. */
-const VERSION_JEU = "v349";
+const VERSION_JEU = "v350";
 
 /* ===================== QUAND ÇA CASSE CHEZ UN JOUEUR =====================
    « Si quelque chose casse chez cinq d'entre eux sur un modèle de téléphone
@@ -12781,7 +12804,15 @@ function openOnline(){
 }
 function saveName(v){
   const n=(v||"").trim().slice(0,18);
-  if(!n) return;
+  /* (v350) « Lorsqu'on clique sur Continuer sans avoir mis de nom, il faut
+     un petit message. » Le bouton ne faisait rien, en silence. */
+  if(!n){
+    const e = document.getElementById("nomErreur"), z = document.getElementById("nameInput");
+    if(e) e.textContent = T("Écris ton prénom pour continuer : c'est le nom que verront les autres joueurs.");
+    if(z){ z.classList.remove("refus"); void z.offsetWidth; z.classList.add("refus"); try{ z.focus({ preventScroll:true }); }catch(err){} }
+    try{ if(navigator.vibrate) navigator.vibrate(12); }catch(err){}
+    return;
+  }
   profile.name = n; saveProfile();
   openOnline();
 }
@@ -16036,6 +16067,34 @@ try{
   vv.addEventListener("resize", apply);
   vv.addEventListener("scroll", apply);
   if(vk){ try{ vk.addEventListener("geometrychange", apply); }catch(e){} }
+  /* ===== (v350) LE CLAVIER QUI FINIT DE MONTER SANS LE DIRE =====
+     « Sur Android, je dois faire un petit glissement vers le haut sur la
+     barre d'écriture pour qu'elle s'ajuste. » (photos : la barre à moitié
+     sous la rangée d'outils de Gboard.) Le jeu se calait sur la dernière
+     taille ANNONCÉE de la zone visible ; or un clavier qui finit de monter
+     — la rangée d'outils de Gboard arrive après les touches — peut changer
+     la zone sans qu'aucun événement ne parte. Le glissement, lui, en faisait
+     partir un : d'où la barre qui se remettait en place.
+     Pendant un peu plus d'une seconde et demie après l'arrivée du clavier,
+     le jeu RELIT donc la zone visible à chaque image (une lecture, pas un
+     calcul de mise en page), et ne se recale que si elle a bougé. */
+  let guetZone = 0, guetZoneFin = 0, zoneVue = "";
+  const guetterZone = (ms)=>{
+    guetZoneFin = Math.max(guetZoneFin, performance.now() + (ms || 1600));
+    if(guetZone) return;
+    const pas = ()=>{
+      guetZone = 0;
+      if(!isField() || document.hidden){ zoneVue = ""; return; }
+      let r = 0; try{ const b = !redim && vk && vk.boundingRect; r = b ? Math.round(b.height) : 0; }catch(e){}
+      const v = Math.round(vv.height) + "," + Math.round(vv.offsetTop || 0) + "," + innerHeight + "," + r;
+      if(v !== zoneVue){ const avant = zoneVue; zoneVue = v; if(avant) apply(); }
+      if(performance.now() < guetZoneFin) guetZone = requestAnimationFrame(pas);
+    };
+    guetZone = requestAnimationFrame(pas);
+  };
+  document.addEventListener("focusin", ()=>{ if(isField()) guetterZone(1600); });
+  vv.addEventListener("resize", ()=>{ if(isField()) guetterZone(1200); });
+  if(vk){ try{ vk.addEventListener("geometrychange", ()=>{ if(isField()) guetterZone(1200); }); }catch(e){} }
   /* (v345) Le relevé du clavier (voir LE RELEVÉ DU CLAVIER), une fois posé. */
   vv.addEventListener("resize", ()=>{ if(isField()) relever(); });
   if(vk){ try{ vk.addEventListener("geometrychange", ()=>{ if(isField()) relever(); }); }catch(e){} }
@@ -25619,7 +25678,12 @@ function manchesCombien(n){
 function versionsDeLaLangue(v){
   return biblesDeLaLangue().map(b => (LANGUE === "fr" && b.cle === "lsg1910") ? v.t : ((VERSETS_ALT[b.cle] || {})[v.r] || "")).filter(Boolean);
 }
-function motRe(m){ return new RegExp("(?<![\\p{L}\\p{M}])" + m.replace(/[.*+?^${}()|[\]\\]/g, "\\$&") + "(?![\\p{L}\\p{M}])", "iu"); }
+/* (v350) UN MOT ENTIER, SANS REGARDER EN ARRIÈRE. Le « regard en arrière »
+   des expressions n'existe dans Safari que depuis iOS 16.4 : sur un iPhone resté plus bas (un XS en iOS
+   16.3), construire l'expression levait une erreur et « Trouve l'erreur »
+   ne démarrait pas. Ce qui précède le mot est donc LU (début, ou tout sauf
+   une lettre) et rendu tel quel : même résultat, partout. */
+function motRe(m){ return new RegExp("(^|[^\\p{L}\\p{M}])(" + m.replace(/[.*+?^${}()|[\]\\]/g, "\\$&") + ")(?![\\p{L}\\p{M}])", "iu"); }
 function manchesErreur(n){
   const out = [], echanges = JEU_ECHANGES[LANGUE] || JEU_ECHANGES.fr;
   for(const v of melanger(HERO_VERSES)){
@@ -25633,7 +25697,7 @@ function manchesErreur(n){
     const mots = t.split(/\s+/).filter(Boolean);
     const cibles = mots.map((m, i) => motRe(a).test(m) ? i : -1).filter(i => i >= 0);
     const k = cibles[Math.floor(Math.random() * cibles.length)];
-    mots[k] = mots[k].replace(motRe(a), (x) => x[0] === x[0].toUpperCase() && x[0] !== x[0].toLowerCase() ? z[0].toUpperCase() + z.slice(1) : z);
+    mots[k] = mots[k].replace(motRe(a), (x, avant, mot) => avant + (mot[0] === mot[0].toUpperCase() && mot[0] !== mot[0].toLowerCase() ? z[0].toUpperCase() + z.slice(1) : z));
     out.push({ r:v.r, mots, faux:k, juste:t.split(/\s+/).filter(Boolean)[k], choix:null });
   }
   return out;
@@ -25824,10 +25888,29 @@ function enteteJeux(){
       <button class="icon-btn" onclick="openSettings()" aria-label="${T("Réglages")}"><span class="ico" style="width:1.22rem;height:1.22rem;">${ICONS.gear}</span></button>
     </div>`;
 }
+/* ===== (v350) « NOUVEAU » DIT UNE VRAIE NOUVEAUTÉ =====
+   « Le badge Nouveau jusqu'à ce qu'on finisse une partie : si c'est bien,
+     laisse-le ; sinon retire-le, pour un jeu plus classique. »
+   Tel quel, il ne disait rien : pour un joueur qui arrive, TOUT est nouveau
+   — cinq « Nouveau » sur cinq tuiles, et une ligne de plus dans chacune.
+   Il ne garde donc que son vrai sens : un jeu AJOUTÉ après l'arrivée du
+   joueur, tant qu'il n'y a pas joué. Les jeux connus à la première ouverture
+   sont notés (bt_jeux_connus) ; aujourd'hui, personne ne voit donc de
+   « Nouveau » — le prochain jeu ajouté l'aura. Une tuile sans record ni
+   nouveauté n'a plus de dernière ligne : elle est plus courte, sans vide. */
+function jeuxConnus(){
+  let l = null;
+  try{ l = JSON.parse(localStorage.getItem("bt_jeux_connus") || "null"); }catch(e){}
+  if(!Array.isArray(l)){
+    l = JEUX.map(j => j.id);
+    try{ localStorage.setItem("bt_jeux_connus", JSON.stringify(l)); }catch(e){}
+  }
+  return l;
+}
 function recordHtml(id){
   const r = lireJeux()[id];
-  return r && r.parties ? `<span class="jx-record"><span class="ico">${ICONS.trophy}</span>${escapeHtml(Tf("Record {p}\u00a0%", { p:r.record }))}</span>`
-                        : `<span class="jx-record jx-neuf">${T("Nouveau")}</span>`;
+  if(r && r.parties) return `<span class="jx-record"><span class="ico">${ICONS.trophy}</span>${escapeHtml(Tf("Record {p}\u00a0%", { p:r.record }))}</span>`;
+  return jeuxConnus().indexOf(id) < 0 ? `<span class="jx-record jx-neuf">${T("Nouveau")}</span>` : "";
 }
 function renderJeux(){
   const el = document.createElement("div");
@@ -28005,12 +28088,28 @@ function majFil(){
   if(z._repli){ clearTimeout(z._repli); z._repli = 0; }
   poserFil(z, html);
 }
+/* (v350) « À certains moments, il y a un nouveau message qui s'affiche
+   alors qu'il n'y en a pas. » La pastille « Nouveaux messages » paraissait à
+   CHAQUE redessin du fil lu plus haut — or le fil se redessine pour bien
+   d'autres choses qu'un message : un « Vu » qui passe au bleu, un message
+   supprimé, une photo arrivée, le retour sur l'app. Elle ne paraît plus que
+   si un message est vraiment arrivé en bas du fil : un numéro plus grand que
+   le dernier qu'on avait. */
+function dernierMessageDuFil(z){
+  let n = 0;
+  z.querySelectorAll("[data-m]").forEach(e => { const v = +e.getAttribute("data-m"); if(v > n) n = v; });
+  return n;
+}
 function poserFil(z, html){
   const enBas = z.scrollHeight - z.scrollTop - z.clientHeight < 90;
   const haut = z.scrollTop;
+  const avant = dernierMessageDuFil(z);
   poserSurPlace(z, html);
   if(enBas) descendreFil(false);
-  else { z.scrollTop = haut; const b = document.getElementById("filBas"); if(b) b.hidden = false; }
+  else {
+    z.scrollTop = haut;
+    if(dernierMessageDuFil(z) > avant){ const b = document.getElementById("filBas"); if(b) b.hidden = false; }
+  }
   voilerFil(z);
 }
 /* ===== (v329) UN MESSAGE ARRIVE, LE RESTE NE BOUGE PAS =====
@@ -30626,6 +30725,54 @@ async function confirmerRappels(endpoint){
 function relevesClavier(){
   try{ const l = JSON.parse(localStorage.getItem("bt_clavier_diag") || "[]"); return Array.isArray(l) ? l : []; }catch(e){ return []; }
 }
+/* ===== (v350) LES SORTIES DE CHAMP, DANS LE RELEVÉ =====
+   « Lorsque je colle un texte depuis le presse-papiers de mon clavier, le
+   clavier se ferme juste après. » Rien dans le jeu ne ferme le clavier après
+   une saisie — pas à la lecture du code. Il faut donc VOIR ce qui se passe
+   sur ce téléphone-là : chaque fois qu'un champ perd le curseur, le jeu note
+   (sur le téléphone seulement, les cinq dernières fois) la dernière saisie
+   (collage, frappe…), si c'est le jeu lui-même qui a retiré le curseur — et
+   d'où, en trois lignes —, ce qui l'a pris ensuite, et la zone visible.
+   « Copier le relevé », dans la Modération, l'emporte avec le reste. Aucun
+   texte saisi n'est noté : seulement sa nature et sa longueur. */
+const CLE_SORTIES = "bt_clavier_sorties";
+(function noterSortiesDeChamp(){
+  const champ = (t) => !!t && (t.tagName === "INPUT" || t.tagName === "TEXTAREA");
+  let saisie = null, retrait = null;
+  document.addEventListener("input", (e) => { if(champ(e.target)) saisie = { genre:String(e.inputType || "").slice(0, 24), n:String(e.data || "").length, t:Date.now() }; }, true);
+  document.addEventListener("paste", (e) => { if(champ(e.target)) saisie = { genre:"paste", n:0, t:Date.now() }; }, true);
+  try{
+    const blurDOrigine = HTMLElement.prototype.blur;
+    HTMLElement.prototype.blur = function(){
+      if(this === document.activeElement && champ(this)){
+        const pile = String((new Error()).stack || "").split("\n").slice(2, 5).map(x => x.trim().replace(/https?:\/\/[^\s)]*\//g, "").slice(0, 70));
+        retrait = { pile, t:Date.now() };
+      }
+      return blurDOrigine.apply(this, arguments);
+    };
+  }catch(e){}
+  document.addEventListener("focusout", (e) => {
+    const t = e.target;
+    if(!champ(t)) return;
+    try{
+      const now = Date.now(), vv = window.visualViewport;
+      const s = { t:now, champ:String(t.id || t.className || t.tagName).slice(0, 30),
+        vers:e.relatedTarget ? String(e.relatedTarget.id || e.relatedTarget.className || e.relatedTarget.tagName).slice(0, 30) : null,
+        saisie:(saisie && now - saisie.t < 4000) ? { genre:saisie.genre, n:saisie.n, il_y_a:now - saisie.t } : null,
+        par_le_jeu:(retrait && now - retrait.t < 300) ? retrait.pile : null,
+        cache:!!document.hidden, vv:vv ? Math.round(vv.height) : null, fen:innerHeight,
+        ecran:(typeof state !== "undefined" && state) ? state.screen : "" };
+      let l = [];
+      try{ l = JSON.parse(localStorage.getItem(CLE_SORTIES) || "[]"); }catch(err){}
+      if(!Array.isArray(l)) l = [];
+      l.unshift(s);
+      localStorage.setItem(CLE_SORTIES, JSON.stringify(l.slice(0, 5)));
+    }catch(err){}
+  }, true);
+})();
+function sortiesDeChamp(){
+  try{ const l = JSON.parse(localStorage.getItem(CLE_SORTIES) || "[]"); return Array.isArray(l) ? l : []; }catch(e){ return []; }
+}
 function lignesClavierDiag(){
   const ligne = (t) => `<div class="rd-l"><span class="rd-m att">${ICONS.info}</span><span class="rd-t">${escapeHtml(frSpace(t))}</span></div>`;
   const l = relevesClavier();
@@ -30640,7 +30787,7 @@ function lignesClavierDiag(){
     Tf("Marge du bas : {a} px au repos, {b} px clavier ouvert", { a:p.sab, b:o.sab }),
     Tf("Hauteur visible retenue : {v} px · champ de {h} à {b} px", { v:r.visible, h:c.haut, b:c.bas })
   ].map(ligne).join("")
-    + `<div class="mod-act"><button class="grp-pill calme" onclick="copierDansPressePapier(JSON.stringify(relevesClavier()), T('Relevé copié'))">${T("Copier le relevé")}</button></div>`;
+    + `<div class="mod-act"><button class="grp-pill calme" onclick="copierDansPressePapier(JSON.stringify({ clavier:relevesClavier(), sorties:sortiesDeChamp() }), T('Relevé copié'))">${T("Copier le relevé")}</button></div>`;
 }
 function renderModeration(){
   setTimeout(rafraichirTousGroupes, 0);
@@ -30756,8 +30903,14 @@ function choixPublicite(){ try{ window.googlefc.showRevocationMessage(); }catch(
    LE STATUT : avec la publicité, l'éditeur n'est plus « à titre non
    professionnel » ; la loi demande alors aussi une adresse et un téléphone.
    Ce sont des données personnelles de Taylor : elles ne s'écrivent ici
-   qu'avec son accord, et ce qu'il choisira d'y mettre. */
+   qu'avec son accord, et ce qu'il choisit d'y mettre.
+   (v350) Taylor les a données pour cette page, le 08/11/2026 : « pour le
+   numéro de téléphone tu peux mettre 0784045770 », et l'adresse, « Angers
+   49100, et dans l'adresse bv c'est boulevard ». La même page existe en
+   ligne, pour qui n'a pas le jeu : confidentialite.html (le message
+   européen d'AdSense demande l'adresse d'une politique de confidentialité). */
 const MAIL_YADA = "yadaquiz.app@gmail.com";
+const EDITEUR = { nom:"Taylor Dauber", adresse:"Boulevard de la Résistance et de la Déportation, 49100 Angers", tel:"07 84 04 57 70", telLien:"+33784045770" };
 const HEBERGEURS = {
   cloudflare: "Cloudflare, Inc., 101 Townsend Street, San Francisco, CA 94107, États-Unis — +1 888 993 5273.",
   github: "GitHub, Inc., 88 Colin P. Kelly Jr. Street, San Francisco, CA 94107, États-Unis — support.github.com."
@@ -30773,16 +30926,20 @@ function sonderHebergeur(){
 }
 function ouvrirMentions(){
   const lignes = [
-    ["Éditeur et directeur de la publication :", "Taylor Dauber"],
+    ["Éditeur et directeur de la publication :", EDITEUR.nom],
+    EDITEUR.adresse ? ["Adresse :", "@adresse"] : null,
+    ["Téléphone :", "@tel"],
     ["Contact :", MAIL_YADA],
     ["Hébergeur :", "@hebergeur"],
     ["Données personnelles :", "@confidentialite"]
-  ];
+  ].filter(Boolean);
   ouvrirFeuilleGroupe("mentionsVeil", T("Mentions légales"), ICONS.info,
     `<div class="conf-liste">${lignes.map(([t, d]) => {
       const texte = d === MAIL_YADA ? `<a class="lien-mail" href="mailto:${MAIL_YADA}">${MAIL_YADA}</a>`
         : d === "@hebergeur" ? `<span class="ment-heb">${escapeHtml(T(HEBERGEURS[hebergeurSuppose()]))}</span>`
         : d === "@confidentialite" ? `<button class="lien-conf ment-conf" onclick="ouvrirConfidentialite()">${T("Confidentialité")}</button>`
+        : d === "@tel" ? `<a class="lien-mail ment-tel" href="tel:${EDITEUR.telLien}">${escapeHtml(EDITEUR.tel)}</a>`
+        : d === "@adresse" ? `<span class="ment-adr">${escapeHtml(EDITEUR.adresse)}</span>`
         : `<span class="ment-nom">${escapeHtml(d)}</span>`;
       return `<p class="conf-l"><b>${escapeHtml(T(t))}</b> ${texte}</p>`;
     }).join("")}</div>`);
@@ -32215,7 +32372,7 @@ function renderEndSolo(){
 }
 function renderEnd(){
   const el = document.createElement("div");
-  el.className = "screen";
+  el.className = "screen" + (state.mode === "group" ? " fin-groupe" : "");
   relacherToasts();   // l'écran des résultats est là : les bandeaux peuvent passer
   el.innerHTML = renderHeader(T("Résultats"), false) + (state.mode==="group" ? renderEndGroup() : renderEndSolo());
   // Animate the solo progress ring + percentage after paint
@@ -33057,7 +33214,8 @@ function renderOnlineName(){
       <h2 class="online-hero-title">${T("Choisis ton nom")}</h2>
       <p class="online-hero-sub">${T("Il sera visible par tes amis pendant les duels.")}</p>
     </div>
-    <input class="text-input" id="nameInput" maxlength="18" placeholder="${T("Ton prénom")}" value="${escapeHtml(profile.name)}" autocomplete="off" enterkeyhint="go" oninput="profile.name=this.value.slice(0,18)" onkeydown="if(event.key==='Enter'){event.preventDefault();this.blur();saveName(this.value);}">
+    <input class="text-input" id="nameInput" maxlength="18" placeholder="${T("Ton prénom")}" value="${escapeHtml(profile.name)}" autocomplete="off" enterkeyhint="go" oninput="profile.name=this.value.slice(0,18); const e=document.getElementById('nomErreur'); if(e) e.textContent='';" onkeydown="if(event.key==='Enter'){event.preventDefault();this.blur();saveName(this.value);}">
+    <div class="error-msg nom-erreur" id="nomErreur" role="alert"></div>
     <label class="field-label" style="margin-top:var(--e-3)">${T("Couleur")}</label>
     <div class="color-row" role="radiogroup" aria-label="${T("Couleur")}">
       ${TEAM_COLORS.map(c=>`<button class="color-dot${c===profile.color?' sel':''}" data-c="${c}" onclick="setProfileColor('${c}')" role="radio" aria-checked="${c===profile.color}" aria-label="${T('couleur')}"><span class="gt-disque" style="background:${c}"></span><span class="cd-ck">${ACH_CHECK}</span></button>`).join("")}
@@ -34069,10 +34227,69 @@ const SERRE_INTERIEUR = [
   /* (v345) L'écran du Mode Groupe : ses cartes cèdent un peu de leur
      rembourrage pour tenir dans le téléphone, comme celui du Solo (voir
      L'ÉCRAN DU MODE GROUPE TIENT DANS L'ÉCRAN). */
-  [".mise-groupe > .card", "padding", 0.55],
+  [".mise-groupe > .card", "padding", 0.45],
+  /* ===== (v350) TROIS ÉCRANS QUI DÉFILAIENT ENCORE SUR L'IPHONE DE TAYLOR =====
+     « Le bouton pour lancer la partie n'est pas dans l'écran. » — « Sur la
+       progression c'est pareil : sur certains téléphones c'est bien ajusté,
+       sur d'autres comme le mien je dois swipe. » — « Sur l'écran des
+       résultats en mode groupe, je veux que je n'aie pas à glisser vers le
+       bas si c'est possible. »
+     Mesuré avec les marges réelles d'un iPhone 17 Pro installé (62 px
+     d'encoche, 34 de barre) : le Mode Groupe dépassait de 91 px pour 96 de
+     rattrapables — il tenait au pixel près dans le navigateur des bancs, et
+     plus du tout sur le téléphone, dont les polices ne mesurent pas
+     exactement pareil : le resserrement abandonnait, tout défilait, le
+     bouton sortait par le bas. Les résultats du Groupe dépassaient de 92 px
+     pour 35 rattrapables, la Progression de 61 pour 49. Sur un 13 mini et
+     sur un SE, aucun des trois n'avait de chance.
+     Ce qui cède en plus, ce sont encore des ESPACES — et deux décors :
+     — Mode Groupe : l'air sous les titres des cartes et avant celui du
+       chrono, l'écart entre les deux rangées de joueurs, et la hauteur des
+       places, jamais sous ce qu'elles portent (voir plancherDesPlaces).
+       Aucune puce ne change de taille : la durée, le chrono et le
+       testament restent ceux du Solo, au pixel près ; seul l'écart entre
+       deux rangées de puces peut céder.
+       (Le rembourrage des cartes, qui cédait déjà, peut maintenant
+       descendre à 45 % au lieu de 55 : c'est ce qui fait tenir un SE.)
+     — Résultats du Groupe : le trophée (il peut perdre deux cinquièmes de sa
+       taille : c'est un décor, le podium dit déjà qui a gagné), l'air autour
+       de la phrase et sous le trophée, celui des lignes du classement, et
+       celui au-dessus des boutons. Les pastilles, les noms, les scores et
+       les boutons « − » et « + » gardent leur taille.
+     — Progression : le rembourrage des deux cartes, l'air sous la semaine,
+       l'écart entre les rangées d'objectifs, et l'air entre l'icône d'un
+       objectif, son nom et son compte. Les rangées des testaments, qu'on
+       touche, ne bougent pas. */
+  [".mise-groupe .card h2", "margin-bottom", 0.35], [".mise-groupe .card .chip-row + h2", "margin-top", 0.45],
+  [".mise-groupe .chip-row", "row-gap", 0.5],
+  [".mise-groupe .places", "row-gap", 0.6], [".mise-groupe .pl-btn", "height", plancherDesPlaces],
+  [".fin-groupe .end-medal", "width", 0.6], [".fin-groupe .end-medal", "margin-bottom", 0.4],
+  [".fin-groupe .end-hero", "padding-bottom", 0.3], [".fin-groupe .end-sub", "margin-top", 0.4], [".fin-groupe .end-sub", "margin-bottom", 0.4],
+  [".fin-groupe .podium-avatar", "margin-bottom", 0.5], [".fin-groupe .podium-score", "margin-bottom", 0.5],
+  [".fin-groupe .rank-row", "padding", 0.45], [".fin-groupe .rank-row", "margin-bottom", 0.5], [".fin-groupe .end-actions", "padding-top", 0.4],
+  [".parcours-ecran .parcours-sum", "padding", 0.5], [".parcours-ecran .semaine", "margin-bottom", 0.4],
+  [".parcours-ecran .ach-card", "padding", 0.5], [".parcours-ecran .ach-grid", "row-gap", 0.45], [".parcours-ecran .ach", "row-gap", 0.5],
   [".question-card", "padding", 0.5], [".fact-card", "padding", 0.5], [".option-btn", "padding", 0.5],
   [".option-btn", "min-height", 0.82], [".question-card", "min-height", 0.75], [".options-grid", "row-gap", 0.5]
 ];
+/* (v350) UNE PLACE DU MODE GROUPE PERD DE LA HAUTEUR, JAMAIS CE QU'ELLE PORTE :
+   sa pastille et son nom (deux lignes au plus), son rembourrage et deux
+   pixels d'air. Les six se mesurent ensemble et prennent le même plancher —
+   une rangée garde des places de même hauteur, quel que soit le nom le plus
+   long. Et jamais sous les trois quarts de leur taille. */
+function plancherDesPlaces(v, el){
+  const g = el.closest(".places");
+  let h = 0;
+  Array.prototype.forEach.call(g ? g.querySelectorAll(".pl-btn") : [el], b => {
+    const cs = getComputedStyle(b);
+    let c = 0, n = 0;
+    Array.prototype.forEach.call(b.children, e => { if(getComputedStyle(e).position !== "absolute"){ c += e.offsetHeight; n++; } });
+    if(!n) return;
+    c += (n - 1) * (parseFloat(cs.rowGap) || 0) + (parseFloat(cs.paddingTop) || 0) + (parseFloat(cs.paddingBottom) || 0) + 2;
+    if(c > h) h = c;
+  });
+  return Math.min(v, Math.max(v * 0.75, h));
+}
 function elementsSerrables(ecran){
   const els = [];
   const prendre = (c)=>{
@@ -34115,7 +34332,7 @@ function serrerEcran(ecran, siDepasse){
   SERRE_INTERIEUR.forEach(([sel, prop, f]) => ecran.querySelectorAll(sel).forEach(el => {
     if(prop === "padding"){ lever(el, "padding-top", v => v * f); lever(el, "padding-bottom", v => v * f); }
     else if(prop === "min-height") lever(el, "min-height", v => Math.max(sel === ".option-btn" ? 44 : 0, v * f));
-    else lever(el, prop, v => v * f);
+    else lever(el, prop, typeof f === "function" ? (v => f(v, el)) : (v => v * f));
   }));
   if(!leviers.length) return;
   /* Même tout resserré, ça ne tiendrait pas : on ne touche à RIEN. Pas même

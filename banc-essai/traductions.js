@@ -259,6 +259,13 @@ for(const [a, b] of [['const TEXTES = {', '\n};'], ['const BANK = {', '\n  ]\n};
                      ['const MINOR_PROPHETS = [', '];'], ['const TORAH = [', '];'],
                      ['const GOSPELS = [', '];'], ['const MOIS_FR = [', '];'],
                      ['const SEM_LETTRES = [', '];'],
+                     /* (v350) L'IDENTITÉ DE L'ÉDITEUR, dans les mentions
+                        légales : un nom, une adresse postale, un téléphone.
+                        Ce n'est pas de l'interface, et cela ne se traduit
+                        pas : « Boulevard de la Résistance et de la
+                        Déportation » reste son nom en anglais et en
+                        espagnol. */
+                     ['const EDITEUR = {', '};'],
                      /* La sonde d'ouverture : un panneau de mesure pour moi,
                         jamais montré à un joueur. Rien à y traduire. */
                      ['const SONDE = (function(){', 'document.body.appendChild(box);'],

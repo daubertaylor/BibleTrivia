@@ -23,6 +23,13 @@ consentement européen créé dans « Confidentialité et messages ». `ads.txt`
 à la racine. Un navigateur piloté (les bancs) ne charge même pas le script de
 Google : il y lançait de vraies demandes d'annonces avec le compte de Taylor.
 
+**La Confidentialité en ligne (v350)** : <https://yadaquiz.app/confidentialite.html>,
+avec les mentions légales, en français, anglais et espagnol. C'est l'adresse à
+donner au message européen d'AdSense (et à tout formulaire qui demande une
+politique de confidentialité). Ses textes sont ceux du jeu (Réglages →
+Confidentialité, Mentions légales) : `banc-essai/page-confidentialite.js`
+vérifie qu'ils le restent.
+
 Le jeu s'appelait BibleTrivia jusqu'à la v202. **Le nom s'écrit maintenant à un
 seul endroit dans le code**, la constante `NOM_DU_JEU` — tout ce que le joueur
 lit le prend de là. Quatre endroits ne peuvent pas la lire, parce qu'ils sont

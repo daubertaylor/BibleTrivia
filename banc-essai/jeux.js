@@ -7,8 +7,9 @@
    en touchant les vrais boutons, sur un iPhone :
      1. LA BARRE A TROIS ONGLETS — Accueil, Jeux, Groupes — et « Jeux » mène
         à l'écran des jeux, allumé ; le jeu du jour est le même à chaque
-        lecture de la journée ; les cinq jeux sont là, « Nouveau » tant qu'on
-        n'y a pas joué ;
+        lecture de la journée ; les cinq jeux sont là — sans « Nouveau » pour
+        qui les trouve en arrivant : depuis la v350, « Nouveau » ne marque
+        qu'un jeu arrivé APRÈS le joueur, tant qu'il n'y a pas joué ;
      2. CHAQUE JEU, JOUÉ JUSTE de la première à la dernière manche : chaque
         manche dit « Bien joué ! » et donne 10 points, « Suivant » puis « Voir
         les résultats » ; la fin dit 100 % et « Nouveau record ! », le record
@@ -185,9 +186,20 @@ const REGLES = (n) => {
       tuiles: [...document.querySelectorAll('.jx-grille .jx-tuile .jx-nom')].map(x => x.textContent),
       neufs: document.querySelectorAll('.jx-grille .jx-record.jx-neuf').length, h: document.querySelector('.jx-h')?.textContent }));
     dit('1. la barre a trois onglets : Accueil, Jeux, Groupes', barre.length === 3 && barre[0].startsWith('accueil:') && barre[1] === 'jeux:Jeux' && barre[2].startsWith('groupes:'), barre.join(' · '));
-    dit('1. « Jeux » ouvre l\'écran des jeux, onglet allumé ; le jeu du jour en tête, le même à chaque lecture ; les cinq jeux, « Nouveau »',
+    dit('1. « Jeux » ouvre l\'écran des jeux, onglet allumé ; le jeu du jour en tête, le même à chaque lecture ; les cinq jeux, sans « Nouveau » pour qui arrive',
       hub.ecran === 'jeux' && hub.actif === 'jeux' && hub.titre === 'Jeux' && hub.sur === 'Le jeu du jour' && hub.duJour === hub.duJour2
-      && hub.tuiles.length === 5 && hub.neufs === 5 && hub.h === 'Tous les jeux', JSON.stringify(hub));
+      && hub.tuiles.length === 5 && hub.neufs === 0 && hub.h === 'Tous les jeux', JSON.stringify(hub));
+    /* (v350) Un jeu arrivé après le joueur — ici, comme si Verset en morceaux
+       venait d'être ajouté : lui seul dit « Nouveau », jusqu'à ce qu'on y
+       joue (la tuile dit alors son record : voir 2). */
+    const neuf = await p.evaluate(async () => {
+      const connus = JSON.parse(localStorage.getItem('bt_jeux_connus') || 'null');
+      localStorage.setItem('bt_jeux_connus', JSON.stringify(JEUX.map(j => j.id).filter(id => id !== 'morceaux')));
+      render(); await new Promise(z => setTimeout(z, 400));
+      return { connus, neufs: [...document.querySelectorAll('.jx-grille .jx-tuile')].map((t, i) => t.querySelector('.jx-neuf') ? JEUX[i].id : null).filter(Boolean) };
+    });
+    dit('1. « Nouveau » marque seulement un jeu arrivé après le joueur (les jeux connus à l\'arrivée sont notés)',
+      Array.isArray(neuf.connus) && neuf.connus.length === 5 && neuf.neufs.join() === 'morceaux', JSON.stringify(neuf));
     await p.locator('.jx-une').click(); await pose(p);
     const une = await p.evaluate(() => ({ ecran: state.screen, id: jeu && jeu.id, duJour: jeuDuJour().id }));
     dit('1. la carte du jeu du jour lance le jeu du jour', une.ecran === 'jeu' && une.id === une.duJour, JSON.stringify(une));
@@ -249,8 +261,10 @@ const REGLES = (n) => {
        cada personaje con su lugar », du verbe unir) : ils ne trahissent rien
        chez lui. */
     const FRANCAIS = {
-      en: /[àâèéêëîïôöùûç]|\b(le|la|les|des|une|est|pour|avec|dans|du|au|et)\b/i,
-      es: /[àâèêëîïôöùûç]|\b(des|est|pour|avec|dans|du|au|et)\b/i,
+      /* (v350) Entre deux LETTRES, pas entre deux « \b » : sans le drapeau u,
+         « á » n'est pas une lettre pour \b, et « está » contenait « est ». */
+      en: /[àâèéêëîïôöùûç]|(?<!\p{L})(le|la|les|des|une|est|pour|avec|dans|du|au|et)(?!\p{L})/iu,
+      es: /[àâèêëîïôöùûç]|(?<!\p{L})(des|est|pour|avec|dans|du|au|et)(?!\p{L})/iu,
     };
     for (const lg of ['en', 'es']) {
       const A = ATTENDU[lg];
