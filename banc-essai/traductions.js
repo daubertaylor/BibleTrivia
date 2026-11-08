@@ -266,6 +266,10 @@ for(const [a, b] of [['const TEXTES = {', '\n};'], ['const BANK = {', '\n  ]\n};
                         Déportation » reste son nom en anglais et en
                         espagnol. */
                      ['const EDITEUR = {', '};'],
+                     /* (v353) Les unités du Parcours : des noms de livres en
+                        clé (traduits par nomLivre à l'affichage), et des noms
+                        d'unité, qui sont au dictionnaire. */
+                     ['const PARCOURS = [', '\n];'],
                      /* La sonde d'ouverture : un panneau de mesure pour moi,
                         jamais montré à un joueur. Rien à y traduire. */
                      ['const SONDE = (function(){', 'document.body.appendChild(box);'],

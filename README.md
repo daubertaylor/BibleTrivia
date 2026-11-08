@@ -30,6 +30,15 @@ politique de confidentialité). Ses textes sont ceux du jeu (Réglages →
 Confidentialité, Mentions légales) : `banc-essai/page-confidentialite.js`
 vérifie qu'ils le restent.
 
+**Le Parcours (v353)** : « le Duolingo de la Bible ». Un chemin dans l'ordre
+de la Bible, de la Genèse à l'Apocalypse : douze unités (`PARCOURS`), cinq
+leçons chacune, six questions par leçon, tirées des livres de l'unité, des
+plus faciles aux plus difficiles. Une erreur revient à la fin de la leçon.
+Une leçon allume la flamme du jour et fait avancer la Progression, comme
+toute partie. Ce qui est fait se garde dans `bt_parcours` (la date de chaque
+leçon), ne recule jamais et monte dans le compte. Il est vérifié par
+`banc-essai/parcours.js`.
+
 Le jeu s'appelait BibleTrivia jusqu'à la v202. **Le nom s'écrit maintenant à un
 seul endroit dans le code**, la constante `NOM_DU_JEU` — tout ce que le joueur
 lit le prend de là. Quatre endroits ne peuvent pas la lire, parce qu'ils sont

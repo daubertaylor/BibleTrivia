@@ -990,6 +990,7 @@
   }
   .mode-icon, .daily-card .dc-ico, .parcours-card .pc-ico{ width:2.7rem; height:2.7rem; border-radius:var(--r-ico); display:flex; align-items:center; justify-content:center; flex-shrink:0; padding:0.6rem; color:#fff; box-shadow:inset 0 1px 0 rgba(255,255,255,0.26), 0 2px 7px rgba(15,12,10,0.24); }
   .mode-icon.group{ background:var(--pal-corail); box-shadow:inset 0 1px 0 rgba(255,255,255,0.26), 0 2px 7px var(--pal-corail-o); }
+  .mode-icon.chemin{ background:var(--pal-jade); box-shadow:inset 0 1px 0 rgba(255,255,255,0.26), 0 2px 7px var(--pal-jade-o); }
   .mode-icon.solo{ background:var(--pal-or); box-shadow:inset 0 1px 0 rgba(255,255,255,0.26), 0 2px 7px var(--pal-or-o); }
   .mode-text{ display:flex; flex-direction:column; gap:0.16rem; min-width:0; }
   .mode-title{ font-family:'Poppins',sans-serif; font-weight:600; font-size:0.98rem; color:var(--ink); }
@@ -4403,6 +4404,21 @@
      Entre les deux, ils prennent le surplus à parts égales. */
   .ec-carte{ display:block; flex:1 1 0; min-height:clamp(0.62rem, calc(1.55 * var(--hu)), 0.95rem);
     max-height:clamp(0.9rem, calc(3 * var(--hu)), 1.7rem); }
+  /* (v353) SIX CARTES, ET RIEN SOUS LA BARRE. Le Parcours arrive en tête de
+     l'accueil. Mesuré à toutes les hauteurs (banc-essai/accueil.js) : la
+     dernière carte passait sous la barre de 22 à 24 px entre 560 et 700 px,
+     et de 1 à 13 px jusqu'à 750. Ce qui tient une carte à sa hauteur sur un
+     écran court, c'est son icône et sa marge intérieure : la marge se
+     resserre d'un tiers (le logo, le verset et les écarts ne bougent pas),
+     et sous 600 px l'icône aussi. Ces règles viennent APRÈS celles des cartes,
+     à poids égal : c'est l'ordre qui décide. */
+  @media (max-height:750px) and (orientation:portrait){
+    .home-cartes > button{ padding-top:calc(clamp(0.38rem, calc(1.05 * var(--hu)), 0.82rem) + 1px); padding-bottom:calc(clamp(0.38rem, calc(1.05 * var(--hu)), 0.82rem) + 1px);
+      max-height:clamp(3.1rem, calc(9.1 * var(--hu)), 5.8rem); }
+  }
+  @media (max-height:600px) and (orientation:portrait){
+    .home-cartes .mode-icon, .home-cartes .dc-ico, .home-cartes .pc-ico{ width:2.4rem; height:2.4rem; padding:0.52rem; }
+  }
   /* L'espaceur du bas n'est plus le seul à absorber : il redevient ce qu'il
      doit être, une RESPIRATION DE SECTION entre les cartes et la rangée des
      sept jours — de l'ordre de deux écarts de cartes, pas de huit. */
@@ -6588,6 +6604,50 @@
   .jx-ico.indigo, .jx-pastille.indigo{ background:var(--pal-indigo); box-shadow:inset 0 1px 0 rgba(255,255,255,0.26), 0 2px 7px var(--pal-indigo-o); }
   .jx-ico.bronze, .jx-pastille.bronze{ background:var(--pal-bronze); box-shadow:inset 0 1px 0 rgba(255,255,255,0.26), 0 2px 7px var(--pal-bronze-o); }
   .jx-ico.rose, .jx-pastille.rose{ background:var(--pal-rose); box-shadow:inset 0 1px 0 rgba(255,255,255,0.26), 0 2px 7px var(--pal-rose-o); }
+  /* ===================== (v353) LE PARCOURS =====================
+     Un chemin de pierres rondes, qui serpente sous la bannière de chaque
+     unité. Une pierre faite porte sa coche, celle à faire son étoile et la
+     bulle « Commencer », les suivantes un cadenas, en pierre claire. Aucune
+     bordure : la couleur est dans la matière (dégradé de la palette), le
+     relief dans l'ombre — comme les icônes de l'accueil. */
+  .chemin-ecran{ padding-bottom:calc(var(--sab, 0px) + 2.2rem); }
+  .ch-tete{ display:flex; flex-direction:column; gap:0.28rem; }
+  .ch-sur{ font-family:'Poppins',sans-serif; font-size:0.72rem; font-weight:700; letter-spacing:0.09em; text-transform:uppercase; color:var(--ink-soft); }
+  .ch-titre{ font-family:'Poppins',sans-serif; font-size:1.2rem; font-weight:600; color:var(--ink); line-height:1.25; }
+  .ch-jauge{ height:0.5rem; border-radius:99px; background:rgba(60,45,30,0.1); overflow:hidden; margin:0.45rem 0 0.15rem; }
+  .ch-jauge i{ display:block; height:100%; width:calc(var(--p) * 100%); min-width:0.5rem; border-radius:inherit; background:var(--pal-jade); }
+  .ch-compte{ font-size:0.8rem; font-weight:600; color:var(--ink); }
+  .ch-aide{ font-size:0.78rem; color:var(--ink-soft); line-height:1.35; }
+  .ch-unites{ display:flex; flex-direction:column; gap:1.5rem; margin-top:0.35rem; }
+  .ch-bandeau{ position:relative; display:flex; flex-direction:column; gap:0.12rem; padding:0.85rem 3.4rem 0.9rem 1.05rem;
+    border-radius:var(--r-l); color:#fff; box-shadow:inset 0 1px 0 rgba(255,255,255,0.26), 0 4px 14px var(--ch-o); }
+  .ch-bandeau .ch-num{ font-size:0.7rem; font-weight:700; letter-spacing:0.09em; text-transform:uppercase; opacity:0.88; }
+  .ch-bandeau b{ font-family:'Poppins',sans-serif; font-size:1.08rem; font-weight:600; line-height:1.25; }
+  .ch-bandeau small{ font-size:0.8rem; opacity:0.92; }
+  .ch-bandeau .ch-score{ position:absolute; top:50%; right:1.05rem; transform:translateY(-50%); font-family:'Poppins',sans-serif; font-weight:600; font-size:0.95rem; }
+  .ch-unite.fermee .ch-bandeau{ opacity:0.66; }
+  .ch-pas{ display:flex; flex-direction:column; align-items:center; gap:1rem; padding:1.25rem 0 0.35rem; }
+  .ch-noeud{ position:relative; display:flex; flex-direction:column; align-items:center; transform:translateX(calc(var(--x) * 4.4rem)); }
+  .ch-pierre{ width:4.1rem; height:4.1rem; border-radius:50%; display:flex; align-items:center; justify-content:center; padding:1.08rem; color:#fff;
+    box-shadow:inset 0 -0.28rem 0 rgba(0,0,0,0.13), inset 0 1px 0 rgba(255,255,255,0.3), 0 4px 12px var(--ch-o); }
+  .ch-pierre .ico{ width:100%; height:100%; display:flex; }
+  .ch-pierre .ico svg{ width:100%; height:100%; }
+  .ch-noeud.courante .ch-pierre{ width:4.75rem; height:4.75rem; padding:1.2rem; animation:chPouls 2.4s ease-in-out infinite; }
+  .ch-noeud.fermee .ch-pierre{ background:var(--surface); color:var(--ink-soft); box-shadow:inset 0 -0.28rem 0 rgba(60,45,30,0.08), inset 0 1px 0 rgba(255,255,255,0.7), 0 2px 8px rgba(15,12,10,0.08); }
+  .ch-bulle{ margin-top:0.55rem; padding:0.5rem 1.15rem; border-radius:99px; background:var(--surface); font-family:'Poppins',sans-serif; font-weight:600; font-size:0.9rem; color:var(--ink);
+    box-shadow:inset 0 1px 0 rgba(255,255,255,0.7), 0 4px 14px rgba(15,12,10,0.12); }
+  @keyframes chPouls{ 0%, 100%{ transform:scale(1); } 50%{ transform:scale(1.06); } }
+  .ch-noeud.s-allume .ch-pierre{ animation:chAllume 0.9s cubic-bezier(.2,.9,.3,1.3) 0.35s both; }
+  @keyframes chAllume{ 0%{ transform:scale(0.62); filter:saturate(0); } 60%{ transform:scale(1.12); } 100%{ transform:scale(1); filter:none; } }
+  .ch-t-jade{ background:var(--pal-jade); --ch-o:var(--pal-jade-o); }
+  .ch-t-bronze{ background:var(--pal-bronze); --ch-o:var(--pal-bronze-o); }
+  .ch-t-vert{ background:var(--pal-vert); --ch-o:var(--pal-vert-o); }
+  .ch-t-ciel{ background:var(--pal-ciel); --ch-o:var(--pal-ciel-o); }
+  .ch-t-ardoise{ background:var(--pal-ardoise); --ch-o:var(--pal-ardoise-o); }
+  .ch-t-rose{ background:var(--pal-rose); --ch-o:var(--pal-rose-o); }
+  .ch-t-pourpre{ background:var(--pal-pourpre); --ch-o:var(--pal-pourpre-o); }
+  .ch-t-indigo{ background:var(--pal-indigo); --ch-o:var(--pal-indigo-o); }
+  .end-actions.lecon-fin .btn-replay{ flex:1; }
   .jx-ico.pourpre, .jx-pastille.pourpre{ background:var(--pal-pourpre); box-shadow:inset 0 1px 0 rgba(255,255,255,0.26), 0 2px 7px var(--pal-pourpre-o); }
   .jx-nom{ font-family:'Poppins',sans-serif; font-weight:600; font-size:0.98rem; color:var(--ink); line-height:1.25; }
   .jx-desc{ font-size:0.8rem; color:var(--ink-soft); line-height:1.35; }
@@ -7107,6 +7167,41 @@ const TEXTES = {
     "C'est parti…":"Here we go…",
     "Choisis ton nom":"Choose your name",
     "Écris ton prénom pour continuer : c'est le nom que verront les autres joueurs.":"Write your first name to continue: it's the name other players will see.",
+    /* (v353) LE PARCOURS */
+    "Parcours":"Path",
+    "Au commencement":"In the beginning",
+    "L'Exode et le désert":"The Exodus and the wilderness",
+    "La Terre promise":"The Promised Land",
+    "Les rois d'Israël":"The kings of Israel",
+    "L'exil et le retour":"Exile and return",
+    "Sagesse et poésie":"Wisdom and poetry",
+    "Les grands prophètes":"The major prophets",
+    "Les petits prophètes":"The minor prophets",
+    "La vie de Jésus":"The life of Jesus",
+    "L'Église naissante":"The early Church",
+    "Les lettres de Paul":"Paul's letters",
+    "Lettres et Apocalypse":"Letters and Revelation",
+    "Unité {n} · {nom}":"Unit {n} · {nom}",
+    "Unité {n}":"Unit {n}",
+    "Ton parcours":"Your path",
+    "Toute la Bible est parcourue":"The whole Bible is done",
+    "Parcours terminé":"Path complete",
+    "De la Genèse à l'Apocalypse":"From Genesis to Revelation",
+    "{n} leçon sur {t}":"{n} of {t} lessons",
+    "{n} leçons sur {t}":"{n} of {t} lessons",
+    "Six questions par leçon. Une erreur revient à la fin.":"Six questions per lesson. A mistake comes back at the end.",
+    "Leçon {n}":"Lesson {n}",
+    "faite":"done",
+    "verrouillée":"locked",
+    "Commencer":"Start",
+    "Leçon terminée":"Lesson complete",
+    "Sans faute\u00a0!":"Flawless!",
+    "{n} sur {t} du premier coup":"{n} of {t} on the first try",
+    "{unite} · leçon {l} sur {m}":"{unite} · lesson {l} of {m}",
+    "au 1er essai":"first try",
+    "Unité terminée\u00a0!":"Unit complete!",
+    "Quitter la leçon\u00a0?":"Leave the lesson?",
+    "Tu la reprendras depuis le début.":"You'll start it again from the beginning.",
     "Code de la partie":"Game code",
     "Continuer":"Continue",
     "Couleur":"Color",
@@ -8005,6 +8100,41 @@ const TEXTES = {
     "C'est parti…":"Allá vamos…",
     "Choisis ton nom":"Elige tu nombre",
     "Écris ton prénom pour continuer : c'est le nom que verront les autres joueurs.":"Escribe tu nombre para continuar: es el nombre que verán los demás jugadores.",
+    /* (v353) LE PARCOURS */
+    "Parcours":"Camino",
+    "Au commencement":"En el principio",
+    "L'Exode et le désert":"El Éxodo y el desierto",
+    "La Terre promise":"La Tierra prometida",
+    "Les rois d'Israël":"Los reyes de Israel",
+    "L'exil et le retour":"El exilio y el regreso",
+    "Sagesse et poésie":"Sabiduría y poesía",
+    "Les grands prophètes":"Los profetas mayores",
+    "Les petits prophètes":"Los profetas menores",
+    "La vie de Jésus":"La vida de Jesús",
+    "L'Église naissante":"La Iglesia naciente",
+    "Les lettres de Paul":"Las cartas de Pablo",
+    "Lettres et Apocalypse":"Cartas y Apocalipsis",
+    "Unité {n} · {nom}":"Unidad {n} · {nom}",
+    "Unité {n}":"Unidad {n}",
+    "Ton parcours":"Tu camino",
+    "Toute la Bible est parcourue":"Toda la Biblia está recorrida",
+    "Parcours terminé":"Camino terminado",
+    "De la Genèse à l'Apocalypse":"Del Génesis al Apocalipsis",
+    "{n} leçon sur {t}":"{n} de {t} lecciones",
+    "{n} leçons sur {t}":"{n} de {t} lecciones",
+    "Six questions par leçon. Une erreur revient à la fin.":"Seis preguntas por lección. Un error vuelve al final.",
+    "Leçon {n}":"Lección {n}",
+    "faite":"hecha",
+    "verrouillée":"bloqueada",
+    "Commencer":"Empezar",
+    "Leçon terminée":"Lección terminada",
+    "Sans faute\u00a0!":"¡Sin errores!",
+    "{n} sur {t} du premier coup":"{n} de {t} a la primera",
+    "{unite} · leçon {l} sur {m}":"{unite} · lección {l} de {m}",
+    "au 1er essai":"a la primera",
+    "Unité terminée\u00a0!":"¡Unidad terminada!",
+    "Quitter la leçon\u00a0?":"¿Salir de la lección?",
+    "Tu la reprendras depuis le début.":"La retomarás desde el principio.",
     "Code de la partie":"Código de la partida",
     "Continuer":"Continuar",
     "Couleur":"Color",
@@ -9236,6 +9366,11 @@ const ICONS = {
   etoile: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3.6l2.5 5.2 5.7.8-4.1 4 1 5.6-5.1-2.7-5.1 2.7 1-5.6-4.1-4 5.7-.8L12 3.6Z"/></svg>`,
   /* (v329) « Céder le groupe » : la couronne au trait, comme ses voisines de
      la liste (la pleine reste celle du podium et des badges). */
+  /* (v353) LE PARCOURS : un chemin qui serpente d'un point à un autre, et le
+     cadenas d'une leçon qu'on n'a pas encore ouverte. Même trait que les
+     autres (24 × 24, 1,9, bouts ronds). */
+  chemin: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><circle cx="5.4" cy="19.2" r="1.8"/><circle cx="18.6" cy="4.8" r="1.8"/><path d="M7.2 19.2h7.6a3.4 3.4 0 0 0 0-6.8H9.2a3.4 3.4 0 0 1 0-6.8h7.6"/></svg>`,
+  cadenas: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><rect x="5.2" y="10.4" width="13.6" height="9.8" rx="2.4"/><path d="M8.4 10.4V7.9a3.6 3.6 0 0 1 7.2 0v2.5"/></svg>`,
   couronne: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M3.6 8.2l4.1 3.9L12 5.4l4.3 6.7 4.1-3.9-1.7 10H5.3l-1.7-10Z"/></svg>`,
   close: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><line x1="6" y1="6" x2="18" y2="18"/><line x1="18" y1="6" x2="6" y2="18"/></svg>`,
   chevronLeft: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 5.5 8.5 12 15 18.5"/></svg>`,
@@ -11448,7 +11583,7 @@ const SUPABASE_ANON_KEY = "sb_publishable_FDJ_R0foC7uIeHmxVrj6rA_2NeIgW2a";
    remontée d'un téléphone ne vaut rien si on ne sait pas QUELLE version
    tournait. Elle doit rester égale au CACHE de sw.js — c'est ce que vérifie
    banc-essai/version.js, qui refuse de laisser publier les deux en désaccord. */
-const VERSION_JEU = "v352";
+const VERSION_JEU = "v353";
 
 /* ===================== QUAND ÇA CASSE CHEZ UN JOUEUR =====================
    « Si quelque chose casse chez cinq d'entre eux sur un modèle de téléphone
@@ -21921,7 +22056,7 @@ function qTestament(q){
   return NT_BOOKS.test(ref) ? "nt" : "at";
 }
 function recordSoloResult(){
-  if(state.revision) return; // la révision n'entre pas dans les statistiques
+  if(state.revision || state.lecon) return; // ni la révision ni une leçon du Parcours n'entrent dans les statistiques
   const max = maxPossibleScore();
   const pct = max>0 ? Math.round((state.soloScore/max)*100) : 0;
   const st = loadStats();
@@ -22659,6 +22794,227 @@ function pumpAchToast(){
 }
 function openParcours(){ state.screen = "parcours"; render(); }
 function parcoursSummary(){ const p = loadProgress(), d = progressDerived(p); return { mastered:d.mastered, touched:d.touched, totalCorrect:p.totalCorrect }; }
+/* ===================== (v353) LE PARCOURS : LA BIBLE, LEÇON PAR LEÇON =====================
+   « Le Duolingo de la Bible. » — « Pour le Duolingo, j'aime bien l'idée. »
+   Un CHEMIN à travers la Bible, dans son ordre, de la Genèse à l'Apocalypse :
+   douze unités, cinq leçons chacune, six questions par leçon. On sait
+   toujours quoi faire ensuite — c'est tout ce que le Parcours ajoute, et
+   c'est ce qui manquait : le Solo demande de choisir, le Parcours propose.
+
+   UNE LEÇON, C'EST UNE PARTIE SOLO SANS CHRONO, tirée des livres de son
+   unité (bookOf, comme la Progression), du plus facile au plus difficile :
+   la première leçon d'une unité est surtout faite de questions faciles, la
+   cinquième surtout de difficiles. Les questions jamais vues passent
+   d'abord, comme en Solo. Une ERREUR REVIENT À LA FIN de la leçon, une fois :
+   on la revoit pendant qu'on s'en souvient. Elle entre aussi au carnet
+   (« À revoir »), comme toute erreur ; la redonner juste dans la même leçon
+   ne l'en fait pas sortir — c'est le carnet qui juge, des jours plus tard.
+
+   CE QUE LA LEÇON COMPTE : comme toute partie, elle allume la flamme du jour
+   (compterPartie) et fait avancer les livres de la Progression. Elle n'entre
+   pas dans le record du Solo : une erreur rejouée fausserait le pourcentage.
+
+   LA MÉMOIRE : bt_parcours, la date de chaque leçon faite. Rien ne s'y
+   retire jamais — saveParcours fusionne avec ce qui est déjà là, et le
+   compte emporte le tout (voir sauvegardeIci, fusionner). Une leçon faite
+   le reste, sur ce téléphone comme sur un autre. */
+const PARCOURS = [
+  { id:"genese",  nom:"Au commencement",      livres:["Genèse"], teinte:"jade" },
+  { id:"exode",   nom:"L'Exode et le désert", livres:["Exode","Lévitique","Nombres","Deutéronome"], teinte:"bronze" },
+  { id:"terre",   nom:"La Terre promise",     livres:["Josué","Juges","Ruth"], teinte:"vert" },
+  { id:"rois",    nom:"Les rois d'Israël",    livres:["1 Samuel","2 Samuel","1 Rois","2 Rois","1 Chroniques","2 Chroniques"], teinte:"ciel" },
+  { id:"exil",    nom:"L'exil et le retour",  livres:["Esdras","Néhémie","Esther"], teinte:"ardoise" },
+  { id:"sagesse", nom:"Sagesse et poésie",    livres:["Job","Psaumes","Proverbes","Ecclésiaste","Cantique des cantiques"], teinte:"rose" },
+  { id:"grands",  nom:"Les grands prophètes", livres:["Ésaïe","Jérémie","Lamentations","Ézéchiel","Daniel"], teinte:"pourpre" },
+  { id:"petits",  nom:"Les petits prophètes", livres:BIBLE_BOOKS.slice(27, BIBLE_AT_COUNT), teinte:"indigo" },
+  { id:"jesus",   nom:"La vie de Jésus",      livres:["Matthieu","Marc","Luc","Jean"], teinte:"jade" },
+  { id:"eglise",  nom:"L'Église naissante",   livres:["Actes"], teinte:"bronze" },
+  { id:"paul",    nom:"Les lettres de Paul",  livres:BIBLE_BOOKS.slice(44, 57), teinte:"ciel" },
+  { id:"fin",     nom:"Lettres et Apocalypse", livres:BIBLE_BOOKS.slice(57), teinte:"pourpre" }
+];
+const LECONS_PAR_UNITE = 5;
+const QUESTIONS_PAR_LECON = 6;
+/* On monte doucement : la part de chaque palier, leçon après leçon. */
+const LECON_PALIERS = [
+  { facile:4, moyen:2, difficile:0 },
+  { facile:3, moyen:3, difficile:0 },
+  { facile:1, moyen:4, difficile:1 },
+  { facile:0, moyen:3, difficile:3 },
+  { facile:0, moyen:2, difficile:4 }
+];
+function cleLecon(u, l){ return PARCOURS[u].id + ":" + (l + 1); }
+const CLES_LECONS = new Set(PARCOURS.flatMap((u, i) => Array.from({ length:LECONS_PAR_UNITE }, (_, l) => cleLecon(i, l))));
+function faitesValides(x){
+  const out = {};
+  if(x && typeof x === "object") Object.keys(x).forEach(k => { const d = x[k]; if(typeof d === "string" && /^\d{4}-\d{2}-\d{2}$/.test(d)) out[k] = d; });
+  return out;
+}
+function loadParcours(){
+  try{ const s = JSON.parse(localStorage.getItem("bt_parcours") || "{}"); return { faites: faitesValides(s && s.faites) }; }
+  catch(e){ return { faites:{} }; }
+}
+/* L'UNION DE DEUX MÉMOIRES : toute leçon faite d'un côté ou de l'autre, à la
+   date la plus ancienne. Jamais moins que l'un ou l'autre (voir fusionner). */
+function unionDesLecons(a, b){
+  const x = faitesValides(a && a.faites), y = faitesValides(b && b.faites), out = Object.assign({}, x);
+  Object.keys(y).forEach(k => { if(!out[k] || y[k] < out[k]) out[k] = y[k]; });
+  return out;
+}
+function saveParcours(p){
+  const faites = unionDesLecons(loadParcours(), p);
+  try{ localStorage.setItem("bt_parcours", JSON.stringify({ v:1, faites })); }catch(e){}
+}
+function leconFaite(u, l, p){ return !!(p || loadParcours()).faites[cleLecon(u, l)]; }
+/* Où en est le joueur : la première leçon pas encore faite, dans l'ordre. */
+function positionParcours(p){
+  p = p || loadParcours();
+  for(let u = 0; u < PARCOURS.length; u++) for(let l = 0; l < LECONS_PAR_UNITE; l++) if(!leconFaite(u, l, p)) return { u, l };
+  return null;
+}
+function leconOuverte(u, l, p){
+  p = p || loadParcours();
+  if(leconFaite(u, l, p)) return true;
+  const pos = positionParcours(p);
+  return !!pos && pos.u === u && pos.l === l;
+}
+function questionsDeLecon(u, l){
+  const livres = new Set(PARCOURS[u].livres), seen = loadSeen();
+  const par = { facile:[], moyen:[], difficile:[] };
+  ["facile","moyen","difficile"].forEach(t => (BANK[t] || []).forEach(q => { const b = bookOf(q); if(b && livres.has(b)) par[t].push(Object.assign({}, q, { tier:t })); }));
+  const veut = LECON_PALIERS[l] || LECON_PALIERS[LECON_PALIERS.length - 1];
+  /* UNE QUESTION JAMAIS VUE PASSE AVANT LE PALIER. Chaque palier prend
+     d'abord ses questions neuves ; ce qui lui manque se prend en NEUF aux
+     paliers voisins (Esdras, Néhémie et Esther n'ont que six questions
+     faciles pour deux leçons qui en veulent sept) ; et seulement ensuite,
+     quand l'unité a tout montré, des questions déjà vues — son palier
+     d'abord. Une leçon ne repasse jamais une question tant qu'il en reste
+     une neuve dans son unité. */
+  const neuves = {}, revues = {};
+  ["facile","moyen","difficile"].forEach(t => { neuves[t] = shuffle(par[t].filter(q => !seen.has(qKey(q)))); revues[t] = shuffle(par[t].filter(q => seen.has(qKey(q)))); });
+  const VOISINS = { facile:["moyen","difficile"], moyen:["facile","difficile"], difficile:["moyen","facile"] };
+  const prises = [], cles = new Set();
+  const prendre = (liste, n) => {
+    for(const q of liste){ if(n <= 0) break; const k = qKey(q); if(cles.has(k)) continue; cles.add(k); prises.push(q); n--; }
+    return n;
+  };
+  const besoin = { facile:veut.facile, moyen:veut.moyen, difficile:veut.difficile };
+  const tiers = ["facile","moyen","difficile"];
+  tiers.forEach(t => { besoin[t] = prendre(neuves[t], besoin[t]); });
+  tiers.forEach(t => VOISINS[t].forEach(v => { besoin[t] = prendre(neuves[v], besoin[t]); }));
+  tiers.forEach(t => { besoin[t] = prendre(revues[t], besoin[t]); });
+  tiers.forEach(t => VOISINS[t].forEach(v => { besoin[t] = prendre(revues[v], besoin[t]); }));
+  prises.forEach(q => seen.add(qKey(q)));
+  saveSeen(seen);
+  const rang = { facile:0, moyen:1, difficile:2 };
+  return prises.sort((a, b) => rang[a.tier] - rang[b.tier]).map(q => Object.assign({}, q, { shuffledOptions: shuffle(q.options) }));
+}
+function commencerLecon(u, l){
+  if(!PARCOURS[u] || l < 0 || l >= LECONS_PAR_UNITE || !leconOuverte(u, l)) return;
+  const qs = questionsDeLecon(u, l);
+  if(!qs.length) return;
+  finirPlaces();
+  marquerJoue();
+  bumpModeUse("parcours");
+  state.mode = "solo"; state.revision = false; state.revisionDe = null;
+  state.lecon = { u, l, n:qs.length, ok:0 };
+  state.soloScore = 0; state.soloStreak = 0; state.soloBestStreak = 0; state.soloCorrect = 0; displayedSoloScore = 0; state.soloMissed = []; state.soloIsRecord = false;
+  state.questions = qs;
+  state.currentIndex = 0; state.revealed = false; state.awarded = []; state.soloSelected = null; state.timedOut = false;
+  state.screen = "play";
+  render();
+}
+/* La dernière question passée : la leçon est faite, pour toujours. */
+function terminerLecon(){
+  const L = state.lecon;
+  if(!L || !PARCOURS[L.u]) return;
+  const p = loadParcours(), k = cleLecon(L.u, L.l);
+  L.nouvelle = !p.faites[k];
+  if(!p.faites[k]) p.faites[k] = cleDeDate(new Date());
+  saveParcours(p);
+  L.uniteFinie = Array.from({ length:LECONS_PAR_UNITE }, (_, l) => leconFaite(L.u, l, p)).every(Boolean);
+}
+function leconFinHtml(){
+  const L = state.lecon, u = PARCOURS[L.u], t = L.n | 0, ok = Math.min(t, L.ok | 0);
+  return `<h1 class="end-title">${ok >= t ? T("Sans faute\u00a0!") : escapeHtml(Tf("{n} sur {t} du premier coup", { n:ok, t }))}</h1>
+      <p class="end-sub">${escapeHtml(Tf("{unite} · leçon {l} sur {m}", { unite:T(u.nom), l:L.l + 1, m:LECONS_PAR_UNITE }))}</p>
+      ${L.uniteFinie && L.nouvelle ? `<div class="end-best">${T("Unité terminée\u00a0!")}</div>` : ""}`;
+}
+let cheminVient = null;   // la leçon qu'on vient de finir : sa pierre s'allume à l'arrivée
+function continuerParcours(){
+  if(pubAvant(continuerParcours)) return;   // l'annonce plein écran, puis le chemin
+  const L = state.lecon;
+  clearSavedGame();
+  state = etatNeuf();
+  cheminVient = (L && L.nouvelle) ? { u:L.u, l:L.l } : null;
+  state.screen = "chemin";
+  render();
+}
+function ouvrirChemin(){ state.screen = "chemin"; render(); }
+function livresDeLUnite(u){
+  const l = u.livres;
+  return l.length === 1 ? nomLivre(l[0]) : nomLivre(l[0]) + " – " + nomLivre(l[l.length - 1]);
+}
+/* LE CHEMIN SERPENTE : chaque unité part du centre, s'écarte et revient, une
+   fois vers la droite, la suivante vers la gauche. */
+const CH_ECARTS = [0, 0.62, 1, 0.62, 0];
+function uniteHtml(u, i, p, pos, vient){
+  const faites = Array.from({ length:LECONS_PAR_UNITE }, (_, l) => leconFaite(i, l, p));
+  const n = faites.filter(Boolean).length;
+  const etat = n === LECONS_PAR_UNITE ? "finie" : ((pos && pos.u === i) || n ? "ouverte" : "fermee");
+  const sens = i % 2 ? -1 : 1;
+  const pierres = faites.map((f, l) => {
+    const courante = !!pos && pos.u === i && pos.l === l;
+    const cls = f ? "faite" : (courante ? "courante" : "fermee");
+    const allume = (vient && vient.u === i && vient.l === l) ? " s-allume" : "";
+    const ico = f ? ICONS.coche : (courante ? ICONS.etoile : ICONS.cadenas);
+    const nom = Tf("Leçon {n}", { n:l + 1 }) + " · " + (f ? T("faite") : courante ? T("à faire") : T("verrouillée"));
+    return `<div class="ch-noeud ${cls}${allume}" style="--x:${(sens * CH_ECARTS[l]).toFixed(2)}">
+        <button class="ch-pierre ch-t-${u.teinte}" ${(f || courante) ? `onclick="commencerLecon(${i}, ${l})"` : "disabled"} aria-label="${escapeHtml(nom)}"><span class="ico">${ico}</span></button>
+        ${courante ? `<button class="ch-bulle" onclick="commencerLecon(${i}, ${l})">${T("Commencer")}</button>` : ""}
+      </div>`;
+  }).join("");
+  return `<section class="ch-unite ${etat}" aria-label="${escapeHtml(Tf("Unité {n}", { n:i + 1 }) + " · " + T(u.nom))}">
+      <div class="ch-bandeau ch-t-${u.teinte}">
+        <span class="ch-num">${Tf("Unité {n}", { n:i + 1 })}</span>
+        <b>${escapeHtml(T(u.nom))}</b>
+        <small>${escapeHtml(livresDeLUnite(u))}</small>
+        <span class="ch-score">${n}/${LECONS_PAR_UNITE}</span>
+      </div>
+      <div class="ch-pas">${pierres}</div>
+    </section>`;
+}
+function renderChemin(){
+  const el = document.createElement("div");
+  el.className = "screen chemin-ecran";
+  const p = loadParcours(), pos = positionParcours(p);
+  const total = PARCOURS.length * LECONS_PAR_UNITE;
+  const faites = Object.keys(p.faites).filter(k => CLES_LECONS.has(k)).length;
+  const vient = cheminVient; cheminVient = null;
+  /* La carte du haut dit le VOYAGE (où il mène, où l'on en est) ; le nom de
+     l'unité est juste en dessous, sur sa bannière : pas deux fois. */
+  const tete = `<span class="ch-sur">${pos ? T("Ton parcours") : T("Parcours terminé")}</span><b class="ch-titre">${T("De la Genèse à l'Apocalypse")}</b>`;
+  el.innerHTML = `
+    ${renderHeader(T("Parcours"), true)}
+    <div class="card ch-tete">
+      ${tete}
+      <div class="ch-jauge" role="progressbar" aria-valuemin="0" aria-valuemax="${total}" aria-valuenow="${faites}"><i style="--p:${(faites / total).toFixed(4)}"></i></div>
+      <small class="ch-compte">${escapeHtml(Tf(faites > 1 ? "{n} leçons sur {t}" : "{n} leçon sur {t}", { n:faites, t:total }))}</small>
+      <small class="ch-aide">${T("Six questions par leçon. Une erreur revient à la fin.")}</small>
+    </div>
+    <div class="ch-unites">${PARCOURS.map((u, i) => uniteHtml(u, i, p, pos, vient)).join("")}</div>`;
+  setTimeout(() => montrerLeconCourante(el), apresEntree() + 90);
+  return el;
+}
+/* On arrive SUR la leçon à faire : le chemin défile jusqu'à elle. */
+function montrerLeconCourante(el){
+  try{
+    const a = document.getElementById("app");
+    const n = el.querySelector(".ch-noeud.s-allume") || el.querySelector(".ch-noeud.courante");
+    if(!a || !n || !el.isConnected || state.screen !== "chemin") return;
+    const r = n.getBoundingClientRect(), cible = a.scrollTop + r.top + r.height / 2 - a.clientHeight * 0.48;
+    if(cible > 24) a.scrollTo({ top:cible, behavior:"smooth" });
+  }catch(e){}
+}
 function renderParcours(){
   const el = document.createElement("div"); el.className = "screen parcours-ecran";
   /* Réconcilie les objectifs avec les stats de vie AVANT d'afficher : un badge
@@ -24257,7 +24613,7 @@ function sauvegardeVide(){
            stats:{ bestScore:0, bestPct:0, games:0 },
            flamme:{ last:"", streak:0, score:0, total:0, jours:[], geles:[], gels:0,
                     palier:0, parties:0, palierParties:0, annonce:"" },
-           vues:[], carnet:[], acquises:{}, modes:{}, gout:{ bible:"", scene:"", maj:0 } };
+           vues:[], carnet:[], acquises:{}, modes:{}, gout:{ bible:"", scene:"", maj:0 }, parcours:{ faites:{} } };
 }
 /* La photo de CE téléphone, à cet instant. */
 function sauvegardeIci(){
@@ -24278,6 +24634,7 @@ function sauvegardeIci(){
     carnet:  loadErrbook(),
     acquises:loadAcquises(),
     modes:   loadModeUse(),
+    parcours: loadParcours(),
     gout:    { bible:settings.bible, scene:settings.scene, maj:nEntier(settings.majGout) } };
 }
 function listeDeCles(x){ return Array.isArray(x) ? x.filter(k => typeof k === "string" && k) : []; }
@@ -24474,6 +24831,8 @@ function fusionner(ici, ailleurs){
     carnet: carnet,
     acquises: acquises,
     modes:  maxParCle(a.modes, b.modes),
+    /* (v353) Le Parcours : toute leçon faite d'un côté ou de l'autre. */
+    parcours: { faites: unionDesLecons(a.parcours, b.parcours) },
     /* LE GOÛT : le plus RÉCEMMENT choisi. À égalité — deux appareils qui n'ont
        jamais rien choisi — celui d'ici, qui au pire est le défaut. */
     gout: (function(){
@@ -24507,6 +24866,7 @@ function appliquerSauvegarde(recue){
   saveSeen(new Set(sur.vues));
   saveErrbook(sur.carnet);
   saveAcquises(sur.acquises);
+  saveParcours(sur.parcours);
   try{ localStorage.setItem("bt_modeuse", JSON.stringify(sur.modes)); }catch(e){}
   /* Le goût ne s'applique que s'il désigne quelque chose qui existe encore :
      une scène retirée du catalogue ou une traduction inconnue laisseraient le
@@ -31364,7 +31724,7 @@ function startRevision(quoi){
      l'autre. Un seul nombre pour tout le jeu. */
   const b = (quoi === "carnet") ? source : parEntetement(source).slice(0, REVISION_LOT);
   if(!b.length) return;
-  state.mode = "solo"; state.revision = true;
+  state.mode = "solo"; state.revision = true; state.lecon = null;
   /* D'où part la révision : « Quitter » y ramène (voir LA PARTIE FINIE, ON
      REVIENT DANS SON MODE). Gardé dans la partie sauvegardée, il survit à une
      relance de l'app en pleine révision. */
@@ -31491,7 +31851,7 @@ function startGame(){
   /* Partie ordinaire : on sort TOUJOURS du contexte révision. Le livre, lui,
      est un réglage de l'écran du mode, comme la durée : il reste (voir UN
      LIVRE, DEPUIS L'ÉCRAN DU MODE). */
-  state.revision = false;
+  state.revision = false; state.lecon = null;
   marquerJoue();
   if(state.mode==="group"){
     const valid = validTeams();
@@ -31530,7 +31890,7 @@ function replayGame(){
   render();
 }
 function etatNeuf(){
-  return { screen:"mode", mode:null, teams: loadTeams(), lengthKey: state.lengthKey, timerKey: state.timerKey, themeKey: state.themeKey||"tout", livre: state.livre || null, daily:false, revision:false, timedOut:false, scores:[], soloScore:0, soloStreak:0, soloBestStreak:0, soloCorrect:0, soloSelected:null, soloMissed:[], soloIsRecord:false, questions:[], currentIndex:0, revealed:false, awarded:[] };
+  return { screen:"mode", mode:null, teams: loadTeams(), lengthKey: state.lengthKey, timerKey: state.timerKey, themeKey: state.themeKey||"tout", livre: state.livre || null, daily:false, revision:false, lecon:null, timedOut:false, scores:[], soloScore:0, soloStreak:0, soloBestStreak:0, soloCorrect:0, soloSelected:null, soloMissed:[], soloIsRecord:false, questions:[], currentIndex:0, revealed:false, awarded:[] };
 }
 function newGame(){
   clearSavedGame();
@@ -31552,10 +31912,11 @@ function newGame(){
    (v320 ; elle ramenait à la Progression quand c'est de là qu'elle partait). */
 function retourAuMode(){
   if(pubAvant(retourAuMode)) return;   // (v349) seulement depuis les résultats
-  const mode = state.mode, revision = !!state.revision, de = state.revisionDe;
+  const mode = state.mode, revision = !!state.revision, de = state.revisionDe, lecon = !!state.lecon;
   clearSavedGame();
   state = etatNeuf();
-  if(revision && de !== "setup") state.screen = "revoir";
+  if(lecon) state.screen = "chemin";             // (v353) une leçon ramène au chemin
+  else if(revision && de !== "setup") state.screen = "revoir";
   else if(mode === "solo" || mode === "group"){ state.mode = mode; state.screen = "setup"; }
   render();
 }
@@ -31569,7 +31930,7 @@ function saveState(){
         teams:state.teams, scores:state.scores,
         soloScore:state.soloScore, soloStreak:state.soloStreak, soloBestStreak:state.soloBestStreak, soloCorrect:state.soloCorrect, soloSelected:state.soloSelected,
         soloMissed:state.soloMissed, themeKey:state.themeKey, revision:state.revision, revisionDe:state.revisionDe,
-        livre:state.livre || null,
+        livre:state.livre || null, lecon:state.lecon || null,
         questions:state.questions, currentIndex:state.currentIndex, revealed:state.revealed, awarded:state.awarded,
         /* le chrono arrêté d'une question révélée (voir .timer-chip.fige) */
         chronoReste:qTimerLeft
@@ -31595,8 +31956,8 @@ function currentQ(){ return state.questions[state.currentIndex]; }
 
 function confirmLeaveGame(){
   showModal({
-    title:T("Quitter la partie ?"),
-    message:T("La partie en cours sera perdue."),
+    title:state.lecon ? T("Quitter la leçon\u00a0?") : T("Quitter la partie ?"),
+    message:state.lecon ? T("Tu la reprendras depuis le début.") : T("La partie en cours sera perdue."),
     okLabel:T("Quitter"), cancelLabel:T("Rester"), danger:true,
     onOk:()=>{ stopQTimer(); retourAuMode(); }
   });
@@ -31616,7 +31977,10 @@ function soloAnswer(idx){
     state.soloScore += TIER_INFO[q.tier].pts;
     state.soloCorrect += 1;
     state.soloStreak += 1;
-    errbookRemove(q); // juste : elle monte d'un palier (voir REVOIR_ECHELLE)
+    if(state.lecon && !q.relance) state.lecon.ok = (state.lecon.ok | 0) + 1;   // (v353) du premier coup
+    /* (v353) Une erreur rattrapée DANS la leçon reste au carnet : c'est lui
+       qui la juge, des jours plus tard. */
+    if(!q.relance) errbookRemove(q); // juste : elle monte d'un palier (voir REVOIR_ECHELLE)
     if(state.soloStreak > state.soloBestStreak) state.soloBestStreak = state.soloStreak;
     progressCredit(q, state.soloStreak); // parcours : crédite le livre + objectifs
     playCorrect(); // toujours le même son, quelle que soit la série
@@ -31624,6 +31988,8 @@ function soloAnswer(idx){
     state.soloStreak = 0;
     state.soloMissed.push({ q:q.q, options:q.options, correct:q.correct, chosen:opt, fact:q.fact });
     errbookAdd(q);
+    /* (v353) LE PARCOURS : une erreur revient à la fin de la leçon, une fois. */
+    if(state.lecon && !q.relance) state.questions.push(Object.assign({}, q, { relance:true, shuffledOptions:shuffle(q.options) }));
     playIncorrect();
   }
   render();
@@ -31893,8 +32259,9 @@ function nextQuestion(){
     if(state.mode==="solo"){
       recordSoloResult();
       // Mémorise les erreurs de CETTE partie pour « Réviser la dernière partie »
-      if(!state.revision){ try { localStorage.setItem("bt_lastmiss", JSON.stringify(state.soloMissed.map(m=>qKey(m)))); } catch(e){} }
+      if(!state.revision && !state.lecon){ try { localStorage.setItem("bt_lastmiss", JSON.stringify(state.soloMissed.map(m=>qKey(m)))); } catch(e){} }
     }
+    if(state.lecon) terminerLecon();   // (v353) la leçon est faite
     state.screen = "end";
     render();
     playWin();
@@ -32225,7 +32592,12 @@ function renderModeSelect(){
          On intercale donc des espaceurs SOUPLES ET PLAFONNÉS : ils prennent
          le surplus à parts égales jusqu'à leur maximum, et ce qui reste
          au-delà remonte au-dessus du logo, où il ne se voit pas. */
-      return [group, solo, online, revoir].join(`<i class="ec-carte"></i>`);
+      /* (v353) LE PARCOURS EN TÊTE : la porte qui dit quoi faire ensuite. Son
+         sous-titre dit OÙ l'on en est, l'unité en cours. */
+      const pos = positionParcours();
+      const cheminTxt = pos ? Tf("Unité {n} · {nom}", { n:pos.u + 1, nom:T(PARCOURS[pos.u].nom) }) : T("Toute la Bible est parcourue");
+      const chemin = `<button class="mode-card" onclick="ouvrirChemin()"><span class="mode-icon chemin">${ICONS.chemin}</span><span class="mode-text"><span class="mode-title">${T("Parcours")}</span><span class="mode-desc">${escapeHtml(cheminTxt)}</span></span><span class="chev">${ICONS.chevronRight}</span></button>`;
+      return [chemin, group, solo, online, revoir].join(`<i class="ec-carte"></i>`);
     })()}
     ${(()=>{ const s = parcoursSummary(), n = dailyStreakShown();
       const pilule = barre ? '<span class="dc-streak pc-feu' + (n ? '' : ' eteinte') + '">' + ICONS.flame + '<b>' + n + '</b></span>' : "";
@@ -32408,7 +32780,7 @@ function renderPlay(){
   } else {
     bottomHtml = `
       ${state.timedOut && state.revealed ? `<div class="timeout-note${pop?' reveal-in':''}"><span class="ico">${ICONS.clock}</span>${T("Temps écoulé !")}</div>` : ""}
-      ${state.revealed ? `<div class="fact-card${pop?' reveal-in':''}">${testamentTag(q)}<span class="ficon">${ICONS.bookOpen}</span><span class="ftext"><span class="fact-label">${state.revision && state.soloSelected === q.correct ? T("Rattrapée !") : T("Le savais-tu ?")}</span>${escapeHtml(faitVersion(texteFait(q)))}</span></div>` : ""}
+      ${state.revealed ? `<div class="fact-card${pop?' reveal-in':''}">${testamentTag(q)}<span class="ficon">${ICONS.bookOpen}</span><span class="ftext"><span class="fact-label">${(state.revision || q.relance) && state.soloSelected === q.correct ? T("Rattrapée !") : T("Le savais-tu ?")}</span>${escapeHtml(faitVersion(texteFait(q)))}</span></div>` : ""}
       ${state.revealed ? `<button class="btn-next${pop?' reveal-in':''}" onclick="nextQuestion()">${state.currentIndex>=total-1 ? T("Voir les résultats") : T("Question suivante")}</button>` : ""}
       <div class="flex-sp"></div>
       <div class="solo-score-bar"><span class="label">${T("Score")}</span><span class="value" data-count-value>${state.soloScore} pts</span></div>
@@ -32417,11 +32789,11 @@ function renderPlay(){
 
   const streakHot = state.soloStreak >= 3;
   el.innerHTML = `
-    ${renderHeader(state.revision ? T("Seconde chance") : NOM_DU_JEU, true, "confirmLeaveGame()")}
+    ${renderHeader(state.revision ? T("Seconde chance") : (state.lecon ? T(PARCOURS[state.lecon.u].nom) : NOM_DU_JEU), true, "confirmLeaveGame()")}
     <div class="play-meta">
       <span class="tier-chip ${info.cls}">${tierDotsHtml(info.level)}${T(info.label)} · ${info.pts} pts</span>
       <span class="q-counter">${state.currentIndex+1}/${total}</span>
-      ${state.revision ? "" : state.revealed ? timerFigeHtml(timerSecondsFor(state.timerKey)) : timerChipHtml(timerSecondsFor(state.timerKey))}
+      ${(state.revision || state.lecon) ? "" : state.revealed ? timerFigeHtml(timerSecondsFor(state.timerKey)) : timerChipHtml(timerSecondsFor(state.timerKey))}
       ${state.mode==="solo" ? `<span class="streak-chip${streakHot?' hot':''}"><span class="ico">${ICONS.flame}</span>${state.soloStreak}</span>` : ""}
     </div>
     <div class="progress-track">
@@ -32435,7 +32807,7 @@ function renderPlay(){
 
   // Chrono : démarre sur chaque nouvelle question non révélée
   if(fresh && !state.revealed){
-    const secs = state.revision ? null : timerSecondsFor(state.timerKey);
+    const secs = (state.revision || state.lecon) ? null : timerSecondsFor(state.timerKey);
     startQTimer(secs, state.mode==="solo" ? soloTimeUp : groupTimeUp);
   }
 
@@ -32580,7 +32952,10 @@ function renderEndGroup(){
 }
 function renderEndSolo(){
   const max = maxPossibleScore();
-  const pct = max>0 ? Math.round((state.soloScore/max)*100) : 0;
+  /* (v353) Une leçon se compte DU PREMIER COUP : les erreurs rejouées à la
+     fin ne gonflent ni ne creusent l'anneau. */
+  const pct = state.lecon ? (state.lecon.n ? Math.round(100 * Math.min(state.lecon.n, state.lecon.ok | 0) / state.lecon.n) : 0)
+                          : (max>0 ? Math.round((state.soloScore/max)*100) : 0);
   const totalQ = state.questions.length;
   const st = loadStats();
   const R = 52, C = 2*Math.PI*R;
@@ -32589,8 +32964,8 @@ function renderEndSolo(){
   return `
     <div class="end-hero">
       <div class="end-medal"><span class="em-cup">${idsPropres(TROPHY_GOLD)}</span></div>
-      <div class="end-eyebrow${state.soloIsRecord?' record':''}">${state.soloIsRecord?T("★ Nouveau record personnel !"):(state.revision?T("Seconde chance"):T("Partie terminée"))}</div>
-      ${state.revision?(()=>{
+      <div class="end-eyebrow${state.soloIsRecord?' record':''}">${state.soloIsRecord?T("★ Nouveau record personnel !"):(state.lecon?T("Leçon terminée"):state.revision?T("Seconde chance"):T("Partie terminée"))}</div>
+      ${state.lecon ? leconFinHtml() : state.revision?(()=>{
           /* LA SECONDE CHANCE SE COMPTE EN ERREURS RATTRAPÉES, pas en points :
              c'est ce qu'on est venu faire. Ce qui reste se dit d'après la porte
              d'où l'on vient — l'écran « À revoir » ou la dernière partie. */
@@ -32601,7 +32976,7 @@ function renderEndSolo(){
             <div class="end-best">${reste > 0 ? Tf("{n} encore à rattraper", { n:reste }) : T("Plus rien à rattraper, bravo !")}</div>`; })()
         : `<h1 class="end-title">${state.soloScore} ${T("points")}</h1>
       <p class="end-sub">${soloPerformanceMessage(pct)}</p>`}
-      ${!state.revision && st.games>0?`<div class="end-best">${Tf(st.games>1?"Record personnel : {p}% · {n} parties jouées":"Record personnel : {p}% · {n} partie jouée", {p:st.bestPct, n:st.games})}</div>`:""}
+      ${!state.revision && !state.lecon && st.games>0?`<div class="end-best">${Tf(st.games>1?"Record personnel : {p}% · {n} parties jouées":"Record personnel : {p}% · {n} partie jouée", {p:st.bestPct, n:st.games})}</div>`:""}
     </div>
     <div class="flex-sp"></div>
     <div class="solo-summary">
@@ -32615,7 +32990,7 @@ function renderEndSolo(){
         </svg>
         <div class="ring-center">
           <span class="ring-score" data-ring-pct data-target-pct="${pct}">0%</span>
-          <span class="ring-label">${T("du maximum")}</span>
+          <span class="ring-label">${state.lecon ? T("au 1er essai") : T("du maximum")}</span>
         </div>
       </div>
       <div class="solo-stats">
@@ -32626,11 +33001,11 @@ function renderEndSolo(){
     <div class="flex-sp"></div>
     ${state.soloMissed && state.soloMissed.length ? `<button class="btn-review" onclick="openMissedReview()"><span class="ico">${ICONS.bookOpen}</span>${state.soloMissed.length>1?Tf("Revoir mes {n} erreurs",{n:state.soloMissed.length}):T("Revoir mon erreur")}</button>` : ""}
     <div class="end-bottom">
-    <div class="end-actions">
+    ${state.lecon ? `<div class="end-actions lecon-fin"><button class="btn-replay" onclick="continuerParcours()">${T("Continuer")}</button></div>` : `<div class="end-actions">
       <button class="btn-replay" onclick="replayGame()">${T("Rejouer")}</button>
       <button class="btn-newgame btn-quit" onclick="retourAuMode()">${T("Quitter")}</button>
     </div>
-    ${shareLineHtml(state.mode)}
+    ${shareLineHtml(state.mode)}`}
     </div>
   `;
 }
@@ -34165,7 +34540,7 @@ function glisserBarre(b, de, a, p){
 }
 const PROFONDEUR = {
   mode:0,
-  groupes:1, profile:1, parcours:1, revoir:1, setup:1, "online-name":1, online:1, jeux:1,
+  groupes:1, profile:1, parcours:1, chemin:1, revoir:1, setup:1, "online-name":1, online:1, jeux:1,
   moderation:2, "online-join":2, play:2, jeu:2,
   groupe:3, end:3, "jeu-fin":3,
   "online-room":4, "online-play":5, "online-end":6
@@ -34288,6 +34663,7 @@ function render(){
   else if(state.screen==="play") node = renderPlay();
   else if(state.screen==="profile") node = renderProfile();
   else if(state.screen==="parcours") node = renderParcours();
+  else if(state.screen==="chemin") node = renderChemin();
   else if(state.screen==="revoir") node = renderRevoir();
   else if(state.screen==="online-name") node = renderOnlineName();
   else if(state.screen==="online") node = renderOnline();
