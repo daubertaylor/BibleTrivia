@@ -69,12 +69,25 @@ grant insert on public.erreurs to anon, authenticated;
 --  ET ÇA NE GROSSIT PAS INDÉFINIMENT
 -- ============================================================================
 --  Une erreur de plus de trente jours n'apprend plus rien : la version qui la
---  portait n'existe plus. (Demande pg_cron, déjà installé pour les rappels.)
-select cron.schedule(
-  'purge-erreurs',
-  '17 4 * * *',
-  $$ delete from public.erreurs where quand < now() - interval '30 days' $$
-);
+--  portait n'existe plus.
+--  (v350) SANS pg_cron, LA TABLE SE CRÉE QUAND MÊME. Le 08/11/2026, Taylor a
+--  lancé la requête de lecture : « relation "public.erreurs" does not exist ».
+--  La table n'avait jamais été créée — et un « select cron.schedule » qui
+--  échoue annule TOUT ce qui a été collé avec lui (l'éditeur de Supabase joue
+--  le texte collé comme une seule transaction). La purge passe donc dans un
+--  bloc qui rattrape son échec, comme dans notifications/installer.sql : la
+--  table est là, seule la purge attend pg_cron (Database → Extensions).
+--  Vérifié sur un vrai PostgreSQL sans pg_cron : la table se crée, un joueur
+--  (anon) dépose et ne lit pas, et le script se recolle sans dommage.
+do $do$
+begin
+  create extension if not exists pg_cron with schema pg_catalog;
+  perform cron.schedule('purge-erreurs', '17 4 * * *',
+    $c$ delete from public.erreurs where quand < now() - interval '30 days' $c$);
+exception when others then
+  raise notice 'pg_cron indisponible (%) : la table est là, seule la purge automatique manque', sqlerrm;
+end
+$do$;
 
 -- ============================================================================
 --  POUR LIRE LES ERREURS : depuis le tableau de bord Supabase (Table editor),

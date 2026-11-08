@@ -1,9 +1,34 @@
 <!DOCTYPE html>
 <html lang="fr" translate="no" class="notranslate" style="background:#15100B">
 <head>
-<script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-4777080561806498"
-     crossorigin="anonymous"></script>
 <meta charset="UTF-8">
+<!-- (v349) GOOGLE ADSENSE. La balise qui dit à Google à quel compte appartient
+     yadaquiz.app (elle suffit à la vérification du site, avec ads.txt), puis
+     le script du compte. Les annonces ne viennent qu'à UN moment : en plein
+     écran, entre deux parties (voir LA PUBLICITÉ, EN PLEIN ÉCRAN). Au moins une
+     minute entre deux annonces (data-ad-frequency-hint) : jamais à la chaîne. -->
+<meta name="google-adsense-account" content="ca-pub-4777080561806498">
+<!-- Les deux fonctions de Google pour les annonces des jeux (H5 Games Ads),
+     définies comme Google les définit : elles déposent la demande, son script
+     la traite quand il est là.
+     LE SCRIPT N'ARRIVE JAMAIS DANS UN NAVIGATEUR PILOTÉ. Posé tel quel dans la
+     page, il se chargeait aussi dans les bancs, et Google y lançait de vraies
+     demandes d'annonces (les annonces automatiques du compte) : des centaines
+     par jour, venues d'un automate, avec le compte de Taylor — du trafic
+     invalide, qui met un compte AdSense en danger. Il est donc posé par le
+     code, avec les mêmes attributs, et seulement pour un vrai navigateur (ou
+     quand un banc le demande exprès, window.__pubBanc). -->
+<script>
+  window.adsbygoogle = window.adsbygoogle || [];
+  var adBreak = adConfig = function(o){ adsbygoogle.push(o); };
+  (function(){
+    try{ if(navigator.webdriver && !window.__pubBanc) return; }catch(e){}
+    var s = document.createElement("script");
+    s.async = true; s.crossOrigin = "anonymous"; s.setAttribute("data-ad-frequency-hint", "60s");
+    s.src = "https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-4777080561806498";
+    document.head.appendChild(s);
+  })();
+</script>
 <!-- « interactive-widget=overlays-content » : LE CLAVIER SE POSE PAR-DESSUS,
      IL NE REDIMENSIONNE PLUS RIEN. Sans cette déclaration, chaque navigateur
      décide seul — et Android ne fait pas comme iOS. Tout le recadrage du jeu a
@@ -1141,6 +1166,9 @@
   .btn-primary.is-waiting, .btn-replay.is-waiting{ --glass-tint: rgb(252,248,241); color:var(--ink-soft); cursor:default; pointer-events:none; box-shadow:var(--relief); }
   #roomStartBtn{ margin-top:0.9rem; }
   .error-msg{ color:#ff8a76; font-size:0.82rem; text-align:center; margin-top:var(--e-2); min-height:1.2em; text-shadow:0 1px 6px rgba(0,0,0,0.35); }
+  /* (v350) Le champ du prénom refuse « Continuer » à vide : il dit non de la tête. */
+  .text-input.refus{ animation:champRefus 0.36s cubic-bezier(0.36,0.07,0.19,0.97); }
+  @keyframes champRefus{ 0%,100%{ transform:translateX(0); } 20%{ transform:translateX(-7px); } 40%{ transform:translateX(6px); } 60%{ transform:translateX(-4px); } 80%{ transform:translateX(2px); } }
 
   /* ---------- Play ---------- */
   /* Rangée d'infos de jeu : UNE seule ligne (nowrap) -> la flamme de série reste
@@ -3970,6 +3998,38 @@
   @keyframes ffCase{ from{ transform:scale(0.6); filter:saturate(0) brightness(1.6); opacity:0.4; } to{ transform:none; filter:none; opacity:1; } }
   .modal-card.fete-flamme .modal-actions, .modal-card.invit-rappels .modal-actions{ width:100%; margin-top:0.6rem; }
   .modal-card.fete-flamme .modal-btn.ok{ width:100%; }
+  /* ===== (v352) LA FLAMME EN PAGE ENTIÈRE, COMME DUOLINGO =====
+     « Lorsque j'ai les flammes, je veux un écran dédié, une page entière,
+       comme Duolingo. On peut fermer cette page pour arriver au résultat… dans
+       l'ordre : tu vois le résultat, et ensuite tu vois la flamme. »
+     L'ordre y était déjà : la fête attend que les résultats soient posés
+     (voir relacherToasts). Ce qui change, c'est sa scène : plus une carte
+     posée sur les résultats, une PAGE — elle arrive par le côté comme toutes
+     les pages, sur leur fond uni ; la flamme en grand au milieu, le compte qui
+     passe d'hier à aujourd'hui, la semaine, et « Continuer » en bas, sous le
+     pouce. Toucher ailleurs ne ferme rien : on la quitte par son bouton, et
+     l'on retrouve ses résultats. Le contenu et ses noms (#modalVeil,
+     .fete-flamme, #modalOk) ne bougent pas : tout ce qui la lisait la lit.
+     Le moteur de verre éteint l'animation des voiles ouverts (plus haut) :
+     celle-ci la reprend, plus loin dans la feuille, à poids égal. La carte ne
+     porte plus de verre : c'est une page. */
+  html .modal-veil.fete-page:not(.closing){ animation:pageIn var(--tr-ouvre); }
+  html .modal-veil.fete-page.closing{ animation:pageOut var(--tr-ferme) forwards; }
+  .modal-veil.fete-page{ display:block; padding:0; background:var(--page-fond); box-shadow:-18px 0 42px rgba(24,16,10,0.22); }
+  .modal-veil.fete-page .modal-card.fete-flamme{ position:absolute; inset:0; width:auto; max-width:none; border-radius:0; margin:0;
+    justify-content:center; gap:0.5rem; padding:calc(env(safe-area-inset-top) + 2rem) var(--page-marge) calc(var(--sab) + 7rem);
+    background:none; box-shadow:none; --rim-cast:none; animation:none; }
+  .modal-veil.fete-page.closing .modal-card{ animation:none; }
+  .modal-veil.fete-page .modal-card > .gs, .modal-veil.fete-page .modal-card > .glass-rim{ display:none !important; }
+  .fete-page .fete-flamme .ff-feu{ width:9.5rem; height:9.5rem; }
+  .fete-page .fete-flamme .ff-n{ height:4.4rem; width:12rem; font-size:3.7rem; line-height:4.4rem; }
+  .fete-page .fete-flamme .modal-title{ font-size:1.5rem; margin-top:0.3rem; text-align:center; }
+  .fete-page .fete-flamme .modal-msg{ font-size:1rem; max-width:20rem; text-align:center; }
+  .fete-page .fete-flamme .ff-sem{ margin-top:1.3rem; --sj-l:2.35rem; }
+  .fete-page .fete-flamme .ff-sem .sj{ height:2.9rem; }
+  .modal-veil.fete-page .modal-card.fete-flamme .modal-actions{ position:absolute; left:var(--page-marge); right:var(--page-marge);
+    bottom:calc(var(--sab) + 1.4rem); width:auto; margin:0; }
+  .fete-page .fete-flamme .modal-btn.ok{ padding:calc(1.08rem + 1px); font-size:1.02rem; }
   .invit-rappels .ir-cloche{ background:linear-gradient(160deg, var(--pal-corail-a), var(--pal-corail-b)); padding:1.05rem; animation:ffPose 0.55s cubic-bezier(0.2,1.35,0.4,1) both; }
   .modal-card.invit-rappels .modal-actions.colonne{ display:flex; flex-direction:column; gap:0.5rem; }
   .modal-card.invit-rappels .modal-actions.colonne .modal-btn{ width:100%; margin:0; }
@@ -5049,6 +5109,13 @@
      franche quand elle redescend) → le logo semble léviter. */
   .hero-zone::after{ content:""; position:absolute; left:50%; bottom:-0.15rem; width:46%; height:0.7rem; transform:translateX(-50%); background:radial-gradient(ellipse at center, rgba(10,8,6,0.42), rgba(10,8,6,0) 72%); filter:blur(3px); z-index:0; pointer-events:none; animation:heroShadow 5s ease-in-out infinite; }
   .hero-zone.show-verse::after{ opacity:0; transition:opacity var(--tr-ouvre); }
+  /* (v350) « L'ombre censée refléter l'icône est toujours à travers le
+     verset. » L'opacité ci-dessus ne suffisait pas : l'animation de
+     respiration (heroShadow) réécrit l'opacité à chaque image, et une
+     animation passe avant toute règle. Le filtre, lui, n'est pas animé :
+     c'est par lui que l'ombre s'efface, au pas du verset qui arrive. */
+  .hero-zone::after{ transition:filter var(--tr-ouvre); }
+  .hero-zone.show-verse::after{ filter:blur(3px) opacity(0); }
   @keyframes heroShadow{ 0%,100%{ transform:translateX(-50%) scale(1); opacity:0.5; } 50%{ transform:translateX(-50%) scale(0.78); opacity:0.26; } }
   .hero-icon-btn{ display:block; position:relative; z-index:1; background:none; border:none; padding:0; border-radius:26%; box-shadow:none; pointer-events:auto;
     -webkit-touch-callout:none; -webkit-user-select:none; user-select:none; touch-action:manipulation; }
@@ -6115,6 +6182,12 @@
   .grp-raison .gr-coche svg{ width:100%; height:100%; }
   .grp-raison.choisie{ color:var(--primary-dark); background:rgba(238,74,40,0.08); }
   .grp-raison.choisie .gr-coche{ visibility:visible; }
+  /* (v352) LA PHOTO SIGNALÉE, EN TÊTE DE SA PAGE : on voit ce qu'on signale,
+     carrée comme dans la photo en grand, avec le nom de qui la porte. */
+  .sp-tete{ display:flex; flex-direction:column; align-items:center; gap:0.5rem; margin:0.15rem 0 0.85rem; }
+  .sp-img{ width:6.4rem; height:6.4rem; border-radius:var(--r-m); background-color:var(--page-carte); background-size:cover;
+    background-position:50% 50%; background-repeat:no-repeat; box-shadow:var(--relief); }
+  .sp-nom{ font-family:'Poppins',sans-serif; font-weight:600; font-size:0.98rem; color:var(--ink); max-width:100%; overflow-wrap:anywhere; text-align:center; }
   /* L'avatar du groupe dans le titre d'une feuille REMPLIT la case d'icône
      (1,5 rem), il ne la dépasse pas : à 1,75 rem il débordait sur le titre
      et descendait sur la carte du code d'invitation. */
@@ -6499,6 +6572,9 @@
      feuille ne grandit pas d'un pixel. */
   .liens-legaux{ display:flex; justify-content:center; align-items:center; flex-wrap:wrap; gap:0 0.1rem; margin:-0.8rem auto -0.35rem; }
   .liens-legaux .lien-conf{ display:inline-flex; align-items:center; margin:0; }
+  /* (v349) Dans les mentions, « Confidentialité » est un lien de la phrase. */
+  .conf-l .ment-conf{ display:inline-block; margin:-0.62rem 0; padding:0.62rem 0; font-size:inherit; font-weight:600;
+    color:var(--ink-soft); text-decoration:underline; text-underline-offset:3px; }
   .conf-l .lien-mail{ color:inherit; text-decoration:underline; text-underline-offset:3px; overflow-wrap:anywhere; }
   /* ===================== (v347) LES JEUX =====================
      Mêmes matières que l'accueil — cartes de verre, icônes au dégradé de la
@@ -6526,7 +6602,14 @@
   .grp-h.jx-h{ margin-top:0.1rem; }
   /* La grille : deux colonnes ; un jeu seul sur sa ligne la prend entière. */
   .jx-grille{ display:grid; grid-template-columns:1fr 1fr; gap:0.7rem; }
-  .mode-card.jx-tuile{ margin:0; flex-direction:column; align-items:flex-start; justify-content:flex-start; gap:0.6rem; padding:calc(0.95rem + 1px); min-height:9.6rem; }
+  /* (v350) « Je préférais l'ancienne version, juste adaptée pour que ce soit
+     plus cohérent en termes d'espacement. » Les tuiles restent ; elles ne
+     s'allongent plus pour rien : plus de hauteur minimale (elle laissait un
+     trou entre la phrase et le bas), la même marge que la carte du jeu du
+     jour, et une phrase coupée en deux lignes égales plutôt qu'un mot seul
+     sur la seconde. */
+  .mode-card.jx-tuile{ margin:0; flex-direction:column; align-items:flex-start; justify-content:flex-start; gap:0.6rem; padding:calc(1rem + 1px) calc(0.95rem + 1px); }
+  .jx-tuile .jx-desc{ text-wrap:balance; }
   .jx-tuile-txt{ display:flex; flex-direction:column; gap:0.2rem; min-width:0; }
   .mode-card.jx-tuile.large{ grid-column:1 / -1; flex-direction:row; align-items:center; min-height:0; }
   .mode-card.jx-tuile.large .jx-tuile-txt{ flex:1; }
@@ -6588,6 +6671,25 @@
   /* Un morceau posé laisse sa forme, vide : rien ne bouge, et l'on voit ce qui reste. */
   .option-btn.jx-utilise{ opacity:0.32; transform:scale(0.96); pointer-events:none; }
   .option-btn.jx-utilise .opt-text{ visibility:hidden; }
+  /* ===== (v351) LE VERSET À LA MAIN (voir LE VERSET SE REBÂTIT À LA MAIN) =====
+     Un morceau se prend sans que la page défile ni que le texte se
+     sélectionne. Celui qu'on porte laisse sa trace, pâlie ; la copie qui
+     suit le doigt a la matière des morceaux de la réserve, soulevée. Le trait
+     qui dit où il se posera est de l'encre, comme un curseur de texte. */
+  /* touch-action ne s'applique pas à un élément EN LIGNE — et les morceaux
+     de la ligne le sont (un morceau peut se couper d'une rangée à l'autre) :
+     posé sur eux seuls, il était ignoré, le navigateur prenait le geste pour
+     un défilement et l'annulait. C'est la ligne entière qui le porte. */
+  #jxLigne{ position:relative; touch-action:none; }
+  .jx-verset .jx-pose, .jx-bouts .jx-bout{ touch-action:none; -webkit-user-select:none; user-select:none; -webkit-touch-callout:none; }
+  .jx-pose.jx-leve, .option-btn.jx-bout.jx-leve{ opacity:0.3; }
+  .jx-pose.jx-arrive, .option-btn.jx-bout.jx-arrive{ visibility:hidden; }
+  .jx-flotte{ position:fixed; left:0; top:0; z-index:9000; pointer-events:none; padding:0.62rem 0.85rem; border-radius:var(--r-m);
+    background:rgb(252,248,241); color:var(--ink); white-space:nowrap; max-width:86vw; overflow:hidden; text-overflow:ellipsis;
+    box-shadow:0 14px 30px rgba(15,12,10,0.26), 0 3px 9px rgba(15,12,10,0.14); will-change:transform; }
+  .jx-curseur{ position:absolute; width:3px; border-radius:2px; background:var(--ink); opacity:0.72; pointer-events:none; animation:jxCurseur 1s ease-in-out infinite; }
+  @keyframes jxCurseur{ 0%,100%{ opacity:0.72; } 50%{ opacity:0.3; } }
+  .btn-next.jx-valider{ margin-top:0.9rem; margin-bottom:0; }
   /* ===== LA FIN ===== */
   .card.jx-bilan{ display:flex; flex-direction:column; align-items:center; text-align:center; gap:0.35rem; padding-top:calc(1.4rem + 1px); padding-bottom:calc(1.3rem + 1px); }
   .jx-pct{ font-family:'Poppins',sans-serif; font-weight:800; font-size:3.1rem; line-height:1; color:var(--ink); margin-top:0.55rem; font-variant-numeric:tabular-nums; }
@@ -7004,6 +7106,7 @@ const TEXTES = {
     "Avec le code reçu d'un ami":"With the code a friend sent you",
     "C'est parti…":"Here we go…",
     "Choisis ton nom":"Choose your name",
+    "Écris ton prénom pour continuer : c'est le nom que verront les autres joueurs.":"Write your first name to continue: it's the name other players will see.",
     "Code de la partie":"Game code",
     "Continuer":"Continue",
     "Couleur":"Color",
@@ -7272,7 +7375,7 @@ const TEXTES = {
     "Sans compte,":"Without an account,",
     "ta progression et tes réglages restent sur ton téléphone.":"your progress and settings stay on your phone.",
     "Avec un compte,":"With an account,",
-    "ton e-mail sert à te connecter ; ta progression et ta photo sont sauvegardées en ligne.":"your email is used to sign in; your progress and photo are saved online.",
+    "ton e-mail sert à te connecter ; ta progression et ta photo sont sauvegardées en ligne, chez Supabase.":"your email is used to sign in; your progress and photo are saved online, with Supabase.",
     "Les autres voient":"Others see",
     "ton nom, ta couleur, ta photo et, dans tes groupes, tes messages.":"your name, color and photo — and, in your groups, your messages.",
     "Ta dernière visite":"Your last visit",
@@ -7316,8 +7419,10 @@ const TEXTES = {
     "Personne d'autre dans ce groupe pour le reprendre : supprime plutôt le groupe.":"No one else in this group to take it over: delete the group instead.",
     "Les rapports de bug,":"Bug reports,",
     "s'ils sont activés, n'envoient que l'erreur, rien sur toi.":"if turned on, send only the error, nothing about you.",
+    "La publicité":"Ads",
+    "vient de Google AdSense, en plein écran, entre deux parties. Google peut utiliser des cookies pour la choisir : en Europe, avec ton accord. Yada ne lui transmet ni ton nom, ni tes messages, ni ta progression.":"come from Google AdSense, full screen, between two games. Google may use cookies to choose them: in Europe, only with your consent. Yada never passes on your name, your messages or your progress.",
     "Jamais":"Never",
-    "de publicité, de pistage ni de revente.":"any ads, tracking or data selling.",
+    "de revente de tes données.":"any selling of your data.",
     "Tout supprimer :":"To delete everything:",
     "Profil → Mon compte → « Supprimer mon compte ».":"Profile → My account → “Delete my account”.",
     "Ta progression n'existe que sur ce téléphone.":"Your progress lives only on this phone.",
@@ -7707,6 +7812,13 @@ const TEXTES = {
     "Photo du groupe inappropriée":"Inappropriate group photo",
     "Nom ou description du groupe inapproprié":"Inappropriate group name or description",
     "Signaler cette photo":"Report this photo",
+    "Signaler la photo du groupe":"Report the group photo",
+    "Qu'est-ce qui ne va pas sur cette photo ? La modération le reçoit, sans que l'autre personne sache que ça vient de toi.":"What's wrong with this photo? Moderators receive it, without the other person knowing it came from you.",
+    "Nudité ou contenu sexuel":"Nudity or sexual content",
+    "Violence ou contenu choquant":"Violence or shocking content",
+    "Haine ou symbole haineux":"Hate or a hateful symbol",
+    "La photo de quelqu'un d'autre":"Someone else's photo",
+    "Publicité ou arnaque":"Advertising or a scam",
     "Contenu sexuel, violent ou haineux":"Sexual, violent or hateful content",
     "Publicité ou messages en série":"Ads or spam",
     "Quelqu'un est en danger":"Someone is in danger",
@@ -7780,8 +7892,9 @@ const TEXTES = {
     "Touche les récits du plus ancien au plus récent":"Tap the stories from earliest to latest",
     "Touche un personnage, puis son lieu":"Tap a person, then their place",
     "Un mot a changé\u00a0: touche-le":"One word has changed: tap it",
-    "Touche les morceaux dans l'ordre du verset":"Tap the pieces in the order of the verse",
-    "Touche les morceaux dans l'ordre":"Tap the pieces in order",
+    "Touche ou glisse les morceaux dans l'ordre du verset":"Tap or drag the pieces in the order of the verse",
+    "Touche ou glisse les morceaux ici":"Tap or drag the pieces here",
+    "Valider":"Check",
     "Du plus ancien au plus récent, dans le récit biblique.":"From earliest to latest, in the Bible's account.",
     "Chaque paire se lit dans le chapitre indiqué.":"Each pair can be read in the chapter shown.",
     "La réponse\u00a0: {n} ({ref}).":"The answer: {n} ({ref}).",
@@ -7795,19 +7908,15 @@ const TEXTES = {
     "de suite":"in a row",
     "Autres jeux":"Other games",
     "Mentions légales":"Legal notice",
-    "Éditeur, directeur de la publication et responsable des données :":"Publisher, publication director and data controller:",
-    "Taylor Dauber, à titre personnel et non professionnel.":"Taylor Dauber, in a personal, non-professional capacity.",
+    "Éditeur et directeur de la publication :":"Publisher and publication director:",
     "Contact :":"Contact:",
-    "Hébergement du jeu :":"Game hosting:",
-    "GitHub, Inc. (GitHub Pages), 88 Colin P. Kelly Jr. Street, San Francisco, CA 94107, États-Unis.":"GitHub, Inc. (GitHub Pages), 88 Colin P. Kelly Jr. Street, San Francisco, CA 94107, United States.",
-    "Comptes, groupes et messages :":"Accounts, groups and messages:",
-    "Supabase Pte. Ltd., 65 Chulia Street #38-02/03, OCBC Centre, Singapour 049513.":"Supabase Pte. Ltd., 65 Chulia Street #38-02/03, OCBC Centre, Singapore 049513.",
-    "Textes bibliques :":"Bible texts:",
-    "Louis Segond (1910), Darby (1885), Ostervald, Bible Annotée, David Martin (1744), King James (1769), American Standard (1901), World English Bible, Reina-Valera (1865, 1909) : toutes dans le domaine public.":"Louis Segond (1910), Darby (1885), Ostervald, Bible Annotée, David Martin (1744), King James (1769), American Standard (1901), World English Bible, Reina-Valera (1865, 1909): all in the public domain.",
-    "Polices :":"Fonts:",
-    "Poppins, Inter et Fraunces, sous licence SIL Open Font License.":"Poppins, Inter and Fraunces, under the SIL Open Font License.",
-    "Les questions, la musique et les sons":"The questions, the music and the sounds",
-    "ont été créés pour Yada : merci de ne pas les reproduire sans accord.":"were made for Yada: please do not reproduce them without permission.",
+    "Téléphone :":"Phone:",
+    "Adresse :":"Address:",
+    "Hébergeur :":"Host:",
+    "Cloudflare, Inc., 101 Townsend Street, San Francisco, CA 94107, États-Unis — +1 888 993 5273.":"Cloudflare, Inc., 101 Townsend Street, San Francisco, CA 94107, United States — +1 888 993 5273.",
+    "GitHub, Inc., 88 Colin P. Kelly Jr. Street, San Francisco, CA 94107, États-Unis — support.github.com.":"GitHub, Inc., 88 Colin P. Kelly Jr. Street, San Francisco, CA 94107, United States — support.github.com.",
+    "Données personnelles :":"Personal data:",
+    "Mes choix de publicité":"My ad choices",
     "Photo du groupe":"Group photo",
     "Image du groupe":"Group picture",
     "Choisir une photo":"Choose a photo",
@@ -7895,6 +8004,7 @@ const TEXTES = {
     "Avec le code reçu d'un ami":"Con el código que te pasó un amigo",
     "C'est parti…":"Allá vamos…",
     "Choisis ton nom":"Elige tu nombre",
+    "Écris ton prénom pour continuer : c'est le nom que verront les autres joueurs.":"Escribe tu nombre para continuar: es el nombre que verán los demás jugadores.",
     "Code de la partie":"Código de la partida",
     "Continuer":"Continuar",
     "Couleur":"Color",
@@ -8156,7 +8266,7 @@ const TEXTES = {
     "Sans compte,":"Sin cuenta,",
     "ta progression et tes réglages restent sur ton téléphone.":"tu progreso y tus ajustes se quedan en tu teléfono.",
     "Avec un compte,":"Con una cuenta,",
-    "ton e-mail sert à te connecter ; ta progression et ta photo sont sauvegardées en ligne.":"tu correo sirve para iniciar sesión; tu progreso y tu foto se guardan en línea.",
+    "ton e-mail sert à te connecter ; ta progression et ta photo sont sauvegardées en ligne, chez Supabase.":"tu correo sirve para iniciar sesión; tu progreso y tu foto se guardan en línea, en Supabase.",
     "Les autres voient":"Los demás ven",
     "ton nom, ta couleur, ta photo et, dans tes groupes, tes messages.":"tu nombre, tu color, tu foto y, en tus grupos, tus mensajes.",
     "Ta dernière visite":"Tu última visita",
@@ -8200,8 +8310,10 @@ const TEXTES = {
     "Personne d'autre dans ce groupe pour le reprendre : supprime plutôt le groupe.":"No hay nadie más en este grupo para hacerse cargo: mejor elimina el grupo.",
     "Les rapports de bug,":"Los informes de errores,",
     "s'ils sont activés, n'envoient que l'erreur, rien sur toi.":"si están activados, solo envían el error, nada sobre ti.",
+    "La publicité":"La publicidad",
+    "vient de Google AdSense, en plein écran, entre deux parties. Google peut utiliser des cookies pour la choisir : en Europe, avec ton accord. Yada ne lui transmet ni ton nom, ni tes messages, ni ta progression.":"viene de Google AdSense, a pantalla completa, entre dos partidas. Google puede usar cookies para elegirla: en Europa, con tu consentimiento. Yada no le transmite ni tu nombre, ni tus mensajes, ni tu progreso.",
     "Jamais":"Nunca",
-    "de publicité, de pistage ni de revente.":"publicidad, rastreo ni venta de datos.",
+    "de revente de tes données.":"se venden tus datos.",
     "Tout supprimer :":"Para borrarlo todo:",
     "Profil → Mon compte → « Supprimer mon compte ».":"Perfil → Mi cuenta → «Eliminar mi cuenta».",
     "Ta progression n'existe que sur ce téléphone.":"Tu progreso solo existe en este teléfono.",
@@ -8597,6 +8709,13 @@ const TEXTES = {
     "Photo du groupe inappropriée":"Foto del grupo inapropiada",
     "Nom ou description du groupe inapproprié":"Nombre o descripción del grupo inapropiados",
     "Signaler cette photo":"Denunciar esta foto",
+    "Signaler la photo du groupe":"Denunciar la foto del grupo",
+    "Qu'est-ce qui ne va pas sur cette photo ? La modération le reçoit, sans que l'autre personne sache que ça vient de toi.":"¿Qué tiene de malo esta foto? La moderación lo recibe sin que la otra persona sepa que viene de ti.",
+    "Nudité ou contenu sexuel":"Desnudos o contenido sexual",
+    "Violence ou contenu choquant":"Violencia o contenido impactante",
+    "Haine ou symbole haineux":"Odio o un símbolo de odio",
+    "La photo de quelqu'un d'autre":"La foto de otra persona",
+    "Publicité ou arnaque":"Publicidad o estafa",
     "Contenu sexuel, violent ou haineux":"Contenido sexual, violento o de odio",
     "Publicité ou messages en série":"Publicidad o mensajes en serie",
     "Quelqu'un est en danger":"Alguien está en peligro",
@@ -8670,8 +8789,9 @@ const TEXTES = {
     "Touche les récits du plus ancien au plus récent":"Toca los relatos del más antiguo al más reciente",
     "Touche un personnage, puis son lieu":"Toca un personaje y luego su lugar",
     "Un mot a changé\u00a0: touche-le":"Una palabra cambió: tócala",
-    "Touche les morceaux dans l'ordre du verset":"Toca los pedazos en el orden del versículo",
-    "Touche les morceaux dans l'ordre":"Toca los pedazos en orden",
+    "Touche ou glisse les morceaux dans l'ordre du verset":"Toca o arrastra los pedazos en el orden del versículo",
+    "Touche ou glisse les morceaux ici":"Toca o arrastra los pedazos aquí",
+    "Valider":"Comprobar",
     "Du plus ancien au plus récent, dans le récit biblique.":"Del más antiguo al más reciente, en el relato bíblico.",
     "Chaque paire se lit dans le chapitre indiqué.":"Cada par se lee en el capítulo indicado.",
     "La réponse\u00a0: {n} ({ref}).":"La respuesta: {n} ({ref}).",
@@ -8685,19 +8805,15 @@ const TEXTES = {
     "de suite":"seguidas",
     "Autres jeux":"Otros juegos",
     "Mentions légales":"Aviso legal",
-    "Éditeur, directeur de la publication et responsable des données :":"Editor, director de la publicación y responsable de los datos:",
-    "Taylor Dauber, à titre personnel et non professionnel.":"Taylor Dauber, a título personal y no profesional.",
+    "Éditeur et directeur de la publication :":"Editor y director de la publicación:",
     "Contact :":"Contacto:",
-    "Hébergement du jeu :":"Alojamiento del juego:",
-    "GitHub, Inc. (GitHub Pages), 88 Colin P. Kelly Jr. Street, San Francisco, CA 94107, États-Unis.":"GitHub, Inc. (GitHub Pages), 88 Colin P. Kelly Jr. Street, San Francisco, CA 94107, Estados Unidos.",
-    "Comptes, groupes et messages :":"Cuentas, grupos y mensajes:",
-    "Supabase Pte. Ltd., 65 Chulia Street #38-02/03, OCBC Centre, Singapour 049513.":"Supabase Pte. Ltd., 65 Chulia Street #38-02/03, OCBC Centre, Singapur 049513.",
-    "Textes bibliques :":"Textos bíblicos:",
-    "Louis Segond (1910), Darby (1885), Ostervald, Bible Annotée, David Martin (1744), King James (1769), American Standard (1901), World English Bible, Reina-Valera (1865, 1909) : toutes dans le domaine public.":"Louis Segond (1910), Darby (1885), Ostervald, Bible Annotée, David Martin (1744), King James (1769), American Standard (1901), World English Bible, Reina-Valera (1865, 1909): todas de dominio público.",
-    "Polices :":"Tipografías:",
-    "Poppins, Inter et Fraunces, sous licence SIL Open Font License.":"Poppins, Inter y Fraunces, con licencia SIL Open Font License.",
-    "Les questions, la musique et les sons":"Las preguntas, la música y los sonidos",
-    "ont été créés pour Yada : merci de ne pas les reproduire sans accord.":"se crearon para Yada: por favor, no los reproduzcas sin permiso.",
+    "Téléphone :":"Teléfono:",
+    "Adresse :":"Dirección:",
+    "Hébergeur :":"Alojamiento:",
+    "Cloudflare, Inc., 101 Townsend Street, San Francisco, CA 94107, États-Unis — +1 888 993 5273.":"Cloudflare, Inc., 101 Townsend Street, San Francisco, CA 94107, Estados Unidos — +1 888 993 5273.",
+    "GitHub, Inc., 88 Colin P. Kelly Jr. Street, San Francisco, CA 94107, États-Unis — support.github.com.":"GitHub, Inc., 88 Colin P. Kelly Jr. Street, San Francisco, CA 94107, Estados Unidos — support.github.com.",
+    "Données personnelles :":"Datos personales:",
+    "Mes choix de publicité":"Mis opciones de publicidad",
     "Photo du groupe":"Foto del grupo",
     "Image du groupe":"Imagen del grupo",
     "Choisir une photo":"Elegir una foto",
@@ -11332,7 +11448,7 @@ const SUPABASE_ANON_KEY = "sb_publishable_FDJ_R0foC7uIeHmxVrj6rA_2NeIgW2a";
    remontée d'un téléphone ne vaut rien si on ne sait pas QUELLE version
    tournait. Elle doit rester égale au CACHE de sw.js — c'est ce que vérifie
    banc-essai/version.js, qui refuse de laisser publier les deux en désaccord. */
-const VERSION_JEU = "v348";
+const VERSION_JEU = "v352";
 
 /* ===================== QUAND ÇA CASSE CHEZ UN JOUEUR =====================
    « Si quelque chose casse chez cinq d'entre eux sur un modèle de téléphone
@@ -12761,7 +12877,15 @@ function openOnline(){
 }
 function saveName(v){
   const n=(v||"").trim().slice(0,18);
-  if(!n) return;
+  /* (v350) « Lorsqu'on clique sur Continuer sans avoir mis de nom, il faut
+     un petit message. » Le bouton ne faisait rien, en silence. */
+  if(!n){
+    const e = document.getElementById("nomErreur"), z = document.getElementById("nameInput");
+    if(e) e.textContent = T("Écris ton prénom pour continuer : c'est le nom que verront les autres joueurs.");
+    if(z){ z.classList.remove("refus"); void z.offsetWidth; z.classList.add("refus"); try{ z.focus({ preventScroll:true }); }catch(err){} }
+    try{ if(navigator.vibrate) navigator.vibrate(12); }catch(err){}
+    return;
+  }
   profile.name = n; saveProfile();
   openOnline();
 }
@@ -13964,7 +14088,7 @@ function ensureAudioAwake(){ if(actx) reveiller(actx); }
 /* Verrou : on ne ranime JAMAIS l'audio si l'app n'est pas au premier plan.
    Sinon, en fermant l'app (blur/statechange déclenchés pendant la mise en
    veille), on relançait le son au pire moment -> « bruit bizarre ». */
-function audioActive(){ return document.visibilityState === "visible" && !document.hidden && !sonFlou; }
+function audioActive(){ return document.visibilityState === "visible" && !document.hidden && !sonFlou && !pubEcranPlein; }
 /* Ré-amorce la nappe musicale UNIQUEMENT si le planificateur est réellement
    mort (interruption). Quand la musique tourne bien, on ne touche à RIEN :
    réinitialiser musicNextBar en pleine lecture reprogrammait des notes
@@ -16016,6 +16140,34 @@ try{
   vv.addEventListener("resize", apply);
   vv.addEventListener("scroll", apply);
   if(vk){ try{ vk.addEventListener("geometrychange", apply); }catch(e){} }
+  /* ===== (v350) LE CLAVIER QUI FINIT DE MONTER SANS LE DIRE =====
+     « Sur Android, je dois faire un petit glissement vers le haut sur la
+     barre d'écriture pour qu'elle s'ajuste. » (photos : la barre à moitié
+     sous la rangée d'outils de Gboard.) Le jeu se calait sur la dernière
+     taille ANNONCÉE de la zone visible ; or un clavier qui finit de monter
+     — la rangée d'outils de Gboard arrive après les touches — peut changer
+     la zone sans qu'aucun événement ne parte. Le glissement, lui, en faisait
+     partir un : d'où la barre qui se remettait en place.
+     Pendant un peu plus d'une seconde et demie après l'arrivée du clavier,
+     le jeu RELIT donc la zone visible à chaque image (une lecture, pas un
+     calcul de mise en page), et ne se recale que si elle a bougé. */
+  let guetZone = 0, guetZoneFin = 0, zoneVue = "";
+  const guetterZone = (ms)=>{
+    guetZoneFin = Math.max(guetZoneFin, performance.now() + (ms || 1600));
+    if(guetZone) return;
+    const pas = ()=>{
+      guetZone = 0;
+      if(!isField() || document.hidden){ zoneVue = ""; return; }
+      let r = 0; try{ const b = !redim && vk && vk.boundingRect; r = b ? Math.round(b.height) : 0; }catch(e){}
+      const v = Math.round(vv.height) + "," + Math.round(vv.offsetTop || 0) + "," + innerHeight + "," + r;
+      if(v !== zoneVue){ const avant = zoneVue; zoneVue = v; if(avant) apply(); }
+      if(performance.now() < guetZoneFin) guetZone = requestAnimationFrame(pas);
+    };
+    guetZone = requestAnimationFrame(pas);
+  };
+  document.addEventListener("focusin", ()=>{ if(isField()) guetterZone(1600); });
+  vv.addEventListener("resize", ()=>{ if(isField()) guetterZone(1200); });
+  if(vk){ try{ vk.addEventListener("geometrychange", ()=>{ if(isField()) guetterZone(1200); }); }catch(e){} }
   /* (v345) Le relevé du clavier (voir LE RELEVÉ DU CLAVIER), une fois posé. */
   vv.addEventListener("resize", ()=>{ if(isField()) relever(); });
   if(vk){ try{ vk.addEventListener("geometrychange", ()=>{ if(isField()) relever(); }); }catch(e){} }
@@ -21014,7 +21166,10 @@ function shareLineHtml(kind){
    « bibletrivia » d'indexedDB, et l'adresse du jeu ci-dessous (elle dépend du
    dépôt, pas du nom). */
 const NOM_DU_JEU = "Yada";
-const GAME_URL = "https://daubertaylor.github.io/BibleTrivia/";
+/* (v349) L'adresse du jeu, celle qu'on partage et qu'on met dans les
+   invitations : son domaine à lui. L'ancienne (GitHub Pages) n'est plus
+   donnée à personne. */
+const GAME_URL = "https://yadaquiz.app/";
 function showMiniToast(msg){
   let el = document.querySelector(".mini-toast");
   if(!el){ el = document.createElement("div"); el.className = "mini-toast"; document.body.appendChild(el); }
@@ -22423,7 +22578,8 @@ function feterFlamme(n, apres){
   const titre = n <= 1 ? T("Ta flamme est allumée !") : Tf("{n} jours d'affilée !", { n });
   const mot = n <= 1 ? T("Joue chaque jour pour la faire grandir.") : T("Reviens demain pour la garder allumée.");
   const veil = document.createElement("div");
-  veil.className = "modal-veil"; veil.id = "modalVeil";
+  /* (v352) Une PAGE entière, plus une carte (voir LA FLAMME EN PAGE ENTIÈRE). */
+  veil.className = "modal-veil fete-page"; veil.id = "modalVeil";
   veil.innerHTML = `<div class="modal-card fete-flamme" role="dialog" aria-label="${escapeHtml(titre)}">
       <div class="ff-feu" aria-hidden="true"><span class="ff-ico">${ICONS.flame}</span></div>
       <div class="ff-n" aria-hidden="true"><span class="ff-avant">${Math.max(0, n - 1)}</span><span class="ff-apres">${n}</span></div>
@@ -25440,6 +25596,7 @@ function majBarre(){
   }
 }
 function allerOnglet(o){
+  if(pubAvant(()=> allerOnglet(o))) return;  // (v349) « Autres jeux », la flèche, après un jeu fini
   if(o === "jeux"){
     if(state.screen === "jeux"){ remonterGroupes(); return; }
     jeu = null;
@@ -25595,7 +25752,12 @@ function manchesCombien(n){
 function versionsDeLaLangue(v){
   return biblesDeLaLangue().map(b => (LANGUE === "fr" && b.cle === "lsg1910") ? v.t : ((VERSETS_ALT[b.cle] || {})[v.r] || "")).filter(Boolean);
 }
-function motRe(m){ return new RegExp("(?<![\\p{L}\\p{M}])" + m.replace(/[.*+?^${}()|[\]\\]/g, "\\$&") + "(?![\\p{L}\\p{M}])", "iu"); }
+/* (v350) UN MOT ENTIER, SANS REGARDER EN ARRIÈRE. Le « regard en arrière »
+   des expressions n'existe dans Safari que depuis iOS 16.4 : sur un iPhone resté plus bas (un XS en iOS
+   16.3), construire l'expression levait une erreur et « Trouve l'erreur »
+   ne démarrait pas. Ce qui précède le mot est donc LU (début, ou tout sauf
+   une lettre) et rendu tel quel : même résultat, partout. */
+function motRe(m){ return new RegExp("(^|[^\\p{L}\\p{M}])(" + m.replace(/[.*+?^${}()|[\]\\]/g, "\\$&") + ")(?![\\p{L}\\p{M}])", "iu"); }
 function manchesErreur(n){
   const out = [], echanges = JEU_ECHANGES[LANGUE] || JEU_ECHANGES.fr;
   for(const v of melanger(HERO_VERSES)){
@@ -25609,7 +25771,7 @@ function manchesErreur(n){
     const mots = t.split(/\s+/).filter(Boolean);
     const cibles = mots.map((m, i) => motRe(a).test(m) ? i : -1).filter(i => i >= 0);
     const k = cibles[Math.floor(Math.random() * cibles.length)];
-    mots[k] = mots[k].replace(motRe(a), (x) => x[0] === x[0].toUpperCase() && x[0] !== x[0].toLowerCase() ? z[0].toUpperCase() + z.slice(1) : z);
+    mots[k] = mots[k].replace(motRe(a), (x, avant, mot) => avant + (mot[0] === mot[0].toUpperCase() && mot[0] !== mot[0].toLowerCase() ? z[0].toUpperCase() + z.slice(1) : z));
     out.push({ r:v.r, mots, faux:k, juste:t.split(/\s+/).filter(Boolean)[k], choix:null });
   }
   return out;
@@ -25655,6 +25817,7 @@ const PREPARER = { ordre:manchesOrdre, quiou:manchesQuiou, combien:manchesCombie
 
 /* ===== LA PARTIE ===== */
 function lancerJeu(id){
+  if(pubAvant(()=> lancerJeu(id))) return;   // (v349) « Rejouer », après un jeu fini
   const def = defJeu(id); if(!def) return;
   const manches = PREPARER[id](def.manches);
   if(!manches.length) return;
@@ -25715,10 +25878,10 @@ function toucherOrdre(i){
     b.classList.toggle("jx-pris", rang >= 0);
     const l = b.querySelector(".letter"); if(l) l.textContent = rang >= 0 ? String(rang + 1) : "";
   });
-  if(m.ordre.length === m.items.length){
-    const juste = m.ordre.every((j, r) => r === 0 || m.items[m.ordre[r - 1]][0] < m.items[j][0]);
-    setTimeout(()=> conclureManche(juste), 160);
-  }
+  /* (v351) Plus de validation au dernier toucher : « Valider » (voir
+     LE VERSET SE REBÂTIT À LA MAIN). Le dernier récit touché par erreur se
+     reprend, comme les autres. */
+  majValider(m);
 }
 function toucherQui(i){
   const m = mancheCourante(); if(!m || jeu.revele) return;
@@ -25738,10 +25901,6 @@ function toucherOu(l){
   m.liens[m.choisi] = l; m.choisi = null;
   playTap();
   majQuiou(m);
-  if(Object.keys(m.liens).length === m.paires.length){
-    const juste = m.paires.every((p, i) => m.liens[i] === i);
-    setTimeout(()=> conclureManche(juste), 160);
-  }
 }
 /* LES LIENS SE LISENT À LA COULEUR. Chaque personne porte sa pastille,
    toujours la même ; le lieu qu'on lui relie prend la même, à côté de son
@@ -25760,6 +25919,8 @@ function majQuiou(m){
     JX_LIENS.forEach(c => p.classList.toggle(c, qui !== undefined && JX_LIENS[+qui] === c));
     b.classList.toggle("jx-relie", qui !== undefined);
   });
+  /* (v351) La dernière paire reliée ne valide plus : « Valider ». */
+  majValider(m);
 }
 function toucherNombre(k){
   const m = mancheCourante(); if(!m || jeu.revele) return;
@@ -25771,24 +25932,206 @@ function toucherMot(k){
   m.choix = k;
   conclureManche(k === m.faux);
 }
+/* ===== (v351) LE VERSET SE REBÂTIT À LA MAIN =====
+   « Pour rebâtir les versets, j'aime beaucoup. J'aimerais juste améliorer un
+     petit truc ou deux : la possibilité de prendre le verset dans les mains,
+     si on le souhaite, de le placer soi-même, et aussi de confirmer son
+     choix plutôt que ça confirme tout seul à la fin. »
+   Deux gestes, au choix :
+   — TOUCHER, comme avant : un morceau de la réserve va au bout de la ligne ;
+     un morceau de la ligne retourne dans la réserve.
+   — PRENDRE : le doigt soulève le morceau, et un trait montre où il se
+     posera dans la ligne, entre deux morceaux. On voit, de haut en bas : la
+     copie du morceau (en relief), le trait, puis le doigt — ni le doigt ni
+     la copie ne cachent l'endroit visé. Lâché dans la
+     ligne, il s'y insère, là ; lâché ailleurs, il rentre dans la réserve. Un
+     morceau déjà posé se déplace de la même façon.
+   Rien ne se valide tout seul : « Valider » s'allume quand tous les morceaux
+   sont posés, et l'on peut encore tout déplacer avant de le toucher. */
+let glisseMorceau = null, clicMorceauMuet = 0;
 function toucherMorceau(k){
   const m = mancheCourante(); if(!m || jeu.revele) return;
+  /* Le clic qui suit un glissement (une souris le donne) n'est pas un toucher. */
+  if(performance.now() - clicMorceauMuet < 450) return;
   const p = m.pose.indexOf(k);
   if(p >= 0) m.pose.splice(p, 1); else m.pose.push(k);
   playTap();
   majMorceaux(m);
-  if(m.pose.length === m.parts.length){
-    /* Deux morceaux identiques s'échangent sans faute : on compare le TEXTE. */
-    const juste = m.pose.every((x, i) => m.parts[x] === m.parts[i]);
-    setTimeout(()=> conclureManche(juste), 160);
-  }
+}
+/* « Valider », pour les trois jeux qui se jouent en plusieurs gestes (Dans
+   l'ordre, Qui ? Où ?, Verset en morceaux) : la manche est-elle complète,
+   et juste ? */
+function mancheComplete(m){
+  if(!m || !jeu) return false;
+  if(jeu.id === "ordre") return m.ordre.length === m.items.length;
+  if(jeu.id === "quiou") return Object.keys(m.liens).length === m.paires.length;
+  if(jeu.id === "morceaux") return m.pose.length === m.parts.length;
+  return false;
+}
+function mancheJuste(m){
+  if(jeu.id === "ordre") return m.ordre.every((j, r) => r === 0 || m.items[m.ordre[r - 1]][0] < m.items[j][0]);
+  if(jeu.id === "quiou") return m.paires.every((p, i) => m.liens[i] === i);
+  /* Deux morceaux identiques s'échangent sans faute : on compare le TEXTE. */
+  return m.pose.every((x, i) => m.parts[x] === m.parts[i]);
+}
+function validerManche(){
+  const m = mancheCourante(); if(!m || jeu.revele || !mancheComplete(m)) return;
+  conclureManche(mancheJuste(m));
+}
+function majValider(m){
+  const v = document.getElementById("jxValider"), pret = mancheComplete(m);
+  if(v && v.disabled === pret){ v.disabled = !pret; try{ glassTrack(); }catch(e){} }
+}
+function boutonValider(m){
+  return `<button class="btn-next jx-valider" id="jxValider" onclick="validerManche()"${mancheComplete(m) ? "" : " disabled"}>${T("Valider")}</button>`;
+}
+function ligneMorceauxHtml(m){
+  return m.pose.length
+    ? m.pose.map(x => `<button class="jx-pose" data-k="${x}" onclick="toucherMorceau(${x})">${escapeHtml(frSpace(m.parts[x]))}</button>`).join(" ")
+    : `<span class="jx-vide">${T("Touche ou glisse les morceaux ici")}</span>`;
 }
 function majMorceaux(m){
   const ligne = document.getElementById("jxLigne");
-  if(ligne) ligne.innerHTML = m.pose.length
-    ? m.pose.map(x => `<button class="jx-pose" onclick="toucherMorceau(${x})">${escapeHtml(frSpace(m.parts[x]))}</button>`).join(" ")
-    : `<span class="jx-vide">${T("Touche les morceaux dans l'ordre")}</span>`;
+  if(ligne) ligne.innerHTML = ligneMorceauxHtml(m);
   document.querySelectorAll("#jxZone .jx-bout").forEach(b => b.classList.toggle("jx-utilise", m.pose.includes(+b.dataset.k)));
+  majValider(m);
+}
+/* Le geste : rien ne bouge avant sept pixels (en deçà, c'est un toucher). */
+function brancherGlisseMorceaux(zone){
+  if(!zone) return;
+  zone.addEventListener("pointerdown", (e)=>{
+    if(e.button > 0 || glisseMorceau) return;
+    const m = mancheCourante(); if(!m || jeu.revele) return;
+    const b = e.target && e.target.closest ? e.target.closest(".jx-bout, .jx-pose") : null;
+    if(!b || !zone.contains(b) || b.classList.contains("jx-utilise")) return;
+    const g = { k:+b.dataset.k, depuis:b.classList.contains("jx-pose") ? "ligne" : "reserve", el:b, id:e.pointerId,
+                x0:e.clientX, y0:e.clientY, doigt:e.pointerType === "touch", actif:false, dans:false, idx:0 };
+    glisseMorceau = g;
+    const bouge = (ev)=>{
+      if(ev.pointerId !== g.id) return;
+      if(!g.actif){
+        if(Math.hypot(ev.clientX - g.x0, ev.clientY - g.y0) < 7) return;
+        if(!leverMorceau(g)){ fin(ev, true); return; }
+      }
+      if(ev.cancelable) ev.preventDefault();
+      suivreMorceau(g, ev.clientX, ev.clientY);
+    };
+    const fin = (ev, annule)=>{
+      if(ev && ev.pointerId !== g.id) return;
+      window.removeEventListener("pointermove", bouge, true);
+      window.removeEventListener("pointerup", lache, true);
+      window.removeEventListener("pointercancel", rompt, true);
+      if(glisseMorceau === g) glisseMorceau = null;
+      if(g.actif){ clicMorceauMuet = performance.now(); poserMorceau(g, annule); }
+    };
+    const lache = (ev)=> fin(ev, false), rompt = (ev)=> fin(ev, true);
+    window.addEventListener("pointermove", bouge, { capture:true, passive:false });
+    window.addEventListener("pointerup", lache, true);
+    window.addEventListener("pointercancel", rompt, true);
+  });
+}
+function leverMorceau(g){
+  const m = mancheCourante(); if(!m || jeu.revele || !g.el.isConnected) return false;
+  g.actif = true;
+  const c = document.createElement("div");
+  c.className = "jx-flotte";
+  c.textContent = m.parts[g.k];
+  const modele = document.querySelector("#jxZone .jx-bout .opt-text");
+  if(modele){ const cs = getComputedStyle(modele); c.style.fontFamily = cs.fontFamily; c.style.fontSize = cs.fontSize; c.style.fontWeight = cs.fontWeight; }
+  document.body.appendChild(c);
+  const r = c.getBoundingClientRect();
+  g.copie = c; g.w = r.width; g.h = r.height;
+  g.el.classList.add("jx-leve");
+  const ligne = document.getElementById("jxLigne");
+  if(ligne){ const t = document.createElement("span"); t.className = "jx-curseur"; t.hidden = true; t.setAttribute("aria-hidden", "true"); ligne.appendChild(t); g.curseur = t; }
+  try{ if(navigator.vibrate) navigator.vibrate(8); }catch(e){}
+  return true;
+}
+/* Où le morceau se poserait : l'écart le plus proche entre deux morceaux de
+   la ligne (avant chacun, après chacun — la ligne se replie sur plusieurs
+   rangées), la hauteur comptant double. Le morceau soulevé n'en fait pas
+   partie : on le pose « ailleurs ». */
+function placeDansLaLigne(ligne, k, hx, hy){
+  const poses = Array.prototype.filter.call(ligne.querySelectorAll(".jx-pose"), b => +b.dataset.k !== k);
+  let best = null;
+  const essai = (idx, x, top, h)=>{ const d = Math.abs(hx - x) + 2 * Math.abs(hy - (top + h / 2)); if(!best || d < best.d) best = { idx, x, top, h, d }; };
+  poses.forEach((b, i)=>{
+    const rs = b.getClientRects(); if(!rs.length) return;
+    const a = rs[0], z = rs[rs.length - 1];
+    essai(i, a.left - 2, a.top, a.height);
+    essai(i + 1, z.right + 2, z.top, z.height);
+  });
+  if(!best){
+    const v = ligne.querySelector(".jx-vide, .jx-pose");
+    const r = (v || ligne).getBoundingClientRect();
+    best = { idx:0, x:r.left + r.width / 2, top:r.top, h:Math.min(r.height, 34) };
+  }
+  return best;
+}
+function suivreMorceau(g, x, y){
+  if(!g.copie) return;
+  /* L'endroit visé est juste au-dessus du bout du doigt (à la souris, sous la
+     flèche) ; la copie flotte encore au-dessus de lui. Posée SUR l'endroit
+     visé, elle cachait le trait et les deux morceaux entre lesquels elle
+     allait se poser (vu sur la photo du geste). */
+  const hx = x, hy = g.doigt ? y - 34 : y;
+  const lx = x - g.w / 2, ly = hy - 22 - g.h;
+  g.copie.style.transform = "translate(" + lx.toFixed(1) + "px," + ly.toFixed(1) + "px) scale(1.04)";
+  const ligne = document.getElementById("jxLigne");
+  const r = ligne ? ligne.getBoundingClientRect() : null;
+  g.dans = !!r && hx >= r.left - 18 && hx <= r.right + 18 && hy >= r.top - 30 && hy <= r.bottom + 30;
+  const t = g.curseur;
+  if(!t) return;
+  if(g.dans){
+    const p = placeDansLaLigne(ligne, g.k, hx, hy);
+    g.idx = p.idx;
+    t.style.left = (p.x - r.left - 1.5).toFixed(1) + "px";
+    t.style.top = (p.top - r.top).toFixed(1) + "px";
+    t.style.height = p.h.toFixed(1) + "px";
+    t.hidden = false;
+  } else t.hidden = true;
+}
+function poserMorceau(g, annule){
+  if(g.curseur) g.curseur.remove();
+  g.el.classList.remove("jx-leve");
+  const m = mancheCourante();
+  if(!m || jeu.revele || !document.getElementById("jxLigne")){ if(g.copie) g.copie.remove(); return; }
+  const avant = m.pose.join();
+  if(!annule && g.dans){
+    const reste = m.pose.filter(x => x !== g.k);
+    reste.splice(Math.min(g.idx, reste.length), 0, g.k);
+    m.pose = reste;
+  } else if(!annule && g.depuis === "ligne"){
+    m.pose = m.pose.filter(x => x !== g.k);
+  }
+  majMorceaux(m);
+  if(m.pose.join() !== avant) playTap();
+  atterrirMorceau(g);
+}
+/* La copie rejoint sa place — dans la ligne, ou dans la réserve — puis
+   s'efface sur le morceau, qui se montre à cet instant. */
+function atterrirMorceau(g){
+  const c = g.copie; if(!c) return;
+  const cible = document.querySelector('#jxLigne .jx-pose[data-k="' + g.k + '"]') || document.querySelector('#jxZone .jx-bout[data-k="' + g.k + '"]');
+  if(!cible){ c.remove(); return; }
+  cible.classList.add("jx-arrive");
+  const r = cible.getBoundingClientRect(), rc = c.getBoundingClientRect();
+  const dx = (r.left + r.width / 2) - (rc.left + rc.width / 2), dy = (r.top + r.height / 2) - (rc.top + rc.height / 2);
+  let fini = false;
+  const finir = ()=>{ if(fini) return; fini = true; c.remove(); cible.classList.remove("jx-arrive"); };
+  try{
+    const depart = c.style.transform;
+    const a = c.animate([{ transform:depart, opacity:1 }, { transform:"translate(" + dx.toFixed(1) + "px," + dy.toFixed(1) + "px) " + depart.replace(/scale\([^)]*\)/, "scale(1)"), opacity:0.9 }],
+      { duration:190, easing:"cubic-bezier(0.2,0.9,0.3,1)", fill:"forwards" });
+    a.onfinish = finir;
+    setTimeout(finir, 420);
+  }catch(e){ finir(); }
+}
+/* Un écran qui se redessine en plein geste (rien ne le fait aujourd'hui) ne
+   laisse pas de copie orpheline. */
+function oublierGlisseMorceau(){
+  glisseMorceau = null;
+  document.querySelectorAll("body > .jx-flotte").forEach(c => c.remove());
 }
 
 /* ===== L'ÉCRAN DES JEUX (l'onglet) ===== */
@@ -25799,10 +26142,29 @@ function enteteJeux(){
       <button class="icon-btn" onclick="openSettings()" aria-label="${T("Réglages")}"><span class="ico" style="width:1.22rem;height:1.22rem;">${ICONS.gear}</span></button>
     </div>`;
 }
+/* ===== (v350) « NOUVEAU » DIT UNE VRAIE NOUVEAUTÉ =====
+   « Le badge Nouveau jusqu'à ce qu'on finisse une partie : si c'est bien,
+     laisse-le ; sinon retire-le, pour un jeu plus classique. »
+   Tel quel, il ne disait rien : pour un joueur qui arrive, TOUT est nouveau
+   — cinq « Nouveau » sur cinq tuiles, et une ligne de plus dans chacune.
+   Il ne garde donc que son vrai sens : un jeu AJOUTÉ après l'arrivée du
+   joueur, tant qu'il n'y a pas joué. Les jeux connus à la première ouverture
+   sont notés (bt_jeux_connus) ; aujourd'hui, personne ne voit donc de
+   « Nouveau » — le prochain jeu ajouté l'aura. Une tuile sans record ni
+   nouveauté n'a plus de dernière ligne : elle est plus courte, sans vide. */
+function jeuxConnus(){
+  let l = null;
+  try{ l = JSON.parse(localStorage.getItem("bt_jeux_connus") || "null"); }catch(e){}
+  if(!Array.isArray(l)){
+    l = JEUX.map(j => j.id);
+    try{ localStorage.setItem("bt_jeux_connus", JSON.stringify(l)); }catch(e){}
+  }
+  return l;
+}
 function recordHtml(id){
   const r = lireJeux()[id];
-  return r && r.parties ? `<span class="jx-record"><span class="ico">${ICONS.trophy}</span>${escapeHtml(Tf("Record {p}\u00a0%", { p:r.record }))}</span>`
-                        : `<span class="jx-record jx-neuf">${T("Nouveau")}</span>`;
+  if(r && r.parties) return `<span class="jx-record"><span class="ico">${ICONS.trophy}</span>${escapeHtml(Tf("Record {p}\u00a0%", { p:r.record }))}</span>`;
+  return jeuxConnus().indexOf(id) < 0 ? `<span class="jx-record jx-neuf">${T("Nouveau")}</span>` : "";
 }
 function renderJeux(){
   const el = document.createElement("div");
@@ -25836,7 +26198,7 @@ function consigneJeu(m){
   if(jeu.id === "quiou") return T("Touche un personnage, puis son lieu");
   if(jeu.id === "combien") return m.f[3][langueIdx()];
   if(jeu.id === "erreur") return T("Un mot a changé\u00a0: touche-le");
-  return T("Touche les morceaux dans l'ordre du verset");
+  return T("Touche ou glisse les morceaux dans l'ordre du verset");
 }
 function zoneJeu(m){
   const L = langueIdx(), rv = jeu.revele;
@@ -25849,7 +26211,8 @@ function zoneJeu(m){
         return `<div class="option-btn jx-pas ${bien ? "correct" : "incorrect"}"><span class="letter">${r + 1}</span><span class="opt-text">${escapeHtml(e[1][L])}<small class="jx-ref">${escapeHtml(refLivre(e[2]))}</small></span></div>`; }).join("")}</div>`;
     }
     return `<div class="jx-liste">${m.items.map((e, i) => { const r = m.ordre.indexOf(i);
-      return `<button class="option-btn jx-pas${r >= 0 ? " jx-pris" : ""}" data-i="${i}" onclick="toucherOrdre(${i})"><span class="letter">${r >= 0 ? r + 1 : ""}</span><span class="opt-text">${escapeHtml(e[1][L])}</span></button>`; }).join("")}</div>`;
+      return `<button class="option-btn jx-pas${r >= 0 ? " jx-pris" : ""}" data-i="${i}" onclick="toucherOrdre(${i})"><span class="letter">${r >= 0 ? r + 1 : ""}</span><span class="opt-text">${escapeHtml(e[1][L])}</span></button>`; }).join("")}</div>
+      ${boutonValider(m)}`;
   }
   if(jeu.id === "quiou"){
     if(rv){
@@ -25858,7 +26221,8 @@ function zoneJeu(m){
     return `<div class="jx-deux">
         <div class="jx-col">${m.paires.map((p, i) => `<button class="option-btn jx-qui" data-i="${i}" onclick="toucherQui(${i})"><span class="jx-point ${JX_LIENS[i]}"></span><span class="opt-text">${escapeHtml(p[0][L])}</span></button>`).join("")}</div>
         <div class="jx-col">${m.lieux.map(l => `<button class="option-btn jx-ou" data-l="${l}" onclick="toucherOu(${l})"><span class="jx-point"></span><span class="opt-text">${escapeHtml(m.paires[l][1][L])}</span></button>`).join("")}</div>
-      </div>`;
+      </div>
+      ${boutonValider(m)}`;
   }
   if(jeu.id === "combien"){
     return `<div class="options-grid jx-nombres">${m.options.map((o, k) => {
@@ -25879,8 +26243,9 @@ function zoneJeu(m){
   if(rv){
     return `<div class="card jx-verset jx-final">${m.parts.map((p, i) => `<span class="jx-pose ${m.pose[i] !== undefined && m.parts[m.pose[i]] === p ? "bien" : "mal"}">${escapeHtml(frSpace(p))}</span>`).join(" ")}</div>`;
   }
-  return `<div class="card jx-verset" id="jxLigne">${m.pose.length ? m.pose.map(x => `<button class="jx-pose" onclick="toucherMorceau(${x})">${escapeHtml(frSpace(m.parts[x]))}</button>`).join(" ") : `<span class="jx-vide">${T("Touche les morceaux dans l'ordre")}</span>`}</div>
-    <div class="jx-bouts">${m.melange.map(k => `<button class="option-btn jx-bout${m.pose.includes(k) ? " jx-utilise" : ""}" data-k="${k}" onclick="toucherMorceau(${k})"><span class="opt-text">${escapeHtml(frSpace(m.parts[k]))}</span></button>`).join("")}</div>`;
+  return `<div class="card jx-verset" id="jxLigne">${ligneMorceauxHtml(m)}</div>
+    <div class="jx-bouts">${m.melange.map(k => `<button class="option-btn jx-bout${m.pose.includes(k) ? " jx-utilise" : ""}" data-k="${k}" onclick="toucherMorceau(${k})"><span class="opt-text">${escapeHtml(frSpace(m.parts[k]))}</span></button>`).join("")}</div>
+    ${boutonValider(m)}`;
 }
 /* Ce que dit la carte « Le savais-tu ? » une fois la manche jouée. */
 function faitJeu(m){
@@ -25914,6 +26279,8 @@ function renderJeu(){
       <button class="btn-next${pop ? " reveal-in" : ""}" onclick="mancheSuivante()">${jeu.i >= total - 1 ? T("Voir les résultats") : T("Suivant")}</button>` : ""}
     <div class="flex-sp"></div>
     <div class="solo-score-bar"><span class="label">${T("Score")}</span><span class="value">${jeu.points} pts</span></div>`;
+  oublierGlisseMorceau();
+  if(def.id === "morceaux" && !jeu.revele) brancherGlisseMorceaux(el.querySelector("#jxZone"));
   return el;
 }
 /* ===== LA FIN D'UNE PARTIE ===== */
@@ -25940,6 +26307,7 @@ function renderJeuFin(){
     <button class="btn-ghost jx-autres" onclick="allerOnglet('jeux')">${T("Autres jeux")}</button>
     <div class="flex-sp"></div>`;
   setTimeout(()=>{ try{ relacherToasts(); }catch(e){} }, 0);
+  partieFinie();
   return el;
 }
 
@@ -27979,12 +28347,28 @@ function majFil(){
   if(z._repli){ clearTimeout(z._repli); z._repli = 0; }
   poserFil(z, html);
 }
+/* (v350) « À certains moments, il y a un nouveau message qui s'affiche
+   alors qu'il n'y en a pas. » La pastille « Nouveaux messages » paraissait à
+   CHAQUE redessin du fil lu plus haut — or le fil se redessine pour bien
+   d'autres choses qu'un message : un « Vu » qui passe au bleu, un message
+   supprimé, une photo arrivée, le retour sur l'app. Elle ne paraît plus que
+   si un message est vraiment arrivé en bas du fil : un numéro plus grand que
+   le dernier qu'on avait. */
+function dernierMessageDuFil(z){
+  let n = 0;
+  z.querySelectorAll("[data-m]").forEach(e => { const v = +e.getAttribute("data-m"); if(v > n) n = v; });
+  return n;
+}
 function poserFil(z, html){
   const enBas = z.scrollHeight - z.scrollTop - z.clientHeight < 90;
   const haut = z.scrollTop;
+  const avant = dernierMessageDuFil(z);
   poserSurPlace(z, html);
   if(enBas) descendreFil(false);
-  else { z.scrollTop = haut; const b = document.getElementById("filBas"); if(b) b.hidden = false; }
+  else {
+    z.scrollTop = haut;
+    if(dernierMessageDuFil(z) > avant){ const b = document.getElementById("filBas"); if(b) b.hidden = false; }
+  }
   voilerFil(z);
 }
 /* ===== (v329) UN MESSAGE ARRIVE, LE RESTE NE BOUGE PAS =====
@@ -29663,11 +30047,16 @@ async function envoyerSignalement(raison){
   const boutons = document.querySelectorAll("#grpSignalerVeil .grp-raison");
   if(envoi) envoi.disabled = true;
   boutons.forEach(b => b.disabled = true);
-  let r = await appelGroupe("signaler", { p_message:s.message, p_cible:s.cible, p_groupe:s.groupe, p_raison:k, p_details:valeurChamp("grpPrecision") });
-  if(!r.ok && r.erreur === "raison" && RAISONS_V346[k]){
-    const detail = valeurChamp("grpPrecision");
+  /* (v352) Une photo part avec la raison « photo » (la Modération montre la
+     photo en cause), ce qu'elle montre en tête du détail — en français :
+     c'est la modération qui le lit. */
+  const kSrv = s.photo ? "photo" : k;
+  const detailSaisi = valeurChamp("grpPrecision");
+  const detailSrv = s.photo ? [((RAISONS_PHOTO.find(x => x[0] === k) || [k, ""])[1]), detailSaisi].filter(Boolean).join(" — ").slice(0, 300) : detailSaisi;
+  let r = await appelGroupe("signaler", { p_message:s.message, p_cible:s.cible, p_groupe:s.groupe, p_raison:kSrv, p_details:detailSrv });
+  if(!r.ok && r.erreur === "raison" && RAISONS_V346[kSrv]){
     r = await appelGroupe("signaler", { p_message:s.message, p_cible:s.cible, p_groupe:s.groupe, p_raison:"inapproprie",
-      p_details:(RAISONS_V346[k] + (detail ? " — " + detail : "")).slice(0, 300) });
+      p_details:(RAISONS_V346[kSrv] + (detailSrv ? " — " + detailSrv : "")).slice(0, 300) });
   }
   if(!r.ok){ if(envoi) envoi.disabled = false; boutons.forEach(b => b.disabled = false); motFeuille("grpSignalerVeil", motErreurGroupe(r)); return; }
   const corps = document.querySelector("#grpSignalerVeil .grp-feuille-corps");
@@ -30600,6 +30989,54 @@ async function confirmerRappels(endpoint){
 function relevesClavier(){
   try{ const l = JSON.parse(localStorage.getItem("bt_clavier_diag") || "[]"); return Array.isArray(l) ? l : []; }catch(e){ return []; }
 }
+/* ===== (v350) LES SORTIES DE CHAMP, DANS LE RELEVÉ =====
+   « Lorsque je colle un texte depuis le presse-papiers de mon clavier, le
+   clavier se ferme juste après. » Rien dans le jeu ne ferme le clavier après
+   une saisie — pas à la lecture du code. Il faut donc VOIR ce qui se passe
+   sur ce téléphone-là : chaque fois qu'un champ perd le curseur, le jeu note
+   (sur le téléphone seulement, les cinq dernières fois) la dernière saisie
+   (collage, frappe…), si c'est le jeu lui-même qui a retiré le curseur — et
+   d'où, en trois lignes —, ce qui l'a pris ensuite, et la zone visible.
+   « Copier le relevé », dans la Modération, l'emporte avec le reste. Aucun
+   texte saisi n'est noté : seulement sa nature et sa longueur. */
+const CLE_SORTIES = "bt_clavier_sorties";
+(function noterSortiesDeChamp(){
+  const champ = (t) => !!t && (t.tagName === "INPUT" || t.tagName === "TEXTAREA");
+  let saisie = null, retrait = null;
+  document.addEventListener("input", (e) => { if(champ(e.target)) saisie = { genre:String(e.inputType || "").slice(0, 24), n:String(e.data || "").length, t:Date.now() }; }, true);
+  document.addEventListener("paste", (e) => { if(champ(e.target)) saisie = { genre:"paste", n:0, t:Date.now() }; }, true);
+  try{
+    const blurDOrigine = HTMLElement.prototype.blur;
+    HTMLElement.prototype.blur = function(){
+      if(this === document.activeElement && champ(this)){
+        const pile = String((new Error()).stack || "").split("\n").slice(2, 5).map(x => x.trim().replace(/https?:\/\/[^\s)]*\//g, "").slice(0, 70));
+        retrait = { pile, t:Date.now() };
+      }
+      return blurDOrigine.apply(this, arguments);
+    };
+  }catch(e){}
+  document.addEventListener("focusout", (e) => {
+    const t = e.target;
+    if(!champ(t)) return;
+    try{
+      const now = Date.now(), vv = window.visualViewport;
+      const s = { t:now, champ:String(t.id || t.className || t.tagName).slice(0, 30),
+        vers:e.relatedTarget ? String(e.relatedTarget.id || e.relatedTarget.className || e.relatedTarget.tagName).slice(0, 30) : null,
+        saisie:(saisie && now - saisie.t < 4000) ? { genre:saisie.genre, n:saisie.n, il_y_a:now - saisie.t } : null,
+        par_le_jeu:(retrait && now - retrait.t < 300) ? retrait.pile : null,
+        cache:!!document.hidden, vv:vv ? Math.round(vv.height) : null, fen:innerHeight,
+        ecran:(typeof state !== "undefined" && state) ? state.screen : "" };
+      let l = [];
+      try{ l = JSON.parse(localStorage.getItem(CLE_SORTIES) || "[]"); }catch(err){}
+      if(!Array.isArray(l)) l = [];
+      l.unshift(s);
+      localStorage.setItem(CLE_SORTIES, JSON.stringify(l.slice(0, 5)));
+    }catch(err){}
+  }, true);
+})();
+function sortiesDeChamp(){
+  try{ const l = JSON.parse(localStorage.getItem(CLE_SORTIES) || "[]"); return Array.isArray(l) ? l : []; }catch(e){ return []; }
+}
 function lignesClavierDiag(){
   const ligne = (t) => `<div class="rd-l"><span class="rd-m att">${ICONS.info}</span><span class="rd-t">${escapeHtml(frSpace(t))}</span></div>`;
   const l = relevesClavier();
@@ -30614,7 +31051,7 @@ function lignesClavierDiag(){
     Tf("Marge du bas : {a} px au repos, {b} px clavier ouvert", { a:p.sab, b:o.sab }),
     Tf("Hauteur visible retenue : {v} px · champ de {h} à {b} px", { v:r.visible, h:c.haut, b:c.bas })
   ].map(ligne).join("")
-    + `<div class="mod-act"><button class="grp-pill calme" onclick="copierDansPressePapier(JSON.stringify(relevesClavier()), T('Relevé copié'))">${T("Copier le relevé")}</button></div>`;
+    + `<div class="mod-act"><button class="grp-pill calme" onclick="copierDansPressePapier(JSON.stringify({ clavier:relevesClavier(), sorties:sortiesDeChamp() }), T('Relevé copié'))">${T("Copier le relevé")}</button></div>`;
 }
 function renderModeration(){
   setTimeout(rafraichirTousGroupes, 0);
@@ -30692,61 +31129,88 @@ function ouvrirConfidentialite(){
      compte. */
   const lignes = [
     ["Sans compte,", "ta progression et tes réglages restent sur ton téléphone."],
-    ["Avec un compte,", "ton e-mail sert à te connecter ; ta progression et ta photo sont sauvegardées en ligne."],
+    ["Avec un compte,", "ton e-mail sert à te connecter ; ta progression et ta photo sont sauvegardées en ligne, chez Supabase."],
     ["Les autres voient", "ton nom, ta couleur, ta photo et, dans tes groupes, tes messages."],
     ["Ta dernière visite", "est notée, et seul le serveur s'en sert : après 90 jours sans toi, un groupe dont tu es propriétaire passe à quelqu'un d'autre."],
     ["La modération", "peut lire les groupes et y écrire (signé « La modération »), pour faire respecter les règles."],
     ["Les rapports de bug,", "s'ils sont activés, n'envoient que l'erreur, rien sur toi."],
-    ["Jamais", "de publicité, de pistage ni de revente."],
+    ["La publicité", "vient de Google AdSense, en plein écran, entre deux parties. Google peut utiliser des cookies pour la choisir : en Europe, avec ton accord. Yada ne lui transmet ni ton nom, ni tes messages, ni ta progression."],
+    ["Jamais", "de revente de tes données."],
     ["Tout supprimer :", "Profil → Mon compte → « Supprimer mon compte »."]
   ];
+  /* (v349) Le choix donné à Google en Europe se reprend ici, quand le
+     message de consentement de Google est en place (AdSense → Confidentialité
+     et messages) : sans lui, pas de bouton qui ne mènerait nulle part. */
+  const choix = choixPubDispo() ? `<button class="lien-conf conf-choix" onclick="choixPublicite()">${T("Mes choix de publicité")}</button>` : "";
   ouvrirFeuilleGroupe("confidentialiteVeil", T("Confidentialité"), ICONS.bouclier,
-    `<div class="conf-liste">${lignes.map(([t, d])=>`<p class="conf-l"><b>${escapeHtml(T(t))}</b> ${escapeHtml(T(d))}</p>`).join("")}</div>`);
+    `<div class="conf-liste">${lignes.map(([t, d])=>`<p class="conf-l"><b>${escapeHtml(T(t))}</b> ${escapeHtml(T(d))}</p>`).join("")}${choix}</div>`);
 }
+function choixPubDispo(){ try{ return !!(window.googlefc && typeof window.googlefc.showRevocationMessage === "function"); }catch(e){ return false; } }
+function choixPublicite(){ try{ window.googlefc.showRevocationMessage(); }catch(e){} }
 
-/* ===================== (v346) LES MENTIONS LÉGALES =====================
-   « Pour les mentions légales, pour l'instant le jeu sera à mon compte. S'il
-     faut mon nom : Taylor Dauber, et pour l'adresse mail celle de Yada si
-     c'est possible. S'il faut un numéro de téléphone obligatoire, ajoute-le ;
-     s'il n'y en a pas forcément besoin, ne l'ajoute pas. Je veux que ce soit
-     propre, sans trop d'informations sur moi. »
-   CE QUE LA LOI DEMANDE, ET RIEN DE PLUS (loi pour la confiance dans
-   l'économie numérique, article 1-1 depuis la loi SREN de 2024). Un site
-   édité À TITRE NON PROFESSIONNEL peut même ne nommer que son hébergeur —
-   à condition de lui avoir donné son identité. Le téléphone n'est exigé que
-   d'un éditeur professionnel : il n'est donc pas ici. Taylor a choisi de
-   donner son nom ; l'adresse de contact est celle de Yada.
-   ATTENTION, LE JOUR DES PUBLICITÉS : une contrepartie économique, même
-   modeste, fait de l'éditeur un professionnel ; la loi demande alors, pour
-   une personne, ses nom et prénom, son domicile et son téléphone. Cette page
-   devra être revue AVANT d'activer les publicités, et la Confidentialité
-   aussi (« jamais de publicité »).
-   Le nom n'y paraît qu'UNE fois : l'éditeur est aussi le directeur de la
-   publication et le responsable des données personnelles — le règlement
-   européen (RGPD) demande de le nommer, puisque le jeu a des comptes.
-   Chaque ligne dit ce qui est vrai : l'hébergeur du jeu (GitHub Pages), celui
-   des comptes et des groupes (Supabase), les traductions de la Bible (toutes
-   libres de droits) et les polices. */
-/* L'adresse de Yada : une donnée, écrite une fois. Elle ne se traduit pas, et
-   la page la reçoit calculée, comme tout ce qui n'est pas une phrase. */
+/* ===================== LES MENTIONS LÉGALES (v346, refaites en v349) =====================
+   « Revois les mentions légales, vu qu'on a changé l'hébergement. Retire ce
+     qui n'est pas obligatoire, et fais en sorte que ce soit très professionnel :
+     simple, mais très professionnel. »
+   CE QUE LA LOI DEMANDE (loi pour la confiance dans l'économie numérique,
+   article 1-1), ET RIEN D'AUTRE : l'éditeur et le directeur de la publication,
+   un moyen de le joindre, et l'hébergeur — son nom, son adresse, son
+   téléphone. Les traductions de la Bible, les polices, Supabase ne sont pas
+   des mentions obligatoires : Supabase est dit là où il sert, dans la
+   Confidentialité (« sauvegardées en ligne, chez Supabase »).
+   L'HÉBERGEUR EST CELUI QUI SERT VRAIMENT LA PAGE. yadaquiz.app passe par
+   Cloudflare ; selon le réglage, la page vient de Cloudflare lui-même (le
+   site « yada » de Cloudflare) ou de GitHub Pages derrière lui. La page le
+   demande au serveur (l'en-tête « x-github-request-id » ne vient que de
+   GitHub) et nomme le bon. GitHub ne publie pas de téléphone : on donne son
+   adresse et sa page de contact.
+   LE STATUT : avec la publicité, l'éditeur n'est plus « à titre non
+   professionnel » ; la loi demande alors aussi une adresse et un téléphone.
+   Ce sont des données personnelles de Taylor : elles ne s'écrivent ici
+   qu'avec son accord, et ce qu'il choisit d'y mettre.
+   (v350) Taylor les a données pour cette page, le 08/11/2026 : « pour le
+   numéro de téléphone tu peux mettre 0784045770 », et l'adresse, « Angers
+   49100, et dans l'adresse bv c'est boulevard ». La même page existe en
+   ligne, pour qui n'a pas le jeu : confidentialite.html (le message
+   européen d'AdSense demande l'adresse d'une politique de confidentialité). */
 const MAIL_YADA = "yadaquiz.app@gmail.com";
+const EDITEUR = { nom:"Taylor Dauber", adresse:"Boulevard de la Résistance et de la Déportation, 49100 Angers", tel:"07 84 04 57 70", telLien:"+33784045770" };
+const HEBERGEURS = {
+  cloudflare: "Cloudflare, Inc., 101 Townsend Street, San Francisco, CA 94107, États-Unis — +1 888 993 5273.",
+  github: "GitHub, Inc., 88 Colin P. Kelly Jr. Street, San Francisco, CA 94107, États-Unis — support.github.com."
+};
+let hebergeurSu = null;
+function hebergeurSuppose(){ return hebergeurSu || (/github\.io$/i.test(location.hostname) ? "github" : "cloudflare"); }
+function sonderHebergeur(){
+  if(hebergeurSu || !/^https?:$/.test(location.protocol)) return Promise.resolve(hebergeurSuppose());
+  return fetch(location.origin + location.pathname, { method:"HEAD", cache:"no-store" }).then(r => {
+    hebergeurSu = r.headers.get("x-github-request-id") ? "github" : (r.headers.get("cf-ray") ? "cloudflare" : hebergeurSuppose());
+    return hebergeurSu;
+  }).catch(()=> hebergeurSuppose());
+}
 function ouvrirMentions(){
   const lignes = [
-    ["Éditeur, directeur de la publication et responsable des données :", "Taylor Dauber, à titre personnel et non professionnel."],
+    ["Éditeur et directeur de la publication :", EDITEUR.nom],
+    EDITEUR.adresse ? ["Adresse :", "@adresse"] : null,
+    ["Téléphone :", "@tel"],
     ["Contact :", MAIL_YADA],
-    ["Hébergement du jeu :", "GitHub, Inc. (GitHub Pages), 88 Colin P. Kelly Jr. Street, San Francisco, CA 94107, États-Unis."],
-    ["Comptes, groupes et messages :", "Supabase Pte. Ltd., 65 Chulia Street #38-02/03, OCBC Centre, Singapour 049513."],
-    ["Textes bibliques :", "Louis Segond (1910), Darby (1885), Ostervald, Bible Annotée, David Martin (1744), King James (1769), American Standard (1901), World English Bible, Reina-Valera (1865, 1909) : toutes dans le domaine public."],
-    ["Polices :", "Poppins, Inter et Fraunces, sous licence SIL Open Font License."],
-    ["Les questions, la musique et les sons", "ont été créés pour Yada : merci de ne pas les reproduire sans accord."]
-  ];
+    ["Hébergeur :", "@hebergeur"],
+    ["Données personnelles :", "@confidentialite"]
+  ].filter(Boolean);
   ouvrirFeuilleGroupe("mentionsVeil", T("Mentions légales"), ICONS.info,
     `<div class="conf-liste">${lignes.map(([t, d]) => {
-      const texte = d === MAIL_YADA
-        ? `<a class="lien-mail" href="mailto:${MAIL_YADA}">${MAIL_YADA}</a>`
-        : escapeHtml(T(d));
+      const texte = d === MAIL_YADA ? `<a class="lien-mail" href="mailto:${MAIL_YADA}">${MAIL_YADA}</a>`
+        : d === "@hebergeur" ? `<span class="ment-heb">${escapeHtml(T(HEBERGEURS[hebergeurSuppose()]))}</span>`
+        : d === "@confidentialite" ? `<button class="lien-conf ment-conf" onclick="ouvrirConfidentialite()">${T("Confidentialité")}</button>`
+        : d === "@tel" ? `<a class="lien-mail ment-tel" href="tel:${EDITEUR.telLien}">${escapeHtml(EDITEUR.tel)}</a>`
+        : d === "@adresse" ? `<span class="ment-adr">${escapeHtml(EDITEUR.adresse)}</span>`
+        : `<span class="ment-nom">${escapeHtml(d)}</span>`;
       return `<p class="conf-l"><b>${escapeHtml(T(t))}</b> ${texte}</p>`;
     }).join("")}</div>`);
+  sonderHebergeur().then(h => {
+    const e = document.querySelector("#mentionsVeil .ment-heb");
+    if(e){ const t = T(HEBERGEURS[h]); if(e.textContent !== t) e.textContent = t; }
+  });
 }
 
 /* ===================== SUPPRIMER SON COMPTE =====================
@@ -31047,6 +31511,7 @@ function startGame(){
   render();
 }
 function replayGame(){
+  if(pubAvant(replayGame)) return;     // (v349) l'annonce plein écran, puis la partie
   /* REJOUER UNE RÉVISION, C'EST ROUVRIR LA MÊME PORTE : le carnet pour « À
      revoir », les erreurs de la dernière partie pour l'écran du Solo. Avant,
      les deux rejouaient les erreurs de la dernière partie (par neuf, quand
@@ -31086,6 +31551,7 @@ function newGame(){
    partie sur un livre ramène à l'écran de son mode, le livre toujours choisi
    (v320 ; elle ramenait à la Progression quand c'est de là qu'elle partait). */
 function retourAuMode(){
+  if(pubAvant(retourAuMode)) return;   // (v349) seulement depuis les résultats
   const mode = state.mode, revision = !!state.revision, de = state.revisionDe;
   clearSavedGame();
   state = etatNeuf();
@@ -31986,6 +32452,74 @@ function renderPlay(){
 }
 
 /* ===================== RENDER: END ===================== */
+
+/* ===================== (v349) LA PUBLICITÉ, EN PLEIN ÉCRAN ENTRE DEUX PARTIES =====================
+   « Je veux que les pubs AdSense apparaissent exactement là où on veut : en
+     fin de partie. » — « La pub doit prendre tout l'écran, pas comme ça. »
+   L'écran entier est une forme d'annonce à part, et Google n'en permet
+   qu'UNE façon dans un jeu : la sienne, pour les jeux en HTML5 (« H5 Games
+   Ads », la fonction adBreak). Une annonce plein écran bâtie à la main avec
+   un bloc AdSense ordinaire est interdite par son règlement des annonces plein
+   écran — le compte s'y perdrait. Le bloc posé sous les résultats (la
+   première forme de cette version) s'en va donc, et adBreak le remplace :
+   — QUAND. Les résultats d'abord : on voit ce qu'on a fait, la flamme se
+     fête. Puis, au moment de QUITTER l'écran des résultats (Rejouer,
+     Quitter, Autres jeux, la flèche), l'annonce prend tout l'écran, et l'on
+     arrive ensuite là où l'on allait. C'est le « passage entre deux niveaux »
+     que Google recommande — comme Duolingo entre deux leçons.
+   — QUI DÉCIDE DU RESTE : Google. L'annonce (vidéo ou image), le moment où
+     l'on peut la passer ou la fermer, et sa fréquence (une minute au moins
+     entre deux : data-ad-frequency-hint, dans l'en-tête). Pas de compte à
+     rebours de notre main : les normes « Better Ads » l'interdisent.
+   — UNE PARTIE FINIE, UNE OCCASION. Quitter une partie EN COURS ne montre
+     rien. Une partie en ligne non plus : son écran de fin se joue à deux,
+     et faire attendre l'autre n'est pas un passage naturel.
+   — LE SON DU JEU SE TAIT pendant l'annonce, et revient après.
+   — RIEN NE BLOQUE. Tant que Google n'a pas ouvert ces annonces au compte
+     (elles se demandent : voir le README), ou s'il n'en a aucune à montrer,
+     il répond aussitôt et l'on passe ; s'il ne répond pas du tout (script
+     bloqué), on passe au bout d'une seconde et demie.
+   — JAMAIS DANS UN NAVIGATEUR PILOTÉ (navigator.webdriver : un banc, un
+     robot, un outil de test) : des annonces demandées par un automate avec le
+     compte de Taylor, Google les range dans le trafic invalide. Un banc qui
+     veut voir le geste le demande exprès (window.__pubBanc), Google coupé. */
+var pubDue = false, pubEcranPlein = false;
+function pubAutorisee(){
+  try{ if(navigator.webdriver && !window.__pubBanc) return false; }catch(e){}
+  return typeof window.adBreak === "function";
+}
+/* Une partie vient de finir : l'écran de ses résultats ouvre la prochaine occasion.
+   Le son des annonces suit celui du jeu ; Google prépare la suivante à l'avance. */
+function partieFinie(){
+  pubDue = true;
+  if(!pubAutorisee() || typeof window.adConfig !== "function") return;
+  try{ window.adConfig({ preloadAdBreaks:"on", sound:(settings.music || settings.sfx) ? "on" : "off" }); }catch(e){}
+}
+/* Appelée par ce qui QUITTE l'écran des résultats : vrai si l'annonce prend
+   la main (« suite » viendra après elle), faux s'il n'y a rien à montrer. */
+function pubAvant(suite){
+  if(pubEcranPlein) return true;          // un second toucher pendant l'annonce ne fait rien
+  const ici = state.screen === "end" || state.screen === "jeu-fin";
+  if(!pubDue || !ici){ pubDue = false; return false; }
+  pubDue = false;
+  if(!pubAutorisee()) return false;
+  pubEcranPlein = true;
+  let fini = false, montree = false, attente = 0;
+  const reprendre = ()=>{
+    if(fini) return;
+    fini = true; clearTimeout(attente); pubEcranPlein = false;
+    if(montree){ try{ relancerSon(); }catch(e){} }
+    try{ suite(); }catch(e){}
+  };
+  attente = setTimeout(()=>{ if(!montree) reprendre(); }, 1500);
+  try{
+    window.adBreak({ type:"next", name:"fin-de-partie",
+      beforeAd:()=>{ montree = true; clearTimeout(attente); attente = setTimeout(reprendre, 120000); try{ audioHidden(); }catch(e){} },
+      afterAd:()=>{},
+      adBreakDone:()=>{ reprendre(); } });
+  }catch(e){ reprendre(); }
+  return true;
+}
 function renderEndGroup(){
   const withRanks = computeRanks();
   const winners = withRanks.filter(r=>r.rank===1).map(r=>nomEquipe(state.teams[r.teamIdx].name));
@@ -32102,7 +32636,7 @@ function renderEndSolo(){
 }
 function renderEnd(){
   const el = document.createElement("div");
-  el.className = "screen";
+  el.className = "screen" + (state.mode === "group" ? " fin-groupe" : "");
   relacherToasts();   // l'écran des résultats est là : les bandeaux peuvent passer
   el.innerHTML = renderHeader(T("Résultats"), false) + (state.mode==="group" ? renderEndGroup() : renderEndSolo());
   // Animate the solo progress ring + percentage after paint
@@ -32114,6 +32648,7 @@ function renderEnd(){
       if(pctEl){ const tgt = parseInt(pctEl.getAttribute("data-target-pct"),10) || 0; animateCount(pctEl, 0, tgt, msPli(), "%"); }
     });
   }
+  partieFinie();
   return el;
 }
 
@@ -32548,12 +33083,49 @@ function cibleDuPid(pid){
   try{ const j = net.joueurs[pid]; if(j && j.compte) return j.compte; }catch(e){}
   return null;
 }
+/* ===== (v352) UNE PHOTO SE SIGNALE POUR CE QU'ELLE MONTRE =====
+   « Au niveau du signalement, il faut un signalement distinct du profil et
+     de la photo, ou alors juste sur le profil signaler le profil et après
+     parler de la photo : là, ça ne va pas. » « Signaler cette photo »
+   ouvrait « Signaler cette personne » : les sept raisons d'un PROFIL (son
+   nom, le harcèlement, le spam…), la photo cochée d'avance — on ne savait
+   plus ce qu'on signalait. La photo a maintenant SA page : elle-même en
+   tête, avec le nom de qui la porte, et des raisons qui ne parlent que
+   d'elle. Rien n'est coché d'avance : on dit ce qui ne va pas. Le serveur
+   reçoit toujours la raison « photo » (la Modération montre alors la photo
+   en cause et « Retirer la photo »), ce qu'elle montre écrit en tête du
+   détail. Le profil, lui, garde « Signaler cette personne » et ses raisons.
+   Même chose pour la photo d'un groupe (« Signaler la photo du groupe »). */
+const RAISONS_PHOTO = [
+  ["nudite", "Nudité ou contenu sexuel"],
+  ["violence", "Violence ou contenu choquant"],
+  ["haine", "Haine ou symbole haineux"],
+  ["usurpation", "La photo de quelqu'un d'autre"],
+  ["arnaque", "Publicité ou arnaque"],
+  ["autre", "Autre chose"]
+];
 function signalerPhoto(pid){
   const groupe = pid.indexOf("g:") === 0;
   const cible = groupe ? null : cibleDuPid(pid);
   if(!groupe && !cible) return;
+  let v = null, nom = "";
+  try{ v = groupe ? valeurPhotoSrv(pid) : photoValeur(pid === "moi" ? true : pid); }catch(e){}
+  try{ nom = groupe ? nomDuGroupe(pid.slice(2)) : nomDuPid(pid); }catch(e){}
   fermerPhotoGrand();
-  setTimeout(()=>{ signalerMessage(null, cible, groupe ? pid.slice(2) : null, "photo"); }, msFerme() + 40);
+  setTimeout(()=>{ ouvrirSignalPhoto(cible, groupe ? pid.slice(2) : null, v, nom); }, msFerme() + 40);
+}
+function ouvrirSignalPhoto(cible, groupe, v, nom){
+  signalement = { message:null, cible:cible || null, groupe:groupe || null, raison:null, photo:true };
+  fermerFeuilleGroupe("grpActionsVeil");
+  const titre = groupe ? T("Signaler la photo du groupe") : T("Signaler cette photo");
+  ouvrirFeuilleGroupe("grpSignalerVeil", titre, ICONS.drapeau, `
+    <div class="sp-tete">${v ? `<div class="sp-img" role="img" aria-label="${escapeHtml(titre)}" style="background-image:${v}"></div>` : ""}${nom ? `<span class="sp-nom">${escapeHtml(nom)}</span>` : ""}</div>
+    <p class="grp-aide">${T("Qu'est-ce qui ne va pas sur cette photo ? La modération le reçoit, sans que l'autre personne sache que ça vient de toi.")}</p>
+    <div class="grp-liste-act grp-raisons" role="radiogroup">${RAISONS_PHOTO.map(([k, t])=>
+      `<button class="grp-act-l grp-raison" role="radio" aria-checked="false" data-k="${k}" onclick="choisirRaison('${k}')"><span class="gal-t">${escapeHtml(T(t))}</span><span class="gr-coche">${ICONS.coche}</span></button>`).join("")}</div>
+    <textarea class="text-input grp-precision" id="grpPrecision" maxlength="300" placeholder="${T("Précise ce qui s'est passé (facultatif)")}"></textarea>
+    <button class="btn-primary grp-signaler-envoi" id="grpSignalerEnvoi" onclick="envoyerSignalement()" disabled>${T("Envoyer le signalement")}</button>
+    <div class="grp-mot"><span></span></div>`);
 }
 function fermerPhotoGrand(){
   const v = document.getElementById("photoGrandVeil");
@@ -32943,7 +33515,8 @@ function renderOnlineName(){
       <h2 class="online-hero-title">${T("Choisis ton nom")}</h2>
       <p class="online-hero-sub">${T("Il sera visible par tes amis pendant les duels.")}</p>
     </div>
-    <input class="text-input" id="nameInput" maxlength="18" placeholder="${T("Ton prénom")}" value="${escapeHtml(profile.name)}" autocomplete="off" enterkeyhint="go" oninput="profile.name=this.value.slice(0,18)" onkeydown="if(event.key==='Enter'){event.preventDefault();this.blur();saveName(this.value);}">
+    <input class="text-input" id="nameInput" maxlength="18" placeholder="${T("Ton prénom")}" value="${escapeHtml(profile.name)}" autocomplete="off" enterkeyhint="go" oninput="profile.name=this.value.slice(0,18); const e=document.getElementById('nomErreur'); if(e) e.textContent='';" onkeydown="if(event.key==='Enter'){event.preventDefault();this.blur();saveName(this.value);}">
+    <div class="error-msg nom-erreur" id="nomErreur" role="alert"></div>
     <label class="field-label" style="margin-top:var(--e-3)">${T("Couleur")}</label>
     <div class="color-row" role="radiogroup" aria-label="${T("Couleur")}">
       ${TEAM_COLORS.map(c=>`<button class="color-dot${c===profile.color?' sel':''}" data-c="${c}" onclick="setProfileColor('${c}')" role="radio" aria-checked="${c===profile.color}" aria-label="${T('couleur')}"><span class="gt-disque" style="background:${c}"></span><span class="cd-ck">${ACH_CHECK}</span></button>`).join("")}
@@ -33955,10 +34528,69 @@ const SERRE_INTERIEUR = [
   /* (v345) L'écran du Mode Groupe : ses cartes cèdent un peu de leur
      rembourrage pour tenir dans le téléphone, comme celui du Solo (voir
      L'ÉCRAN DU MODE GROUPE TIENT DANS L'ÉCRAN). */
-  [".mise-groupe > .card", "padding", 0.55],
+  [".mise-groupe > .card", "padding", 0.45],
+  /* ===== (v350) TROIS ÉCRANS QUI DÉFILAIENT ENCORE SUR L'IPHONE DE TAYLOR =====
+     « Le bouton pour lancer la partie n'est pas dans l'écran. » — « Sur la
+       progression c'est pareil : sur certains téléphones c'est bien ajusté,
+       sur d'autres comme le mien je dois swipe. » — « Sur l'écran des
+       résultats en mode groupe, je veux que je n'aie pas à glisser vers le
+       bas si c'est possible. »
+     Mesuré avec les marges réelles d'un iPhone 17 Pro installé (62 px
+     d'encoche, 34 de barre) : le Mode Groupe dépassait de 91 px pour 96 de
+     rattrapables — il tenait au pixel près dans le navigateur des bancs, et
+     plus du tout sur le téléphone, dont les polices ne mesurent pas
+     exactement pareil : le resserrement abandonnait, tout défilait, le
+     bouton sortait par le bas. Les résultats du Groupe dépassaient de 92 px
+     pour 35 rattrapables, la Progression de 61 pour 49. Sur un 13 mini et
+     sur un SE, aucun des trois n'avait de chance.
+     Ce qui cède en plus, ce sont encore des ESPACES — et deux décors :
+     — Mode Groupe : l'air sous les titres des cartes et avant celui du
+       chrono, l'écart entre les deux rangées de joueurs, et la hauteur des
+       places, jamais sous ce qu'elles portent (voir plancherDesPlaces).
+       Aucune puce ne change de taille : la durée, le chrono et le
+       testament restent ceux du Solo, au pixel près ; seul l'écart entre
+       deux rangées de puces peut céder.
+       (Le rembourrage des cartes, qui cédait déjà, peut maintenant
+       descendre à 45 % au lieu de 55 : c'est ce qui fait tenir un SE.)
+     — Résultats du Groupe : le trophée (il peut perdre deux cinquièmes de sa
+       taille : c'est un décor, le podium dit déjà qui a gagné), l'air autour
+       de la phrase et sous le trophée, celui des lignes du classement, et
+       celui au-dessus des boutons. Les pastilles, les noms, les scores et
+       les boutons « − » et « + » gardent leur taille.
+     — Progression : le rembourrage des deux cartes, l'air sous la semaine,
+       l'écart entre les rangées d'objectifs, et l'air entre l'icône d'un
+       objectif, son nom et son compte. Les rangées des testaments, qu'on
+       touche, ne bougent pas. */
+  [".mise-groupe .card h2", "margin-bottom", 0.35], [".mise-groupe .card .chip-row + h2", "margin-top", 0.45],
+  [".mise-groupe .chip-row", "row-gap", 0.5],
+  [".mise-groupe .places", "row-gap", 0.6], [".mise-groupe .pl-btn", "height", plancherDesPlaces],
+  [".fin-groupe .end-medal", "width", 0.6], [".fin-groupe .end-medal", "margin-bottom", 0.4],
+  [".fin-groupe .end-hero", "padding-bottom", 0.3], [".fin-groupe .end-sub", "margin-top", 0.4], [".fin-groupe .end-sub", "margin-bottom", 0.4],
+  [".fin-groupe .podium-avatar", "margin-bottom", 0.5], [".fin-groupe .podium-score", "margin-bottom", 0.5],
+  [".fin-groupe .rank-row", "padding", 0.45], [".fin-groupe .rank-row", "margin-bottom", 0.5], [".fin-groupe .end-actions", "padding-top", 0.4],
+  [".parcours-ecran .parcours-sum", "padding", 0.5], [".parcours-ecran .semaine", "margin-bottom", 0.4],
+  [".parcours-ecran .ach-card", "padding", 0.5], [".parcours-ecran .ach-grid", "row-gap", 0.45], [".parcours-ecran .ach", "row-gap", 0.5],
   [".question-card", "padding", 0.5], [".fact-card", "padding", 0.5], [".option-btn", "padding", 0.5],
   [".option-btn", "min-height", 0.82], [".question-card", "min-height", 0.75], [".options-grid", "row-gap", 0.5]
 ];
+/* (v350) UNE PLACE DU MODE GROUPE PERD DE LA HAUTEUR, JAMAIS CE QU'ELLE PORTE :
+   sa pastille et son nom (deux lignes au plus), son rembourrage et deux
+   pixels d'air. Les six se mesurent ensemble et prennent le même plancher —
+   une rangée garde des places de même hauteur, quel que soit le nom le plus
+   long. Et jamais sous les trois quarts de leur taille. */
+function plancherDesPlaces(v, el){
+  const g = el.closest(".places");
+  let h = 0;
+  Array.prototype.forEach.call(g ? g.querySelectorAll(".pl-btn") : [el], b => {
+    const cs = getComputedStyle(b);
+    let c = 0, n = 0;
+    Array.prototype.forEach.call(b.children, e => { if(getComputedStyle(e).position !== "absolute"){ c += e.offsetHeight; n++; } });
+    if(!n) return;
+    c += (n - 1) * (parseFloat(cs.rowGap) || 0) + (parseFloat(cs.paddingTop) || 0) + (parseFloat(cs.paddingBottom) || 0) + 2;
+    if(c > h) h = c;
+  });
+  return Math.min(v, Math.max(v * 0.75, h));
+}
 function elementsSerrables(ecran){
   const els = [];
   const prendre = (c)=>{
@@ -34001,7 +34633,7 @@ function serrerEcran(ecran, siDepasse){
   SERRE_INTERIEUR.forEach(([sel, prop, f]) => ecran.querySelectorAll(sel).forEach(el => {
     if(prop === "padding"){ lever(el, "padding-top", v => v * f); lever(el, "padding-bottom", v => v * f); }
     else if(prop === "min-height") lever(el, "min-height", v => Math.max(sel === ".option-btn" ? 44 : 0, v * f));
-    else lever(el, prop, v => v * f);
+    else lever(el, prop, typeof f === "function" ? (v => f(v, el)) : (v => v * f));
   }));
   if(!leviers.length) return;
   /* Même tout resserré, ça ne tiendrait pas : on ne touche à RIEN. Pas même

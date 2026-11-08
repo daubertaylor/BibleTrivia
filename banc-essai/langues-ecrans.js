@@ -106,6 +106,10 @@ const TOLERE = [
      détecteur y voit le français « tes » ; le français, lui, écrit
      « 1 Thess. ». Le motif est exact : ces deux abrégés-là, rien d'autre. */
   /^[12] Tes\.$/,
+  /* (v350) L'ADRESSE DE L'ÉDITEUR EST UN NOM PROPRE. Les mentions légales la
+     donnent telle que la Poste la connaît, en toutes langues (voir aussi
+     MEME_DANS_LES_DEUX). Le motif est exact : cette adresse, rien d'autre. */
+  /^Boulevard de la Résistance et de la Déportation, 49100 Angers$/,
 ];
 
 const PREP = (lg) => {
@@ -182,6 +186,11 @@ const JAMAIS_A_L_ECRAN = [
      pour la prochaine langue en chantier. */
   { lg:'es', quoi:'pronto', car:"aucune langue n'est plus en attente : « bientôt » ne s'affiche nulle part" },
   { lg:'en', quoi:'soon',   car:"aucune langue n'est plus en attente : « bientôt » ne s'affiche nulle part" },
+  /* (v349) La publicité et les mentions. */
+  { lg:'en', quoi:'My ad choices', car:"le bouton n'existe que si le message de consentement de Google est chargé (googlefc) : jamais au banc" },
+  { lg:'es', quoi:'Mis opciones de publicidad', car:"le bouton n'existe que si le message de consentement de Google est chargé (googlefc) : jamais au banc" },
+  { lg:'en', quoi:'GitHub, Inc., 88 Colin P. Kelly Jr. Street, San Francisco, CA 94107, United States — support.github.com.', car:"l'hébergeur nommé est celui qui sert la page : au banc (127.0.0.1), c'est Cloudflare" },
+  { lg:'es', quoi:'GitHub, Inc., 88 Colin P. Kelly Jr. Street, San Francisco, CA 94107, Estados Unidos — support.github.com.', car:"l'hébergeur nommé est celui qui sert la page : au banc (127.0.0.1), c'est Cloudflare" },
   { lg:'es', quoi:'Victoria',  car:"« Victoire » sans point d'exclamation ne sert qu'au texte partagé" },
   { lg:'es', quoi:'Buen duelo', car:"n'existe que dans le texte PARTAGÉ d'un duel serré" },
   { lg:'es', quoi:'mi rival',   car:"le repli du nom dans le texte partagé, jamais à l'écran" },
@@ -219,6 +228,9 @@ const MEME_DANS_LES_DEUX = [
      pareil dans les trois langues. Ici, et seulement ici. */
   { quoi:/^pts$/, ou:/jx-chiffres/, car:'l\'unité des points, sous son nombre en gras' },
   { quoi:/^[^\p{L}]*$/u,                       car:'aucune lettre — chiffres, ponctuation, icône' },
+  { quoi:/^Taylor Dauber$/, ou:/ment-nom/, car:"(v349) l'éditeur, dans les mentions légales : un nom propre, le même dans toutes les langues" },
+  { quoi:/^07 84 04 57 70$/, ou:/ment-tel/, car:"(v350) le téléphone de l'éditeur, dans les mentions légales : un numéro, le même dans toutes les langues" },
+  { quoi:/^Boulevard de la Résistance et de la Déportation, 49100 Angers$/, ou:/ment-adr/, car:"(v350) l'adresse de l'éditeur : la même dans toutes les langues" },
   { quoi:/^(Français|English|Español|Português|Deutsch|Italiano)$/, car:'une langue s\'écrit dans sa langue' },
   /* Une adresse e-mail ne se traduit pas : c'est celle du joueur, il l'a
      tapée lui-même. Elle s'affiche telle quelle sur la carte du compte. */
@@ -1077,8 +1089,13 @@ const ouvrirLaLangue = async (p, lg) => {
       state.screen = 'groupes'; render();
       const pv = photoValeur; photoValeur = () => "url('data:image/gif;base64,R0lGODlhAQABAAAAACw=')";
       try { ouvrirPhotoGrand('u:u-2'); } finally { photoValeur = pv; } }],
+    /* (v352) UNE PHOTO SE SIGNALE SUR SA PROPRE PAGE : la photo et le nom en
+       tête, et ses raisons à elle (nudité, violence, haine…). Celle d'un
+       joueur, puis celle d'un groupe. On lui prête une image d'un pixel. */
     ['Groupes · signaler une photo', () => { __fermerTout(); __grpDecor(); grp.etat.moderateur = false;
-      state.screen = 'groupes'; render(); signalerMessage(null, 'u-2', null, 'photo'); }],
+      state.screen = 'groupes'; render(); ouvrirSignalPhoto('u-2', null, "url('data:image/gif;base64,R0lGODlhAQABAAAAACw=')", 'Sam'); }],
+    ['Groupes · signaler la photo du groupe', () => { __fermerTout(); __grpDecor(); grp.etat.moderateur = false;
+      state.screen = 'groupes'; render(); ouvrirSignalPhoto(null, 'g-1', "url('data:image/gif;base64,R0lGODlhAQABAAAAACw=')", 'Lee'); }],
     ['Compte · supprimer', () => { __fermerTout(); __grpDecor(); state.screen='profile'; render(); demanderSuppressionCompte(); }],
     ['Compte · suppression ratée', async () => { __fermerTout(); __grpDecor(); state.screen='profile'; render();
       const a = appelGroupe; appelGroupe = async () => ({ ok:false, erreur:'reseau' }); await supprimerMonCompte(); appelGroupe = a; }],
@@ -1236,6 +1253,9 @@ const ouvrirLaLangue = async (p, lg) => {
       const q = currentQ(); if (q) soloAnswer(q.shuffledOptions.indexOf(q.correct)); }],
     ['Fin de partie',     () => { state.screen='end'; render(); }],
     ['Nom en ligne',      () => { state.screen='online-name'; render(); }],
+    /* (v350) « Continuer » sans prénom : le petit message sous le champ.
+       saveName('') s'arrête au message, avant toute connexion. */
+    ['Nom en ligne · sans nom', () => { state.screen='online-name'; render(); saveName(''); }],
     ['Hub en ligne',      () => { net.connected=1; net.error=''; state.screen='online'; render(); }],
     ['Hub · erreur',      () => { net.error = T("La connexion au salon a échoué. Réessaie."); render(); }],
     /* La carte de recherche d'adversaire : un écran entier que le banc ne

@@ -1,6 +1,6 @@
 /* Yada — service worker : rend l'app jouable hors connexion.
    À déposer à côté de index.html (même dossier, nom exact "sw.js"). */
-const CACHE = "yada-v348";
+const CACHE = "yada-v352";
 /* ===== LES BANQUES DE QUESTIONS NE SONT PAS DANS LE SOCLE =====
    questions-en.js y était, et questions-es.js allait l'y rejoindre : six cent
    mille octets téléchargés à l'installation par TOUT LE MONDE, y compris les
@@ -25,8 +25,33 @@ const CORE = ["./", "./index.html", "./manifest.json", "./apple-touch-icon.png",
       cache : le jeu perdait sa copie hors ligne au pire moment. Désormais
       l'installation échoue franchement, l'ancienne version reste en place
       avec son cache entier, et le navigateur réessaiera plus tard. */
+/* ===== (v352) UNE PAGE SE RANGE SANS LA TRACE DE SON DÉTOUR =====
+   Chez Cloudflare (le site « yada »), /index.html répond « va voir / » (307),
+   et /x.html « va voir /x ». Le navigateur suit, et la réponse garde la trace
+   du détour (redirected). Rangée telle quelle, puis servie à l'ouverture de
+   l'app, elle est REFUSÉE — Safari : « Response served by service worker has
+   redirections » ; Chrome : « a redirected response was used for a request
+   whose redirect mode is not follow » — et l'app installée ne s'ouvre plus.
+   GitHub Pages ne redirige pas : le piège n'existait pas avant.
+   Le socle est donc d'abord LU EN ENTIER (chaque fichier recopié, sans
+   détour), puis rangé : une coupure de réseau en cours de route fait échouer
+   l'installation AVANT que rien ne soit rangé, comme le faisait addAll — une
+   version ne s'installe toujours qu'entière. Et ce qui sort du cache pour
+   ouvrir une page est relu de même (sansDetour) : une copie rangée par une
+   version d'avant guérit à la première ouverture. */
+function sansDetour(res) {
+  if (!res || !res.redirected) return Promise.resolve(res);
+  return res.blob().then((b) => new Response(b, { status: res.status, statusText: res.statusText, headers: res.headers }));
+}
+function lireDuReseau(u) {
+  return fetch(new Request(u, { cache: "reload" })).then((res) => {
+    if (!res.ok) throw new TypeError("socle incomplet : " + u + " (" + res.status + ")");
+    return res.blob().then((b) => [u, new Response(b, { status: res.status, statusText: res.statusText, headers: res.headers })]);
+  });
+}
 self.addEventListener("install", (e) => {
-  e.waitUntil(caches.open(CACHE).then((c) => c.addAll(CORE.map((u) => new Request(u, { cache: "reload" })))));
+  e.waitUntil(Promise.all(CORE.map(lireDuReseau))
+    .then((paires) => caches.open(CACHE).then((c) => Promise.all(paires.map(([u, r]) => c.put(u, r))))));
   self.skipWaiting();
 });
 /* ===== « GARDE-MOI ÇA » : LA PAGE DEMANDE, LE SERVICE WORKER RANGE =====
@@ -68,7 +93,7 @@ function secours(req, res) {
   return caches.match(req)
     .then((hit) => hit || caches.match("./index.html"))
     .then((hit) => hit || caches.match("./"))
-    .then((hit) => hit || res || new Response("", { status: 504, statusText: "hors ligne" }));
+    .then((hit) => hit ? sansDetour(hit) : (res || new Response("", { status: 504, statusText: "hors ligne" })));
 }
 /* ===== LE JEU SE LANCE DEPUIS SON CACHE, TOUT DE SUITE =====
    « Lorsque j'ai pas une bonne connexion, le jeu ne se lance pas. Je suis
@@ -125,7 +150,8 @@ self.addEventListener("fetch", (e) => {
       caches.open(CACHE)
         .then((c) => c.match("./index.html").then((hit) => hit || c.match("./")))
         .then((hit) => hit || caches.match("./index.html"))
-        .then((hit) => hit || fetch(req).then((res) => (res && res.ok) ? res : secours(req, res)).catch(() => secours(req, null)))
+        .then((hit) => hit ? sansDetour(hit)
+          : fetch(req).then((res) => (res && (res.ok || res.type === "opaqueredirect")) ? res : secours(req, res)).catch(() => secours(req, null)))
     );
     return;
   }
@@ -144,6 +170,11 @@ self.addEventListener("fetch", (e) => {
              une page d'erreur figée dans son app installée, et ne pouvait plus
              jouer du tout, même sans réseau. On bascule donc sur le cache
              exactement comme si la connexion était tombée. */
+          /* (v352) « Va voir ailleurs » (Cloudflare : /x.html → /x) : on
+             rend la redirection telle quelle, le navigateur la suit, et la
+             page d'arrivée repasse ici. Sans cela, elle comptait pour une
+             mauvaise réponse, et l'on tombait sur le jeu. */
+          if (res && res.type === "opaqueredirect") return res;
           if (!res || !res.ok) return secours(req, res);
           const copy = res.clone();
           caches.open(CACHE).then((c) => c.put(req, copy)).catch(() => {});
