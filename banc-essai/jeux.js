@@ -72,12 +72,15 @@ const jouerManche = async (p, juste) => {
   if (id === 'ordre') {
     const rangs = m.items.map((e, i) => [e[0], i]).sort((a, b) => a[0] - b[0]).map(x => x[1]);
     for (const i of (juste ? rangs : rangs.slice().reverse())) await touche(`#jxZone .jx-pas[data-i="${i}"]`);
+    /* (v351) Rien ne se valide tout seul : « Valider ». */
+    await touche('#jxZone .jx-valider');
   } else if (id === 'quiou') {
     const n = m.paires.length;
     for (let i = 0; i < n; i++) {
       await touche(`#jxZone .jx-qui[data-i="${i}"]`);
       await touche(`#jxZone .jx-ou[data-l="${juste ? i : (i + 1) % n}"]`);
     }
+    await touche('#jxZone .jx-valider');
   } else if (id === 'combien') {
     const k = m.options.findIndex(o => juste ? o === m.f[1] : o !== m.f[1]);
     await p.locator('#jxZone .jx-nb').nth(k).click({ timeout: 5000 });
@@ -86,6 +89,8 @@ const jouerManche = async (p, juste) => {
   } else {
     const ks = [...Array(m.parts.length).keys()];
     for (const k of (juste ? ks : ks.slice().reverse())) await touche(`#jxZone .jx-bout[data-k="${k}"]`);
+    /* (v351) Rien ne se valide tout seul : « Valider ». */
+    await touche('#jxZone .jx-valider');
   }
   await p.waitForSelector('.jeu-ecran .fact-card', { timeout: 5000 });
   return p.evaluate(() => ({ label: document.querySelector('.fact-card .fact-label').textContent,

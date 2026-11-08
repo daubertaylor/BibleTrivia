@@ -6633,6 +6633,25 @@
   /* Un morceau posé laisse sa forme, vide : rien ne bouge, et l'on voit ce qui reste. */
   .option-btn.jx-utilise{ opacity:0.32; transform:scale(0.96); pointer-events:none; }
   .option-btn.jx-utilise .opt-text{ visibility:hidden; }
+  /* ===== (v351) LE VERSET À LA MAIN (voir LE VERSET SE REBÂTIT À LA MAIN) =====
+     Un morceau se prend sans que la page défile ni que le texte se
+     sélectionne. Celui qu'on porte laisse sa trace, pâlie ; la copie qui
+     suit le doigt a la matière des morceaux de la réserve, soulevée. Le trait
+     qui dit où il se posera est de l'encre, comme un curseur de texte. */
+  /* touch-action ne s'applique pas à un élément EN LIGNE — et les morceaux
+     de la ligne le sont (un morceau peut se couper d'une rangée à l'autre) :
+     posé sur eux seuls, il était ignoré, le navigateur prenait le geste pour
+     un défilement et l'annulait. C'est la ligne entière qui le porte. */
+  #jxLigne{ position:relative; touch-action:none; }
+  .jx-verset .jx-pose, .jx-bouts .jx-bout{ touch-action:none; -webkit-user-select:none; user-select:none; -webkit-touch-callout:none; }
+  .jx-pose.jx-leve, .option-btn.jx-bout.jx-leve{ opacity:0.3; }
+  .jx-pose.jx-arrive, .option-btn.jx-bout.jx-arrive{ visibility:hidden; }
+  .jx-flotte{ position:fixed; left:0; top:0; z-index:9000; pointer-events:none; padding:0.62rem 0.85rem; border-radius:var(--r-m);
+    background:rgb(252,248,241); color:var(--ink); white-space:nowrap; max-width:86vw; overflow:hidden; text-overflow:ellipsis;
+    box-shadow:0 14px 30px rgba(15,12,10,0.26), 0 3px 9px rgba(15,12,10,0.14); will-change:transform; }
+  .jx-curseur{ position:absolute; width:3px; border-radius:2px; background:var(--ink); opacity:0.72; pointer-events:none; animation:jxCurseur 1s ease-in-out infinite; }
+  @keyframes jxCurseur{ 0%,100%{ opacity:0.72; } 50%{ opacity:0.3; } }
+  .btn-next.jx-valider{ margin-top:0.9rem; margin-bottom:0; }
   /* ===== LA FIN ===== */
   .card.jx-bilan{ display:flex; flex-direction:column; align-items:center; text-align:center; gap:0.35rem; padding-top:calc(1.4rem + 1px); padding-bottom:calc(1.3rem + 1px); }
   .jx-pct{ font-family:'Poppins',sans-serif; font-weight:800; font-size:3.1rem; line-height:1; color:var(--ink); margin-top:0.55rem; font-variant-numeric:tabular-nums; }
@@ -7828,8 +7847,9 @@ const TEXTES = {
     "Touche les récits du plus ancien au plus récent":"Tap the stories from earliest to latest",
     "Touche un personnage, puis son lieu":"Tap a person, then their place",
     "Un mot a changé\u00a0: touche-le":"One word has changed: tap it",
-    "Touche les morceaux dans l'ordre du verset":"Tap the pieces in the order of the verse",
-    "Touche les morceaux dans l'ordre":"Tap the pieces in order",
+    "Touche ou glisse les morceaux dans l'ordre du verset":"Tap or drag the pieces in the order of the verse",
+    "Touche ou glisse les morceaux ici":"Tap or drag the pieces here",
+    "Valider":"Check",
     "Du plus ancien au plus récent, dans le récit biblique.":"From earliest to latest, in the Bible's account.",
     "Chaque paire se lit dans le chapitre indiqué.":"Each pair can be read in the chapter shown.",
     "La réponse\u00a0: {n} ({ref}).":"The answer: {n} ({ref}).",
@@ -8717,8 +8737,9 @@ const TEXTES = {
     "Touche les récits du plus ancien au plus récent":"Toca los relatos del más antiguo al más reciente",
     "Touche un personnage, puis son lieu":"Toca un personaje y luego su lugar",
     "Un mot a changé\u00a0: touche-le":"Una palabra cambió: tócala",
-    "Touche les morceaux dans l'ordre du verset":"Toca los pedazos en el orden del versículo",
-    "Touche les morceaux dans l'ordre":"Toca los pedazos en orden",
+    "Touche ou glisse les morceaux dans l'ordre du verset":"Toca o arrastra los pedazos en el orden del versículo",
+    "Touche ou glisse les morceaux ici":"Toca o arrastra los pedazos aquí",
+    "Valider":"Comprobar",
     "Du plus ancien au plus récent, dans le récit biblique.":"Del más antiguo al más reciente, en el relato bíblico.",
     "Chaque paire se lit dans le chapitre indiqué.":"Cada par se lee en el capítulo indicado.",
     "La réponse\u00a0: {n} ({ref}).":"La respuesta: {n} ({ref}).",
@@ -11375,7 +11396,7 @@ const SUPABASE_ANON_KEY = "sb_publishable_FDJ_R0foC7uIeHmxVrj6rA_2NeIgW2a";
    remontée d'un téléphone ne vaut rien si on ne sait pas QUELLE version
    tournait. Elle doit rester égale au CACHE de sw.js — c'est ce que vérifie
    banc-essai/version.js, qui refuse de laisser publier les deux en désaccord. */
-const VERSION_JEU = "v350";
+const VERSION_JEU = "v351";
 
 /* ===================== QUAND ÇA CASSE CHEZ UN JOUEUR =====================
    « Si quelque chose casse chez cinq d'entre eux sur un modèle de téléphone
@@ -25804,10 +25825,10 @@ function toucherOrdre(i){
     b.classList.toggle("jx-pris", rang >= 0);
     const l = b.querySelector(".letter"); if(l) l.textContent = rang >= 0 ? String(rang + 1) : "";
   });
-  if(m.ordre.length === m.items.length){
-    const juste = m.ordre.every((j, r) => r === 0 || m.items[m.ordre[r - 1]][0] < m.items[j][0]);
-    setTimeout(()=> conclureManche(juste), 160);
-  }
+  /* (v351) Plus de validation au dernier toucher : « Valider » (voir
+     LE VERSET SE REBÂTIT À LA MAIN). Le dernier récit touché par erreur se
+     reprend, comme les autres. */
+  majValider(m);
 }
 function toucherQui(i){
   const m = mancheCourante(); if(!m || jeu.revele) return;
@@ -25827,10 +25848,6 @@ function toucherOu(l){
   m.liens[m.choisi] = l; m.choisi = null;
   playTap();
   majQuiou(m);
-  if(Object.keys(m.liens).length === m.paires.length){
-    const juste = m.paires.every((p, i) => m.liens[i] === i);
-    setTimeout(()=> conclureManche(juste), 160);
-  }
 }
 /* LES LIENS SE LISENT À LA COULEUR. Chaque personne porte sa pastille,
    toujours la même ; le lieu qu'on lui relie prend la même, à côté de son
@@ -25849,6 +25866,8 @@ function majQuiou(m){
     JX_LIENS.forEach(c => p.classList.toggle(c, qui !== undefined && JX_LIENS[+qui] === c));
     b.classList.toggle("jx-relie", qui !== undefined);
   });
+  /* (v351) La dernière paire reliée ne valide plus : « Valider ». */
+  majValider(m);
 }
 function toucherNombre(k){
   const m = mancheCourante(); if(!m || jeu.revele) return;
@@ -25860,24 +25879,206 @@ function toucherMot(k){
   m.choix = k;
   conclureManche(k === m.faux);
 }
+/* ===== (v351) LE VERSET SE REBÂTIT À LA MAIN =====
+   « Pour rebâtir les versets, j'aime beaucoup. J'aimerais juste améliorer un
+     petit truc ou deux : la possibilité de prendre le verset dans les mains,
+     si on le souhaite, de le placer soi-même, et aussi de confirmer son
+     choix plutôt que ça confirme tout seul à la fin. »
+   Deux gestes, au choix :
+   — TOUCHER, comme avant : un morceau de la réserve va au bout de la ligne ;
+     un morceau de la ligne retourne dans la réserve.
+   — PRENDRE : le doigt soulève le morceau, et un trait montre où il se
+     posera dans la ligne, entre deux morceaux. On voit, de haut en bas : la
+     copie du morceau (en relief), le trait, puis le doigt — ni le doigt ni
+     la copie ne cachent l'endroit visé. Lâché dans la
+     ligne, il s'y insère, là ; lâché ailleurs, il rentre dans la réserve. Un
+     morceau déjà posé se déplace de la même façon.
+   Rien ne se valide tout seul : « Valider » s'allume quand tous les morceaux
+   sont posés, et l'on peut encore tout déplacer avant de le toucher. */
+let glisseMorceau = null, clicMorceauMuet = 0;
 function toucherMorceau(k){
   const m = mancheCourante(); if(!m || jeu.revele) return;
+  /* Le clic qui suit un glissement (une souris le donne) n'est pas un toucher. */
+  if(performance.now() - clicMorceauMuet < 450) return;
   const p = m.pose.indexOf(k);
   if(p >= 0) m.pose.splice(p, 1); else m.pose.push(k);
   playTap();
   majMorceaux(m);
-  if(m.pose.length === m.parts.length){
-    /* Deux morceaux identiques s'échangent sans faute : on compare le TEXTE. */
-    const juste = m.pose.every((x, i) => m.parts[x] === m.parts[i]);
-    setTimeout(()=> conclureManche(juste), 160);
-  }
+}
+/* « Valider », pour les trois jeux qui se jouent en plusieurs gestes (Dans
+   l'ordre, Qui ? Où ?, Verset en morceaux) : la manche est-elle complète,
+   et juste ? */
+function mancheComplete(m){
+  if(!m || !jeu) return false;
+  if(jeu.id === "ordre") return m.ordre.length === m.items.length;
+  if(jeu.id === "quiou") return Object.keys(m.liens).length === m.paires.length;
+  if(jeu.id === "morceaux") return m.pose.length === m.parts.length;
+  return false;
+}
+function mancheJuste(m){
+  if(jeu.id === "ordre") return m.ordre.every((j, r) => r === 0 || m.items[m.ordre[r - 1]][0] < m.items[j][0]);
+  if(jeu.id === "quiou") return m.paires.every((p, i) => m.liens[i] === i);
+  /* Deux morceaux identiques s'échangent sans faute : on compare le TEXTE. */
+  return m.pose.every((x, i) => m.parts[x] === m.parts[i]);
+}
+function validerManche(){
+  const m = mancheCourante(); if(!m || jeu.revele || !mancheComplete(m)) return;
+  conclureManche(mancheJuste(m));
+}
+function majValider(m){
+  const v = document.getElementById("jxValider"), pret = mancheComplete(m);
+  if(v && v.disabled === pret){ v.disabled = !pret; try{ glassTrack(); }catch(e){} }
+}
+function boutonValider(m){
+  return `<button class="btn-next jx-valider" id="jxValider" onclick="validerManche()"${mancheComplete(m) ? "" : " disabled"}>${T("Valider")}</button>`;
+}
+function ligneMorceauxHtml(m){
+  return m.pose.length
+    ? m.pose.map(x => `<button class="jx-pose" data-k="${x}" onclick="toucherMorceau(${x})">${escapeHtml(frSpace(m.parts[x]))}</button>`).join(" ")
+    : `<span class="jx-vide">${T("Touche ou glisse les morceaux ici")}</span>`;
 }
 function majMorceaux(m){
   const ligne = document.getElementById("jxLigne");
-  if(ligne) ligne.innerHTML = m.pose.length
-    ? m.pose.map(x => `<button class="jx-pose" onclick="toucherMorceau(${x})">${escapeHtml(frSpace(m.parts[x]))}</button>`).join(" ")
-    : `<span class="jx-vide">${T("Touche les morceaux dans l'ordre")}</span>`;
+  if(ligne) ligne.innerHTML = ligneMorceauxHtml(m);
   document.querySelectorAll("#jxZone .jx-bout").forEach(b => b.classList.toggle("jx-utilise", m.pose.includes(+b.dataset.k)));
+  majValider(m);
+}
+/* Le geste : rien ne bouge avant sept pixels (en deçà, c'est un toucher). */
+function brancherGlisseMorceaux(zone){
+  if(!zone) return;
+  zone.addEventListener("pointerdown", (e)=>{
+    if(e.button > 0 || glisseMorceau) return;
+    const m = mancheCourante(); if(!m || jeu.revele) return;
+    const b = e.target && e.target.closest ? e.target.closest(".jx-bout, .jx-pose") : null;
+    if(!b || !zone.contains(b) || b.classList.contains("jx-utilise")) return;
+    const g = { k:+b.dataset.k, depuis:b.classList.contains("jx-pose") ? "ligne" : "reserve", el:b, id:e.pointerId,
+                x0:e.clientX, y0:e.clientY, doigt:e.pointerType === "touch", actif:false, dans:false, idx:0 };
+    glisseMorceau = g;
+    const bouge = (ev)=>{
+      if(ev.pointerId !== g.id) return;
+      if(!g.actif){
+        if(Math.hypot(ev.clientX - g.x0, ev.clientY - g.y0) < 7) return;
+        if(!leverMorceau(g)){ fin(ev, true); return; }
+      }
+      if(ev.cancelable) ev.preventDefault();
+      suivreMorceau(g, ev.clientX, ev.clientY);
+    };
+    const fin = (ev, annule)=>{
+      if(ev && ev.pointerId !== g.id) return;
+      window.removeEventListener("pointermove", bouge, true);
+      window.removeEventListener("pointerup", lache, true);
+      window.removeEventListener("pointercancel", rompt, true);
+      if(glisseMorceau === g) glisseMorceau = null;
+      if(g.actif){ clicMorceauMuet = performance.now(); poserMorceau(g, annule); }
+    };
+    const lache = (ev)=> fin(ev, false), rompt = (ev)=> fin(ev, true);
+    window.addEventListener("pointermove", bouge, { capture:true, passive:false });
+    window.addEventListener("pointerup", lache, true);
+    window.addEventListener("pointercancel", rompt, true);
+  });
+}
+function leverMorceau(g){
+  const m = mancheCourante(); if(!m || jeu.revele || !g.el.isConnected) return false;
+  g.actif = true;
+  const c = document.createElement("div");
+  c.className = "jx-flotte";
+  c.textContent = m.parts[g.k];
+  const modele = document.querySelector("#jxZone .jx-bout .opt-text");
+  if(modele){ const cs = getComputedStyle(modele); c.style.fontFamily = cs.fontFamily; c.style.fontSize = cs.fontSize; c.style.fontWeight = cs.fontWeight; }
+  document.body.appendChild(c);
+  const r = c.getBoundingClientRect();
+  g.copie = c; g.w = r.width; g.h = r.height;
+  g.el.classList.add("jx-leve");
+  const ligne = document.getElementById("jxLigne");
+  if(ligne){ const t = document.createElement("span"); t.className = "jx-curseur"; t.hidden = true; t.setAttribute("aria-hidden", "true"); ligne.appendChild(t); g.curseur = t; }
+  try{ if(navigator.vibrate) navigator.vibrate(8); }catch(e){}
+  return true;
+}
+/* Où le morceau se poserait : l'écart le plus proche entre deux morceaux de
+   la ligne (avant chacun, après chacun — la ligne se replie sur plusieurs
+   rangées), la hauteur comptant double. Le morceau soulevé n'en fait pas
+   partie : on le pose « ailleurs ». */
+function placeDansLaLigne(ligne, k, hx, hy){
+  const poses = Array.prototype.filter.call(ligne.querySelectorAll(".jx-pose"), b => +b.dataset.k !== k);
+  let best = null;
+  const essai = (idx, x, top, h)=>{ const d = Math.abs(hx - x) + 2 * Math.abs(hy - (top + h / 2)); if(!best || d < best.d) best = { idx, x, top, h, d }; };
+  poses.forEach((b, i)=>{
+    const rs = b.getClientRects(); if(!rs.length) return;
+    const a = rs[0], z = rs[rs.length - 1];
+    essai(i, a.left - 2, a.top, a.height);
+    essai(i + 1, z.right + 2, z.top, z.height);
+  });
+  if(!best){
+    const v = ligne.querySelector(".jx-vide, .jx-pose");
+    const r = (v || ligne).getBoundingClientRect();
+    best = { idx:0, x:r.left + r.width / 2, top:r.top, h:Math.min(r.height, 34) };
+  }
+  return best;
+}
+function suivreMorceau(g, x, y){
+  if(!g.copie) return;
+  /* L'endroit visé est juste au-dessus du bout du doigt (à la souris, sous la
+     flèche) ; la copie flotte encore au-dessus de lui. Posée SUR l'endroit
+     visé, elle cachait le trait et les deux morceaux entre lesquels elle
+     allait se poser (vu sur la photo du geste). */
+  const hx = x, hy = g.doigt ? y - 34 : y;
+  const lx = x - g.w / 2, ly = hy - 22 - g.h;
+  g.copie.style.transform = "translate(" + lx.toFixed(1) + "px," + ly.toFixed(1) + "px) scale(1.04)";
+  const ligne = document.getElementById("jxLigne");
+  const r = ligne ? ligne.getBoundingClientRect() : null;
+  g.dans = !!r && hx >= r.left - 18 && hx <= r.right + 18 && hy >= r.top - 30 && hy <= r.bottom + 30;
+  const t = g.curseur;
+  if(!t) return;
+  if(g.dans){
+    const p = placeDansLaLigne(ligne, g.k, hx, hy);
+    g.idx = p.idx;
+    t.style.left = (p.x - r.left - 1.5).toFixed(1) + "px";
+    t.style.top = (p.top - r.top).toFixed(1) + "px";
+    t.style.height = p.h.toFixed(1) + "px";
+    t.hidden = false;
+  } else t.hidden = true;
+}
+function poserMorceau(g, annule){
+  if(g.curseur) g.curseur.remove();
+  g.el.classList.remove("jx-leve");
+  const m = mancheCourante();
+  if(!m || jeu.revele || !document.getElementById("jxLigne")){ if(g.copie) g.copie.remove(); return; }
+  const avant = m.pose.join();
+  if(!annule && g.dans){
+    const reste = m.pose.filter(x => x !== g.k);
+    reste.splice(Math.min(g.idx, reste.length), 0, g.k);
+    m.pose = reste;
+  } else if(!annule && g.depuis === "ligne"){
+    m.pose = m.pose.filter(x => x !== g.k);
+  }
+  majMorceaux(m);
+  if(m.pose.join() !== avant) playTap();
+  atterrirMorceau(g);
+}
+/* La copie rejoint sa place — dans la ligne, ou dans la réserve — puis
+   s'efface sur le morceau, qui se montre à cet instant. */
+function atterrirMorceau(g){
+  const c = g.copie; if(!c) return;
+  const cible = document.querySelector('#jxLigne .jx-pose[data-k="' + g.k + '"]') || document.querySelector('#jxZone .jx-bout[data-k="' + g.k + '"]');
+  if(!cible){ c.remove(); return; }
+  cible.classList.add("jx-arrive");
+  const r = cible.getBoundingClientRect(), rc = c.getBoundingClientRect();
+  const dx = (r.left + r.width / 2) - (rc.left + rc.width / 2), dy = (r.top + r.height / 2) - (rc.top + rc.height / 2);
+  let fini = false;
+  const finir = ()=>{ if(fini) return; fini = true; c.remove(); cible.classList.remove("jx-arrive"); };
+  try{
+    const depart = c.style.transform;
+    const a = c.animate([{ transform:depart, opacity:1 }, { transform:"translate(" + dx.toFixed(1) + "px," + dy.toFixed(1) + "px) " + depart.replace(/scale\([^)]*\)/, "scale(1)"), opacity:0.9 }],
+      { duration:190, easing:"cubic-bezier(0.2,0.9,0.3,1)", fill:"forwards" });
+    a.onfinish = finir;
+    setTimeout(finir, 420);
+  }catch(e){ finir(); }
+}
+/* Un écran qui se redessine en plein geste (rien ne le fait aujourd'hui) ne
+   laisse pas de copie orpheline. */
+function oublierGlisseMorceau(){
+  glisseMorceau = null;
+  document.querySelectorAll("body > .jx-flotte").forEach(c => c.remove());
 }
 
 /* ===== L'ÉCRAN DES JEUX (l'onglet) ===== */
@@ -25944,7 +26145,7 @@ function consigneJeu(m){
   if(jeu.id === "quiou") return T("Touche un personnage, puis son lieu");
   if(jeu.id === "combien") return m.f[3][langueIdx()];
   if(jeu.id === "erreur") return T("Un mot a changé\u00a0: touche-le");
-  return T("Touche les morceaux dans l'ordre du verset");
+  return T("Touche ou glisse les morceaux dans l'ordre du verset");
 }
 function zoneJeu(m){
   const L = langueIdx(), rv = jeu.revele;
@@ -25957,7 +26158,8 @@ function zoneJeu(m){
         return `<div class="option-btn jx-pas ${bien ? "correct" : "incorrect"}"><span class="letter">${r + 1}</span><span class="opt-text">${escapeHtml(e[1][L])}<small class="jx-ref">${escapeHtml(refLivre(e[2]))}</small></span></div>`; }).join("")}</div>`;
     }
     return `<div class="jx-liste">${m.items.map((e, i) => { const r = m.ordre.indexOf(i);
-      return `<button class="option-btn jx-pas${r >= 0 ? " jx-pris" : ""}" data-i="${i}" onclick="toucherOrdre(${i})"><span class="letter">${r >= 0 ? r + 1 : ""}</span><span class="opt-text">${escapeHtml(e[1][L])}</span></button>`; }).join("")}</div>`;
+      return `<button class="option-btn jx-pas${r >= 0 ? " jx-pris" : ""}" data-i="${i}" onclick="toucherOrdre(${i})"><span class="letter">${r >= 0 ? r + 1 : ""}</span><span class="opt-text">${escapeHtml(e[1][L])}</span></button>`; }).join("")}</div>
+      ${boutonValider(m)}`;
   }
   if(jeu.id === "quiou"){
     if(rv){
@@ -25966,7 +26168,8 @@ function zoneJeu(m){
     return `<div class="jx-deux">
         <div class="jx-col">${m.paires.map((p, i) => `<button class="option-btn jx-qui" data-i="${i}" onclick="toucherQui(${i})"><span class="jx-point ${JX_LIENS[i]}"></span><span class="opt-text">${escapeHtml(p[0][L])}</span></button>`).join("")}</div>
         <div class="jx-col">${m.lieux.map(l => `<button class="option-btn jx-ou" data-l="${l}" onclick="toucherOu(${l})"><span class="jx-point"></span><span class="opt-text">${escapeHtml(m.paires[l][1][L])}</span></button>`).join("")}</div>
-      </div>`;
+      </div>
+      ${boutonValider(m)}`;
   }
   if(jeu.id === "combien"){
     return `<div class="options-grid jx-nombres">${m.options.map((o, k) => {
@@ -25987,8 +26190,9 @@ function zoneJeu(m){
   if(rv){
     return `<div class="card jx-verset jx-final">${m.parts.map((p, i) => `<span class="jx-pose ${m.pose[i] !== undefined && m.parts[m.pose[i]] === p ? "bien" : "mal"}">${escapeHtml(frSpace(p))}</span>`).join(" ")}</div>`;
   }
-  return `<div class="card jx-verset" id="jxLigne">${m.pose.length ? m.pose.map(x => `<button class="jx-pose" onclick="toucherMorceau(${x})">${escapeHtml(frSpace(m.parts[x]))}</button>`).join(" ") : `<span class="jx-vide">${T("Touche les morceaux dans l'ordre")}</span>`}</div>
-    <div class="jx-bouts">${m.melange.map(k => `<button class="option-btn jx-bout${m.pose.includes(k) ? " jx-utilise" : ""}" data-k="${k}" onclick="toucherMorceau(${k})"><span class="opt-text">${escapeHtml(frSpace(m.parts[k]))}</span></button>`).join("")}</div>`;
+  return `<div class="card jx-verset" id="jxLigne">${ligneMorceauxHtml(m)}</div>
+    <div class="jx-bouts">${m.melange.map(k => `<button class="option-btn jx-bout${m.pose.includes(k) ? " jx-utilise" : ""}" data-k="${k}" onclick="toucherMorceau(${k})"><span class="opt-text">${escapeHtml(frSpace(m.parts[k]))}</span></button>`).join("")}</div>
+    ${boutonValider(m)}`;
 }
 /* Ce que dit la carte « Le savais-tu ? » une fois la manche jouée. */
 function faitJeu(m){
@@ -26022,6 +26226,8 @@ function renderJeu(){
       <button class="btn-next${pop ? " reveal-in" : ""}" onclick="mancheSuivante()">${jeu.i >= total - 1 ? T("Voir les résultats") : T("Suivant")}</button>` : ""}
     <div class="flex-sp"></div>
     <div class="solo-score-bar"><span class="label">${T("Score")}</span><span class="value">${jeu.points} pts</span></div>`;
+  oublierGlisseMorceau();
+  if(def.id === "morceaux" && !jeu.revele) brancherGlisseMorceaux(el.querySelector("#jxZone"));
   return el;
 }
 /* ===== LA FIN D'UNE PARTIE ===== */
