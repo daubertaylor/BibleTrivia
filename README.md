@@ -1,10 +1,27 @@
 # Yada
 
 Quiz biblique — application web installable (PWA), en un seul fichier
-`index.html`. Publiée par GitHub Pages sur
-<https://daubertaylor.github.io/BibleTrivia/> (l'adresse suit le dépôt, pas le
-nom du jeu : la renommer casserait tous les liens déjà partagés et les
-installations déjà posées sur les écrans d'accueil).
+`index.html`. Son adresse, depuis la v349 : <https://yadaquiz.app/>.
+
+L'ancienne adresse, <https://daubertaylor.github.io/BibleTrivia/> (GitHub Pages),
+était celle des premiers joueurs : ce qu'ils gardent (progression, réglages)
+est rangé par adresse, dans leur téléphone. Elle doit continuer de servir le
+même jeu tant qu'ils y sont — c'est le compte (« Sauvegarder ma progression »)
+qui emporte tout d'une adresse à l'autre.
+
+**La publicité (v349).** Une seule forme, et une seule voie : l'annonce Google
+en plein écran, entre deux parties — les résultats d'abord, puis l'annonce au
+moment de les quitter (Rejouer, Quitter, Autres jeux). Dans un jeu, Google ne
+permet l'écran entier QUE par sa fonction `adBreak` (programme « H5 Games
+Ads ») : une annonce plein écran bâtie à la main avec un bloc AdSense
+ordinaire est interdite, et mettrait le compte en danger. Ce programme se
+demande (formulaire sur <https://developers.google.com/ad-placement/docs/beta>,
+compte AdSense approuvé) : tant qu'il n'est pas ouvert au compte, Google répond
+« rien à montrer » et le jeu passe aussitôt. Côté AdSense : annonces
+automatiques désactivées (elles se poseraient n'importe où), et le message de
+consentement européen créé dans « Confidentialité et messages ». `ads.txt` est
+à la racine. Un navigateur piloté (les bancs) ne charge même pas le script de
+Google : il y lançait de vraies demandes d'annonces avec le compte de Taylor.
 
 Le jeu s'appelait BibleTrivia jusqu'à la v202. **Le nom s'écrit maintenant à un
 seul endroit dans le code**, la constante `NOM_DU_JEU` — tout ce que le joueur
@@ -13,7 +30,7 @@ servis avant que la moindre ligne de code ne tourne : `<title>` et
 `apple-mobile-web-app-title` dans l'en-tête, `name` et `short_name` dans
 `manifest.json`. Et trois choses ne suivent JAMAIS le nom, sous peine de perdre
 ce que le joueur a déjà : les clés `bt_…` de la mémoire locale, la base
-`bibletrivia` d'indexedDB, et l'adresse ci-dessus.
+`bibletrivia` d'indexedDB, et l'adresse du jeu.
 
 Déploiement : pousser sur `claude/ios-app-polish-ui-ndgqle`, puis avancer
 `main` en avance rapide. **Toujours incrémenter `CACHE` dans `sw.js`** —

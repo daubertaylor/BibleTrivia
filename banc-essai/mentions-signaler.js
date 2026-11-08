@@ -9,9 +9,12 @@
    Ce qui est vérifié :
      1. Réglages : « Confidentialité » et « Mentions légales » sur UNE ligne,
         deux cibles de 44 px, dans la page — sur un grand et un petit écran.
-     2. La page des mentions : Taylor Dauber, l'adresse de Yada en lien
-        mailto, les deux hébergeurs ; AUCUN numéro de téléphone, aucune adresse
-        personnelle ; rien ne déborde.
+     2. La page des mentions (v349, refaite « simple et très professionnelle ») :
+        l'éditeur et directeur de la publication (Taylor Dauber), l'adresse de
+        Yada en lien mailto, l'hébergeur avec son adresse et SON téléphone (la
+        loi le demande), et le lien vers la Confidentialité — quatre lignes ;
+        aucun autre numéro de téléphone, aucune adresse personnelle ; rien ne
+        déborde.
      3. En anglais et en espagnol : chaque ligne traduite (aucun mot français).
      4. Une photo de profil vue en grand : « Signaler cette photo » ; le
         toucher ouvre « Signaler cette personne », la raison « photo » déjà
@@ -75,7 +78,7 @@ const PHOTO = "url('data:image/svg+xml;utf8,<svg xmlns=%27http://www.w3.org/2000
     }
 
     /* ---- 2 et 3. La page des mentions, en trois langues ---- */
-    const FRANCAIS = /Éditeur|responsable des données|Hébergement|Polices|domaine public|Singapour|États-Unis|non professionnel|merci de ne pas/;
+    const FRANCAIS = /Éditeur|directeur de la publication|Hébergeur|Données personnelles|Confidentialité|États-Unis/;
     for (const lg of ['fr', 'en', 'es']) {
       const { ctx, p } = await ouvrir(lg);
       await p.evaluate(() => openSettings());
@@ -91,17 +94,20 @@ const PHOTO = "url('data:image/svg+xml;utf8,<svg xmlns=%27http://www.w3.org/2000
           mail: mail ? mail.getAttribute('href') : null, deborde: s.scrollWidth - s.clientWidth };
       });
       if (!m) { dit('2. ' + lg + ' : la page des mentions s\'ouvre', false, 'introuvable'); await ctx.close(); continue; }
-      const tel = /(\+33|\b0\d([ .]?\d\d){4}\b|07 84)/.test(m.texte);
+      /* Le seul numéro permis : celui de l'hébergeur. */
+      const tel = /(\+33|\b0\d([ .]?\d\d){4}\b|07 84)/.test(m.texte.replace('+1 888 993 5273', ''));
       if (lg === 'fr') {
-        dit('2. la page « Mentions légales » : Taylor Dauber (une seule fois), l\'adresse de Yada (lien mailto), les deux hébergeurs',
-          posee && m.titre === 'Mentions légales' && /Taylor Dauber/.test(m.texte) && m.mail === 'mailto:yadaquiz.app@gmail.com'
-          && (m.texte.match(/Taylor Dauber/g) || []).length === 1 && /GitHub, Inc\./.test(m.texte) && /Supabase Pte\. Ltd\./.test(m.texte) && m.lignes === 7, JSON.stringify({ posee, titre: m.titre, mail: m.mail, lignes: m.lignes }));
-        dit('2. … aucun numéro de téléphone, aucune adresse personnelle, rien ne déborde',
+        dit('2. la page « Mentions légales » : l\'éditeur et directeur de la publication (Taylor Dauber, une seule fois), l\'adresse de Yada (lien mailto), l\'hébergeur avec son téléphone, le lien vers la Confidentialité',
+          posee && m.titre === 'Mentions légales' && /Éditeur et directeur de la publication : Taylor Dauber/.test(m.texte) && m.mail === 'mailto:yadaquiz.app@gmail.com'
+          && (m.texte.match(/Taylor Dauber/g) || []).length === 1 && /Cloudflare, Inc\., 101 Townsend Street, San Francisco, CA 94107, États-Unis — \+1 888 993 5273/.test(m.texte)
+          && /Données personnelles : Confidentialité/.test(m.texte) && m.lignes === 4, JSON.stringify({ posee, titre: m.titre, mail: m.mail, lignes: m.lignes, texte: m.texte.slice(0, 260) }));
+        dit('2. … aucun autre numéro de téléphone que celui de l\'hébergeur, aucune adresse personnelle, rien ne déborde',
           !tel && !/daubertaylor22|@gmail\.com/.test(m.texte.replace('yadaquiz.app@gmail.com', '')) && m.deborde <= 0, JSON.stringify({ tel, deborde: m.deborde }));
       } else {
         const reste = (m.texte.match(FRANCAIS) || [])[0];
-        dit('3. ' + lg + ' : chaque ligne traduite, le même lien mailto, aucun téléphone',
-          posee && !reste && m.titre !== 'Mentions légales' && m.mail === 'mailto:yadaquiz.app@gmail.com' && !tel && m.lignes === 7 && m.deborde <= 0,
+        dit('3. ' + lg + ' : chaque ligne traduite, le même lien mailto, aucun autre téléphone que celui de l\'hébergeur',
+          posee && !reste && m.titre !== 'Mentions légales' && m.mail === 'mailto:yadaquiz.app@gmail.com' && !tel && m.lignes === 4 && m.deborde <= 0
+          && /\+1 888 993 5273/.test(m.texte),
           JSON.stringify({ titre: m.titre, reste, mail: m.mail, lignes: m.lignes }));
       }
       await ctx.close();

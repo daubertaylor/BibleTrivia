@@ -182,6 +182,11 @@ const JAMAIS_A_L_ECRAN = [
      pour la prochaine langue en chantier. */
   { lg:'es', quoi:'pronto', car:"aucune langue n'est plus en attente : « bientôt » ne s'affiche nulle part" },
   { lg:'en', quoi:'soon',   car:"aucune langue n'est plus en attente : « bientôt » ne s'affiche nulle part" },
+  /* (v349) La publicité et les mentions. */
+  { lg:'en', quoi:'My ad choices', car:"le bouton n'existe que si le message de consentement de Google est chargé (googlefc) : jamais au banc" },
+  { lg:'es', quoi:'Mis opciones de publicidad', car:"le bouton n'existe que si le message de consentement de Google est chargé (googlefc) : jamais au banc" },
+  { lg:'en', quoi:'GitHub, Inc., 88 Colin P. Kelly Jr. Street, San Francisco, CA 94107, United States — support.github.com.', car:"l'hébergeur nommé est celui qui sert la page : au banc (127.0.0.1), c'est Cloudflare" },
+  { lg:'es', quoi:'GitHub, Inc., 88 Colin P. Kelly Jr. Street, San Francisco, CA 94107, Estados Unidos — support.github.com.', car:"l'hébergeur nommé est celui qui sert la page : au banc (127.0.0.1), c'est Cloudflare" },
   { lg:'es', quoi:'Victoria',  car:"« Victoire » sans point d'exclamation ne sert qu'au texte partagé" },
   { lg:'es', quoi:'Buen duelo', car:"n'existe que dans le texte PARTAGÉ d'un duel serré" },
   { lg:'es', quoi:'mi rival',   car:"le repli du nom dans le texte partagé, jamais à l'écran" },
@@ -219,6 +224,7 @@ const MEME_DANS_LES_DEUX = [
      pareil dans les trois langues. Ici, et seulement ici. */
   { quoi:/^pts$/, ou:/jx-chiffres/, car:'l\'unité des points, sous son nombre en gras' },
   { quoi:/^[^\p{L}]*$/u,                       car:'aucune lettre — chiffres, ponctuation, icône' },
+  { quoi:/^Taylor Dauber$/, ou:/ment-nom/, car:"(v349) l'éditeur, dans les mentions légales : un nom propre, le même dans toutes les langues" },
   { quoi:/^(Français|English|Español|Português|Deutsch|Italiano)$/, car:'une langue s\'écrit dans sa langue' },
   /* Une adresse e-mail ne se traduit pas : c'est celle du joueur, il l'a
      tapée lui-même. Elle s'affiche telle quelle sur la carte du compte. */
