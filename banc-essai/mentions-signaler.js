@@ -19,9 +19,11 @@
         donnée personnelle ; rien ne déborde.
      3. En anglais et en espagnol : chaque ligne traduite (aucun mot français).
      4. Une photo de profil vue en grand : « Signaler cette photo » ; le
-        toucher ouvre « Signaler cette personne », la raison « photo » déjà
-        cochée, « Envoyer » prêt, et les raisons d'une PERSONNE (photo, nom,
-        usurpation d'abord).
+        toucher ouvre SA page (v352) : « Signaler cette photo », la photo et
+        le nom en tête, les raisons d'une PHOTO (nudité, violence, haine, la
+        photo de quelqu'un d'autre, publicité, autre), rien de coché,
+        « Envoyer » qui attend ; il part avec la raison « photo », ce qu'elle
+        montre en tête du détail.
      5. Jamais sur sa propre photo, ni sans compte, ni en mode modération ;
         jamais sur la photo de son propre groupe ; oui sur celle d'un groupe
         dont on est simple membre (raisons d'un GROUPE).
@@ -157,18 +159,25 @@ const PHOTO = "url('data:image/svg+xml;utf8,<svg xmlns=%27http://www.w3.org/2000
       a4.ouverte && a4.lien && a4.geo.texte === 'Signaler cette photo' && Math.abs(a4.geo.centre) <= 1 && a4.geo.sousPhoto && a4.geo.bas >= 8 && a4.geo.h >= 36, JSON.stringify(a4));
     await p.evaluate(() => document.querySelector('#photoGrandVeil .pv-signaler').click());
     await p.waitForTimeout(900);
-    const f4 = await p.evaluate(() => { const v = document.getElementById('grpSignalerVeil'); if (!v) return null;
+    const PAGE_PHOTO = () => { const v = document.getElementById('grpSignalerVeil'); if (!v) return null;
+      const img = v.querySelector('.sp-img');
       return { titre: (v.querySelector('.st-mot') || {}).textContent, raisons: [...v.querySelectorAll('.grp-raison')].map(b => b.dataset.k),
-        cochee: (v.querySelector('.grp-raison.choisie') || { dataset: {} }).dataset.k, envoi: !document.getElementById('grpSignalerEnvoi').disabled,
-        photo: !!document.getElementById('photoGrandVeil') }; });
-    dit('4. … le toucher ouvre « Signaler cette personne », « Photo de profil inappropriée » déjà cochée, « Envoyer » prêt',
-      !!f4 && f4.titre === 'Signaler cette personne' && f4.cochee === 'photo' && f4.envoi && !f4.photo
-      && f4.raisons.slice(0, 3).join() === 'photo,nom,usurpation' && f4.raisons.includes('harcelement') && f4.raisons[f4.raisons.length - 1] === 'autre', JSON.stringify(f4));
+        cochee: (v.querySelector('.grp-raison.choisie') || { dataset: {} }).dataset.k || null, envoi: !document.getElementById('grpSignalerEnvoi').disabled,
+        image: img ? img.getAttribute('style') : null, nom: (v.querySelector('.sp-nom') || {}).textContent || null,
+        textes: [...v.querySelectorAll('.grp-raison .gal-t')].map(x => x.textContent), photo: !!document.getElementById('photoGrandVeil') }; };
+    const f4 = await p.evaluate(PAGE_PHOTO);
+    const RAISONS = 'nudite,violence,haine,usurpation,arnaque,autre';
+    dit('4. … le toucher ouvre SA page : « Signaler cette photo », la photo et le nom en tête, les raisons d\'une photo, rien de coché, « Envoyer » qui attend',
+      !!f4 && f4.titre === 'Signaler cette photo' && f4.raisons.join() === RAISONS && !f4.cochee && !f4.envoi && !f4.photo
+      && !!f4.image && f4.image.includes(PHOTO) && f4.nom === 'Sam' && f4.textes[0] === 'Nudité ou contenu sexuel', JSON.stringify(f4));
+    await p.evaluate(() => document.querySelector('#grpSignalerVeil .grp-raison[data-k="nudite"]').click());
+    const pret4 = await p.evaluate(() => !document.getElementById('grpSignalerEnvoi').disabled);
     await p.evaluate(() => document.getElementById('grpSignalerEnvoi').click());
     await p.waitForTimeout(500);
     const e4 = await p.evaluate(() => ({ appels: window.__appels.slice(), merci: !!document.querySelector('#grpSignalerVeil .grp-merci') }));
-    dit('4. … et il part : la personne visée, la raison « photo »',
-      e4.merci && e4.appels.length === 1 && e4.appels[0].args.p_cible === 'u-2' && e4.appels[0].args.p_raison === 'photo' && e4.appels[0].args.p_groupe === null, JSON.stringify(e4));
+    dit('4. … une raison choisie, il part : la personne visée, la raison « photo », ce qu\'elle montre en tête du détail',
+      pret4 && e4.merci && e4.appels.length === 1 && e4.appels[0].args.p_cible === 'u-2' && e4.appels[0].args.p_raison === 'photo' && e4.appels[0].args.p_groupe === null
+      && e4.appels[0].args.p_details === 'Nudité ou contenu sexuel', JSON.stringify(e4));
     await fermer();
 
     /* 5. Là où il ne doit pas être */
@@ -186,11 +195,14 @@ const PHOTO = "url('data:image/svg+xml;utf8,<svg xmlns=%27http://www.w3.org/2000
     const unGroupe = await lien('g:g-1');
     await p.evaluate(() => document.querySelector('#photoGrandVeil .pv-signaler').click());
     await p.waitForTimeout(900);
-    const f5 = await p.evaluate(() => { const v = document.getElementById('grpSignalerVeil'); if (!v) return null;
-      return { titre: (v.querySelector('.st-mot') || {}).textContent, raisons: [...v.querySelectorAll('.grp-raison')].map(b => b.dataset.k),
-        premiere: (v.querySelector('.grp-raison .gal-t') || {}).textContent, cochee: (v.querySelector('.grp-raison.choisie') || { dataset: {} }).dataset.k }; });
-    dit('5. … oui sur la photo d\'un groupe dont on est membre : « Signaler ce groupe », « Photo du groupe inappropriée » cochée',
-      unGroupe.lien && !!f5 && f5.titre === 'Signaler ce groupe' && f5.cochee === 'photo' && f5.premiere === 'Photo du groupe inappropriée' && f5.raisons.includes('nom'), JSON.stringify({ unGroupe, f5 }));
+    const f5 = await p.evaluate(PAGE_PHOTO);
+    await p.evaluate(() => { window.__appels = []; document.querySelector('#grpSignalerVeil .grp-raison[data-k="haine"]').click(); document.getElementById('grpSignalerEnvoi').click(); });
+    await p.waitForTimeout(500);
+    const e5 = await p.evaluate(() => window.__appels.slice());
+    dit('5. … oui sur la photo d\'un groupe dont on est membre : « Signaler la photo du groupe », la photo et le nom du groupe, les raisons d\'une photo ; elle part pour le groupe',
+      unGroupe.lien && !!f5 && f5.titre === 'Signaler la photo du groupe' && f5.raisons.join() === RAISONS && !f5.cochee && f5.nom === 'Les Psaumes' && !!f5.image
+      && e5.length === 1 && e5[0].args.p_groupe === 'g-1' && e5[0].args.p_cible === null && e5[0].args.p_raison === 'photo' && e5[0].args.p_details === 'Haine ou symbole haineux',
+      JSON.stringify({ unGroupe, f5, e5 }));
     await fermer();
 
     /* 6. Le serveur d'avant la v346 */
@@ -198,12 +210,13 @@ const PHOTO = "url('data:image/svg+xml;utf8,<svg xmlns=%27http://www.w3.org/2000
     await lien('u:u-2');
     await p.evaluate(() => document.querySelector('#photoGrandVeil .pv-signaler').click());
     await p.waitForTimeout(900);
-    await p.evaluate(() => { const t = document.getElementById('grpPrecision'); t.value = 'Photo choquante'; document.getElementById('grpSignalerEnvoi').click(); });
+    await p.evaluate(() => { document.querySelector('#grpSignalerVeil .grp-raison[data-k="nudite"]').click(); const t = document.getElementById('grpPrecision'); t.value = 'Photo choquante'; document.getElementById('grpSignalerEnvoi').click(); });
     await p.waitForTimeout(600);
     const e6 = await p.evaluate(() => ({ appels: window.__appels.slice(), merci: !!document.querySelector('#grpSignalerVeil .grp-merci') }));
     const a = e6.appels;
     dit('6. un serveur d\'avant la v346 refuse « photo » : le signalement repart en « contenu inapproprié », la raison en tête du détail',
-      e6.merci && a.length === 2 && a[0].args.p_raison === 'photo' && a[1].args.p_raison === 'inapproprie' && a[1].args.p_details === 'Photo inappropriée — Photo choquante' && a[1].args.p_cible === 'u-2',
+      e6.merci && a.length === 2 && a[0].args.p_raison === 'photo' && a[0].args.p_details === 'Nudité ou contenu sexuel — Photo choquante'
+      && a[1].args.p_raison === 'inapproprie' && a[1].args.p_details === 'Photo inappropriée — Nudité ou contenu sexuel — Photo choquante' && a[1].args.p_cible === 'u-2',
       JSON.stringify(e6));
     await fermer();
     await p.evaluate(() => { window.__ancien = false; });

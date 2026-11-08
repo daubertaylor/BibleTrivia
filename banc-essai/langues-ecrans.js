@@ -1089,8 +1089,13 @@ const ouvrirLaLangue = async (p, lg) => {
       state.screen = 'groupes'; render();
       const pv = photoValeur; photoValeur = () => "url('data:image/gif;base64,R0lGODlhAQABAAAAACw=')";
       try { ouvrirPhotoGrand('u:u-2'); } finally { photoValeur = pv; } }],
+    /* (v352) UNE PHOTO SE SIGNALE SUR SA PROPRE PAGE : la photo et le nom en
+       tête, et ses raisons à elle (nudité, violence, haine…). Celle d'un
+       joueur, puis celle d'un groupe. On lui prête une image d'un pixel. */
     ['Groupes · signaler une photo', () => { __fermerTout(); __grpDecor(); grp.etat.moderateur = false;
-      state.screen = 'groupes'; render(); signalerMessage(null, 'u-2', null, 'photo'); }],
+      state.screen = 'groupes'; render(); ouvrirSignalPhoto('u-2', null, "url('data:image/gif;base64,R0lGODlhAQABAAAAACw=')", 'Sam'); }],
+    ['Groupes · signaler la photo du groupe', () => { __fermerTout(); __grpDecor(); grp.etat.moderateur = false;
+      state.screen = 'groupes'; render(); ouvrirSignalPhoto(null, 'g-1', "url('data:image/gif;base64,R0lGODlhAQABAAAAACw=')", 'Lee'); }],
     ['Compte · supprimer', () => { __fermerTout(); __grpDecor(); state.screen='profile'; render(); demanderSuppressionCompte(); }],
     ['Compte · suppression ratée', async () => { __fermerTout(); __grpDecor(); state.screen='profile'; render();
       const a = appelGroupe; appelGroupe = async () => ({ ok:false, erreur:'reseau' }); await supprimerMonCompte(); appelGroupe = a; }],

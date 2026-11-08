@@ -3998,6 +3998,38 @@
   @keyframes ffCase{ from{ transform:scale(0.6); filter:saturate(0) brightness(1.6); opacity:0.4; } to{ transform:none; filter:none; opacity:1; } }
   .modal-card.fete-flamme .modal-actions, .modal-card.invit-rappels .modal-actions{ width:100%; margin-top:0.6rem; }
   .modal-card.fete-flamme .modal-btn.ok{ width:100%; }
+  /* ===== (v352) LA FLAMME EN PAGE ENTIÈRE, COMME DUOLINGO =====
+     « Lorsque j'ai les flammes, je veux un écran dédié, une page entière,
+       comme Duolingo. On peut fermer cette page pour arriver au résultat… dans
+       l'ordre : tu vois le résultat, et ensuite tu vois la flamme. »
+     L'ordre y était déjà : la fête attend que les résultats soient posés
+     (voir relacherToasts). Ce qui change, c'est sa scène : plus une carte
+     posée sur les résultats, une PAGE — elle arrive par le côté comme toutes
+     les pages, sur leur fond uni ; la flamme en grand au milieu, le compte qui
+     passe d'hier à aujourd'hui, la semaine, et « Continuer » en bas, sous le
+     pouce. Toucher ailleurs ne ferme rien : on la quitte par son bouton, et
+     l'on retrouve ses résultats. Le contenu et ses noms (#modalVeil,
+     .fete-flamme, #modalOk) ne bougent pas : tout ce qui la lisait la lit.
+     Le moteur de verre éteint l'animation des voiles ouverts (plus haut) :
+     celle-ci la reprend, plus loin dans la feuille, à poids égal. La carte ne
+     porte plus de verre : c'est une page. */
+  html .modal-veil.fete-page:not(.closing){ animation:pageIn var(--tr-ouvre); }
+  html .modal-veil.fete-page.closing{ animation:pageOut var(--tr-ferme) forwards; }
+  .modal-veil.fete-page{ display:block; padding:0; background:var(--page-fond); box-shadow:-18px 0 42px rgba(24,16,10,0.22); }
+  .modal-veil.fete-page .modal-card.fete-flamme{ position:absolute; inset:0; width:auto; max-width:none; border-radius:0; margin:0;
+    justify-content:center; gap:0.5rem; padding:calc(env(safe-area-inset-top) + 2rem) var(--page-marge) calc(var(--sab) + 7rem);
+    background:none; box-shadow:none; --rim-cast:none; animation:none; }
+  .modal-veil.fete-page.closing .modal-card{ animation:none; }
+  .modal-veil.fete-page .modal-card > .gs, .modal-veil.fete-page .modal-card > .glass-rim{ display:none !important; }
+  .fete-page .fete-flamme .ff-feu{ width:9.5rem; height:9.5rem; }
+  .fete-page .fete-flamme .ff-n{ height:4.4rem; width:12rem; font-size:3.7rem; line-height:4.4rem; }
+  .fete-page .fete-flamme .modal-title{ font-size:1.5rem; margin-top:0.3rem; text-align:center; }
+  .fete-page .fete-flamme .modal-msg{ font-size:1rem; max-width:20rem; text-align:center; }
+  .fete-page .fete-flamme .ff-sem{ margin-top:1.3rem; --sj-l:2.35rem; }
+  .fete-page .fete-flamme .ff-sem .sj{ height:2.9rem; }
+  .modal-veil.fete-page .modal-card.fete-flamme .modal-actions{ position:absolute; left:var(--page-marge); right:var(--page-marge);
+    bottom:calc(var(--sab) + 1.4rem); width:auto; margin:0; }
+  .fete-page .fete-flamme .modal-btn.ok{ padding:calc(1.08rem + 1px); font-size:1.02rem; }
   .invit-rappels .ir-cloche{ background:linear-gradient(160deg, var(--pal-corail-a), var(--pal-corail-b)); padding:1.05rem; animation:ffPose 0.55s cubic-bezier(0.2,1.35,0.4,1) both; }
   .modal-card.invit-rappels .modal-actions.colonne{ display:flex; flex-direction:column; gap:0.5rem; }
   .modal-card.invit-rappels .modal-actions.colonne .modal-btn{ width:100%; margin:0; }
@@ -6150,6 +6182,12 @@
   .grp-raison .gr-coche svg{ width:100%; height:100%; }
   .grp-raison.choisie{ color:var(--primary-dark); background:rgba(238,74,40,0.08); }
   .grp-raison.choisie .gr-coche{ visibility:visible; }
+  /* (v352) LA PHOTO SIGNALÉE, EN TÊTE DE SA PAGE : on voit ce qu'on signale,
+     carrée comme dans la photo en grand, avec le nom de qui la porte. */
+  .sp-tete{ display:flex; flex-direction:column; align-items:center; gap:0.5rem; margin:0.15rem 0 0.85rem; }
+  .sp-img{ width:6.4rem; height:6.4rem; border-radius:var(--r-m); background-color:var(--page-carte); background-size:cover;
+    background-position:50% 50%; background-repeat:no-repeat; box-shadow:var(--relief); }
+  .sp-nom{ font-family:'Poppins',sans-serif; font-weight:600; font-size:0.98rem; color:var(--ink); max-width:100%; overflow-wrap:anywhere; text-align:center; }
   /* L'avatar du groupe dans le titre d'une feuille REMPLIT la case d'icône
      (1,5 rem), il ne la dépasse pas : à 1,75 rem il débordait sur le titre
      et descendait sur la carte du code d'invitation. */
@@ -7774,6 +7812,13 @@ const TEXTES = {
     "Photo du groupe inappropriée":"Inappropriate group photo",
     "Nom ou description du groupe inapproprié":"Inappropriate group name or description",
     "Signaler cette photo":"Report this photo",
+    "Signaler la photo du groupe":"Report the group photo",
+    "Qu'est-ce qui ne va pas sur cette photo ? La modération le reçoit, sans que l'autre personne sache que ça vient de toi.":"What's wrong with this photo? Moderators receive it, without the other person knowing it came from you.",
+    "Nudité ou contenu sexuel":"Nudity or sexual content",
+    "Violence ou contenu choquant":"Violence or shocking content",
+    "Haine ou symbole haineux":"Hate or a hateful symbol",
+    "La photo de quelqu'un d'autre":"Someone else's photo",
+    "Publicité ou arnaque":"Advertising or a scam",
     "Contenu sexuel, violent ou haineux":"Sexual, violent or hateful content",
     "Publicité ou messages en série":"Ads or spam",
     "Quelqu'un est en danger":"Someone is in danger",
@@ -8664,6 +8709,13 @@ const TEXTES = {
     "Photo du groupe inappropriée":"Foto del grupo inapropiada",
     "Nom ou description du groupe inapproprié":"Nombre o descripción del grupo inapropiados",
     "Signaler cette photo":"Denunciar esta foto",
+    "Signaler la photo du groupe":"Denunciar la foto del grupo",
+    "Qu'est-ce qui ne va pas sur cette photo ? La modération le reçoit, sans que l'autre personne sache que ça vient de toi.":"¿Qué tiene de malo esta foto? La moderación lo recibe sin que la otra persona sepa que viene de ti.",
+    "Nudité ou contenu sexuel":"Desnudos o contenido sexual",
+    "Violence ou contenu choquant":"Violencia o contenido impactante",
+    "Haine ou symbole haineux":"Odio o un símbolo de odio",
+    "La photo de quelqu'un d'autre":"La foto de otra persona",
+    "Publicité ou arnaque":"Publicidad o estafa",
     "Contenu sexuel, violent ou haineux":"Contenido sexual, violento o de odio",
     "Publicité ou messages en série":"Publicidad o mensajes en serie",
     "Quelqu'un est en danger":"Alguien está en peligro",
@@ -11396,7 +11448,7 @@ const SUPABASE_ANON_KEY = "sb_publishable_FDJ_R0foC7uIeHmxVrj6rA_2NeIgW2a";
    remontée d'un téléphone ne vaut rien si on ne sait pas QUELLE version
    tournait. Elle doit rester égale au CACHE de sw.js — c'est ce que vérifie
    banc-essai/version.js, qui refuse de laisser publier les deux en désaccord. */
-const VERSION_JEU = "v351";
+const VERSION_JEU = "v352";
 
 /* ===================== QUAND ÇA CASSE CHEZ UN JOUEUR =====================
    « Si quelque chose casse chez cinq d'entre eux sur un modèle de téléphone
@@ -22526,7 +22578,8 @@ function feterFlamme(n, apres){
   const titre = n <= 1 ? T("Ta flamme est allumée !") : Tf("{n} jours d'affilée !", { n });
   const mot = n <= 1 ? T("Joue chaque jour pour la faire grandir.") : T("Reviens demain pour la garder allumée.");
   const veil = document.createElement("div");
-  veil.className = "modal-veil"; veil.id = "modalVeil";
+  /* (v352) Une PAGE entière, plus une carte (voir LA FLAMME EN PAGE ENTIÈRE). */
+  veil.className = "modal-veil fete-page"; veil.id = "modalVeil";
   veil.innerHTML = `<div class="modal-card fete-flamme" role="dialog" aria-label="${escapeHtml(titre)}">
       <div class="ff-feu" aria-hidden="true"><span class="ff-ico">${ICONS.flame}</span></div>
       <div class="ff-n" aria-hidden="true"><span class="ff-avant">${Math.max(0, n - 1)}</span><span class="ff-apres">${n}</span></div>
@@ -29994,11 +30047,16 @@ async function envoyerSignalement(raison){
   const boutons = document.querySelectorAll("#grpSignalerVeil .grp-raison");
   if(envoi) envoi.disabled = true;
   boutons.forEach(b => b.disabled = true);
-  let r = await appelGroupe("signaler", { p_message:s.message, p_cible:s.cible, p_groupe:s.groupe, p_raison:k, p_details:valeurChamp("grpPrecision") });
-  if(!r.ok && r.erreur === "raison" && RAISONS_V346[k]){
-    const detail = valeurChamp("grpPrecision");
+  /* (v352) Une photo part avec la raison « photo » (la Modération montre la
+     photo en cause), ce qu'elle montre en tête du détail — en français :
+     c'est la modération qui le lit. */
+  const kSrv = s.photo ? "photo" : k;
+  const detailSaisi = valeurChamp("grpPrecision");
+  const detailSrv = s.photo ? [((RAISONS_PHOTO.find(x => x[0] === k) || [k, ""])[1]), detailSaisi].filter(Boolean).join(" — ").slice(0, 300) : detailSaisi;
+  let r = await appelGroupe("signaler", { p_message:s.message, p_cible:s.cible, p_groupe:s.groupe, p_raison:kSrv, p_details:detailSrv });
+  if(!r.ok && r.erreur === "raison" && RAISONS_V346[kSrv]){
     r = await appelGroupe("signaler", { p_message:s.message, p_cible:s.cible, p_groupe:s.groupe, p_raison:"inapproprie",
-      p_details:(RAISONS_V346[k] + (detail ? " — " + detail : "")).slice(0, 300) });
+      p_details:(RAISONS_V346[kSrv] + (detailSrv ? " — " + detailSrv : "")).slice(0, 300) });
   }
   if(!r.ok){ if(envoi) envoi.disabled = false; boutons.forEach(b => b.disabled = false); motFeuille("grpSignalerVeil", motErreurGroupe(r)); return; }
   const corps = document.querySelector("#grpSignalerVeil .grp-feuille-corps");
@@ -33025,12 +33083,49 @@ function cibleDuPid(pid){
   try{ const j = net.joueurs[pid]; if(j && j.compte) return j.compte; }catch(e){}
   return null;
 }
+/* ===== (v352) UNE PHOTO SE SIGNALE POUR CE QU'ELLE MONTRE =====
+   « Au niveau du signalement, il faut un signalement distinct du profil et
+     de la photo, ou alors juste sur le profil signaler le profil et après
+     parler de la photo : là, ça ne va pas. » « Signaler cette photo »
+   ouvrait « Signaler cette personne » : les sept raisons d'un PROFIL (son
+   nom, le harcèlement, le spam…), la photo cochée d'avance — on ne savait
+   plus ce qu'on signalait. La photo a maintenant SA page : elle-même en
+   tête, avec le nom de qui la porte, et des raisons qui ne parlent que
+   d'elle. Rien n'est coché d'avance : on dit ce qui ne va pas. Le serveur
+   reçoit toujours la raison « photo » (la Modération montre alors la photo
+   en cause et « Retirer la photo »), ce qu'elle montre écrit en tête du
+   détail. Le profil, lui, garde « Signaler cette personne » et ses raisons.
+   Même chose pour la photo d'un groupe (« Signaler la photo du groupe »). */
+const RAISONS_PHOTO = [
+  ["nudite", "Nudité ou contenu sexuel"],
+  ["violence", "Violence ou contenu choquant"],
+  ["haine", "Haine ou symbole haineux"],
+  ["usurpation", "La photo de quelqu'un d'autre"],
+  ["arnaque", "Publicité ou arnaque"],
+  ["autre", "Autre chose"]
+];
 function signalerPhoto(pid){
   const groupe = pid.indexOf("g:") === 0;
   const cible = groupe ? null : cibleDuPid(pid);
   if(!groupe && !cible) return;
+  let v = null, nom = "";
+  try{ v = groupe ? valeurPhotoSrv(pid) : photoValeur(pid === "moi" ? true : pid); }catch(e){}
+  try{ nom = groupe ? nomDuGroupe(pid.slice(2)) : nomDuPid(pid); }catch(e){}
   fermerPhotoGrand();
-  setTimeout(()=>{ signalerMessage(null, cible, groupe ? pid.slice(2) : null, "photo"); }, msFerme() + 40);
+  setTimeout(()=>{ ouvrirSignalPhoto(cible, groupe ? pid.slice(2) : null, v, nom); }, msFerme() + 40);
+}
+function ouvrirSignalPhoto(cible, groupe, v, nom){
+  signalement = { message:null, cible:cible || null, groupe:groupe || null, raison:null, photo:true };
+  fermerFeuilleGroupe("grpActionsVeil");
+  const titre = groupe ? T("Signaler la photo du groupe") : T("Signaler cette photo");
+  ouvrirFeuilleGroupe("grpSignalerVeil", titre, ICONS.drapeau, `
+    <div class="sp-tete">${v ? `<div class="sp-img" role="img" aria-label="${escapeHtml(titre)}" style="background-image:${v}"></div>` : ""}${nom ? `<span class="sp-nom">${escapeHtml(nom)}</span>` : ""}</div>
+    <p class="grp-aide">${T("Qu'est-ce qui ne va pas sur cette photo ? La modération le reçoit, sans que l'autre personne sache que ça vient de toi.")}</p>
+    <div class="grp-liste-act grp-raisons" role="radiogroup">${RAISONS_PHOTO.map(([k, t])=>
+      `<button class="grp-act-l grp-raison" role="radio" aria-checked="false" data-k="${k}" onclick="choisirRaison('${k}')"><span class="gal-t">${escapeHtml(T(t))}</span><span class="gr-coche">${ICONS.coche}</span></button>`).join("")}</div>
+    <textarea class="text-input grp-precision" id="grpPrecision" maxlength="300" placeholder="${T("Précise ce qui s'est passé (facultatif)")}"></textarea>
+    <button class="btn-primary grp-signaler-envoi" id="grpSignalerEnvoi" onclick="envoyerSignalement()" disabled>${T("Envoyer le signalement")}</button>
+    <div class="grp-mot"><span></span></div>`);
 }
 function fermerPhotoGrand(){
   const v = document.getElementById("photoGrandVeil");

@@ -24,15 +24,21 @@
    le premier toucher d'une session réveille aussi le son, et c'est un autre
    travail, qu'on ne veut pas mêler à celui-ci.
 
+   (v352) LE BRIDAGE S'ADAPTE À LA MACHINE. Sur une machine plus rapide, le
+   témoin ne se voyait plus à x4 : 8 à 10 ms de surcoût pour un seuil de 12,
+   la v348 en ligne comprise — le banc se disait aveugle, quelle que soit la
+   version. Quand le témoin ne se voit pas, il bride donc plus fort (x6, puis
+   x8) et rejoue tout, avant de juger. Un bridage donné à la main reste seul.
+
    Usage : node banc-essai/premiere-ouverture.js [url] [bridage] */
 const { chromium } = require('/opt/node22/lib/node_modules/playwright');
 const URL = process.argv[2] || 'http://127.0.0.1:8099/index.html';
-const BRIDE = Number(process.argv[3] || 4);
+const BRIDES = process.argv[3] ? [Number(process.argv[3])] : [4, 6, 8];
 const SESSIONS = 4;
 const IOS = 'Mozilla/5.0 (iPhone; CPU iPhone OS 17_5 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.5 Mobile/15E148 Safari/604.1';
 const mediane = (l) => { const t = [...l].sort((a, b) => a - b); const m = t.length >> 1; return t.length % 2 ? t[m] : (t[m - 1] + t[m]) / 2; };
 
-async function session(nav, temoin) {
+async function session(nav, temoin, bride) {
   const ctx = await nav.newContext({ viewport:{ width:393, height:852 }, deviceScaleFactor:3,
     isMobile:true, hasTouch:true, userAgent:IOS, serviceWorkers:'block' });
   const p = await ctx.newPage();
@@ -56,7 +62,7 @@ async function session(nav, temoin) {
     await p.waitForTimeout(800);
   }
   const cdp = await ctx.newCDPSession(p);
-  if (BRIDE > 1) await cdp.send('Emulation.setCPUThrottlingRate', { rate:BRIDE });
+  if (bride > 1) await cdp.send('Emulation.setCPUThrottlingRate', { rate:bride });
   const travail = [], pages = [];
   for (let n = 0; n < 3; n++) {
     const evts = [];
@@ -104,10 +110,15 @@ async function session(nav, temoin) {
 
 (async () => {
   const nav = await chromium.launch({ executablePath:'/opt/pw-browsers/chromium' });
-  const res = { temoin:[], essai:[] };
+  /* Le surcoût de la PREMIÈRE ouverture : sa valeur, moins celle des deux
+     suivantes de la même session. Médiane sur les sessions. */
+  const surcout = (l, cle) => mediane(l.map(r => r[cle][0] - mediane([r[cle][1], r[cle][2]])));
+  let res, pT, pE, tT, tE, BRIDE;
+  for (BRIDE of BRIDES) {
+  res = { temoin:[], essai:[] };
   for (let s = 0; s < SESSIONS; s++) {
     for (const cas of ['temoin', 'essai']) {
-      const r = await session(nav, cas === 'temoin');
+      const r = await session(nav, cas === 'temoin', BRIDE);
       res[cas].push(r);
       console.log('  ' + (cas === 'temoin' ? 'témoin' : 'essai ') + ' session ' + (s + 1) + ' : préchauffé ' + (r.chaud ? 'oui' : 'non')
         + ' — mise en page ' + r.pages.map(x => x.toFixed(0)).join(' / ') + ' ms'
@@ -115,15 +126,15 @@ async function session(nav, temoin) {
         + (r.erreurs.length ? '  ERREURS ' + JSON.stringify(r.erreurs) : ''));
     }
   }
-  await nav.close();
-  /* Le surcoût de la PREMIÈRE ouverture : sa valeur, moins celle des deux
-     suivantes de la même session. Médiane sur les sessions. */
-  const surcout = (l, cle) => mediane(l.map(r => r[cle][0] - mediane([r[cle][1], r[cle][2]])));
-  const pT = surcout(res.temoin, 'pages'), pE = surcout(res.essai, 'pages');
-  const tT = surcout(res.temoin, 'travail'), tE = surcout(res.essai, 'travail');
+  pT = surcout(res.temoin, 'pages'); pE = surcout(res.essai, 'pages');
+  tT = surcout(res.temoin, 'travail'); tE = surcout(res.essai, 'travail');
   console.log('\n  surcoût médian de la 1re ouverture (bridé x' + BRIDE + ') :'
     + '\n    mise en page — témoin ' + pT.toFixed(1) + ' ms, essai ' + pE.toFixed(1) + ' ms'
     + '\n    travail total — témoin ' + tT.toFixed(0) + ' ms, essai ' + tE.toFixed(0) + ' ms (pour information : le verre en fait varier le bruit)');
+  if (pT >= 12 || BRIDE === BRIDES[BRIDES.length - 1]) break;
+  console.log('\n  à x' + BRIDE + ', le témoin ne se voit pas (' + pT.toFixed(1) + ' ms) : la machine est trop rapide pour ce bridage, on bride plus fort.\n');
+  }
+  await nav.close();
   const ko = [];
   if (res.temoin.some(r => r.chaud)) ko.push('le témoin était déjà préchauffé : il ne témoigne de rien');
   if (res.essai.some(r => !r.chaud)) ko.push('le préchauffage n\'a jamais eu lieu dans une session d\'essai');

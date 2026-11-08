@@ -81,6 +81,20 @@ const jour = (d) => { const t = new Date(Date.now() + d * 86400000), z = n => St
     dit('1. première partie du jour : la flamme se fête après les résultats — « 5 », « 5 jours d\'affilée ! », la case du jour en or, « Continuer » seul',
       r1.tFin !== null && c1.fete && c1.n === '5' && /^5 jours d'affilée/.test(c1.titre) && c1.jour && c1.bouton === 'Continuer' && c1.boutons === 1, JSON.stringify(c1));
     dit('2. … et les bandeaux attendent qu\'elle soit refermée', !c1.toast, 'bandeau visible : ' + c1.toast);
+    /* (v352) Une page entière, comme Duolingo : tout l'écran, « Continuer »
+       en bas sous le pouce, et toucher ailleurs ne la ferme pas. */
+    await p.waitForTimeout(700);
+    const pg = await p.evaluate(() => {
+      const v = document.getElementById('modalVeil'), c = v && v.querySelector('.fete-flamme'), b = c && c.querySelector('#modalOk');
+      if (!c) return null;
+      const r = c.getBoundingClientRect(), rb = b.getBoundingClientRect(), rv = v.getBoundingClientRect();
+      return { page: v.classList.contains('fete-page'), plein: Math.round(r.left) === 0 && Math.round(r.top) === 0 && Math.round(r.width) === innerWidth && Math.round(r.height) === innerHeight,
+        voile: Math.round(rv.width) + 'x' + Math.round(rv.height), bas: Math.round(innerHeight - rb.bottom), large: Math.round(rb.width), fond: getComputedStyle(v).backgroundColor };
+    });
+    await p.mouse.click(30, 120); await p.waitForTimeout(500);
+    const resteOuverte = await p.evaluate(() => !!document.querySelector('#modalVeil .fete-flamme'));
+    dit('2. … c\'est une page entière : tout l\'écran, « Continuer » en bas sous le pouce, et toucher ailleurs ne la ferme pas',
+      !!pg && pg.page && pg.plein && pg.bas >= 8 && pg.bas <= 90 && pg.large >= 300 && resteOuverte, JSON.stringify({ pg, resteOuverte }));
     await p.evaluate(() => document.querySelector('#modalVeil .fete-flamme #modalOk').click());
     await p.waitForTimeout(900);
     const c3 = await p.evaluate(CARTE);
