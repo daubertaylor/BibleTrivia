@@ -97,9 +97,10 @@ const EN_RELIEF = ['.app-header', '.icon-btn:not(.hero-profile)', '.card', '.mod
   '.streak-chip', '.rev-item', '.me-row', '.rank-row', '.pl-btn:not(.pl-libre)', '.bk', '.text-input', '.code-input',
   '.share-btn', '.btn-ghost', '.modal-btn.cancel', '.modal-btn.ok', '.btn-primary:not(:disabled)', '.btn-next:not(:disabled)',
   '.btn-replay', '.btn-reveal', '.grp-pill', '.bb-curseur', '.b-bulle:not(.b-vide)', '.compo-jeu', '.compo-mod',
-  '.compo-envoi', '.grp-desc-carte', '.grp-code-carte', '.set-groupe', '.sheet-grab', '.hero-verse-card', '.switch',
+  '.compo-envoi', '.grp-desc-carte', '.grp-code-carte', '.set-groupe', '.sheet-grab', '.hero-verse-card',
   '.sem-flamme:not(.eteinte)', '.pc-feu', '.bk-carte', '.tp-carte', '.tp-tete', '.duel-scorebar', '.dr-side'];
-const A_PLAT = ['.adj-btn', '.sj'];
+/* (v355) Les interrupteurs sont plats (« plus plat, plus moderne ») : seul leur galet a une ombre. */
+const A_PLAT = ['.adj-btn', '.sj', '.switch'];
 let ko = 0;
 const dit = (q, b, d) => { if (!b) ko++; console.log('  ' + (b ? 'OK  ' : 'KO  ') + q + (d ? '   (' + String(d).slice(0, 300) + ')' : '')); };
 

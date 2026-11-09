@@ -99,17 +99,17 @@ const PHOTO = "url('data:image/svg+xml;utf8,<svg xmlns=%27http://www.w3.org/2000
         const mel = v.querySelector('a.lien-mail[href^="mailto:"]');
         return { titre: (v.querySelector('.st-mot') || {}).textContent, texte: corps.textContent.replace(/\s+/g, ' ').trim(), lignes: corps.querySelectorAll('.conf-l').length,
           mail: mel ? mel.getAttribute('href') : null, deborde: s.scrollWidth - s.clientWidth,
-          tel: t ? t.getAttribute('href') + ' ' + t.textContent : null, attendues: EDITEUR.adresse ? 6 : 5, adresse: EDITEUR.adresse };
+          tel: t ? t.getAttribute('href') + ' ' + t.textContent : null, attendues: EDITEUR.adresse ? 7 : 6, adresse: EDITEUR.adresse };
       });
       if (!m) { dit('2. ' + lg + ' : la page des mentions s\'ouvre', false, 'introuvable'); await ctx.close(); continue; }
       /* Les seuls numéros permis : celui de l'hébergeur, et celui que Taylor a
          donné pour cette page (v350). Tout autre est une fuite. */
-      const tel = /(\+33|\b0\d([ .]?\d\d){4}\b)/.test(m.texte.replace('+1 888 993 5273', '').replace('07 84 04 57 70', ''));
+      const tel = /(\+33|\b0\d([ .]?\d\d){4}\b)/.test(m.texte.replace('+1 650 319 8930', '').replace('07 84 04 57 70', ''));
       if (lg === 'fr') {
         dit('2. la page « Mentions légales » : l\'éditeur et directeur de la publication (Taylor Dauber, une seule fois), l\'adresse de Yada (lien mailto), l\'hébergeur avec son téléphone, le lien vers la Confidentialité',
           posee && m.titre === 'Mentions légales' && /Éditeur et directeur de la publication : Taylor Dauber/.test(m.texte) && m.mail === 'mailto:yadaquiz.app@gmail.com'
-          && (m.texte.match(/Taylor Dauber/g) || []).length === 1 && /Cloudflare, Inc\., 101 Townsend Street, San Francisco, CA 94107, États-Unis — \+1 888 993 5273/.test(m.texte)
-          && /Données personnelles : Confidentialité/.test(m.texte) && m.lignes === m.attendues
+          && (m.texte.match(/Taylor Dauber/g) || []).length === 1 && /Cloudflare, Inc\., 101 Townsend Street, San Francisco, CA 94107, États-Unis — \+1 650 319 8930/.test(m.texte)
+          && /Données personnelles : Confidentialité/.test(m.texte) && /Hébergeur des données : Supabase Pte\. Ltd\., 65 Chulia Street/.test(m.texte) && m.lignes === m.attendues
           && m.tel === 'tel:+33784045770 07 84 04 57 70' && /Téléphone : 07 84 04 57 70/.test(m.texte) && (!m.adresse || m.texte.includes('Adresse : ' + m.adresse)),
           JSON.stringify({ posee, titre: m.titre, mail: m.mail, tel: m.tel, lignes: m.lignes, texte: m.texte.slice(0, 300) }));
         dit('2. … aucun autre numéro de téléphone que ceux de l\'hébergeur et de l\'éditeur, aucune adresse personnelle, rien ne déborde',
@@ -119,7 +119,7 @@ const PHOTO = "url('data:image/svg+xml;utf8,<svg xmlns=%27http://www.w3.org/2000
         dit('3. ' + lg + ' : chaque ligne traduite, le même lien mailto, aucun autre téléphone que celui de l\'hébergeur',
           posee && !reste && m.titre !== 'Mentions légales' && m.mail === 'mailto:yadaquiz.app@gmail.com' && !tel && m.lignes === m.attendues && m.deborde <= 0
           && m.tel === 'tel:+33784045770 07 84 04 57 70'
-          && /\+1 888 993 5273/.test(m.texte),
+          && /\+1 650 319 8930/.test(m.texte),
           JSON.stringify({ titre: m.titre, reste, mail: m.mail, lignes: m.lignes }));
       }
       await ctx.close();

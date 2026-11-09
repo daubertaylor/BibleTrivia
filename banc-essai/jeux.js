@@ -204,7 +204,7 @@ const REGLES = (n) => {
       sur: document.querySelector('.jx-une .jx-sur')?.textContent, duJour: jeuDuJour().id, duJour2: jeuDuJour().id,
       tuiles: [...document.querySelectorAll('.jx-grille .jx-tuile .jx-nom')].map(x => x.textContent),
       neufs: document.querySelectorAll('.jx-grille .jx-record.jx-neuf').length, h: document.querySelector('.jx-h')?.textContent }));
-    dit('1. la barre a trois onglets : Accueil, Jeux, Groupes', barre.length === 3 && barre[0].startsWith('accueil:') && barre[1] === 'jeux:Jeux' && barre[2].startsWith('groupes:'), barre.join(' · '));
+    dit('1. la barre a quatre onglets : Accueil, Parcours, Jeux, Groupes (v355)', barre.length === 4 && barre[0].startsWith('accueil:') && barre[1] === 'parcours:Parcours' && barre[2] === 'jeux:Jeux' && barre[3].startsWith('groupes:'), barre.join(' · '));
     dit('1. « Jeux » ouvre l\'écran des jeux, onglet allumé ; le jeu du jour en tête, le même à chaque lecture ; les cinq jeux, sans « Nouveau » pour qui arrive',
       hub.ecran === 'jeux' && hub.actif === 'jeux' && hub.titre === 'Jeux' && hub.sur === 'Le jeu du jour' && hub.duJour === hub.duJour2
       && hub.tuiles.length === 5 && hub.neufs === 0 && hub.h === 'Tous les jeux', JSON.stringify(hub));

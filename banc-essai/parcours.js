@@ -1,7 +1,9 @@
 /* ====== LE PARCOURS : LA BIBLE, LEÇON PAR LEÇON (v353) ======
    « Le Duolingo de la Bible. » Un chemin de la Genèse à l'Apocalypse :
    douze unités, cinq leçons de six questions. Sur un iPhone :
-     1. l'accueil propose le Parcours en tête, avec l'unité en cours ;
+     1. (v355) le Parcours a son onglet dans la barre du bas, entre l'Accueil
+        et les Jeux ; il ouvre le chemin, onglet allumé, et l'accueil n'a plus
+        que ses cinq cartes ;
      2. le chemin : douze unités dans l'ordre de la Bible, cinq pierres
         chacune ; une seule à faire, les suivantes fermées ; rien ne dépasse ;
      3. une leçon : six questions des livres de son unité, les faciles
@@ -69,11 +71,15 @@ async function finirLecon(p, fautes) {
     const { ctx, p } = await ouvrir(nav);
 
     /* 1 */
-    const c1 = await p.evaluate(() => { const c = document.querySelector('.home-cartes .mode-card'); return c ? c.querySelector('.mode-title').textContent + ' | ' + c.querySelector('.mode-desc').textContent : null; });
-    await p.evaluate(() => { [...document.querySelectorAll('.mode-card')].find(x => /Parcours/.test(x.textContent)).click(); });
+    const c1 = await p.evaluate(() => ({ onglets: [...document.querySelectorAll('#barreBas .bb-onglet')].map(b => b.dataset.o + ':' + b.querySelector('.bb-mot').textContent.trim()),
+      cartes: [...document.querySelectorAll('.home-cartes > button')].map(c => (c.querySelector('.mode-title, .pc-txt > b') || c).textContent.trim()) }));
+    await p.locator('#barreBas .bb-onglet[data-o="parcours"]').click();
     await p.waitForTimeout(1300);
-    const e1 = await p.evaluate(() => state.screen);
-    dit('1. l\'accueil propose le Parcours en tête, avec l\'unité en cours', c1 === 'Parcours | Unité 1 · Au commencement' && e1 === 'chemin', JSON.stringify({ c1, e1 }));
+    const e1 = await p.evaluate(() => ({ ecran: state.screen, allume: (document.querySelector('#barreBas .bb-onglet.actif') || {}).dataset?.o,
+      titre: (document.querySelector('.chemin-ecran .header-title') || {}).textContent, fleche: !!document.querySelector('.chemin-ecran .app-header [aria-label="Retour"]') }));
+    dit('1. le Parcours a son onglet dans la barre, entre l\'Accueil et les Jeux ; il ouvre le chemin, allumé ; l\'accueil garde ses cinq cartes',
+      c1.onglets.join() === 'accueil:Accueil,parcours:Parcours,jeux:Jeux,groupes:Groupes' && c1.cartes.length === 5 && !c1.cartes.some(x => /Parcours/.test(x))
+      && e1.ecran === 'chemin' && e1.allume === 'parcours' && e1.titre === 'Parcours' && !e1.fleche, JSON.stringify({ c1, e1 }));
 
     /* 2 */
     const c2 = await p.evaluate(() => {

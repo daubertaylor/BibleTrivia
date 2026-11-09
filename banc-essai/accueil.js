@@ -152,9 +152,8 @@ const RELEVE = () => {
          en jouant, quel que soit le mode. Restent cinq vraies destinations —
          Groupe, Solo, En ligne, À revoir, Progression. */
       /* (v345) Un seul régime : la barre, toujours (voir LA BARRE TOUJOURS LÀ). */
-      /* (v353) SIX : le Parcours arrive en tête (« le Duolingo de la
-         Bible »). Toutes les autres règles restent, à toutes les hauteurs. */
-      if (r.cartes !== 6) pires.push(ou + r.cartes + ' cartes au lieu de 6');
+      /* (v355) Cinq de nouveau : le Parcours a son onglet dans la barre. */
+      if (r.cartes !== 5) pires.push(ou + r.cartes + ' cartes au lieu de 5');
       else if (r.deb > 0) pires.push(ou + 'débord ' + r.deb + (r.semVue ? '' : ' (bande masquée)'));
       else if (!r.barre) pires.push(ou + 'la barre ne s\'affiche pas');
       else if (r.semVue) pires.push(ou + 'la bande des sept jours est restée sur l\'accueil');
@@ -166,6 +165,6 @@ const RELEVE = () => {
   await nav.close();
   if (pires.length) { console.log('  HAUTEURS EN DÉFAUT :'); pires.forEach(x => console.log('   ' + x)); process.exit(1); }
   console.log('  OK — ' + HAUTEURS.length + ' hauteurs de ' + HAUTEURS[0] + ' à ' + HAUTEURS[HAUTEURS.length-1]
-    + ' px, groupes ouverts ou non : six cartes, aucun débord, la barre toujours là et entière,'
+    + ' px, groupes ouverts ou non : cinq cartes, aucun débord, la barre toujours là et entière,'
     + ' et la dernière carte au-dessus d\'elle');
 })();

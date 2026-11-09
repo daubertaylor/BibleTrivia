@@ -36,7 +36,7 @@ un au doigt, il suit le doigt, les autres s'écartent, et il se pose là où on
 le lâche (ou l'on touche deux livres pour les échanger). « Valider » quand
 on veut. Il est vérifié par `banc-essai/livres.js`.
 
-**Le Parcours (v353)** : « le Duolingo de la Bible ». Un chemin dans l'ordre
+**Le Parcours (v353, dans la barre du bas depuis la v355)** : « le Duolingo de la Bible ». Un chemin dans l'ordre
 de la Bible, de la Genèse à l'Apocalypse : douze unités (`PARCOURS`), cinq
 leçons chacune, six questions par leçon, tirées des livres de l'unité, des
 plus faciles aux plus difficiles. Une erreur revient à la fin de la leçon.

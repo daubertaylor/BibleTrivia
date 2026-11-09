@@ -1177,7 +1177,7 @@ const ouvrirLaLangue = async (p, lg) => {
      rien de ce qui précède ne doit la voir. Le chemin neuf, une leçon et la
      question avant de la quitter, la fin d'une leçon avec une erreur, puis
      sans faute qui finit l'unité, le chemin après, et le Parcours fini (le
-     chemin, puis la carte de l'accueil). */
+     chemin, puis l'accueil). (v355 : le chemin est un onglet de la barre.) */
   const PARCOURS_ETAPES = [
     ['Parcours · le chemin', () => { __fermerTout(); localStorage.removeItem('bt_parcours'); state.screen = 'mode'; render(); ouvrirChemin(); }],
     ['Parcours · une leçon', () => { __fermerTout(); commencerLecon(0, 0); }],

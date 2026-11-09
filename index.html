@@ -1314,7 +1314,7 @@
   .fact-card{ display:flex; gap:0.7rem; align-items:flex-start; background:rgba(255,242,214,0.62); backdrop-filter:blur(14px) saturate(180%); -webkit-backdrop-filter:blur(14px) saturate(180%); border:0; border-radius:var(--r-s); padding:calc(0.75rem + 1px) calc(0.9rem + 1px); margin-bottom:1rem; --rim-edge:0 0 0 1px rgba(150,95,15,0.28); }
   .fact-card .ficon{ width:1.95rem; height:1.95rem; padding:0.42rem; border-radius:10px; background:linear-gradient(160deg, #FBE9BE, #F3C75E); color:#8a5e14; flex-shrink:0; margin-top:0.05rem; box-shadow:inset 0 1px 0 rgba(255,255,255,0.26), 0 2px 7px rgba(206,138,42,0.24); }
   .fact-label{ display:block; font-family:'Fraunces',serif; font-style:italic; font-weight:500; color:var(--gold-deep); font-size:0.82rem; letter-spacing:0.01em; margin-bottom:0.12rem; }
-  .fact-card .ftext{ font-size:0.87rem; color:#6b5219; line-height:1.55; }
+  .fact-card .ftext{ font-size:0.87rem; color:var(--ink); line-height:1.55; }
 
   .btn-reveal{ width:100%; border:0; color:#fff; border-radius:var(--r-m); padding:calc(0.9rem + 1px); font-size:0.92rem; font-weight:700; margin-bottom:0.95rem; text-shadow:0 1px 4px rgba(120,78,10,0.45); --rim-edge:0 0 0 1px rgba(150,95,15,0.32);--rim-cast:0 5px 16px rgba(196,132,26,0.44); }
   .btn-next{ width:100%; background:var(--primary); color:#fff; border:0; border-radius:var(--r-m); padding:calc(clamp(0.9rem, calc(1.75 * var(--uh)), 1.06rem) + 1px); font-size:0.95rem; font-weight:700; letter-spacing:0.01em; margin-bottom:1.05rem; --rim-edge:0 0 0 1px rgba(150,30,14,0.3);--rim-cast:0 6px 16px rgba(214,60,34,0.42); }
@@ -3677,7 +3677,7 @@
   /* Le bouton avatar est transparent et déborde (badge C) : sans découpe, sa
      couche reflet montrerait un rectangle de photo pendant les transitions. */
   .hero-profile .glass-refl, .grp-profil .glass-refl{ display:none; }
-  .fact-card{ --glass-tint: rgb(255,244,222); }
+  .fact-card{ --glass-tint: rgb(252,248,241); }
   .btn-reveal{ --glass-tint: rgb(228,150,38); }
   .btn-primary, .btn-next, .btn-replay{ --glass-tint: rgb(236,60,26); color:#fff; }
   /* MODE EN LIGNE : mêmes contours de verre PREMIUM que le reste du jeu (bord
@@ -4411,21 +4411,6 @@
      Entre les deux, ils prennent le surplus à parts égales. */
   .ec-carte{ display:block; flex:1 1 0; min-height:clamp(0.62rem, calc(1.55 * var(--hu)), 0.95rem);
     max-height:clamp(0.9rem, calc(3 * var(--hu)), 1.7rem); }
-  /* (v353) SIX CARTES, ET RIEN SOUS LA BARRE. Le Parcours arrive en tête de
-     l'accueil. Mesuré à toutes les hauteurs (banc-essai/accueil.js) : la
-     dernière carte passait sous la barre de 22 à 24 px entre 560 et 700 px,
-     et de 1 à 13 px jusqu'à 750. Ce qui tient une carte à sa hauteur sur un
-     écran court, c'est son icône et sa marge intérieure : la marge se
-     resserre d'un tiers (le logo, le verset et les écarts ne bougent pas),
-     et sous 600 px l'icône aussi. Ces règles viennent APRÈS celles des cartes,
-     à poids égal : c'est l'ordre qui décide. */
-  @media (max-height:750px) and (orientation:portrait){
-    .home-cartes > button{ padding-top:calc(clamp(0.38rem, calc(1.05 * var(--hu)), 0.82rem) + 1px); padding-bottom:calc(clamp(0.38rem, calc(1.05 * var(--hu)), 0.82rem) + 1px);
-      max-height:clamp(3.1rem, calc(9.1 * var(--hu)), 5.8rem); }
-  }
-  @media (max-height:600px) and (orientation:portrait){
-    .home-cartes .mode-icon, .home-cartes .dc-ico, .home-cartes .pc-ico{ width:2.4rem; height:2.4rem; padding:0.52rem; }
-  }
   /* L'espaceur du bas n'est plus le seul à absorber : il redevient ce qu'il
      doit être, une RESPIRATION DE SECTION entre les cartes et la rangée des
      sept jours — de l'ordre de deux écarts de cartes, pas de huit. */
@@ -4475,8 +4460,18 @@
 
   /* ---------- « Le savais-tu ? » retravaillé ---------- */
   .fact-card{ position:relative; overflow:hidden; border-radius:var(--r-l); padding:calc(0.9rem + 1px) calc(1rem + 1px) calc(0.9rem + 1px) calc(0.9rem + 1px); gap:0.8rem; align-items:center; }
-  .fact-card .tst-tag{ position:absolute; top:0.42rem; right:0.55rem; font-family:'Poppins',sans-serif; font-size:0.56rem; font-weight:700; letter-spacing:0.06em; color:#8a5e14; opacity:0.72; pointer-events:none; }
-  .fact-card::after{ content:""; position:absolute; top:-45%; right:-14%; width:56%; aspect-ratio:1; background:radial-gradient(closest-side, rgba(255,225,140,0.55), transparent 72%); pointer-events:none; }
+  .fact-card .tst-tag{ position:absolute; top:0.42rem; right:0.55rem; font-family:'Poppins',sans-serif; font-size:0.56rem; font-weight:700; letter-spacing:0.06em; color:var(--ink-soft); opacity:0.8; pointer-events:none; }
+  /* (v355) « LE SAVAIS-TU ? » RENTRE DANS LE RANG.
+     « Je me demande si ça devrait pas être d'une autre couleur, ou que le
+       côté jaune est un peu trop. Fais en sorte que ce soit super bien
+       cohérent avec le reste du jeu. »
+     Trois jaunes s'empilaient : la carte teintée crème-or (au lieu de la
+     crème de toutes les surfaces du jeu), un halo doré posé en haut à
+     droite — qui passait SOUS la fin de la phrase et la pâlissait (« d'abon-
+     dance », sur la capture) —, et le texte en brun doré. La carte prend la
+     crème commune et l'encre du jeu ; le halo s'en va. Ce qui reste à elle,
+     c'est ce qui la signe : sa pastille bronze (le livre, comme « Version
+     de la Bible ») et son titre en italique, avec son filet. */
   /* LA PASTILLE DU « SAVAIS-TU » REJOINT CELLES DU JEU. C'était la seule
      pastille d'icône qui n'en était pas une : un dégradé PÂLE (#FFF3D3 →
      #F3C75E) posé sur une carte crème dorée — donc un objet qui fondait dans
@@ -4976,10 +4971,23 @@
      leur propre liseré : neutre à l'arrêt, VERT allumé, comme toute surface
      colorée du jeu. Le galet reçoit sa lèvre de lumière, pour qu'il ait l'air
      taillé dans la même matière. */
-  .switch{ position:relative; width:3.2rem; height:1.9rem; border-radius:var(--r-full); border:none; background:rgba(42,36,30,0.18); transition:background 0.28s ease, box-shadow 0.28s ease; flex-shrink:0; padding:0; --rim-edge:0 0 0 1px rgba(30,22,14,0.14); --rim-cast:var(--relief); }
-  .switch::after{ content:""; position:absolute; top:0.18rem; left:0.18rem; width:1.54rem; height:1.54rem; border-radius:50%; background:#fff; box-shadow:inset 0 1.5px 0 rgba(255,255,255,0.9), 0 0 0 1px rgba(30,22,14,0.1), 0 2px 6px rgba(0,0,0,0.25); transition:transform 0.32s cubic-bezier(0.17,1.32,0.32,1); }
-  .switch.on{ background:linear-gradient(180deg, var(--pal-vert-a), var(--pal-vert-b)); --rim-edge:0 0 0 1px transparent; --rim-cast:var(--relief); }
-  .switch.on::after{ transform:translateX(1.3rem); }
+  /* (v355) PLUS FINS, PLUS PLATS.
+     « Je les trouve un peu mastoc en hauteur, ça ne fait pas assez moderne,
+       plus plat. J'adore les boutons comme ils sont, mais si tu peux les
+       rendre plus modernes… » Ils faisaient la taille d'un interrupteur
+       d'iPhone (51 × 31) avec, en plus, le relief des cartes : un objet
+       épais posé sur la carte. Ils passent à 2,75 × 1,55 rem, À PLAT (plus
+       de relief : un rail teinté, vert franc allumé, sans dégradé), et seul
+       le galet garde une ombre douce, la seule chose qui bouge.
+       Le doigt n'y perd rien : un calque invisible (::before) étend la zone
+       qu'on touche à 46 px de haut, quelle que soit la taille du texte (il reprend
+       le doigt et sa taille : le ::before d'un bouton porte d'ordinaire la teinte
+       de l'appui, réduite à rien et transparente au doigt). */
+  .switch{ position:relative; width:2.75rem; height:1.55rem; border-radius:var(--r-full); border:none; background:rgba(42,36,30,0.16); transition:background 0.25s ease; flex-shrink:0; padding:0; --rim-edge:0 0 0 1px transparent; --rim-cast:0 0 0 transparent; }
+  .switch::before{ content:""; position:absolute; left:-6px; right:-6px; top:calc(50% - 23px); bottom:calc(50% - 23px); pointer-events:auto; transform:none; background:none; }
+  .switch::after{ content:""; position:absolute; top:0.16rem; left:0.16rem; width:1.23rem; height:1.23rem; border-radius:50%; background:#fff; box-shadow:0 1px 2px rgba(30,22,14,0.16), 0 2px 6px rgba(30,22,14,0.12); transition:transform 0.3s cubic-bezier(0.2,1.2,0.35,1); }
+  .switch.on{ background:var(--pal-vert-b); --rim-edge:0 0 0 1px transparent; }
+  .switch.on::after{ transform:translateX(1.2rem); }
   .vol-row{ display:flex; align-items:center; gap:0.7rem; padding:0.15rem 0.1rem 0.4rem; }
   .vol-row .vr-ico{ width:1.05rem; height:1.05rem; color:var(--ink-soft); flex-shrink:0; display:inline-flex; }
   /* ===== LE CURSEUR DE VOLUME FAISAIT DIX PIXELS DE HAUT =====
@@ -6603,6 +6611,8 @@
      Mêmes matières que l'accueil — cartes de verre, icônes au dégradé de la
      palette, ombre de relief, aucune bordure —, une couleur par jeu. */
   html.avec-barre .screen.jeux-ecran{ padding-bottom:calc(var(--bb-h) + var(--bb-bas) - max(calc(var(--sab) + 0.35rem), var(--air-bas, 0.8rem)) + 0.7rem); }
+  /* (v355) Le chemin est un onglet : sa dernière unité se lit au-dessus de la barre. */
+  html.avec-barre .screen.chemin-ecran{ padding-bottom:calc(var(--bb-h) + var(--bb-bas) - max(calc(var(--sab) + 0.35rem), var(--air-bas, 0.8rem)) + 0.7rem); }
   .jx-ico{ width:2.7rem; height:2.7rem; border-radius:var(--r-ico); display:flex; align-items:center; justify-content:center; flex-shrink:0;
     padding:0.6rem; color:#fff; box-shadow:inset 0 1px 0 rgba(255,255,255,0.26), 0 2px 7px rgba(15,12,10,0.24); }
   .jx-ico svg{ width:100%; height:100%; }
@@ -6804,14 +6814,27 @@
   .jx-chiffres .ico{ width:1rem; height:1rem; display:inline-flex; }
   .btn-primary.jx-rejouer{ width:100%; margin-bottom:0.7rem; }
   .btn-ghost.jx-autres{ width:100%; }
-  /* ===== LA BARRE : TROIS ONGLETS (Accueil · Jeux · Groupes) ===== */
-  .barre-bas{ grid-template-columns:1fr 1fr 1fr; }
-  .bb-curseur{ width:calc((100% - 0.6rem) / 3); }
-  .barre-bas[data-o="jeux"] .bb-curseur{ transform:translateX(100%); }
-  .barre-bas[data-o="groupes"] .bb-curseur{ transform:translateX(200%); }
-  /* Trois onglets demandent un peu plus de large : la barre passe de 17,5 à
-     21,5 rem au plus, et garde 1,25 rem d'air de chaque côté sur un petit écran. */
-  :root{ --bb-l:min(21.5rem, calc(100vw - 2.5rem)); }
+  /* ===== (v355) LA BARRE : QUATRE ONGLETS (Accueil · Parcours · Jeux · Groupes) =====
+     « Je préférerais que le Parcours soit en bas — carte blanche, place-le
+       au bon endroit. » Le Parcours est l'endroit où l'on revient chaque
+       jour : il a son onglet, comme les Jeux et les Groupes, à un toucher de
+       partout. Et l'accueil retrouve ses cinq cartes (« le bas est devenu
+       trop collé »).
+     Quatre onglets côte à côte ne laissaient que 83 px chacun : l'icône et
+     le mot ne tenaient plus sur une ligne (« Parcours » en demande 94). Le
+     mot passe SOUS l'icône, plus petit — la façon de toutes les barres à
+     quatre onglets —, et la pastille corail glisse toujours de l'un à
+     l'autre. */
+  .barre-bas{ grid-template-columns:1fr 1fr 1fr 1fr; }
+  .bb-curseur{ width:calc((100% - 0.6rem) / 4); }
+  .barre-bas[data-o="parcours"] .bb-curseur{ transform:translateX(100%); }
+  .barre-bas[data-o="jeux"] .bb-curseur{ transform:translateX(200%); }
+  .barre-bas[data-o="groupes"] .bb-curseur{ transform:translateX(300%); }
+  .bb-onglet{ flex-direction:column; gap:0.14rem; font-size:0.68rem; line-height:1.1; letter-spacing:0.01em; padding:0 0.15rem; min-width:0; }
+  .bb-onglet.a-pastille{ gap:0.14rem; }
+  .bb-ico{ width:1.28rem; height:1.28rem; }
+  .bb-mot{ max-width:100%; }
+  :root{ --bb-l:min(23rem, calc(100vw - 2rem)); }
   /* ===== LES RÉGLAGES, RESSERRÉS =====
      « Il y a beaucoup trop d'espace en bas. Réajuste le tout pour que ce
      soit beaucoup moins espacé, beaucoup plus compact, beaucoup plus net, et
@@ -7219,10 +7242,8 @@ const TEXTES = {
     "L'Église naissante":"The early Church",
     "Les lettres de Paul":"Paul's letters",
     "Lettres et Apocalypse":"Letters and Revelation",
-    "Unité {n} · {nom}":"Unit {n} · {nom}",
     "Unité {n}":"Unit {n}",
     "Ton parcours":"Your path",
-    "Toute la Bible est parcourue":"The whole Bible is done",
     "Parcours terminé":"Path complete",
     "De la Genèse à l'Apocalypse":"From Genesis to Revelation",
     "{n} leçon sur {t}":"{n} of {t} lessons",
@@ -8050,8 +8071,10 @@ const TEXTES = {
     "Téléphone :":"Phone:",
     "Adresse :":"Address:",
     "Hébergeur :":"Host:",
-    "Cloudflare, Inc., 101 Townsend Street, San Francisco, CA 94107, États-Unis — +1 888 993 5273.":"Cloudflare, Inc., 101 Townsend Street, San Francisco, CA 94107, United States — +1 888 993 5273.",
+    "Cloudflare, Inc., 101 Townsend Street, San Francisco, CA 94107, États-Unis — +1 650 319 8930.":"Cloudflare, Inc., 101 Townsend Street, San Francisco, CA 94107, United States — +1 650 319 8930.",
     "GitHub, Inc., 88 Colin P. Kelly Jr. Street, San Francisco, CA 94107, États-Unis — support.github.com.":"GitHub, Inc., 88 Colin P. Kelly Jr. Street, San Francisco, CA 94107, United States — support.github.com.",
+    "Hébergeur des données\u00a0:":"Data host:",
+    "Supabase Pte. Ltd., 65 Chulia Street #38-02/03, OCBC Centre, Singapour 049513 — legal@supabase.io (comptes, sauvegardes, groupes).":"Supabase Pte. Ltd., 65 Chulia Street #38-02/03, OCBC Centre, Singapore 049513 — legal@supabase.io (accounts, backups, groups).",
     "Données personnelles :":"Personal data:",
     "Mes choix de publicité":"My ad choices",
     "Photo du groupe":"Group photo",
@@ -8156,10 +8179,8 @@ const TEXTES = {
     "L'Église naissante":"La Iglesia naciente",
     "Les lettres de Paul":"Las cartas de Pablo",
     "Lettres et Apocalypse":"Cartas y Apocalipsis",
-    "Unité {n} · {nom}":"Unidad {n} · {nom}",
     "Unité {n}":"Unidad {n}",
     "Ton parcours":"Tu camino",
-    "Toute la Bible est parcourue":"Toda la Biblia está recorrida",
     "Parcours terminé":"Camino terminado",
     "De la Genèse à l'Apocalypse":"Del Génesis al Apocalipsis",
     "{n} leçon sur {t}":"{n} de {t} lecciones",
@@ -8986,8 +9007,10 @@ const TEXTES = {
     "Téléphone :":"Teléfono:",
     "Adresse :":"Dirección:",
     "Hébergeur :":"Alojamiento:",
-    "Cloudflare, Inc., 101 Townsend Street, San Francisco, CA 94107, États-Unis — +1 888 993 5273.":"Cloudflare, Inc., 101 Townsend Street, San Francisco, CA 94107, Estados Unidos — +1 888 993 5273.",
+    "Cloudflare, Inc., 101 Townsend Street, San Francisco, CA 94107, États-Unis — +1 650 319 8930.":"Cloudflare, Inc., 101 Townsend Street, San Francisco, CA 94107, Estados Unidos — +1 650 319 8930.",
     "GitHub, Inc., 88 Colin P. Kelly Jr. Street, San Francisco, CA 94107, États-Unis — support.github.com.":"GitHub, Inc., 88 Colin P. Kelly Jr. Street, San Francisco, CA 94107, Estados Unidos — support.github.com.",
+    "Hébergeur des données\u00a0:":"Alojamiento de los datos:",
+    "Supabase Pte. Ltd., 65 Chulia Street #38-02/03, OCBC Centre, Singapour 049513 — legal@supabase.io (comptes, sauvegardes, groupes).":"Supabase Pte. Ltd., 65 Chulia Street #38-02/03, OCBC Centre, Singapur 049513 — legal@supabase.io (cuentas, copias de seguridad, grupos).",
     "Données personnelles :":"Datos personales:",
     "Mes choix de publicité":"Mis opciones de publicidad",
     "Photo du groupe":"Foto del grupo",
@@ -11634,7 +11657,7 @@ const SUPABASE_ANON_KEY = "sb_publishable_FDJ_R0foC7uIeHmxVrj6rA_2NeIgW2a";
    remontée d'un téléphone ne vaut rien si on ne sait pas QUELLE version
    tournait. Elle doit rester égale au CACHE de sw.js — c'est ce que vérifie
    banc-essai/version.js, qui refuse de laisser publier les deux en désaccord. */
-const VERSION_JEU = "v354";
+const VERSION_JEU = "v355";
 
 /* ===================== QUAND ÇA CASSE CHEZ UN JOUEUR =====================
    « Si quelque chose casse chez cinq d'entre eux sur un modèle de téléphone
@@ -14317,7 +14340,7 @@ function reviveAudioHard(){
   const ancien = actx;
   actx = null; masterGain = null; masterFilter = null;
   if(musicTimer){ clearInterval(musicTimer); musicTimer = null; }
-  musicBusNode = null; musicDelayIn = null; musicFb = null; qNoiseBuf = null; musicPlaying = false; qVoies = new Map();
+  musicBusNode = null; musicDelayIn = null; musicFb = null; qNoiseBuf = null; musicPlaying = false; qVoies = new Map(); oublierRendu();
   audioWasHidden = false; audioInterrupted = false; masterCoupe = false; // contexte neuf : plus rien de gelé
   sonHorloge = -1; sonGel = 0;                     // et son horloge repart de zéro
   const rebatir = ()=>{
@@ -14375,7 +14398,7 @@ let sonCoupeGen = 0, sonReprendreT = 0;
 function jeterMusique(bus, echo){
   try { if(bus) bus.disconnect(); } catch(e){}
   try { if(echo) echo.disconnect(); } catch(e){}
-  if(bus && musicBusNode === bus){ musicBusNode = null; musicDelayIn = null; musicFb = null; qVoies = new Map(); }
+  if(bus && musicBusNode === bus){ musicBusNode = null; musicDelayIn = null; musicFb = null; qVoies = new Map(); oublierRendu(); }
 }
 function audioHidden(){
   if(!actx) return;
@@ -14463,7 +14486,7 @@ function restartMusicClean(){
     try { if(vieuxBus) vieuxBus.disconnect(); } catch(e){}
     try { if(vieilEcho) vieilEcho.disconnect(); } catch(e){}
   }, 200);
-  musicBusNode = null; musicDelayIn = null; musicFb = null; qVoies = new Map();
+  musicBusNode = null; musicDelayIn = null; musicFb = null; qVoies = new Map(); oublierRendu(220);
   startMusic();
 }
 /* Le master a-t-il été coupé par audioHidden ? Tant qu'il l'est, le retour
@@ -14671,19 +14694,30 @@ function musicBus(){
     musicBusNode = ctx.createGain();
     musicBusNode.gain.value = 0.0001;
     musicBusNode.connect(masterFilter);
-    /* Écho « croche pointée » (0,45 s à 100 BPM) : LA signature des musiques
-       hypnotiques. Réinjection filtrée (1,6 kHz) qui s'assombrit à chaque
-       répétition. Branché AVANT le gain du bus -> le volume et l'arrêt de la
-       musique gouvernent aussi les échos. */
-    musicDelayIn = ctx.createGain(); musicDelayIn.gain.value = 1;
-    const dly = ctx.createDelay(1.0); dly.delayTime.value = 0.54;
-    const lp = ctx.createBiquadFilter(); lp.type = "lowpass"; lp.frequency.value = 1150; lp.Q.value = 0.5;
-    const fb = ctx.createGain(); fb.gain.value = 0.36; musicFb = fb;
-    const wet = ctx.createGain(); wet.gain.value = 0.85;
-    musicDelayIn.connect(dly); dly.connect(lp); lp.connect(fb); fb.connect(dly);
-    lp.connect(wet); wet.connect(musicBusNode);
   }
   return musicBusNode;
+}
+/* Écho « croche pointée » (0,45 s à 100 BPM) : LA signature des musiques
+   hypnotiques. Réinjection filtrée (1,6 kHz) qui s'assombrit à chaque
+   répétition. Branché AVANT le gain du bus -> le volume et l'arrêt de la
+   musique gouvernent aussi les échos.
+   (v355) Le même réseau sert deux fois : DANS chaque mesure rendue d'avance
+   (voir LA MUSIQUE RENDUE D'AVANCE), et, en direct, seulement si la musique
+   doit se calculer en direct (un navigateur sans rendu d'avance) — il n'est
+   alors construit qu'au premier besoin. */
+function reseauEcho(ctx, sortie){
+  const entree = ctx.createGain(); entree.gain.value = 1;
+  const dly = ctx.createDelay(1.0); dly.delayTime.value = 0.54;
+  const lp = ctx.createBiquadFilter(); lp.type = "lowpass"; lp.frequency.value = 1150; lp.Q.value = 0.5;
+  const fb = ctx.createGain(); fb.gain.value = 0.36;
+  const wet = ctx.createGain(); wet.gain.value = 0.85;
+  entree.connect(dly); dly.connect(lp); lp.connect(fb); fb.connect(dly);
+  lp.connect(wet); wet.connect(sortie);
+  return { entree, fb };
+}
+function echoDirect(){
+  if(!musicDelayIn){ const e = reseauEcho(getCtx(), musicBus()); musicDelayIn = e.entree; musicFb = e.fb; }
+  return musicDelayIn;
 }
 /* Sortie d'une voix : panoramique léger (si dispo) vers le bus + envoi
    éventuel vers l'écho. La stéréo ondule, l'écho lie tout. */
@@ -14714,28 +14748,34 @@ function musicBus(){
    marge ne valait que 20 ms sur Android ; elle est maintenant de 50 ms —
    voir UNE RÉSERVE DE SON QUI TIENT PENDANT UN CHANGEMENT DE PAGE.) */
 let qVoies = new Map();
+/* (v355) Où l'on compose : la musique en direct (qCible nul), ou une mesure
+   rendue d'avance — son propre contexte, son bus, son écho et ses voix. */
+let qCible = null;
+function qCtx(){ return qCible ? qCible.ctx : getCtx(); }
 function qOut(node, pan, send){ node.connect(qVoie(pan, send)); }
 function qVoie(pan, send){
-  const ctx = getCtx(), bus = musicBus();
-  const p = Math.round((pan || 0) * 10) / 10, s = (send > 0 && musicDelayIn) ? send : 0;
+  const c = qCible, ctx = c ? c.ctx : getCtx(), bus = c ? c.bus : musicBus();
+  const echo = send > 0 ? (c ? c.echo : echoDirect()) : null;
+  const p = Math.round((pan || 0) * 10) / 10, s = echo ? send : 0;
+  const voies = c ? c.voies : qVoies;
   const cle = p + "|" + s;
-  const deja = qVoies.get(cle);
+  const deja = voies.get(cle);
   if(deja && deja.bus === bus) return deja.entree;
   let entree;
   if(p && ctx.createStereoPanner){ entree = ctx.createStereoPanner(); entree.pan.value = p; }
   else entree = ctx.createGain();
   entree.connect(bus);
-  if(s > 0){ const sg = ctx.createGain(); sg.gain.value = s; entree.connect(sg); sg.connect(musicDelayIn); }
-  qVoies.set(cle, { bus, entree });
+  if(s > 0){ const sg = ctx.createGain(); sg.gain.value = s; entree.connect(sg); sg.connect(echo); }
+  voies.set(cle, { bus, entree });
   return entree;
 }
-function qT(t0){ const ctx = getCtx(); return t0 < ctx.currentTime + 0.004 ? ctx.currentTime + 0.004 : t0; } // filet : jamais dans le passé (anti-glitch)
+function qT(t0){ const ctx = qCtx(); return t0 < ctx.currentTime + 0.004 ? ctx.currentTime + 0.004 : t0; } // filet : jamais dans le passé (anti-glitch)
 /* LA note de piano FEUTRÉ — l'unique instrument. Attaque veloutée de 35 ms
    (aucun « pincement »), deux triangles à peine désaccordés (le battement
    lent d'une vraie corde double), souffle d'octave discret. La résonance
    longue fait se FONDRE les notes entre elles, comme pédale enfoncée. */
 function qPluck(freq, t0, vol, pan, send, dur){
-  const ctx = getCtx(); t0 = qT(t0); dur = dur || 2.2;
+  const ctx = qCtx(); t0 = qT(t0); dur = dur || 2.2;
   /* (v338) Une enveloppe pour les deux cordes ; chacune s'arrête aux quatre
      cinquièmes de sa descente, quand il n'en reste plus rien à entendre. */
   const g = ctx.createGain();
@@ -14762,7 +14802,7 @@ let qNoiseBuf = null; // bruit blanc précalculé une fois (tic, taiko, riser)
 /* Scintillement : l'octave de la dernière note d'une phrase, en écho
    lointain, alterné gauche/droite — la poussière d'étoiles du désert. */
 function qSpark(freq, t0, pan){
-  const ctx = getCtx(); t0 = qT(t0);
+  const ctx = qCtx(); t0 = qT(t0);
   const o = ctx.createOscillator(), g = ctx.createGain();
   o.type = "sine"; o.frequency.value = freq;
   g.gain.setValueAtTime(0.0001, t0);
@@ -14771,12 +14811,11 @@ function qSpark(freq, t0, pan){
   o.connect(g); qOut(g, pan, 0.5);
   o.start(t0); o.stop(t0 + 1.2);
 }
-function scheduleMusicBar(){
-  const bar = musicStep % 8;                 // position dans la boucle harmonique
-  const cycle = (musicStep >> 3) % 4;        // macro-arc : 4 cycles de 8 mesures
+function composerMesure(step, t0){
+  const bar = step % 8;                      // position dans la boucle harmonique
+  const cycle = (step >> 3) % 4;             // macro-arc : 4 cycles de 8 mesures
   const breath = (cycle === 3 && bar < 2);   // la « respiration » : 2 mesures suspendues
   const ch = QUIZ_PROG[bar];
-  const t0 = musicNextBar;
   const E = Q_STEP * 2;                      // la croche (~0,36 s à 84 BPM)
   /* MAINS HUMAINES : chaque note est décalée de quelques millisecondes et
      jouée avec un toucher légèrement différent — jamais deux fois pareil,
@@ -14804,7 +14843,7 @@ function scheduleMusicBar(){
     for(let n=0; n<8; n++){
       if(n === 6 && Math.random() < 0.18) continue;   // la note qu'on laisse filer
       const arch = 1 + 0.16*Math.sin((n/7)*Math.PI);  // le phrasé en arche
-      qPluck(cell[PAT[n]], t0 + n*E + h(26), vBase*arch*w(), 0.3*Math.sin((musicStep*8+n)*0.5), 0.35);
+      qPluck(cell[PAT[n]], t0 + n*E + h(26), vBase*arch*w(), 0.3*Math.sin((step*8+n)*0.5), 0.35);
     }
   } else {
     // Respiration : l'accord simplement posé, égrené comme à main levée,
@@ -14829,7 +14868,86 @@ function scheduleMusicBar(){
       qSpark(last[2]*2, t0 + (last[0] - 16 + last[1])*Q_STEP + 0.3, (bar >> 1) % 2 ? 0.65 : -0.65);
     }
   }
+}
+/* La musique calculée en direct, mesure par mesure : le filet, pour un
+   navigateur qui ne sait pas rendre d'avance (voir LA MUSIQUE RENDUE
+   D'AVANCE). */
+function scheduleMusicBar(){
+  composerMesure(musicStep, musicNextBar);
   musicStep += 1; musicNextBar += MUSIC_BAR;
+}
+/* ===== (v355) LA MUSIQUE RENDUE D'AVANCE =====
+   « Lorsque je quitte le jeu, la page, pour aller sur une autre page, ça fait
+     un bruit robotique, comme un bruit bizarre qui casse le son du jeu.
+     Règle ça une fois pour toutes. »
+   La v338 avait divisé par deux le calcul de la musique, la v345 doublé la
+   réserve du son ; le bruit revenait. Sa cause ne change pas : la musique se
+   CALCULAIT EN DIRECT — une soixantaine d'oscillateurs par mesure, et
+   l'écho —, sur le fil du son, à l'heure. Un changement de page est le
+   moment où le téléphone a le plus à faire ; si le fil du son rate son
+   rendez-vous, la sortie hoquette. Rien ne peut garantir qu'il ne le
+   ratera jamais tant qu'il a autant à calculer.
+   On ne lui demande donc plus de calculer. Chaque mesure se compose comme
+   avant — mêmes notes, mêmes mains humaines, même écho —, mais dans un
+   contexte À PART (OfflineAudioContext), à l'avance, trois mesures devant
+   celle qu'on entend ; le fil du son ne fait plus que REJOUER des mesures
+   déjà prêtes, qui se chevauchent par leurs queues (chaque mesure garde
+   6,6 s de résonance et d'écho : la somme est exactement la musique d'avant,
+   le son est linéaire). Rejouer coûte au fil du son dix fois moins que
+   calculer : la page peut prendre le processeur, la musique tient.
+   Rendue à 22 050 Hz : le son du jeu passe de toute façon sous un filtre à
+   2,4 kHz, rien d'audible ne s'y perd, et une mesure tient en 1,6 Mo. Un
+   navigateur sans rendu d'avance, ou qui échoue trois fois, garde la
+   musique en direct, comme avant. */
+const MUSIQUE_SR = 22050, MUSIQUE_AVANT = 0.06, MUSIQUE_QUEUE = 6.6;
+let musiqueRendue = null, musiqueRendueGen = 0;
+function rendreDispo(){ return !!(window.OfflineAudioContext || window.webkitOfflineAudioContext); }
+function etatRendu(){
+  if(!musiqueRendue) musiqueRendue = { gen:++musiqueRendueGen, prets:new Map(), enCours:new Set(), sources:new Set(), echecs:0, joues:0 };
+  return musiqueRendue;
+}
+/* La musique s'arrête, se refait ou se coupe : ses mesures déjà prêtes et
+   celles qui sonnent s'en vont avec elle — après « attente » ms quand leur
+   bus finit un fondu (arrêtées en plein fondu, elles claqueraient). */
+function oublierRendu(attente){
+  const R = musiqueRendue; musiqueRendue = null;
+  if(!R) return;
+  R.prets.clear();
+  const finir = () => { R.sources.forEach(src => { try{ src.stop(); }catch(e){} try{ src.disconnect(); }catch(e){} }); R.sources.clear(); };
+  if(attente) setTimeout(finir, attente); else finir();
+}
+function rendreMesure(step){
+  const OAC = window.OfflineAudioContext || window.webkitOfflineAudioContext;
+  const off = new OAC(2, Math.ceil((MUSIQUE_AVANT + MUSIC_BAR + MUSIQUE_QUEUE) * MUSIQUE_SR), MUSIQUE_SR);
+  const bus = off.createGain(); bus.connect(off.destination);
+  const echo = reseauEcho(off, bus);
+  const avant = qCible;
+  qCible = { ctx:off, bus, echo:echo.entree, voies:new Map() };
+  try{ composerMesure(step, MUSIQUE_AVANT); } finally { qCible = avant; }
+  return new Promise((ok, ko) => {
+    off.oncomplete = (e) => ok(e.renderedBuffer);
+    try{ const p = off.startRendering(); if(p && p.then) p.then(ok, ko); }catch(e){ ko(e); }
+  });
+}
+function demanderMesure(R, step){
+  if(R.prets.has(step) || R.enCours.has(step)) return;
+  R.enCours.add(step);
+  let r;
+  try{ r = rendreMesure(step); }catch(e){ R.enCours.delete(step); R.echecs++; return; }
+  r.then((buf) => {
+    R.enCours.delete(step);
+    if(musiqueRendue !== R) return;
+    R.prets.set(step, buf);
+    if(musicPlaying) musicTick();
+  }, () => { R.enCours.delete(step); R.echecs++; });
+}
+function jouerMesure(R, buf, quand){
+  const ctx = getCtx(), src = ctx.createBufferSource();
+  src.buffer = buf;
+  src.connect(musicBus());
+  src.start(quand);
+  R.sources.add(src); R.joues++;
+  src.onended = () => { R.sources.delete(src); try{ src.disconnect(); }catch(e){} };
 }
 function musicTick(){
   if(!musicPlaying) return;
@@ -14842,7 +14960,20 @@ function musicTick(){
      sinon la note démarrait au milieu de son enveloppe = clic/« vieux bruit ».
      (L'ancien seuil −1s laissait passer tous les retards de 0 à 1s.) */
   if(musicNextBar < ctx.currentTime + 0.06){ musicNextBar = ctx.currentTime + 0.12; }
-  while(musicNextBar < ctx.currentTime + 1.6){ scheduleMusicBar(); }
+  /* (v355) Les mesures rendues d'avance (voir LA MUSIQUE RENDUE D'AVANCE) :
+     trois en préparation, et celles qui sont prêtes partent à leur heure.
+     Une mesure pas encore prête attend le tour suivant (ou la fin de son
+     rendu, qui rappelle ce tic). */
+  const R = rendreDispo() ? etatRendu() : null;
+  if(!R || R.echecs > 2){ while(musicNextBar < ctx.currentTime + 1.6){ scheduleMusicBar(); } return; }
+  for(let k = 0; k < 3; k++) demanderMesure(R, musicStep + k);
+  while(musicNextBar < ctx.currentTime + 1.6){
+    const buf = R.prets.get(musicStep);
+    if(!buf) break;
+    R.prets.delete(musicStep);
+    jouerMesure(R, buf, musicNextBar - MUSIQUE_AVANT);
+    musicStep += 1; musicNextBar += MUSIC_BAR;
+  }
 }
 /* La musique ne démarre qu'APRÈS le premier geste réel de l'utilisateur —
    jamais toute seule au lancement (sur une PWA déjà « déverrouillée », iOS
@@ -14873,6 +15004,9 @@ function stopMusic(){
     g.setValueAtTime(g.value, actx.currentTime);
     g.linearRampToValueAtTime(0.0001, actx.currentTime + 0.7);
   }
+  /* (v355) Le fondu fini, les mesures qui sonnaient encore s'arrêtent. */
+  const R = musiqueRendue;
+  setTimeout(()=>{ if(!musicPlaying && musiqueRendue === R) oublierRendu(); }, 800);
 }
 /* La musique ne démarre JAMAIS d'elle-même : uniquement après le tout premier
    toucher réel en jeu (audioUnlocked, posé par le pointerdown). Retour d'appel,
@@ -23045,7 +23179,7 @@ function renderChemin(){
      l'unité est juste en dessous, sur sa bannière : pas deux fois. */
   const tete = `<span class="ch-sur">${pos ? T("Ton parcours") : T("Parcours terminé")}</span><b class="ch-titre">${T("De la Genèse à l'Apocalypse")}</b>`;
   el.innerHTML = `
-    ${renderHeader(T("Parcours"), true)}
+    ${enteteParcours()}
     <div class="card ch-tete">
       ${tete}
       <div class="ch-jauge" role="progressbar" aria-valuemin="0" aria-valuemax="${total}" aria-valuenow="${faites}"><i style="--p:${(faites / total).toFixed(4)}"></i></div>
@@ -23055,6 +23189,16 @@ function renderChemin(){
     <div class="ch-unites">${PARCOURS.map((u, i) => uniteHtml(u, i, p, pos, vient)).join("")}</div>`;
   setTimeout(() => montrerLeconCourante(el), apresEntree() + 90);
   return el;
+}
+/* (v355) Un écran d'onglet : la pastille du joueur à gauche (son profil),
+   le titre, les Réglages — comme les Jeux et les Groupes. Pas de flèche :
+   on n'en « revient » pas, on change d'onglet. */
+function enteteParcours(){
+  return `<div class="app-header jx-entete">
+      <button class="icon-btn grp-profil" onclick="openProfile()" aria-label="${T("Profil")}">${avatarHtml(profile.name || "?", profile.color, 2.4, true)}</button>
+      <span class="header-title">${T("Parcours")}</span>
+      <button class="icon-btn" onclick="openSettings()" aria-label="${T("Réglages")}"><span class="ico" style="width:1.22rem;height:1.22rem;">${ICONS.gear}</span></button>
+    </div>`;
 }
 /* On arrive SUR la leçon à faire : le chemin défile jusqu'à elle. */
 function montrerLeconCourante(el){
@@ -25866,6 +26010,7 @@ function groupesSurCompte(){
 function barreHtml(){
   return `<span class="bb-curseur" aria-hidden="true"></span>`
     + `<button class="bb-onglet" data-o="accueil" onclick="allerOnglet('accueil')"><span class="bb-ico">${ICONS.maison}</span><span class="bb-mot">${T("Accueil")}</span></button>`
+    + `<button class="bb-onglet" data-o="parcours" onclick="allerOnglet('parcours')"><span class="bb-ico">${ICONS.chemin}</span><span class="bb-mot">${T("Parcours")}</span></button>`
     + `<button class="bb-onglet" data-o="jeux" onclick="allerOnglet('jeux')"><span class="bb-ico">${ICONS.manette}</span><span class="bb-mot">${T("Jeux")}</span></button>`
     + `<button class="bb-onglet" data-o="groupes" onclick="allerOnglet('groupes')"><span class="bb-ico">${ICONS.bulles}<i class="bb-pastille" hidden></i></span><span class="bb-mot">${T("Groupes")}</span></button>`;
 }
@@ -25898,7 +26043,7 @@ function majBarre(){
     document.body.appendChild(b);
   }
   if(b.dataset.langue !== LANGUE){ b.innerHTML = barreHtml(); b.dataset.langue = LANGUE; b.setAttribute("aria-label", T("Navigation")); }
-  const montre = state.screen === "mode" || state.screen === "groupes" || state.screen === "jeux";
+  const montre = state.screen === "mode" || state.screen === "groupes" || state.screen === "jeux" || state.screen === "chemin";
   /* ===== LA PASTILLE RESTE SUR SON ONGLET =====
      « Quand elle est sur Messages, elle doit bien rester sur Messages — et
      inversement sur Accueil. » Elle suivait l'ÉCRAN : tout ce qui n'était pas
@@ -25909,7 +26054,7 @@ function majBarre(){
      discussion et la modération sont dans les Groupes, l'accueil est
      l'Accueil, et tout le reste (Profil, Progression, une partie) la laisse
      où elle était. */
-  const o = ({ groupes:"groupes", groupe:"groupes", moderation:"groupes", mode:"accueil", jeux:"jeux", jeu:"jeux", "jeu-fin":"jeux" })[state.screen] || b.dataset.o || "accueil";
+  const o = ({ groupes:"groupes", groupe:"groupes", moderation:"groupes", mode:"accueil", chemin:"parcours", jeux:"jeux", jeu:"jeux", "jeu-fin":"jeux" })[state.screen] || b.dataset.o || "accueil";
   const revient = montre && (b.classList.contains("cachee") || b.classList.contains("part-cote"));
   /* Elle ne glisse que sous les yeux, d'un onglet à l'autre. Une barre qui
      REVIENT arrive avec sa pastille déjà en place. */
@@ -26008,6 +26153,13 @@ function majBarre(){
 }
 function allerOnglet(o){
   if(pubAvant(()=> allerOnglet(o))) return;  // (v349) « Autres jeux », la flèche, après un jeu fini
+  /* (v355) Le Parcours a son onglet : on y arrive sur la leçon à faire. */
+  if(o === "parcours"){
+    if(state.screen === "chemin"){ remonterGroupes(); return; }
+    state.screen = "chemin";
+    render();
+    return;
+  }
   if(o === "jeux"){
     if(state.screen === "jeux"){ remonterGroupes(); return; }
     jeu = null;
@@ -31833,8 +31985,22 @@ function choixPublicite(){ try{ window.googlefc.showRevocationMessage(); }catch(
    européen d'AdSense demande l'adresse d'une politique de confidentialité). */
 const MAIL_YADA = "yadaquiz.app@gmail.com";
 const EDITEUR = { nom:"Taylor Dauber", adresse:"Boulevard de la Résistance et de la Déportation, 49100 Angers", tel:"07 84 04 57 70", telLien:"+33784045770" };
+/* (v355) LES MENTIONS, VÉRIFIÉES À LA SOURCE. Depuis la loi SREN (21 mai
+   2024), ce qu'un site doit dire de lui est à l'article 1-1 de la LCEN :
+   l'identité de l'éditeur (pour une personne : nom, domicile, téléphone),
+   le directeur de la publication, et l'hébergeur (nom, adresse,
+   téléphone). Seul un particulier qui publie À TITRE NON PROFESSIONNEL
+   peut taire son identité en ne donnant que celle de son hébergeur ; Yada
+   montre des annonces, il donne donc les deux.
+   Le téléphone de Cloudflare venait d'un annuaire (un numéro de vente) :
+   c'est maintenant celui que Cloudflare publie lui-même (sa déclaration
+   « Modern Slavery Act »). GitHub ne publie aucun téléphone dans ses
+   documents : son adresse, et son support. Et les comptes, les sauvegardes
+   et les groupes sont gardés chez Supabase : l'entité que ses conditions
+   nomment (Supabase Pte. Ltd., Singapour) entre dans la page. */
+const HEBERGEUR_DONNEES = "Supabase Pte. Ltd., 65 Chulia Street #38-02/03, OCBC Centre, Singapour 049513 — legal@supabase.io (comptes, sauvegardes, groupes).";
 const HEBERGEURS = {
-  cloudflare: "Cloudflare, Inc., 101 Townsend Street, San Francisco, CA 94107, États-Unis — +1 888 993 5273.",
+  cloudflare: "Cloudflare, Inc., 101 Townsend Street, San Francisco, CA 94107, États-Unis — +1 650 319 8930.",
   github: "GitHub, Inc., 88 Colin P. Kelly Jr. Street, San Francisco, CA 94107, États-Unis — support.github.com."
 };
 let hebergeurSu = null;
@@ -31853,12 +32019,14 @@ function ouvrirMentions(){
     ["Téléphone :", "@tel"],
     ["Contact :", MAIL_YADA],
     ["Hébergeur :", "@hebergeur"],
+    ["Hébergeur des données\u00a0:", "@donnees"],
     ["Données personnelles :", "@confidentialite"]
   ].filter(Boolean);
   ouvrirFeuilleGroupe("mentionsVeil", T("Mentions légales"), ICONS.info,
     `<div class="conf-liste">${lignes.map(([t, d]) => {
       const texte = d === MAIL_YADA ? `<a class="lien-mail" href="mailto:${MAIL_YADA}">${MAIL_YADA}</a>`
         : d === "@hebergeur" ? `<span class="ment-heb">${escapeHtml(T(HEBERGEURS[hebergeurSuppose()]))}</span>`
+        : d === "@donnees" ? `<span class="ment-donnees">${escapeHtml(T(HEBERGEUR_DONNEES))}</span>`
         : d === "@confidentialite" ? `<button class="lien-conf ment-conf" onclick="ouvrirConfidentialite()">${T("Confidentialité")}</button>`
         : d === "@tel" ? `<a class="lien-mail ment-tel" href="tel:${EDITEUR.telLien}">${escapeHtml(EDITEUR.tel)}</a>`
         : d === "@adresse" ? `<span class="ment-adr">${escapeHtml(EDITEUR.adresse)}</span>`
@@ -32890,12 +33058,9 @@ function renderModeSelect(){
          On intercale donc des espaceurs SOUPLES ET PLAFONNÉS : ils prennent
          le surplus à parts égales jusqu'à leur maximum, et ce qui reste
          au-delà remonte au-dessus du logo, où il ne se voit pas. */
-      /* (v353) LE PARCOURS EN TÊTE : la porte qui dit quoi faire ensuite. Son
-         sous-titre dit OÙ l'on en est, l'unité en cours. */
-      const pos = positionParcours();
-      const cheminTxt = pos ? Tf("Unité {n} · {nom}", { n:pos.u + 1, nom:T(PARCOURS[pos.u].nom) }) : T("Toute la Bible est parcourue");
-      const chemin = `<button class="mode-card" onclick="ouvrirChemin()"><span class="mode-icon chemin">${ICONS.chemin}</span><span class="mode-text"><span class="mode-title">${T("Parcours")}</span><span class="mode-desc">${escapeHtml(cheminTxt)}</span></span><span class="chev">${ICONS.chevronRight}</span></button>`;
-      return [chemin, group, solo, online, revoir].join(`<i class="ec-carte"></i>`);
+      /* (v355) Le Parcours n'est plus une carte de l'accueil : il a son
+         onglet dans la barre (voir LA BARRE : QUATRE ONGLETS). */
+      return [group, solo, online, revoir].join(`<i class="ec-carte"></i>`);
     })()}
     ${(()=>{ const s = parcoursSummary(), n = dailyStreakShown();
       const pilule = barre ? '<span class="dc-streak pc-feu' + (n ? '' : ' eteinte') + '">' + ICONS.flame + '<b>' + n + '</b></span>' : "";
@@ -34860,7 +35025,7 @@ const PARTIE_EN_COURS = { play:1, "online-play":1, jeu:1 }, FIN_DE_PARTIE = { en
 /* (v347) LES ONGLETS SONT CÔTE À CÔTE : Accueil, Jeux, Groupes. D'un onglet
    à l'autre, le sens est celui de la barre — vers la droite, l'écran arrive ;
    vers la gauche, celui qu'on quitte repart —, quel que soit le chemin. */
-const ONGLETS_ORDRE = { mode:0, jeux:1, groupes:2 };
+const ONGLETS_ORDRE = { mode:0, chemin:1, jeux:2, groupes:3 };
 function sensDuGlissement(de, vers){
   if(!de || de === "splash" || de === vers) return null;
   if(!cheminEcrans.length || cheminEcrans[cheminEcrans.length - 1] !== de) cheminEcrans = [de];

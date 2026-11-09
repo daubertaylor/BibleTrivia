@@ -26,7 +26,8 @@ const MIN = 44;
 /* CE QUE LE JEU ASSUME, ET POURQUOI. Une exception doit s'écrire, sinon
    c'est un défaut qu'on a oublié. */
 const TOLERE = {
-  '.switch':  'interrupteur — 51x31, la taille exacte d\'un UISwitch iOS',
+  /* (v355) '.switch' n'est plus une exception : plus fin à l'œil, il se
+     touche sur 44 px de haut (son calque ::before). */
   '.icon-btn': 'rond d\'en-tête, 39 px : il porte du verre, donc une découpe, donc\n' +
                '                          seule sa boîte pourrait grandir — et l\'en-tête entier grandirait\n' +
                '                          de 5,8 px sur TOUS les écrans. Cinq pixels de zone ne valent pas ça.',
