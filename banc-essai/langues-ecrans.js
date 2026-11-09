@@ -920,6 +920,17 @@ const ouvrirLaLangue = async (p, lg) => {
     ['Groupes · membre',   () => { __fermerTout(); ouvrirMembre('u-4'); }],
     ['Groupes · admin',    () => { __fermerTout(); ouvrirMembre('u-2'); }],
     ['Groupes · en sourdine', () => { __fermerTout(); ouvrirMembre('u-3'); }],
+    /* (v356) Le profil d'un joueur (voir LE PROFIL D'UN JOUEUR) : ses chiffres,
+       la phrase de quelqu'un qui n'en a posé aucun, un objectif qu'il n'a pas,
+       et « Voir le profil » en tenant un de ses messages — chez un simple
+       membre : la modération, elle, y va par « Gérer ». */
+    ['Groupes · profil, ses chiffres', () => { __fermerTout(); grp.etat.stats = true;
+      grp.stats = { 'u-4':{ v:1, livres:12, at:7, nt:5, bonnes:834, serie:21, succes:['pas', 'centurion'] } }; ouvrirMembre('u-4'); }],
+    ['Groupes · profil, rien encore', () => { __fermerTout(); grp.stats = { 'u-3':null }; ouvrirMembre('u-3'); }],
+    ['Groupes · profil, un objectif', () => { infoObjectifDe('millenaire', false); }],
+    ['Groupes · voir le profil', () => { __fermerTout(); const r = grp.membres['g-1'][0].role, mo = grp.etat.moderateur;
+      grp.membres['g-1'][0].role = 'membre'; grp.etat.moderateur = false; actionsMessage('7');
+      grp.membres['g-1'][0].role = r; grp.etat.moderateur = mo; }],
     ['Groupes · un message', () => { __fermerTout(); actionsMessage('7'); }],
     /* (v343) Le menu d'un message, « Répondre » en tête (l'appui long) : il
        faut la discussion ouverte et un serveur qui sait les réponses. */

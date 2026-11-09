@@ -24,7 +24,18 @@
        node plis.js        (jeu servi en HTTP sur 8099)
 
    Repères : une seule durée et une seule courbe pour toute la famille ;
-   saut <= 40 px/image. */
+   saut <= 40 px/image.
+
+   (v356) UNE EXCEPTION, ET UNE SEULE : LE FONDU DES ÉCRANS. « Pour se
+   déplacer, dans l'accueil, dans le jeu, dans le groupe, ou même pour aller
+   dans le profil, je trouve que c'est pas plaisant du tout. » Un écran ne
+   glisse plus comme une page : il FOND, au « fade through » d'Android
+   (Material) — l'écran quitté s'efface en 0,09 s, celui qui arrive apparaît
+   ENSUITE en 0,21 s. Sur l'horloge des plis (0,52 s), les deux écrans se
+   superposeraient, texte sur texte. Le banc le lit donc sur SA propre
+   horloge, celle que le jeu déclare (PASSAGE_ENTREE, PASSAGE_SORTIE et
+   leurs courbes) — et vérifie que c'est bien un fondu (l'opacité bouge).
+   Les pages (Réglages…) et les feuilles gardent l'horloge des plis. */
 const { chromium } = require('/opt/node22/lib/node_modules/playwright');
 const IOS = 'Mozilla/5.0 (iPhone; CPU iPhone OS 17_5 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.5 Mobile/15E148 Safari/604.1';
 const URL = process.argv[2] || 'http://127.0.0.1:8099/index.html';
@@ -103,11 +114,15 @@ const norme = (s) => (s || '').replace(/\s+/g, '');
     setTimeout(() => {
       const el = document.querySelector(sel);
       if (!el) return res(null);
+      /* (v356) Un écran ne glisse plus : il fond. Son animation est donc
+         celle de l'opacité ; un glissement (transform) reste reconnu. */
       const a = (el.getAnimations ? el.getAnimations() : []).find(x => {
-        try { return !x.animationName && x.effect && x.effect.getKeyframes().some(k => k.transform); } catch (e) { return false; } });
+        try { return !x.animationName && x.effect && x.effect.getKeyframes().some(k => k.transform || k.opacity !== undefined); } catch (e) { return false; } });
       if (!a) return res({ manquant: 'aucun glissement' });
       const t = a.effect.getTiming();
-      res({ d: (Math.round(t.duration) / 1000) + 's', c: t.easing });
+      /* (v356) Un fondu : l'opacité fait partie du mouvement. */
+      const fondu = a.effect.getKeyframes().some(k => k.opacity !== undefined);
+      res({ d: (Math.round(t.duration) / 1000) + 's', c: t.easing, fondu });
     }, 60);
   }), { prep, sel });
 
@@ -189,13 +204,17 @@ const norme = (s) => (s || '').replace(/\s+/g, '');
   function norme_(s){ return s.replace(/\s+/g,''); }
 
   console.log('  --tr-plie = ' + ref + '   (msPli() = ' + cpt.ms + ' ms)\n');
+  /* (v356) L'horloge du fondu des écrans, telle que le jeu la déclare. */
+  const fondu = await p.evaluate(() => { try { return { e: PASSAGE_ENTREE, ec: PASSAGE_ENTRE, s: PASSAGE_SORTIE, sc: PASSAGE_SORT, dec: PASSAGE_DECALE }; } catch (e) { return null; } });
+  const PROPRES = fondu ? { "changement d'écran": [(fondu.e / 1000) + 's', fondu.ec], "retour à l'accueil": [(fondu.s / 1000) + 's', fondu.sc] } : {};
   let ok = true;
   for (const [nom, r] of releves) {
     if (!r) { console.log('  ' + nom.padEnd(26) + ' INTROUVABLE'); ok = false; continue; }
     if (r.manquant) { console.log('  ' + nom.padEnd(26) + ' propriété non animée (' + r.manquant + ')'); ok = false; continue; }
-    const bon = r.d === refD && norme(r.c) === norme(refC);
+    const propre = PROPRES[nom];
+    const bon = propre ? (r.d === propre[0] && norme(r.c) === norme(propre[1]) && r.fondu === true) : (r.d === refD && norme(r.c) === norme(refC));
     if (!bon) ok = false;
-    console.log('  ' + nom.padEnd(26) + r.d.padEnd(8) + norme(r.c).padEnd(34) + (bon ? '' : '  <-- AUTRE HORLOGE'));
+    console.log('  ' + nom.padEnd(26) + r.d.padEnd(8) + norme(r.c).padEnd(34) + (bon ? (propre ? '  (le fondu des écrans : sa propre horloge, voulue)' : '') : (propre ? '  <-- PAS L\'HORLOGE DU FONDU' : '  <-- AUTRE HORLOGE')));
   }
   const bonCpt = cpt.ms !== null && Math.abs(cpt.ms - Math.round(parseFloat(refD) * 1000)) <= 1;
   if (!bonCpt) ok = false;
@@ -226,10 +245,9 @@ const norme = (s) => (s || '').replace(/\s+/g, '');
   };
   await p.setViewportSize({ width:393, height:852 }); await attente(300);
   await p.evaluate(() => { state.screen='mode'; render(); }); await attente(700);
-  /* L'écran QU'ON QUITTE n'a pas d'animation, et c'est voulu : (v345) il
-     reste posé dessous, immobile, pendant que le nouveau le recouvre comme
-     une page. On le relève pour mémoire, sans le compter comme une horloge
-     de plus. */
+  /* L'écran QU'ON QUITTE n'a pas d'animation CSS : (v356) il s'efface par
+     le script, sur l'horloge du fondu (lue plus haut, au retour à
+     l'accueil). On le relève pour mémoire. */
   const sortieEcran = await p.evaluate(() => new Promise(res => {
     state.screen = 'parcours'; render();
     setTimeout(() => { const e = document.querySelector('.screen-exit');
@@ -257,13 +275,14 @@ const norme = (s) => (s || '').replace(/\s+/g, '');
   const refFD = (refF.match(/([\d.]+)s/) || [,''])[1] + 's';
   const refFC = norme(refF.replace(/^[\d.]+s\s*/, ''));
   console.log('\n  --tr-ferme = ' + refF + '   (msFerme() = ' + await p.evaluate(()=>{ try{ return msFerme(); }catch(e){ return null; } }) + ' ms)\n');
-  console.log('  ' + 'écran quitté'.padEnd(26) + 'reste posé dessous, sans animation : ' + sortieEcran + '  (voulu)');
+  console.log('  ' + 'écran quitté'.padEnd(26) + 's\'efface par le script, sans animation CSS : ' + sortieEcran + '  (voulu)');
   for (const [nom, r] of fermetures) {
     if (!r) { console.log('  ' + nom.padEnd(26) + ' INTROUVABLE'); ok = false; continue; }
     if (r.manquant) { console.log('  ' + nom.padEnd(26) + ' ' + r.manquant); ok = false; continue; }
-    const bon = r.d === refFD && norme(r.c) === norme(refFC);
+    const propre = PROPRES[nom];
+    const bon = propre ? (r.d === propre[0] && norme(r.c) === norme(propre[1]) && r.fondu === true) : (r.d === refFD && norme(r.c) === norme(refFC));
     if (!bon) ok = false;
-    console.log('  ' + nom.padEnd(26) + r.d.padEnd(8) + norme(r.c).padEnd(34) + (bon ? '' : '  <-- AUTRE HORLOGE'));
+    console.log('  ' + nom.padEnd(26) + r.d.padEnd(8) + norme(r.c).padEnd(34) + (bon ? (propre ? '  (le fondu des écrans : sa propre horloge, voulue)' : '') : (propre ? '  <-- PAS L\'HORLOGE DU FONDU' : '  <-- AUTRE HORLOGE')));
   }
 
   /* ===== le profil image par image des deux plis qui DÉPLACENT la page ===== */
