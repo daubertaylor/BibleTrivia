@@ -17,8 +17,8 @@
      3. LE MÊME JEU, JOUÉ FAUX : « Le savais-tu ? », aucun point, 0 % — et le
         record reste celui d'avant ;
      4. LES MANCHES TIENNENT LEURS RÈGLES, sur trente tirages de chaque jeu :
-        Dans l'ordre (quatre récits, deux rangs d'écart au moins, jamais deux
-        récits dont le texte ne fixe pas l'ordre), Qui ? Où ? (chaque personne
+        Range les livres (v354 : quatre puis cinq livres, de plus en plus
+        serrés, jamais deux fois le même, jamais rangés d'avance), Qui ? Où ? (chaque personne
         n'a qu'un lieu possible parmi les quatre), Combien ? (la réponse parmi
         quatre nombres différents), Trouve l'erreur (un seul mot a changé, et
         le mot qui le remplace n'est dans AUCUNE version de la langue pour ce
@@ -37,7 +37,7 @@ const URL = process.argv[2] || process.env.URL_ESSAI || 'http://127.0.0.1:8099/i
 const IOS = 'Mozilla/5.0 (iPhone; CPU iPhone OS 18_5 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/18.5 Mobile/15E148 Safari/604.1';
 let ko = 0;
 const dit = (q, b, d) => { if (!b) ko++; console.log('  ' + (b ? 'OK  ' : 'KO  ') + q + (d ? '   (' + String(d).slice(0, 420) + ')' : '')); };
-const IDS = ['ordre', 'quiou', 'combien', 'erreur', 'morceaux'];
+const IDS = ['livres', 'quiou', 'combien', 'erreur', 'morceaux'];
 
 const ouvrir = async (nav, lg) => {
   const ctx = await nav.newContext({ viewport: { width: 393, height: 852 }, deviceScaleFactor: 2, isMobile: true, hasTouch: true, userAgent: IOS, serviceWorkers: 'block' });
@@ -69,10 +69,18 @@ const pose = async (p) => { await p.waitForTimeout(80); await p.waitForFunction(
 const jouerManche = async (p, juste) => {
   const { id, m } = await p.evaluate(() => ({ id: jeu.id, m: JSON.parse(JSON.stringify(mancheCourante())) }));
   const touche = async (sel) => { await p.locator(sel).first().click({ timeout: 5000 }); };
-  if (id === 'ordre') {
-    const rangs = m.items.map((e, i) => [e[0], i]).sort((a, b) => a[0] - b[0]).map(x => x[1]);
-    for (const i of (juste ? rangs : rangs.slice().reverse())) await touche(`#jxZone .jx-pas[data-i="${i}"]`);
-    /* (v351) Rien ne se valide tout seul : « Valider ». */
+  if (id === 'livres') {
+    /* (v354) Toucher un livre puis un autre les échange : on range place
+       après place. Faux : on valide l'ordre de départ, jamais le bon. */
+    if (juste) {
+      const cible = m.livres.slice().sort((a, b) => a - b);
+      for (let r = 0; r < cible.length; r++) {
+        const cur = await p.evaluate(() => mancheCourante().livres.slice());
+        if (cur[r] === cible[r]) continue;
+        await touche(`#jxZone .jx-livre[data-b="${cur[r]}"]`);
+        await touche(`#jxZone .jx-livre[data-b="${cible[r]}"]`);
+      }
+    }
     await touche('#jxZone .jx-valider');
   } else if (id === 'quiou') {
     const n = m.paires.length;
@@ -130,15 +138,21 @@ const REGLES = (n) => {
   const fautes = [];
   const mot = (w) => String(w).replace(/[«»"“”,;:.!?()]/g, '');
   for (let t = 0; t < n; t++) {
-    /* Dans l'ordre */
-    for (const m of manchesOrdre(6)) {
-      if (m.items.length !== 4) fautes.push('ordre : ' + m.items.length + ' récits');
-      for (let a = 0; a < m.items.length; a++) for (let b = a + 1; b < m.items.length; b++) {
-        const x = m.items[a], y = m.items[b];
-        if (Math.abs(x[0] - y[0]) < 2) fautes.push('ordre : rangs trop proches ' + x[0] + '/' + y[0]);
-        if ((x[3] || []).includes(y[0]) || (y[3] || []).includes(x[0])) fautes.push('ordre : ' + x[1][0] + ' / ' + y[1][0] + ' ne se départagent pas');
-      }
-    }
+    /* Range les livres (v354) : 4, 4, puis 5 livres ; toute la Bible à huit
+       rangs, puis un Testament à trois rangs, puis huit livres qui se
+       suivent ; jamais deux fois le même, jamais rangés d'avance. */
+    const ml = manchesLivres(6), vusL = new Set();
+    if (ml.length !== 6) fautes.push('livres : ' + ml.length + ' manches');
+    ml.forEach((m, k) => {
+      const t = m.livres.slice().sort((a, b) => a - b);
+      if (m.livres.length !== (k < 2 ? 4 : 5)) fautes.push('livres : manche ' + (k + 1) + ', ' + m.livres.length + ' livres');
+      if (m.livres.every((b, i) => i === 0 || m.livres[i - 1] < b)) fautes.push('livres : manche ' + (k + 1) + ' déjà rangée');
+      m.livres.forEach(b => { if (!(b >= 0 && b < 66)) fautes.push('livres : livre ' + b); if (vusL.has(b)) fautes.push('livres : ' + BIBLE_BOOKS[b] + ' deux fois'); vusL.add(b); });
+      const ecart = Math.min(...t.slice(1).map((b, i) => b - t[i]));
+      if (k < 2 && ecart < 8) fautes.push('livres : manche ' + (k + 1) + ', écart ' + ecart);
+      if (k >= 2 && k < 4 && (ecart < 3 || (t[0] < 39) !== (t[t.length - 1] < 39))) fautes.push('livres : manche ' + (k + 1) + ', ' + t.join(','));
+      if (k >= 4 && t[t.length - 1] - t[0] > 7) fautes.push('livres : manche ' + (k + 1) + ', trop large ' + t.join(','));
+    });
     /* Qui ? Où ? */
     for (const m of manchesQuiou(6)) {
       const lieux = m.paires.map(p => p[1][0]), qui = m.paires.map(p => p[0][0]);
@@ -257,8 +271,8 @@ const REGLES = (n) => {
 
     /* ===== 7. ANGLAIS ET ESPAGNOL ===== */
     const ATTENDU = {
-      en: { onglet: 'Games', duJour: 'Game of the day', tous: 'All games', noms: ['In order', 'Who? Where?', 'How many?', 'Spot the error', 'Verse in pieces'], bien: 'Well done!', savais: 'Did you know?', bible: 'kjv1769' },
-      es: { onglet: 'Juegos', duJour: 'Juego del día', tous: 'Todos los juegos', noms: ['En orden', '¿Quién? ¿Dónde?', '¿Cuántos?', 'Encuentra el error', 'Versículo en pedazos'], bien: '¡Bien hecho!', savais: '¿Lo sabías?', bible: 'rv1909' },
+      en: { onglet: 'Games', duJour: 'Game of the day', tous: 'All games', noms: ['Sort the books', 'Who? Where?', 'How many?', 'Spot the error', 'Verse in pieces'], bien: 'Well done!', savais: 'Did you know?', bible: 'kjv1769' },
+      es: { onglet: 'Juegos', duJour: 'Juego del día', tous: 'Todos los juegos', noms: ['Ordena los libros', '¿Quién? ¿Dónde?', '¿Cuántos?', 'Encuentra el error', 'Versículo en pedazos'], bien: '¡Bien hecho!', savais: '¿Lo sabías?', bible: 'rv1909' },
     };
     /* Du français dans un écran anglais ou espagnol : un accent que la langue
        n'écrit pas, ou un mot-outil qu'elle n'a pas. L'espagnol écrit « la »,

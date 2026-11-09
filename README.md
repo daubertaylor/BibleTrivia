@@ -30,6 +30,12 @@ politique de confidentialité). Ses textes sont ceux du jeu (Réglages →
 Confidentialité, Mentions légales) : `banc-essai/page-confidentialite.js`
 vérifie qu'ils le restent.
 
+**Range les livres (v354)** : dans l'onglet Jeux, il a pris la place de
+« Dans l'ordre ». Quatre ou cinq livres de la Bible, mélangés : on en prend
+un au doigt, il suit le doigt, les autres s'écartent, et il se pose là où on
+le lâche (ou l'on touche deux livres pour les échanger). « Valider » quand
+on veut. Il est vérifié par `banc-essai/livres.js`.
+
 **Le Parcours (v353)** : « le Duolingo de la Bible ». Un chemin dans l'ordre
 de la Bible, de la Genèse à l'Apocalypse : douze unités (`PARCOURS`), cinq
 leçons chacune, six questions par leçon, tirées des livres de l'unité, des

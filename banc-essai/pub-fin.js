@@ -113,7 +113,7 @@ const etat = (p) => p.evaluate(() => ({ ecran: state.screen, pauses: window.__pa
 
     /* 2 */
     const fautes2 = [];
-    for (const e of ['solo', 'revoir', 'groupe', 'ordre', 'quiou', 'combien', 'erreur', 'morceaux']) {
+    for (const e of ['solo', 'revoir', 'groupe', 'livres', 'quiou', 'combien', 'erreur', 'morceaux']) {
       const avant = await p.evaluate(() => window.__pauses.length);
       await FINIR(p, e);
       const r = await etat(p);

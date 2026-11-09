@@ -20,9 +20,11 @@
         savais-tu ? », et la ligne montre ce qui était à sa place ;
      8. en anglais et en espagnol : la consigne et « Valider » ;
      9. aucune erreur ;
-    10. DANS L'ORDRE et QUI ? OÙ ? ne se valident plus au dernier toucher
-        non plus : « Valider » s'allume quand tout est fait, et le dernier
-        geste se reprend avant de valider.
+    10. QUI ? OÙ ? ne se valide plus au dernier toucher non plus : « Valider »
+        s'allume quand tout est fait, et le dernier geste se reprend avant de
+        valider ; RANGE LES LIVRES (v354, à la place de « Dans l'ordre ») a
+        toujours tous ses livres en place : « Valider » est allumé dès le
+        départ, et une liste rangée ne se valide pas toute seule.
    Usage : node banc-essai/morceaux-main.js [url] */
 const { chromium } = require('/opt/node22/lib/node_modules/playwright');
 const URL = process.argv[2] || 'http://127.0.0.1:8099/index.html';
@@ -173,27 +175,28 @@ async function viserAvant(p, k) {
     dit('7. « Valider » faux : « Le savais-tu ? », la ligne montre ce qui était à sa place ; juste : « Bien joué ! », +10',
       avantFaux.valider === false && faux.label === 'Le savais-tu ?' && !faux.juste && faux.mal > 0 && faux.bien + faux.mal === n && juste.label === 'Bien joué !' && juste.juste && juste.points === 10,
       JSON.stringify({ avantFaux, faux, juste }));
-    /* 10. Dans l'ordre, Qui ? Où ? */
+    /* 10. Range les livres, Qui ? Où ? */
     const r10 = {};
-    for (const id of ['ordre', 'quiou']) {
+    for (const id of ['livres', 'quiou']) {
       await p.evaluate((id) => { jeu = null; lancerJeu(id); }, id);
       await p.waitForFunction(() => document.querySelectorAll('#app > .screen').length === 1 && document.getElementById('jxValider'), null, { timeout: 6000 });
       await p.waitForTimeout(600);
       const m = await p.evaluate(() => JSON.parse(JSON.stringify(mancheCourante())));
       const eteints = [];
-      if (id === 'ordre') {
-        const rangs = m.items.map((e, i) => [e[0], i]).sort((a, b) => a[0] - b[0]).map(x => x[1]);
-        for (const i of rangs) { eteints.push(await p.evaluate(() => document.getElementById('jxValider').disabled)); await p.locator(`#jxZone .jx-pas[data-i="${i}"]`).tap(); await p.waitForTimeout(120); }
+      if (id === 'livres') {
+        const allume = await p.evaluate(() => !document.getElementById('jxValider').disabled);
+        const cible = m.livres.slice().sort((a, b) => a - b);
+        for (let r = 0; r < cible.length; r++) {
+          const cur = await p.evaluate(() => mancheCourante().livres.slice());
+          if (cur[r] === cible[r]) continue;
+          await p.locator(`#jxZone .jx-livre[data-b="${cur[r]}"]`).tap(); await p.waitForTimeout(120);
+          await p.locator(`#jxZone .jx-livre[data-b="${cible[r]}"]`).tap(); await p.waitForTimeout(420);
+        }
         await p.waitForTimeout(600);
-        const plein = await p.evaluate(() => ({ revele: jeu.revele, eteint: document.getElementById('jxValider').disabled }));
-        /* le dernier se reprend… puis se remet */
-        const last = rangs[rangs.length - 1];
-        await p.locator(`#jxZone .jx-pas[data-i="${last}"]`).tap(); await p.waitForTimeout(150);
-        const repris = await p.evaluate(() => ({ n: mancheCourante().ordre.length, eteint: document.getElementById('jxValider').disabled }));
-        await p.locator(`#jxZone .jx-pas[data-i="${last}"]`).tap(); await p.waitForTimeout(150);
+        const plein = await p.evaluate(() => ({ revele: jeu.revele, eteint: document.getElementById('jxValider').disabled, range: mancheCourante().livres.join() }));
         await p.locator('#jxValider').tap();
         await p.waitForSelector('.jeu-ecran .fact-card', { timeout: 5000 });
-        r10[id] = { eteints, plein, repris, juste: await p.evaluate(() => jeu.juste) };
+        r10[id] = { allume, plein, cible: cible.join(), juste: await p.evaluate(() => jeu.juste) };
       } else {
         const n = m.paires.length;
         for (let i = 0; i < n; i++) {
@@ -208,8 +211,8 @@ async function viserAvant(p, k) {
         r10[id] = { eteints, plein, juste: await p.evaluate(() => jeu.juste) };
       }
     }
-    dit('10. Dans l\'ordre et Qui ? Où ? ne se valident plus au dernier toucher : « Valider » s\'allume quand tout est fait, le dernier geste se reprend',
-      r10.ordre && r10.ordre.eteints.every(x => x === true) && !r10.ordre.plein.revele && r10.ordre.plein.eteint === false && r10.ordre.repris.eteint === true && r10.ordre.juste === true
+    dit('10. Qui ? Où ? ne se valide plus au dernier toucher (« Valider » s\'allume quand tout est fait) ; Range les livres : « Valider » allumé dès le départ, et rangé, rien ne se valide tout seul',
+      r10.livres && r10.livres.allume && !r10.livres.plein.revele && r10.livres.plein.eteint === false && r10.livres.plein.range === r10.livres.cible && r10.livres.juste === true
       && r10.quiou && r10.quiou.eteints.every(x => x === true) && !r10.quiou.plein.revele && r10.quiou.plein.eteint === false && r10.quiou.juste === true, JSON.stringify(r10));
     p._errs.forEach(e => errs.push(e));
     await ctx.close();

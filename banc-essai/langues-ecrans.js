@@ -514,8 +514,8 @@ const ouvrirLaLangue = async (p, lg) => {
        SIX PLACES). */
     ['Groupe · la page d\'un joueur', () => { __fermerTout(); state.mode='group';
       state.teams=[{name:'Taylor'},{name:'Joueur 2'},{name:'Joueur 3'}]; state.screen='setup'; render(); ouvrirJoueur(1); }],
-    /* (v345) Le déroulé du Mode Groupe vit dans sa page, « Comment jouer »,
-       ouverte par le rond (i) de la carte des joueurs. */
+    /* (v345) Le déroulé du Mode Groupe, « Comment jouer », ouvert par le
+       rond (i) de la carte des joueurs — (v354) dans une petite fenêtre. */
     ['Groupe · comment jouer', () => { __fermerTout(); state.mode='group';
       state.teams=[{name:'Taylor'},{name:'Joueur 2'}]; state.screen='setup'; render(); ouvrirDeroule(); }],
   ];
@@ -1143,10 +1143,10 @@ const ouvrirLaLangue = async (p, lg) => {
      place. */
   const JEUX_ETAPES = [
     ['Jeux · l\'écran', () => { __fermerTout(); jeu = null; localStorage.removeItem('bt_jeux'); state.screen = 'jeux'; render(); majBarre(); }],
-    ['Jeux · records', () => { __fermerTout(); jeu = null; localStorage.setItem('bt_jeux', JSON.stringify({ ordre:{ record:83, parties:2 }, combien:{ record:100, parties:1 } }));
+    ['Jeux · records', () => { __fermerTout(); jeu = null; localStorage.setItem('bt_jeux', JSON.stringify({ livres:{ record:83, parties:2 }, combien:{ record:100, parties:1 } }));
       state.screen = 'jeux'; render(); }],
   ];
-  for (const id of ['ordre', 'quiou', 'combien', 'erreur', 'morceaux']) {
+  for (const id of ['livres', 'quiou', 'combien', 'erreur', 'morceaux']) {
     const lancer = (id) => { __fermerTout(); let g = 4242; const r = Math.random;
       Math.random = () => (g = (g * 16807) % 2147483647) / 2147483647;
       try { lancerJeu(id); } finally { Math.random = r; } };
@@ -1166,7 +1166,7 @@ const ouvrirLaLangue = async (p, lg) => {
     ['Jeux · quitter ?', () => { __fermerTout(); lancerJeu('combien'); quitterJeu(); }],
     ['Jeux · fin, record', () => { __fermerTout(); jeu = { id:'combien', manches:new Array(10).fill(0), i:9, revele:true, juste:true,
       points:100, bons:10, serie:10, meilleure:10, vu:9, pct:100, nouveau:true, record:80 }; state.screen = 'jeu-fin'; render(); }],
-    ['Jeux · fin, belle partie', () => { __fermerTout(); jeu = { id:'ordre', manches:new Array(6).fill(0), i:5, revele:true, juste:false,
+    ['Jeux · fin, belle partie', () => { __fermerTout(); jeu = { id:'livres', manches:new Array(6).fill(0), i:5, revele:true, juste:false,
       points:40, bons:4, serie:0, meilleure:3, vu:5, pct:67, nouveau:false, record:83 }; state.screen = 'jeu-fin'; render(); }],
     ['Jeux · fin, à rejouer', () => { __fermerTout(); jeu = { id:'erreur', manches:new Array(8).fill(0), i:7, revele:true, juste:false,
       points:20, bons:2, serie:0, meilleure:1, vu:7, pct:25, nouveau:false, record:null }; state.screen = 'jeu-fin'; render(); }],
