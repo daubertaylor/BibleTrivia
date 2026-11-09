@@ -5898,7 +5898,9 @@
      elle est, et coïncide à chaque image avec le décor qu'elle recouvre. Le
      verre des cartes qui glissent fait de même (voir LE VERRE DE L'ÉCRAN QUI
      GLISSE) : il montre le décor qui est derrière lui là où il passe, pas
-     celui de sa place d'arrivée. */
+     celui de sa place d'arrivée.
+     (v356 : plus de copie du décor. v357 : les écrans sont côte à côte et
+     glissent ensemble — voir LES ÉCRANS SONT CÔTE À CÔTE.) */
   html .screen.screen-enter.pousse{ animation:none; }
   html .screen.screen-exit.reste, html .screen.screen-exit.retire{ animation:none; opacity:1; }
   /* CHAQUE ÉCRAN DANS SON PLAN. Ce qu'un écran pose au-dessus de lui-même
@@ -11707,7 +11709,7 @@ const SUPABASE_ANON_KEY = "sb_publishable_FDJ_R0foC7uIeHmxVrj6rA_2NeIgW2a";
    remontée d'un téléphone ne vaut rien si on ne sait pas QUELLE version
    tournait. Elle doit rester égale au CACHE de sw.js — c'est ce que vérifie
    banc-essai/version.js, qui refuse de laisser publier les deux en désaccord. */
-const VERSION_JEU = "v356";
+const VERSION_JEU = "v357";
 
 /* ===================== QUAND ÇA CASSE CHEZ UN JOUEUR =====================
    « Si quelque chose casse chez cinq d'entre eux sur un modèle de téléphone
@@ -23951,6 +23953,10 @@ function animerLaJauge(node){
     for(let i=0;i<j.length;i++) j[i].style.transition = "";
     /* …et avance une fois l'écran posé (son arrivée finie). */
     const arrivee = (node.getAnimations ? node.getAnimations() : []).filter(a => a.playState === "running");
+    /* (v357) Le glissement d'un écran est préparé pendant le rendu et lancé
+       à sa fin (voir LE GLISSEMENT D'UN ÉCRAN EST PRÉPARÉ) : il ne figure pas
+       encore parmi ses animations. On attend donc aussi celui du passage. */
+    if(passage && passage.entrant === node) passage.anims.forEach(a => { if(arrivee.indexOf(a) < 0) arrivee.push(a); });
     const avancer = ()=> setTimeout(()=>{ for(let i=0;i<j.length;i++){ if(j[i].isConnected) j[i].style.setProperty("--m", m); } }, 90);
     if(arrivee.length) Promise.all(arrivee.map(a => a.finished.catch(()=>{}))).then(avancer); else avancer();
   }catch(e){}
@@ -35136,16 +35142,37 @@ function renderOnlineEnd(){
    « Rejouer » depuis les résultats). Les feuilles, elles, montent comme avant.
    Seul l'écran d'ouverture (splash) garde sa montée : c'est une arrivée, pas
    un déplacement. */
-/* ===== (v345) PASSAGE D'UN ÉCRAN À L'AUTRE =====
-   (Voir UNE SEULE ANIMATION DE CHANGEMENT D'ÉCRAN, dans la feuille de style.)
-   « pousse » : l'écran qui arrive entre par la droite et recouvre celui
-   qu'on quitte, resté immobile. « retour » : l'écran qu'on quitte repart
-   vers la droite et découvre, déjà posé, celui où l'on revient.
-   Le mouvement est conduit ici (Web Animations) plutôt que par une classe :
-   il part d'une position MESURÉE — un retour demandé pendant qu'un écran
-   arrive le renvoie d'où il en est, sans saut — et un rendu sur place
-   pendant le mouvement le reprend au même instant, à la même horloge que
-   sa copie du décor. */
+/* ===== (v357) LES ÉCRANS SONT CÔTE À CÔTE =====
+   « Pour l'animation de changement de page, j'aime pas du tout, ça saute
+     brusquement. » « Je veux une vraie animation qui soit cohérente avec le
+     reste du jeu, qui passe bien. » Et déjà (v345) : « J'aime beaucoup
+     l'animation d'ouverture des Réglages : je veux que tout le jeu ait
+     exactement la même animation. »
+   Un écran arrive donc comme les Réglages : par la droite, de toute la
+   largeur, sur l'horloge et la courbe des pages et de tous les plis du jeu
+   (--tr-ouvre : 0,52 s, une courbe qui ralentit — le quart du chemin en
+   50 ms, 87 % à mi-horloge). Mais un écran du jeu est transparent, posé sur
+   la photo du décor : il ne peut pas RECOUVRIR l'autre comme une page
+   crème. Les écrans sont donc côte à côte, et celui qui arrive POUSSE celui
+   qu'on quitte : les deux glissent ENSEMBLE, collés l'un à l'autre. En
+   avançant, l'écran quitté part vers la gauche et le suivant arrive de la
+   droite ; en revenant, l'inverse ; entre deux onglets, le sens de la
+   barre (sa pastille file du même côté).
+   Rien ne fond : l'écran n'est jamais vide (entre les deux, il n'y a que
+   leurs marges) et deux écrans ne se superposent jamais. Le décor ne bouge
+   pas — c'est le même derrière tous les écrans, il n'y a rien à copier ni
+   à raccorder. Le verre de chaque carte fait le chemin inverse de son écran
+   et montre, à chaque image, le décor qui est derrière lui (voir LE VERRE
+   DE L'ÉCRAN QUI GLISSE). La barre du bas glisse avec l'écran qui la
+   porte ; entre deux écrans qui la portent, elle reste.
+   Le déplacement passe par la propriété « translate » : « transform » reste
+   au défilement maison des écrans et au centrage de la barre.
+   CE QUI A ÉTÉ ESSAYÉ AVANT. v345 à v355 : l'écran arrivait PAR-DESSUS
+   l'autre, avec une copie du décor (pour paraître plein) et une ombre —
+   lourd, et une copie à raccorder au pixel près (« le trait rouge », v348).
+   v356 : un fondu ; entre les deux écrans il ne restait un instant que la
+   photo — le saut. Une cascade de cartes (essayée pour la v357, jamais
+   publiée) restait un effet de surface, pas un déplacement. */
 let passage = null;
 function courbeDe(nom, defaut){
   try{
@@ -35155,154 +35182,113 @@ function courbeDe(nom, defaut){
   }catch(e){}
   return defaut;
 }
-/* La copie du décor : la boîte visible de #app, et dedans la photo, la
-   vignette et le grain posés exactement là où sont les originaux. (v348)
-   Ils sont rangés dans .fp-decor, qui fera le chemin inverse de la boîte
-   (voir LE DÉCOR NE BOUGE PAS) : f._decor. */
-function fondDuPassage(app){
-  const f = document.createElement("div");
-  f.className = "fond-pousse";
-  f.setAttribute("aria-hidden", "true");
-  const d = document.createElement("div");
-  d.className = "fp-decor";
-  f.appendChild(d);
-  f._decor = d;
-  const ra = app.getBoundingClientRect();
-  const ax = ra.left + app.clientLeft, ay = ra.top + app.clientTop;
-  f.style.left = app.scrollLeft + "px";
-  f.style.top = app.scrollTop + "px";
-  f.style.width = app.clientWidth + "px";
-  f.style.height = app.clientHeight + "px";
-  [["bg-layer", "ov-fond"], ["bg-overlay", "ov-vignette"], ["bg-grain", "ov-grain"]].forEach(([id, cl])=>{
-    const o = document.getElementById(id); if(!o) return;
-    const r = o.getBoundingClientRect();
-    const c = document.createElement("div");
-    c.className = cl;
-    c.style.left = (r.left - ax) + "px"; c.style.top = (r.top - ay) + "px";
-    c.style.width = r.width + "px"; c.style.height = r.height + "px";
-    d.appendChild(c);
-  });
-  return f;
-}
-function glisserX(el, de, a, ms, courbe){
-  try{ return el.animate([{ transform:"translate3d(" + de + "px,0,0)" }, { transform:"translate3d(" + a + "px,0,0)" }], { duration:ms, easing:courbe, fill:"both" }); }
-  catch(e){ return null; }
-}
-function xCourant(el){
-  try{ const t = getComputedStyle(el).transform; if(t && t !== "none") return new DOMMatrixReadOnly(t).m41; }catch(e){}
+/* Où en est un écran (ou la barre) dans son glissement. */
+function xGlisse(el){
+  try{ const v = getComputedStyle(el).translate; if(v && v !== "none") return parseFloat(v) || 0; }catch(e){}
   return 0;
 }
-/* ===== (v356) LE PASSAGE D'UN ÉCRAN À L'AUTRE EST UN FONDU =====
-   « Pour les animations de transition, je veux que tu trouves des animations
-     meilleures. J'aime bien la plupart des animations pour aller sur les
-     côtés, dans des vrais menus blancs. Mais pour se déplacer — dans
-     l'accueil, dans le jeu, dans le groupe, ou même pour aller dans le
-     profil —, je trouve que c'est pas plaisant du tout. […] Je veux un truc
-     qui soit clean, qui fonctionne parfaitement sur tout type d'appareil
-     sans faire bugger. »
-   CE QUI GLISSAIT (v345 à v355). Un écran arrivait comme une page : de
-   toute la largeur, par la droite, en emportant une copie du décor — sans
-   elle on aurait vu l'écran quitté au travers —, une ombre sur son bord,
-   et, pour que la photo ne voyage pas, la copie et le verre de chaque carte
-   faisaient le chemin inverse, image par image. Sur une page unie (les
-   Réglages), glisser est naturel : c'est une feuille qu'on pose. Sur la
-   photo du jeu, c'était un pan du monde qui coulissait, avec son bord et
-   son ombre, et le travail le plus lourd du jeu à chaque déplacement.
-   CE QUI LE REMPLACE. Le décor est le même derrière tous les écrans : il ne
-   bouge plus du tout, et seuls les écrans changent, en fondu — le « fade
-   through » d'Android (Material), fait pour passer d'une destination à une
-   autre, à ses mesures : l'écran quitté s'efface en 0,09 s ; celui qui
-   arrive apparaît ENSUITE, en 0,21 s, en ralentissant. Jamais les deux à la
-   fois : un fondu enchaîné superposait leurs textes un instant (mesuré à
-   45 % chacun, 80 ms après le geste). Rien d'autre : pas de copie du décor,
-   pas de contre-mouvement du verre (rien ne se déplace, il n'y a rien à
-   compenser), pas d'ombre. Juste l'opacité, que tous les téléphones
-   composent sans repeindre.
-   ET PAS D'ÉCHELLE. Le fondu de Material grossit aussi l'écran qui arrive ;
-   le nôtre l'a fait (de 98,5 % à 100 %) le temps d'un essai, et l'a payé :
-   dans Chrome, un écran qui a été mis à l'échelle reste ensuite dessiné à
-   une fraction de pixel de sa place — tous les textes et tous les bords
-   décalés d'un tiers de pixel, donc un peu flous, jusqu'au rendu suivant
-   (relevé image par image sur le Mode Groupe, contre la v355 ; un fondu
-   d'opacité seule rend l'écran au pixel près). « Sur tout type d'appareil,
-   sans faire bugger » : on garde la seule propriété qui ne touche ni à la
-   mise en page ni au dessin.
-   La barre du bas fait comme son écran : elle s'efface avec lui, ou
-   apparaît avec lui ; entre deux onglets, elle reste, et seule sa pastille
-   glisse. Les PAGES (Réglages, Profil d'un joueur…) et les FEUILLES gardent
-   leur arrivée par le côté ou par le bas : ce sont des choses qu'on pose
-   sur l'écran, pas des déplacements. */
-const PASSAGE_SORTIE = 90, PASSAGE_DECALE = 90, PASSAGE_ENTREE = 210;
-const PASSAGE_SORT = "cubic-bezier(0.4,0,1,1)", PASSAGE_ENTRE = "cubic-bezier(0,0,0.2,1)";
-/* Un écran qui apparaissait encore quand on l'a quitté (un geste rapide)
-   repart de l'opacité où il en était, gardée en style par finirPassage :
-   jamais d'éclair à pleine opacité avant de s'effacer. */
-function opaciteGardee(el){
-  const o = el && el.style ? el.style.opacity : "";
-  return o === "" ? null : Math.max(0, Math.min(1, parseFloat(o) || 0));
-}
-function animSortie(el){
+/* LE GLISSEMENT D'UN ÉCRAN EST PRÉPARÉ, PUIS LANCÉ À LA FIN DU RENDU.
+   Un élément qui porte une translation devient le repère (offsetParent) de
+   ce qu'il contient. Le moteur du verre cale ses couches en additionnant
+   ces repères, au pixel entier : lancé tout de suite, le glissement
+   changeait le repère des cartes au moment où le moteur les calait, et
+   l'arrondi tombait parfois de l'autre côté — le verre de la carte
+   Progression restait décalé d'un pixel tout le passage (mesuré). L'animation
+   est donc créée à l'arrêt ; verreDuPassage la lance, une fois le verre calé
+   sur la vraie mise en page, dans le même rendu (aucune image entre les
+   deux). */
+function glisser(el, de, a, p){
   try{
-    const g = opaciteGardee(el), de = g === null ? 1 : g;
-    return el.animate([{ opacity:de }, { opacity:0 }],
-      { duration:Math.round(PASSAGE_SORTIE * Math.max(0.3, de)), easing:PASSAGE_SORT, fill:"both" });
-  }catch(e){ return null; }
+    const x = new Animation(new KeyframeEffect(el, [{ translate:de + "px 0px" }, { translate:a + "px 0px" }], { duration:p.duree, easing:p.courbe, fill:"both" }), document.timeline);
+    x._glisse = [de, a];
+    return x;
+  }catch(e){
+    try{ const x = el.animate([{ translate:de + "px 0px" }, { translate:a + "px 0px" }], { duration:p.duree, easing:p.courbe, fill:"both" }); x._glisse = [de, a]; return x; }
+    catch(e2){ return null; }
+  }
 }
-function animEntree(el){
-  try{
-    return el.animate([{ opacity:0 }, { opacity:1 }], { duration:PASSAGE_ENTREE, delay:PASSAGE_DECALE, easing:PASSAGE_ENTRE, fill:"both" });
-  }catch(e){ return null; }
+/* Lance ce qui a été préparé : à l'instant de départ du passage s'il est
+   déjà parti (un écran repris en route), sinon avec tout le reste, à la
+   prochaine image. */
+function lancerGlissements(p){
+  p.anims.forEach(a => {
+    try{
+      if(a.playState !== "idle") return;
+      if(a._depart !== undefined && a._depart !== null) a.startTime = a._depart; else a.play();
+    }catch(e){}
+  });
 }
 function lancerPassage(app, entrant, sortant, retour, xDepart){
-  const duree = PASSAGE_DECALE + PASSAGE_ENTREE;
-  const p = { genre: retour ? "retour" : "pousse", fondu:true, debut: performance.now(), duree, courbe:PASSAGE_ENTRE, dx:0, x0:0, entrant, sortant, fond:null, anims: [], contre: [] };
-  p.anims.push(animSortie(sortant), animEntree(entrant));
+  const W = app.clientWidth || window.innerWidth || 0;
+  /* Le sens du contenu : vers la droite au retour, vers la gauche à l'aller. */
+  const d = retour ? 1 : -1;
+  /* L'écran quitté part d'où il est — un geste rapide le prend en route —,
+     et celui qui arrive reste collé à lui : les deux font le même chemin. */
+  const x0 = Math.max(-W, Math.min(W, xDepart || 0));
+  const p = { genre: retour ? "retour" : "pousse", cote:true, debut: performance.now(), duree: msPli(),
+              courbe: courbeDe("--tr-ouvre", "cubic-bezier(0.33,1,0.68,1)"), W, d, x0,
+              sortantDe: x0, sortantA: d * W, entrantDe: x0 - d * W,
+              entrant, sortant, fond:null, anims: [], contre: [] };
+  p.anims.push(glisser(sortant, p.sortantDe, p.sortantA, p), glisser(entrant, p.entrantDe, 0, p));
   p.anims = p.anims.filter(Boolean);
   passage = p;
-  /* Fini quand le fondu l'est VRAIMENT — une première image lente le fait
-     partir plus tard que prévu —, avec un filet s'il ne finissait pas. */
+  /* Fini quand le mouvement l'est VRAIMENT — une première image lente le
+     fait partir plus tard que prévu —, avec un filet s'il ne finissait pas. */
   const fin = ()=>{ if(passage === p) finirPassage(true); };
   Promise.all(p.anims.map(a => a.finished)).then(fin, ()=>{});
-  p.t = setTimeout(fin, duree + 1500);
+  p.t = setTimeout(fin, p.duree + 1500);
   if(!p.anims.length) fin();
 }
 /* Un rendu sur place pendant que l'écran arrive : le nœud neuf reprend le
-   fondu à l'instant exact de l'ancien (même départ sur l'horloge). */
+   mouvement à l'instant exact de l'ancien (même départ sur l'horloge). */
 function reprendrePassage(vieux, node){
   const p = passage;
   if(!p) return false;
   const a0 = p.anims.find(a => { try{ return a.effect && a.effect.target === vieux; }catch(e){ return false; } });
   node.classList.add("screen-enter", "arrivee", "pousse");
-  const a = animEntree(node);
+  const a = glisser(node, p.entrantDe, 0, p);
   let t = 0;
   if(a){
-    try{ if(a0 && a0.startTime !== null){ a.startTime = a0.startTime; t = a0.currentTime || 0; } }catch(e){}
+    try{ if(a0 && a0.startTime !== null){ a._depart = a0.startTime; t = a0.currentTime || 0; } }catch(e){}
     p.anims.push(a);
   }
   p.entrant = node;
   setTimeout(()=>{ node.classList.remove("arrivee"); fitScroll(); }, Math.max(60, apresEntree() - t));
   return true;
 }
-/* ===== (v348) LE VERRE DE L'ÉCRAN QUI GLISSE =====
+/* ===== (v348, v357) LE VERRE DE L'ÉCRAN QUI GLISSE =====
    Le verre d'une carte est une fenêtre sur le décor (la couche .gs, calée
-   sur la place de repos de la carte). Tant que le décor glissait avec
-   l'écran, il suffisait qu'elle glisse aussi. Le décor ne bouge plus (voir
-   LE DÉCOR NE BOUGE PAS) : la couche de chaque carte de l'écran qui bouge
-   fait donc, comme lui, le chemin inverse de l'écran — même horloge, même
-   courbe. Elle montre à chaque image le morceau de décor qui est
-   réellement derrière la carte, et arrive sur son calage de repos, exact :
-   au dégel, le moteur ne trouve rien à corriger.
-   Le moteur est gelé pendant le passage (glassFreezeForTransition) et ne
-   réécrit pas le calage : on part du calage écrit, tel quel, et l'on
-   ajoute la translation devant. Une couche pleine (.gs-plein) n'a pas de
-   décor : elle suit sa carte. Même chose pour la barre du bas quand elle
-   glisse avec sa page (glisserBarre). Appelé à la fin de chaque rendu,
-   une fois le verre posé : un écran repris en route (reprendrePassage)
-   reçoit le même contre-mouvement, à l'instant où en est le passage. */
-function contreGlisser(gs, de, a, p){
-  const t = gs.style.transform || "";
+   sur la place de repos de la carte). Le décor ne bouge pas : quand un écran
+   glisse, la couche de chaque carte qu'il porte fait le chemin inverse —
+   même horloge, même courbe, même instant de départ. Elle montre à chaque
+   image le morceau de décor qui est réellement derrière la carte, et finit
+   sur son calage de repos, exact : au dégel, le moteur ne trouve rien à
+   corriger. Elle passe, elle aussi, par « translate » : son calage, écrit
+   dans « transform » par le moteur, n'est pas touché.
+   Le moteur est gelé pendant le passage (glassFreezeForTransition). Une
+   couche pleine (.gs-plein) n'a pas de décor : elle suit sa carte. Même
+   chose pour la barre du bas quand elle glisse avec sa page. Appelé à la
+   fin de chaque rendu, une fois le verre posé : c'est ici que les écrans
+   partent (voir LE GLISSEMENT D'UN ÉCRAN EST PRÉPARÉ), et qu'un écran repris
+   en route (reprendrePassage) reçoit son mouvement et son contre-mouvement,
+   à l'instant où en est le passage. */
+/* LE CHEMIN EST COMPTÉ DANS LA CARTE. Une carte dessinée plus petite (le
+   verset de l'accueil est à 82 %, scale(0.82)) réduit aussi le chemin de sa
+   couche : 400 px demandés n'en faisaient que 328 à l'écran, et son verre
+   glissait de 63 px sur le décor à mi-chemin (mesuré). On divise donc le
+   chemin par l'échelle de la carte, lue sur sa taille réelle. */
+function echelleCarte(el){
   try{
-    const x = gs.animate([{ transform:"translate3d(" + de + "px,0,0) " + t }, { transform:"translate3d(" + a + "px,0,0) " + t }], { duration:p.duree, easing:p.courbe, fill:"both" });
+    const w = parseFloat(getComputedStyle(el).width), r = el.getBoundingClientRect().width;
+    const k = (w > 0 && r > 0) ? r / w : 1;
+    return (k > 0.05 && k < 20) ? k : 1;
+  }catch(e){ return 1; }
+}
+function contreGlisser(gs, de, a, p){
+  if(gs._passage === p) return;
+  try{
+    const k = echelleCarte(gs.parentElement);
+    const x = gs.animate([{ translate:(-de / k) + "px 0px" }, { translate:(-a / k) + "px 0px" }], { duration:p.duree, easing:p.courbe, fill:"both" });
     const a0 = p.anims[0];
     if(a0 && a0.startTime !== null) x.startTime = a0.startTime;
     gs._passage = p;
@@ -35311,117 +35297,79 @@ function contreGlisser(gs, de, a, p){
 }
 function verreDuPassage(){
   const p = passage;
-  /* (v356) Un fondu ne déplace rien : le verre n'a rien à compenser. */
-  if(!p || !p.contre || p.fondu) return;
-  const ecran = p.genre === "pousse" ? p.entrant : p.sortant;
-  const de = p.genre === "pousse" ? -p.dx : -p.x0, a = p.genre === "pousse" ? 0 : -p.dx;
-  if(ecran && ecran.isConnected){
-    ecran.querySelectorAll(".gs:not(.gs-plein)").forEach(gs => { if(gs._passage !== p) contreGlisser(gs, de, a, p); });
-  }
-  const g = p.barreGlisse, b = g && document.getElementById("barreBas");
-  const bgs = b && b._gs;
-  if(bgs && bgs.parentNode === b && !bgs.classList.contains("gs-plein") && bgs._passage !== p) contreGlisser(bgs, -g.de, -g.a, p);
+  if(!p || !p.cote) return;
+  lancerGlissements(p);
+  [[p.sortant, p.sortantDe, p.sortantA], [p.entrant, p.entrantDe, 0]].forEach(([ecran, de, a]) => {
+    if(ecran && ecran.isConnected) ecran.querySelectorAll(".gs:not(.gs-plein)").forEach(gs => contreGlisser(gs, de, a, p));
+  });
+  const g = p.barreGlisse, b = g && document.getElementById("barreBas"), bgs = b && b._gs;
+  if(bgs && bgs.parentNode === b && !bgs.classList.contains("gs-plein")) contreGlisser(bgs, g.de, g.a, p);
 }
-/* Le passage se termine : la copie du décor s'en va (elle coïncide avec
-   l'original), l'écran quitté aussi, et plus aucune animation ne tient
-   l'écran posé. « fini » : le mouvement est allé au bout (la barre du bas se
-   recale alors sur l'écran) ; sinon un autre passage le remplace et décide. */
+/* Le passage se termine : l'écran quitté s'en va, et plus aucune animation
+   ne tient l'écran posé. « fini » : le mouvement est allé au bout (la barre
+   du bas se recale alors sur l'écran) ; sinon un autre passage le remplace,
+   dans le même rendu, et repart d'où en était l'écran (voir xDepart). */
 function finirPassage(fini){
   const p = passage; if(!p) return;
   passage = null;
   clearTimeout(p.t);
-  /* (v356) Interrompu par un autre changement d'écran, l'écran qui
-     apparaissait garde l'opacité où il en est : c'est de là qu'il
-     s'effacera (voir animSortie). Fini, il est tout entier à lui-même. */
-  if(p.fondu && p.entrant && p.entrant.style){
-    if(fini) p.entrant.style.opacity = "";
-    else { try{ p.entrant.style.opacity = getComputedStyle(p.entrant).opacity; }catch(e){} }
-  }
   p.anims.forEach(a => { try{ a.cancel(); }catch(e){} });
   (p.contre || []).forEach(a => { try{ a.cancel(); }catch(e){} });
-  if(p.fond && p.fond.parentNode) p.fond.remove();
   if(p.sortant && p.sortant.parentNode) p.sortant.remove();
   /* « pousse » reste avec « screen-enter » (elles partent ensemble, plus
      bas dans render) : seule, « screen-enter » relancerait l'ancienne
      entrée par le bas — mesuré : 122 px de saut sur l'écran du salon, à la
      fin du glissement. */
   if(p.entrant && p.entrant.classList) p.entrant.classList.remove("sous-retour");
-  /* Un rendu sur place a pu remplacer l'écran posé dessous : on retire la
-     marque de tout écran resté. */
   try{ document.querySelectorAll("#app > .screen.sous-retour").forEach(e => e.classList.remove("sous-retour")); }catch(e){}
   if(typeof p.barreFin === "function"){ try{ p.barreFin(fini); }catch(e){} }
   if(fini){ try{ majBarre(); }catch(e){} }
 }
 /* LA BARRE DU BAS SUIT LE PASSAGE. Elle vit hors des écrans, posée
    au-dessus : on lui fait faire ce que ferait sa page. Elle part avec
-   l'écran qu'on quitte en se laissant recouvrir par celui qui arrive —
-   rognée exactement au bord de la page qui glisse, ombre comprise —, elle
-   revient découverte par l'écran qui repart, ou elle arrive avec l'écran
-   qui la porte. Entre Accueil et Groupes elle reste : seule la pastille
+   l'écran qu'on quitte, du même mouvement ; elle arrive avec l'écran qui la
+   porte. Entre deux écrans qui la portent, elle reste : seule la pastille
    glisse. « cachee » : elle est rangée ; « montre » : l'écran la veut. */
 function barreSuitLePassage(b, cachee, montre){
   const p = passage;
-  if(!p) return false;
-  /* Un fondu interrompu l'a laissée à mi-chemin, son opacité gardée en
-     style : elle repart de là, quoi qu'on lui demande. */
-  const mi = opaciteGardee(b);
-  if(cachee !== montre && mi === null) return false;
+  if(!p || !p.cote) return false;
+  /* Prise en route par un geste rapide : elle repart d'où elle était. */
+  const enRoute = b._xEnRoute || 0;
+  b._xEnRoute = 0;
+  if(cachee !== montre){
+    /* Elle reste (ou reste rangée). Sauf si elle était en route : elle
+       rejoint alors sa place sur la même horloge, au lieu d'y sauter. */
+    if(!montre || !enRoute) return false;
+    const a = glisserBarre(b, enRoute, 0, p);
+    p.barreFin = (fini)=>{ if(!fini) b._xEnRoute = xGlisse(b); if(a){ try{ a.cancel(); }catch(e){} } };
+    return true;
+  }
   clearTimeout(b._finMouvement);
   b.classList.remove("arrive-g", "arrive-d", "part-cote", "part-g");
-  /* (v356) Elle s'efface avec l'écran qu'on quitte, ou apparaît avec celui
-     qui arrive : le même fondu, à la même horloge (voir LE PASSAGE D'UN
-     ÉCRAN À L'AUTRE EST UN FONDU). */
-  const de = mi !== null ? mi : (cachee ? 0 : 1);
-  b.classList.add("sans-transition"); b.classList.remove("cachee");
-  void b.offsetWidth; b.classList.remove("sans-transition");
   b.style.opacity = "";
-  const a = montre ? fondreBarre(b, de, 1, PASSAGE_DECALE, PASSAGE_ENTREE, PASSAGE_ENTRE)
-                   : fondreBarre(b, de, 0, 0, Math.round(PASSAGE_SORTIE * Math.max(0.3, de)), PASSAGE_SORT);
-  p.barreFin = (fini)=>{
-    if(!fini){
-      /* Interrompue : elle reste où elle en est, pour le fondu suivant. */
-      let o = montre ? 1 : 0;
-      try{ o = parseFloat(getComputedStyle(b).opacity); }catch(e){}
+  if(!montre){
+    /* Elle part avec l'écran qu'on quitte, puis se range sans qu'on la voie. */
+    const a = glisserBarre(b, p.sortantDe, p.sortantA, p);
+    p.barreFin = ()=>{
+      b.classList.add("sans-transition", "cachee");
       if(a){ try{ a.cancel(); }catch(e){} }
-      b.style.opacity = String(Math.round(o * 1000) / 1000);
-      return;
-    }
-    if(!montre) b.classList.add("sans-transition", "cachee");
-    if(a){ try{ a.cancel(); }catch(e){} }
-    if(!montre){ void b.offsetWidth; b.classList.remove("sans-transition"); }
-  };
+      void b.offsetWidth; b.classList.remove("sans-transition");
+    };
+  } else {
+    /* Elle arrive avec l'écran qui la porte, collée à lui. */
+    b.classList.add("sans-transition"); b.classList.remove("cachee");
+    void b.offsetWidth; b.classList.remove("sans-transition");
+    const a = glisserBarre(b, p.entrantDe, 0, p);
+    p.barreFin = (fini)=>{ if(!fini) b._xEnRoute = xGlisse(b); if(a){ try{ a.cancel(); }catch(e){} } };
+  }
   return true;
-}
-function fondreBarre(b, de, a, delai, duree, courbe){
-  try{ return b.animate([{ opacity:de }, { opacity:a }], { duration:duree, delay:delai, easing:courbe, fill:"both" }); }
-  catch(e){ return null; }
-}
-/* Rognée au bord de la page qui glisse : ce bord va de x0 à x0 + dx, sur la
-   courbe du passage ; la barre n'est visible qu'à sa gauche. Le rognage est
-   linéaire dans le bord, donc dans la progression adoucie : des étapes
-   placées dans cet espace (la courbe est celle de l'animation entière)
-   tombent juste, sans échantillonnage. */
-function rognerBarre(b, x0, dx, p){
-  try{
-    const r = b.getBoundingClientRect();
-    const S = 64;
-    const f = (e)=> Math.max(-S, Math.min(r.width + S, r.right - (x0 + dx * e)));
-    const pts = [0, 1];
-    if(dx) [(r.right - x0 + S) / dx, (r.left - x0 - S) / dx].forEach(e => { if(e > 0 && e < 1) pts.push(e); });
-    pts.sort((u, v) => u - v);
-    const kf = pts.map(e => ({ offset:e, clipPath:"inset(" + (-S) + "px " + f(e).toFixed(2) + "px " + (-S) + "px " + (-S) + "px)" }));
-    const a = b.animate(kf, { duration:p.duree, easing:p.courbe, fill:"both" });
-    const a0 = p.anims[0];
-    if(a0 && a0.startTime !== null) a.startTime = a0.startTime;
-    return a;
-  }catch(e){ return null; }
 }
 function glisserBarre(b, de, a, p){
   /* (v348) Son verre fera le chemin inverse (voir LE VERRE DE L'ÉCRAN QUI
      GLISSE), une fois posé par le moteur. */
   p.barreGlisse = { de, a };
   try{
-    const x = b.animate([{ transform:"translate3d(calc(-50% + " + de + "px),0,0)" }, { transform:"translate3d(calc(-50% + " + a + "px),0,0)" }], { duration:p.duree, easing:p.courbe, fill:"both" });
+    const x = b.animate([{ translate:de + "px 0px" }, { translate:a + "px 0px" }], { duration:p.duree, easing:p.courbe, fill:"both" });
     const a0 = p.anims[0];
     if(a0 && a0.startTime !== null) x.startTime = a0.startTime;
     return x;
@@ -35581,7 +35529,7 @@ function render(){
      qui arrivait : si c'est lui qu'on quitte, il repart de là. */
   let xDepart = 0;
   if(!sameScreen && passage){
-    if(passage.genre === "pousse" && passage.entrant && passage.entrant.isConnected) xDepart = xCourant(passage.entrant);
+    if(passage.entrant && passage.entrant.isConnected) xDepart = xGlisse(passage.entrant);
     finirPassage(false);
   }
 
@@ -35590,8 +35538,8 @@ function render(){
        retire aussi de tout écran resté en place, pour qu'elle ne traîne jamais. */
     Array.prototype.forEach.call(app.children, (c)=>{ if(c && c.classList) c.classList.remove("arrivee"); });
     node.classList.add("arrivee");
-    /* (v356) Qu'on avance ou qu'on revienne, l'écran qui arrive apparaît en
-       fondu (voir LE PASSAGE D'UN ÉCRAN À L'AUTRE EST UN FONDU). */
+    /* (v357) Qu'on avance ou qu'on revienne, l'écran qui arrive glisse,
+       collé à celui qu'il pousse (voir LES ÉCRANS SONT CÔTE À CÔTE). */
     if(!sousPage) node.classList.add("screen-enter", "pousse");
     entreeDebut = (typeof performance!=="undefined" ? performance.now() : Date.now());
     setTimeout(()=>{ node.classList.remove("arrivee"); fitScroll(); }, apresEntree());
@@ -35684,6 +35632,13 @@ function render(){
        défilement est rendue à zéro pour l'écran qui arrive : on le remonte
        d'autant, il ne bouge pas à l'écran.) */
     const yAvant = (CUSTOM_SCROLL ? customScrollY : app.scrollTop) || 0;
+    /* (v357) ET SA HAUTEUR. Sorti du flux (position absolue, plus bas), un
+       écran n'a plus que la hauteur de son contenu : l'accueil, qui répartit
+       l'air entre ses cartes, passait de 828 à 695 px, et ses cartes
+       SAUTAIENT vers le haut — de 26 px pour la première à 116 px pour
+       Progression — au premier instant de chaque départ. Mesuré, puis vu
+       image par image. On lui laisse donc exactement la hauteur qu'il avait. */
+    const hAvant = prevNode.getBoundingClientRect().height;
     if(sousPage){
       prevNode.remove();
       app.appendChild(node);
@@ -35693,6 +35648,7 @@ function render(){
     prevNode.classList.remove("screen-enter", "pousse", "arrivee", "vers-droite", "vers-gauche");
     prevNode.classList.add("screen-exit", retour ? "retire" : "reste");
     prevNode.style.position = "absolute";
+    if(hAvant > 0) prevNode.style.height = hAvant + "px";
     prevNode.style.top = ((parseFloat(cs.paddingTop) || 0) - yAvant) + "px";
     prevNode.style.left = cs.paddingLeft;
     prevNode.style.right = cs.paddingRight;
