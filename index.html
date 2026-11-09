@@ -3129,6 +3129,13 @@
   .modal-card{ width:100%; max-width:21rem; border:0; border-radius:var(--r-l); padding:calc(1.45rem + 1px) calc(1.25rem + 1px) calc(1.15rem + 1px); text-align:center; animation:modalIn var(--tr-ouvre); transform:translateZ(0); -webkit-transform:translateZ(0); --rim-cast:0 24px 60px rgba(18,12,6,0.42), 0 4px 12px rgba(18,12,6,0.22); }
   .modal-title{ font-family:'Poppins',sans-serif; font-weight:700; font-size:1.15rem; color:var(--ink); }
   .modal-msg{ font-size:0.9rem; color:var(--ink-soft); line-height:1.5; margin-top:0.45rem; }
+  /* (v354) « Comment jouer » : les trois gestes d'une manche, numérotés
+     comme les étapes d'une recette, puis une note plus discrète. */
+  .deroule-pas{ list-style:none; margin:0.95rem 0 0; padding:0; display:flex; flex-direction:column; gap:0.6rem; text-align:left; }
+  .deroule-pas li{ display:flex; align-items:flex-start; gap:0.7rem; font-size:0.95rem; line-height:1.4; color:var(--ink); }
+  .dp-n{ flex-shrink:0; width:1.55rem; height:1.55rem; margin-top:-0.04rem; border-radius:50%; display:inline-flex; align-items:center; justify-content:center;
+    background:var(--primary); color:#fff; font-family:'Poppins',sans-serif; font-weight:700; font-size:0.8rem; box-shadow:0 2px 6px rgba(214,60,34,0.28); }
+  .deroule-note{ margin:0.85rem 0 0.15rem; font-size:0.86rem; line-height:1.45; color:var(--ink-soft); text-align:left; }
   /* GUIDE PLEIN ÉCRAN : les trois gestes reprennent, au pixel près, les lignes
      des Réglages (.set-row / .set-ico / .set-txt) — même pastille colorée, même
      titre, même sous-titre. On arrive de là, on retrouve la même matière ; il
@@ -6693,13 +6700,38 @@
   .jx-col .option-btn{ min-height:3.4rem; }
   .jx-zone .option-btn .opt-text{ min-width:0; overflow-wrap:anywhere; }
   .jx-ref{ display:block; margin-top:0.18rem; font-size:0.72rem; font-weight:500; color:var(--ink-soft); }
-  /* Le numéro d'ordre (Dans l'ordre) : un rond, plein quand le récit est pris. */
-  .jx-pas .letter{ width:1.6rem; height:1.6rem; border-radius:50%; flex-shrink:0; display:inline-flex; align-items:center; justify-content:center;
-    background:rgba(24,16,10,0.06); opacity:1; color:var(--ink-soft); font-family:'Poppins',sans-serif; font-size:0.82rem; }
   .option-btn.jx-pris{ --glass-tint: rgb(255,236,226); }
-  .jx-pas.jx-pris .letter{ background:var(--primary); color:#fff; box-shadow:0 2px 6px rgba(214,60,34,0.32); }
-  .jx-pas.correct .letter{ background:var(--green); color:#fff; }
-  .jx-pas.incorrect .letter{ background:var(--error); color:#fff; }
+  /* ===== (v354) RANGE LES LIVRES (voir RANGE LES LIVRES, dans le code) =====
+     Une colonne de livres, un peu plus serrée que les réponses du quiz :
+     cinq livres, la consigne et « Valider » tiennent dans l'écran du plus
+     petit téléphone. Le nom en Poppins, comme les noms de livres ailleurs ;
+     la poignée à droite dit qu'on peut le prendre. Le livre ne se
+     sélectionne pas et ne fait pas défiler la page : le doigt est à lui. */
+  .jx-livres .option-btn.jx-livre{ min-height:clamp(2.85rem, calc(6.2 * var(--hu)), 3.9rem);
+    padding-top:calc(clamp(0.6rem, calc(1.25 * var(--hu)), 0.86rem) + 1px); padding-bottom:calc(clamp(0.6rem, calc(1.25 * var(--hu)), 0.86rem) + 1px);
+    touch-action:none; -webkit-user-select:none; user-select:none; -webkit-touch-callout:none; }
+  .jx-livre .opt-text{ font-family:'Poppins',sans-serif; font-weight:600; font-size:clamp(0.94rem, calc(2.55 * var(--lw)), 1.02rem); color:var(--ink); }
+  .jx-poignee{ width:1.3rem; height:1.3rem; flex-shrink:0; display:inline-flex; color:var(--ink-soft); opacity:0.5; }
+  .jx-poignee svg{ width:100%; height:100%; }
+  /* À la révélation, le numéro du livre dans la Bible : un rond vert à sa
+     place, rouge sinon. */
+  .jx-livre .letter{ width:1.75rem; height:1.75rem; border-radius:50%; flex-shrink:0; display:inline-flex; align-items:center; justify-content:center;
+    background:rgba(24,16,10,0.06); opacity:1; color:var(--ink-soft); font-family:'Poppins',sans-serif; font-size:0.8rem; font-variant-numeric:tabular-nums; letter-spacing:0; }
+  .jx-livre.correct .letter{ background:var(--green); color:#fff; }
+  .jx-livre.incorrect .letter{ background:var(--error); color:#fff; }
+  /* Le livre porté se soulève — un peu plus grand, une ombre dessous — et
+     suit le doigt sans retard (rien ne lisse sa position) ; les autres
+     glissent pour lui faire sa place. Lâché, il descend dans son trou. */
+  /* LE DÉPLACEMENT PASSE PAR « translate », LA LEVÉE PAR « scale » : posé
+     dans « transform » avec l'échelle, le déplacement était agrandi avec
+     elle — 236 px de doigt, 244 px de livre (mesuré). « translate »
+     s'applique après l'échelle : le livre reste sous le doigt, au pixel. Et
+     l'appui (scale 0,968 sur tout bouton touché) est rendu au livre porté. */
+  .jx-livres.jx-en-main .option-btn.jx-livre{ transition:translate 0.22s cubic-bezier(0.2,0.8,0.2,1), transform 0.22s cubic-bezier(0.2,0.8,0.2,1), background-color 0.28s ease; }
+  .jx-livres .option-btn.jx-livre.jx-porte{ z-index:3; transform:translateZ(0); scale:1.035;
+    transition:transform 0.16s cubic-bezier(0.2,0.9,0.3,1), scale 0.16s cubic-bezier(0.2,0.9,0.3,1), box-shadow 0.16s ease;
+    box-shadow:0 14px 30px rgba(15,12,10,0.22), 0 3px 9px rgba(15,12,10,0.12); }
+  .jx-livres .option-btn.jx-livre.jx-atterrit{ z-index:3; transition:translate 0.2s cubic-bezier(0.2,0.9,0.3,1), transform 0.2s cubic-bezier(0.2,0.9,0.3,1), scale 0.2s ease, box-shadow 0.2s ease; }
   /* Qui ? Où ? : la pastille de chaque personne ; un lieu relié prend la sienne. */
   .jx-point{ width:0.78rem; height:0.78rem; border-radius:50%; flex-shrink:0; background:rgba(24,16,10,0.1); transition:background-color var(--tr-onde), transform 0.2s ease; }
   .jx-point.jade{ background:var(--pal-jade); }
@@ -6744,9 +6776,15 @@
   .jx-verset .jx-pose, .jx-bouts .jx-bout{ touch-action:none; -webkit-user-select:none; user-select:none; -webkit-touch-callout:none; }
   .jx-pose.jx-leve, .option-btn.jx-bout.jx-leve{ opacity:0.3; }
   .jx-pose.jx-arrive, .option-btn.jx-bout.jx-arrive{ visibility:hidden; }
+  /* (v354) La copie se lit EN ENTIER : un long morceau se replie sur deux
+     lignes au lieu de finir en « … ». Elle se DÉCOLLE du morceau (un bref
+     glissé jusqu'au-dessus du doigt) au lieu d'y apparaître d'un coup. */
   .jx-flotte{ position:fixed; left:0; top:0; z-index:9000; pointer-events:none; padding:0.62rem 0.85rem; border-radius:var(--r-m);
-    background:rgb(252,248,241); color:var(--ink); white-space:nowrap; max-width:86vw; overflow:hidden; text-overflow:ellipsis;
+    background:rgb(252,248,241); color:var(--ink); white-space:normal; max-width:min(86vw, 21rem); text-align:center; line-height:1.3; overflow-wrap:anywhere;
     box-shadow:0 14px 30px rgba(15,12,10,0.26), 0 3px 9px rgba(15,12,10,0.14); will-change:transform; }
+  .jx-flotte.jx-decolle{ transition:transform 0.15s cubic-bezier(0.2,0.8,0.3,1); }
+  #jxLigne .jx-vide{ transition:opacity 0.15s ease; }
+  #jxLigne.jx-vise .jx-vide{ opacity:0.25; }
   .jx-curseur{ position:absolute; width:3px; border-radius:2px; background:var(--ink); opacity:0.72; pointer-events:none; animation:jxCurseur 1s ease-in-out infinite; }
   @keyframes jxCurseur{ 0%,100%{ opacity:0.72; } 50%{ opacity:0.3; } }
   .btn-next.jx-valider{ margin-top:0.9rem; margin-bottom:0; }
@@ -7302,7 +7340,6 @@ const TEXTES = {
     "Partager le jeu":"Share the game",
     "Déroulé :":"How it works:",
     "réponds à chaque question avant la fin du chrono — tous niveaux mélangés. Enchaîne les bonnes réponses pour faire grimper ta série.":"answer each question before the timer runs out — all levels mixed. String correct answers together to grow your streak.",
-    "lisez la question à voix haute → révélez la réponse → attribuez les points au bon joueur (ou à la bonne équipe). Avec le chrono, la réponse se révèle toute seule à la fin du temps. Une erreur ? Les boutons −/+ corrigent à tout moment.":"read the question aloud → reveal the answer → award the points to the right player (or team). With the timer on, the answer reveals itself when time runs out. A mistake? The −/+ buttons fix it at any time.",
     "Résultats":"Results",
     "Égalité":"Tie",
     "Ex æquo en tête !":"Tied for the lead!",
@@ -7329,6 +7366,10 @@ const TEXTES = {
     "Hors connexion":"Offline",
     "Le mode en ligne nécessite Internet. Les modes Solo et Groupe restent jouables sans connexion.":"Online mode needs the internet. Solo and Group modes still work offline.",
     "Compris":"Got it",
+    "Lisez la question à voix haute.":"Read the question aloud.",
+    "Révélez la réponse.":"Reveal the answer.",
+    "Donnez les points au bon joueur, ou à la bonne équipe.":"Award the points to the right player, or team.",
+    "Avec le chrono, la réponse se révèle toute seule à la fin du temps. Une erreur\u00a0? Les boutons −/+ corrigent à tout moment.":"With the timer on, the answer reveals itself when time runs out. A mistake? The −/+ buttons fix it at any time.",
     "Réessaie.":"Try again.",
     "Le salon est complet · {n} joueurs":"The room is full · {n} players",
     "Code invalide.":"Invalid code.",
@@ -7974,8 +8015,8 @@ const TEXTES = {
     "Tous les jeux":"All games",
     "Record {p}\u00a0%":"Best {p}%",
     "Nouveau record\u00a0!":"New best!",
-    "Dans l'ordre":"In order",
-    "Remets quatre récits dans l'ordre de la Bible":"Put four stories in Bible order",
+    "Range les livres":"Sort the books",
+    "Remets les livres de la Bible dans l'ordre":"Put the books of the Bible in order",
     "Qui\u00a0? Où\u00a0?":"Who? Where?",
     "Relie chaque personnage à son lieu":"Match each person to their place",
     "Combien\u00a0?":"How many?",
@@ -7984,13 +8025,14 @@ const TEXTES = {
     "Un mot du verset a changé\u00a0: trouve-le":"One word in the verse has changed: find it",
     "Verset en morceaux":"Verse in pieces",
     "Rebâtis le verset, morceau par morceau":"Rebuild the verse, piece by piece",
-    "Touche les récits du plus ancien au plus récent":"Tap the stories from earliest to latest",
+    "Glisse les livres dans l'ordre de la Bible":"Drag the books into Bible order",
+    "Le premier en haut":"First at the top",
     "Touche un personnage, puis son lieu":"Tap a person, then their place",
     "Un mot a changé\u00a0: touche-le":"One word has changed: tap it",
     "Touche ou glisse les morceaux dans l'ordre du verset":"Tap or drag the pieces in the order of the verse",
     "Touche ou glisse les morceaux ici":"Tap or drag the pieces here",
     "Valider":"Check",
-    "Du plus ancien au plus récent, dans le récit biblique.":"From earliest to latest, in the Bible's account.",
+    "Le numéro est la place du livre dans la Bible, sur 66.":"The number is the book's place in the Bible, out of 66.",
     "Chaque paire se lit dans le chapitre indiqué.":"Each pair can be read in the chapter shown.",
     "La réponse\u00a0: {n} ({ref}).":"The answer: {n} ({ref}).",
     "Le texte dit «\u00a0{mot}\u00a0» ({ref}).":"The text says “{mot}” ({ref}).",
@@ -8232,7 +8274,6 @@ const TEXTES = {
     "Partager le jeu":"Compartir el juego",
     "Déroulé\u00a0:":"Cómo funciona:",
     "réponds à chaque question avant la fin du chrono — tous niveaux mélangés. Enchaîne les bonnes réponses pour faire grimper ta série.":"responde cada pregunta antes de que se acabe el tiempo — todos los niveles mezclados. Encadena respuestas correctas para subir tu racha.",
-    "lisez la question à voix haute → révélez la réponse → attribuez les points au bon joueur (ou à la bonne équipe). Avec le chrono, la réponse se révèle toute seule à la fin du temps. Une erreur\u00a0? Les boutons −/+ corrigent à tout moment.":"lean la pregunta en voz alta → revelen la respuesta → den los puntos al jugador (o al equipo) correcto. Con el tiempo activado, la respuesta se revela sola al acabarse. ¿Un error? Los botones −/+ lo corrigen en cualquier momento.",
     "Résultats":"Resultados",
     "Égalité":"Empate",
     "Ex æquo en tête\u00a0!":"¡Empate en el primer puesto!",
@@ -8258,6 +8299,10 @@ const TEXTES = {
     "Hors connexion":"Sin conexión",
     "Le mode en ligne nécessite Internet. Les modes Solo et Groupe restent jouables sans connexion.":"El modo en línea necesita Internet. Los modos Solo y Grupo siguen funcionando sin conexión.",
     "Compris":"Entendido",
+    "Lisez la question à voix haute.":"Lean la pregunta en voz alta.",
+    "Révélez la réponse.":"Revelen la respuesta.",
+    "Donnez les points au bon joueur, ou à la bonne équipe.":"Den los puntos al jugador o al equipo correcto.",
+    "Avec le chrono, la réponse se révèle toute seule à la fin du temps. Une erreur\u00a0? Les boutons −/+ corrigent à tout moment.":"Con el tiempo activado, la respuesta se revela sola al acabarse. ¿Un error? Los botones −/+ lo corrigen en cualquier momento.",
     "Réessaie.":"Inténtalo de nuevo.",
     "Le salon est complet · {n} joueurs":"La sala está llena · {n} jugadores",
     "Code invalide.":"Código no válido.",
@@ -8906,8 +8951,8 @@ const TEXTES = {
     "Tous les jeux":"Todos los juegos",
     "Record {p}\u00a0%":"Récord {p} %",
     "Nouveau record\u00a0!":"¡Nuevo récord!",
-    "Dans l'ordre":"En orden",
-    "Remets quatre récits dans l'ordre de la Bible":"Ordena cuatro relatos como en la Biblia",
+    "Range les livres":"Ordena los libros",
+    "Remets les livres de la Bible dans l'ordre":"Pon los libros de la Biblia en orden",
     "Qui\u00a0? Où\u00a0?":"¿Quién? ¿Dónde?",
     "Relie chaque personnage à son lieu":"Une a cada personaje con su lugar",
     "Combien\u00a0?":"¿Cuántos?",
@@ -8916,13 +8961,14 @@ const TEXTES = {
     "Un mot du verset a changé\u00a0: trouve-le":"Una palabra del versículo cambió: encuéntrala",
     "Verset en morceaux":"Versículo en pedazos",
     "Rebâtis le verset, morceau par morceau":"Arma el versículo, pedazo a pedazo",
-    "Touche les récits du plus ancien au plus récent":"Toca los relatos del más antiguo al más reciente",
+    "Glisse les livres dans l'ordre de la Bible":"Arrastra los libros al orden de la Biblia",
+    "Le premier en haut":"El primero arriba",
     "Touche un personnage, puis son lieu":"Toca un personaje y luego su lugar",
     "Un mot a changé\u00a0: touche-le":"Una palabra cambió: tócala",
     "Touche ou glisse les morceaux dans l'ordre du verset":"Toca o arrastra los pedazos en el orden del versículo",
     "Touche ou glisse les morceaux ici":"Toca o arrastra los pedazos aquí",
     "Valider":"Comprobar",
-    "Du plus ancien au plus récent, dans le récit biblique.":"Del más antiguo al más reciente, en el relato bíblico.",
+    "Le numéro est la place du livre dans la Bible, sur 66.":"El número es el lugar del libro en la Biblia, de 66.",
     "Chaque paire se lit dans le chapitre indiqué.":"Cada par se lee en el capítulo indicado.",
     "La réponse\u00a0: {n} ({ref}).":"La respuesta: {n} ({ref}).",
     "Le texte dit «\u00a0{mot}\u00a0» ({ref}).":"El texto dice «{mot}» ({ref}).",
@@ -9341,7 +9387,12 @@ const ICONS = {
   plus: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.1" stroke-linecap="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>`,
   cle: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><circle cx="7.6" cy="15.6" r="4"/><path d="M10.4 12.8 19.6 3.6"/><path d="M16.2 7l2.6 2.6"/><path d="M18.4 4.8 21 7.4"/></svg>`,
   info: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><line x1="12" y1="11" x2="12" y2="16.4"/><circle cx="12" cy="7.7" r="0.6" fill="currentColor"/></svg>`,
-  jeuOrdre: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><circle cx="6.5" cy="5.5" r="1.9"/><circle cx="6.5" cy="12" r="1.9"/><circle cx="6.5" cy="18.5" r="1.9"/><line x1="6.5" y1="7.4" x2="6.5" y2="10.1"/><line x1="6.5" y1="13.9" x2="6.5" y2="16.6"/><line x1="11" y1="5.5" x2="19.5" y2="5.5"/><line x1="11" y1="12" x2="17" y2="12"/><line x1="11" y1="18.5" x2="19.5" y2="18.5"/></svg>`,
+  /* (v354) Range les livres : trois livres debout, rangés du plus petit au
+     plus grand — un rayon qu'on a mis en ordre. Et la poignée d'un livre
+     qu'on peut prendre (six points, comme partout où une liste se range au
+     doigt). */
+  jeuLivres: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><rect x="3.6" y="10.6" width="4.4" height="9.9" rx="1.1"/><rect x="9.8" y="7" width="4.4" height="13.5" rx="1.1"/><rect x="16" y="3.5" width="4.4" height="17" rx="1.1"/><line x1="3.6" y1="13.7" x2="8" y2="13.7"/><line x1="9.8" y1="10.1" x2="14.2" y2="10.1"/><line x1="16" y1="6.6" x2="20.4" y2="6.6"/></svg>`,
+  poignee: `<svg viewBox="0 0 24 24" fill="currentColor"><circle cx="9" cy="6.5" r="1.65"/><circle cx="15" cy="6.5" r="1.65"/><circle cx="9" cy="12" r="1.65"/><circle cx="15" cy="12" r="1.65"/><circle cx="9" cy="17.5" r="1.65"/><circle cx="15" cy="17.5" r="1.65"/></svg>`,
   jeuLieu: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M12 21.2s-6.6-5.5-6.6-11.1a6.6 6.6 0 0 1 13.2 0c0 5.6-6.6 11.1-6.6 11.1Z"/><circle cx="12" cy="10.1" r="2.5"/></svg>`,
   jeuNombre: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><line x1="9.6" y1="4" x2="7.8" y2="20"/><line x1="16.2" y1="4" x2="14.4" y2="20"/><line x1="4.6" y1="9" x2="19.6" y2="9"/><line x1="4.4" y1="15" x2="19.4" y2="15"/></svg>`,
   jeuLoupe: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><circle cx="10.6" cy="10.6" r="6.4"/><line x1="15.4" y1="15.4" x2="20" y2="20"/><line x1="10.6" y1="7.8" x2="10.6" y2="11"/><circle cx="10.6" cy="13.5" r="0.55" fill="currentColor"/></svg>`,
@@ -11583,7 +11634,7 @@ const SUPABASE_ANON_KEY = "sb_publishable_FDJ_R0foC7uIeHmxVrj6rA_2NeIgW2a";
    remontée d'un téléphone ne vaut rien si on ne sait pas QUELLE version
    tournait. Elle doit rester égale au CACHE de sw.js — c'est ce que vérifie
    banc-essai/version.js, qui refuse de laisser publier les deux en désaccord. */
-const VERSION_JEU = "v353";
+const VERSION_JEU = "v354";
 
 /* ===================== QUAND ÇA CASSE CHEZ UN JOUEUR =====================
    « Si quelque chose casse chez cinq d'entre eux sur un modèle de téléphone
@@ -25983,6 +26034,12 @@ function remonterGroupes(){
 
 const JEU_COMBIEN = [["Genèse 7:12",40,[7,12,100],["Pendant combien de jours la pluie tomba-t-elle sur la terre, au déluge ?","For how many days did the rain fall on the earth in the flood?","¿Cuántos días llovió sobre la tierra en el diluvio?"]],["Genèse 7:6",600,[120,500,950],["Quel âge avait Noé quand le déluge arriva sur la terre ?","How old was Noah when the flood came upon the earth?","¿Qué edad tenía Noé cuando el diluvio vino sobre la tierra?"]],["Genèse 6:15",300,[100,150,500],["Combien de coudées mesurait la longueur de l'arche ?","How many cubits long was the ark?","¿Cuántos codos de largo medía el arca?"]],["Genèse 6:10",3,[2,4,12],["Combien de fils Noé eut-il ?","How many sons did Noah have?","¿Cuántos hijos tuvo Noé?"]],["Genèse 5:27",969,[777,930,950],["Combien d'années vécut Mathusalem ?","How many years did Methuselah live?","¿Cuántos años vivió Matusalén?"]],["Genèse 21:5",100,[75,90,120],["Quel âge avait Abraham à la naissance d'Isaac ?","How old was Abraham when Isaac was born?","¿Qué edad tenía Abraham cuando nació Isaac?"]],["Genèse 29:20",7,[3,10,14],["Combien d'années Jacob servit-il d'abord pour Rachel ?","How many years did Jacob first serve for Rachel?","¿Cuántos años sirvió primero Jacob por Raquel?"]],["Genèse 35:22",12,[7,10,13],["Combien de fils Jacob eut-il ?","How many sons did Jacob have?","¿Cuántos hijos tuvo Jacob?"]],["Genèse 37:28",20,[10,30,40],["Pour combien de sicles d'argent Joseph fut-il vendu ?","For how many pieces of silver was Joseph sold?","¿Por cuántas piezas de plata fue vendido José?"]],["Exode 20:11",6,[3,7,40],["En combien de jours l'Éternel a-t-il fait les cieux, la terre et la mer ?","In how many days did the LORD make heaven, earth and the sea?","¿En cuántos días hizo Jehová los cielos, la tierra y el mar?"]],["Exode 34:28",10,[7,12,40],["Combien de paroles furent écrites sur les tables de l'alliance ?","How many commandments were written on the tables of the covenant?","¿Cuántas palabras fueron escritas en las tablas de la alianza?"]],["Nombres 32:13",40,[7,12,70],["Pendant combien d'années l'Éternel fit-il errer Israël dans le désert ?","For how many years did the LORD make Israel wander in the wilderness?","¿Cuántos años hizo Jehová andar errante a Israel por el desierto?"]],["Deutéronome 34:7",120,[80,100,140],["Quel âge avait Moïse lorsqu'il mourut ?","How old was Moses when he died?","¿Qué edad tenía Moisés cuando murió?"]],["Josué 6:15",7,[3,6,12],["Le septième jour, combien de fois fit-on le tour de Jéricho ?","On the seventh day, how many times did they go around Jericho?","El séptimo día, ¿cuántas veces rodearon Jericó?"]],["Juges 7:7",300,[100,1000,10000],["Avec combien d'hommes l'Éternel sauva-t-il Israël par Gédéon ?","With how many men did the LORD save Israel through Gideon?","¿Con cuántos hombres salvó Jehová a Israel por medio de Gedeón?"]],["Juges 16:19",7,[3,5,12],["Combien de tresses de Samson furent rasées ?","How many locks of Samson's head were shaved off?","¿Cuántos mechones de la cabeza de Sansón fueron rapados?"]],["1 Samuel 17:40",5,[1,3,7],["Combien de pierres David choisit-il dans le torrent ?","How many stones did David choose from the brook?","¿Cuántas piedras escogió David del arroyo?"]],["1 Rois 2:11",40,[7,12,33],["Combien d'années David régna-t-il sur Israël ?","For how many years did David reign over Israel?","¿Cuántos años reinó David sobre Israel?"]],["1 Rois 11:42",40,[12,20,70],["Combien d'années Salomon régna-t-il à Jérusalem ?","For how many years did Solomon reign in Jerusalem?","¿Cuántos años reinó Salomón en Jerusalén?"]],["1 Rois 19:8",40,[3,7,12],["Combien de jours Élie marcha-t-il jusqu'à Horeb ?","For how many days did Elijah walk to Horeb?","¿Cuántos días caminó Elías hasta Horeb?"]],["2 Rois 5:14",7,[3,5,10],["Combien de fois Naaman se plongea-t-il dans le Jourdain ?","How many times did Naaman dip himself in the Jordan?","¿Cuántas veces se zambulló Naamán en el Jordán?"]],["Daniel 6:10",3,[1,2,7],["Combien de fois par jour Daniel se mettait-il à genoux pour prier ?","How many times a day did Daniel kneel to pray?","¿Cuántas veces al día se arrodillaba Daniel para orar?"]],["Matthieu 4:2",40,[3,7,12],["Combien de jours Jésus jeûna-t-il dans le désert ?","For how many days did Jesus fast in the wilderness?","¿Cuántos días ayunó Jesús en el desierto?"]],["Matthieu 14:17",5,[2,7,12],["Combien de pains les disciples avaient-ils devant la foule ?","How many loaves did the disciples have before the crowd?","¿Cuántos panes tenían los discípulos ante la multitud?"]],["Matthieu 14:17",2,[1,3,5],["Combien de poissons les disciples avaient-ils avec les pains ?","How many fishes did the disciples have with the loaves?","¿Cuántos peces tenían los discípulos con los panes?"]],["Matthieu 14:20",12,[5,7,10],["Combien de paniers de morceaux restèrent après le repas ?","How many baskets of fragments were left after the meal?","¿Cuántas cestas de pedazos sobraron después de la comida?"]],["Matthieu 25:1",10,[5,7,12],["Combien de vierges allèrent à la rencontre de l'époux ?","How many virgins went forth to meet the bridegroom?","¿Cuántas vírgenes salieron a recibir al esposo?"]],["Matthieu 25:15",5,[2,3,10],["Combien de talents le maître donna-t-il au premier serviteur ?","How many talents did the master give to the first servant?","¿Cuántos talentos dio el señor al primer siervo?"]],["Matthieu 26:15",30,[10,20,40],["Pour combien de pièces d'argent Judas livra-t-il Jésus ?","For how many pieces of silver did Judas betray Jesus?","¿Por cuántas piezas de plata entregó Judas a Jesús?"]],["Matthieu 26:34",3,[2,4,7],["Combien de fois Pierre allait-il renier Jésus avant que le coq chante ?","How many times would Peter deny Jesus before the cock crowed?","¿Cuántas veces negaría Pedro a Jesús antes de que cantara el gallo?"]],["Luc 2:42",12,[7,10,13],["Quel âge avait Jésus quand il monta à Jérusalem pour la Pâque, avec ses parents ?","How old was Jesus when he went up to Jerusalem for the Passover with his parents?","¿Qué edad tenía Jesús cuando subió a Jerusalén para la Pascua con sus padres?"]],["Luc 3:23",30,[12,25,33],["Environ quel âge avait Jésus quand il commença son ministère ?","About how old was Jesus when he began his ministry?","¿Como qué edad tenía Jesús cuando comenzó su ministerio?"]],["Luc 6:13",12,[7,10,70],["Combien d'apôtres Jésus choisit-il parmi ses disciples ?","How many apostles did Jesus choose from his disciples?","¿Cuántos apóstoles escogió Jesús de entre sus discípulos?"]],["Luc 15:4",99,[9,49,100],["Combien de brebis le berger laisse-t-il pour chercher celle qui est perdue ?","How many sheep does the shepherd leave to seek the one that is lost?","¿Cuántas ovejas deja el pastor para buscar la que se perdió?"]],["Luc 15:8",10,[3,7,12],["Combien de drachmes avait la femme qui en perdit une ?","How many pieces of silver did the woman have who lost one?","¿Cuántas dracmas tenía la mujer que perdió una?"]],["Luc 17:12",10,[3,7,12],["Combien de lépreux vinrent au-devant de Jésus ?","How many lepers met Jesus?","¿Cuántos leprosos salieron al encuentro de Jesús?"]],["Jean 11:17",4,[2,3,7],["Depuis combien de jours Lazare était-il dans le sépulcre quand Jésus arriva ?","How many days had Lazarus been in the grave when Jesus came?","¿Cuántos días llevaba Lázaro en el sepulcro cuando llegó Jesús?"]],["Jean 21:11",153,[100,144,200],["Combien de grands poissons y avait-il dans le filet de Pierre ?","How many great fishes were in Peter's net?","¿Cuántos peces grandes había en la red de Pedro?"]],["Actes 1:3",40,[3,7,50],["Pendant combien de jours Jésus ressuscité se montra-t-il aux apôtres ?","For how many days did the risen Jesus show himself to the apostles?","¿Durante cuántos días se mostró Jesús resucitado a los apóstoles?"]],["Actes 2:41",3000,[500,5000,12000],["Environ combien de personnes furent ajoutées le jour de la Pentecôte ?","About how many souls were added on the day of Pentecost?","¿Cerca de cuántas personas se añadieron el día de Pentecostés?"]],["Actes 27:37",276,[176,300,376],["Combien de personnes y avait-il dans le navire de Paul ?","How many souls were in Paul's ship?","¿Cuántas personas había en la nave de Pablo?"]]];
 const JEU_QUIOU = [[["Moïse","Moses","Moisés"],["Sinaï","Sinai","Sinaí"],"Exode 19",["Égypte"]],[["Jonas","Jonah","Jonás"],["Ninive","Nineveh","Nínive"],"Jonas 3",[]],[["Élie","Elijah","Elías"],["Mont Carmel","Mount Carmel","Monte Carmelo"],"1 Rois 18",["Jourdain"]],[["Abram","Abram","Abram"],["Ur","Ur","Ur"],"Genèse 11",["Morija","Beer-Schéba"]],[["David","David","David"],["Bethléhem","Bethlehem","Belén"],"1 Samuel 16",["Jérusalem"]],[["Daniel","Daniel","Daniel"],["Babylone","Babylon","Babilonia"],"Daniel 1",[]],[["Josué","Joshua","Josué"],["Jéricho","Jericho","Jericó"],"Josué 6",["Jourdain"]],[["Samson","Samson","Sansón"],["Gaza","Gaza","Gaza"],"Juges 16",[]],[["Gédéon","Gideon","Gedeón"],["Ophra","Ophrah","Ofra"],"Juges 6",[]],[["Ruth","Ruth","Rut"],["Moab","Moab","Moab"],"Ruth 1",["Bethléhem"]],[["Esther","Esther","Ester"],["Suse","Shushan","Susa"],"Esther 2",[]],[["Zachée","Zacchaeus","Zaqueo"],["Jéricho","Jericho","Jericó"],"Luc 19",[]],[["Lazare","Lazarus","Lázaro"],["Béthanie","Bethany","Betania"],"Jean 11",[]],[["Pierre","Peter","Pedro"],["Joppé","Joppa","Jope"],"Actes 10",["Jérusalem"]],[["Lot","Lot","Lot"],["Sodome","Sodom","Sodoma"],"Genèse 19",[]],[["Jacob","Jacob","Jacob"],["Béthel","Bethel","Betel"],"Genèse 28",["Égypte"]],[["Joseph","Joseph","José"],["Égypte","Egypt","Egipto"],"Genèse 39",[]],[["Naaman","Naaman","Naamán"],["Jourdain","Jordan","Jordán"],"2 Rois 5",[]],[["Jean-Baptiste","John the Baptist","Juan el Bautista"],["Désert de Judée","Wilderness of Judea","Desierto de Judea"],"Matthieu 3",["Jourdain"]],[["Paul","Paul","Pablo"],["Athènes","Athens","Atenas"],"Actes 17",["Damas","Corinthe","Philippes","Jérusalem"]],[["Lydie","Lydia","Lidia"],["Philippes","Philippi","Filipos"],"Actes 16",[]],[["Samuel","Samuel","Samuel"],["Silo","Shiloh","Silo"],"1 Samuel 3",[]],[["Saül","Saul","Saúl"],["Mont Guilboa","Mount Gilboa","Monte Gilboa"],"1 Samuel 31",[]],[["Marie","Mary","María"],["Nazareth","Nazareth","Nazaret"],"Luc 1",["Bethléhem","Cana","Jérusalem"]],[["Isaac","Isaac","Isaac"],["Morija","Moriah","Moriah"],"Genèse 22",["Beer-Schéba"]],[["Agar","Hagar","Agar"],["Beer-Schéba","Beersheba","Beerseba"],"Genèse 21",[]],[["Jérémie","Jeremiah","Jeremías"],["Anathoth","Anathoth","Anatot"],"Jérémie 1",["Jérusalem","Égypte"]],[["Amos","Amos","Amós"],["Tekoa","Tekoa","Tecoa"],"Amos 1",[]],[["Ézéchiel","Ezekiel","Ezequiel"],["Fleuve Kebar","River Chebar","Río Quebar"],"Ézéchiel 1",["Babylone"]],[["Jean","John","Juan"],["Patmos","Patmos","Patmos"],"Apocalypse 1",[]],[["Corneille","Cornelius","Cornelio"],["Césarée","Caesarea","Cesarea"],"Actes 10",[]],[["Philippe","Philip","Felipe"],["Samarie","Samaria","Samaria"],"Actes 8",[]],[["Timothée","Timothy","Timoteo"],["Lystre","Lystra","Listra"],"Actes 16",["Philippes"]],[["Goliath","Goliath","Goliat"],["Gath","Gath","Gat"],"1 Samuel 17",[]],[["Job","Job","Job"],["Pays d'Uts","Land of Uz","Tierra de Uz"],"Job 1",[]],[["Simon","Simon","Simón"],["Cyrène","Cyrene","Cirene"],"Matthieu 27",[]],[["Élisée","Elisha","Eliseo"],["Sunem","Shunem","Sunem"],"2 Rois 4",["Jourdain"]],[["Rahab","Rahab","Rahab"],["Jéricho","Jericho","Jericó"],"Josué 2",[]],[["Nebucadnetsar","Nebuchadnezzar","Nabucodonosor"],["Babylone","Babylon","Babilonia"],"Daniel 4",[]]];
+/* (v354) LA FRISE DE « DANS L'ORDRE », MISE DE CÔTÉ. Le jeu a laissé sa
+   place à « Range les livres » (choisi par Taylor). Ses soixante récits ont
+   été lus un à un sur le texte, avec ceux dont le texte ne fixe pas l'ordre
+   (« pas_avec ») : on les garde pour le Parcours, où remettre des récits
+   dans l'ordre pourra devenir un exercice de leçon. Rien ne les lit
+   aujourd'hui. */
 const JEU_ORDRE = [[1,["Dieu crée le ciel et la terre","God creates the heavens and the earth","Dios crea los cielos y la tierra"],"Genèse 1",[]],[2,["Adam et Ève quittent le jardin d'Éden","Adam and Eve leave the garden of Eden","Adán y Eva salen del jardín de Edén"],"Genèse 3",[]],[3,["Caïn tue son frère Abel","Cain kills his brother Abel","Caín mata a su hermano Abel"],"Genèse 4",[]],[4,["Noé construit l'arche","Noah builds the ark","Noé construye el arca"],"Genèse 6",[]],[5,["La tour de Babel","The tower of Babel","La torre de Babel"],"Genèse 11",[]],[6,["Abram part pour le pays de Canaan","Abram sets out for the land of Canaan","Abram parte hacia la tierra de Canaán"],"Genèse 12",[]],[7,["Sodome et Gomorrhe sont détruites","Sodom and Gomorrah are destroyed","Sodoma y Gomorra son destruidas"],"Genèse 19",[]],[8,["Abraham offre Isaac sur le mont Morija","Abraham offers Isaac on Mount Moriah","Abraham ofrece a Isaac en el monte Moriah"],"Genèse 22",[]],[9,["Jacob voit une échelle en songe","Jacob dreams of a ladder","Jacob sueña con una escalera"],"Genèse 28",[]],[10,["Joseph est vendu par ses frères","Joseph is sold by his brothers","José es vendido por sus hermanos"],"Genèse 37",[]],[11,["Joseph devient gouverneur de l'Égypte","Joseph becomes ruler over Egypt","José llega a gobernar Egipto"],"Genèse 41",[]],[12,["Moïse est sauvé des eaux","Moses is drawn out of the water","Moisés es sacado de las aguas"],"Exode 2",[]],[13,["Dieu parle à Moïse dans un buisson ardent","God speaks to Moses from a burning bush","Dios habla a Moisés desde una zarza ardiente"],"Exode 3",[]],[14,["Israël traverse la mer Rouge","Israel crosses the Red Sea","Israel cruza el mar Rojo"],"Exode 14",[]],[15,["Les dix commandements sont donnés au Sinaï","The ten commandments are given at Sinai","Los diez mandamientos son dados en el Sinaí"],"Exode 20",[]],[16,["Le peuple adore le veau d'or","The people worship the golden calf","El pueblo adora el becerro de oro"],"Exode 32",[]],[17,["Douze espions explorent Canaan","Twelve spies search out Canaan","Doce espías reconocen Canaán"],"Nombres 13",[]],[18,["Les murailles de Jéricho tombent","The walls of Jericho fall","Caen los muros de Jericó"],"Josué 6",[]],[19,["Gédéon vainc Madian avec trois cents hommes","Gideon defeats Midian with three hundred men","Gedeón vence a Madián con trescientos hombres"],"Juges 7",[21]],[20,["Samson est trahi par Delila","Samson is betrayed by Delilah","Sansón es traicionado por Dalila"],"Juges 16",[21]],[21,["Ruth glane dans le champ de Boaz","Ruth gleans in the field of Boaz","Rut espiga en el campo de Booz"],"Ruth 2",[19,20,22]],[22,["Dieu appelle le jeune Samuel dans la nuit","God calls young Samuel in the night","Dios llama al joven Samuel en la noche"],"1 Samuel 3",[21]],[23,["Samuel oint Saül, premier roi d'Israël","Samuel anoints Saul, first king of Israel","Samuel unge a Saúl, primer rey de Israel"],"1 Samuel 10",[]],[24,["David bat Goliath","David defeats Goliath","David vence a Goliat"],"1 Samuel 17",[]],[25,["David devient roi sur tout Israël","David becomes king over all Israel","David llega a ser rey sobre todo Israel"],"2 Samuel 5",[]],[26,["Salomon bâtit le temple","Solomon builds the temple","Salomón edifica el templo"],"1 Rois 6",[]],[27,["Élie affronte les prophètes de Baal au Carmel","Elijah faces the prophets of Baal on Carmel","Elías enfrenta a los profetas de Baal en el Carmelo"],"1 Rois 18",[]],[28,["Élie est enlevé au ciel","Elijah is taken up to heaven","Elías es llevado al cielo"],"2 Rois 2",[]],[29,["Jonas prêche à Ninive","Jonah preaches in Nineveh","Jonás predica en Nínive"],"Jonas 3",[]],[30,["Nebucadnetsar prend Jérusalem","Nebuchadnezzar takes Jerusalem","Nabucodonosor toma Jerusalén"],"2 Rois 25",[]],[31,["Daniel est jeté dans la fosse aux lions","Daniel is cast into the lions' den","Daniel es echado en el foso de los leones"],"Daniel 6",[]],[32,["Esther devient reine","Esther becomes queen","Ester llega a ser reina"],"Esther 2",[]],[33,["Néhémie rebâtit la muraille de Jérusalem","Nehemiah rebuilds the wall of Jerusalem","Nehemías reedifica el muro de Jerusalén"],"Néhémie 6",[]],[40,["L'ange Gabriel est envoyé à Marie","The angel Gabriel is sent to Mary","El ángel Gabriel es enviado a María"],"Luc 1",[]],[41,["Jésus naît à Bethléhem","Jesus is born in Bethlehem","Jesús nace en Belén"],"Luc 2",[]],[42,["Des mages viennent adorer Jésus","Wise men come to worship Jesus","Unos magos vienen a adorar a Jesús"],"Matthieu 2",[]],[43,["Jésus, à douze ans, est retrouvé dans le temple","Jesus, at twelve, is found in the temple","Jesús, a los doce años, es hallado en el templo"],"Luc 2",[]],[44,["Jean baptise Jésus dans le Jourdain","John baptizes Jesus in the Jordan","Juan bautiza a Jesús en el Jordán"],"Matthieu 3",[]],[45,["Jésus est tenté dans le désert","Jesus is tempted in the wilderness","Jesús es tentado en el desierto"],"Matthieu 4",[]],[46,["L'eau changée en vin aux noces de Cana","Water turned into wine at the wedding in Cana","El agua convertida en vino en las bodas de Caná"],"Jean 2",[]],[47,["Jésus nourrit cinq mille hommes","Jesus feeds five thousand men","Jesús alimenta a cinco mil hombres"],"Matthieu 14",[]],[48,["Jésus est transfiguré sur la montagne","Jesus is transfigured on the mountain","Jesús se transfigura en el monte"],"Matthieu 17",[]],[49,["Jésus ressuscite Lazare","Jesus raises Lazarus","Jesús resucita a Lázaro"],"Jean 11",[]],[50,["Jésus entre à Jérusalem, acclamé","Jesus enters Jerusalem to cheers","Jesús entra en Jerusalén aclamado"],"Matthieu 21",[]],[51,["Jésus prend la Pâque avec ses disciples","Jesus keeps the Passover with his disciples","Jesús celebra la Pascua con sus discípulos"],"Matthieu 26",[]],[52,["Jésus est crucifié","Jesus is crucified","Jesús es crucificado"],"Matthieu 27",[]],[53,["Jésus est ressuscité","Jesus is risen","Jesús ha resucitado"],"Matthieu 28",[]],[54,["Jésus est élevé au ciel","Jesus is taken up into heaven","Jesús es alzado al cielo"],"Actes 1",[]],[55,["Le Saint-Esprit descend à la Pentecôte","The Holy Spirit comes at Pentecost","El Espíritu Santo desciende en Pentecostés"],"Actes 2",[]],[56,["Étienne est lapidé","Stephen is stoned","Esteban es apedreado"],"Actes 7",[]],[57,["Saul rencontre Jésus sur le chemin de Damas","Saul meets Jesus on the road to Damascus","Saulo encuentra a Jesús camino a Damasco"],"Actes 9",[]],[58,["Pierre entre chez Corneille, à Césarée","Peter enters the house of Cornelius in Caesarea","Pedro entra en casa de Cornelio en Cesarea"],"Actes 10",[]],[59,["Paul parle à l'Aréopage d'Athènes","Paul speaks at the Areopagus in Athens","Pablo habla en el Areópago de Atenas"],"Actes 17",[]],[60,["Paul fait naufrage","Paul is shipwrecked","Pablo naufraga"],"Actes 27",[]],[61,["Paul arrive à Rome","Paul arrives in Rome","Pablo llega a Roma"],"Actes 28",[]]];
 /* « Trouve l'erreur » : un mot du verset est remplacé par un autre, de même
    genre, de même nombre, de même première lettre (voyelle ou consonne : l'article
@@ -26020,18 +26077,19 @@ const JEU_ECHANGES = {
    revient, pas un détour ; et la place y est faite pour ceux qui viendront.
    Les jeux ont l'allure du quiz — mêmes cartes, mêmes boutons, même « Le
    savais-tu ? », mêmes sons —, chacun avec sa couleur de la palette :
-     · Dans l'ordre (jade) : quatre récits à remettre dans l'ordre de la Bible ;
+     · Range les livres (jade) : des livres de la Bible à remettre dans l'ordre,
+       à la main (v354 ; il a pris la place de « Dans l'ordre ») ;
      · Qui ? Où ? (indigo) : relier quatre personnages à leur lieu ;
      · Combien ? (bronze) : un nombre tiré du texte, parmi quatre ;
      · Trouve l'erreur (rose) : un mot du verset a changé, le toucher ;
      · Verset en morceaux (pourpre) : rebâtir le verset dans l'ordre.
-   RIEN N'EST ÉCRIT DE MÉMOIRE. Les nombres, les paires et la frise ont été
+   RIEN N'EST ÉCRIT DE MÉMOIRE. Les nombres et les paires ont été
    lus, un à un, dans la Segond 1910, la King James et la Reina-Valera 1909
    (par les scripts de vérification, hors du jeu) ; les deux jeux de versets prennent le texte même de
    la version choisie dans les Réglages. Une partie finie allume la flamme
    du jour, comme toute partie (compterPartie). */
 const JEUX = [
-  { id:"ordre",    nom:"Dans l'ordre",       desc:"Remets quatre récits dans l'ordre de la Bible", teinte:"jade",    ico:"jeuOrdre",  manches:6 },
+  { id:"livres",   nom:"Range les livres",    desc:"Remets les livres de la Bible dans l'ordre", teinte:"jade",    ico:"jeuLivres", manches:6 },
   { id:"quiou",    nom:"Qui\u00a0? Où\u00a0?",          desc:"Relie chaque personnage à son lieu",           teinte:"indigo",  ico:"jeuLieu",   manches:6 },
   { id:"combien",  nom:"Combien\u00a0?",           desc:"Des nombres tirés du texte",                   teinte:"bronze",  ico:"jeuNombre", manches:10 },
   { id:"erreur",   nom:"Trouve l'erreur",     desc:"Un mot du verset a changé\u00a0: trouve-le",        teinte:"rose",    ico:"jeuLoupe",  manches:8 },
@@ -26053,29 +26111,39 @@ function lireJeux(){ try{ const v = JSON.parse(localStorage.getItem("bt_jeux") |
 function ecrireJeux(v){ try{ localStorage.setItem("bt_jeux", JSON.stringify(v)); }catch(e){} }
 
 /* ===== LES MANCHES DE CHAQUE JEU ===== */
-/* Dans l'ordre : quatre récits, assez éloignés dans la frise pour que leur
-   ordre ne se discute pas (deux rangs d'écart au moins, et jamais deux
-   récits dont le texte ne fixe pas l'ordre — voir « pas_avec »). Les
-   premières manches piochent dans toute la Bible ; les dernières, dans un
-   seul Testament : de plus en plus serré. */
-function manchesOrdre(n){
-  const out = [], vus = new Set();
+/* (v354) Range les livres : des livres de la Bible, mélangés, de plus en
+   plus serrés —
+   — manches 1 et 2 : quatre livres pris dans toute la Bible, à huit rangs
+     au moins l'un de l'autre ;
+   — manches 3 et 4 : cinq livres d'un même Testament, à trois rangs au moins ;
+   — manches 5 et 6 : cinq livres voisins, pris dans huit qui se suivent.
+   Jamais deux fois le même livre dans une partie, jamais dans l'ordre au
+   départ. L'ordre est celui des Bibles du jeu (Segond 1910, King James,
+   Reina-Valera 1909) : le même dans les trois, les soixante-six livres de
+   BIBLE_BOOKS. */
+function manchesLivres(n){
+  const out = [], vus = new Set(), N = BIBLE_BOOKS.length, tous = BIBLE_BOOKS.map((x, i) => i);
   for(let m = 0; m < n; m++){
-    const serre = m >= Math.ceil(n / 2);
+    const palier = m < 2 ? 0 : (m < 4 ? 1 : 2);
+    const combien = palier === 0 ? 4 : 5, ecart = palier === 0 ? 8 : (palier === 1 ? 3 : 1);
     let tirage = null;
-    for(let essai = 0; essai < 200 && !tirage; essai++){
-      const testament = Math.random() < 0.5 ? "at" : "nt";
-      const pool = melanger(JEU_ORDRE.filter(e => !vus.has(e[0]) && (!serre || (testament === "at" ? e[0] < 40 : e[0] >= 40))));
+    for(let essai = 0; essai < 400 && !tirage; essai++){
+      let pool = tous;
+      if(palier === 1){ const at = Math.random() < 0.5; pool = tous.filter(b => at ? b < BIBLE_AT_COUNT : b >= BIBLE_AT_COUNT); }
+      else if(palier === 2){ const d = Math.floor(Math.random() * (N - 7)); pool = tous.slice(d, d + 8); }
       const choix = [];
-      for(const e of pool){
-        if(choix.length === 4) break;
-        if(choix.every(c => Math.abs(c[0] - e[0]) >= 2 && !(c[3] || []).includes(e[0]) && !(e[3] || []).includes(c[0]))) choix.push(e);
+      for(const b of melanger(pool.filter(b => !vus.has(b)))){
+        if(choix.length === combien) break;
+        if(choix.every(c => Math.abs(c - b) >= ecart)) choix.push(b);
       }
-      if(choix.length === 4) tirage = choix;
+      if(choix.length === combien) tirage = choix;
     }
     if(!tirage) break;
-    tirage.forEach(e => vus.add(e[0]));
-    out.push({ items:melanger(tirage), ordre:[] });
+    tirage.forEach(b => vus.add(b));
+    const livres = melanger(tirage);
+    /* Jamais rangés d'avance : ce serait déjà gagné. */
+    if(livres.every((b, i) => i === 0 || livres[i - 1] < b)){ const t = livres[0]; livres[0] = livres[1]; livres[1] = t; }
+    out.push({ livres, choisi:null });
   }
   return out;
 }
@@ -26173,7 +26241,7 @@ function manchesMorceaux(n){
   }
   return out;
 }
-const PREPARER = { ordre:manchesOrdre, quiou:manchesQuiou, combien:manchesCombien, erreur:manchesErreur, morceaux:manchesMorceaux };
+const PREPARER = { livres:manchesLivres, quiou:manchesQuiou, combien:manchesCombien, erreur:manchesErreur, morceaux:manchesMorceaux };
 
 /* ===== LA PARTIE ===== */
 function lancerJeu(id){
@@ -26228,20 +26296,208 @@ function finirJeu(){
 
 /* ===== LES GESTES DE CHAQUE JEU (sans tout redessiner : la manche reste
    posée sous le doigt, seuls les morceaux touchés changent) ===== */
-function toucherOrdre(i){
-  const m = mancheCourante(); if(!m || jeu.revele) return;
-  const k = m.ordre.indexOf(i);
-  if(k >= 0) m.ordre.splice(k, 1); else m.ordre.push(i);
+/* ===== (v354) RANGE LES LIVRES =====
+   « Je veux dans le mode jeux que tu en remplaces un par un truc pour
+     classer les livres dans l'ordre, avec un système où tu prends et tu les
+     places au bon endroit. » Il prend la place de « Dans l'ordre ».
+   Une colonne de livres de la Bible, mélangés. Deux gestes, au choix :
+   — PRENDRE : le livre se soulève sous le doigt (un peu plus grand, une
+     ombre dessous) et le suit ; les autres glissent pour lui faire sa
+     place. Lâché, il descend dans le trou qu'ils lui ont laissé. Rien ne
+     bouge avant sept pixels : en deçà, c'est un toucher.
+   — TOUCHER un livre, puis un autre : ils s'échangent. Toucher deux fois le
+     même le repose.
+   Rien ne se valide tout seul : « Valider », quand on veut. À la
+   révélation, les livres glissent jusqu'à leur vraie place, chacun avec son
+   numéro dans la Bible.
+   LE LIVRE PORTÉ EST LE VRAI BOUTON, déplacé par transform, et non une copie
+   comme les morceaux du verset : une liste se range sur place. Un bouton du
+   jeu est une surface pleine (GLASS_PLEIN) : il n'a pas de décor à recaler
+   quand il bouge. Les places se comptent dans la mise en page de la liste
+   (offsetTop), jamais à l'écran : un livre encore en train de glisser ne
+   fausse pas la place des autres. */
+let glisseLivre = null, clicLivreMuet = 0, livreAtterrit = null, livresGen = 0;
+/* Le déplacement d'un livre : la propriété « translate » (voir le style),
+   ou transform sur un navigateur qui ne la connaît pas (Safari avant 14.1). */
+const LIVRE_TRANSLATE = (function(){ try{ return !!(window.CSS && CSS.supports && CSS.supports("translate", "0px 1px")); }catch(e){ return false; } })();
+function bougerLivre(e, d){
+  const v = (d === null || Math.abs(d) < 0.5) ? "" : d.toFixed(1) + "px";
+  if(LIVRE_TRANSLATE) e.style.translate = v ? "0px " + v : "";
+  else e.style.transform = v ? "translate3d(0," + v + ",0)" : "";
+}
+function livreDecale(e){ return !!(e.style.translate || e.style.transform); }
+function libererLivre(e){ e.style.removeProperty("translate"); e.style.removeProperty("transform"); }
+function glisseEn(t){ return "translate " + t + ", transform " + t; }
+function majLivres(m){
+  document.querySelectorAll("#jxLivres .jx-livre").forEach(e => e.classList.toggle("jx-pris", m.choisi === +e.dataset.b));
+}
+function toucherLivre(b){
+  const m = mancheCourante(); if(!m || !jeu || jeu.revele || jeu.id !== "livres") return;
+  /* Le clic qui suit un glissement (une souris le donne) n'est pas un toucher. */
+  if(glisseLivre || performance.now() - clicLivreMuet < 450) return;
+  if(livreAtterrit) livreAtterrit.finir();
+  if(m.choisi === null || m.choisi === undefined){ m.choisi = b; playTap(); majLivres(m); return; }
+  if(m.choisi === b){ m.choisi = null; playTap(); majLivres(m); return; }
+  const i = m.livres.indexOf(m.choisi), j = m.livres.indexOf(b);
+  m.choisi = null;
+  if(i < 0 || j < 0){ majLivres(m); return; }
+  const ordre = m.livres.slice(); ordre[i] = m.livres[j]; ordre[j] = m.livres[i];
   playTap();
-  document.querySelectorAll("#jxZone .jx-pas").forEach(b => {
-    const j = +b.dataset.i, rang = m.ordre.indexOf(j);
-    b.classList.toggle("jx-pris", rang >= 0);
-    const l = b.querySelector(".letter"); if(l) l.textContent = rang >= 0 ? String(rang + 1) : "";
+  rangerLesLivres(m, ordre);
+}
+/* Un échange : la liste prend son nouvel ordre, et chaque livre glisse de
+   là où il était jusqu'à sa nouvelle place. */
+function rangerLesLivres(m, ordre){
+  m.livres = ordre.slice();
+  majLivres(m);
+  const liste = document.getElementById("jxLivres"); if(!liste) return;
+  const els = Array.prototype.slice.call(liste.querySelectorAll(".jx-livre"));
+  /* Où chacun est À L'ÉCRAN (un échange encore en vol compris), puis sa
+     place dans la liste rangée, sans aucun décalage. */
+  const avant = els.map(e => e.getBoundingClientRect().top);
+  els.forEach(e => { e.style.transition = "none"; libererLivre(e); });
+  m.livres.forEach(b => { const e = els.find(x => +x.dataset.b === b); if(e) liste.appendChild(e); });
+  const gen = ++livresGen;
+  els.forEach((e, k) => bougerLivre(e, avant[k] - e.getBoundingClientRect().top));
+  void liste.offsetHeight;
+  els.forEach(e => { if(livreDecale(e)){ e.style.transition = glisseEn("0.3s cubic-bezier(0.2,0.8,0.2,1)"); bougerLivre(e, null); } else e.style.removeProperty("transition"); });
+  setTimeout(()=>{ if(gen !== livresGen) return; els.forEach(e => { e.style.removeProperty("transition"); libererLivre(e); }); }, 340);
+  try{ glassTrack(); }catch(e){}
+}
+/* Où chaque livre se trouve si le livre f va à la place v : les hauteurs de
+   la liste, dans le nouvel ordre, l'une sous l'autre. */
+function topsDesLivres(R, f, v, ecart){
+  const ordre = R.map((r, k) => k); ordre.splice(f, 1); ordre.splice(v, 0, f);
+  const tops = []; let y = R[0].top;
+  ordre.forEach(k => { tops[k] = y; y += R[k].h + ecart; });
+  return tops;
+}
+function decalerLesLivres(g, v){
+  const tops = topsDesLivres(g.R, g.from, v, g.ecart);
+  g.els.forEach((e, k) => { if(k !== g.from) bougerLivre(e, tops[k] - g.R[k].top); });
+  return tops[g.from] - g.R[g.from].top;
+}
+function brancherGlisseLivres(liste){
+  if(!liste) return;
+  liste.addEventListener("pointerdown", (e)=>{
+    if(e.button > 0 || glisseLivre) return;
+    const m = mancheCourante(); if(!m || !jeu || jeu.revele) return;
+    const el = e.target && e.target.closest ? e.target.closest(".jx-livre") : null;
+    if(!el || !liste.contains(el)) return;
+    if(livreAtterrit) livreAtterrit.finir();
+    const g = { b:+el.dataset.b, el, id:e.pointerId, x0:e.clientX, y0:e.clientY, actif:false };
+    glisseLivre = g;
+    const bouge = (ev)=>{
+      if(ev.pointerId !== g.id) return;
+      if(!g.actif){
+        if(Math.hypot(ev.clientX - g.x0, ev.clientY - g.y0) < 7) return;
+        if(!leverLivre(g)){ fin(ev, true); return; }
+      }
+      if(ev.cancelable) ev.preventDefault();
+      suivreLivre(g, ev.clientY);
+    };
+    const fin = (ev, annule)=>{
+      if(ev && ev.pointerId !== g.id) return;
+      window.removeEventListener("pointermove", bouge, true);
+      window.removeEventListener("pointerup", lache, true);
+      window.removeEventListener("pointercancel", rompt, true);
+      if(glisseLivre === g) glisseLivre = null;
+      if(g.actif){ clicLivreMuet = performance.now(); poserLivre(g, annule); }
+    };
+    const lache = (ev)=> fin(ev, false), rompt = (ev)=> fin(ev, true);
+    window.addEventListener("pointermove", bouge, { capture:true, passive:false });
+    window.addEventListener("pointerup", lache, true);
+    window.addEventListener("pointercancel", rompt, true);
   });
-  /* (v351) Plus de validation au dernier toucher : « Valider » (voir
-     LE VERSET SE REBÂTIT À LA MAIN). Le dernier récit touché par erreur se
-     reprend, comme les autres. */
-  majValider(m);
+}
+function leverLivre(g){
+  const m = mancheCourante(), liste = document.getElementById("jxLivres");
+  if(!m || !jeu || jeu.revele || !liste || !g.el.isConnected) return false;
+  const els = Array.prototype.slice.call(liste.querySelectorAll(".jx-livre"));
+  const from = els.indexOf(g.el); if(from < 0) return false;
+  livresGen++;   // un échange encore en vol ne nettoiera rien sous le doigt
+  g.actif = true; g.liste = liste; g.els = els; g.from = from; g.vers = from;
+  g.R = els.map(e => ({ top:e.offsetTop, h:e.offsetHeight }));
+  g.ecart = els.length > 1 ? Math.max(0, g.R[1].top - g.R[0].top - g.R[0].h) : 0;
+  if(m.choisi !== null && m.choisi !== undefined){ m.choisi = null; majLivres(m); }
+  els.forEach(e => { if(e !== g.el){ e.style.removeProperty("transition"); libererLivre(e); } });
+  liste.classList.add("jx-en-main");
+  /* Sans « translate », c'est transform qui porte le livre : rien ne doit
+     le lisser. */
+  if(LIVRE_TRANSLATE) g.el.style.removeProperty("transition"); else g.el.style.transition = "none";
+  g.el.classList.add("jx-porte");
+  try{ if(navigator.vibrate) navigator.vibrate(8); }catch(e){}
+  return true;
+}
+function suivreLivre(g, y){
+  const R = g.R, n = R.length, f = g.from;
+  /* Le livre suit le doigt, sans quitter la liste de plus d'une
+     demi-hauteur, en haut comme en bas. */
+  const haut = R[0].top - R[f].top - R[f].h * 0.45, bas = (R[n - 1].top + R[n - 1].h) - (R[f].top + R[f].h) + R[f].h * 0.45;
+  const dy = Math.max(haut, Math.min(bas, y - g.y0));
+  bougerLivre(g.el, dy);
+  /* Sa place : autant de livres au-dessus de lui que de milieux qu'il a
+     dépassés. */
+  const c = R[f].top + R[f].h / 2 + dy;
+  let v = 0;
+  for(let k = 0; k < n; k++) if(k !== f && R[k].top + R[k].h / 2 < c) v++;
+  if(v !== g.vers){ g.vers = v; decalerLesLivres(g, v); }
+}
+function poserLivre(g, annule){
+  const m = mancheCourante(), liste = g.liste, els = g.els || [];
+  const net = ()=>{ els.forEach(e => { e.style.transition = "none"; libererLivre(e); e.classList.remove("jx-porte", "jx-atterrit"); });
+    if(liste) liste.classList.remove("jx-en-main"); void document.body.offsetHeight; els.forEach(e => e.style.removeProperty("transition")); };
+  if(!m || !jeu || jeu.revele || jeu.id !== "livres" || !liste || !liste.isConnected || m.livres.indexOf(g.b) !== g.from){ net(); return; }
+  const v = annule ? g.from : g.vers;
+  if(v !== g.from){
+    const ordre = m.livres.slice(); ordre.splice(g.from, 1); ordre.splice(v, 0, g.b);
+    m.livres = ordre;
+    playTap();
+  }
+  /* Les autres finissent de glisser ; lui descend dans son trou. */
+  const d = decalerLesLivres(g, v);
+  g.el.style.removeProperty("transition");
+  g.el.classList.remove("jx-porte");
+  g.el.classList.add("jx-atterrit");
+  bougerLivre(g.el, d);
+  /* Posé : la liste prend son nouvel ordre pour de bon, sans que rien ne
+     bouge (chacun est déjà, à l'écran, là où l'ordre le met). */
+  const a = {}; let fini = false;
+  a.finir = ()=>{
+    if(fini) return; fini = true;
+    if(livreAtterrit === a) livreAtterrit = null;
+    els.forEach(e => { e.style.transition = "none"; libererLivre(e); e.classList.remove("jx-porte", "jx-atterrit"); });
+    liste.classList.remove("jx-en-main");
+    const cur = mancheCourante();
+    if(liste.isConnected && cur === m) m.livres.forEach(b => { const e = els.find(x => +x.dataset.b === b); if(e) liste.appendChild(e); });
+    void liste.offsetHeight;
+    els.forEach(e => e.style.removeProperty("transition"));
+    try{ glassTrack(); }catch(e){}
+  };
+  livreAtterrit = a;
+  setTimeout(a.finir, 230);
+}
+/* La révélation : les livres glissent de la place où on les a laissés
+   jusqu'à leur vraie place. */
+function placesDesLivres(){
+  const o = {};
+  document.querySelectorAll("#jxLivres .jx-livre").forEach(e => { o[e.dataset.b] = e.getBoundingClientRect().top; });
+  return o;
+}
+function glisserLesLivres(avant){
+  const ms = msPli(); let bouge = false;
+  document.querySelectorAll("#jxZone .jx-livre").forEach(e => {
+    const v = avant[e.dataset.b]; if(v === undefined) return;
+    const d = v - e.getBoundingClientRect().top; if(Math.abs(d) < 1) return;
+    bouge = true;
+    e.style.transition = "none";
+    bougerLivre(e, d);
+    void e.offsetHeight;
+    e.style.transition = glisseEn(tempoPli());
+    bougerLivre(e, null);
+    setTimeout(()=>{ e.style.removeProperty("transition"); libererLivre(e); }, ms + 60);
+  });
+  if(bouge){ try{ glassSuivre(ms + 120); }catch(e){} }
 }
 function toucherQui(i){
   const m = mancheCourante(); if(!m || jeu.revele) return;
@@ -26318,25 +26574,27 @@ function toucherMorceau(k){
   playTap();
   majMorceaux(m);
 }
-/* « Valider », pour les trois jeux qui se jouent en plusieurs gestes (Dans
-   l'ordre, Qui ? Où ?, Verset en morceaux) : la manche est-elle complète,
-   et juste ? */
+/* « Valider », pour les trois jeux qui se jouent en plusieurs gestes (Range
+   les livres, Qui ? Où ?, Verset en morceaux) : la manche est-elle complète,
+   et juste ? Les livres sont toujours tous là : on valide quand on veut. */
 function mancheComplete(m){
   if(!m || !jeu) return false;
-  if(jeu.id === "ordre") return m.ordre.length === m.items.length;
+  if(jeu.id === "livres") return true;
   if(jeu.id === "quiou") return Object.keys(m.liens).length === m.paires.length;
   if(jeu.id === "morceaux") return m.pose.length === m.parts.length;
   return false;
 }
 function mancheJuste(m){
-  if(jeu.id === "ordre") return m.ordre.every((j, r) => r === 0 || m.items[m.ordre[r - 1]][0] < m.items[j][0]);
+  if(jeu.id === "livres") return m.livres.every((b, r) => r === 0 || m.livres[r - 1] < b);
   if(jeu.id === "quiou") return m.paires.every((p, i) => m.liens[i] === i);
   /* Deux morceaux identiques s'échangent sans faute : on compare le TEXTE. */
   return m.pose.every((x, i) => m.parts[x] === m.parts[i]);
 }
 function validerManche(){
   const m = mancheCourante(); if(!m || jeu.revele || !mancheComplete(m)) return;
+  const avant = jeu.id === "livres" ? placesDesLivres() : null;
   conclureManche(mancheJuste(m));
+  if(avant){ try{ glisserLesLivres(avant); }catch(e){} }
 }
 function majValider(m){
   const v = document.getElementById("jxValider"), pret = mancheComplete(m);
@@ -26401,6 +26659,15 @@ function leverMorceau(g){
   document.body.appendChild(c);
   const r = c.getBoundingClientRect();
   g.copie = c; g.w = r.width; g.h = r.height;
+  /* (v354) LA COPIE SE DÉCOLLE DU MORCEAU. Elle naissait directement
+     au-dessus du doigt, à cinquante pixels du morceau qu'on venait de
+     toucher : un saut. Elle part maintenant du morceau lui-même et glisse
+     jusqu'au-dessus du doigt, le temps d'un battement (0,15 s). */
+  const rs = g.el.getClientRects(), o = rs.length ? rs[0] : g.el.getBoundingClientRect();
+  c.style.transform = "translate(" + (o.left + o.width / 2 - g.w / 2).toFixed(1) + "px," + (o.top + o.height / 2 - g.h / 2).toFixed(1) + "px)";
+  void c.offsetWidth;
+  c.classList.add("jx-decolle");
+  setTimeout(()=>{ c.classList.remove("jx-decolle"); }, 160);
   g.el.classList.add("jx-leve");
   const ligne = document.getElementById("jxLigne");
   if(ligne){ const t = document.createElement("span"); t.className = "jx-curseur"; t.hidden = true; t.setAttribute("aria-hidden", "true"); ligne.appendChild(t); g.curseur = t; }
@@ -26435,11 +26702,19 @@ function suivreMorceau(g, x, y){
      visé, elle cachait le trait et les deux morceaux entre lesquels elle
      allait se poser (vu sur la photo du geste). */
   const hx = x, hy = g.doigt ? y - 34 : y;
-  const lx = x - g.w / 2, ly = hy - 22 - g.h;
+  /* (v354) La copie RESTE DANS L'ÉCRAN : un morceau pris près d'un bord
+     sortait à moitié de l'écran (centrée sur le doigt, une copie de 200 px
+     tenue à 20 px du bord en perdait 80). Elle s'arrête à 8 px des bords,
+     agrandissement compris (1,04) ; l'endroit visé, lui, reste sous le doigt. */
+  const vw = document.documentElement.clientWidth || window.innerWidth, bord = 8 + g.w * 0.02;
+  const lx = Math.max(bord, Math.min(vw - g.w - bord, x - g.w / 2)), ly = Math.max(6, hy - 22 - g.h);
   g.copie.style.transform = "translate(" + lx.toFixed(1) + "px," + ly.toFixed(1) + "px) scale(1.04)";
   const ligne = document.getElementById("jxLigne");
   const r = ligne ? ligne.getBoundingClientRect() : null;
   g.dans = !!r && hx >= r.left - 18 && hx <= r.right + 18 && hy >= r.top - 30 && hy <= r.bottom + 30;
+  /* (v354) Visée, la ligne VIDE efface son invitation : le trait se tenait
+     au milieu de « Touche ou glisse les morceaux ici », coupant la phrase. */
+  if(ligne) ligne.classList.toggle("jx-vise", g.dans);
   const t = g.curseur;
   if(!t) return;
   if(g.dans){
@@ -26453,6 +26728,7 @@ function suivreMorceau(g, x, y){
 }
 function poserMorceau(g, annule){
   if(g.curseur) g.curseur.remove();
+  const visee = document.getElementById("jxLigne"); if(visee) visee.classList.remove("jx-vise");
   g.el.classList.remove("jx-leve");
   const m = mancheCourante();
   if(!m || jeu.revele || !document.getElementById("jxLigne")){ if(g.copie) g.copie.remove(); return; }
@@ -26492,6 +26768,8 @@ function atterrirMorceau(g){
 function oublierGlisseMorceau(){
   glisseMorceau = null;
   document.querySelectorAll("body > .jx-flotte").forEach(c => c.remove());
+  /* (v354) Un livre porté ou qui se posait appartient à l'écran d'avant. */
+  glisseLivre = null; livreAtterrit = null;
 }
 
 /* ===== L'ÉCRAN DES JEUX (l'onglet) ===== */
@@ -26554,7 +26832,7 @@ function renderJeux(){
 
 /* ===== UNE MANCHE ===== */
 function consigneJeu(m){
-  if(jeu.id === "ordre") return T("Touche les récits du plus ancien au plus récent");
+  if(jeu.id === "livres") return T("Glisse les livres dans l'ordre de la Bible");
   if(jeu.id === "quiou") return T("Touche un personnage, puis son lieu");
   if(jeu.id === "combien") return m.f[3][langueIdx()];
   if(jeu.id === "erreur") return T("Un mot a changé\u00a0: touche-le");
@@ -26562,17 +26840,11 @@ function consigneJeu(m){
 }
 function zoneJeu(m){
   const L = langueIdx(), rv = jeu.revele;
-  if(jeu.id === "ordre"){
-    /* À la révélation : la frise juste, chaque récit avec son chapitre. */
-    if(rv){
-      const juste = m.items.slice().sort((a, b) => a[0] - b[0]);
-      return `<div class="jx-liste">${juste.map((e, r) => {
-        const bien = m.ordre[r] !== undefined && m.items[m.ordre[r]] === e;
-        return `<div class="option-btn jx-pas ${bien ? "correct" : "incorrect"}"><span class="letter">${r + 1}</span><span class="opt-text">${escapeHtml(e[1][L])}<small class="jx-ref">${escapeHtml(refLivre(e[2]))}</small></span></div>`; }).join("")}</div>`;
-    }
-    return `<div class="jx-liste">${m.items.map((e, i) => { const r = m.ordre.indexOf(i);
-      return `<button class="option-btn jx-pas${r >= 0 ? " jx-pris" : ""}" data-i="${i}" onclick="toucherOrdre(${i})"><span class="letter">${r >= 0 ? r + 1 : ""}</span><span class="opt-text">${escapeHtml(e[1][L])}</span></button>`; }).join("")}</div>
-      ${boutonValider(m)}`;
+  if(jeu.id === "livres"){
+    /* À la révélation : l'ordre juste, chaque livre avec son numéro dans la
+       Bible — vert s'il était à sa place, rouge sinon. */
+    const ordre = rv ? m.livres.slice().sort((a, b) => a - b) : m.livres, ident = rv ? "" : ' id="jxLivres"';
+    return `<div class="jx-liste jx-livres"${ident}>${ordre.map((b, r) => carteLivre(m, b, r)).join("")}</div>${rv ? "" : boutonValider(m)}`;
   }
   if(jeu.id === "quiou"){
     if(rv){
@@ -26607,10 +26879,19 @@ function zoneJeu(m){
     <div class="jx-bouts">${m.melange.map(k => `<button class="option-btn jx-bout${m.pose.includes(k) ? " jx-utilise" : ""}" data-k="${k}" onclick="toucherMorceau(${k})"><span class="opt-text">${escapeHtml(frSpace(m.parts[k]))}</span></button>`).join("")}</div>
     ${boutonValider(m)}`;
 }
+/* (v354) Un livre de « Range les livres » : un bouton qu'on prend, avec sa
+   poignée ; révélé, son numéro dans la Bible. (Une fonction à part : un
+   gabarit dans un gabarit se lit mal, pour nous comme pour le banc des
+   traductions.) */
+function carteLivre(m, b, r){
+  const nom = escapeHtml(nomLivre(BIBLE_BOOKS[b]));
+  if(jeu.revele) return `<div class="option-btn jx-livre ${m.livres[r] === b ? "correct" : "incorrect"}" data-b="${b}"><span class="letter">${b + 1}</span><span class="opt-text">${nom}</span></div>`;
+  return `<button class="option-btn jx-livre${m.choisi === b ? " jx-pris" : ""}" data-b="${b}" onclick="toucherLivre(${b})"><span class="opt-text">${nom}</span><span class="jx-poignee" aria-hidden="true">${ICONS.poignee}</span></button>`;
+}
 /* Ce que dit la carte « Le savais-tu ? » une fois la manche jouée. */
 function faitJeu(m){
   const L = langueIdx();
-  if(jeu.id === "ordre") return T("Du plus ancien au plus récent, dans le récit biblique.");
+  if(jeu.id === "livres") return T("Le numéro est la place du livre dans la Bible, sur 66.");
   if(jeu.id === "quiou") return T("Chaque paire se lit dans le chapitre indiqué.");
   if(jeu.id === "combien") return Tf("La réponse\u00a0: {n} ({ref}).", { n:m.f[1].toLocaleString(LANGUE), ref:refLivre(m.f[0]) });
   if(jeu.id === "erreur") return Tf("Le texte dit «\u00a0{mot}\u00a0» ({ref}).", { mot:String(m.juste).replace(/[«»"“”,;:.!?]/g, ""), ref:refLivre(m.r) });
@@ -26624,6 +26905,10 @@ function renderJeu(){
   const m = mancheCourante(), total = jeu.manches.length;
   const fresh = jeu.vu !== jeu.i; jeu.vu = jeu.i;
   const pop = justRevealed; justRevealed = false;
+  /* (v354) Sous la consigne : la référence du verset (Trouve l'erreur,
+     Verset en morceaux) ou, pendant une manche de Range les livres, dans
+     quel sens ranger. */
+  const sousConsigne = (jeu.id === "erreur" || jeu.id === "morceaux") ? escapeHtml(refLivre(m.r)) : ((jeu.id === "livres" && !jeu.revele) ? T("Le premier en haut") : "");
   el.innerHTML = `
     ${renderHeader(T(def.nom), true, "quitterJeu()")}
     <div class="play-meta">
@@ -26633,7 +26918,7 @@ function renderJeu(){
     </div>
     <div class="progress-track"><div class="progress-fill" style="--p:${(jeu.i + (jeu.revele ? 1 : 0)) / total}" data-p="${(jeu.i + (jeu.revele ? 1 : 0)) / total}"></div></div>
     <div class="flex-sp" style="flex-grow:0.35"></div>
-    <div class="question-card jx-consigne${fresh ? " animate" : ""}"><div class="qtext">${escapeHtml(consigneJeu(m))}</div>${(jeu.id === "erreur" || jeu.id === "morceaux") ? `<div class="jx-cref">${escapeHtml(refLivre(m.r))}</div>` : ""}</div>
+    <div class="question-card jx-consigne${fresh ? " animate" : ""}"><div class="qtext">${escapeHtml(consigneJeu(m))}</div>${sousConsigne ? `<div class="jx-cref">${sousConsigne}</div>` : ""}</div>
     <div id="jxZone" class="jx-zone${fresh ? " animate" : ""}">${zoneJeu(m)}</div>
     ${jeu.revele ? `<div class="fact-card${pop ? " reveal-in" : ""}"><span class="ficon">${ICONS.bookOpen}</span><span class="ftext"><span class="fact-label">${jeu.juste ? T("Bien joué\u00a0!") : T("Le savais-tu\u00a0?")}</span>${escapeHtml(faitJeu(m))}</span></div>
       <button class="btn-next${pop ? " reveal-in" : ""}" onclick="mancheSuivante()">${jeu.i >= total - 1 ? T("Voir les résultats") : T("Suivant")}</button>` : ""}
@@ -26641,6 +26926,7 @@ function renderJeu(){
     <div class="solo-score-bar"><span class="label">${T("Score")}</span><span class="value">${jeu.points} pts</span></div>`;
   oublierGlisseMorceau();
   if(def.id === "morceaux" && !jeu.revele) brancherGlisseMorceaux(el.querySelector("#jxZone"));
+  if(def.id === "livres" && !jeu.revele) brancherGlisseLivres(el.querySelector("#jxLivres"));
   return el;
 }
 /* ===== LA FIN D'UNE PARTIE ===== */
@@ -31458,11 +31744,23 @@ async function traiterSignalement(id, decision, btn){
    relire sans chercher : les règles depuis les groupes, la confidentialité
    depuis les Réglages. Courts, et vrais — chaque ligne correspond à ce que le
    jeu fait réellement, pas à un modèle copié. */
-/* (v345) Le déroulé du Mode Groupe, dans sa page (voir L'ÉCRAN DU MODE
-   GROUPE TIENT DANS L'ÉCRAN). */
+/* ===== (v354) « COMMENT JOUER » TIENT DANS UNE PETITE FENÊTRE =====
+   « Pour cette page-là, je pense qu'elle n'est pas forcément nécessaire : je
+     voudrais plutôt un petit pop-up qui s'affiche pour nous expliquer les
+     règles, plutôt que d'avoir cette page-là lorsqu'on clique sur le truc
+     d'information. »
+   Une page entière (v345) pour trois lignes : l'écran du Mode Groupe
+   disparaissait, et il fallait en revenir. C'est maintenant une fenêtre,
+   posée sur la mise en place qu'on voit encore derrière : les trois gestes
+   d'une manche, numérotés, puis le chrono et les corrections. « Compris »
+   la referme, comme toucher à côté. */
 function ouvrirDeroule(){
-  ouvrirFeuilleGroupe("derouleVeil", T("Comment jouer"), ICONS.info, `
-    <p class="grp-aide"><b>${T("Déroulé :")}</b> ${T("lisez la question à voix haute → révélez la réponse → attribuez les points au bon joueur (ou à la bonne équipe). Avec le chrono, la réponse se révèle toute seule à la fin du temps. Une erreur ? Les boutons −/+ corrigent à tout moment.")}</p>`);
+  const pas = [T("Lisez la question à voix haute."), T("Révélez la réponse."), T("Donnez les points au bon joueur, ou à la bonne équipe.")];
+  showModal({
+    title:T("Comment jouer"), cardClass:"modal-deroule", okLabel:T("Compris"), hideCancel:true,
+    bodyHtml:`<ol class="deroule-pas">${pas.map((p, i) => `<li><span class="dp-n">${i + 1}</span><span>${escapeHtml(p)}</span></li>`).join("")}</ol>
+      <p class="deroule-note">${escapeHtml(T("Avec le chrono, la réponse se révèle toute seule à la fin du temps. Une erreur ? Les boutons −/+ corrigent à tout moment."))}</p>`
+  });
 }
 function ouvrirRegles(){
   ouvrirFeuilleGroupe("grpReglesVeil", T("Les règles de la communauté"), ICONS.bouclier, `
@@ -34653,7 +34951,7 @@ function render(){
   /* La réponse s'affiche : on note où sont la question et les réponses AVANT
      de redessiner, pour les faire glisser au lieu de les faire sauter (voir
      glisserApresRevelation). */
-  const revelation = sameScreen && ((state.screen === "play" && justRevealed) || (state.screen === "online-play" && net && net.justRevealed));
+  const revelation = sameScreen && ((state.screen === "play" && justRevealed) || (state.screen === "online-play" && net && net.justRevealed) || (state.screen === "jeu" && justRevealed));
   const avantRevelation = revelation ? positionsDuJeu(app) : null;
 
   let node;
@@ -34947,7 +35245,17 @@ const SERRE_INTERIEUR = [
   [".parcours-ecran .parcours-sum", "padding", 0.5], [".parcours-ecran .semaine", "margin-bottom", 0.4],
   [".parcours-ecran .ach-card", "padding", 0.5], [".parcours-ecran .ach-grid", "row-gap", 0.45], [".parcours-ecran .ach", "row-gap", 0.5],
   [".question-card", "padding", 0.5], [".fact-card", "padding", 0.5], [".option-btn", "padding", 0.5],
-  [".option-btn", "min-height", 0.82], [".question-card", "min-height", 0.75], [".options-grid", "row-gap", 0.5]
+  [".option-btn", "min-height", 0.82], [".question-card", "min-height", 0.75], [".options-grid", "row-gap", 0.5],
+  /* (v354) LES JEUX : l'écart entre les lignes d'une liste (Range les
+     livres, Qui ? Où ?), l'air au-dessus de « Valider » et sous la
+     consigne. Sur un iPhone SE (320 × 568), cinq livres, la consigne et
+     « Valider » ne tenaient pas : il manquait 66 px, et rien de ce qui
+     pouvait céder dans une manche n'était nommé ici. */
+  [".jx-liste", "row-gap", 0.5], [".jx-col", "row-gap", 0.5], [".jx-valider", "margin-top", 0.4], [".jx-cref", "margin-top", 0.4],
+  /* Les livres RÉVÉLÉS ne se touchent plus (ce ne sont plus des boutons) :
+     ils peuvent descendre sous les 44 px d'un bouton, jusqu'à ce qu'ils
+     portent — leur numéro et leur nom. */
+  [".jx-livre:not(button)", "min-height", 0.82]
 ];
 /* (v350) UNE PLACE DU MODE GROUPE PERD DE LA HAUTEUR, JAMAIS CE QU'ELLE PORTE :
    sa pastille et son nom (deux lignes au plus), son rembourrage et deux
@@ -35008,7 +35316,10 @@ function serrerEcran(ecran, siDepasse){
   Array.prototype.forEach.call(ecran.children, c => { if(c.classList && c.classList.contains("flex-sp")) lever(c, "min-height", () => 0); });
   SERRE_INTERIEUR.forEach(([sel, prop, f]) => ecran.querySelectorAll(sel).forEach(el => {
     if(prop === "padding"){ lever(el, "padding-top", v => v * f); lever(el, "padding-bottom", v => v * f); }
-    else if(prop === "min-height") lever(el, "min-height", v => Math.max(sel === ".option-btn" ? 44 : 0, v * f));
+    /* (v354) Jamais AU-DESSUS de ce qu'il est : un bouton déjà plus bas
+       que 44 px (les livres d'un iPhone SE, 41 px) grandissait au lieu de
+       céder, et l'air gagné ailleurs y passait. */
+    else if(prop === "min-height") lever(el, "min-height", v => Math.min(v, Math.max(sel === ".option-btn" ? 44 : 0, v * f)));
     else lever(el, prop, typeof f === "function" ? (v => f(v, el)) : (v => v * f));
   }));
   if(!leviers.length) return;
@@ -35043,7 +35354,12 @@ function serrerEcran(ecran, siDepasse){
    iPhone 16 Pro, 66 sur un Pro Max, sous le doigt qui venait de toucher.
    Elles glissent désormais jusqu'à leur nouvelle place sur la durée d'un pli,
    pendant que l'anecdote arrive. Le verre suit image par image. */
-const JEU_GLISSE = [".duel-scorebar", ".play-meta", ".progress-track", ".question-card", ".options-grid"];
+/* (v354) LES JEUX AUSSI. « Le savais-tu ? » et « Suivant » arrivent à la
+   place de « Valider » : la consigne et la manche remontaient d'un bloc,
+   30 px d'une image à l'autre sur un iPhone 16, dans les cinq jeux. Elles
+   glissent maintenant comme celles du quiz. La grille de « Combien ? » est
+   DANS la manche : elle suit la manche, elle ne glisse pas une seconde fois. */
+const JEU_GLISSE = [".duel-scorebar", ".play-meta", ".progress-track", ".question-card", ".options-grid:not(.jx-zone *)", ".jx-zone"];
 function positionsDuJeu(app){
   const sc = app && Array.prototype.find.call(app.children, c => c.classList && c.classList.contains("screen") && !c.classList.contains("screen-exit"));
   if(!sc) return null;
