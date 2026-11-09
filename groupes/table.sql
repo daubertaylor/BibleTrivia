@@ -186,6 +186,9 @@ create table if not exists public.mots_interdits (
 alter table public.profils add column if not exists photo            text;
 alter table public.profils add column if not exists photo_maj        bigint not null default 0;
 alter table public.profils add column if not exists photo_retiree_le timestamptz;
+-- LES CHIFFRES D'UN JOUEUR (v356) : voir « LES CHIFFRES D'UN JOUEUR » plus bas.
+alter table public.profils add column if not exists stats            jsonb;
+alter table public.profils add column if not exists stats_maj        timestamptz;
 alter table public.groupes add column if not exists photo            text;
 alter table public.groupes add column if not exists photo_maj        bigint not null default 0;
 alter table public.groupes add column if not exists photo_retiree_le timestamptz;
@@ -510,7 +513,7 @@ begin
     'regles_version', r.regles_version,
     -- Le profil sans sa photo : le jeu a déjà la sienne, et n'a besoin que de
     -- sa version (photo_maj) pour savoir si celle du serveur est à jour.
-    'profil', (select to_jsonb(p) - 'banni_le' - 'photo' from public.profils p where p.id = moi),
+    'profil', (select to_jsonb(p) - 'banni_le' - 'photo' - 'stats' from public.profils p where p.id = moi),
     -- Ce serveur connaît les photos (v311) : le jeu ne les propose qu'ici.
     'photos', true,
     -- Et les logos (v322) : le jeu ne propose d'en choisir un qu'ici.
@@ -542,6 +545,10 @@ begin
     -- Et le récap des parties de groupe (v339) : chaque joueur inscrit son
     -- score sur l'invitation (resultat_partie). Le jeu ne l'envoie qu'ici.
     'recaps', true,
+    -- Et les chiffres d'un joueur (v356) : chacun pose les siens
+    -- (poser_stats), et la page d'un membre les montre. Le jeu n'envoie ni
+    -- ne lit rien de tel ailleurs qu'ici.
+    'stats', true,
     -- La taille d'un groupe (v332) : le jeu la dit quand un groupe est plein.
     'membres_max', 120,
     -- Pour un modérateur : combien de choses attendent une décision (une par
@@ -1347,6 +1354,58 @@ begin
   return jsonb_build_object('ok', true);
 end $$;
 
+-- LES CHIFFRES D'UN JOUEUR (v356).
+-- « Quand tu cliques sur le profil, tu vois le profil avec les différentes
+--   statistiques au niveau des testaments, des succès de la personne. »
+-- Un RÉSUMÉ, que le jeu de chacun pose lui-même à la fin de ses parties :
+-- livres maîtrisés (en tout, dans l'Ancien et dans le Nouveau Testament),
+-- bonnes réponses, meilleure série, et les objectifs débloqués. Les membres
+-- d'un groupe partagé le lisent comme le reste du profil (même règle
+-- d'accès : « son profil et ceux de ses groupes »).
+-- Le serveur n'en garde que des NOMBRES BORNÉS et des NOMS D'OBJECTIFS :
+-- une clé inconnue, un nombre négatif ou démesuré, un texte à la place d'un
+-- nombre, un objectif au nom étrange — rien de tout cela ne passe. Il ne
+-- garde rien d'autre de la progression : elle reste dans le téléphone (et
+-- dans la sauvegarde du compte, qui n'est lisible que par son propriétaire).
+create or replace function public._borne(v jsonb, plafond bigint) returns bigint
+language sql immutable set search_path = '' as $$
+  select case when jsonb_typeof(v) = 'number'
+              then greatest(0::bigint, least(plafond, floor(least((v #>> '{}')::numeric, plafond::numeric))::bigint))
+              else 0::bigint end
+$$;
+
+create or replace function public.poser_stats(p_stats jsonb) returns jsonb
+language plpgsql volatile security definer set search_path = '' as $$
+declare
+  moi uuid := auth.uid();
+  objectifs jsonb := '[]'::jsonb;
+  x jsonb;
+begin
+  if moi is null then return jsonb_build_object('ok', false, 'erreur', 'non_connecte'); end if;
+  if p_stats is null or jsonb_typeof(p_stats) <> 'object' or octet_length(p_stats::text) > 4000 then
+    return jsonb_build_object('ok', false, 'erreur', 'stats'); end if;
+  if jsonb_typeof(p_stats -> 'succes') = 'array' then
+    for x in select e from jsonb_array_elements(p_stats -> 'succes') as t(e) limit 40 loop
+      if jsonb_typeof(x) = 'string' and (x #>> '{}') ~ '^[a-z0-9-]{1,24}$' and not (objectifs @> jsonb_build_array(x)) then
+        objectifs := objectifs || jsonb_build_array(x);
+      end if;
+    end loop;
+  end if;
+  update public.profils set
+    stats = jsonb_build_object(
+      'v', 1,
+      'livres', public._borne(p_stats -> 'livres', 66),
+      'at',     public._borne(p_stats -> 'at', 39),
+      'nt',     public._borne(p_stats -> 'nt', 27),
+      'bonnes', public._borne(p_stats -> 'bonnes', 10000000),
+      'serie',  public._borne(p_stats -> 'serie', 100000),
+      'succes', objectifs),
+    stats_maj = now()
+  where id = moi;
+  if not found then return jsonb_build_object('ok', false, 'erreur', 'sans_profil'); end if;
+  return jsonb_build_object('ok', true);
+end $$;
+
 -- MA PHOTO, celle que voient les membres de mes groupes. null = la retirer.
 -- Le jeu l'envoie quand elle change, et la retire quand on la retire.
 create or replace function public.poser_photo(p_photo text) returns jsonb
@@ -1598,7 +1657,7 @@ begin
               and p.proname in ('_moderateur','_role','_membre','_partage_un_groupe','_bloque','_normaliser','_interdit',
                                 '_coordonnees','_code','_peut_participer','_annoncer','_passer_la_main','_masquer','_quitter_tout','_nom',
                                 '_absent','_successeur','_veiller_absences','_annoncer_proprietaire',
-                                '_maintenant_ms','_photo_valide','poser_photo','poser_photo_groupe',
+                                '_maintenant_ms','_photo_valide','poser_photo','poser_photo_groupe','_borne','poser_stats',
                                 'mon_etat_groupes','poser_profil','accepter_regles','creer_groupe','groupe_par_code',
                                 'rejoindre_groupe','quitter_groupe','envoyer_message','fermer_partie','marquer_lu','marquer_recu','marquer_recus',
                                 'regler_notifs','supprimer_message',

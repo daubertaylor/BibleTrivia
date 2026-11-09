@@ -36,6 +36,20 @@ un au doigt, il suit le doigt, les autres s'écartent, et il se pose là où on
 le lâche (ou l'on touche deux livres pour les échanger). « Valider » quand
 on veut. Il est vérifié par `banc-essai/livres.js`.
 
+**Qui ? Où ? au doigt (v356)** : on prend un personnage et on le tire
+jusqu'à son lieu ; un fil de sa couleur suit le doigt et s'accroche au lieu
+visé, pastille contre pastille. Le geste marche aussi d'un lieu vers un
+personnage, un lien se refait ailleurs d'un autre geste, et toucher (un
+personnage, puis son lieu) marche toujours. Il est vérifié par
+`banc-essai/quiou-main.js`.
+
+**Le profil d'un joueur (v356)** : toucher un membre d'un groupe montre
+ses chiffres de jeu — livres maîtrisés, bonnes réponses, meilleure série,
+ses deux testaments et ses objectifs. Chaque jeu pose lui-même son résumé
+chez le serveur (`poser_stats`, groupes/table.sql — étape 15 de
+groupes/LISEZMOI.md : recoller le fichier une fois). Vérifié par
+`banc-essai/profil-joueur.js`.
+
 **Le Parcours (v353, dans la barre du bas depuis la v355)** : « le Duolingo de la Bible ». Un chemin dans l'ordre
 de la Bible, de la Genèse à l'Apocalypse : douze unités (`PARCOURS`), cinq
 leçons chacune, six questions par leçon, tirées des livres de l'unité, des

@@ -241,7 +241,17 @@ finissant ses questions, inscrit son propre score sur l'invitation
 seulement s'il était de la partie. Tant que le fichier n'est pas recollé,
 la bulle dit seulement « Partie terminée », comme avant.
 
-**Une seule fois suffit pour les étapes 6 à 14 ensemble**, quelle que soit
+### 15. Le profil d'un joueur (v356) — recoller le fichier une fois
+
+Toucher un membre d'un groupe (dans la page du groupe, ou « Voir le profil »
+en tenant un de ses messages) montre maintenant **ses chiffres de jeu** :
+livres maîtrisés, bonnes réponses, meilleure série, ses deux testaments et
+ses objectifs débloqués. Le jeu de chacun pose lui-même son résumé à la fin
+de ses parties (fonction `poser_stats`, qui ne garde que des nombres bornés
+et des noms d'objectifs). Tant que le fichier n'est pas recollé, la page
+d'un membre reste comme avant, sans chiffres.
+
+**Une seule fois suffit pour les étapes 6 à 15 ensemble**, quelle que soit
 la version déjà installée : le fichier d'aujourd'hui se colle par-dessus
 n'importe laquelle de ses versions passées sans rien perdre, et donne
 exactement la même base qu'une installation neuve (vérifié par

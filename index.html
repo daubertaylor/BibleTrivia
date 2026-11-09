@@ -6224,6 +6224,31 @@
      et descendait sur la carte du code d'invitation. */
   .sheet-title .st-ico > .grp-av{ width:100%; height:100%; font-size:0.78rem; border-radius:8px; }
   .grp-membre-role{ margin:-0.2rem 0 0.2rem; color:var(--ink-soft); font-size:0.88rem; }
+  /* ===== (v356) LE PROFIL D'UN JOUEUR (voir LE PROFIL D'UN JOUEUR, dans le code) =====
+     Une carte de la page, comme celles des actions : les trois chiffres de
+     la Progression, ses deux testaments, et ses seize objectifs en une
+     grille serrée — des pastilles sans nom (on touche pour le lire), en
+     couleur s'il les a, éteintes sinon. Rien ne change de taille quand les
+     chiffres arrivent. */
+  .mb-profil{ background:var(--page-carte); border-radius:var(--r-l); box-shadow:var(--ombre-pose);
+    padding:calc(0.95rem + 1px) calc(1rem + 1px) calc(1rem + 1px); display:flex; flex-direction:column; gap:0.95rem; }
+  .mb-chiffres{ flex:none; min-height:2.75rem; align-items:center; }
+  .mb-chiffres > div{ justify-content:center; }
+  .mb-note{ margin:0; flex:1; font-size:0.84rem; line-height:1.4; color:var(--ink-soft); text-align:center; }
+  .mb-tst{ display:flex; flex-direction:column; gap:0.6rem; }
+  .mb-tst-l{ display:flex; align-items:center; gap:0.7rem; }
+  .mb-tst-l .tst-name{ font-size:0.88rem; }
+  .mb-tst-l .tst-bar{ background:rgba(120,90,50,0.14); }
+  .mb-obj-h{ display:flex; align-items:baseline; justify-content:space-between; font-family:'Poppins',sans-serif; font-size:0.9rem; font-weight:700; color:var(--ink); margin-bottom:-0.35rem; }
+  .mb-obj-h small{ font-size:0.78rem; font-weight:700; color:var(--ink-soft); font-variant-numeric:tabular-nums; }
+  .mb-succes{ display:grid; grid-template-columns:repeat(8, minmax(0, 1fr)); gap:0.45rem 0.4rem; }
+  .mb-ach{ border:0; background:none; padding:0; display:flex; justify-content:center; -webkit-tap-highlight-color:transparent; --press-tint: transparent; }
+  .mb-ach::before{ content:none; }
+  .mb-ach .ach-tile{ width:100%; height:auto; aspect-ratio:1 / 1; max-width:2.5rem; border-radius:var(--r-s); transition:transform 0.14s cubic-bezier(0.34,1.4,0.6,1); }
+  .mb-ach:active .ach-tile{ transform:scale(0.9); }
+  .mb-ach .ach-tile svg{ width:56%; height:56%; }
+  .mb-ach:not(.on) .ach-tile{ filter:saturate(0.14) brightness(1.04); opacity:0.5; box-shadow:0 1px 3px rgba(15,12,10,0.1); }
+  .modal-card.ach-info.ach-eteint .ach-tile{ filter:saturate(0.14) brightness(1.04); opacity:0.62; }
 
   /* ---------- LA DISCUSSION ---------- */
   .screen.groupe-ecran{ height:100%; min-height:0; display:flex; flex-direction:column; }
@@ -6750,6 +6775,27 @@
   .jx-point.rose{ background:var(--pal-rose); }
   .option-btn.jx-qui.jx-pris .jx-point{ transform:scale(1.25); }
   .option-btn.jx-relie .opt-text{ opacity:0.78; }
+  /* ===== (v356) QUI ? OÙ ? AU DOIGT (voir QUI ? OÙ ? SE RELIE AU DOIGT) =====
+     Une carte se prend sans que la page défile ni que le texte se
+     sélectionne. Celle qu'on tient ne s'enfonce pas (le doigt ne l'appuie
+     pas, il la tire) et prend la teinte d'une carte choisie ; celle qu'on
+     vise aussi, et sa pastille grossit pour recevoir le fil. Le lien fait,
+     la pastille du lieu prend sa couleur d'un petit coup. Le fil est un
+     trait rond de la couleur du personnage, qui pend un peu, comme un fil. */
+  .jx-deux .option-btn{ touch-action:none; -webkit-user-select:none; user-select:none; -webkit-touch-callout:none; }
+  .jx-deux .option-btn.jx-tient{ --glass-tint: rgb(255,236,226); transform:translateZ(0); }
+  .jx-deux .option-btn.jx-vise{ --glass-tint: rgb(255,236,226); }
+  .option-btn.jx-tient .jx-point, .option-btn.jx-vise .jx-point{ transform:scale(1.3); }
+  .jx-point.jx-claque{ animation:jxClaque 0.34s cubic-bezier(0.2,1.4,0.4,1); }
+  @keyframes jxClaque{ 0%{ transform:scale(0.55); } 55%{ transform:scale(1.4); } 100%{ transform:scale(1); } }
+  .jx-fil{ position:fixed; left:0; top:0; width:100%; height:100%; overflow:visible; pointer-events:none; z-index:9000; --fil:rgba(42,36,30,0.42); transition:opacity 0.18s ease; }
+  .jx-fil.jade{ --fil:var(--pal-jade-b); }
+  .jx-fil.indigo{ --fil:var(--pal-indigo-b); }
+  .jx-fil.bronze{ --fil:var(--pal-bronze-b); }
+  .jx-fil.rose{ --fil:var(--pal-rose-b); }
+  .jx-fil path{ fill:none; stroke:var(--fil); stroke-width:3.5; stroke-linecap:round; }
+  .jx-fil circle{ fill:var(--fil); }
+  .jx-fil.jx-fondu{ opacity:0; }
   /* Combien ? : de grands chiffres. */
   .options-grid.jx-nombres{ grid-template-columns:1fr 1fr; }
   .jx-nb{ justify-content:center; min-height:3.6rem; }
@@ -7534,7 +7580,7 @@ const TEXTES = {
     "Avec un compte,":"With an account,",
     "ton e-mail sert à te connecter ; ta progression et ta photo sont sauvegardées en ligne, chez Supabase.":"your email is used to sign in; your progress and photo are saved online, with Supabase.",
     "Les autres voient":"Others see",
-    "ton nom, ta couleur, ta photo et, dans tes groupes, tes messages.":"your name, color and photo — and, in your groups, your messages.",
+    "ton nom, ta couleur, ta photo et, dans tes groupes, tes messages et tes chiffres de jeu (livres maîtrisés, objectifs).":"your name, color and photo — and, in your groups, your messages and your game stats (books mastered, goals).",
     "Ta dernière visite":"Your last visit",
     "est notée, et seul le serveur s'en sert : après 90 jours sans toi, un groupe dont tu es propriétaire passe à quelqu'un d'autre.":"is recorded, and only the server uses it: after 90 days without you, a group you own passes to someone else.",
     "La modération":"Moderators",
@@ -7558,6 +7604,9 @@ const TEXTES = {
     "Lever":"Lift",
     "{nom} peut de nouveau rejoindre le groupe.":"{nom} can join the group again.",
     "Gérer {nom}":"Manage {nom}",
+    "Voir le profil":"View profile",
+    "Ses chiffres arriveront avec sa prochaine partie.":"Their stats will show up after their next game.",
+    "Pas encore débloqué":"Not unlocked yet",
     "La modération a retiré {nom} du groupe":"Moderators removed {nom} from the group",
     "La modération a banni {nom} du groupe":"Moderators banned {nom} from the group",
     "La modération a nommé {nom} admin du groupe":"Moderators made {nom} a group admin",
@@ -8048,7 +8097,6 @@ const TEXTES = {
     "Rebâtis le verset, morceau par morceau":"Rebuild the verse, piece by piece",
     "Glisse les livres dans l'ordre de la Bible":"Drag the books into Bible order",
     "Le premier en haut":"First at the top",
-    "Touche un personnage, puis son lieu":"Tap a person, then their place",
     "Un mot a changé\u00a0: touche-le":"One word has changed: tap it",
     "Touche ou glisse les morceaux dans l'ordre du verset":"Tap or drag the pieces in the order of the verse",
     "Touche ou glisse les morceaux ici":"Tap or drag the pieces here",
@@ -8464,7 +8512,7 @@ const TEXTES = {
     "Avec un compte,":"Con una cuenta,",
     "ton e-mail sert à te connecter ; ta progression et ta photo sont sauvegardées en ligne, chez Supabase.":"tu correo sirve para iniciar sesión; tu progreso y tu foto se guardan en línea, en Supabase.",
     "Les autres voient":"Los demás ven",
-    "ton nom, ta couleur, ta photo et, dans tes groupes, tes messages.":"tu nombre, tu color, tu foto y, en tus grupos, tus mensajes.",
+    "ton nom, ta couleur, ta photo et, dans tes groupes, tes messages et tes chiffres de jeu (livres maîtrisés, objectifs).":"tu nombre, tu color, tu foto y, en tus grupos, tus mensajes y tus cifras de juego (libros dominados, logros).",
     "Ta dernière visite":"Tu última visita",
     "est notée, et seul le serveur s'en sert : après 90 jours sans toi, un groupe dont tu es propriétaire passe à quelqu'un d'autre.":"queda registrada y solo la usa el servidor: tras 90 días sin ti, un grupo del que eres titular pasa a otra persona.",
     "La modération":"La moderación",
@@ -8488,6 +8536,9 @@ const TEXTES = {
     "Lever":"Levantar",
     "{nom} peut de nouveau rejoindre le groupe.":"{nom} puede volver a unirse al grupo.",
     "Gérer {nom}":"Gestionar a {nom}",
+    "Voir le profil":"Ver perfil",
+    "Ses chiffres arriveront avec sa prochaine partie.":"Sus cifras aparecerán tras su próxima partida.",
+    "Pas encore débloqué":"Aún no desbloqueado",
     "La modération a retiré {nom} du groupe":"La moderación quitó a {nom} del grupo",
     "La modération a banni {nom} du groupe":"La moderación expulsó a {nom} del grupo",
     "La modération a nommé {nom} admin du groupe":"La moderación nombró admin del grupo a {nom}",
@@ -8984,7 +9035,6 @@ const TEXTES = {
     "Rebâtis le verset, morceau par morceau":"Arma el versículo, pedazo a pedazo",
     "Glisse les livres dans l'ordre de la Bible":"Arrastra los libros al orden de la Biblia",
     "Le premier en haut":"El primero arriba",
-    "Touche un personnage, puis son lieu":"Toca un personaje y luego su lugar",
     "Un mot a changé\u00a0: touche-le":"Una palabra cambió: tócala",
     "Touche ou glisse les morceaux dans l'ordre du verset":"Toca o arrastra los pedazos en el orden del versículo",
     "Touche ou glisse les morceaux ici":"Toca o arrastra los pedazos aquí",
@@ -11657,7 +11707,7 @@ const SUPABASE_ANON_KEY = "sb_publishable_FDJ_R0foC7uIeHmxVrj6rA_2NeIgW2a";
    remontée d'un téléphone ne vaut rien si on ne sait pas QUELLE version
    tournait. Elle doit rester égale au CACHE de sw.js — c'est ce que vérifie
    banc-essai/version.js, qui refuse de laisser publier les deux en désaccord. */
-const VERSION_JEU = "v355";
+const VERSION_JEU = "v356";
 
 /* ===================== QUAND ÇA CASSE CHEZ UN JOUEUR =====================
    « Si quelque chose casse chez cinq d'entre eux sur un modèle de téléphone
@@ -15557,6 +15607,8 @@ try{
          retiré de la hauteur visible : la barre se pose sur le vrai haut du
          clavier, et nulle part ailleurs. Là où la fenêtre a rétréci d'autant
          (le cas de la v338), il n'y a rien à retirer : rien ne change.
+         (v356) Ces boutons peuvent aussi arriver APRÈS le clavier : voir LES
+         BOUTONS D'ANDROID QUI ARRIVENT APRÈS LE CLAVIER.
      La marge se lit sur une sonde (un trait invisible posé au bas de la
      fenêtre, haut de la marge VIVE), jamais sur --sab, qui est figée. */
   let sondeSab = null, sabRepos = 0;
@@ -16488,6 +16540,33 @@ try{
   document.addEventListener("focusin", ()=>{ if(isField()) guetterZone(1600); });
   vv.addEventListener("resize", ()=>{ if(isField()) guetterZone(1200); });
   if(vk){ try{ vk.addEventListener("geometrychange", ()=>{ if(isField()) guetterZone(1200); }); }catch(e){} }
+  /* ===== (v356) LES BOUTONS D'ANDROID QUI ARRIVENT APRÈS LE CLAVIER =====
+     « Si je prends mon doigt, que je le mets sur la barre où j'écris, que je
+       glisse vers le haut, le clavier s'ajuste parfaitement. Il faut que ce
+       soit comme ça, sans que j'aie à faire la manipulation. Le clavier
+       Android de base. »
+     Sur la photo d'avant le geste (Gboard, le jeu en plein écran), la barre
+     d'écriture est trop basse de 48 px : la hauteur exacte des boutons
+     d'Android (◀ ● ■), qui reviennent sous le clavier quand il monte (voir
+     LES BOUTONS D'ANDROID QUI ARRIVENT AVEC LE CLAVIER). Le jeu sait les
+     compter, par la marge sûre du bas qui grandit d'autant, mais il ne la
+     relisait qu'aux nouvelles du clavier : à son arrivée, et pendant la
+     seconde et demie où il guette la zone visible (v350). Or ces boutons
+     peuvent arriver APRÈS le clavier, et une marge qui change ne prévient
+     personne : ni la zone visible, ni le clavier, ni la fenêtre ne bougent.
+     La barre restait sous la rangée d'outils du clavier jusqu'à ce que le
+     geste du doigt fasse tout relire. Reproduit : des boutons arrivés 0,3 s
+     après le clavier laissaient la barre cachée de 39 px, pour toujours.
+     La sonde de la marge (un trait invisible, haut de la marge VIVE) est
+     désormais OBSERVÉE : dès que sa hauteur change, un champ en main, le
+     jeu se recale — quel que soit le moment où les boutons arrivent, ou
+     repartent. C'est ce que faisait le geste, sans le geste. */
+  try{
+    sabVif();
+    if(sondeSab && window.ResizeObserver){
+      new ResizeObserver(()=>{ if(isField()){ apply(); relever(); } }).observe(sondeSab);
+    }
+  }catch(e){}
   /* (v345) Le relevé du clavier (voir LE RELEVÉ DU CLAVIER), une fois posé. */
   vv.addEventListener("resize", ()=>{ if(isField()) relever(); });
   if(vk){ try{ vk.addEventListener("geometrychange", ()=>{ if(isField()) relever(); }); }catch(e){} }
@@ -23377,6 +23456,9 @@ function compterPartie(){
     }
     saveDaily({ parties, palierParties: palier });
   }catch(e){}
+  /* (v356) Les chiffres de la partie, pour les membres de mes groupes (voir
+     LE PROFIL D'UN JOUEUR). Un peu après : la partie finit de s'enregistrer. */
+  try{ clearTimeout(publierStatsT); publierStatsT = setTimeout(publierMesStats, 1800); }catch(e){}
 }
 function loadDaily(){ try { const s = JSON.parse(localStorage.getItem("bt_daily")||"{}"); return { last:s.last||"", streak:+s.streak||0, score:+s.score||0, total:+s.total||0,
   /* jours == null veut dire « ce joueur date d'avant les gels » : on retombe
@@ -25937,6 +26019,7 @@ async function chargerEtatGroupes(){
        elle montre tout de suite, le serveur dit ce qui a changé depuis. */
     if(r.participe === "ok"){ abonnerGroupes(); abonnerPerso(); suivreNomGroupes(); if(!grp.liste || grp.listeDeMemoire) chargerListes(); else marquerRecusDeLaListe(); if(invitationEnAttente) setTimeout(servirInvitation, 300); if(discussionEnAttente) setTimeout(servirDiscussion, 300); if(moderationEnAttente) setTimeout(servirModeration, 300); }
     else { desabonnerGroupes(); desabonnerPerso(); }
+    if(r.participe === "ok" && r.stats === true){ try{ clearTimeout(publierStatsT); publierStatsT = setTimeout(publierMesStats, 2500); }catch(e){} }
     if(r.participe === "ok"){
       ecrireBase("meta", "etat", { participe:r.participe, moderateur:!!r.moderateur, ouverts:r.ouverts, photos:r.photos === true, logos:r.logos === true,
                                    reponses:r.reponses === true, membres_max:+r.membres_max || 0,
@@ -25975,7 +26058,7 @@ function participeGroupes(){ return !!(grp.etat && grp.etat.participe === "ok");
 /* Le compte vient de changer (connexion, déconnexion, compte supprimé). */
 function groupesSurCompte(){
   if(!compteConnecte()){ oublierPhotosSrv(); oublierMemoire(); }
-  grp.etat = null; grp.liste = null; grp.publics = null; grp.fils = {}; grp.profils = {}; grp.membres = {};
+  grp.etat = null; grp.liste = null; grp.publics = null; grp.fils = {}; grp.profils = {}; grp.membres = {}; grp.stats = {};
   /* Le même compte qu'à la dernière fois : ses groupes reviennent tout de
      suite, le serveur suivra (voir LA MÉMOIRE DES GROUPES). */
   if(compteConnecte()) lireMemoire().then(()=>{
@@ -26090,6 +26173,9 @@ function majBarre(){
       if(barreSuitLePassage(b, b.classList.contains("cachee") || b.classList.contains("part-cote"), montre)) return;
     } else if(passage.barreFin) return;
   }
+  /* (v356) Un fondu interrompu sans passage pour le reprendre (un écran
+     changé sous une page) : la barre redevient entière. */
+  if(!passage && b.style.opacity !== "") b.style.opacity = "";
   const etait = b.classList.contains("cachee") || b.classList.contains("part-cote");
   /* Le sens de la page qui arrive (voir LA BARRE ARRIVE AVEC SA PAGE). */
   const entree = document.querySelector("#app > .screen.screen-enter:not(.screen-exit)");
@@ -26653,12 +26739,14 @@ function glisserLesLivres(avant){
 }
 function toucherQui(i){
   const m = mancheCourante(); if(!m || jeu.revele) return;
+  if(performance.now() - clicQuiouMuet < 450) return;   // (v356) le clic qui suit un fil tiré
   m.choisi = (m.choisi === i) ? null : i;
   playTap();
   majQuiou(m);
 }
 function toucherOu(l){
   const m = mancheCourante(); if(!m || jeu.revele) return;
+  if(performance.now() - clicQuiouMuet < 450) return;   // (v356) le clic qui suit un fil tiré
   if(m.choisi === null){
     /* Un lieu déjà relié se dénoue d'un geste. */
     const qui = Object.keys(m.liens).find(k => m.liens[k] === l);
@@ -26689,6 +26777,149 @@ function majQuiou(m){
   });
   /* (v351) La dernière paire reliée ne valide plus : « Valider ». */
   majValider(m);
+}
+/* ===== (v356) QUI ? OÙ ? SE RELIE AU DOIGT =====
+   « Relier chaque personnage à son lieu, je préfère que ce soit un truc où
+     on les prend, où on les relie à son lieu directement, au lieu de
+     cliquer. »
+   Le doigt prend un personnage et le tire jusqu'à son lieu. Un fil de sa
+   couleur part de sa pastille et suit le doigt ; le lieu survolé
+   s'éclaire, et le fil s'y accroche, pastille contre pastille. Lâché sur
+   un lieu, le lien est fait : la pastille du lieu prend la couleur, d'un
+   petit coup. Lâché ailleurs, le fil se rembobine et rien ne change.
+   Le geste marche aussi dans l'autre sens (d'un lieu vers un personnage),
+   et sur un lien déjà fait : le refaire ailleurs le déplace, et un lieu
+   déjà pris change de personnage. Toucher reste possible, comme avant.
+   Les pastilles se font face : celle d'un personnage au bord droit de sa
+   carte, celle d'un lieu au bord gauche — le fil va de l'une à l'autre.
+   Rien ne part avant sept pixels (en deçà, c'est un toucher). */
+let glisseQuiou = null, clicQuiouMuet = 0;
+const FIL_NS = "http://www.w3.org/2000/svg";
+function brancherGlisseQuiou(zone){
+  if(!zone) return;
+  zone.addEventListener("pointerdown", (e)=>{
+    if(e.button > 0 || glisseQuiou) return;
+    const m = mancheCourante(); if(!m || jeu.revele) return;
+    const b = e.target && e.target.closest ? e.target.closest(".jx-qui, .jx-ou") : null;
+    if(!b || !zone.contains(b)) return;
+    const qui = b.classList.contains("jx-qui");
+    const g = { el:b, qui, n:qui ? +b.dataset.i : +b.dataset.l, id:e.pointerId, x0:e.clientX, y0:e.clientY, actif:false, cible:null, zone };
+    glisseQuiou = g;
+    const bouge = (ev)=>{
+      if(ev.pointerId !== g.id) return;
+      if(!g.actif){
+        if(Math.hypot(ev.clientX - g.x0, ev.clientY - g.y0) < 7) return;
+        if(!tirerFil(g)){ fin(ev, true); return; }
+      }
+      if(ev.cancelable) ev.preventDefault();
+      suivreFil(g, ev.clientX, ev.clientY);
+    };
+    const fin = (ev, annule)=>{
+      if(ev && ev.pointerId !== g.id) return;
+      window.removeEventListener("pointermove", bouge, true);
+      window.removeEventListener("pointerup", lache, true);
+      window.removeEventListener("pointercancel", rompt, true);
+      if(glisseQuiou === g) glisseQuiou = null;
+      if(g.actif){ clicQuiouMuet = performance.now(); lacherFil(g, annule); }
+    };
+    const lache = (ev)=> fin(ev, false), rompt = (ev)=> fin(ev, true);
+    window.addEventListener("pointermove", bouge, { capture:true, passive:false });
+    window.addEventListener("pointerup", lache, true);
+    window.addEventListener("pointercancel", rompt, true);
+  });
+}
+/* Le centre d'une pastille, là où le fil s'accroche. */
+function centrePastille(carte){
+  const p = carte && carte.querySelector(".jx-point");
+  const r = (p || carte).getBoundingClientRect();
+  return { x:r.left + r.width / 2, y:r.top + r.height / 2 };
+}
+function tirerFil(g){
+  const m = mancheCourante(); if(!m || jeu.revele || !g.el.isConnected) return false;
+  g.actif = true;
+  const svg = document.createElementNS(FIL_NS, "svg");
+  svg.setAttribute("class", "jx-fil" + (g.qui ? " " + JX_LIENS[g.n] : ""));
+  svg.setAttribute("aria-hidden", "true");
+  const trait = document.createElementNS(FIL_NS, "path"), bout = document.createElementNS(FIL_NS, "circle");
+  bout.setAttribute("r", "4.5");
+  svg.appendChild(trait); svg.appendChild(bout);
+  document.body.appendChild(svg);
+  g.svg = svg; g.trait = trait; g.bout = bout;
+  /* Les cartes d'en face, celles qu'on peut viser. */
+  g.enFace = Array.prototype.slice.call(g.zone.querySelectorAll(g.qui ? ".jx-ou" : ".jx-qui"));
+  g.el.classList.add("jx-tient");
+  /* Le doigt n'appuie plus, il tire : l'onde d'appui s'efface. */
+  try{ if(ondeCourante === g.el) ondeRanger(); }catch(e){}
+  if(m.choisi !== null){ m.choisi = null; majQuiou(m); }
+  try{ if(navigator.vibrate) navigator.vibrate(8); }catch(e){}
+  return true;
+}
+/* Le fil pend un peu entre ses deux bouts, comme un fil. */
+function dessinerFil(g, x0, y0, x1, y1){
+  const d = Math.hypot(x1 - x0, y1 - y0), pend = Math.min(26, d * 0.14);
+  const cx = (x0 + x1) / 2, cy = (y0 + y1) / 2 + pend;
+  g.trait.setAttribute("d", "M" + x0.toFixed(1) + " " + y0.toFixed(1) + " Q" + cx.toFixed(1) + " " + cy.toFixed(1) + " " + x1.toFixed(1) + " " + y1.toFixed(1));
+  g.bout.setAttribute("cx", x1.toFixed(1)); g.bout.setAttribute("cy", y1.toFixed(1));
+  g.fin = { x:x1, y:y1 };
+}
+function suivreFil(g, x, y){
+  if(!g.svg) return;
+  /* La carte visée : celle d'en face sous le doigt (un peu de marge autour,
+     la moitié de l'écart entre deux cartes). */
+  let cible = null;
+  for(const c of g.enFace){
+    const r = c.getBoundingClientRect();
+    if(x >= r.left - 10 && x <= r.right + 10 && y >= r.top - 5 && y <= r.bottom + 5){ cible = c; break; }
+  }
+  if(cible !== g.cible){
+    if(g.cible) g.cible.classList.remove("jx-vise");
+    if(cible) cible.classList.add("jx-vise");
+    g.cible = cible;
+    /* Tiré depuis un lieu, le fil prend la couleur du personnage visé. */
+    if(!g.qui){
+      JX_LIENS.forEach(c => g.svg.classList.remove(c));
+      if(cible) g.svg.classList.add(JX_LIENS[+cible.dataset.i]);
+    }
+  }
+  const a = centrePastille(g.el), z = cible ? centrePastille(cible) : { x, y };
+  dessinerFil(g, a.x, a.y, z.x, z.y);
+}
+function lacherFil(g, annule){
+  const m = mancheCourante();
+  g.el.classList.remove("jx-tient");
+  if(g.cible) g.cible.classList.remove("jx-vise");
+  const ok = !annule && !!g.cible && !!m && !jeu.revele && document.getElementById("jxZone") === g.zone;
+  if(ok){
+    const i = g.qui ? g.n : +g.cible.dataset.i, l = g.qui ? +g.cible.dataset.l : g.n;
+    const avant = JSON.stringify(m.liens);
+    Object.keys(m.liens).forEach(k => { if(m.liens[k] === l) delete m.liens[k]; });
+    m.liens[i] = l; m.choisi = null;
+    majQuiou(m);
+    if(JSON.stringify(m.liens) !== avant){
+      playTap();
+      const lieu = g.zone.querySelector('.jx-ou[data-l="' + l + '"] .jx-point');
+      if(lieu){ lieu.classList.remove("jx-claque"); void lieu.offsetWidth; lieu.classList.add("jx-claque"); setTimeout(()=> lieu.classList.remove("jx-claque"), 380); }
+      try{ if(navigator.vibrate) navigator.vibrate(10); }catch(e){}
+    }
+    /* Accroché : le fil s'efface sur place. */
+    if(g.svg){ const s = g.svg; s.classList.add("jx-fondu"); setTimeout(()=> s.remove(), 220); }
+    return;
+  }
+  /* Lâché ailleurs : le fil se rembobine jusqu'à sa pastille. */
+  rembobinerFil(g);
+}
+function rembobinerFil(g){
+  const s = g.svg; if(!s) return;
+  if(!g.fin || !g.el.isConnected){ s.remove(); return; }
+  const de = g.fin, t0 = performance.now(), D = 170;
+  const pas = (t)=>{
+    const k = Math.min(1, (t - t0) / D), e = 1 - Math.pow(1 - k, 3);
+    const a = centrePastille(g.el);
+    dessinerFil(g, a.x, a.y, de.x + (a.x - de.x) * e, de.y + (a.y - de.y) * e);
+    if(k < 1) requestAnimationFrame(pas); else s.remove();
+  };
+  requestAnimationFrame(pas);
+  setTimeout(()=>{ if(s.isConnected) s.remove(); }, D + 400);
 }
 function toucherNombre(k){
   const m = mancheCourante(); if(!m || jeu.revele) return;
@@ -26922,6 +27153,9 @@ function oublierGlisseMorceau(){
   document.querySelectorAll("body > .jx-flotte").forEach(c => c.remove());
   /* (v354) Un livre porté ou qui se posait appartient à l'écran d'avant. */
   glisseLivre = null; livreAtterrit = null;
+  /* (v356) Un fil tiré aussi. */
+  glisseQuiou = null;
+  document.querySelectorAll("body > .jx-fil").forEach(f => f.remove());
 }
 
 /* ===== L'ÉCRAN DES JEUX (l'onglet) ===== */
@@ -26985,7 +27219,7 @@ function renderJeux(){
 /* ===== UNE MANCHE ===== */
 function consigneJeu(m){
   if(jeu.id === "livres") return T("Glisse les livres dans l'ordre de la Bible");
-  if(jeu.id === "quiou") return T("Touche un personnage, puis son lieu");
+  if(jeu.id === "quiou") return T("Relie chaque personnage à son lieu");
   if(jeu.id === "combien") return m.f[3][langueIdx()];
   if(jeu.id === "erreur") return T("Un mot a changé\u00a0: touche-le");
   return T("Touche ou glisse les morceaux dans l'ordre du verset");
@@ -27003,7 +27237,7 @@ function zoneJeu(m){
       return `<div class="jx-liste">${m.paires.map((p, i) => `<div class="option-btn jx-paire ${m.liens[i] === i ? "correct" : "incorrect"}"><span class="opt-text"><b>${escapeHtml(p[0][L])}</b> — ${escapeHtml(p[1][L])}<small class="jx-ref">${escapeHtml(refLivre(p[2]))}</small></span></div>`).join("")}</div>`;
     }
     return `<div class="jx-deux">
-        <div class="jx-col">${m.paires.map((p, i) => `<button class="option-btn jx-qui" data-i="${i}" onclick="toucherQui(${i})"><span class="jx-point ${JX_LIENS[i]}"></span><span class="opt-text">${escapeHtml(p[0][L])}</span></button>`).join("")}</div>
+        <div class="jx-col">${m.paires.map((p, i) => `<button class="option-btn jx-qui" data-i="${i}" onclick="toucherQui(${i})"><span class="opt-text">${escapeHtml(p[0][L])}</span><span class="jx-point ${JX_LIENS[i]}"></span></button>`).join("")}</div>
         <div class="jx-col">${m.lieux.map(l => `<button class="option-btn jx-ou" data-l="${l}" onclick="toucherOu(${l})"><span class="jx-point"></span><span class="opt-text">${escapeHtml(m.paires[l][1][L])}</span></button>`).join("")}</div>
       </div>
       ${boutonValider(m)}`;
@@ -27079,6 +27313,7 @@ function renderJeu(){
   oublierGlisseMorceau();
   if(def.id === "morceaux" && !jeu.revele) brancherGlisseMorceaux(el.querySelector("#jxZone"));
   if(def.id === "livres" && !jeu.revele) brancherGlisseLivres(el.querySelector("#jxLivres"));
+  if(def.id === "quiou" && !jeu.revele) brancherGlisseQuiou(el.querySelector("#jxZone"));
   return el;
 }
 /* ===== LA FIN D'UNE PARTIE ===== */
@@ -28285,6 +28520,10 @@ function photosServeur(){ return !!(grp.etat && grp.etat.photos === true); }
 /* v322 : le serveur connaît les logos de groupe (la colonne groupes.logo et
    les fonctions qui la lisent et l'écrivent, groupes/table.sql). */
 function logosServeur(){ return !!(grp.etat && grp.etat.logos === true); }
+/* v356 : le serveur garde les chiffres d'un joueur (profils.stats, et la
+   fonction poser_stats qui les écrit — groupes/table.sql, LES CHIFFRES D'UN
+   JOUEUR). Sans lui, le jeu n'en envoie ni n'en lit aucun. */
+function statsServeur(){ return !!(grp.etat && grp.etat.stats === true); }
 /* La valeur CSS d'une photo du serveur : une adresse « blob: » de soixante
    caractères, posée sur l'avatar lui-même. Jamais l'image en texte dans le
    HTML — trente kilo-octets recopiés à chaque bulle du fil. */
@@ -30386,6 +30625,9 @@ function actionsMessage(id){
   const mon = monRole();
   const peutGerer = !!sonRole && ((estModo() && (moderationPleine() || sonRole !== "proprietaire"))
                                  || (mon === "proprietaire") || (mon === "admin" && sonRole === "membre"));
+  /* (v356) Son profil, ses chiffres (voir LE PROFIL D'UN JOUEUR). Qui peut
+     le gérer y va par « Gérer », plus bas : la même page. */
+  if(!moi && m.auteur && !mod && !peutGerer && statsServeur()) h += ligneAction(ICONS.personne, T("Voir le profil"), `fermerFeuilleGroupe('grpActionsVeil'); ouvrirMembre('${m.auteur}')`);
   if(!moi && m.auteur && !mod){
     if(!m.masque && !modeModeration()) h += ligneAction(ICONS.drapeau, T("Signaler"), `signalerMessage('${m.id}')`);
     if(!estModo()) h += ligneAction(ICONS.bloquer, Tf("Bloquer {nom}", { nom }), `bloquerQuelquUn('${m.auteur}')`, true);
@@ -31085,6 +31327,122 @@ function ouvrirMembre(qui){
   const g = groupeCourant(); if(!g || !qui || qui === monId()) return;
   const nom = p.nom || T("Quelqu'un");
   ouvrirFeuilleGroupe("grpMembreVeil", nom, avatarHtml(nom, p.couleur || "#8A8F98", 1.5, "u:" + qui), membreHtml(qui));
+  chargerStatsDe(qui);      // (v356) ses chiffres, relus à chaque ouverture
+}
+/* ===================== (v356) LE PROFIL D'UN JOUEUR =====================
+   « Je t'avais demandé un truc qui permet de voir le profil : quand tu
+     cliques sur le profil, tu vois le profil avec les différentes
+     statistiques au niveau des testaments, des succès de la personne. »
+   La page d'un membre (celle qu'on ouvre depuis la page du groupe, ou par
+   « Voir le profil » en tenant un de ses messages) montre maintenant ses
+   chiffres, avant ce qu'on peut faire de lui : les trois de la Progression
+   (livres maîtrisés, bonnes réponses, bonnes d'affilée), ses deux
+   testaments, et ses seize objectifs — en couleur ceux qu'il a débloqués.
+   Toucher un objectif dit lequel c'est.
+   D'OÙ ILS VIENNENT. Chaque jeu pose lui-même son résumé chez le serveur
+   (poser_stats), à la fin de chaque partie et à l'arrivée dans les groupes,
+   seulement s'il a changé — jamais la progression elle-même. Le serveur ne
+   le montre qu'aux membres d'un groupe partagé.
+   SANS SAUT. La carte a sa forme dès l'ouverture : les chiffres connus de la
+   dernière fois tout de suite, sinon des tirets, et les objectifs éteints ;
+   les vrais chiffres s'y posent à leur arrivée, sans que rien ne bouge.
+   Quelqu'un qui n'a encore rien posé (son jeu n'est pas à jour, ou il n'a
+   pas joué depuis) : une phrase le dit, à la place des trois chiffres.
+   Un serveur qui ne connaît pas encore les chiffres : la page reste celle
+   d'avant, sans carte. */
+/* « var » : la fin d'une partie et l'arrivée dans les groupes s'en servent
+   plus haut dans le fichier. */
+var publierStatsT = 0, statsEnVol = false;
+const CLE_STATS_PUB = "bt_stats_pub";
+/* Les objectifs : ceux qu'il a, et ceux qu'il a déjà mérités sans que le jeu
+   les ait encore fêtés (la Progression les rattrape à son ouverture). On les
+   COMPTE sans les débloquer ici : la fête reste au jeu, au bon moment. */
+function mesStats(){
+  const p = loadProgress(), d = achDerived(p);
+  const at = BIBLE_BOOKS.slice(0, BIBLE_AT_COUNT), nt = BIBLE_BOOKS.slice(BIBLE_AT_COUNT);
+  return { livres:d.mastered, at:nMastered(at, d), nt:nMastered(nt, d),
+           bonnes:Math.max(0, p.totalCorrect | 0), serie:Math.max(0, p.bestStreak | 0),
+           succes:ACHIEVEMENTS.filter(a => (p.ach && p.ach[a.id]) || a.cur(p, d) >= a.max).map(a => a.id) };
+}
+async function publierMesStats(){
+  if(statsEnVol || !statsServeur() || !participeGroupes() || !compteConnecte()) return;
+  let s, j;
+  try{ s = mesStats(); j = JSON.stringify(s); }catch(e){ return; }
+  let deja = "";
+  try{ deja = localStorage.getItem(CLE_STATS_PUB) || ""; }catch(e){}
+  const qui = monId();
+  if(deja === qui + "|" + j) return;              // rien de neuf depuis la dernière fois
+  statsEnVol = true;
+  try{
+    const r = await appelGroupe("poser_stats", { p_stats:s });
+    if(r && r.ok){ try{ localStorage.setItem(CLE_STATS_PUB, qui + "|" + j); }catch(e){} }
+  }finally{ statsEnVol = false; }
+}
+async function chargerStatsDe(qui){
+  if(!statsServeur() || !qui) return;
+  const supa = initSupa(); if(!supa || !supa.from) return;
+  try{
+    const r = await supa.from("profils").select("id,stats").in("id", [qui]);
+    if(r.error || !Array.isArray(r.data)) return;
+    const l = r.data.find(x => x && x.id === qui);
+    grp.stats = grp.stats || {};
+    grp.stats[qui] = (l && l.stats && typeof l.stats === "object") ? l.stats : null;
+    majCarteProfil(qui);
+  }catch(e){}
+}
+function majCarteProfil(qui){
+  document.querySelectorAll("#grpMembreVeil .mb-profil").forEach(c => {
+    if(c.dataset.qui === qui) c.innerHTML = contenuProfilHtml(grp.stats ? grp.stats[qui] : undefined);
+  });
+}
+function carteProfilHtml(qui){
+  if(!statsServeur()) return "";
+  return `<div class="mb-profil" data-qui="${escapeHtml(qui)}">${contenuProfilHtml(grp.stats ? grp.stats[qui] : undefined)}</div>`;
+}
+/* s : ses chiffres ; null = il n'en a posé aucun ; undefined = pas encore lus. */
+function contenuProfilHtml(s){
+  const connu = !!(s && typeof s === "object");
+  const n = (k, max)=> connu ? Math.max(0, Math.min(max, Math.floor(+s[k] || 0))) : null;
+  const livres = n("livres", 66), bonnes = n("bonnes", 1e7), serie = n("serie", 1e5), at = n("at", BIBLE_AT_COUNT), nt = n("nt", BIBLE_BOOKS.length - BIBLE_AT_COUNT);
+  const faits = new Set(connu && Array.isArray(s.succes) ? s.succes.map(String) : []);
+  const chiffre = (v)=> v === null ? "\u2014" : v.toLocaleString(LANGUE);
+  const chiffres = s === null
+    ? `<p class="mb-note">${T("Ses chiffres arriveront avec sa prochaine partie.")}</p>`
+    : `<div><b>${chiffre(livres)}<i>/66</i></b><small>${T("livres maîtrisés")}</small></div>
+       <div><b>${chiffre(bonnes)}</b><small>${T("bonnes réponses")}</small></div>
+       <div><b>${chiffre(serie)}</b><small>${T("bonnes d'affilée")}</small></div>`;
+  /* Les deux barres commencent et finissent au même pixel (voir LES DEUX
+     BARRES, dans la Progression) : chaque nom réserve la place du plus long. */
+  const cales = [T("Ancien Testament"), T("Nouveau Testament")].map(x => `<span class="tst-cale" aria-hidden="true">${x}</span>`).join("");
+  const tst = (nom, v, tot)=> `<div class="mb-tst-l">
+      <span class="tst-name"><span>${T(nom)}</span>${cales}</span>
+      <span class="tst-bar"><i style="width:${v === null ? 0 : Math.round(100 * v / tot)}%"></i></span>
+      <span class="tst-count"><span>${v === null ? "\u2014" : v}/${tot}</span><span class="tst-cale" aria-hidden="true">39/39</span></span>
+    </div>`;
+  const nb = ACHIEVEMENTS.filter(a => faits.has(a.id)).length;
+  return `<div class="ps-cells mb-chiffres">${chiffres}</div>
+    <div class="mb-tst">${tst("Ancien Testament", at, BIBLE_AT_COUNT)}${tst("Nouveau Testament", nt, BIBLE_BOOKS.length - BIBLE_AT_COUNT)}</div>
+    <div class="mb-obj-h"><span>${T("Objectifs")}</span><small>${connu ? nb + "/" + ACHIEVEMENTS.length : ""}</small></div>
+    <div class="mb-succes">${ACHIEVEMENTS.map(a => `<button type="button" class="mb-ach${faits.has(a.id) ? " on" : ""}" onclick="infoObjectifDe('${a.id}', ${faits.has(a.id)})" aria-label="${escapeHtml(T(a.t))}"><span class="ach-tile c-${a.clr}">${a.ico}</span></button>`).join("")}</div>`;
+}
+/* L'objectif d'un autre : ce qu'il est, et s'il l'a — pas sa progression,
+   que le serveur ne connaît pas. */
+function infoObjectifDe(id, on){
+  const a = ACHIEVEMENTS.find(x => x.id === id); if(!a) return;
+  closeModal();
+  const veil = document.createElement("div");
+  veil.className = "modal-veil"; veil.id = "modalVeil";
+  veil.innerHTML = `
+    <div class="modal-card ach-info${on ? "" : " ach-eteint"}">
+      <span class="ach-tile c-${a.clr}">${a.ico}${on ? `<span class="ach-check">${ACH_CHECK}</span>` : ""}</span>
+      <div class="ach-info-t">${escapeHtml(T(a.t))}</div>
+      <div class="ach-info-d">${escapeHtml(T(a.d))}</div>
+      <div class="ach-info-c ${on ? "on" : ""}">${on ? T("Objectif débloqué") : T("Pas encore débloqué")}</div>
+      <button class="modal-btn ok" onclick="closeModal()">${T("Fermer")}</button>
+    </div>`;
+  document.body.appendChild(veil);
+  try{ glassTrack(); }catch(e){}
+  veil.addEventListener("click", (e)=>{ if(e.target === veil) closeModal(); });
 }
 /* (v336) Avec son profil, un modérateur n'a ici que son rôle — et de quoi
    passer en mode modération, d'un toucher : la page se refait sur place,
@@ -31114,6 +31472,7 @@ function membreHtml(qui){
   const peutModerer = parRole || (modo && (pleine || m.role !== "proprietaire"));
   const sourdine = sourdineDe(m);
   let h = `<p class="grp-membre-role">${escapeHtml([roleDe(m) || T("Membre"), sourdine].filter(Boolean).join(" · "))}</p>`;
+  h += carteProfilHtml(qui);   // (v356) ses chiffres (voir LE PROFIL D'UN JOUEUR)
   /* (v336) En mode modération, tout ce qui se fait ici se fait au nom de la
      modération — et la page le dit avant le geste. */
   if(peutModerer && modo && pleine) h += `<p class="grp-aide grp-modo-aide"><span class="ico">${ICONS.bouclier}</span>${T("Ici, tu agis au nom de la modération.")}</p>`;
@@ -31940,7 +32299,7 @@ function ouvrirConfidentialite(){
   const lignes = [
     ["Sans compte,", "ta progression et tes réglages restent sur ton téléphone."],
     ["Avec un compte,", "ton e-mail sert à te connecter ; ta progression et ta photo sont sauvegardées en ligne, chez Supabase."],
-    ["Les autres voient", "ton nom, ta couleur, ta photo et, dans tes groupes, tes messages."],
+    ["Les autres voient", "ton nom, ta couleur, ta photo et, dans tes groupes, tes messages et tes chiffres de jeu (livres maîtrisés, objectifs)."],
     ["Ta dernière visite", "est notée, et seul le serveur s'en sert : après 90 jours sans toi, un groupe dont tu es propriétaire passe à quelqu'un d'autre."],
     ["La modération", "peut lire les groupes et y écrire (signé « La modération »), pour faire respecter les règles."],
     ["Les rapports de bug,", "s'ils sont activés, n'envoient que l'erreur, rien sur toi."],
@@ -34833,45 +35192,88 @@ function xCourant(el){
   try{ const t = getComputedStyle(el).transform; if(t && t !== "none") return new DOMMatrixReadOnly(t).m41; }catch(e){}
   return 0;
 }
+/* ===== (v356) LE PASSAGE D'UN ÉCRAN À L'AUTRE EST UN FONDU =====
+   « Pour les animations de transition, je veux que tu trouves des animations
+     meilleures. J'aime bien la plupart des animations pour aller sur les
+     côtés, dans des vrais menus blancs. Mais pour se déplacer — dans
+     l'accueil, dans le jeu, dans le groupe, ou même pour aller dans le
+     profil —, je trouve que c'est pas plaisant du tout. […] Je veux un truc
+     qui soit clean, qui fonctionne parfaitement sur tout type d'appareil
+     sans faire bugger. »
+   CE QUI GLISSAIT (v345 à v355). Un écran arrivait comme une page : de
+   toute la largeur, par la droite, en emportant une copie du décor — sans
+   elle on aurait vu l'écran quitté au travers —, une ombre sur son bord,
+   et, pour que la photo ne voyage pas, la copie et le verre de chaque carte
+   faisaient le chemin inverse, image par image. Sur une page unie (les
+   Réglages), glisser est naturel : c'est une feuille qu'on pose. Sur la
+   photo du jeu, c'était un pan du monde qui coulissait, avec son bord et
+   son ombre, et le travail le plus lourd du jeu à chaque déplacement.
+   CE QUI LE REMPLACE. Le décor est le même derrière tous les écrans : il ne
+   bouge plus du tout, et seuls les écrans changent, en fondu — le « fade
+   through » d'Android (Material), fait pour passer d'une destination à une
+   autre, à ses mesures : l'écran quitté s'efface en 0,09 s ; celui qui
+   arrive apparaît ENSUITE, en 0,21 s, en ralentissant. Jamais les deux à la
+   fois : un fondu enchaîné superposait leurs textes un instant (mesuré à
+   45 % chacun, 80 ms après le geste). Rien d'autre : pas de copie du décor,
+   pas de contre-mouvement du verre (rien ne se déplace, il n'y a rien à
+   compenser), pas d'ombre. Juste l'opacité, que tous les téléphones
+   composent sans repeindre.
+   ET PAS D'ÉCHELLE. Le fondu de Material grossit aussi l'écran qui arrive ;
+   le nôtre l'a fait (de 98,5 % à 100 %) le temps d'un essai, et l'a payé :
+   dans Chrome, un écran qui a été mis à l'échelle reste ensuite dessiné à
+   une fraction de pixel de sa place — tous les textes et tous les bords
+   décalés d'un tiers de pixel, donc un peu flous, jusqu'au rendu suivant
+   (relevé image par image sur le Mode Groupe, contre la v355 ; un fondu
+   d'opacité seule rend l'écran au pixel près). « Sur tout type d'appareil,
+   sans faire bugger » : on garde la seule propriété qui ne touche ni à la
+   mise en page ni au dessin.
+   La barre du bas fait comme son écran : elle s'efface avec lui, ou
+   apparaît avec lui ; entre deux onglets, elle reste, et seule sa pastille
+   glisse. Les PAGES (Réglages, Profil d'un joueur…) et les FEUILLES gardent
+   leur arrivée par le côté ou par le bas : ce sont des choses qu'on pose
+   sur l'écran, pas des déplacements. */
+const PASSAGE_SORTIE = 90, PASSAGE_DECALE = 90, PASSAGE_ENTREE = 210;
+const PASSAGE_SORT = "cubic-bezier(0.4,0,1,1)", PASSAGE_ENTRE = "cubic-bezier(0,0,0.2,1)";
+/* Un écran qui apparaissait encore quand on l'a quitté (un geste rapide)
+   repart de l'opacité où il en était, gardée en style par finirPassage :
+   jamais d'éclair à pleine opacité avant de s'effacer. */
+function opaciteGardee(el){
+  const o = el && el.style ? el.style.opacity : "";
+  return o === "" ? null : Math.max(0, Math.min(1, parseFloat(o) || 0));
+}
+function animSortie(el){
+  try{
+    const g = opaciteGardee(el), de = g === null ? 1 : g;
+    return el.animate([{ opacity:de }, { opacity:0 }],
+      { duration:Math.round(PASSAGE_SORTIE * Math.max(0.3, de)), easing:PASSAGE_SORT, fill:"both" });
+  }catch(e){ return null; }
+}
+function animEntree(el){
+  try{
+    return el.animate([{ opacity:0 }, { opacity:1 }], { duration:PASSAGE_ENTREE, delay:PASSAGE_DECALE, easing:PASSAGE_ENTRE, fill:"both" });
+  }catch(e){ return null; }
+}
 function lancerPassage(app, entrant, sortant, retour, xDepart){
-  const W = app.clientWidth || window.innerWidth || 0;
-  const fond = fondDuPassage(app);
-  /* L'ordre de peinture : en « pousse », l'écran quitté, puis la copie du
-     décor, puis l'écran qui arrive ; en « retour », l'écran où l'on revient,
-     puis la copie, puis l'écran qui repart, au-dessus de tout. (v345) Ce sont
-     les plans qui le disent (voir LES TROIS PLANS SONT DITS), pas l'ordre du
-     document : la copie se range simplement à la fin. */
-  app.appendChild(fond);
-  const duree = retour ? msFerme() : msPli();
-  const courbe = retour ? courbeDe("--tr-ferme", "cubic-bezier(0.4,0,1,1)") : courbeDe("--tr-ouvre", "cubic-bezier(0.33,1,0.68,1)");
-  const p = { genre: retour ? "retour" : "pousse", debut: performance.now(), duree, courbe, dx: W, x0: 0, entrant, sortant, fond, anims: [], contre: [] };
-  /* (v348) La boîte de la copie glisse avec l'écran ; le décor qu'elle
-     montre fait le chemin inverse, à la même horloge : il ne bouge pas
-     (voir LE DÉCOR NE BOUGE PAS). */
-  if(retour){
-    entrant.classList.add("sous-retour");
-    p.x0 = Math.max(0, Math.min(W, xDepart || 0));
-    p.anims.push(glisserX(sortant, p.x0, W, duree, courbe), glisserX(fond, p.x0, W, duree, courbe), glisserX(fond._decor, -p.x0, -W, duree, courbe));
-  } else {
-    p.anims.push(glisserX(entrant, W, 0, duree, courbe), glisserX(fond, W, 0, duree, courbe), glisserX(fond._decor, -W, 0, duree, courbe));
-  }
+  const duree = PASSAGE_DECALE + PASSAGE_ENTREE;
+  const p = { genre: retour ? "retour" : "pousse", fondu:true, debut: performance.now(), duree, courbe:PASSAGE_ENTRE, dx:0, x0:0, entrant, sortant, fond:null, anims: [], contre: [] };
+  p.anims.push(animSortie(sortant), animEntree(entrant));
   p.anims = p.anims.filter(Boolean);
   passage = p;
-  /* Fini quand le mouvement l'est VRAIMENT — une première image lente le
-     fait partir plus tard que prévu —, avec un filet s'il ne finissait pas. */
+  /* Fini quand le fondu l'est VRAIMENT — une première image lente le fait
+     partir plus tard que prévu —, avec un filet s'il ne finissait pas. */
   const fin = ()=>{ if(passage === p) finirPassage(true); };
   Promise.all(p.anims.map(a => a.finished)).then(fin, ()=>{});
   p.t = setTimeout(fin, duree + 1500);
   if(!p.anims.length) fin();
 }
 /* Un rendu sur place pendant que l'écran arrive : le nœud neuf reprend le
-   mouvement à l'instant exact de l'ancien (même départ sur l'horloge). */
+   fondu à l'instant exact de l'ancien (même départ sur l'horloge). */
 function reprendrePassage(vieux, node){
   const p = passage;
   if(!p) return false;
   const a0 = p.anims.find(a => { try{ return a.effect && a.effect.target === vieux; }catch(e){ return false; } });
   node.classList.add("screen-enter", "arrivee", "pousse");
-  const a = glisserX(node, p.dx, 0, p.duree, p.courbe);
+  const a = animEntree(node);
   let t = 0;
   if(a){
     try{ if(a0 && a0.startTime !== null){ a.startTime = a0.startTime; t = a0.currentTime || 0; } }catch(e){}
@@ -34909,7 +35311,8 @@ function contreGlisser(gs, de, a, p){
 }
 function verreDuPassage(){
   const p = passage;
-  if(!p || !p.contre) return;
+  /* (v356) Un fondu ne déplace rien : le verre n'a rien à compenser. */
+  if(!p || !p.contre || p.fondu) return;
   const ecran = p.genre === "pousse" ? p.entrant : p.sortant;
   const de = p.genre === "pousse" ? -p.dx : -p.x0, a = p.genre === "pousse" ? 0 : -p.dx;
   if(ecran && ecran.isConnected){
@@ -34927,6 +35330,13 @@ function finirPassage(fini){
   const p = passage; if(!p) return;
   passage = null;
   clearTimeout(p.t);
+  /* (v356) Interrompu par un autre changement d'écran, l'écran qui
+     apparaissait garde l'opacité où il en est : c'est de là qu'il
+     s'effacera (voir animSortie). Fini, il est tout entier à lui-même. */
+  if(p.fondu && p.entrant && p.entrant.style){
+    if(fini) p.entrant.style.opacity = "";
+    else { try{ p.entrant.style.opacity = getComputedStyle(p.entrant).opacity; }catch(e){} }
+  }
   p.anims.forEach(a => { try{ a.cancel(); }catch(e){} });
   (p.contre || []).forEach(a => { try{ a.cancel(); }catch(e){} });
   if(p.fond && p.fond.parentNode) p.fond.remove();
@@ -34939,7 +35349,7 @@ function finirPassage(fini){
   /* Un rendu sur place a pu remplacer l'écran posé dessous : on retire la
      marque de tout écran resté. */
   try{ document.querySelectorAll("#app > .screen.sous-retour").forEach(e => e.classList.remove("sous-retour")); }catch(e){}
-  if(typeof p.barreFin === "function"){ try{ p.barreFin(); }catch(e){} }
+  if(typeof p.barreFin === "function"){ try{ p.barreFin(fini); }catch(e){} }
   if(fini){ try{ majBarre(); }catch(e){} }
 }
 /* LA BARRE DU BAS SUIT LE PASSAGE. Elle vit hors des écrans, posée
@@ -34950,25 +35360,41 @@ function finirPassage(fini){
    qui la porte. Entre Accueil et Groupes elle reste : seule la pastille
    glisse. « cachee » : elle est rangée ; « montre » : l'écran la veut. */
 function barreSuitLePassage(b, cachee, montre){
-  const p = passage, app = document.getElementById("app");
-  if(!p || !app || cachee !== montre) return false;
-  const ra = app.getBoundingClientRect(), ax = ra.left + app.clientLeft;
+  const p = passage;
+  if(!p) return false;
+  /* Un fondu interrompu l'a laissée à mi-chemin, son opacité gardée en
+     style : elle repart de là, quoi qu'on lui demande. */
+  const mi = opaciteGardee(b);
+  if(cachee !== montre && mi === null) return false;
   clearTimeout(b._finMouvement);
   b.classList.remove("arrive-g", "arrive-d", "part-cote", "part-g");
-  if(!montre){
-    const a = p.genre === "pousse" ? rognerBarre(b, ax + p.dx, -p.dx, p) : glisserBarre(b, p.x0, p.dx, p);
-    p.barreFin = ()=>{
-      b.classList.add("sans-transition", "cachee");
+  /* (v356) Elle s'efface avec l'écran qu'on quitte, ou apparaît avec celui
+     qui arrive : le même fondu, à la même horloge (voir LE PASSAGE D'UN
+     ÉCRAN À L'AUTRE EST UN FONDU). */
+  const de = mi !== null ? mi : (cachee ? 0 : 1);
+  b.classList.add("sans-transition"); b.classList.remove("cachee");
+  void b.offsetWidth; b.classList.remove("sans-transition");
+  b.style.opacity = "";
+  const a = montre ? fondreBarre(b, de, 1, PASSAGE_DECALE, PASSAGE_ENTREE, PASSAGE_ENTRE)
+                   : fondreBarre(b, de, 0, 0, Math.round(PASSAGE_SORTIE * Math.max(0.3, de)), PASSAGE_SORT);
+  p.barreFin = (fini)=>{
+    if(!fini){
+      /* Interrompue : elle reste où elle en est, pour le fondu suivant. */
+      let o = montre ? 1 : 0;
+      try{ o = parseFloat(getComputedStyle(b).opacity); }catch(e){}
       if(a){ try{ a.cancel(); }catch(e){} }
-      void b.offsetWidth; b.classList.remove("sans-transition");
-    };
-  } else {
-    b.classList.add("sans-transition"); b.classList.remove("cachee");
-    void b.offsetWidth; b.classList.remove("sans-transition");
-    const a = p.genre === "retour" ? rognerBarre(b, ax + p.x0, p.dx - p.x0, p) : glisserBarre(b, p.dx, 0, p);
-    p.barreFin = ()=>{ if(a){ try{ a.cancel(); }catch(e){} } };
-  }
+      b.style.opacity = String(Math.round(o * 1000) / 1000);
+      return;
+    }
+    if(!montre) b.classList.add("sans-transition", "cachee");
+    if(a){ try{ a.cancel(); }catch(e){} }
+    if(!montre){ void b.offsetWidth; b.classList.remove("sans-transition"); }
+  };
   return true;
+}
+function fondreBarre(b, de, a, delai, duree, courbe){
+  try{ return b.animate([{ opacity:de }, { opacity:a }], { duration:duree, delay:delai, easing:courbe, fill:"both" }); }
+  catch(e){ return null; }
 }
 /* Rognée au bord de la page qui glisse : ce bord va de x0 à x0 + dx, sur la
    courbe du passage ; la barre n'est visible qu'à sa gauche. Le rognage est
@@ -35164,7 +35590,9 @@ function render(){
        retire aussi de tout écran resté en place, pour qu'elle ne traîne jamais. */
     Array.prototype.forEach.call(app.children, (c)=>{ if(c && c.classList) c.classList.remove("arrivee"); });
     node.classList.add("arrivee");
-    if(!retour && !sousPage) node.classList.add("screen-enter", "pousse");
+    /* (v356) Qu'on avance ou qu'on revienne, l'écran qui arrive apparaît en
+       fondu (voir LE PASSAGE D'UN ÉCRAN À L'AUTRE EST UN FONDU). */
+    if(!sousPage) node.classList.add("screen-enter", "pousse");
     entreeDebut = (typeof performance!=="undefined" ? performance.now() : Date.now());
     setTimeout(()=>{ node.classList.remove("arrivee"); fitScroll(); }, apresEntree());
     Array.prototype.forEach.call(node.children, (c,i)=>{ if(c && c.style) c.style.setProperty("--i", i); });
@@ -35183,7 +35611,7 @@ function render(){
     const vieux = Array.prototype.find.call(app.children, (c)=> c && c.classList && c.classList.contains("screen-enter") && !c.classList.contains("screen-exit"));
     /* (v345) Un écran qui arrive en glissant : le nœud neuf reprend le même
        mouvement, au même instant (voir PASSAGE D'UN ÉCRAN À L'AUTRE). */
-    const repris = !!(vieux && passage && passage.genre === "pousse" && passage.entrant === vieux) && reprendrePassage(vieux, node);
+    const repris = !!(vieux && passage && passage.entrant === vieux) && reprendrePassage(vieux, node);
     /* On demande au navigateur OÙ EN EST l'animation plutôt que de le déduire
        d'une horloge : un écran lourd (le salon et ses avatars) met parfois
        50 ms à peindre sa première image, et l'horloge le croirait alors en
@@ -35291,7 +35719,7 @@ function render(){
        seul l'écran est remplacé, à sa place. */
     const cur = passage ? Array.prototype.find.call(app.children, c=>c.classList && c.classList.contains("screen") && !c.classList.contains("screen-exit")) : null;
     if(cur){
-      if(passage.genre === "retour"){ node.classList.add("sous-retour"); passage.entrant = node; }
+      if(passage.entrant === cur) passage.entrant = node;
       app.replaceChild(node, cur);
     } else app.replaceChildren(node);
     if(CUSTOM_SCROLL){ customScrollY = sameScreen ? prevScroll : 0; applyScrollTransform(); }
