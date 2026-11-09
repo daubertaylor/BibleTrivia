@@ -62,13 +62,14 @@ const net = (t) => String(t || '').replace(/ /g, ' ').replace(/\s+/g, ' ').trim
       await q.goto(URL_JEU); await q.waitForFunction(() => { try { return typeof EDITEUR === 'object'; } catch (e) { return false; } }, null, { timeout: 25000 });
       const a = await q.evaluate(() => EDITEUR.adresse); await c.close(); return a;
     })();
-    const autres = page.texte.replace(/\+1 888 993 5273/g, '').replace(/07 84 04 57 70/g, '');
+    const autres = page.texte.replace(/\+1 650 319 8930/g, '').replace(/07 84 04 57 70/g, '');
     const fuite = /(\+33|\b0\d([ .]?\d\d){4}\b)/.test(autres) || /daubertaylor22/.test(page.texte);
     const fr = page.fr || [];
     dit('3. les mentions : l\'éditeur, son téléphone (tel:), l\'e-mail de Yada (mailto), les deux hébergeurs' + (adresse ? ', son adresse' : '') + ' ; aucun autre numéro, aucune autre donnée personnelle',
       fr.includes('Éditeur et directeur de la publication : Taylor Dauber') && fr.includes('Téléphone : 07 84 04 57 70') && fr.includes('Contact : yadaquiz.app@gmail.com')
-      && fr.some(x => /^Hébergeur : Cloudflare, Inc\., 101 Townsend Street, San Francisco, CA 94107, États-Unis — \+1 888 993 5273\. \(yadaquiz\.app\)$/.test(x))
+      && fr.some(x => /^Hébergeur : Cloudflare, Inc\., 101 Townsend Street, San Francisco, CA 94107, États-Unis — \+1 650 319 8930\. \(yadaquiz\.app\)$/.test(x))
       && fr.some(x => /^Hébergeur : GitHub, Inc\., 88 Colin P\. Kelly Jr\. Street/.test(x))
+      && fr.some(x => /^Hébergeur des données : Supabase Pte\. Ltd\., 65 Chulia Street #38-02\/03, OCBC Centre, Singapour 049513/.test(x))
       && page.tel.length === 3 && page.tel.every(t => t === 'tel:+33784045770 07 84 04 57 70') && page.mail.length === 3 && page.mail.every(m => m === 'mailto:yadaquiz.app@gmail.com')
       && (!adresse || fr.includes('Adresse : ' + adresse)) && !fuite,
       JSON.stringify({ tel: page.tel, mail: page.mail, fuite, adresse, mentions: fr.slice(-6) }));
