@@ -556,6 +556,37 @@
   @media (min-width:620px){ #app{ max-width:31rem; } }
   @media (min-width:900px){ #app{ max-width:34rem; } }
   @media (min-width:1300px){ #app{ max-width:37rem; } }
+  /* ===================== (v360) LE RESSORT =====================
+     « Fluidifie encore l'animation de transition : je veux qu'elle soit
+       bien fluide, sans s'arrêter brusquement. »
+     L'horloge commune (--tr-plie) était easeOutCubic sur 0,52 s. Filmé
+     image par image sur un écran de 402 px : 38 px dès la PREMIÈRE image —
+     l'écran part d'un coup à pleine vitesse —, puis il freine aussitôt, et
+     la moitié du chemin est faite en 0,1 s. Ce qui se voit, c'est un élan
+     brutal suivi d'un coup de frein. Et sur un téléphone lent, la première
+     image peut tomber 50 ms en retard (le temps de construire l'écran) :
+     avec une courbe qui part à pleine vitesse, l'écran apparaît alors déjà
+     au sixième de sa course — un bond à l'entrée (mesuré, processeur
+     ralenti six fois : 75 px).
+     Elle devient un RESSORT AMORTI, comme les écrans d'iOS : départ depuis
+     l'arrêt (8 px, puis 20, puis 27 : l'écran prend son élan), une seule
+     bosse de vitesse (32 px par image, au cinquième de l'horloge), puis une
+     longue pose qui ralentit sans fin visible — sur la dernière demi-seconde
+     de mouvement, la vitesse ne fait que décroître, jamais de cassure. Une
+     image en retard au départ ne coûte plus que quelques pixels.
+     Le ressort : x(t) = 1 − (1 + k·t)·e^(−k·t), k = 7,54 (ω = 13 rad/s sur
+     0,58 s), ramené à 1 au bout de l'horloge — critique, donc sans
+     dépassement (un écran qui dépasserait ouvrirait un vide contre son
+     voisin). Écrit en linear() : 26 points, à 0,34 px près sur un écran de
+     412 px. linear() existe depuis Chrome 113, Safari 17.2 et Firefox 112 ;
+     un navigateur plus ancien garde la courbe d'avant, écrite au-dessus.
+     C'est TOUJOURS une seule horloge : les écrans, la barre et sa pastille,
+     les feuilles, les plis et les compteurs (easePli, en JS) passent
+     ensemble au ressort — la cohérence demandée (« exactement la même
+     animation partout ») ne bouge pas. */
+  @supports (transition-timing-function: linear(0, 1)){
+    :root{ --tr-plie: 0.58s linear(0 0%, 0.003292 1.104%, 0.01361 2.313%, 0.03187 3.658%, 0.05949 5.189%, 0.09916 6.998%, 0.1572 9.311%, 0.2724 13.51%, 0.3942 17.97%, 0.4763 21.18%, 0.5456 24.14%, 0.6068 27.02%, 0.6618 29.91%, 0.7115 32.87%, 0.7566 35.94%, 0.7973 39.16%, 0.834 42.59%, 0.8669 46.27%, 0.896 50.3%, 0.9216 54.75%, 0.9436 59.78%, 0.9621 65.6%, 0.9772 72.56%, 0.989 81.32%, 0.9974 93.27%, 1 100%); }
+  }
   .screen{ display:flex; flex-direction:column; flex:1; }
   /* MÊME style d'animation PARTOUT, calqué sur l'ouverture des Réglages :
      glissement vers le haut + ressort léger (même courbe que la feuille et les
@@ -11729,7 +11760,7 @@ const SUPABASE_ANON_KEY = "sb_publishable_FDJ_R0foC7uIeHmxVrj6rA_2NeIgW2a";
    remontée d'un téléphone ne vaut rien si on ne sait pas QUELLE version
    tournait. Elle doit rester égale au CACHE de sw.js — c'est ce que vérifie
    banc-essai/version.js, qui refuse de laisser publier les deux en désaccord. */
-const VERSION_JEU = "v359";
+const VERSION_JEU = "v360";
 
 /* ===================== QUAND ÇA CASSE CHEZ UN JOUEUR =====================
    « Si quelque chose casse chez cinq d'entre eux sur un modèle de téléphone
@@ -21982,6 +22013,20 @@ function normalizeTeams(){
    la même que celle des compteurs en JS depuis toujours. Seules les horloges
    étaient à recaler, pas la forme du mouvement.) */
 let _tempoPli = "";
+/* (v360) LA COURBE DES PLIS, POUR LE SCRIPT. Ce qui s'anime en JS sur
+   l'horloge commune prend la même courbe que --tr-plie (voir LE RESSORT) :
+   courbePli() pour une animation du navigateur, easePli() pour un calcul
+   image par image (les compteurs). Là où linear() n'existe pas, c'est
+   l'ancienne, easeOutCubic. */
+const PLI_RESSORT = (()=>{ try{ return !!(window.CSS && CSS.supports && CSS.supports("transition-timing-function", "linear(0, 1)")); }catch(e){ return false; } })();
+function easePli(t){
+  if(!(t > 0)) return 0;
+  if(t >= 1) return 1;
+  if(!PLI_RESSORT) return 1 - Math.pow(1 - t, 3);
+  const k = 7.54, n = 1 - (1 + k) * Math.exp(-k);
+  return (1 - (1 + k * t) * Math.exp(-k * t)) / n;
+}
+function courbePli(){ return courbeDe("--tr-plie", "cubic-bezier(0.33,1,0.68,1)"); }
 function tempoPli(){
   if(_tempoPli) return _tempoPli;
   let v = "";
@@ -33148,7 +33193,7 @@ function fonduTexte(el, html){
   sortie.onfinish = () => {
     el.innerHTML = el._vise;
     const entree = el.animate([{ opacity:0, transform:"translateY(5px)" }, { opacity:1, transform:"none" }],
-      { duration: Math.round(msPli() * 0.8), easing: "cubic-bezier(0.33,1,0.68,1)" });
+      { duration: Math.round(msPli() * 0.8), easing: courbePli() });
     sortie.cancel();
     el._fondu = entree;
     entree.onfinish = () => { el._fondu = null; if(el.innerHTML !== el._vise) fonduTexte(el, el._vise); };
@@ -33178,7 +33223,7 @@ function plierPodium(pod, ouvrir){
   const plein = { height: pod.offsetHeight + "px", opacity: 1, marginTop: cs.marginTop, marginBottom: cs.marginBottom, paddingTop: cs.paddingTop };
   const vide = { height: "0px", opacity: 0, marginTop: "0px", marginBottom: "0px", paddingTop: "0px" };
   pod.style.overflow = "hidden";
-  const a = pod.animate(ouvrir ? [vide, plein] : [plein, vide], { duration: msPli(), easing: "cubic-bezier(0.33,1,0.68,1)", fill: ouvrir ? "none" : "forwards" });
+  const a = pod.animate(ouvrir ? [vide, plein] : [plein, vide], { duration: msPli(), easing: courbePli(), fill: ouvrir ? "none" : "forwards" });
   a.onfinish = () => { if(ouvrir) pod.style.removeProperty("overflow"); else pod.remove(); try{ fitScroll(); }catch(e){} };
 }
 function majFinGroupe(teamIdx){
@@ -33275,7 +33320,7 @@ function majFinGroupe(teamIdx){
       const j = v.av._glisse;
       setTimeout(() => { if(v.av._glisse === j){ v.av.style.removeProperty("position"); v.av.style.removeProperty("z-index"); } }, msPli() + 60);
     } else if(!v.de){
-      v.av.animate([{ opacity:0, transform:"scale(0.6)" }, { opacity:1, transform:"none" }], { duration: msPli(), easing: "cubic-bezier(0.33,1,0.68,1)" });
+      v.av.animate([{ opacity:0, transform:"scale(0.6)" }, { opacity:1, transform:"none" }], { duration: msPli(), easing: courbePli() });
     }
   });
   try{ glassSuivre(msPli() + 160); }catch(e){}
@@ -33746,7 +33791,7 @@ function animateCount(el, from, to, duration, suffix){
   const start = performance.now();
   function step(now){
     const t = Math.min((now - start) / duration, 1);
-    const eased = 1 - Math.pow(1 - t, 3); // easeOutCubic
+    const eased = easePli(t);            // (v360) la courbe des plis (voir LE RESSORT)
     const val = Math.round(from + (to - from) * eased);
     el.textContent = val + suffix;
     if(t < 1) requestAnimationFrame(step);
@@ -35404,7 +35449,7 @@ let passage = null;
 function courbeDe(nom, defaut){
   try{
     const v = getComputedStyle(document.documentElement).getPropertyValue(nom);
-    const m = /cubic-bezier\([^)]*\)/.exec(v || "");
+    const m = /(?:cubic-bezier|linear)\([^)]*\)/.exec(v || "");
     if(m) return m[0];
   }catch(e){}
   return defaut;
@@ -35445,19 +35490,64 @@ function lancerGlissements(p){
     }catch(e){}
   });
 }
-function lancerPassage(app, entrant, sortant, retour, xDepart){
+/* ===== (v360) LE RESSORT REPRIS EN VOL =====
+   Deux onglets touchés coup sur coup : l'écran qui arrivait repart vers la
+   gauche avant d'avoir fini. Avec le ressort (voir LE RESSORT), un passage
+   part de l'arrêt — et l'écran, lancé à 30 px par image, marquait un temps
+   d'arrêt avant de repartir. Le ressort se reprend donc AVEC SA VITESSE :
+   on relève celle de l'écran à l'instant du second toucher (la dérivée du
+   ressort à l'instant où il en est), et le nouveau passage part avec elle —
+   la même loi, un départ lancé : x(τ) = 1 − (1 + (k − s)·τ)·e^(−k·τ), où s
+   est la vitesse de départ rapportée au chemin. Jamais plus que k (au-delà,
+   le ressort dépasserait sa place). Un demi-tour, lui, repart de l'arrêt :
+   l'écran revient aussitôt, sans finir son élan dans l'autre sens. */
+const RESSORT_K = 7.54;
+function vitesseGlisse(p){
+  try{
+    if(!p || !p.cote || !PLI_RESSORT || !p.entrant) return 0;
+    const a = p.anims.find(x => { try{ return x.effect && x.effect.target === p.entrant; }catch(e){ return false; } });
+    if(!a || a.currentTime === null || !(p.duree > 0)) return 0;
+    const tau = Math.min(1, Math.max(0, a.currentTime / p.duree));
+    const k = RESSORT_K, s = p.s || 0, y1 = 1 - (1 + k - s) * Math.exp(-k);
+    return (0 - p.entrantDe) * Math.exp(-k * tau) * (s + k * (k - s) * tau) / y1 / p.duree;   // px par ms
+  }catch(e){ return 0; }
+}
+function courbeRessort(s){
+  const k = RESSORT_K, y1 = 1 - (1 + k - s) * Math.exp(-k);
+  const pts = ["0 0%"];
+  for(let i = 1; i < 40; i++){
+    const t = Math.pow(i / 40, 1.6);
+    pts.push((Math.round((1 - (1 + (k - s) * t) * Math.exp(-k * t)) / y1 * 1e5) / 1e5) + " " + (Math.round(t * 1e5) / 1e3) + "%");
+  }
+  pts.push("1 100%");
+  return "linear(" + pts.join(", ") + ")";
+}
+function lancerPassage(app, entrant, sortant, retour, xDepart, vDepart){
   const W = app.clientWidth || window.innerWidth || 0;
   /* Le sens du contenu : vers la droite au retour, vers la gauche à l'aller. */
   const d = retour ? 1 : -1;
   /* L'écran quitté part d'où il est — un geste rapide le prend en route —,
      et celui qui arrive reste collé à lui : les deux font le même chemin. */
   const x0 = Math.max(-W, Math.min(W, xDepart || 0));
-  const p = { genre: retour ? "retour" : "pousse", cote:true, debut: performance.now(), duree: msPli(),
-              courbe: courbeDe("--tr-ouvre", "cubic-bezier(0.33,1,0.68,1)"), W, d, x0,
+  const duree = msPli(), chemin = d * W - x0;
+  /* (v360) Repris en vol dans le même sens : il garde sa vitesse (voir LE
+     RESSORT REPRIS EN VOL). */
+  const elan = (PLI_RESSORT && vDepart && chemin && Math.sign(vDepart) === Math.sign(chemin)) ? Math.min(RESSORT_K, vDepart * duree / chemin) : 0;
+  const p = { genre: retour ? "retour" : "pousse", cote:true, debut: performance.now(), duree, s: elan > 0.05 ? elan : 0,
+              courbe: elan > 0.05 ? courbeRessort(elan) : courbeDe("--tr-ouvre", "cubic-bezier(0.33,1,0.68,1)"), W, d, x0,
               sortantDe: x0, sortantA: d * W, entrantDe: x0 - d * W,
               entrant, sortant, fond:null, anims: [], contre: [] };
   p.anims.push(glisser(sortant, p.sortantDe, p.sortantA, p), glisser(entrant, p.entrantDe, 0, p));
   p.anims = p.anims.filter(Boolean);
+  /* (v360) Repris en vol, il repart À L'INSTANT du toucher : lancé « à la
+     prochaine image », il restait une image immobile (mesuré : 0 px entre
+     deux images à 31 px) avant de reprendre son élan. */
+  if(p.s){
+    try{
+      const t = document.timeline.currentTime;
+      if(t !== null && t !== undefined){ p.departVif = t; p.anims.forEach(a => { a._depart = t; }); }
+    }catch(e){}
+  }
   passage = p;
   /* Fini quand le mouvement l'est VRAIMENT — une première image lente le
      fait partir plus tard que prévu —, avec un filet s'il ne finissait pas. */
@@ -35595,7 +35685,8 @@ function glisserBarre(b, de, a, p){
   try{
     const x = b.animate([{ translate:de + "px 0px" }, { translate:a + "px 0px" }], { duration:p.duree, easing:p.courbe, fill:"both" });
     const a0 = p.anims[0];
-    if(a0 && a0.startTime !== null) x.startTime = a0.startTime;
+    if(p.departVif !== undefined && p.departVif !== null) x.startTime = p.departVif;
+    else if(a0 && a0.startTime !== null) x.startTime = a0.startTime;
     return x;
   }catch(e){ return null; }
 }
@@ -35751,9 +35842,9 @@ function render(){
   const sousPage = !sameScreen && !!document.querySelector(".sheet-veil.page");
   /* Un passage encore en vol se pose d'abord — en relevant où en est l'écran
      qui arrivait : si c'est lui qu'on quitte, il repart de là. */
-  let xDepart = 0;
+  let xDepart = 0, vDepart = 0;
   if(!sameScreen && passage){
-    if(passage.entrant && passage.entrant.isConnected) xDepart = xGlisse(passage.entrant);
+    if(passage.entrant && passage.entrant.isConnected){ xDepart = xGlisse(passage.entrant); vDepart = vitesseGlisse(passage); }
     finirPassage(false);
   }
 
@@ -35896,7 +35987,7 @@ function render(){
        ARRIVE DÉJÀ À SA PLACE DE LECTURE) ; l'écran quitté reste où il est. */
     const lecture = placeDeLecture(node, app);
     if(lecture) prevNode.style.top = ((parseFloat(prevNode.style.top) || 0) + lecture) + "px";
-    lancerPassage(app, node, prevNode, retour, xDepart);
+    lancerPassage(app, node, prevNode, retour, xDepart, vDepart);
     if(typeof node._posee === "function"){ try{ node._posee(); }catch(e){} }
     }
   } else {

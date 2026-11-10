@@ -187,7 +187,11 @@ const FAUX = (mode) => {
         await p.waitForTimeout(700);
         await p.locator('#compoTexte').tap();
         for (const f of [0.5, 1]) { await clavier(Math.round(KB * f)); await p.waitForTimeout(40); }
-        await p.waitForTimeout(aveugle ? 1300 : 350);
+        /* (v360) Le temps que la barre se POSE, sur l'horloge du jeu : avec le
+           ressort (voir LE RESSORT), elle fait encore ses deux derniers pixels
+           à 0,35 s — c'est la pose douce, pas un retard. 0,65 s reste « tout
+           de suite » à côté de la seconde et demie de la première fois. */
+        await p.waitForTimeout(aveugle ? 1300 : 650);
         const ensuite = await mesurer();
         dire(juste(ensuite) && ensuite.tete >= 0 && /resizes-visual/.test(ensuite.meta), '   … au lancement suivant, tout de suite : barre juste au-dessus du clavier (' + ensuite.compoBas + ', clavier à ' + ensuite.hautClavier + ', ' + ensuite.meta + ')');
       }

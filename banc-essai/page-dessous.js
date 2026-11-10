@@ -104,7 +104,13 @@ const ETAT = (id) => {
       for (let essai = 0; essai < 4 && !joue; essai++) {
         await ouvrir();
         await p.evaluate(() => { window.__arrivee = false; document.getElementById('grpReglesVeil').addEventListener('animationend', (e) => { if (e.animationName === 'pageIn') window.__arrivee = true; }); });
-        await p.waitForFunction(() => { const v = document.getElementById('grpReglesVeil'); return !!v && new DOMMatrix(getComputedStyle(v).transform).m41 <= 2; }, null, { polling: 'raf', timeout: 3000 });
+        /* (v360) À 8 px de sa place, et non plus 2 : avec le ressort (voir LE
+           RESSORT), la page met plus longtemps à faire ses derniers pixels, et
+           les 2 derniers ne laissaient que 60 ms avant la fin de l'arrivée —
+           moins que le trajet d'un toucher de ce banc quand d'autres tournent
+           à côté. À 8 px, il reste 0,15 s : on la prend toujours dans la toute
+           fin de sa course, comme le dit le cas. */
+        await p.waitForFunction(() => { const v = document.getElementById('grpReglesVeil'); return !!v && new DOMMatrix(getComputedStyle(v).transform).m41 <= 8; }, null, { polling: 'raf', timeout: 3000 });
         await doigt('touchStart', 1);
         await tirer(1, 91, 70);                                  /* ≈ 0,35 s */
         joue = await p.evaluate(() => !window.__arrivee);

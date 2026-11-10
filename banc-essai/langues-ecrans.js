@@ -261,8 +261,11 @@ const MEME_DANS_LES_DEUX = [
      colonne porte donc « M » des deux côtés — mardi d'un côté, Monday de
      l'autre. Une coïncidence de lettres, pas un mot oublié. */
   { lg:'en', quoi:/^M$/, ou:/fg-sem/, car:'mardi et Monday commencent par la même lettre, à la même colonne' },
-  /* Six livres s'écrivent pareil dans les deux langues. */
-  { lg:'es', quoi:/^(Josué|Esdras|Habacuc|Job|Daniel|Joel|1 Cor\.|2 Cor\.)$/, ou:/bk-nm/,
+  /* Six livres s'écrivent pareil dans les deux langues. (v360) Ces règles
+     valent aussi pour la liste « À revoir » (rv-bk), qui montre les mêmes
+     noms courts : elle tire ses questions au hasard, et le jour où elle
+     tombait sur « 2 Samuel », le banc criait au livre non traduit. */
+  { lg:'es', quoi:/^(Josué|Esdras|Habacuc|Job|Daniel|Joel|1 Cor\.|2 Cor\.)$/, ou:/bk-nm|rv-bk/,
     car:'le même nom, ou la même abréviation, en français et en espagnol' },
   /* Les lettres de repère : A B C D devant les options, l'initiale d'une
      équipe. Ce sont des numéros écrits en lettres, pas des mots. */
@@ -277,7 +280,7 @@ const MEME_DANS_LES_DEUX = [
      de même « 2 Chron. » et « Philip. ». Vérifié dans LIVRES_COURTS_EN, qui les
      porte explicitement — ce n'est pas un oubli de traduction, c'est la bonne
      abréviation des deux côtés. */
-  { quoi:/^(1 Cor\.|2 Cor\.|1 Chron\.|2 Chron\.|1 Samuel|2 Samuel|Philip\.|Lament\.|Col\.|Dan\.|Jude|Job|Ruth|Esther|Amos|Joel|Nahum)$/, ou:/bk-nm/,
+  { quoi:/^(1 Cor\.|2 Cor\.|1 Chron\.|2 Chron\.|1 Samuel|2 Samuel|Philip\.|Lament\.|Col\.|Dan\.|Jude|Job|Ruth|Esther|Amos|Joel|Nahum)$/, ou:/bk-nm|rv-bk/,
     car:'la même abréviation dans les deux langues' },
   /* Le nom du bloc de code que l'installateur doit trouver dans le fichier.
      Ce n'est pas une phrase, c'est un repère : il s'écrit pareil partout,
@@ -289,8 +292,8 @@ const MEME_DANS_LES_DEUX = [
   /* LA PAGE DU NOUVEAU TESTAMENT (v316) montre ses vingt-sept abrégés. Trois
      s'écrivent pareil en anglais — LIVRES_COURTS_EN les porte exprès —, et
      l'espagnol abrège Apocalipsis en « Apoc. », comme le français. */
-  { lg:'en', quoi:/^(Coloss\.|1 Thess\.|2 Thess\.)$/, ou:/bk-nm/, car:'la même abréviation, portée exprès par LIVRES_COURTS_EN' },
-  { lg:'es', quoi:/^Apoc\.$/, ou:/bk-nm/, car:'la même abréviation d\'Apocalipsis en espagnol' },
+  { lg:'en', quoi:/^(Coloss\.|1 Thess\.|2 Thess\.)$/, ou:/bk-nm|rv-bk/, car:'la même abréviation, portée exprès par LIVRES_COURTS_EN' },
+  { lg:'es', quoi:/^Apoc\.$/, ou:/bk-nm|rv-bk/, car:'la même abréviation d\'Apocalipsis en espagnol' },
   /* LA PAGE « UN LIVRE » (v316) dit à voix haute le nom de chaque livre et
      son nombre de questions : « Ruth · 8 questions ». Neuf livres ont le même
      nom en anglais, et « questions » s'écrit pareil. */
