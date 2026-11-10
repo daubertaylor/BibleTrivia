@@ -11709,7 +11709,7 @@ const SUPABASE_ANON_KEY = "sb_publishable_FDJ_R0foC7uIeHmxVrj6rA_2NeIgW2a";
    remontée d'un téléphone ne vaut rien si on ne sait pas QUELLE version
    tournait. Elle doit rester égale au CACHE de sw.js — c'est ce que vérifie
    banc-essai/version.js, qui refuse de laisser publier les deux en désaccord. */
-const VERSION_JEU = "v357";
+const VERSION_JEU = "v358";
 
 /* ===================== QUAND ÇA CASSE CHEZ UN JOUEUR =====================
    « Si quelque chose casse chez cinq d'entre eux sur un modèle de téléphone
@@ -23268,6 +23268,9 @@ function renderChemin(){
       <small class="ch-aide">${T("Six questions par leçon. Une erreur revient à la fin.")}</small>
     </div>
     <div class="ch-unites">${PARCOURS.map((u, i) => uniteHtml(u, i, p, pos, vient)).join("")}</div>`;
+  /* (v358) On arrive SUR la leçon à faire : le chemin y est posé avant de
+     glisser (voir UN ÉCRAN ARRIVE DÉJÀ À SA PLACE DE LECTURE). */
+  el._defile = (a) => cibleLeconCourante(el, a);
   setTimeout(() => montrerLeconCourante(el), apresEntree() + 90);
   return el;
 }
@@ -23281,14 +23284,23 @@ function enteteParcours(){
       <button class="icon-btn" onclick="openSettings()" aria-label="${T("Réglages")}"><span class="ico" style="width:1.22rem;height:1.22rem;">${ICONS.gear}</span></button>
     </div>`;
 }
-/* On arrive SUR la leçon à faire : le chemin défile jusqu'à elle. */
+/* La leçon à faire (ou celle qui vient de s'allumer), un peu au-dessus du
+   milieu de l'écran : la hauteur de défilement qui l'y met. */
+function cibleLeconCourante(el, a){
+  const n = el.querySelector(".ch-noeud.s-allume") || el.querySelector(".ch-noeud.courante");
+  if(!a || !n) return 0;
+  const r = n.getBoundingClientRect(), cible = a.scrollTop + r.top + r.height / 2 - a.clientHeight * 0.48;
+  return cible > 24 ? cible : 0;
+}
+/* Filet : si le chemin n'est PAS sur la leçon une fois posé (un écran
+   arrivé autrement que par un passage), il la rejoint en douceur. Arrivé
+   par un passage, il y est déjà : rien ne bouge. */
 function montrerLeconCourante(el){
   try{
     const a = document.getElementById("app");
-    const n = el.querySelector(".ch-noeud.s-allume") || el.querySelector(".ch-noeud.courante");
-    if(!a || !n || !el.isConnected || state.screen !== "chemin") return;
-    const r = n.getBoundingClientRect(), cible = a.scrollTop + r.top + r.height / 2 - a.clientHeight * 0.48;
-    if(cible > 24) a.scrollTo({ top:cible, behavior:"smooth" });
+    if(!a || !el.isConnected || state.screen !== "chemin") return;
+    const cible = cibleLeconCourante(el, a);
+    if(cible > 24 && Math.abs(cible - a.scrollTop) > 24) a.scrollTo({ top:cible, behavior:"smooth" });
   }catch(e){}
 }
 function renderParcours(){
@@ -35284,10 +35296,10 @@ function echelleCarte(el){
     return (k > 0.05 && k < 20) ? k : 1;
   }catch(e){ return 1; }
 }
-function contreGlisser(gs, de, a, p){
+function contreGlisser(gs, de, a, p, k){
   if(gs._passage === p) return;
   try{
-    const k = echelleCarte(gs.parentElement);
+    if(!(k > 0)) k = echelleCarte(gs.parentElement);
     const x = gs.animate([{ translate:(-de / k) + "px 0px" }, { translate:(-a / k) + "px 0px" }], { duration:p.duree, easing:p.courbe, fill:"both" });
     const a0 = p.anims[0];
     if(a0 && a0.startTime !== null) x.startTime = a0.startTime;
@@ -35295,15 +35307,40 @@ function contreGlisser(gs, de, a, p){
     p.contre.push(x);
   }catch(e){}
 }
+/* (v358) TOUTES LES LECTURES, PUIS TOUTES LES ÉCRITURES. Lire l'échelle
+   d'une carte puis créer son animation, carte après carte, obligeait le
+   navigateur à recalculer les styles à chaque lecture : 62 ms sur le Mode
+   Groupe, processeur ralenti comme un téléphone moyen (mesuré), avant que
+   le glissement ne parte. On lit donc tout d'abord, on écrit ensuite. */
 function verreDuPassage(){
   const p = passage;
   if(!p || !p.cote) return;
-  lancerGlissements(p);
+  const travaux = [];
   [[p.sortant, p.sortantDe, p.sortantA], [p.entrant, p.entrantDe, 0]].forEach(([ecran, de, a]) => {
-    if(ecran && ecran.isConnected) ecran.querySelectorAll(".gs:not(.gs-plein)").forEach(gs => contreGlisser(gs, de, a, p));
+    if(ecran && ecran.isConnected) ecran.querySelectorAll(".gs:not(.gs-plein)").forEach(gs => { if(gs._passage !== p) travaux.push([gs, de, a, echelleCarte(gs.parentElement)]); });
   });
   const g = p.barreGlisse, b = g && document.getElementById("barreBas"), bgs = b && b._gs;
-  if(bgs && bgs.parentNode === b && !bgs.classList.contains("gs-plein")) contreGlisser(bgs, g.de, g.a, p);
+  if(bgs && bgs.parentNode === b && !bgs.classList.contains("gs-plein")) travaux.push([bgs, g.de, g.a, echelleCarte(b)]);
+  lancerGlissements(p);
+  travaux.forEach(([gs, de, a, k]) => contreGlisser(gs, de, a, p, k));
+}
+/* ===== (v358) UN ÉCRAN ARRIVE DÉJÀ À SA PLACE DE LECTURE =====
+   « Lorsque je suis dans l'accueil et que je vais dans Parcours, on dirait
+     qu'il l'affiche après, et ça fait un espèce de petit saut. »
+   Le Parcours arrivait EN HAUT du chemin, puis, le glissement fini, défilait
+   tout seul jusqu'à la leçon à faire : 1 879 px pour un joueur à sa
+   dix-neuvième leçon (mesuré) — deux mouvements pour un seul geste, le
+   second au moment où l'on croit être arrivé. Un écran qui a une place de
+   lecture (node._defile) y est maintenant posé AVANT de glisser : il arrive
+   déjà sur la leçon. L'écran qu'on quitte, lui, ne bouge pas : il est
+   descendu d'autant dans la page qui défile. */
+function placeDeLecture(node, app){
+  if(CUSTOM_SCROLL || !node || !app || typeof node._defile !== "function") return 0;
+  let v = 0;
+  try{ v = Math.round(node._defile(app) || 0); }catch(e){ v = 0; }
+  if(!(v > 0)) return 0;
+  app.scrollTop = v;
+  return app.scrollTop || 0;
 }
 /* Le passage se termine : l'écran quitté s'en va, et plus aucune animation
    ne tient l'écran posé. « fini » : le mouvement est allé au bout (la barre
@@ -35643,6 +35680,7 @@ function render(){
       prevNode.remove();
       app.appendChild(node);
       if(CUSTOM_SCROLL){ customScrollY = 0; applyScrollTransform(); } else { app.scrollTop = 0; }
+      placeDeLecture(node, app);
       if(typeof node._posee === "function"){ try{ node._posee(); }catch(e){} }
     } else {
     prevNode.classList.remove("screen-enter", "pousse", "arrivee", "vers-droite", "vers-gauche");
@@ -35667,6 +35705,10 @@ function render(){
        dépend plus de cet ordre (voir LES TROIS PLANS SONT DITS). */
     app.insertBefore(node, prevNode);
     if(CUSTOM_SCROLL){ customScrollY = 0; applyScrollTransform(); } else { app.scrollTop = 0; }
+    /* (v358) Posé sur sa place de lecture avant de glisser (voir UN ÉCRAN
+       ARRIVE DÉJÀ À SA PLACE DE LECTURE) ; l'écran quitté reste où il est. */
+    const lecture = placeDeLecture(node, app);
+    if(lecture) prevNode.style.top = ((parseFloat(prevNode.style.top) || 0) + lecture) + "px";
     lancerPassage(app, node, prevNode, retour, xDepart);
     if(typeof node._posee === "function"){ try{ node._posee(); }catch(e){} }
     }
@@ -35854,7 +35896,8 @@ function serrerEcran(ecran, siDepasse){
   if(ecran._serre){ ecran._serre.forEach(x => { x.el.style.setProperty(x.prop, x.orig); }); ecran._serre = null; }
   const cs = getComputedStyle(a);
   const dispo = a.clientHeight - (parseFloat(cs.paddingTop) || 0) - (parseFloat(cs.paddingBottom) || 0);
-  if(!(ecran.offsetHeight - dispo > 0.5)) return;
+  const depasse0 = ecran.offsetHeight - dispo;
+  if(!(depasse0 > 0.5)) return;
   /* Ce qui peut céder : chaque valeur, et jusqu'où. */
   const leviers = [];
   const lever = (el, prop, plancher) => {
@@ -35891,10 +35934,42 @@ function serrerEcran(ecran, siDepasse){
      plus petit resserrement qui suffit, par dichotomie — une dizaine de
      mises en page d'un seul écran, quelques millisecondes. Si même tout
      resserré l'écran ne tient pas, on rend tout : il défilera, comme avant. */
-  if(poser(1) > 0.5){ ecran._serre.forEach(x => { x.el.style.setProperty(x.prop, x.orig); }); ecran._serre = null; if(a.scrollTop !== defile) a.scrollTop = defile; return; }
-  let bas = 0, haut = 1;
-  for(let i = 0; i < 10; i++){ const k = (bas + haut) / 2; if(poser(k) > 0.5) bas = k; else haut = k; }
-  poser(haut);
+  /* (v358) PAR FAUSSE POSITION, ET NON PLUS PAR MOITIÉS. Chaque essai est
+     une mise en page de tout l'écran ; la dichotomie en faisait douze, 180 ms
+     sur le Mode Groupe avec un processeur de téléphone moyen (mesuré) — avant
+     que l'écran ne puisse partir. Le dépassement varie presque en ligne
+     droite avec le resserrement (les marges qui se touchent le cassent par
+     endroits) : on vise donc là où la droite coupe, en corrigeant d'un essai
+     à l'autre (méthode « Illinois »). Deux à quatre mises en page suffisent ;
+     on s'arrête dès que l'écran tient à moins d'un pixel et demi près, et
+     jamais au-delà de huit essais. On garde le plus petit resserrement essayé
+     qui tient.
+     MAIS L'ÉCRAN REMPLIT LA FENÊTRE (flex:1) : dès que son contenu tient, il
+     garde la hauteur de la fenêtre, et le dépassement mesuré reste à zéro au
+     lieu de devenir négatif. La droite n'a plus de pente : la recherche
+     s'arrêtait au premier essai, sur le resserrement COMPLET — le Mode
+     Groupe à trois joueurs serré de moitié (marges des cartes de 17 à
+     8,6 px, places de 83 à 71 px) pour une place qu'il avait presque, et
+     l'appui de « Comment jouer » rogné sous 44 px (vu par doigt.js). Le
+     temps de la recherche, l'écran prend donc la hauteur de son seul contenu
+     (flex:none) : le dépassement redevient une vraie mesure, de part et
+     d'autre de zéro. Il retrouve sa place à la fin, avec le resserrement
+     retenu — posé sans relire la mise en page. */
+  const flexAvant = ecran.style.getPropertyValue("flex");
+  const rendreFlex = () => { if(flexAvant) ecran.style.setProperty("flex", flexAvant); else ecran.style.removeProperty("flex"); };
+  ecran.style.setProperty("flex", "none");
+  const depasse1 = poser(1);
+  if(depasse1 > 0.5){ rendreFlex(); ecran._serre.forEach(x => { x.el.style.setProperty(x.prop, x.orig); }); ecran._serre = null; if(a.scrollTop !== defile) a.scrollTop = defile; return; }
+  let bas = 0, fBas = depasse0 - 0.5, haut = 1, fHaut = depasse1 - 0.5, cote = 0;
+  for(let i = 0; i < 8 && fHaut < -1; i++){
+    let k = haut - fHaut * (haut - bas) / (fHaut - fBas);
+    if(!(k > bas && k < haut)) k = (bas + haut) / 2;
+    const fk = poser(k) - 0.5;
+    if(fk > 0){ bas = k; fBas = fk; if(cote === -1) fHaut /= 2; cote = -1; }
+    else { haut = k; fHaut = fk; if(cote === 1) fBas /= 2; cote = 1; }
+  }
+  rendreFlex();
+  leviers.forEach(x => x.el.style.setProperty(x.prop, (x.base - haut * (x.base - x.bas)).toFixed(2) + "px"));
 }
 /* ===== LA RÉPONSE S'AFFICHE, RIEN NE SAUTE =====
    Toucher une réponse faisait apparaître « Le savais-tu ? » et « Question
