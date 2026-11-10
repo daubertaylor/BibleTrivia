@@ -1,4 +1,4 @@
-/* ====== LE DÉCOR NE BOUGE PAS, LES ÉCRANS SONT CÔTE À CÔTE (v348, v356, v357) ======
+/* ====== LE DÉCOR NE BOUGE PAS, LES ÉCRANS SONT CÔTE À CÔTE (v348, v356, v357, v359) ======
    v348 : « Corrige ça : je t'ai mis un trait rouge, lors d'une fermeture ou
      d'une ouverture » — le bord de la copie du décor qui glissait avec la
      page. v356 : « Je veux un truc qui soit clean, qui fonctionne
@@ -19,12 +19,13 @@
         l'un de l'autre, et sur l'horloge des pages (--tr-ouvre) ;
      3. JAMAIS L'UN SUR L'AUTRE, JAMAIS VIDE : les deux écrans ne se
         recouvrent jamais, et à eux deux ils remplissent l'écran (il n'y a
-        entre eux que leurs marges) ; le verre de chaque carte reste face au
-        décor, y compris celui d'une carte dessinée plus petite (le verset de
-        l'accueil, à 82 %) : 0,5 px au plus sur l'écran qui arrive ; 1 px au
-        plus sur celui qui part — sorti du flux, il change de repère, et le
-        moteur du verre, qui cale au pixel entier, peut tomber sur l'arrondi
-        voisin (l'écart réel avec le décor reste sous le pixel) ;
+        entre eux que leurs marges) ; (v359) le verre de chaque carte glisse
+        AVEC sa carte — aucune animation sur une couche de verre pendant le
+        passage, rien à redessiner (« sur Android, ça clignote ») —, exactement
+        du même chemin que son écran : 0,5 px au plus sur l'écran qui arrive,
+        1 px au plus sur celui qui part (sorti du flux, il change de repère, et
+        le moteur du verre cale au pixel entier) ; et il retrouve sa vue du
+        décor, exacte, à l'arrivée ;
      4. L'ÉCRAN QUITTÉ NE BOUGE PAS AU DÉPART : au premier instant, ses
         cartes sont exactement où elles étaient (l'accueil perdait sa
         hauteur et ses cartes sautaient de 26 à 116 px vers le haut) ;
@@ -68,6 +69,11 @@ const OUTILS = () => {
     });
     return o;
   };
+  /* (v359) Le verre suit son écran : sa place pendant le passage, c'est sa
+     place au repos décalée du glissement de l'écran. */
+  window.__ecartDecale = (a, b, dx) => { let pire = 0, n = 0;
+    for (const k in a) { if (!b[k]) continue; n++; pire = Math.max(pire, Math.abs(a[k][0] - (b[k][0] + dx)), Math.abs(a[k][1] - b[k][1])); }
+    return { pire: Math.round(pire * 100) / 100, n }; };
   window.__ecart = (a, b) => { let pire = 0, n = 0;
     for (const k in a) { if (!b[k]) continue; n++; pire = Math.max(pire, Math.abs(a[k][0] - b[k][0]), Math.abs(a[k][1] - b[k][1])); }
     return { pire: Math.round(pire * 100) / 100, n }; };
@@ -160,7 +166,7 @@ const OUTILS = () => {
       const horloge = await p.evaluate(() => ({ ms: msPli(), courbe: courbeDe('--tr-ouvre', '?') }));
       for (const [nomP, aller, retour] of PASSAGES) {
         const releves = [];
-        let verreE = { pire: 0, n: 0 }, verreS = { pire: 0, n: 0 }, depart = { pire: 0, n: 0 };
+        let verreE = { pire: 0, n: 0 }, verreS = { pire: 0, n: 0 }, depart = { pire: 0, n: 0 }, gsAnims = 0;
         for (const geste of [aller, retour]) {
           /* Le retour part de la destination : on y va d'abord. */
           if (geste === retour) { await p.evaluate((g) => new Function(g)(), aller); await p.waitForTimeout(900); }
@@ -172,12 +178,14 @@ const OUTILS = () => {
               __fige(0);
               const placesDepart = __places(passage && passage.sortant);
               __fige(f);
-              return { avant, placesAvant, placesDepart, e: __etat(), vE: __verre(passage && passage.entrant), vS: __verre(passage && passage.sortant) };
+              const gsAnims = document.getAnimations().filter(x => x.effect && x.effect.target && x.effect.target.classList && x.effect.target.classList.contains('gs')).length;
+              return { avant, placesAvant, placesDepart, gsAnims, e: __etat(), vE: __verre(passage && passage.entrant), vS: __verre(passage && passage.sortant) };
             }, [geste, f]);
             await p.evaluate(() => __lache()); await p.waitForTimeout(900);
             const posee = await p.evaluate(() => __verre(__ecranVif()));
-            const eE = await p.evaluate(([a, b]) => __ecart(a, b), [r.vE, posee]);
-            const eS = await p.evaluate(([a, b]) => __ecart(a, b), [r.vS, r.avant]);
+            const eE = await p.evaluate(([a, b, dx]) => __ecartDecale(a, b, dx), [r.vE, posee, r.e && r.e.e ? r.e.e.x : 0]);
+            const eS = await p.evaluate(([a, b, dx]) => __ecartDecale(a, b, dx), [r.vS, r.avant, r.e && r.e.s ? r.e.s.x : 0]);
+            gsAnims = Math.max(gsAnims, r.gsAnims || 0);
             const eD = await p.evaluate(([a, b]) => __ecart(a, b), [r.placesDepart, r.placesAvant]);
             verreE = { pire: Math.max(verreE.pire, eE.pire), n: verreE.n + eE.n };
             verreS = { pire: Math.max(verreS.pire, eS.pire), n: verreS.n + eS.n };
@@ -218,9 +226,9 @@ const OUTILS = () => {
           const plein = vu(x.e) + vu(x.s);
           if (plein < x.vw - 2 * 13) fautes3.push('vide : ' + plein.toFixed(0) + ' px couverts sur ' + x.vw + ' à ' + x.f);
         });
-        dit(nomP + ' : 3. jamais l\'un sur l\'autre, jamais vide, et le verre des cartes reste face au décor',
-          !fautes3.length && verreE.pire <= 0.5 && verreS.pire <= 1 && verreE.n >= FRACTIONS.length * 2 && verreS.n >= FRACTIONS.length * 2,
-          (fautes3.length ? fautes3.slice(0, 2).join(' · ') + ' · ' : '') + 'verre de l\'écran qui arrive : ' + verreE.pire + ' px au plus sur ' + verreE.n + ' relevés ; de celui qui part : ' + verreS.pire + ' px sur ' + verreS.n);
+        dit(nomP + ' : 3. jamais l\'un sur l\'autre, jamais vide, et le verre glisse avec sa carte — aucune animation sur le verre, rien à redessiner',
+          !fautes3.length && gsAnims === 0 && verreE.pire <= 0.5 && verreS.pire <= 1 && verreE.n >= FRACTIONS.length * 2 && verreS.n >= FRACTIONS.length * 2,
+          (fautes3.length ? fautes3.slice(0, 2).join(' · ') + ' · ' : '') + 'animations sur le verre : ' + gsAnims + ' · verre de l\'écran qui arrive : ' + verreE.pire + ' px au plus du chemin de son écran, sur ' + verreE.n + ' relevés ; de celui qui part : ' + verreS.pire + ' px sur ' + verreS.n);
         dit(nomP + ' : 4. au premier instant, les cartes de l\'écran quitté sont exactement où elles étaient',
           depart.n >= FRACTIONS.length * 2 && depart.pire <= 0.5, depart.pire + ' px au plus sur ' + depart.n + ' cartes');
       }

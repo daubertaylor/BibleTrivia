@@ -143,7 +143,9 @@ const PHOTO = "url('data:image/svg+xml;utf8,<svg xmlns=%27http://www.w3.org/2000
     }, PHOTO);
     const lien = (pid) => p.evaluate(async (pid) => {
       ouvrirPhotoGrand(pid);
-      await new Promise(r => setTimeout(r, 500));
+      /* (v360) Mesurée une fois POSÉE, sur l'horloge du jeu : avec le ressort
+         (voir LE RESSORT), la photo fait encore ses derniers pixels à 0,5 s. */
+      await new Promise(r => setTimeout(r, Math.max(500, msPli() + 80)));
       const v = document.getElementById('photoGrandVeil');
       const b = v ? v.querySelector('.pv-signaler') : null;
       let geo = null;

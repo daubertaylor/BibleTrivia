@@ -556,6 +556,37 @@
   @media (min-width:620px){ #app{ max-width:31rem; } }
   @media (min-width:900px){ #app{ max-width:34rem; } }
   @media (min-width:1300px){ #app{ max-width:37rem; } }
+  /* ===================== (v360) LE RESSORT =====================
+     « Fluidifie encore l'animation de transition : je veux qu'elle soit
+       bien fluide, sans s'arrêter brusquement. »
+     L'horloge commune (--tr-plie) était easeOutCubic sur 0,52 s. Filmé
+     image par image sur un écran de 402 px : 38 px dès la PREMIÈRE image —
+     l'écran part d'un coup à pleine vitesse —, puis il freine aussitôt, et
+     la moitié du chemin est faite en 0,1 s. Ce qui se voit, c'est un élan
+     brutal suivi d'un coup de frein. Et sur un téléphone lent, la première
+     image peut tomber 50 ms en retard (le temps de construire l'écran) :
+     avec une courbe qui part à pleine vitesse, l'écran apparaît alors déjà
+     au sixième de sa course — un bond à l'entrée (mesuré, processeur
+     ralenti six fois : 75 px).
+     Elle devient un RESSORT AMORTI, comme les écrans d'iOS : départ depuis
+     l'arrêt (8 px, puis 20, puis 27 : l'écran prend son élan), une seule
+     bosse de vitesse (32 px par image, au cinquième de l'horloge), puis une
+     longue pose qui ralentit sans fin visible — sur la dernière demi-seconde
+     de mouvement, la vitesse ne fait que décroître, jamais de cassure. Une
+     image en retard au départ ne coûte plus que quelques pixels.
+     Le ressort : x(t) = 1 − (1 + k·t)·e^(−k·t), k = 7,54 (ω = 13 rad/s sur
+     0,58 s), ramené à 1 au bout de l'horloge — critique, donc sans
+     dépassement (un écran qui dépasserait ouvrirait un vide contre son
+     voisin). Écrit en linear() : 26 points, à 0,34 px près sur un écran de
+     412 px. linear() existe depuis Chrome 113, Safari 17.2 et Firefox 112 ;
+     un navigateur plus ancien garde la courbe d'avant, écrite au-dessus.
+     C'est TOUJOURS une seule horloge : les écrans, la barre et sa pastille,
+     les feuilles, les plis et les compteurs (easePli, en JS) passent
+     ensemble au ressort — la cohérence demandée (« exactement la même
+     animation partout ») ne bouge pas. */
+  @supports (transition-timing-function: linear(0, 1)){
+    :root{ --tr-plie: 0.58s linear(0 0%, 0.003292 1.104%, 0.01361 2.313%, 0.03187 3.658%, 0.05949 5.189%, 0.09916 6.998%, 0.1572 9.311%, 0.2724 13.51%, 0.3942 17.97%, 0.4763 21.18%, 0.5456 24.14%, 0.6068 27.02%, 0.6618 29.91%, 0.7115 32.87%, 0.7566 35.94%, 0.7973 39.16%, 0.834 42.59%, 0.8669 46.27%, 0.896 50.3%, 0.9216 54.75%, 0.9436 59.78%, 0.9621 65.6%, 0.9772 72.56%, 0.989 81.32%, 0.9974 93.27%, 1 100%); }
+  }
   .screen{ display:flex; flex-direction:column; flex:1; }
   /* MÊME style d'animation PARTOUT, calqué sur l'ouverture des Réglages :
      glissement vers le haut + ressort léger (même courbe que la feuille et les
@@ -6672,13 +6703,27 @@
   .ch-unite.fermee .ch-bandeau{ opacity:0.66; }
   .ch-pas{ display:flex; flex-direction:column; align-items:center; gap:1rem; padding:1.25rem 0 0.35rem; }
   .ch-noeud{ position:relative; display:flex; flex-direction:column; align-items:center; transform:translateX(calc(var(--x) * 4.4rem)); }
+  /* (v359) PAS DE TRAIT AUTOUR DES PIERRES — NI NOIR, NI CLAIR.
+     « Regarde, c'est pas pareil sur tes captures que sur mon jeu : les bords
+       sont noirs de mon côté, c'est pas normal non ? » (capture de l'iPhone :
+     chaque pierre, et la bulle « Commencer », cernée d'un trait noir.)
+     Les pierres et la bulle sont des BOUTONS, et rien ne leur retirait la
+     bordure qu'un navigateur pose d'office sur un bouton : Chrome un liseré
+     clair de 2 px — presque invisible sur mes captures, faites dans Chrome —,
+     Safari sur iPhone un trait noir. Ce sont les seuls boutons du jeu qui la
+     gardaient (relevé écran par écran : banc bords-natifs.js). Plus aucune
+     bordure, et plus d'apparence de bouton du système : la pierre n'est que
+     sa matière et son ombre, comme le dit l'en-tête de ce bloc. Sa taille ne
+     bouge pas (border-box). */
   .ch-pierre{ width:4.1rem; height:4.1rem; border-radius:50%; display:flex; align-items:center; justify-content:center; padding:1.08rem; color:#fff;
+    border:0; -webkit-appearance:none; appearance:none;
     box-shadow:inset 0 -0.28rem 0 rgba(0,0,0,0.13), inset 0 1px 0 rgba(255,255,255,0.3), 0 4px 12px var(--ch-o); }
   .ch-pierre .ico{ width:100%; height:100%; display:flex; }
   .ch-pierre .ico svg{ width:100%; height:100%; }
   .ch-noeud.courante .ch-pierre{ width:4.75rem; height:4.75rem; padding:1.2rem; animation:chPouls 2.4s ease-in-out infinite; }
   .ch-noeud.fermee .ch-pierre{ background:var(--surface); color:var(--ink-soft); box-shadow:inset 0 -0.28rem 0 rgba(60,45,30,0.08), inset 0 1px 0 rgba(255,255,255,0.7), 0 2px 8px rgba(15,12,10,0.08); }
   .ch-bulle{ margin-top:0.55rem; padding:0.5rem 1.15rem; border-radius:99px; background:var(--surface); font-family:'Poppins',sans-serif; font-weight:600; font-size:0.9rem; color:var(--ink);
+    border:0; -webkit-appearance:none; appearance:none;
     box-shadow:inset 0 1px 0 rgba(255,255,255,0.7), 0 4px 14px rgba(15,12,10,0.12); }
   @keyframes chPouls{ 0%, 100%{ transform:scale(1); } 50%{ transform:scale(1.06); } }
   .ch-noeud.s-allume .ch-pierre{ animation:chAllume 0.9s cubic-bezier(.2,.9,.3,1.3) 0.35s both; }
@@ -7985,6 +8030,9 @@ const TEXTES = {
     "Hauteur visible retenue : {v} px · champ de {h} à {b} px":"Visible height used: {v} px · field from {h} to {b} px",
     "Copier le relevé":"Copy the reading",
     "Relevé copié":"Reading copied",
+    "Relevé du clavier copié":"Keyboard reading copied",
+    "Navigateur : {n}":"Browser: {n}",
+    "Correction apprise : {d} px":"Learned correction: {d} px",
     "La fonction en ligne ne sait pas encore prévenir des messages : sa mise à jour part toute seule de GitHub.":"The online function can't send message notifications yet: its update goes out from GitHub on its own.",
     "Le dernier message n'a pas pu joindre la fonction : {m}":"The last message couldn't reach the function: {m}",
     "Dernier message ({quand}) : personne à prévenir.":"Last message ({quand}): nobody to notify.",
@@ -8923,6 +8971,9 @@ const TEXTES = {
     "Hauteur visible retenue : {v} px · champ de {h} à {b} px":"Altura visible usada: {v} px · campo de {h} a {b} px",
     "Copier le relevé":"Copiar la medición",
     "Relevé copié":"Medición copiada",
+    "Relevé du clavier copié":"Medición del teclado copiada",
+    "Navigateur : {n}":"Navegador: {n}",
+    "Correction apprise : {d} px":"Corrección aprendida: {d} px",
     "La fonction en ligne ne sait pas encore prévenir des messages : sa mise à jour part toute seule de GitHub.":"La función en línea aún no sabe avisar de los mensajes: su actualización sale sola desde GitHub.",
     "Le dernier message n'a pas pu joindre la fonction : {m}":"El último mensaje no pudo llegar a la función: {m}",
     "Dernier message ({quand}) : personne à prévenir.":"Último mensaje ({quand}): nadie a quien avisar.",
@@ -11709,7 +11760,7 @@ const SUPABASE_ANON_KEY = "sb_publishable_FDJ_R0foC7uIeHmxVrj6rA_2NeIgW2a";
    remontée d'un téléphone ne vaut rien si on ne sait pas QUELLE version
    tournait. Elle doit rester égale au CACHE de sw.js — c'est ce que vérifie
    banc-essai/version.js, qui refuse de laisser publier les deux en désaccord. */
-const VERSION_JEU = "v357";
+const VERSION_JEU = "v360";
 
 /* ===================== QUAND ÇA CASSE CHEZ UN JOUEUR =====================
    « Si quelque chose casse chez cinq d'entre eux sur un modèle de téléphone
@@ -15461,7 +15512,7 @@ function reglagesHtml(){
            « L'erreur, et rien de toi » ne les aidait pas à comprendre. La
            rangée nomme donc la chose (des rapports de bug) et dit tout de
            suite qu'ils partent seuls : le joueur n'a rien à faire. -->
-      <div class="set-row">
+      <div class="set-row" onpointerdown="releveAppuiDebut(event)" onpointerup="releveAppuiFin(event)" onpointercancel="releveAppuiFin(event)" onpointerleave="releveAppuiFin(event)" oncontextmenu="event.preventDefault()">
         <span class="set-ico rap">${ICONS.bogue}</span>
         <span class="set-txt"><b>${T("Rapports de bug")}</b><small>${T("Envoyés seuls, rien à faire")}</small></span>
         <button class="switch${settings.rapport?' on':''}" id="swRapport" role="switch" aria-checked="${!!settings.rapport}" aria-label="${T("Rapports de bug")}" onclick="setRapport(!settings.rapport)"></button>
@@ -15672,6 +15723,47 @@ try{
      iOS n'a pas cette interface : il continue de rétrécir visualViewport,
      rien ne change pour lui. */
   const vk = ("virtualKeyboard" in navigator) ? navigator.virtualKeyboard : null;
+  /* ===== (v359) LE CHROME D'AUJOURD'HUI DIT SON CLAVIER, MÊME EN PLEIN ÉCRAN =====
+     « Aussi regarde sur Android, le clavier a toujours le même problème »
+     (photo : Gboard ouvert dans une discussion, la barre d'écriture cachée
+     sous sa rangée d'outils, les boutons ■ ● d'Android sous le clavier ; un
+     geste du doigt vers le haut, et tout se remettait en place).
+     Lu dans le code de Chrome lui-même (CompositorViewHolder, correctifs de
+     juin et juillet 2026, Chrome 152) : EN PLEIN ÉCRAN, l'ancien Chrome
+     n'annonçait pas le clavier quand il montait — l'annonce partait au
+     premier geste sur la page (« the event was delayed until the user
+     interacted with the page ») —, et la hauteur annoncée pouvait ne pas
+     compter les boutons d'Android posés sous le clavier (le clavier MOINS
+     les barres du système), quand la page, en plein écran, descend jusque
+     sous eux. Depuis Chrome 152, l'annonce part aussitôt, et en plein écran
+     la hauteur est BRUTE : boutons compris.
+     Et le jeu, lui : un clavier qui ne se dit pas en 0,9 s passait pour un
+     navigateur muet (v328), et le téléphone basculait POUR TOUJOURS au mode
+     ordinaire (bt_clavier_redim). Un Android qui avait connu l'ancien Chrome
+     en plein écran y était resté — et aucune des corrections faites depuis
+     sur le clavier annoncé (v338, v345, v350, v356) ne le touchait plus : il
+     se calait sur la zone visible du mode ordinaire, qui ne compte pas ces
+     boutons non plus. Le geste du doigt faisait partir la vraie mesure.
+     Maintenant :
+       — un Chrome 152 ou plus récent n'est jamais mis au mode ordinaire, et
+         le téléphone qui y avait été mis en revient : son clavier se dit ;
+       — en plein écran, sa hauteur brute se pose au bas de la fenêtre au
+         repos, sans rien y ajouter (voir hauteurMesuree) ;
+       — les navigateurs dont on ne sait rien (Samsung Internet, un ancien
+         Chrome) : voir CE QUE LE GESTE APPREND. */
+  const versionChrome = (()=>{
+    try{
+      const u = String(navigator.userAgent || "");
+      if(!/Android/i.test(u)) return 0;
+      /* Seul le Chrome de Google (et ce qui garde son code Android, comme
+         Brave) a ces correctifs : Samsung Internet, Edge, Opera et les vues
+         web des applications ont le moteur, pas ce code-là. */
+      if(/SamsungBrowser|EdgA\/|OPR\/|OPT\/|YaBrowser|UCBrowser|MiuiBrowser|HuaweiBrowser|HeyTapBrowser|VivoBrowser|DuckDuckGo|Firefox|; wv\)/i.test(u)) return 0;
+      const m = /\bChrome\/(\d+)/.exec(u);
+      return m ? +m[1] : 0;
+    }catch(e){ return 0; }
+  })();
+  const chromeQuiDitJuste = versionChrome >= 152;
   /* ===== (v328) UN CLAVIER QUI NE DIT PAS SA TAILLE : LE MODE ORDINAIRE =====
      « Sur Android, le clavier » : la barre d'écriture d'une discussion
      restait sous le clavier ouvert. « Par-dessus » (overlays-content) n'est
@@ -15691,6 +15783,10 @@ try{
   const CLE_REDIM = "bt_clavier_redim";
   let redim = false;
   try{ redim = localStorage.getItem(CLE_REDIM) === "1"; }catch(e){}
+  /* (v359) Un Chrome qui dit son clavier n'en a jamais besoin — même mis là
+     autrefois par l'ancien Chrome du plein écran (voir LE CHROME
+     D'AUJOURD'HUI DIT SON CLAVIER). */
+  if(chromeQuiDitJuste) redim = false;
   const modeOrdinaire = ()=>{
     const m = document.querySelector('meta[name="viewport"]');
     const c = m ? (m.getAttribute("content") || "") : "";
@@ -15704,7 +15800,7 @@ try{
      bas, UN CLAVIER QUE PERSONNE N'ANNONCE). Zéro tant qu'on n'en a pas
      besoin. */
   let estime = 0;
-  if(/Android/i.test(navigator.userAgent || "") && !redim){
+  if(/Android/i.test(navigator.userAgent || "") && !redim && !chromeQuiDitJuste){
     let toucheChamp = 0, guet = null;
     document.addEventListener("pointerdown", (e)=>{
       const el = e.target && e.target.closest ? e.target.closest("input, textarea") : null;
@@ -15808,7 +15904,18 @@ try{
      (boundingRect.y) n'y entre toujours pas : quand la fenêtre a déjà
      rétréci, Chrome la compte à partir de la fenêtre raccourcie, et elle
      retire le clavier une deuxième fois. */
-  const hauteurVisible = ()=>{
+  /* (v359) Le plein écran, vu du jeu : le navigateur en plein écran (le jeu
+     le demande dans Chrome), ou le jeu installé en plein écran. */
+  const enPleinEcran = ()=>{
+    try{ return !!(document.fullscreenElement || document.webkitFullscreenElement) || !!(window.matchMedia && matchMedia("(display-mode: fullscreen)").matches); }
+    catch(e){ return false; }
+  };
+  /* (v359) Une hauteur BRUTE (boutons compris) : celle du Chrome
+     d'aujourd'hui en plein écran. Elle se reconnaît aussi à sa géométrie : il
+     pose le clavier au bas de la fenêtre (haut + hauteur = la fenêtre), quand
+     l'ancien donnait le coin de la zone visible (0 en plein écran). */
+  const clavierBrut = (r)=> !!r && chromeQuiDitJuste && enPleinEcran() && r.y > 0 && Math.abs(r.y + r.height - innerHeight) <= 3;
+  const hauteurMesuree = ()=>{
     const r = rectClavier();
     if(!r){
       /* (v343) Rien ne parle, mais un clavier est là (voir l'estimation).
@@ -15817,9 +15924,90 @@ try{
       return vv.height;
     }
     const fen = innerHeight;
+    /* (v359) Brute, boutons compris : elle part du bas de l'écran — celui
+       de la fenêtre au repos, que la page atteint en plein écran. La marge
+       qui grandit avec les boutons n'y est pas ajoutée : elle les
+       compterait deux fois (la barre d'écriture flotterait d'autant). */
+    if(clavierBrut(r)) return Math.max(0, Math.min(vv.height, fen, restInner - r.height));
     const perdu = Math.max(0, restInner - fen);
     const bas = (perdu >= r.height * 0.75 ? Math.min(fen, restInner - r.height) : fen - r.height) - boutonsEnPlus(perdu);
     return Math.max(0, Math.min(vv.height, bas));
+  };
+  /* ===== (v359) CE QUE LE GESTE APPREND =====
+     « Si je mets mon doigt sur la barre où j'écris et que je glisse vers le
+       haut, le clavier s'ajuste parfaitement. » Un navigateur qui se trompe
+     d'abord sur son clavier et se corrige au premier geste sur la page finit
+     par dire vrai : la mesure d'après le geste est la bonne. Le jeu la
+     retient, pour CE téléphone : « quand le clavier s'annonce ainsi, la place
+     qu'il laisse est plus petite (ou plus grande) de tant ». À l'ouverture
+     suivante, dès la première annonce, la barre se pose là où le geste
+     l'aurait mise — sans geste. Et quand la mesure juste arrive d'elle-même,
+     elle ne ressemble plus à l'annonce fausse : rien n'est compté deux fois.
+     N'est appris que :
+       — sur Android (l'iPhone dit son clavier juste ; sa barre de
+         suggestions qui va et vient n'est pas une erreur) ;
+       — un changement de la mesure, le clavier ouvert et posé depuis 0,6 s
+         au moins, dans les 2,5 s qui suivent un toucher de la PAGE fait
+         après qu'il s'est posé (les touches du clavier ne parlent pas à la
+         page : un panneau d'émojis, le presse-papiers n'y entrent pas) ; un
+         autre champ touché recommence tout ; et on attend que la nouvelle
+         mesure se pose à son tour (0,7 s) ;
+       — de 12 à 120 px ;
+       — attaché à l'annonce exacte (sa sorte, sa hauteur, la fenêtre, la
+         marge) : un autre clavier, l'écran tourné — et rien ne s'applique.
+     Six annonces au plus, oubliées au bout de deux mois, sur ce téléphone
+     seulement (bt_clavier_appris). */
+  const CLE_APPRIS = "bt_clavier_appris";
+  const ANDROID = /Android/i.test(navigator.userAgent || "");
+  let appris = [];
+  try{
+    const l = JSON.parse(localStorage.getItem(CLE_APPRIS) || "[]");
+    if(Array.isArray(l)) appris = l.filter(x => x && typeof x.s === "string" && typeof x.d === "number"
+      && Math.abs(x.d) >= 12 && Math.abs(x.d) <= 120 && Date.now() - (+x.t || 0) < 60 * 864e5).slice(0, 6);
+  }catch(e){}
+  const signatureClavier = ()=>{
+    const r = rectClavier();
+    const sorte = r ? (clavierBrut(r) ? "brut" : "annonce") : (estime && isField() && vv.height >= restH - 90) ? "estime" : "zone";
+    const v = r ? Math.round(r.height) : sorte === "estime" ? estime : Math.round(vv.height);
+    return [sorte, v, innerWidth, innerHeight, sabVif()].join(",");
+  };
+  let corrige = 0;     // la correction apprise appliquée à la dernière mesure (pour le relevé)
+  const hauteurVisible = ()=>{
+    const v = hauteurMesuree();
+    corrige = 0;
+    if(!ANDROID || !appris.length || !isField() || !(restH - v > 90)) return v;
+    const s = signatureClavier();
+    const a = appris.find(x => x.s === s);
+    if(!a) return v;
+    corrige = a.d;
+    return Math.max(0, Math.min(vv.height, v - a.d));
+  };
+  let toucherPage = 0, posee = null, avantGeste = null, apprendreT = 0;
+  document.addEventListener("pointerdown", ()=>{ toucherPage = performance.now(); }, { capture:true, passive:true });
+  document.addEventListener("focusin", ()=>{ posee = null; avantGeste = null; clearTimeout(apprendreT); }, true);
+  const apprendre = ()=>{
+    try{
+      if(!ANDROID || !isField() || document.hidden){ posee = null; avantGeste = null; return; }
+      const v = Math.round(hauteurMesuree());
+      if(!(restH - v > 90)){ posee = null; avantGeste = null; return; }
+      const s = signatureClavier(), t = performance.now();
+      if(posee && s === posee.s) return;
+      /* Ça bouge. Depuis une mesure posée, juste après un toucher de la page :
+         c'est peut-être la correction — on la suit jusqu'à ce qu'elle se pose. */
+      if(posee && !avantGeste && t - posee.t >= 600 && toucherPage > posee.t && t - toucherPage < 2500) avantGeste = posee;
+      posee = { s, v, t };
+      clearTimeout(apprendreT);
+      if(avantGeste) apprendreT = setTimeout(()=>{
+        try{
+          const a = avantGeste; avantGeste = null;
+          if(!a || !posee || !isField() || signatureClavier() !== posee.s) return;
+          const d = a.v - posee.v;
+          if(Math.abs(d) < 12 || Math.abs(d) > 120 || a.s.split(",")[2] !== posee.s.split(",")[2]) return;
+          appris = [{ s:a.s, d, t:Date.now() }].concat(appris.filter(x => x.s !== a.s)).slice(0, 6);
+          localStorage.setItem(CLE_APPRIS, JSON.stringify(appris));
+        }catch(e){}
+      }, 700);
+    }catch(e){}
   };
   /* ===== (v345) LE RELEVÉ DU CLAVIER, LU DANS LA MODÉRATION =====
      Le clavier d'Android a été repris cinq fois sur des photos, sans jamais
@@ -15832,32 +16020,50 @@ try{
      partira des vrais chiffres. Rien de personnel, rien n'est envoyé. */
   const CLE_RELEVE = "bt_clavier_diag";
   let releveT = 0;
+  /* (v359) Chaque relevé dit aussi la version du jeu, le Chrome reconnu, la
+     sorte de mesure, la mesure brute et la correction apprise appliquée, et
+     ce qui l'a fait écrire : le clavier posé (« pose »), ou un toucher de la
+     page clavier ouvert (« geste ») et ce qu'il est devenu 1,2 s après
+     (« apres-geste ») — le geste qui remettait tout en place, vu de
+     l'intérieur, une fois par ouverture du clavier. Six relevés gardés. */
+  const ecrireReleve = (quoi)=>{
+    try{
+      if(!isField() || document.hidden) return;
+      let r = null;
+      try{ const b = vk && vk.boundingRect; if(b && b.height > 0) r = { y:Math.round(b.y), h:Math.round(b.height) }; }catch(e){}
+      const champ = document.activeElement.getBoundingClientRect();
+      const mm = (q)=>{ try{ return !!(window.matchMedia && matchMedia(q).matches); }catch(e){ return false; } };
+      const rel = {
+        t: Date.now(), quoi, v: (typeof VERSION_JEU !== "undefined" ? VERSION_JEU : ""),
+        ua: String(navigator.userAgent || "").slice(0, 180), chrome: versionChrome,
+        mode: mm("(display-mode: fullscreen)") ? "fullscreen" : mm("(display-mode: standalone)") ? "standalone" : "browser",
+        fs: !!(document.fullscreenElement || document.webkitFullscreenElement),
+        vk: vk ? (redim ? "ordinaire" : "overlays") : "absent", estime, sorte: signatureClavier().split(",")[0],
+        ecranH: (window.screen && screen.height) || 0, dpr: Math.round((window.devicePixelRatio || 1) * 100) / 100,
+        repos: { fen:restInner, vv:Math.round(restH), sab:sabRepos },
+        ouvert: { fen:innerHeight, vv:Math.round(vv.height), vvTop:Math.round(vv.offsetTop || 0), sab:sabVif(), clavier:r },
+        mesure: Math.round(hauteurMesuree()), visible: Math.round(hauteurVisible()), appris: corrige,
+        champ: { haut:Math.round(champ.top), bas:Math.round(champ.bottom) },
+        ecran: (typeof state !== "undefined" && state) ? state.screen : "" };
+      let l = [];
+      try{ l = JSON.parse(localStorage.getItem(CLE_RELEVE) || "[]"); }catch(e){}
+      if(!Array.isArray(l)) l = [];
+      l.unshift(rel);
+      localStorage.setItem(CLE_RELEVE, JSON.stringify(l.slice(0, 6)));
+    }catch(e){}
+  };
   const relever = ()=>{
     clearTimeout(releveT);
-    releveT = setTimeout(()=>{
-      try{
-        if(!isField() || document.hidden) return;
-        let r = null;
-        try{ const b = vk && vk.boundingRect; if(b && b.height > 0) r = { y:Math.round(b.y), h:Math.round(b.height) }; }catch(e){}
-        const champ = document.activeElement.getBoundingClientRect();
-        const mm = (q)=>{ try{ return !!(window.matchMedia && matchMedia(q).matches); }catch(e){ return false; } };
-        const rel = {
-          t: Date.now(), ua: String(navigator.userAgent || "").slice(0, 180),
-          mode: mm("(display-mode: fullscreen)") ? "fullscreen" : mm("(display-mode: standalone)") ? "standalone" : "browser",
-          fs: !!(document.fullscreenElement || document.webkitFullscreenElement),
-          vk: vk ? (redim ? "ordinaire" : "overlays") : "absent", estime,
-          repos: { fen:restInner, vv:Math.round(restH), sab:sabRepos },
-          ouvert: { fen:innerHeight, vv:Math.round(vv.height), vvTop:Math.round(vv.offsetTop || 0), sab:sabVif(), clavier:r },
-          visible: Math.round(hauteurVisible()), champ: { haut:Math.round(champ.top), bas:Math.round(champ.bottom) },
-          ecran: (typeof state !== "undefined" && state) ? state.screen : "" };
-        let l = [];
-        try{ l = JSON.parse(localStorage.getItem(CLE_RELEVE) || "[]"); }catch(e){}
-        if(!Array.isArray(l)) l = [];
-        l.unshift(rel);
-        localStorage.setItem(CLE_RELEVE, JSON.stringify(l.slice(0, 3)));
-      }catch(e){}
-    }, 900);
+    releveT = setTimeout(()=>ecrireReleve("pose"), 900);
   };
+  let gesteOuverture = 0, gesteNote = -1;
+  document.addEventListener("focusin", ()=>{ gesteOuverture++; }, true);
+  document.addEventListener("pointerdown", ()=>{
+    if(!isField() || !de.classList.contains("kb") || gesteNote === gesteOuverture) return;
+    gesteNote = gesteOuverture;
+    ecrireReleve("geste");
+    setTimeout(()=>ecrireReleve("apres-geste"), 1200);
+  }, { capture:true, passive:true });
   /* ===== (v330) LA ZONE VISIBLE PEUT ÊTRE DÉCALÉE VERS LE BAS =====
      « Le clavier n'est pas du tout à la bonne taille pour Android » (photo :
      la barre d'écriture très au-dessus du clavier, un grand vide de décor
@@ -16387,6 +16593,7 @@ try{
   let fhPose = 0;   // (v339) la hauteur visible de la discussion au dernier pas (voir apply)
   function apply(){
     suivreDecor();
+    apprendre();                          // (v359) voir CE QUE LE GESTE APPREND
     if(!isField()){
       fhPose = 0;
       restH = Math.max(restH, vv.height); // pas de clavier -> c'est la hauteur de repos
@@ -21806,6 +22013,20 @@ function normalizeTeams(){
    la même que celle des compteurs en JS depuis toujours. Seules les horloges
    étaient à recaler, pas la forme du mouvement.) */
 let _tempoPli = "";
+/* (v360) LA COURBE DES PLIS, POUR LE SCRIPT. Ce qui s'anime en JS sur
+   l'horloge commune prend la même courbe que --tr-plie (voir LE RESSORT) :
+   courbePli() pour une animation du navigateur, easePli() pour un calcul
+   image par image (les compteurs). Là où linear() n'existe pas, c'est
+   l'ancienne, easeOutCubic. */
+const PLI_RESSORT = (()=>{ try{ return !!(window.CSS && CSS.supports && CSS.supports("transition-timing-function", "linear(0, 1)")); }catch(e){ return false; } })();
+function easePli(t){
+  if(!(t > 0)) return 0;
+  if(t >= 1) return 1;
+  if(!PLI_RESSORT) return 1 - Math.pow(1 - t, 3);
+  const k = 7.54, n = 1 - (1 + k) * Math.exp(-k);
+  return (1 - (1 + k * t) * Math.exp(-k * t)) / n;
+}
+function courbePli(){ return courbeDe("--tr-plie", "cubic-bezier(0.33,1,0.68,1)"); }
 function tempoPli(){
   if(_tempoPli) return _tempoPli;
   let v = "";
@@ -23268,6 +23489,9 @@ function renderChemin(){
       <small class="ch-aide">${T("Six questions par leçon. Une erreur revient à la fin.")}</small>
     </div>
     <div class="ch-unites">${PARCOURS.map((u, i) => uniteHtml(u, i, p, pos, vient)).join("")}</div>`;
+  /* (v358) On arrive SUR la leçon à faire : le chemin y est posé avant de
+     glisser (voir UN ÉCRAN ARRIVE DÉJÀ À SA PLACE DE LECTURE). */
+  el._defile = (a) => cibleLeconCourante(el, a);
   setTimeout(() => montrerLeconCourante(el), apresEntree() + 90);
   return el;
 }
@@ -23281,14 +23505,23 @@ function enteteParcours(){
       <button class="icon-btn" onclick="openSettings()" aria-label="${T("Réglages")}"><span class="ico" style="width:1.22rem;height:1.22rem;">${ICONS.gear}</span></button>
     </div>`;
 }
-/* On arrive SUR la leçon à faire : le chemin défile jusqu'à elle. */
+/* La leçon à faire (ou celle qui vient de s'allumer), un peu au-dessus du
+   milieu de l'écran : la hauteur de défilement qui l'y met. */
+function cibleLeconCourante(el, a){
+  const n = el.querySelector(".ch-noeud.s-allume") || el.querySelector(".ch-noeud.courante");
+  if(!a || !n) return 0;
+  const r = n.getBoundingClientRect(), cible = a.scrollTop + r.top + r.height / 2 - a.clientHeight * 0.48;
+  return cible > 24 ? cible : 0;
+}
+/* Filet : si le chemin n'est PAS sur la leçon une fois posé (un écran
+   arrivé autrement que par un passage), il la rejoint en douceur. Arrivé
+   par un passage, il y est déjà : rien ne bouge. */
 function montrerLeconCourante(el){
   try{
     const a = document.getElementById("app");
-    const n = el.querySelector(".ch-noeud.s-allume") || el.querySelector(".ch-noeud.courante");
-    if(!a || !n || !el.isConnected || state.screen !== "chemin") return;
-    const r = n.getBoundingClientRect(), cible = a.scrollTop + r.top + r.height / 2 - a.clientHeight * 0.48;
-    if(cible > 24) a.scrollTo({ top:cible, behavior:"smooth" });
+    if(!a || !el.isConnected || state.screen !== "chemin") return;
+    const cible = cibleLeconCourante(el, a);
+    if(cible > 24 && Math.abs(cible - a.scrollTop) > 24) a.scrollTo({ top:cible, behavior:"smooth" });
   }catch(e){}
 }
 function renderParcours(){
@@ -32152,6 +32385,32 @@ async function confirmerRappels(endpoint){
 function relevesClavier(){
   try{ const l = JSON.parse(localStorage.getItem("bt_clavier_diag") || "[]"); return Array.isArray(l) ? l : []; }catch(e){ return []; }
 }
+/* (v359) Ce que le geste a appris sur ce téléphone (voir CE QUE LE GESTE
+   APPREND), et le relevé complet, tel qu'il se copie. */
+function apprisClavier(){
+  try{ const l = JSON.parse(localStorage.getItem("bt_clavier_appris") || "[]"); return Array.isArray(l) ? l : []; }catch(e){ return []; }
+}
+function texteDuReleve(){
+  return JSON.stringify({ version:VERSION_JEU, clavier:relevesClavier(), sorties:sortiesDeChamp(), appris:apprisClavier() });
+}
+/* ===== (v359) LE RELEVÉ DU CLAVIER, DEPUIS N'IMPORTE QUEL TÉLÉPHONE =====
+   La Modération n'est ouverte qu'aux modérateurs, et le téléphone qui a le
+   souci n'en a pas toujours un. Un appui long (0,65 s) sur la rangée
+   « Rapports de bug », dans les Réglages, copie le relevé complet. Pour
+   tous les autres, rien ne change : un toucher bref ne fait rien, et
+   l'interrupteur garde son rôle. La copie part au lâcher du doigt (un geste
+   qui ouvre le presse-papiers). */
+let appuiReleve = 0;
+function releveAppuiDebut(e){
+  appuiReleve = 0;
+  if(e && e.target && e.target.closest && e.target.closest(".switch")) return;
+  appuiReleve = performance.now();
+}
+function releveAppuiFin(e){
+  const t = appuiReleve; appuiReleve = 0;
+  if(!t || !e || e.type !== "pointerup" || performance.now() - t < 650) return;
+  copierDansPressePapier(texteDuReleve(), T("Relevé du clavier copié"));
+}
 /* ===== (v350) LES SORTIES DE CHAMP, DANS LE RELEVÉ =====
    « Lorsque je colle un texte depuis le presse-papiers de mon clavier, le
    clavier se ferme juste après. » Rien dans le jeu ne ferme le clavier après
@@ -32200,6 +32459,17 @@ const CLE_SORTIES = "bt_clavier_sorties";
 function sortiesDeChamp(){
   try{ const l = JSON.parse(localStorage.getItem(CLE_SORTIES) || "[]"); return Array.isArray(l) ? l : []; }catch(e){ return []; }
 }
+/* (v359) Le navigateur d'un relevé, en clair. */
+function nomDuNavigateur(r){
+  const u = String((r && r.ua) || "");
+  let m;
+  if(r && r.chrome) return "Chrome " + r.chrome;
+  if((m = /SamsungBrowser\/(\d+)/.exec(u))) return "Samsung Internet " + m[1];
+  if((m = /Firefox\/(\d+)/.exec(u))) return "Firefox " + m[1];
+  if((m = /Chrome\/(\d+)/.exec(u))) return "Chromium " + m[1];
+  if((m = /Version\/(\d+).*Safari/.exec(u))) return "Safari " + m[1];
+  return T("navigateur");
+}
 function lignesClavierDiag(){
   const ligne = (t) => `<div class="rd-l"><span class="rd-m att">${ICONS.info}</span><span class="rd-t">${escapeHtml(frSpace(t))}</span></div>`;
   const l = relevesClavier();
@@ -32208,13 +32478,15 @@ function lignesClavierDiag(){
   const modes = { fullscreen:T("plein écran"), standalone:T("app installée"), browser:T("navigateur") };
   return [
     Tf("Affichage : {m}", { m:(modes[r.mode] || r.mode || "?") + (r.fs ? " · " + T("plein écran du navigateur") : "") }),
+    Tf("Navigateur : {n}", { n:nomDuNavigateur(r) + (r.v ? " · " + NOM_DU_JEU + " " + r.v : "") }),
     Tf("Fenêtre : {a} px au repos, {b} px clavier ouvert", { a:p.fen, b:o.fen }),
     o.clavier ? Tf("Clavier annoncé : {h} px, haut à {y} px", { h:o.clavier.h, y:o.clavier.y })
       : (r.estime ? Tf("Clavier estimé : {h} px", { h:r.estime }) : T("Clavier annoncé : aucun")),
     Tf("Marge du bas : {a} px au repos, {b} px clavier ouvert", { a:p.sab, b:o.sab }),
-    Tf("Hauteur visible retenue : {v} px · champ de {h} à {b} px", { v:r.visible, h:c.haut, b:c.bas })
-  ].map(ligne).join("")
-    + `<div class="mod-act"><button class="grp-pill calme" onclick="copierDansPressePapier(JSON.stringify({ clavier:relevesClavier(), sorties:sortiesDeChamp() }), T('Relevé copié'))">${T("Copier le relevé")}</button></div>`;
+    Tf("Hauteur visible retenue : {v} px · champ de {h} à {b} px", { v:r.visible, h:c.haut, b:c.bas }),
+    r.appris ? Tf("Correction apprise : {d} px", { d:r.appris }) : ""
+  ].filter(Boolean).map(ligne).join("")
+    + `<div class="mod-act"><button class="grp-pill calme" onclick="copierDansPressePapier(texteDuReleve(), T('Relevé copié'))">${T("Copier le relevé")}</button></div>`;
 }
 function renderModeration(){
   setTimeout(rafraichirTousGroupes, 0);
@@ -32921,7 +33193,7 @@ function fonduTexte(el, html){
   sortie.onfinish = () => {
     el.innerHTML = el._vise;
     const entree = el.animate([{ opacity:0, transform:"translateY(5px)" }, { opacity:1, transform:"none" }],
-      { duration: Math.round(msPli() * 0.8), easing: "cubic-bezier(0.33,1,0.68,1)" });
+      { duration: Math.round(msPli() * 0.8), easing: courbePli() });
     sortie.cancel();
     el._fondu = entree;
     entree.onfinish = () => { el._fondu = null; if(el.innerHTML !== el._vise) fonduTexte(el, el._vise); };
@@ -32951,7 +33223,7 @@ function plierPodium(pod, ouvrir){
   const plein = { height: pod.offsetHeight + "px", opacity: 1, marginTop: cs.marginTop, marginBottom: cs.marginBottom, paddingTop: cs.paddingTop };
   const vide = { height: "0px", opacity: 0, marginTop: "0px", marginBottom: "0px", paddingTop: "0px" };
   pod.style.overflow = "hidden";
-  const a = pod.animate(ouvrir ? [vide, plein] : [plein, vide], { duration: msPli(), easing: "cubic-bezier(0.33,1,0.68,1)", fill: ouvrir ? "none" : "forwards" });
+  const a = pod.animate(ouvrir ? [vide, plein] : [plein, vide], { duration: msPli(), easing: courbePli(), fill: ouvrir ? "none" : "forwards" });
   a.onfinish = () => { if(ouvrir) pod.style.removeProperty("overflow"); else pod.remove(); try{ fitScroll(); }catch(e){} };
 }
 function majFinGroupe(teamIdx){
@@ -33048,7 +33320,7 @@ function majFinGroupe(teamIdx){
       const j = v.av._glisse;
       setTimeout(() => { if(v.av._glisse === j){ v.av.style.removeProperty("position"); v.av.style.removeProperty("z-index"); } }, msPli() + 60);
     } else if(!v.de){
-      v.av.animate([{ opacity:0, transform:"scale(0.6)" }, { opacity:1, transform:"none" }], { duration: msPli(), easing: "cubic-bezier(0.33,1,0.68,1)" });
+      v.av.animate([{ opacity:0, transform:"scale(0.6)" }, { opacity:1, transform:"none" }], { duration: msPli(), easing: courbePli() });
     }
   });
   try{ glassSuivre(msPli() + 160); }catch(e){}
@@ -33519,7 +33791,7 @@ function animateCount(el, from, to, duration, suffix){
   const start = performance.now();
   function step(now){
     const t = Math.min((now - start) / duration, 1);
-    const eased = 1 - Math.pow(1 - t, 3); // easeOutCubic
+    const eased = easePli(t);            // (v360) la courbe des plis (voir LE RESSORT)
     const val = Math.round(from + (to - from) * eased);
     el.textContent = val + suffix;
     if(t < 1) requestAnimationFrame(step);
@@ -35177,7 +35449,7 @@ let passage = null;
 function courbeDe(nom, defaut){
   try{
     const v = getComputedStyle(document.documentElement).getPropertyValue(nom);
-    const m = /cubic-bezier\([^)]*\)/.exec(v || "");
+    const m = /(?:cubic-bezier|linear)\([^)]*\)/.exec(v || "");
     if(m) return m[0];
   }catch(e){}
   return defaut;
@@ -35218,19 +35490,64 @@ function lancerGlissements(p){
     }catch(e){}
   });
 }
-function lancerPassage(app, entrant, sortant, retour, xDepart){
+/* ===== (v360) LE RESSORT REPRIS EN VOL =====
+   Deux onglets touchés coup sur coup : l'écran qui arrivait repart vers la
+   gauche avant d'avoir fini. Avec le ressort (voir LE RESSORT), un passage
+   part de l'arrêt — et l'écran, lancé à 30 px par image, marquait un temps
+   d'arrêt avant de repartir. Le ressort se reprend donc AVEC SA VITESSE :
+   on relève celle de l'écran à l'instant du second toucher (la dérivée du
+   ressort à l'instant où il en est), et le nouveau passage part avec elle —
+   la même loi, un départ lancé : x(τ) = 1 − (1 + (k − s)·τ)·e^(−k·τ), où s
+   est la vitesse de départ rapportée au chemin. Jamais plus que k (au-delà,
+   le ressort dépasserait sa place). Un demi-tour, lui, repart de l'arrêt :
+   l'écran revient aussitôt, sans finir son élan dans l'autre sens. */
+const RESSORT_K = 7.54;
+function vitesseGlisse(p){
+  try{
+    if(!p || !p.cote || !PLI_RESSORT || !p.entrant) return 0;
+    const a = p.anims.find(x => { try{ return x.effect && x.effect.target === p.entrant; }catch(e){ return false; } });
+    if(!a || a.currentTime === null || !(p.duree > 0)) return 0;
+    const tau = Math.min(1, Math.max(0, a.currentTime / p.duree));
+    const k = RESSORT_K, s = p.s || 0, y1 = 1 - (1 + k - s) * Math.exp(-k);
+    return (0 - p.entrantDe) * Math.exp(-k * tau) * (s + k * (k - s) * tau) / y1 / p.duree;   // px par ms
+  }catch(e){ return 0; }
+}
+function courbeRessort(s){
+  const k = RESSORT_K, y1 = 1 - (1 + k - s) * Math.exp(-k);
+  const pts = ["0 0%"];
+  for(let i = 1; i < 40; i++){
+    const t = Math.pow(i / 40, 1.6);
+    pts.push((Math.round((1 - (1 + (k - s) * t) * Math.exp(-k * t)) / y1 * 1e5) / 1e5) + " " + (Math.round(t * 1e5) / 1e3) + "%");
+  }
+  pts.push("1 100%");
+  return "linear(" + pts.join(", ") + ")";
+}
+function lancerPassage(app, entrant, sortant, retour, xDepart, vDepart){
   const W = app.clientWidth || window.innerWidth || 0;
   /* Le sens du contenu : vers la droite au retour, vers la gauche à l'aller. */
   const d = retour ? 1 : -1;
   /* L'écran quitté part d'où il est — un geste rapide le prend en route —,
      et celui qui arrive reste collé à lui : les deux font le même chemin. */
   const x0 = Math.max(-W, Math.min(W, xDepart || 0));
-  const p = { genre: retour ? "retour" : "pousse", cote:true, debut: performance.now(), duree: msPli(),
-              courbe: courbeDe("--tr-ouvre", "cubic-bezier(0.33,1,0.68,1)"), W, d, x0,
+  const duree = msPli(), chemin = d * W - x0;
+  /* (v360) Repris en vol dans le même sens : il garde sa vitesse (voir LE
+     RESSORT REPRIS EN VOL). */
+  const elan = (PLI_RESSORT && vDepart && chemin && Math.sign(vDepart) === Math.sign(chemin)) ? Math.min(RESSORT_K, vDepart * duree / chemin) : 0;
+  const p = { genre: retour ? "retour" : "pousse", cote:true, debut: performance.now(), duree, s: elan > 0.05 ? elan : 0,
+              courbe: elan > 0.05 ? courbeRessort(elan) : courbeDe("--tr-ouvre", "cubic-bezier(0.33,1,0.68,1)"), W, d, x0,
               sortantDe: x0, sortantA: d * W, entrantDe: x0 - d * W,
               entrant, sortant, fond:null, anims: [], contre: [] };
   p.anims.push(glisser(sortant, p.sortantDe, p.sortantA, p), glisser(entrant, p.entrantDe, 0, p));
   p.anims = p.anims.filter(Boolean);
+  /* (v360) Repris en vol, il repart À L'INSTANT du toucher : lancé « à la
+     prochaine image », il restait une image immobile (mesuré : 0 px entre
+     deux images à 31 px) avant de reprendre son élan. */
+  if(p.s){
+    try{
+      const t = document.timeline.currentTime;
+      if(t !== null && t !== undefined){ p.departVif = t; p.anims.forEach(a => { a._depart = t; }); }
+    }catch(e){}
+  }
   passage = p;
   /* Fini quand le mouvement l'est VRAIMENT — une première image lente le
      fait partir plus tard que prévu —, avec un filet s'il ne finissait pas. */
@@ -35256,54 +35573,51 @@ function reprendrePassage(vieux, node){
   setTimeout(()=>{ node.classList.remove("arrivee"); fitScroll(); }, Math.max(60, apresEntree() - t));
   return true;
 }
-/* ===== (v348, v357) LE VERRE DE L'ÉCRAN QUI GLISSE =====
+/* ===== (v348, v357, v359) LE VERRE DE L'ÉCRAN QUI GLISSE =====
    Le verre d'une carte est une fenêtre sur le décor (la couche .gs, calée
-   sur la place de repos de la carte). Le décor ne bouge pas : quand un écran
-   glisse, la couche de chaque carte qu'il porte fait le chemin inverse —
-   même horloge, même courbe, même instant de départ. Elle montre à chaque
-   image le morceau de décor qui est réellement derrière la carte, et finit
-   sur son calage de repos, exact : au dégel, le moteur ne trouve rien à
-   corriger. Elle passe, elle aussi, par « translate » : son calage, écrit
-   dans « transform » par le moteur, n'est pas touché.
-   Le moteur est gelé pendant le passage (glassFreezeForTransition). Une
-   couche pleine (.gs-plein) n'a pas de décor : elle suit sa carte. Même
-   chose pour la barre du bas quand elle glisse avec sa page. Appelé à la
-   fin de chaque rendu, une fois le verre posé : c'est ici que les écrans
-   partent (voir LE GLISSEMENT D'UN ÉCRAN EST PRÉPARÉ), et qu'un écran repris
-   en route (reprendrePassage) reçoit son mouvement et son contre-mouvement,
-   à l'instant où en est le passage. */
-/* LE CHEMIN EST COMPTÉ DANS LA CARTE. Une carte dessinée plus petite (le
-   verset de l'accueil est à 82 %, scale(0.82)) réduit aussi le chemin de sa
-   couche : 400 px demandés n'en faisaient que 328 à l'écran, et son verre
-   glissait de 63 px sur le décor à mi-chemin (mesuré). On divise donc le
-   chemin par l'échelle de la carte, lue sur sa taille réelle. */
-function echelleCarte(el){
-  try{
-    const w = parseFloat(getComputedStyle(el).width), r = el.getBoundingClientRect().width;
-    const k = (w > 0 && r > 0) ? r / w : 1;
-    return (k > 0.05 && k < 20) ? k : 1;
-  }catch(e){ return 1; }
-}
-function contreGlisser(gs, de, a, p){
-  if(gs._passage === p) return;
-  try{
-    const k = echelleCarte(gs.parentElement);
-    const x = gs.animate([{ translate:(-de / k) + "px 0px" }, { translate:(-a / k) + "px 0px" }], { duration:p.duree, easing:p.courbe, fill:"both" });
-    const a0 = p.anims[0];
-    if(a0 && a0.startTime !== null) x.startTime = a0.startTime;
-    gs._passage = p;
-    p.contre.push(x);
-  }catch(e){}
-}
+   sur la place de repos de la carte). (v359) Pendant un passage, il glisse
+   AVEC sa carte : il garde la vue du décor qu'il a au repos, et la retrouve
+   exactement à l'arrivée — rien n'est recalé à la fin.
+   « Sur Android, l'écran qui clignote lorsque je clique… la barre du bas,
+     Accueil, Parcours, Jeux et Groupes. Règle ça précisément. »
+   De la v348 à la v358, la couche de chaque carte faisait le chemin inverse
+   de sa carte, pour montrer à chaque image le décor réellement derrière
+   elle. Mais une couche de verre a la taille du décor entier : en plein
+   glissement de l'Accueil aux Jeux, le téléphone tenait 66 couches, dont 22
+   de cette taille (mesuré : jusqu'à 540 Mo à pleine résolution), et le
+   contre-mouvement lui faisait dessiner, À CHAQUE IMAGE, des morceaux de
+   décor qu'il n'avait encore jamais montrés. C'est le défaut de la v319
+   (« ça clignote à certains endroits » : trop de couches de cette taille) :
+   un Android à court de mémoire graphique montre un instant ces morceaux
+   vides. Sans contre-mouvement, tout ce qui glisse est déjà dessiné : le
+   téléphone ne fait que le déplacer. Le décor du verre est très flouté :
+   filmée à mi-glissement, la différence ne se voit pas.
+   C'est ici, à la fin de chaque rendu, une fois le verre calé sur la vraie
+   mise en page, que les écrans partent (voir LE GLISSEMENT D'UN ÉCRAN EST
+   PRÉPARÉ) — un écran repris en route (reprendrePassage) aussi, à l'instant
+   où en est le passage. */
 function verreDuPassage(){
   const p = passage;
   if(!p || !p.cote) return;
   lancerGlissements(p);
-  [[p.sortant, p.sortantDe, p.sortantA], [p.entrant, p.entrantDe, 0]].forEach(([ecran, de, a]) => {
-    if(ecran && ecran.isConnected) ecran.querySelectorAll(".gs:not(.gs-plein)").forEach(gs => contreGlisser(gs, de, a, p));
-  });
-  const g = p.barreGlisse, b = g && document.getElementById("barreBas"), bgs = b && b._gs;
-  if(bgs && bgs.parentNode === b && !bgs.classList.contains("gs-plein")) contreGlisser(bgs, g.de, g.a, p);
+}
+/* ===== (v358) UN ÉCRAN ARRIVE DÉJÀ À SA PLACE DE LECTURE =====
+   « Lorsque je suis dans l'accueil et que je vais dans Parcours, on dirait
+     qu'il l'affiche après, et ça fait un espèce de petit saut. »
+   Le Parcours arrivait EN HAUT du chemin, puis, le glissement fini, défilait
+   tout seul jusqu'à la leçon à faire : 1 879 px pour un joueur à sa
+   dix-neuvième leçon (mesuré) — deux mouvements pour un seul geste, le
+   second au moment où l'on croit être arrivé. Un écran qui a une place de
+   lecture (node._defile) y est maintenant posé AVANT de glisser : il arrive
+   déjà sur la leçon. L'écran qu'on quitte, lui, ne bouge pas : il est
+   descendu d'autant dans la page qui défile. */
+function placeDeLecture(node, app){
+  if(CUSTOM_SCROLL || !node || !app || typeof node._defile !== "function") return 0;
+  let v = 0;
+  try{ v = Math.round(node._defile(app) || 0); }catch(e){ v = 0; }
+  if(!(v > 0)) return 0;
+  app.scrollTop = v;
+  return app.scrollTop || 0;
 }
 /* Le passage se termine : l'écran quitté s'en va, et plus aucune animation
    ne tient l'écran posé. « fini » : le mouvement est allé au bout (la barre
@@ -35371,7 +35685,8 @@ function glisserBarre(b, de, a, p){
   try{
     const x = b.animate([{ translate:de + "px 0px" }, { translate:a + "px 0px" }], { duration:p.duree, easing:p.courbe, fill:"both" });
     const a0 = p.anims[0];
-    if(a0 && a0.startTime !== null) x.startTime = a0.startTime;
+    if(p.departVif !== undefined && p.departVif !== null) x.startTime = p.departVif;
+    else if(a0 && a0.startTime !== null) x.startTime = a0.startTime;
     return x;
   }catch(e){ return null; }
 }
@@ -35527,9 +35842,9 @@ function render(){
   const sousPage = !sameScreen && !!document.querySelector(".sheet-veil.page");
   /* Un passage encore en vol se pose d'abord — en relevant où en est l'écran
      qui arrivait : si c'est lui qu'on quitte, il repart de là. */
-  let xDepart = 0;
+  let xDepart = 0, vDepart = 0;
   if(!sameScreen && passage){
-    if(passage.entrant && passage.entrant.isConnected) xDepart = xGlisse(passage.entrant);
+    if(passage.entrant && passage.entrant.isConnected){ xDepart = xGlisse(passage.entrant); vDepart = vitesseGlisse(passage); }
     finirPassage(false);
   }
 
@@ -35643,6 +35958,7 @@ function render(){
       prevNode.remove();
       app.appendChild(node);
       if(CUSTOM_SCROLL){ customScrollY = 0; applyScrollTransform(); } else { app.scrollTop = 0; }
+      placeDeLecture(node, app);
       if(typeof node._posee === "function"){ try{ node._posee(); }catch(e){} }
     } else {
     prevNode.classList.remove("screen-enter", "pousse", "arrivee", "vers-droite", "vers-gauche");
@@ -35667,7 +35983,11 @@ function render(){
        dépend plus de cet ordre (voir LES TROIS PLANS SONT DITS). */
     app.insertBefore(node, prevNode);
     if(CUSTOM_SCROLL){ customScrollY = 0; applyScrollTransform(); } else { app.scrollTop = 0; }
-    lancerPassage(app, node, prevNode, retour, xDepart);
+    /* (v358) Posé sur sa place de lecture avant de glisser (voir UN ÉCRAN
+       ARRIVE DÉJÀ À SA PLACE DE LECTURE) ; l'écran quitté reste où il est. */
+    const lecture = placeDeLecture(node, app);
+    if(lecture) prevNode.style.top = ((parseFloat(prevNode.style.top) || 0) + lecture) + "px";
+    lancerPassage(app, node, prevNode, retour, xDepart, vDepart);
     if(typeof node._posee === "function"){ try{ node._posee(); }catch(e){} }
     }
   } else {
@@ -35854,7 +36174,8 @@ function serrerEcran(ecran, siDepasse){
   if(ecran._serre){ ecran._serre.forEach(x => { x.el.style.setProperty(x.prop, x.orig); }); ecran._serre = null; }
   const cs = getComputedStyle(a);
   const dispo = a.clientHeight - (parseFloat(cs.paddingTop) || 0) - (parseFloat(cs.paddingBottom) || 0);
-  if(!(ecran.offsetHeight - dispo > 0.5)) return;
+  const depasse0 = ecran.offsetHeight - dispo;
+  if(!(depasse0 > 0.5)) return;
   /* Ce qui peut céder : chaque valeur, et jusqu'où. */
   const leviers = [];
   const lever = (el, prop, plancher) => {
@@ -35891,10 +36212,42 @@ function serrerEcran(ecran, siDepasse){
      plus petit resserrement qui suffit, par dichotomie — une dizaine de
      mises en page d'un seul écran, quelques millisecondes. Si même tout
      resserré l'écran ne tient pas, on rend tout : il défilera, comme avant. */
-  if(poser(1) > 0.5){ ecran._serre.forEach(x => { x.el.style.setProperty(x.prop, x.orig); }); ecran._serre = null; if(a.scrollTop !== defile) a.scrollTop = defile; return; }
-  let bas = 0, haut = 1;
-  for(let i = 0; i < 10; i++){ const k = (bas + haut) / 2; if(poser(k) > 0.5) bas = k; else haut = k; }
-  poser(haut);
+  /* (v358) PAR FAUSSE POSITION, ET NON PLUS PAR MOITIÉS. Chaque essai est
+     une mise en page de tout l'écran ; la dichotomie en faisait douze, 180 ms
+     sur le Mode Groupe avec un processeur de téléphone moyen (mesuré) — avant
+     que l'écran ne puisse partir. Le dépassement varie presque en ligne
+     droite avec le resserrement (les marges qui se touchent le cassent par
+     endroits) : on vise donc là où la droite coupe, en corrigeant d'un essai
+     à l'autre (méthode « Illinois »). Deux à quatre mises en page suffisent ;
+     on s'arrête dès que l'écran tient à moins d'un pixel et demi près, et
+     jamais au-delà de huit essais. On garde le plus petit resserrement essayé
+     qui tient.
+     MAIS L'ÉCRAN REMPLIT LA FENÊTRE (flex:1) : dès que son contenu tient, il
+     garde la hauteur de la fenêtre, et le dépassement mesuré reste à zéro au
+     lieu de devenir négatif. La droite n'a plus de pente : la recherche
+     s'arrêtait au premier essai, sur le resserrement COMPLET — le Mode
+     Groupe à trois joueurs serré de moitié (marges des cartes de 17 à
+     8,6 px, places de 83 à 71 px) pour une place qu'il avait presque, et
+     l'appui de « Comment jouer » rogné sous 44 px (vu par doigt.js). Le
+     temps de la recherche, l'écran prend donc la hauteur de son seul contenu
+     (flex:none) : le dépassement redevient une vraie mesure, de part et
+     d'autre de zéro. Il retrouve sa place à la fin, avec le resserrement
+     retenu — posé sans relire la mise en page. */
+  const flexAvant = ecran.style.getPropertyValue("flex");
+  const rendreFlex = () => { if(flexAvant) ecran.style.setProperty("flex", flexAvant); else ecran.style.removeProperty("flex"); };
+  ecran.style.setProperty("flex", "none");
+  const depasse1 = poser(1);
+  if(depasse1 > 0.5){ rendreFlex(); ecran._serre.forEach(x => { x.el.style.setProperty(x.prop, x.orig); }); ecran._serre = null; if(a.scrollTop !== defile) a.scrollTop = defile; return; }
+  let bas = 0, fBas = depasse0 - 0.5, haut = 1, fHaut = depasse1 - 0.5, cote = 0;
+  for(let i = 0; i < 8 && fHaut < -1; i++){
+    let k = haut - fHaut * (haut - bas) / (fHaut - fBas);
+    if(!(k > bas && k < haut)) k = (bas + haut) / 2;
+    const fk = poser(k) - 0.5;
+    if(fk > 0){ bas = k; fBas = fk; if(cote === -1) fHaut /= 2; cote = -1; }
+    else { haut = k; fHaut = fk; if(cote === 1) fBas /= 2; cote = 1; }
+  }
+  rendreFlex();
+  leviers.forEach(x => x.el.style.setProperty(x.prop, (x.base - haut * (x.base - x.bas)).toFixed(2) + "px"));
 }
 /* ===== LA RÉPONSE S'AFFICHE, RIEN NE SAUTE =====
    Toucher une réponse faisait apparaître « Le savais-tu ? » et « Question
@@ -37905,12 +38258,31 @@ function tryAutoFullscreen(e){
        On le demande donc une fois l'écran POSÉ. Le toucher du joueur vaut
        encore : Chrome garde son accord quelques secondes après le geste. */
     fsPending = true;
-    setTimeout(()=>{
+    /* (v359) ET PAS AVANT LA FIN DU GLISSEMENT : on l'attend, au lieu d'un
+       délai fixe. « Sur Android, l'écran clignote lorsque je clique sur la
+       barre du bas. » Le délai (0,56 s) était juste pour l'ancienne arrivée ;
+       depuis la v357, le glissement dure 0,52 s À PARTIR de sa première
+       image — et un écran met un dixième à un quart de seconde à se
+       construire sur un téléphone moyen, davantage au premier toucher après
+       l'ouverture, qui est justement celui où le jeu n'est pas encore en plein
+       écran. Mesuré au processeur ralenti : la demande tombait à la dernière
+       image du glissement — sur un vrai téléphone, en plein dedans, et tout
+       l'écran se recalait d'un coup. On attend donc qu'il n'y ait plus de
+       passage ; s'ils s'enchaînent plus de quatre secondes, on renonce (Chrome
+       n'accorde le plein écran que peu après un toucher). */
+    const depuis = performance.now();
+    const essayer = ()=>{
+      if(passage){
+        if(performance.now() - depuis < 4000) setTimeout(essayer, 50);
+        else fsPending = false;
+        return;
+      }
       setTimeout(()=>{ fsPending = false; }, 600);
       if(!fsAvailable() || fsActive() || champEnCours()) return;
       if(navigator.userActivation && navigator.userActivation.isActive === false) return;
       toggleFullscreen();
-    }, apresEntree());
+    };
+    setTimeout(essayer, apresEntree());
   }, 0);
 }
 /* Android : au premier changement d'écran, on passe en plein écran immersif — la
