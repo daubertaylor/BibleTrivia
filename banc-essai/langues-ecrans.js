@@ -213,6 +213,11 @@ const JAMAIS_A_L_ECRAN = [
   { lg:'es', quoi:'app instalada', car:"le relevé d'un téléphone où le jeu est INSTALLÉ ; le banc tourne dans un onglet" },
   { lg:'es', quoi:'pantalla completa del navegador', car:"le relevé d'un navigateur passé en plein écran ; le banc ne l'est pas" },
   { lg:'es', quoi:'Medición copiada', car:"le petit mot après « Copier le relevé », seulement quand on l'a touché" },
+  /* (v359) Le relevé du clavier se copie aussi depuis n'importe quel
+     téléphone, d'un appui long sur « Rapports de bug » dans les Réglages :
+     le petit mot ne se dit qu'après cet appui long. */
+  { lg:'en', quoi:'Keyboard reading copied', car:"le petit mot après un appui long sur « Rapports de bug », seulement quand on l'a fait" },
+  { lg:'es', quoi:'Medición del teclado copiada', car:"le petit mot après un appui long sur « Rapports de bug », seulement quand on l'a fait" },
 ];
 
 const MEME_DANS_LES_DEUX = [

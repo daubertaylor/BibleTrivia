@@ -13,7 +13,8 @@
         leçon à faire est dans l'écran pendant toute l'arrivée ;
      2. … et l'accueil qu'on quitte ne bouge pas verticalement : ses cartes
         restent à leur hauteur, image après image ;
-     3. … et le verre du chemin qui arrive reste face au décor ;
+     3. … et le verre du chemin qui arrive glisse avec lui, et retrouve sa
+        vue du décor à l'arrivée ;
      4. un joueur qui commence (aucune leçon faite) : le chemin arrive en
         haut, et rien ne défile ;
      5. Parcours → Accueil : le chemin qu'on quitte reste à sa hauteur, et
@@ -92,16 +93,17 @@ const OUTILS = () => {
       allerOnglet('parcours');
       const pp = passage;
       document.getAnimations().forEach(a => { try { a.pause(); a.currentTime = pp.duree * 0.4; } catch (e) {} });
+      const x = __tr(pp.entrant);
       const pendant = [...pp.entrant.querySelectorAll('.gs:not(.gs-plein)')].filter(g => getComputedStyle(g).display !== 'none').map(g => [g, g.getBoundingClientRect()]);
       document.getAnimations().forEach(a => { try { a.play(); } catch (e) {} });
       await __dors(900);
       let pire = 0, n = 0;
-      pendant.forEach(([g, r0]) => { if (!g.isConnected) return; const r1 = g.getBoundingClientRect(); n++; pire = Math.max(pire, Math.abs(r1.left - r0.left), Math.abs(r1.top - r0.top)); });
-      return { pire: Math.round(pire * 100) / 100, n };
+      pendant.forEach(([g, r0]) => { if (!g.isConnected) return; const r1 = g.getBoundingClientRect(); n++; pire = Math.max(pire, Math.abs((r1.left + x) - r0.left), Math.abs(r1.top - r0.top)); });
+      return { pire: Math.round(pire * 100) / 100, n, x: Math.round(x) };
     });
     /* (Les pierres du chemin sont pleines : seules l'en-tête, la carte du
        haut et les bannières montrent le décor.) */
-    dit('3. … et le verre du chemin qui arrive reste face au décor', v.n >= 2 && v.pire <= 0.5, v.pire + ' px au plus sur ' + v.n + ' couches');
+    dit('3. … et le verre du chemin qui arrive glisse avec lui, et retrouve sa vue du décor à l\'arrivée', v.n >= 2 && v.x > 5 && v.pire <= 0.5, v.pire + ' px au plus sur ' + v.n + ' couches (glissement figé à ' + v.x + ' px)');
 
     /* 5. Parcours → Accueil */
     r = await p.evaluate(() => __filmer("allerOnglet('mode')", 1200));
