@@ -6491,6 +6491,7 @@
     transform:translate3d(-50%,0,0); transition:transform var(--tr-ouvre), opacity 0.22s ease; }
   .card.barre-partie.sur-barre{ transform:translate3d(-50%, calc(-1 * (var(--bb-h) + var(--bp-ecart))), 0); }
   .card.barre-partie.cachee, html.kb .card.barre-partie:not(.dans-fil){ transform:translate3d(-50%, calc(100% + var(--bb-bas) + 1rem), 0); opacity:0; pointer-events:none; }
+  .card.barre-partie.sans-transition{ transition:none !important; }
   html.sous-page #barrePartie{ visibility:hidden; }
   .barre-partie .bp-contenu{ flex:1; min-width:0; display:flex; align-items:center; gap:0.3rem; position:relative; }
   .barre-partie .bp-zone{ flex:1; min-width:0; display:flex; align-items:center; gap:0.6rem; min-height:2.8rem; padding:0; border:0; background:none; color:inherit; font:inherit; text-align:left; cursor:pointer; -webkit-tap-highlight-color:transparent; }
@@ -8398,6 +8399,7 @@ const TEXTES = {
     "Revenir à la partie du groupe":"Back to the group game",
     "L'invitation disparaîtra de la discussion.":"The invitation will disappear from the chat.",
     "Ton groupe la jouera sans toi.":"Your group will play it without you.",
+    "La partie du groupe est fermée.":"The group game is closed.",
     "Cette partie n'est plus ouverte.":"This game is no longer open.",
     "Lancer une partie":"Start a game",
     "Écris un message…":"Write a message…",
@@ -9391,6 +9393,7 @@ const TEXTES = {
     "Revenir à la partie du groupe":"Volver a la partida del grupo",
     "L'invitation disparaîtra de la discussion.":"La invitación desaparecerá del chat.",
     "Ton groupe la jouera sans toi.":"Tu grupo la jugará sin ti.",
+    "La partie du groupe est fermée.":"La partida del grupo está cerrada.",
     "Cette partie n'est plus ouverte.":"Esta partida ya no está abierta.",
     "Lancer une partie":"Iniciar una partida",
     "Écris un message…":"Escribe un mensaje…",
@@ -12176,7 +12179,7 @@ const SUPABASE_ANON_KEY = "sb_publishable_FDJ_R0foC7uIeHmxVrj6rA_2NeIgW2a";
    remontée d'un téléphone ne vaut rien si on ne sait pas QUELLE version
    tournait. Elle doit rester égale au CACHE de sw.js — c'est ce que vérifie
    banc-essai/version.js, qui refuse de laisser publier les deux en désaccord. */
-const VERSION_JEU = "v372";
+const VERSION_JEU = "v373";
 
 /* ===================== QUAND ÇA CASSE CHEZ UN JOUEUR =====================
    « Si quelque chose casse chez cinq d'entre eux sur un modèle de téléphone
@@ -12599,8 +12602,18 @@ function versEcranEnLigne(e){
 /* render() la consulte en premier : vrai si elle a tout fait. */
 function rendrePartieLogee(){
   if(!net || !net.fil) return false;
+  /* (v373) Un écran hors des messages que ni l'onglet ni le profil n'ont
+     annoncé : la partie du groupe est quittée ici (voir LA PARTIE DU GROUPE
+     RESTE DANS LES MESSAGES) — l'hôte qui avait des joueurs le lit. */
+  if(salonOuvert() && ECRANS_DES_MESSAGES.indexOf(state.screen) < 0 && !/^online/.test(state.screen) && state.screen !== "splash"){
+    const avecJoueurs = !!net.isHost && nbJoueurs() > 1;
+    quitterLaPartieDuGroupe();
+    if(avecJoueurs){ try{ showMiniToast(T("La partie du groupe est fermée.")); }catch(e){} }
+    return false;
+  }
   /* (v369) LE SALON NE CHANGE PLUS D'ÉCRAN, NULLE PART. Logé, il ne tenait
-     qu'à SA discussion, et y ramenait. On reste maintenant là où l'on est —
+     qu'à SA discussion, et y ramenait. (v373 : dans les messages seulement —
+     voir LA PARTIE DU GROUPE RESTE DANS LES MESSAGES.) On reste maintenant là où l'on est —
      cette discussion, une autre, l'accueil, le Parcours… — et ce qui le
      montre se met à jour : sa carte dans la discussion du groupe, sa barre
      partout ailleurs (voir LA PARTIE DU GROUPE SUIT LE JOUEUR). */
@@ -12757,7 +12770,60 @@ function majPanneauPartie(el, pose){
    dessous. C'est une capsule de verre, comme la barre du bas, avec ce qui
    se joue : la manette, « Commencer ». Elle s'efface sous une page, et
    quand le clavier monte. */
-const ECRANS_BARRE_PARTIE = ["mode", "groupes", "jeux", "chemin", "parcours", "revoir", "profile", "moderation", "setup"];
+/* ===== (v373) LA PARTIE DU GROUPE RESTE DANS LES MESSAGES =====
+   « Pour ce qui est de la partie de groupe qui nous suit dans les
+     différents modes, je ne sais pas si c'est bien. Je pense que peut-être
+     il serait mieux, lorsqu'on décide de lancer une partie, de rester
+     uniquement dans les messages, pour éviter que le truc de partie nous
+     suive dans les autres modes et que ça se superpose sur différents modes
+     de jeu et autres. »
+   La v369 la laissait suivre le joueur partout : sa barre se posait sur
+   l'accueil, le Parcours, les jeux, le profil, par-dessus ce qu'on y
+   faisait. Elle se tient maintenant DANS LES MESSAGES : la liste des
+   groupes (sa barre, au-dessus de celle du bas), les discussions (sa carte
+   dans celle du groupe, sa barre sous l'en-tête dans les autres), la
+   modération. On y circule librement, elle attend.
+   EN SORTIR, C'EST LA QUITTER. L'accueil, le Parcours, les jeux, son
+   profil :
+     — l'hôte que des joueurs ont rejoint le confirme d'abord (« Fermer la
+       partie ? » — « Rester », ou « Fermer » : ses joueurs en sortent, et
+       l'on va là où l'on allait) ;
+     — l'hôte seul, ou un invité, sort sans question, comme on quittait la
+       discussion en v365 : l'invitation disparaît, ou le groupe joue sans
+       lui.
+   L'onglet et le profil posent la question (sortirDesMessages) ; tout autre
+   chemin hors des messages quitte la partie au rendu (rendrePartieLogee).
+   Lancer une autre partie depuis les messages reste demandé comme avant
+   (avantAutrePartie). */
+const ECRANS_DES_MESSAGES = ["groupes", "groupe", "moderation"];
+const ECRANS_BARRE_PARTIE = ["groupes", "moderation"];
+function salonOuvert(){ return partieDansLeFil() && ecranEnLigne() === "online-room"; }
+/* Vrai : rien à quitter, on y va. Faux : la partie est quittée et « suite »
+   est partie d'ici — ou la question est posée, et « suite » partira si
+   l'hôte ferme. */
+function sortirDesMessages(suite){
+  if(!salonOuvert()) return true;
+  if(net.isHost && nbJoueurs() > 1){
+    showModal({
+      title:T("Fermer la partie\u00a0?"), message:T("Les joueurs qui t'ont rejoint en sortiront."),
+      okLabel:T("Fermer"), cancelLabel:T("Rester"), danger:true,
+      onOk:()=>{ quitterPuisAller(suite); }
+    });
+    return false;
+  }
+  quitterPuisAller(suite);
+  return false;
+}
+/* La partie quittée, sa barre n'est pas rangée sur place : elle attend le
+   passage qui suit, et part avec la liste (voir ELLE ARRIVE ET PART AVEC SA
+   PAGE). Si rien ne passe, elle se range ensuite. */
+let barrePartieRetenue = false;
+function quitterPuisAller(suite){
+  barrePartieRetenue = true;
+  try{ quitterLaPartieDuGroupe(); try{ suite(); }catch(e){} }
+  finally{ barrePartieRetenue = false; }
+  majBarrePartie();
+}
 function barrePartieVue(){
   return partieDansLeFil() && ecranEnLigne() === "online-room" && ECRANS_BARRE_PARTIE.indexOf(state.screen) >= 0;
 }
@@ -12780,8 +12846,38 @@ function majBarrePartie(){
   const cur = document.querySelector("#app > .screen:not(.screen-exit)");
   if(cur) cur.classList.toggle("sous-partie", vue);
   let b = document.getElementById("barrePartie");
+  /* ===== (v373) ELLE ARRIVE ET PART AVEC SA PAGE =====
+     Filmée de la discussion à la liste des groupes : l'écran arrivait de
+     côté, mais la barre MONTAIT du bas en s'allumant (de 0 à 100 % en
+     0,2 s), sur place — un morceau de la page qui n'arrivait pas avec elle.
+     Et en ouvrant une discussion, elle descendait en s'éteignant pendant
+     que les groupes partaient de côté. Elle fait maintenant ce que fait la
+     barre du bas (voir LA BARRE DU BAS SUIT LE PASSAGE) : elle arrive avec
+     l'écran qui la porte, entière et déjà à sa hauteur, et part avec celui
+     qu'on quitte ; rangée seulement une fois le passage fini. */
+  const pp = passage && passage.cote ? passage : null;
   if(!vue){
-    if(b && !b.classList.contains("cachee")){ b.classList.add("cachee"); b.setAttribute("aria-hidden", "true"); }
+    if(b && !b.classList.contains("cachee")){
+      if(pp && pp.barrePartie === "part") return;          // elle part déjà avec sa page
+      if(!pp && barrePartieRetenue) return;                // elle attend le passage qui vient
+      b.setAttribute("aria-hidden", "true");
+      if(pp && !pp.barrePartie){
+        pp.barrePartie = "part";
+        const a = glisserAvecLePassage(b, pp.sortantDe, pp.sortantA, pp);
+        pp.barrePartieFin = ()=>{
+          b.classList.add("sans-transition", "cachee");
+          if(a){ try{ a.cancel(); }catch(e){} }
+          void b.offsetWidth; b.classList.remove("sans-transition");
+        };
+        return;
+      }
+      /* La partie s'arrête pendant qu'elle arrive avec sa page : son
+         arrivée s'arrête là, et elle se range. */
+      if(pp && pp.barrePartie === "arrive" && typeof pp.barrePartieFin === "function"){
+        const f = pp.barrePartieFin; pp.barrePartieFin = null; try{ f(); }catch(e){}
+      }
+      b.classList.add("cachee");
+    }
     return;
   }
   let neuve = false;
@@ -12804,7 +12900,17 @@ function majBarrePartie(){
   const bb = document.getElementById("barreBas");
   b._leve = sur && bb ? bb.offsetHeight + 0.5 * (parseFloat(getComputedStyle(document.documentElement).fontSize) || 16) : 0;
   b.classList.toggle("sur-barre", sur);
-  if(b.classList.contains("cachee")){ void b.offsetWidth; b.classList.remove("cachee"); }
+  if(b.classList.contains("cachee")){
+    if(pp && !pp.barrePartie){
+      /* (v373) Elle arrive avec l'écran qui la porte : posée d'abord à sa
+         place, sans transition, c'est le glissement qui la fait venir. */
+      pp.barrePartie = "arrive";
+      b.classList.add("sans-transition"); b.classList.remove("cachee");
+      void b.offsetWidth; b.classList.remove("sans-transition");
+      const a = glisserAvecLePassage(b, pp.entrantDe, 0, pp);
+      pp.barrePartieFin = ()=>{ if(a){ try{ a.cancel(); }catch(e){} } };
+    } else { void b.offsetWidth; b.classList.remove("cachee"); }
+  }
   if(neuve){ try{ glassRelayout(); queueGlassSync(); }catch(e){} }
 }
 /* La même barre, dans le fil d'une autre discussion. */
@@ -12829,8 +12935,8 @@ function ouvrirPartieDuGroupe(){
   ouvrirGroupe(net.fil);
 }
 /* ===== (v369) UNE AUTRE PARTIE, PENDANT QUE CELLE DU GROUPE ATTEND =====
-   La partie du groupe suit le joueur partout ; on ne joue pourtant qu'à une
-   chose à la fois. Lancer autre chose — une partie, une révision, une leçon,
+   La partie du groupe suit le joueur (v373 : dans les messages) ; on ne
+   joue pourtant qu'à une chose à la fois. Lancer autre chose — une partie, une révision, une leçon,
    une quête, un jeu, l'écran En ligne, la partie d'un autre groupe — la
    quitterait (et l'hôte la fermerait pour tous) : c'est demandé d'abord.
    Vrai : rien n'attend, on y va. Faux : la question est posée ; « suite »
@@ -13924,6 +14030,18 @@ function closeModal(){
   if(!v) return;
   v.id = "";
   v.classList.add("closing");
+  /* (v373) Fermée par ce qui vient de changer d'écran — son bouton a
+     dessiné l'écran suivant juste avant de la fermer, et le glissement n'a
+     pas encore commencé : elle part avec sa page (voir LA FENÊTRE PART AVEC
+     SA PAGE). C'est le mouvement qui le dit, pas l'horloge : sur un
+     téléphone lent, dessiner l'écran suivant prend plus d'un dixième de
+     seconde (mesuré au processeur ralenti six fois : 0,14 s). */
+  if(passage && passage.cote){
+    const a0 = passage.anims && passage.anims[0];
+    let fait = 0;
+    try{ fait = a0 && a0.currentTime !== null ? a0.currentTime : 0; }catch(e){}
+    if(fait < 60) fenetresAvecLaPage(passage);
+  }
   setTimeout(()=>{ if(v.parentNode) v.remove(); }, msFerme() + 20);
 }
 /* ===== UNE FENÊTRE QUI NE FAIT QUE FERMER N'A QU'UN BOUTON =====
@@ -27603,6 +27721,8 @@ function majBarre(){
 }
 function allerOnglet(o){
   if(pubAvant(()=> allerOnglet(o))) return;  // (v349) « Autres jeux », la flèche, après un jeu fini
+  /* (v373) Quitter les messages, c'est quitter la partie du groupe. */
+  if(o !== "groupes" && ECRANS_DES_MESSAGES.indexOf(state.screen) >= 0 && !sortirDesMessages(()=> allerOnglet(o))) return;
   /* (v355) Le Parcours a son onglet : on y arrive sur la leçon à faire. */
   if(o === "parcours"){
     if(state.screen === "chemin"){ remonterGroupes(); return; }
@@ -27788,20 +27908,40 @@ function versionsDeLaLangue(v){
    ne démarrait pas. Ce qui précède le mot est donc LU (début, ou tout sauf
    une lettre) et rendu tel quel : même résultat, partout. */
 function motRe(m){ return new RegExp("(^|[^\\p{L}\\p{M}])(" + m.replace(/[.*+?^${}()|[\]\\]/g, "\\$&") + ")(?![\\p{L}\\p{M}])", "iu"); }
+/* ===== (v373) « TROUVE L'ERREUR » EST PRÊT TOUT DE SUITE =====
+   Toucher sa tuile, et rien pendant un quart de seconde : au premier
+   lancement, préparer les huit manches coûtait 0,23 s sur un processeur de
+   téléphone moyen (mesuré au processeur ralenti quatre fois), quand les
+   autres jeux se préparent en moins d'une milliseconde. Pour chaque verset
+   essayé, chacune des cinquante paires de mots demandait TROIS expressions
+   neuves (le mot dans le verset ? le remplaçant dans une autre version ?
+   dans celle-ci ?) — des centaines d'expressions à fabriquer avant
+   d'afficher quoi que ce soit.
+   Les mots d'un verset sont maintenant relevés UNE fois — les suites de
+   lettres, en minuscules, exactement ce qu'« un mot entier » voulait dire
+   pour l'expression (motRe) — et chaque paire se vérifie d'un regard dans
+   ces listes. Mêmes paires possibles, verset par verset, dans les trois
+   langues (vérifié par banc-essai/erreur-prete.js) ; seule l'expression du
+   mot choisi reste, pour le trouver et le remplacer. */
+const LETTRES_RE = /[\p{L}\p{M}]+/gu;
+function motsDe(t){ return new Set(String(t || "").toLowerCase().match(LETTRES_RE) || []); }
+function pairesPossibles(echanges, t, tous){
+  const ici = motsDe(t), ailleurs = motsDe(tous);
+  return echanges.filter(([a, z]) => ici.has(a.toLowerCase()) && !ailleurs.has(z.toLowerCase()) && !ici.has(z.toLowerCase()));
+}
 function manchesErreur(n){
   const out = [], echanges = JEU_ECHANGES[LANGUE] || JEU_ECHANGES.fr;
   for(const v of melanger(HERO_VERSES)){
     if(out.length >= n) break;
     const t = texteVerset(v.r, v.t);
     if(!t || t.split(/\s+/).length < 7 || t.split(/\s+/).length > 40) continue;
-    const tous = versionsDeLaLangue(v).join(" ");
-    const possibles = echanges.filter(([a, z]) => motRe(a).test(t) && !motRe(z).test(tous) && !motRe(z).test(t));
+    const possibles = pairesPossibles(echanges, t, versionsDeLaLangue(v).join(" "));
     if(!possibles.length) continue;
     const [a, z] = possibles[Math.floor(Math.random() * possibles.length)];
-    const mots = t.split(/\s+/).filter(Boolean);
-    const cibles = mots.map((m, i) => motRe(a).test(m) ? i : -1).filter(i => i >= 0);
+    const mots = t.split(/\s+/).filter(Boolean), ra = motRe(a);
+    const cibles = mots.map((m, i) => ra.test(m) ? i : -1).filter(i => i >= 0);
     const k = cibles[Math.floor(Math.random() * cibles.length)];
-    mots[k] = mots[k].replace(motRe(a), (x, avant, mot) => avant + (mot[0] === mot[0].toUpperCase() && mot[0] !== mot[0].toLowerCase() ? z[0].toUpperCase() + z.slice(1) : z));
+    mots[k] = mots[k].replace(ra, (x, avant, mot) => avant + (mot[0] === mot[0].toUpperCase() && mot[0] !== mot[0].toLowerCase() ? z[0].toUpperCase() + z.slice(1) : z));
     out.push({ r:v.r, mots, faux:k, juste:t.split(/\s+/).filter(Boolean)[k], choix:null });
   }
   return out;
@@ -36096,7 +36236,10 @@ function choisirPhotoProfil(){
     </div>`);
 }
 let profileReturn = "mode";
-function openProfile(){ if(state.screen !== "profile"){ profileReturn = state.screen; } state.screen="profile"; render(); }
+function openProfile(){
+  if(state.screen !== "profile" && !sortirDesMessages(()=> openProfile())) return;   // (v373)
+  if(state.screen !== "profile"){ profileReturn = state.screen; } state.screen="profile"; render();
+}
 /* Le pseudo tapé n'est jamais perdu : on le relit avant toute mise à jour. */
 function syncProfileDraft(){
   const i = document.getElementById("profileName") || document.getElementById("nameInput");
@@ -36833,6 +36976,47 @@ function verreDuPassage(){
   const p = passage;
   if(!p || !p.cote) return;
   lancerGlissements(p);
+  fenetresAvecLaPage(p);
+}
+/* ===== (v373) LA FENÊTRE PART AVEC SA PAGE =====
+   « Pour l'animation de transition de page, sur certaines pages comme
+     Range les livres, lorsque je quitte ou que j'ouvre la page, ça
+     n'apparaît pas au bon moment. C'est pas comme si c'était déjà là. »
+   Filmé image par image : on quitte Range les livres, « Quitter la
+   partie ? », « Quitter ». La fenêtre et son voile s'effaçaient SUR PLACE,
+   sur leur horloge de fermeture (0,24 s, qui part lentement), pendant que
+   les deux écrans glissaient dessous : à 100 ms, le voile était encore à
+   93 %. L'écran des jeux arrivait donc assombri, « Quitter la partie ? »
+   en fantôme sur ses tuiles, et ne s'éclaircissait qu'ensuite : il ne
+   semblait pas déjà là, il apparaissait.
+   Une fenêtre appartient à la page qui l'a ouverte. Quand ce qu'on y
+   touche change d'écran, elle part AVEC cette page — du même mouvement, sur
+   la même horloge, collée à elle —, tout en s'effaçant comme avant. Rien
+   ne passe plus devant l'écran qui arrive : il est entier, et clair, dès
+   sa première image. Toutes les fenêtres du jeu en profitent (quitter une
+   partie, un duel, fermer la partie du groupe…) : c'est le voile qui se
+   ferme, quel que soit le bouton, que le passage suit — qu'il se ferme
+   juste après le départ de l'écran (son bouton dessine l'écran suivant,
+   puis la ferme : closeModal), ou juste avant (une suite lancée après
+   elle : ici). */
+function fenetresAvecLaPage(p){
+  if(!p || !p.cote || !p.sortant) return;
+  document.querySelectorAll(".modal-veil.closing").forEach(v => {
+    if(v._avecPage) return;
+    v._avecPage = true;
+    glisserAvecLePassage(v, p.sortantDe, p.sortantA, p);
+  });
+}
+/* Ce qui vit hors des écrans (une fenêtre, la barre de la partie) fait le
+   chemin d'un écran : le même ressort, la même horloge, le même départ. */
+function glisserAvecLePassage(el, de, a, p){
+  try{
+    const x = el.animate(imagesRessort(de, a, p.s), { duration:p.duree, easing:"linear", fill:"both" });
+    const a0 = p.anims[0];
+    if(p.departVif !== undefined && p.departVif !== null) x.startTime = p.departVif;
+    else if(a0 && a0.startTime !== null) x.startTime = a0.startTime;
+    return x;
+  }catch(e){ return null; }
 }
 /* ===== (v358) UN ÉCRAN ARRIVE DÉJÀ À SA PLACE DE LECTURE =====
    « Lorsque je suis dans l'accueil et que je vais dans Parcours, on dirait
@@ -36870,6 +37054,7 @@ function finirPassage(fini){
   if(p.entrant && p.entrant.classList) p.entrant.classList.remove("sous-retour");
   try{ document.querySelectorAll("#app > .screen.sous-retour").forEach(e => e.classList.remove("sous-retour")); }catch(e){}
   if(typeof p.barreFin === "function"){ try{ p.barreFin(fini); }catch(e){} }
+  if(typeof p.barrePartieFin === "function"){ try{ p.barrePartieFin(fini); }catch(e){} }   // (v373)
   if(fini){ try{ majBarre(); }catch(e){} }
 }
 /* LA BARRE DU BAS SUIT LE PASSAGE. Elle vit hors des écrans, posée
