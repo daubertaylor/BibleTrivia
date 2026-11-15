@@ -1435,7 +1435,7 @@ self.BANQUE_EN = [
 ["Which king fell through a lattice and was sick?", ["Ahaziah", "Ahab", "Jehoram", "Jehu"], "King Ahaziah hurt himself falling through a lattice in an upper chamber (2 Kings 1).", 0],
 ["Which man was caught away by the Spirit from one place to another?", ["Philip", "Elijah", "Ezekiel", "Habakkuk"], "After baptising the eunuch, the Spirit caught Philip away elsewhere (Acts 8:39).", 0],
 ["Which servant of Elisha was struck with leprosy for running after Naaman's gifts?", ["Gehazi", "Baruch", "Obadiah", "Jonadab"], "“The leprosy therefore of Naaman shall cleave unto thee, and unto thy seed” (2 Kings 5:20-27).", 0],
-["Which king put an end to the worship of the golden calves in the north?", ["Jehu", "Ahab", "Omri", "Jeroboam"], "Jehu destroyed the worshippers of Baal in Israel (2 Kings 10).", 0],
+["Which king put an end to the worship of Baal in Israel?", ["Jehu", "Ahab", "Omri", "Jeroboam"], "Jehu destroyed the worshippers of Baal in Israel (2 Kings 10).", 0],
 ["Which man was thrown into a waterless pit by his brothers?", ["Joseph", "Benjamin", "Reuben", "Daniel"], "His brothers cast Joseph into a dry pit before selling him (Genesis 37:24).", 0],
 ["Which king had the ark carried up with singing?", ["David", "Solomon", "Hezekiah", "Josiah"], "David brought the ark up to Jerusalem with singing and instruments (1 Chronicles 15).", 0],
 ["Which prophet announced seventy weeks?", ["Daniel", "Ezekiel", "Zechariah", "Jeremiah"], "Daniel received the famous prophecy of the seventy weeks (Daniel 9).", 0],

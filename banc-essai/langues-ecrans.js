@@ -881,9 +881,21 @@ const ouvrirLaLangue = async (p, lg) => {
       net.fil = 'g-1'; net.phase = null; net.filReduit = false;
       state.screen = 'groupe'; render(); }],
     ['Groupes · salon plié', () => { reduirePartie(); }],
-    ['Groupes · fermer la partie ?', () => { reduirePartie(); retourGroupes(); }],
+    /* (v369) LA PARTIE DU GROUPE SUIT LE JOUEUR : quitter la discussion ne
+       la ferme plus ; sa barre est aux groupes (hôte à deux : « 2 joueurs »,
+       « Commencer »), la même dans la discussion d'un autre groupe ; puis les
+       trois questions de la garde — lancer une partie solo à côté : « Fermer
+       la partie ? » (un joueur l'a rejointe, puis personne), et chez un
+       invité « Quitter la partie ? ». */
+    ['Groupes · la partie suit (groupes)', () => { reduirePartie(); retourGroupes(); }],
+    ['Groupes · la partie suit (autre discussion)', () => { __fermerTout(); grp.courant = 'g-2'; state.screen = 'groupe'; render(); }],
+    ['Groupes · fermer la partie ?', () => { __fermerTout(); state.screen = 'groupes'; grp.courant = null; render(); startGame(); }],
+    ['Groupes · fermer l\'invitation ?', () => { __fermerTout(); net.joueurs = {}; net.oppPresent = false; net.opp = null; majBarrePartie(); startGame(); }],
+    ['Groupes · quitter la partie ?', () => { __fermerTout(); net.isHost = false;
+      net.joueurs = { b:{ id:'b', name:'Sam', color:'#E8574C', ready:true } }; net.oppPresent = true; net.opp = net.joueurs.b;
+      majBarrePartie(); startGame(); }],
     ['Groupes · le salon s\'en va', () => { __fermerTout(); net.fil = null; net.phase = null; net.room = null; net.code = ''; net.isHost = false;
-      net.joueurs = {}; net.oppPresent = false; net.opp = null; state.screen = 'groupe'; render(); }],
+      net.joueurs = {}; net.oppPresent = false; net.opp = null; grp.courant = 'g-1'; state.screen = 'groupe'; render(); }],
     /* (v339) Des parties de groupe terminées, avec leurs scores : chaque bulle
        dit qui l'a emporté (un autre, un ex æquo, soi) ; puis deux récaps —
        gagné par un autre, gagné par soi —, et tout se referme. */
@@ -1228,6 +1240,33 @@ const ouvrirLaLangue = async (p, lg) => {
       commencerLecon(0, 4);
       for(let i = 0; i < 20 && state.screen === 'play'; i++){ const q = currentQ(); soloAnswer(q.shuffledOptions.findIndex(o => o === q.correct)); nextQuestion(); } }],
     ['Parcours · le chemin après', () => { __fermerTout(); state.screen = 'chemin'; render(); }],
+    /* (v368) LE PARCOURS ENRICHI. Le chemin d'après a crédité d'un coup les
+       leçons posées à la main (le bandeau « Des diamants pour tes leçons ») ;
+       puis le coffre de la Genèse, les règles des deux quêtes, une quête
+       jouée (quittée, ratée, presque, réussie), la boutique (un gel acheté,
+       la réserve pleine, le solde trop court) et une leçon d'avant créditée
+       seule — la phrase au singulier. */
+    ['Parcours · le coffre', () => { __fermerTout(); ouvrirCoffre(0); }],
+    ['Parcours · coffre ouvert', () => { __fermerTout(); state.screen = 'chemin'; render(); }],
+    ['Parcours · règle du Défi éclair', () => { __fermerTout(); commencerQuete(0, 0); }],
+    ['Parcours · règle de Sans faute', () => { __fermerTout(); commencerQuete(0, 1); }],
+    ['Parcours · une quête', () => { __fermerTout(); lancerQuete(0, 0); }],
+    ['Parcours · quitter la quête', () => { confirmLeaveGame(); }],
+    ['Parcours · quête manquée', () => { __fermerTout(); lancerQuete(0, 0);
+      for(let i = 0; i < 20 && state.screen === 'play'; i++){ const q = currentQ(); soloAnswer(q.shuffledOptions.findIndex(o => o !== q.correct)); nextQuestion(); } }],
+    ['Parcours · quête presque', () => { __fermerTout(); lancerQuete(0, 0);
+      for(let i = 0; i < 20 && state.screen === 'play'; i++){ const q = currentQ(); soloAnswer(q.shuffledOptions.findIndex(o => i < 2 ? o !== q.correct : o === q.correct)); nextQuestion(); } }],
+    ['Parcours · quête réussie', () => { __fermerTout(); lancerQuete(0, 0);
+      for(let i = 0; i < 20 && state.screen === 'play'; i++){ const q = currentQ(); soloAnswer(q.shuffledOptions.findIndex(o => o === q.correct)); nextQuestion(); } }],
+    ['Parcours · quête cochée', () => { __fermerTout(); state.screen = 'chemin'; render(); }],
+    ['Parcours · la boutique', () => { __fermerTout(); saveDaily({ gels:0 }); ouvrirBoutique(); }],
+    ['Parcours · un gel acheté', () => { acheterGel(); }],
+    ['Parcours · réserve pleine', () => { saveDaily({ gels:2 }); majBoutique(); acheterGel(); }],
+    ['Parcours · solde trop court', () => { saveDaily({ gels:0 }); depenserDiamants('banc', Math.max(1, soldeDiamants() - 10)); majBoutique(); }],
+    ['Parcours · une leçon d\'avant', () => { __fermerTout();
+      const p = loadParcours(); p.faites['exode:1'] = '2026-01-01'; localStorage.setItem('bt_parcours', JSON.stringify({ v:1, faites:p.faites }));
+      try { achToastPause = false; achToastBusy = false; } catch(e){}
+      state.screen = 'chemin'; render(); }],
     ['Parcours · tout fait', () => { __fermerTout();
       const f = {}; PARCOURS.forEach((u, i) => { for(let l = 0; l < LECONS_PAR_UNITE; l++) f[cleLecon(i, l)] = '2026-01-01'; });
       localStorage.setItem('bt_parcours', JSON.stringify({ v:1, faites:f })); state.screen = 'chemin'; render(); }],

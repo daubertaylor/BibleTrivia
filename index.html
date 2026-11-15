@@ -6474,6 +6474,38 @@
   .grp-partie .gp-joueur.moi{ color:var(--ink); }
   .grp-partie .gp-reglages{ display:flex; flex-direction:column; gap:0.4rem; }
   .grp-partie .gp-note{ font-size:0.82rem; color:var(--ink-soft); text-align:center; }
+  /* ===== (v369) LA PARTIE DU GROUPE SUIT LE JOUEUR =====
+     Une capsule du même verre que la barre du bas (une carte du jeu, avec
+     sa couche peinte), juste au-dessus d'elle quand elle est là, à sa place
+     au bas de l'écran sinon. Elle vit hors des écrans : elle reste quand ils
+     glissent. L'écran affiché lui garde sa place (sous-partie). Dans la
+     discussion d'un autre groupe, elle se pose sous l'en-tête (dans-fil).
+     Aucune bordure. */
+  :root{ --bp-h:3.4rem; --bp-ecart:0.5rem; }
+  .card.barre-partie{ position:fixed; z-index:59; left:50%; bottom:var(--bb-bas); width:var(--bb-l); min-height:var(--bp-h); margin:0;
+    display:flex; align-items:center; padding:0.3rem; border:0; border-radius:var(--r-full); color:var(--ink);
+    --rim-cast:0 10px 34px rgba(15,12,10,0.24), 0 2px 8px rgba(15,12,10,0.1);
+    transform:translate3d(-50%,0,0); transition:transform var(--tr-ouvre), opacity 0.22s ease; }
+  .card.barre-partie.sur-barre{ transform:translate3d(-50%, calc(-1 * (var(--bb-h) + var(--bp-ecart))), 0); }
+  .card.barre-partie.cachee, html.kb .card.barre-partie:not(.dans-fil){ transform:translate3d(-50%, calc(100% + var(--bb-bas) + 1rem), 0); opacity:0; pointer-events:none; }
+  html.sous-page #barrePartie{ visibility:hidden; }
+  .barre-partie .bp-contenu{ flex:1; min-width:0; display:flex; align-items:center; gap:0.3rem; position:relative; }
+  .barre-partie .bp-zone{ flex:1; min-width:0; display:flex; align-items:center; gap:0.6rem; min-height:2.8rem; padding:0; border:0; background:none; color:inherit; font:inherit; text-align:left; cursor:pointer; -webkit-tap-highlight-color:transparent; }
+  .barre-partie .bp-ico{ width:2.6rem; height:2.6rem; flex-shrink:0; padding:0.62rem; border-radius:50%; display:inline-flex; align-items:center; justify-content:center;
+    color:#fff; background:var(--pal-corail); box-shadow:inset 0 1px 0 rgba(255,255,255,0.26), 0 2px 7px rgba(15,12,10,0.18); transition:transform 0.18s ease; }
+  .barre-partie .bp-ico svg{ width:100%; height:100%; }
+  .barre-partie .bp-txt{ flex:1; min-width:0; display:flex; flex-direction:column; gap:0.05rem; }
+  .barre-partie .bp-txt b{ font-family:'Poppins',sans-serif; font-weight:600; font-size:0.9rem; line-height:1.25; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+  .barre-partie .bp-txt small{ font-size:0.76rem; font-weight:500; line-height:1.3; color:var(--ink-soft); white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+  .barre-partie .bp-chev{ width:1.1rem; height:1.1rem; flex-shrink:0; margin-right:0.55rem; display:inline-flex; color:var(--ink-soft); }
+  .barre-partie .bp-chev svg{ width:100%; height:100%; }
+  .barre-partie .bp-go{ flex-shrink:0; min-height:2.6rem; padding:0 0.95rem; border:0; border-radius:var(--r-full); background:var(--primary); color:#fff;
+    font-family:'Poppins',sans-serif; font-weight:600; font-size:0.84rem; cursor:pointer; box-shadow:inset 0 1px 0 rgba(255,255,255,0.22), 0 2px 7px rgba(15,12,10,0.16); transition:transform 0.18s ease; -webkit-tap-highlight-color:transparent; }
+  .barre-partie .bp-go:active, .barre-partie .bp-zone:active .bp-ico{ transform:scale(0.95); }
+  .card.barre-partie.dans-fil{ position:relative; z-index:auto; left:auto; bottom:auto; transform:none; width:auto; flex:none; margin:0 0 var(--e-2); transition:none;
+    --rim-cast:0 5px 14px rgba(34,26,16,0.12); }
+  #app > .screen.sous-partie{ margin-bottom:calc(var(--bp-h) + var(--bp-ecart)); }
+  html.partie-vue .mini-toast{ bottom:calc(var(--bb-h) + var(--bb-bas) + 0.7rem + var(--bp-h) + var(--bp-ecart)); }
   .fil-carte{ position:relative; flex:1; min-height:0; display:flex; flex-direction:column; padding:0; margin-bottom:var(--e-2);
     border-radius:var(--r-l); }
   #fil{ flex:1; min-height:0; overflow-y:auto; overscroll-behavior:contain; -webkit-overflow-scrolling:touch;
@@ -6895,6 +6927,108 @@
   .ch-t-rose{ background:var(--pal-rose); --ch-o:var(--pal-rose-o); }
   .ch-t-pourpre{ background:var(--pal-pourpre); --ch-o:var(--pal-pourpre-o); }
   .ch-t-indigo{ background:var(--pal-indigo); --ch-o:var(--pal-indigo-o); }
+  /* ===================== (v368) LES QUÊTES, LES COFFRES, LES DIAMANTS =====================
+     « Pour le mode Parcours, je veux que tu l'améliores au maximum, qu'il
+       soit vraiment intéressant, avec des espaces de quête secondaire sur
+       les côtés… et si tu penses que c'est bien d'avoir des diamants pour
+       par exemple acheter des gels de série… »
+     Au bord du chemin, du côté où il ne va pas, deux QUÊTES par unité — un
+     losange, pour ne jamais les confondre avec les pierres rondes des
+     leçons —, et au bout de chaque unité un COFFRE, en or. Les diamants se
+     lisent en haut du chemin, et y mènent à la boutique. Mêmes matières que
+     les pierres : la couleur dans la matière, le relief dans l'ombre, aucune
+     bordure. Le losange tourne par « transform » ; son pouls passe par
+     « scale », pour ne pas lui reprendre sa rotation. */
+  /* Le compteur tient dans la hauteur de la ligne « Ton parcours » : la carte
+     ne grandit pas, et un nouveau joueur voit toujours le haut du chemin sans
+     rien faire défiler (parcours-arrivee.js). Sa cible, elle, déborde : une
+     marge invisible autour de lui (::after) la porte à 44 px. */
+  .ch-haut{ display:flex; align-items:center; justify-content:space-between; gap:0.6rem; margin:-0.32rem -0.3rem -0.28rem 0; }
+  .ch-diamants{ position:relative; display:inline-flex; align-items:center; gap:0.3rem; min-height:2.05rem; padding:0 0.45rem 0 0.66rem; flex-shrink:0;
+    border:0; -webkit-appearance:none; appearance:none; border-radius:99px; background:rgba(39,125,196,0.1); color:var(--ink);
+    font-family:'Poppins',sans-serif; font-weight:600; font-size:0.95rem; font-variant-numeric:tabular-nums; }
+  .ch-diamants::after{ content:""; position:absolute; inset:-0.42rem -0.3rem; }
+  .ch-diamants .ico{ width:1.08rem; height:1.08rem; display:flex; color:#2F8FD8; }
+  .ch-diamants .chev{ width:0.85rem; height:0.85rem; display:flex; color:var(--ink-soft); }
+  .ch-diamants svg, .ch-prime svg, .end-diamants svg, .bq-acheter svg, .bq-ligne svg, .bq-gemme svg, .bq-ico svg, .cm-ico svg{ width:100%; height:100%; }
+  .ch-quete{ position:absolute; top:0.1rem; left:calc(50% + var(--qx) * 1rem); z-index:1; width:max-content; max-width:6.2rem; transform:translateX(-50%);
+    display:flex; flex-direction:column; align-items:center; gap:0.18rem; text-align:center; }
+  .ch-medaillon{ width:2.9rem; height:2.9rem; margin:0.6rem 0 0.52rem; border-radius:0.85rem; padding:0.66rem; display:flex; align-items:center; justify-content:center;
+    border:0; -webkit-appearance:none; appearance:none; color:#fff; background:var(--pal-or); transform:rotate(45deg);
+    box-shadow:inset 0 -0.22rem 0 rgba(0,0,0,0.12), inset 0 1px 0 rgba(255,255,255,0.32), 0 4px 12px var(--pal-or-o); }
+  .ch-medaillon .ico{ width:100%; height:100%; display:flex; transform:rotate(-45deg); }
+  .ch-medaillon .ico svg{ width:100%; height:100%; }
+  /* Le nom et la prime d'une quête sur une étiquette claire, comme la bulle
+     « Commencer » : posés à même la photo du désert, ils ne se lisaient pas. */
+  .ch-etiq{ display:flex; flex-direction:column; align-items:center; gap:0.04rem; max-width:6rem; padding:0.3rem 0.62rem 0.32rem; border-radius:0.85rem;
+    background:var(--surface); box-shadow:inset 0 1px 0 rgba(255,255,255,0.7), 0 3px 10px rgba(15,12,10,0.14); }
+  .ch-quete small{ font-family:'Poppins',sans-serif; font-size:0.72rem; font-weight:600; color:var(--ink); line-height:1.2; text-align:center; }
+  .ch-prime{ display:inline-flex; align-items:center; gap:0.2rem; font-size:0.72rem; font-weight:700; color:#2577BE; font-variant-numeric:tabular-nums; }
+  .ch-prime .ico{ width:0.8rem; height:0.8rem; display:flex; color:#2F8FD8; }
+  .ch-quete.fermee .ch-medaillon{ background:var(--surface); color:var(--ink-soft); box-shadow:inset 0 -0.22rem 0 rgba(60,45,30,0.08), inset 0 1px 0 rgba(255,255,255,0.7), 0 2px 8px rgba(15,12,10,0.08); }
+  .ch-quete.fermee .ch-etiq{ opacity:0.82; }
+  .ch-quete.fermee small, .ch-quete.fermee .ch-prime{ color:var(--ink-soft); }
+  .ch-quete.ouverte .ch-medaillon{ animation:chPoulsQ 2.4s ease-in-out infinite; }
+  .ch-quete.reussie .ch-medaillon{ background:var(--pal-vert); box-shadow:inset 0 -0.22rem 0 rgba(0,0,0,0.12), inset 0 1px 0 rgba(255,255,255,0.32), 0 4px 12px var(--pal-vert-o); }
+  .ch-quete.s-allume .ch-medaillon{ animation:chAllumeQ 0.9s cubic-bezier(.2,.9,.3,1.3) 0.35s both; }
+  @keyframes chPoulsQ{ 0%, 100%{ scale:1; } 50%{ scale:1.07; } }
+  @keyframes chAllumeQ{ 0%{ scale:0.62; filter:saturate(0); } 60%{ scale:1.12; } 100%{ scale:1; filter:none; } }
+  /* Le coffre a sa place dans la colonne du chemin, mais il n'est pas une
+     pierre de leçon : pas de « ch-noeud » (que les bancs comptent cinq par
+     unité). */
+  .ch-coffre{ position:relative; display:flex; flex-direction:column; align-items:center; }
+  .ch-coffre-btn{ width:4.3rem; height:3.75rem; border-radius:1.1rem; padding:0.78rem 0.92rem; display:flex; align-items:center; justify-content:center;
+    border:0; -webkit-appearance:none; appearance:none; color:#fff; background:var(--pal-or);
+    box-shadow:inset 0 -0.28rem 0 rgba(0,0,0,0.13), inset 0 1px 0 rgba(255,255,255,0.32), 0 4px 14px var(--pal-or-o); }
+  .ch-coffre-btn .ico{ width:100%; height:100%; display:flex; }
+  .ch-coffre-btn .ico svg{ width:100%; height:100%; }
+  .ch-coffre.ferme .ch-coffre-btn{ background:var(--surface); color:var(--ink-soft); box-shadow:inset 0 -0.28rem 0 rgba(60,45,30,0.08), inset 0 1px 0 rgba(255,255,255,0.7), 0 2px 8px rgba(15,12,10,0.08); }
+  .ch-coffre.ouvert .ch-coffre-btn{ background:var(--pal-bronze); box-shadow:inset 0 -0.28rem 0 rgba(0,0,0,0.13), inset 0 1px 0 rgba(255,255,255,0.3), 0 4px 12px var(--pal-bronze-o); }
+  .ch-coffre.pret .ch-coffre-btn{ animation:chPouls 2.4s ease-in-out infinite; }
+  .ch-coffre-l{ margin-top:0.5rem; flex-direction:row; gap:0.22rem; font-family:'Poppins',sans-serif; font-size:0.74rem; font-weight:600; color:var(--ink-soft); }
+  .ch-coffre.ouvert .ch-coffre-l{ color:#1F6FB4; }
+  .ch-coffre-l .ico{ width:0.85rem; height:0.85rem; display:flex; color:#2F8FD8; }
+  .ch-coffre-l svg{ width:100%; height:100%; }
+  /* La fin d'une leçon ou d'une quête dit ce qu'elle a rapporté. */
+  .end-diamants{ display:inline-flex; align-items:center; gap:0.35rem; margin-top:0.6rem; padding:0.42rem 0.95rem; border-radius:99px;
+    background:rgba(255,255,255,0.16); color:#fff; font-family:'Poppins',sans-serif; font-weight:700; font-size:0.95rem; text-shadow:0 1px 8px rgba(0,0,0,0.45); }
+  .end-diamants .ico{ width:1.15rem; height:1.15rem; display:flex; color:#8FD3FF; filter:drop-shadow(0 1px 4px rgba(0,0,0,0.35)); }
+  /* Le coffre qu'on ouvre : la fenêtre se pose, le coffre saute. */
+  .modal-card.coffre-modal{ display:flex; flex-direction:column; }
+  .coffre-modal .cm-ico{ order:-1; align-self:center; width:4.7rem; height:4.1rem; margin-bottom:0.75rem; border-radius:1.2rem; padding:0.85rem 1rem; color:#fff; background:var(--pal-or);
+    box-shadow:inset 0 -0.28rem 0 rgba(0,0,0,0.13), inset 0 1px 0 rgba(255,255,255,0.32), 0 6px 18px var(--pal-or-o); animation:coffreSaute 0.7s cubic-bezier(.2,.9,.3,1.3) 0.12s both; }
+  .coffre-modal .cm-ico .ico{ width:100%; height:100%; display:flex; }
+  .coffre-modal .cm-solde{ font-size:0.85rem; color:var(--ink-soft); margin:0.15rem 0 0.2rem; }
+  @keyframes coffreSaute{ 0%{ transform:scale(0.6) rotate(-8deg); } 60%{ transform:scale(1.1) rotate(4deg); } 100%{ transform:none; } }
+  /* LA BOUTIQUE : une page, comme les Réglages. Ses cartes sont celles des
+     pages (page-carte, ombre posée). */
+  .bq-solde, .bq-article, .bq-gains{ background:var(--page-carte); border-radius:var(--r-l); box-shadow:var(--ombre-pose); }
+  .bq-solde{ display:flex; align-items:center; gap:0.9rem; padding:1rem 1.1rem; }
+  .bq-gemme{ width:3.1rem; height:3.1rem; border-radius:var(--r-ico); display:flex; align-items:center; justify-content:center; padding:0.64rem; color:#fff; background:var(--pal-ciel); flex-shrink:0;
+    box-shadow:inset 0 1px 0 rgba(255,255,255,0.26), 0 2px 7px var(--pal-ciel-o); }
+  .bq-gemme .ico{ width:100%; height:100%; display:flex; }
+  .bq-n{ display:flex; flex-direction:column; min-width:0; }
+  .bq-n b{ font-family:'Poppins',sans-serif; font-size:1.6rem; font-weight:600; color:var(--ink); line-height:1.1; font-variant-numeric:tabular-nums; }
+  .bq-n small{ font-size:0.8rem; color:var(--ink-soft); }
+  .bq-article{ display:grid; grid-template-columns:auto 1fr; align-items:center; column-gap:0.85rem; row-gap:0.7rem; padding:1rem 1.1rem; }
+  .bq-ico{ width:2.9rem; height:2.9rem; border-radius:var(--r-ico); display:flex; align-items:center; justify-content:center; padding:0.5rem; background:rgba(39,125,196,0.1); }
+  .bq-ico .ico{ width:100%; height:100%; display:flex; }
+  .bq-txt{ display:flex; flex-direction:column; gap:0.18rem; min-width:0; }
+  .bq-txt b{ font-family:'Poppins',sans-serif; font-weight:600; font-size:0.98rem; color:var(--ink); }
+  .bq-txt small{ font-size:0.8rem; color:var(--ink-soft); line-height:1.35; }
+  .bq-txt .bq-reserve{ font-weight:600; color:var(--ink); }
+  .bq-achat{ grid-column:1 / -1; display:flex; align-items:center; justify-content:flex-end; gap:0.7rem; flex-wrap:wrap; }
+  .bq-etat{ font-size:0.78rem; font-weight:600; color:var(--ink-soft); }
+  .bq-acheter{ display:inline-flex; align-items:center; gap:0.32rem; min-height:2.75rem; padding:0 1.1rem; border:0; -webkit-appearance:none; appearance:none; border-radius:99px;
+    background:var(--pal-ciel); color:#fff; font-family:'Poppins',sans-serif; font-weight:600; font-size:0.95rem; font-variant-numeric:tabular-nums;
+    box-shadow:inset 0 1px 0 rgba(255,255,255,0.26), 0 3px 10px var(--pal-ciel-o); }
+  .bq-acheter .ico{ width:1rem; height:1rem; display:flex; }
+  .bq-acheter:disabled{ background:rgba(60,45,30,0.08); color:var(--ink-soft); box-shadow:none; }
+  .bq-h{ font-family:'Poppins',sans-serif; font-size:0.74rem; font-weight:700; letter-spacing:0.09em; text-transform:uppercase; color:var(--ink-soft); margin:0.75rem 0.25rem 0.1rem; }
+  .bq-gains{ display:flex; flex-direction:column; padding:0.3rem 1.1rem; }
+  .bq-ligne{ display:flex; align-items:center; justify-content:space-between; gap:0.8rem; min-height:2.6rem; font-size:0.88rem; color:var(--ink); }
+  .bq-ligne b{ display:inline-flex; align-items:center; gap:0.22rem; font-family:'Poppins',sans-serif; color:#1F6FB4; font-variant-numeric:tabular-nums; flex-shrink:0; }
+  .bq-ligne .ico{ width:0.9rem; height:0.9rem; display:flex; color:#2F8FD8; }
   .end-actions.lecon-fin .btn-replay{ flex:1; }
   .jx-ico.pourpre, .jx-pastille.pourpre{ background:var(--pal-pourpre); box-shadow:inset 0 1px 0 rgba(255,255,255,0.26), 0 2px 7px var(--pal-pourpre-o); }
   .jx-nom{ font-family:'Poppins',sans-serif; font-weight:600; font-size:0.98rem; color:var(--ink); line-height:1.25; }
@@ -7522,6 +7656,48 @@ const TEXTES = {
     "Unité terminée\u00a0!":"Unit complete!",
     "Quitter la leçon\u00a0?":"Leave the lesson?",
     "Tu la reprendras depuis le début.":"You'll start it again from the beginning.",
+    /* (v368) Les quêtes, les coffres, les diamants, la boutique. */
+    "Défi éclair":"Lightning challenge",
+    "Six questions de l'unité, quinze secondes chacune\u00a0: cinq justes pour la réussir.":"Six questions from the unit, fifteen seconds each: get five right to pass.",
+    "Cinq questions de l'unité, sans une seule erreur.":"Five questions from the unit, without a single mistake.",
+    "Quête":"Quest",
+    "Quête réussie\u00a0!":"Quest complete!",
+    "Presque\u00a0!":"Almost!",
+    "Pas cette fois":"Not this time",
+    "{n} sur {t} — il en fallait {s}":"{n} of {t} — you needed {s}",
+    "Quitter la quête\u00a0?":"Leave the quest?",
+    "Tu pourras la retenter quand tu veux.":"You can try it again whenever you like.",
+    "réussie":"complete",
+    "après la leçon {n}":"after lesson {n}",
+    "Coffre":"Chest",
+    "ouvert":"opened",
+    "à ouvrir":"ready to open",
+    "au bout de l'unité":"at the end of the unit",
+    "Ouvrir le coffre":"Open the chest",
+    "Coffre ouvert\u00a0!":"Chest opened!",
+    "+{n} diamants":"+{n} diamonds",
+    "Tu as maintenant {n} diamants.":"You now have {n} diamonds.",
+    "Son coffre t'attend au bout du chemin.":"Its chest is waiting at the end of the path.",
+    "{n} diamants · Boutique":"{n} diamonds · Shop",
+    "Boutique":"Shop",
+    "Tes diamants":"Your diamonds",
+    "Gel de série":"Streak freeze",
+    "Il protège ta flamme pour UN jour manqué. Deux en réserve au maximum.":"It protects your flame for ONE missed day. Two in reserve at most.",
+    "En réserve\u00a0: {n}/{m}":"In reserve: {n}/{m}",
+    "Acheter":"Buy",
+    "Réserve pleine":"Reserve full",
+    "Il te manque {n} diamants":"You need {n} more diamonds",
+    "Ta réserve est pleine\u00a0: deux gels au maximum.":"Your reserve is full: two freezes at most.",
+    "Gel acheté — il couvre UN jour manqué.":"Freeze bought — it covers ONE missed day.",
+    "Comment gagner des diamants":"How to earn diamonds",
+    "Une leçon terminée":"A lesson completed",
+    "Une leçon sans faute, une fois":"A flawless lesson, once",
+    "Une quête réussie":"A quest completed",
+    "Le coffre d'une unité":"A unit's chest",
+    "Des diamants pour tes leçons":"Diamonds for your lessons",
+    "{n} leçons déjà faites\u00a0: +{d} diamants":"{n} lessons already done: +{d} diamonds",
+    "1 leçon déjà faite\u00a0: +{d} diamants":"1 lesson already done: +{d} diamonds",
+    "Ou à la boutique du Parcours, pour {prix} diamants.":"Or from the Path shop, for {prix} diamonds.",
     "Code de la partie":"Game code",
     "Continuer":"Continue",
     "Couleur":"Color",
@@ -8215,6 +8391,10 @@ const TEXTES = {
     "Fermer la partie\u00a0?":"Close the game?",
     "Les joueurs qui t'ont rejoint en sortiront.":"The players who joined you will be taken out of it.",
     "Les membres te rejoignent depuis la discussion.":"Members join you from the chat.",
+    "{n} joueurs":"{n} players",
+    "Revenir à la partie du groupe":"Back to the group game",
+    "L'invitation disparaîtra de la discussion.":"The invitation will disappear from the chat.",
+    "Ton groupe la jouera sans toi.":"Your group will play it without you.",
     "Cette partie n'est plus ouverte.":"This game is no longer open.",
     "Lancer une partie":"Start a game",
     "Écris un message…":"Write a message…",
@@ -8470,6 +8650,48 @@ const TEXTES = {
     "Unité terminée\u00a0!":"¡Unidad terminada!",
     "Quitter la leçon\u00a0?":"¿Salir de la lección?",
     "Tu la reprendras depuis le début.":"La retomarás desde el principio.",
+    /* (v368) Las misiones, los cofres, los diamantes, la tienda. */
+    "Défi éclair":"Desafío relámpago",
+    "Six questions de l'unité, quinze secondes chacune\u00a0: cinq justes pour la réussir.":"Seis preguntas de la unidad, quince segundos cada una: cinco correctas para superarla.",
+    "Cinq questions de l'unité, sans une seule erreur.":"Cinco preguntas de la unidad, sin un solo error.",
+    "Quête":"Misión",
+    "Quête réussie\u00a0!":"¡Misión cumplida!",
+    "Presque\u00a0!":"¡Casi!",
+    "Pas cette fois":"Esta vez no",
+    "{n} sur {t} — il en fallait {s}":"{n} de {t}: hacían falta {s}",
+    "Quitter la quête\u00a0?":"¿Salir de la misión?",
+    "Tu pourras la retenter quand tu veux.":"Podrás volver a intentarlo cuando quieras.",
+    "réussie":"cumplida",
+    "après la leçon {n}":"tras la lección {n}",
+    "Coffre":"Cofre",
+    "ouvert":"abierto",
+    "à ouvrir":"por abrir",
+    "au bout de l'unité":"al final de la unidad",
+    "Ouvrir le coffre":"Abrir el cofre",
+    "Coffre ouvert\u00a0!":"¡Cofre abierto!",
+    "+{n} diamants":"+{n} diamantes",
+    "Tu as maintenant {n} diamants.":"Ahora tienes {n} diamantes.",
+    "Son coffre t'attend au bout du chemin.":"Su cofre te espera al final del camino.",
+    "{n} diamants · Boutique":"{n} diamantes · Tienda",
+    "Boutique":"Tienda",
+    "Tes diamants":"Tus diamantes",
+    "Gel de série":"Congelación de racha",
+    "Il protège ta flamme pour UN jour manqué. Deux en réserve au maximum.":"Protege tu llama durante UN día perdido. Dos en reserva como máximo.",
+    "En réserve\u00a0: {n}/{m}":"En reserva: {n}/{m}",
+    "Acheter":"Comprar",
+    "Réserve pleine":"Reserva llena",
+    "Il te manque {n} diamants":"Te faltan {n} diamantes",
+    "Ta réserve est pleine\u00a0: deux gels au maximum.":"Tu reserva está llena: dos congelaciones como máximo.",
+    "Gel acheté — il couvre UN jour manqué.":"Congelación comprada: cubre UN día perdido.",
+    "Comment gagner des diamants":"Cómo ganar diamantes",
+    "Une leçon terminée":"Una lección terminada",
+    "Une leçon sans faute, une fois":"Una lección sin errores, una vez",
+    "Une quête réussie":"Una misión cumplida",
+    "Le coffre d'une unité":"El cofre de una unidad",
+    "Des diamants pour tes leçons":"Diamantes por tus lecciones",
+    "{n} leçons déjà faites\u00a0: +{d} diamants":"{n} lecciones ya hechas: +{d} diamantes",
+    "1 leçon déjà faite\u00a0: +{d} diamants":"1 lección ya hecha: +{d} diamantes",
+    "Ou à la boutique du Parcours, pour {prix} diamants.":"O en la tienda del Camino, por {prix} diamantes.",
     "Code de la partie":"Código de la partida",
     "Continuer":"Continuar",
     "Couleur":"Color",
@@ -9162,6 +9384,10 @@ const TEXTES = {
     "Fermer la partie\u00a0?":"¿Cerrar la partida?",
     "Les joueurs qui t'ont rejoint en sortiront.":"Los jugadores que se te unieron saldrán de ella.",
     "Les membres te rejoignent depuis la discussion.":"Los miembros se unen desde el chat.",
+    "{n} joueurs":"{n} jugadores",
+    "Revenir à la partie du groupe":"Volver a la partida del grupo",
+    "L'invitation disparaîtra de la discussion.":"La invitación desaparecerá del chat.",
+    "Ton groupe la jouera sans toi.":"Tu grupo la jugará sin ti.",
     "Cette partie n'est plus ouverte.":"Esta partida ya no está abierta.",
     "Lancer une partie":"Iniciar una partida",
     "Écris un message…":"Escribe un mensaje…",
@@ -9727,6 +9953,14 @@ const ICONS = {
      autres (24 × 24, 1,9, bouts ronds). */
   chemin: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><circle cx="5.4" cy="19.2" r="1.8"/><circle cx="18.6" cy="4.8" r="1.8"/><path d="M7.2 19.2h7.6a3.4 3.4 0 0 0 0-6.8H9.2a3.4 3.4 0 0 1 0-6.8h7.6"/></svg>`,
   cadenas: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><rect x="5.2" y="10.4" width="13.6" height="9.8" rx="2.4"/><path d="M8.4 10.4V7.9a3.6 3.6 0 0 1 7.2 0v2.5"/></svg>`,
+  /* (v368) LES DIAMANTS, LES COFFRES, LA BOUTIQUE. Le diamant est plein, à
+     facettes (des voiles de blanc et d'ombre sur sa couleur, sans dégradé
+     nommé : il peut paraître dix fois dans une page) ; le coffre, la
+     boutique au trait, comme leurs voisins. */
+  diamant: `<svg viewBox="0 0 24 24" stroke="none"><path fill="currentColor" d="M7 4h10l4.2 5.4L12 20.6 2.8 9.4Z"/><path fill="#fff" fill-opacity="0.42" d="M7 4h10l-2.6 5.4H9.6Z"/><path fill="#fff" fill-opacity="0.62" d="M7 4 9.6 9.4H2.8Z"/><path fill="#fff" fill-opacity="0.16" d="M2.8 9.4h6.8L12 20.6Z"/><path fill="#000" fill-opacity="0.12" d="M14.4 9.4h6.8L12 20.6Z"/></svg>`,
+  coffre: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M4 10.4h16v7.8a1.8 1.8 0 0 1-1.8 1.8H5.8A1.8 1.8 0 0 1 4 18.2Z"/><path d="M4 10.4V8.6A4.6 4.6 0 0 1 8.6 4h6.8A4.6 4.6 0 0 1 20 8.6v1.8"/><rect x="10.2" y="9" width="3.6" height="4.4" rx="1"/></svg>`,
+  coffreOuvert: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M4 12h16v6.2A1.8 1.8 0 0 1 18.2 20H5.8A1.8 1.8 0 0 1 4 18.2Z"/><path d="M4.6 12 3.3 6.9a1.2 1.2 0 0 1 .9-1.5l13.3-2.7a1.2 1.2 0 0 1 1.4 1l1 4.6"/><line x1="12" y1="14.6" x2="12" y2="16.8"/></svg>`,
+  boutique: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M5.6 8h12.8l-1 11.2a1.8 1.8 0 0 1-1.8 1.6H8.4a1.8 1.8 0 0 1-1.8-1.6Z"/><path d="M9 8V6.6a3 3 0 0 1 6 0V8"/></svg>`,
   couronne: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M3.6 8.2l4.1 3.9L12 5.4l4.3 6.7 4.1-3.9-1.7 10H5.3l-1.7-10Z"/></svg>`,
   close: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><line x1="6" y1="6" x2="18" y2="18"/><line x1="18" y1="6" x2="6" y2="18"/></svg>`,
   chevronLeft: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 5.5 8.5 12 15 18.5"/></svg>`,
@@ -9956,7 +10190,7 @@ const BANK = {
     { q:"Que sont devenus les disciples après avoir reçu l'Esprit ?", options:["Des témoins hardis","Des pêcheurs","Des scribes","Des soldats"], correct:"Des témoins hardis", fact:"Remplis de l'Esprit, les disciples annoncèrent l'Évangile avec hardiesse (Actes 2)." },
     { q:"Qui gardait les vêtements pendant la lapidation d'Étienne ?", options:["Saul","Pierre","Jean","Barnabas"], correct:"Saul", fact:"Le futur Paul (Actes 7:58)." },
     { q:"Quel nom Saul a-t-il porté après sa conversion ?", options:["Paul","Pierre","Silas","Barnabas"], correct:"Paul", fact:"Saul de Tarse est appelé Paul dès son ministère chez les païens (Actes 13:9)." },
-    { q:"Combien de jours Jonas a-t-il prêché à Ninive ? (marche)", options:["Un","Trois","Sept","Quarante"], correct:"Trois", fact:"Une ville de trois jours de marche (Jonas 3)." },
+    { q:"Ninive, où prêcha Jonas, était une ville de combien de jours de marche ?", options:["Un","Trois","Sept","Quarante"], correct:"Trois", fact:"Une ville de trois jours de marche (Jonas 3)." },
     { q:"Qu'a fait pousser Dieu pour abriter Jonas ?", options:["Un ricin","Un figuier","Une vigne","Un cèdre"], correct:"Un ricin", fact:"Puis il sécha (Jonas 4)." },
     { q:"Qui a été le fils promis d'Abraham et Sara ?", options:["Isaac","Ismaël","Jacob","Ésaü"], correct:"Isaac", fact:"« Il rit » (Genèse 21)." },
     { q:"Qui a vendu son droit d'aînesse pour un plat de lentilles ?", options:["Ésaü","Jacob","Ruben","Benjamin"], correct:"Ésaü", fact:"Épuisé, Ésaü brada son droit d'aînesse pour un plat de lentilles (Genèse 25)." },
@@ -10039,7 +10273,7 @@ const BANK = {
     { q:"Qui a été appelé au buisson ardent ?", options:["Abraham","Moïse","Josué","Aaron"], correct:"Moïse", fact:"Au buisson ardent qui ne se consumait pas, Dieu appela Moïse (Exode 3)." },
     { q:"Quel apôtre a écrit l'Apocalypse ?", options:["Pierre","Jean","Paul","Jacques"], correct:"Jean", fact:"Sur l'île de Patmos (Apocalypse 1)." },
     { q:"Qui a offert or, encens et myrrhe ?", options:["Les bergers","Les mages","Les anges","Les prêtres"], correct:"Les mages", fact:"À Jésus enfant (Matthieu 2)." },
-    { q:"Quel roi a fait tomber les murs de Jéricho ? (chef)", options:["Josué","Caleb","Gédéon","Josias"], correct:"Josué", fact:"Après sept tours (Josué 6)." },
+    { q:"Quel chef a fait tomber les murs de Jéricho ?", options:["Josué","Caleb","Gédéon","Josias"], correct:"Josué", fact:"Après sept tours (Josué 6)." },
     { q:"Qui a été changé en « Israël » ?", options:["Abraham","Isaac","Jacob","Joseph"], correct:"Jacob", fact:"Après avoir lutté avec Dieu (Genèse 32)." },
     { q:"Quel disciple a coupé l'oreille d'un serviteur ?", options:["Jean","Pierre","Jacques","Thomas"], correct:"Pierre", fact:"Jésus la guérit (Luc 22)." },
     { q:"Combien de commandements Dieu a-t-il donnés à Moïse ?", options:["Cinq","Sept","Dix","Douze"], correct:"Dix", fact:"Les Dix Commandements furent gravés sur deux tables de pierre (Exode 20)." },
@@ -10060,7 +10294,7 @@ const BANK = {
     { q:"Quel roi a fait venir la reine de Saba ?", options:["David","Salomon","Roboam","Achab"], correct:"Salomon", fact:"Par sa renommée (1 Rois 10)." },
     { q:"Qui a été enfermé avec des lions toute la nuit ?", options:["Daniel","Ézéchiel","Néhémie","Mardochée"], correct:"Daniel", fact:"La gueule des lions resta close toute la nuit près de Daniel (Daniel 6)." },
     { q:"Quel disciple tenait la bourse commune des douze ?", options:["Judas","Pierre","Matthieu","Philippe"], correct:"Judas", fact:"« Il était voleur, et, tenant la bourse, il prenait ce qu'on y mettait » (Jean 12:6)." },
-    { q:"Qui a marché quarante ans dans le désert ? (peuple)", options:["Les Hébreux","Les Philistins","Les Égyptiens","Les Cananéens"], correct:"Les Hébreux", fact:"À cause de leur incrédulité, ils errèrent quarante ans au désert (Nombres 14)." },
+    { q:"Quel peuple a marché quarante ans dans le désert ?", options:["Les Hébreux","Les Philistins","Les Égyptiens","Les Cananéens"], correct:"Les Hébreux", fact:"À cause de leur incrédulité, ils errèrent quarante ans au désert (Nombres 14)." },
     { q:"Quel apôtre était médecin et écrivit un évangile ?", options:["Marc","Luc","Matthieu","Jean"], correct:"Luc", fact:"Paul appelle Luc « le médecin bien-aimé » (Colossiens 4:14)." },
     { q:"Qui a été la mère de Jean-Baptiste ?", options:["Marie","Élisabeth","Anne","Marthe"], correct:"Élisabeth", fact:"Âgée et sans enfant, Élisabeth enfanta Jean-Baptiste (Luc 1)." },
     { q:"Qui a offert son fils Isaac en sacrifice, arrêté par un ange ?", options:["Abraham","Jacob","Noé","Loth"], correct:"Abraham", fact:"Un ange arrêta le bras d'Abraham : un bélier fut offert à la place (Genèse 22)." },
@@ -10548,7 +10782,7 @@ const BANK = {
     { q:"Quel prophète envoya un de ses disciples oindre Jéhu roi d'Israël ?", options:["Élisée","Élie","Nathan","Gad"], correct:"Élisée", fact:"Un envoyé d'Élisée oignit Jéhu roi d'Israël (2 Rois 9)." },
     { q:"Qui a été le beau-père de Moïse ?", options:["Jéthro","Balaam","Coré","Aaron"], correct:"Jéthro", fact:"Prêtre de Madian (Exode 18)." },
     { q:"Quel disciple a été appelé « le Zélote » ?", options:["Simon","Jude","Jacques","Barthélemy"], correct:"Simon", fact:"Simon était surnommé « le Zélote » pour son ardeur (Luc 6:15)." },
-    { q:"Quel roi a vaincu Goliath ? (son adversaire)", options:["David","Saül","Jonathan","Abner"], correct:"David", fact:"Le berger David abattit le géant Goliath d'un seul jet de fronde (1 Samuel 17)." },
+    { q:"Qui a vaincu Goliath ?", options:["David","Saül","Jonathan","Abner"], correct:"David", fact:"Le berger David abattit le géant Goliath d'un seul jet de fronde (1 Samuel 17)." },
     { q:"Quel roi a été guéri et vit son ombre reculer ?", options:["Ézéchias","Josias","Ozias","Achaz"], correct:"Ézéchias", fact:"En signe de guérison, l'ombre du cadran recula pour Ézéchias (2 Rois 20)." },
     { q:"Quel prophète a été chauve et raillé ?", options:["Élisée","Élie","Amos","Michée"], correct:"Élisée", fact:"Des jeunes gens raillèrent la calvitie d'Élisée sur la route (2 Rois 2:23)." },
     { q:"Qui a reconstruit les murs de Jérusalem ?", options:["Néhémie","Esdras","Zorobabel","Aggée"], correct:"Néhémie", fact:"En 52 jours (Néhémie 6)." },
@@ -10591,22 +10825,22 @@ const BANK = {
     { q:"Qui fit pleuvoir la manne sur les Hébreux au désert ?", options:["Dieu","Moïse","Aaron","Josué"], correct:"Dieu", fact:"La manne, « pain du ciel », tombait chaque matin (Exode 16)." },
     { q:"Quel prophète a été appelé à manger un rouleau ?", options:["Ézéchiel","Ésaïe","Jérémie","Daniel"], correct:"Ézéchiel", fact:"Ézéchiel dut manger un rouleau avant de prophétiser (Ézéchiel 3)." },
     { q:"Quel apôtre était collecteur d'impôts ?", options:["Matthieu","Pierre","André","Jacques"], correct:"Matthieu", fact:"Matthieu quitta son bureau de péage pour suivre Jésus (Matthieu 9)." },
-    { q:"Quel roi a vaincu les Amalécites du temps de Moïse ? (chef)", options:["Josué","Caleb","Aaron","Hur"], correct:"Josué", fact:"Josué combattait Amalek pendant que Moïse tenait les mains levées (Exode 17)." },
+    { q:"Quel chef a vaincu les Amalécites du temps de Moïse ?", options:["Josué","Caleb","Aaron","Hur"], correct:"Josué", fact:"Josué combattait Amalek pendant que Moïse tenait les mains levées (Exode 17)." },
     { q:"Quel homme a été aveuglé trois jours après avoir vu Jésus ?", options:["Paul","Pierre","Ananias","Barnabas"], correct:"Paul", fact:"Aveuglé trois jours, Saul recouvra la vue chez Ananias (Actes 9)." },
-    { q:"Quel roi a fait bâtir le second Temple ? (dirigeant du retour)", options:["Zorobabel","Néhémie","Esdras","Aggée"], correct:"Zorobabel", fact:"Zorobabel posa les fondations du second Temple (Esdras 3)." },
+    { q:"Quel chef du retour d'exil posa les fondations du second Temple ?", options:["Zorobabel","Néhémie","Esdras","Aggée"], correct:"Zorobabel", fact:"Zorobabel posa les fondations du second Temple (Esdras 3)." },
     { q:"Qui complota l'extermination des Juifs sous le roi Assuérus ?", options:["Haman","Vasthi","Mardochée","Assuérus"], correct:"Haman", fact:"Esther déjoua son plan ; il périt à sa propre potence (Esther 3-7)." },
     { q:"Quel homme a été gouverneur d'Égypte sous Pharaon ?", options:["Joseph","Moïse","Daniel","Néhémie"], correct:"Joseph", fact:"Joseph devint le second de Pharaon sur toute l'Égypte (Genèse 41)." },
     { q:"Quel prophète a eu Baruc pour scribe ?", options:["Jérémie","Ésaïe","Ézéchiel","Daniel"], correct:"Jérémie", fact:"Baruc écrivit les prophéties sous la dictée de Jérémie (Jérémie 36)." },
     { q:"Quel roi a mené Israël au sommet de sa gloire ?", options:["Salomon","David","Saül","Ézéchias"], correct:"Salomon", fact:"Sous Salomon, Israël connut son âge d'or et sa plus grande étendue (1 Rois 4)." },
-    { q:"Quel disciple a demandé à s'asseoir à la droite de Jésus ? (avec son frère)", options:["Jacques","André","Philippe","Thomas"], correct:"Jacques", fact:"Jacques et Jean demandèrent les places d'honneur auprès de Jésus (Marc 10:37)." },
+    { q:"Quel disciple, avec son frère, demanda à s'asseoir à la droite de Jésus ?", options:["Jacques","André","Philippe","Thomas"], correct:"Jacques", fact:"Jacques et Jean demandèrent les places d'honneur auprès de Jésus (Marc 10:37)." },
     { q:"Quel homme a acheté un champ en gage d'espérance ?", options:["Jérémie","Ésaïe","Booz","Néhémie"], correct:"Jérémie", fact:"En pleine guerre, Jérémie acheta un champ, gage d'un retour (Jérémie 32)." },
     { q:"Quel roi a vu Daniel interpréter l'écriture du mur ?", options:["Belschatsar","Nebucadnetsar","Darius","Cyrus"], correct:"Belschatsar", fact:"Daniel déchiffra pour Belschatsar l'écriture tracée sur le mur (Daniel 5)." },
     { q:"Quel homme a été jeté par-dessus bord pour calmer la tempête ?", options:["Jonas","Paul","Pierre","Jean"], correct:"Jonas", fact:"Jonas se fit jeter à la mer pour apaiser la tempête (Jonas 1)." },
     { q:"Quel apôtre a guéri un boiteux à la Belle Porte ?", options:["Pierre","Paul","Jean","Barnabas"], correct:"Pierre", fact:"Pierre guérit un boiteux à la Belle Porte : « Lève-toi et marche » (Actes 3)." },
-    { q:"Quel roi a partagé son royaume entre Israël et Juda ? (après lui)", options:["Salomon","David","Saül","Roboam"], correct:"Salomon", fact:"Après Salomon, le royaume se scinda en Israël et Juda (1 Rois 11-12)." },
+    { q:"Après quel roi le royaume se divisa-t-il entre Israël et Juda ?", options:["Salomon","David","Saül","Roboam"], correct:"Salomon", fact:"Après Salomon, le royaume se scinda en Israël et Juda (1 Rois 11-12)." },
     { q:"Quel prophète a vu un homme mesurer Jérusalem au cordeau ?", options:["Zacharie","Ézéchiel","Amos","Aggée"], correct:"Zacharie", fact:"Zacharie vit un homme mesurer Jérusalem au cordeau (Zacharie 2)." },
     { q:"Quel homme a été appelé « fils d'encouragement » ?", options:["Barnabas","Silas","Timothée","Tite"], correct:"Barnabas", fact:"Les apôtres surnommèrent Joseph « Barnabas », fils d'encouragement (Actes 4:36)." },
-    { q:"Quel prophète a résisté au roi Achab avec Élie ? (successeur)", options:["Élisée","Michée","Amos","Osée"], correct:"Élisée", fact:"Élisée poursuivit l'œuvre d'Élie face aux rois d'Israël (2 Rois 2-9)." },
+    { q:"Quel prophète poursuivit l'œuvre d'Élie face aux rois d'Israël ?", options:["Élisée","Michée","Amos","Osée"], correct:"Élisée", fact:"Élisée poursuivit l'œuvre d'Élie face aux rois d'Israël (2 Rois 2-9)." },
     { q:"Quel apôtre a écrit à Timothée et Tite ?", options:["Paul","Pierre","Jean","Jacques"], correct:"Paul", fact:"Épîtres pastorales." },
     { q:"Quel homme a interprété les rêves en prison ?", options:["Joseph","Daniel","Néhémie","Mardochée"], correct:"Joseph", fact:"En prison, Joseph interpréta les songes de l'échanson et du panetier (Genèse 40)." },
     { q:"Quel roi a pleuré en lisant le livre de la Loi ?", options:["Josias","Ézéchias","Ozias","Joas"], correct:"Josias", fact:"Josias déchira ses vêtements en entendant lire la Loi (2 Rois 22:11)." },
@@ -10627,12 +10861,12 @@ const BANK = {
     { q:"Quel roi bâtit sa capitale à Samarie ?", options:["Achab","Omri","Jéhu","Jéroboam"], correct:"Omri", fact:"Il l'acheta à Schémer (1 Rois 16)." },
     { q:"Quel prophète est appelé « le prophète des larmes » ?", options:["Ésaïe","Jérémie","Ézéchiel","Osée"], correct:"Jérémie", fact:"Auteur des Lamentations." },
     { q:"Quel couple mentit sur son don et mourut subitement ?", options:["Aquilas et Priscille","Ananias et Saphira","Zacharie et Élisabeth","Joseph et Marie"], correct:"Ananias et Saphira", fact:"Ils avaient menti à l'Esprit (Actes 5)." },
-    { q:"Quel homme fut ressuscité par Pierre à Jaffa ? (une femme)", options:["Tabitha","Lydie","Marthe","Suzanne"], correct:"Tabitha", fact:"Appelée aussi Dorcas (Actes 9)." },
+    { q:"Quelle femme Pierre ressuscita-t-il à Joppé ?", options:["Tabitha","Lydie","Marthe","Suzanne"], correct:"Tabitha", fact:"Appelée aussi Dorcas (Actes 9)." },
     { q:"Quelle ville païenne se repentit à la prédication de Jonas ?", options:["Babylone","Ninive","Tyr","Sodome"], correct:"Ninive", fact:"Depuis le roi jusqu'au bétail (Jonas 3)." },
     { q:"Quel homme, chef des publicains, rendit ce qu'il avait volé ?", options:["Matthieu","Zachée","Lévi","Barthélemy"], correct:"Zachée", fact:"« Le salut est entré ici » (Luc 19)." },
     { q:"Quel roi commanda le recensement qui déplut à Dieu ?", options:["Saül","David","Salomon","Achab"], correct:"David", fact:"Suivi d'une peste (2 Samuel 24)." },
     { q:"Quel homme bâtit une tour pour atteindre le ciel ?", options:["Nemrod","Les hommes de Babel","Caïn","Loth"], correct:"Les hommes de Babel", fact:"Dieu confondit leur langage (Genèse 11)." },
-    { q:"Quel homme vit une échelle atteignant le ciel ? (patriarche)", options:["Abraham","Jacob","Isaac","Joseph"], correct:"Jacob", fact:"À Béthel (Genèse 28)." },
+    { q:"Quel patriarche vit une échelle atteignant le ciel ?", options:["Abraham","Jacob","Isaac","Joseph"], correct:"Jacob", fact:"À Béthel (Genèse 28)." },
     { q:"Combien d'années les Hébreux errèrent-ils au désert ?", options:["Sept","Vingt","Quarante","Soixante-dix"], correct:"Quarante", fact:"À cause de leur incrédulité (Nombres 14)." },
     { q:"Quelle reine est venue de loin pour tester la sagesse de Salomon ?", options:["La reine Esther","La reine de Saba","La reine Jézabel","La reine Athalie"], correct:"La reine de Saba", fact:"Elle repartit émerveillée : « on ne m'en avait pas dit la moitié » (1 Rois 10)." },
     { q:"Combien de jours Jésus est-il resté où il était avant d'aller vers Lazare ?", options:["Deux jours","Un jour","Quatre jours","Une semaine"], correct:"Deux jours", fact:"« Il resta deux jours encore dans le lieu où il était » (Jean 11:6)." },
@@ -11161,7 +11395,7 @@ const BANK = {
     { q:"Quel prophète fut « fils de Buzi », prêtre exilé ?", options:["Ézéchiel","Jérémie","Daniel","Ésaïe"], correct:"Ézéchiel", fact:"Ézéchiel, prêtre déporté, prophétisa près du fleuve Kebar (Ézéchiel 1:3)." },
     { q:"Quels quatre visages avaient les êtres vivants d'Ézéchiel ?", options:["Homme, lion, bœuf, aigle","Homme, cheval, aigle, bœuf","Lion, agneau, aigle, homme","Bœuf, lion, cerf, homme"], correct:"Homme, lion, bœuf, aigle", fact:"Les êtres vivants d'Ézéchiel avaient quatre faces : homme, lion, bœuf, aigle (Ézéchiel 1:10)." },
     { q:"Combien de semaines Daniel annonce-t-il dans sa prophétie ?", options:["Soixante-dix","Soixante-deux","Sept","Douze"], correct:"Soixante-dix", fact:"Daniel reçut la célèbre prophétie des soixante-dix semaines (Daniel 9:24)." },
-    { q:"Comment furent renommés Daniel et ses amis à Babylone ? (Daniel)", options:["Beltschatsar","Abed-Nego","Schadrak","Méschak"], correct:"Beltschatsar", fact:"À Babylone, on renomma Daniel « Beltschatsar » (Daniel 1:7)." },
+    { q:"Quel nom Daniel reçut-il à Babylone ?", options:["Beltschatsar","Abed-Nego","Schadrak","Méschak"], correct:"Beltschatsar", fact:"À Babylone, on renomma Daniel « Beltschatsar » (Daniel 1:7)." },
     { q:"Quel prophète mineur ne contient qu'un seul chapitre et vise Édom ?", options:["Abdias","Nahum","Habacuc","Aggée"], correct:"Abdias", fact:"Livre d'Abdias." },
     { q:"Quel prophète mineur annonça la ruine de Ninive ?", options:["Nahum","Jonas","Amos","Habacuc"], correct:"Nahum", fact:"Livre de Nahum." },
     { q:"Quel prophète dit « le juste vivra par sa foi » ?", options:["Habacuc","Aggée","Sophonie","Malachie"], correct:"Habacuc", fact:"« Le juste vivra par sa foi » est une parole d'Habacuc (Habacuc 2:4)." },
@@ -11233,12 +11467,12 @@ const BANK = {
     { q:"Quel homme baptisa Paul à Damas ?", options:["Ananias","Barnabas","Corneille","Gamaliel"], correct:"Ananias", fact:"Ananias rendit la vue à Saul puis le baptisa à Damas (Actes 9:17)." },
     { q:"Que signifiaient les mots écrits sur le mur, chez Belschatsar ?", options:["Son règne est compté, pesé et partagé","Une victoire sur les Mèdes","Une famine de sept ans","Le retour des exilés"], correct:"Son règne est compté, pesé et partagé", fact:"Compté, pesé, divisé : MENÉ, THEKEL, PHARSIN (Daniel 5:26-28)." },
     { q:"Quel homme construisit un autel appelé « L'Éternel est ma bannière » ?", options:["Moïse","Josué","Gédéon","Aaron"], correct:"Moïse", fact:"Après la victoire sur Amalek, Moïse bâtit l'autel « l'Éternel ma bannière » (Exode 17:15)." },
-    { q:"Quel roi de Juda fit une réforme à huit ans de règne ? (monté enfant)", options:["Josias","Joas","Ozias","Achaz"], correct:"Josias", fact:"Devenu roi à huit ans, Josias mena une grande réforme religieuse (2 Rois 22-23)." },
+    { q:"Quel roi de Juda, monté sur le trône à huit ans, mena une grande réforme ?", options:["Josias","Joas","Ozias","Achaz"], correct:"Josias", fact:"Devenu roi à huit ans, Josias mena une grande réforme religieuse (2 Rois 22-23)." },
     { q:"Quel homme, prophète, fut avalé pour avoir fui Tarsis ?", options:["Jonas","Amos","Osée","Joël"], correct:"Jonas", fact:"Jonas fuyait vers Tarsis quand un grand poisson l'engloutit (Jonas 1:3)." },
     { q:"Quel roi tomba par une fenêtre et fut malade ?", options:["Achazia","Achab","Joram","Jéhu"], correct:"Achazia", fact:"Le roi Achazia se blessa en tombant d'une fenêtre à l'étage (2 Rois 1)." },
     { q:"Quel prophète fut emporté par l'Esprit d'un lieu à l'autre ?", options:["Philippe","Élie","Ézéchiel","Habacuc"], correct:"Philippe", fact:"Après le baptême de l'eunuque, l'Esprit emporta Philippe ailleurs (Actes 8:39)." },
     { q:"Quel serviteur d'Élisée fut frappé de lèpre pour avoir couru après les cadeaux de Naaman ?", options:["Guéhazi","Baruc","Abdias","Jonadab"], correct:"Guéhazi", fact:"« La lèpre de Naaman s'attachera à toi et à ta postérité » (2 Rois 5:20-27)." },
-    { q:"Quel roi mit fin au culte des veaux d'or ? (réformateur du Nord)", options:["Jéhu","Achab","Omri","Jéroboam"], correct:"Jéhu", fact:"Jéhu extermina les adorateurs de Baal en Israël (2 Rois 10)." },
+    { q:"Quel roi mit fin au culte de Baal en Israël ?", options:["Jéhu","Achab","Omri","Jéroboam"], correct:"Jéhu", fact:"Jéhu extermina les adorateurs de Baal en Israël (2 Rois 10)." },
     { q:"Quel homme fut jeté dans un puits sans eau par ses frères ?", options:["Joseph","Benjamin","Ruben","Daniel"], correct:"Joseph", fact:"Ses frères jetèrent Joseph dans une citerne sèche avant de le vendre (Genèse 37:24)." },
     { q:"Quel roi fit transporter l'arche avec des chants ?", options:["David","Salomon","Ézéchias","Josias"], correct:"David", fact:"David fit monter l'arche à Jérusalem au son des chants et des instruments (1 Chroniques 15)." },
     { q:"Quel prophète annonça soixante-dix semaines ?", options:["Daniel","Ézéchiel","Zacharie","Jérémie"], correct:"Daniel", fact:"Daniel reçut la célèbre prophétie des soixante-dix semaines (Daniel 9)." },
@@ -11249,7 +11483,7 @@ const BANK = {
     { q:"Quel prophète maria une prophétesse qui enfanta Maher-Schalal ?", options:["Ésaïe","Osée","Jérémie","Ézéchiel"], correct:"Ésaïe", fact:"Le fils d'Ésaïe reçut le nom-signe Maher-Schalal-Chash-Baz (Ésaïe 8:3)." },
     { q:"Quel homme survécut à un serpent sans mal, à Malte ?", options:["Paul","Pierre","Jean","Barnabas"], correct:"Paul", fact:"À Malte, Paul secoua dans le feu un serpent sans en souffrir (Actes 28:5)." },
     { q:"Quel roi fit un veau d'or au désert ?", options:["Aaron","Moïse","Josué","Coré"], correct:"Aaron", fact:"En l'absence de Moïse, Aaron céda et fondit un veau d'or (Exode 32)." },
-    { q:"Quel homme fut lévite, aïeul lointain, appelé au sacerdoce ? (frère de Moïse)", options:["Aaron","Coré","Nadab","Éléazar"], correct:"Aaron", fact:"Aaron, frère de Moïse, fut établi premier grand prêtre d'Israël (Exode 28)." },
+    { q:"Quel frère de Moïse fut appelé au sacerdoce ?", options:["Aaron","Coré","Nadab","Éléazar"], correct:"Aaron", fact:"Aaron, frère de Moïse, fut établi premier grand prêtre d'Israël (Exode 28)." },
     { q:"Quel roi mourut lépreux, isolé dans une maison ?", options:["Ozias","Achaz","Joas","Manassé"], correct:"Ozias", fact:"Lépreux, le roi Ozias finit ses jours à l'écart de tous (2 Chroniques 26:21)." },
     { q:"Quel homme reçut la promesse d'une descendance comme les étoiles ?", options:["Abraham","Isaac","Jacob","Moïse"], correct:"Abraham", fact:"« Compte les étoiles… telle sera ta descendance », dit Dieu à Abraham (Genèse 15:5)." },
     { q:"Qui renvoya à Israël l'arche capturée, sur un chariot neuf ?", options:["Les Philistins","Le roi Saül","Le roi David","Samuel"], correct:"Les Philistins", fact:"Deux vaches tirèrent le chariot tout droit vers Israël (1 Samuel 6)." },
@@ -11939,7 +12173,7 @@ const SUPABASE_ANON_KEY = "sb_publishable_FDJ_R0foC7uIeHmxVrj6rA_2NeIgW2a";
    remontée d'un téléphone ne vaut rien si on ne sait pas QUELLE version
    tournait. Elle doit rester égale au CACHE de sw.js — c'est ce que vérifie
    banc-essai/version.js, qui refuse de laisser publier les deux en désaccord. */
-const VERSION_JEU = "v367";
+const VERSION_JEU = "v370";
 
 /* ===================== QUAND ÇA CASSE CHEZ UN JOUEUR =====================
    « Si quelque chose casse chez cinq d'entre eux sur un modèle de téléphone
@@ -12362,35 +12596,63 @@ function versEcranEnLigne(e){
 /* render() la consulte en premier : vrai si elle a tout fait. */
 function rendrePartieLogee(){
   if(!net || !net.fil) return false;
+  /* (v369) LE SALON NE CHANGE PLUS D'ÉCRAN, NULLE PART. Logé, il ne tenait
+     qu'à SA discussion, et y ramenait. On reste maintenant là où l'on est —
+     cette discussion, une autre, l'accueil, le Parcours… — et ce qui le
+     montre se met à jour : sa carte dans la discussion du groupe, sa barre
+     partout ailleurs (voir LA PARTIE DU GROUPE SUIT LE JOUEUR). */
   if(state.screen === "online-room" && net.room){
     net.phase = state.screen;
-    state.screen = "groupe";
-    if(grp.courant !== net.fil) return false;
-    const ecran = ecranDeDiscussion();
-    if(ecran && lastScreen === "groupe"){ majPanneauPartie(ecran); return true; }
+    state.screen = ecranSousLeSalon();
+    if(state.screen === lastScreen){ majPartieAilleurs(); return true; }
     return false;
   }
-  /* La partie part : le salon quitte la discussion, la partie arrive en
-     plein écran (le render() qui suit la dessine). */
+  /* La partie part : le salon quitte la discussion — ou la barre —, et la
+     partie arrive en plein écran, d'où que l'on soit (le render() qui suit
+     la dessine). Une page, une feuille ou une fenêtre encore ouverte se
+     referme d'abord : la partie n'attend personne. */
   if((state.screen === "online-play" || state.screen === "online-end") && net.room){
     net.fil = null; net.phase = null;
+    if(document.querySelector(".sheet-veil:not(.closing), #modalVeil")) fermerFeuillesOuvertes();
     return false;
   }
-  /* Le salon s'arrête ici (introuvable, complet, fermé…) : on reste dans la
-     discussion, le mot au-dessus d'elle. */
-  if(/^online/.test(state.screen) && grp.courant === net.fil){
+  /* Le salon s'arrête ici (introuvable, complet, fermé…) : on reste où l'on
+     est, le mot au-dessus. */
+  if(/^online/.test(state.screen)){
     net.fil = null; net.phase = null;
-    state.screen = "groupe";
+    state.screen = ecranSousLeSalon();
     if(net.error){ showMiniToast(net.error); net.error = ""; }
-    const ecran = ecranDeDiscussion();
-    if(ecran && lastScreen === "groupe"){ majPanneauPartie(ecran); return true; }
+    if(state.screen === lastScreen){ majPartieAilleurs(); return true; }
   }
   return false;
+}
+/* (v369) L'écran sous le salon : celui qu'on regarde. */
+function ecranSousLeSalon(){
+  if(lastScreen && lastScreen !== "splash" && !/^online/.test(lastScreen)) return lastScreen;
+  return grp.courant ? "groupe" : "groupes";
+}
+/* (v369) Ce qui montre le salon là où l'on est : sa carte (une discussion),
+   sa barre (ailleurs). */
+function majPartieAilleurs(){
+  if(state.screen === "groupe") majPanneauPartie();
+  majBarrePartie();
 }
 function ecranDeDiscussion(){
   return Array.prototype.find.call(document.querySelectorAll("#app > .screen.groupe-ecran"), e => !e.classList.contains("screen-exit")) || null;
 }
-function reduirePartie(){ net.filReduit = !net.filReduit; majPanneauPartie(); }
+/* (v369) LA CARTE SE PLIE EN GLISSANT. Elle se pliait d'un coup : le fil
+   sautait d'une centaine de pixels. Elle passe maintenant d'une hauteur à
+   l'autre sur l'horloge du pli (morpherCarte), le fil la suit — depuis la
+   hauteur où on la voit, même si elle bougeait encore. */
+function reduirePartie(){
+  const ecran = ecranDeDiscussion();
+  const p = ecran ? Array.prototype.find.call(ecran.querySelectorAll(":scope > .grp-partie"), x => !x._part) : null;
+  const h0 = p ? p.getBoundingClientRect().height : 0;
+  if(p){ clearTimeout(p._finMorph); ["height", "transition", "overflow", "margin-bottom", "opacity"].forEach(k => p.style.removeProperty(k)); }
+  net.filReduit = !net.filReduit;
+  majPanneauPartie();
+  if(p && p.isConnected && h0 > 0) morpherCarte(p, h0);
+}
 function quitterPartieDuFil(){ leaveRoomToOnline(); }
 /* Les visages du salon, en une rangée. */
 function joueursDuFilHtml(){
@@ -12399,37 +12661,39 @@ function joueursDuFilHtml(){
 }
 /* LA CARTE ARRIVE ET S'EN VA EN DOUCEUR. Posée d'un coup, elle poussait le
    fil d'une centaine de pixels dans la même image — et l'y laissait
-   retomber d'autant en partant. Sa place s'ouvre et se referme maintenant
-   sur l'horloge rapide du jeu, le fil glisse avec elle. Un écran qui ARRIVE
-   avec sa carte (on revient dans la discussion) la montre déjà posée : rien
-   n'apparaît après lui (v361). */
-function deplierCarte(p){
-  try{
-    const cs = getComputedStyle(p), h = p.offsetHeight;
-    p.animate([{ height:"0px", opacity:0, marginBottom:"0px", paddingTop:"0px", paddingBottom:"0px" },
-               { height:h + "px", opacity:1, marginBottom:cs.marginBottom, paddingTop:cs.paddingTop, paddingBottom:cs.paddingBottom }],
-      { duration:260, easing:"cubic-bezier(0.33,1,0.68,1)" });
-  }catch(e){}
-}
-function replierCarte(p){
-  if(p._part) return;
-  p._part = true;
-  const finir = ()=>{ p.remove(); try{ glassRelayout(); queueGlassSync(); }catch(e){} };
-  try{
-    const cs = getComputedStyle(p), h = p.offsetHeight;
-    p.style.pointerEvents = "none"; p.style.overflow = "hidden";
-    const a = p.animate([{ height:h + "px", opacity:1, marginBottom:cs.marginBottom, paddingTop:cs.paddingTop, paddingBottom:cs.paddingBottom },
-                         { height:"0px", opacity:0, marginBottom:"0px", paddingTop:"0px", paddingBottom:"0px" }],
-      { duration:240, easing:"cubic-bezier(0.33,1,0.68,1)", fill:"forwards" });
-    a.onfinish = finir; a.oncancel = finir;
-  }catch(e){ finir(); }
-}
-function majPanneauPartie(el){
+   retomber d'autant en partant. Sa place s'ouvre et se referme sur
+   l'horloge du pli, le fil glisse avec elle. Un écran qui ARRIVE avec sa
+   carte (on revient dans la discussion) la montre déjà posée : rien
+   n'apparaît après lui (v361).
+   (v369) DEUX FONCTIONS PORTAIENT CE NOM. Le salon (v365) avait ici ses
+   propres deplierCarte et replierCarte ; les cartes du compte, plus loin
+   dans le fichier, portaient les mêmes noms — et une déclaration de
+   fonction plus loin remplace la précédente. Le salon a donc toujours
+   tourné sur celles du compte (voir LA CARTE QUI S'EN VA SE REPLIE), et ces
+   copies-ci étaient mortes : elles sont retirées. Ce qu'elles seules
+   faisaient passe dans les vivantes : une carte qui s'en va le dit
+   (« _part » : ce n'est plus LA carte du salon). Et une carte posée avec
+   son écran — qu'il arrive, ou qu'il soit seulement redessiné — ne rejoue
+   pas son arrivée (« pose ») : redessinée, la discussion la dépliait de
+   nouveau, sous les yeux, et la figeait à sa hauteur pendant une demi-
+   seconde — la plier à ce moment-là ne faisait rien. */
+function majPanneauPartie(el, pose){
   const ecran = el || ecranDeDiscussion();
   if(!ecran) return;
   let p = Array.prototype.find.call(ecran.querySelectorAll(":scope > .grp-partie"), x => !x._part) || null;
   if(!net.room){ net.fil = null; net.phase = null; }
-  if(!partieDansLeFil() || net.fil !== grp.courant || ecranEnLigne() !== "online-room"){
+  const salon = partieDansLeFil() && ecranEnLigne() === "online-room";
+  /* (v369) LA DISCUSSION D'UN AUTRE GROUPE : la barre de la partie s'y pose
+     sous l'en-tête, à la place de la carte — la même barre que partout
+     ailleurs (la barre d'écriture tient le bas de l'écran). */
+  const barre = Array.prototype.find.call(ecran.querySelectorAll(":scope > .barre-partie"), x => !x._part) || null;
+  if(salon && net.fil !== grp.courant){
+    if(p){ if(ecran.classList.contains("screen-exit")){ p.remove(); } else replierCarte(p); }
+    poserBarreDansFil(ecran, barre, pose);
+    return;
+  }
+  if(barre){ if(ecran.classList.contains("screen-exit")){ barre.remove(); } else replierCarte(barre); }
+  if(!salon){
     if(p){ if(ecran.classList.contains("screen-exit")){ p.remove(); } else replierCarte(p); }
     return;
   }
@@ -12452,7 +12716,7 @@ function majPanneauPartie(el){
     p = document.createElement("div");
     p.className = "card grp-partie";
     ecran.insertBefore(p, ecran.querySelector(":scope > .fil-carte"));
-    neuve = !ecran.classList.contains("arrivee");
+    neuve = !pose && !ecran.classList.contains("arrivee");
   }
   p.classList.toggle("reduit", !!net.filReduit);
   p.setAttribute("data-phase", "room");
@@ -12467,9 +12731,126 @@ function majPanneauPartie(el){
   if(neuve) deplierCarte(p);
   try{ glassRelayout(); queueGlassSync(); }catch(e){}
 }
+/* ===== (v369) LA PARTIE DU GROUPE SUIT LE JOUEUR =====
+   « Je te parlais uniquement de lancer l'invitation aux autres joueurs sans
+     devoir être dans un écran spécifique, et pouvoir rester dans les messages
+     ou autre. Et une fois que la partie est lancée, ensuite on entre à
+     l'intérieur de la partie sans rester dans le chat. »
+   Logé (v365), le salon tenait à SA discussion : la quitter le fermait — et
+   l'hôte qui avait des joueurs devait le confirmer. Il ne tient plus à aucun
+   écran. On lance l'invitation, ou l'on rejoint, puis on va où l'on veut :
+   les groupes, un autre groupe, l'accueil, le Parcours, son profil.
+   Partout, une barre dit que la partie attend — « Partie du groupe », le
+   groupe, combien l'ont rejointe —, et l'hôte y a « Commencer » dès que
+   quelqu'un est là. La toucher ramène dans la discussion, à la carte. Dans
+   la discussion d'un AUTRE groupe, la même barre se pose sous l'en-tête :
+   le bas de l'écran est à la barre d'écriture.
+   Quand l'hôte lance, la partie arrive EN PLEIN ÉCRAN chez chacun, d'où
+   qu'il soit — une page ou une fenêtre ouverte se referme d'abord (voir
+   rendrePartieLogee).
+   OÙ ELLE SE TIENT. Au-dessus de la barre du bas quand celle-ci est là ;
+   sinon à sa place, au bas de l'écran. L'écran lui garde sa place
+   (« sous-partie », posée dès le rendu, avant toute mesure) : rien ne passe
+   dessous. C'est une capsule de verre, comme la barre du bas, avec ce qui
+   se joue : la manette, « Commencer ». Elle s'efface sous une page, et
+   quand le clavier monte. */
+const ECRANS_BARRE_PARTIE = ["mode", "groupes", "jeux", "chemin", "parcours", "revoir", "profile", "moderation", "setup"];
+function barrePartieVue(){
+  return partieDansLeFil() && ecranEnLigne() === "online-room" && ECRANS_BARRE_PARTIE.indexOf(state.screen) >= 0;
+}
+function barrePartieHtml(){
+  const n = nbJoueurs(), pret = !!(net.isHost && net.oppPresent && n > 1 && n <= MAX_JOUEURS);
+  const g = (grp.liste || []).find(x => x.id === net.fil);
+  const nom = g && g.nom ? escapeHtml(couperSignes(g.nom, 26)) + " · " : "";
+  const etat = net.isHost ? (n > 1 ? Tf("{n} joueurs", { n }) : T("En attente des joueurs…"))
+    : (net.oppPresent ? Tf("{n} joueurs", { n }) : T("Connexion au salon…"));
+  return `<button class="bp-zone" onclick="ouvrirPartieDuGroupe()" aria-label="${T("Revenir à la partie du groupe")}">`
+    + `<span class="bp-ico">${ICONS.manette}</span>`
+    + `<span class="bp-txt"><b>${T("Partie du groupe")}</b><small>${nom}${etat}</small></span>`
+    + (pret ? "" : `<span class="bp-chev" aria-hidden="true">${ICONS.chevronRight}</span>`)
+    + `</button>`
+    + (pret ? `<button class="bp-go" onclick="hostStart()">${T("Commencer")}</button>` : "");
+}
+function majBarrePartie(){
+  const vue = barrePartieVue();
+  document.documentElement.classList.toggle("partie-vue", vue);
+  const cur = document.querySelector("#app > .screen:not(.screen-exit)");
+  if(cur) cur.classList.toggle("sous-partie", vue);
+  let b = document.getElementById("barrePartie");
+  if(!vue){
+    if(b && !b.classList.contains("cachee")){ b.classList.add("cachee"); b.setAttribute("aria-hidden", "true"); }
+    return;
+  }
+  let neuve = false;
+  if(!b){
+    /* Une carte de verre du jeu (le même verre que la barre du bas) ; ce
+       qu'elle dit vit dans .bp-contenu, à côté des couches du verre. */
+    b = document.createElement("div");
+    b.id = "barrePartie"; b.className = "card barre-partie cachee";
+    b.innerHTML = `<div class="bp-contenu"></div>`;
+    document.body.appendChild(b);
+    neuve = true;
+  }
+  const c = b.querySelector(".bp-contenu"), html = barrePartieHtml();
+  if(c && c._html !== html){ c._html = html; c.innerHTML = html; }
+  b.removeAttribute("aria-hidden");
+  /* Au-dessus de la barre du bas quand elle est là. Le verre se cale sur
+     cette place de repos (voir LE VERRE DE LA BARRE DU BAS SE CALE SUR SA
+     PLACE) : de combien elle est levée, en pixels. */
+  const sur = groupesVisibles() && ["mode", "groupes", "jeux", "chemin"].indexOf(state.screen) >= 0;
+  const bb = document.getElementById("barreBas");
+  b._leve = sur && bb ? bb.offsetHeight + 0.5 * (parseFloat(getComputedStyle(document.documentElement).fontSize) || 16) : 0;
+  b.classList.toggle("sur-barre", sur);
+  if(b.classList.contains("cachee")){ void b.offsetWidth; b.classList.remove("cachee"); }
+  if(neuve){ try{ glassRelayout(); queueGlassSync(); }catch(e){} }
+}
+/* La même barre, dans le fil d'une autre discussion. */
+function poserBarreDansFil(ecran, x, pose){
+  const html = barrePartieHtml();
+  let neuve = false;
+  if(!x){
+    x = document.createElement("div");
+    x.className = "card barre-partie dans-fil";
+    x.innerHTML = `<div class="bp-contenu"></div>`;
+    ecran.insertBefore(x, ecran.querySelector(":scope > .fil-carte"));
+    neuve = !pose && !ecran.classList.contains("arrivee");
+  }
+  const c = x.querySelector(".bp-contenu");
+  if(c && c._html !== html){ c._html = html; c.innerHTML = html; }
+  if(neuve) deplierCarte(x);
+  try{ glassRelayout(); queueGlassSync(); }catch(e){}
+}
+function ouvrirPartieDuGroupe(){
+  if(!partieDansLeFil()) return;
+  if(state.screen === "groupe" && grp.courant === net.fil){ majPanneauPartie(); return; }
+  ouvrirGroupe(net.fil);
+}
+/* ===== (v369) UNE AUTRE PARTIE, PENDANT QUE CELLE DU GROUPE ATTEND =====
+   La partie du groupe suit le joueur partout ; on ne joue pourtant qu'à une
+   chose à la fois. Lancer autre chose — une partie, une révision, une leçon,
+   une quête, un jeu, l'écran En ligne, la partie d'un autre groupe — la
+   quitterait (et l'hôte la fermerait pour tous) : c'est demandé d'abord.
+   Vrai : rien n'attend, on y va. Faux : la question est posée ; « suite »
+   repart une fois la partie quittée — après la fenêtre, qui se ferme. */
+function avantAutrePartie(suite){
+  if(!partieDansLeFil()) return true;
+  const hote = !!net.isHost, venus = nbJoueurs() > 1;
+  showModal({
+    title:hote ? T("Fermer la partie\u00a0?") : T("Quitter la partie\u00a0?"),
+    message:hote ? (venus ? T("Les joueurs qui t'ont rejoint en sortiront.") : T("L'invitation disparaîtra de la discussion.")) : T("Ton groupe la jouera sans toi."),
+    okLabel:hote ? T("Fermer") : T("Quitter"), cancelLabel:T("Rester"), danger:true,
+    onOk:()=>{ quitterLaPartieDuGroupe(); setTimeout(()=>{ try{ suite(); }catch(e){} }, 0); }
+  });
+  return false;
+}
+function quitterLaPartieDuGroupe(){
+  cleanupRoom();
+  net.fil = null; net.phase = null; net.depuisGroupe = null; net.error = "";
+  majPartieAilleurs();
+}
 function reRenderIfOnline(){
   if(net && net.fil){
-    if(partieDansLeFil() && ecranEnLigne() === "online-room"){ if(state.screen === "groupe") majPanneauPartie(); return; }
+    if(partieDansLeFil() && ecranEnLigne() === "online-room"){ majPartieAilleurs(); return; }
   }
   const sc = String(state.screen);
   if(sc.indexOf("online") !== 0) return;
@@ -13488,13 +13869,12 @@ function quitterFinEnLigne(){
    Ouvrir En ligne depuis l'accueil l'oublie : ce départ-là ramène à l'accueil,
    comme avant. */
 function sortirVersGroupe(mot){
-  /* (v365) Le salon était logé dans la discussion : on y est déjà. */
+  /* (v365) Le salon était logé : on n'a pas quitté l'écran où l'on est.
+     (v369) Où que ce soit — la discussion, une autre, l'accueil… — on y
+     reste : sa carte ou sa barre s'en va, le mot s'affiche au-dessus. */
   if(net.fil){
-    const id = net.fil;
     net.fil = null; net.phase = null; net.depuisGroupe = null;
-    if(state.screen === "groupe" && grp.courant === id) majPanneauPartie();
-    else if((grp.liste || []).some(x => x.id === id)) ouvrirGroupe(id);
-    else { state.screen = "groupes"; render(); ouvrirGroupes(); }
+    majPartieAilleurs();
     if(mot) showMiniToast(mot);
     return true;
   }
@@ -13507,6 +13887,7 @@ function sortirVersGroupe(mot){
   return true;
 }
 function openOnline(){
+  if(!avantAutrePartie(openOnline)) return;     // (v369)
   net.depuisGroupe = null;
   net.error="";
   if(!navigator.onLine){
@@ -23797,6 +24178,224 @@ function saveParcours(p){
   try{ localStorage.setItem("bt_parcours", JSON.stringify({ v:1, faites })); }catch(e){}
 }
 function leconFaite(u, l, p){ return !!(p || loadParcours()).faites[cleLecon(u, l)]; }
+/* ===================== (v368) LES DIAMANTS =====================
+   « …et si tu penses que c'est bien d'avoir des diamants pour par exemple
+     acheter des gels de série ou même quoi que ce soit d'autre. »
+   CE QUI EN DONNE : finir une leçon (10) ; la finir sans faute (5 de plus,
+   une fois par leçon — la refaire sans faute plus tard compte aussi) ;
+   réussir une quête (20) ; ouvrir le coffre d'une unité (30). CE QUI EN
+   COÛTE : un gel de série, 50 — et le plafond des gels ne bouge pas : deux en
+   réserve, un jour chacun (voir LES GELS DE SÉRIE). Une unité rapporte de
+   quoi en acheter deux ou trois ; la réserve n'en tient toujours que deux.
+   UN REGISTRE, PAS UN SOLDE (bt_tresor). Chaque gain porte le nom de ce qui
+   l'a mérité (« lecon:genese:1 », « coffre:genese », « quete:genese:eclair »)
+   et ne se compte donc qu'une fois, sur ce téléphone comme sur un autre.
+   Chaque dépense porte un nom unique. Le solde se CALCULE : gains moins
+   dépenses. Deux téléphones se fusionnent en réunissant leurs registres
+   (voir fusionner) : aucun gain ne se perd, aucune dépense ne s'oublie, rien
+   ne se compte deux fois — ce qu'un simple nombre ne saurait pas faire.
+   Les leçons faites avant la v368 sont créditées d'office, une fois
+   (rattraperDiamants) : personne ne repart de zéro. */
+const DIAMANTS = { lecon:10, parfait:5, quete:20, coffre:30 };
+const PRIX_GEL = 50;
+function tresorValide(x){
+  const out = { gains:{}, depenses:{} };
+  if(!x || typeof x !== "object") return out;
+  for(const sorte of ["gains", "depenses"]){
+    const o = x[sorte];
+    if(!o || typeof o !== "object") continue;
+    for(const k of Object.keys(o)){
+      const e = o[k], brut = (e && typeof e === "object") ? e.n : e;
+      const n = Math.round(Number(brut));
+      if(k.length > 80 || !(n > 0) || n > 1000) continue;
+      const t = (e && typeof e === "object" && typeof e.t === "string" && /^\d{4}-\d{2}-\d{2}$/.test(e.t)) ? e.t : "";
+      out[sorte][k] = { n, t };
+    }
+  }
+  return out;
+}
+function loadTresor(){
+  try{ return tresorValide(JSON.parse(localStorage.getItem("bt_tresor") || "{}")); }
+  catch(e){ return { gains:{}, depenses:{} }; }
+}
+/* L'UNION DE DEUX REGISTRES : chaque ligne d'un côté ou de l'autre. */
+function unionTresor(a, b){
+  const x = tresorValide(a), y = tresorValide(b), out = { gains:{}, depenses:{} };
+  for(const sorte of ["gains", "depenses"]){
+    for(const src of [x, y]) for(const k of Object.keys(src[sorte])){
+      const e = src[sorte][k], d = out[sorte][k];
+      if(!d || e.n > d.n || (e.n === d.n && e.t && (!d.t || e.t < d.t))) out[sorte][k] = { n:e.n, t:e.t };
+    }
+  }
+  return out;
+}
+function saveTresor(t){
+  const tout = unionTresor(loadTresor(), t);
+  try{ localStorage.setItem("bt_tresor", JSON.stringify({ v:1, gains:tout.gains, depenses:tout.depenses })); }catch(e){}
+}
+function soldeDiamants(t){
+  t = t || loadTresor();
+  let s = 0;
+  for(const k of Object.keys(t.gains)) s += t.gains[k].n;
+  for(const k of Object.keys(t.depenses)) s -= t.depenses[k].n;
+  return Math.max(0, s);
+}
+/* Gagner, une fois par nom : rend ce qui vient d'entrer (0 si c'était déjà
+   gagné). */
+function gagnerDiamants(cle, n){
+  const t = loadTresor();
+  if(t.gains[cle]) return 0;
+  t.gains[cle] = { n, t:cleDeDate(new Date()) };
+  saveTresor(t);
+  return n;
+}
+function depenserDiamants(quoi, n){
+  const t = loadTresor();
+  if(soldeDiamants(t) < n) return false;
+  t.depenses[quoi + ":" + Date.now().toString(36) + Math.random().toString(36).slice(2, 7)] = { n, t:cleDeDate(new Date()) };
+  saveTresor(t);
+  return true;
+}
+/* Les leçons faites avant les diamants (ou sur un téléphone qui ne les
+   connaissait pas encore) : créditées une fois, et dites. */
+function rattraperDiamants(){
+  const p = loadParcours(), t = loadTresor();
+  let n = 0;
+  Object.keys(p.faites).forEach(k => {
+    if(CLES_LECONS.has(k) && !t.gains["lecon:" + k]){ t.gains["lecon:" + k] = { n:DIAMANTS.lecon, t:p.faites[k] }; n++; }
+  });
+  if(!n) return 0;
+  saveTresor(t);
+  achToastQueue.push({ clr:"blue", ico:ICONS.diamant, tete:T("Des diamants pour tes leçons"),
+    t: n > 1 ? Tf("{n} leçons déjà faites\u00a0: +{d} diamants", { n, d:n * DIAMANTS.lecon }) : Tf("1 leçon déjà faite\u00a0: +{d} diamants", { d:DIAMANTS.lecon }) });
+  try{ pumpAchToast(); }catch(e){}
+  return n;
+}
+/* ===================== (v368) LES QUÊTES =====================
+   « …avec des espaces de quête secondaire sur les côtés… »
+   Deux par unité, au bord du chemin, du côté où il ne tourne pas. Elles
+   reprennent les questions de l'UNITÉ — d'abord celles que ses leçons ont
+   déjà montrées : une quête vérifie ce qu'on a appris, elle ne l'apprend pas.
+     — LE DÉFI ÉCLAIR, ouvert dès la deuxième leçon faite : six questions,
+       quinze secondes chacune ; cinq justes pour le réussir.
+     — SANS FAUTE, ouvert dès la quatrième : cinq questions, du moyen et du
+       difficile d'abord, aucune erreur.
+   Ratée, une quête se retente autant qu'on veut ; réussie, elle rapporte ses
+   diamants une fois et garde sa coche. Elle se joue comme une leçon (même
+   écran, mêmes résultats), sans erreur rejouée à la fin : son compte est
+   celui du premier coup. Comme toute partie, elle allume la flamme du jour. */
+const QUETES = [
+  { k:"eclair",  nom:"Défi éclair", regle:"Six questions de l'unité, quinze secondes chacune\u00a0: cinq justes pour la réussir.", ico:"bolt",   apres:1, pres:1, n:6, seuil:5, chrono:"15" },
+  { k:"parfait", nom:"Sans faute",  regle:"Cinq questions de l'unité, sans une seule erreur.",                                     ico:"cible",  apres:3, pres:3, n:5, seuil:5, chrono:null }
+];
+function cleQuete(u, qi){ return "quete:" + PARCOURS[u].id + ":" + QUETES[qi].k; }
+function queteOuverte(u, qi, p){ return !!PARCOURS[u] && !!QUETES[qi] && leconFaite(u, QUETES[qi].apres, p); }
+function queteReussie(u, qi, t){ return !!(t || loadTresor()).gains[cleQuete(u, qi)]; }
+function questionsDeQuete(u, qi){
+  const livres = new Set(PARCOURS[u].livres), seen = loadSeen(), Q = QUETES[qi];
+  const toutes = [];
+  ["facile","moyen","difficile"].forEach(t => (BANK[t] || []).forEach(q => { const b = bookOf(q); if(b && livres.has(b)) toutes.push(Object.assign({}, q, { tier:t })); }));
+  const epreuve = (l) => Q.k === "parfait" ? l.slice().sort((a, b) => (a.tier === "facile") - (b.tier === "facile")) : l;
+  const prises = epreuve(shuffle(toutes.filter(q => seen.has(qKey(q))))).concat(epreuve(shuffle(toutes.filter(q => !seen.has(qKey(q)))))).slice(0, Q.n);
+  prises.forEach(q => seen.add(qKey(q)));
+  saveSeen(seen);
+  return shuffle(prises).map(q => Object.assign({}, q, { shuffledOptions: shuffle(q.options) }));
+}
+/* Toucher une quête : sa règle d'abord, en une phrase — on sait ce qu'on
+   tente avant que le chrono parte. */
+function commencerQuete(u, qi){
+  if(!queteOuverte(u, qi)) return;
+  const Q = QUETES[qi];
+  showModal({ title:T(Q.nom), message:T(Q.regle), okLabel:T("Commencer"), cancelLabel:T("Plus tard"),
+    onOk:()=>{ setTimeout(()=>lancerQuete(u, qi), 0); return true; } });
+}
+function lancerQuete(u, qi){
+  if(!queteOuverte(u, qi)) return;
+  const Q = QUETES[qi], qs = questionsDeQuete(u, qi);
+  if(!qs.length) return;
+  if(!avantAutrePartie(()=> lancerQuete(u, qi))) return;     // (v369)
+  finirPlaces();
+  marquerJoue();
+  bumpModeUse("parcours");
+  state.mode = "solo"; state.revision = false; state.revisionDe = null;
+  state.lecon = { u, l:-1, quete:qi, chrono:Q.chrono || null, n:qs.length, ok:0 };
+  state.soloScore = 0; state.soloStreak = 0; state.soloBestStreak = 0; state.soloCorrect = 0; displayedSoloScore = 0; state.soloMissed = []; state.soloIsRecord = false;
+  state.questions = qs;
+  state.currentIndex = 0; state.revealed = false; state.awarded = []; state.soloSelected = null; state.timedOut = false;
+  state.screen = "play";
+  render();
+}
+function relancerQuete(){
+  if(pubAvant(relancerQuete)) return;
+  const L = state.lecon;
+  if(!L || L.quete === undefined) return continuerParcours();
+  const u = L.u, qi = L.quete;
+  clearSavedGame();
+  state = etatNeuf();
+  lancerQuete(u, qi);
+}
+function terminerQuete(L){
+  const Q = QUETES[L.quete];
+  L.reussie = (L.ok | 0) >= Q.seuil;
+  L.gain = L.reussie ? gagnerDiamants(cleQuete(L.u, L.quete), DIAMANTS.quete) : 0;
+}
+/* Le chrono de la partie en cours : celui d'une quête qui en a un, sinon
+   celui que le joueur a choisi (une leçon et une révision n'en ont pas : voir
+   les deux appels). */
+function chronoDeLaPartie(){
+  return (state.lecon && state.lecon.chrono) ? timerSecondsFor(state.lecon.chrono) : timerSecondsFor(state.timerKey);
+}
+function sansChrono(){ return !!state.revision || (!!state.lecon && !state.lecon.chrono); }
+/* ===================== (v368) LES COFFRES =====================
+   Au bout de chaque unité. Fermé tant qu'une leçon manque ; prêt quand les
+   cinq sont faites (il bat, comme la leçon à faire) ; ouvert pour toujours
+   une fois touché — ses trente diamants sont au registre. */
+function coffrePret(u, p){ return Array.from({ length:LECONS_PAR_UNITE }, (_, l) => leconFaite(u, l, p)).every(Boolean); }
+function ouvrirCoffre(u){
+  const U = PARCOURS[u];
+  if(!U || !coffrePret(u)) return;
+  const n = gagnerDiamants("coffre:" + U.id, DIAMANTS.coffre);
+  if(!n) return;
+  if(state.screen === "chemin") render();
+  showModal({ title:T("Coffre ouvert\u00a0!"), message:Tf("+{n} diamants", { n }), cardClass:"coffre-modal",
+    bodyHtml:`<div class="cm-ico"><span class="ico">${ICONS.coffreOuvert}</span></div><p class="cm-solde">${escapeHtml(Tf("Tu as maintenant {n} diamants.", { n:soldeDiamants() }))}</p>`,
+    okLabel:T("Continuer"), hideCancel:true });
+}
+/* ===================== (v368) LA BOUTIQUE =====================
+   Une page, comme les Réglages : le solde, ce qu'on peut acheter, et
+   comment on gagne. Un seul article pour commencer, le plus demandé : le gel
+   de série. Il se paie en diamants, mais la RÉSERVE ne change pas — deux au
+   maximum, un jour chacun : on peut s'offrir un filet, pas des vacances. */
+function boutiqueHtml(){
+  const solde = soldeDiamants(), d = loadDaily(), plein = d.gels >= GEL_MAX, manque = Math.max(0, PRIX_GEL - solde);
+  const etat = plein ? T("Réserve pleine") : (manque ? Tf("Il te manque {n} diamants", { n:manque }) : "");
+  const gains = [[T("Une leçon terminée"), DIAMANTS.lecon], [T("Une leçon sans faute, une fois"), DIAMANTS.parfait],
+                 [T("Une quête réussie"), DIAMANTS.quete], [T("Le coffre d'une unité"), DIAMANTS.coffre]];
+  return `<div class="bq-solde"><span class="bq-gemme"><span class="ico">${ICONS.diamant}</span></span><span class="bq-n"><b>${solde}</b><small>${T("Tes diamants")}</small></span></div>
+    <div class="bq-article">
+      <span class="bq-ico"><span class="ico">${ICONS.flammeGelee}</span></span>
+      <span class="bq-txt"><b>${T("Gel de série")}</b><small>${T("Il protège ta flamme pour UN jour manqué. Deux en réserve au maximum.")}</small>
+        <small class="bq-reserve">${escapeHtml(Tf("En réserve\u00a0: {n}/{m}", { n:d.gels, m:GEL_MAX }))}</small></span>
+      <div class="bq-achat">${etat ? `<small class="bq-etat">${escapeHtml(etat)}</small>` : ""}<button class="bq-acheter" onclick="acheterGel()" ${plein || manque ? "disabled" : ""} aria-label="${escapeHtml(T("Acheter") + " · " + PRIX_GEL)}"><span class="ico">${ICONS.diamant}</span>${PRIX_GEL}</button></div>
+    </div>
+    <h2 class="bq-h">${T("Comment gagner des diamants")}</h2>
+    <div class="bq-gains">${gains.map(([l, n]) => `<div class="bq-ligne"><span>${escapeHtml(l)}</span><b><span class="ico">${ICONS.diamant}</span>+${n}</b></div>`).join("")}</div>`;
+}
+function ouvrirBoutique(){ ouvrirFeuilleGroupe("boutiqueVeil", T("Boutique"), ICONS.boutique, boutiqueHtml()); }
+function majBoutique(){
+  const c = document.querySelector("#boutiqueVeil .grp-feuille-corps");
+  if(c) c.innerHTML = boutiqueHtml();
+  const s = soldeDiamants();
+  document.querySelectorAll(".ch-diamants b").forEach(b => { b.textContent = s; });
+}
+function acheterGel(){
+  const d = loadDaily();
+  if(d.gels >= GEL_MAX){ showMiniToast(T("Ta réserve est pleine\u00a0: deux gels au maximum.")); return; }
+  if(!depenserDiamants("gel", PRIX_GEL)){ showMiniToast(Tf("Il te manque {n} diamants", { n:Math.max(1, PRIX_GEL - soldeDiamants()) })); return; }
+  saveDaily({ gels:Math.min(GEL_MAX, d.gels + 1) });
+  showMiniToast(T("Gel acheté — il couvre UN jour manqué."));
+  majBoutique();
+}
 /* Où en est le joueur : la première leçon pas encore faite, dans l'ordre. */
 function positionParcours(p){
   p = p || loadParcours();
@@ -23844,6 +24443,7 @@ function commencerLecon(u, l){
   if(!PARCOURS[u] || l < 0 || l >= LECONS_PAR_UNITE || !leconOuverte(u, l)) return;
   const qs = questionsDeLecon(u, l);
   if(!qs.length) return;
+  if(!avantAutrePartie(()=> commencerLecon(u, l))) return;   // (v369)
   finirPlaces();
   marquerJoue();
   bumpModeUse("parcours");
@@ -23859,17 +24459,29 @@ function commencerLecon(u, l){
 function terminerLecon(){
   const L = state.lecon;
   if(!L || !PARCOURS[L.u]) return;
+  if(L.quete !== undefined){ terminerQuete(L); return; }   // (v368) une quête
   const p = loadParcours(), k = cleLecon(L.u, L.l);
   L.nouvelle = !p.faites[k];
   if(!p.faites[k]) p.faites[k] = cleDeDate(new Date());
   saveParcours(p);
   L.uniteFinie = Array.from({ length:LECONS_PAR_UNITE }, (_, l) => leconFaite(L.u, l, p)).every(Boolean);
+  /* (v368) Ses diamants : la leçon faite, une fois ; sans faute, une fois de plus. */
+  L.gain = gagnerDiamants("lecon:" + k, DIAMANTS.lecon) + ((L.ok | 0) >= (L.n | 0) ? gagnerDiamants("parfait:" + k, DIAMANTS.parfait) : 0);
 }
+/* (v368) Ce qu'une leçon ou une quête vient de rapporter. */
+function gainHtml(n){ return n > 0 ? `<div class="end-diamants"><span class="ico">${ICONS.diamant}</span>${escapeHtml(Tf("+{n} diamants", { n }))}</div>` : ""; }
 function leconFinHtml(){
   const L = state.lecon, u = PARCOURS[L.u], t = L.n | 0, ok = Math.min(t, L.ok | 0);
+  if(L.quete !== undefined){
+    const Q = QUETES[L.quete];
+    return `<h1 class="end-title">${L.reussie ? T("Quête réussie\u00a0!") : (ok >= Q.seuil - 1 ? T("Presque\u00a0!") : T("Pas cette fois"))}</h1>
+      <p class="end-sub">${escapeHtml(L.reussie ? T(Q.nom) + " · " + T(u.nom) : Tf("{n} sur {t} — il en fallait {s}", { n:ok, t, s:Q.seuil }))}</p>
+      ${gainHtml(L.gain | 0)}`;
+  }
   return `<h1 class="end-title">${ok >= t ? T("Sans faute\u00a0!") : escapeHtml(Tf("{n} sur {t} du premier coup", { n:ok, t }))}</h1>
       <p class="end-sub">${escapeHtml(Tf("{unite} · leçon {l} sur {m}", { unite:T(u.nom), l:L.l + 1, m:LECONS_PAR_UNITE }))}</p>
-      ${L.uniteFinie && L.nouvelle ? `<div class="end-best">${T("Unité terminée\u00a0!")}</div>` : ""}`;
+      ${L.uniteFinie && L.nouvelle ? `<div class="end-best">${T("Unité terminée\u00a0!")} ${T("Son coffre t'attend au bout du chemin.")}</div>` : ""}
+      ${gainHtml(L.gain | 0)}`;
 }
 let cheminVient = null;   // la leçon qu'on vient de finir : sa pierre s'allume à l'arrivée
 function continuerParcours(){
@@ -23877,7 +24489,8 @@ function continuerParcours(){
   const L = state.lecon;
   clearSavedGame();
   state = etatNeuf();
-  cheminVient = (L && L.nouvelle) ? { u:L.u, l:L.l } : null;
+  /* (v368) Une quête réussie s'allume à l'arrivée, comme une leçon neuve. */
+  cheminVient = !L ? null : (L.quete !== undefined ? ((L.reussie && L.gain) ? { u:L.u, q:L.quete } : null) : (L.nouvelle ? { u:L.u, l:L.l } : null));
   state.screen = "chemin";
   render();
 }
@@ -23889,7 +24502,8 @@ function livresDeLUnite(u){
 /* LE CHEMIN SERPENTE : chaque unité part du centre, s'écarte et revient, une
    fois vers la droite, la suivante vers la gauche. */
 const CH_ECARTS = [0, 0.62, 1, 0.62, 0];
-function uniteHtml(u, i, p, pos, vient){
+function uniteHtml(u, i, p, pos, vient, t){
+  t = t || loadTresor();
   const faites = Array.from({ length:LECONS_PAR_UNITE }, (_, l) => leconFaite(i, l, p));
   const n = faites.filter(Boolean).length;
   const etat = n === LECONS_PAR_UNITE ? "finie" : ((pos && pos.u === i) || n ? "ouverte" : "fermee");
@@ -23900,9 +24514,12 @@ function uniteHtml(u, i, p, pos, vient){
     const allume = (vient && vient.u === i && vient.l === l) ? " s-allume" : "";
     const ico = f ? ICONS.coche : (courante ? ICONS.etoile : ICONS.cadenas);
     const nom = Tf("Leçon {n}", { n:l + 1 }) + " · " + (f ? T("faite") : courante ? T("à faire") : T("verrouillée"));
+    /* (v368) La quête qui se tient à hauteur de cette leçon, au bord. */
+    const qi = QUETES.findIndex(Q => Q.pres === l);
     return `<div class="ch-noeud ${cls}${allume}" style="--x:${(sens * CH_ECARTS[l]).toFixed(2)}">
         <button class="ch-pierre ch-t-${u.teinte}" ${(f || courante) ? `onclick="commencerLecon(${i}, ${l})"` : "disabled"} aria-label="${escapeHtml(nom)}"><span class="ico">${ico}</span></button>
         ${courante ? `<button class="ch-bulle" onclick="commencerLecon(${i}, ${l})">${T("Commencer")}</button>` : ""}
+        ${qi < 0 ? "" : queteHtml(i, qi, sens * CH_ECARTS[l], sens, faites, t, vient)}
       </div>`;
   }).join("");
   return `<section class="ch-unite ${etat}" aria-label="${escapeHtml(Tf("Unité {n}", { n:i + 1 }) + " · " + T(u.nom))}">
@@ -23912,8 +24529,37 @@ function uniteHtml(u, i, p, pos, vient){
         <small>${escapeHtml(livresDeLUnite(u))}</small>
         <span class="ch-score">${n}/${LECONS_PAR_UNITE}</span>
       </div>
-      <div class="ch-pas">${pierres}</div>
+      <div class="ch-pas">${pierres}${coffreHtml(u, i, n === LECONS_PAR_UNITE, t)}</div>
     </section>`;
+}
+/* (v368) UNE QUÊTE AU BORD DU CHEMIN. Elle se pose du côté où le chemin ne
+   va pas, à 5,6 rem du milieu — assez loin pour que son étiquette (six rem
+   au plus, sur deux lignes s'il le faut : « Desafío relámpago ») ne frôle
+   jamais la pierre du milieu de la ligne suivante, même celle, plus grande,
+   de la leçon à faire. Sa place se compte depuis celle de la leçon qui la
+   porte (ecart, en largeurs de pas de 4,4 rem). */
+function queteHtml(i, qi, ecart, sens, faites, t, vient){
+  const Q = QUETES[qi], reussie = queteReussie(i, qi, t), ouverte = !!faites[Q.apres];
+  const etat = reussie ? "reussie" : (ouverte ? "ouverte" : "fermee");
+  const qx = (-sens * 5.6 - ecart * 4.4).toFixed(2);
+  const ico = reussie ? ICONS.coche : (ouverte ? ICONS[Q.ico] : ICONS.cadenas);
+  const nom = T(Q.nom) + " · " + (reussie ? T("réussie") : ouverte ? T("à faire") : Tf("après la leçon {n}", { n:Q.apres + 1 }));
+  const allume = (vient && vient.u === i && vient.q === qi) ? " s-allume" : "";
+  return `<div class="ch-quete ${etat}${allume}" style="--qx:${qx}">
+      <button class="ch-medaillon" ${ouverte ? `onclick="commencerQuete(${i}, ${qi})"` : "disabled"} aria-label="${escapeHtml(nom)}"><span class="ico">${ico}</span></button>
+      <span class="ch-etiq"><small>${escapeHtml(T(Q.nom))}</small><span class="ch-prime"><span class="ico">${ICONS.diamant}</span>+${DIAMANTS.quete}</span></span>
+    </div>`;
+}
+/* (v368) LE COFFRE, au bout de l'unité. */
+function coffreHtml(u, i, fini, t){
+  const ouvert = !!t.gains["coffre:" + u.id];
+  const etat = ouvert ? "ouvert" : (fini ? "pret" : "ferme");
+  const nom = T("Coffre") + " · " + (ouvert ? T("ouvert") : fini ? T("à ouvrir") : T("au bout de l'unité"));
+  return `<div class="ch-coffre ${etat}">
+      <button class="ch-coffre-btn" ${etat === "pret" ? `onclick="ouvrirCoffre(${i})"` : "disabled"} aria-label="${escapeHtml(nom)}"><span class="ico">${ouvert ? ICONS.coffreOuvert : ICONS.coffre}</span></button>
+      ${etat === "pret" ? `<button class="ch-bulle" onclick="ouvrirCoffre(${i})">${T("Ouvrir le coffre")}</button>`
+        : `<span class="ch-etiq ch-coffre-l">${ouvert ? `<span class="ico">${ICONS.diamant}</span>+${DIAMANTS.coffre}` : escapeHtml(T("Coffre"))}</span>`}
+    </div>`;
 }
 function renderChemin(){
   const el = document.createElement("div");
@@ -23922,9 +24568,13 @@ function renderChemin(){
   const total = PARCOURS.length * LECONS_PAR_UNITE;
   const faites = Object.keys(p.faites).filter(k => CLES_LECONS.has(k)).length;
   const vient = cheminVient; cheminVient = null;
+  rattraperDiamants();   // (v368) les leçons faites avant les diamants
+  const t = loadTresor(), solde = soldeDiamants(t);
   /* La carte du haut dit le VOYAGE (où il mène, où l'on en est) ; le nom de
      l'unité est juste en dessous, sur sa bannière : pas deux fois. */
-  const tete = `<span class="ch-sur">${pos ? T("Ton parcours") : T("Parcours terminé")}</span><b class="ch-titre">${T("De la Genèse à l'Apocalypse")}</b>`;
+  const tete = `<div class="ch-haut"><span class="ch-sur">${pos ? T("Ton parcours") : T("Parcours terminé")}</span>
+      <button class="ch-diamants" onclick="ouvrirBoutique()" aria-label="${escapeHtml(Tf("{n} diamants · Boutique", { n:solde }))}"><span class="ico">${ICONS.diamant}</span><b>${solde}</b><span class="chev">${ICONS.chevronRight}</span></button></div>
+    <b class="ch-titre">${T("De la Genèse à l'Apocalypse")}</b>`;
   el.innerHTML = `
     ${enteteParcours()}
     <div class="card ch-tete">
@@ -23933,7 +24583,7 @@ function renderChemin(){
       <small class="ch-compte">${escapeHtml(Tf(faites > 1 ? "{n} leçons sur {t}" : "{n} leçon sur {t}", { n:faites, t:total }))}</small>
       <small class="ch-aide">${T("Six questions par leçon. Une erreur revient à la fin.")}</small>
     </div>
-    <div class="ch-unites">${PARCOURS.map((u, i) => uniteHtml(u, i, p, pos, vient)).join("")}</div>`;
+    <div class="ch-unites">${PARCOURS.map((u, i) => uniteHtml(u, i, p, pos, vient, t)).join("")}</div>`;
   /* (v358) On arrive SUR la leçon à faire : le chemin y est posé avant de
      glisser (voir UN ÉCRAN ARRIVE DÉJÀ À SA PLACE DE LECTURE). */
   el._defile = (a) => cibleLeconCourante(el, a);
@@ -23953,7 +24603,7 @@ function enteteParcours(){
 /* La leçon à faire (ou celle qui vient de s'allumer), un peu au-dessus du
    milieu de l'écran : la hauteur de défilement qui l'y met. */
 function cibleLeconCourante(el, a){
-  const n = el.querySelector(".ch-noeud.s-allume") || el.querySelector(".ch-noeud.courante");
+  const n = el.querySelector(".ch-noeud.s-allume, .ch-quete.s-allume") || el.querySelector(".ch-noeud.courante");
   if(!a || !n) return 0;
   const r = n.getBoundingClientRect(), cible = a.scrollTop + r.top + r.height / 2 - a.clientHeight * 0.48;
   return cible > 24 ? cible : 0;
@@ -24069,7 +24719,12 @@ function dayKey(off){ const d = new Date(Date.now() + (off||0)*86400000); const 
        s'éteint, même avec deux gels en poche : c'est la règle qui empêche
        d'acheter des vacances.
    Un gel se dépense TOUT SEUL, le lendemain du jour manqué, et le joueur
-   l'apprend par un bandeau. Rien à activer, rien à cliquer. */
+   l'apprend par un bandeau. Rien à activer, rien à cliquer.
+   (v368) ET DEPUIS LES DIAMANTS, ON PEUT AUSSI EN ACHETER — « si tu penses
+   que c'est bien d'avoir des diamants pour par exemple acheter des gels de
+   série ». Les deux règles qui tiennent la flamme ne bougent pas : deux en
+   réserve au plus, un jour chacun. On s'offre un filet, pas des vacances
+   (voir LA BOUTIQUE). */
 /* FLAMME_MEMOIRE : combien de jours joués on garde. Quatre-vingt-dix
    jusqu'à la v314 ; la page de la flamme montre maintenant toute l'histoire
    (« sur un an »), elle en garde donc plus d'un an. On ne retire jamais rien
@@ -24563,6 +25218,7 @@ function ouvrirFlamme(){
           <span class="flam-jour">${phraseDuJour()}</span>
           <span class="ft-g">${ICONS.flammeGelee}${escapeHtml(reserve)}</span>
           <span class="flam-regle">${Tf("Un gel tous les {p} jours d'affilée ou toutes les {g} parties, {m} en réserve au maximum. Il couvre un seul jour manqué : deux jours de suite et la flamme s'éteint.", {p:GEL_PALIER, g:GEL_PARTIES, m:GEL_MAX})}</span>
+          <span class="flam-regle">${Tf("Ou à la boutique du Parcours, pour {prix} diamants.", { prix:PRIX_GEL })}</span>
         </span>
       </div>
       <div class="flam-leg"><span class="fj fait"></span><b>${T("joué")}</b><span class="fj gele"></span><b>${T("gelé")}</b></div>
@@ -25574,7 +26230,8 @@ function sauvegardeVide(){
            stats:{ bestScore:0, bestPct:0, games:0 },
            flamme:{ last:"", streak:0, score:0, total:0, jours:[], geles:[], gels:0,
                     palier:0, parties:0, palierParties:0, annonce:"" },
-           vues:[], carnet:[], acquises:{}, modes:{}, gout:{ bible:"", scene:"", maj:0 }, parcours:{ faites:{} } };
+           vues:[], carnet:[], acquises:{}, modes:{}, gout:{ bible:"", scene:"", maj:0 }, parcours:{ faites:{} },
+           tresor:{ gains:{}, depenses:{} } };
 }
 /* La photo de CE téléphone, à cet instant. */
 function sauvegardeIci(){
@@ -25596,6 +26253,7 @@ function sauvegardeIci(){
     acquises:loadAcquises(),
     modes:   loadModeUse(),
     parcours: loadParcours(),
+    tresor:   loadTresor(),
     gout:    { bible:settings.bible, scene:settings.scene, maj:nEntier(settings.majGout) } };
 }
 function listeDeCles(x){ return Array.isArray(x) ? x.filter(k => typeof k === "string" && k) : []; }
@@ -25794,6 +26452,8 @@ function fusionner(ici, ailleurs){
     modes:  maxParCle(a.modes, b.modes),
     /* (v353) Le Parcours : toute leçon faite d'un côté ou de l'autre. */
     parcours: { faites: unionDesLecons(a.parcours, b.parcours) },
+    /* (v368) Les diamants : la réunion des deux registres (voir LES DIAMANTS). */
+    tresor: unionTresor(a.tresor, b.tresor),
     /* LE GOÛT : le plus RÉCEMMENT choisi. À égalité — deux appareils qui n'ont
        jamais rien choisi — celui d'ici, qui au pire est le défaut. */
     gout: (function(){
@@ -25828,6 +26488,7 @@ function appliquerSauvegarde(recue){
   saveErrbook(sur.carnet);
   saveAcquises(sur.acquises);
   saveParcours(sur.parcours);
+  saveTresor(sur.tresor);
   try{ localStorage.setItem("bt_modeuse", JSON.stringify(sur.modes)); }catch(e){}
   /* Le goût ne s'applique que s'il désigne quelque chose qui existe encore :
      une scène retirée du catalogue ou une traduction inconnue laisseraient le
@@ -26451,6 +27112,8 @@ function morpherCarte(el, h0, nouveau){
    se déplie depuis rien. */
 function replierCarte(el){
   if(!el || !el.isConnected){ try{ el.remove(); }catch(e){} return; }
+  if(el._part) return;
+  el._part = true;      // (v369) elle s'en va : ce n'est plus la carte (voir majPanneauPartie)
   const ms = msPli(), h0 = el.offsetHeight;
   el.style.transition = "none"; el.style.overflow = "clip"; el.style.height = h0 + "px";
   void el.offsetHeight;
@@ -27167,6 +27830,7 @@ const PREPARER = { livres:manchesLivres, quiou:manchesQuiou, combien:manchesComb
 
 /* ===== LA PARTIE ===== */
 function lancerJeu(id){
+  if(!avantAutrePartie(()=> lancerJeu(id))) return;          // (v369)
   if(pubAvant(()=> lancerJeu(id))) return;   // (v349) « Rejouer », après un jeu fini
   const def = defJeu(id); if(!def) return;
   const manches = PREPARER[id](def.manches);
@@ -29148,17 +29812,8 @@ async function ouvrirGroupe(id){
   await chargerFil(id);
 }
 function retourGroupes(){
-  /* (v365) Le salon logé ici : en partant, on le quitte — l'hôte, qui le
-     ferme pour tous, le confirme si quelqu'un l'a rejoint. */
-  if(partieDansLeFil()){
-    const partir = ()=>{ cleanupRoom(); net.fil = null; net.phase = null; net.depuisGroupe = null; retourGroupes(); };
-    if(net.isHost && nbJoueurs() > 1){
-      showModal({ title:T("Fermer la partie ?"), message:T("Les joueurs qui t'ont rejoint en sortiront."), okLabel:T("Fermer"), cancelLabel:T("Rester"), danger:true, onOk:partir });
-      return;
-    }
-    partir();
-    return;
-  }
+  /* (v369) Le salon logé ici ne se ferme plus en partant : il suit le
+     joueur (voir LA PARTIE DU GROUPE SUIT LE JOUEUR). */
   /* (v329) On vient d'écrire dans ce groupe : des réponses vont arriver. Le
      bon moment pour proposer les rappels (une fois sur ce téléphone, et
      jamais à qui a déjà répondu) — en quittant la discussion, pas pendant
@@ -29812,7 +30467,7 @@ function renderGroupe(){
      éclair de vieux messages à chaque ouverture. render() appelle _posee
      dès que l'écran est dans la page, avant toute image (voir render). */
   el._posee = ()=>{
-    if(net && net.fil === g.id) majPanneauPartie(el);
+    if(net && net.fil) majPanneauPartie(el, true);     // (v369) la carte ici, la barre dans un autre groupe — posées avec l'écran
     descendreFil(false); if(t && t.value) surSaisie(t);
     /* Le fil se raccourcit (le clavier monte) ou s'allonge (il redescend) :
        s'il était au bas, il y reste, à chaque image de la transition. */
@@ -30649,6 +31304,7 @@ function lancerPartieGroupe(btn){
   const g = groupeCourant(); if(!g) return;
   if(!navigator.onLine || !onlineConfigured()){ showMiniToast(T("Pas de réseau. Réessaie dans un instant.")); return; }
   if(net.partieGroupe && net.room){ showMiniToast(T("Termine ou ferme ta partie avant d'en lancer une autre.")); return; }
+  if(!avantAutrePartie(()=> lancerPartieGroupe(btn))) return;  // (v369) j'attends celle d'un autre
   const depuis = Date.now() - (net.partieLancee || 0);
   if(depuis < PARTIE_ECART){ showMiniToast(Tf("Attends {s} s avant de lancer une autre partie.", { s:Math.ceil((PARTIE_ECART - depuis) / 1000) })); return; }
   const code = genCode();
@@ -30709,6 +31365,9 @@ async function retirerInvitation(id, jouee){
 function rejoindrePartieGroupe(code){
   if(!/^[A-Z0-9]{4,8}$/.test(String(code || ""))) return;
   if(!navigator.onLine || !onlineConfigured()){ showMiniToast(T("Pas de réseau. Réessaie dans un instant.")); return; }
+  /* (v369) Déjà dans ce salon : on y va. Dans un autre : c'est demandé. */
+  if(partieDansLeFil() && net.code === code){ ouvrirPartieDuGroupe(); return; }
+  if(!avantAutrePartie(()=> rejoindrePartieGroupe(code))) return;
   net.autoMatch = false; clearTimeout(net.matchGuard);
   net.depuisGroupe = grp.courant;
   /* (v365) Rejoint depuis la discussion, le salon s'y loge. */
@@ -33312,6 +33971,7 @@ function startRevision(quoi){
      l'autre. Un seul nombre pour tout le jeu. */
   const b = (quoi === "carnet") ? source : parEntetement(source).slice(0, REVISION_LOT);
   if(!b.length) return;
+  if(!avantAutrePartie(()=> startRevision(quoi))) return;    // (v369)
   state.mode = "solo"; state.revision = true; state.lecon = null;
   /* D'où part la révision : « Quitter » y ramène (voir LA PARTIE FINIE, ON
      REVIENT DANS SON MODE). Gardé dans la partie sauvegardée, il survit à une
@@ -33432,6 +34092,7 @@ function buildQuestions(){
   state.questions = shuffle(list);
 }
 function startGame(){
+  if(!avantAutrePartie(startGame)) return;      // (v369) la partie du groupe attend
   /* Un retrait de joueur encore en vol (la croix touchée il y a moins d'un
      dixième de seconde) se pose AVANT qu'on lise la liste : sinon il
      couperait plus tard dans la liste de la partie déjà lancée. */
@@ -33459,6 +34120,7 @@ function startGame(){
   render();
 }
 function replayGame(){
+  if(!avantAutrePartie(replayGame)) return;     // (v369)
   if(pubAvant(replayGame)) return;     // (v349) l'annonce plein écran, puis la partie
   /* REJOUER UNE RÉVISION, C'EST ROUVRIR LA MÊME PORTE : le carnet pour « À
      revoir », les erreurs de la dernière partie pour l'écran du Solo. Avant,
@@ -33544,8 +34206,8 @@ function currentQ(){ return state.questions[state.currentIndex]; }
 
 function confirmLeaveGame(){
   showModal({
-    title:state.lecon ? T("Quitter la leçon\u00a0?") : T("Quitter la partie ?"),
-    message:state.lecon ? T("Tu la reprendras depuis le début.") : T("La partie en cours sera perdue."),
+    title:state.lecon ? (state.lecon.quete !== undefined ? T("Quitter la quête\u00a0?") : T("Quitter la leçon\u00a0?")) : T("Quitter la partie ?"),
+    message:state.lecon ? (state.lecon.quete !== undefined ? T("Tu pourras la retenter quand tu veux.") : T("Tu la reprendras depuis le début.")) : T("La partie en cours sera perdue."),
     okLabel:T("Quitter"), cancelLabel:T("Rester"), danger:true,
     onOk:()=>{ stopQTimer(); retourAuMode(); }
   });
@@ -33577,7 +34239,7 @@ function soloAnswer(idx){
     state.soloMissed.push({ q:q.q, options:q.options, correct:q.correct, chosen:opt, fact:q.fact });
     errbookAdd(q);
     /* (v353) LE PARCOURS : une erreur revient à la fin de la leçon, une fois. */
-    if(state.lecon && !q.relance) state.questions.push(Object.assign({}, q, { relance:true, shuffledOptions:shuffle(q.options) }));
+    if(state.lecon && state.lecon.quete === undefined && !q.relance) state.questions.push(Object.assign({}, q, { relance:true, shuffledOptions:shuffle(q.options) }));
     playIncorrect();
   }
   render();
@@ -34374,11 +35036,11 @@ function renderPlay(){
 
   const streakHot = state.soloStreak >= 3;
   el.innerHTML = `
-    ${renderHeader(state.revision ? T("Seconde chance") : (state.lecon ? T(PARCOURS[state.lecon.u].nom) : NOM_DU_JEU), true, "confirmLeaveGame()")}
+    ${renderHeader(state.revision ? T("Seconde chance") : (state.lecon ? (state.lecon.quete !== undefined ? T(QUETES[state.lecon.quete].nom) : T(PARCOURS[state.lecon.u].nom)) : NOM_DU_JEU), true, "confirmLeaveGame()")}
     <div class="play-meta">
       <span class="tier-chip ${info.cls}">${tierDotsHtml(info.level)}${T(info.label)} · ${info.pts} pts</span>
       <span class="q-counter">${state.currentIndex+1}/${total}</span>
-      ${(state.revision || state.lecon) ? "" : state.revealed ? timerFigeHtml(timerSecondsFor(state.timerKey)) : timerChipHtml(timerSecondsFor(state.timerKey))}
+      ${sansChrono() ? "" : state.revealed ? timerFigeHtml(chronoDeLaPartie()) : timerChipHtml(chronoDeLaPartie())}
       ${state.mode==="solo" ? `<span class="streak-chip${streakHot?' hot':''}"><span class="ico">${ICONS.flame}</span>${state.soloStreak}</span>` : ""}
     </div>
     <div class="progress-track">
@@ -34392,7 +35054,7 @@ function renderPlay(){
 
   // Chrono : démarre sur chaque nouvelle question non révélée
   if(fresh && !state.revealed){
-    const secs = (state.revision || state.lecon) ? null : timerSecondsFor(state.timerKey);
+    const secs = sansChrono() ? null : chronoDeLaPartie();   // (v368) le Défi éclair a son chrono
     startQTimer(secs, state.mode==="solo" ? soloTimeUp : groupTimeUp);
   }
 
@@ -34549,7 +35211,7 @@ function renderEndSolo(){
   return `
     <div class="end-hero">
       <div class="end-medal"><span class="em-cup">${idsPropres(TROPHY_GOLD)}</span></div>
-      <div class="end-eyebrow${state.soloIsRecord?' record':''}">${state.soloIsRecord?T("★ Nouveau record personnel !"):(state.lecon?T("Leçon terminée"):state.revision?T("Seconde chance"):T("Partie terminée"))}</div>
+      <div class="end-eyebrow${state.soloIsRecord?' record':''}">${state.soloIsRecord?T("★ Nouveau record personnel !"):(state.lecon?(state.lecon.quete !== undefined ? T("Quête") : T("Leçon terminée")):state.revision?T("Seconde chance"):T("Partie terminée"))}</div>
       ${state.lecon ? leconFinHtml() : state.revision?(()=>{
           /* LA SECONDE CHANCE SE COMPTE EN ERREURS RATTRAPÉES, pas en points :
              c'est ce qu'on est venu faire. Ce qui reste se dit d'après la porte
@@ -34593,7 +35255,9 @@ function renderEndSolo(){
     <div class="flex-sp"></div>
     ${state.soloMissed && state.soloMissed.length ? `<button class="btn-review" onclick="openMissedReview()"><span class="ico">${ICONS.bookOpen}</span>${state.soloMissed.length>1?Tf("Revoir mes {n} erreurs",{n:state.soloMissed.length}):T("Revoir mon erreur")}</button>` : ""}
     <div class="end-bottom">
-    ${state.lecon ? `<div class="end-actions lecon-fin"><button class="btn-replay" onclick="continuerParcours()">${T("Continuer")}</button></div>`
+    ${state.lecon ? ((state.lecon.quete !== undefined && !state.lecon.reussie)
+        ? `<div class="end-actions"><button class="btn-replay" onclick="relancerQuete()">${T("Réessayer")}</button><button class="btn-newgame btn-quit" onclick="continuerParcours()">${T("Continuer")}</button></div>`
+        : `<div class="end-actions lecon-fin"><button class="btn-replay" onclick="continuerParcours()">${T("Continuer")}</button></div>`)
       /* (v364) Après une séance « À revoir » : « Continuer » joue la suite s'il
          en reste ; sinon un seul bouton, qui ramène là d'où l'on vient. */
       : (state.revision && resteARattraper() === 0) ? `<div class="end-actions lecon-fin"><button class="btn-replay" onclick="retourAuMode()">${T("Continuer")}</button></div>` : `<div class="end-actions">
@@ -36385,6 +37049,9 @@ function render(){
   else if(state.screen==="jeu") node = renderJeu();
   else if(state.screen==="jeu-fin") node = renderJeuFin();
   else node = renderEnd();
+  /* (v369) La barre de la partie du groupe : l'écran lui garde sa place dès
+     le rendu, avant toute mesure (voir LA PARTIE DU GROUPE SUIT LE JOUEUR). */
+  if(barrePartieVue()) node.classList.add("sous-partie");
   /* Accueil, Groupes, un groupe : trois pièces côte à côte (voir sensDuGlissement). */
   const sens = sameScreen ? null : sensDuGlissement(lastScreen, state.screen);
   /* (v345) On revient (vers la gauche de la carte des écrans) : l'écran
@@ -36561,6 +37228,7 @@ function render(){
   lastScreen = state.screen;
   try{ document.documentElement.classList.toggle("ecran-discussion", state.screen === "groupe"); }catch(e){}
   try{ majBarre(); }catch(e){}
+  try{ majBarrePartie(); }catch(e){}
   /* Après la barre : c'est elle qui donne aux écrans des groupes leur pied. */
   if(state.screen === "revoir"){ try{ tenirRevoir(node); }catch(e){} }
   try{ serrerEcran(node); }catch(e){}
@@ -37479,9 +38147,12 @@ function queueGlassXF(){
          lire un style calculé à chaque passage forçait un recalcul de style
          au repos, ce que banc-essai/charge.js refuse (« 1 lecture forcée,
          max 0 »). Il ne change qu'avec la mise en page elle-même. */
-      if(el.id === "barreBas"){
+      /* (v369) La barre de la partie du groupe aussi : centrée, à « bottom »
+         du bas de l'écran, levée au-dessus de la barre du bas quand elle y
+         est (_leve, voir majBarrePartie). */
+      if(el.id === "barreBas" || el.id === "barrePartie"){
         if(el._basGen !== glassGen){ el._basGen = glassGen; el._bas = parseFloat(getComputedStyle(el).bottom) || 0; }
-        r = { left:(de.clientWidth - r.width) / 2, top:de.clientHeight - el._bas - r.height };
+        r = { left:(de.clientWidth - r.width) / 2, top:de.clientHeight - el._bas - r.height - (el._leve || 0) };
       }
       tx = -r.left - ox; ty = -r.top - oy;
     }
