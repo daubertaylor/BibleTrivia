@@ -6474,6 +6474,38 @@
   .grp-partie .gp-joueur.moi{ color:var(--ink); }
   .grp-partie .gp-reglages{ display:flex; flex-direction:column; gap:0.4rem; }
   .grp-partie .gp-note{ font-size:0.82rem; color:var(--ink-soft); text-align:center; }
+  /* ===== (v369) LA PARTIE DU GROUPE SUIT LE JOUEUR =====
+     Une capsule du même verre que la barre du bas (une carte du jeu, avec
+     sa couche peinte), juste au-dessus d'elle quand elle est là, à sa place
+     au bas de l'écran sinon. Elle vit hors des écrans : elle reste quand ils
+     glissent. L'écran affiché lui garde sa place (sous-partie). Dans la
+     discussion d'un autre groupe, elle se pose sous l'en-tête (dans-fil).
+     Aucune bordure. */
+  :root{ --bp-h:3.4rem; --bp-ecart:0.5rem; }
+  .card.barre-partie{ position:fixed; z-index:59; left:50%; bottom:var(--bb-bas); width:var(--bb-l); min-height:var(--bp-h); margin:0;
+    display:flex; align-items:center; padding:0.3rem; border:0; border-radius:var(--r-full); color:var(--ink);
+    --rim-cast:0 10px 34px rgba(15,12,10,0.24), 0 2px 8px rgba(15,12,10,0.1);
+    transform:translate3d(-50%,0,0); transition:transform var(--tr-ouvre), opacity 0.22s ease; }
+  .card.barre-partie.sur-barre{ transform:translate3d(-50%, calc(-1 * (var(--bb-h) + var(--bp-ecart))), 0); }
+  .card.barre-partie.cachee, html.kb .card.barre-partie:not(.dans-fil){ transform:translate3d(-50%, calc(100% + var(--bb-bas) + 1rem), 0); opacity:0; pointer-events:none; }
+  html.sous-page #barrePartie{ visibility:hidden; }
+  .barre-partie .bp-contenu{ flex:1; min-width:0; display:flex; align-items:center; gap:0.3rem; position:relative; }
+  .barre-partie .bp-zone{ flex:1; min-width:0; display:flex; align-items:center; gap:0.6rem; min-height:2.8rem; padding:0; border:0; background:none; color:inherit; font:inherit; text-align:left; cursor:pointer; -webkit-tap-highlight-color:transparent; }
+  .barre-partie .bp-ico{ width:2.6rem; height:2.6rem; flex-shrink:0; padding:0.62rem; border-radius:50%; display:inline-flex; align-items:center; justify-content:center;
+    color:#fff; background:var(--pal-corail); box-shadow:inset 0 1px 0 rgba(255,255,255,0.26), 0 2px 7px rgba(15,12,10,0.18); transition:transform 0.18s ease; }
+  .barre-partie .bp-ico svg{ width:100%; height:100%; }
+  .barre-partie .bp-txt{ flex:1; min-width:0; display:flex; flex-direction:column; gap:0.05rem; }
+  .barre-partie .bp-txt b{ font-family:'Poppins',sans-serif; font-weight:600; font-size:0.9rem; line-height:1.25; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+  .barre-partie .bp-txt small{ font-size:0.76rem; font-weight:500; line-height:1.3; color:var(--ink-soft); white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+  .barre-partie .bp-chev{ width:1.1rem; height:1.1rem; flex-shrink:0; margin-right:0.55rem; display:inline-flex; color:var(--ink-soft); }
+  .barre-partie .bp-chev svg{ width:100%; height:100%; }
+  .barre-partie .bp-go{ flex-shrink:0; min-height:2.6rem; padding:0 0.95rem; border:0; border-radius:var(--r-full); background:var(--primary); color:#fff;
+    font-family:'Poppins',sans-serif; font-weight:600; font-size:0.84rem; cursor:pointer; box-shadow:inset 0 1px 0 rgba(255,255,255,0.22), 0 2px 7px rgba(15,12,10,0.16); transition:transform 0.18s ease; -webkit-tap-highlight-color:transparent; }
+  .barre-partie .bp-go:active, .barre-partie .bp-zone:active .bp-ico{ transform:scale(0.95); }
+  .card.barre-partie.dans-fil{ position:relative; z-index:auto; left:auto; bottom:auto; transform:none; width:auto; flex:none; margin:0 0 var(--e-2); transition:none;
+    --rim-cast:0 5px 14px rgba(34,26,16,0.12); }
+  #app > .screen.sous-partie{ margin-bottom:calc(var(--bp-h) + var(--bp-ecart)); }
+  html.partie-vue .mini-toast{ bottom:calc(var(--bb-h) + var(--bb-bas) + 0.7rem + var(--bp-h) + var(--bp-ecart)); }
   .fil-carte{ position:relative; flex:1; min-height:0; display:flex; flex-direction:column; padding:0; margin-bottom:var(--e-2);
     border-radius:var(--r-l); }
   #fil{ flex:1; min-height:0; overflow-y:auto; overscroll-behavior:contain; -webkit-overflow-scrolling:touch;
@@ -8359,6 +8391,10 @@ const TEXTES = {
     "Fermer la partie\u00a0?":"Close the game?",
     "Les joueurs qui t'ont rejoint en sortiront.":"The players who joined you will be taken out of it.",
     "Les membres te rejoignent depuis la discussion.":"Members join you from the chat.",
+    "{n} joueurs":"{n} players",
+    "Revenir à la partie du groupe":"Back to the group game",
+    "L'invitation disparaîtra de la discussion.":"The invitation will disappear from the chat.",
+    "Ton groupe la jouera sans toi.":"Your group will play it without you.",
     "Cette partie n'est plus ouverte.":"This game is no longer open.",
     "Lancer une partie":"Start a game",
     "Écris un message…":"Write a message…",
@@ -9348,6 +9384,10 @@ const TEXTES = {
     "Fermer la partie\u00a0?":"¿Cerrar la partida?",
     "Les joueurs qui t'ont rejoint en sortiront.":"Los jugadores que se te unieron saldrán de ella.",
     "Les membres te rejoignent depuis la discussion.":"Los miembros se unen desde el chat.",
+    "{n} joueurs":"{n} jugadores",
+    "Revenir à la partie du groupe":"Volver a la partida del grupo",
+    "L'invitation disparaîtra de la discussion.":"La invitación desaparecerá del chat.",
+    "Ton groupe la jouera sans toi.":"Tu grupo la jugará sin ti.",
     "Cette partie n'est plus ouverte.":"Esta partida ya no está abierta.",
     "Lancer une partie":"Iniciar una partida",
     "Écris un message…":"Escribe un mensaje…",
@@ -12133,7 +12173,7 @@ const SUPABASE_ANON_KEY = "sb_publishable_FDJ_R0foC7uIeHmxVrj6rA_2NeIgW2a";
    remontée d'un téléphone ne vaut rien si on ne sait pas QUELLE version
    tournait. Elle doit rester égale au CACHE de sw.js — c'est ce que vérifie
    banc-essai/version.js, qui refuse de laisser publier les deux en désaccord. */
-const VERSION_JEU = "v368";
+const VERSION_JEU = "v369";
 
 /* ===================== QUAND ÇA CASSE CHEZ UN JOUEUR =====================
    « Si quelque chose casse chez cinq d'entre eux sur un modèle de téléphone
@@ -12556,35 +12596,63 @@ function versEcranEnLigne(e){
 /* render() la consulte en premier : vrai si elle a tout fait. */
 function rendrePartieLogee(){
   if(!net || !net.fil) return false;
+  /* (v369) LE SALON NE CHANGE PLUS D'ÉCRAN, NULLE PART. Logé, il ne tenait
+     qu'à SA discussion, et y ramenait. On reste maintenant là où l'on est —
+     cette discussion, une autre, l'accueil, le Parcours… — et ce qui le
+     montre se met à jour : sa carte dans la discussion du groupe, sa barre
+     partout ailleurs (voir LA PARTIE DU GROUPE SUIT LE JOUEUR). */
   if(state.screen === "online-room" && net.room){
     net.phase = state.screen;
-    state.screen = "groupe";
-    if(grp.courant !== net.fil) return false;
-    const ecran = ecranDeDiscussion();
-    if(ecran && lastScreen === "groupe"){ majPanneauPartie(ecran); return true; }
+    state.screen = ecranSousLeSalon();
+    if(state.screen === lastScreen){ majPartieAilleurs(); return true; }
     return false;
   }
-  /* La partie part : le salon quitte la discussion, la partie arrive en
-     plein écran (le render() qui suit la dessine). */
+  /* La partie part : le salon quitte la discussion — ou la barre —, et la
+     partie arrive en plein écran, d'où que l'on soit (le render() qui suit
+     la dessine). Une page, une feuille ou une fenêtre encore ouverte se
+     referme d'abord : la partie n'attend personne. */
   if((state.screen === "online-play" || state.screen === "online-end") && net.room){
     net.fil = null; net.phase = null;
+    if(document.querySelector(".sheet-veil:not(.closing), #modalVeil")) fermerFeuillesOuvertes();
     return false;
   }
-  /* Le salon s'arrête ici (introuvable, complet, fermé…) : on reste dans la
-     discussion, le mot au-dessus d'elle. */
-  if(/^online/.test(state.screen) && grp.courant === net.fil){
+  /* Le salon s'arrête ici (introuvable, complet, fermé…) : on reste où l'on
+     est, le mot au-dessus. */
+  if(/^online/.test(state.screen)){
     net.fil = null; net.phase = null;
-    state.screen = "groupe";
+    state.screen = ecranSousLeSalon();
     if(net.error){ showMiniToast(net.error); net.error = ""; }
-    const ecran = ecranDeDiscussion();
-    if(ecran && lastScreen === "groupe"){ majPanneauPartie(ecran); return true; }
+    if(state.screen === lastScreen){ majPartieAilleurs(); return true; }
   }
   return false;
+}
+/* (v369) L'écran sous le salon : celui qu'on regarde. */
+function ecranSousLeSalon(){
+  if(lastScreen && lastScreen !== "splash" && !/^online/.test(lastScreen)) return lastScreen;
+  return grp.courant ? "groupe" : "groupes";
+}
+/* (v369) Ce qui montre le salon là où l'on est : sa carte (une discussion),
+   sa barre (ailleurs). */
+function majPartieAilleurs(){
+  if(state.screen === "groupe") majPanneauPartie();
+  majBarrePartie();
 }
 function ecranDeDiscussion(){
   return Array.prototype.find.call(document.querySelectorAll("#app > .screen.groupe-ecran"), e => !e.classList.contains("screen-exit")) || null;
 }
-function reduirePartie(){ net.filReduit = !net.filReduit; majPanneauPartie(); }
+/* (v369) LA CARTE SE PLIE EN GLISSANT. Elle se pliait d'un coup : le fil
+   sautait d'une centaine de pixels. Elle passe maintenant d'une hauteur à
+   l'autre sur l'horloge du pli (morpherCarte), le fil la suit — depuis la
+   hauteur où on la voit, même si elle bougeait encore. */
+function reduirePartie(){
+  const ecran = ecranDeDiscussion();
+  const p = ecran ? Array.prototype.find.call(ecran.querySelectorAll(":scope > .grp-partie"), x => !x._part) : null;
+  const h0 = p ? p.getBoundingClientRect().height : 0;
+  if(p){ clearTimeout(p._finMorph); ["height", "transition", "overflow", "margin-bottom", "opacity"].forEach(k => p.style.removeProperty(k)); }
+  net.filReduit = !net.filReduit;
+  majPanneauPartie();
+  if(p && p.isConnected && h0 > 0) morpherCarte(p, h0);
+}
 function quitterPartieDuFil(){ leaveRoomToOnline(); }
 /* Les visages du salon, en une rangée. */
 function joueursDuFilHtml(){
@@ -12593,37 +12661,39 @@ function joueursDuFilHtml(){
 }
 /* LA CARTE ARRIVE ET S'EN VA EN DOUCEUR. Posée d'un coup, elle poussait le
    fil d'une centaine de pixels dans la même image — et l'y laissait
-   retomber d'autant en partant. Sa place s'ouvre et se referme maintenant
-   sur l'horloge rapide du jeu, le fil glisse avec elle. Un écran qui ARRIVE
-   avec sa carte (on revient dans la discussion) la montre déjà posée : rien
-   n'apparaît après lui (v361). */
-function deplierCarte(p){
-  try{
-    const cs = getComputedStyle(p), h = p.offsetHeight;
-    p.animate([{ height:"0px", opacity:0, marginBottom:"0px", paddingTop:"0px", paddingBottom:"0px" },
-               { height:h + "px", opacity:1, marginBottom:cs.marginBottom, paddingTop:cs.paddingTop, paddingBottom:cs.paddingBottom }],
-      { duration:260, easing:"cubic-bezier(0.33,1,0.68,1)" });
-  }catch(e){}
-}
-function replierCarte(p){
-  if(p._part) return;
-  p._part = true;
-  const finir = ()=>{ p.remove(); try{ glassRelayout(); queueGlassSync(); }catch(e){} };
-  try{
-    const cs = getComputedStyle(p), h = p.offsetHeight;
-    p.style.pointerEvents = "none"; p.style.overflow = "hidden";
-    const a = p.animate([{ height:h + "px", opacity:1, marginBottom:cs.marginBottom, paddingTop:cs.paddingTop, paddingBottom:cs.paddingBottom },
-                         { height:"0px", opacity:0, marginBottom:"0px", paddingTop:"0px", paddingBottom:"0px" }],
-      { duration:240, easing:"cubic-bezier(0.33,1,0.68,1)", fill:"forwards" });
-    a.onfinish = finir; a.oncancel = finir;
-  }catch(e){ finir(); }
-}
-function majPanneauPartie(el){
+   retomber d'autant en partant. Sa place s'ouvre et se referme sur
+   l'horloge du pli, le fil glisse avec elle. Un écran qui ARRIVE avec sa
+   carte (on revient dans la discussion) la montre déjà posée : rien
+   n'apparaît après lui (v361).
+   (v369) DEUX FONCTIONS PORTAIENT CE NOM. Le salon (v365) avait ici ses
+   propres deplierCarte et replierCarte ; les cartes du compte, plus loin
+   dans le fichier, portaient les mêmes noms — et une déclaration de
+   fonction plus loin remplace la précédente. Le salon a donc toujours
+   tourné sur celles du compte (voir LA CARTE QUI S'EN VA SE REPLIE), et ces
+   copies-ci étaient mortes : elles sont retirées. Ce qu'elles seules
+   faisaient passe dans les vivantes : une carte qui s'en va le dit
+   (« _part » : ce n'est plus LA carte du salon). Et une carte posée avec
+   son écran — qu'il arrive, ou qu'il soit seulement redessiné — ne rejoue
+   pas son arrivée (« pose ») : redessinée, la discussion la dépliait de
+   nouveau, sous les yeux, et la figeait à sa hauteur pendant une demi-
+   seconde — la plier à ce moment-là ne faisait rien. */
+function majPanneauPartie(el, pose){
   const ecran = el || ecranDeDiscussion();
   if(!ecran) return;
   let p = Array.prototype.find.call(ecran.querySelectorAll(":scope > .grp-partie"), x => !x._part) || null;
   if(!net.room){ net.fil = null; net.phase = null; }
-  if(!partieDansLeFil() || net.fil !== grp.courant || ecranEnLigne() !== "online-room"){
+  const salon = partieDansLeFil() && ecranEnLigne() === "online-room";
+  /* (v369) LA DISCUSSION D'UN AUTRE GROUPE : la barre de la partie s'y pose
+     sous l'en-tête, à la place de la carte — la même barre que partout
+     ailleurs (la barre d'écriture tient le bas de l'écran). */
+  const barre = Array.prototype.find.call(ecran.querySelectorAll(":scope > .barre-partie"), x => !x._part) || null;
+  if(salon && net.fil !== grp.courant){
+    if(p){ if(ecran.classList.contains("screen-exit")){ p.remove(); } else replierCarte(p); }
+    poserBarreDansFil(ecran, barre, pose);
+    return;
+  }
+  if(barre){ if(ecran.classList.contains("screen-exit")){ barre.remove(); } else replierCarte(barre); }
+  if(!salon){
     if(p){ if(ecran.classList.contains("screen-exit")){ p.remove(); } else replierCarte(p); }
     return;
   }
@@ -12646,7 +12716,7 @@ function majPanneauPartie(el){
     p = document.createElement("div");
     p.className = "card grp-partie";
     ecran.insertBefore(p, ecran.querySelector(":scope > .fil-carte"));
-    neuve = !ecran.classList.contains("arrivee");
+    neuve = !pose && !ecran.classList.contains("arrivee");
   }
   p.classList.toggle("reduit", !!net.filReduit);
   p.setAttribute("data-phase", "room");
@@ -12661,9 +12731,126 @@ function majPanneauPartie(el){
   if(neuve) deplierCarte(p);
   try{ glassRelayout(); queueGlassSync(); }catch(e){}
 }
+/* ===== (v369) LA PARTIE DU GROUPE SUIT LE JOUEUR =====
+   « Je te parlais uniquement de lancer l'invitation aux autres joueurs sans
+     devoir être dans un écran spécifique, et pouvoir rester dans les messages
+     ou autre. Et une fois que la partie est lancée, ensuite on entre à
+     l'intérieur de la partie sans rester dans le chat. »
+   Logé (v365), le salon tenait à SA discussion : la quitter le fermait — et
+   l'hôte qui avait des joueurs devait le confirmer. Il ne tient plus à aucun
+   écran. On lance l'invitation, ou l'on rejoint, puis on va où l'on veut :
+   les groupes, un autre groupe, l'accueil, le Parcours, son profil.
+   Partout, une barre dit que la partie attend — « Partie du groupe », le
+   groupe, combien l'ont rejointe —, et l'hôte y a « Commencer » dès que
+   quelqu'un est là. La toucher ramène dans la discussion, à la carte. Dans
+   la discussion d'un AUTRE groupe, la même barre se pose sous l'en-tête :
+   le bas de l'écran est à la barre d'écriture.
+   Quand l'hôte lance, la partie arrive EN PLEIN ÉCRAN chez chacun, d'où
+   qu'il soit — une page ou une fenêtre ouverte se referme d'abord (voir
+   rendrePartieLogee).
+   OÙ ELLE SE TIENT. Au-dessus de la barre du bas quand celle-ci est là ;
+   sinon à sa place, au bas de l'écran. L'écran lui garde sa place
+   (« sous-partie », posée dès le rendu, avant toute mesure) : rien ne passe
+   dessous. C'est une capsule de verre, comme la barre du bas, avec ce qui
+   se joue : la manette, « Commencer ». Elle s'efface sous une page, et
+   quand le clavier monte. */
+const ECRANS_BARRE_PARTIE = ["mode", "groupes", "jeux", "chemin", "parcours", "revoir", "profile", "moderation", "setup"];
+function barrePartieVue(){
+  return partieDansLeFil() && ecranEnLigne() === "online-room" && ECRANS_BARRE_PARTIE.indexOf(state.screen) >= 0;
+}
+function barrePartieHtml(){
+  const n = nbJoueurs(), pret = !!(net.isHost && net.oppPresent && n > 1 && n <= MAX_JOUEURS);
+  const g = (grp.liste || []).find(x => x.id === net.fil);
+  const nom = g && g.nom ? escapeHtml(couperSignes(g.nom, 26)) + " · " : "";
+  const etat = net.isHost ? (n > 1 ? Tf("{n} joueurs", { n }) : T("En attente des joueurs…"))
+    : (net.oppPresent ? Tf("{n} joueurs", { n }) : T("Connexion au salon…"));
+  return `<button class="bp-zone" onclick="ouvrirPartieDuGroupe()" aria-label="${T("Revenir à la partie du groupe")}">`
+    + `<span class="bp-ico">${ICONS.manette}</span>`
+    + `<span class="bp-txt"><b>${T("Partie du groupe")}</b><small>${nom}${etat}</small></span>`
+    + (pret ? "" : `<span class="bp-chev" aria-hidden="true">${ICONS.chevronRight}</span>`)
+    + `</button>`
+    + (pret ? `<button class="bp-go" onclick="hostStart()">${T("Commencer")}</button>` : "");
+}
+function majBarrePartie(){
+  const vue = barrePartieVue();
+  document.documentElement.classList.toggle("partie-vue", vue);
+  const cur = document.querySelector("#app > .screen:not(.screen-exit)");
+  if(cur) cur.classList.toggle("sous-partie", vue);
+  let b = document.getElementById("barrePartie");
+  if(!vue){
+    if(b && !b.classList.contains("cachee")){ b.classList.add("cachee"); b.setAttribute("aria-hidden", "true"); }
+    return;
+  }
+  let neuve = false;
+  if(!b){
+    /* Une carte de verre du jeu (le même verre que la barre du bas) ; ce
+       qu'elle dit vit dans .bp-contenu, à côté des couches du verre. */
+    b = document.createElement("div");
+    b.id = "barrePartie"; b.className = "card barre-partie cachee";
+    b.innerHTML = `<div class="bp-contenu"></div>`;
+    document.body.appendChild(b);
+    neuve = true;
+  }
+  const c = b.querySelector(".bp-contenu"), html = barrePartieHtml();
+  if(c && c._html !== html){ c._html = html; c.innerHTML = html; }
+  b.removeAttribute("aria-hidden");
+  /* Au-dessus de la barre du bas quand elle est là. Le verre se cale sur
+     cette place de repos (voir LE VERRE DE LA BARRE DU BAS SE CALE SUR SA
+     PLACE) : de combien elle est levée, en pixels. */
+  const sur = groupesVisibles() && ["mode", "groupes", "jeux", "chemin"].indexOf(state.screen) >= 0;
+  const bb = document.getElementById("barreBas");
+  b._leve = sur && bb ? bb.offsetHeight + 0.5 * (parseFloat(getComputedStyle(document.documentElement).fontSize) || 16) : 0;
+  b.classList.toggle("sur-barre", sur);
+  if(b.classList.contains("cachee")){ void b.offsetWidth; b.classList.remove("cachee"); }
+  if(neuve){ try{ glassRelayout(); queueGlassSync(); }catch(e){} }
+}
+/* La même barre, dans le fil d'une autre discussion. */
+function poserBarreDansFil(ecran, x, pose){
+  const html = barrePartieHtml();
+  let neuve = false;
+  if(!x){
+    x = document.createElement("div");
+    x.className = "card barre-partie dans-fil";
+    x.innerHTML = `<div class="bp-contenu"></div>`;
+    ecran.insertBefore(x, ecran.querySelector(":scope > .fil-carte"));
+    neuve = !pose && !ecran.classList.contains("arrivee");
+  }
+  const c = x.querySelector(".bp-contenu");
+  if(c && c._html !== html){ c._html = html; c.innerHTML = html; }
+  if(neuve) deplierCarte(x);
+  try{ glassRelayout(); queueGlassSync(); }catch(e){}
+}
+function ouvrirPartieDuGroupe(){
+  if(!partieDansLeFil()) return;
+  if(state.screen === "groupe" && grp.courant === net.fil){ majPanneauPartie(); return; }
+  ouvrirGroupe(net.fil);
+}
+/* ===== (v369) UNE AUTRE PARTIE, PENDANT QUE CELLE DU GROUPE ATTEND =====
+   La partie du groupe suit le joueur partout ; on ne joue pourtant qu'à une
+   chose à la fois. Lancer autre chose — une partie, une révision, une leçon,
+   une quête, un jeu, l'écran En ligne, la partie d'un autre groupe — la
+   quitterait (et l'hôte la fermerait pour tous) : c'est demandé d'abord.
+   Vrai : rien n'attend, on y va. Faux : la question est posée ; « suite »
+   repart une fois la partie quittée — après la fenêtre, qui se ferme. */
+function avantAutrePartie(suite){
+  if(!partieDansLeFil()) return true;
+  const hote = !!net.isHost, venus = nbJoueurs() > 1;
+  showModal({
+    title:hote ? T("Fermer la partie\u00a0?") : T("Quitter la partie\u00a0?"),
+    message:hote ? (venus ? T("Les joueurs qui t'ont rejoint en sortiront.") : T("L'invitation disparaîtra de la discussion.")) : T("Ton groupe la jouera sans toi."),
+    okLabel:hote ? T("Fermer") : T("Quitter"), cancelLabel:T("Rester"), danger:true,
+    onOk:()=>{ quitterLaPartieDuGroupe(); setTimeout(()=>{ try{ suite(); }catch(e){} }, 0); }
+  });
+  return false;
+}
+function quitterLaPartieDuGroupe(){
+  cleanupRoom();
+  net.fil = null; net.phase = null; net.depuisGroupe = null; net.error = "";
+  majPartieAilleurs();
+}
 function reRenderIfOnline(){
   if(net && net.fil){
-    if(partieDansLeFil() && ecranEnLigne() === "online-room"){ if(state.screen === "groupe") majPanneauPartie(); return; }
+    if(partieDansLeFil() && ecranEnLigne() === "online-room"){ majPartieAilleurs(); return; }
   }
   const sc = String(state.screen);
   if(sc.indexOf("online") !== 0) return;
@@ -13682,13 +13869,12 @@ function quitterFinEnLigne(){
    Ouvrir En ligne depuis l'accueil l'oublie : ce départ-là ramène à l'accueil,
    comme avant. */
 function sortirVersGroupe(mot){
-  /* (v365) Le salon était logé dans la discussion : on y est déjà. */
+  /* (v365) Le salon était logé : on n'a pas quitté l'écran où l'on est.
+     (v369) Où que ce soit — la discussion, une autre, l'accueil… — on y
+     reste : sa carte ou sa barre s'en va, le mot s'affiche au-dessus. */
   if(net.fil){
-    const id = net.fil;
     net.fil = null; net.phase = null; net.depuisGroupe = null;
-    if(state.screen === "groupe" && grp.courant === id) majPanneauPartie();
-    else if((grp.liste || []).some(x => x.id === id)) ouvrirGroupe(id);
-    else { state.screen = "groupes"; render(); ouvrirGroupes(); }
+    majPartieAilleurs();
     if(mot) showMiniToast(mot);
     return true;
   }
@@ -13701,6 +13887,7 @@ function sortirVersGroupe(mot){
   return true;
 }
 function openOnline(){
+  if(!avantAutrePartie(openOnline)) return;     // (v369)
   net.depuisGroupe = null;
   net.error="";
   if(!navigator.onLine){
@@ -24126,6 +24313,7 @@ function lancerQuete(u, qi){
   if(!queteOuverte(u, qi)) return;
   const Q = QUETES[qi], qs = questionsDeQuete(u, qi);
   if(!qs.length) return;
+  if(!avantAutrePartie(()=> lancerQuete(u, qi))) return;     // (v369)
   finirPlaces();
   marquerJoue();
   bumpModeUse("parcours");
@@ -24255,6 +24443,7 @@ function commencerLecon(u, l){
   if(!PARCOURS[u] || l < 0 || l >= LECONS_PAR_UNITE || !leconOuverte(u, l)) return;
   const qs = questionsDeLecon(u, l);
   if(!qs.length) return;
+  if(!avantAutrePartie(()=> commencerLecon(u, l))) return;   // (v369)
   finirPlaces();
   marquerJoue();
   bumpModeUse("parcours");
@@ -26923,6 +27112,8 @@ function morpherCarte(el, h0, nouveau){
    se déplie depuis rien. */
 function replierCarte(el){
   if(!el || !el.isConnected){ try{ el.remove(); }catch(e){} return; }
+  if(el._part) return;
+  el._part = true;      // (v369) elle s'en va : ce n'est plus la carte (voir majPanneauPartie)
   const ms = msPli(), h0 = el.offsetHeight;
   el.style.transition = "none"; el.style.overflow = "clip"; el.style.height = h0 + "px";
   void el.offsetHeight;
@@ -27639,6 +27830,7 @@ const PREPARER = { livres:manchesLivres, quiou:manchesQuiou, combien:manchesComb
 
 /* ===== LA PARTIE ===== */
 function lancerJeu(id){
+  if(!avantAutrePartie(()=> lancerJeu(id))) return;          // (v369)
   if(pubAvant(()=> lancerJeu(id))) return;   // (v349) « Rejouer », après un jeu fini
   const def = defJeu(id); if(!def) return;
   const manches = PREPARER[id](def.manches);
@@ -29620,17 +29812,8 @@ async function ouvrirGroupe(id){
   await chargerFil(id);
 }
 function retourGroupes(){
-  /* (v365) Le salon logé ici : en partant, on le quitte — l'hôte, qui le
-     ferme pour tous, le confirme si quelqu'un l'a rejoint. */
-  if(partieDansLeFil()){
-    const partir = ()=>{ cleanupRoom(); net.fil = null; net.phase = null; net.depuisGroupe = null; retourGroupes(); };
-    if(net.isHost && nbJoueurs() > 1){
-      showModal({ title:T("Fermer la partie ?"), message:T("Les joueurs qui t'ont rejoint en sortiront."), okLabel:T("Fermer"), cancelLabel:T("Rester"), danger:true, onOk:partir });
-      return;
-    }
-    partir();
-    return;
-  }
+  /* (v369) Le salon logé ici ne se ferme plus en partant : il suit le
+     joueur (voir LA PARTIE DU GROUPE SUIT LE JOUEUR). */
   /* (v329) On vient d'écrire dans ce groupe : des réponses vont arriver. Le
      bon moment pour proposer les rappels (une fois sur ce téléphone, et
      jamais à qui a déjà répondu) — en quittant la discussion, pas pendant
@@ -30284,7 +30467,7 @@ function renderGroupe(){
      éclair de vieux messages à chaque ouverture. render() appelle _posee
      dès que l'écran est dans la page, avant toute image (voir render). */
   el._posee = ()=>{
-    if(net && net.fil === g.id) majPanneauPartie(el);
+    if(net && net.fil) majPanneauPartie(el, true);     // (v369) la carte ici, la barre dans un autre groupe — posées avec l'écran
     descendreFil(false); if(t && t.value) surSaisie(t);
     /* Le fil se raccourcit (le clavier monte) ou s'allonge (il redescend) :
        s'il était au bas, il y reste, à chaque image de la transition. */
@@ -31121,6 +31304,7 @@ function lancerPartieGroupe(btn){
   const g = groupeCourant(); if(!g) return;
   if(!navigator.onLine || !onlineConfigured()){ showMiniToast(T("Pas de réseau. Réessaie dans un instant.")); return; }
   if(net.partieGroupe && net.room){ showMiniToast(T("Termine ou ferme ta partie avant d'en lancer une autre.")); return; }
+  if(!avantAutrePartie(()=> lancerPartieGroupe(btn))) return;  // (v369) j'attends celle d'un autre
   const depuis = Date.now() - (net.partieLancee || 0);
   if(depuis < PARTIE_ECART){ showMiniToast(Tf("Attends {s} s avant de lancer une autre partie.", { s:Math.ceil((PARTIE_ECART - depuis) / 1000) })); return; }
   const code = genCode();
@@ -31181,6 +31365,9 @@ async function retirerInvitation(id, jouee){
 function rejoindrePartieGroupe(code){
   if(!/^[A-Z0-9]{4,8}$/.test(String(code || ""))) return;
   if(!navigator.onLine || !onlineConfigured()){ showMiniToast(T("Pas de réseau. Réessaie dans un instant.")); return; }
+  /* (v369) Déjà dans ce salon : on y va. Dans un autre : c'est demandé. */
+  if(partieDansLeFil() && net.code === code){ ouvrirPartieDuGroupe(); return; }
+  if(!avantAutrePartie(()=> rejoindrePartieGroupe(code))) return;
   net.autoMatch = false; clearTimeout(net.matchGuard);
   net.depuisGroupe = grp.courant;
   /* (v365) Rejoint depuis la discussion, le salon s'y loge. */
@@ -33784,6 +33971,7 @@ function startRevision(quoi){
      l'autre. Un seul nombre pour tout le jeu. */
   const b = (quoi === "carnet") ? source : parEntetement(source).slice(0, REVISION_LOT);
   if(!b.length) return;
+  if(!avantAutrePartie(()=> startRevision(quoi))) return;    // (v369)
   state.mode = "solo"; state.revision = true; state.lecon = null;
   /* D'où part la révision : « Quitter » y ramène (voir LA PARTIE FINIE, ON
      REVIENT DANS SON MODE). Gardé dans la partie sauvegardée, il survit à une
@@ -33904,6 +34092,7 @@ function buildQuestions(){
   state.questions = shuffle(list);
 }
 function startGame(){
+  if(!avantAutrePartie(startGame)) return;      // (v369) la partie du groupe attend
   /* Un retrait de joueur encore en vol (la croix touchée il y a moins d'un
      dixième de seconde) se pose AVANT qu'on lise la liste : sinon il
      couperait plus tard dans la liste de la partie déjà lancée. */
@@ -33931,6 +34120,7 @@ function startGame(){
   render();
 }
 function replayGame(){
+  if(!avantAutrePartie(replayGame)) return;     // (v369)
   if(pubAvant(replayGame)) return;     // (v349) l'annonce plein écran, puis la partie
   /* REJOUER UNE RÉVISION, C'EST ROUVRIR LA MÊME PORTE : le carnet pour « À
      revoir », les erreurs de la dernière partie pour l'écran du Solo. Avant,
@@ -36859,6 +37049,9 @@ function render(){
   else if(state.screen==="jeu") node = renderJeu();
   else if(state.screen==="jeu-fin") node = renderJeuFin();
   else node = renderEnd();
+  /* (v369) La barre de la partie du groupe : l'écran lui garde sa place dès
+     le rendu, avant toute mesure (voir LA PARTIE DU GROUPE SUIT LE JOUEUR). */
+  if(barrePartieVue()) node.classList.add("sous-partie");
   /* Accueil, Groupes, un groupe : trois pièces côte à côte (voir sensDuGlissement). */
   const sens = sameScreen ? null : sensDuGlissement(lastScreen, state.screen);
   /* (v345) On revient (vers la gauche de la carte des écrans) : l'écran
@@ -37035,6 +37228,7 @@ function render(){
   lastScreen = state.screen;
   try{ document.documentElement.classList.toggle("ecran-discussion", state.screen === "groupe"); }catch(e){}
   try{ majBarre(); }catch(e){}
+  try{ majBarrePartie(); }catch(e){}
   /* Après la barre : c'est elle qui donne aux écrans des groupes leur pied. */
   if(state.screen === "revoir"){ try{ tenirRevoir(node); }catch(e){} }
   try{ serrerEcran(node); }catch(e){}
@@ -37953,9 +38147,12 @@ function queueGlassXF(){
          lire un style calculé à chaque passage forçait un recalcul de style
          au repos, ce que banc-essai/charge.js refuse (« 1 lecture forcée,
          max 0 »). Il ne change qu'avec la mise en page elle-même. */
-      if(el.id === "barreBas"){
+      /* (v369) La barre de la partie du groupe aussi : centrée, à « bottom »
+         du bas de l'écran, levée au-dessus de la barre du bas quand elle y
+         est (_leve, voir majBarrePartie). */
+      if(el.id === "barreBas" || el.id === "barrePartie"){
         if(el._basGen !== glassGen){ el._basGen = glassGen; el._bas = parseFloat(getComputedStyle(el).bottom) || 0; }
-        r = { left:(de.clientWidth - r.width) / 2, top:de.clientHeight - el._bas - r.height };
+        r = { left:(de.clientWidth - r.width) / 2, top:de.clientHeight - el._bas - r.height - (el._leve || 0) };
       }
       tx = -r.left - ox; ty = -r.top - oy;
     }

@@ -881,9 +881,21 @@ const ouvrirLaLangue = async (p, lg) => {
       net.fil = 'g-1'; net.phase = null; net.filReduit = false;
       state.screen = 'groupe'; render(); }],
     ['Groupes · salon plié', () => { reduirePartie(); }],
-    ['Groupes · fermer la partie ?', () => { reduirePartie(); retourGroupes(); }],
+    /* (v369) LA PARTIE DU GROUPE SUIT LE JOUEUR : quitter la discussion ne
+       la ferme plus ; sa barre est aux groupes (hôte à deux : « 2 joueurs »,
+       « Commencer »), la même dans la discussion d'un autre groupe ; puis les
+       trois questions de la garde — lancer une partie solo à côté : « Fermer
+       la partie ? » (un joueur l'a rejointe, puis personne), et chez un
+       invité « Quitter la partie ? ». */
+    ['Groupes · la partie suit (groupes)', () => { reduirePartie(); retourGroupes(); }],
+    ['Groupes · la partie suit (autre discussion)', () => { __fermerTout(); grp.courant = 'g-2'; state.screen = 'groupe'; render(); }],
+    ['Groupes · fermer la partie ?', () => { __fermerTout(); state.screen = 'groupes'; grp.courant = null; render(); startGame(); }],
+    ['Groupes · fermer l\'invitation ?', () => { __fermerTout(); net.joueurs = {}; net.oppPresent = false; net.opp = null; majBarrePartie(); startGame(); }],
+    ['Groupes · quitter la partie ?', () => { __fermerTout(); net.isHost = false;
+      net.joueurs = { b:{ id:'b', name:'Sam', color:'#E8574C', ready:true } }; net.oppPresent = true; net.opp = net.joueurs.b;
+      majBarrePartie(); startGame(); }],
     ['Groupes · le salon s\'en va', () => { __fermerTout(); net.fil = null; net.phase = null; net.room = null; net.code = ''; net.isHost = false;
-      net.joueurs = {}; net.oppPresent = false; net.opp = null; state.screen = 'groupe'; render(); }],
+      net.joueurs = {}; net.oppPresent = false; net.opp = null; grp.courant = 'g-1'; state.screen = 'groupe'; render(); }],
     /* (v339) Des parties de groupe terminées, avec leurs scores : chaque bulle
        dit qui l'a emporté (un autre, un ex æquo, soi) ; puis deux récaps —
        gagné par un autre, gagné par soi —, et tout se referme. */

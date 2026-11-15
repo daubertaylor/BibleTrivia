@@ -14,9 +14,11 @@
         « Commencer » prêt ;
      3. on parle pendant le salon : le message de Chloé arrive chez Benoît,
         sous la carte ;
-     4. la carte se plie et se déplie ; elle se plie seule quand on écrit ;
-     5. Benoît quitte la discussion avec Chloé dans son salon : c'est demandé
-        d'abord (« Fermer la partie ? ») ; « Rester » garde le salon ;
+     4. la carte se plie et se déplie — (v369) en glissant : à mi-chemin, sa
+        hauteur est entre les deux ; elle se plie seule quand on écrit ;
+     5. (v369) Benoît quitte la discussion avec Chloé dans son salon : rien
+        n'est demandé, le salon reste — sa barre l'attend aux groupes ; il
+        revient par elle, et la carte est là ;
      6. Benoît lance : chez les deux, la partie arrive EN PLEIN ÉCRAN — la
         question, ses quatre réponses, le chrono —, plus de carte ;
      7. la partie finie : les résultats en plein écran, chez les deux ;
@@ -123,28 +125,40 @@ const dit = (quoi, bon, detail) => { console.log('  ' + (bon ? 'OK  ' : 'KO  ') 
     const vb3 = await ben.p.evaluate(VUE);
     dit('3. on parle pendant le salon : le message de Chloé arrive chez Benoît, sous la carte', ok3 && vb3.panneau === 'room' && vb3.ecran === 'groupe', JSON.stringify(vb3.derniers));
 
-    /* 4 */
+    /* 4 (v369 : la carte se plie en glissant, sur l'horloge du pli) */
+    const hCarte = () => chl.p.evaluate(() => { const c = document.querySelector('#app > .screen:not(.screen-exit) > .grp-partie'); return c ? Math.round(c.getBoundingClientRect().height) : 0; });
+    await chl.p.waitForTimeout(800);                       // une arrivée de carte encore en vol se pose
+    const hAvant = await hCarte();
     await chl.p.evaluate(() => reduirePartie());
+    await chl.p.waitForTimeout(120);
+    const hMilieu = await hCarte();
+    await chl.p.waitForTimeout(800);
     const v4a = await chl.p.evaluate(VUE);
     await chl.p.evaluate(() => reduirePartie());
+    await chl.p.waitForTimeout(800);
     const v4b = await chl.p.evaluate(VUE);
     await chl.p.evaluate(() => document.documentElement.classList.add('kb'));
     const v4c = await chl.p.evaluate(VUE);
     await chl.p.evaluate(() => document.documentElement.classList.remove('kb'));
     const v4d = await chl.p.evaluate(VUE);
     dit('4. la carte se plie (sa ligne de tête et le nombre de joueurs) et se déplie ; elle se plie seule quand le clavier est ouvert',
-      v4a.reduit && !v4a.corps && /2\/\d+/.test(v4a.resume) && v4a.filH > v4b.filH && !v4b.reduit && v4b.corps && !v4c.corps && v4d.corps,
-      JSON.stringify({ plie: [v4a.reduit, v4a.corps, v4a.resume, v4a.filH], deplie: [v4b.corps, v4b.filH], clavier: v4c.corps }));
+      v4a.reduit && !v4a.corps && /2\/\d+/.test(v4a.resume) && v4a.filH > v4b.filH + 20 && !v4b.reduit && v4b.corps && !v4c.corps && v4d.corps
+        && hMilieu < hAvant - 2 && hMilieu > v4a.panneauH + 2,
+      JSON.stringify({ plie: [v4a.reduit, v4a.corps, v4a.resume, v4a.filH, v4a.panneauH], deplie: [v4b.corps, v4b.filH], glisse: [hAvant, hMilieu], clavier: v4c.corps }));
 
-    /* 5 */
+    /* 5 (v369) */
     await ben.p.evaluate(() => retourGroupes());
+    await attendre(ben.p, () => state.screen === 'groupes' && !!document.querySelector('#barrePartie:not(.cachee)'), null, 6000);
     await ben.p.waitForTimeout(400);
-    const v5a = await ben.p.evaluate(VUE);
-    await ben.p.evaluate(() => { const b = [...document.querySelectorAll('#modalVeil button')].find(x => /Rester/.test(x.textContent)); if (b) b.click(); });
+    const v5a = await ben.p.evaluate(() => ({ ecran: state.screen, modale: !!document.getElementById('modalVeil'), salon: !!(net.room && net.fil),
+      barre: !!document.querySelector('#barrePartie:not(.cachee) .bp-go') }));
+    await ben.p.evaluate(() => document.querySelector('#barrePartie .bp-zone').click());
+    await attendre(ben.p, () => state.screen === 'groupe' && !!document.querySelector('#app > .screen:not(.screen-exit) > .grp-partie[data-phase="room"]'), null, 8000);
     await ben.p.waitForTimeout(500);
     const v5b = await ben.p.evaluate(VUE);
-    dit('5. l\'hôte qui quitte la discussion avec un joueur dans son salon : c\'est demandé d\'abord ; « Rester » garde le salon',
-      v5a.modale && v5a.ecran === 'groupe' && !v5b.modale && v5b.ecran === 'groupe' && v5b.panneau === 'room' && v5b.visages === 2, JSON.stringify({ v5a: [v5a.modale, v5a.ecran], v5b: [v5b.modale, v5b.panneau, v5b.visages] }));
+    dit('5. (v369) l\'hôte qui quitte la discussion avec un joueur dans son salon : rien n\'est demandé, le salon reste, sa barre l\'attend aux groupes ; il revient par elle',
+      !v5a.modale && v5a.ecran === 'groupes' && v5a.salon && v5a.barre && !v5b.modale && v5b.ecran === 'groupe' && v5b.panneau === 'room' && v5b.visages === 2,
+      JSON.stringify({ v5a, v5b: [v5b.modale, v5b.ecran, v5b.panneau, v5b.visages] }));
 
     /* 6 */
     const PLEIN = () => {
