@@ -12,7 +12,9 @@
         d'autre (si la banque change sans que le site soit régénéré, ce banc
         le dit) ; 66 pages de livres, chacune avec ses questions ;
      3. chaque page : servie, titrée, décrite, une adresse de référence en
-        yadaquiz.app, un seul titre h1, en français ; aucun lien mort (tous
+        yadaquiz.app, un seul titre h1, en français — (v367) à la française :
+        aucune espace ordinaire devant « : ; ? ! » », après « « », ni dans un
+        nombre (1 796) — ; aucun lien mort (tous
         les liens internes mènent à un fichier du dépôt) ; le plan du site
         (sitemap.xml) les liste toutes, et robots.txt l'annonce ;
      4. on joue sur une page : toucher la bonne réponse l'allume en vert,
@@ -88,7 +90,12 @@ function existe(rel){
       });
       return { statut: r.status, qs, titre: d.title, desc: (d.querySelector('meta[name="description"]') || {}).content || '',
         canon: (d.querySelector('link[rel="canonical"]') || {}).href || '', h1: d.querySelectorAll('h1').length, lang: d.documentElement.lang,
-        liens: [...d.querySelectorAll('a[href]')].map(a => a.getAttribute('href')) };
+        liens: [...d.querySelectorAll('a[href]')].map(a => a.getAttribute('href')),
+        typo: (() => { const w = d.createTreeWalker(d.body, NodeFilter.SHOW_TEXT), f = [];
+          for (let n = w.nextNode(); n; n = w.nextNode()) { const p = n.parentElement;
+            if (!p || /^(SCRIPT|STYLE)$/.test(p.tagName)) continue;
+            const m = n.nodeValue.match(/[^\s] [:;?!»]|« [^\s]|\d \d{3}(?!\d)/); if (m) f.push(m[0]); }
+          return f; })() };
     }, BASE + rel);
     const pages = {};
     for (const a of adresses) {
@@ -121,6 +128,7 @@ function existe(rel){
     const malTenues = [], morts = new Set();
     for (const a in pages) {
       const g = pages[a];
+      if (g.typo.length) malTenues.push(a + ' typographie : ' + JSON.stringify(g.typo.slice(0, 3)) + ' (' + g.typo.length + ')');
       if (g.statut !== 200 || g.titre.length < 15 || g.desc.length < 70 || g.canon !== 'https://yadaquiz.app/' + a || g.h1 !== 1 || g.lang !== 'fr') malTenues.push(a + ' ' + JSON.stringify({ s: g.statut, t: g.titre.length, d: g.desc.length, c: g.canon, h1: g.h1, l: g.lang }));
       for (const h of g.liens) {
         if (/^(https?:|mailto:|tel:|#)/.test(h)) continue;
@@ -130,7 +138,7 @@ function existe(rel){
     }
     const robots = fs.readFileSync(path.join(RACINE, 'robots.txt'), 'utf8');
     const attendues = ['', 'quiz-biblique/', 'guide/', 'a-propos/', 'faq/', 'nouveautes/', 'confidentialite'];
-    dit('3. chaque page : servie, titrée, décrite, son adresse de référence en yadaquiz.app, un seul h1, en français ; aucun lien mort ; le plan les liste toutes, robots.txt l\'annonce',
+    dit('3. chaque page : servie, titrée, décrite, son adresse de référence en yadaquiz.app, un seul h1, en français, à la française ; aucun lien mort ; le plan les liste toutes, robots.txt l\'annonce',
       malTenues.length === 0 && morts.size === 0 && attendues.every(x => adresses.includes(x)) && adresses.length >= 72
       && /^Sitemap: https:\/\/yadaquiz\.app\/sitemap\.xml$/m.test(robots) && !/^Disallow: \/\s*$/m.test(robots),
       JSON.stringify({ malTenues: malTenues.slice(0, 3), morts: [...morts].slice(0, 5), adresses: adresses.length }));

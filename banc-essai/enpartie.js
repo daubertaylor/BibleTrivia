@@ -82,7 +82,12 @@ const GESTES = [
           o[(i++) + '|' + e.tagName.toLowerCase() + '.' + cl] = Math.round(b.top * 100) / 100;
           /* et l'horloge de tout ce qui anime en ce moment */
           const cs = getComputedStyle(e);
-          if (cs.animationName && cs.animationName !== 'none')
+          /* (v366) Une animation qui tourne SANS FIN — la flamme d'une série
+             chaude (flameFlicker, 0,9 s) — est un décor, pas un mouvement de
+             la partie : elle n'a pas l'horloge des passages et ne la doit
+             pas. Elle n'apparaissait qu'au hasard des bonnes réponses
+             (soloAnswer(0), soloAnswer(1)…) : un rouge de loterie. */
+          if (cs.animationName && cs.animationName !== 'none' && !/infinite/.test(cs.animationIterationCount))
             horloges.add(cs.animationDuration.split(',')[0].trim() + cs.animationTimingFunction.split(/,(?![^()]*\))/)[0].trim().replace(/\s+/g,''));
         });
         /* CE QUI RESTE DU MOUVEMENT, pas la hauteur du contenu. En révélant en

@@ -4,8 +4,11 @@
    était easeOutCubic : 38 px dès la première image, un coup de frein
    aussitôt. Elle devient un ressort amorti (voir LE RESSORT). Filmé image
    par image, sur iPhone et sur Android, de vrais touchers sur la barre :
-     1. une seule horloge : l'écran qui arrive, celui qui part, la barre et
-        sa pastille portent la courbe de --tr-plie, en ressort (linear()) ;
+     1. une seule horloge : l'écran qui arrive et celui qui part portent le
+        ressort en images clés — deux tronçons cubic-bezier raccordés à
+        22,54 % (v366 : Safari n'accélère pas une courbe linear()) —, la
+        pastille de la barre la courbe de --tr-plie, et plus aucune courbe
+        linear() ;
      2. l'écran part de l'arrêt : sa première image avance de moins de 3 %
         de la largeur (12 px), et sa vitesse monte d'abord ;
      3. une seule bosse de vitesse : passé le sommet, elle ne fait que
@@ -61,7 +64,7 @@ const norme = (s) => String(s || '').replace(/\s+/g, '');
               const a = pp.anims || [];
               const courbe = norme => String(norme || '').replace(/\s+/g, '');
               window.__horloge = { pli: getComputedStyle(document.documentElement).getPropertyValue('--tr-plie').trim(),
-                ecrans: a.map(x => { try { return x.effect.getTiming().easing; } catch (e) { return '?'; } }),
+                ecrans: a.map(x => { try { return x.effect.getTiming().easing + ' | ' + x.effect.getKeyframes().map(k => (Math.round(k.computedOffset * 1e4) / 1e4) + ' ' + k.easing).join(' ; '); } catch (e) { return '?'; } }),
                 pastille: getComputedStyle(document.querySelector('.bb-curseur')).transitionTimingFunction };
             }
             const e = pp && pp.entrant;
@@ -77,7 +80,8 @@ const norme = (s) => String(s || '').replace(/\s+/g, '');
         if (!r.h) { fautes.horloge.push(tel + ' → ' + o + ' : aucun passage'); continue; }
         vus++;
         const pli = norme(r.h.pli.replace(/^[\d.]+s\s*/, ''));
-        if (!/^linear\(/.test(pli) || r.h.ecrans.some(x => norme(x) !== pli) || norme(r.h.pastille) !== pli) fautes.horloge.push(tel + ' → ' + o + ' : ' + JSON.stringify(r.h).slice(0, 200));
+        const RESS = norme('linear | 0 cubic-bezier(0.2519, 0, 0.5558, 0.5371) ; 0.2254 cubic-bezier(0.2344, 0.8699, 0.4669, 0.9745) ; 1 linear');
+        if (/linear\(/.test(pli) || r.h.ecrans.some(x => norme(x) !== RESS) || norme(r.h.pastille) !== pli) fautes.horloge.push(tel + ' → ' + o + ' : ' + JSON.stringify(r.h).slice(0, 300));
         /* Les positions pendant le passage (|x| décroît vers 0). */
         const pos = r.film.filter(x => x[2]).map(x => [x[0], Math.abs(x[1])]);
         const visibles = pos.filter(x => x[1] < r.W - 0.5);
@@ -115,20 +119,20 @@ const norme = (s) => String(s || '').replace(/\s+/g, '');
           try {
             const ms = msPli(), out = [];
             for (const f of [0.1, 0.25, 0.5, 0.75]) out.push([f, Math.round(easePli(f) * 1000) / 1000]);
-            return { ms, out, ressort: PLI_RESSORT };
+            return { ms, out };
           } catch (e) { return { erreur: e.message }; }
         });
       }
       await ctx.close();
     }
   }
-  dit('1. une seule horloge, en ressort : écrans, barre et pastille portent la courbe de --tr-plie', vus >= 12 && !fautes.horloge.length, fautes.horloge[0] || vus + ' passages filmés');
+  dit('1. une seule horloge, en ressort : les écrans portent le ressort en deux tronçons (images clés), la pastille la courbe de --tr-plie, et plus aucune courbe linear()', vus >= 12 && !fautes.horloge.length, fautes.horloge[0] || vus + ' passages filmés');
   dit('2. l\'écran part de l\'arrêt : 1re image sous 12 px, puis il accélère', !fautes.depart.length, fautes.depart[0] || '');
   dit('3. une seule bosse de vitesse, qui ne fait que décroître ensuite', !fautes.bosse.length, fautes.bosse[0] || '');
   dit('4. une pose douce : la dernière image sous 1 px, et encore plus de 2 px sur les 150 dernières ms', !fautes.pose.length, fautes.pose[0] || '');
   dit('5. sur un téléphone lent, l\'écran apparaît à moins de 10 % de sa course', !fautes.lent.length, fautes.lent[0] || '');
   const k = 7.54, n = 1 - (1 + k) * Math.exp(-k), ref = (t) => (1 - (1 + k * t) * Math.exp(-k * t)) / n;
-  const bonCpt = compteur && compteur.ressort && compteur.ms === 580 && compteur.out.every(([f, v]) => Math.abs(v - ref(f)) < 0.002);
+  const bonCpt = compteur && compteur.ms === 580 && compteur.out.every(([f, v]) => Math.abs(v - ref(f)) < 0.002);
   dit('6. les compteurs suivent le même ressort, sur la même durée', bonCpt, JSON.stringify(compteur));
   let bonElan = false, detail = '—';
   if (elan && elan.second) {

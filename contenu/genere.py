@@ -46,6 +46,8 @@ def typo(s):
     """Les espaces insécables de la typographie française — sur du TEXTE."""
     s = re.sub(r"[  ]([?!:;»])", NB + r"\1", s)
     s = re.sub(r"«[  ]", "«" + NB, s)
+    # (v367) Et dans un nombre : « 185 000 hommes » ne se coupe pas en deux.
+    s = re.sub(r"(\d) (\d{3})(?!\d)", r"\1" + NB + r"\2", s)
     return s
 
 def typo_html(h):
@@ -203,9 +205,9 @@ def question_html(q, num):
             '<h3>%s</h3>'
             '<ol class="q-options">%s</ol>'
             '<details class="q-rep"><summary>Voir la réponse</summary>'
-            '<p class="bonne">Réponse : <span>%s</span></p>'
+            '<p class="bonne">Réponse%s: <span>%s</span></p>'
             '<div class="savais"><span class="ico" aria-hidden="true">%s</span><div><p class="titre">Le savais-tu%s?</p><p>%s</p></div></div>'
-            '</details></article>\n') % (q["tier"], q["i"], b, num, lab, pts, NB, e(q["q"]), lis, e(q["correct"]), LIVRE_ICO, NB, e(q["fact"]))
+            '</details></article>\n') % (q["tier"], q["i"], b, num, lab, pts, NB, e(q["q"]), lis, NB, e(q["correct"]), LIVRE_ICO, NB, e(q["fact"]))
 
 def bloc_questions(qs, ancre_prefixe=""):
     out, num = [], 0
