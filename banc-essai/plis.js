@@ -116,7 +116,14 @@ const norme = (s) => (s || '').replace(/\s+/g, '');
         try { return !x.animationName && x.effect && x.effect.getKeyframes().some(k => k.translate !== undefined || k.transform); } catch (e) { return false; } });
       if (!a) return res({ manquant: 'aucun glissement' });
       const t = a.effect.getTiming();
-      res({ d: (Math.round(t.duration) / 1000) + 's', c: t.easing });
+      /* (v366) Le ressort est DANS les images clés — deux tronçons
+         raccordés à 22,54 % — et l'animation elle-même est « linear » :
+         Safari n'accélère pas une courbe linear() à points. On le reconnaît
+         donc à ses images clés. */
+      const n = (s) => String(s || '').replace(/\s+/g, '');
+      const ks = a.effect.getKeyframes().map(k => (Math.round(k.computedOffset * 1e4) / 1e4) + ' ' + k.easing).join(' ; ');
+      const ressort = t.easing === 'linear' && n(ks) === n('0 ' + RESSORT_A + ' ; ' + RESSORT_JOINT + ' ' + RESSORT_B + ' ; 1 linear');
+      res({ d: (Math.round(t.duration) / 1000) + 's', c: ressort ? 'ressort(deux-tronçons)' : t.easing + ' | ' + ks });
     }, 60);
   }), { prep, sel });
 
@@ -207,14 +214,14 @@ const norme = (s) => (s || '').replace(/\s+/g, '');
     if (!r) { console.log('  ' + nom.padEnd(26) + ' INTROUVABLE'); ok = false; continue; }
     if (r.manquant) { console.log('  ' + nom.padEnd(26) + ' propriété non animée (' + r.manquant + ')'); ok = false; continue; }
     const propre = PROPRES[nom];
-    const bon = propre ? (r.d === propre[0] && norme(r.c) === norme(propre[1])) : (r.d === refD && norme(r.c) === norme(refC));
+    const bon = propre ? (r.d === propre[0] && norme(r.c) === norme(propre[1])) : (r.d === refD && (norme(r.c) === norme(refC) || r.c === 'ressort(deux-tronçons)'));
     if (!bon) ok = false;
     console.log('  ' + nom.padEnd(26) + r.d.padEnd(8) + norme(r.c).padEnd(34) + (bon ? (propre ? '  (sa propre horloge, voulue)' : '') : (propre ? '  <-- PAS SA PROPRE HORLOGE' : '  <-- AUTRE HORLOGE')));
   }
   const bonCpt = cpt.ms !== null && Math.abs(cpt.ms - Math.round(parseFloat(refD) * 1000)) <= 1;
   if (!bonCpt) ok = false;
   console.log('  ' + 'compteurs (JS)'.padEnd(26) + (cpt.ms === null ? 'chacun' : cpt.ms + 'ms').padEnd(8) +
-    'easeOutCubic'.padEnd(34) + (bonCpt ? '' : '  <-- AUTRE HORLOGE'));
+    'ressort (easePli)'.padEnd(34) + (bonCpt ? '' : '  <-- AUTRE HORLOGE'));
 
   /* ===== ET TOUT CE QUI S'EN VA : UNE SEULE HORLOGE AUSSI =====
      « Il faut que ce soit ultra cohérent », y compris pour revenir en arrière.

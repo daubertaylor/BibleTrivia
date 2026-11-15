@@ -415,7 +415,9 @@
        à ce que l'iPhone obtient déjà : il ne bouge pas d'un pixel, et les
        autres le rejoignent. */
     --air-bas: 0.8rem;
-    --tr-plie: 0.52s cubic-bezier(0.33,1,0.68,1);
+    /* (v366) La courbe d'une TRANSITION (une seule courbe possible) : voir
+       LE RESSORT EN DEUX TRONÇONS, plus bas. */
+    --tr-plie: 0.58s cubic-bezier(0.2579,0.2731,0.1056,1);
     --tr-ouvre: var(--tr-plie);
     /* ===== (v361) CE QUI APPARAÎT APPARAÎT TOUT DE SUITE =====
        « Les transitions sont parfaites, juste certains affichages
@@ -641,9 +643,41 @@
      les feuilles, les plis et les compteurs (easePli, en JS) passent
      ensemble au ressort — la cohérence demandée (« exactement la même
      animation partout ») ne bouge pas. */
-  @supports (transition-timing-function: linear(0, 1)){
-    :root{ --tr-plie: 0.58s linear(0 0%, 0.003292 1.104%, 0.01361 2.313%, 0.03187 3.658%, 0.05949 5.189%, 0.09916 6.998%, 0.1572 9.311%, 0.2724 13.51%, 0.3942 17.97%, 0.4763 21.18%, 0.5456 24.14%, 0.6068 27.02%, 0.6618 29.91%, 0.7115 32.87%, 0.7566 35.94%, 0.7973 39.16%, 0.834 42.59%, 0.8669 46.27%, 0.896 50.3%, 0.9216 54.75%, 0.9436 59.78%, 0.9621 65.6%, 0.9772 72.56%, 0.989 81.32%, 0.9974 93.27%, 1 100%); }
-  }
+  /* ===== (v366) LE RESSORT EN DEUX TRONÇONS, POUR QUE L'iPHONE LE JOUE SEUL =====
+     « Pour ce qui est des transitions au niveau du changement de page, j'aime
+       beaucoup. Mais sur Android, c'est ultra fluide. Et sur iOS, c'est un
+       petit peu moins fluide. Je sais pas pourquoi. Essaie de régler ça pour
+       que ça soit parfaitement fluide sur les deux OS. »
+     Le pourquoi : Safari ne confie au processeur graphique (Core Animation,
+     qui anime sans attendre la page) que les courbes qu'il sait y écrire.
+     cubic-bezier, oui ; linear() à points, NON — c'est voulu chez WebKit
+     (« We cannot make use of accelerated animations when a linear() timing
+     function is used », bug 281429), et c'est encore vrai de Safari 26 sur
+     iOS 26 (bug 312407). Une animation en linear() y reste sur le fil de la
+     page : 60 images par seconde au mieux sur un iPhone à 120 Hz, 30 en
+     économie d'énergie, et elle perd des images dès que la page travaille —
+     pile au départ d'un passage, quand l'écran qui arrive se construit.
+     Chrome, lui, joue linear() sur son compositeur : sur Android, rien ne se
+     voyait. Depuis la v360 (LE RESSORT, juste au-dessus), l'iPhone jouait
+     donc TOUS les mouvements du jeu sur le fil de la page.
+     Le ressort ne change pas d'un pixel. Il est écrit en DEUX cubic-bezier
+     raccordées en vitesse, à 22,54 % de l'horloge, là où il a fait 50,89 %
+     du chemin : 0,038 px d'écart au plus sur 412 px (les 26 points d'avant :
+     0,34 px). Tout ce qui se joue en IMAGES CLÉS le porte ainsi — les écrans
+     et la barre (imagesRessort, dans le script), et chaque @keyframes de
+     l'horloge, qui a son étape à 22,54 % : arrivée d'un écran, d'une
+     feuille, d'une page, d'une fenêtre, d'une carte de question, d'une
+     réponse, du voile, de la barre.
+       premier tronçon : cubic-bezier(0.2519, 0, 0.5558, 0.5371)
+       second tronçon  : cubic-bezier(0.2344, 0.8699, 0.4669, 0.9745)
+     (Écrites en toutes lettres dans chaque @keyframes : une var() n'est pas
+     lue partout dans la courbe d'une image clé.)
+     Une TRANSITION, elle, n'a qu'une courbe : --tr-plie devient la
+     cubic-bezier la plus proche du ressort sans jamais le dépasser — 5,8 px
+     d'écart au plus sur 412 px, moins d'un pixel sur la pastille de la
+     barre. Les compteurs (easePli) restent le ressort exact.
+     Et tous les navigateurs, anciens compris, ont maintenant le même
+     ressort : il ne dépend plus de linear(). */
   .screen{ display:flex; flex-direction:column; flex:1; }
   /* MÊME style d'animation PARTOUT, calqué sur l'ouverture des Réglages :
      glissement vers le haut + ressort léger (même courbe que la feuille et les
@@ -2747,8 +2781,8 @@
   .option-btn.reveal-shake{ animation:wrongFlash var(--tr-ouvre); }
   .option-btn{ position:relative; }
 
-  @keyframes cardSlideIn{ from{ transform:translate3d(0,14px,0); } to{ transform:translate3d(0,0,0); } }
-  @keyframes optionIn{ from{ transform:translate3d(0,14px,0); } to{ transform:translate3d(0,0,0); } }
+  @keyframes cardSlideIn{ 0%{ transform:translate3d(0,14px,0); animation-timing-function:cubic-bezier(0.2519,0,0.5558,0.5371); } 22.54%{ transform:translate3d(0,6.8754px,0); animation-timing-function:cubic-bezier(0.2344,0.8699,0.4669,0.9745); } 100%{ transform:translate3d(0,0,0); } }
+  @keyframes optionIn{ 0%{ transform:translate3d(0,14px,0); animation-timing-function:cubic-bezier(0.2519,0,0.5558,0.5371); } 22.54%{ transform:translate3d(0,6.8754px,0); animation-timing-function:cubic-bezier(0.2344,0.8699,0.4669,0.9745); } 100%{ transform:translate3d(0,0,0); } }
   @keyframes fondu{ from{ opacity:0; } to{ opacity:1; } }
   @keyframes wrongFlash{ 0%{ box-shadow:0 0 0 0 rgba(226,75,55,0.55); } 100%{ box-shadow:0 0 0 12px rgba(226,75,55,0); } }
   @keyframes glowBurst{ 0%{ opacity:0; transform:scale(0.85); } 40%{ opacity:1; } 100%{ opacity:0; transform:scale(1.15); } }
@@ -3288,7 +3322,7 @@
      corail = continuer/rester, blanc miroir = sortir, partout pareil. */
   .modal-btn.cancel.keep{ --glass-tint: rgb(236,60,26); color:#fff; border-color:transparent; box-shadow:var(--rebord-plein); }
   .modal-card.shake{ animation:wrongFlash var(--tr-ouvre); }
-  @keyframes veilIn{ from{ opacity:0; } to{ opacity:1; } }
+  @keyframes veilIn{ 0%{ opacity:0; animation-timing-function:cubic-bezier(0.2519,0,0.5558,0.5371); } 22.54%{ opacity:0.5089; animation-timing-function:cubic-bezier(0.2344,0.8699,0.4669,0.9745); } 100%{ opacity:1; } }
   /* UN MENU S'OUVRE COMME LES RÉGLAGES : il MONTE DEPUIS LE BAS DE L'ÉCRAN.
      Avant, il ne faisait qu'un petit pas de 34px là où la feuille Réglages
      parcourt toute la hauteur (650px mesurés sur un écran de 874px) : même
@@ -3311,7 +3345,7 @@
      iPhone 15 : il ne manque plus qu'une carte de haut, et la bande du bas est
      en place à 150 ms au lieu de 390. Le geste reste franchement visible — ce
      n'est pas un fondu déguisé — et il garde la courbe et la durée du pli. */
-  @keyframes screenIn{ from{ transform:translate3d(0,14lvh,0); } to{ transform:translate3d(0,0,0); } }
+  @keyframes screenIn{ 0%{ transform:translate3d(0,14lvh,0); animation-timing-function:cubic-bezier(0.2519,0,0.5558,0.5371); } 22.54%{ transform:translate3d(0,6.8754lvh,0); animation-timing-function:cubic-bezier(0.2344,0.8699,0.4669,0.9745); } 100%{ transform:translate3d(0,0,0); } }
   /* ANDROID (verre GPU backdrop-filter) UNIQUEMENT : le verre paraissait
      « ultra transparent » pendant le fondu d'opacité au changement d'écran.
      On y monte l'opacité très vite (pleine à 22%), seul le glissement reste.
@@ -3336,7 +3370,7 @@
   html.gl-native .screen-exit:not(.reste):not(.retire), html.gl-xf .screen-exit:not(.reste):not(.retire){ animation:none; display:none; }
   @keyframes modalInGl{ from{ transform:scale(0.9) translateY(16px); } to{ transform:scale(1) translateY(0); } }
   html.gl-native .modal-card, html.gl-xf .modal-card{ animation-name:modalInGl; }
-  @keyframes modalIn{ from{ opacity:0; transform:scale(0.9) translateY(16px); } to{ opacity:1; transform:scale(1) translateY(0); } }
+  @keyframes modalIn{ 0%{ opacity:0; transform:scale(0.9) translateY(16px); animation-timing-function:cubic-bezier(0.2519,0,0.5558,0.5371); } 22.54%{ opacity:0.5089; transform:scale(0.95089) translateY(7.8576px); animation-timing-function:cubic-bezier(0.2344,0.8699,0.4669,0.9745); } 100%{ opacity:1; transform:scale(1) translateY(0); } }
   .modal-veil.closing{ animation:veilOut var(--tr-voile-out) forwards; }
   .modal-veil.closing .modal-card{ animation:modalOut var(--tr-ferme) forwards; }
   @keyframes modalOut{ to{ opacity:0; transform:scale(0.93) translateY(10px); } }
@@ -3391,7 +3425,7 @@
      le voile affiché le temps de la fermeture, puis la classe est retirée (et
      un filet la retire de toute façon, pour qu'un verrou ne puisse jamais
      rester en travers du jeu). */
-  @keyframes rlIn{ from{ opacity:0; } to{ opacity:1; } }
+  @keyframes rlIn{ 0%{ opacity:0; animation-timing-function:cubic-bezier(0.2519,0,0.5558,0.5371); } 22.54%{ opacity:0.5089; animation-timing-function:cubic-bezier(0.2344,0.8699,0.4669,0.9745); } 100%{ opacity:1; } }
   @keyframes rlOut{ from{ opacity:1; } to{ opacity:0; } }
   @media (orientation:landscape) and (pointer:coarse){ #rotate-lock{ display:flex; } }
   #rotate-lock{ animation:rlIn var(--tr-ouvre) both; }
@@ -3821,7 +3855,7 @@
      resterait figé pendant le déplacement et « sauterait ». Le simple
      fondu d'opacité ne bouge jamais la surface → zéro clignotement,
      rendu parfaitement homogène d'un écran à l'autre. */
-  @keyframes fadeSlide{ from{ transform:translate3d(0,14px,0); } to{ transform:translate3d(0,0,0); } }
+  @keyframes fadeSlide{ 0%{ transform:translate3d(0,14px,0); animation-timing-function:cubic-bezier(0.2519,0,0.5558,0.5371); } 22.54%{ transform:translate3d(0,6.8754px,0); animation-timing-function:cubic-bezier(0.2344,0.8699,0.4669,0.9745); } 100%{ transform:translate3d(0,0,0); } }
   .screen-exit{ animation:screenOut var(--tr-ferme) forwards; }
   @keyframes screenOut{ from{ opacity:1; transform:translate3d(0,0,0); } to{ opacity:0; transform:translate3d(0,-8px,0); } }
   .reveal-in{ animation:fadeSlide var(--tr-ouvre) both, fondu var(--tr-fondu) both; }
@@ -5167,7 +5201,7 @@
      est écrite dans le même espace que le reste de la vie de la feuille, et il
      n'y a plus aucun changement de repère à aucun instant. Ce n'est pas une
      correction de défaut, c'est une incohérence retirée. */
-  @keyframes sheetIn{ from{ transform:translateZ(0) translateY(calc(100% - 220px)); } to{ transform:translateZ(0) translateY(0); } }
+  @keyframes sheetIn{ 0%{ transform:translateZ(0) translateY(calc(100% - 220px)); animation-timing-function:cubic-bezier(0.2519,0,0.5558,0.5371); } 22.54%{ transform:translateZ(0) translateY(calc((100% - 220px) * 0.4911)); animation-timing-function:cubic-bezier(0.2344,0.8699,0.4669,0.9745); } 100%{ transform:translateZ(0) translateY(0); } }
   /* ===== LA FEUILLE EST FINIE AVANT DE BOUGER =====
      Elle démarrait son ascension à l'instant même où on l'insérait dans la
      page — c'est-à-dire AVANT que le moteur de verre ne lui ait posé ses
@@ -5231,7 +5265,7 @@
      Une feuille qu'on referme ou qu'on tire pendant sa montée coupe le
      contre-mouvement avec elle : le moteur reprend alors le suivi image par
      image, comme avant. */
-  @keyframes contreMonte{ from{ transform:translate3d(var(--gx), var(--gy0), 0); } to{ transform:translate3d(var(--gx), var(--gy1), 0); } }
+  @keyframes contreMonte{ 0%{ transform:translate3d(var(--gx), var(--gy0), 0); animation-timing-function:cubic-bezier(0.2519,0,0.5558,0.5371); } 22.54%{ transform:translate3d(var(--gx), calc(var(--gy0) * 0.4911 + var(--gy1) * 0.5089), 0); animation-timing-function:cubic-bezier(0.2344,0.8699,0.4669,0.9745); } 100%{ transform:translate3d(var(--gx), var(--gy1), 0); } }
   .settings-sheet.contre .gs{ animation:contreMonte var(--tr-ouvre) forwards; }
   .sheet-veil.closing .settings-sheet .gs{ animation:none; }
   @keyframes sheetOut{ to{ transform:translateZ(0) translateY(calc(100% - 190px)); } }
@@ -5817,8 +5851,8 @@
      page. Entre Accueil et Groupes elle ne bouge pas : seule la pastille
      glisse. */
   .barre-bas.sans-transition{ transition:none !important; }
-  @keyframes barreArriveG{ from{ transform:translate3d(calc(-50% - 28vw),0,0); } to{ transform:translate3d(-50%,0,0); } }
-  @keyframes barreArriveD{ from{ transform:translate3d(calc(-50% + 28vw),0,0); } to{ transform:translate3d(-50%,0,0); } }
+  @keyframes barreArriveG{ 0%{ transform:translate3d(calc(-50% - 28vw),0,0); animation-timing-function:cubic-bezier(0.2519,0,0.5558,0.5371); } 22.54%{ transform:translate3d(calc(-50% - 13.7508vw),0,0); animation-timing-function:cubic-bezier(0.2344,0.8699,0.4669,0.9745); } 100%{ transform:translate3d(-50%,0,0); } }
+  @keyframes barreArriveD{ 0%{ transform:translate3d(calc(-50% + 28vw),0,0); animation-timing-function:cubic-bezier(0.2519,0,0.5558,0.5371); } 22.54%{ transform:translate3d(calc(-50% + 13.7508vw),0,0); animation-timing-function:cubic-bezier(0.2344,0.8699,0.4669,0.9745); } 100%{ transform:translate3d(-50%,0,0); } }
   @keyframes barrePart{ from{ opacity:1; transform:translate3d(-50%,0,0); } to{ opacity:0; transform:translate3d(calc(-50% - 10vw),0,0); } }
   @keyframes barrePartG{ from{ opacity:1; transform:translate3d(-50%,0,0); } to{ opacity:0; transform:translate3d(calc(-50% + 10vw),0,0); } }
   .barre-bas.arrive-g{ animation:barreArriveG var(--tr-ouvre) both; }
@@ -6543,7 +6577,7 @@
      tiroir), et y rentre : on ne la voit pas se dévoiler par le haut. */
   .compo-cite-z > .ccz-in{ min-height:0; overflow:hidden; display:flex; flex-direction:column; justify-content:flex-end; }
   .compo-cite.arrive{ animation:ccArrive var(--tr-ouvre) both, fondu var(--tr-fondu) both; }
-  @keyframes ccArrive{ from{ transform:translateY(0.35rem); } to{ transform:none; } }
+  @keyframes ccArrive{ 0%{ transform:translateY(0.35rem); animation-timing-function:cubic-bezier(0.2519,0,0.5558,0.5371); } 22.54%{ transform:translateY(0.1719rem); animation-timing-function:cubic-bezier(0.2344,0.8699,0.4669,0.9745); } 100%{ transform:none; } }
   .compo-cite.part{ animation:ccPart var(--tr-ferme) both; pointer-events:none; }
   @keyframes ccPart{ from{ opacity:1; transform:none; } to{ opacity:0; transform:translateY(0.35rem); } }
   .compo-cite .cc-t{ flex:1; min-width:0; display:flex; flex-direction:column; gap:0.02rem; }
@@ -7125,7 +7159,7 @@
   html .sheet-veil.page.closing{ animation:pageOut var(--tr-ferme) forwards; }
   /* Tirée au doigt depuis le bord : elle suit le doigt, sans animation. */
   html .sheet-veil.page.tiree{ animation:none; transition:none; }
-  @keyframes pageIn{ from{ transform:translate3d(100%,0,0); } to{ transform:translate3d(0,0,0); } }
+  @keyframes pageIn{ 0%{ transform:translate3d(100%,0,0); animation-timing-function:cubic-bezier(0.2519,0,0.5558,0.5371); } 22.54%{ transform:translate3d(49.11%,0,0); animation-timing-function:cubic-bezier(0.2344,0.8699,0.4669,0.9745); } 100%{ transform:translate3d(0,0,0); } }
   @keyframes pageOut{ to{ transform:translate3d(100%,0,0); } }
   /* La feuille devient le CORPS de la page : toute la hauteur, et c'est elle
      — elle seule — qui défile. Les listes qui défilaient dans la feuille
@@ -11905,7 +11939,7 @@ const SUPABASE_ANON_KEY = "sb_publishable_FDJ_R0foC7uIeHmxVrj6rA_2NeIgW2a";
    remontée d'un téléphone ne vaut rien si on ne sait pas QUELLE version
    tournait. Elle doit rester égale au CACHE de sw.js — c'est ce que vérifie
    banc-essai/version.js, qui refuse de laisser publier les deux en désaccord. */
-const VERSION_JEU = "v365";
+const VERSION_JEU = "v366";
 
 /* ===================== QUAND ÇA CASSE CHEZ UN JOUEUR =====================
    « Si quelque chose casse chez cinq d'entre eux sur un modèle de téléphone
@@ -22415,25 +22449,25 @@ let _tempoPli = "";
 /* (v360) LA COURBE DES PLIS, POUR LE SCRIPT. Ce qui s'anime en JS sur
    l'horloge commune prend la même courbe que --tr-plie (voir LE RESSORT) :
    courbePli() pour une animation du navigateur, easePli() pour un calcul
-   image par image (les compteurs). Là où linear() n'existe pas, c'est
-   l'ancienne, easeOutCubic. */
-const PLI_RESSORT = (()=>{ try{ return !!(window.CSS && CSS.supports && CSS.supports("transition-timing-function", "linear(0, 1)")); }catch(e){ return false; } })();
+   image par image (les compteurs).
+   (v366) Le ressort ne dépend plus de linear() (voir LE RESSORT EN DEUX
+   TRONÇONS) : easePli() est le ressort exact pour tous les navigateurs, et
+   courbePli() rend la courbe des transitions, celle que Safari accélère. */
 function easePli(t){
   if(!(t > 0)) return 0;
   if(t >= 1) return 1;
-  if(!PLI_RESSORT) return 1 - Math.pow(1 - t, 3);
   const k = 7.54, n = 1 - (1 + k) * Math.exp(-k);
   return (1 - (1 + k * t) * Math.exp(-k * t)) / n;
 }
-function courbePli(){ return courbeDe("--tr-plie", "cubic-bezier(0.33,1,0.68,1)"); }
+function courbePli(){ return courbeDe("--tr-plie", "cubic-bezier(0.2579,0.2731,0.1056,1)"); }
 function tempoPli(){
   if(_tempoPli) return _tempoPli;
   let v = "";
   try{ v = getComputedStyle(document.documentElement).getPropertyValue("--tr-plie").trim(); }catch(e){}
-  _tempoPli = v || "0.52s cubic-bezier(0.33,1,0.68,1)";
+  _tempoPli = v || "0.58s cubic-bezier(0.2579,0.2731,0.1056,1)";
   return _tempoPli;
 }
-function msPli(){ const m = tempoPli().match(/([\d.]+)s/); return m ? Math.round(parseFloat(m[1]) * 1000) : 520; }
+function msPli(){ const m = tempoPli().match(/([\d.]+)s/); return m ? Math.round(parseFloat(m[1]) * 1000) : 580; }
 /* L'horloge de FERMETURE, lue au même endroit que celle de l'ouverture : tout
    ce qui s'efface (voile, feuille, fenêtre, verrou paysage) la partage. Elle
    est plus courte que l'ouverture, et c'est voulu — on regarde une chose qui
@@ -35956,11 +35990,11 @@ function xGlisse(el){
    deux). */
 function glisser(el, de, a, p){
   try{
-    const x = new Animation(new KeyframeEffect(el, [{ translate:de + "px 0px" }, { translate:a + "px 0px" }], { duration:p.duree, easing:p.courbe, fill:"both" }), document.timeline);
+    const x = new Animation(new KeyframeEffect(el, imagesRessort(de, a, p.s), { duration:p.duree, easing:"linear", fill:"both" }), document.timeline);
     x._glisse = [de, a];
     return x;
   }catch(e){
-    try{ const x = el.animate([{ translate:de + "px 0px" }, { translate:a + "px 0px" }], { duration:p.duree, easing:p.courbe, fill:"both" }); x._glisse = [de, a]; return x; }
+    try{ const x = el.animate(imagesRessort(de, a, p.s), { duration:p.duree, easing:"linear", fill:"both" }); x._glisse = [de, a]; return x; }
     catch(e2){ return null; }
   }
 }
@@ -35989,7 +36023,7 @@ function lancerGlissements(p){
 const RESSORT_K = 7.54;
 function vitesseGlisse(p){
   try{
-    if(!p || !p.cote || !PLI_RESSORT || !p.entrant) return 0;
+    if(!p || !p.cote || !p.entrant) return 0;
     const a = p.anims.find(x => { try{ return x.effect && x.effect.target === p.entrant; }catch(e){ return false; } });
     if(!a || a.currentTime === null || !(p.duree > 0)) return 0;
     const tau = Math.min(1, Math.max(0, a.currentTime / p.duree));
@@ -35997,15 +36031,30 @@ function vitesseGlisse(p){
     return (0 - p.entrantDe) * Math.exp(-k * tau) * (s + k * (k - s) * tau) / y1 / p.duree;   // px par ms
   }catch(e){ return 0; }
 }
-function courbeRessort(s){
+/* ===== (v366) LE RESSORT EN IMAGES CLÉS =====
+   Un écran glissait sur une courbe linear(), que Safari ne confie pas au
+   processeur graphique (voir LE RESSORT EN DEUX TRONÇONS) : l'iPhone le
+   jouait sur le fil de la page — celui-là même qui construit l'écran qui
+   arrive, au même instant. Le ressort est maintenant DANS les images clés :
+   deux tronçons cubic-bezier raccordés à 22,54 % de l'horloge, et
+   l'animation elle-même est « linear », le mot-clé sans points, que Safari
+   accélère. Repris en vol avec son élan, il garde ses quarante points, posés
+   en images clés eux aussi, linéaires entre eux : le même mouvement
+   qu'avant. */
+const RESSORT_JOINT = 0.2254, RESSORT_MI = 0.5089;
+const RESSORT_A = "cubic-bezier(0.2519, 0, 0.5558, 0.5371)";
+const RESSORT_B = "cubic-bezier(0.2344, 0.8699, 0.4669, 0.9745)";
+function imagesRessort(de, a, s){
+  const x = (v)=> (v === 0 ? de : v === 1 ? a : de + (a - de) * v) + "px 0px";
+  if(!(s > 0.05)) return [{ offset:0, translate:x(0), easing:RESSORT_A }, { offset:RESSORT_JOINT, translate:x(RESSORT_MI), easing:RESSORT_B }, { offset:1, translate:x(1) }];
   const k = RESSORT_K, y1 = 1 - (1 + k - s) * Math.exp(-k);
-  const pts = ["0 0%"];
+  const l = [{ offset:0, translate:x(0) }];
   for(let i = 1; i < 40; i++){
     const t = Math.pow(i / 40, 1.6);
-    pts.push((Math.round((1 - (1 + (k - s) * t) * Math.exp(-k * t)) / y1 * 1e5) / 1e5) + " " + (Math.round(t * 1e5) / 1e3) + "%");
+    l.push({ offset:t, translate:x((1 - (1 + (k - s) * t) * Math.exp(-k * t)) / y1) });
   }
-  pts.push("1 100%");
-  return "linear(" + pts.join(", ") + ")";
+  l.push({ offset:1, translate:x(1) });
+  return l;
 }
 function lancerPassage(app, entrant, sortant, retour, xDepart, vDepart){
   const W = app.clientWidth || window.innerWidth || 0;
@@ -36017,9 +36066,9 @@ function lancerPassage(app, entrant, sortant, retour, xDepart, vDepart){
   const duree = msPli(), chemin = d * W - x0;
   /* (v360) Repris en vol dans le même sens : il garde sa vitesse (voir LE
      RESSORT REPRIS EN VOL). */
-  const elan = (PLI_RESSORT && vDepart && chemin && Math.sign(vDepart) === Math.sign(chemin)) ? Math.min(RESSORT_K, vDepart * duree / chemin) : 0;
+  const elan = (vDepart && chemin && Math.sign(vDepart) === Math.sign(chemin)) ? Math.min(RESSORT_K, vDepart * duree / chemin) : 0;
   const p = { genre: retour ? "retour" : "pousse", cote:true, debut: performance.now(), duree, s: elan > 0.05 ? elan : 0,
-              courbe: elan > 0.05 ? courbeRessort(elan) : courbeDe("--tr-ouvre", "cubic-bezier(0.33,1,0.68,1)"), W, d, x0,
+              W, d, x0,
               sortantDe: x0, sortantA: d * W, entrantDe: x0 - d * W,
               entrant, sortant, fond:null, anims: [], contre: [] };
   p.anims.push(glisser(sortant, p.sortantDe, p.sortantA, p), glisser(entrant, p.entrantDe, 0, p));
@@ -36186,7 +36235,7 @@ function glisserBarre(b, de, a, p){
      GLISSE), une fois posé par le moteur. */
   p.barreGlisse = { de, a };
   try{
-    const x = b.animate([{ translate:de + "px 0px" }, { translate:a + "px 0px" }], { duration:p.duree, easing:p.courbe, fill:"both" });
+    const x = b.animate(imagesRessort(de, a, p.s), { duration:p.duree, easing:"linear", fill:"both" });
     const a0 = p.anims[0];
     if(p.departVif !== undefined && p.departVif !== null) x.startTime = p.departVif;
     else if(a0 && a0.startTime !== null) x.startTime = a0.startTime;

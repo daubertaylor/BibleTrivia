@@ -16,7 +16,8 @@
         (propriété « translate » seule : ni échelle, ni « transform », ni
         opacité), du bon côté — à l'aller l'écran qui arrive vient de la
         droite, au retour de la gauche —, toujours exactement à une largeur
-        l'un de l'autre, et sur l'horloge des pages (--tr-ouvre) ;
+        l'un de l'autre, et sur l'horloge des pages (v366 : le ressort en
+        images clés, deux tronçons raccordés à 22,54 %) ;
      3. JAMAIS L'UN SUR L'AUTRE, JAMAIS VIDE : les deux écrans ne se
         recouvrent jamais, et à eux deux ils remplissent l'écran (il n'y a
         entre eux que leurs marges) ; (v359) le verre de chaque carte glisse
@@ -94,7 +95,7 @@ const OUTILS = () => {
     const p = passage; if (!p) return null;
     const lit = (el) => { if (!el || !el.isConnected) return null; const cs = getComputedStyle(el), m = new DOMMatrixReadOnly(cs.transform), r = el.getBoundingClientRect();
       return { op: +cs.opacity, sc: m.a, sy: m.d, mx: m.m41, my: m.m42, x: __tr(el)[0], y: __tr(el)[1], g: r.left, d: r.right }; };
-    return { e: lit(p.entrant), s: lit(p.sortant), W: p.W, retour: p.genre === 'retour', duree: p.duree, courbe: p.courbe,
+    return { e: lit(p.entrant), s: lit(p.sortant), W: p.W, retour: p.genre === 'retour', duree: p.duree, courbe: (() => { try { const a = p.anims.find(x => x.effect && x.effect.target === p.entrant); return a.effect.getTiming().easing + ' | ' + a.effect.getKeyframes().map(k => (Math.round(k.computedOffset * 1e4) / 1e4) + ' ' + k.easing).join(' ; '); } catch (e) { return '?'; } })(),
       fonds: document.querySelectorAll('.fond-pousse').length, vw: innerWidth };
   };
 };
@@ -163,7 +164,7 @@ const OUTILS = () => {
     /* ---- 2, 3 et 4. côte à côte, jamais l'un sur l'autre, le verre, le départ ---- */
     {
       const { ctx, p } = await ouvrir(ua, vp);
-      const horloge = await p.evaluate(() => ({ ms: msPli(), courbe: courbeDe('--tr-ouvre', '?') }));
+      const horloge = await p.evaluate(() => ({ ms: msPli(), courbe: 'linear | ' + imagesRessort(0, 1, 0).map(k => k.offset + ' ' + (k.easing || 'linear')).join(' ; ') }));
       for (const [nomP, aller, retour] of PASSAGES) {
         const releves = [];
         let verreE = { pire: 0, n: 0 }, verreS = { pire: 0, n: 0 }, depart = { pire: 0, n: 0 }, gsAnims = 0;
