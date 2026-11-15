@@ -6895,6 +6895,108 @@
   .ch-t-rose{ background:var(--pal-rose); --ch-o:var(--pal-rose-o); }
   .ch-t-pourpre{ background:var(--pal-pourpre); --ch-o:var(--pal-pourpre-o); }
   .ch-t-indigo{ background:var(--pal-indigo); --ch-o:var(--pal-indigo-o); }
+  /* ===================== (v368) LES QUÊTES, LES COFFRES, LES DIAMANTS =====================
+     « Pour le mode Parcours, je veux que tu l'améliores au maximum, qu'il
+       soit vraiment intéressant, avec des espaces de quête secondaire sur
+       les côtés… et si tu penses que c'est bien d'avoir des diamants pour
+       par exemple acheter des gels de série… »
+     Au bord du chemin, du côté où il ne va pas, deux QUÊTES par unité — un
+     losange, pour ne jamais les confondre avec les pierres rondes des
+     leçons —, et au bout de chaque unité un COFFRE, en or. Les diamants se
+     lisent en haut du chemin, et y mènent à la boutique. Mêmes matières que
+     les pierres : la couleur dans la matière, le relief dans l'ombre, aucune
+     bordure. Le losange tourne par « transform » ; son pouls passe par
+     « scale », pour ne pas lui reprendre sa rotation. */
+  /* Le compteur tient dans la hauteur de la ligne « Ton parcours » : la carte
+     ne grandit pas, et un nouveau joueur voit toujours le haut du chemin sans
+     rien faire défiler (parcours-arrivee.js). Sa cible, elle, déborde : une
+     marge invisible autour de lui (::after) la porte à 44 px. */
+  .ch-haut{ display:flex; align-items:center; justify-content:space-between; gap:0.6rem; margin:-0.32rem -0.3rem -0.28rem 0; }
+  .ch-diamants{ position:relative; display:inline-flex; align-items:center; gap:0.3rem; min-height:2.05rem; padding:0 0.45rem 0 0.66rem; flex-shrink:0;
+    border:0; -webkit-appearance:none; appearance:none; border-radius:99px; background:rgba(39,125,196,0.1); color:var(--ink);
+    font-family:'Poppins',sans-serif; font-weight:600; font-size:0.95rem; font-variant-numeric:tabular-nums; }
+  .ch-diamants::after{ content:""; position:absolute; inset:-0.42rem -0.3rem; }
+  .ch-diamants .ico{ width:1.08rem; height:1.08rem; display:flex; color:#2F8FD8; }
+  .ch-diamants .chev{ width:0.85rem; height:0.85rem; display:flex; color:var(--ink-soft); }
+  .ch-diamants svg, .ch-prime svg, .end-diamants svg, .bq-acheter svg, .bq-ligne svg, .bq-gemme svg, .bq-ico svg, .cm-ico svg{ width:100%; height:100%; }
+  .ch-quete{ position:absolute; top:0.1rem; left:calc(50% + var(--qx) * 1rem); z-index:1; width:max-content; max-width:6.2rem; transform:translateX(-50%);
+    display:flex; flex-direction:column; align-items:center; gap:0.18rem; text-align:center; }
+  .ch-medaillon{ width:2.9rem; height:2.9rem; margin:0.6rem 0 0.52rem; border-radius:0.85rem; padding:0.66rem; display:flex; align-items:center; justify-content:center;
+    border:0; -webkit-appearance:none; appearance:none; color:#fff; background:var(--pal-or); transform:rotate(45deg);
+    box-shadow:inset 0 -0.22rem 0 rgba(0,0,0,0.12), inset 0 1px 0 rgba(255,255,255,0.32), 0 4px 12px var(--pal-or-o); }
+  .ch-medaillon .ico{ width:100%; height:100%; display:flex; transform:rotate(-45deg); }
+  .ch-medaillon .ico svg{ width:100%; height:100%; }
+  /* Le nom et la prime d'une quête sur une étiquette claire, comme la bulle
+     « Commencer » : posés à même la photo du désert, ils ne se lisaient pas. */
+  .ch-etiq{ display:flex; flex-direction:column; align-items:center; gap:0.04rem; max-width:6rem; padding:0.3rem 0.62rem 0.32rem; border-radius:0.85rem;
+    background:var(--surface); box-shadow:inset 0 1px 0 rgba(255,255,255,0.7), 0 3px 10px rgba(15,12,10,0.14); }
+  .ch-quete small{ font-family:'Poppins',sans-serif; font-size:0.72rem; font-weight:600; color:var(--ink); line-height:1.2; text-align:center; }
+  .ch-prime{ display:inline-flex; align-items:center; gap:0.2rem; font-size:0.72rem; font-weight:700; color:#2577BE; font-variant-numeric:tabular-nums; }
+  .ch-prime .ico{ width:0.8rem; height:0.8rem; display:flex; color:#2F8FD8; }
+  .ch-quete.fermee .ch-medaillon{ background:var(--surface); color:var(--ink-soft); box-shadow:inset 0 -0.22rem 0 rgba(60,45,30,0.08), inset 0 1px 0 rgba(255,255,255,0.7), 0 2px 8px rgba(15,12,10,0.08); }
+  .ch-quete.fermee .ch-etiq{ opacity:0.82; }
+  .ch-quete.fermee small, .ch-quete.fermee .ch-prime{ color:var(--ink-soft); }
+  .ch-quete.ouverte .ch-medaillon{ animation:chPoulsQ 2.4s ease-in-out infinite; }
+  .ch-quete.reussie .ch-medaillon{ background:var(--pal-vert); box-shadow:inset 0 -0.22rem 0 rgba(0,0,0,0.12), inset 0 1px 0 rgba(255,255,255,0.32), 0 4px 12px var(--pal-vert-o); }
+  .ch-quete.s-allume .ch-medaillon{ animation:chAllumeQ 0.9s cubic-bezier(.2,.9,.3,1.3) 0.35s both; }
+  @keyframes chPoulsQ{ 0%, 100%{ scale:1; } 50%{ scale:1.07; } }
+  @keyframes chAllumeQ{ 0%{ scale:0.62; filter:saturate(0); } 60%{ scale:1.12; } 100%{ scale:1; filter:none; } }
+  /* Le coffre a sa place dans la colonne du chemin, mais il n'est pas une
+     pierre de leçon : pas de « ch-noeud » (que les bancs comptent cinq par
+     unité). */
+  .ch-coffre{ position:relative; display:flex; flex-direction:column; align-items:center; }
+  .ch-coffre-btn{ width:4.3rem; height:3.75rem; border-radius:1.1rem; padding:0.78rem 0.92rem; display:flex; align-items:center; justify-content:center;
+    border:0; -webkit-appearance:none; appearance:none; color:#fff; background:var(--pal-or);
+    box-shadow:inset 0 -0.28rem 0 rgba(0,0,0,0.13), inset 0 1px 0 rgba(255,255,255,0.32), 0 4px 14px var(--pal-or-o); }
+  .ch-coffre-btn .ico{ width:100%; height:100%; display:flex; }
+  .ch-coffre-btn .ico svg{ width:100%; height:100%; }
+  .ch-coffre.ferme .ch-coffre-btn{ background:var(--surface); color:var(--ink-soft); box-shadow:inset 0 -0.28rem 0 rgba(60,45,30,0.08), inset 0 1px 0 rgba(255,255,255,0.7), 0 2px 8px rgba(15,12,10,0.08); }
+  .ch-coffre.ouvert .ch-coffre-btn{ background:var(--pal-bronze); box-shadow:inset 0 -0.28rem 0 rgba(0,0,0,0.13), inset 0 1px 0 rgba(255,255,255,0.3), 0 4px 12px var(--pal-bronze-o); }
+  .ch-coffre.pret .ch-coffre-btn{ animation:chPouls 2.4s ease-in-out infinite; }
+  .ch-coffre-l{ margin-top:0.5rem; flex-direction:row; gap:0.22rem; font-family:'Poppins',sans-serif; font-size:0.74rem; font-weight:600; color:var(--ink-soft); }
+  .ch-coffre.ouvert .ch-coffre-l{ color:#1F6FB4; }
+  .ch-coffre-l .ico{ width:0.85rem; height:0.85rem; display:flex; color:#2F8FD8; }
+  .ch-coffre-l svg{ width:100%; height:100%; }
+  /* La fin d'une leçon ou d'une quête dit ce qu'elle a rapporté. */
+  .end-diamants{ display:inline-flex; align-items:center; gap:0.35rem; margin-top:0.6rem; padding:0.42rem 0.95rem; border-radius:99px;
+    background:rgba(255,255,255,0.16); color:#fff; font-family:'Poppins',sans-serif; font-weight:700; font-size:0.95rem; text-shadow:0 1px 8px rgba(0,0,0,0.45); }
+  .end-diamants .ico{ width:1.15rem; height:1.15rem; display:flex; color:#8FD3FF; filter:drop-shadow(0 1px 4px rgba(0,0,0,0.35)); }
+  /* Le coffre qu'on ouvre : la fenêtre se pose, le coffre saute. */
+  .modal-card.coffre-modal{ display:flex; flex-direction:column; }
+  .coffre-modal .cm-ico{ order:-1; align-self:center; width:4.7rem; height:4.1rem; margin-bottom:0.75rem; border-radius:1.2rem; padding:0.85rem 1rem; color:#fff; background:var(--pal-or);
+    box-shadow:inset 0 -0.28rem 0 rgba(0,0,0,0.13), inset 0 1px 0 rgba(255,255,255,0.32), 0 6px 18px var(--pal-or-o); animation:coffreSaute 0.7s cubic-bezier(.2,.9,.3,1.3) 0.12s both; }
+  .coffre-modal .cm-ico .ico{ width:100%; height:100%; display:flex; }
+  .coffre-modal .cm-solde{ font-size:0.85rem; color:var(--ink-soft); margin:0.15rem 0 0.2rem; }
+  @keyframes coffreSaute{ 0%{ transform:scale(0.6) rotate(-8deg); } 60%{ transform:scale(1.1) rotate(4deg); } 100%{ transform:none; } }
+  /* LA BOUTIQUE : une page, comme les Réglages. Ses cartes sont celles des
+     pages (page-carte, ombre posée). */
+  .bq-solde, .bq-article, .bq-gains{ background:var(--page-carte); border-radius:var(--r-l); box-shadow:var(--ombre-pose); }
+  .bq-solde{ display:flex; align-items:center; gap:0.9rem; padding:1rem 1.1rem; }
+  .bq-gemme{ width:3.1rem; height:3.1rem; border-radius:var(--r-ico); display:flex; align-items:center; justify-content:center; padding:0.64rem; color:#fff; background:var(--pal-ciel); flex-shrink:0;
+    box-shadow:inset 0 1px 0 rgba(255,255,255,0.26), 0 2px 7px var(--pal-ciel-o); }
+  .bq-gemme .ico{ width:100%; height:100%; display:flex; }
+  .bq-n{ display:flex; flex-direction:column; min-width:0; }
+  .bq-n b{ font-family:'Poppins',sans-serif; font-size:1.6rem; font-weight:600; color:var(--ink); line-height:1.1; font-variant-numeric:tabular-nums; }
+  .bq-n small{ font-size:0.8rem; color:var(--ink-soft); }
+  .bq-article{ display:grid; grid-template-columns:auto 1fr; align-items:center; column-gap:0.85rem; row-gap:0.7rem; padding:1rem 1.1rem; }
+  .bq-ico{ width:2.9rem; height:2.9rem; border-radius:var(--r-ico); display:flex; align-items:center; justify-content:center; padding:0.5rem; background:rgba(39,125,196,0.1); }
+  .bq-ico .ico{ width:100%; height:100%; display:flex; }
+  .bq-txt{ display:flex; flex-direction:column; gap:0.18rem; min-width:0; }
+  .bq-txt b{ font-family:'Poppins',sans-serif; font-weight:600; font-size:0.98rem; color:var(--ink); }
+  .bq-txt small{ font-size:0.8rem; color:var(--ink-soft); line-height:1.35; }
+  .bq-txt .bq-reserve{ font-weight:600; color:var(--ink); }
+  .bq-achat{ grid-column:1 / -1; display:flex; align-items:center; justify-content:flex-end; gap:0.7rem; flex-wrap:wrap; }
+  .bq-etat{ font-size:0.78rem; font-weight:600; color:var(--ink-soft); }
+  .bq-acheter{ display:inline-flex; align-items:center; gap:0.32rem; min-height:2.75rem; padding:0 1.1rem; border:0; -webkit-appearance:none; appearance:none; border-radius:99px;
+    background:var(--pal-ciel); color:#fff; font-family:'Poppins',sans-serif; font-weight:600; font-size:0.95rem; font-variant-numeric:tabular-nums;
+    box-shadow:inset 0 1px 0 rgba(255,255,255,0.26), 0 3px 10px var(--pal-ciel-o); }
+  .bq-acheter .ico{ width:1rem; height:1rem; display:flex; }
+  .bq-acheter:disabled{ background:rgba(60,45,30,0.08); color:var(--ink-soft); box-shadow:none; }
+  .bq-h{ font-family:'Poppins',sans-serif; font-size:0.74rem; font-weight:700; letter-spacing:0.09em; text-transform:uppercase; color:var(--ink-soft); margin:0.75rem 0.25rem 0.1rem; }
+  .bq-gains{ display:flex; flex-direction:column; padding:0.3rem 1.1rem; }
+  .bq-ligne{ display:flex; align-items:center; justify-content:space-between; gap:0.8rem; min-height:2.6rem; font-size:0.88rem; color:var(--ink); }
+  .bq-ligne b{ display:inline-flex; align-items:center; gap:0.22rem; font-family:'Poppins',sans-serif; color:#1F6FB4; font-variant-numeric:tabular-nums; flex-shrink:0; }
+  .bq-ligne .ico{ width:0.9rem; height:0.9rem; display:flex; color:#2F8FD8; }
   .end-actions.lecon-fin .btn-replay{ flex:1; }
   .jx-ico.pourpre, .jx-pastille.pourpre{ background:var(--pal-pourpre); box-shadow:inset 0 1px 0 rgba(255,255,255,0.26), 0 2px 7px var(--pal-pourpre-o); }
   .jx-nom{ font-family:'Poppins',sans-serif; font-weight:600; font-size:0.98rem; color:var(--ink); line-height:1.25; }
@@ -7522,6 +7624,48 @@ const TEXTES = {
     "Unité terminée\u00a0!":"Unit complete!",
     "Quitter la leçon\u00a0?":"Leave the lesson?",
     "Tu la reprendras depuis le début.":"You'll start it again from the beginning.",
+    /* (v368) Les quêtes, les coffres, les diamants, la boutique. */
+    "Défi éclair":"Lightning challenge",
+    "Six questions de l'unité, quinze secondes chacune\u00a0: cinq justes pour la réussir.":"Six questions from the unit, fifteen seconds each: get five right to pass.",
+    "Cinq questions de l'unité, sans une seule erreur.":"Five questions from the unit, without a single mistake.",
+    "Quête":"Quest",
+    "Quête réussie\u00a0!":"Quest complete!",
+    "Presque\u00a0!":"Almost!",
+    "Pas cette fois":"Not this time",
+    "{n} sur {t} — il en fallait {s}":"{n} of {t} — you needed {s}",
+    "Quitter la quête\u00a0?":"Leave the quest?",
+    "Tu pourras la retenter quand tu veux.":"You can try it again whenever you like.",
+    "réussie":"complete",
+    "après la leçon {n}":"after lesson {n}",
+    "Coffre":"Chest",
+    "ouvert":"opened",
+    "à ouvrir":"ready to open",
+    "au bout de l'unité":"at the end of the unit",
+    "Ouvrir le coffre":"Open the chest",
+    "Coffre ouvert\u00a0!":"Chest opened!",
+    "+{n} diamants":"+{n} diamonds",
+    "Tu as maintenant {n} diamants.":"You now have {n} diamonds.",
+    "Son coffre t'attend au bout du chemin.":"Its chest is waiting at the end of the path.",
+    "{n} diamants · Boutique":"{n} diamonds · Shop",
+    "Boutique":"Shop",
+    "Tes diamants":"Your diamonds",
+    "Gel de série":"Streak freeze",
+    "Il protège ta flamme pour UN jour manqué. Deux en réserve au maximum.":"It protects your flame for ONE missed day. Two in reserve at most.",
+    "En réserve\u00a0: {n}/{m}":"In reserve: {n}/{m}",
+    "Acheter":"Buy",
+    "Réserve pleine":"Reserve full",
+    "Il te manque {n} diamants":"You need {n} more diamonds",
+    "Ta réserve est pleine\u00a0: deux gels au maximum.":"Your reserve is full: two freezes at most.",
+    "Gel acheté — il couvre UN jour manqué.":"Freeze bought — it covers ONE missed day.",
+    "Comment gagner des diamants":"How to earn diamonds",
+    "Une leçon terminée":"A lesson completed",
+    "Une leçon sans faute, une fois":"A flawless lesson, once",
+    "Une quête réussie":"A quest completed",
+    "Le coffre d'une unité":"A unit's chest",
+    "Des diamants pour tes leçons":"Diamonds for your lessons",
+    "{n} leçons déjà faites\u00a0: +{d} diamants":"{n} lessons already done: +{d} diamonds",
+    "1 leçon déjà faite\u00a0: +{d} diamants":"1 lesson already done: +{d} diamonds",
+    "Ou à la boutique du Parcours, pour {prix} diamants.":"Or from the Path shop, for {prix} diamonds.",
     "Code de la partie":"Game code",
     "Continuer":"Continue",
     "Couleur":"Color",
@@ -8470,6 +8614,48 @@ const TEXTES = {
     "Unité terminée\u00a0!":"¡Unidad terminada!",
     "Quitter la leçon\u00a0?":"¿Salir de la lección?",
     "Tu la reprendras depuis le début.":"La retomarás desde el principio.",
+    /* (v368) Las misiones, los cofres, los diamantes, la tienda. */
+    "Défi éclair":"Desafío relámpago",
+    "Six questions de l'unité, quinze secondes chacune\u00a0: cinq justes pour la réussir.":"Seis preguntas de la unidad, quince segundos cada una: cinco correctas para superarla.",
+    "Cinq questions de l'unité, sans une seule erreur.":"Cinco preguntas de la unidad, sin un solo error.",
+    "Quête":"Misión",
+    "Quête réussie\u00a0!":"¡Misión cumplida!",
+    "Presque\u00a0!":"¡Casi!",
+    "Pas cette fois":"Esta vez no",
+    "{n} sur {t} — il en fallait {s}":"{n} de {t}: hacían falta {s}",
+    "Quitter la quête\u00a0?":"¿Salir de la misión?",
+    "Tu pourras la retenter quand tu veux.":"Podrás volver a intentarlo cuando quieras.",
+    "réussie":"cumplida",
+    "après la leçon {n}":"tras la lección {n}",
+    "Coffre":"Cofre",
+    "ouvert":"abierto",
+    "à ouvrir":"por abrir",
+    "au bout de l'unité":"al final de la unidad",
+    "Ouvrir le coffre":"Abrir el cofre",
+    "Coffre ouvert\u00a0!":"¡Cofre abierto!",
+    "+{n} diamants":"+{n} diamantes",
+    "Tu as maintenant {n} diamants.":"Ahora tienes {n} diamantes.",
+    "Son coffre t'attend au bout du chemin.":"Su cofre te espera al final del camino.",
+    "{n} diamants · Boutique":"{n} diamantes · Tienda",
+    "Boutique":"Tienda",
+    "Tes diamants":"Tus diamantes",
+    "Gel de série":"Congelación de racha",
+    "Il protège ta flamme pour UN jour manqué. Deux en réserve au maximum.":"Protege tu llama durante UN día perdido. Dos en reserva como máximo.",
+    "En réserve\u00a0: {n}/{m}":"En reserva: {n}/{m}",
+    "Acheter":"Comprar",
+    "Réserve pleine":"Reserva llena",
+    "Il te manque {n} diamants":"Te faltan {n} diamantes",
+    "Ta réserve est pleine\u00a0: deux gels au maximum.":"Tu reserva está llena: dos congelaciones como máximo.",
+    "Gel acheté — il couvre UN jour manqué.":"Congelación comprada: cubre UN día perdido.",
+    "Comment gagner des diamants":"Cómo ganar diamantes",
+    "Une leçon terminée":"Una lección terminada",
+    "Une leçon sans faute, une fois":"Una lección sin errores, una vez",
+    "Une quête réussie":"Una misión cumplida",
+    "Le coffre d'une unité":"El cofre de una unidad",
+    "Des diamants pour tes leçons":"Diamantes por tus lecciones",
+    "{n} leçons déjà faites\u00a0: +{d} diamants":"{n} lecciones ya hechas: +{d} diamantes",
+    "1 leçon déjà faite\u00a0: +{d} diamants":"1 lección ya hecha: +{d} diamantes",
+    "Ou à la boutique du Parcours, pour {prix} diamants.":"O en la tienda del Camino, por {prix} diamantes.",
     "Code de la partie":"Código de la partida",
     "Continuer":"Continuar",
     "Couleur":"Color",
@@ -9727,6 +9913,14 @@ const ICONS = {
      autres (24 × 24, 1,9, bouts ronds). */
   chemin: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><circle cx="5.4" cy="19.2" r="1.8"/><circle cx="18.6" cy="4.8" r="1.8"/><path d="M7.2 19.2h7.6a3.4 3.4 0 0 0 0-6.8H9.2a3.4 3.4 0 0 1 0-6.8h7.6"/></svg>`,
   cadenas: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><rect x="5.2" y="10.4" width="13.6" height="9.8" rx="2.4"/><path d="M8.4 10.4V7.9a3.6 3.6 0 0 1 7.2 0v2.5"/></svg>`,
+  /* (v368) LES DIAMANTS, LES COFFRES, LA BOUTIQUE. Le diamant est plein, à
+     facettes (des voiles de blanc et d'ombre sur sa couleur, sans dégradé
+     nommé : il peut paraître dix fois dans une page) ; le coffre, la
+     boutique au trait, comme leurs voisins. */
+  diamant: `<svg viewBox="0 0 24 24" stroke="none"><path fill="currentColor" d="M7 4h10l4.2 5.4L12 20.6 2.8 9.4Z"/><path fill="#fff" fill-opacity="0.42" d="M7 4h10l-2.6 5.4H9.6Z"/><path fill="#fff" fill-opacity="0.62" d="M7 4 9.6 9.4H2.8Z"/><path fill="#fff" fill-opacity="0.16" d="M2.8 9.4h6.8L12 20.6Z"/><path fill="#000" fill-opacity="0.12" d="M14.4 9.4h6.8L12 20.6Z"/></svg>`,
+  coffre: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M4 10.4h16v7.8a1.8 1.8 0 0 1-1.8 1.8H5.8A1.8 1.8 0 0 1 4 18.2Z"/><path d="M4 10.4V8.6A4.6 4.6 0 0 1 8.6 4h6.8A4.6 4.6 0 0 1 20 8.6v1.8"/><rect x="10.2" y="9" width="3.6" height="4.4" rx="1"/></svg>`,
+  coffreOuvert: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M4 12h16v6.2A1.8 1.8 0 0 1 18.2 20H5.8A1.8 1.8 0 0 1 4 18.2Z"/><path d="M4.6 12 3.3 6.9a1.2 1.2 0 0 1 .9-1.5l13.3-2.7a1.2 1.2 0 0 1 1.4 1l1 4.6"/><line x1="12" y1="14.6" x2="12" y2="16.8"/></svg>`,
+  boutique: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M5.6 8h12.8l-1 11.2a1.8 1.8 0 0 1-1.8 1.6H8.4a1.8 1.8 0 0 1-1.8-1.6Z"/><path d="M9 8V6.6a3 3 0 0 1 6 0V8"/></svg>`,
   couronne: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M3.6 8.2l4.1 3.9L12 5.4l4.3 6.7 4.1-3.9-1.7 10H5.3l-1.7-10Z"/></svg>`,
   close: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><line x1="6" y1="6" x2="18" y2="18"/><line x1="18" y1="6" x2="6" y2="18"/></svg>`,
   chevronLeft: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 5.5 8.5 12 15 18.5"/></svg>`,
@@ -11939,7 +12133,7 @@ const SUPABASE_ANON_KEY = "sb_publishable_FDJ_R0foC7uIeHmxVrj6rA_2NeIgW2a";
    remontée d'un téléphone ne vaut rien si on ne sait pas QUELLE version
    tournait. Elle doit rester égale au CACHE de sw.js — c'est ce que vérifie
    banc-essai/version.js, qui refuse de laisser publier les deux en désaccord. */
-const VERSION_JEU = "v367";
+const VERSION_JEU = "v368";
 
 /* ===================== QUAND ÇA CASSE CHEZ UN JOUEUR =====================
    « Si quelque chose casse chez cinq d'entre eux sur un modèle de téléphone
@@ -23797,6 +23991,223 @@ function saveParcours(p){
   try{ localStorage.setItem("bt_parcours", JSON.stringify({ v:1, faites })); }catch(e){}
 }
 function leconFaite(u, l, p){ return !!(p || loadParcours()).faites[cleLecon(u, l)]; }
+/* ===================== (v368) LES DIAMANTS =====================
+   « …et si tu penses que c'est bien d'avoir des diamants pour par exemple
+     acheter des gels de série ou même quoi que ce soit d'autre. »
+   CE QUI EN DONNE : finir une leçon (10) ; la finir sans faute (5 de plus,
+   une fois par leçon — la refaire sans faute plus tard compte aussi) ;
+   réussir une quête (20) ; ouvrir le coffre d'une unité (30). CE QUI EN
+   COÛTE : un gel de série, 50 — et le plafond des gels ne bouge pas : deux en
+   réserve, un jour chacun (voir LES GELS DE SÉRIE). Une unité rapporte de
+   quoi en acheter deux ou trois ; la réserve n'en tient toujours que deux.
+   UN REGISTRE, PAS UN SOLDE (bt_tresor). Chaque gain porte le nom de ce qui
+   l'a mérité (« lecon:genese:1 », « coffre:genese », « quete:genese:eclair »)
+   et ne se compte donc qu'une fois, sur ce téléphone comme sur un autre.
+   Chaque dépense porte un nom unique. Le solde se CALCULE : gains moins
+   dépenses. Deux téléphones se fusionnent en réunissant leurs registres
+   (voir fusionner) : aucun gain ne se perd, aucune dépense ne s'oublie, rien
+   ne se compte deux fois — ce qu'un simple nombre ne saurait pas faire.
+   Les leçons faites avant la v368 sont créditées d'office, une fois
+   (rattraperDiamants) : personne ne repart de zéro. */
+const DIAMANTS = { lecon:10, parfait:5, quete:20, coffre:30 };
+const PRIX_GEL = 50;
+function tresorValide(x){
+  const out = { gains:{}, depenses:{} };
+  if(!x || typeof x !== "object") return out;
+  for(const sorte of ["gains", "depenses"]){
+    const o = x[sorte];
+    if(!o || typeof o !== "object") continue;
+    for(const k of Object.keys(o)){
+      const e = o[k], brut = (e && typeof e === "object") ? e.n : e;
+      const n = Math.round(Number(brut));
+      if(k.length > 80 || !(n > 0) || n > 1000) continue;
+      const t = (e && typeof e === "object" && typeof e.t === "string" && /^\d{4}-\d{2}-\d{2}$/.test(e.t)) ? e.t : "";
+      out[sorte][k] = { n, t };
+    }
+  }
+  return out;
+}
+function loadTresor(){
+  try{ return tresorValide(JSON.parse(localStorage.getItem("bt_tresor") || "{}")); }
+  catch(e){ return { gains:{}, depenses:{} }; }
+}
+/* L'UNION DE DEUX REGISTRES : chaque ligne d'un côté ou de l'autre. */
+function unionTresor(a, b){
+  const x = tresorValide(a), y = tresorValide(b), out = { gains:{}, depenses:{} };
+  for(const sorte of ["gains", "depenses"]){
+    for(const src of [x, y]) for(const k of Object.keys(src[sorte])){
+      const e = src[sorte][k], d = out[sorte][k];
+      if(!d || e.n > d.n || (e.n === d.n && e.t && (!d.t || e.t < d.t))) out[sorte][k] = { n:e.n, t:e.t };
+    }
+  }
+  return out;
+}
+function saveTresor(t){
+  const tout = unionTresor(loadTresor(), t);
+  try{ localStorage.setItem("bt_tresor", JSON.stringify({ v:1, gains:tout.gains, depenses:tout.depenses })); }catch(e){}
+}
+function soldeDiamants(t){
+  t = t || loadTresor();
+  let s = 0;
+  for(const k of Object.keys(t.gains)) s += t.gains[k].n;
+  for(const k of Object.keys(t.depenses)) s -= t.depenses[k].n;
+  return Math.max(0, s);
+}
+/* Gagner, une fois par nom : rend ce qui vient d'entrer (0 si c'était déjà
+   gagné). */
+function gagnerDiamants(cle, n){
+  const t = loadTresor();
+  if(t.gains[cle]) return 0;
+  t.gains[cle] = { n, t:cleDeDate(new Date()) };
+  saveTresor(t);
+  return n;
+}
+function depenserDiamants(quoi, n){
+  const t = loadTresor();
+  if(soldeDiamants(t) < n) return false;
+  t.depenses[quoi + ":" + Date.now().toString(36) + Math.random().toString(36).slice(2, 7)] = { n, t:cleDeDate(new Date()) };
+  saveTresor(t);
+  return true;
+}
+/* Les leçons faites avant les diamants (ou sur un téléphone qui ne les
+   connaissait pas encore) : créditées une fois, et dites. */
+function rattraperDiamants(){
+  const p = loadParcours(), t = loadTresor();
+  let n = 0;
+  Object.keys(p.faites).forEach(k => {
+    if(CLES_LECONS.has(k) && !t.gains["lecon:" + k]){ t.gains["lecon:" + k] = { n:DIAMANTS.lecon, t:p.faites[k] }; n++; }
+  });
+  if(!n) return 0;
+  saveTresor(t);
+  achToastQueue.push({ clr:"blue", ico:ICONS.diamant, tete:T("Des diamants pour tes leçons"),
+    t: n > 1 ? Tf("{n} leçons déjà faites\u00a0: +{d} diamants", { n, d:n * DIAMANTS.lecon }) : Tf("1 leçon déjà faite\u00a0: +{d} diamants", { d:DIAMANTS.lecon }) });
+  try{ pumpAchToast(); }catch(e){}
+  return n;
+}
+/* ===================== (v368) LES QUÊTES =====================
+   « …avec des espaces de quête secondaire sur les côtés… »
+   Deux par unité, au bord du chemin, du côté où il ne tourne pas. Elles
+   reprennent les questions de l'UNITÉ — d'abord celles que ses leçons ont
+   déjà montrées : une quête vérifie ce qu'on a appris, elle ne l'apprend pas.
+     — LE DÉFI ÉCLAIR, ouvert dès la deuxième leçon faite : six questions,
+       quinze secondes chacune ; cinq justes pour le réussir.
+     — SANS FAUTE, ouvert dès la quatrième : cinq questions, du moyen et du
+       difficile d'abord, aucune erreur.
+   Ratée, une quête se retente autant qu'on veut ; réussie, elle rapporte ses
+   diamants une fois et garde sa coche. Elle se joue comme une leçon (même
+   écran, mêmes résultats), sans erreur rejouée à la fin : son compte est
+   celui du premier coup. Comme toute partie, elle allume la flamme du jour. */
+const QUETES = [
+  { k:"eclair",  nom:"Défi éclair", regle:"Six questions de l'unité, quinze secondes chacune\u00a0: cinq justes pour la réussir.", ico:"bolt",   apres:1, pres:1, n:6, seuil:5, chrono:"15" },
+  { k:"parfait", nom:"Sans faute",  regle:"Cinq questions de l'unité, sans une seule erreur.",                                     ico:"cible",  apres:3, pres:3, n:5, seuil:5, chrono:null }
+];
+function cleQuete(u, qi){ return "quete:" + PARCOURS[u].id + ":" + QUETES[qi].k; }
+function queteOuverte(u, qi, p){ return !!PARCOURS[u] && !!QUETES[qi] && leconFaite(u, QUETES[qi].apres, p); }
+function queteReussie(u, qi, t){ return !!(t || loadTresor()).gains[cleQuete(u, qi)]; }
+function questionsDeQuete(u, qi){
+  const livres = new Set(PARCOURS[u].livres), seen = loadSeen(), Q = QUETES[qi];
+  const toutes = [];
+  ["facile","moyen","difficile"].forEach(t => (BANK[t] || []).forEach(q => { const b = bookOf(q); if(b && livres.has(b)) toutes.push(Object.assign({}, q, { tier:t })); }));
+  const epreuve = (l) => Q.k === "parfait" ? l.slice().sort((a, b) => (a.tier === "facile") - (b.tier === "facile")) : l;
+  const prises = epreuve(shuffle(toutes.filter(q => seen.has(qKey(q))))).concat(epreuve(shuffle(toutes.filter(q => !seen.has(qKey(q)))))).slice(0, Q.n);
+  prises.forEach(q => seen.add(qKey(q)));
+  saveSeen(seen);
+  return shuffle(prises).map(q => Object.assign({}, q, { shuffledOptions: shuffle(q.options) }));
+}
+/* Toucher une quête : sa règle d'abord, en une phrase — on sait ce qu'on
+   tente avant que le chrono parte. */
+function commencerQuete(u, qi){
+  if(!queteOuverte(u, qi)) return;
+  const Q = QUETES[qi];
+  showModal({ title:T(Q.nom), message:T(Q.regle), okLabel:T("Commencer"), cancelLabel:T("Plus tard"),
+    onOk:()=>{ setTimeout(()=>lancerQuete(u, qi), 0); return true; } });
+}
+function lancerQuete(u, qi){
+  if(!queteOuverte(u, qi)) return;
+  const Q = QUETES[qi], qs = questionsDeQuete(u, qi);
+  if(!qs.length) return;
+  finirPlaces();
+  marquerJoue();
+  bumpModeUse("parcours");
+  state.mode = "solo"; state.revision = false; state.revisionDe = null;
+  state.lecon = { u, l:-1, quete:qi, chrono:Q.chrono || null, n:qs.length, ok:0 };
+  state.soloScore = 0; state.soloStreak = 0; state.soloBestStreak = 0; state.soloCorrect = 0; displayedSoloScore = 0; state.soloMissed = []; state.soloIsRecord = false;
+  state.questions = qs;
+  state.currentIndex = 0; state.revealed = false; state.awarded = []; state.soloSelected = null; state.timedOut = false;
+  state.screen = "play";
+  render();
+}
+function relancerQuete(){
+  if(pubAvant(relancerQuete)) return;
+  const L = state.lecon;
+  if(!L || L.quete === undefined) return continuerParcours();
+  const u = L.u, qi = L.quete;
+  clearSavedGame();
+  state = etatNeuf();
+  lancerQuete(u, qi);
+}
+function terminerQuete(L){
+  const Q = QUETES[L.quete];
+  L.reussie = (L.ok | 0) >= Q.seuil;
+  L.gain = L.reussie ? gagnerDiamants(cleQuete(L.u, L.quete), DIAMANTS.quete) : 0;
+}
+/* Le chrono de la partie en cours : celui d'une quête qui en a un, sinon
+   celui que le joueur a choisi (une leçon et une révision n'en ont pas : voir
+   les deux appels). */
+function chronoDeLaPartie(){
+  return (state.lecon && state.lecon.chrono) ? timerSecondsFor(state.lecon.chrono) : timerSecondsFor(state.timerKey);
+}
+function sansChrono(){ return !!state.revision || (!!state.lecon && !state.lecon.chrono); }
+/* ===================== (v368) LES COFFRES =====================
+   Au bout de chaque unité. Fermé tant qu'une leçon manque ; prêt quand les
+   cinq sont faites (il bat, comme la leçon à faire) ; ouvert pour toujours
+   une fois touché — ses trente diamants sont au registre. */
+function coffrePret(u, p){ return Array.from({ length:LECONS_PAR_UNITE }, (_, l) => leconFaite(u, l, p)).every(Boolean); }
+function ouvrirCoffre(u){
+  const U = PARCOURS[u];
+  if(!U || !coffrePret(u)) return;
+  const n = gagnerDiamants("coffre:" + U.id, DIAMANTS.coffre);
+  if(!n) return;
+  if(state.screen === "chemin") render();
+  showModal({ title:T("Coffre ouvert\u00a0!"), message:Tf("+{n} diamants", { n }), cardClass:"coffre-modal",
+    bodyHtml:`<div class="cm-ico"><span class="ico">${ICONS.coffreOuvert}</span></div><p class="cm-solde">${escapeHtml(Tf("Tu as maintenant {n} diamants.", { n:soldeDiamants() }))}</p>`,
+    okLabel:T("Continuer"), hideCancel:true });
+}
+/* ===================== (v368) LA BOUTIQUE =====================
+   Une page, comme les Réglages : le solde, ce qu'on peut acheter, et
+   comment on gagne. Un seul article pour commencer, le plus demandé : le gel
+   de série. Il se paie en diamants, mais la RÉSERVE ne change pas — deux au
+   maximum, un jour chacun : on peut s'offrir un filet, pas des vacances. */
+function boutiqueHtml(){
+  const solde = soldeDiamants(), d = loadDaily(), plein = d.gels >= GEL_MAX, manque = Math.max(0, PRIX_GEL - solde);
+  const etat = plein ? T("Réserve pleine") : (manque ? Tf("Il te manque {n} diamants", { n:manque }) : "");
+  const gains = [[T("Une leçon terminée"), DIAMANTS.lecon], [T("Une leçon sans faute, une fois"), DIAMANTS.parfait],
+                 [T("Une quête réussie"), DIAMANTS.quete], [T("Le coffre d'une unité"), DIAMANTS.coffre]];
+  return `<div class="bq-solde"><span class="bq-gemme"><span class="ico">${ICONS.diamant}</span></span><span class="bq-n"><b>${solde}</b><small>${T("Tes diamants")}</small></span></div>
+    <div class="bq-article">
+      <span class="bq-ico"><span class="ico">${ICONS.flammeGelee}</span></span>
+      <span class="bq-txt"><b>${T("Gel de série")}</b><small>${T("Il protège ta flamme pour UN jour manqué. Deux en réserve au maximum.")}</small>
+        <small class="bq-reserve">${escapeHtml(Tf("En réserve\u00a0: {n}/{m}", { n:d.gels, m:GEL_MAX }))}</small></span>
+      <div class="bq-achat">${etat ? `<small class="bq-etat">${escapeHtml(etat)}</small>` : ""}<button class="bq-acheter" onclick="acheterGel()" ${plein || manque ? "disabled" : ""} aria-label="${escapeHtml(T("Acheter") + " · " + PRIX_GEL)}"><span class="ico">${ICONS.diamant}</span>${PRIX_GEL}</button></div>
+    </div>
+    <h2 class="bq-h">${T("Comment gagner des diamants")}</h2>
+    <div class="bq-gains">${gains.map(([l, n]) => `<div class="bq-ligne"><span>${escapeHtml(l)}</span><b><span class="ico">${ICONS.diamant}</span>+${n}</b></div>`).join("")}</div>`;
+}
+function ouvrirBoutique(){ ouvrirFeuilleGroupe("boutiqueVeil", T("Boutique"), ICONS.boutique, boutiqueHtml()); }
+function majBoutique(){
+  const c = document.querySelector("#boutiqueVeil .grp-feuille-corps");
+  if(c) c.innerHTML = boutiqueHtml();
+  const s = soldeDiamants();
+  document.querySelectorAll(".ch-diamants b").forEach(b => { b.textContent = s; });
+}
+function acheterGel(){
+  const d = loadDaily();
+  if(d.gels >= GEL_MAX){ showMiniToast(T("Ta réserve est pleine\u00a0: deux gels au maximum.")); return; }
+  if(!depenserDiamants("gel", PRIX_GEL)){ showMiniToast(Tf("Il te manque {n} diamants", { n:Math.max(1, PRIX_GEL - soldeDiamants()) })); return; }
+  saveDaily({ gels:Math.min(GEL_MAX, d.gels + 1) });
+  showMiniToast(T("Gel acheté — il couvre UN jour manqué."));
+  majBoutique();
+}
 /* Où en est le joueur : la première leçon pas encore faite, dans l'ordre. */
 function positionParcours(p){
   p = p || loadParcours();
@@ -23859,17 +24270,29 @@ function commencerLecon(u, l){
 function terminerLecon(){
   const L = state.lecon;
   if(!L || !PARCOURS[L.u]) return;
+  if(L.quete !== undefined){ terminerQuete(L); return; }   // (v368) une quête
   const p = loadParcours(), k = cleLecon(L.u, L.l);
   L.nouvelle = !p.faites[k];
   if(!p.faites[k]) p.faites[k] = cleDeDate(new Date());
   saveParcours(p);
   L.uniteFinie = Array.from({ length:LECONS_PAR_UNITE }, (_, l) => leconFaite(L.u, l, p)).every(Boolean);
+  /* (v368) Ses diamants : la leçon faite, une fois ; sans faute, une fois de plus. */
+  L.gain = gagnerDiamants("lecon:" + k, DIAMANTS.lecon) + ((L.ok | 0) >= (L.n | 0) ? gagnerDiamants("parfait:" + k, DIAMANTS.parfait) : 0);
 }
+/* (v368) Ce qu'une leçon ou une quête vient de rapporter. */
+function gainHtml(n){ return n > 0 ? `<div class="end-diamants"><span class="ico">${ICONS.diamant}</span>${escapeHtml(Tf("+{n} diamants", { n }))}</div>` : ""; }
 function leconFinHtml(){
   const L = state.lecon, u = PARCOURS[L.u], t = L.n | 0, ok = Math.min(t, L.ok | 0);
+  if(L.quete !== undefined){
+    const Q = QUETES[L.quete];
+    return `<h1 class="end-title">${L.reussie ? T("Quête réussie\u00a0!") : (ok >= Q.seuil - 1 ? T("Presque\u00a0!") : T("Pas cette fois"))}</h1>
+      <p class="end-sub">${escapeHtml(L.reussie ? T(Q.nom) + " · " + T(u.nom) : Tf("{n} sur {t} — il en fallait {s}", { n:ok, t, s:Q.seuil }))}</p>
+      ${gainHtml(L.gain | 0)}`;
+  }
   return `<h1 class="end-title">${ok >= t ? T("Sans faute\u00a0!") : escapeHtml(Tf("{n} sur {t} du premier coup", { n:ok, t }))}</h1>
       <p class="end-sub">${escapeHtml(Tf("{unite} · leçon {l} sur {m}", { unite:T(u.nom), l:L.l + 1, m:LECONS_PAR_UNITE }))}</p>
-      ${L.uniteFinie && L.nouvelle ? `<div class="end-best">${T("Unité terminée\u00a0!")}</div>` : ""}`;
+      ${L.uniteFinie && L.nouvelle ? `<div class="end-best">${T("Unité terminée\u00a0!")} ${T("Son coffre t'attend au bout du chemin.")}</div>` : ""}
+      ${gainHtml(L.gain | 0)}`;
 }
 let cheminVient = null;   // la leçon qu'on vient de finir : sa pierre s'allume à l'arrivée
 function continuerParcours(){
@@ -23877,7 +24300,8 @@ function continuerParcours(){
   const L = state.lecon;
   clearSavedGame();
   state = etatNeuf();
-  cheminVient = (L && L.nouvelle) ? { u:L.u, l:L.l } : null;
+  /* (v368) Une quête réussie s'allume à l'arrivée, comme une leçon neuve. */
+  cheminVient = !L ? null : (L.quete !== undefined ? ((L.reussie && L.gain) ? { u:L.u, q:L.quete } : null) : (L.nouvelle ? { u:L.u, l:L.l } : null));
   state.screen = "chemin";
   render();
 }
@@ -23889,7 +24313,8 @@ function livresDeLUnite(u){
 /* LE CHEMIN SERPENTE : chaque unité part du centre, s'écarte et revient, une
    fois vers la droite, la suivante vers la gauche. */
 const CH_ECARTS = [0, 0.62, 1, 0.62, 0];
-function uniteHtml(u, i, p, pos, vient){
+function uniteHtml(u, i, p, pos, vient, t){
+  t = t || loadTresor();
   const faites = Array.from({ length:LECONS_PAR_UNITE }, (_, l) => leconFaite(i, l, p));
   const n = faites.filter(Boolean).length;
   const etat = n === LECONS_PAR_UNITE ? "finie" : ((pos && pos.u === i) || n ? "ouverte" : "fermee");
@@ -23900,9 +24325,12 @@ function uniteHtml(u, i, p, pos, vient){
     const allume = (vient && vient.u === i && vient.l === l) ? " s-allume" : "";
     const ico = f ? ICONS.coche : (courante ? ICONS.etoile : ICONS.cadenas);
     const nom = Tf("Leçon {n}", { n:l + 1 }) + " · " + (f ? T("faite") : courante ? T("à faire") : T("verrouillée"));
+    /* (v368) La quête qui se tient à hauteur de cette leçon, au bord. */
+    const qi = QUETES.findIndex(Q => Q.pres === l);
     return `<div class="ch-noeud ${cls}${allume}" style="--x:${(sens * CH_ECARTS[l]).toFixed(2)}">
         <button class="ch-pierre ch-t-${u.teinte}" ${(f || courante) ? `onclick="commencerLecon(${i}, ${l})"` : "disabled"} aria-label="${escapeHtml(nom)}"><span class="ico">${ico}</span></button>
         ${courante ? `<button class="ch-bulle" onclick="commencerLecon(${i}, ${l})">${T("Commencer")}</button>` : ""}
+        ${qi < 0 ? "" : queteHtml(i, qi, sens * CH_ECARTS[l], sens, faites, t, vient)}
       </div>`;
   }).join("");
   return `<section class="ch-unite ${etat}" aria-label="${escapeHtml(Tf("Unité {n}", { n:i + 1 }) + " · " + T(u.nom))}">
@@ -23912,8 +24340,37 @@ function uniteHtml(u, i, p, pos, vient){
         <small>${escapeHtml(livresDeLUnite(u))}</small>
         <span class="ch-score">${n}/${LECONS_PAR_UNITE}</span>
       </div>
-      <div class="ch-pas">${pierres}</div>
+      <div class="ch-pas">${pierres}${coffreHtml(u, i, n === LECONS_PAR_UNITE, t)}</div>
     </section>`;
+}
+/* (v368) UNE QUÊTE AU BORD DU CHEMIN. Elle se pose du côté où le chemin ne
+   va pas, à 5,6 rem du milieu — assez loin pour que son étiquette (six rem
+   au plus, sur deux lignes s'il le faut : « Desafío relámpago ») ne frôle
+   jamais la pierre du milieu de la ligne suivante, même celle, plus grande,
+   de la leçon à faire. Sa place se compte depuis celle de la leçon qui la
+   porte (ecart, en largeurs de pas de 4,4 rem). */
+function queteHtml(i, qi, ecart, sens, faites, t, vient){
+  const Q = QUETES[qi], reussie = queteReussie(i, qi, t), ouverte = !!faites[Q.apres];
+  const etat = reussie ? "reussie" : (ouverte ? "ouverte" : "fermee");
+  const qx = (-sens * 5.6 - ecart * 4.4).toFixed(2);
+  const ico = reussie ? ICONS.coche : (ouverte ? ICONS[Q.ico] : ICONS.cadenas);
+  const nom = T(Q.nom) + " · " + (reussie ? T("réussie") : ouverte ? T("à faire") : Tf("après la leçon {n}", { n:Q.apres + 1 }));
+  const allume = (vient && vient.u === i && vient.q === qi) ? " s-allume" : "";
+  return `<div class="ch-quete ${etat}${allume}" style="--qx:${qx}">
+      <button class="ch-medaillon" ${ouverte ? `onclick="commencerQuete(${i}, ${qi})"` : "disabled"} aria-label="${escapeHtml(nom)}"><span class="ico">${ico}</span></button>
+      <span class="ch-etiq"><small>${escapeHtml(T(Q.nom))}</small><span class="ch-prime"><span class="ico">${ICONS.diamant}</span>+${DIAMANTS.quete}</span></span>
+    </div>`;
+}
+/* (v368) LE COFFRE, au bout de l'unité. */
+function coffreHtml(u, i, fini, t){
+  const ouvert = !!t.gains["coffre:" + u.id];
+  const etat = ouvert ? "ouvert" : (fini ? "pret" : "ferme");
+  const nom = T("Coffre") + " · " + (ouvert ? T("ouvert") : fini ? T("à ouvrir") : T("au bout de l'unité"));
+  return `<div class="ch-coffre ${etat}">
+      <button class="ch-coffre-btn" ${etat === "pret" ? `onclick="ouvrirCoffre(${i})"` : "disabled"} aria-label="${escapeHtml(nom)}"><span class="ico">${ouvert ? ICONS.coffreOuvert : ICONS.coffre}</span></button>
+      ${etat === "pret" ? `<button class="ch-bulle" onclick="ouvrirCoffre(${i})">${T("Ouvrir le coffre")}</button>`
+        : `<span class="ch-etiq ch-coffre-l">${ouvert ? `<span class="ico">${ICONS.diamant}</span>+${DIAMANTS.coffre}` : escapeHtml(T("Coffre"))}</span>`}
+    </div>`;
 }
 function renderChemin(){
   const el = document.createElement("div");
@@ -23922,9 +24379,13 @@ function renderChemin(){
   const total = PARCOURS.length * LECONS_PAR_UNITE;
   const faites = Object.keys(p.faites).filter(k => CLES_LECONS.has(k)).length;
   const vient = cheminVient; cheminVient = null;
+  rattraperDiamants();   // (v368) les leçons faites avant les diamants
+  const t = loadTresor(), solde = soldeDiamants(t);
   /* La carte du haut dit le VOYAGE (où il mène, où l'on en est) ; le nom de
      l'unité est juste en dessous, sur sa bannière : pas deux fois. */
-  const tete = `<span class="ch-sur">${pos ? T("Ton parcours") : T("Parcours terminé")}</span><b class="ch-titre">${T("De la Genèse à l'Apocalypse")}</b>`;
+  const tete = `<div class="ch-haut"><span class="ch-sur">${pos ? T("Ton parcours") : T("Parcours terminé")}</span>
+      <button class="ch-diamants" onclick="ouvrirBoutique()" aria-label="${escapeHtml(Tf("{n} diamants · Boutique", { n:solde }))}"><span class="ico">${ICONS.diamant}</span><b>${solde}</b><span class="chev">${ICONS.chevronRight}</span></button></div>
+    <b class="ch-titre">${T("De la Genèse à l'Apocalypse")}</b>`;
   el.innerHTML = `
     ${enteteParcours()}
     <div class="card ch-tete">
@@ -23933,7 +24394,7 @@ function renderChemin(){
       <small class="ch-compte">${escapeHtml(Tf(faites > 1 ? "{n} leçons sur {t}" : "{n} leçon sur {t}", { n:faites, t:total }))}</small>
       <small class="ch-aide">${T("Six questions par leçon. Une erreur revient à la fin.")}</small>
     </div>
-    <div class="ch-unites">${PARCOURS.map((u, i) => uniteHtml(u, i, p, pos, vient)).join("")}</div>`;
+    <div class="ch-unites">${PARCOURS.map((u, i) => uniteHtml(u, i, p, pos, vient, t)).join("")}</div>`;
   /* (v358) On arrive SUR la leçon à faire : le chemin y est posé avant de
      glisser (voir UN ÉCRAN ARRIVE DÉJÀ À SA PLACE DE LECTURE). */
   el._defile = (a) => cibleLeconCourante(el, a);
@@ -23953,7 +24414,7 @@ function enteteParcours(){
 /* La leçon à faire (ou celle qui vient de s'allumer), un peu au-dessus du
    milieu de l'écran : la hauteur de défilement qui l'y met. */
 function cibleLeconCourante(el, a){
-  const n = el.querySelector(".ch-noeud.s-allume") || el.querySelector(".ch-noeud.courante");
+  const n = el.querySelector(".ch-noeud.s-allume, .ch-quete.s-allume") || el.querySelector(".ch-noeud.courante");
   if(!a || !n) return 0;
   const r = n.getBoundingClientRect(), cible = a.scrollTop + r.top + r.height / 2 - a.clientHeight * 0.48;
   return cible > 24 ? cible : 0;
@@ -24069,7 +24530,12 @@ function dayKey(off){ const d = new Date(Date.now() + (off||0)*86400000); const 
        s'éteint, même avec deux gels en poche : c'est la règle qui empêche
        d'acheter des vacances.
    Un gel se dépense TOUT SEUL, le lendemain du jour manqué, et le joueur
-   l'apprend par un bandeau. Rien à activer, rien à cliquer. */
+   l'apprend par un bandeau. Rien à activer, rien à cliquer.
+   (v368) ET DEPUIS LES DIAMANTS, ON PEUT AUSSI EN ACHETER — « si tu penses
+   que c'est bien d'avoir des diamants pour par exemple acheter des gels de
+   série ». Les deux règles qui tiennent la flamme ne bougent pas : deux en
+   réserve au plus, un jour chacun. On s'offre un filet, pas des vacances
+   (voir LA BOUTIQUE). */
 /* FLAMME_MEMOIRE : combien de jours joués on garde. Quatre-vingt-dix
    jusqu'à la v314 ; la page de la flamme montre maintenant toute l'histoire
    (« sur un an »), elle en garde donc plus d'un an. On ne retire jamais rien
@@ -24563,6 +25029,7 @@ function ouvrirFlamme(){
           <span class="flam-jour">${phraseDuJour()}</span>
           <span class="ft-g">${ICONS.flammeGelee}${escapeHtml(reserve)}</span>
           <span class="flam-regle">${Tf("Un gel tous les {p} jours d'affilée ou toutes les {g} parties, {m} en réserve au maximum. Il couvre un seul jour manqué : deux jours de suite et la flamme s'éteint.", {p:GEL_PALIER, g:GEL_PARTIES, m:GEL_MAX})}</span>
+          <span class="flam-regle">${Tf("Ou à la boutique du Parcours, pour {prix} diamants.", { prix:PRIX_GEL })}</span>
         </span>
       </div>
       <div class="flam-leg"><span class="fj fait"></span><b>${T("joué")}</b><span class="fj gele"></span><b>${T("gelé")}</b></div>
@@ -25574,7 +26041,8 @@ function sauvegardeVide(){
            stats:{ bestScore:0, bestPct:0, games:0 },
            flamme:{ last:"", streak:0, score:0, total:0, jours:[], geles:[], gels:0,
                     palier:0, parties:0, palierParties:0, annonce:"" },
-           vues:[], carnet:[], acquises:{}, modes:{}, gout:{ bible:"", scene:"", maj:0 }, parcours:{ faites:{} } };
+           vues:[], carnet:[], acquises:{}, modes:{}, gout:{ bible:"", scene:"", maj:0 }, parcours:{ faites:{} },
+           tresor:{ gains:{}, depenses:{} } };
 }
 /* La photo de CE téléphone, à cet instant. */
 function sauvegardeIci(){
@@ -25596,6 +26064,7 @@ function sauvegardeIci(){
     acquises:loadAcquises(),
     modes:   loadModeUse(),
     parcours: loadParcours(),
+    tresor:   loadTresor(),
     gout:    { bible:settings.bible, scene:settings.scene, maj:nEntier(settings.majGout) } };
 }
 function listeDeCles(x){ return Array.isArray(x) ? x.filter(k => typeof k === "string" && k) : []; }
@@ -25794,6 +26263,8 @@ function fusionner(ici, ailleurs){
     modes:  maxParCle(a.modes, b.modes),
     /* (v353) Le Parcours : toute leçon faite d'un côté ou de l'autre. */
     parcours: { faites: unionDesLecons(a.parcours, b.parcours) },
+    /* (v368) Les diamants : la réunion des deux registres (voir LES DIAMANTS). */
+    tresor: unionTresor(a.tresor, b.tresor),
     /* LE GOÛT : le plus RÉCEMMENT choisi. À égalité — deux appareils qui n'ont
        jamais rien choisi — celui d'ici, qui au pire est le défaut. */
     gout: (function(){
@@ -25828,6 +26299,7 @@ function appliquerSauvegarde(recue){
   saveErrbook(sur.carnet);
   saveAcquises(sur.acquises);
   saveParcours(sur.parcours);
+  saveTresor(sur.tresor);
   try{ localStorage.setItem("bt_modeuse", JSON.stringify(sur.modes)); }catch(e){}
   /* Le goût ne s'applique que s'il désigne quelque chose qui existe encore :
      une scène retirée du catalogue ou une traduction inconnue laisseraient le
@@ -33544,8 +34016,8 @@ function currentQ(){ return state.questions[state.currentIndex]; }
 
 function confirmLeaveGame(){
   showModal({
-    title:state.lecon ? T("Quitter la leçon\u00a0?") : T("Quitter la partie ?"),
-    message:state.lecon ? T("Tu la reprendras depuis le début.") : T("La partie en cours sera perdue."),
+    title:state.lecon ? (state.lecon.quete !== undefined ? T("Quitter la quête\u00a0?") : T("Quitter la leçon\u00a0?")) : T("Quitter la partie ?"),
+    message:state.lecon ? (state.lecon.quete !== undefined ? T("Tu pourras la retenter quand tu veux.") : T("Tu la reprendras depuis le début.")) : T("La partie en cours sera perdue."),
     okLabel:T("Quitter"), cancelLabel:T("Rester"), danger:true,
     onOk:()=>{ stopQTimer(); retourAuMode(); }
   });
@@ -33577,7 +34049,7 @@ function soloAnswer(idx){
     state.soloMissed.push({ q:q.q, options:q.options, correct:q.correct, chosen:opt, fact:q.fact });
     errbookAdd(q);
     /* (v353) LE PARCOURS : une erreur revient à la fin de la leçon, une fois. */
-    if(state.lecon && !q.relance) state.questions.push(Object.assign({}, q, { relance:true, shuffledOptions:shuffle(q.options) }));
+    if(state.lecon && state.lecon.quete === undefined && !q.relance) state.questions.push(Object.assign({}, q, { relance:true, shuffledOptions:shuffle(q.options) }));
     playIncorrect();
   }
   render();
@@ -34374,11 +34846,11 @@ function renderPlay(){
 
   const streakHot = state.soloStreak >= 3;
   el.innerHTML = `
-    ${renderHeader(state.revision ? T("Seconde chance") : (state.lecon ? T(PARCOURS[state.lecon.u].nom) : NOM_DU_JEU), true, "confirmLeaveGame()")}
+    ${renderHeader(state.revision ? T("Seconde chance") : (state.lecon ? (state.lecon.quete !== undefined ? T(QUETES[state.lecon.quete].nom) : T(PARCOURS[state.lecon.u].nom)) : NOM_DU_JEU), true, "confirmLeaveGame()")}
     <div class="play-meta">
       <span class="tier-chip ${info.cls}">${tierDotsHtml(info.level)}${T(info.label)} · ${info.pts} pts</span>
       <span class="q-counter">${state.currentIndex+1}/${total}</span>
-      ${(state.revision || state.lecon) ? "" : state.revealed ? timerFigeHtml(timerSecondsFor(state.timerKey)) : timerChipHtml(timerSecondsFor(state.timerKey))}
+      ${sansChrono() ? "" : state.revealed ? timerFigeHtml(chronoDeLaPartie()) : timerChipHtml(chronoDeLaPartie())}
       ${state.mode==="solo" ? `<span class="streak-chip${streakHot?' hot':''}"><span class="ico">${ICONS.flame}</span>${state.soloStreak}</span>` : ""}
     </div>
     <div class="progress-track">
@@ -34392,7 +34864,7 @@ function renderPlay(){
 
   // Chrono : démarre sur chaque nouvelle question non révélée
   if(fresh && !state.revealed){
-    const secs = (state.revision || state.lecon) ? null : timerSecondsFor(state.timerKey);
+    const secs = sansChrono() ? null : chronoDeLaPartie();   // (v368) le Défi éclair a son chrono
     startQTimer(secs, state.mode==="solo" ? soloTimeUp : groupTimeUp);
   }
 
@@ -34549,7 +35021,7 @@ function renderEndSolo(){
   return `
     <div class="end-hero">
       <div class="end-medal"><span class="em-cup">${idsPropres(TROPHY_GOLD)}</span></div>
-      <div class="end-eyebrow${state.soloIsRecord?' record':''}">${state.soloIsRecord?T("★ Nouveau record personnel !"):(state.lecon?T("Leçon terminée"):state.revision?T("Seconde chance"):T("Partie terminée"))}</div>
+      <div class="end-eyebrow${state.soloIsRecord?' record':''}">${state.soloIsRecord?T("★ Nouveau record personnel !"):(state.lecon?(state.lecon.quete !== undefined ? T("Quête") : T("Leçon terminée")):state.revision?T("Seconde chance"):T("Partie terminée"))}</div>
       ${state.lecon ? leconFinHtml() : state.revision?(()=>{
           /* LA SECONDE CHANCE SE COMPTE EN ERREURS RATTRAPÉES, pas en points :
              c'est ce qu'on est venu faire. Ce qui reste se dit d'après la porte
@@ -34593,7 +35065,9 @@ function renderEndSolo(){
     <div class="flex-sp"></div>
     ${state.soloMissed && state.soloMissed.length ? `<button class="btn-review" onclick="openMissedReview()"><span class="ico">${ICONS.bookOpen}</span>${state.soloMissed.length>1?Tf("Revoir mes {n} erreurs",{n:state.soloMissed.length}):T("Revoir mon erreur")}</button>` : ""}
     <div class="end-bottom">
-    ${state.lecon ? `<div class="end-actions lecon-fin"><button class="btn-replay" onclick="continuerParcours()">${T("Continuer")}</button></div>`
+    ${state.lecon ? ((state.lecon.quete !== undefined && !state.lecon.reussie)
+        ? `<div class="end-actions"><button class="btn-replay" onclick="relancerQuete()">${T("Réessayer")}</button><button class="btn-newgame btn-quit" onclick="continuerParcours()">${T("Continuer")}</button></div>`
+        : `<div class="end-actions lecon-fin"><button class="btn-replay" onclick="continuerParcours()">${T("Continuer")}</button></div>`)
       /* (v364) Après une séance « À revoir » : « Continuer » joue la suite s'il
          en reste ; sinon un seul bouton, qui ramène là d'où l'on vient. */
       : (state.revision && resteARattraper() === 0) ? `<div class="end-actions lecon-fin"><button class="btn-replay" onclick="retourAuMode()">${T("Continuer")}</button></div>` : `<div class="end-actions">

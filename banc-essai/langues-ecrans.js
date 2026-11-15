@@ -1228,6 +1228,33 @@ const ouvrirLaLangue = async (p, lg) => {
       commencerLecon(0, 4);
       for(let i = 0; i < 20 && state.screen === 'play'; i++){ const q = currentQ(); soloAnswer(q.shuffledOptions.findIndex(o => o === q.correct)); nextQuestion(); } }],
     ['Parcours · le chemin après', () => { __fermerTout(); state.screen = 'chemin'; render(); }],
+    /* (v368) LE PARCOURS ENRICHI. Le chemin d'après a crédité d'un coup les
+       leçons posées à la main (le bandeau « Des diamants pour tes leçons ») ;
+       puis le coffre de la Genèse, les règles des deux quêtes, une quête
+       jouée (quittée, ratée, presque, réussie), la boutique (un gel acheté,
+       la réserve pleine, le solde trop court) et une leçon d'avant créditée
+       seule — la phrase au singulier. */
+    ['Parcours · le coffre', () => { __fermerTout(); ouvrirCoffre(0); }],
+    ['Parcours · coffre ouvert', () => { __fermerTout(); state.screen = 'chemin'; render(); }],
+    ['Parcours · règle du Défi éclair', () => { __fermerTout(); commencerQuete(0, 0); }],
+    ['Parcours · règle de Sans faute', () => { __fermerTout(); commencerQuete(0, 1); }],
+    ['Parcours · une quête', () => { __fermerTout(); lancerQuete(0, 0); }],
+    ['Parcours · quitter la quête', () => { confirmLeaveGame(); }],
+    ['Parcours · quête manquée', () => { __fermerTout(); lancerQuete(0, 0);
+      for(let i = 0; i < 20 && state.screen === 'play'; i++){ const q = currentQ(); soloAnswer(q.shuffledOptions.findIndex(o => o !== q.correct)); nextQuestion(); } }],
+    ['Parcours · quête presque', () => { __fermerTout(); lancerQuete(0, 0);
+      for(let i = 0; i < 20 && state.screen === 'play'; i++){ const q = currentQ(); soloAnswer(q.shuffledOptions.findIndex(o => i < 2 ? o !== q.correct : o === q.correct)); nextQuestion(); } }],
+    ['Parcours · quête réussie', () => { __fermerTout(); lancerQuete(0, 0);
+      for(let i = 0; i < 20 && state.screen === 'play'; i++){ const q = currentQ(); soloAnswer(q.shuffledOptions.findIndex(o => o === q.correct)); nextQuestion(); } }],
+    ['Parcours · quête cochée', () => { __fermerTout(); state.screen = 'chemin'; render(); }],
+    ['Parcours · la boutique', () => { __fermerTout(); saveDaily({ gels:0 }); ouvrirBoutique(); }],
+    ['Parcours · un gel acheté', () => { acheterGel(); }],
+    ['Parcours · réserve pleine', () => { saveDaily({ gels:2 }); majBoutique(); acheterGel(); }],
+    ['Parcours · solde trop court', () => { saveDaily({ gels:0 }); depenserDiamants('banc', Math.max(1, soldeDiamants() - 10)); majBoutique(); }],
+    ['Parcours · une leçon d\'avant', () => { __fermerTout();
+      const p = loadParcours(); p.faites['exode:1'] = '2026-01-01'; localStorage.setItem('bt_parcours', JSON.stringify({ v:1, faites:p.faites }));
+      try { achToastPause = false; achToastBusy = false; } catch(e){}
+      state.screen = 'chemin'; render(); }],
     ['Parcours · tout fait', () => { __fermerTout();
       const f = {}; PARCOURS.forEach((u, i) => { for(let l = 0; l < LECONS_PAR_UNITE; l++) f[cleLecon(i, l)] = '2026-01-01'; });
       localStorage.setItem('bt_parcours', JSON.stringify({ v:1, faites:f })); state.screen = 'chemin'; render(); }],
