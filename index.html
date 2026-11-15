@@ -401,6 +401,19 @@
        propriétés : le mouvement et le fondu sont donc deux animations
        posées ensemble (la seconde est toujours « fondu »). */
     --tr-fondu: var(--onde-duree) cubic-bezier(0.33,1,0.68,1);
+    /* ===== (v362) CE QUI SUIT LE CLAVIER =====
+       « Sur Android, lors de l'animation de l'ouverture, la barre
+         d'écriture se comporte bizarrement, l'écran saute un peu. Fais en
+         sorte que ça s'ouvre parfaitement, comme sur iOS. »
+       iOS annonce son clavier d'un coup : une seule transition, propre.
+       Android l'annonce en plusieurs pas pendant qu'il monte, et chaque pas
+       relançait la transition — sur le ressort de la v360, qui part de
+       l'ARRÊT : la barre repartait de zéro à chaque pas, par à-coups. Ce
+       qui suit le clavier (la discussion, une feuille, une fenêtre, une
+       page) garde la durée des pages mais une courbe qui part FRANCHE :
+       relancée en route, elle continue sans marquer d'arrêt, et le clavier
+       lui-même part vite. */
+    --tr-clavier: 0.52s cubic-bezier(0.33,1,0.68,1);
     /* Y COMPRIS EN PARTIE. Le banc enpartie.js a trouvé cinq mouvements qui
        tournaient encore sur leur propre horloge, tous pendant une partie :
        le trophée et la médaille (0,75s, avec dépassement), la couronne du
@@ -673,7 +686,7 @@
      visible : la modale se recentre au-dessus du clavier, entière. */
   /* Une hauteur explicite au repos, sinon il n'y a rien à faire glisser : de
      « tout l'écran » à --vvh, le voile sautait d'une image à l'autre. */
-  .modal-veil{ height:100%; transition:height var(--tr-ouvre); }
+  .modal-veil{ height:100%; transition:height var(--tr-clavier); }
   html.kb .modal-veil{ bottom:auto; height:var(--vvh, 100%); top:var(--vvt, 0px); }
   /* ===== LES FEUILLES AUSSI S'ARRÊTENT AU BORD DU CLAVIER =====
      « Quand j'écris le nom du groupe ou la description, le clavier cache ce
@@ -692,7 +705,7 @@
      AVEC lui est à nous. Tout ce qui lui répond — feuille, fenêtre,
      discussion, page qui se recadre — prend donc le pas d'une page qui
      s'ouvre (--tr-ouvre, 0,52 s), au lieu de bondir en 0,28 s. */
-  .sheet-veil{ height:100%; transition:height var(--tr-ouvre); }
+  .sheet-veil{ height:100%; transition:height var(--tr-clavier); }
   /* (v330) top : la zone visible a pu glisser vers le bas (voir --vvt dans
      le module du clavier) — la feuille, la page, la fenêtre s'y posent. */
   html.kb .sheet-veil{ bottom:auto; height:var(--vvh, 100%); top:var(--vvt, 0px); }
@@ -700,7 +713,13 @@
   /* La discussion, clavier ouvert (voir le module du clavier) : l'écran prend
      la hauteur visible, sans cale ni défilement, et y glisse à la vitesse du
      clavier d'iOS. La marge du bas n'a plus de barre d'accueil à éviter. */
-  html.ecran-discussion #app{ transition:height var(--tr-ouvre), padding-bottom var(--tr-ouvre); }
+  html.ecran-discussion #app{ transition:height var(--tr-clavier), padding-bottom var(--tr-clavier); }
+  /* (v362) Sur Android, le module du clavier fait lui-même suivre la hauteur
+     visible, image par image (voir LA HAUTEUR VISIBLE SUIT LE CLAVIER SANS
+     À-COUPS) : aucune transition ne doit la reprendre derrière lui. Dès que
+     le clavier se range (plus de « kb »), les transitions reviennent. */
+  html.kb.kb-suivi.ecran-discussion #app{ transition:padding-bottom var(--tr-clavier); }
+  html.kb.kb-suivi .sheet-veil, html.kb.kb-suivi .modal-veil{ transition:none; }
   /* !important (v317) : une hauteur ÉPINGLÉE en ligne (reparerHauteurApp)
      passait devant cette règle, et la barre d'écriture redescendait sous le
      clavier. Clavier ouvert dans une discussion, c'est la hauteur visible qui
@@ -7032,7 +7051,7 @@
   .sheet-veil.page .settings-sheet.settings-sheet{ position:absolute; inset:0; width:auto; max-width:none; margin:0; border-radius:0;
     padding:0 var(--page-marge) calc(var(--sab) + 1.75rem);
     overflow-x:hidden; overflow-y:auto; overscroll-behavior:contain; -webkit-overflow-scrolling:touch; touch-action:pan-y;
-    background:none; box-shadow:none; transform:none; animation:none !important; transition:transform var(--tr-ouvre), bottom var(--tr-ouvre); will-change:auto; }
+    background:none; box-shadow:none; transform:none; animation:none !important; transition:transform var(--tr-ouvre), bottom var(--tr-clavier); will-change:auto; }
   .sheet-veil.page .settings-sheet.settings-sheet.feuille-recule{ transform:translate3d(-22%,0,0); }
   /* ===== UNE PAGE PASSE SOUS LE CLAVIER (v318) =====
      « Ici, bug d'affichage. » (capture de Taylor, iPhone : « Rejoindre avec
@@ -7050,6 +7069,7 @@
      le corps, pas le voile. */
   html.kb .sheet-veil.page{ height:100%; }
   html.kb .sheet-veil.page .settings-sheet.settings-sheet{ bottom:calc(100% - var(--vvh, 100%)); }
+  html.kb.kb-suivi .sheet-veil.page .settings-sheet.settings-sheet{ transition:transform var(--tr-ouvre); }
   .sheet-veil.page .rev-list, .sheet-veil.page .flam-list{ max-height:none; height:auto; overflow:visible; }
   /* LA BARRE DU HAUT. Elle déborde des marges de la page pour couvrir toute
      la largeur, et garde la zone de l'encoche. */
@@ -11783,7 +11803,7 @@ const SUPABASE_ANON_KEY = "sb_publishable_FDJ_R0foC7uIeHmxVrj6rA_2NeIgW2a";
    remontée d'un téléphone ne vaut rien si on ne sait pas QUELLE version
    tournait. Elle doit rester égale au CACHE de sw.js — c'est ce que vérifie
    banc-essai/version.js, qui refuse de laisser publier les deux en désaccord. */
-const VERSION_JEU = "v361";
+const VERSION_JEU = "v362";
 
 /* ===================== QUAND ÇA CASSE CHEZ UN JOUEUR =====================
    « Si quelque chose casse chez cinq d'entre eux sur un modèle de téléphone
@@ -15942,7 +15962,11 @@ try{
      pose le clavier au bas de la fenêtre (haut + hauteur = la fenêtre), quand
      l'ancien donnait le coin de la zone visible (0 en plein écran). */
   const clavierBrut = (r)=> !!r && chromeQuiDitJuste && enPleinEcran() && r.y > 0 && Math.abs(r.y + r.height - innerHeight) <= 3;
+  /* (v362) Ce que la mesure a déjà retiré pour les boutons d'Android (voir
+     LES BOUTONS D'ANDROID, SOUS UN CLAVIER QUE SEULE LA ZONE VISIBLE DIT). */
+  let compense = 0;
   const hauteurMesuree = ()=>{
+    compense = 0;
     const r = rectClavier();
     if(!r){
       /* (v343) Rien ne parle, mais un clavier est là (voir l'estimation).
@@ -15969,7 +15993,10 @@ try{
          (getWindowVisibleDisplayFrame, boutons compris) — les retirer une
          seconde fois ferait flotter la barre. Lu dans son code
          (CompositorViewHolder.updateCachedSizes). */
-      if(SAMSUNG && isField() && vv.height < restH - 90) return Math.max(0, vv.height - boutonsEnPlus(Math.max(0, restInner - innerHeight)));
+      if(SAMSUNG && isField() && vv.height < restH - 90){
+        compense = boutonsEnPlus(Math.max(0, restInner - innerHeight));
+        return Math.max(0, vv.height - compense);
+      }
       return vv.height;
     }
     const fen = innerHeight;
@@ -16026,10 +16053,38 @@ try{
     corrige = 0;
     if(!ANDROID || !appris.length || !isField() || !(restH - v > 90)) return v;
     const s = signatureClavier();
-    const a = appris.find(x => x.s === s);
-    if(!a) return v;
-    corrige = a.d;
-    return Math.max(0, Math.min(vv.height, v - a.d));
+    let a = appris.find(x => x.s === s), part = 1;
+    /* ===== (v362) LA CORRECTION SUIT LA MONTÉE DU CLAVIER =====
+       Elle était attachée à l'annonce FINALE du clavier : pendant qu'il
+       montait, aucune annonce ne lui ressemblait — la barre montait sans
+       elle, puis sautait d'un coup, à la fin, de toute la correction
+       (« l'écran saute un peu »). Le même clavier (même sorte d'annonce,
+       même fenêtre, même marge) pas encore arrivé : la correction suit sa
+       montée, au prorata du chemin fait. Un autre clavier, arrivé, n'en
+       reçoit toujours aucune. */
+    if(!a){
+      const p = s.split(","), sorte = p[0];
+      if(sorte === "zone" || sorte === "annonce" || sorte === "brut"){
+        const cur = +p[1];
+        for(const x of appris){
+          const q = x.s.split(",");
+          if(q[0] !== sorte || q[2] !== p[2] || q[3] !== p[3] || q[4] !== p[4]) continue;
+          const fin = +q[1];
+          const k = sorte === "zone" ? (restH - cur) / Math.max(1, restH - fin) : cur / Math.max(1, fin);
+          if(k > 0 && k < 1){ a = x; part = k; break; }
+        }
+      }
+      if(!a) return v;
+    }
+    /* ===== (v362) RIEN N'EST COMPTÉ DEUX FOIS =====
+       Une correction apprise AVANT que la mesure ne retire elle-même les
+       boutons d'Android (v361) les contenait déjà : on n'en garde que ce que
+       la mesure ne retire pas encore. Une correction apprise depuis porte
+       ce qui était retiré au moment où elle l'a été (c). */
+    let d = a.d;
+    if(d > 0) d = Math.max(0, d - Math.max(0, compense - (+a.c || 0)));
+    corrige = Math.round(d * part);
+    return Math.max(0, Math.min(vv.height, v - d * part));
   };
   let toucherPage = 0, posee = null, avantGeste = null, apprendreT = 0;
   document.addEventListener("pointerdown", ()=>{ toucherPage = performance.now(); }, { capture:true, passive:true });
@@ -16052,7 +16107,7 @@ try{
           if(!a || !posee || !isField() || signatureClavier() !== posee.s) return;
           const d = a.v - posee.v;
           if(Math.abs(d) < 12 || Math.abs(d) > 120 || a.s.split(",")[2] !== posee.s.split(",")[2]) return;
-          appris = [{ s:a.s, d, t:Date.now() }].concat(appris.filter(x => x.s !== a.s)).slice(0, 6);
+          appris = [{ s:a.s, d, c:compense, t:Date.now() }].concat(appris.filter(x => x.s !== a.s)).slice(0, 6);
           localStorage.setItem(CLE_APPRIS, JSON.stringify(appris));
         }catch(e){}
       }, 700);
@@ -16095,7 +16150,7 @@ try{
         ecranDispo: (window.screen && screen.availHeight) || 0, exterieur: window.outerHeight || 0,
         repos: { fen:restInner, vv:Math.round(restH), sab:sabRepos },
         ouvert: { fen:innerHeight, vv:Math.round(vv.height), vvTop:Math.round(vv.offsetTop || 0), sab:sabVif(), clavier:r },
-        mesure: Math.round(hauteurMesuree()), visible: Math.round(hauteurVisible()), appris: corrige,
+        mesure: Math.round(hauteurMesuree()), visible: Math.round(hauteurVisible()), appris: corrige, boutons: compense,
         champ: { haut:Math.round(champ.top), bas:Math.round(champ.bottom) },
         ecran: (typeof state !== "undefined" && state) ? state.screen : "" };
       let l = [];
@@ -16644,6 +16699,41 @@ try{
      sous les yeux, et le champ monte avec le clavier. Rien d'autre ne bouge. */
   const champDeDiscussion = ()=>{ const el = document.activeElement; return !!el && el.id === "compoTexte"; };
   let fhPose = 0;   // (v339) la hauteur visible de la discussion au dernier pas (voir apply)
+  /* ===== (v362) SUR ANDROID, LA HAUTEUR VISIBLE SUIT LE CLAVIER SANS À-COUPS =====
+     Android annonce son clavier en plusieurs pas pendant qu'il monte ;
+     chaque pas relançait la transition de la discussion, qui marquait un
+     recul (2,5 px mesurés, à chaque pas) avant de repartir : une dent de
+     scie, « l'écran saute un peu ». La hauteur visible suit maintenant la
+     dernière annonce IMAGE PAR IMAGE, en gardant son élan d'un pas à
+     l'autre : elle part vite (comme le clavier d'iPhone), ne revient jamais
+     en arrière, et se pose en douceur (95 % du chemin en 0,4 s). L'iPhone,
+     qui annonce son clavier d'un coup, garde sa transition. */
+  const TAU_CLAVIER = 0.13;
+  let vvhVise = 0, vvhVu = 0, vvhRaf = 0, vvhAvant = 0;
+  const ecrireVvh = (v)=> de.style.setProperty("--vvh", (Math.round(v * 10) / 10) + "px");
+  const pasVvh = (t)=>{
+    vvhRaf = 0;
+    if(!de.classList.contains("kb")){ de.classList.remove("kb-suivi"); vvhVu = 0; return; }
+    const dt = Math.min(0.05, Math.max(0.001, (t - vvhAvant) / 1000)); vvhAvant = t;
+    vvhVu += (vvhVise - vvhVu) * (1 - Math.exp(-dt / TAU_CLAVIER));
+    if(Math.abs(vvhVise - vvhVu) < 0.4) vvhVu = vvhVise;
+    ecrireVvh(vvhVu);
+    if(vvhVu !== vvhVise) vvhRaf = requestAnimationFrame(pasVvh);
+  };
+  const poserVvh = (v)=>{
+    v = Math.round(v);
+    if(!ANDROID){ de.style.setProperty("--vvh", v + "px"); return; }
+    if(!de.classList.contains("kb") || !vvhVu){
+      /* Le clavier commence à monter : on part de la hauteur AFFICHÉE. */
+      let h = restH;
+      try{ const a = document.getElementById("app"); if(a && champDeDiscussion()) h = a.getBoundingClientRect().height || restH; }catch(e){}
+      vvhVu = h;
+      ecrireVvh(vvhVu);
+    }
+    vvhVise = v;
+    de.classList.add("kb-suivi");
+    if(!vvhRaf){ vvhAvant = performance.now(); vvhRaf = requestAnimationFrame(pasVvh); }
+  };
   function apply(){
     suivreDecor();
     apprendre();                          // (v359) voir CE QUE LE GESTE APPREND
@@ -16664,7 +16754,7 @@ try{
     if(champDeDiscussion()){
       const cache = restH - hauteurVisible();
       if(cache > 90){
-        de.style.setProperty("--vvh", Math.round(hauteurVisible()) + "px");
+        poserVvh(hauteurVisible());
         de.style.setProperty("--kbh", Math.round(cache) + "px");
         poserDecalage(decalageVisible());
         if(!de.classList.contains("kb-fil")){
@@ -16703,7 +16793,7 @@ try{
           if(a) de.style.setProperty("--dep", Math.max(0, a.scrollHeight - a.clientHeight) + "px");
         }catch(e){}
       }
-      de.style.setProperty("--vvh", Math.round(hauteurVisible()) + "px");
+      poserVvh(hauteurVisible());
       de.style.setProperty("--kbh", Math.round(hidden) + "px");  // de quoi remonter le champ
       poserDecalage(decalageVisible());
       de.classList.add("kb");
