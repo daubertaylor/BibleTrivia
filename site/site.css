@@ -73,7 +73,11 @@ li{ margin:0.25rem 0; }
 }
 
 /* ----- Le bandeau : le décor du jeu ----- */
-.bandeau{ position:relative; color:#fff; background:#3a2a1c url("decor.jpg") center 62% / cover no-repeat; overflow:hidden; }
+/* (v372) Sous la photo, sa miniature (32 × 24, étirée et donc floue) : tant
+   que la photo n'est pas peinte, on voit déjà le ciel et le sable, pas un
+   aplat brun. */
+.bandeau{ position:relative; color:#fff; overflow:hidden;
+  background:url("decor.jpg") center 62% / cover no-repeat, url("data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAAAQABAAD/2wBDAAwICQsJCAwLCgsODQwOEh4UEhEREiUbHBYeLCcuLisnKyoxN0Y7MTRCNCorPVM+QkhKTk9OLztWXFVMW0ZNTkv/2wBDAQ0ODhIQEiQUFCRLMisyS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0v/wAARCAAYACADASIAAhEBAxEB/8QAGQAAAwADAAAAAAAAAAAAAAAAAAQFAQMG/8QAJRAAAgEEAQMEAwAAAAAAAAAAAQIDAAQFESESMUEGE2FxQoHB/8QAFwEAAwEAAAAAAAAAAAAAAAAAAQIDBf/EABwRAQACAgMBAAAAAAAAAAAAAAEAEQIDBBUhEv/aAAwDAQACEQMRAD8AgT2EUDdLyhTrfSw0dVnG2q3bsYNnoPkd/wBU6+Cne4ilR416Y9Nt+7AcVvtrCbHnSTRojKNlQzMGHkaFHsPSoetKbuWsPjJVRVRFUk7O1BHbX3uqtt6bRJY3jg6Ag5UtwT41XP3edySBUtkuXOuWEftg/wBqdc+o8vYQFppLhBJsBW4WmeX9ekQ4VeMZF8EQO7KiH8mOqTk9Sks0NpGWfxJ4HzRRWXr1Y5Fs19m3LFAikebu4JAfcMzueQ2tb+KRyNw0+5LmRpZRx34H0KKKsYg2EmqlLP/Z") center 62% / cover no-repeat, #3a2a1c; }
 .bandeau::before{ content:""; position:absolute; inset:0;
   background:linear-gradient(180deg, rgba(21,16,11,0.30) 0%, rgba(21,16,11,0.52) 55%, rgba(21,16,11,0.78) 100%); }
 .bandeau-in{ position:relative; max-width:var(--large); margin:0 auto; padding:3.1rem 1.15rem 2.7rem; }
@@ -199,3 +203,24 @@ li{ margin:0.25rem 0; }
 .pied a:hover{ text-decoration:underline; }
 .pied p{ font-size:0.92rem; }
 .pied .bas{ grid-column:1 / -1; font-size:0.82rem; color:rgba(255,255,255,0.5); margin:0; }
+
+/* ----- (v372) D'UNE PAGE À L'AUTRE, SANS COUPURE -----
+   Chaque lien rechargeait la page d'un coup : un aplat brun à la place du
+   décor, le titre dans une police de secours puis dans la sienne, la rangée
+   des rubriques revenue au début. Le navigateur fait maintenant passer d'une
+   page à l'autre (Safari 18.2 et plus, Chrome) : l'en-tête reste où il est,
+   et la page qui arrive monte PAR-DESSUS celle qu'on quitte, qui ne bouge
+   pas. Un fondu des deux à la fois superposait leurs textes et laissait la
+   photo du décor pâlir à mi-chemin (le fond crème passait au travers) : ici,
+   la nouvelle page est opaque en 0,1 s et finit de monter seule. Ailleurs,
+   le lien marche comme avant. Courbes cubic-bezier : jouées par le
+   téléphone, sur iPhone aussi. */
+@view-transition{ navigation:auto; }
+.entete{ view-transition-name:entete; }
+::view-transition-old(root){ animation:none; mix-blend-mode:normal; }
+::view-transition-new(root){ mix-blend-mode:normal; animation:vtEntre 0.36s both; }
+::view-transition-old(entete), ::view-transition-new(entete){ animation-duration:0.22s; animation-timing-function:cubic-bezier(0.33,1,0.68,1); }
+@keyframes vtEntre{
+  0%{ opacity:0; transform:translateY(22px); animation-timing-function:cubic-bezier(0.33,1,0.68,1); }
+  28%{ opacity:1; transform:translateY(9px); animation-timing-function:cubic-bezier(0.33,1,0.68,1); }
+  100%{ opacity:1; transform:translateY(0); } }

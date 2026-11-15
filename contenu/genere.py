@@ -172,9 +172,14 @@ def page(chemin, titre, description, corps, *, rubrique=None, bandeau=None, miet
 <link rel="icon" href="{r}icon-192.png">
 <link rel="apple-touch-icon" href="{r}apple-touch-icon.png">
 <link rel="stylesheet" href="{r}site/site.css">
+<link rel="preload" href="{r}site/decor.jpg" as="image" fetchpriority="high">
+<link rel="preload" href="{r}fonts/poppins-700-latin.woff2" as="font" type="font/woff2" crossorigin>
+<link rel="preload" href="{r}fonts/poppins-600-latin.woff2" as="font" type="font/woff2" crossorigin>
+<link rel="preload" href="{r}fonts/inter-latin.woff2" as="font" type="font/woff2" crossorigin>
+<script type="speculationrules">{{"prefetch":[{{"where":{{"and":[{{"href_matches":"/*"}},{{"not":{{"href_matches":"/"}}}}]}},"eagerness":"moderate"}}]}}</script>
 {ld}</head>
 <body>
-<header class="entete"><div class="entete-in"><a class="marque" href="{r}"><img src="{r}icon-192.png" alt="" width="34" height="34">Yada</a><nav class="menu" aria-label="Le site">{menu}</nav><a class="jouer" href="{r}">Jouer</a></div><nav class="menu-mobile" aria-label="Le site (mobile)">{menu}</nav></header>
+<header class="entete"><div class="entete-in"><a class="marque" href="{r}"><img src="{r}icon-192.png" alt="" width="34" height="34">Yada</a><nav class="menu" aria-label="Le site">{menu}</nav><a class="jouer" href="{r}">Jouer</a></div><nav class="menu-mobile" aria-label="Le site (mobile)">{menu}</nav><script>(function(){{try{{var m=document.querySelector(".menu-mobile");if(!m)return;var k="yada-onglets";m.scrollLeft=+sessionStorage.getItem(k)||0;var a=m.querySelector("[aria-current]");if(a){{var r=a.getBoundingClientRect(),n=m.getBoundingClientRect();if(r.left<n.left+12||r.right>n.right-12)m.scrollLeft+=(r.left+r.width/2)-(n.left+n.width/2);}}addEventListener("pagehide",function(){{try{{sessionStorage.setItem(k,m.scrollLeft)}}catch(e){{}}}});}}catch(e){{}}}})();</script></header>
 {haut}<main class="contenu">
 {fil}{corps}
 </main>
