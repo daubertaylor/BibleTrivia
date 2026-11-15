@@ -11,13 +11,17 @@
    centre, et on vérifie SEPT promesses :
 
      1. LA GOUTTE NAÎT SOUS LE DOIGT : le centre du disque est le point touché,
-        au pixel près — pas le centre de la puce ;
+        au pixel près — pas le centre de la puce ; (v364) sur une puce large,
+        en largeur seulement : en hauteur, elle naît à la hauteur du milieu, à
+        un dixième près de l'écart du doigt — le bas se remplit avec le haut
+        (voir puce-pleine.js) ;
      2. ELLE S'ÉTALE : son échelle monte par valeurs distinctes et croissantes,
         jamais d'un saut, et elle part petite ;
      3. ELLE COUVRE TOUT : à la fin, le cœur plein du disque atteint le coin le
         plus éloigné (géométrie), et en pixels les quatre coins de la puce sont
         rouges — pas de frange claire ;
-     4. LA TEINTE PLEINE N'ARRIVE QU'À LA FIN, sous l'encre ;
+     4. LA TEINTE PLEINE N'ARRIVE QU'À LA FIN, sous l'encre — (v364) aux
+        quatre cinquièmes, quand son cœur couvre déjà toute la puce ;
      5. LE MOT NE BLANCHIT QUE COUVERT : à l'instant où il bascule, le cœur de
         l'encre couvre toute la boîte du libellé ;
      6. UN SEUL ROUGE : la quantité totale de rouge sur la rangée (en pixels,
@@ -122,10 +126,11 @@ const LENT = 6;
 
   /* 1. sous le doigt */
   const pose = l.find(e => isFinite(e.x));
-  const attendu = { x: doigt.x - cible.x, y: doigt.y - cible.y };
+  const large = cible.w >= cible.h * 1.4, yDoigt = doigt.y - cible.y;
+  const attendu = { x: doigt.x - cible.x, y: large ? cible.h / 2 + (yDoigt - cible.h / 2) * 0.1 : yDoigt };
   if (!pose) soucis.push('la goutte n\'a pas de point de départ');
   else if (Math.hypot(pose.x - attendu.x, pose.y - attendu.y) > 2)
-    soucis.push('la goutte ne naît pas sous le doigt : (' + pose.x.toFixed(1) + ', ' + pose.y.toFixed(1) + ') au lieu de ('
+    soucis.push('la goutte ne naît pas sous le doigt (à la hauteur du milieu, sur une puce large) : (' + pose.x.toFixed(1) + ', ' + pose.y.toFixed(1) + ') au lieu de ('
       + attendu.x.toFixed(1) + ', ' + attendu.y.toFixed(1) + ')');
 
   /* 2. elle s'étale */
@@ -147,8 +152,8 @@ const LENT = 6;
 
   /* 4. la teinte n'arrive qu'à la fin */
   const rouge = (c) => { const v = (String(c).match(/\d+/g) || []).map(Number); return v[0] > 200 && v[1] < 110 && v[2] < 90; };
-  const tot = pendant.filter(e => e.t < 0.5 * LENT * 1000 * 0.85);
-  if (tot.some(e => rouge(e.teinte))) soucis.push('la teinte pleine arrive avant la fin de l\'encre');
+  const tot = pendant.filter(e => e.t < 0.5 * LENT * 1000 * 0.75);
+  if (tot.some(e => rouge(e.teinte))) soucis.push('la teinte pleine arrive avant les quatre cinquièmes de l\'encre');
 
   /* 5. le mot ne blanchit que couvert */
   const blanc = (c) => { const v = (String(c).match(/\d+/g) || []).map(Number); return v[0] > 240 && v[1] > 240 && v[2] > 240; };

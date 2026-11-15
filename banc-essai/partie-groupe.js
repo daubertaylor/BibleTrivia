@@ -56,13 +56,14 @@ const dit = (quoi, bon, detail) => { console.log('  ' + (bon ? 'OK  ' : 'KO  ') 
 
     /* ---- 1-2 ---- */
     const delai = await p.evaluate(() => new Promise(res => { const t0 = performance.now(); document.querySelector('.compo-jeu').click();
-      const tic = () => { if (state.screen === 'online-room') res(Math.round(performance.now() - t0)); else if (performance.now() - t0 > 3000) res(-1); else requestAnimationFrame(tic); }; tic(); }));
-    dit('la manette ouvre le salon tout de suite, sans attendre le serveur', delai >= 0 && delai < 250, delai + ' ms (serveur à 800 ms)');
+      /* (v365) Le salon s'ouvre DANS la discussion : sa carte, au toucher. */
+      const tic = () => { if (state.screen === 'groupe' && document.querySelector('.grp-partie[data-phase="room"]')) res(Math.round(performance.now() - t0)); else if (performance.now() - t0 > 3000) res(-1); else requestAnimationFrame(tic); }; tic(); }));
+    dit('la manette ouvre le salon tout de suite, dans la discussion, sans attendre le serveur', delai >= 0 && delai < 250, delai + ' ms (serveur à 800 ms)');
     dit('… et l\'invitation arrive ensuite dans le groupe', await attendre(p, () => !!(net.partieGroupe && net.partieGroupe.message), null, 6000) && /ouverte/.test(await parties()), await parties());
 
     /* ---- 3 ---- */
-    await p.evaluate(() => document.querySelector('.app-header [onclick*="leaveRoomToOnline"]').click());
-    await attendre(p, () => state.screen === 'groupe', null, 6000);
+    await p.evaluate(() => document.querySelector('.grp-partie .gp-quitter').click());   // (v365) la croix du salon
+    await attendre(p, () => state.screen === 'groupe' && !document.querySelector('.grp-partie'), null, 6000);
     let fin = false; for (let i = 0; i < 20 && !fin; i++) { await p.waitForTimeout(250); fin = /supprimee/.test(await parties()); }
     dit('salon fermé sans que personne soit venu : l\'invitation s\'en va', fin, await parties());
 
@@ -87,8 +88,8 @@ const dit = (quoi, bon, detail) => { console.log('  ' + (bon ? 'OK  ' : 'KO  ') 
     await m.sql("update public.messages set cree_le = cree_le - interval '3 seconds'");
     const deux = (await m.rpc(A, 'envoyer_message', { p_groupe: g.id, p_texte: '', p_genre: 'partie', p_donnees: { code: 'YYYY' } })).data;
     dit('le serveur refuse une 2e partie ouverte', deux && deux.erreur === 'partie_en_cours', JSON.stringify(deux));
-    await p.evaluate(() => document.querySelector('.app-header [onclick*="leaveRoomToOnline"]').click());
-    await attendre(p, () => state.screen === 'groupe', null, 6000);
+    await p.evaluate(() => document.querySelector('.grp-partie .gp-quitter').click());   // (v365) la croix du salon
+    await attendre(p, () => state.screen === 'groupe' && !document.querySelector('.grp-partie'), null, 6000);
     let close = false; for (let i = 0; i < 20 && !close; i++) { await p.waitForTimeout(250); close = !/ouverte/.test(await parties()); }
     /* LA DERNIÈRE PARTIE DATE DE DEUX SECONDES, posé en absolu. Reculer
        toutes les dates « de deux secondes de plus » s'ajoutait aux reculs

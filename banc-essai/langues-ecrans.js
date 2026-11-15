@@ -143,6 +143,10 @@ const RAMASSER = () => {
     if(!t) continue;
     const p = n.parentElement;
     if(!p || p.tagName === 'SCRIPT' || p.tagName === 'STYLE') continue;
+    /* (v363) Un <noscript> n'est jamais peint quand le jeu tourne : c'est le
+       mot laissé à un lecteur sans JavaScript (un robot d'indexation), en
+       français comme le site. Le navigateur le garde pourtant en texte brut. */
+    if(p.closest('noscript')) continue;
     if(!visible(p)) continue;
     /* L'ENDROIT, C'EST AUSSI CELUI D'AU-DESSUS. Les lettres de la grille de la
        flamme vivent dans des <span> nus : sans le parent, leur emplacement
@@ -864,6 +868,22 @@ const ouvrirLaLangue = async (p, lg) => {
        au-dessus de la discussion (voir sortirVersGroupe). */
     ['Groupes · partie finie', async () => { showMiniToast(T("Cette partie n'est plus ouverte."));
       await new Promise(r => setTimeout(r, 120)); }],
+    /* (v365) LE SALON D'UNE PARTIE DE GROUPE SE TIENT DANS LA DISCUSSION : sa
+       carte (les visages, les réglages de l'hôte, « Commencer ») entre
+       l'en-tête et le fil ; le bouton qui la plie dit « Réduire la partie »,
+       puis « Ouvrir la partie » ; et l'hôte qui quitte la discussion alors
+       qu'un joueur l'a rejoint se voit demander « Fermer la partie ? ». Le
+       salon est posé à la main, comme « Salon à deux » plus bas : rien ne
+       part vers un serveur. */
+    ['Groupes · salon dans la discussion', () => { __fermerTout(); __grpDecor(); grp.courant = 'g-1';
+      net.error = ''; net.code = 'ABCD'; net.isHost = true; net.room = { send(){}, track(){}, untrack(){}, unsubscribe(){} };
+      net.joueurs = { b:{ id:'b', name:'Sam', color:'#E8574C', ready:true } }; net.oppPresent = true; net.opp = net.joueurs.b;
+      net.fil = 'g-1'; net.phase = null; net.filReduit = false;
+      state.screen = 'groupe'; render(); }],
+    ['Groupes · salon plié', () => { reduirePartie(); }],
+    ['Groupes · fermer la partie ?', () => { reduirePartie(); retourGroupes(); }],
+    ['Groupes · le salon s\'en va', () => { __fermerTout(); net.fil = null; net.phase = null; net.room = null; net.code = ''; net.isHost = false;
+      net.joueurs = {}; net.oppPresent = false; net.opp = null; state.screen = 'groupe'; render(); }],
     /* (v339) Des parties de groupe terminées, avec leurs scores : chaque bulle
        dit qui l'a emporté (un autre, un ex æquo, soi) ; puis deux récaps —
        gagné par un autre, gagné par soi —, et tout se referme. */

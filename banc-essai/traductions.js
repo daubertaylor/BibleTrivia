@@ -238,6 +238,16 @@ while(net.includes('<style>')) net = effacer(net, '<style>', '</style>');
    derniers on exige une espace devant les deux barres, ce qui laisse
    « https:// » tranquille. */
 net = net.replace(/<!--[\s\S]*?-->/g, blanc);
+/* (v363) CE QUE LA PAGE DIT D'ELLE-MÊME À GOOGLE : son titre, sa description,
+   ses aperçus de liens et ses données structurées, les liens vers les pages du
+   site, et le mot laissé aux lecteurs sans JavaScript. Ils présentent un site
+   écrit en français, et ne sont pas l'interface du jeu (aucun joueur ne les
+   lit dans sa langue : le jeu, lui, passe par T()). */
+net = net.replace(/<title>[\s\S]*?<\/title>/g, blanc);
+net = net.replace(/<meta\b[^>]*>/g, blanc);
+net = net.replace(/<script type="application\/ld\+json">[\s\S]*?<\/script>/g, blanc);
+net = net.replace(/<nav id="liens-site"[\s\S]*?<\/nav>/g, blanc);
+net = net.replace(/<noscript>[\s\S]*?<\/noscript>/g, blanc);
 net = net.replace(/\/\*[\s\S]*?\*\//g, blanc);
 net = net.replace(/(^|\s)\/\/[^\n]*/g, (m, d) => d + blanc(m.slice(d.length)));
 /* Les tables de CONTENU, chacune avec son propre chantier de traduction. */
@@ -509,6 +519,10 @@ net.split('\n').forEach((ligne, n) => {
       if(txt.length < 3) continue;
       if(/^[\s\d.,:%\/·—–-]*$/.test(txt)) continue;
       if(/^[a-z-]+$/.test(txt)) continue;                       // une classe, une clé
+      /* (v365) Une liste de classes (« card grp-partie ») ou un sélecteur
+         (« :scope > .grp-partie ») : « partie » n'y est pas un mot. */
+      if(/^[a-z][a-z0-9-]*( [a-z][a-z0-9-]*)+$/.test(txt) && /-/.test(txt)) continue;
+      if(/^:scope\b|^[.#][a-z]|\s>\s[.#]?[a-z]/.test(txt) && !/[A-ZÀ-Ý]/.test(txt)) continue;
       if(/^(https?:|data:|#|\.|\/|[A-Za-z_$]+\()/.test(txt)) continue;
       /* Un littéral COMPARÉ n'est pas un littéral AFFICHÉ : `x === "Ésaïe"`
          teste un nom de livre, il ne l'écrit pas à l'écran. */
@@ -668,6 +682,10 @@ for(const ligne of codeSeul.split('\n')){
        phrase. */
     if(/^--[a-z0-9-]+$/.test(txt)) continue;
     if(/^(https?:|data:|#|\.|\/)/.test(txt)) continue;
+    /* (v365) Une liste de classes ou un sélecteur, passés en argument
+       (querySelectorAll(":scope > .grp-partie"), className = "card grp-partie"). */
+    if(/^[a-z][a-z0-9-]*( [a-z][a-z0-9-]*)+$/.test(txt) && /-/.test(txt)) continue;
+    if(/^:scope\b|^[.#][a-z]|\s>\s[.#]?[a-z]/.test(txt) && !/[A-ZÀ-Ý]/.test(txt)) continue;
     if(/[=!]==?\s*$/.test(ligne.slice(0, m.index))) continue;      // une COMPARAISON
     if(!(ACCENT.test(txt) || (txt.match(OUTILS) || []).length >= 2 || FRANCAIS_SEUL.test(txt))) continue;
     /* ===== UNE PHRASE AU DICTIONNAIRE N'EST PAS UN OUBLI =====

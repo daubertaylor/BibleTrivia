@@ -106,7 +106,9 @@ echo "$total bancs — $avec reçoivent $URL, $((total-avec)) tournent sur leurs
 # déjà près de six minutes d'attente pure. Il a franchi les 420 s le jour où
 # les mentions ont ajouté leurs écrans. On ne rogne pas sa pose (un texte qui
 # arrive en fondu serait relevé avant d'être visible) : on lui donne le temps.
-duree(){ case "$1" in langues-ecrans) echo 900;; *) echo 420;; esac; }
+# verset-ligne relit 3 920 versets sur dix formats de téléphone : 431 s, seul,
+# le 15/11/2026 (v365) — il s'arrêtait net au dixième format. Même remède.
+duree(){ case "$1" in langues-ecrans|verset-ligne) echo 900;; *) echo 420;; esac; }
 export -f duree
 
 # Tout est passé en argument : $1 node, $2 banc, $3 url, $4 dossier de sortie.
