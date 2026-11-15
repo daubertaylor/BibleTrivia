@@ -85,9 +85,14 @@ const dit = (q, b, d) => { if (!b) ko++; console.log('  ' + (b ? 'OK  ' : 'KO  '
     await p.evaluate(() => { state.scores = [120, 80, 40]; state.screen = 'end'; render(); });
     const l = await film;
     let recul = 0; for (let i = 1; i < l.length; i++) for (let k = 0; k < l[i].length; k++) if (l[i][k] > l[i - 1][k] + 0.05) recul = Math.max(recul, l[i][k] - l[i - 1][k]);
-    const depart = l.length ? Math.min(...l[0]) : 0, arrivee = l.length ? Math.max(...l[l.length - 1].map(Math.abs)) : 99;
-    dit('5. à l\'arrivée, les marches montent sans jamais redescendre', l.length > 10 && depart > 20 && arrivee < 0.5 && recul === 0,
-      l.length + ' images, départ ' + depart.toFixed(1) + ' px sous le socle, arrivée ' + arrivee.toFixed(2) + ', plus grand recul ' + recul.toFixed(2) + ' px');
+    /* (v361) RIEN N'APPARAÎT APRÈS. Les marches montaient de sous leur socle
+       pendant que l'écran glissait (0,12 s de retard, puis le ressort) : à
+       l'arrivée de l'écran, le podium se construisait encore. Elles sont
+       maintenant posées dès la première image et glissent avec l'écran —
+       jamais loin de leur socle, jamais un recul. */
+    const loin = l.length ? Math.max(...l.flatMap(x => x.map(Math.abs))) : 99, arrivee = l.length ? Math.max(...l[l.length - 1].map(Math.abs)) : 99;
+    dit('5. à l\'arrivée, les marches sont déjà sur leur socle, de la première à la dernière image', l.length > 10 && loin <= 0.5 && arrivee < 0.5 && recul === 0,
+      l.length + ' images, au plus loin ' + loin.toFixed(2) + ' px du socle, arrivée ' + arrivee.toFixed(2) + ', plus grand recul ' + recul.toFixed(2) + ' px');
     await ctx.close();
   } catch (e) {
     console.log('  KO  le banc s\'est arrêté : ' + (e.stack || e).toString().slice(0, 500)); ko++;

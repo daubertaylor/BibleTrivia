@@ -143,10 +143,16 @@ const memes = (a, b) => !!a && !!b && ['niveau', 'compteur', 'serie'].every(k =>
     await p.evaluate(() => { const b = [...document.querySelectorAll('button')].find(x => x.textContent.trim() === 'Quitter' && x.offsetParent); b.click(); });
     await p.waitForTimeout(900);
     const ecran8 = await p.evaluate(() => state.screen);
-    const entree8 = await p.evaluate(() => { startGame(); return new Promise(r => requestAnimationFrame(() => r(!!document.querySelector('.question-card.animate')))); });
+    /* (v361) La première question arrive AVEC SON ÉCRAN : elle est entière
+       dès la première image (voir CE QUI ARRIVE AVEC SON ÉCRAN EST DÉJÀ LÀ).
+       Ce qu'on vérifie : c'est bien une partie NEUVE qui arrive — l'écran
+       glisse, sa question est là, entière — et son chrono part (plus bas). */
+    const entree8 = await p.evaluate(() => { startGame(); return new Promise(r => requestAnimationFrame(() => {
+      const e = passage && passage.entrant; const q = e && e.querySelector('.question-card');
+      r(!!q && !q.classList.contains('animate') && getComputedStyle(q).opacity === '1'); })); });
     await p.waitForTimeout(2200);
     const chrono8 = await p.evaluate(() => { const c = document.querySelector('#qTimerChip .tv-n') || document.getElementById('qTimerChip'); return c ? c.textContent.trim() : null; });
-    dit('7. quitter à la première question puis recommencer : la nouvelle arrive avec son entrée, et son chrono part',
+    dit('7. quitter à la première question puis recommencer : la nouvelle arrive avec son écran, entière, et son chrono part',
       ecran8 === 'setup' && entree8 && /^2[78] s$/.test(chrono8 || ''), JSON.stringify({ ecran8, entree8, chrono8 }));
     await p.evaluate(() => { stopQTimer(); clearSavedGame(); });
     await ctx.close();
