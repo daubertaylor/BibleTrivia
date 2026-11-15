@@ -387,6 +387,20 @@
     --air-bas: 0.8rem;
     --tr-plie: 0.52s cubic-bezier(0.33,1,0.68,1);
     --tr-ouvre: var(--tr-plie);
+    /* ===== (v361) CE QUI APPARAÎT APPARAÎT TOUT DE SUITE =====
+       « Les transitions sont parfaites, juste certains affichages
+         apparaissent trop tard. » Le ressort de la v360 part de l'arrêt :
+       c'est ce qui rend un glissement doux. Mais un FONDU (de 0 à 1
+       d'opacité) qui part de l'arrêt reste presque invisible pendant les
+       premières images : 6 % à 30 ms, 18 % à 60 ms, la moitié à 130 ms.
+       Le ressort reste donc pour ce qui BOUGE (une carte qui monte de
+       14 px, un écran qui glisse) ; ce qui APPARAÎT prend la durée rapide
+       du jeu et la courbe d'arrivée — celles de l'onde d'appui, déjà dans
+       la maison : 33 % dès 30 ms, 58 % à 60 ms, 95 % à 150 ms.
+       Dans une @keyframes, une seule courbe vaut pour toutes les
+       propriétés : le mouvement et le fondu sont donc deux animations
+       posées ensemble (la seconde est toujours « fondu »). */
+    --tr-fondu: var(--onde-duree) cubic-bezier(0.33,1,0.68,1);
     /* Y COMPRIS EN PARTIE. Le banc enpartie.js a trouvé cinq mouvements qui
        tournaient encore sur leur propre horloge, tous pendant une partie :
        le trophée et la médaille (0,75s, avec dépassement), la couronne du
@@ -1467,7 +1481,9 @@
      moment où l'animation démarrait, avant de remonter. Un aller-retour que
      le banc de partie a mesuré à 6,85 px. « both » lui fait tenir sa position
      de départ dès le premier instant. */
-  .podium-crown{ width:1.5rem; height:1.5rem; color:var(--gold); margin-bottom:0.3rem; opacity:0; animation:crownPop var(--tr-ouvre) 0.3s both; }
+  /* (v361) La couronne du premier est là quand l'écran arrive. Elle ne
+     TOMBE que si elle se gagne sous nos yeux (voir majCouronne). */
+  .podium-crown{ width:1.5rem; height:1.5rem; color:var(--gold); margin-bottom:0.3rem; }
   /* ===== LA PASTILLE DU PODIUM EST LA PASTILLE DU JOUEUR, EN PLUS GRAND =====
      Elle s'était mise à vivre sa vie : couleur À PLAT là où toutes les autres
      du jeu (mode Groupe, attribution des points, tableau des scores) portent
@@ -2650,13 +2666,17 @@
 
   /* progress fill fades in */
 
-  /* per-question staggered entrance (only when the question changes) */
-  .question-card.animate{ animation:cardSlideIn var(--tr-ouvre) both; }
-  .options-grid.animate .option-btn{ opacity:0; animation:optionIn var(--tr-ouvre) both; }
-  .options-grid.animate .option-btn:nth-child(1){ animation-delay:0.04s; }
-  .options-grid.animate .option-btn:nth-child(2){ animation-delay:0.08s; }
-  .options-grid.animate .option-btn:nth-child(3){ animation-delay:0.12s; }
-  .options-grid.animate .option-btn:nth-child(4){ animation-delay:0.16s; }
+  /* UNE QUESTION NEUVE, SUR PLACE (la suivante) : la carte et ses réponses
+     montent de 14 px sur le ressort et apparaissent sur le fondu rapide.
+     (v361) PLUS DE CASCADE. Les réponses arrivaient l'une après l'autre
+     (40, 80, 120, 160 ms de retard), et sur le ressort, qui part de
+     l'arrêt : au bout de 0,2 s, la quatrième n'était qu'à 10 %, et
+     entière qu'à 0,7 s — « certains affichages apparaissent trop
+     tard ». Elles arrivent maintenant ensemble, avec leur question.
+     Une question qui arrive AVEC SON ÉCRAN (la première d'une partie) n'a
+     pas d'entrée du tout : voir CE QUI ARRIVE AVEC SON ÉCRAN EST DÉJÀ LÀ. */
+  .question-card.animate{ animation:cardSlideIn var(--tr-ouvre) both, fondu var(--tr-fondu) both; }
+  .options-grid.animate .option-btn{ animation:optionIn var(--tr-ouvre) both, fondu var(--tr-fondu) both; }
 
   /* one-shot feedback on the revealed answer */
   .option-btn.reveal-pop{ z-index:2; }
@@ -2664,8 +2684,9 @@
   .option-btn.reveal-shake{ animation:wrongFlash var(--tr-ouvre); }
   .option-btn{ position:relative; }
 
-  @keyframes cardSlideIn{ from{ opacity:0; transform:translate3d(0,14px,0); } to{ opacity:1; transform:translate3d(0,0,0); } }
-  @keyframes optionIn{ from{ opacity:0; transform:translate3d(0,14px,0); } to{ opacity:1; transform:translate3d(0,0,0); } }
+  @keyframes cardSlideIn{ from{ transform:translate3d(0,14px,0); } to{ transform:translate3d(0,0,0); } }
+  @keyframes optionIn{ from{ transform:translate3d(0,14px,0); } to{ transform:translate3d(0,0,0); } }
+  @keyframes fondu{ from{ opacity:0; } to{ opacity:1; } }
   @keyframes wrongFlash{ 0%{ box-shadow:0 0 0 0 rgba(226,75,55,0.55); } 100%{ box-shadow:0 0 0 12px rgba(226,75,55,0); } }
   @keyframes glowBurst{ 0%{ opacity:0; transform:scale(0.85); } 40%{ opacity:1; } 100%{ opacity:0; transform:scale(1.15); } }
 
@@ -3311,7 +3332,7 @@
   @keyframes rlOut{ from{ opacity:1; } to{ opacity:0; } }
   @media (orientation:landscape) and (pointer:coarse){ #rotate-lock{ display:flex; } }
   #rotate-lock{ animation:rlIn var(--tr-ouvre) both; }
-  #rotate-lock .rl-ico, #rotate-lock p{ animation:fadeSlide var(--tr-ouvre) both; }
+  #rotate-lock .rl-ico, #rotate-lock p{ animation:fadeSlide var(--tr-ouvre) both, fondu var(--tr-fondu) both; }
   html.rl-sort #rotate-lock{ display:flex !important; animation:rlOut var(--tr-ferme) forwards; pointer-events:none; }
   html.rl-sort #rotate-lock .rl-ico, html.rl-sort #rotate-lock p{ animation:none; }
   /* TÉLÉPHONE COUCHÉ : ON NE REFAIT PAS LA MISE EN PAGE POUR RIEN.
@@ -3737,11 +3758,13 @@
      resterait figé pendant le déplacement et « sauterait ». Le simple
      fondu d'opacité ne bouge jamais la surface → zéro clignotement,
      rendu parfaitement homogène d'un écran à l'autre. */
-  @keyframes fadeSlide{ from{ opacity:0; transform:translate3d(0,14px,0); } to{ opacity:1; transform:translate3d(0,0,0); } }
+  @keyframes fadeSlide{ from{ transform:translate3d(0,14px,0); } to{ transform:translate3d(0,0,0); } }
   .screen-exit{ animation:screenOut var(--tr-ferme) forwards; }
   @keyframes screenOut{ from{ opacity:1; transform:translate3d(0,0,0); } to{ opacity:0; transform:translate3d(0,-8px,0); } }
-  .reveal-in{ animation:fadeSlide var(--tr-ouvre) both; }
-  .screen-enter .podium-bar{ animation:marcheMonte var(--tr-ouvre) 0.12s backwards; }
+  .reveal-in{ animation:fadeSlide var(--tr-ouvre) both, fondu var(--tr-fondu) both; }
+  /* (v361) Les marches du podium ne montent plus en arrivant : elles sont
+     posées sur leur socle dès la première image et glissent avec l'écran
+     (voir CE QUI ARRIVE AVEC SON ÉCRAN EST DÉJÀ LÀ). */
   @keyframes marcheMonte{ from{ transform:translateY(100%); } to{ transform:translateY(0); } }
 
 
@@ -4477,14 +4500,14 @@
   .option-btn{ min-height:clamp(3.1rem, calc(7 * var(--hu)), 4.6rem); }
 
   /* ---------- Médaillon de fin : verre cerclé d'or, trophée intégré ---------- */
-  .end-medal{ position:relative; width:clamp(5.9rem, calc(27 * var(--lw)), 7.3rem); aspect-ratio:1; margin:0 auto 0.7rem; border-radius:50%; display:flex; align-items:center; justify-content:center; border:1px solid var(--bord); animation:trophyIn var(--tr-ouvre) backwards; transform:translateZ(0); -webkit-transform:translateZ(0); --rim-cast:0 10px 30px rgba(18,12,6,0.3); }
+  .end-medal{ position:relative; width:clamp(5.9rem, calc(27 * var(--lw)), 7.3rem); aspect-ratio:1; margin:0 auto 0.7rem; border-radius:50%; display:flex; align-items:center; justify-content:center; border:1px solid var(--bord); transform:translateZ(0); -webkit-transform:translateZ(0); --rim-cast:0 10px 30px rgba(18,12,6,0.3); }
   .end-medal::before{ content:""; position:absolute; top:6%; left:6%; right:6%; bottom:6%; border-radius:50%; border:0; box-shadow:inset 0 0 14px rgba(239,173,38,0.3), 0 0 16px rgba(239,173,38,0.22); pointer-events:none; }
   .end-medal::after{ content:""; position:absolute; left:50%; top:50%; width:170%; aspect-ratio:1; transform:translate(-50%,-50%); background:radial-gradient(closest-side, rgba(255,205,90,0.32), rgba(255,205,90,0.08) 55%, transparent 72%); z-index:-1; pointer-events:none; }
   .em-cup{ width:56%; display:block; filter:drop-shadow(0 6px 12px rgba(150,90,8,0.4)); }
   .em-cup svg{ height:auto; overflow:visible; }
 
   /* ---------- Trophée premium (bas de coupe élancé, socle à étages) ---------- */
-  .end-trophy{ position:relative; width:clamp(6.6rem, calc(32 * var(--lw)), 8.4rem); height:auto; margin:0 auto 0.85rem; filter:drop-shadow(0 14px 26px rgba(150,90,8,0.45)); animation:trophyIn var(--tr-ouvre) backwards; }
+  .end-trophy{ position:relative; width:clamp(6.6rem, calc(32 * var(--lw)), 8.4rem); height:auto; margin:0 auto 0.85rem; filter:drop-shadow(0 14px 26px rgba(150,90,8,0.45)); }
   .end-trophy svg{ height:auto; overflow:visible; }
   .end-trophy::before{ content:""; position:absolute; left:50%; top:40%; width:170%; aspect-ratio:1; transform:translate(-50%,-50%); background:radial-gradient(closest-side, rgba(255,205,90,0.38), rgba(255,205,90,0.1) 55%, transparent 72%); z-index:-1; pointer-events:none; }
   @keyframes trophyIn{ from{ opacity:0; transform:translateY(14px) scale(0.8); } to{ opacity:1; transform:translateY(0) scale(1); } }
@@ -6430,8 +6453,8 @@
   /* La citation sort de DERRIÈRE la barre d'écriture (posée au bas du
      tiroir), et y rentre : on ne la voit pas se dévoiler par le haut. */
   .compo-cite-z > .ccz-in{ min-height:0; overflow:hidden; display:flex; flex-direction:column; justify-content:flex-end; }
-  .compo-cite.arrive{ animation:ccArrive var(--tr-ouvre) both; }
-  @keyframes ccArrive{ from{ opacity:0; transform:translateY(0.35rem); } to{ opacity:1; transform:none; } }
+  .compo-cite.arrive{ animation:ccArrive var(--tr-ouvre) both, fondu var(--tr-fondu) both; }
+  @keyframes ccArrive{ from{ transform:translateY(0.35rem); } to{ transform:none; } }
   .compo-cite.part{ animation:ccPart var(--tr-ferme) both; pointer-events:none; }
   @keyframes ccPart{ from{ opacity:1; transform:none; } to{ opacity:0; transform:translateY(0.35rem); } }
   .compo-cite .cc-t{ flex:1; min-width:0; display:flex; flex-direction:column; gap:0.02rem; }
@@ -6775,7 +6798,7 @@
   .jx-cref{ margin-top:0.32rem; font-family:'Poppins',sans-serif; font-weight:600; font-size:0.72rem; letter-spacing:0.07em; text-transform:uppercase; color:var(--primary); }
   .jx-consigne .qtext{ font-size:clamp(1rem, calc(3.7 * var(--lw)), 1.18rem); }
   .jx-zone{ margin-bottom:var(--e-3); }
-  .jx-zone.animate{ animation:fadeSlide var(--tr-ouvre) 0.06s both; }
+  .jx-zone.animate{ animation:fadeSlide var(--tr-ouvre) both, fondu var(--tr-fondu) both; }
   .jx-liste{ display:flex; flex-direction:column; gap:0.55rem; }
   .jx-deux{ display:grid; grid-template-columns:1fr 1fr; gap:0.55rem; }
   .jx-col{ display:flex; flex-direction:column; gap:0.55rem; min-width:0; }
@@ -9316,7 +9339,7 @@ function voileRedemarrage(){
   if(document.getElementById("redemVeil")) return;
   const v = document.createElement("div");
   v.id = "redemVeil"; v.className = "redem-veil";
-  v.innerHTML = `<img class="splash-dove" src="${DOVE_ICON}" alt="${NOM_DU_JEU}" draggable="false">`;
+  v.innerHTML = `<img class="splash-dove" src="${DOVE_ICON}" alt="${NOM_DU_JEU}" draggable="false" decoding="sync">`;
   document.body.appendChild(v);
   requestAnimationFrame(()=>{ v.classList.add("show"); });
 }
@@ -11760,7 +11783,7 @@ const SUPABASE_ANON_KEY = "sb_publishable_FDJ_R0foC7uIeHmxVrj6rA_2NeIgW2a";
    remontée d'un téléphone ne vaut rien si on ne sait pas QUELLE version
    tournait. Elle doit rester égale au CACHE de sw.js — c'est ce que vérifie
    banc-essai/version.js, qui refuse de laisser publier les deux en désaccord. */
-const VERSION_JEU = "v360";
+const VERSION_JEU = "v361";
 
 /* ===================== QUAND ÇA CASSE CHEZ UN JOUEUR =====================
    « Si quelque chose casse chez cinq d'entre eux sur un modèle de téléphone
@@ -15764,6 +15787,10 @@ try{
     }catch(e){ return 0; }
   })();
   const chromeQuiDitJuste = versionChrome >= 152;
+  /* (v362) Samsung Internet : le navigateur des Galaxy, celui qui a
+     installé Yada sur celui de Taylor. Voir LES BOUTONS D'ANDROID, SOUS UN
+     CLAVIER QUE SEULE LA ZONE VISIBLE DIT. */
+  const SAMSUNG = /SamsungBrowser\//i.test(navigator.userAgent || "");
   /* ===== (v328) UN CLAVIER QUI NE DIT PAS SA TAILLE : LE MODE ORDINAIRE =====
      « Sur Android, le clavier » : la barre d'écriture d'une discussion
      restait sous le clavier ouvert. « Par-dessus » (overlays-content) n'est
@@ -15921,6 +15948,28 @@ try{
       /* (v343) Rien ne parle, mais un clavier est là (voir l'estimation).
          (v345) Les boutons arrivés avec lui sont sous lui : en plus. */
       if(estime && isField() && vv.height >= restH - 90) return Math.max(0, restH - estime - boutonsEnPlus(Math.max(0, restInner - innerHeight)));
+      /* ===== (v362) LES BOUTONS D'ANDROID, SOUS UN CLAVIER QUE SEULE LA
+         ZONE VISIBLE DIT =====
+         « Pour le clavier, c'est à cause des boutons retour natifs
+           d'Android qui s'affichent en même temps que le clavier. »
+         En plein écran, Android range ses boutons (■ ● ◀) ; quand le
+         clavier monte, il les fait revenir, SOUS lui. Samsung Internet —
+         qui a installé Yada sur le Galaxy de Taylor — ne dit pas son
+         clavier au jeu (navigator.virtualKeyboard reste muet) : seule sa
+         zone visible rétrécit, et de la hauteur du clavier SANS ces
+         boutons. La barre d'écriture, posée au bas de cette zone, restait
+         d'autant sous le haut du clavier — exactement la hauteur des
+         boutons (photo du 9/11 : la rangée d'outils de Gboard posée sur
+         elle). Les boutons, eux, se lisent : la marge sûre du bas grandit
+         de leur hauteur quand ils arrivent (voir la v345). On la retire
+         donc de la zone visible, comme on le fait déjà quand Chrome annonce
+         son clavier — moins ce que la fenêtre aurait elle-même perdu.
+         Chrome ne passe JAMAIS par ici avec cette correction : en plein
+         écran, sa zone visible est mesurée sur ce qui reste vraiment libre
+         (getWindowVisibleDisplayFrame, boutons compris) — les retirer une
+         seconde fois ferait flotter la barre. Lu dans son code
+         (CompositorViewHolder.updateCachedSizes). */
+      if(SAMSUNG && isField() && vv.height < restH - 90) return Math.max(0, vv.height - boutonsEnPlus(Math.max(0, restInner - innerHeight)));
       return vv.height;
     }
     const fen = innerHeight;
@@ -16040,6 +16089,10 @@ try{
         fs: !!(document.fullscreenElement || document.webkitFullscreenElement),
         vk: vk ? (redim ? "ordinaire" : "overlays") : "absent", estime, sorte: signatureClavier().split(",")[0],
         ecranH: (window.screen && screen.height) || 0, dpr: Math.round((window.devicePixelRatio || 1) * 100) / 100,
+        /* (v361) La hauteur d'écran que le système laisse aux applications
+           et celle de la fenêtre vue de dehors : leur écart avec ecranH dit
+           si la barre de navigation d'Android (■ ●) est comptée, et par qui. */
+        ecranDispo: (window.screen && screen.availHeight) || 0, exterieur: window.outerHeight || 0,
         repos: { fen:restInner, vv:Math.round(restH), sab:sabRepos },
         ouvert: { fen:innerHeight, vv:Math.round(vv.height), vvTop:Math.round(vv.offsetTop || 0), sab:sabVif(), clavier:r },
         mesure: Math.round(hauteurMesuree()), visible: Math.round(hauteurVisible()), appris: corrige,
@@ -33581,7 +33634,7 @@ function renderModeSelect(){
       ${indicateurReseauHtml()}
       <div class="hero-zone" id="heroZone">
         <button class="hero-icon-btn" onclick="heroIconTap()" onpointerdown="heroIconPress(event)" onpointerup="heroIconRelease()" onpointerleave="heroIconRelease()" onpointercancel="heroIconRelease()" aria-label="${NOM_DU_JEU}">
-          <span class="hero-icon-wrap"><img class="hero-icon" src="${DOVE_ICON}" alt="${NOM_DU_JEU}" draggable="false"><span class="hero-points" aria-hidden="true"><i></i><i></i><i></i><i></i><i></i></span></span>
+          <span class="hero-icon-wrap"><img class="hero-icon" src="${DOVE_ICON}" alt="${NOM_DU_JEU}" draggable="false" decoding="sync"><span class="hero-points" aria-hidden="true"><i></i><i></i><i></i><i></i><i></i></span></span>
           <span class="hero-doigt" aria-hidden="true"></span>
         </button>
         <button class="hero-verse-card" onclick="hideHeroVerse()" aria-label="${T('Fermer le verset')}">
@@ -34154,7 +34207,7 @@ function renderSplash(){
   el.innerHTML = `
     <div class="splash-center">
       <div class="splash-dove-wrap">
-        <img class="splash-dove" src="${DOVE_ICON}" alt="${NOM_DU_JEU}" draggable="false">
+        <img class="splash-dove" src="${DOVE_ICON}" alt="${NOM_DU_JEU}" draggable="false" decoding="sync">
       </div>
       <h1 class="splash-title" aria-label="${NOM_DU_JEU}">${lettresQuiSAssemblent(NOM_DU_JEU)}</h1>
     </div>
@@ -34249,8 +34302,32 @@ function photoProfil(){
 /* La variable de racine est la SEULE copie de l'image dans la page. */
 function majPhotoRacine(){
   const p = photoProfil();
+  prechaufferImage("photo", p);
   try{ document.documentElement.style.setProperty("--photo", p ? 'url("' + p + '")' : "none"); }catch(e){}
 }
+/* ===== (v361) LES IMAGES SONT PRÊTES AVANT D'ÊTRE MONTRÉES =====
+   La colombe de l'Accueil et la photo de la pastille sont recréées à
+   chaque écran. Sur un téléphone, une image se décode quand on la peint
+   pour la première fois — et un navigateur peut alors peindre l'écran
+   sans elle, puis la poser une image plus tard (Safari le fait pour les
+   grandes images, Chrome sur Android aussi). On les décode donc une fois,
+   au lancement et à chaque nouvelle photo, et on garde la copie décodée :
+   l'écran qui arrive les trouve prêtes. La colombe se peint en plus
+   « decoding=sync » : jamais d'écran peint sans elle. */
+const IMAGES_PRETES = Object.create(null);
+function prechaufferImage(cle, src){
+  try{
+    const vieille = IMAGES_PRETES[cle];
+    if(vieille && vieille._src === src) return;
+    if(!src){ delete IMAGES_PRETES[cle]; return; }
+    const im = new Image();
+    im._src = src;
+    im.src = src;
+    IMAGES_PRETES[cle] = im;
+    if(im.decode) im.decode().catch(()=>{});
+  }catch(e){}
+}
+prechaufferImage("colombe", DOVE_ICON);
 /* ===== LA PHOTO DES AUTRES JOUEURS =====
    ELLE NE PASSE PAS PAR LA PRÉSENCE, et c'est le point à ne pas rater. La
    présence est re-diffusée à CHAQUE track() — donc à chaque changement de
@@ -35573,6 +35650,24 @@ function reprendrePassage(vieux, node){
   setTimeout(()=>{ node.classList.remove("arrivee"); fitScroll(); }, Math.max(60, apresEntree() - t));
   return true;
 }
+/* ===== (v361) CE QUI ARRIVE AVEC SON ÉCRAN EST DÉJÀ LÀ =====
+   « Les transitions sont parfaites, juste certains affichages apparaissent
+     trop tard. » Mesuré image par image : quand l'écran de jeu glissait,
+   la question et ses quatre réponses faisaient EN PLUS leur propre entrée,
+   en partant invisibles — à mi-glissement, la question à 45 %, la
+   troisième et la quatrième réponse à 0 % ; la dernière entière à 0,7 s,
+   bien après l'écran. Pareil pour la zone d'un jeu (60 ms de retard en
+   plus), la médaille et le trophée des résultats, la couronne (0,3 s de
+   retard), les marches du podium qui montaient.
+   Le glissement EST l'arrivée : un écran arrive entier, tout ce qu'il
+   montre est là dès sa première image et glisse avec lui. Les entrées sur
+   place (la question suivante, la réponse révélée) gardent la leur. */
+function sansEntreeInterne(node){
+  try{
+    node.querySelectorAll(".question-card.animate, .options-grid.animate, .jx-zone.animate").forEach(n => n.classList.remove("animate"));
+    node.querySelectorAll(".reveal-in").forEach(n => n.classList.remove("reveal-in"));
+  }catch(e){}
+}
 /* ===== (v348, v357, v359) LE VERRE DE L'ÉCRAN QUI GLISSE =====
    Le verre d'une carte est une fenêtre sur le décor (la couche .gs, calée
    sur la place de repos de la carte). (v359) Pendant un passage, il glisse
@@ -35853,6 +35948,7 @@ function render(){
        retire aussi de tout écran resté en place, pour qu'elle ne traîne jamais. */
     Array.prototype.forEach.call(app.children, (c)=>{ if(c && c.classList) c.classList.remove("arrivee"); });
     node.classList.add("arrivee");
+    sansEntreeInterne(node);
     /* (v357) Qu'on avance ou qu'on revienne, l'écran qui arrive glisse,
        collé à celui qu'il pousse (voir LES ÉCRANS SONT CÔTE À CÔTE). */
     if(!sousPage) node.classList.add("screen-enter", "pousse");
