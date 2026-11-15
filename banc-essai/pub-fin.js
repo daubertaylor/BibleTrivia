@@ -58,7 +58,9 @@ const FAUX_GOOGLE = (banc) => {
       }, 50);
       return 0;
     }
-    if (o && (o.preloadAdBreaks || o.sound)) { window.__configs.push(o); return 0; }
+    /* (v364) Google prévient quand ses annonces sont prêtes (onReady) : le jeu
+       n'en demande qu'à partir de là (voir rejouer-vite.js pour l'autre cas). */
+    if (o && (o.preloadAdBreaks || o.sound || o.onReady)) { window.__configs.push(o); if (typeof o.onReady === 'function') setTimeout(() => o.onReady(), 30); return 0; }
     return Array.prototype.push.call(this, o);
   };
   window.adsbygoogle = file;
@@ -128,7 +130,7 @@ const etat = (p) => p.evaluate(() => ({ ecran: state.screen, pauses: window.__pa
       ['solo', '.end-actions .btn-replay', 'play'],
       ['solo', '.end-actions .btn-quit', 'setup'],
       ['groupe', '.end-actions .btn-replay', 'play'],
-      ['revoir', '.end-actions .btn-quit', 'setup'],
+      ['revoir', '.end-actions .btn-replay', 'setup'],   // (v364) un seul bouton : « Continuer »
       ['combien', '.jx-rejouer', 'jeu'],
       ['morceaux', '.jx-autres', 'jeux'],
     ];

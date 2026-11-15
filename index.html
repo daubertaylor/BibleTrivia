@@ -27,6 +27,13 @@
     s.async = true; s.crossOrigin = "anonymous"; s.setAttribute("data-ad-frequency-hint", "60s");
     s.src = "https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-4777080561806498";
     document.head.appendChild(s);
+    /* (v364) GOOGLE DIT QUAND IL EST PRÊT. « Le bouton Rejouer prend du temps
+       à se lancer. » Tant que Google n'a pas ouvert les annonces au compte, il
+       ne répond jamais à adBreak : le jeu attendait une seconde et demie à
+       chaque « Rejouer », « Quitter », « Autres jeux », pour rien. onReady
+       (la fonction prévue par Google) dit quand l'annonce est vraiment
+       possible ; d'ici là, on passe sans attendre. */
+    adConfig({ preloadAdBreaks:"on", onReady:function(){ window.__pubPrete = true; } });
   })();
 </script>
 <!-- « interactive-widget=overlays-content » : LE CLAVIER SE POSE PAR-DESSUS,
@@ -1979,6 +1986,16 @@
   .rv-bk.nt{ background:rgba(76,134,232,0.15); color:#2f5fb3; }
   .rv-q{ flex:1; min-width:0; font-size:0.86rem; line-height:1.38; color:var(--ink); overflow-wrap:anywhere; hyphens:auto; }
   .rv-quand{ flex-shrink:0; font-size:0.74rem; font-weight:600; color:var(--ink-soft); }
+  /* (v364) « À REVOIR » TIENT DANS L'ÉCRAN, ET NE SE LAISSE PLUS TIRER.
+     « Ici, je ne veux pas qu'on puisse swiper vers le bas. » Cinq questions
+     de trois lignes : la page dépassait de 71 px sur un iPhone de 667 px de
+     haut, et elle défilait. Une question se lit en deux lignes au plus — ses
+     premiers mots suffisent à la reconnaître —, en une seule s'il le faut
+     (tenirRevoir), et la règle du bas cède sa place en dernier recours. */
+  .rv-q{ display:-webkit-box; -webkit-box-orient:vertical; -webkit-line-clamp:2; overflow:hidden; }
+  .rv-lignes.serre .rv-q{ -webkit-line-clamp:1; hyphens:manual; -webkit-hyphens:manual; }
+  .rv-lignes.serre{ row-gap:0.62rem; }
+  .screen.rv-sans-regle .rvl-regle{ display:none; }
   .rv-suite{ font-size:0.78rem; color:var(--ink-soft); padding:0.2rem 0 0.35rem; }
   /* ===== UN SEUL LIVRE, EN LIGNE (v316) =====
      La quatrième puce du salon porte le nom court du livre choisi : elle ne
@@ -2568,7 +2585,11 @@
      teinte, qui ne bascule qu'à la fin de l'encre. */
   .chip.remplit, .len-chip.remplit{ transition:transform 0.44s cubic-bezier(0.2,1,0.3,1),
     background-color 0s, border-color 0.22s ease, color 0s linear var(--encre-texte),
-    opacity 0.22s ease, --glass-tint 0s linear var(--encre-duree); }
+    opacity 0.22s ease, --glass-tint 0s linear calc(var(--encre-duree) * 0.8); }
+  /* (v364) La teinte pleine arrive aux quatre cinquièmes de l'encre, et non
+     plus à la toute fin : il ne reste alors que les coins, qu'elle achève
+     d'un coup — au lieu d'une lisière rose qui traînait encore un dixième
+     de seconde le long du bord. */
   .chip.devide, .len-chip.devide{ transition:transform 0.44s cubic-bezier(0.2,1,0.3,1),
     background-color 0s, border-color 0.22s ease, color 0s,
     opacity 0.22s ease, --glass-tint 0s linear; }
@@ -7382,6 +7403,7 @@ const TEXTES = {
     "Une bonne réponse, et l'erreur est rattrapée. Seules tes {n} dernières erreurs restent ici, sept jours au plus.":"One right answer and the mistake is fixed. Only your last {n} mistakes stay here, for seven days at most.",
     "Tes erreurs récentes":"Your recent mistakes",
     "Tout est rattrapé\u00a0!":"All caught up!",
+    "Séance parfaite\u00a0!":"Perfect session!",
     "Plus rien à rattraper, bravo\u00a0!":"Nothing left to fix, well done!",
     "{n} encore à rattraper":"{n} still to fix",
     "Rattrapée\u00a0!":"Fixed!",
@@ -8330,6 +8352,7 @@ const TEXTES = {
     "Une bonne réponse, et l'erreur est rattrapée. Seules tes {n} dernières erreurs restent ici, sept jours au plus.":"Una respuesta correcta y el error queda corregido. Aquí solo quedan tus {n} últimos errores, siete días como máximo.",
     "Tes erreurs récentes":"Tus errores recientes",
     "Tout est rattrapé\u00a0!":"¡Todo corregido!",
+    "Séance parfaite\u00a0!":"¡Sesión perfecta!",
     "Plus rien à rattraper, bravo\u00a0!":"¡Nada más por corregir, bien hecho!",
     "{n} encore à rattraper":"{n} aún por corregir",
     "Rattrapée\u00a0!":"¡Corregido!",
@@ -11848,7 +11871,7 @@ const SUPABASE_ANON_KEY = "sb_publishable_FDJ_R0foC7uIeHmxVrj6rA_2NeIgW2a";
    remontée d'un téléphone ne vaut rien si on ne sait pas QUELLE version
    tournait. Elle doit rester égale au CACHE de sw.js — c'est ce que vérifie
    banc-essai/version.js, qui refuse de laisser publier les deux en désaccord. */
-const VERSION_JEU = "v363";
+const VERSION_JEU = "v364";
 
 /* ===================== QUAND ÇA CASSE CHEZ UN JOUEUR =====================
    « Si quelque chose casse chez cinq d'entre eux sur un modèle de téléphone
@@ -22404,6 +22427,18 @@ function pointPuce(c, clientX, clientY){
     if(r.width > 0 && r.height > 0){
       x = Math.min(W, Math.max(0, (clientX - r.left) * W / r.width));
       y = Math.min(H, Math.max(0, (clientY - r.top) * H / r.height));
+      /* (v364) LA GOUTTE PART DU DOIGT EN LARGEUR, DU MILIEU EN HAUTEUR.
+         « Quand je passe de Courte à Normale, ça se remplit, mais ça laisse
+           une bordure en bas qui n'est pas remplie et qui se remplit après. »
+         Un iPhone situe le toucher plus haut que le milieu du doigt : sur une
+         puce plate, la goutte naissait près du HAUT, et le bas était le bord
+         le plus lointain — filmé, toucher au cinquième de la hauteur : le
+         milieu plein à 144 ms, la bande du bas vide jusqu'à 196 ms et pleine
+         à 297 ms seulement. Sur une puce plus large que haute, la goutte part
+         donc de la hauteur du milieu (à un dixième près du doigt) : le haut et
+         le bas se remplissent ensemble, et elle part toujours d'où l'on a
+         touché, de gauche à droite. */
+      if(W >= H * 1.4) y = H / 2 + (y - H / 2) * 0.1;
     }
   }
   return { x, y };
@@ -32938,6 +32973,26 @@ function questionsDuLivre(nom){
    refermer — et la feuille glissante, avec son voile, son glissement au
    doigt et son verre, disparaît entièrement de ce chemin. */
 function ouvrirRevoir(){ state.screen = "revoir"; render(); }
+/* (v364) « À REVOIR » TIENT DANS L'ÉCRAN : une question en deux lignes, puis
+   en une, puis la règle du bas s'efface. Mesuré sur la mise en page (pas sur
+   l'écran qui glisse), avant qu'il ne paraisse : rien ne bouge sous les yeux. */
+function tenirRevoir(ecran){
+  const a = document.getElementById("app");
+  const l = ecran && ecran.querySelector(".rv-lignes");
+  if(!a || !l) return;
+  const cs = getComputedStyle(a);
+  const dispo = a.clientHeight - (parseFloat(cs.paddingTop) || 0) - (parseFloat(cs.paddingBottom) || 0);
+  const depasse = () => ecran.offsetHeight - dispo > 0.5;
+  /* Chaque essai passe d'abord par serrerEcran : quelques pixels d'air
+     cèdent avant qu'une question ne perde une ligne. */
+  const tient = () => { try{ serrerEcran(ecran); }catch(e){} return !depasse(); };
+  l.classList.remove("serre"); ecran.classList.remove("rv-sans-regle");
+  if(tient()) return;
+  l.classList.add("serre");
+  if(tient()) return;
+  ecran.classList.add("rv-sans-regle");
+  tient();
+}
 /* ===== L'ÉCRAN DE LA SECONDE CHANCE (v316) =====
    Trois choses de haut en bas, et rien d'autre :
      — combien d'erreurs récentes attendent, en grand ; et LA SEMAINE :
@@ -32996,6 +33051,11 @@ function renderRevoir(){
    du balisage est exactement la forme où une vraie phrase se cacherait sans
    être vue par le banc des traductions. */
 function lancerRevision(){ startRevision("carnet"); }
+/* Ce qui reste à rattraper, compté d'après la porte d'où vient la séance :
+   l'écran « À revoir » ou la dernière partie. */
+function resteARattraper(){
+  try{ return (state.revisionDe === "setup") ? lastMissEntries().length : aRattraper().length; }catch(e){ return 0; }
+}
 function jouerSoloDepuisRevoir(){ state.mode = "solo"; state.screen = "setup"; render(); }
 
 function startRevision(quoi){
@@ -34147,7 +34207,7 @@ function renderPlay(){
 var pubDue = false, pubEcranPlein = false;
 function pubAutorisee(){
   try{ if(navigator.webdriver && !window.__pubBanc) return false; }catch(e){}
-  return typeof window.adBreak === "function";
+  return typeof window.adBreak === "function" && window.__pubPrete === true;
 }
 /* Une partie vient de finir : l'écran de ses résultats ouvre la prochaine occasion.
    Le son des annonces suit celui du jeu ; Google prépare la suivante à l'avance. */
@@ -34259,8 +34319,15 @@ function renderEndSolo(){
              c'est ce qu'on est venu faire. Ce qui reste se dit d'après la porte
              d'où l'on vient — l'écran « À revoir » ou la dernière partie. */
           const t = state.questions.length, ok = t - state.soloMissed.length;
-          const reste = (state.revisionDe === "setup") ? lastMissEntries().length : aRattraper().length;
-          return `<h1 class="end-title">${ok === t ? T("Tout est rattrapé !") : Tf(ok > 1 ? "{n} rattrapées sur {t}" : "{n} rattrapée sur {t}", { n:ok, t })}</h1>
+          const reste = resteARattraper();
+          /* (v364) « TOUT EST RATTRAPÉ » SEULEMENT QUAND C'EST VRAI. « Il me
+             reste une série et précisément une erreur : ça me dit que j'ai
+             terminé. » Le titre ne regardait que la séance : cinq sur cinq,
+             et « Tout est rattrapé ! » s'affichait en grand… au-dessus de
+             « 1 encore à rattraper ». Une séance parfaite qui laisse du
+             travail se dit « Séance parfaite ! », et le bouton dit
+             « Continuer ». */
+          return `<h1 class="end-title">${ok === t ? (reste > 0 ? T("Séance parfaite\u00a0!") : T("Tout est rattrapé !")) : Tf(ok > 1 ? "{n} rattrapées sur {t}" : "{n} rattrapée sur {t}", { n:ok, t })}</h1>
             <p class="end-sub">${soloPerformanceMessage(pct)}</p>
             <div class="end-best">${reste > 0 ? Tf("{n} encore à rattraper", { n:reste }) : T("Plus rien à rattraper, bravo !")}</div>`; })()
         : `<h1 class="end-title">${state.soloScore} ${T("points")}</h1>
@@ -34290,8 +34357,11 @@ function renderEndSolo(){
     <div class="flex-sp"></div>
     ${state.soloMissed && state.soloMissed.length ? `<button class="btn-review" onclick="openMissedReview()"><span class="ico">${ICONS.bookOpen}</span>${state.soloMissed.length>1?Tf("Revoir mes {n} erreurs",{n:state.soloMissed.length}):T("Revoir mon erreur")}</button>` : ""}
     <div class="end-bottom">
-    ${state.lecon ? `<div class="end-actions lecon-fin"><button class="btn-replay" onclick="continuerParcours()">${T("Continuer")}</button></div>` : `<div class="end-actions">
-      <button class="btn-replay" onclick="replayGame()">${T("Rejouer")}</button>
+    ${state.lecon ? `<div class="end-actions lecon-fin"><button class="btn-replay" onclick="continuerParcours()">${T("Continuer")}</button></div>`
+      /* (v364) Après une séance « À revoir » : « Continuer » joue la suite s'il
+         en reste ; sinon un seul bouton, qui ramène là d'où l'on vient. */
+      : (state.revision && resteARattraper() === 0) ? `<div class="end-actions lecon-fin"><button class="btn-replay" onclick="retourAuMode()">${T("Continuer")}</button></div>` : `<div class="end-actions">
+      <button class="btn-replay" onclick="replayGame()">${state.revision ? T("Continuer") : T("Rejouer")}</button>
       <button class="btn-newgame btn-quit" onclick="retourAuMode()">${T("Quitter")}</button>
     </div>
     ${shareLineHtml(state.mode)}`}
@@ -36238,6 +36308,7 @@ function render(){
   try{ document.documentElement.classList.toggle("ecran-discussion", state.screen === "groupe"); }catch(e){}
   try{ majBarre(); }catch(e){}
   /* Après la barre : c'est elle qui donne aux écrans des groupes leur pied. */
+  if(state.screen === "revoir"){ try{ tenirRevoir(node); }catch(e){} }
   try{ serrerEcran(node); }catch(e){}
   if(avantRevelation){ try{ glisserApresRevelation(node, avantRevelation); }catch(e){} }
   animerLaBarre(node);
@@ -36573,6 +36644,12 @@ function fitScroll(){
      autres écrans décident selon leur contenu (défilement natif si ça déborde). */
   let fixedScreen = false;
   try{ fixedScreen = (state.screen === "mode"); }catch(e){}
+  /* (v364) « À revoir » est fixe dès qu'il tient (voir tenirRevoir). */
+  try{ if(state.screen === "revoir" && !a.querySelector(":scope > .arrivee")){
+    const ec = Array.prototype.find.call(a.children, c => c.classList && c.classList.contains("screen") && !c.classList.contains("screen-exit"));
+    const cs = getComputedStyle(a);
+    if(ec && ec.offsetHeight <= a.clientHeight - (parseFloat(cs.paddingTop) || 0) - (parseFloat(cs.paddingBottom) || 0) + 0.5) fixedScreen = true;
+  } }catch(e){}
   if(fixedScreen){ a.style.overflowY = "hidden"; rendLeDefilement(a); return; }
   /* Ce qui a changé depuis le rendu (une liste arrivée du serveur, une police
      chargée) peut faire dépasser l'écran : on resserre d'abord. La mesure se
