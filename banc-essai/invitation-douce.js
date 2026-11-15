@@ -8,7 +8,9 @@
    et elle sautait hors du fil une demi-seconde plus tard.
    Le décor de partie-groupe.js — un VRAI PostgreSQL, et deux téléphones :
    Taylor lance la partie, Benoît regarde la discussion.
-     1. Taylor revenu dans la discussion : l'invitation n'y est à AUCUNE image ;
+     1. (v365) Taylor reste dans la discussion pendant son salon ; quand il
+        le ferme par sa croix, la carte du salon et l'invitation s'en vont en
+        se repliant, sur plusieurs images, sans marche brutale ;
      2. chez Benoît, elle se replie : sa place se referme sur plusieurs images,
         sans marche brutale, et elle s'efface ;
      3. … avec la date « Aujourd'hui », qui n'a plus rien à dater ;
@@ -76,6 +78,8 @@ const dit = (quoi, bon, detail) => { console.log('  ' + (bon ? 'OK  ' : 'KO  ') 
           img.cible = b ? { h: +b.getBoundingClientRect().height.toFixed(2), op: +getComputedStyle(b).opacity } : null;
           img.jour = [...z.querySelectorAll(':scope > .b-jour')].map(j => j.textContent.trim());
           img.partie = !!z.querySelector('.b-partie');
+          const carte = document.querySelector('.grp-partie');
+          img.carte = carte ? +carte.getBoundingClientRect().height.toFixed(1) : 0;
           img.places = [...z.querySelectorAll(':scope > .b-sys, :scope > .b-jour, [data-m]')]
             .map(e => [(e.getAttribute('data-m') || ('j' + e.getAttribute('data-j'))), +e.getBoundingClientRect().top.toFixed(2)]);
         }
@@ -104,18 +108,24 @@ const dit = (quoi, bon, detail) => { console.log('  ' + (bon ? 'OK  ' : 'KO  ') 
 
     /* ---- 1 à 4 : Taylor lance, puis revient sans jouer ---- */
     await ta.evaluate(() => document.querySelector('.compo-jeu').click());
-    const lancee = await attendre(ta, () => state.screen === 'online-room' && !!(net.partieGroupe && net.partieGroupe.message), null, 9000);
+    const lancee = await attendre(ta, () => state.screen === 'groupe' && !!document.querySelector('.grp-partie[data-phase="room"]') && !!(net.partieGroupe && net.partieGroupe.message), null, 9000);
     const vue = await attendre(be, () => !!document.querySelector('#fil .b-partie'), null, 9000);
     const idPartie = await ta.evaluate(() => net.partieGroupe && net.partieGroupe.message);
     await be.waitForTimeout(700);
-    await filmer(ta, null);
+    await filmer(ta, '.b-partie');
     await filmer(be, '.b-partie');
-    await ta.evaluate(() => document.querySelector('.app-header [onclick*="leaveRoomToOnline"]').click());
+    await ta.evaluate(() => document.querySelector('.grp-partie .gp-quitter').click());   // (v365) la croix du salon
     const [fa, fb] = await Promise.all([film(ta), film(be)]);
-    const chezTaylor = fa.filter(x => x.ecran === 'groupe' && x.places);
-    const vuChezTaylor = chezTaylor.filter(x => x.partie);
-    dit('1. Taylor revenu dans la discussion : l\'invitation n\'y est à aucune image', lancee && chezTaylor.length > 30 && vuChezTaylor.length === 0,
-      (lancee ? 'partie lancée' : 'partie PAS lancée') + ', ' + chezTaylor.length + ' images dans la discussion, ' + vuChezTaylor.length + ' avec l\'invitation');
+    /* (v365) Chez Taylor : la carte du salon et l'invitation se replient. */
+    const repli = (images, prendre) => {
+      const v = images.map(prendre), h = v.find(x => x > 0) || 0;
+      let marche = 0; for (let i = 1; i < v.length; i++) marche = Math.max(marche, v[i - 1] - v[i]);
+      return { h: Math.round(h), route: v.filter(x => x > 1 && x < h - 1).length, marche: +marche.toFixed(1), fin: v[v.length - 1] };
+    };
+    const rc = repli(fa, x => x.carte), ri = repli(fa, x => x.cible ? x.cible.h : 0);
+    dit('1. Taylor ferme son salon par sa croix : la carte du salon et l\'invitation se replient sous ses yeux (plusieurs images, sans marche brutale), et il reste dans la discussion',
+      lancee && rc.h > 60 && rc.route >= 6 && rc.marche <= 0.35 * rc.h && rc.fin === 0 && ri.h > 60 && ri.route >= 6 && ri.marche <= 0.35 * ri.h && !fa[fa.length - 1].partie
+      && fa.every(x => x.ecran === 'groupe'), JSON.stringify({ lancee, carte: rc, invitation: ri }));
     const avec = fb.filter(x => x.cible);
     const h0 = avec.length ? avec[0].cible.h : 0;
     let marche = 0;

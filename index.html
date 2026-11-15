@@ -27,6 +27,13 @@
     s.async = true; s.crossOrigin = "anonymous"; s.setAttribute("data-ad-frequency-hint", "60s");
     s.src = "https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-4777080561806498";
     document.head.appendChild(s);
+    /* (v364) GOOGLE DIT QUAND IL EST PRÊT. « Le bouton Rejouer prend du temps
+       à se lancer. » Tant que Google n'a pas ouvert les annonces au compte, il
+       ne répond jamais à adBreak : le jeu attendait une seconde et demie à
+       chaque « Rejouer », « Quitter », « Autres jeux », pour rien. onReady
+       (la fonction prévue par Google) dit quand l'annonce est vraiment
+       possible ; d'ici là, on passe sans attendre. */
+    adConfig({ preloadAdBreaks:"on", onReady:function(){ window.__pubPrete = true; } });
   })();
 </script>
 <!-- « interactive-widget=overlays-content » : LE CLAVIER SE POSE PAR-DESSUS,
@@ -66,7 +73,30 @@
 <meta name="color-scheme" content="dark">
 <meta name="mobile-web-app-capable" content="yes">
 <link rel="manifest" href="manifest.json">
-<title>Yada — Quiz Biblique</title>
+<title>Yada — Le quiz biblique gratuit</title>
+<!-- ===== (v363) CE QUE GOOGLE DIT DE YADA =====
+     « Sur cette page, ça affiche un extrait du code JavaScript au lieu d'une
+       description propre. » Sans description, Google en fabrique une avec le
+     texte qu'il trouve dans la page — et la page du jeu n'en a presque
+     aucun : le verrou paysage (« Tourne l'écran… »), puis du code. Elle dit
+     maintenant elle-même ce qu'elle est (description, image de partage,
+     données structurées), son adresse de référence (canonical : la même page
+     est aussi servie par Cloudflare et GitHub), et le verrou paysage ne sert
+     plus jamais d'extrait (data-nosnippet). Les pages à lire (guide, quiz par
+     livre, questions fréquentes…) sont générées par contenu/genere.py. -->
+<meta name="description" content="Yada, le quiz biblique gratuit : 1 796 questions sur les 66 livres de la Bible, un Parcours de la Genèse à l'Apocalypse, cinq jeux, des parties entre amis et en ligne. Sans compte, en français, en anglais et en espagnol.">
+<link rel="canonical" href="https://yadaquiz.app/">
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="Yada">
+<meta property="og:locale" content="fr_FR">
+<meta property="og:title" content="Yada — Le quiz biblique gratuit">
+<meta property="og:description" content="Yada, le quiz biblique gratuit : 1 796 questions sur les 66 livres de la Bible, un Parcours de la Genèse à l'Apocalypse, cinq jeux, des parties entre amis et en ligne. Sans compte, en français, en anglais et en espagnol.">
+<meta property="og:url" content="https://yadaquiz.app/">
+<meta property="og:image" content="https://yadaquiz.app/site/partage.jpg">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta name="twitter:card" content="summary_large_image">
+<script type="application/ld+json">[{"@context":"https://schema.org","@type":"WebSite","name":"Yada","alternateName":"Yada, le quiz biblique","url":"https://yadaquiz.app/","inLanguage":"fr"},{"@context":"https://schema.org","@type":"WebApplication","name":"Yada","url":"https://yadaquiz.app/","description":"Yada, le quiz biblique gratuit : 1 796 questions sur les 66 livres de la Bible, un Parcours de la Genèse à l'Apocalypse, cinq jeux, des parties entre amis et en ligne. Sans compte, en français, en anglais et en espagnol.","image":"https://yadaquiz.app/site/partage.jpg","applicationCategory":"GameApplication","applicationSubCategory":"Quiz biblique","operatingSystem":"iOS, Android, Windows, macOS, Linux (navigateur)","inLanguage":["fr","en","es"],"isAccessibleForFree":true,"offers":{"@type":"Offer","price":"0","priceCurrency":"EUR"},"author":{"@type":"Person","name":"Taylor Dauber"}}]</script>
 <link rel="icon" href="data:image/png;base64,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">
 <link rel="apple-touch-icon" sizes="512x512" href="icon-512.png">
 <meta name="apple-mobile-web-app-capable" content="yes">
@@ -1956,6 +1986,16 @@
   .rv-bk.nt{ background:rgba(76,134,232,0.15); color:#2f5fb3; }
   .rv-q{ flex:1; min-width:0; font-size:0.86rem; line-height:1.38; color:var(--ink); overflow-wrap:anywhere; hyphens:auto; }
   .rv-quand{ flex-shrink:0; font-size:0.74rem; font-weight:600; color:var(--ink-soft); }
+  /* (v364) « À REVOIR » TIENT DANS L'ÉCRAN, ET NE SE LAISSE PLUS TIRER.
+     « Ici, je ne veux pas qu'on puisse swiper vers le bas. » Cinq questions
+     de trois lignes : la page dépassait de 71 px sur un iPhone de 667 px de
+     haut, et elle défilait. Une question se lit en deux lignes au plus — ses
+     premiers mots suffisent à la reconnaître —, en une seule s'il le faut
+     (tenirRevoir), et la règle du bas cède sa place en dernier recours. */
+  .rv-q{ display:-webkit-box; -webkit-box-orient:vertical; -webkit-line-clamp:2; overflow:hidden; }
+  .rv-lignes.serre .rv-q{ -webkit-line-clamp:1; hyphens:manual; -webkit-hyphens:manual; }
+  .rv-lignes.serre{ row-gap:0.62rem; }
+  .screen.rv-sans-regle .rvl-regle{ display:none; }
   .rv-suite{ font-size:0.78rem; color:var(--ink-soft); padding:0.2rem 0 0.35rem; }
   /* ===== UN SEUL LIVRE, EN LIGNE (v316) =====
      La quatrième puce du salon porte le nom court du livre choisi : elle ne
@@ -2545,7 +2585,11 @@
      teinte, qui ne bascule qu'à la fin de l'encre. */
   .chip.remplit, .len-chip.remplit{ transition:transform 0.44s cubic-bezier(0.2,1,0.3,1),
     background-color 0s, border-color 0.22s ease, color 0s linear var(--encre-texte),
-    opacity 0.22s ease, --glass-tint 0s linear var(--encre-duree); }
+    opacity 0.22s ease, --glass-tint 0s linear calc(var(--encre-duree) * 0.8); }
+  /* (v364) La teinte pleine arrive aux quatre cinquièmes de l'encre, et non
+     plus à la toute fin : il ne reste alors que les coins, qu'elle achève
+     d'un coup — au lieu d'une lisière rose qui traînait encore un dixième
+     de seconde le long du bord. */
   .chip.devide, .len-chip.devide{ transition:transform 0.44s cubic-bezier(0.2,1,0.3,1),
     background-color 0s, border-color 0.22s ease, color 0s,
     opacity 0.22s ease, --glass-tint 0s linear; }
@@ -6370,6 +6414,32 @@
   .grp-fil-tete .grp-txt{ gap:0; }
   .grp-fil-tete .grp-txt b{ line-height:1.4; }
   .grp-fil-tete .grp-txt small{ line-height:1.25; }
+  /* ===== (v365) LE SALON D'UNE PARTIE DE GROUPE, DANS LA DISCUSSION =====
+     Une carte de verre entre l'en-tête et le fil : qui est là, les réglages
+     de l'hôte et « Commencer ». La discussion reste dessous, vivante. La
+     carte se plie d'un geste (elle ne garde que sa ligne de tête), et se
+     plie toute seule quand on écrit. La partie, elle, se joue en plein
+     écran : la carte s'en va quand l'hôte la lance. */
+  .grp-partie{ flex:none; display:flex; flex-direction:column; gap:0.55rem; margin:0 0 var(--e-2); padding:calc(0.55rem + 1px) calc(0.7rem + 1px) calc(0.7rem + 1px);
+    max-height:min(62%, 34rem); overflow-y:auto; overscroll-behavior:contain; -webkit-overflow-scrolling:touch; }
+  .grp-partie .gp-tete{ display:flex; align-items:center; gap:0.5rem; min-height:2.1rem; }
+  .grp-partie .gp-ico{ width:2rem; height:2rem; padding:0.42rem; flex-shrink:0; border-radius:var(--r-ico); display:inline-flex; align-items:center; justify-content:center;
+    color:#fff; background:var(--msg-c, var(--pal-corail)); box-shadow:inset 0 1px 0 rgba(255,255,255,0.26), 0 2px 7px rgba(15,12,10,0.2); }
+  .grp-partie .gp-ico svg{ width:100%; height:100%; }
+  .grp-partie .gp-titre{ flex:1; min-width:0; font-family:'Poppins',sans-serif; font-weight:600; font-size:0.94rem; color:var(--ink); white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+  .grp-partie .gp-resume{ flex-shrink:0; font-size:0.8rem; font-weight:700; color:var(--ink-soft); font-variant-numeric:tabular-nums; }
+  .grp-partie .gp-tete .icon-btn{ width:2.1rem; height:2.1rem; flex-shrink:0; }
+  .grp-partie .gp-plier .ico{ display:inline-flex; transform:rotate(-90deg); transition:transform var(--tr-plie); }
+  .grp-partie.reduit .gp-plier .ico{ transform:rotate(90deg); }
+  .grp-partie .gp-corps{ display:flex; flex-direction:column; gap:0.5rem; }
+  .grp-partie.reduit .gp-corps, html.kb .grp-partie .gp-corps{ display:none; }
+  .grp-partie .gp-corps > *{ margin-top:0 !important; margin-bottom:0 !important; }
+  .grp-partie .gp-joueurs{ display:flex; gap:0.6rem; overflow-x:auto; padding:0.1rem 0.1rem 0.2rem; scrollbar-width:none; }
+  .grp-partie .gp-joueur{ display:flex; flex-direction:column; align-items:center; gap:0.25rem; min-width:3.3rem; max-width:4.4rem; font-size:0.72rem; font-weight:600; color:var(--ink-soft); }
+  .grp-partie .gp-joueur > span:last-child{ max-width:100%; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+  .grp-partie .gp-joueur.moi{ color:var(--ink); }
+  .grp-partie .gp-reglages{ display:flex; flex-direction:column; gap:0.4rem; }
+  .grp-partie .gp-note{ font-size:0.82rem; color:var(--ink-soft); text-align:center; }
   .fil-carte{ position:relative; flex:1; min-height:0; display:flex; flex-direction:column; padding:0; margin-bottom:var(--e-2);
     border-radius:var(--r-l); }
   #fil{ flex:1; min-height:0; overflow-y:auto; overscroll-behavior:contain; -webkit-overflow-scrolling:touch;
@@ -6703,6 +6773,19 @@
      feuille ne grandit pas d'un pixel. */
   .liens-legaux{ display:flex; justify-content:center; align-items:center; flex-wrap:wrap; gap:0 0.1rem; margin:-0.8rem auto -0.35rem; }
   .liens-legaux .lien-conf{ display:inline-flex; align-items:center; margin:0; }
+  /* (v363) « À propos » est un vrai lien (le site s'ouvre à côté du jeu),
+     le même mot souligné que ses deux voisins. Les trois tiennent sur une
+     ligne jusque sur le plus petit iPhone (320 px) : un peu moins d'air sur
+     les côtés, et toujours 44 px de haut sous le doigt. */
+  .liens-legaux .lien-conf{ padding-left:0.55rem; padding-right:0.55rem; }
+  #liens-site{ display:none; }
+  @media (min-width:1100px) and (hover:hover) and (pointer:fine){
+    html:has(#barreBas:not(.cachee)) #liens-site{ position:fixed; left:1.1rem; bottom:1.1rem; z-index:2; display:flex; flex-direction:column; align-items:flex-start; gap:0.4rem; }
+    #liens-site a{ font-family:'Inter',sans-serif; font-size:0.8rem; font-weight:600; color:rgba(255,255,255,0.9); text-decoration:none;
+      padding:0.4rem 0.85rem; border-radius:999px; background:rgba(21,16,11,0.36); -webkit-backdrop-filter:blur(10px); backdrop-filter:blur(10px);
+      transition:background-color 0.2s ease; }
+    #liens-site a:hover{ background:rgba(21,16,11,0.55); color:#fff; }
+  }
   /* (v349) Dans les mentions, « Confidentialité » est un lien de la phrase. */
   .conf-l .ment-conf{ display:inline-block; margin:-0.62rem 0; padding:0.62rem 0; font-size:inherit; font-weight:600;
     color:var(--ink-soft); text-decoration:underline; text-underline-offset:3px; }
@@ -7208,8 +7291,15 @@
 <div id="bg-layer"></div>
 <div id="bg-overlay"></div>
 <div id="bg-grain"></div>
-<div id="rotate-lock"><span class="rl-ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><rect x="7" y="2.5" width="10" height="19" rx="2.5"/><line x1="10.3" y1="18.4" x2="13.7" y2="18.4"/></svg></span><p>Tourne l’écran —<br>Yada se joue en portrait</p></div>
+<div id="rotate-lock" data-nosnippet><span class="rl-ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><rect x="7" y="2.5" width="10" height="19" rx="2.5"/><line x1="10.3" y1="18.4" x2="13.7" y2="18.4"/></svg></span><p>Tourne l’écran —<br>Yada se joue en portrait</p></div>
 <div id="app"></div>
+<!-- (v363) LE SITE, À CÔTÉ DU JEU. Des liens ordinaires, écrits dans la page
+     (un robot les lit sans rien exécuter) : sur un grand écran, ils se posent
+     au coin, hors du jeu, quand la barre du bas est là (l'accueil et les
+     onglets, jamais pendant une partie) ; sur un téléphone,
+     ils ne prennent aucune place (« À propos », dans les Réglages, y mène). -->
+<nav id="liens-site" aria-label="Le site de Yada" data-nosnippet><a href="quiz-biblique/">Quiz biblique par livre</a><a href="guide/">Guide du jeu</a><a href="nouveautes/">Nouveautés</a><a href="faq/">Questions fréquentes</a><a href="a-propos/">À propos</a><a href="confidentialite">Confidentialité</a></nav>
+<noscript><p style="color:#fff;font-family:sans-serif;padding:1.5rem;max-width:32rem;margin:0 auto">Yada, le quiz biblique gratuit : active JavaScript pour jouer. En attendant, découvre le <a style="color:#FFD968" href="quiz-biblique/">quiz biblique livre par livre</a> et le <a style="color:#FFD968" href="guide/">guide du jeu</a>.</p></noscript>
 
 <script>
 /* iOS Safari n'applique PAS :active de façon fiable au toucher tant qu'aucun
@@ -7339,6 +7429,7 @@ const TEXTES = {
     "Une bonne réponse, et l'erreur est rattrapée. Seules tes {n} dernières erreurs restent ici, sept jours au plus.":"One right answer and the mistake is fixed. Only your last {n} mistakes stay here, for seven days at most.",
     "Tes erreurs récentes":"Your recent mistakes",
     "Tout est rattrapé\u00a0!":"All caught up!",
+    "Séance parfaite\u00a0!":"Perfect session!",
     "Plus rien à rattraper, bravo\u00a0!":"Nothing left to fix, well done!",
     "{n} encore à rattraper":"{n} still to fix",
     "Rattrapée\u00a0!":"Fixed!",
@@ -8085,6 +8176,10 @@ const TEXTES = {
     "pas de réseau":"no network",
     "Ce groupe n'existe plus.":"This group no longer exists.",
     "Partie du groupe":"Group game",
+    "Réduire la partie":"Collapse the game",
+    "Ouvrir la partie":"Expand the game",
+    "Fermer la partie\u00a0?":"Close the game?",
+    "Les joueurs qui t'ont rejoint en sortiront.":"The players who joined you will be taken out of it.",
     "Les membres te rejoignent depuis la discussion.":"Members join you from the chat.",
     "Cette partie n'est plus ouverte.":"This game is no longer open.",
     "Lancer une partie":"Start a game",
@@ -8207,6 +8302,7 @@ const TEXTES = {
     "de suite":"in a row",
     "Autres jeux":"Other games",
     "Mentions légales":"Legal notice",
+    "À propos":"About",
     "Éditeur et directeur de la publication :":"Publisher and publication director:",
     "Contact :":"Contact:",
     "Téléphone :":"Phone:",
@@ -8286,6 +8382,7 @@ const TEXTES = {
     "Une bonne réponse, et l'erreur est rattrapée. Seules tes {n} dernières erreurs restent ici, sept jours au plus.":"Una respuesta correcta y el error queda corregido. Aquí solo quedan tus {n} últimos errores, siete días como máximo.",
     "Tes erreurs récentes":"Tus errores recientes",
     "Tout est rattrapé\u00a0!":"¡Todo corregido!",
+    "Séance parfaite\u00a0!":"¡Sesión perfecta!",
     "Plus rien à rattraper, bravo\u00a0!":"¡Nada más por corregir, bien hecho!",
     "{n} encore à rattraper":"{n} aún por corregir",
     "Rattrapée\u00a0!":"¡Corregido!",
@@ -9026,6 +9123,10 @@ const TEXTES = {
     "pas de réseau":"sin red",
     "Ce groupe n'existe plus.":"Este grupo ya no existe.",
     "Partie du groupe":"Partida del grupo",
+    "Réduire la partie":"Plegar la partida",
+    "Ouvrir la partie":"Desplegar la partida",
+    "Fermer la partie\u00a0?":"¿Cerrar la partida?",
+    "Les joueurs qui t'ont rejoint en sortiront.":"Los jugadores que se te unieron saldrán de ella.",
     "Les membres te rejoignent depuis la discussion.":"Los miembros se unen desde el chat.",
     "Cette partie n'est plus ouverte.":"Esta partida ya no está abierta.",
     "Lancer une partie":"Iniciar una partida",
@@ -9148,6 +9249,7 @@ const TEXTES = {
     "de suite":"seguidas",
     "Autres jeux":"Otros juegos",
     "Mentions légales":"Aviso legal",
+    "À propos":"Acerca de",
     "Éditeur et directeur de la publication :":"Editor y director de la publicación:",
     "Contact :":"Contacto:",
     "Téléphone :":"Teléfono:",
@@ -11803,7 +11905,7 @@ const SUPABASE_ANON_KEY = "sb_publishable_FDJ_R0foC7uIeHmxVrj6rA_2NeIgW2a";
    remontée d'un téléphone ne vaut rien si on ne sait pas QUELLE version
    tournait. Elle doit rester égale au CACHE de sw.js — c'est ce que vérifie
    banc-essai/version.js, qui refuse de laisser publier les deux en désaccord. */
-const VERSION_JEU = "v362";
+const VERSION_JEU = "v365";
 
 /* ===================== QUAND ÇA CASSE CHEZ UN JOUEUR =====================
    « Si quelque chose casse chez cinq d'entre eux sur un modèle de téléphone
@@ -12035,7 +12137,7 @@ function majAdversaire(){
   net.oppPresent = pres.length > 0;
   net.opp = pres[0] || tous[0] || null;
   const partis = tous.length > 0 && pres.length === 0;
-  if(partis && !net.oppGone && (state.screen==="online-play" || state.screen==="online-end")) markOppGone();
+  if(partis && !net.oppGone && (ecranEnLigne()==="online-play" || ecranEnLigne()==="online-end")) markOppGone();
   else if(!partis && net.oppGone && pres.length){ net.oppGone = false; }
   if(net.opp){
     net.oppScore = net.opp.score|0; net.oppIndex = net.opp.idx|0;
@@ -12191,7 +12293,150 @@ function signaturePresence(){
           net.lengthKey, net.timerKey, net.themeKey, j].join("~");
 }
 let derniereSignature = "";
+/* ===== (v365) LE SALON SE TIENT DANS LA DISCUSSION, LA PARTIE EN PLEIN ÉCRAN =====
+   « Que le mode jeu dans les groupes puisse se lancer sans devoir rester
+     dans le jeu : tu lances dans le chat, il y a un message avec le jeu, les
+     joueurs peuvent rejoindre directement sans avoir à quitter les messages ;
+     de cette façon, les gens pourront continuer à parler. » Puis : « Je ne
+     t'ai pas dit de mettre la partie entière dans le chat, juste le truc de
+     la demande de partie. »
+   La manette d'une discussion, et la bulle « Rejoindre la partie », ne
+   quittent donc plus la discussion : LE SALON s'y loge, en carte, entre
+   l'en-tête et le fil — qui est là, les réglages de l'hôte, « Commencer ».
+   Les messages continuent d'arriver dessous, et on peut écrire. Quand l'hôte
+   lance, chacun passe EN PLEIN ÉCRAN, comme toujours : les questions, puis
+   les résultats ; « Quitter » y ramène dans la discussion.
+   C'EST LE MÊME SALON, PAS UN AUTRE. Tout le jeu en ligne (présence,
+   départ, questions, scores, revanche, récap) est celui de toujours : il
+   continue de dire « online-room » et d'appeler render(). Tant que le salon
+   est logé (net.fil : le groupe), render() garde la discussion à l'écran et
+   ne redessine que la carte ; ce qui demandait « sur quel écran de la partie
+   suis-je ? » le demande à ecranEnLigne(). Dès que la partie part (un autre
+   écran que le salon), le salon se déloge : net.fil s'efface, et l'écran de
+   jeu arrive comme d'habitude. Qui entre par le code (« Jouer en ligne »)
+   attend dans l'écran du salon, comme avant, dans la même partie. */
+function partieDansLeFil(){ return !!(net && net.fil && net.room); }
+function ecranEnLigne(){ return partieDansLeFil() ? (net.phase || "online-room") : state.screen; }
+/* Passer à un écran de la partie SANS render() derrière (le direct, qui
+   redessine lui-même) : logé, le salon reste un salon ; tout autre écran le
+   déloge, et devient l'écran. */
+function versEcranEnLigne(e){
+  if(partieDansLeFil() && e === "online-room"){ net.phase = e; return; }
+  if(net && net.fil){ net.fil = null; net.phase = null; }
+  state.screen = e;
+}
+/* render() la consulte en premier : vrai si elle a tout fait. */
+function rendrePartieLogee(){
+  if(!net || !net.fil) return false;
+  if(state.screen === "online-room" && net.room){
+    net.phase = state.screen;
+    state.screen = "groupe";
+    if(grp.courant !== net.fil) return false;
+    const ecran = ecranDeDiscussion();
+    if(ecran && lastScreen === "groupe"){ majPanneauPartie(ecran); return true; }
+    return false;
+  }
+  /* La partie part : le salon quitte la discussion, la partie arrive en
+     plein écran (le render() qui suit la dessine). */
+  if((state.screen === "online-play" || state.screen === "online-end") && net.room){
+    net.fil = null; net.phase = null;
+    return false;
+  }
+  /* Le salon s'arrête ici (introuvable, complet, fermé…) : on reste dans la
+     discussion, le mot au-dessus d'elle. */
+  if(/^online/.test(state.screen) && grp.courant === net.fil){
+    net.fil = null; net.phase = null;
+    state.screen = "groupe";
+    if(net.error){ showMiniToast(net.error); net.error = ""; }
+    const ecran = ecranDeDiscussion();
+    if(ecran && lastScreen === "groupe"){ majPanneauPartie(ecran); return true; }
+  }
+  return false;
+}
+function ecranDeDiscussion(){
+  return Array.prototype.find.call(document.querySelectorAll("#app > .screen.groupe-ecran"), e => !e.classList.contains("screen-exit")) || null;
+}
+function reduirePartie(){ net.filReduit = !net.filReduit; majPanneauPartie(); }
+function quitterPartieDuFil(){ leaveRoomToOnline(); }
+/* Les visages du salon, en une rangée. */
+function joueursDuFilHtml(){
+  return `<div class="gp-joueurs">${classement().sort((a, b)=> (a.moi ? 0 : 1) - (b.moi ? 0 : 1)).map(j => `
+      <span class="gp-joueur${j.moi ? " moi" : ""}">${avatarHtml(j.name, j.color, 2.2, j.moi ? true : j.id)}<span>${escapeHtml(couperSignes(j.name || T("Joueur"), 10))}</span></span>`).join("")}</div>`;
+}
+/* LA CARTE ARRIVE ET S'EN VA EN DOUCEUR. Posée d'un coup, elle poussait le
+   fil d'une centaine de pixels dans la même image — et l'y laissait
+   retomber d'autant en partant. Sa place s'ouvre et se referme maintenant
+   sur l'horloge rapide du jeu, le fil glisse avec elle. Un écran qui ARRIVE
+   avec sa carte (on revient dans la discussion) la montre déjà posée : rien
+   n'apparaît après lui (v361). */
+function deplierCarte(p){
+  try{
+    const cs = getComputedStyle(p), h = p.offsetHeight;
+    p.animate([{ height:"0px", opacity:0, marginBottom:"0px", paddingTop:"0px", paddingBottom:"0px" },
+               { height:h + "px", opacity:1, marginBottom:cs.marginBottom, paddingTop:cs.paddingTop, paddingBottom:cs.paddingBottom }],
+      { duration:260, easing:"cubic-bezier(0.33,1,0.68,1)" });
+  }catch(e){}
+}
+function replierCarte(p){
+  if(p._part) return;
+  p._part = true;
+  const finir = ()=>{ p.remove(); try{ glassRelayout(); queueGlassSync(); }catch(e){} };
+  try{
+    const cs = getComputedStyle(p), h = p.offsetHeight;
+    p.style.pointerEvents = "none"; p.style.overflow = "hidden";
+    const a = p.animate([{ height:h + "px", opacity:1, marginBottom:cs.marginBottom, paddingTop:cs.paddingTop, paddingBottom:cs.paddingBottom },
+                         { height:"0px", opacity:0, marginBottom:"0px", paddingTop:"0px", paddingBottom:"0px" }],
+      { duration:240, easing:"cubic-bezier(0.33,1,0.68,1)", fill:"forwards" });
+    a.onfinish = finir; a.oncancel = finir;
+  }catch(e){ finir(); }
+}
+function majPanneauPartie(el){
+  const ecran = el || ecranDeDiscussion();
+  if(!ecran) return;
+  let p = Array.prototype.find.call(ecran.querySelectorAll(":scope > .grp-partie"), x => !x._part) || null;
+  if(!net.room){ net.fil = null; net.phase = null; }
+  if(!partieDansLeFil() || net.fil !== grp.courant || ecranEnLigne() !== "online-room"){
+    if(p){ if(ecran.classList.contains("screen-exit")){ p.remove(); } else replierCarte(p); }
+    return;
+  }
+  const corps = document.createElement("div");
+  corps.className = "gp-corps";
+  const src = renderOnlineRoom();
+  corps.innerHTML = joueursDuFilHtml();
+  if(net.isHost){
+    const r = document.createElement("div");
+    r.className = "gp-reglages";
+    src.querySelectorAll(".len-row").forEach(x => r.appendChild(x));
+    corps.appendChild(r);
+    const b = src.querySelector("#roomStartBtn"); if(b) corps.appendChild(b);
+  } else {
+    const w = src.querySelector("#waitNote");
+    if(w){ w.className = "gp-note"; corps.appendChild(w); }
+  }
+  let neuve = false;
+  if(!p){
+    p = document.createElement("div");
+    p.className = "card grp-partie";
+    ecran.insertBefore(p, ecran.querySelector(":scope > .fil-carte"));
+    neuve = !ecran.classList.contains("arrivee");
+  }
+  p.classList.toggle("reduit", !!net.filReduit);
+  p.setAttribute("data-phase", "room");
+  p.innerHTML = `<div class="gp-tete">
+      <span class="gp-ico">${ICONS.manette}</span>
+      <span class="gp-titre">${T("Partie du groupe")}</span>
+      <span class="gp-resume">${nbJoueurs()}/${MAX_JOUEURS}</span>
+      <button class="icon-btn gp-plier" onclick="reduirePartie()" aria-label="${net.filReduit ? T("Ouvrir la partie") : T("Réduire la partie")}"><span class="ico" style="width:1.1rem;height:1.1rem;">${ICONS.chevronLeft}</span></button>
+      <button class="icon-btn gp-quitter" onclick="quitterPartieDuFil()" aria-label="${T("Quitter la partie")}"><span class="ico" style="width:1.05rem;height:1.05rem;">${ICONS.close}</span></button>
+    </div>`;
+  p.appendChild(corps);
+  if(neuve) deplierCarte(p);
+  try{ glassRelayout(); queueGlassSync(); }catch(e){}
+}
 function reRenderIfOnline(){
+  if(net && net.fil){
+    if(partieDansLeFil() && ecranEnLigne() === "online-room"){ if(state.screen === "groupe") majPanneauPartie(); return; }
+  }
   const sc = String(state.screen);
   if(sc.indexOf("online") !== 0) return;
   if(document.getElementById("modalVeil")){ return; }
@@ -12767,8 +13012,8 @@ function bindRoom(ch){
        passée derrière retire sa présence), puis le salon se ferme. */
     if(restants.length && !net.isHost && !net.deck.length && (leftPresences||[]).some(m => m && m.hote)) guetterHote(ch);
     if(!restants.length){
-      if(state.screen==="online-play" || state.screen==="online-end"){ markOppGone(); }
-      else if(state.screen==="online-room" && !net.isHost){
+      if(ecranEnLigne()==="online-play" || ecranEnLigne()==="online-end"){ markOppGone(); }
+      else if(ecranEnLigne()==="online-room" && !net.isHost){
         cleanupRoom();
         net.error = T("L'hôte a quitté le salon.");
         if(sortirVersGroupe(net.error)) net.error = "";
@@ -12806,12 +13051,12 @@ function bindRoom(ch){
     const j = net.joueurs[payload.id] || (net.joueurs[payload.id] = { id:payload.id, name:payload.name||"Joueur", color:payload.color, gone:false });
     j.idx = payload.idx|0; j.score = payload.score|0; j.done = !!payload.done; j.vu = Date.now(); j.gone = false;
     majAdversaire();
-    if(net.myDone && net.oppDone && state.screen!=="online-end"){ state.screen="online-end"; playWin(); }
+    if(net.myDone && net.oppDone && ecranEnLigne()!=="online-end"){ versEcranEnLigne("online-end"); playWin(); }
     reRenderIfOnline();
   });
   ch.on("broadcast", { event:"rematch" }, ({ payload })=>{
     if(!payload || payload.id===myId) return;
-    if(state.screen!=="online-end") return;
+    if(ecranEnLigne()!=="online-end") return;
     net.oppWantReplay = true; net.replayDeclined = false;
     /* Si je voulais DÉJÀ rejouer, la poignée de main est complète -> l'hôte
        relance (l'invité démarrera à la réception de « start »). Sinon, l'écran
@@ -12884,7 +13129,7 @@ function createRoom(code, host, _retry){
       if(!host){
         net.joinTimer = setTimeout(()=>{
           net.joinTimer = null;
-          if(!net.oppPresent && state.screen==="online-room"){
+          if(!net.oppPresent && ecranEnLigne()==="online-room"){
             cleanupRoom();
             /* Depuis une bulle du groupe, on n'a tapé aucun code : la partie
                annoncée est finie, ou celui qui l'a lancée est parti. */
@@ -13085,7 +13330,7 @@ function markOppGone(){
   net.goneFresh = true;
   clearTimeout(net.goneBannerTimer);
   net.goneBannerTimer = setTimeout(()=>{ net.hideGoneBanner = true; reRenderIfOnline(); }, 6000);
-  if(net.myDone && state.screen==="online-play"){ state.screen="online-end"; }
+  if(net.myDone && ecranEnLigne()==="online-play"){ versEcranEnLigne("online-end"); }
   reRenderIfOnline();
 }
 /* Quitter un duel, fini ou pas, ramène à l'écran En ligne — comme le Solo et
@@ -13120,7 +13365,7 @@ function quitDuel(){
    continue sans lui : son score reste au tableau. */
 const HOTE_GRACE = 30000;
 function salonFermeParHote(){
-  if(state.screen !== "online-room") { cleanupRoom(); return; }
+  if(ecranEnLigne() !== "online-room") { cleanupRoom(); return; }
   cleanupRoom();
   net.error = T("L'hôte a quitté le salon.");
   if(sortirVersGroupe(net.error)){ net.error = ""; return; }
@@ -13209,6 +13454,16 @@ function quitterFinEnLigne(){
    Ouvrir En ligne depuis l'accueil l'oublie : ce départ-là ramène à l'accueil,
    comme avant. */
 function sortirVersGroupe(mot){
+  /* (v365) Le salon était logé dans la discussion : on y est déjà. */
+  if(net.fil){
+    const id = net.fil;
+    net.fil = null; net.phase = null; net.depuisGroupe = null;
+    if(state.screen === "groupe" && grp.courant === id) majPanneauPartie();
+    else if((grp.liste || []).some(x => x.id === id)) ouvrirGroupe(id);
+    else { state.screen = "groupes"; render(); ouvrirGroupes(); }
+    if(mot) showMiniToast(mot);
+    return true;
+  }
   const id = net.depuisGroupe;
   if(!id) return false;
   net.depuisGroupe = null;
@@ -15568,6 +15823,7 @@ function reglagesHtml(){
       <div class="liens-legaux">
         <button class="lien-conf" onclick="ouvrirConfidentialite()">${T("Confidentialité")}</button>
         <button class="lien-conf" onclick="ouvrirMentions()">${T("Mentions légales")}</button>
+        <a class="lien-conf" href="a-propos/" target="_blank" rel="noopener">${T("À propos")}</a>
       </div>
     </div>`;
 }
@@ -16356,7 +16612,7 @@ try{
      ni courbe : un SUIVI AMORTI (voir glisserVers) avale à chaque image une
      même fraction de ce qui reste. La queue de bégaiement disparaît pour la
      même raison qu'avant — on pose les cinq derniers pixels d'un coup — mais
-     le raccord d'une cible qui se déplace, lui, devient gratuit : il n'y a
+     le raccord d'une cible qui se déplace, lui, devient gratuit : il n'y a
      plus de vitesse à raccorder, la loi ne dépend que de l'écart du moment.
      Ce qui reste vrai et le restera : un défileur ne connaît que les pixels
      entiers, donc toute fin de mouvement sous un pixel par image bégaie. */
@@ -22358,6 +22614,18 @@ function pointPuce(c, clientX, clientY){
     if(r.width > 0 && r.height > 0){
       x = Math.min(W, Math.max(0, (clientX - r.left) * W / r.width));
       y = Math.min(H, Math.max(0, (clientY - r.top) * H / r.height));
+      /* (v364) LA GOUTTE PART DU DOIGT EN LARGEUR, DU MILIEU EN HAUTEUR.
+         « Quand je passe de Courte à Normale, ça se remplit, mais ça laisse
+           une bordure en bas qui n'est pas remplie et qui se remplit après. »
+         Un iPhone situe le toucher plus haut que le milieu du doigt : sur une
+         puce plate, la goutte naissait près du HAUT, et le bas était le bord
+         le plus lointain — filmé, toucher au cinquième de la hauteur : le
+         milieu plein à 144 ms, la bande du bas vide jusqu'à 196 ms et pleine
+         à 297 ms seulement. Sur une puce plus large que haute, la goutte part
+         donc de la hauteur du milieu (à un dixième près du doigt) : le haut et
+         le bas se remplissent ensemble, et elle part toujours d'où l'on a
+         touché, de gauche à droite. */
+      if(W >= H * 1.4) y = H / 2 + (y - H / 2) * 0.1;
     }
   }
   return { x, y };
@@ -28846,6 +29114,17 @@ async function ouvrirGroupe(id){
   await chargerFil(id);
 }
 function retourGroupes(){
+  /* (v365) Le salon logé ici : en partant, on le quitte — l'hôte, qui le
+     ferme pour tous, le confirme si quelqu'un l'a rejoint. */
+  if(partieDansLeFil()){
+    const partir = ()=>{ cleanupRoom(); net.fil = null; net.phase = null; net.depuisGroupe = null; retourGroupes(); };
+    if(net.isHost && nbJoueurs() > 1){
+      showModal({ title:T("Fermer la partie ?"), message:T("Les joueurs qui t'ont rejoint en sortiront."), okLabel:T("Fermer"), cancelLabel:T("Rester"), danger:true, onOk:partir });
+      return;
+    }
+    partir();
+    return;
+  }
   /* (v329) On vient d'écrire dans ce groupe : des réponses vont arriver. Le
      bon moment pour proposer les rappels (une fois sur ce téléphone, et
      jamais à qui a déjà répondu) — en quittant la discussion, pas pendant
@@ -29499,6 +29778,7 @@ function renderGroupe(){
      éclair de vieux messages à chaque ouverture. render() appelle _posee
      dès que l'écran est dans la page, avant toute image (voir render). */
   el._posee = ()=>{
+    if(net && net.fil === g.id) majPanneauPartie(el);
     descendreFil(false); if(t && t.value) surSaisie(t);
     /* Le fil se raccourcit (le clavier monte) ou s'allonge (il redescend) :
        s'il était au bas, il y reste, à chaque image de la transition. */
@@ -30342,6 +30622,7 @@ function lancerPartieGroupe(btn){
   net.partieGroupe = { groupe:g.id, code, message:null, venus:false };
   net.autoMatch = false; clearTimeout(net.matchGuard);
   net.depuisGroupe = g.id;
+  net.fil = g.id; net.phase = null; net.filReduit = false;   // (v365) le salon se tient ici
   createRoom(code, true);
   annoncerPartie(g.id, code, false);
 }
@@ -30396,6 +30677,8 @@ function rejoindrePartieGroupe(code){
   if(!navigator.onLine || !onlineConfigured()){ showMiniToast(T("Pas de réseau. Réessaie dans un instant.")); return; }
   net.autoMatch = false; clearTimeout(net.matchGuard);
   net.depuisGroupe = grp.courant;
+  /* (v365) Rejoint depuis la discussion, le salon s'y loge. */
+  if(state.screen === "groupe" && grp.courant){ net.fil = grp.courant; net.phase = null; net.filReduit = false; }
   joinRoom(code, false);
 }
 /* ===== (v336) LA PARTIE SUIVIE =====
@@ -32757,7 +33040,7 @@ function choixPublicite(){ try{ window.googlefc.showRevocationMessage(); }catch(
    LE STATUT : avec la publicité, l'éditeur n'est plus « à titre non
    professionnel » ; la loi demande alors aussi une adresse et un téléphone.
    Ce sont des données personnelles de Taylor : elles ne s'écrivent ici
-   qu'avec son accord, et ce qu'il choisit d'y mettre.
+   qu'avec son accord, et ce que Taylor choisit d'y mettre.
    (v350) Taylor les a données pour cette page, le 08/11/2026 : « pour le
    numéro de téléphone tu peux mettre 0784045770 », et l'adresse, « Angers
    49100, et dans l'adresse bv c'est boulevard ». La même page existe en
@@ -32892,6 +33175,26 @@ function questionsDuLivre(nom){
    refermer — et la feuille glissante, avec son voile, son glissement au
    doigt et son verre, disparaît entièrement de ce chemin. */
 function ouvrirRevoir(){ state.screen = "revoir"; render(); }
+/* (v364) « À REVOIR » TIENT DANS L'ÉCRAN : une question en deux lignes, puis
+   en une, puis la règle du bas s'efface. Mesuré sur la mise en page (pas sur
+   l'écran qui glisse), avant qu'il ne paraisse : rien ne bouge sous les yeux. */
+function tenirRevoir(ecran){
+  const a = document.getElementById("app");
+  const l = ecran && ecran.querySelector(".rv-lignes");
+  if(!a || !l) return;
+  const cs = getComputedStyle(a);
+  const dispo = a.clientHeight - (parseFloat(cs.paddingTop) || 0) - (parseFloat(cs.paddingBottom) || 0);
+  const depasse = () => ecran.offsetHeight - dispo > 0.5;
+  /* Chaque essai passe d'abord par serrerEcran : quelques pixels d'air
+     cèdent avant qu'une question ne perde une ligne. */
+  const tient = () => { try{ serrerEcran(ecran); }catch(e){} return !depasse(); };
+  l.classList.remove("serre"); ecran.classList.remove("rv-sans-regle");
+  if(tient()) return;
+  l.classList.add("serre");
+  if(tient()) return;
+  ecran.classList.add("rv-sans-regle");
+  tient();
+}
 /* ===== L'ÉCRAN DE LA SECONDE CHANCE (v316) =====
    Trois choses de haut en bas, et rien d'autre :
      — combien d'erreurs récentes attendent, en grand ; et LA SEMAINE :
@@ -32950,6 +33253,11 @@ function renderRevoir(){
    du balisage est exactement la forme où une vraie phrase se cacherait sans
    être vue par le banc des traductions. */
 function lancerRevision(){ startRevision("carnet"); }
+/* Ce qui reste à rattraper, compté d'après la porte d'où vient la séance :
+   l'écran « À revoir » ou la dernière partie. */
+function resteARattraper(){
+  try{ return (state.revisionDe === "setup") ? lastMissEntries().length : aRattraper().length; }catch(e){ return 0; }
+}
 function jouerSoloDepuisRevoir(){ state.mode = "solo"; state.screen = "setup"; render(); }
 
 function startRevision(quoi){
@@ -34101,7 +34409,7 @@ function renderPlay(){
 var pubDue = false, pubEcranPlein = false;
 function pubAutorisee(){
   try{ if(navigator.webdriver && !window.__pubBanc) return false; }catch(e){}
-  return typeof window.adBreak === "function";
+  return typeof window.adBreak === "function" && window.__pubPrete === true;
 }
 /* Une partie vient de finir : l'écran de ses résultats ouvre la prochaine occasion.
    Le son des annonces suit celui du jeu ; Google prépare la suivante à l'avance. */
@@ -34213,8 +34521,15 @@ function renderEndSolo(){
              c'est ce qu'on est venu faire. Ce qui reste se dit d'après la porte
              d'où l'on vient — l'écran « À revoir » ou la dernière partie. */
           const t = state.questions.length, ok = t - state.soloMissed.length;
-          const reste = (state.revisionDe === "setup") ? lastMissEntries().length : aRattraper().length;
-          return `<h1 class="end-title">${ok === t ? T("Tout est rattrapé !") : Tf(ok > 1 ? "{n} rattrapées sur {t}" : "{n} rattrapée sur {t}", { n:ok, t })}</h1>
+          const reste = resteARattraper();
+          /* (v364) « TOUT EST RATTRAPÉ » SEULEMENT QUAND C'EST VRAI. « Il me
+             reste une série et précisément une erreur : ça me dit que j'ai
+             terminé. » Le titre ne regardait que la séance : cinq sur cinq,
+             et « Tout est rattrapé ! » s'affichait en grand… au-dessus de
+             « 1 encore à rattraper ». Une séance parfaite qui laisse du
+             travail se dit « Séance parfaite ! », et le bouton dit
+             « Continuer ». */
+          return `<h1 class="end-title">${ok === t ? (reste > 0 ? T("Séance parfaite\u00a0!") : T("Tout est rattrapé !")) : Tf(ok > 1 ? "{n} rattrapées sur {t}" : "{n} rattrapée sur {t}", { n:ok, t })}</h1>
             <p class="end-sub">${soloPerformanceMessage(pct)}</p>
             <div class="end-best">${reste > 0 ? Tf("{n} encore à rattraper", { n:reste }) : T("Plus rien à rattraper, bravo !")}</div>`; })()
         : `<h1 class="end-title">${state.soloScore} ${T("points")}</h1>
@@ -34244,8 +34559,11 @@ function renderEndSolo(){
     <div class="flex-sp"></div>
     ${state.soloMissed && state.soloMissed.length ? `<button class="btn-review" onclick="openMissedReview()"><span class="ico">${ICONS.bookOpen}</span>${state.soloMissed.length>1?Tf("Revoir mes {n} erreurs",{n:state.soloMissed.length}):T("Revoir mon erreur")}</button>` : ""}
     <div class="end-bottom">
-    ${state.lecon ? `<div class="end-actions lecon-fin"><button class="btn-replay" onclick="continuerParcours()">${T("Continuer")}</button></div>` : `<div class="end-actions">
-      <button class="btn-replay" onclick="replayGame()">${T("Rejouer")}</button>
+    ${state.lecon ? `<div class="end-actions lecon-fin"><button class="btn-replay" onclick="continuerParcours()">${T("Continuer")}</button></div>`
+      /* (v364) Après une séance « À revoir » : « Continuer » joue la suite s'il
+         en reste ; sinon un seul bouton, qui ramène là d'où l'on vient. */
+      : (state.revision && resteARattraper() === 0) ? `<div class="end-actions lecon-fin"><button class="btn-replay" onclick="retourAuMode()">${T("Continuer")}</button></div>` : `<div class="end-actions">
+      <button class="btn-replay" onclick="replayGame()">${state.revision ? T("Continuer") : T("Rejouer")}</button>
       <button class="btn-newgame btn-quit" onclick="retourAuMode()">${T("Quitter")}</button>
     </div>
     ${shareLineHtml(state.mode)}`}
@@ -35978,6 +36296,9 @@ function fondreLeSplash(){
   return true;
 }
 function render(){
+  /* (v365) Le salon logé dans la discussion ne change pas d'écran : sa carte
+     seule se redessine (voir LE SALON SE TIENT DANS LA DISCUSSION). */
+  if(rendrePartieLogee()) return;
   /* Un rendu redessine l'écran à partir de la liste : un retrait en vol se
      pose d'abord, pour que l'écran neuf montre la liste telle qu'elle sera. */
   finirPlaces();
@@ -36192,6 +36513,7 @@ function render(){
   try{ document.documentElement.classList.toggle("ecran-discussion", state.screen === "groupe"); }catch(e){}
   try{ majBarre(); }catch(e){}
   /* Après la barre : c'est elle qui donne aux écrans des groupes leur pied. */
+  if(state.screen === "revoir"){ try{ tenirRevoir(node); }catch(e){} }
   try{ serrerEcran(node); }catch(e){}
   if(avantRevelation){ try{ glisserApresRevelation(node, avantRevelation); }catch(e){} }
   animerLaBarre(node);
@@ -36219,7 +36541,7 @@ function render(){
   majVoilesScores();
   majVoilesListe(node.querySelector(".salle-liste"));
 
-  if(state.screen!=="play" && state.screen!=="online-play"){ stopQTimer(); }
+  if(state.screen!=="play" && ecranEnLigne()!=="online-play"){ stopQTimer(); }
   if(state.screen==="play") saveState();
   else if(state.screen==="end" || state.screen==="mode") clearSavedGame();
   /* Ce que cet écran vient de montrer, pour que la présence sache si elle a
@@ -36527,6 +36849,12 @@ function fitScroll(){
      autres écrans décident selon leur contenu (défilement natif si ça déborde). */
   let fixedScreen = false;
   try{ fixedScreen = (state.screen === "mode"); }catch(e){}
+  /* (v364) « À revoir » est fixe dès qu'il tient (voir tenirRevoir). */
+  try{ if(state.screen === "revoir" && !a.querySelector(":scope > .arrivee")){
+    const ec = Array.prototype.find.call(a.children, c => c.classList && c.classList.contains("screen") && !c.classList.contains("screen-exit"));
+    const cs = getComputedStyle(a);
+    if(ec && ec.offsetHeight <= a.clientHeight - (parseFloat(cs.paddingTop) || 0) - (parseFloat(cs.paddingBottom) || 0) + 0.5) fixedScreen = true;
+  } }catch(e){}
   if(fixedScreen){ a.style.overflowY = "hidden"; rendLeDefilement(a); return; }
   /* Ce qui a changé depuis le rendu (une liste arrivée du serveur, une police
      chargée) peut faire dépasser l'écran : on resserre d'abord. La mesure se

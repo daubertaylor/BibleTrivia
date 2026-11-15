@@ -18,9 +18,11 @@
         de l'accueil dit le même, et le bouton joue exactement ces cinq-là,
         dans l'ordre de la liste ;
      4. chaque ligne dit son livre, son jour (« Aujourd'hui », « Hier », puis
-        le nom du jour), et sa question EN ENTIER — elle passe à la ligne, rien
-        n'est coupé par « … » (banc-essai/revue.js) — ; les questions
-        commencent toutes au même endroit ;
+        le nom du jour), et sa question — (v364) en deux lignes au plus, une
+        seule s'il le faut : l'écran ne se tire plus (« Ici, je ne veux pas
+        qu'on puisse swiper vers le bas »), ses premiers mots suffisent à la
+        reconnaître ; rien ne déborde en largeur — ; les questions commencent
+        toutes au même endroit ;
      5. une bonne réponse, et l'erreur est rattrapée : elle quitte la liste et
         la jauge de la semaine avance ; une nouvelle faute la remet en tête ;
      6. une entrée d'avant la v316 (sans « rate ») compte d'après « maj » tant
@@ -124,7 +126,8 @@ const v = (nom, bon, det) => { if (!bon) ko++; console.log('  ' + (bon ? 'OK ' :
         const lignes = [...document.querySelectorAll('.rv-ligne')].map(l => {
           const q = l.querySelector('.rv-q');
           return { livre: (l.querySelector('.rv-bk') || {}).textContent || '', quand: (l.querySelector('.rv-quand') || {}).textContent || '',
-            q: q ? q.textContent : '', entiere: !!q && q.scrollWidth <= q.clientWidth + 1 && q.scrollHeight <= q.clientHeight + 1,
+            q: q ? q.textContent : '', lignes: q ? Math.round(q.clientHeight / (parseFloat(getComputedStyle(q).lineHeight) || 1)) : 0,
+            entiere: !!q && q.scrollWidth <= q.clientWidth + 1 && q.clientHeight > 0,
             gauche: q ? Math.round(q.getBoundingClientRect().left) : -1 };
         });
         const app = document.getElementById('app');
@@ -150,7 +153,7 @@ const v = (nom, bon, det) => { if (!bon) ko++; console.log('  ' + (bon ? 'OK ' :
       const jourAttendu = (j) => j === 0 ? 'Aujourd\'hui' : j === 1 ? 'Hier' : null;
       v('… et son jour', ecran.lignes.every((l, i) => { const a = jourAttendu(cinq[i].j); return a ? l.quand === a : /^[A-ZÀ-Ý][a-zà-ÿ]+$/.test(l.quand); }),
         ecran.lignes.map(l => l.quand).join(', '));
-      v('… et sa question en entier, rien de coupé', ecran.lignes.length > 0 && ecran.lignes.every(l => l.entiere), '');
+      v('… et sa question, en deux lignes au plus, sans rien qui déborde', ecran.lignes.length > 0 && ecran.lignes.every(l => l.entiere && l.lignes >= 1 && l.lignes <= 2), ecran.lignes.map(l => l.lignes).join(' '));
       v('les questions commencent toutes au même endroit', new Set(ecran.lignes.map(l => l.gauche)).size === 1, ecran.lignes.map(l => l.gauche).join(' '));
       v('le reste se dit en petit sous la liste', attendues.length > 5 ? /\d/.test(ecran.suite) : ecran.suite === '', ecran.suite);
       v('la jauge de la semaine compte les rattrapées', ecran.jauge.indexOf(String(rattrapeesAtt)) === 0 && ecran.jauge.indexOf(String(rattrapeesAtt + attendues.length)) > 0, ecran.jauge);

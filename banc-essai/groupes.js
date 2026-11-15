@@ -155,11 +155,12 @@ const dit = (quoi, bon, detail) => { console.log('  ' + (bon ? 'OK  ' : 'KO  ') 
     await attendre(pa, () => state.screen === 'groupe' && !!document.querySelector('.compo-jeu'), null, 8000);
     await pa.waitForTimeout(1100);
     await pa.evaluate(() => document.querySelector('.compo-jeu').click());
-    dit('Taylor lance une partie : son salon s\'ouvre', await attendre(pa, () => state.screen === 'online-room', null, 10000));
+    /* (v365) Le salon s'ouvre DANS la discussion : sa carte, entre l'en-tête et le fil. */
+    dit('Taylor lance une partie : son salon s\'ouvre dans la discussion', await attendre(pa, () => state.screen === 'groupe' && !!document.querySelector('.grp-partie[data-phase="room"]'), null, 10000));
     const salon = await pa.evaluate(() => net.code);
     dit('Benoît voit l\'invitation dans la discussion', await attendre(pb, () => !!document.querySelector('.b-partie .grp-pill'), null, 8000));
     await pb.evaluate(() => document.querySelector('.b-partie .grp-pill').click());
-    dit('… la touche, et entre dans le salon de Taylor', await attendre(pb, (c) => state.screen === 'online-room' && net.code === c, salon, 10000));
+    dit('… la touche, et entre dans le salon de Taylor, sans quitter la discussion', await attendre(pb, (c) => state.screen === 'groupe' && !!document.querySelector('.grp-partie[data-phase="room"]') && net.code === c, salon, 10000));
     dit('… où Taylor le voit arriver', await attendre(pa, () => net.oppPresent === true, null, 10000));
 
     /* ---- 8b. quitter ramène au groupe, jamais à l'accueil ----
@@ -194,14 +195,14 @@ const dit = (quoi, bon, detail) => { console.log('  ' + (bon ? 'OK  ' : 'KO  ') 
     await pa.evaluate(() => { net.partieLancee = 0; });
     await pa.waitForTimeout(1200);
     await pa.evaluate(() => document.querySelector('.compo-jeu').click());
-    await attendre(pa, () => state.screen === 'online-room', null, 10000);
+    await attendre(pa, () => state.screen === 'groupe' && !!document.querySelector('.grp-partie[data-phase="room"]'), null, 10000);
     const salon2 = await pa.evaluate(() => net.code);
     await attendre(pb, (c) => [...document.querySelectorAll('.b-partie .grp-pill')].some(b => b.getAttribute('onclick').indexOf(c) >= 0), salon2, 8000);
     await pb.evaluate((c) => [...document.querySelectorAll('.b-partie .grp-pill')].find(b => b.getAttribute('onclick').indexOf(c) >= 0).click(), salon2);
     await attendre(pa, () => net.oppPresent === true, null, 10000);
     await pa.waitForTimeout(600);
-    await fleche(pa, 'leaveRoomToOnline');
-    dit('Taylor quitte son salon par la flèche : retour dans la discussion', await auGroupe(pa));
+    await pa.evaluate(() => document.querySelector('.grp-partie .gp-quitter').click());   // (v365) la croix du salon
+    dit('Taylor quitte son salon par la croix de sa carte : il reste dans la discussion', await auGroupe(pa));
     dit('Benoît, dans le salon fermé : retour dans la discussion', await auGroupe(pb));
     dit('… avec le mot qui l\'explique', await toast(pb, /quitté le salon/));
 
@@ -215,7 +216,7 @@ const dit = (quoi, bon, detail) => { console.log('  ' + (bon ? 'OK  ' : 'KO  ') 
     await attendre(pb, (c) => [...document.querySelectorAll('.b-partie .grp-pill')].some(b => b.getAttribute('onclick').indexOf(c) >= 0), salon2, 8000);
     await pb.waitForTimeout(2400);
     await pb.evaluate((c) => [...document.querySelectorAll('.b-partie .grp-pill')].find(b => b.getAttribute('onclick').indexOf(c) >= 0).click(), salon2);
-    dit('une bulle dont la partie est finie ouvre le salon…', await attendre(pb, () => state.screen === 'online-room', null, 4000));
+    dit('une bulle dont la partie est finie ouvre le salon dans la discussion…', await attendre(pb, () => state.screen === 'groupe' && typeof ecranEnLigne === 'function' && ecranEnLigne() === 'online-room', null, 4000));
     dit('… puis ramène à la discussion, sans laisser sur l\'écran En ligne', await attendre(pb, (g) => state.screen === 'groupe' && grp.courant === g, gid, 8000));
     dit('… avec « Cette partie n\'est plus ouverte. »', await toast(pb, /plus ouverte/));
 

@@ -9,6 +9,8 @@
    Ce qui est vérifié :
      1. Réglages : « Confidentialité » et « Mentions légales » sur UNE ligne,
         deux cibles de 44 px, dans la page — sur un grand et un petit écran.
+        (v363) Et « À propos » à leur suite, sur la même ligne : trois
+        cibles de 44 px, toujours dans la page.
      2. La page des mentions (v349, refaite « simple et très professionnelle ») :
         l'éditeur et directeur de la publication (Taylor Dauber), son
         téléphone (v350 : « pour le numéro de téléphone tu peux mettre
@@ -75,9 +77,9 @@ const PHOTO = "url('data:image/svg+xml;utf8,<svg xmlns=%27http://www.w3.org/2000
           boites: ls.map(l => { const b = l.getBoundingClientRect(); return { h: Math.round(b.height), mil: Math.round((b.top + b.bottom) / 2), g: b.left, d: b.right }; }),
           dedans: ls.every(l => { const b = l.getBoundingClientRect(); return b.left >= sh.left - 0.5 && b.right <= sh.right + 0.5; }) };
       });
-      const uneLigne = r.n === 2 && Math.abs(r.boites[0].mil - r.boites[1].mil) <= 1 && r.boites[0].d <= r.boites[1].g + 0.5;
-      dit('1. ' + nom + ' : « Confidentialité » et « Mentions légales » côte à côte, deux cibles de 44 px, dans la page',
-        uneLigne && r.boites.every(b => b.h >= 44) && r.dedans && r.textes[0] === 'Confidentialité' && r.textes[1] === 'Mentions légales', JSON.stringify(r));
+      const uneLigne = r.n === 3 && r.boites.every(b => Math.abs(b.mil - r.boites[0].mil) <= 1) && r.boites.every((b, i) => i === 0 || r.boites[i - 1].d <= b.g + 0.5);
+      dit('1. ' + nom + ' : « Confidentialité », « Mentions légales » et « À propos » côte à côte, trois cibles de 44 px, dans la page',
+        uneLigne && r.boites.every(b => b.h >= 44) && r.dedans && r.textes.join('|') === 'Confidentialité|Mentions légales|À propos', JSON.stringify(r));
       await ctx.close();
     }
 
