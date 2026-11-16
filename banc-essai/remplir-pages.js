@@ -52,6 +52,15 @@ const ECART = async (p, a, b) => p.evaluate(async ([x, y]) => {
   return s / (da.length / 4);
 }, [a.toString('base64'), b.toString('base64')]);
 
+/* (v377) Les durées RÉELLES de l'encre, lues dans le jeu (puis ralenties) :
+   un banc qui les écrit en dur mesure un autre réglage que celui du jeu. */
+const lireDurees = (p) => p.evaluate(() => {
+  const t = document.createElement('button'); t.className = 'chip'; document.body.appendChild(t);
+  const s = getComputedStyle(t);
+  const l = (n, d) => { const v = s.getPropertyValue(n).trim(); const x = parseFloat(v); return isFinite(x) ? (/ms$/.test(v) ? x / 1000 : x) : d; };
+  const r = { duree: l('--encre-duree', 0.5), sortie: l('--encre-sortie', 0.3), attente: l('--encre-attente', 0.02) };
+  t.remove(); return r;
+});
 (async () => {
   const nav = await chromium.launch({ executablePath: '/opt/pw-browsers/chromium' });
   const ctx = await nav.newContext({ viewport: { width: 390, height: 844 }, deviceScaleFactor: 2, isMobile: true, hasTouch: true, userAgent: IOS, serviceWorkers: 'block' });
@@ -80,11 +89,12 @@ const ECART = async (p, a, b) => p.evaluate(async ([x, y]) => {
     return { t: Math.round(t), blanc, livre: state.livre };
   });
 
-  /* Puis le ralenti : l'encre dure 2,5 s pour le jeu (ses minuteries), et
-     l'animation 2 s — la fenêtre entre les deux laisse photographier l'encre
-     finie, avant que sa couche ne s'efface. */
-  await p.addStyleTag({ content: '.chip,.len-chip,.bk-choix{--encre-duree:2.5s !important;--encre-sortie:1.5s !important;}'
-    + '.bk-choix.remplit::after,.sheet-veil .len-chip.remplit::after{animation-duration:2s !important;}' });
+  /* Puis le ralenti : les durées réelles du jeu, cinq fois plus lentes.
+     (v377) Le jeu ne se règle plus sur une minuterie mais sur la fin RÉELLE
+     de l'encre : pour photographier l'encre finie juste avant la relève, on
+     la fige à 98,5 % de sa course, le temps d'une photo, puis on la relâche. */
+  const D = await lireDurees(p);
+  await p.addStyleTag({ content: `.chip,.len-chip,.bk-choix{--encre-duree:${D.duree * 5}s !important;--encre-sortie:${D.sortie * 5}s !important;}` });
   await p.evaluate(() => { const f = window.fermerFeuilleGroupe; window.__fermer = f; window.fermerFeuilleGroupe = (id) => { if (id !== 'livreVeil') f(id); }; });
 
   const familles = [
@@ -117,14 +127,19 @@ const ECART = async (p, a, b) => p.evaluate(async ([x, y]) => {
     const zp = { x: bp.x - x0, y: bp.y - y0, w: bp.width, h: bp.height, largeur: tout.width };
     const zq = { x: bq.x - x0, y: bq.y - y0, w: bq.width, h: bq.height, largeur: tout.width };
     await f.geste();
+    await p.evaluate((s) => { window.__fige = null; const el = document.querySelector(s);
+      const guette = () => { const a = el.getAnimations({ subtree: true }).find(x => x.animationName === 'encreIn');
+        if (a && a.effect.getComputedTiming().progress >= 0.985) { a.pause(); window.__fige = a; return; }
+        if (performance.now() - t0 < 6000) requestAnimationFrame(guette); };
+      const t0 = performance.now(); requestAnimationFrame(guette); }, prise);
     const images = [];
     const t0 = Date.now();
     let finie = null;
-    while (Date.now() - t0 < 2550) {
+    while (Date.now() - t0 < D.duree * 5 * 1000 + 150) {
       images.push(await p.screenshot({ clip: tout }));
-      if (!finie && Date.now() - t0 > 2080) {
-        const encore = await p.evaluate((s) => document.querySelector(s).classList.contains('remplit'), prise);
-        if (encore) finie = await p.screenshot({ clip: bp });
+      if (!finie && await p.evaluate(() => !!(window.__fige && window.__fige.playState === 'paused'))) {
+        finie = await p.screenshot({ clip: bp });
+        await p.evaluate(() => { window.__fige.play(); });
       }
     }
     const prises = [], quittees = [];

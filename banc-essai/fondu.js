@@ -56,6 +56,15 @@ const { chromium } = require('/opt/node22/lib/node_modules/playwright');
 const URL = process.argv[2] || 'http://127.0.0.1:8099/index.html';
 const S_ETAPES = 6;     // sous six paliers distincts, ce n'est pas un retrait
 const LENT = 5;
+/* (v377) Les durées RÉELLES de l'encre, lues dans le jeu (puis ralenties) :
+   un banc qui les écrit en dur mesure un autre réglage que celui du jeu. */
+const lireDurees = (p) => p.evaluate(() => {
+  const t = document.createElement('button'); t.className = 'chip'; document.body.appendChild(t);
+  const s = getComputedStyle(t);
+  const l = (n, d) => { const v = s.getPropertyValue(n).trim(); const x = parseFloat(v); return isFinite(x) ? (/ms$/.test(v) ? x / 1000 : x) : d; };
+  const r = { duree: l('--encre-duree', 0.5), sortie: l('--encre-sortie', 0.3), attente: l('--encre-attente', 0.02) };
+  t.remove(); return r;
+});
 (async()=>{
   const b = await chromium.launch({ executablePath:'/opt/pw-browsers/chromium' });
   const ctx = await b.newContext({ viewport:{width:393,height:852}, deviceScaleFactor:2, isMobile:true, hasTouch:true, serviceWorkers:'block' });
@@ -63,7 +72,8 @@ const LENT = 5;
   await p.addInitScript(()=>{ localStorage.setItem('bt_profile',JSON.stringify({name:'T',color:'#4C86E8'})); localStorage.setItem('bt_fs_hint','1'); });
   await p.goto(URL);
   await p.waitForFunction(()=>{ try{ return state.screen==='mode'; }catch(e){ return false; } }, null, {timeout:20000});
-  await p.addStyleTag({ content:`.chip, .len-chip{ --encre-duree:${0.5*LENT}s !important; --encre-sortie:${0.3*LENT}s !important; }
+  const D = await lireDurees(p);
+  await p.addStyleTag({ content:`.chip, .len-chip{ --encre-duree:${D.duree*LENT}s !important; --encre-sortie:${D.sortie*LENT}s !important; }
     :root{ --onde-duree:${0.24*LENT}s !important; --tr-onde:${0.24*LENT}s cubic-bezier(0.33,1,0.68,1) !important; }` });
   const cdp = await ctx.newCDPSession(p);
   const toucher = async (x, y) => {
@@ -84,16 +94,16 @@ const LENT = 5;
     if(!pos){ console.log('  ' + nom + ' : moins de deux puces'); ko++; continue; }
     // on sélectionne la première, puis on la QUITTE pour la seconde
     await toucher(pos.a.x + pos.a.w/2, pos.a.y + pos.a.h/2);
-    await p.waitForTimeout(0.5*LENT*1000 + 600);
-    const textes = p.evaluate((g)=> new Promise(res=>{
+    await p.waitForTimeout(D.duree*LENT*1000 + 600);
+    const textes = p.evaluate(([g, ms])=> new Promise(res=>{
       const q=[...document.querySelectorAll('.chip[data-group="'+g+'"]')][0];
       const rel=[]; const t0=performance.now();
-      const tic=()=>{ rel.push(getComputedStyle(q).color); if(performance.now()-t0 < 0.3*5*1000+300) requestAnimationFrame(tic); else res(rel); };
-      requestAnimationFrame(tic); }), groupe);
+      const tic=()=>{ rel.push(getComputedStyle(q).color); if(performance.now()-t0 < ms) requestAnimationFrame(tic); else res(rel); };
+      requestAnimationFrame(tic); }), [groupe, D.sortie*LENT*1000+300]);
     await toucher(pos.b.x + pos.b.w/2, pos.b.y + pos.b.h/2);
     const parts = [];
     const t0 = Date.now();
-    while(Date.now() - t0 < 0.3*LENT*1000 + 300){
+    while(Date.now() - t0 < D.sortie*LENT*1000 + 300){
       const png = await p.screenshot({ clip:{ x:pos.a.x, y:pos.a.y, width:pos.a.w, height:pos.a.h } });
       parts.push(await p.evaluate(async (b64)=>{
         const img = new Image(); img.src = 'data:image/png;base64,' + b64; await img.decode();

@@ -13,7 +13,10 @@
      2. la bande du bas et celle du haut sont pleines ensemble (80 ms d'écart
         au plus), et le milieu avant elles ;
      3. la puce est entièrement pleine (haut, milieu, bas) avant 0,45 s ;
-     4. la teinte pleine arrive aux quatre cinquièmes de l'encre (0,4 s) ;
+     4. (v377) la teinte pleine n'a plus d'heure : juste après le toucher, la
+        puce choisie garde son crème (le jeu le tient tant que l'encre ne la
+        couvre pas toute — voir remplissage.js, point 4), et sous l'encre elle
+        s'y fond sans délai, en 0,15 s ;
      5. aucune erreur.
    Usage : node banc-essai/puce-pleine.js [url] */
 const { chromium } = require('/opt/node22/lib/node_modules/playwright');
@@ -25,7 +28,7 @@ const dit = (q, b, d) => { if (!b) ko++; console.log('  ' + (b ? 'OK  ' : 'KO  '
 
 (async () => {
   const nav = await chromium.launch({ executablePath: '/opt/pw-browsers/chromium' });
-  const errs = [], origines = [], temps = [];
+  const errs = [], origines = [], temps = [], tenues = [];
   let delai = null;
   try {
     for (const [tel, ua, vp] of [['iPhone', IOS, { width: 402, height: 874 }], ['Android', AND, { width: 412, height: 915 }]]) {
@@ -52,10 +55,12 @@ const dit = (q, b, d) => { if (!b) ko++; console.log('  ' + (b ? 'OK  ' : 'KO  '
         await p.waitForTimeout(250);
         const t0 = Date.now() / 1000;
         await p.touchscreen.tap(b.x + b.width / 2, b.y + b.height * py);
-        const o = await n.evaluate(el => ({ y: parseFloat(el.style.getPropertyValue('--encre-y')), x: parseFloat(el.style.getPropertyValue('--encre-x')), H: el.offsetHeight, W: el.offsetWidth }));
+        const o = await n.evaluate(el => ({ y: parseFloat(el.style.getPropertyValue('--encre-y')), x: parseFloat(el.style.getPropertyValue('--encre-x')), H: el.offsetHeight, W: el.offsetWidth,
+          teinte: getComputedStyle(el).getPropertyValue('--glass-tint').trim(), choisie: el.classList.contains('active') }));
+        tenues.push(o.choisie && /^rgb\(252, 248, 241\)$/.test(o.teinte) ? 'tenue' : o.teinte);
         await p.waitForTimeout(900);
         await cdp.send('Page.stopScreencast');
-        if (delai === null) delai = await n.evaluate(el => { el.classList.add('remplit'); const s = getComputedStyle(el); const props = s.transitionProperty.split(',').map(x => x.trim()); const i = props.indexOf('--glass-tint'); const d = s.transitionDelay.split(',').map(x => x.trim()); return i >= 0 ? d[i] : null; });
+        if (delai === null) delai = await n.evaluate(el => { el.classList.add('remplit'); const s = getComputedStyle(el); const props = s.transitionProperty.split(',').map(x => x.trim()); const i = props.indexOf('--glass-tint'); const d = s.transitionDelay.split(',').map(x => x.trim()), u = s.transitionDuration.split(',').map(x => x.trim()); return i >= 0 ? d[i] + ' / ' + u[i] : null; });
         origines.push({ tel, py, ry: +(o.y / o.H).toFixed(3), rx: +(o.x / o.W).toFixed(3) });
         /* Le plus tôt où chaque bande (haut, milieu, bas) est rouge plein sur 95 % de sa largeur. */
         const rouge = await p.evaluate(async ([imgs, b, t0]) => {
@@ -80,7 +85,8 @@ const dit = (q, b, d) => { if (!b) ko++; console.log('  ' + (b ? 'OK  ' : 'KO  '
   dit('2. la bande du bas et celle du haut sont pleines ensemble (80 ms d\'écart au plus), le milieu avant elles',
     temps.length === 6 && temps.every(t => t.haut !== null && t.bas !== null && Math.abs(t.haut - t.bas) <= 80 && t.milieu <= Math.min(t.haut, t.bas)), JSON.stringify(temps));
   dit('3. la puce est entièrement pleine avant 0,45 s', temps.length === 6 && temps.every(t => Math.max(t.haut, t.milieu, t.bas) < 450), JSON.stringify(temps.map(t => Math.max(t.haut, t.milieu, t.bas))));
-  dit('4. la teinte pleine arrive aux quatre cinquièmes de l\'encre (0,4 s)', delai === '0.4s', delai);
+  dit('4. juste après le toucher, la puce choisie garde son crème ; sous l\'encre, la teinte s\'y fond sans délai, en 0,15 s',
+    tenues.length === 6 && tenues.every(t => t === 'tenue') && delai === '0s / 0.15s', JSON.stringify(tenues) + ' — ' + delai);
   dit('5. aucune erreur', errs.length === 0, errs.slice(0, 3).join(' | '));
   await nav.close();
   console.log(ko ? '\n  ' + ko + ' KO' : '\n  OK — une puce se remplit d\'un seul coup, le bas avec le haut');
