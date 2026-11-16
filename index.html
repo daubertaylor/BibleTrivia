@@ -3288,6 +3288,32 @@
   .dp-n{ flex-shrink:0; width:1.55rem; height:1.55rem; margin-top:-0.04rem; border-radius:50%; display:inline-flex; align-items:center; justify-content:center;
     background:var(--primary); color:#fff; font-family:'Poppins',sans-serif; font-weight:700; font-size:0.8rem; box-shadow:0 2px 6px rgba(214,60,34,0.28); }
   .deroule-note{ margin:0.85rem 0 0.15rem; font-size:0.86rem; line-height:1.45; color:var(--ink-soft); text-align:left; }
+  /* ===== (v375) « COMMENT JOUER » EST UNE CARTE PLEINE =====
+     « Son interface, lorsqu'on clique dessus, est très glassmorphisme ;
+       si tu penses qu'il faudrait faire autre chose, fais-le. » (Capture de
+     Taylor : le décor et les cartes de l'écran passaient à travers la
+     fenêtre, en taches grises et pêche, sous trois lignes à lire.) Une
+     fenêtre de VERRE va à ce qu'on regarde en passant ; celle-ci, on la
+     LIT. Elle devient une carte pleine, crème comme les pages, avec le
+     relief commun : une pastille en tête, chaque geste sur sa ligne blanche
+     avec son numéro, la note du chrono dans un encart doré. Aucun trait,
+     aucune ombre de couleur (le numéro perd la sienne, corail). */
+  .modal-card.modal-deroule{ background:var(--page-fond); box-shadow:var(--relief), 0 22px 54px rgba(24,16,10,0.2); backdrop-filter:none; -webkit-backdrop-filter:none;
+    max-width:22rem; padding:1.3rem 1.05rem 1.05rem; }
+  .modal-card.modal-deroule > :is(.gs, .glass-rim, .glass-refl){ display:none !important; }
+  .modal-deroule .deroule-tete{ width:3.1rem; height:3.1rem; margin:0 auto 0.7rem; border-radius:50%; display:flex; align-items:center; justify-content:center;
+    background:#fff; color:var(--primary); box-shadow:var(--relief); }
+  .modal-deroule .deroule-tete svg{ width:1.55rem; height:1.55rem; }
+  .modal-deroule .modal-title{ font-size:1.2rem; }
+  .modal-deroule .deroule-pas{ margin-top:0.9rem; gap:0.48rem; }
+  .modal-deroule .deroule-pas li{ align-items:center; padding:0.66rem 0.8rem; border-radius:16px; background:#fff; box-shadow:var(--relief); font-size:0.93rem; line-height:1.35; }
+  .modal-deroule .dp-n{ margin-top:0; box-shadow:none; }
+  .modal-deroule .deroule-note{ display:flex; align-items:flex-start; gap:0.55rem; margin:0.7rem 0 0.1rem; padding:0.7rem 0.8rem; border-radius:16px;
+    background:rgba(239,173,38,0.14); color:var(--ink); font-size:0.84rem; line-height:1.45; }
+  .modal-deroule .deroule-note .ico{ width:1.15rem; height:1.15rem; flex-shrink:0; margin-top:0.08rem; color:#C9870F; display:inline-flex; }
+  .modal-deroule .deroule-note .ico svg{ width:100%; height:100%; }
+  .modal-deroule .modal-actions{ margin-top:1.1rem; }
+  .modal-deroule .modal-err{ display:none; }   /* une fenêtre à lire, sans champ : aucune place gardée pour une erreur */
   /* GUIDE PLEIN ÉCRAN : les trois gestes reprennent, au pixel près, les lignes
      des Réglages (.set-row / .set-ico / .set-txt) — même pastille colorée, même
      titre, même sous-titre. On arrive de là, on retrouve la même matière ; il
@@ -6683,6 +6709,15 @@
   .grp-vus .gv-rien{ font-size:0.88rem; color:var(--ink-soft); margin:0.15rem 0.6rem 0.3rem; }
   .b-vide{ font-style:italic; color:var(--ink-soft) !important; background:rgba(252,248,241,0.6) !important; box-shadow:none !important; }
   .b-partie{ display:flex; flex-direction:column; align-items:flex-start; gap:0.45rem; padding:0.85rem 0.9rem 0.95rem; }
+  /* (v375) LA CARTE D'UNE PARTIE NE SE SÉLECTIONNE PAS. Les bulles de texte
+     sont des boutons : le doigt qui les tient n'y sélectionne rien. La carte
+     d'une partie est un bloc, et elle héritait de « user-select:text » : sur
+     iPhone, l'appui long y lançait AUSSI la sélection du texte (un mot
+     surligné, ses poignées, la loupe) une fraction de seconde après
+     l'ouverture du menu — « la petite barre bug légèrement à son
+     ouverture ». Elle ne se sélectionne plus ; « Répondre », le récap et le
+     reste passent par le menu et le toucher, comme avant. */
+  .b-bulle.b-partie, .b-bulle.b-partie *{ -webkit-user-select:none; user-select:none; -webkit-touch-callout:none; }
   .b-partie .bp-ico{ width:1.6rem; height:1.6rem; color:var(--primary); display:inline-flex; }
   .b-partie .bp-ico svg{ width:100%; height:100%; }
   .b-partie b{ font-family:'Poppins',sans-serif; font-weight:600; font-size:0.98rem; }
@@ -12239,7 +12274,7 @@ const SUPABASE_ANON_KEY = "sb_publishable_FDJ_R0foC7uIeHmxVrj6rA_2NeIgW2a";
    remontée d'un téléphone ne vaut rien si on ne sait pas QUELLE version
    tournait. Elle doit rester égale au CACHE de sw.js — c'est ce que vérifie
    banc-essai/version.js, qui refuse de laisser publier les deux en désaccord. */
-const VERSION_JEU = "v374";
+const VERSION_JEU = "v375";
 
 /* ===================== QUAND ÇA CASSE CHEZ UN JOUEUR =====================
    « Si quelque chose casse chez cinq d'entre eux sur un modèle de téléphone
@@ -14129,7 +14164,7 @@ function showModal(opts){
   veil.id = "modalVeil";
   veil.innerHTML = `
     <div class="modal-card${opts.cardClass?" "+opts.cardClass:""}">
-      <div class="modal-title">${escapeHtml(opts.title||"")}</div>
+      ${opts.iconHtml || ""}<div class="modal-title">${escapeHtml(opts.title||"")}</div>
       ${opts.message?`<div class="modal-msg">${escapeHtml(opts.message)}</div>`:""}
       ${opts.bodyHtml||""}
       ${opts.input?`<input class="text-input modal-input" id="modalInput" placeholder="${escapeHtml(opts.placeholder||"")}" maxlength="30" autocomplete="off">`:""}
@@ -15397,10 +15432,30 @@ function jeterMusique(bus, echo){
   try { if(echo) echo.disconnect(); } catch(e){}
   if(bus && musicBusNode === bus){ musicBusNode = null; musicDelayIn = null; musicFb = null; qVoies = new Map(); oublierRendu(); }
 }
-function audioHidden(){
+/* ===== (v375) PARTIE POUR DE BON, LE SON S'ARRÊTE TOUT DE SUITE =====
+   « Lorsque je suis sur le jeu et que je change la page pour aller dans une
+     autre appli, ça fait un bruit très robotique, comme si le son se fermait
+     d'un coup et qu'il y avait un court-jus. » (Sur iPhone.)
+   La v340 coupait en deux temps : la sortie baissée en 25 ms, puis, 60 ms
+   plus tard, sur une MINUTERIE, la musique débranchée et le contexte
+   arrêté. Quand la fenêtre perd seulement le premier plan (« blur »), la
+   page vit encore et la minuterie tourne. Mais quand elle passe VRAIMENT en
+   arrière-plan (visibilitychange, pagehide, freeze), un iPhone peut geler
+   la page avant ces 60 ms : la minuterie ne tourne jamais, le contexte
+   reste « en marche » dans une page gelée, et le téléphone rejoue en boucle
+   le dernier paquet de son qu'on lui avait donné — le court-jus.
+   Partie pour de bon (« urgent »), la page arrête donc tout DANS
+   l'événement même : la sortie part vers le silence, on attend sur place
+   que ce fondu soit joué (l'horloge du son, pas une minuterie), puis la
+   musique est débranchée et le contexte arrêté (suspend). Le
+   premier plan seulement perdu garde ses deux temps (un aller-retour
+   éclair ne doit pas arrêter le contexte sous les yeux du joueur). */
+function audioHidden(urgent){
   if(!actx) return;
+  urgent = urgent === true || !!(urgent && urgent.type && urgent.type !== "blur");
   clearTimeout(sonReprendreT); sonReprendreT = 0;
   const gen = ++sonCoupeGen, c = actx, now = c.currentTime;
+  const dejaMuet = !!masterGain && masterGain.gain.value <= 0.001;   // un départ déjà joué
   if(masterGain){
     masterGain.gain.cancelScheduledValues(now);
     masterGain.gain.setValueAtTime(Math.max(masterGain.gain.value, 0.0001), now);
@@ -15417,6 +15472,25 @@ function audioHidden(){
   audioWasHidden = true; masterCoupe = true;
   /* Le silence atteint : la musique s'en va, et le contexte s'arrête sur lui. */
   const bus = musicBusNode, echo = musicDelayIn;
+  if(urgent){
+    /* Le fondu doit être JOUÉ avant l'arrêt : arrêté en plein fondu, le
+       contexte s'arrêterait sur un paquet encore sonore (un clic). On attend
+       donc, sur place, que l'horloge du son — qui avance seule, sur son
+       propre fil — ait passé la fin du fondu : 30 ms d'ordinaire, un
+       paquet de plus là où elle avance par gros paquets (jusqu'à 50 ms sur
+       certains appareils), 80 ms au plus si elle cale. Pas de minuterie :
+       une page gelée n'en verrait jamais le bout. La sortie déjà muette
+       (pagehide juste après visibilitychange), il n'y a rien à attendre. */
+    if(c.state === "running" && !dejaMuet){
+      const fin = now + SON_FONDU_SORTIE + 0.005, t0 = performance.now();
+      while(c.currentTime < fin && performance.now() - t0 < 80){ /* l'horloge du son avance */ }
+    }
+    jeterMusique(bus, echo);
+    if(c === actx && c.state === "running"){
+      try{ const p = c.suspend(); if(p && p.catch) p.catch(()=>{}); }catch(e){}
+    }
+    return;
+  }
   setTimeout(()=>{
     if(gen !== sonCoupeGen) return;             // revenu entre-temps : la reprise décide
     jeterMusique(bus, echo);
@@ -16466,7 +16540,7 @@ function volPreview(){ if(settings.sfx){ chime(659.25, 0, 0.55, 0.018); } }
 
 document.addEventListener("visibilitychange", ()=>{
   if(document.visibilityState==="visible"){ sonFlou = false; relancerSon(); }
-  else { clearTimeout(relanceSonT); audioHidden(); }
+  else { clearTimeout(relanceSonT); audioHidden(true); }   // (v375) partie pour de bon
 });
 window.addEventListener("pageshow", ()=>{ sonFlou = false; relancerSon(); });
 /* pagehide : l'événement FIABLE quand l'app part (fermeture/arrière-plan iOS).
@@ -16481,6 +16555,33 @@ document.addEventListener("freeze", audioHidden);
    il fait le contraire. Seul le blur de la FENÊTRE compte : celui d'un champ
    de saisie n'arrive pas jusqu'ici (il ne remonte pas). */
 window.addEventListener("blur", (e)=>{ if(e.target !== window) return; sonFlou = true; clearTimeout(relanceSonT); audioHidden(); });
+/* ===== (v375) LE GESTE DU SYSTÈME, DÈS QU'IL S'ANNONCE =====
+   Sur iPhone, remonter vers l'accueil ou vers une autre app part du bas de
+   l'écran : le doigt s'y pose dans la page, puis le système le reprend — la
+   page reçoit « touchcancel ». C'est le tout premier signe du départ, bien
+   avant que l'app ne passe en arrière-plan : on baisse le son à cet
+   instant (sans arrêter le contexte : la page est encore là). Si l'app est
+   toujours au premier plan un peu plus tard (le geste n'allait nulle
+   part), le son revient en fondu, par le chemin ordinaire du retour. Un
+   toucher qui finit normalement (touchend) ne fait rien. */
+(function(){
+  if(!/iP(hone|od|ad)/.test(navigator.userAgent) && !(navigator.platform === "MacIntel" && navigator.maxTouchPoints > 1)) return;
+  const BORD_BAS = 30;
+  let duBas = false, retour = 0;
+  document.addEventListener("touchstart", (e)=>{
+    const t = e.touches && e.touches[0];
+    duBas = !!t && e.touches.length === 1 && t.clientY >= (window.innerHeight || 0) - BORD_BAS;
+  }, { capture:true, passive:true });
+  document.addEventListener("touchend", ()=>{ duBas = false; }, { capture:true, passive:true });
+  document.addEventListener("touchcancel", ()=>{
+    if(!duBas) return;
+    duBas = false;
+    if(!actx || actx.state !== "running") return;
+    audioHidden();
+    clearTimeout(retour);
+    retour = setTimeout(()=>{ if(audioActive()) relancerSon(); }, 1200);
+  }, { capture:true, passive:true });
+})();
 /* focus/pointer : uniquement quand l'app est réellement au premier plan
    (wakeAudio se protège lui-même). */
 window.addEventListener("focus", (e)=>{ if(e.target !== window) return; sonFlou = false; relancerSon(); });
@@ -32657,6 +32758,7 @@ function allerAuMessage(id){
       if(!c.isConnected && !(id && trouverMessage(id))) return;
       tenu = true;
       try{ if(navigator.vibrate) navigator.vibrate(10); }catch(err){}
+      try{ const sel = window.getSelection && window.getSelection(); if(sel && sel.rangeCount) sel.removeAllRanges(); }catch(err){}   // (v375)
       if(id) actionsMessage(id); else c.click();
     }, DELAI);
   }, { capture:true, passive:true });
@@ -32665,6 +32767,10 @@ function allerAuMessage(id){
   }, { capture:true, passive:true });
   document.addEventListener("pointerup", ()=>{ if(tenu){ tenu = false; leve = performance.now(); } lacher(); }, { capture:true, passive:true });
   document.addEventListener("pointercancel", ()=>{ tenu = false; lacher(); }, { capture:true, passive:true });
+  /* (v375) Un doigt qui tient une bulle n'y sélectionne rien : le menu qui
+     s'ouvre est la seule réponse à l'appui long (voir LA CARTE D'UNE PARTIE
+     NE SE SÉLECTIONNE PAS). */
+  document.addEventListener("selectstart", (e)=>{ if(cible || tenu) e.preventDefault(); }, true);
   document.addEventListener("click", (e)=>{
     if(leve && e.isTrusted && performance.now() - leve < 450){ leve = 0; e.preventDefault(); e.stopPropagation(); }
   }, true);
@@ -33990,8 +34096,9 @@ function ouvrirDeroule(){
   const pas = [T("Lisez la question à voix haute."), T("Révélez la réponse."), T("Donnez les points au bon joueur, ou à la bonne équipe.")];
   showModal({
     title:T("Comment jouer"), cardClass:"modal-deroule", okLabel:T("Compris"), hideCancel:true,
+    iconHtml:`<span class="deroule-tete" aria-hidden="true">${ICONS.users}</span>`,   // (v375) une carte pleine
     bodyHtml:`<ol class="deroule-pas">${pas.map((p, i) => `<li><span class="dp-n">${i + 1}</span><span>${escapeHtml(p)}</span></li>`).join("")}</ol>
-      <p class="deroule-note">${escapeHtml(T("Avec le chrono, la réponse se révèle toute seule à la fin du temps. Une erreur ? Les boutons −/+ corrigent à tout moment."))}</p>`
+      <p class="deroule-note"><span class="ico">${ICONS.clock}</span><span>${escapeHtml(T("Avec le chrono, la réponse se révèle toute seule à la fin du temps. Une erreur ? Les boutons −/+ corrigent à tout moment."))}</span></p>`
   });
 }
 function ouvrirRegles(){
@@ -38032,7 +38139,7 @@ const GLASS_SEL = ".app-header,.card,.mode-card,.question-card,.solo-summary,.so
    reflet, ni calage par image — la page est pleine, et ce qu'elle porte aussi. */
 /* (v335) Ni les pastilles du haut d'une partie (voir LES PASTILLES DU HAUT DE
    LA PARTIE SONT PLEINES) : elles se peignent elles-mêmes. */
-const GLASS_VIVANT = ":is(" + GLASS_SEL + "):not(.sheet-veil *):not(.play-meta > *)";
+const GLASS_VIVANT = ":is(" + GLASS_SEL + "):not(.sheet-veil *):not(.play-meta > *):not(.modal-deroule)";   // (v375) « Comment jouer » est pleine
 const GLASS_SKIP = ".timer-chip.low,.btn-primary:disabled,.btn-next:disabled";
 /* LES SURFACES PLEINES (voir « UNE SURFACE PLEINE N'A PAS DE DÉCOR À
    MONTRER » dans la feuille de style). Ce sont les familles qui portent déjà
