@@ -235,7 +235,9 @@ const MEME_DANS_LES_DEUX = [
      « Puesto » et « Puntos »). Ici, et seulement ici. */
   { lg:'en', quoi:/^(Place|Points)$/, ou:/solo-stat/, car:"(v374) « Place » et « Points » sous leur chiffre, le même mot en anglais" },
   { quoi:/^(Yada|Taylor|Sam|Lee|Kim)$/,        car:'un nom propre' },
-  { quoi:/^(Job|Daniel|Esther|Ruth|Jude|Amos|Nahum|Joel|Amen|Hosanna)$/i, car:'même mot dans les deux langues' },
+  { quoi:/^(Job|Daniel|Esther|Ruth|Jude|Amos|Nahum|Joel|Amen|Hosanna|Abraham|Joseph)$/i, car:'même mot dans les deux langues' },   // (v376) Abraham, Joseph : deux unités du Parcours
+  /* (v376) Les unités de chapitres disent leurs livres : « 1 Samuel 1–15 », « 2 Samuel » s'écrivent pareil en anglais et en espagnol. */
+  { quoi:/^[12] Samuel( \d+–\d+)?$/, ou:/ch-bandeau/, car:'(v376) un livre de Samuel, et ses chapitres' },
   { quoi:/^(Duel|Options|Score|Records|Contact|Version|Format|Instagram|Notifications?|Guide|Volume|Testament|Solo|Installation|Modes?|Messages?|Info|Centurion|Bibliophile|Zoom|Navigation|Public|Admin)$/i, car:'même mot dans les deux langues' },
   /* Le code d'un salon annoncé dans un groupe : « Code EFGH » s'écrit pareil
      en anglais (l'espagnol dit « Código »). */
@@ -1276,9 +1278,30 @@ const ouvrirLaLangue = async (p, lg) => {
       const p = loadParcours(); p.faites['exode:1'] = '2026-01-01'; localStorage.setItem('bt_parcours', JSON.stringify({ v:1, faites:p.faites }));
       try { achToastPause = false; achToastBusy = false; } catch(e){}
       state.screen = 'chemin'; render(); }],
+    /* (v376) LE PARCOURS S'AGRANDIT, ET ON Y JOUE : la page des étapes (une
+       en cours, deux fermées), l'étape 2 regardée, un jeu du chemin (le
+       quitter, le finir avec une erreur, sa tuile faite), la dernière leçon
+       de l'étape 1, puis l'étape 1 finie qui mène à la suivante. */
+    ['Parcours · les étapes', () => { __fermerTout(); state.screen = 'chemin'; render(); ouvrirEtapes(); }],
+    ['Parcours · l\'étape 2', () => { __fermerTout(); voirEtape(1); }],
+    ['Parcours · un jeu du chemin', () => { __fermerTout();
+      localStorage.setItem('bt_parcours', JSON.stringify({ v:1, faites:{ 'genese:1':'2026-01-01', 'genese:2':'2026-01-01', 'genese:3':'2026-01-01' } }));
+      commencerJeuDuChemin(0, 0); }],
+    ['Parcours · quitter le jeu', () => { quitterJeu(); }],
+    ['Parcours · jeu terminé', () => { __fermerTout(); commencerJeuDuChemin(0, 0);
+      for(let k = 0; k < 10 && state.screen === 'jeu'; k++){ conclureManche(k > 0); mancheSuivante(); } }],
+    ['Parcours · le jeu fait', () => { __fermerTout(); etapeVue = null; state.screen = 'chemin'; render(); }],
+    ['Parcours · étape terminée', () => { __fermerTout();
+      const f = {}; for(let u = 0; u < 12; u++) for(let l = 0; l < LECONS_PAR_UNITE; l++) f[cleLecon(u, l)] = '2026-01-01';
+      delete f['fin:5'];
+      localStorage.setItem('bt_parcours', JSON.stringify({ v:1, faites:f }));
+      commencerLecon(11, 4);
+      for(let i = 0; i < 20 && state.screen === 'play'; i++){ const q = currentQ(); soloAnswer(q.shuffledOptions.findIndex(o => o === q.correct)); nextQuestion(); } }],
+    ['Parcours · l\'étape 1 finie', () => { __fermerTout(); etapeVue = 0; state.screen = 'chemin'; render(); }],
     ['Parcours · tout fait', () => { __fermerTout();
       const f = {}; PARCOURS.forEach((u, i) => { for(let l = 0; l < LECONS_PAR_UNITE; l++) f[cleLecon(i, l)] = '2026-01-01'; });
-      localStorage.setItem('bt_parcours', JSON.stringify({ v:1, faites:f })); state.screen = 'chemin'; render(); }],
+      localStorage.setItem('bt_parcours', JSON.stringify({ v:1, faites:f })); etapeVue = null; state.screen = 'chemin'; render(); }],   // (v376) l'étape où l'on en est : la dernière
+    ['Parcours · les étapes, tout fait', () => { ouvrirEtapes(); }],
     ['Parcours · accueil, tout fait', () => { __fermerTout(); state.screen = 'mode'; render(); }],
   ];
   const ETAPES = [

@@ -211,6 +211,10 @@ function verifier(nom, obtenu, attendu){
        bandeau en cours (achToastBusy) qui bloquerait le suivant. */
     achToastQueue.length = 0; achToastBusy = false; achToastPause = false;
     document.querySelectorAll('.ach-toast').forEach(e=>e.remove());
+    /* (v376) Ni fenêtre ni fête laissées ouvertes par une étape précédente :
+       la fête qu'on mesure est celle de CETTE partie. */
+    try{ closeModal(); }catch(e){}
+    document.querySelectorAll('#modalVeil').forEach(e=>e.remove());
     state.mode='solo'; startGame();
     state.currentIndex = state.questions.length - 1; state.revealed = true; state.soloSelected = 0;
     /* (v343) La première partie du jour allume la flamme, et la flamme se

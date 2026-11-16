@@ -47,7 +47,7 @@ const OUTILS = () => {
     const tic = () => {
       const t = performance.now() - t0;
       const e = document.querySelector('#app > .screen:not(.screen-exit)');
-      const n = e && (e.querySelector('.ch-noeud.s-allume') || e.querySelector('.ch-noeud.courante'));
+      const n = e && (e.querySelector('.ch-noeud.s-allume, .ch-jeu.s-allume') || e.querySelector('.ch-noeud.courante, .ch-jeu.courante'));   // (v376) la pierre à faire peut être un jeu
       const rn = n ? n.getBoundingClientRect() : null;
       const bouge = avant.isConnected ? Math.max(0, ...cartes.map((c, i) => Math.abs(c.getBoundingClientRect().top - y0[i]))) : 0;
       l.push({ t: Math.round(t), s: a.scrollTop, x: __tr(e), lecon: rn ? [Math.round(rn.top), Math.round(rn.bottom)] : null, bouge: Math.round(bouge * 100) / 100, pas: passage === pp && !!pp });
