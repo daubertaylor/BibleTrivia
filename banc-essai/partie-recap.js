@@ -21,7 +21,8 @@
         « Chloé l'emporte · N pts », avec son chevron ;
      5. Émile la touche : la page « Récap de la partie » — la coupe, « Chloé
         l'emporte », « Lancée par Benoît · … », « 9 questions · Toute la
-        Bible » (la partie courte) ; Chloé 1re (or), Benoît 2e (argent), leurs bonnes réponses
+        Bible » (la partie courte ; v374 : en pastilles, avec « 3 joueurs ») ;
+        Chloé 1re (or), Benoît 2e (argent), leurs bonnes réponses
         et leurs points ; Dora « N'a pas fini », en dernier ;
      6. chez Chloé : « Tu l'emportes · N pts » ;
      7. « Rejouer » dans le même salon : la nouvelle manche n'écrase rien ;
@@ -152,13 +153,14 @@ const n = (t) => String(t || '').replace(/[\u00A0\u202F]/g, ' ').replace(/\s+/g,
     await attendre(emi.p, () => { const v = document.getElementById('grpRecapVeil'); return !!v && !v.classList.contains('closing'); }, null, 5000);
     await emi.p.waitForTimeout(700);
     const p5 = await emi.p.evaluate(() => { const v = document.getElementById('grpRecapVeil'); const t = (s) => { const e = v.querySelector(s); return e ? e.textContent : ''; };
-      return { titre: t('.page-tete .st-mot') || t('.sheet-title'), coupe: !!v.querySelector('.rp-coupe svg'), nom: t('.grp-ap-nom'),
-        metas: [...v.querySelectorAll('.grp-ap-meta')].map(e => e.textContent),
+      /* (v374) la page en grand : le titre, la ligne « Lancée par… », les pastilles */
+      return { titre: t('.page-tete .st-mot') || t('.sheet-title'), coupe: !!v.querySelector('.rp-coupe svg'), nom: t('.rp-titre'),
+        metas: [t('.rp-meta'), [...v.querySelectorAll('.rp-puce')].map(e => e.textContent).join(' · ')],
         rangs: [...v.querySelectorAll('.rp-rang')].map(r => ({ rg: (r.querySelector('.rank-badge') || {}).textContent, or: (r.querySelector('.rank-badge') || { className: '' }).className,
-          nom: r.querySelector('.grp-txt b').textContent, sous: (r.querySelector('.grp-txt small') || {}).textContent || '', pts: (r.querySelector('.rp-pts') || {}).textContent || '' })) }; });
+          nom: (r.querySelector('.rp-nom') || r.querySelector('.grp-txt b')).textContent, sous: (r.querySelector('.grp-txt small') || {}).textContent || '', pts: (r.querySelector('.rp-pts') || {}).textContent || '' })) }; });
     const r5 = p5.rangs;
     dit('5. le récap : la coupe, « Chloé l\'emporte », lancée par Benoît, « 9 questions · Toute la Bible » ; Chloé or, Benoît argent, Dora « N\'a pas fini »',
-      p5.titre.includes('Récap de la partie') && p5.coupe && n(p5.nom) === "Chloé l'emporte" && /^Lancée par Benoît · Aujourd'hui · \d\d:\d\d$/.test(n(p5.metas[0])) && n(p5.metas[1]) === `${fin3.c.n} questions · Toute la Bible`
+      p5.titre.includes('Récap de la partie') && p5.coupe && n(p5.nom) === "Chloé l'emporte" && /^Lancée par Benoît · Aujourd'hui · \d\d:\d\d$/.test(n(p5.metas[0])) && n(p5.metas[1]) === `${fin3.c.n} questions · Toute la Bible · 3 joueurs`
         && r5.length === 3 && r5[0].nom === 'Chloé' && r5[0].rg === '1' && /\bg1\b/.test(r5[0].or) && r5[0].pts === `${fin3.c.s} pts` && n(r5[0].sous) === `${fin3.c.n}/${fin3.c.n} bonnes réponses`
         && r5[1].nom === 'Benoît' && r5[1].rg === '2' && /\bg2\b/.test(r5[1].or) && r5[1].pts === `${fin3.b.s} pts` && n(r5[1].sous) === `1/${fin3.b.n} bonnes réponses`
         && r5[2].nom === 'Dora' && r5[2].sous === "N'a pas fini" && !r5[2].pts,
