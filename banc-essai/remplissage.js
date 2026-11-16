@@ -20,8 +20,9 @@
      3. ELLE COUVRE TOUT : à la fin, le cœur plein du disque atteint le coin le
         plus éloigné (géométrie), et en pixels les quatre coins de la puce sont
         rouges — pas de frange claire ;
-     4. LA TEINTE PLEINE N'ARRIVE QU'À LA FIN, sous l'encre — (v364) aux
-        quatre cinquièmes, quand son cœur couvre déjà toute la puce ;
+     4. LA TEINTE PLEINE N'ARRIVE QUE SOUS UNE ENCRE QUI COUVRE TOUT — (v377)
+        lu sur l'animation elle-même, et non plus à heure fixe — et elle s'y
+        fond, par plusieurs nuances, au lieu de basculer ;
      5. LE MOT NE BLANCHIT QUE COUVERT : à l'instant où il bascule, le cœur de
         l'encre couvre toute la boîte du libellé ;
      6. UN SEUL ROUGE : la quantité totale de rouge sur la rangée (en pixels,
@@ -38,6 +39,15 @@ const IOS = 'Mozilla/5.0 (iPhone; CPU iPhone OS 17_5 like Mac OS X) AppleWebKit/
 const URL = process.argv[2] || process.env.URL_ESSAI || 'http://127.0.0.1:8099/index.html';
 const LENT = 6;
 
+/* (v377) Les durées RÉELLES de l'encre, lues dans le jeu (puis ralenties) :
+   un banc qui les écrit en dur mesure un autre réglage que celui du jeu. */
+const lireDurees = (p) => p.evaluate(() => {
+  const t = document.createElement('button'); t.className = 'chip'; document.body.appendChild(t);
+  const s = getComputedStyle(t);
+  const l = (n, d) => { const v = s.getPropertyValue(n).trim(); const x = parseFloat(v); return isFinite(x) ? (/ms$/.test(v) ? x / 1000 : x) : d; };
+  const r = { duree: l('--encre-duree', 0.5), sortie: l('--encre-sortie', 0.3), attente: l('--encre-attente', 0.02) };
+  t.remove(); return r;
+});
 (async () => {
   const nav = await chromium.launch({ executablePath: '/opt/pw-browsers/chromium' });
   const ctx = await nav.newContext({ viewport: { width: 393, height: 852 }, deviceScaleFactor: 2,
@@ -65,7 +75,8 @@ const LENT = 6;
   else if (repos.contenu === 'none') soucis.push('la couche d\'encre n\'existe pas (::after sans « content ») : rien ne peut s\'étaler');
   else if (repos.opacite > 0.01) soucis.push('au repos, la couche d\'encre est peinte (opacité ' + repos.opacite + ')');
 
-  await p.addStyleTag({ content: `.chip, .len-chip{ --encre-duree:${0.5 * LENT}s !important; --encre-sortie:${0.3 * LENT}s !important; }
+  const D = await lireDurees(p);
+  await p.addStyleTag({ content: `.chip, .len-chip{ --encre-duree:${D.duree * LENT}s !important; --encre-sortie:${D.sortie * LENT}s !important; }
     :root{ --onde-duree:${0.24 * LENT}s !important; --tr-onde:${0.24 * LENT}s cubic-bezier(0.33,1,0.68,1) !important; }` });
   await p.waitForTimeout(150);
   const boites = await p.evaluate(() => [...document.querySelectorAll('.chip[data-group="len"]')].map(c => {
@@ -94,11 +105,11 @@ const LENT = 6;
       if (performance.now() - t0 < dureeMax) requestAnimationFrame(tic); else res(l);
     };
     requestAnimationFrame(tic);
-  }), 0.5 * LENT * 1000 + 300);
+  }), D.duree * LENT * 1000 + 300);
   const rangee = { x: boites[0].x, y: boites[0].y, width: boites[2].x + boites[2].w - boites[0].x, height: boites[0].h };
   const sommes = [];
   const t0 = Date.now();
-  while (Date.now() - t0 < 0.5 * LENT * 1000 + 200) {
+  while (Date.now() - t0 < D.duree * LENT * 1000 + 200) {
     const png = await p.screenshot({ clip: rangee });
     sommes.push(await p.evaluate(async ({ b64, boites, x0 }) => {
       const img = new Image(); img.src = 'data:image/png;base64,' + b64; await img.decode();
@@ -150,10 +161,21 @@ const LENT = 6;
     if (0.82 * ry < loin) soucis.push('à pleine taille, le cœur de l\'encre (' + (0.82 * ry).toFixed(1) + ' px) n\'atteint pas le coin le plus éloigné (' + loin.toFixed(1) + ' px)');
   }
 
-  /* 4. la teinte n'arrive qu'à la fin */
-  const rouge = (c) => { const v = (String(c).match(/\d+/g) || []).map(Number); return v[0] > 200 && v[1] < 110 && v[2] < 90; };
-  const tot = pendant.filter(e => e.t < 0.5 * LENT * 1000 * 0.75);
-  if (tot.some(e => rouge(e.teinte))) soucis.push('la teinte pleine arrive avant les quatre cinquièmes de l\'encre');
+  /* 4. (v377) la teinte pleine ne quitte le crème qu'une fois la puce
+     ENTIÈREMENT couverte par le cœur de l'encre — à l'échelle de l'instant,
+     et non plus à heure fixe — puis s'y fond, par plusieurs nuances. */
+  const creme = (c) => { const v = (String(c).match(/\d+/g) || []).map(Number); return v[0] >= 250 && v[1] >= 245 && v[2] >= 238; };
+  const iT = pendant.findIndex(e => !creme(e.teinte));
+  if (iT < 0) soucis.push('la teinte pleine n\'arrive jamais sous l\'encre');
+  else {
+    const e = pendant[iT], k4 = (e.rx > 0 && e.ry > 0) ? e.rx / e.ry : 1, ry4 = e.ry > 0 ? e.ry : e.r;
+    const loin4 = Math.max(...[[0, 0], [cible.w, 0], [0, cible.h], [cible.w, cible.h]].map(([a, b]) => Math.hypot((a - e.x) / k4, b - e.y)));
+    const ech4 = iT > 0 ? pendant[iT - 1].ech : e.ech;
+    if (0.82 * ech4 * ry4 + 0.5 < loin4) soucis.push('la teinte pleine arrive avant que l\'encre couvre toute la puce : cœur ' + (0.82 * ech4 * ry4).toFixed(1) + ' px pour ' + loin4.toFixed(1) + ' px');
+    const nuances = new Set(pendant.slice(iT).map(x => x.teinte).filter(x => !creme(x))).size;
+    if (nuances < 4) soucis.push('la teinte pleine bascule au lieu de se fondre : ' + nuances + ' nuance(s)');
+    console.log('  la teinte quitte le crème à ' + Math.round(e.t / LENT) + ' ms (temps réel), sous une encre à l\'échelle ' + ech4.toFixed(3) + ', en ' + nuances + ' nuances');
+  }
 
   /* 5. le mot ne blanchit que couvert */
   const blanc = (c) => { const v = (String(c).match(/\d+/g) || []).map(Number); return v[0] > 240 && v[1] > 240 && v[2] > 240; };
@@ -206,7 +228,7 @@ const LENT = 6;
     let n = 0;
     document.getAnimations().forEach(a => { if (a.effect && a.effect.target === c) { a.pause(); a.currentTime = D * 0.98; n++; } });
     return { n, teinte: getComputedStyle(c).getPropertyValue('--glass-tint').trim(), rayon: parseFloat(getComputedStyle(c).borderTopLeftRadius) };
-  }, 0.5 * LENT * 1000);
+  }, D.duree * LENT * 1000);
   await p.waitForTimeout(120);
   const png = await p.screenshot({ clip: { x: lb.x, y: lb.y, width: lb.w, height: lb.h } });
   const coins = await p.evaluate(async ({ b64, r }) => {
@@ -223,7 +245,7 @@ const LENT = 6;
   else if (pales.length) soucis.push(pales.length + ' coin(s) sur 4 ne sont pas couverts par l\'encre : ' + pales.map(c => 'rgb(' + c.join(',') + ')').join(' '));
 
   const jalons = [0, 0.1, 0.2, 0.3, 0.45, 0.6, 0.8, 1].map(f => {
-    const vise = f * 0.5 * LENT * 1000;
+    const vise = f * D.duree * LENT * 1000;
     const e = pendant.reduce((a, b) => Math.abs(b.t - vise) < Math.abs(a.t - vise) ? b : a, pendant[0] || { ech: 0 });
     return Math.round((e.ech || 0) * 100) + '%';
   });

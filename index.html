@@ -2106,14 +2106,20 @@
      même), toujours peint du dégradé calé sur celui de la puce : à l'échelle
      1, elle est la puce choisie au pixel près. Son rayon est celui qui couvre
      le coin le plus éloigné, sans la marge du bord adouci (voir coeurEncre).
-     ET LA RELÈVE SE CHEVAUCHE. Le dégradé de la puce revient UNE FOIS
-     l'encre pleine (encre-posee), et l'encre reste encore 120 ms dessus —
-     sept images : les deux sont la même image, et si l'iPhone peint l'un une
-     image après l'autre, rien ne clignote entre les deux. */
+     (v377) LA RELÈVE NE SE CHEVAUCHE PLUS. Le dégradé revenait une fois
+     l'encre pleine, et l'encre restait encore 120 ms dessus, au cas où
+     l'iPhone peindrait l'un une image après l'autre. Mais pendant ces 120 ms,
+     le bord de la puce était lissé trois fois (son fond, le dégradé,
+     l'encre) au lieu de deux : filmé, la lisière fonçait d'un coup, puis
+     revenait — un battement au bord, à la fin de chaque choix. Le dégradé
+     remplace maintenant l'encre dans la MÊME image, quand elle a vraiment
+     fini (voir finirEncre) : l'encre finie et le dégradé posé sont la même
+     image, bord compris (filmé : un écart de 7 sur toute la lisière d'une
+     tuile, contre 2 179 pendant le chevauchement). Les deux changements
+     partent dans le même rendu, que le navigateur affiche ensemble. */
   .sheet-veil .len-chip::after, .bk-carte .bk-choix::after{
     background:linear-gradient(150deg, #F44E2C var(--encre-g0, 0%), #DE3616 var(--encre-g1, 100%)); }
   .sheet-veil .len-chip.sel.remplit, .bk-carte .bk-choix.sel.remplit{ background-image:none; }
-  .sheet-veil .len-chip.sel.remplit.encre-posee, .bk-carte .bk-choix.sel.remplit.encre-posee{ background-image:linear-gradient(150deg, #F44E2C, #DE3616); }
   /* LA JAUGE DE LA SEMAINE (v316 ; avant, celle du carnet entier). Elle ne
      remplace pas le nombre — la porte doit continuer d'annoncer ce qu'elle
      jouera — elle montre le CHEMIN : les erreurs de la semaine déjà
@@ -2568,8 +2574,15 @@
        (--encre-rx, --encre-ry, voir rayonsEncre) : née sous le doigt, elle
        atteint tous les bords au même instant, et la puce finit pleine d'un
        seul mouvement. Le voile d'appui prend la même forme. */
+  /* (v377) LA COURSE S'ALLONGE COMME LE RAYON. La goutte qui arrive est
+     plus grande d'un douzième (voir ENCRE_PLEINE) ; sa course s'allonge dans
+     la même proportion (0,5 s / 0,92). Au début, elle s'étale donc
+     exactement comme avant — la rangée garde son unique rouge, mesuré : de
+     99 à 120 % au ralenti, comme avant — et elle couvre toute la puce dès
+     0,3 s au lieu de 0,4 s. Le reste de sa course passe hors de la puce :
+     rien ne bouge plus à l'écran. */
   .chip, .len-chip, .bk-choix{ --encre-x:50%; --encre-y:50%; --encre-r:160px; --encre-rx:var(--encre-r); --encre-ry:var(--encre-r);
-    --encre-duree:0.5s; --encre-sortie:0.3s; --encre-texte:0.2s; --encre-attente:20ms; }
+    --encre-duree:0.54s; --encre-sortie:0.3s; --encre-texte:0.2s; --encre-attente:20ms; }
   .chip::after, .len-chip::after, .bk-choix::after{ content:""; position:absolute; z-index:-1; pointer-events:none;
     left:calc(var(--encre-x) - var(--encre-rx)); top:calc(var(--encre-y) - var(--encre-ry));
     width:calc(var(--encre-rx) * 2); height:calc(var(--encre-ry) * 2); border-radius:50%;
@@ -2622,11 +2635,33 @@
      teinte, qui ne bascule qu'à la fin de l'encre. */
   .chip.remplit, .len-chip.remplit{ transition:transform 0.44s cubic-bezier(0.2,1,0.3,1),
     background-color 0s, border-color 0.22s ease, color 0s linear var(--encre-texte),
-    opacity 0.22s ease, --glass-tint 0s linear calc(var(--encre-duree) * 0.8); }
-  /* (v364) La teinte pleine arrive aux quatre cinquièmes de l'encre, et non
-     plus à la toute fin : il ne reste alors que les coins, qu'elle achève
-     d'un coup — au lieu d'une lisière rose qui traînait encore un dixième
-     de seconde le long du bord. */
+    opacity 0.22s ease, --glass-tint 0.15s linear; }
+  /* ===== (v377) LE FOND SE RETIRE PENDANT LE REMPLISSAGE =====
+     Le bord d'une puce est lissé une fois par couche qui le touche. Au
+     repos, deux couches le touchent : le fond de la puce et sa couche de
+     verre (.gs). Pendant le remplissage, l'encre en ajoute une troisième, et
+     le dernier pixel du bord fonçait d'un cran — filmé : 47 pixels de la
+     lisière, jusqu'à 22 nuances, de la fin de l'appui (le fond revenait,
+     voir L'ONDE) jusqu'au départ de l'encre, puis retour. Une lisière qui
+     fonce un dixième de seconde et revient : un battement au bord. Le fond
+     se retire donc pendant tout le remplissage, comme pendant l'appui (la
+     couche de verre peint déjà la même couleur), et revient dans la MÊME
+     image que le départ de l'encre (encre-sort) : deux couches, puis deux
+     couches, et rien ne bouge. */
+  .chip.has-gs.remplit, .len-chip.has-gs.remplit{ background-color:transparent; }
+  .chip.has-gs.remplit, .len-chip.has-gs.remplit{ transition:transform 0.44s cubic-bezier(0.2,1,0.3,1),
+    background-color 0.22s ease, border-color 0.22s ease, color 0s linear var(--encre-texte),
+    opacity 0.22s ease, --glass-tint 0.15s linear; }
+  .chip.encre-sort, .len-chip.encre-sort{ transition:transform 0.44s cubic-bezier(0.2,1,0.3,1),
+    background-color 0s, border-color 0.22s ease, color 0s, opacity 0.22s ease, --glass-tint 0.2s ease; }
+  /* (v377) La teinte pleine ne bascule plus à heure fixe (aux quatre
+     cinquièmes de l'encre depuis la v364) : la puce choisie garde sa teinte
+     du moment dans son style tant que son encre ne couvre pas TOUTE la puce
+     — lu sur l'animation elle-même —, puis la reçoit en 0,15 s, sous une
+     encre qui couvre déjà tout : seul le dernier pixel du bord la voit
+     passer, en douceur (voir finirEncre et FONDU_TEINTE). La lisière rose
+     que la v364 coupait court ne revient pas : la goutte couvre maintenant
+     toute la puce bien avant la fin de sa course (voir ENCRE_PLEINE). */
   .chip.devide, .len-chip.devide{ transition:transform 0.44s cubic-bezier(0.2,1,0.3,1),
     background-color 0s, border-color 0.22s ease, color 0s,
     opacity 0.22s ease, --glass-tint 0s linear; }
@@ -10126,9 +10161,16 @@ document.addEventListener("pointerdown", (e)=>{
      plus la déplacer. Elle est rendue au style quand l'onde a fini de
      s'effacer. Ça vaut pour tous les boutons, y compris ceux qu'on ajoutera :
      aucun ne pourra plus changer de couleur en cours de route. */
+  /* (v377) MÊME SANS TEINTE DÉCLARÉE. La tuile d'un livre ne déclare pas la
+     sienne : son voile prend celle par défaut (le corail à 18 %, voir
+     button::before) — et rien n'était figé. Devenue choisie en plein geste,
+     elle recevait l'onde BLANCHE des surfaces corail : filmé, son rouge
+     restait pâle (vert à 132 au lieu de 76) jusqu'à 560 ms, le temps que le
+     voile s'efface. Le petit éclair pâle à la fin, celui-là même que ce bloc
+     devait chasser. On fige donc la teinte par défaut, elle aussi. */
   try{
-    const teinte = getComputedStyle(b).getPropertyValue("--press-tint").trim();
-    if(teinte) b.style.setProperty("--press-tint", teinte);
+    const teinte = getComputedStyle(b).getPropertyValue("--press-tint").trim() || "rgba(238,74,40,0.18)";
+    b.style.setProperty("--press-tint", teinte);
   }catch(e){}
   /* L'ENCRE PART DU DOIGT : sur une puce de choix, on note où il s'est posé.
      Le voile d'appui et, si la puce est choisie, l'encre en partiront.
@@ -12466,7 +12508,7 @@ const SUPABASE_ANON_KEY = "sb_publishable_FDJ_R0foC7uIeHmxVrj6rA_2NeIgW2a";
    remontée d'un téléphone ne vaut rien si on ne sait pas QUELLE version
    tournait. Elle doit rester égale au CACHE de sw.js — c'est ce que vérifie
    banc-essai/version.js, qui refuse de laisser publier les deux en désaccord. */
-const VERSION_JEU = "v376";
+const VERSION_JEU = "v377";
 
 /* ===================== QUAND ÇA CASSE CHEZ UN JOUEUR =====================
    « Si quelque chose casse chez cinq d'entre eux sur un modèle de téléphone
@@ -23506,6 +23548,27 @@ function dureeCss(el, nom, defaut){
    ne doit pas en être décalée. Sans point (clavier, appel du jeu), la goutte
    naît au centre. */
 const ENCRE_COEUR = 0.82;
+/* ===== (v377) LA GOUTTE A TOUT COUVERT BIEN AVANT LA FIN DE SA COURSE =====
+   Son cœur plein ne touchait le coin le plus lointain qu'à l'échelle 0,99 :
+   dans le dernier cinquième de la course, là où la courbe ralentit le plus.
+   Les coins et la lisière du bas restaient rose pâle plus d'un dixième de
+   seconde, et la teinte pleine finissait le travail d'un coup. Le rayon de
+   la goutte qui ARRIVE est maintenant celui qui couvre le coin le plus
+   lointain dès l'échelle ENCRE_PLEINE : à un peu plus de la moitié de sa
+   course, la puce est rouge plein, bords et coins compris, et la fin du
+   geste ne change plus rien à l'écran. Celle qui se RETIRE garde son rayon :
+   elle ne doit pas rester pleine plus longtemps (voir UN SEUL ROUGE À LA
+   FOIS). */
+const ENCRE_PLEINE = 0.92;
+/* (v377) LA TEINTE SE GLISSE SOUS L'ENCRE EN DOUCEUR. Deux couches découpées
+   chacune par l'arrondi de la puce se lissent chacune pour son compte : sur
+   le dernier pixel du bord, l'encre ne couvre qu'une part du pixel, et la
+   couche de dessous laisse passer le reste. Tant qu'elle est crème, ce pixel
+   est rose pâle — une lisière autour de la puce, surtout en bas, où l'ombre
+   de la puce fonce le fond. Basculée d'un coup, la teinte faisait sauter
+   cette lisière au rouge ; elle s'y fond maintenant en 0,15 s, dès que la
+   goutte couvre toute la puce (voir finirEncre). */
+const FONDU_TEINTE = 150;
 /* (v328) Dans une page, la goutte est un disque net (sans bord adouci, voir
    « SANS MASQUE ») : c'est son bord même qui doit couvrir le coin. */
 function coeurEncre(c){ return c.closest(".sheet-veil, .bk-carte") ? 1 : ENCRE_COEUR; }
@@ -23540,10 +23603,10 @@ const lePlusLoin = (c, x, y)=>{ const W = c.offsetWidth, H = c.offsetHeight;
    mesure le coin le plus éloigné du doigt dans l'espace où cette ellipse est
    un cercle (les largeurs divisées par k), et son cœur plein doit le
    couvrir, plus un pixel. */
-function rayonsEncre(c, x, y, coeur){
+function rayonsEncre(c, x, y, coeur, plein){
   const W = c.offsetWidth || 1, H = c.offsetHeight || 1, k = W / H;
   const loin = Math.max(Math.hypot(x / k, y), Math.hypot((W - x) / k, y), Math.hypot(x / k, H - y), Math.hypot((W - x) / k, H - y));
-  const ry = loin / coeur + 1;
+  const ry = loin / (coeur * (plein || 1)) + 1;
   return { rx: ry * k, ry, k };
 }
 function encrerPuce(c, clientX, clientY){
@@ -23562,10 +23625,13 @@ function ondePuce(c, clientX, clientY){
   c.style.setProperty("--onde-ry", ro.ry.toFixed(1) + "px");
   if(echelleEncre(c) == null) poserEncre(c, o.x, o.y);
 }
-function poserEncre(c, x, y){
+/* (v377) « plein » : l'échelle où le cœur a couvert toute la puce —
+   ENCRE_PLEINE pour la goutte qui arrive (par défaut), 1 pour celle qui se
+   retire. */
+function poserEncre(c, x, y, plein){
   const W = c.offsetWidth, H = c.offsetHeight;
   const coeur = coeurEncre(c);
-  const { rx, ry, k } = rayonsEncre(c, x, y, coeur);
+  const { rx, ry, k } = rayonsEncre(c, x, y, coeur, plein == null ? ENCRE_PLEINE : plein);
   const rayon = ry;
   c.style.setProperty("--encre-x", x.toFixed(1) + "px");
   c.style.setProperty("--encre-y", y.toFixed(1) + "px");
@@ -23673,6 +23739,111 @@ function echelleEncre(c){
   if(t <= a.attente) return 1;
   return 1 - 0.98 * valeurBezier(...COURBE_ENCRE_OUT, (t - a.attente) / a.duree);
 }
+/* ===== (v377) LE ROUGE PLEIN ATTEND LA FIN DE L'ENCRE — LA VRAIE =====
+   « Pour les modes Groupe et Solo, quand je clique par exemple sur 15 puis
+     30 secondes, le remplissage se fait mal et il s'ajuste d'un coup. En bas
+     surtout : il ne se remplit pas en entier, et ensuite hop, il se remplit,
+     comme si c'était un bug. »
+   La puce choisie a deux rouges : l'ENCRE, une goutte qui s'étale, et la
+   TEINTE pleine, qui la remplace au repos. La teinte arrivait à heure fixe,
+   0,4 s après le toucher, comptée par la page. L'encre, elle, est animée par
+   le compositeur, qui la lance quand sa couche est prête — et au moment même
+   du toucher (son, vibration, rendu de la rangée), un téléphone la lance
+   souvent une ou plusieurs images plus tard. La teinte allumait alors d'un
+   coup tout ce que l'encre n'avait pas encore couvert : la lisière du bas et
+   les coins. C'est le « hop ».
+   Désormais la puce choisie garde, dans son style, la teinte qu'elle avait
+   (crème) tant que son encre ne la couvre pas TOUTE — et c'est l'animation
+   de l'encre elle-même qui le dit, image par image, pas une horloge : quel
+   que soit son retard, la teinte pleine se glisse sous une encre qui couvre
+   déjà tout, et s'y fond (voir FONDU_TEINTE). La couche d'encre, elle, s'en
+   va quand l'animation a vraiment fini (animationend) ; dans une page, le
+   dégradé la remplace à cet instant. La puce qu'on quitte rend sa classe de
+   la même façon, à la fin réelle de son encre : partie en retard, elle
+   perdait sinon ses dernières traces d'un coup. Un filet finit le geste si
+   l'animation ne rend jamais la main (onglet endormi). */
+function finirEncre(c, apres, duree, avance, attente){
+  clearTimeout(c._remplirT); clearTimeout(c._poseT); cancelAnimationFrame(c._couvreF);
+  if(c._finEncre){ c.removeEventListener("animationend", c._finEncre); c._finEncre = null; }
+  const nom = apres ? "encreIn" : "encreOut", debut = performance.now();
+  const attendu = Math.max(0, duree + attente - avance);
+  let fini = false, rendue = 0;
+  /* La teinte pleine rendue à la puce choisie : elle s'y fond (voir
+     FONDU_TEINTE et .remplit). */
+  const rendre = ()=>{
+    if(rendue) return;
+    rendue = performance.now();
+    cancelAnimationFrame(c._couvreF);
+    c.style.removeProperty("--glass-tint");
+  };
+  const finir = ()=>{
+    if(fini) return;
+    fini = true;
+    c.removeEventListener("animationend", ecoute);
+    if(c._finEncre === ecoute) c._finEncre = null;
+    clearTimeout(c._remplirT); cancelAnimationFrame(c._couvreF);
+    if(!apres){ c.classList.remove("devide"); return; }
+    /* L'encre a fini et couvre toute la puce. Si la teinte n'a pas encore
+       été rendue (navigateur sans getAnimations), elle l'est maintenant. */
+    rendre();
+    /* DANS UNE PAGE, le dégradé remplace l'encre dans la MÊME image — sans
+       chevauchement (voir LA RELÈVE NE SE CHEVAUCHE PLUS). */
+    if(coeurEncre(c) === 1){ c.classList.remove("remplit"); return; }
+    /* Ailleurs, l'encre s'en va dès que la teinte a fini de se fondre
+       dessous — d'ordinaire depuis longtemps — et le fond de la puce revient
+       dans la MÊME image (encre-sort : voir LE FOND SE RETIRE PENDANT LE
+       REMPLISSAGE). Plus de chevauchement non plus : sous l'encre, tout est
+       déjà rouge. */
+    const ote = ()=>{
+      c.classList.add("encre-sort");
+      c.classList.remove("remplit");
+      c._remplirT = setTimeout(()=>{ c.classList.remove("encre-sort"); }, 80);
+    };
+    const reste = FONDU_TEINTE + 20 - (performance.now() - rendue);
+    if(reste > 0) c._remplirT = setTimeout(ote, reste); else ote();
+  };
+  const ecoute = (e)=>{
+    if(e.target !== c || e.animationName !== nom) return;
+    /* Une fin restée en file d'un geste précédent n'est pas celle-ci. */
+    if(performance.now() - debut < attendu * 0.5) return;
+    finir();
+  };
+  c._finEncre = ecoute;
+  c.addEventListener("animationend", ecoute);
+  c._remplirT = setTimeout(finir, attendu + 600);
+  if(!apres) return;
+  /* QUAND LA GOUTTE COUVRE-T-ELLE TOUTE LA PUCE ? Pas à une heure comptée
+     depuis le toucher : on le lit sur l'animation elle-même, image par
+     image — en retard ou non, la teinte ne se glisse dessous qu'une fois la
+     puce entièrement couverte. */
+  /* L'échelle où le cœur de CETTE goutte couvre toute la puce, lue sur sa
+     géométrie : une puce reprise en plein retrait repart avec la goutte de
+     son retrait, au rayon plus court (voir basculerChoix). */
+  let sCouvre = ENCRE_PLEINE;
+  try{
+    const W = c.offsetWidth || 1, H = c.offsetHeight || 1;
+    const ex = parseFloat(c.style.getPropertyValue("--encre-x")), ey = parseFloat(c.style.getPropertyValue("--encre-y"));
+    const erx = parseFloat(c.style.getPropertyValue("--encre-rx")), ery = parseFloat(c.style.getPropertyValue("--encre-ry"));
+    if(isFinite(ex) && isFinite(ey) && erx > 0 && ery > 0){
+      const k = erx / ery;
+      const loin = Math.max(Math.hypot(ex / k, ey), Math.hypot((W - ex) / k, ey), Math.hypot(ex / k, H - ey), Math.hypot((W - ex) / k, H - ey));
+      sCouvre = Math.min(1, loin / (coeurEncre(c) * ery));
+    }
+  }catch(e){}
+  const couvert = instantBezier(...COURBE_ENCRE_IN, Math.min(1, Math.max(0, (sCouvre - 0.03) / 0.97))) + 16 / Math.max(1, duree);
+  let anim = null;
+  try{ anim = c.getAnimations({ subtree:true }).find(a => a.animationName === "encreIn") || null; }catch(e){ anim = null; }
+  if(!anim || !anim.effect || !anim.effect.getComputedTiming) return;
+  const guetter = ()=>{
+    if(fini || rendue) return;
+    let t = null;
+    try{ t = anim.effect.getComputedTiming().progress; }catch(e){}
+    if(anim.playState === "finished" || (t != null && t >= couvert)){ rendre(); return; }
+    if(anim.playState === "idle") return;      // annulée : un autre geste a pris la main
+    c._couvreF = requestAnimationFrame(guetter);
+  };
+  c._couvreF = requestAnimationFrame(guetter);
+}
 function basculerChoix(selecteur, classe, k){
   const puces = [...document.querySelectorAll(selecteur)];
   const nouvelle = puces.find(c => c.dataset.k === k) || null;
@@ -23731,29 +23902,29 @@ function basculerChoix(selecteur, classe, k){
             if(Math.abs(nx - ax) >= Math.abs(ny - ay)) x = nx > ax ? W : 0;
             else y = ny > ay ? H : 0;
           }
-          poserEncre(c, x, y);
+          poserEncre(c, x, y, 1);
         }
       }
     }catch(e){ duree = 500; avance = 0; }
+    /* (v377) La teinte que la puce montre EN CE MOMENT (crème, d'ordinaire),
+       lue avant de toucher aux classes : la puce choisie la garde tant que
+       son encre n'a pas fini (voir finirEncre). */
+    let teinte = "";
+    if(apres){ try{ teinte = getComputedStyle(c).getPropertyValue("--glass-tint").trim(); }catch(e){} }
     c._doigt = 0;
     c.style.setProperty("--encre-avance", avance.toFixed(0) + "ms");
     c._encre = { sens: apres ? "in" : "out", debut: performance.now() - avance, duree, attente: apres ? 0 : attente };
     /* Une animation ne se rejoue pas si sa classe est déjà là : on la retire,
        on force le calcul, on la remet. */
-    c.classList.remove("remplit", "devide", "encre-posee");
+    c.classList.remove("remplit", "devide", "encre-sort");
+    if(teinte) c.style.setProperty("--glass-tint", teinte);
     void c.offsetWidth;
     c.classList.toggle(classe, apres);
     c.classList.add(apres ? "remplit" : "devide");
-    clearTimeout(c._remplirT); clearTimeout(c._poseT);
-    /* Dans une page, le dégradé de la puce revient dès que l'encre est
-       pleine, et l'encre reste encore un instant par-dessus (voir SANS
-       MASQUE) : la relève se chevauche. */
-    const page = apres && coeurEncre(c) === 1;
-    if(page) c._poseT = setTimeout(()=>{ c.classList.add("encre-posee"); }, Math.max(0, duree - avance));
-    /* La classe passagère s'en va une fois le mouvement fini : l'état, lui,
-       est porté par « active »/« sel », qui restent. Un filet de sécurité au
-       cas où l'animation ne rendrait jamais la main (onglet endormi). */
-    c._remplirT = setTimeout(()=>{ c.classList.remove("remplit", "devide", "encre-posee"); }, duree + 120);
+    if(!apres) c.style.removeProperty("--glass-tint");
+    /* La classe passagère s'en va quand l'encre a VRAIMENT fini : l'état,
+       lui, est porté par « active »/« sel », qui restent. */
+    finirEncre(c, apres, duree, avance, attente);
   });
 }
 function setLength(key){

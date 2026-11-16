@@ -33,6 +33,15 @@ const URL = process.argv[2] || 'http://127.0.0.1:8099/index.html';
 const S_ETAPES = 6;     // sous six couleurs distinctes, ce n'est pas un fondu
 const S_ECART  = 80;    // ms d'écart toléré entre familles
 
+/* (v377) Les durées RÉELLES de l'encre, lues dans le jeu (puis ralenties) :
+   un banc qui les écrit en dur mesure un autre réglage que celui du jeu. */
+const lireDurees = (p) => p.evaluate(() => {
+  const t = document.createElement('button'); t.className = 'chip'; document.body.appendChild(t);
+  const s = getComputedStyle(t);
+  const l = (n, d) => { const v = s.getPropertyValue(n).trim(); const x = parseFloat(v); return isFinite(x) ? (/ms$/.test(v) ? x / 1000 : x) : d; };
+  const r = { duree: l('--encre-duree', 0.5), sortie: l('--encre-sortie', 0.3), attente: l('--encre-attente', 0.02) };
+  t.remove(); return r;
+});
 const RELEVE = function(sel, ms){
   return new Promise((res)=>{
     const rel = []; const t0 = performance.now();
@@ -82,6 +91,7 @@ function lire(rel){
   await p.goto(URL);
   await p.waitForFunction(()=>{ try{ return state.screen==='mode'; }catch(e){ return false; } }, null, {timeout:20000});
   await p.evaluate(()=>{ try{ getCtx(); }catch(e){} });
+  const D = await lireDurees(p);
 
   /* AUCUNE PAGE NE TRAÎNE AU-DESSUS (v315). La famille « Créer un groupe »
      laisse sa page ouverte ; depuis que les volets sont des pages pleines,
@@ -127,7 +137,7 @@ function lire(rel){
     /* On part du premier, on prend le second : les deux mouvements en un geste. */
     await p.evaluate((s)=>{ const q=document.querySelectorAll(s); q[0].click(); }, sel);
     await p.waitForTimeout(700);
-    const relA = p.evaluate(([s, ms])=>window.__rel(s + ':nth-of-type(2)', ms), [sel, 700]).catch(()=>null);
+    const relA = p.evaluate(([s, ms])=>window.__rel(s + ':nth-of-type(2)', ms), [sel, Math.round(D.duree*1000 + 260)]).catch(()=>null);
     const capA = p.evaluate(([s, ms])=>{
       const q = document.querySelectorAll(s);
       window.__a = q[1]; window.__b = q[0];
@@ -139,7 +149,7 @@ function lire(rel){
           if(performance.now()-t0 < ms) requestAnimationFrame(tic); else res(rel); };
         requestAnimationFrame(tic);
       });
-    }, [sel, 700]);
+    }, [sel, Math.round(D.duree*1000 + 260)]);
     await p.waitForTimeout(30);
     await p.evaluate(()=>{ window.__a.click(); });
     const rel = await capA;
@@ -189,7 +199,7 @@ function lire(rel){
      blanches : elles ne sont ni du fond ni de l'encre), sommée sur la rangée
      et rapportée au repos. */
   const LENT_R = 5;
-  const ralenti = await p.addStyleTag({ content:`.chip, .len-chip{ --encre-duree:${0.5*LENT_R}s !important; --encre-sortie:${0.3*LENT_R}s !important; --encre-attente:${0.02*LENT_R}s !important; }
+  const ralenti = await p.addStyleTag({ content:`.chip, .len-chip{ --encre-duree:${D.duree*LENT_R}s !important; --encre-sortie:${D.sortie*LENT_R}s !important; --encre-attente:${D.attente*LENT_R}s !important; }
     :root{ --onde-duree:${0.24*LENT_R}s !important; --tr-onde:${0.24*LENT_R}s cubic-bezier(0.33,1,0.68,1) !important; }` });
   const rougeRangee = async (boites)=>{
     const x0 = boites[0].x, larg = boites[boites.length-1].x + boites[boites.length-1].w - x0;
@@ -215,12 +225,12 @@ function lire(rel){
   for (const [nom, depart, cible] of [['Tout -> Ancien', 0, 1], ['Ancien -> Tout', 1, 0], ['Tout -> Nouveau', 0, 2]]){
     await prepa();
     await p.evaluate((d)=>{ const q=document.querySelectorAll('.chip[data-group="theme"]'); q[d].click(); }, depart);
-    await p.waitForTimeout(0.5*LENT_R*1000 + 600);
+    await p.waitForTimeout(D.duree*LENT_R*1000 + 600);
     const boites = await p.evaluate(()=>[...document.querySelectorAll('.chip[data-group="theme"]')].map(c=>{ const r=c.getBoundingClientRect(); return { x:r.left, y:r.top, w:r.width, h:r.height }; }));
     const repos = await rougeRangee(boites);
     await p.evaluate((c)=>{ document.querySelectorAll('.chip[data-group="theme"]')[c].click(); }, cible);
     const serie = []; const t0 = Date.now();
-    while(Date.now() - t0 < 0.5*LENT_R*1000 + 300) serie.push(await rougeRangee(boites));
+    while(Date.now() - t0 < D.duree*LENT_R*1000 + 300) serie.push(await rougeRangee(boites));
     const pc = serie.map(x => 100 * x / (repos || 1));
     if(process.env.SERIE) console.log('      repos ' + repos.toFixed(3) + ' : ' + pc.map(v => v.toFixed(0)).join(' '));
     const haut = Math.max(...pc), bas = Math.min(...pc);
