@@ -197,6 +197,11 @@ const JAMAIS_A_L_ECRAN = [
   { lg:'es', quoi:'GitHub, Inc., 88 Colin P. Kelly Jr. Street, San Francisco, CA 94107, Estados Unidos — support.github.com.', car:"l'hébergeur nommé est celui qui sert la page : au banc (127.0.0.1), c'est Cloudflare" },
   { lg:'es', quoi:'Victoria',  car:"« Victoire » sans point d'exclamation ne sert qu'au texte partagé" },
   { lg:'es', quoi:'Buen duelo', car:"n'existe que dans le texte PARTAGÉ d'un duel serré" },
+  /* (v373) L'hôte qui quitte les messages pendant que des joueurs attendent
+     dans le salon : il faut une vraie partie de groupe, avec d'autres
+     joueurs. Le banc n'en ouvre pas. */
+  { lg:'en', quoi:'The group game is closed.', car:"(v373) l'hôte quitte les messages, des joueurs dans le salon : jamais au banc" },
+  { lg:'es', quoi:'La partida del grupo está cerrada.', car:"(v373) l'hôte quitte les messages, des joueurs dans le salon : jamais au banc" },
   { lg:'es', quoi:'mi rival',   car:"le repli du nom dans le texte partagé, jamais à l'écran" },
   { lg:'es', quoi:'Bloqueados en los ajustes del teléfono', car:'idem, et seulement si le téléphone a refusé' },
   { lg:'es', quoi:'No se puede activar el recordatorio ahora mismo.', car:"idem, et seulement si l'abonnement échoue" },
@@ -225,6 +230,10 @@ const JAMAIS_A_L_ECRAN = [
 ];
 
 const MEME_DANS_LES_DEUX = [
+  /* (v374) Le récap d'une partie de groupe : « Place » et « Points »,
+     sous leur chiffre, s'écrivent pareil en anglais (l'espagnol dit
+     « Puesto » et « Puntos »). Ici, et seulement ici. */
+  { lg:'en', quoi:/^(Place|Points)$/, ou:/solo-stat/, car:"(v374) « Place » et « Points » sous leur chiffre, le même mot en anglais" },
   { quoi:/^(Yada|Taylor|Sam|Lee|Kim)$/,        car:'un nom propre' },
   { quoi:/^(Job|Daniel|Esther|Ruth|Jude|Amos|Nahum|Joel|Amen|Hosanna)$/i, car:'même mot dans les deux langues' },
   { quoi:/^(Duel|Options|Score|Records|Contact|Version|Format|Instagram|Notifications?|Guide|Volume|Testament|Solo|Installation|Modes?|Messages?|Info|Centurion|Bibliophile|Zoom|Navigation|Public|Admin)$/i, car:'même mot dans les deux langues' },

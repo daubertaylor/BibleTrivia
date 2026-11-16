@@ -3288,6 +3288,32 @@
   .dp-n{ flex-shrink:0; width:1.55rem; height:1.55rem; margin-top:-0.04rem; border-radius:50%; display:inline-flex; align-items:center; justify-content:center;
     background:var(--primary); color:#fff; font-family:'Poppins',sans-serif; font-weight:700; font-size:0.8rem; box-shadow:0 2px 6px rgba(214,60,34,0.28); }
   .deroule-note{ margin:0.85rem 0 0.15rem; font-size:0.86rem; line-height:1.45; color:var(--ink-soft); text-align:left; }
+  /* ===== (v375) « COMMENT JOUER » EST UNE CARTE PLEINE =====
+     « Son interface, lorsqu'on clique dessus, est très glassmorphisme ;
+       si tu penses qu'il faudrait faire autre chose, fais-le. » (Capture de
+     Taylor : le décor et les cartes de l'écran passaient à travers la
+     fenêtre, en taches grises et pêche, sous trois lignes à lire.) Une
+     fenêtre de VERRE va à ce qu'on regarde en passant ; celle-ci, on la
+     LIT. Elle devient une carte pleine, crème comme les pages, avec le
+     relief commun : une pastille en tête, chaque geste sur sa ligne blanche
+     avec son numéro, la note du chrono dans un encart doré. Aucun trait,
+     aucune ombre de couleur (le numéro perd la sienne, corail). */
+  .modal-card.modal-deroule{ background:var(--page-fond); box-shadow:var(--relief), 0 22px 54px rgba(24,16,10,0.2); backdrop-filter:none; -webkit-backdrop-filter:none;
+    max-width:22rem; padding:1.3rem 1.05rem 1.05rem; }
+  .modal-card.modal-deroule > :is(.gs, .glass-rim, .glass-refl){ display:none !important; }
+  .modal-deroule .deroule-tete{ width:3.1rem; height:3.1rem; margin:0 auto 0.7rem; border-radius:50%; display:flex; align-items:center; justify-content:center;
+    background:#fff; color:var(--primary); box-shadow:var(--relief); }
+  .modal-deroule .deroule-tete svg{ width:1.55rem; height:1.55rem; }
+  .modal-deroule .modal-title{ font-size:1.2rem; }
+  .modal-deroule .deroule-pas{ margin-top:0.9rem; gap:0.48rem; }
+  .modal-deroule .deroule-pas li{ align-items:center; padding:0.66rem 0.8rem; border-radius:16px; background:#fff; box-shadow:var(--relief); font-size:0.93rem; line-height:1.35; }
+  .modal-deroule .dp-n{ margin-top:0; box-shadow:none; }
+  .modal-deroule .deroule-note{ display:flex; align-items:flex-start; gap:0.55rem; margin:0.7rem 0 0.1rem; padding:0.7rem 0.8rem; border-radius:16px;
+    background:rgba(239,173,38,0.14); color:var(--ink); font-size:0.84rem; line-height:1.45; }
+  .modal-deroule .deroule-note .ico{ width:1.15rem; height:1.15rem; flex-shrink:0; margin-top:0.08rem; color:#C9870F; display:inline-flex; }
+  .modal-deroule .deroule-note .ico svg{ width:100%; height:100%; }
+  .modal-deroule .modal-actions{ margin-top:1.1rem; }
+  .modal-deroule .modal-err{ display:none; }   /* une fenêtre à lire, sans champ : aucune place gardée pour une erreur */
   /* GUIDE PLEIN ÉCRAN : les trois gestes reprennent, au pixel près, les lignes
      des Réglages (.set-row / .set-ico / .set-txt) — même pastille colorée, même
      titre, même sous-titre. On arrive de là, on retrouve la même matière ; il
@@ -6491,6 +6517,7 @@
     transform:translate3d(-50%,0,0); transition:transform var(--tr-ouvre), opacity 0.22s ease; }
   .card.barre-partie.sur-barre{ transform:translate3d(-50%, calc(-1 * (var(--bb-h) + var(--bp-ecart))), 0); }
   .card.barre-partie.cachee, html.kb .card.barre-partie:not(.dans-fil){ transform:translate3d(-50%, calc(100% + var(--bb-bas) + 1rem), 0); opacity:0; pointer-events:none; }
+  .card.barre-partie.sans-transition{ transition:none !important; }
   html.sous-page #barrePartie{ visibility:hidden; }
   .barre-partie .bp-contenu{ flex:1; min-width:0; display:flex; align-items:center; gap:0.3rem; position:relative; }
   .barre-partie .bp-zone{ flex:1; min-width:0; display:flex; align-items:center; gap:0.6rem; min-height:2.8rem; padding:0; border:0; background:none; color:inherit; font:inherit; text-align:left; cursor:pointer; -webkit-tap-highlight-color:transparent; }
@@ -6682,6 +6709,15 @@
   .grp-vus .gv-rien{ font-size:0.88rem; color:var(--ink-soft); margin:0.15rem 0.6rem 0.3rem; }
   .b-vide{ font-style:italic; color:var(--ink-soft) !important; background:rgba(252,248,241,0.6) !important; box-shadow:none !important; }
   .b-partie{ display:flex; flex-direction:column; align-items:flex-start; gap:0.45rem; padding:0.85rem 0.9rem 0.95rem; }
+  /* (v375) LA CARTE D'UNE PARTIE NE SE SÉLECTIONNE PAS. Les bulles de texte
+     sont des boutons : le doigt qui les tient n'y sélectionne rien. La carte
+     d'une partie est un bloc, et elle héritait de « user-select:text » : sur
+     iPhone, l'appui long y lançait AUSSI la sélection du texte (un mot
+     surligné, ses poignées, la loupe) une fraction de seconde après
+     l'ouverture du menu — « la petite barre bug légèrement à son
+     ouverture ». Elle ne se sélectionne plus ; « Répondre », le récap et le
+     reste passent par le menu et le toucher, comme avant. */
+  .b-bulle.b-partie, .b-bulle.b-partie *{ -webkit-user-select:none; user-select:none; -webkit-touch-callout:none; }
   .b-partie .bp-ico{ width:1.6rem; height:1.6rem; color:var(--primary); display:inline-flex; }
   .b-partie .bp-ico svg{ width:100%; height:100%; }
   .b-partie b{ font-family:'Poppins',sans-serif; font-weight:600; font-size:0.98rem; }
@@ -6704,6 +6740,54 @@
   .rp-rangs .rp-rang .rank-badge{ flex-shrink:0; }
   .rp-rangs .rp-pts{ flex-shrink:0; font-family:'Poppins',sans-serif; font-weight:700; font-variant-numeric:tabular-nums; color:var(--primary); }
   .rp-rangs .rp-rang.pas-fini{ opacity:0.6; }
+  /* ===== (v374) LE RÉCAP D'UNE PARTIE, EN GRAND =====
+     Voir ouvrirRecapPartie. Une page n'est pas en verre : ses cartes sont
+     blanches, avec le relief commun (--relief) — jamais une ombre de
+     couleur. L'or n'est que dans les fonds : le médaillon, la lueur derrière
+     lui, les marches, les jauges. */
+  .rp-haut{ display:flex; flex-direction:column; align-items:center; text-align:center; padding:0.5rem 0.4rem 0.35rem; }
+  .rp-medaille{ position:relative; isolation:isolate; width:6rem; height:6rem; border-radius:50%; display:flex; align-items:center; justify-content:center; margin:0.3rem 0 1rem;
+    background:radial-gradient(circle at 50% 34%, #FFFCF3 0%, #FDF1D3 52%, #F7DFA6 100%); box-shadow:var(--relief), inset 0 1px 0 rgba(255,255,255,0.95); }
+  .rp-medaille::before{ content:""; position:absolute; left:50%; top:50%; width:205%; aspect-ratio:1; transform:translate(-50%,-50%); border-radius:50%; z-index:-1; pointer-events:none;
+    background:radial-gradient(closest-side, rgba(255,205,90,0.34), rgba(255,205,90,0.1) 58%, transparent 76%); }
+  .rp-medaille .rp-coupe{ width:3.15rem; height:3.4rem; display:inline-flex; }
+  .rp-medaille .rp-coupe svg{ width:100%; height:100%; }
+  .rp-eclat{ position:absolute; width:0.78rem; height:0.78rem; color:#EFAD26; pointer-events:none; }
+  .rp-eclat svg{ width:100%; height:100%; display:block; }
+  .rp-eclat.e1{ left:-0.95rem; top:0.55rem; }
+  .rp-eclat.e2{ right:-1.05rem; top:1.55rem; width:0.62rem; height:0.62rem; opacity:0.85; }
+  .rp-eclat.e3{ right:-0.35rem; bottom:-0.25rem; width:0.5rem; height:0.5rem; opacity:0.7; }
+  .rp-sur{ max-width:100%; margin-bottom:0.3rem; font-size:0.72rem; font-weight:700; letter-spacing:0.09em; text-transform:uppercase; color:#B5790C;
+    white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+  .rp-titre{ font-family:'Poppins',sans-serif; font-weight:700; font-size:1.55rem; line-height:1.2; color:var(--ink); text-wrap:balance; }
+  .rp-meta{ margin:0.38rem 0 0; font-size:0.86rem; line-height:1.4; color:var(--ink-soft); text-wrap:balance; }
+  .rp-puces{ display:flex; flex-wrap:wrap; justify-content:center; gap:0.42rem; margin-top:0.8rem; }
+  .rp-puce{ padding:0.36rem 0.78rem; border-radius:var(--r-full); background:#fff; box-shadow:var(--relief); font-size:0.78rem; font-weight:600; line-height:1.2; color:var(--ink); white-space:nowrap; }
+  .rp-carte{ background:#fff; border-radius:var(--r-l); box-shadow:var(--relief); }
+  .rp-podium{ display:flex; align-items:flex-end; justify-content:center; gap:0.55rem; padding:0.95rem 0.9rem 0; overflow:hidden; }
+  .rp-podium .podium-col{ max-width:31%; }
+  .rp-podium.seul .podium-col{ max-width:44%; }
+  .rp-podium .rp-pod-av{ display:inline-flex; margin-bottom:0.45rem; }
+  .rp-h{ margin:0.55rem 0.2rem -0.15rem; font-size:0.72rem; font-weight:700; letter-spacing:0.08em; text-transform:uppercase; color:var(--ink-soft); }
+  .rp-rangs .rp-rang.moi{ background:rgba(236,60,26,0.055); }
+  .rp-rangs .rp-qui{ min-width:0; }
+  .rp-rangs .rp-qui b{ display:flex; align-items:center; gap:0.4rem; min-width:0; }
+  .rp-toi{ flex-shrink:0; padding:0.08rem 0.45rem; border-radius:var(--r-full); background:var(--primary); color:#fff; font-size:0.66rem; font-weight:700; line-height:1.4; letter-spacing:0.02em; }
+  .rp-jauge{ display:block; height:0.34rem; margin:0.36rem 0 0.28rem; border-radius:var(--r-full); background:var(--surface-alt); overflow:hidden; }
+  .rp-jauge > i{ display:block; height:100%; width:calc(var(--p, 0) * 100%); border-radius:inherit; background:linear-gradient(90deg, #F1502F, #F48A3C); }
+  .rp-jauge.g1 > i{ background:linear-gradient(90deg, #FFD968, #EFAD26); }
+  .rp-jauge.g2 > i{ background:linear-gradient(90deg, #DFE3E8, #A9B0BA); }
+  .rp-jauge.g3 > i{ background:linear-gradient(90deg, #F5B77E, #D08243); }
+  .rp-moi{ padding:1.05rem 0.9rem 0.95rem; }
+  .rp-moi .ring-wrap{ width:6.6rem; height:6.6rem; margin-bottom:0.55rem; }
+  .rp-moi .ring-fg{ transition:none; }
+  .rp-moi .solo-stat{ padding:0 0.3rem; }
+  .rp-moi .solo-stat .lbl{ white-space:nowrap; }
+  .rp-moi .solo-stat .val small{ font-size:0.78rem; font-weight:600; color:var(--ink-soft); margin-left:0.05rem; }
+  .rp-moi .rp-erreurs{ width:100%; margin:0.95rem 0 0; }
+  .rp-relancer{ margin-top:0.35rem; display:flex; align-items:center; justify-content:center; gap:0.5rem; }
+  .rp-relancer .ico{ width:1.25rem; height:1.25rem; display:inline-flex; }
+  .rp-relancer .ico svg{ width:100%; height:100%; }
   .bp-visages{ display:inline-flex; flex-shrink:0; }
   .bp-visages .avatar{ box-shadow:0 0 0 2px rgb(252,248,241); }
   .bp-visages .avatar + .avatar{ margin-left:-0.42rem; }
@@ -8337,6 +8421,12 @@ const TEXTES = {
     "Lancée par toi":"Started by you",
     "{b}/{t} bonnes réponses":"{b}/{t} correct answers",
     "N'a pas fini":"Didn't finish",
+    "Classement":"Ranking",
+    "Ta partie":"Your game",
+    "Réussite":"Accuracy",
+    "Place":"Place",
+    "Points":"Points",
+    "Relancer une partie":"Start a new game",
     "{n} questions":"{n} questions",
     "Dernière activité aujourd'hui":"Last active today",
     "Dernière activité hier":"Last active yesterday",
@@ -8398,6 +8488,7 @@ const TEXTES = {
     "Revenir à la partie du groupe":"Back to the group game",
     "L'invitation disparaîtra de la discussion.":"The invitation will disappear from the chat.",
     "Ton groupe la jouera sans toi.":"Your group will play it without you.",
+    "La partie du groupe est fermée.":"The group game is closed.",
     "Cette partie n'est plus ouverte.":"This game is no longer open.",
     "Lancer une partie":"Start a game",
     "Écris un message…":"Write a message…",
@@ -9330,6 +9421,12 @@ const TEXTES = {
     "Lancée par toi":"Iniciada por ti",
     "{b}/{t} bonnes réponses":"{b}/{t} respuestas correctas",
     "N'a pas fini":"No terminó",
+    "Classement":"Clasificación",
+    "Ta partie":"Tu partida",
+    "Réussite":"Aciertos",
+    "Place":"Puesto",
+    "Points":"Puntos",
+    "Relancer une partie":"Lanzar otra partida",
     "{n} questions":"{n} preguntas",
     "Dernière activité aujourd'hui":"Última actividad hoy",
     "Dernière activité hier":"Última actividad ayer",
@@ -9391,6 +9488,7 @@ const TEXTES = {
     "Revenir à la partie du groupe":"Volver a la partida del grupo",
     "L'invitation disparaîtra de la discussion.":"La invitación desaparecerá del chat.",
     "Ton groupe la jouera sans toi.":"Tu grupo la jugará sin ti.",
+    "La partie du groupe est fermée.":"La partida del grupo está cerrada.",
     "Cette partie n'est plus ouverte.":"Esta partida ya no está abierta.",
     "Lancer une partie":"Iniciar una partida",
     "Écris un message…":"Escribe un mensaje…",
@@ -12176,7 +12274,7 @@ const SUPABASE_ANON_KEY = "sb_publishable_FDJ_R0foC7uIeHmxVrj6rA_2NeIgW2a";
    remontée d'un téléphone ne vaut rien si on ne sait pas QUELLE version
    tournait. Elle doit rester égale au CACHE de sw.js — c'est ce que vérifie
    banc-essai/version.js, qui refuse de laisser publier les deux en désaccord. */
-const VERSION_JEU = "v372";
+const VERSION_JEU = "v375";
 
 /* ===================== QUAND ÇA CASSE CHEZ UN JOUEUR =====================
    « Si quelque chose casse chez cinq d'entre eux sur un modèle de téléphone
@@ -12599,8 +12697,18 @@ function versEcranEnLigne(e){
 /* render() la consulte en premier : vrai si elle a tout fait. */
 function rendrePartieLogee(){
   if(!net || !net.fil) return false;
+  /* (v373) Un écran hors des messages que ni l'onglet ni le profil n'ont
+     annoncé : la partie du groupe est quittée ici (voir LA PARTIE DU GROUPE
+     RESTE DANS LES MESSAGES) — l'hôte qui avait des joueurs le lit. */
+  if(salonOuvert() && ECRANS_DES_MESSAGES.indexOf(state.screen) < 0 && !/^online/.test(state.screen) && state.screen !== "splash"){
+    const avecJoueurs = !!net.isHost && nbJoueurs() > 1;
+    quitterLaPartieDuGroupe();
+    if(avecJoueurs){ try{ showMiniToast(T("La partie du groupe est fermée.")); }catch(e){} }
+    return false;
+  }
   /* (v369) LE SALON NE CHANGE PLUS D'ÉCRAN, NULLE PART. Logé, il ne tenait
-     qu'à SA discussion, et y ramenait. On reste maintenant là où l'on est —
+     qu'à SA discussion, et y ramenait. (v373 : dans les messages seulement —
+     voir LA PARTIE DU GROUPE RESTE DANS LES MESSAGES.) On reste maintenant là où l'on est —
      cette discussion, une autre, l'accueil, le Parcours… — et ce qui le
      montre se met à jour : sa carte dans la discussion du groupe, sa barre
      partout ailleurs (voir LA PARTIE DU GROUPE SUIT LE JOUEUR). */
@@ -12757,7 +12865,60 @@ function majPanneauPartie(el, pose){
    dessous. C'est une capsule de verre, comme la barre du bas, avec ce qui
    se joue : la manette, « Commencer ». Elle s'efface sous une page, et
    quand le clavier monte. */
-const ECRANS_BARRE_PARTIE = ["mode", "groupes", "jeux", "chemin", "parcours", "revoir", "profile", "moderation", "setup"];
+/* ===== (v373) LA PARTIE DU GROUPE RESTE DANS LES MESSAGES =====
+   « Pour ce qui est de la partie de groupe qui nous suit dans les
+     différents modes, je ne sais pas si c'est bien. Je pense que peut-être
+     il serait mieux, lorsqu'on décide de lancer une partie, de rester
+     uniquement dans les messages, pour éviter que le truc de partie nous
+     suive dans les autres modes et que ça se superpose sur différents modes
+     de jeu et autres. »
+   La v369 la laissait suivre le joueur partout : sa barre se posait sur
+   l'accueil, le Parcours, les jeux, le profil, par-dessus ce qu'on y
+   faisait. Elle se tient maintenant DANS LES MESSAGES : la liste des
+   groupes (sa barre, au-dessus de celle du bas), les discussions (sa carte
+   dans celle du groupe, sa barre sous l'en-tête dans les autres), la
+   modération. On y circule librement, elle attend.
+   EN SORTIR, C'EST LA QUITTER. L'accueil, le Parcours, les jeux, son
+   profil :
+     — l'hôte que des joueurs ont rejoint le confirme d'abord (« Fermer la
+       partie ? » — « Rester », ou « Fermer » : ses joueurs en sortent, et
+       l'on va là où l'on allait) ;
+     — l'hôte seul, ou un invité, sort sans question, comme on quittait la
+       discussion en v365 : l'invitation disparaît, ou le groupe joue sans
+       lui.
+   L'onglet et le profil posent la question (sortirDesMessages) ; tout autre
+   chemin hors des messages quitte la partie au rendu (rendrePartieLogee).
+   Lancer une autre partie depuis les messages reste demandé comme avant
+   (avantAutrePartie). */
+const ECRANS_DES_MESSAGES = ["groupes", "groupe", "moderation"];
+const ECRANS_BARRE_PARTIE = ["groupes", "moderation"];
+function salonOuvert(){ return partieDansLeFil() && ecranEnLigne() === "online-room"; }
+/* Vrai : rien à quitter, on y va. Faux : la partie est quittée et « suite »
+   est partie d'ici — ou la question est posée, et « suite » partira si
+   l'hôte ferme. */
+function sortirDesMessages(suite){
+  if(!salonOuvert()) return true;
+  if(net.isHost && nbJoueurs() > 1){
+    showModal({
+      title:T("Fermer la partie\u00a0?"), message:T("Les joueurs qui t'ont rejoint en sortiront."),
+      okLabel:T("Fermer"), cancelLabel:T("Rester"), danger:true,
+      onOk:()=>{ quitterPuisAller(suite); }
+    });
+    return false;
+  }
+  quitterPuisAller(suite);
+  return false;
+}
+/* La partie quittée, sa barre n'est pas rangée sur place : elle attend le
+   passage qui suit, et part avec la liste (voir ELLE ARRIVE ET PART AVEC SA
+   PAGE). Si rien ne passe, elle se range ensuite. */
+let barrePartieRetenue = false;
+function quitterPuisAller(suite){
+  barrePartieRetenue = true;
+  try{ quitterLaPartieDuGroupe(); try{ suite(); }catch(e){} }
+  finally{ barrePartieRetenue = false; }
+  majBarrePartie();
+}
 function barrePartieVue(){
   return partieDansLeFil() && ecranEnLigne() === "online-room" && ECRANS_BARRE_PARTIE.indexOf(state.screen) >= 0;
 }
@@ -12780,8 +12941,38 @@ function majBarrePartie(){
   const cur = document.querySelector("#app > .screen:not(.screen-exit)");
   if(cur) cur.classList.toggle("sous-partie", vue);
   let b = document.getElementById("barrePartie");
+  /* ===== (v373) ELLE ARRIVE ET PART AVEC SA PAGE =====
+     Filmée de la discussion à la liste des groupes : l'écran arrivait de
+     côté, mais la barre MONTAIT du bas en s'allumant (de 0 à 100 % en
+     0,2 s), sur place — un morceau de la page qui n'arrivait pas avec elle.
+     Et en ouvrant une discussion, elle descendait en s'éteignant pendant
+     que les groupes partaient de côté. Elle fait maintenant ce que fait la
+     barre du bas (voir LA BARRE DU BAS SUIT LE PASSAGE) : elle arrive avec
+     l'écran qui la porte, entière et déjà à sa hauteur, et part avec celui
+     qu'on quitte ; rangée seulement une fois le passage fini. */
+  const pp = passage && passage.cote ? passage : null;
   if(!vue){
-    if(b && !b.classList.contains("cachee")){ b.classList.add("cachee"); b.setAttribute("aria-hidden", "true"); }
+    if(b && !b.classList.contains("cachee")){
+      if(pp && pp.barrePartie === "part") return;          // elle part déjà avec sa page
+      if(!pp && barrePartieRetenue) return;                // elle attend le passage qui vient
+      b.setAttribute("aria-hidden", "true");
+      if(pp && !pp.barrePartie){
+        pp.barrePartie = "part";
+        const a = glisserAvecLePassage(b, pp.sortantDe, pp.sortantA, pp);
+        pp.barrePartieFin = ()=>{
+          b.classList.add("sans-transition", "cachee");
+          if(a){ try{ a.cancel(); }catch(e){} }
+          void b.offsetWidth; b.classList.remove("sans-transition");
+        };
+        return;
+      }
+      /* La partie s'arrête pendant qu'elle arrive avec sa page : son
+         arrivée s'arrête là, et elle se range. */
+      if(pp && pp.barrePartie === "arrive" && typeof pp.barrePartieFin === "function"){
+        const f = pp.barrePartieFin; pp.barrePartieFin = null; try{ f(); }catch(e){}
+      }
+      b.classList.add("cachee");
+    }
     return;
   }
   let neuve = false;
@@ -12804,7 +12995,17 @@ function majBarrePartie(){
   const bb = document.getElementById("barreBas");
   b._leve = sur && bb ? bb.offsetHeight + 0.5 * (parseFloat(getComputedStyle(document.documentElement).fontSize) || 16) : 0;
   b.classList.toggle("sur-barre", sur);
-  if(b.classList.contains("cachee")){ void b.offsetWidth; b.classList.remove("cachee"); }
+  if(b.classList.contains("cachee")){
+    if(pp && !pp.barrePartie){
+      /* (v373) Elle arrive avec l'écran qui la porte : posée d'abord à sa
+         place, sans transition, c'est le glissement qui la fait venir. */
+      pp.barrePartie = "arrive";
+      b.classList.add("sans-transition"); b.classList.remove("cachee");
+      void b.offsetWidth; b.classList.remove("sans-transition");
+      const a = glisserAvecLePassage(b, pp.entrantDe, 0, pp);
+      pp.barrePartieFin = ()=>{ if(a){ try{ a.cancel(); }catch(e){} } };
+    } else { void b.offsetWidth; b.classList.remove("cachee"); }
+  }
   if(neuve){ try{ glassRelayout(); queueGlassSync(); }catch(e){} }
 }
 /* La même barre, dans le fil d'une autre discussion. */
@@ -12829,8 +13030,8 @@ function ouvrirPartieDuGroupe(){
   ouvrirGroupe(net.fil);
 }
 /* ===== (v369) UNE AUTRE PARTIE, PENDANT QUE CELLE DU GROUPE ATTEND =====
-   La partie du groupe suit le joueur partout ; on ne joue pourtant qu'à une
-   chose à la fois. Lancer autre chose — une partie, une révision, une leçon,
+   La partie du groupe suit le joueur (v373 : dans les messages) ; on ne
+   joue pourtant qu'à une chose à la fois. Lancer autre chose — une partie, une révision, une leçon,
    une quête, un jeu, l'écran En ligne, la partie d'un autre groupe — la
    quitterait (et l'hôte la fermerait pour tous) : c'est demandé d'abord.
    Vrai : rien n'attend, on y va. Faux : la question est posée ; « suite »
@@ -13924,6 +14125,18 @@ function closeModal(){
   if(!v) return;
   v.id = "";
   v.classList.add("closing");
+  /* (v373) Fermée par ce qui vient de changer d'écran — son bouton a
+     dessiné l'écran suivant juste avant de la fermer, et le glissement n'a
+     pas encore commencé : elle part avec sa page (voir LA FENÊTRE PART AVEC
+     SA PAGE). C'est le mouvement qui le dit, pas l'horloge : sur un
+     téléphone lent, dessiner l'écran suivant prend plus d'un dixième de
+     seconde (mesuré au processeur ralenti six fois : 0,14 s). */
+  if(passage && passage.cote){
+    const a0 = passage.anims && passage.anims[0];
+    let fait = 0;
+    try{ fait = a0 && a0.currentTime !== null ? a0.currentTime : 0; }catch(e){}
+    if(fait < 60) fenetresAvecLaPage(passage);
+  }
   setTimeout(()=>{ if(v.parentNode) v.remove(); }, msFerme() + 20);
 }
 /* ===== UNE FENÊTRE QUI NE FAIT QUE FERMER N'A QU'UN BOUTON =====
@@ -13951,7 +14164,7 @@ function showModal(opts){
   veil.id = "modalVeil";
   veil.innerHTML = `
     <div class="modal-card${opts.cardClass?" "+opts.cardClass:""}">
-      <div class="modal-title">${escapeHtml(opts.title||"")}</div>
+      ${opts.iconHtml || ""}<div class="modal-title">${escapeHtml(opts.title||"")}</div>
       ${opts.message?`<div class="modal-msg">${escapeHtml(opts.message)}</div>`:""}
       ${opts.bodyHtml||""}
       ${opts.input?`<input class="text-input modal-input" id="modalInput" placeholder="${escapeHtml(opts.placeholder||"")}" maxlength="30" autocomplete="off">`:""}
@@ -15219,10 +15432,30 @@ function jeterMusique(bus, echo){
   try { if(echo) echo.disconnect(); } catch(e){}
   if(bus && musicBusNode === bus){ musicBusNode = null; musicDelayIn = null; musicFb = null; qVoies = new Map(); oublierRendu(); }
 }
-function audioHidden(){
+/* ===== (v375) PARTIE POUR DE BON, LE SON S'ARRÊTE TOUT DE SUITE =====
+   « Lorsque je suis sur le jeu et que je change la page pour aller dans une
+     autre appli, ça fait un bruit très robotique, comme si le son se fermait
+     d'un coup et qu'il y avait un court-jus. » (Sur iPhone.)
+   La v340 coupait en deux temps : la sortie baissée en 25 ms, puis, 60 ms
+   plus tard, sur une MINUTERIE, la musique débranchée et le contexte
+   arrêté. Quand la fenêtre perd seulement le premier plan (« blur »), la
+   page vit encore et la minuterie tourne. Mais quand elle passe VRAIMENT en
+   arrière-plan (visibilitychange, pagehide, freeze), un iPhone peut geler
+   la page avant ces 60 ms : la minuterie ne tourne jamais, le contexte
+   reste « en marche » dans une page gelée, et le téléphone rejoue en boucle
+   le dernier paquet de son qu'on lui avait donné — le court-jus.
+   Partie pour de bon (« urgent »), la page arrête donc tout DANS
+   l'événement même : la sortie part vers le silence, on attend sur place
+   que ce fondu soit joué (l'horloge du son, pas une minuterie), puis la
+   musique est débranchée et le contexte arrêté (suspend). Le
+   premier plan seulement perdu garde ses deux temps (un aller-retour
+   éclair ne doit pas arrêter le contexte sous les yeux du joueur). */
+function audioHidden(urgent){
   if(!actx) return;
+  urgent = urgent === true || !!(urgent && urgent.type && urgent.type !== "blur");
   clearTimeout(sonReprendreT); sonReprendreT = 0;
   const gen = ++sonCoupeGen, c = actx, now = c.currentTime;
+  const dejaMuet = !!masterGain && masterGain.gain.value <= 0.001;   // un départ déjà joué
   if(masterGain){
     masterGain.gain.cancelScheduledValues(now);
     masterGain.gain.setValueAtTime(Math.max(masterGain.gain.value, 0.0001), now);
@@ -15239,6 +15472,25 @@ function audioHidden(){
   audioWasHidden = true; masterCoupe = true;
   /* Le silence atteint : la musique s'en va, et le contexte s'arrête sur lui. */
   const bus = musicBusNode, echo = musicDelayIn;
+  if(urgent){
+    /* Le fondu doit être JOUÉ avant l'arrêt : arrêté en plein fondu, le
+       contexte s'arrêterait sur un paquet encore sonore (un clic). On attend
+       donc, sur place, que l'horloge du son — qui avance seule, sur son
+       propre fil — ait passé la fin du fondu : 30 ms d'ordinaire, un
+       paquet de plus là où elle avance par gros paquets (jusqu'à 50 ms sur
+       certains appareils), 80 ms au plus si elle cale. Pas de minuterie :
+       une page gelée n'en verrait jamais le bout. La sortie déjà muette
+       (pagehide juste après visibilitychange), il n'y a rien à attendre. */
+    if(c.state === "running" && !dejaMuet){
+      const fin = now + SON_FONDU_SORTIE + 0.005, t0 = performance.now();
+      while(c.currentTime < fin && performance.now() - t0 < 80){ /* l'horloge du son avance */ }
+    }
+    jeterMusique(bus, echo);
+    if(c === actx && c.state === "running"){
+      try{ const p = c.suspend(); if(p && p.catch) p.catch(()=>{}); }catch(e){}
+    }
+    return;
+  }
   setTimeout(()=>{
     if(gen !== sonCoupeGen) return;             // revenu entre-temps : la reprise décide
     jeterMusique(bus, echo);
@@ -16288,7 +16540,7 @@ function volPreview(){ if(settings.sfx){ chime(659.25, 0, 0.55, 0.018); } }
 
 document.addEventListener("visibilitychange", ()=>{
   if(document.visibilityState==="visible"){ sonFlou = false; relancerSon(); }
-  else { clearTimeout(relanceSonT); audioHidden(); }
+  else { clearTimeout(relanceSonT); audioHidden(true); }   // (v375) partie pour de bon
 });
 window.addEventListener("pageshow", ()=>{ sonFlou = false; relancerSon(); });
 /* pagehide : l'événement FIABLE quand l'app part (fermeture/arrière-plan iOS).
@@ -16303,6 +16555,33 @@ document.addEventListener("freeze", audioHidden);
    il fait le contraire. Seul le blur de la FENÊTRE compte : celui d'un champ
    de saisie n'arrive pas jusqu'ici (il ne remonte pas). */
 window.addEventListener("blur", (e)=>{ if(e.target !== window) return; sonFlou = true; clearTimeout(relanceSonT); audioHidden(); });
+/* ===== (v375) LE GESTE DU SYSTÈME, DÈS QU'IL S'ANNONCE =====
+   Sur iPhone, remonter vers l'accueil ou vers une autre app part du bas de
+   l'écran : le doigt s'y pose dans la page, puis le système le reprend — la
+   page reçoit « touchcancel ». C'est le tout premier signe du départ, bien
+   avant que l'app ne passe en arrière-plan : on baisse le son à cet
+   instant (sans arrêter le contexte : la page est encore là). Si l'app est
+   toujours au premier plan un peu plus tard (le geste n'allait nulle
+   part), le son revient en fondu, par le chemin ordinaire du retour. Un
+   toucher qui finit normalement (touchend) ne fait rien. */
+(function(){
+  if(!/iP(hone|od|ad)/.test(navigator.userAgent) && !(navigator.platform === "MacIntel" && navigator.maxTouchPoints > 1)) return;
+  const BORD_BAS = 30;
+  let duBas = false, retour = 0;
+  document.addEventListener("touchstart", (e)=>{
+    const t = e.touches && e.touches[0];
+    duBas = !!t && e.touches.length === 1 && t.clientY >= (window.innerHeight || 0) - BORD_BAS;
+  }, { capture:true, passive:true });
+  document.addEventListener("touchend", ()=>{ duBas = false; }, { capture:true, passive:true });
+  document.addEventListener("touchcancel", ()=>{
+    if(!duBas) return;
+    duBas = false;
+    if(!actx || actx.state !== "running") return;
+    audioHidden();
+    clearTimeout(retour);
+    retour = setTimeout(()=>{ if(audioActive()) relancerSon(); }, 1200);
+  }, { capture:true, passive:true });
+})();
 /* focus/pointer : uniquement quand l'app est réellement au premier plan
    (wakeAudio se protège lui-même). */
 window.addEventListener("focus", (e)=>{ if(e.target !== window) return; sonFlou = false; relancerSon(); });
@@ -27603,6 +27882,8 @@ function majBarre(){
 }
 function allerOnglet(o){
   if(pubAvant(()=> allerOnglet(o))) return;  // (v349) « Autres jeux », la flèche, après un jeu fini
+  /* (v373) Quitter les messages, c'est quitter la partie du groupe. */
+  if(o !== "groupes" && ECRANS_DES_MESSAGES.indexOf(state.screen) >= 0 && !sortirDesMessages(()=> allerOnglet(o))) return;
   /* (v355) Le Parcours a son onglet : on y arrive sur la leçon à faire. */
   if(o === "parcours"){
     if(state.screen === "chemin"){ remonterGroupes(); return; }
@@ -27788,20 +28069,40 @@ function versionsDeLaLangue(v){
    ne démarrait pas. Ce qui précède le mot est donc LU (début, ou tout sauf
    une lettre) et rendu tel quel : même résultat, partout. */
 function motRe(m){ return new RegExp("(^|[^\\p{L}\\p{M}])(" + m.replace(/[.*+?^${}()|[\]\\]/g, "\\$&") + ")(?![\\p{L}\\p{M}])", "iu"); }
+/* ===== (v373) « TROUVE L'ERREUR » EST PRÊT TOUT DE SUITE =====
+   Toucher sa tuile, et rien pendant un quart de seconde : au premier
+   lancement, préparer les huit manches coûtait 0,23 s sur un processeur de
+   téléphone moyen (mesuré au processeur ralenti quatre fois), quand les
+   autres jeux se préparent en moins d'une milliseconde. Pour chaque verset
+   essayé, chacune des cinquante paires de mots demandait TROIS expressions
+   neuves (le mot dans le verset ? le remplaçant dans une autre version ?
+   dans celle-ci ?) — des centaines d'expressions à fabriquer avant
+   d'afficher quoi que ce soit.
+   Les mots d'un verset sont maintenant relevés UNE fois — les suites de
+   lettres, en minuscules, exactement ce qu'« un mot entier » voulait dire
+   pour l'expression (motRe) — et chaque paire se vérifie d'un regard dans
+   ces listes. Mêmes paires possibles, verset par verset, dans les trois
+   langues (vérifié par banc-essai/erreur-prete.js) ; seule l'expression du
+   mot choisi reste, pour le trouver et le remplacer. */
+const LETTRES_RE = /[\p{L}\p{M}]+/gu;
+function motsDe(t){ return new Set(String(t || "").toLowerCase().match(LETTRES_RE) || []); }
+function pairesPossibles(echanges, t, tous){
+  const ici = motsDe(t), ailleurs = motsDe(tous);
+  return echanges.filter(([a, z]) => ici.has(a.toLowerCase()) && !ailleurs.has(z.toLowerCase()) && !ici.has(z.toLowerCase()));
+}
 function manchesErreur(n){
   const out = [], echanges = JEU_ECHANGES[LANGUE] || JEU_ECHANGES.fr;
   for(const v of melanger(HERO_VERSES)){
     if(out.length >= n) break;
     const t = texteVerset(v.r, v.t);
     if(!t || t.split(/\s+/).length < 7 || t.split(/\s+/).length > 40) continue;
-    const tous = versionsDeLaLangue(v).join(" ");
-    const possibles = echanges.filter(([a, z]) => motRe(a).test(t) && !motRe(z).test(tous) && !motRe(z).test(t));
+    const possibles = pairesPossibles(echanges, t, versionsDeLaLangue(v).join(" "));
     if(!possibles.length) continue;
     const [a, z] = possibles[Math.floor(Math.random() * possibles.length)];
-    const mots = t.split(/\s+/).filter(Boolean);
-    const cibles = mots.map((m, i) => motRe(a).test(m) ? i : -1).filter(i => i >= 0);
+    const mots = t.split(/\s+/).filter(Boolean), ra = motRe(a);
+    const cibles = mots.map((m, i) => ra.test(m) ? i : -1).filter(i => i >= 0);
     const k = cibles[Math.floor(Math.random() * cibles.length)];
-    mots[k] = mots[k].replace(motRe(a), (x, avant, mot) => avant + (mot[0] === mot[0].toUpperCase() && mot[0] !== mot[0].toLowerCase() ? z[0].toUpperCase() + z.slice(1) : z));
+    mots[k] = mots[k].replace(ra, (x, avant, mot) => avant + (mot[0] === mot[0].toUpperCase() && mot[0] !== mot[0].toLowerCase() ? z[0].toUpperCase() + z.slice(1) : z));
     out.push({ r:v.r, mots, faux:k, juste:t.split(/\s+/).filter(Boolean)[k], choix:null });
   }
   return out;
@@ -31460,8 +31761,38 @@ function envoyerResultatPartie(){
   net.resultats = net.resultats || {};
   if(net.resultats[id]) return;
   net.resultats[id] = true;
+  memoriserMaPartie(id);   // (v374) le détail, pour le récap
   appelGroupe("resultat_partie", { p_message:id, p_points:net.score | 0, p_bonnes:net.correct | 0, p_total:net.deck.length,
     p_theme:net.themeKey || "tout", p_livre:net.livreJeu || null });
+}
+/* ===== (v374) CE QUE J'AI JOUÉ, GARDÉ SUR CE TÉLÉPHONE =====
+   Le serveur ne garde de chacun que ses points et ses bonnes réponses. Le
+   récap montre aussi, à qui a joué, sa meilleure série et ses erreurs à
+   revoir — la même page qu'à la fin d'une partie. Ce détail reste sur le
+   téléphone qui a joué : une clé à part (jamais une des clés d'avant), dix
+   parties au plus, les plus récentes. */
+const CLE_PARTIES_GROUPE = "bt_parties_groupe";
+function memoriserMaPartie(id){
+  try{
+    let v = {};
+    try{ v = JSON.parse(localStorage.getItem(CLE_PARTIES_GROUPE) || "{}") || {}; }catch(e){ v = {}; }
+    if(typeof v !== "object" || Array.isArray(v)) v = {};
+    v[id] = { quand:Date.now(), serie:net.bestStreak | 0, bonnes:net.correct | 0, total:(net.deck || []).length,
+      rates:(net.missed || []).slice(0, 40).map(x => ({ q:x.q, options:x.options, correct:x.correct, chosen:x.chosen, fact:x.fact })) };
+    Object.keys(v).sort((a, b)=> ((v[b] && v[b].quand) || 0) - ((v[a] && v[a].quand) || 0)).slice(10).forEach(k => { delete v[k]; });
+    localStorage.setItem(CLE_PARTIES_GROUPE, JSON.stringify(v));
+  }catch(e){}
+}
+function maPartieGardee(id){
+  try{ const v = JSON.parse(localStorage.getItem(CLE_PARTIES_GROUPE) || "{}"); return (v && typeof v === "object" && v[id]) || null; }catch(e){ return null; }
+}
+function revoirErreursPartie(id){
+  const g = maPartieGardee(id);
+  if(g && Array.isArray(g.rates) && g.rates.length) openMissedReview(g.rates);
+}
+function relancerDepuisRecap(){
+  fermerFeuilleGroupe("grpRecapVeil");
+  lancerPartieGroupe();
 }
 function rangsPartie(m){
   const d = (m && m.donnees) || {};
@@ -31488,6 +31819,29 @@ function vainqueurDit(r, avecPoints){
             : (tete[0].moi ? T("Tu l'emportes") : Tf("{nom} l'emporte", { nom:tete[0].nom }));
   return avecPoints ? dit + " · " + tete[0].pts + " pts" : dit;
 }
+/* ===== (v374) LE RÉCAP D'UNE PARTIE, EN GRAND =====
+   « Cette page, je la trouve un peu fade, on peut faire mieux. » (La capture
+   de Taylor : une coupe, une phrase, deux lignes, une carte de deux
+   lignes — et les deux tiers de l'écran vides.) Le récap est le souvenir
+   d'une fin de partie : il en prend la voix.
+     — EN TÊTE : le médaillon et sa coupe, dans leur lueur ; le groupe ; qui
+       l'emporte ; qui l'a lancée, et quand ; ce qu'on a joué, en pastilles
+       (les questions, la partie de la Bible, les joueurs) ;
+     — LE PODIUM, comme à la fin du Mode Groupe : les trois premiers sur leurs
+       marches or, argent, bronze, la couronne au premier — même score, même
+       marche. Seul à avoir fini : sa marche, seule ;
+     — LE CLASSEMENT : chacun avec la jauge de ses bonnes réponses, de la
+       couleur de sa marche, et ses points ; ceux qui n'ont pas fini, à
+       part ; ma ligne éclairée, « Toi » à côté de mon nom ;
+     — TA PARTIE, à qui l'a jouée jusqu'au bout : l'anneau de réussite, sa
+       place, ses points, sa meilleure série — et « Revoir mes
+       erreurs », la page de la fin d'une partie (la bonne réponse, son
+       explication), quand ce téléphone a gardé le détail (voir CE QUE J'AI
+       JOUÉ) ;
+     — « RELANCER UNE PARTIE », dans la discussion du groupe, d'un toucher.
+   RIEN N'ARRIVE APRÈS LA PAGE (v361) : l'anneau est posé plein, les marches
+   à leur hauteur, dès la première image. */
+const ECLAT_RECAP = `<svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 1.5c.5 4.6 2.9 8 10.5 10.5-7.6 2.5-10 5.9-10.5 10.5-.5-4.6-2.9-8-10.5-10.5C9.1 9.5 11.5 6.1 12 1.5z"/></svg>`;
 function ouvrirRecapPartie(id){
   const m = trouverMessage(id);
   if(!m || m.genre !== "partie") return;
@@ -31498,25 +31852,79 @@ function ouvrirRecapPartie(id){
   const quand = m.cree_le ? [jourDuFil(m.cree_le), heureCourte(m.cree_le)].filter(Boolean).join(" · ") : "";
   const quoi = r.livre ? nomLivre(r.livre)
              : r.theme === "at" ? T("Ancien Testament") : r.theme === "nt" ? T("Nouveau Testament") : r.theme === "tout" ? T("Toute la Bible") : "";
-  const jeu = [r.total ? Tf("{n} questions", { n:r.total }) : "", quoi].filter(Boolean).join(" · ");
-  const visage = (j)=> avatarHtml(j.nom, j.moi ? (profile.color || "#4C86E8") : ((grp.profils[j.id] || {}).couleur || "#8A8F98"), 2.2, j.moi ? true : "u:" + j.id);
-  const fini = (j)=> `<div class="grp-ligne rp-rang${j.moi ? " moi" : ""}">
+  const g = (grp.liste || []).find(x => x.id === m.groupe) || null;
+  const nb = r.finis.length + r.pasFini.length;
+  const puces = [r.total ? Tf("{n} questions", { n:r.total }) : "", quoi, nb > 1 ? Tf("{n} joueurs", { n:nb }) : ""].filter(Boolean)
+    .map(x => `<span class="rp-puce">${escapeHtml(x)}</span>`).join("");
+  const couleur = (j)=> j.moi ? (profile.color || "#4C86E8") : ((grp.profils[j.id] || {}).couleur || "#8A8F98");
+  const visage = (j, t)=> avatarHtml(j.nom, couleur(j), t || 2.2, j.moi ? true : "u:" + j.id);
+  /* Le podium : le deuxième, le premier, le troisième. */
+  const tete = r.finis.slice(0, 3);
+  const ordre = tete.length >= 3 ? [1, 0, 2] : tete.length === 2 ? [1, 0] : [0];
+  const marche = (j)=> `<div class="podium-col">
+      <span class="podium-crown"${j.rg === 1 ? "" : ' style="visibility:hidden"'}>${j.rg === 1 ? ICONS.crown : ""}</span>
+      <span class="rp-pod-av">${visage(j, 2.7)}</span>
+      <span class="podium-name">${escapeHtml(j.nom)}</span>
+      <span class="podium-score">${j.pts} pts</span>
+      <div class="podium-socle"><div class="podium-bar p${Math.min(j.rg, 3)}">${j.rg}</div></div>
+    </div>`;
+  const fini = (j)=> {
+    const p = r.total ? Math.max(0, Math.min(1, j.bonnes / r.total)) : 0;
+    return `<div class="grp-ligne rp-rang${j.moi ? " moi" : ""}">
       <span class="rank-badge${j.rg <= 3 ? " g" + j.rg : ""}">${j.rg}</span>${visage(j)}
-      <span class="grp-txt"><b>${escapeHtml(j.nom)}</b>${r.total ? `<small>${escapeHtml(Tf("{b}/{t} bonnes réponses", { b:j.bonnes, t:r.total }))}</small>` : ""}</span>
+      <span class="grp-txt rp-qui"><b><span class="rp-nom">${escapeHtml(j.nom)}</span>${j.moi ? `<span class="rp-toi">${T("Toi")}</span>` : ""}</b>${r.total ? `<span class="rp-jauge${j.rg <= 3 ? " g" + j.rg : ""}" style="--p:${p.toFixed(3)}"><i></i></span><small>${escapeHtml(Tf("{b}/{t} bonnes réponses", { b:j.bonnes, t:r.total }))}</small>` : ""}</span>
       <span class="rp-pts">${j.pts} pts</span>
     </div>`;
+  };
   const absent = (j)=> `<div class="grp-ligne rp-rang pas-fini">
       <span class="rank-badge">–</span>${visage(j)}
-      <span class="grp-txt"><b>${escapeHtml(j.nom)}</b><small>${T("N'a pas fini")}</small></span>
+      <span class="grp-txt rp-qui"><b><span class="rp-nom">${escapeHtml(j.nom)}</span>${j.moi ? `<span class="rp-toi">${T("Toi")}</span>` : ""}</b><small>${T("N'a pas fini")}</small></span>
     </div>`;
+  /* Ta partie : à qui l'a jouée jusqu'au bout. */
+  const mien = r.finis.find(j => j.moi);
+  let ta = "";
+  if(mien && r.total){
+    const garde = maPartieGardee(m.id);
+    const rates = garde && Array.isArray(garde.rates) ? garde.rates : [];
+    const pct = Math.round(100 * mien.bonnes / r.total);
+    const RA = 52, C = 2 * Math.PI * RA, off = C * (1 - pct / 100), aid = "rpAnneau" + String(m.id).replace(/[^\w-]/g, "");
+    ta = `<div class="rp-h">${T("Ta partie")}</div>
+    <div class="rp-carte rp-moi">
+      <div class="ring-wrap">
+        <svg viewBox="0 0 120 120">
+          <defs><linearGradient id="${aid}" x1="0%" y1="0%" x2="100%" y2="100%"><stop offset="0%" stop-color="#F1502F"/><stop offset="100%" stop-color="#EFAD26"/></linearGradient></defs>
+          <circle class="ring-bg" cx="60" cy="60" r="${RA}"></circle>
+          <circle class="ring-fg" style="stroke:url(#${aid})" cx="60" cy="60" r="${RA}" stroke-dasharray="${C.toFixed(1)}" stroke-dashoffset="${off.toFixed(1)}"></circle>
+        </svg>
+        <div class="ring-center"><span class="ring-score">${pct}%</span><span class="ring-label">${T("Réussite")}</span></div>
+      </div>
+      <div class="solo-stats">
+        <div class="solo-stat"><div class="val"><span class="ico">${ICONS.trophy}</span>${mien.rg}<small>/${nb}</small></div><div class="lbl">${T("Place")}</div></div>
+        <div class="solo-stat"><div class="val"><span class="ico">${ICONS.bolt}</span>${mien.pts}</div><div class="lbl">${T("Points")}</div></div>
+        ${garde && garde.serie > 0 ? `<div class="solo-stat"><div class="val"><span class="ico">${ICONS.flame}</span>${garde.serie | 0}</div><div class="lbl">${T("Meilleure série")}</div></div>` : ""}
+      </div>
+      ${rates.length ? `<button class="btn-review rp-erreurs" onclick="revoirErreursPartie('${escapeHtml(String(m.id))}')"><span class="ico">${ICONS.bookOpen}</span>${rates.length > 1 ? Tf("Revoir mes {n} erreurs", { n:rates.length }) : T("Revoir mon erreur")}</button>` : ""}
+    </div>`;
+  }
+  /* Relancer : dans la discussion du groupe, là où la manette est offerte. */
+  const peutRelancer = compteConnecte() && state.screen === "groupe" && grp.courant === m.groupe
+    && !!document.querySelector("#app > .screen:not(.screen-exit) .compo-jeu:not([hidden])");
   ouvrirFeuilleGroupe("grpRecapVeil", T("Récap de la partie"), ICONS.manette, `
-    <div class="grp-ap-tete rp-tete">
-      <span class="rp-coupe" aria-hidden="true">${idsPropres(TROPHY_GOLD)}</span>
-      <b class="grp-ap-nom">${escapeHtml(vainqueurDit(r, false))}</b>
-      <p class="grp-ap-meta">${escapeHtml([lanceur, quand].filter(Boolean).join(" · "))}</p>
-      ${jeu ? `<p class="grp-ap-meta">${escapeHtml(jeu)}</p>` : ""}
+    <div class="rp-haut">
+      <span class="rp-medaille" aria-hidden="true">
+        <span class="rp-coupe">${idsPropres(TROPHY_GOLD)}</span>
+        <span class="rp-eclat e1">${ECLAT_RECAP}</span><span class="rp-eclat e2">${ECLAT_RECAP}</span><span class="rp-eclat e3">${ECLAT_RECAP}</span>
+      </span>
+      ${g && g.nom ? `<span class="rp-sur">${escapeHtml(g.nom)}</span>` : ""}
+      <b class="rp-titre">${escapeHtml(vainqueurDit(r, false))}</b>
+      <p class="rp-meta">${escapeHtml([lanceur, quand].filter(Boolean).join(" · "))}</p>
+      ${puces ? `<div class="rp-puces">${puces}</div>` : ""}
     </div>
-    <div class="grp-defile rp-rangs">${r.finis.map(fini).join("")}${r.pasFini.map(absent).join("")}</div>`);
+    <div class="rp-carte rp-podium${tete.length === 1 ? " seul" : ""}">${ordre.map(i => marche(tete[i])).join("")}</div>
+    <div class="rp-h">${T("Classement")}</div>
+    <div class="grp-defile rp-rangs">${r.finis.map(fini).join("")}${r.pasFini.map(absent).join("")}</div>
+    ${ta}
+    ${peutRelancer ? `<button class="btn-primary rp-relancer" onclick="relancerDepuisRecap()"><span class="ico">${ICONS.manette}</span>${T("Relancer une partie")}</button>` : ""}`);
 }
 function avecQui(venus){
   const moi = monId();
@@ -32350,6 +32758,7 @@ function allerAuMessage(id){
       if(!c.isConnected && !(id && trouverMessage(id))) return;
       tenu = true;
       try{ if(navigator.vibrate) navigator.vibrate(10); }catch(err){}
+      try{ const sel = window.getSelection && window.getSelection(); if(sel && sel.rangeCount) sel.removeAllRanges(); }catch(err){}   // (v375)
       if(id) actionsMessage(id); else c.click();
     }, DELAI);
   }, { capture:true, passive:true });
@@ -32358,6 +32767,10 @@ function allerAuMessage(id){
   }, { capture:true, passive:true });
   document.addEventListener("pointerup", ()=>{ if(tenu){ tenu = false; leve = performance.now(); } lacher(); }, { capture:true, passive:true });
   document.addEventListener("pointercancel", ()=>{ tenu = false; lacher(); }, { capture:true, passive:true });
+  /* (v375) Un doigt qui tient une bulle n'y sélectionne rien : le menu qui
+     s'ouvre est la seule réponse à l'appui long (voir LA CARTE D'UNE PARTIE
+     NE SE SÉLECTIONNE PAS). */
+  document.addEventListener("selectstart", (e)=>{ if(cible || tenu) e.preventDefault(); }, true);
   document.addEventListener("click", (e)=>{
     if(leve && e.isTrusted && performance.now() - leve < 450){ leve = 0; e.preventDefault(); e.stopPropagation(); }
   }, true);
@@ -33683,8 +34096,9 @@ function ouvrirDeroule(){
   const pas = [T("Lisez la question à voix haute."), T("Révélez la réponse."), T("Donnez les points au bon joueur, ou à la bonne équipe.")];
   showModal({
     title:T("Comment jouer"), cardClass:"modal-deroule", okLabel:T("Compris"), hideCancel:true,
+    iconHtml:`<span class="deroule-tete" aria-hidden="true">${ICONS.users}</span>`,   // (v375) une carte pleine
     bodyHtml:`<ol class="deroule-pas">${pas.map((p, i) => `<li><span class="dp-n">${i + 1}</span><span>${escapeHtml(p)}</span></li>`).join("")}</ol>
-      <p class="deroule-note">${escapeHtml(T("Avec le chrono, la réponse se révèle toute seule à la fin du temps. Une erreur ? Les boutons −/+ corrigent à tout moment."))}</p>`
+      <p class="deroule-note"><span class="ico">${ICONS.clock}</span><span>${escapeHtml(T("Avec le chrono, la réponse se révèle toute seule à la fin du temps. Une erreur ? Les boutons −/+ corrigent à tout moment."))}</span></p>`
   });
 }
 function ouvrirRegles(){
@@ -36096,7 +36510,10 @@ function choisirPhotoProfil(){
     </div>`);
 }
 let profileReturn = "mode";
-function openProfile(){ if(state.screen !== "profile"){ profileReturn = state.screen; } state.screen="profile"; render(); }
+function openProfile(){
+  if(state.screen !== "profile" && !sortirDesMessages(()=> openProfile())) return;   // (v373)
+  if(state.screen !== "profile"){ profileReturn = state.screen; } state.screen="profile"; render();
+}
 /* Le pseudo tapé n'est jamais perdu : on le relit avant toute mise à jour. */
 function syncProfileDraft(){
   const i = document.getElementById("profileName") || document.getElementById("nameInput");
@@ -36833,6 +37250,47 @@ function verreDuPassage(){
   const p = passage;
   if(!p || !p.cote) return;
   lancerGlissements(p);
+  fenetresAvecLaPage(p);
+}
+/* ===== (v373) LA FENÊTRE PART AVEC SA PAGE =====
+   « Pour l'animation de transition de page, sur certaines pages comme
+     Range les livres, lorsque je quitte ou que j'ouvre la page, ça
+     n'apparaît pas au bon moment. C'est pas comme si c'était déjà là. »
+   Filmé image par image : on quitte Range les livres, « Quitter la
+   partie ? », « Quitter ». La fenêtre et son voile s'effaçaient SUR PLACE,
+   sur leur horloge de fermeture (0,24 s, qui part lentement), pendant que
+   les deux écrans glissaient dessous : à 100 ms, le voile était encore à
+   93 %. L'écran des jeux arrivait donc assombri, « Quitter la partie ? »
+   en fantôme sur ses tuiles, et ne s'éclaircissait qu'ensuite : il ne
+   semblait pas déjà là, il apparaissait.
+   Une fenêtre appartient à la page qui l'a ouverte. Quand ce qu'on y
+   touche change d'écran, elle part AVEC cette page — du même mouvement, sur
+   la même horloge, collée à elle —, tout en s'effaçant comme avant. Rien
+   ne passe plus devant l'écran qui arrive : il est entier, et clair, dès
+   sa première image. Toutes les fenêtres du jeu en profitent (quitter une
+   partie, un duel, fermer la partie du groupe…) : c'est le voile qui se
+   ferme, quel que soit le bouton, que le passage suit — qu'il se ferme
+   juste après le départ de l'écran (son bouton dessine l'écran suivant,
+   puis la ferme : closeModal), ou juste avant (une suite lancée après
+   elle : ici). */
+function fenetresAvecLaPage(p){
+  if(!p || !p.cote || !p.sortant) return;
+  document.querySelectorAll(".modal-veil.closing").forEach(v => {
+    if(v._avecPage) return;
+    v._avecPage = true;
+    glisserAvecLePassage(v, p.sortantDe, p.sortantA, p);
+  });
+}
+/* Ce qui vit hors des écrans (une fenêtre, la barre de la partie) fait le
+   chemin d'un écran : le même ressort, la même horloge, le même départ. */
+function glisserAvecLePassage(el, de, a, p){
+  try{
+    const x = el.animate(imagesRessort(de, a, p.s), { duration:p.duree, easing:"linear", fill:"both" });
+    const a0 = p.anims[0];
+    if(p.departVif !== undefined && p.departVif !== null) x.startTime = p.departVif;
+    else if(a0 && a0.startTime !== null) x.startTime = a0.startTime;
+    return x;
+  }catch(e){ return null; }
 }
 /* ===== (v358) UN ÉCRAN ARRIVE DÉJÀ À SA PLACE DE LECTURE =====
    « Lorsque je suis dans l'accueil et que je vais dans Parcours, on dirait
@@ -36870,6 +37328,7 @@ function finirPassage(fini){
   if(p.entrant && p.entrant.classList) p.entrant.classList.remove("sous-retour");
   try{ document.querySelectorAll("#app > .screen.sous-retour").forEach(e => e.classList.remove("sous-retour")); }catch(e){}
   if(typeof p.barreFin === "function"){ try{ p.barreFin(fini); }catch(e){} }
+  if(typeof p.barrePartieFin === "function"){ try{ p.barrePartieFin(fini); }catch(e){} }   // (v373)
   if(fini){ try{ majBarre(); }catch(e){} }
 }
 /* LA BARRE DU BAS SUIT LE PASSAGE. Elle vit hors des écrans, posée
@@ -37680,7 +38139,7 @@ const GLASS_SEL = ".app-header,.card,.mode-card,.question-card,.solo-summary,.so
    reflet, ni calage par image — la page est pleine, et ce qu'elle porte aussi. */
 /* (v335) Ni les pastilles du haut d'une partie (voir LES PASTILLES DU HAUT DE
    LA PARTIE SONT PLEINES) : elles se peignent elles-mêmes. */
-const GLASS_VIVANT = ":is(" + GLASS_SEL + "):not(.sheet-veil *):not(.play-meta > *)";
+const GLASS_VIVANT = ":is(" + GLASS_SEL + "):not(.sheet-veil *):not(.play-meta > *):not(.modal-deroule)";   // (v375) « Comment jouer » est pleine
 const GLASS_SKIP = ".timer-chip.low,.btn-primary:disabled,.btn-next:disabled";
 /* LES SURFACES PLEINES (voir « UNE SURFACE PLEINE N'A PAS DE DÉCOR À
    MONTRER » dans la feuille de style). Ce sont les familles qui portent déjà
