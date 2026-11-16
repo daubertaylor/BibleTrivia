@@ -12,7 +12,13 @@
         se lisent) ;
      B. correction apprise, marge qui ne grandit pas ;
      C. rien d'appris, marge qui grandit ;
-     D. iPhone : le clavier annoncé d'un coup.
+     D. iPhone : le clavier annoncé d'un coup ;
+     E. (v371) Samsung, rien d'appris, marge qui grandit — et une image en
+        retard au milieu (90 ms de calcul) : la marge du bas glissait sur sa
+        propre horloge, la hauteur sur celle du clavier ; l'image en retard
+        les désaccordait, et la barre redescendait (jusqu'à 4,7 px, au hasard
+        des images, déjà sur la v365). Le retard rend le défaut plus probable,
+        sans le garantir : c'est la répétition des passages qui le trouve.
    Exigé dans chaque cas :
      1. la barre finit juste au-dessus du vrai haut du clavier (boutons
         compris) — rien de compté deux fois ;
@@ -32,6 +38,7 @@ const CAS = [
   ['B. Samsung, correction apprise, marge immobile', SAMSUNG, true, false, 8],
   ['C. Samsung, rien d\'appris, marge qui grandit', SAMSUNG, false, true, 8],
   ['D. iPhone, clavier annoncé d\'un coup', IOS, false, false, 1],
+  ['E. Samsung, une image en retard au milieu de l\'ouverture', SAMSUNG, false, true, 8, true],
 ];
 let ko = 0;
 const dire = (bon, txt) => { if (!bon) ko++; console.log('  ' + (bon ? 'OK  ' : 'KO  ') + txt); };
@@ -56,7 +63,7 @@ const FAUX = () => {
 
 (async () => {
   const nav = await chromium.launch({ executablePath: '/opt/pw-browsers/chromium' });
-  for (const [nom, ua, appris, margeGrandit, pas] of CAS) {
+  for (const [nom, ua, appris, margeGrandit, pas, retard] of CAS) {
     const ctx = await nav.newContext({ viewport: { width: W, height: H }, deviceScaleFactor: 3, isMobile: true, hasTouch: true, userAgent: ua, serviceWorkers: 'block' });
     const p = await ctx.newPage();
     const errs = []; p.on('pageerror', e => errs.push(e.message));
@@ -97,7 +104,11 @@ const FAUX = () => {
     }), 1700);
     const reduit = KB + (/Android/.test(ua) ? 0 : 0);
     const debut = Date.now();
-    for (let i = 1; i <= pas; i++) { await p.evaluate((h) => window.__clavier(h), Math.round(reduit * i / pas)); if (i < pas) await p.waitForTimeout(40); }
+    for (let i = 1; i <= pas; i++) {
+      await p.evaluate((h) => window.__clavier(h), Math.round(reduit * i / pas));
+      if (retard && i === 4) await p.evaluate(() => { const t = performance.now(); while (performance.now() - t < 90) {} });
+      if (i < pas) await p.waitForTimeout(40);
+    }
     const dernierPas = Date.now() - debut;
     const l = await film;
     const vraiHaut = H - KB - (/Android/.test(ua) ? BOUTONS : 0);

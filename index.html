@@ -782,7 +782,10 @@
      visible, image par image (voir LA HAUTEUR VISIBLE SUIT LE CLAVIER SANS
      À-COUPS) : aucune transition ne doit la reprendre derrière lui. Dès que
      le clavier se range (plus de « kb »), les transitions reviennent. */
-  html.kb.kb-suivi.ecran-discussion #app{ transition:padding-bottom var(--tr-clavier); }
+  html.kb.kb-suivi.ecran-discussion #app{ transition:none; }
+  /* (v371) La marge du bas non plus : elle passe à 0,45rem d'un coup, et la
+     hauteur de départ la compense (voir poserVvh) — une seule horloge pour la
+     barre d'écriture, celle du clavier. */
   html.kb.kb-suivi .sheet-veil, html.kb.kb-suivi .modal-veil{ transition:none; }
   /* !important (v317) : une hauteur ÉPINGLÉE en ligne (reparerHauteurApp)
      passait devant cette règle, et la barre d'écriture redescendait sous le
@@ -12173,7 +12176,7 @@ const SUPABASE_ANON_KEY = "sb_publishable_FDJ_R0foC7uIeHmxVrj6rA_2NeIgW2a";
    remontée d'un téléphone ne vaut rien si on ne sait pas QUELLE version
    tournait. Elle doit rester égale au CACHE de sw.js — c'est ce que vérifie
    banc-essai/version.js, qui refuse de laisser publier les deux en désaccord. */
-const VERSION_JEU = "v370";
+const VERSION_JEU = "v372";
 
 /* ===================== QUAND ÇA CASSE CHEZ UN JOUEUR =====================
    « Si quelque chose casse chez cinq d'entre eux sur un modèle de téléphone
@@ -17395,10 +17398,24 @@ try{
     v = Math.round(v);
     if(!ANDROID){ de.style.setProperty("--vvh", v + "px"); return; }
     if(!de.classList.contains("kb") || !vvhVu){
-      /* Le clavier commence à monter : on part de la hauteur AFFICHÉE. */
-      let h = restH;
-      try{ const a = document.getElementById("app"); if(a && champDeDiscussion()) h = a.getBoundingClientRect().height || restH; }catch(e){}
-      vvhVu = h;
+      /* Le clavier commence à monter : on part de la hauteur AFFICHÉE.
+         (v371) Moins ce que la marge du bas va rendre d'un coup (de sa valeur
+         de repos à 0,45rem, sans transition) : le bas de la barre d'écriture
+         ne bouge pas d'un pixel à l'instant où la discussion passe au clavier.
+         Avant, la marge glissait en 0,52 s sur sa propre horloge, pendant que
+         la hauteur suivait le clavier sur la sienne — une image en retard, et
+         la barre redescendait (jusqu'à 4,7 px). */
+      let h = restH, rendu = 0;
+      try{
+        const a = document.getElementById("app");
+        if(a && champDeDiscussion()){
+          h = a.getBoundingClientRect().height || restH;
+          const pb = parseFloat(getComputedStyle(a).paddingBottom) || 0;
+          const fin = 0.45 * (parseFloat(getComputedStyle(de).fontSize) || 16);
+          rendu = Math.max(0, pb - fin);
+        }
+      }catch(e){}
+      vvhVu = h - rendu;
       ecrireVvh(vvhVu);
     }
     vvhVise = v;
