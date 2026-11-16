@@ -185,11 +185,13 @@ async function finirLecon(p, fautes) {
       const apres = loadParcours().faites;
       appliquerSauvegarde(Object.assign(sauvegardeVide(), {}));   // un compte qui n'a jamais vu le Parcours
       const apres2 = loadParcours().faites;
-      return { garde, f, memes: tri(f) === tri(f2), apres, apres2: tri(apres2) === tri(apres), pos: positionParcours() };
+      return { garde, f, memes: tri(f) === tri(f2), apres, apres2: tri(apres2) === tri(apres), pos: positionParcours(), avant: leconOuverte(0, 2) };
     });
-    dit('10. jamais en arrière : écrire moins ne retire rien ; le compte fusionne les leçons des deux côtés, à la date la plus ancienne',
+    /* (v376) La pierre à faire suit la DERNIÈRE pierre faite (exode:1 → exode:2) ;
+       la leçon laissée derrière (genese:3) reste ouverte : rien ne se ferme. */
+    dit('10. jamais en arrière : écrire moins ne retire rien ; le compte fusionne les leçons des deux côtés, à la date la plus ancienne ; la pierre à faire suit la dernière faite, et rien derrière ne se ferme',
       c10.garde === 2 && c10.f['genese:1'] === '2026-01-02' && !!c10.f['genese:2'] && c10.f['exode:1'] === '2026-03-04' && c10.f['futur:1'] === '2026-05-05' && !('abime:1' in c10.f)
-      && c10.memes && Object.keys(c10.apres).length === 4 && c10.apres2 && c10.pos && c10.pos.u === 0 && c10.pos.l === 2, JSON.stringify(c10));
+      && c10.memes && Object.keys(c10.apres).length === 4 && c10.apres2 && c10.pos && c10.pos.u === 1 && c10.pos.l === 1 && c10.avant === true, JSON.stringify(c10));
     p._errs.forEach(e => errs.push(e));
     await ctx.close();
 
@@ -217,18 +219,26 @@ async function finirLecon(p, fautes) {
         PARCOURS.forEach((u, i) => {
           localStorage.removeItem('bt_seen');
           const vues = new Set();
+          /* (v376) Une unité de chapitres peut avoir moins de trente questions
+             (Joseph, Genèse 37–50 : vingt-trois) : elle les montre TOUTES avant
+             d'en revoir une — la règle de questionsDeLecon. */
+          const unites = new Set(); ['facile','moyen','difficile'].forEach(t => (BANK[t] || []).forEach(q => { if (dansLUnite(u, q)) unites.add(qKey(q)); }));
+          const taille = unites.size;   // par clé : une question rangée à deux paliers ne compte qu'une fois
           for (let l = 0; l < LECONS_PAR_UNITE; l++) {
             const qs = questionsDeLecon(i, l);
             const cles = qs.map(q => qKey(q));
             if (qs.length !== QUESTIONS_PAR_LECON) fautes.push(u.id + ' leçon ' + (l + 1) + ' : ' + qs.length + ' questions');
             if (new Set(cles).size !== cles.length) fautes.push(u.id + ' leçon ' + (l + 1) + ' : doublon');
-            qs.forEach(q => { if (!u.livres.includes(bookOf(q))) fautes.push(u.id + ' : ' + bookOf(q)); });
-            cles.forEach(k => { if (vues.has(k)) fautes.push(u.id + ' leçon ' + (l + 1) + ' : déjà vue dans l\'unité'); vues.add(k); });
+            qs.forEach(q => { if (!dansLUnite(u, q)) fautes.push(u.id + ' : ' + bookOf(q) + ' ' + chapitreDe(q)); });
+            /* les neuves de la leçon d'abord (elle les range par palier : une revue peut précéder la dernière neuve) */
+            const revues = cles.filter(k => vues.has(k));
+            cles.forEach(k => vues.add(k));
+            if (revues.length && vues.size < taille) fautes.push(u.id + ' leçon ' + (l + 1) + ' : déjà vue dans l\'unité, quand il en restait une neuve');
           }
         });
         return fautes;
       });
-      dit('12. chaque unité a de quoi faire ses cinq leçons : six questions de ses livres, sans doublon, sans revoir une question de l\'unité', !c12.length, c12.slice(0, 4).join(' | '));
+      dit('12. chaque unité (les cinquante-quatre) a de quoi faire ses cinq leçons : six questions de ses livres et de ses chapitres, sans doublon, sans revoir une question de l\'unité tant qu\'il en reste une neuve', !c12.length, c12.slice(0, 4).join(' | '));
       o.p._errs.forEach(e => errs.push(e));
       await o.ctx.close();
     }
