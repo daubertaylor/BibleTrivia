@@ -31,7 +31,13 @@
         raccourcit — « · 2 nouveaux messages » reste entier ;
     13. (v334) un message de la modération : signé « La modération » (en
         anglais « Moderators », en espagnol « La moderación »), jamais du nom
-        de la personne qui modère — même quand elle mentionne quelqu'un.
+        de la personne qui modère — même quand elle mentionne quelqu'un ;
+    14. (v380) une partie lancée a SA notification (« partie-<groupe> ») :
+        le nom du groupe, « Benoît a lancé une partie », et elle sonne même
+        cinq secondes après un message (plus de rafale qui l'avale) — celle
+        du message reste à côté ; rejouée, sans bruit ; une nouvelle partie
+        du même groupe la remplace et sonne ; la toucher ouvre la
+        discussion ; le jeu à l'écran, elle se pose sans sonner.
    Usage : node banc-essai/sw-messages.js */
 const fs = require('fs');
 const path = require('path');
@@ -153,7 +159,8 @@ const MIROIR = { actif: false, priere: -1, lecture: -1, messages: true, langue: 
   const es1 = (await b.recevoir(msg({ id: 501 })))[0] || {};
   HORLOGE += 3000;
   const es2 = (await b.recevoir(msg({ id: 502 })))[0] || {};
-  dire(en1.body === 'Benoît mentioned you: hi' && en2.body === 'Benoît started a game' && en2.title === 'Les amis · 2 new messages',
+  /* (v380) La partie a sa propre notification : son titre est le nom du groupe. */
+  dire(en1.body === 'Benoît mentioned you: hi' && en2.body === 'Benoît started a game' && en2.title === 'Les amis' && en2.tag === 'partie-' + G1,
     '8. en anglais : « ' + en1.body + ' », « ' + en2.title + ' » / « ' + en2.body + ' »');
   dire(es1.body === 'Benoît: Salut !' && es2.title === 'Les amis · 2 mensajes nuevos', '   en espagnol : « ' + es1.body + ' », « ' + es2.title + ' »');
   const tout = [n1, n2, n3, n4, n5, men, par, vide, en1, en2, es1, es2];
@@ -227,6 +234,26 @@ const MIROIR = { actif: false, priere: -1, lecture: -1, messages: true, langue: 
   dire(mo1.body === 'La modération : Merci de rester bienveillants' && mo2.body === 'La modération te mentionne : @Benoît merci'
     && mo3.body === 'Moderators: Be kind' && mo4.body === 'La moderación: Sed amables' && ![mo1, mo2, mo3, mo4].some(x => /Taylor/.test(x.body || '')),
     '13. la modération : « ' + mo1.body + ' », « ' + mo2.body + ' », « ' + mo3.body + ' », « ' + mo4.body + ' »');
+
+  /* 14. (v380) une partie lancée a sa propre notification */
+  b = bac(MIROIR);
+  await b.recevoir(msg({ id: 1101, texte: 'On joue ?' }));
+  HORLOGE += 5000;
+  const p2 = (await b.recevoir(msg({ id: 1102, texte: '', partie: true })))[0] || {};
+  dire(p2.tag === 'partie-' + G1 && p2.title === 'Les amis' && p2.body === 'Benoît a lancé une partie' && p2.renotify === true && p2.silent === false
+    && b.affichees.length === 2 && b.affichees.some(x => x.tag === 'grp-' + G1 && x.body === 'Benoît : On joue ?'),
+    '14. (v380) une partie, 5 s après un message : SA notification (' + p2.tag + ', « ' + p2.title + ' » / « ' + p2.body + ' »), qui sonne (' + p2.renotify + ') — celle du message reste');
+  HORLOGE += 1000;
+  const p3 = (await b.recevoir(msg({ id: 1102, texte: '', partie: true })))[0] || {};
+  dire(p3.tag === 'partie-' + G1 && p3.renotify === false && p3.silent === true && b.affichees.length === 2, '    rejouée : reposée sans bruit, toujours deux notifications');
+  HORLOGE += 60000;
+  const p4 = (await b.recevoir(msg({ id: 1103, texte: '', partie: true, de: 'Dora' })))[0] || {};
+  dire(p4.tag === 'partie-' + G1 && p4.body === 'Dora a lancé une partie' && p4.renotify === true && b.affichees.length === 2, '    une nouvelle partie du même groupe remplace l\'ancienne, et sonne (« ' + p4.body + ' »)');
+  const ouvP = await b.toucher(b.affichees.find(x => x.tag === 'partie-' + G1));
+  dire(ouvP.length === 1 && ouvP[0] === './?discussion=' + G1, '    la toucher ouvre la discussion (' + ouvP[0] + ')');
+  b = bac(MIROIR, [aLEcran]);
+  const p5 = (await b.recevoir(msg({ id: 1104, texte: '', partie: true })))[0] || {};
+  dire(p5.tag === 'partie-' + G1 && p5.silent === true && p5.renotify === false, '    le jeu à l\'écran : elle se pose sans sonner');
 
   console.log(ko === 0 ? '\n  OK — un message arrive comme dans une messagerie : une notification par groupe, un son par rafale, et la toucher ouvre la discussion' : '\n  ' + ko + ' défaut(s)');
   process.exit(ko === 0 ? 0 : 1);

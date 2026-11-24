@@ -21,8 +21,23 @@
 <script>
   window.adsbygoogle = window.adsbygoogle || [];
   var adBreak = adConfig = function(o){ adsbygoogle.push(o); };
+  /* (v380) LE CODE D'ANNONCE DU JEU EST EN PAUSE PENDANT L'EXAMEN D'ADSENSE.
+     AdSense a refusé le site pour des « violations des règles ». La règle la
+     plus probable : « annonces diffusées par Google sur des écrans sans
+     contenu de l'éditeur ». Le jeu est une application (presque pas de texte
+     à lire) et c'était la SEULE page qui portait le code d'annonce : Google
+     y lançait ses annonces automatiques. Le code est donc posé sur les pages
+     à lire du site (quiz par livre, guide, FAQ, À propos, nouveautés :
+     contenu/genere.py), et le jeu attend. Les annonces de fin de partie
+     REVIENNENT : « il va y en avoir » (Taylor). Une fois le site accepté
+     (et l'annonce plein écran, adBreak, ouverte au compte) : PUB_JEU = true,
+     rien d'autre à changer. D'ici là, pubAutorisee() ne voit jamais
+     __pubPrete et le jeu passe sans attendre, comme avant l'accord de Google.
+     La balise google-adsense-account reste (elle prouve que le site est à
+     Taylor). */
+  var PUB_JEU = false;
   (function(){
-    try{ if(navigator.webdriver && !window.__pubBanc) return; }catch(e){}
+    try{ if(!window.__pubBanc && (!PUB_JEU || navigator.webdriver)) return; }catch(e){}
     var s = document.createElement("script");
     s.async = true; s.crossOrigin = "anonymous"; s.setAttribute("data-ad-frequency-hint", "60s");
     s.src = "https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-4777080561806498";
@@ -84,13 +99,13 @@
      est aussi servie par Cloudflare et GitHub), et le verrou paysage ne sert
      plus jamais d'extrait (data-nosnippet). Les pages à lire (guide, quiz par
      livre, questions fréquentes…) sont générées par contenu/genere.py. -->
-<meta name="description" content="Yada, le quiz biblique gratuit : 1 796 questions sur les 66 livres de la Bible, un Parcours de la Genèse à l'Apocalypse, cinq jeux, des parties entre amis et en ligne. Sans compte, en français, en anglais et en espagnol.">
+<meta name="description" content="Yada, le quiz biblique gratuit : 1 796 questions sur les 66 livres de la Bible, un Parcours de la Genèse à l'Apocalypse, des jeux, des parties entre amis.">
 <link rel="canonical" href="https://yadaquiz.app/">
 <meta property="og:type" content="website">
 <meta property="og:site_name" content="Yada">
 <meta property="og:locale" content="fr_FR">
 <meta property="og:title" content="Yada — Le quiz biblique gratuit">
-<meta property="og:description" content="Yada, le quiz biblique gratuit : 1 796 questions sur les 66 livres de la Bible, un Parcours de la Genèse à l'Apocalypse, cinq jeux, des parties entre amis et en ligne. Sans compte, en français, en anglais et en espagnol.">
+<meta property="og:description" content="Yada, le quiz biblique gratuit : 1 796 questions sur les 66 livres de la Bible, un Parcours de la Genèse à l'Apocalypse, des jeux, des parties entre amis.">
 <meta property="og:url" content="https://yadaquiz.app/">
 <meta property="og:image" content="https://yadaquiz.app/site/partage.jpg">
 <meta property="og:image:width" content="1200">
@@ -4572,6 +4587,21 @@
      coupe au lieu de sortir. Le nom du groupe garde sa ligne. */
   .bandeau-msg .bm-t small{ font-size:0.92rem; line-height:1.32; color:#fff; font-weight:600; overflow:hidden; overflow-wrap:anywhere;
     display:-webkit-box; -webkit-box-orient:vertical; -webkit-line-clamp:4; line-clamp:4; }
+  /* (v380) L'avis d'un départ (voir QUELQU'UN S'EN VA) : le même dessin,
+     qu'on ne touche que pour le ranger ; le visage de celui qui part, ou
+     une silhouette quand ils sont partis à plusieurs. */
+  .avis-depart{ cursor:default; }
+  .avis-depart > .avatar{ flex-shrink:0; }
+  .avis-depart .ad-ico{ flex-shrink:0; width:2.2rem; height:2.2rem; border-radius:var(--r-s); display:flex; align-items:center; justify-content:center;
+    background:rgba(255,255,255,0.12); color:#F5C453; }
+  .avis-depart .ad-ico svg{ width:1.2rem; height:1.2rem; display:block; }
+  /* (v380) Une partie lancée : une manette sur l'icône du groupe, la
+     pastille pleine de la couleur du jeu (sans contour) — on voit d'un coup
+     d'œil que ce n'est pas un message, sans que le bandeau s'élargisse. */
+  .bandeau-msg .bm-av{ position:relative; flex-shrink:0; display:flex; }
+  .bandeau-msg .bm-manette{ position:absolute; right:-0.32rem; bottom:-0.32rem; width:1.2rem; height:1.2rem; border-radius:50%;
+    display:flex; align-items:center; justify-content:center; background:var(--primary); color:#fff; }
+  .bandeau-msg .bm-manette svg{ width:0.74rem; height:0.74rem; display:block; }
   /* ---------- Inviter des amis (salon) ---------- */
   /* 44 px POUR DE BON. Ces trois-là sont des surfaces de verre : leur
      découpe avale l'agrandisseur, il faut donc que la BOÎTE fasse la taille.
@@ -7118,7 +7148,13 @@
   .liens-legaux .lien-conf{ padding-left:0.55rem; padding-right:0.55rem; }
   /* (v378) Dans la Confidentialité : « Mes choix de publicité » et la
      politique complète, l'un sous l'autre, sous le résumé. */
-  .conf-liste .conf-choix, .conf-liste .conf-politique{ margin:0.3rem auto 0; }
+  .conf-liste .conf-choix{ margin:0.3rem auto 0; }
+  /* (v380) L'adresse de la page, sous le résumé : la carte du code
+     d'invitation (même titre en capitales, mêmes boutons), l'adresse à la
+     place du code, sur une ligne si elle tient, sinon coupée après « / ». */
+  .page-adresse{ margin-top:0.25rem; }
+  .page-adresse .pa-url{ max-width:100%; font-family:'Poppins',sans-serif; font-weight:600; font-size:1.02rem; line-height:1.35; color:var(--ink);
+    text-align:center; overflow-wrap:anywhere; -webkit-user-select:text; user-select:text; }
   #liens-site{ display:none; }
   @media (min-width:1100px) and (hover:hover) and (pointer:fine){
     html:has(#barreBas:not(.cachee)) #liens-site{ position:fixed; left:1.1rem; bottom:1.1rem; z-index:2; display:flex; flex-direction:column; align-items:flex-start; gap:0.4rem; }
@@ -7913,7 +7949,7 @@
      au coin, hors du jeu, quand la barre du bas est là (l'accueil et les
      onglets, jamais pendant une partie) ; sur un téléphone,
      ils ne prennent aucune place (« À propos », dans les Réglages, y mène). -->
-<nav id="liens-site" aria-label="Le site de Yada" data-nosnippet><a href="quiz-biblique/">Quiz biblique par livre</a><a href="guide/">Guide du jeu</a><a href="nouveautes/">Nouveautés</a><a href="faq/">Questions fréquentes</a><a href="a-propos/">À propos</a><a href="confidentialite">Confidentialité</a></nav>
+<nav id="liens-site" aria-label="Le site de Yada" data-nosnippet><a href="quiz-biblique/">Quiz biblique par livre</a><a href="guide/">Guide du jeu</a><a href="nouveautes/">Nouveautés</a><a href="faq/">Questions fréquentes</a><a href="a-propos/">À propos</a><a href="confidentialite">Confidentialité</a><a href="mentions-legales/">Mentions légales</a><a href="contact/">Contact</a></nav>
 <noscript><p style="color:#fff;font-family:sans-serif;padding:1.5rem;max-width:32rem;margin:0 auto">Yada, le quiz biblique gratuit : active JavaScript pour jouer. En attendant, découvre le <a style="color:#FFD968" href="quiz-biblique/">quiz biblique livre par livre</a> et le <a style="color:#FFD968" href="guide/">guide du jeu</a>.</p></noscript>
 
 <script>
@@ -8372,7 +8408,6 @@ const TEXTES = {
     "Longueur de la partie":"Game length",
     "Longueur du duel":"Duel length",
     "{nom} a quitté la partie.":"{nom} has left the game.",
-    "Termine tranquillement ou quitte le duel.":"Finish at your own pace, or leave the duel.",
     "Les autres joueurs ont quitté la partie.":"The other players have left the game.",
     "Ton adversaire a quitté la partie.":"Your opponent has left the game.",
     "Joueur":"Player",
@@ -8473,6 +8508,8 @@ const TEXTES = {
     /* le partage */
     "Partager le résultat":"Share the result",
     "Lien copié\u00a0!":"Link copied!",
+    "Adresse de la page":"Page address",
+    "Copier le lien":"Copy link",
     "Code copié\u00a0!":"Code copied!",
     "{jeu} — {issue} contre {adv}\u00a0: {a} à {b}\u00a0!":"{jeu} — {issue} against {adv}: {a} to {b}!",
     "{jeu} — {p} points en solo ({pct}% du maximum, {c}/{t} bonnes réponses)\u00a0!":"{jeu} — {p} points in solo ({pct}% of the maximum, {c}/{t} correct answers)!",
@@ -8543,7 +8580,7 @@ const TEXTES = {
     "Les rapports de bug,":"Bug reports,",
     "s'ils sont activés, n'envoient que l'erreur, rien sur toi.":"if turned on, send only the error, nothing about you.",
     "La publicité":"Ads",
-    "vient de Google AdSense, en plein écran, entre deux parties. Google peut utiliser des cookies pour la choisir : en Europe, avec ton accord. Yada ne lui transmet ni ton nom, ni tes messages, ni ta progression.":"come from Google AdSense, full screen, between two games. Google may use cookies to choose them: in Europe, only with your consent. Yada never passes on your name, your messages or your progress.",
+    "vient de Google AdSense, en plein écran entre deux parties et sur les pages à lire du site (quiz par livre, guide, questions fréquentes). Google peut utiliser des cookies pour la choisir : en Europe, avec ton accord. Yada ne lui transmet ni ton nom, ni tes messages, ni ta progression.":"come from Google AdSense, full screen between two games and on the site's reading pages (quizzes by book, guide, FAQ). Google may use cookies to choose them: in Europe, only with your consent. Yada never passes on your name, your messages or your progress.",
     "Jamais":"Never",
     "de revente de tes données.":"any selling of your data.",
     "Tout supprimer :":"To delete everything:",
@@ -9062,7 +9099,6 @@ const TEXTES = {
     "Supabase Pte. Ltd., 65 Chulia Street #38-02/03, OCBC Centre, Singapour 049513 — legal@supabase.io (comptes, sauvegardes, groupes).":"Supabase Pte. Ltd., 65 Chulia Street #38-02/03, OCBC Centre, Singapore 049513 — legal@supabase.io (accounts, backups, groups).",
     "Données personnelles :":"Personal data:",
     "Mes choix de publicité":"My ad choices",
-    "Politique de confidentialité complète":"Full privacy policy",
     "Politique de confidentialité":"Privacy policy",
     "Photo du groupe":"Group photo",
     "Image du groupe":"Group picture",
@@ -9091,7 +9127,7 @@ const TEXTES = {
     "Mentions":"Mentions",
     "Muet":"Muted",
     "Chaque nouveau message t'est signalé.":"You're alerted to every new message.",
-    "Seuls les messages qui te nomment, ou qui s'adressent à tout le monde, te sont signalés.":"You're only alerted to messages that mention you or that are meant for everyone.",
+    "Seuls les messages qui te nomment ou s'adressent à tout le monde, et les parties lancées, te sont signalés.":"You're only alerted to messages that mention you or are meant for everyone, and when someone starts a game.",
     "Ce groupe ne te signale plus rien. Ses messages t'attendent quand tu l'ouvres.":"This group no longer alerts you. Its messages are waiting whenever you open it.",
     "@tout le monde":"@everyone",
     "Réservé aux admins":"Admins only",
@@ -9451,7 +9487,6 @@ const TEXTES = {
     "Longueur de la partie":"Duración de la partida",
     "Longueur du duel":"Duración del duelo",
     "{nom} a quitté la partie.":"{nom} salió de la partida.",
-    "Termine tranquillement ou quitte le duel.":"Termina con calma o sal del duelo.",
     "Les autres joueurs ont quitté la partie.":"Los demás jugadores salieron de la partida.",
     "Ton adversaire a quitté la partie.":"Tu rival salió de la partida.",
     "Joueur":"Jugador",
@@ -9550,6 +9585,8 @@ const TEXTES = {
     "Impossible d'activer le rappel pour le moment.":"No se puede activar el recordatorio ahora mismo.",
     "Partager le résultat":"Compartir el resultado",
     "Lien copié\u00a0!":"¡Enlace copiado!",
+    "Adresse de la page":"Dirección de la página",
+    "Copier le lien":"Copiar enlace",
     "Code copié\u00a0!":"¡Código copiado!",
     "{jeu} — {issue} contre {adv}\u00a0: {a} à {b}\u00a0!":"{jeu} — {issue} contra {adv}: ¡{a} a {b}!",
     "{jeu} — {p} points en solo ({pct}% du maximum, {c}/{t} bonnes réponses)\u00a0!":"{jeu} — ¡{p} puntos en solo ({pct}% del máximo, {c}/{t} respuestas correctas)!",
@@ -9619,7 +9656,7 @@ const TEXTES = {
     "Les rapports de bug,":"Los informes de errores,",
     "s'ils sont activés, n'envoient que l'erreur, rien sur toi.":"si están activados, solo envían el error, nada sobre ti.",
     "La publicité":"La publicidad",
-    "vient de Google AdSense, en plein écran, entre deux parties. Google peut utiliser des cookies pour la choisir : en Europe, avec ton accord. Yada ne lui transmet ni ton nom, ni tes messages, ni ta progression.":"viene de Google AdSense, a pantalla completa, entre dos partidas. Google puede usar cookies para elegirla: en Europa, con tu consentimiento. Yada no le transmite ni tu nombre, ni tus mensajes, ni tu progreso.",
+    "vient de Google AdSense, en plein écran entre deux parties et sur les pages à lire du site (quiz par livre, guide, questions fréquentes). Google peut utiliser des cookies pour la choisir : en Europe, avec ton accord. Yada ne lui transmet ni ton nom, ni tes messages, ni ta progression.":"viene de Google AdSense, a pantalla completa entre dos partidas y en las páginas de lectura del sitio (cuestionarios por libro, guía, preguntas frecuentes). Google puede usar cookies para elegirla: en Europa, con tu consentimiento. Yada no le transmite ni tu nombre, ni tus mensajes, ni tu progreso.",
     "Jamais":"Nunca",
     "de revente de tes données.":"se venden tus datos.",
     "Tout supprimer :":"Para borrarlo todo:",
@@ -10144,7 +10181,6 @@ const TEXTES = {
     "Supabase Pte. Ltd., 65 Chulia Street #38-02/03, OCBC Centre, Singapour 049513 — legal@supabase.io (comptes, sauvegardes, groupes).":"Supabase Pte. Ltd., 65 Chulia Street #38-02/03, OCBC Centre, Singapur 049513 — legal@supabase.io (cuentas, copias de seguridad, grupos).",
     "Données personnelles :":"Datos personales:",
     "Mes choix de publicité":"Mis opciones de publicidad",
-    "Politique de confidentialité complète":"Política de privacidad completa",
     "Politique de confidentialité":"Política de privacidad",
     "Photo du groupe":"Foto del grupo",
     "Image du groupe":"Imagen del grupo",
@@ -10173,7 +10209,7 @@ const TEXTES = {
     "Mentions":"Menciones",
     "Muet":"Silencio",
     "Chaque nouveau message t'est signalé.":"Se te avisa de cada mensaje nuevo.",
-    "Seuls les messages qui te nomment, ou qui s'adressent à tout le monde, te sont signalés.":"Solo se te avisa de los mensajes que te mencionan o que van dirigidos a todos.",
+    "Seuls les messages qui te nomment ou s'adressent à tout le monde, et les parties lancées, te sont signalés.":"Solo se te avisa de los mensajes que te mencionan o van dirigidos a todos, y de las partidas que se inician.",
     "Ce groupe ne te signale plus rien. Ses messages t'attendent quand tu l'ouvres.":"Este grupo ya no te avisa de nada. Sus mensajes te esperan cuando lo abras.",
     "@tout le monde":"@todos",
     "Réservé aux admins":"Solo para admins",
@@ -12805,7 +12841,7 @@ const SUPABASE_ANON_KEY = "sb_publishable_FDJ_R0foC7uIeHmxVrj6rA_2NeIgW2a";
    remontée d'un téléphone ne vaut rien si on ne sait pas QUELLE version
    tournait. Elle doit rester égale au CACHE de sw.js — c'est ce que vérifie
    banc-essai/version.js, qui refuse de laisser publier les deux en désaccord. */
-const VERSION_JEU = "v379";
+const VERSION_JEU = "v380";
 
 /* ===================== QUAND ÇA CASSE CHEZ UN JOUEUR =====================
    « Si quelque chose casse chez cinq d'entre eux sur un modèle de téléphone
@@ -13038,7 +13074,7 @@ function majAdversaire(){
   net.opp = pres[0] || tous[0] || null;
   const partis = tous.length > 0 && pres.length === 0;
   if(partis && !net.oppGone && (ecranEnLigne()==="online-play" || ecranEnLigne()==="online-end")) markOppGone();
-  else if(!partis && net.oppGone && pres.length){ net.oppGone = false; }
+  else if(!partis && net.oppGone && pres.length){ net.oppGone = false; cacherDepart(); }   // (v380) revenu : l'avis s'en va
   if(net.opp){
     net.oppScore = net.opp.score|0; net.oppIndex = net.opp.idx|0;
     net.oppLastSeen = Math.max.apply(null, tous.map(j=>j.vu||0).concat([0])) || net.oppLastSeen;
@@ -14511,12 +14547,67 @@ function markOppGone(){
   if(net.oppGone) return;
   net.oppGone = true;
   net.oppPresent = false;
-  net.hideGoneBanner = false;
-  net.goneFresh = true;
-  clearTimeout(net.goneBannerTimer);
-  net.goneBannerTimer = setTimeout(()=>{ net.hideGoneBanner = true; reRenderIfOnline(); }, 6000);
   if(net.myDone && ecranEnLigne()==="online-play"){ versEcranEnLigne("online-end"); }
   reRenderIfOnline();
+  if(ecranEnLigne()==="online-play") montrerDepart();
+}
+/* ===== (v380) QUELQU'UN S'EN VA : UN AVIS PAR-DESSUS, RIEN NE BOUGE =====
+   « Dans une partie, lorsqu'une personne termine ou quitte la partie, je
+     veux que l'animation soit agréable et pas que ça fasse un décalage
+     direct dans notre partie : ça nous trouble en pleine partie. »
+   « X a quitté la partie » était une carte posée DANS l'écran, au-dessus des
+   scores : à son arrivée, les scores, la question et les réponses
+   descendaient d'un coup ; six secondes plus tard, ils remontaient — deux
+   sauts sous le doigt, en pleine question.
+   L'avis vient maintenant PAR-DESSUS, du dessin du bandeau des messages :
+   il descend en haut de l'écran, sur le titre de l'en-tête, entre la flèche
+   et la roue (placeEntreLesBoutons : on peut toujours quitter) — le visage
+   de celui qui part, le nom de la partie, « Sam a quitté la partie. » ; il
+   reste six secondes et remonte. Rien dans l'écran ne bouge — la ligne des
+   scores dit toujours « a quitté », à sa place. Le toucher, ou le pousser
+   vers le haut, le range plus tôt. (« Termine tranquillement ou quitte le
+   duel » ne s'y dit plus : on le fait déjà, et l'avis tient sur une ligne.) */
+let departT = null, departAttente = 0;
+function montrerDepart(){
+  if(document.querySelector(".ach-toast")){
+    if(++departAttente < 16){ clearTimeout(departT); departT = setTimeout(montrerDepart, 500); }
+    else departAttente = 0;
+    return;
+  }
+  departAttente = 0;
+  if(ecranEnLigne() !== "online-play" || !net.oppGone) return;
+  const aPlusieurs = nbJoueurs() > 2 || autresJoueurs().length > 1;
+  const j = net.opp || {};
+  let b = document.getElementById("avisDepart");
+  if(!b){
+    b = document.createElement("div");
+    b.id = "avisDepart"; b.className = "bandeau-msg avis-depart";
+    b.setAttribute("role", "status"); b.setAttribute("aria-live", "polite");
+    let y0 = null, dy = 0;
+    b.addEventListener("pointerdown", (e)=>{ y0 = e.clientY; dy = 0; });
+    b.addEventListener("pointermove", (e)=>{
+      if(y0 == null) return;
+      dy = Math.min(0, e.clientY - y0);
+      if(dy < -4){ b.style.transition = "none"; b.style.transform = "translate(-50%," + dy + "px)"; }
+    });
+    const lacher = ()=>{ if(y0 == null) return; y0 = null; b.style.transition = ""; b.style.transform = ""; cacherDepart(); };
+    b.addEventListener("pointerup", lacher); b.addEventListener("pointercancel", lacher);
+    document.body.appendChild(b);
+  }
+  b.innerHTML = `${aPlusieurs ? `<span class="ad-ico">${ICONS.user}</span>` : avatarHtml(j.name || "?", j.color, 2.2)}<span class="bm-t"><b></b><small></small></span>`;
+  b.querySelector("b").textContent = titrePartie();
+  b.querySelector("small").textContent = aPlusieurs ? T("Les autres joueurs ont quitté la partie.") : Tf("{nom} a quitté la partie.", { nom:j.name || T("L'adversaire") });
+  const place = placeEntreLesBoutons();
+  b.style.maxWidth = place ? place + "px" : "";
+  b.classList.remove("part");
+  requestAnimationFrame(()=>{ requestAnimationFrame(()=> b.classList.add("vu")); });
+  clearTimeout(departT); departT = setTimeout(cacherDepart, 6000);
+}
+function cacherDepart(){
+  clearTimeout(departT); departT = null;
+  const b = document.getElementById("avisDepart");
+  if(!b || !b.classList.contains("vu")) return;
+  b.classList.add("part"); b.classList.remove("vu");
 }
 /* Quitter un duel, fini ou pas, ramène à l'écran En ligne — comme le Solo et
    le Groupe ramènent à leur écran (voir LA PARTIE FINIE, ON REVIENT DANS SON
@@ -30467,6 +30558,7 @@ async function chargerListesUneFois(){
   recompterNonLus();
   majBarre();
   majListes();
+  if(mes) setTimeout(annoncerPartieManquee, 0);   // (v380) voir UNE PARTIE LANCÉE SE DIT TOUJOURS
   return grp.liste;
 }
 /* Les deux listes se redessinent SUR PLACE, à l'intérieur de leur carte : la
@@ -31498,9 +31590,10 @@ function signalementsArrives(n){
 function effacerNotifsGroupe(id){
   try{
     if(!id || !("serviceWorker" in navigator)) return;
+    /* (v380) Et celle de sa partie lancée, qui a la sienne (voir sw.js). */
     navigator.serviceWorker.getRegistration()
-      .then(reg => (reg && reg.getNotifications) ? reg.getNotifications({ tag:"grp-" + id }) : [])
-      .then(l => (l || []).forEach(n => { try{ n.close(); }catch(e){} }))
+      .then(reg => (reg && reg.getNotifications) ? Promise.all([reg.getNotifications({ tag:"grp-" + id }), reg.getNotifications({ tag:"partie-" + id })]) : [])
+      .then(l => [].concat(...(l || [])).forEach(n => { try{ n.close(); }catch(e){} }))
       .catch(()=>{});
   }catch(e){}
 }
@@ -33793,6 +33886,7 @@ async function surMessageDirect(m, evt, direct){
     }
   } else if(g.apercu && g.apercu.id === m.id){
     g.apercu.masque = !!m.masque; g.apercu.supprime = !!m.supprime_le;
+    if(m.donnees) g.apercu.donnees = m.donnees;   // (v380) fermée, commencée : voir annoncerPartieManquee
     if(m.masque || m.supprime_le) g.apercu.texte = "";
     /* Le dernier message vient d'être supprimé : l'aperçu reprend celui
        d'avant, que le serveur connaît. */
@@ -33817,25 +33911,87 @@ async function surMessageDirect(m, evt, direct){
    pendant une partie, ni sur la liste des groupes (elle le montre déjà).
    Seulement ce qui arrive en direct : un rattrapage, au retour sur l'app,
    ne déballe pas une rafale d'anciens messages. */
+/* ===== (v380) UNE PARTIE LANCÉE SE DIT TOUJOURS =====
+   « Lorsqu'une personne lance une partie, lorsque je suis sur le jeu ou
+     autre, je dois bien être notifié. Là, je vois les messages, mais je ne
+     vois pas que la personne a lancé une partie comme un message. »
+   Un lancement de partie n'est pas un message comme les autres : c'est un
+   appel à tout le groupe, et il ne vaut que quelques minutes. Il se taisait
+   pourtant là où un message se tait — pendant une partie solo, dans un
+   groupe en « Mentions » —, se perdait dans la rafale des notifications du
+   groupe (sw.js), et rien ne le rattrapait quand il était arrivé app fermée.
+   Maintenant :
+   — il se dit aussi PENDANT UNE PARTIE SOLO (une leçon, une quête) : le
+     bandeau se pose sur le titre de l'en-tête, sans couvrir ni la question,
+     ni le chrono, ni la flèche ; le toucher demande de quitter la partie
+     (les mots de la flèche), puis ouvre la discussion où l'on rejoint.
+     Pendant une partie de GROUPE, rien : on joue déjà avec les siens ;
+   — en « Mentions », il se dit comme « @tout le monde » : il appelle tout le
+     monde. En « Muet », jamais ;
+   — son bandeau porte une manette sur l'icône du groupe, et reste le temps
+     de se décider (7 s). Pendant une partie solo, il ne déborde jamais sur
+     la flèche ni sur la roue de l'en-tête : il tient entre elles ;
+   — celui qu'on n'a pas vu passer (app fermée, partie de groupe en cours) se
+     dit au retour, une fois, s'il est encore ouvert, récent (un quart
+     d'heure) et pas encore lu : voir annoncerPartieManquee.
+   Un message ordinaire garde ses règles d'avant. */
 let bandeauT = null, bandeauAttente = 0;
+const partiesAnnoncees = new Set();
 function annoncerDansLeJeu(m, g){
   if(!m || !g || document.hidden) return;
   if(m.genre !== "texte" && m.genre !== "partie") return;
   if(m.masque || m.supprime_le || !m.auteur || m.auteur === monId()) return;
   if(grp.bloques && grp.bloques.has(m.auteur)) return;
-  if(state.screen === "splash" || ECRANS_DE_PARTIE.indexOf(state.screen) >= 0) return;
+  const partie = m.genre === "partie";
+  if(state.screen === "splash") return;
+  if(ECRANS_DE_PARTIE.indexOf(state.screen) >= 0 && !(partie && state.screen === "play")) return;
   if(state.screen === "groupe" && grp.courant === g.id) return;
   const mode = modeNotifs(g), nomme = mentionneMoi(m);
-  if(mode === "rien" || (mode === "mentions" && !nomme)) return;
+  if(mode === "rien" || (mode === "mentions" && !nomme && !partie)) return;
+  if(partie) partiesAnnoncees.add(+m.id);
   /* (v335) Et il sonne, du son du jeu (voir LE SON DES MESSAGES) ; sur la
      liste des groupes, le son seul : elle montre déjà le message. */
   sonMessage();
   if(state.screen === "groupes") return;
   const nom = nomAuteur(m);
   const texte = String(m.texte || "").replace(/\s+/g, " ").trim();
-  const ligne = m.genre === "partie" ? Tf("{nom} a lancé une partie", { nom })
+  const ligne = partie ? Tf("{nom} a lancé une partie", { nom })
               : Tf(nomme ? "{nom} te mentionne : {texte}" : "{nom} : {texte}", { nom, texte });
-  montrerBandeau(g, ligne);
+  montrerBandeau(g, ligne, partie);
+}
+/* (v380) Le lancement qu'on n'a pas vu passer : l'app était fermée (et sa
+   notification, s'il y en a eu une, a pu se perdre — un téléphone qui vient
+   de quitter le jeu passe encore pour « à l'écran » quelques secondes,
+   voir PRESENT_MS), ou l'on jouait une partie de groupe. Au retour — la
+   liste relue, ou la partie de groupe quittée —, le plus récent se dit, une
+   fois : un autre que moi l'a lancé, il est encore ouvert, il a moins d'un
+   quart d'heure, et le groupe a des messages que je n'ai pas lus. */
+const PARTIE_MANQUEE_MS = 15 * 60000;
+let partieManqueeT = 0;
+function annoncerPartieManquee(){
+  try{
+    /* À l'ouverture, la liste arrive souvent pendant le chargement : on
+       attend qu'il soit fini (un seul rendez-vous à la fois). */
+    if(state.screen === "splash"){ clearTimeout(partieManqueeT); partieManqueeT = setTimeout(annoncerPartieManquee, 700); return; }
+    if(document.hidden || discussionEnAttente || !participeGroupes() || !grp.liste) return;
+    const maintenant = Date.now();
+    const l = grp.liste.filter(g => {
+      const a = g.apercu, d = (a && a.donnees) || {};
+      return a && a.genre === "partie" && a.auteur && a.auteur !== monId() && !a.masque && !a.supprime
+        && !partiesAnnoncees.has(+a.id) && (+g.non_lus || 0) > 0
+        && !d.fermee && d.lancee !== true && !(grp.retires && grp.retires.has(+a.id))
+        && maintenant - new Date(a.le || 0).getTime() < PARTIE_MANQUEE_MS
+        && !(Array.isArray(d.venus) && d.venus.some(v => v && v.id === monId()));
+    });
+    if(!l.length) return;
+    l.sort((x, y) => String(y.apercu.le || "").localeCompare(String(x.apercu.le || "")));
+    const g = l[0], a = g.apercu;
+    /* La discussion chargée sait mieux que l'aperçu (une fermeture arrivée
+       entre-temps). */
+    const f = messageDeTousLesFils(a.id);
+    if(f && invitationPlusOuverte(f)) return;
+    annoncerDansLeJeu({ id:a.id, groupe:g.id, auteur:a.auteur, genre:"partie", texte:"", donnees:a.donnees || {}, masque:!!a.masque, supprime_le:null }, g);
+  }catch(e){}
 }
 /* (v335) Le message arrive dans la discussion qu'on lit : une goutte, la
    même règle que le bandeau (ni soi, ni bloqué, ni Muet ; en Mentions,
@@ -33849,10 +34005,28 @@ function gouttePourLaDiscussion(m, g){
   if(mode === "rien" || (mode === "mentions" && !mentionneMoi(m))) return;
   sonGoutte();
 }
-function montrerBandeau(g, ligne){
+/* (v380) LA PLACE LIBRE DE L'EN-TÊTE, entre la flèche et la roue (mesurées
+   sur l'écran) : un bandeau posé PENDANT une partie y tient — centré, il
+   prend deux fois la plus petite des deux demi-places —, pour qu'on puisse
+   toujours quitter ou régler sans le chasser d'abord. 0 : pas de contrainte. */
+function placeEntreLesBoutons(){
+  try{
+    const btns = [...document.querySelectorAll("#app > .screen:not(.screen-exit) .app-header .icon-btn")]
+      .map(x => x.getBoundingClientRect()).filter(r => r.width > 0 && r.bottom > 0);
+    const axe = innerWidth / 2;
+    const g = btns.filter(r => r.right <= axe), d = btns.filter(r => r.left >= axe);
+    const demis = [];
+    if(g.length) demis.push(axe - Math.max(...g.map(r => r.right)));
+    if(d.length) demis.push(Math.min(...d.map(r => r.left)) - axe);
+    if(!demis.length) return 0;
+    const demi = Math.min(...demis) - 6;
+    return demi > 80 ? Math.floor(2 * demi) : 0;
+  }catch(e){ return 0; }
+}
+function montrerBandeau(g, ligne, partie){
   /* Un succès s'affiche à la même place : le bandeau attend qu'il parte. */
   if(document.querySelector(".ach-toast")){
-    if(++bandeauAttente < 16){ setTimeout(()=> montrerBandeau(g, ligne), 500); }
+    if(++bandeauAttente < 16){ setTimeout(()=> montrerBandeau(g, ligne, partie), 500); }
     else bandeauAttente = 0;
     return;
   }
@@ -33879,20 +34053,30 @@ function montrerBandeau(g, ligne){
       if(b._glisse){ b._glisse = false; return; }
       const id = b.dataset.g;
       cacherBandeau();
-      if(id){ discussionEnAttente = id; servirDiscussion(); }
+      if(!id) return;
+      /* (v380) Pendant une partie solo, la partie lancée ailleurs se rejoint
+         en quittant celle-ci — les mots de la flèche, puis la discussion. */
+      if(state.screen === "play"){ confirmLeaveGame(()=>{ discussionEnAttente = id; servirDiscussion(); if(state.screen !== "groupe") render(); }); return; }
+      discussionEnAttente = id; servirDiscussion();
     });
     document.body.appendChild(b);
   }
   b.dataset.g = g.id;
   b.setAttribute("aria-label", (g.nom || "") + " · " + ligne);
-  b.innerHTML = `${pastilleGroupe(g, true)}<span class="bm-t"><b></b><small></small></span>`;
+  b.innerHTML = `<span class="bm-av">${pastilleGroupe(g, true)}${partie ? `<span class="bm-manette">${ICONS.manette}</span>` : ""}</span><span class="bm-t"><b></b><small></small></span>`;
   b.querySelector("b").textContent = g.nom || "";
   b.querySelector("small").textContent = ligne;
+  b.classList.toggle("bm-partie", !!partie);
+  /* (v380) Pendant une partie solo, il tient entre la flèche et la roue de
+     l'en-tête : on peut toujours quitter, ou régler. */
+  const place = state.screen === "play" ? placeEntreLesBoutons() : 0;
+  b.style.maxWidth = place ? place + "px" : "";
   b.classList.remove("part");
   requestAnimationFrame(()=>{ requestAnimationFrame(()=> b.classList.add("vu")); });
-  /* Le temps de le lire, comme un succès (voir pumpAchToast). */
+  /* Le temps de le lire, comme un succès (voir pumpAchToast). (v380) Une
+     partie lancée, le temps de se décider. */
   const lu = ligne.length + String(g.nom || "").length;
-  clearTimeout(bandeauT); bandeauT = setTimeout(cacherBandeau, Math.min(6500, Math.max(4200, 1400 + 60 * lu)));
+  clearTimeout(bandeauT); bandeauT = setTimeout(cacherBandeau, partie ? 7000 : Math.min(6500, Math.max(4200, 1400 + 60 * lu)));
 }
 function cacherBandeau(){
   clearTimeout(bandeauT); bandeauT = null;
@@ -34595,7 +34779,7 @@ function choixNotifsHtml(g){
   const mode = modeNotifs(g);
   const noms = [T("Tout"), T("Mentions"), T("Muet")];
   const aides = [T("Chaque nouveau message t'est signalé."),
-                 T("Seuls les messages qui te nomment, ou qui s'adressent à tout le monde, te sont signalés."),
+                 T("Seuls les messages qui te nomment ou s'adressent à tout le monde, et les parties lancées, te sont signalés."),
                  T("Ce groupe ne te signale plus rien. Ses messages t'attendent quand tu l'ouvres.")];
   return `<h3 class="gb-h">${T("Notifications")}</h3>
     <div class="grp-types grp-notifs" role="radiogroup" aria-label="${T("Notifications")}">${NOTIFS_MODES.map((k, i)=>
@@ -35759,7 +35943,7 @@ function ouvrirConfidentialite(){
     ["Ta dernière visite", "est notée, et seul le serveur s'en sert : après 90 jours sans toi, un groupe dont tu es propriétaire passe à quelqu'un d'autre."],
     ["La modération", "peut lire les groupes et y écrire (signé « La modération »), pour faire respecter les règles."],
     ["Les rapports de bug,", "s'ils sont activés, n'envoient que l'erreur, rien sur toi."],
-    ["La publicité", "vient de Google AdSense, en plein écran, entre deux parties. Google peut utiliser des cookies pour la choisir : en Europe, avec ton accord. Yada ne lui transmet ni ton nom, ni tes messages, ni ta progression."],
+    ["La publicité", "vient de Google AdSense, en plein écran entre deux parties et sur les pages à lire du site (quiz par livre, guide, questions fréquentes). Google peut utiliser des cookies pour la choisir : en Europe, avec ton accord. Yada ne lui transmet ni ton nom, ni tes messages, ni ta progression."],
     ["Jamais", "de revente de tes données."],
     ["Tout supprimer :", "Profil → Mon compte → « Supprimer mon compte »."]
   ];
@@ -35772,10 +35956,36 @@ function ouvrirConfidentialite(){
      transferts, durées, droits, traceurs) vit sur le site, à l'adresse
      donnée à Google (yadaquiz.app/confidentialite). Elle s'ouvre dans le
      jeu, comme l'À propos. */
-  const politique = `<button class="lien-conf conf-politique" onclick="ouvrirSite('confidentialite.html', 'Politique de confidentialité')">${T("Politique de confidentialité complète")}</button>`;
+  /* (v380) … et son adresse, en toutes lettres, à ouvrir ou à copier
+     (voir adressePageHtml). */
   ouvrirFeuilleGroupe("confidentialiteVeil", T("Confidentialité"), ICONS.bouclier,
-    `<div class="conf-liste">${lignes.map(([t, d])=>`<p class="conf-l"><b>${escapeHtml(T(t))}</b> ${escapeHtml(T(d))}</p>`).join("")}${choix}${politique}</div>`);
+    `<div class="conf-liste">${lignes.map(([t, d])=>`<p class="conf-l"><b>${escapeHtml(T(t))}</b> ${escapeHtml(T(d))}</p>`).join("")}${choix}</div>`
+    + adressePageHtml("confidentialite", "Politique de confidentialité"));
 }
+/* ===== (v380) CHAQUE PAGE A SON ADRESSE =====
+   « Il faut qu'elle soit vraiment un lien différent… une page différente à
+     la place d'être collée dans celle du jeu, pour que je puisse
+     copier-coller le lien de la page confidentialité et la donner à
+     AdSense. »
+   La politique de confidentialité et les mentions légales ont chacune leur
+   page sur le site, à leur adresse : yadaquiz.app/confidentialite et
+   yadaquiz.app/mentions-legales/. Dans le jeu, la page s'ouvrait sans
+   qu'on voie jamais son adresse. Sous le résumé, une carte l'écrit
+   maintenant en toutes lettres (on peut la sélectionner), avec « Ouvrir »
+   (la page, dans le jeu, comme l'À propos) et « Copier le lien » (l'adresse
+   complète, https:// compris, prête à coller dans AdSense). */
+function adressePageHtml(chemin, titre){
+  const fichier = chemin === "confidentialite" ? "confidentialite.html" : chemin;
+  return `<div class="grp-code-carte page-adresse">
+      <span class="gc-l">${T("Adresse de la page")}</span>
+      <b class="pa-url">${escapeHtml(GAME_URL.replace(/^https:\/\//, "") + chemin)}</b>
+      <div class="gc-act">
+        <button class="grp-pill" onclick="ouvrirSite('${fichier}', '${titre}')">${T("Ouvrir")}</button>
+        <button class="grp-pill calme" onclick="copierAdressePage('${chemin}')">${T("Copier le lien")}</button>
+      </div>
+    </div>`;
+}
+function copierAdressePage(chemin){ copierDansPressePapier(GAME_URL + chemin, T("Lien copié !")); }
 function choixPubDispo(){ try{ return !!(window.googlefc && typeof window.googlefc.showRevocationMessage === "function"); }catch(e){ return false; } }
 function choixPublicite(){ try{ window.googlefc.showRevocationMessage(); }catch(e){} }
 
@@ -35853,7 +36063,7 @@ function ouvrirMentions(){
         : d === "@adresse" ? `<span class="ment-adr">${escapeHtml(EDITEUR.adresse)}</span>`
         : `<span class="ment-nom">${escapeHtml(d)}</span>`;
       return `<p class="conf-l"><b>${escapeHtml(T(t))}</b> ${texte}</p>`;
-    }).join("")}</div>`);
+    }).join("")}</div>` + adressePageHtml("mentions-legales/", "Mentions légales"));
   sonderHebergeur().then(h => {
     const e = document.querySelector("#mentionsVeil .ment-heb");
     if(e){ const t = T(HEBERGEURS[h]); if(e.textContent !== t) e.textContent = t; }
@@ -36269,12 +36479,14 @@ window.addEventListener("pagehide", saveState);
 /* ===================== PLAY ===================== */
 function currentQ(){ return state.questions[state.currentIndex]; }
 
-function confirmLeaveGame(){
+/* (v380) « puis » : ce qui suit la sortie, à la place du retour au mode
+   (le bandeau d'une partie lancée y mène à la discussion du groupe). */
+function confirmLeaveGame(puis){
   showModal({
     title:state.lecon ? (state.lecon.quete !== undefined ? T("Quitter la quête\u00a0?") : T("Quitter la leçon\u00a0?")) : T("Quitter la partie ?"),
     message:state.lecon ? (state.lecon.quete !== undefined ? T("Tu pourras la retenter quand tu veux.") : T("Tu la reprendras depuis le début.")) : T("La partie en cours sera perdue."),
     okLabel:T("Quitter"), cancelLabel:T("Rester"), danger:true,
-    onOk:()=>{ stopQTimer(); retourAuMode(); }
+    onOk:()=>{ stopQTimer(); if(typeof puis === "function"){ clearSavedGame(); state = etatNeuf(); puis(); } else retourAuMode(); }
   });
 }
 
@@ -38484,8 +38696,8 @@ function renderOnlinePlay(){
   const total = net.deck.length;
   const oppName = net.opp ? net.opp.name : "Adversaire";
   const aPlusieurs = nbJoueurs() > 2 || autresJoueurs().length > 1;
-  const goneBanner = (net.oppGone && !net.hideGoneBanner) ? `<div class="leave-banner${net.goneFresh?' reveal-in':''}"><span class="lb-ico">${ICONS.user}</span><span><b>${Tf("{nom} a quitté la partie.", {nom:escapeHtml(oppName)})}</b> ${T("Termine tranquillement ou quitte le duel.")}</span></div>` : "";
-  net.goneFresh = false;
+  /* (v380) « X a quitté la partie » n'est plus posé dans l'écran : il vient
+     par-dessus (voir QUELQU'UN S'EN VA : UN AVIS PAR-DESSUS). */
   /* À DEUX, le bandeau reste le face-à-face d'avant. Au-dessus, il devient une
      ligne de pastilles — une par joueur, classées, la mienne mise en avant :
      à huit, un « VS » n'a plus de sens, et sept colonnes ne tiendraient pas. */
@@ -38506,7 +38718,6 @@ function renderOnlinePlay(){
     </div>`;
   if(net.myDone){
     el.innerHTML = `${renderHeader(titrePartie(), true, "quitDuel()")}
-      ${goneBanner}
       ${scorebar}
       <div class="flex-sp"></div>
       <div class="searching-card">
@@ -38546,7 +38757,6 @@ function renderOnlinePlay(){
     return `<div class="${cls}"><span class="letter">${letter}</span><span class="opt-text">${escapeHtml(texteOption(q, opt))}</span>${ic}</div>`;
   }).join("");
   el.innerHTML = `${renderHeader(titrePartie(), true, "quitDuel()")}
-    ${goneBanner}
     ${scorebar}
     <div class="play-meta"><span class="tier-chip ${info.cls}">${tierDotsHtml(info.level)}${T(info.label)} · ${info.pts} pts</span><span class="q-counter">${net.idx+1}/${total}</span>${net.revealed ? timerFigeHtml(timerSecondsFor(net.timerKey)) : timerChipHtml(timerSecondsFor(net.timerKey))}</div>
     <div class="progress-track">
@@ -39350,6 +39560,10 @@ function render(){
     else if(sameScreen) app.scrollTop = prevScroll;
     if(typeof node._posee === "function"){ try{ node._posee(); }catch(e){} }
   }
+  /* (v380) On sort d'une partie : un lancement manqué pendant qu'on jouait
+     se dit maintenant (voir UNE PARTIE LANCÉE SE DIT TOUJOURS). */
+  if(lastScreen !== state.screen && ECRANS_DE_PARTIE.indexOf(lastScreen) >= 0 && ECRANS_DE_PARTIE.indexOf(state.screen) < 0) setTimeout(annoncerPartieManquee, 700);
+  if(lastScreen === "online-play" && state.screen !== "online-play") cacherDepart();   // (v380) l'avis part avec la partie
   lastScreen = state.screen;
   try{ document.documentElement.classList.toggle("ecran-discussion", state.screen === "groupe"); }catch(e){}
   try{ majBarre(); }catch(e){}

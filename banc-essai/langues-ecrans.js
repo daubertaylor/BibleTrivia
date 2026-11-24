@@ -642,10 +642,13 @@ const ouvrirLaLangue = async (p, lg) => {
       state.screen='online-play'; render(); }],
     /* L'adversaire parti en cours de route : la mention « gone » se colle à
        son nom, dans la barre de scores du duel. */
-    ['Duel · parti',       () => { net.oppGone = true; net.myDone = false;
+    ['Duel · parti',       () => { net.oppGone = false; net.myDone = false;
       /* La barre de scores du duel ne s'affiche qu'EN partie : il faut donc
          une question sous la main, pas l'index d'après la dernière. */
-      net.idx = net.deck.length - 1; net.revealed = false; render(); }],
+      net.idx = net.deck.length - 1; net.revealed = false; render();
+      /* (v380) « Sam a quitté la partie » vient par-dessus l'écran (l'avis
+         du départ) : on le fait venir, ses mots sont lus avec le reste. */
+      markOppGone(); }],
     /* Les quatre temps de la poignée de main « on rejoue ? ». */
     ['Rejouer · on me demande', () => { __fermerTout();
       net.oppPresent=true; net.opp={ id:'b', name:'Sam', color:'#E8574C' };

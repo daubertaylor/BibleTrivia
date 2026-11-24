@@ -25,7 +25,9 @@
         Dora (Muet) jamais, même nommée ;
      8. « @tout le monde » : Jean Paul aussi, sans « mention » ;
      9. un long texte sur plusieurs lignes : une ligne, 140 caractères ;
-    10. une partie lancée : « partie », sans texte ;
+    10. une partie lancée : « partie », sans texte — (v380) et Jean Paul
+        (Mentions) est prévenu aussi : une partie appelle tout le groupe,
+        comme « @tout le monde » ; Dora (Muet) jamais ;
     11. masqué avant l'envoi, groupe supprimé : personne ;
     12. un appareil où le jeu est à l'écran ne reçoit rien ; s'il ne l'a
         plus redit depuis 45 s (fermé sans avoir pu le dire), il est prévenu ;
@@ -186,7 +188,7 @@ const EP = (x) => 'https://push.exemple/appareil-' + x;
     envois.length = 0;
     await ecrire('', { code: 'ABCD12' }, 'partie');
     rep = await servir((await nouveaux())[0], { sans_attente: true });
-    dit('10. une partie lancée : « partie », sans texte', qui() === 'B-tablette,B-tel,H' && envois.every(x => x.charge.partie === true && x.charge.texte === ''), JSON.stringify(envois[0] && envois[0].charge));
+    dit('10. une partie lancée : « partie », sans texte — Jean Paul (Mentions) aussi (v380), Dora (Muet) jamais', qui() === 'B-tablette,B-tel,C,H' && envois.every(x => x.charge.partie === true && x.charge.texte === ''), qui() + ' · ' + JSON.stringify(envois[0] && envois[0].charge));
 
     /* ===== 11 : masqué, groupe supprimé ===== */
     envois.length = 0;
