@@ -6,7 +6,9 @@
    attendaient ensemble, pour toujours. Trois joueurs dans un vrai salon (le
    serveur temps réel local, hub.js) :
      1. l'hôte quitte son salon avant de lancer : les DEUX invités sortent
-        aussitôt (moins de deux secondes), avec « L'hôte a quitté le salon. » ;
+        aussitôt (moins de deux secondes), avec le mot qui dit qui l'a
+        fermée — « Taylor a fermé la partie. » (v379 ; avant : « L'hôte a
+        quitté le salon. », qui reste celui d'un hôte disparu, en 4) ;
      2. seul invité : il sort aussi, comme avant ;
      3. l'hôte passe l'application derrière quelques secondes, puis revient :
         personne n'est mis dehors (trente secondes de grâce) ;
@@ -57,7 +59,7 @@ const dit = (q, b, d) => { if (!b) ko++; console.log('  ' + (b ? 'OK  ' : 'KO  '
     await attends(1800);
     const apres1 = [await etat(A), await etat(B)];
     dit('1. l\'hôte quitte avant de lancer : les deux invités sortent aussitôt, avec le mot',
-      avant.every(e => e.ecran === 'online-room' && e.joueurs === 3) && apres1.every(e => e.ecran === 'online' && !e.salon && /hôte/.test(e.mot)),
+      avant.every(e => e.ecran === 'online-room' && e.joueurs === 3) && apres1.every(e => e.ecran === 'online' && !e.salon && e.mot === 'Taylor a fermé la partie.'),
       JSON.stringify({ avant, apres1 }));
 
     /* 2 */

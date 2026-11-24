@@ -25,7 +25,10 @@
         au chemin, où la tuile s'allume et la leçon d'après s'ouvre ;
      6. quitter un jeu du chemin : « Quitter le jeu ? », et retour au chemin ;
    LES ÉTAPES
-     7. l'en-tête dit « Étape 1 sur 3 » ; la page des étapes les montre
+     7. (v379) l'en-tête dit « Étape 1 sur 3 » ; la page des étapes les montre
+        toutes, OUVERTES (chacune à son pas : « À commencer ») ; l'étape 2 se
+        regarde et se joue dès sa première leçon ; au bout de l'étape 1, la
+        suivante est ouverte. Avant la v379 :
         toutes ; la deuxième se regarde (vingt-trois unités, « Genèse 1–11 »),
         ses pierres fermées ; au bout, la suivante dit quand elle s'ouvre ;
      8. la dernière leçon de l'étape 1 : « Étape terminée ! » ; le chemin
@@ -172,11 +175,14 @@ const fermerFete = (p) => p.evaluate(() => { const b = document.querySelector('#
       await p.waitForTimeout(1300);
       const r7c = await p.evaluate(() => ({ voile: !!document.querySelector('#etapesVeil:not(.closing)'), sur: document.querySelector('.ch-sur').textContent, unites: document.querySelectorAll('.ch-unite').length,
         premiere: document.querySelector('.ch-bandeau small').textContent, ouvertes: document.querySelectorAll('.ch-pierre:not([disabled]), .ch-tuile:not([disabled])').length,
-        haut: document.getElementById('app').scrollTop, suite: (document.querySelector('.ch-suite-titre') || {}).textContent }));
-      dit('7. « Étape 1 sur 3 » ; la page des étapes les montre toutes ; l\'étape 2 se regarde (23 unités, « Genèse 1–11 »), ses pierres fermées ; au bout, la suivante dit quand elle s\'ouvre',
-        r7a.sur === 'Étape 1 sur 3' && r7a.titre === 'Les grands récits' && /fermee/.test(r7a.suite) && r7a.cle
-        && r7b.length === 3 && /^\|Les grands récits\|En cours/.test(r7b[0]) && /^fermee\|L'Ancien Testament, livre par livre\|Après l'étape 1/.test(r7b[1]) && /^fermee\|Le Nouveau/.test(r7b[2])
-        && r7c.sur === 'Étape 2 sur 3' && r7c.unites === 23 && r7c.premiere === 'Genèse 1–11' && r7c.ouvertes === 0 && r7c.haut === 0 && r7c.suite === 'Le Nouveau Testament, livre par livre',
+        haut: document.getElementById('app').scrollTop, suite: (document.querySelector('.ch-suite-titre') || {}).textContent,
+        /* (v379) L'étape 2 se joue dès sa première leçon : elle s'ouvre, comme
+           l'étape 1, à sa place de lecture, la leçon à faire bien à l'écran. */
+        pierre: (() => { const s = document.querySelector('.ch-pierre:not([disabled]), .ch-tuile:not([disabled])'); return s ? Math.round(s.getBoundingClientRect().top) : -1; })() }));
+      dit('7. « Étape 1 sur 3 » ; la page des étapes les montre toutes, ouvertes ; l\'étape 2 (23 unités, « Genèse 1–11 ») se joue dès sa première leçon ; au bout, la suivante est ouverte',
+        r7a.sur === 'Étape 1 sur 3' && r7a.titre === 'Les grands récits' && !/fermee/.test(r7a.suite || 'fermee') && !r7a.cle
+        && r7b.length === 3 && /^\|Les grands récits\|En cours/.test(r7b[0]) && /^\|L'Ancien Testament, livre par livre\|À commencer/.test(r7b[1]) && /^\|Le Nouveau Testament, livre par livre\|À commencer/.test(r7b[2])
+        && r7c.sur === 'Étape 2 sur 3' && r7c.unites === 23 && r7c.premiere === 'Genèse 1–11' && r7c.ouvertes === 1 && r7c.pierre > 60 && r7c.pierre < 600 && r7c.suite === 'Le Nouveau Testament, livre par livre',
         JSON.stringify({ r7a, r7b, r7c }));
       o.p._errs.forEach(e => errs.push(e));
       await o.ctx.close();

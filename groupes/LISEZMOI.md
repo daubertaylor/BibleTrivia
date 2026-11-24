@@ -251,7 +251,16 @@ de ses parties (fonction `poser_stats`, qui ne garde que des nombres bornés
 et des noms d'objectifs). Tant que le fichier n'est pas recollé, la page
 d'un membre reste comme avant, sans chiffres.
 
-**Une seule fois suffit pour les étapes 6 à 15 ensemble**, quelle que soit
+### 16. La flamme sur la page d'un joueur (v379) — recoller le fichier une fois
+
+La page d'un joueur (toucher un membre, ou « Voir le profil ») montre
+maintenant sa flamme : le nombre de jours d'affilée, en orange si elle brûle
+encore. Le serveur ne gardait jusqu'ici que les trois chiffres et les
+objectifs : comme aux étapes 6 à 15, recoller `groupes/table.sql` **en
+entier** dans **SQL Editor** → **Run**. Rien d'autre ne change. Avant ce
+geste, la page montre un tiret à la place du nombre.
+
+**Une seule fois suffit pour les étapes 6 à 16 ensemble**, quelle que soit
 la version déjà installée : le fichier d'aujourd'hui se colle par-dessus
 n'importe laquelle de ses versions passées sans rien perdre, et donne
 exactement la même base qu'une installation neuve (vérifié par

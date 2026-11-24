@@ -308,7 +308,8 @@ const dit = (quoi, bon, detail) => { console.log('  ' + (bon ? 'OK  ' : 'KO  ') 
     await ben.p.waitForTimeout(500);
     const vb11 = await ben.p.evaluate(VUE), vc11 = await chl.p.evaluate(VUE);
     dit('11. Benoît, aux groupes, touche Jeux : « Fermer la partie ? », « Fermer » — la fenêtre et la barre de la partie partent avec les groupes, les jeux arrivent sans barre ; Chloé lit que l\'hôte est parti et reste dans la discussion, sans carte',
-      /Fermer la partie/.test(vb11a.modale) && colle.images >= 3 && colle.ecart <= 1 && colle.barre >= 3 && colle.barreEcart <= 1 && colle.barreOpacite >= 99 && ok11 && !vb11.barre && !vb11.vue && ok11c && vc11.ecran === 'groupe' && !vc11.carte && /hôte a quitté/.test(mot),
+      /* (v379) Le mot dit qui l'a fermée : « Benoît a fermé la partie. » */
+      /Fermer la partie/.test(vb11a.modale) && colle.images >= 3 && colle.ecart <= 1 && colle.barre >= 3 && colle.barreEcart <= 1 && colle.barreOpacite >= 99 && ok11 && !vb11.barre && !vb11.vue && ok11c && vc11.ecran === 'groupe' && !vc11.carte && mot === 'Benoît a fermé la partie.',
       JSON.stringify({ modale: vb11a.modale, colle, ok11, vb11: [vb11.ecran, vb11.barre, vb11.vue], ok11c, vc11: [vc11.ecran, vc11.carte], mot }));
 
     /* 12 */

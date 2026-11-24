@@ -2122,6 +2122,12 @@
   .sheet-veil .len-chip::after, .bk-carte .bk-choix::after{
     background:linear-gradient(150deg, #F44E2C var(--encre-g0, 0%), #DE3616 var(--encre-g1, 100%)); }
   .sheet-veil .len-chip.sel.remplit, .bk-carte .bk-choix.sel.remplit{ background-image:none; }
+  /* (v379) La goutte qui remplit est la puce agrandie (voir LA GOUTTE QUI
+     REMPLIT A LA FORME DE LA PUCE) : son dégradé est celui de la puce, posé
+     sur sa boîte — à l'instant où elle couvre la puce, elle EST la puce,
+     au pixel près, et la relève se fait là. */
+  .sheet-veil .len-chip.goutte-puce::after, .bk-carte .bk-choix.goutte-puce::after{
+    background:linear-gradient(150deg, #F44E2C, #DE3616); }
   /* LA JAUGE DE LA SEMAINE (v316 ; avant, celle du carnet entier). Elle ne
      remplace pas le nombre — la porte doit continuer d'annoncer ce qu'elle
      jouera — elle montre le CHEMIN : les erreurs de la semaine déjà
@@ -2593,6 +2599,36 @@
        lointain : à la fin, la puce est rouge plein, bords et coins compris. */
     background:radial-gradient(closest-side, rgb(236,60,26) 82%, rgba(236,60,26,0.6) 91%, rgba(236,60,26,0) 100%);
     transform:scale(0.001); opacity:0; }
+  /* ===== (v379) LA GOUTTE QUI REMPLIT A LA FORME DE LA PUCE =====
+     « Lorsque je change le curseur, ça se remplit, mais pas en entier d'un
+       coup : la petite barre qui reste en bas, elle se remplit après. Il
+       faut que le bas et tout l'icône se remplissent en entier, tout en
+       même temps, sans décalage. » (IMG_4343, « Normale ».)
+     Filmé image par image, Courte puis Normale : le milieu de la puce était
+     rouge à 242 ms, la bande du bas à 310 ms seulement. Ce n'était pas un
+     réglage, c'était la FORME. Une ellipse, même aux proportions de la puce
+     (v345), touche le milieu des quatre bords au même instant, puis doit
+     grandir encore de près de moitié pour atteindre les coins : pendant ce
+     temps, le long des bords, il reste deux bandes — en haut, et en bas,
+     celle qu'on voit, contre l'ombre de la puce. Mesuré sur soixante-dix
+     points tout autour de la puce : le bord mettait de 43 à 67 ms à rougir.
+     Une seule forme atteint TOUT le bord d'une puce au même instant : la
+     puce elle-même. La goutte qui REMPLIT est donc maintenant la puce,
+     agrandie depuis le doigt (une homothétie, voir poserEncre) : née sous
+     le doigt, minuscule, elle a à chaque image la forme exacte de la puce,
+     arrondis compris, et franchit les quatre bords — le bas comme le reste
+     — dans la même image (mesuré : 0 à 17 ms, banc-essai/puce-bord.js). Sa
+     boîte est la puce agrandie de moitié (ENCRE_BOITE) : elle la couvre en
+     pleine course, et le reste de son élan passe hors de la puce. Son bord
+     est net : un bord adouci n'atteint jamais le bord en même temps que le
+     reste.
+     La goutte qui se RETIRE, elle, ne change pas (l'ellipse ci-dessus) :
+     c'est elle qui tient « un seul rouge à la fois », réglée depuis la v304,
+     et un retrait ne laisse pas de bande — il finit au point où il part. */
+  .chip.goutte-puce::after, .len-chip.goutte-puce::after, .bk-choix.goutte-puce::after{
+    left:var(--encre-l, 0px); top:var(--encre-t, 0px); width:var(--encre-w, 100%); height:var(--encre-h, 100%);
+    border-radius:var(--encre-br, inherit); transform-origin:var(--encre-ox, 50%) var(--encre-oy, 50%);
+    background:rgb(236,60,26); }
   /* L'encre arrive un peu claire et fonce en s'étalant : elle « prend ». */
   @keyframes encreIn{ 0%{ transform:scale(0.03); opacity:0.62; } 40%{ opacity:1; } 100%{ transform:scale(1); opacity:1; } }
   /* Elle se retire en restant pleine — une couleur qui s'en va, pas une
@@ -2654,6 +2690,16 @@
   .chip.has-gs.remplit, .len-chip.has-gs.remplit{ transition:transform 0.44s cubic-bezier(0.2,1,0.3,1),
     background-color 0.22s ease, border-color 0.22s ease, color 0s linear var(--encre-texte),
     opacity 0.22s ease, --glass-tint 0.15s linear; }
+  /* (v379) Sous la goutte qui a la forme de la puce, la teinte pleine se
+     pose d'un coup, dans l'image où la goutte finit de couvrir la puce :
+     il n'y a plus de lisière qui attendait, rien à fondre (voir PLUS DE
+     FONDU SOUS LA GOUTTE-PUCE). */
+  .chip.goutte-puce.remplit, .len-chip.goutte-puce.remplit{ transition:transform 0.44s cubic-bezier(0.2,1,0.3,1),
+    background-color 0s, border-color 0.22s ease, color 0s linear var(--encre-texte),
+    opacity 0.22s ease, --glass-tint 0s linear; }
+  .chip.has-gs.goutte-puce.remplit, .len-chip.has-gs.goutte-puce.remplit{ transition:transform 0.44s cubic-bezier(0.2,1,0.3,1),
+    background-color 0.22s ease, border-color 0.22s ease, color 0s linear var(--encre-texte),
+    opacity 0.22s ease, --glass-tint 0s linear; }
   .chip.encre-sort, .len-chip.encre-sort{ transition:transform 0.44s cubic-bezier(0.2,1,0.3,1),
     background-color 0s, border-color 0.22s ease, color 0s, opacity 0.22s ease, --glass-tint 0.2s ease; }
   /* (v377) La teinte pleine ne bascule plus à heure fixe (aux quatre
@@ -6107,6 +6153,34 @@
   .parcours-sum .sj:not(.fait):not(.gele){ background:rgba(34,26,16,0.07); color:var(--ink-soft); -webkit-backdrop-filter:none; backdrop-filter:none; }
   .parcours-sum .sj.auj:not(.fait):not(.gele){ background:rgba(34,26,16,0.13); color:var(--ink); }
   .parcours-sum .sem-flamme.eteinte{ --glass-tint: rgba(34,26,16,0.07); color:var(--ink-soft); text-shadow:none; }
+  /* ===== (v379) LA FLAMME EST PEINTE AVEC SA CARTE =====
+     « Lorsque j'entre dans le mode Progression, il y a l'icône de la flamme
+       qui clignote au moment de l'ouverture. Il faut que la flamme soit
+       parfaitement affichée, qu'elle ne s'affiche pas en retard. »
+     Allumée, la pastille était une surface de verre à part entière, posée
+     DANS une autre (la carte des chiffres) : sa propre couche graphique,
+     et sous elle une couche de décor de la taille du décor entier
+     (563 × 1 748 px) pour montrer… rien — sa teinte, l'orange du feu, est
+     OPAQUE : personne n'a jamais vu la photo dessous. Les jours déjà joués
+     (l'or) et gelés (le bleu) portaient de même un flou d'arrière-plan
+     sous un fond opaque : une couche chacun, pour rien.
+     Or Progression arrive par la droite, et la flamme est tout au bout, à
+     droite de sa carte : elle entre la DERNIÈRE dans l'écran. Un iPhone ne
+     garnit une couche qu'au moment où elle paraît à l'écran : ces couches
+     se peignaient donc en plein glissement, une image ou deux après la
+     carte qui les porte — la flamme arrivait en retard, puis s'allumait.
+     (Chromium, lui, garnit tout d'avance : le défaut ne se filme pas ici.
+     On ne peut que retirer ce qui le permet.)
+     Allumée, la pastille n'est donc plus du verre : elle est peinte, de la
+     même couleur, AVEC sa carte et dans la même couche — elle ne peut plus
+     arriver ni après elle, ni sans elle. Les jours aussi. Au repos, rien ne
+     change au pixel près : même orange, même relief, même onde au toucher,
+     et la pastille s'enfonce toujours sous le doigt (la règle de l'appui
+     reste plus forte que celle-ci). Éteinte, sa teinte est translucide :
+     elle a besoin de son décor, et reste du verre. */
+  .sem-flamme:not(.eteinte){ transform:none; -webkit-transform:none; }
+  .semaine .sem-flamme:not(.eteinte){ background-image:none; background-color:var(--feu); box-shadow:var(--relief); }
+  .parcours-sum .sj{ -webkit-backdrop-filter:none; backdrop-filter:none; }
 
   /* ---------- GLISSER DE CÔTÉ ----------
      Tout le jeu, depuis la v312 (voir PROFONDEUR) : on va plus loin vers la
@@ -6239,6 +6313,11 @@
   .grp-txt b{ font-family:'Poppins',sans-serif; font-weight:600; font-size:0.96rem; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
   .grp-txt small{ font-size:0.8rem; color:var(--ink-soft); line-height:1.35; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
   .grp-txt small.grp-nb{ font-size:0.74rem; }
+  /* (v379) « À la une » : la vitrine du jour (voir LA VITRINE TOURNE). */
+  .grp-txt small.grp-une{ display:inline-flex; align-items:center; gap:0.22rem; font-family:'Poppins',sans-serif; font-size:0.66rem; font-weight:700;
+    letter-spacing:0.06em; text-transform:uppercase; color:var(--primary); margin-bottom:0.08rem; }
+  .grp-une .ico{ width:0.78rem; height:0.78rem; display:inline-flex; }
+  .grp-une .ico svg{ width:100%; height:100%; }
   .grp-ligne.a-lire .grp-txt small{ color:var(--ink); font-weight:600; }
   .grp-droite{ display:flex; flex-direction:column; align-items:flex-end; gap:0.3rem; flex-shrink:0; }
   .grp-droite small{ font-size:0.72rem; color:var(--ink-soft); }
@@ -6495,6 +6574,23 @@
      et descendait sur la carte du code d'invitation. */
   .sheet-title .st-ico > .grp-av{ width:100%; height:100%; font-size:0.78rem; border-radius:8px; }
   .grp-membre-role{ margin:-0.2rem 0 0.2rem; color:var(--ink-soft); font-size:0.88rem; }
+  /* (v379) LE HAUT DE LA PAGE D'UN JOUEUR (voir le code du même nom) : sa
+     photo en grand, son nom, puis son rôle et sa flamme sur une même ligne.
+     L'en-tête garde son bouton de retour ; son titre (le même nom, en petit)
+     s'efface, mais reste lu par la lecture d'écran. */
+  .profil-page .page-tete .sheet-title{ visibility:hidden; }
+  .mb-hero{ display:flex; flex-direction:column; align-items:center; gap:0.4rem; margin:-0.35rem 0 1.1rem; text-align:center; }
+  .mb-av{ display:flex; margin-bottom:0.3rem; }
+  .mb-nom{ font-family:'Poppins',sans-serif; font-weight:700; font-size:1.45rem; line-height:1.2; color:var(--ink); max-width:100%; overflow-wrap:anywhere; }
+  .mb-ligne{ display:flex; align-items:center; justify-content:center; flex-wrap:wrap; gap:0.55rem; min-height:2rem; }
+  .mb-ligne .mb-role{ margin:0; }
+  .mb-feu{ display:inline-flex; }
+  .mb-flamme{ display:inline-flex; align-items:center; gap:0.28rem; height:2rem; padding:0 0.8rem 0 0.7rem; border-radius:var(--r-full);
+    background:var(--feu); color:#fff; font-family:inherit; font-weight:800; font-size:0.95rem; font-variant-numeric:tabular-nums;
+    text-shadow:0 1px 2px var(--feu-encre); box-shadow:var(--relief); }
+  .mb-flamme svg{ width:1.02rem; height:1.02rem; display:block; }
+  .mb-flamme b{ font-weight:800; min-width:2ch; text-align:center; }
+  .mb-flamme.eteinte{ background:rgba(34,26,16,0.07); color:var(--ink-soft); text-shadow:none; box-shadow:none; }
   /* ===== (v356) LE PROFIL D'UN JOUEUR (voir LE PROFIL D'UN JOUEUR, dans le code) =====
      Une carte de la page, comme celles des actions : les trois chiffres de
      la Progression, ses deux testaments, et ses seize objectifs en une
@@ -7225,14 +7321,29 @@
      pierre de leçon : pas de « ch-noeud » (que les bancs comptent cinq par
      unité). */
   .ch-coffre{ position:relative; display:flex; flex-direction:column; align-items:center; }
-  .ch-coffre-btn{ width:4.3rem; height:3.75rem; border-radius:1.1rem; padding:0.78rem 0.92rem; display:flex; align-items:center; justify-content:center;
-    border:0; -webkit-appearance:none; appearance:none; color:#fff; background:var(--pal-or);
-    box-shadow:inset 0 -0.28rem 0 rgba(0,0,0,0.13), inset 0 1px 0 rgba(255,255,255,0.32), 0 4px 14px var(--pal-or-o); }
-  .ch-coffre-btn .ico{ width:100%; height:100%; display:flex; }
-  .ch-coffre-btn .ico svg{ width:100%; height:100%; }
-  .ch-coffre.ferme .ch-coffre-btn{ background:var(--surface); color:var(--ink-soft); box-shadow:inset 0 -0.28rem 0 rgba(60,45,30,0.08), inset 0 1px 0 rgba(255,255,255,0.7), 0 2px 8px rgba(15,12,10,0.08); }
-  .ch-coffre.ouvert .ch-coffre-btn{ background:var(--pal-bronze); box-shadow:inset 0 -0.28rem 0 rgba(0,0,0,0.13), inset 0 1px 0 rgba(255,255,255,0.3), 0 4px 12px var(--pal-bronze-o); }
+  /* (v379) Le coffre modélisé (voir LE COFFRE, MODÉLISÉ) : plus de tuile
+     autour, le coffre EST l'objet, posé sur le chemin avec son ombre. Au
+     loin (pas encore atteint), il reste éteint ; prêt, il respire comme la
+     pierre à faire. */
+  .ch-coffre-btn{ width:6rem; height:4.64rem; border-radius:1.1rem; padding:0; display:flex; align-items:center; justify-content:center;
+    border:0; -webkit-appearance:none; appearance:none; background:none; box-shadow:none; --press-tint: transparent; -webkit-tap-highlight-color:transparent; }
+  .ch-coffre-btn .cf-img{ width:100%; height:100%; display:block; object-fit:contain; pointer-events:none; -webkit-user-drag:none; user-select:none; -webkit-touch-callout:none; }
+  /* ===== (v379) LE COFFRE AU MILIEU DU CHEMIN =====
+     « Vérifie aussi que le coffre est bien correctement placé. » Il ne
+     l'était pas tout à fait : la pierre au-dessus, l'étiquette et le bouton
+     « Ouvrir le coffre » dessous tombaient sur l'axe du chemin, mais la
+     caisse, elle, était 13 px à sa gauche. Le rendu 3D a cadré le coffre AVEC
+     son ombre, qui part à droite (la lumière vient d'en haut à gauche, comme
+     sur les pierres) : dans son image de 216 px, la caisse est à 28,5 px à
+     gauche du milieu — 13,19 % de la largeur, au pixel près la même dans les
+     trois états (fermé, prêt, ouvert), mesuré sur ses pixels opaques. On
+     décale l'image d'autant : la caisse est sur l'axe, l'ombre reste où la
+     lumière la pose. (Et le coffre qui « respire », prêt, respire maintenant
+     autour de lui-même.) */
+  .cf-img{ translate:13.19% 0; }
+  .ch-coffre.ferme .cf-img{ filter:saturate(0.18) brightness(1.08); opacity:0.92; }
   .ch-coffre.pret .ch-coffre-btn{ animation:chPouls 2.4s ease-in-out infinite; }
+  .ch-coffre-btn:active:not(:disabled){ transform:scale(0.94); }
   .ch-coffre-l{ margin-top:0.5rem; flex-direction:row; gap:0.22rem; font-family:'Poppins',sans-serif; font-size:0.74rem; font-weight:600; color:var(--ink-soft); }
   .ch-coffre.ouvert .ch-coffre-l{ color:#1F6FB4; }
   .ch-coffre-l .ico{ width:0.85rem; height:0.85rem; display:flex; color:#2F8FD8; }
@@ -7243,6 +7354,77 @@
   .end-diamants .ico{ width:1.15rem; height:1.15rem; display:flex; color:#8FD3FF; filter:drop-shadow(0 1px 4px rgba(0,0,0,0.35)); }
   /* Le coffre qu'on ouvre : la fenêtre se pose, le coffre saute. */
   .modal-card.coffre-modal{ display:flex; flex-direction:column; }
+  /* ===== (v379) LA SCÈNE DU COFFRE (voir LE COFFRE S'OUVRE) =====
+     Un fond chaud et sombre, plein (pas de verre) ; au centre le coffre, ses
+     rayons et sa lumière ; dessous le gain. Tout se joue sur une seule
+     horloge. Le couvercle : vingt images d'une même bande, tenues chacune
+     un vingtième de l'ouverture, pendant que la lumière monte. */
+  .modal-veil.coffre-veil{ display:flex; align-items:center; justify-content:center; padding:calc(env(safe-area-inset-top, 0px) + 1rem) 1.2rem calc(var(--sab) + 1.2rem);
+    background:radial-gradient(120% 80% at 50% 38%, rgb(74,48,20), rgb(18,12,6)); -webkit-backdrop-filter:none; backdrop-filter:none; }
+  .coffre-veil.closing{ animation:csPart 0.2s ease forwards; }
+  @keyframes csPart{ to{ opacity:0; } }
+  .coffre-scene{ width:min(22rem, 100%); display:flex; flex-direction:column; align-items:center; text-align:center; color:#fff; animation:csArrive 0.22s ease both; }
+  @keyframes csArrive{ from{ opacity:0; } }
+  .cs-centre{ position:relative; width:15rem; height:14rem; display:flex; align-items:flex-end; justify-content:center; }
+  .cs-coffre{ position:relative; width:13rem; height:13.585rem; transform-origin:50% 90%;
+    animation:csTombe 0.52s cubic-bezier(0.2,1.3,0.4,1) both, csFremit 0.38s ease-in-out 0.52s both; }
+  @keyframes csTombe{ from{ transform:translate3d(0,-2.2rem,0) scale(0.82); opacity:0; } 60%{ opacity:1; } }
+  @keyframes csFremit{ 0%,100%{ transform:rotate(0); } 20%{ transform:rotate(-4deg); } 45%{ transform:rotate(4deg); } 70%{ transform:rotate(-2.5deg); } }
+  .cs-coffre > span{ position:absolute; inset:0; display:block; }
+  .cs-coffre .cf-img{ width:100%; height:100%; display:block; object-fit:contain; }
+  /* (v379) L'ouverture a son propre cadrage : la caisse y est à 2 % à
+     gauche du milieu, dans les vingt images (voir LE COFFRE AU MILIEU DU
+     CHEMIN). */
+  .cs-anim{ translate:2% 0; background-repeat:no-repeat; background-size:2000% 100%; background-position:0% 0;
+    animation:csCouvercle 0.62s linear 0.92s both; }
+  /* (v379) Pas de steps() : Safari ne confie au processeur graphique aucune
+     animation qui en porte une (voir TOUT CE QUI BOUGE, L'iPHONE LE JOUE
+     SEUL), et la règle vaut pour toute la feuille. Chaque image est tenue
+     par deux clés égales ; le saut à la suivante dure un dix-millionième
+     de l'ouverture — les mêmes vingt images, aux mêmes instants. */
+  @keyframes csCouvercle{
+    0%,4.99999%{ background-position:0% 0; } 5%,9.99999%{ background-position:5.2632% 0; }
+    10%,14.99999%{ background-position:10.5263% 0; } 15%,19.99999%{ background-position:15.7895% 0; }
+    20%,24.99999%{ background-position:21.0526% 0; } 25%,29.99999%{ background-position:26.3158% 0; }
+    30%,34.99999%{ background-position:31.5789% 0; } 35%,39.99999%{ background-position:36.8421% 0; }
+    40%,44.99999%{ background-position:42.1053% 0; } 45%,49.99999%{ background-position:47.3684% 0; }
+    50%,54.99999%{ background-position:52.6316% 0; } 55%,59.99999%{ background-position:57.8947% 0; }
+    60%,64.99999%{ background-position:63.1579% 0; } 65%,69.99999%{ background-position:68.4211% 0; }
+    70%,74.99999%{ background-position:73.6842% 0; } 75%,79.99999%{ background-position:78.9474% 0; }
+    80%,84.99999%{ background-position:84.2105% 0; } 85%,89.99999%{ background-position:89.4737% 0; }
+    90%,94.99999%{ background-position:94.7368% 0; } 95%,100%{ background-position:100% 0; } }
+  .cs-coffre:not(.anim) > span{ top:auto; height:auto; aspect-ratio:216 / 167; }
+  .cs-ouvert{ opacity:0; animation:csOuvre 0.3s cubic-bezier(0.2,1.2,0.4,1) 0.92s both; transform-origin:50% 47%; }
+  @keyframes csOuvre{ from{ opacity:0; transform:scale(0.96, 0.9); } to{ opacity:1; transform:none; } }
+  .cs-ferme{ animation:csFermeSort 0.16s ease-in 0.92s both; }
+  @keyframes csFermeSort{ to{ opacity:0; } }
+  .cs-halo{ position:absolute; left:50%; top:50%; width:15rem; height:15rem; margin:-7.5rem 0 0 -7.5rem; border-radius:50%;
+    background:radial-gradient(closest-side, rgba(255,236,170,0.85), rgba(255,200,80,0.45) 45%, rgba(255,170,40,0) 72%);
+    opacity:0; transform:scale(0.2); animation:csHalo 0.6s cubic-bezier(0.2,1,0.3,1) 0.98s forwards; }
+  @keyframes csHalo{ to{ opacity:1; transform:scale(1); } }
+  .cs-rayons{ position:absolute; left:50%; top:50%; width:22rem; height:22rem; margin:-11rem 0 0 -11rem; border-radius:50%;
+    background:repeating-conic-gradient(rgba(255,226,140,0.16) 0 9deg, rgba(255,226,140,0) 9deg 22.5deg);
+    -webkit-mask:radial-gradient(closest-side, #000 30%, transparent 100%); mask:radial-gradient(closest-side, #000 30%, transparent 100%);
+    opacity:0; animation:csRayonsVient 0.7s ease 1s forwards, csTourne 16s linear 1s infinite; }
+  @keyframes csRayonsVient{ to{ opacity:1; } }
+  @keyframes csTourne{ from{ rotate:0deg; } to{ rotate:360deg; } }
+  .cs-gemmes{ position:absolute; left:50%; top:46%; width:0; height:0; }
+  .cs-gemme{ position:absolute; left:-0.8rem; top:-0.8rem; width:1.6rem; height:1.6rem; opacity:0;
+    animation:csJaillit 0.9s cubic-bezier(0.15,0.9,0.3,1) calc(1.12s + var(--gd)) both; }
+  .cs-gemme svg{ width:100%; height:100%; display:block; }
+  @keyframes csJaillit{ 0%{ opacity:0; transform:translate3d(0,0.6rem,0) scale(0.3) rotate(0); } 18%{ opacity:1; }
+    70%{ opacity:1; transform:translate3d(var(--gx),var(--gy),0) scale(1) rotate(var(--gr)); }
+    100%{ opacity:0; transform:translate3d(var(--gx),calc(var(--gy) + 1.6rem),0) scale(0.9) rotate(var(--gr)); } }
+  .cs-texte{ margin-top:0.4rem; opacity:0; animation:csTexte 0.4s cubic-bezier(0.2,1,0.3,1) 1.25s both; }
+  @keyframes csTexte{ from{ opacity:0; transform:translate3d(0,0.6rem,0); } to{ opacity:1; transform:none; } }
+  .cs-titre{ font-family:'Poppins',sans-serif; font-weight:700; font-size:1.45rem; letter-spacing:0.01em; text-shadow:0 2px 14px rgba(0,0,0,0.35); }
+  .cs-gain{ display:inline-flex; align-items:center; gap:0.45rem; margin-top:0.5rem; padding:0.45rem 1.1rem 0.45rem 0.85rem; border-radius:99px;
+    background:rgba(255,255,255,0.12); font-family:'Poppins',sans-serif; font-size:1.35rem; font-variant-numeric:tabular-nums; }
+  .cs-gain .ico{ width:1.35rem; height:1.35rem; display:flex; color:#7CC6F7; }
+  .cs-gain .ico svg{ width:100%; height:100%; }
+  .cs-solde{ margin:0.6rem 0 0; font-size:0.9rem; color:rgba(255,255,255,0.78); }
+  .cs-lu{ position:absolute; width:1px; height:1px; overflow:hidden; clip:rect(0 0 0 0); white-space:nowrap; }
+  .cs-ok{ margin-top:1.4rem; min-width:12rem; opacity:0; animation:csTexte 0.35s cubic-bezier(0.2,1,0.3,1) 1.6s both; }
   .coffre-modal .cm-ico{ order:-1; align-self:center; width:4.7rem; height:4.1rem; margin-bottom:0.75rem; border-radius:1.2rem; padding:0.85rem 1rem; color:#fff; background:var(--pal-or);
     box-shadow:inset 0 -0.28rem 0 rgba(0,0,0,0.13), inset 0 1px 0 rgba(255,255,255,0.32), 0 6px 18px var(--pal-or-o); animation:coffreSaute 0.7s cubic-bezier(.2,.9,.3,1.3) 0.12s both; }
   .coffre-modal .cm-ico .ico{ width:100%; height:100%; display:flex; }
@@ -7866,6 +8048,7 @@ const TEXTES = {
     "Plus rien à rattraper, bravo\u00a0!":"Nothing left to fix, well done!",
     "{n} encore à rattraper":"{n} still to fix",
     "Rattrapée\u00a0!":"Fixed!",
+    "À la une":"Featured",
     "Le site de Yada":"The Yada website",
     "Quiz par livre":"Quiz by book",
     "Guide":"Guide",
@@ -7900,12 +8083,13 @@ const TEXTES = {
     "Étape {n} sur {m}":"Stage {n} of {m}",
     "Étape suivante":"Next stage",
     "Aller à l'étape {n}":"Go to stage {n}",
-    "Elle s'ouvre quand cette étape est finie.":"It opens once this stage is finished.",
     "Le bout du chemin":"The end of the path",
     "Tu as traversé toute la Bible, trois fois.":"You have crossed the whole Bible, three times.",
     "{n} unités":"{n} units",
     "Terminée":"Completed",
     "En cours":"In progress",
+    "À commencer":"Not started",
+    "Commence par celui que tu veux\u00a0: chacun avance à son pas.":"Start with whichever you like: each one moves at its own pace.",
     "Après l'étape {n}":"After stage {n}",
     "Trois voyages à travers la Bible\u00a0: les grands récits, puis chaque livre, de plus près.":"Three journeys through the Bible: the great stories, then each book, up close.",
     "Étape terminée\u00a0!":"Stage complete!",
@@ -7999,6 +8183,8 @@ const TEXTES = {
     "Six questions de l'unité, quinze secondes chacune\u00a0: cinq justes pour la réussir.":"Six questions from the unit, fifteen seconds each: get five right to pass.",
     "Cinq questions de l'unité, sans une seule erreur.":"Five questions from the unit, without a single mistake.",
     "Quête":"Quest",
+    "À découvrir":"To discover",
+    "Jeu":"Game",
     "Quête réussie\u00a0!":"Quest complete!",
     "Presque\u00a0!":"Almost!",
     "Pas cette fois":"Not this time",
@@ -8013,29 +8199,31 @@ const TEXTES = {
     "au bout de l'unité":"at the end of the unit",
     "Ouvrir le coffre":"Open the chest",
     "Coffre ouvert\u00a0!":"Chest opened!",
-    "+{n} diamants":"+{n} diamonds",
-    "Tu as maintenant {n} diamants.":"You now have {n} diamonds.",
+    "+{n} gemmes":"+{n} gems",
+    "Tu as maintenant {n} gemmes.":"You now have {n} gems.",
     "Son coffre t'attend au bout du chemin.":"Its chest is waiting at the end of the path.",
-    "{n} diamants · Boutique":"{n} diamonds · Shop",
+    "{n} gemmes · Boutique":"{n} gems · Shop",
     "Boutique":"Shop",
-    "Tes diamants":"Your diamonds",
+    "Tes gemmes":"Your gems",
     "Gel de série":"Streak freeze",
     "Il protège ta flamme pour UN jour manqué. Deux en réserve au maximum.":"It protects your flame for ONE missed day. Two in reserve at most.",
     "En réserve\u00a0: {n}/{m}":"In reserve: {n}/{m}",
     "Acheter":"Buy",
     "Réserve pleine":"Reserve full",
-    "Il te manque {n} diamants":"You need {n} more diamonds",
+    "Il te manque {n} gemmes":"You need {n} more gems",
+    "Il te manque 1 gemme":"You need 1 more gem",
+    "{n} gemme · Boutique":"{n} gem · Shop",
     "Ta réserve est pleine\u00a0: deux gels au maximum.":"Your reserve is full: two freezes at most.",
     "Gel acheté — il couvre UN jour manqué.":"Freeze bought — it covers ONE missed day.",
-    "Comment gagner des diamants":"How to earn diamonds",
+    "Comment gagner des gemmes":"How to earn gems",
     "Une leçon terminée":"A lesson completed",
     "Une leçon sans faute, une fois":"A flawless lesson, once",
     "Une quête réussie":"A quest completed",
     "Le coffre d'une unité":"A unit's chest",
-    "Des diamants pour tes leçons":"Diamonds for your lessons",
-    "{n} leçons déjà faites\u00a0: +{d} diamants":"{n} lessons already done: +{d} diamonds",
-    "1 leçon déjà faite\u00a0: +{d} diamants":"1 lesson already done: +{d} diamonds",
-    "Ou à la boutique du Parcours, pour {prix} diamants.":"Or from the Path shop, for {prix} diamonds.",
+    "Des gemmes pour tes leçons":"Gems for your lessons",
+    "{n} leçons déjà faites\u00a0: +{d} gemmes":"{n} lessons already done: +{d} gems",
+    "1 leçon déjà faite\u00a0: +{d} gemmes":"1 lesson already done: +{d} gems",
+    "Ou à la boutique du Parcours, pour {prix} gemmes.":"Or from the Path shop, for {prix} gems.",
     "Code de la partie":"Game code",
     "Continuer":"Continue",
     "Couleur":"Color",
@@ -8430,6 +8618,10 @@ const TEXTES = {
     "Ajouter 10 points":"Add 10 points",
     "★ Nouveau record personnel\u00a0!":"★ New personal best!",
     "Partie terminée":"Game over",
+    "Partie annulée":"Game cancelled",
+    "{nom} a fermé la partie.":"{nom} closed the game.",
+    "La partie a été fermée.":"The game was closed.",
+    "Fermer la partie":"Close the game",
     "points":"points",
     "Record personnel\u00a0: {p}% · {n} partie jouée":"Personal best: {p}% · {n} game played",
     "Record personnel\u00a0: {p}% · {n} parties jouées":"Personal best: {p}% · {n} games played",
@@ -8944,6 +9136,7 @@ const TEXTES = {
     "Plus rien à rattraper, bravo\u00a0!":"¡Nada más por corregir, bien hecho!",
     "{n} encore à rattraper":"{n} aún por corregir",
     "Rattrapée\u00a0!":"¡Corregido!",
+    "À la une":"Destacado",
     "Le site de Yada":"El sitio de Yada",
     "Quiz par livre":"Quiz por libro",
     "Guide":"Guía",
@@ -8973,12 +9166,13 @@ const TEXTES = {
     "Étape {n} sur {m}":"Etapa {n} de {m}",
     "Étape suivante":"Siguiente etapa",
     "Aller à l'étape {n}":"Ir a la etapa {n}",
-    "Elle s'ouvre quand cette étape est finie.":"Se abre cuando termines esta etapa.",
     "Le bout du chemin":"El final del camino",
     "Tu as traversé toute la Bible, trois fois.":"Has recorrido toda la Biblia, tres veces.",
     "{n} unités":"{n} unidades",
     "Terminée":"Terminada",
     "En cours":"En curso",
+    "À commencer":"Por empezar",
+    "Commence par celui que tu veux\u00a0: chacun avance à son pas.":"Empieza por el que quieras: cada uno avanza a su ritmo.",
     "Après l'étape {n}":"Después de la etapa {n}",
     "Trois voyages à travers la Bible\u00a0: les grands récits, puis chaque livre, de plus près.":"Tres viajes por la Biblia: los grandes relatos y, después, cada libro de cerca.",
     "Étape terminée\u00a0!":"¡Etapa terminada!",
@@ -9072,6 +9266,8 @@ const TEXTES = {
     "Six questions de l'unité, quinze secondes chacune\u00a0: cinq justes pour la réussir.":"Seis preguntas de la unidad, quince segundos cada una: cinco correctas para superarla.",
     "Cinq questions de l'unité, sans une seule erreur.":"Cinco preguntas de la unidad, sin un solo error.",
     "Quête":"Misión",
+    "À découvrir":"Por descubrir",
+    "Jeu":"Juego",
     "Quête réussie\u00a0!":"¡Misión cumplida!",
     "Presque\u00a0!":"¡Casi!",
     "Pas cette fois":"Esta vez no",
@@ -9086,29 +9282,31 @@ const TEXTES = {
     "au bout de l'unité":"al final de la unidad",
     "Ouvrir le coffre":"Abrir el cofre",
     "Coffre ouvert\u00a0!":"¡Cofre abierto!",
-    "+{n} diamants":"+{n} diamantes",
-    "Tu as maintenant {n} diamants.":"Ahora tienes {n} diamantes.",
+    "+{n} gemmes":"+{n} gemas",
+    "Tu as maintenant {n} gemmes.":"Ahora tienes {n} gemas.",
     "Son coffre t'attend au bout du chemin.":"Su cofre te espera al final del camino.",
-    "{n} diamants · Boutique":"{n} diamantes · Tienda",
+    "{n} gemmes · Boutique":"{n} gemas · Tienda",
     "Boutique":"Tienda",
-    "Tes diamants":"Tus diamantes",
+    "Tes gemmes":"Tus gemas",
     "Gel de série":"Congelación de racha",
     "Il protège ta flamme pour UN jour manqué. Deux en réserve au maximum.":"Protege tu llama durante UN día perdido. Dos en reserva como máximo.",
     "En réserve\u00a0: {n}/{m}":"En reserva: {n}/{m}",
     "Acheter":"Comprar",
     "Réserve pleine":"Reserva llena",
-    "Il te manque {n} diamants":"Te faltan {n} diamantes",
+    "Il te manque {n} gemmes":"Te faltan {n} gemas",
+    "Il te manque 1 gemme":"Te falta 1 gema",
+    "{n} gemme · Boutique":"{n} gema · Tienda",
     "Ta réserve est pleine\u00a0: deux gels au maximum.":"Tu reserva está llena: dos congelaciones como máximo.",
     "Gel acheté — il couvre UN jour manqué.":"Congelación comprada: cubre UN día perdido.",
-    "Comment gagner des diamants":"Cómo ganar diamantes",
+    "Comment gagner des gemmes":"Cómo ganar gemas",
     "Une leçon terminée":"Una lección terminada",
     "Une leçon sans faute, une fois":"Una lección sin errores, una vez",
     "Une quête réussie":"Una misión cumplida",
     "Le coffre d'une unité":"El cofre de una unidad",
-    "Des diamants pour tes leçons":"Diamantes por tus lecciones",
-    "{n} leçons déjà faites\u00a0: +{d} diamants":"{n} lecciones ya hechas: +{d} diamantes",
-    "1 leçon déjà faite\u00a0: +{d} diamants":"1 lección ya hecha: +{d} diamantes",
-    "Ou à la boutique du Parcours, pour {prix} diamants.":"O en la tienda del Camino, por {prix} diamantes.",
+    "Des gemmes pour tes leçons":"Gemas por tus lecciones",
+    "{n} leçons déjà faites\u00a0: +{d} gemmes":"{n} lecciones ya hechas: +{d} gemas",
+    "1 leçon déjà faite\u00a0: +{d} gemmes":"1 lección ya hecha: +{d} gemas",
+    "Ou à la boutique du Parcours, pour {prix} gemmes.":"O en la tienda del Camino, por {prix} gemas.",
     "Code de la partie":"Código de la partida",
     "Continuer":"Continuar",
     "Couleur":"Color",
@@ -9494,6 +9692,10 @@ const TEXTES = {
     "Ajouter 10 points":"Añadir 10 puntos",
     "★ Nouveau record personnel\u00a0!":"★ ¡Nuevo récord personal!",
     "Partie terminée":"Partida terminada",
+    "Partie annulée":"Partida cancelada",
+    "{nom} a fermé la partie.":"{nom} cerró la partida.",
+    "La partie a été fermée.":"La partida se cerró.",
+    "Fermer la partie":"Cerrar la partida",
     "points":"puntos",
     "Record personnel\u00a0: {p}% · {n} partie jouée":"Récord personal: {p}% · {n} partida jugada",
     "Record personnel\u00a0: {p}% · {n} parties jouées":"Récord personal: {p}% · {n} partidas jugadas",
@@ -12603,7 +12805,7 @@ const SUPABASE_ANON_KEY = "sb_publishable_FDJ_R0foC7uIeHmxVrj6rA_2NeIgW2a";
    remontée d'un téléphone ne vaut rien si on ne sait pas QUELLE version
    tournait. Elle doit rester égale au CACHE de sw.js — c'est ce que vérifie
    banc-essai/version.js, qui refuse de laisser publier les deux en désaccord. */
-const VERSION_JEU = "v378";
+const VERSION_JEU = "v379";
 
 /* ===================== QUAND ÇA CASSE CHEZ UN JOUEUR =====================
    « Si quelque chose casse chez cinq d'entre eux sur un modèle de téléphone
@@ -13093,7 +13295,38 @@ function reduirePartie(){
   majPanneauPartie();
   if(p && p.isConnected && h0 > 0) morpherCarte(p, h0);
 }
-function quitterPartieDuFil(){ leaveRoomToOnline(); }
+/* ===== (v379) FERMER UNE PARTIE QUI N'A PAS COMMENCÉ =====
+   « Si par exemple pas de joueurs arrivent et que je décide de me dire : les
+     joueurs ne viendront pas, je ferme la partie. Vérifie la fermeture. Fais
+     ça proprement. »
+   Rejoué de bout en bout (banc salon-ferme.js, un vrai serveur) :
+   - PERSONNE N'EST VENU : la croix ferme sans question ; la carte se replie,
+     l'invitation quitte le fil chez tous (le serveur la retire). C'était
+     déjà juste, et ça le reste ;
+   - QUELQU'UN L'A REJOINTE : la croix fermait aussitôt, pour tous, sans rien
+     demander — alors que quitter les messages, ou lancer autre chose, pose
+     la question. Elle la pose maintenant aussi : « Fermer la partie ? Les
+     joueurs qui t'ont rejoint en sortiront. » — « Rester » ou « Fermer » ;
+   - l'invitation d'une partie fermée AVANT d'avoir commencé disait « Partie
+     terminée » : elle dit « Partie annulée » (voir bulleHtml) ;
+   - chez les invités, le mot dit qui a fermé : « Benoît a fermé la partie. »
+     (au lieu de « L'hôte a quitté le salon. », qui reste pour un hôte qui
+     disparaît sans rien dire) ;
+   - un « Rejoindre » touché pendant que l'hôte ferme ne laisse plus seul
+     dans un salon vide : une invitation fermée ou retirée ne se rejoint pas,
+     et un salon dont l'invitation se ferme pendant qu'on l'attend se quitte
+     tout de suite (voir partieFermeeEnDirect). */
+function quitterPartieDuFil(){
+  if(net.isHost && nbJoueurs() > 1 && !(net.deck && net.deck.length)){
+    showModal({
+      title:T("Fermer la partie\u00a0?"), message:T("Les joueurs qui t'ont rejoint en sortiront."),
+      okLabel:T("Fermer"), cancelLabel:T("Rester"), danger:true,
+      onOk:()=>{ if(net.room) leaveRoomToOnline(); }
+    });
+    return;
+  }
+  leaveRoomToOnline();
+}
 /* Les visages du salon, en une rangée. */
 function joueursDuFilHtml(){
   return `<div class="gp-joueurs">${classement().sort((a, b)=> (a.moi ? 0 : 1) - (b.moi ? 0 : 1)).map(j => `
@@ -13165,7 +13398,7 @@ function majPanneauPartie(el, pose){
       <span class="gp-titre">${T("Partie du groupe")}</span>
       <span class="gp-resume">${nbJoueurs()}/${MAX_JOUEURS}</span>
       <button class="icon-btn gp-plier" onclick="reduirePartie()" aria-label="${net.filReduit ? T("Ouvrir la partie") : T("Réduire la partie")}"><span class="ico" style="width:1.1rem;height:1.1rem;">${ICONS.chevronLeft}</span></button>
-      <button class="icon-btn gp-quitter" onclick="quitterPartieDuFil()" aria-label="${T("Quitter la partie")}"><span class="ico" style="width:1.05rem;height:1.05rem;">${ICONS.close}</span></button>
+      <button class="icon-btn gp-quitter" onclick="quitterPartieDuFil()" aria-label="${net.isHost ? T("Fermer la partie") : T("Quitter la partie")}"><span class="ico" style="width:1.05rem;height:1.05rem;">${ICONS.close}</span></button>
     </div>`;
   p.appendChild(corps);
   if(neuve) deplierCarte(p);
@@ -13975,9 +14208,13 @@ function bindRoom(ch){
     recevoirPhoto(payload.id, payload.u);
   });
   /* (v335) L'hôte a fermé le salon avant de lancer : tout le monde sort. */
-  ch.on("broadcast", { event:"ferme" }, ()=>{
+  ch.on("broadcast", { event:"ferme" }, ({ payload } = {})=>{
     if(net.room !== ch || net.isHost || net.deck.length) return;
-    salonFermeParHote();
+    /* (v379) Il l'a fermée lui-même : on dit qui (voir FERMER UNE PARTIE QUI
+       N'A PAS COMMENCÉ). */
+    const j = payload && payload.id && net.joueurs ? net.joueurs[payload.id] : null;
+    const nom = j && String(j.name || "").trim();
+    salonFermeParHote(nom ? Tf("{nom} a fermé la partie.", { nom }) : T("La partie a été fermée."));
   });
   ch.on("broadcast", { event:"start" }, ({ payload })=>{
     if(!payload) return;
@@ -14312,10 +14549,10 @@ function quitDuel(){
    revenir, puis le salon se ferme de la même façon. Une partie LANCÉE, elle,
    continue sans lui : son score reste au tableau. */
 const HOTE_GRACE = 30000;
-function salonFermeParHote(){
+function salonFermeParHote(mot){
   if(ecranEnLigne() !== "online-room") { cleanupRoom(); return; }
   cleanupRoom();
-  net.error = T("L'hôte a quitté le salon.");
+  net.error = mot || T("L'hôte a quitté le salon.");
   if(sortirVersGroupe(net.error)){ net.error = ""; return; }
   state.screen = "online"; render();
 }
@@ -23664,6 +23901,28 @@ const ENCRE_PLEINE = 0.92;
    cette lisière au rouge ; elle s'y fond maintenant en 0,15 s, dès que la
    goutte couvre toute la puce (voir finirEncre). */
 const FONDU_TEINTE = 150;
+/* ===== (v379) PLUS DE FONDU SOUS LA GOUTTE-PUCE =====
+   Ce fondu existait parce que l'ellipse touchait le bord bien avant les
+   coins : pendant ce temps, le dernier pixel du bord restait rose pâle (la
+   crème de la couche du dessous transparaît dans son lissage), et basculer
+   la teinte d'un coup le faisait sauter au rouge. Fondu ou non, ce bord se
+   remplissait APRÈS le reste. La goutte-puce n'atteint le bord qu'à
+   l'instant où elle couvre tout (voir LA GOUTTE QUI REMPLIT A LA FORME DE
+   LA PUCE) : la teinte pleine se pose dessous à cet instant même — une
+   image avant, pour l'iPhone qui peindrait l'encre une image en retard —,
+   et le dernier pixel du bord devient rouge AVEC le reste. (FONDU_TEINTE
+   reste la règle de l'ellipse : une puce reprise en plein retrait se
+   remplit encore avec elle.) */
+const POSE_TEINTE = 16;
+/* (v379) L'ÉCHELLE OÙ LA GOUTTE-PUCE COUVRE LA PUCE : 0,67. La courbe de
+   l'encre part vite et finit très lentement (de 0,85 à 0,92, 60 ms ; de
+   0,92 à 1, 240 ms). Couvrir la puce à 0,92, c'était franchir son bord dans
+   la partie lente : filmé, un liseré de deux ou trois pixels restait tout
+   autour pendant une centaine de millisecondes. À 0,67 — l'échelle où
+   l'ellipse touchait le MILIEU des bords —, la goutte franchit tout le bord
+   en pleine vitesse, coins compris, et le reste de son élan passe hors de la
+   puce, où rien ne se voit. */
+const ENCRE_BOITE = 0.67;
 /* (v328) Dans une page, la goutte est un disque net (sans bord adouci, voir
    « SANS MASQUE ») : c'est son bord même qui doit couvrir le coin. */
 function coeurEncre(c){ return c.closest(".sheet-veil, .bk-carte") ? 1 : ENCRE_COEUR; }
@@ -23747,7 +24006,24 @@ function poserEncre(c, x, y, plein){
   const delta = (x - W / 2) * sx + (y - H / 2) * sy;
   c.style.setProperty("--encre-g0", (mi - lPuce / 2 - delta).toFixed(1) + "px");
   c.style.setProperty("--encre-g1", (mi + lPuce / 2 - delta).toFixed(1) + "px");
-  return { x, y, rayon, k, coeur };
+  /* (v379) ET LA BOÎTE DE LA GOUTTE-PUCE (voir LA GOUTTE QUI REMPLIT A LA
+     FORME DE LA PUCE) : la puce agrandie de 1/p autour du doigt. Mise à
+     l'échelle depuis le doigt (transform-origin), elle est EXACTEMENT la
+     puce à l'échelle p, arrondis compris. Une goutte qui remplit prend
+     ENCRE_BOITE ; une goutte qui se retire n'en a pas l'usage (elle reste
+     l'ellipse), sa boîte est la puce. */
+  const pb = plein == null ? ENCRE_BOITE : plein;
+  const cs = getComputedStyle(c);
+  const coin = (v)=> ((parseFloat(v) || 0) / pb).toFixed(2) + "px";
+  c.style.setProperty("--encre-p", String(pb));
+  c.style.setProperty("--encre-l", (x - x / pb).toFixed(2) + "px");
+  c.style.setProperty("--encre-t", (y - y / pb).toFixed(2) + "px");
+  c.style.setProperty("--encre-w", (W / pb).toFixed(2) + "px");
+  c.style.setProperty("--encre-h", (H / pb).toFixed(2) + "px");
+  c.style.setProperty("--encre-ox", (x / pb).toFixed(2) + "px");
+  c.style.setProperty("--encre-oy", (y / pb).toFixed(2) + "px");
+  c.style.setProperty("--encre-br", [cs.borderTopLeftRadius, cs.borderTopRightRadius, cs.borderBottomRightRadius, cs.borderBottomLeftRadius].map(coin).join(" "));
+  return { x, y, rayon, k, coeur, p: pb };
 }
 /* La courbe d'étalement de l'encre (la même que dans la feuille de style) :
    à quel instant le disque atteint-il une échelle donnée ? On résout la
@@ -23779,6 +24055,16 @@ function delaiLibelle(c, o, dureeMs){
     }
   }
   if(!isFinite(g)) return Math.round(dureeMs * 0.4);
+  /* (v379) La goutte-puce couvre le libellé quand, de chaque côté du
+     doigt, elle a fait au moins le chemin jusqu'à lui. */
+  if(o.boite && isFinite(o.p) && o.p > 0){
+    const Wp = c.offsetWidth || 1, Hp = c.offsetHeight || 1;
+    const fx = Math.max(0, o.x > 0 ? (o.x - g) / o.x : 0, Wp - o.x > 0 ? (d - o.x) / (Wp - o.x) : 0);
+    const fy = Math.max(0, o.y > 0 ? (o.y - h) / o.y : 0, Hp - o.y > 0 ? (bas - o.y) / (Hp - o.y) : 0);
+    const e = o.p * Math.min(1, Math.max(fx, fy));
+    const te = instantBezier(0.3, 0.55, 0.25, 1, Math.min(1, Math.max(0, (e - 0.03) / 0.97)));
+    return Math.round(Math.min(dureeMs, Math.max(40, te * dureeMs + 16)));
+  }
   /* Mesuré dans l'espace où la goutte (une ellipse, voir rayonsEncre) est un
      cercle : les largeurs divisées par k. */
   const k = o.k || 1;
@@ -23859,6 +24145,7 @@ function echelleEncre(c){
    l'animation ne rend jamais la main (onglet endormi). */
 function finirEncre(c, apres, duree, avance, attente){
   clearTimeout(c._remplirT); clearTimeout(c._poseT); cancelAnimationFrame(c._couvreF);
+  const boiteF = c.classList.contains("goutte-puce");
   if(c._finEncre){ c.removeEventListener("animationend", c._finEncre); c._finEncre = null; }
   const nom = apres ? "encreIn" : "encreOut", debut = performance.now();
   const attendu = Math.max(0, duree + attente - avance);
@@ -23870,6 +24157,9 @@ function finirEncre(c, apres, duree, avance, attente){
     rendue = performance.now();
     cancelAnimationFrame(c._couvreF);
     c.style.removeProperty("--glass-tint");
+    /* (v379) Posée MAINTENANT, sous « remplit » : dans une page, la classe
+       part juste après, et la teinte prendrait sinon la transition de repos. */
+    void getComputedStyle(c).getPropertyValue("--glass-tint");
   };
   const finir = ()=>{
     if(fini) return;
@@ -23883,7 +24173,7 @@ function finirEncre(c, apres, duree, avance, attente){
     rendre();
     /* DANS UNE PAGE, le dégradé remplace l'encre dans la MÊME image — sans
        chevauchement (voir LA RELÈVE NE SE CHEVAUCHE PLUS). */
-    if(coeurEncre(c) === 1){ c.classList.remove("remplit"); return; }
+    if(coeurEncre(c) === 1){ c.classList.remove("remplit", "goutte-puce"); return; }
     /* Ailleurs, l'encre s'en va dès que la teinte a fini de se fondre
        dessous — d'ordinaire depuis longtemps — et le fond de la puce revient
        dans la MÊME image (encre-sort : voir LE FOND SE RETIRE PENDANT LE
@@ -23891,10 +24181,10 @@ function finirEncre(c, apres, duree, avance, attente){
        déjà rouge. */
     const ote = ()=>{
       c.classList.add("encre-sort");
-      c.classList.remove("remplit");
+      c.classList.remove("remplit", "goutte-puce");
       c._remplirT = setTimeout(()=>{ c.classList.remove("encre-sort"); }, 80);
     };
-    const reste = FONDU_TEINTE + 20 - (performance.now() - rendue);
+    const reste = (boiteF ? 0 : FONDU_TEINTE) + 20 - (performance.now() - rendue);
     if(reste > 0) c._remplirT = setTimeout(ote, reste); else ote();
   };
   const ecoute = (e)=>{
@@ -23915,7 +24205,11 @@ function finirEncre(c, apres, duree, avance, attente){
      géométrie : une puce reprise en plein retrait repart avec la goutte de
      son retrait, au rayon plus court (voir basculerChoix). */
   let sCouvre = ENCRE_PLEINE;
-  try{
+  /* (v379) La goutte-puce couvre tout à l'échelle de sa boîte. */
+  const boite = c.classList.contains("goutte-puce");
+  const pBoite = parseFloat(c.style.getPropertyValue("--encre-p"));
+  if(boite && isFinite(pBoite) && pBoite > 0) sCouvre = pBoite;
+  else try{
     const W = c.offsetWidth || 1, H = c.offsetHeight || 1;
     const ex = parseFloat(c.style.getPropertyValue("--encre-x")), ey = parseFloat(c.style.getPropertyValue("--encre-y"));
     const erx = parseFloat(c.style.getPropertyValue("--encre-rx")), ery = parseFloat(c.style.getPropertyValue("--encre-ry"));
@@ -23925,7 +24219,11 @@ function finirEncre(c, apres, duree, avance, attente){
       sCouvre = Math.min(1, loin / (coeurEncre(c) * ery));
     }
   }catch(e){}
-  const couvert = instantBezier(...COURBE_ENCRE_IN, Math.min(1, Math.max(0, (sCouvre - 0.03) / 0.97))) + 16 / Math.max(1, duree);
+  /* (v379) Sous la goutte-puce, la teinte pleine se pose UNE IMAGE AVANT la
+     couverture (voir PLUS DE FONDU SOUS LA GOUTTE-PUCE) ; dans une page, la
+     relève se fait à la couverture même. */
+  const enPage = coeurEncre(c) === 1;
+  const couvert = instantBezier(...COURBE_ENCRE_IN, Math.min(1, Math.max(0, (sCouvre - 0.03) / 0.97))) + ((boite && !enPage) ? -POSE_TEINTE : 16) / Math.max(1, duree);
   let anim = null;
   try{ anim = c.getAnimations({ subtree:true }).find(a => a.animationName === "encreIn") || null; }catch(e){ anim = null; }
   if(!anim || !anim.effect || !anim.effect.getComputedTiming) return;
@@ -23933,7 +24231,15 @@ function finirEncre(c, apres, duree, avance, attente){
     if(fini || rendue) return;
     let t = null;
     try{ t = anim.effect.getComputedTiming().progress; }catch(e){}
-    if(anim.playState === "finished" || (t != null && t >= couvert)){ rendre(); return; }
+    if(anim.playState === "finished" || (t != null && t >= couvert)){
+      rendre();
+      /* (v379) Dans une page, la goutte-puce EST le dégradé de la puce sur la
+         boîte de la puce, à l'instant où elle la couvre : la relève se fait
+         là, dans la même image, et l'encre ne grandit pas au-delà sous les
+         yeux (son dégradé s'étirerait). */
+      if(boite && enPage) finir();
+      return;
+    }
     if(anim.playState === "idle") return;      // annulée : un autre geste a pris la main
     c._couvreF = requestAnimationFrame(guetter);
   };
@@ -23950,27 +24256,33 @@ function basculerChoix(selecteur, classe, k){
     const avant = c.classList.contains(classe);
     const apres = c.dataset.k === k;
     if(avant === apres) return;
-    let duree, avance = 0, attente = 0;
+    let duree, avance = 0, attente = 0, pose = null;
     /* Lu avant de toucher aux classes : où en est l'encre de CETTE puce. */
     const enVol = echelleEncre(c);
     const geometrie = ()=>{
       const rx = parseFloat(c.style.getPropertyValue("--encre-rx")), ry = parseFloat(c.style.getPropertyValue("--encre-ry"));
       return { x: parseFloat(c.style.getPropertyValue("--encre-x")), y: parseFloat(c.style.getPropertyValue("--encre-y")),
-               rayon: parseFloat(c.style.getPropertyValue("--encre-r")), k: (rx > 0 && ry > 0) ? rx / ry : 1, coeur: coeurEncre(c) };
+               rayon: parseFloat(c.style.getPropertyValue("--encre-r")), k: (rx > 0 && ry > 0) ? rx / ry : 1, coeur: coeurEncre(c),
+               p: parseFloat(c.style.getPropertyValue("--encre-p")) };
     };
     const valide = (o)=> o && isFinite(o.x) && isFinite(o.y) && isFinite(o.rayon);
     try{
       if(apres){
         duree = dureeCss(c, "--encre-duree", 500);
-        let pose;
         if(enVol != null && enVol > 0.03 && valide(geometrie())){
           /* Elle se vidait : elle se remplit d'où elle en est, depuis son centre. */
           pose = geometrie();
           avance = instantBezier(...COURBE_ENCRE_IN, Math.min(1, (enVol - 0.03) / 0.97)) * duree;
+          pose.boite = false;   // (v379) reprise en plein retrait : elle se remplit avec l'ellipse du retrait
         } else {
           /* Le point posé au contact est déjà sur la puce ; sinon, le centre. */
           const o = doigt ? geometrie() : null;
           pose = valide(o) ? o : encrerPuce(c);
+          /* (v379) Un remplissage neuf : la goutte-puce (voir LA GOUTTE QUI
+             REMPLIT A LA FORME DE LA PUCE). La boîte posée au contact est
+             celle d'une goutte qui remplit (ENCRE_BOITE). */
+          pose.boite = true;
+          if(!(pose.p > 0 && pose.p < 1)){ const q = poserEncre(c, pose.x, pose.y); pose.p = q.p; }
         }
         c.style.setProperty("--encre-texte", Math.max(0, delaiLibelle(c, pose, duree) - avance) + "ms");
       } else {
@@ -24011,11 +24323,12 @@ function basculerChoix(selecteur, classe, k){
     c._encre = { sens: apres ? "in" : "out", debut: performance.now() - avance, duree, attente: apres ? 0 : attente };
     /* Une animation ne se rejoue pas si sa classe est déjà là : on la retire,
        on force le calcul, on la remet. */
-    c.classList.remove("remplit", "devide", "encre-sort");
+    c.classList.remove("remplit", "devide", "encre-sort", "goutte-puce");
     if(teinte) c.style.setProperty("--glass-tint", teinte);
     void c.offsetWidth;
     c.classList.toggle(classe, apres);
     c.classList.add(apres ? "remplit" : "devide");
+    if(apres && pose && pose.boite) c.classList.add("goutte-puce");   // (v379)
     if(!apres) c.style.removeProperty("--glass-tint");
     /* La classe passagère s'en va quand l'encre a VRAIMENT fini : l'état,
        lui, est porté par « active »/« sel », qui restent. */
@@ -25098,6 +25411,21 @@ function sequenceParcours(){
    ne se compte deux fois — ce qu'un simple nombre ne saurait pas faire.
    Les leçons faites avant la v368 sont créditées d'office, une fois
    (rattraperDiamants) : personne ne repart de zéro. */
+/* ===== (v379) DES GEMMES, PAS DES DIAMANTS =====
+   « Si c'est mieux d'appeler ça des gemmes, fais-le. Mais du coup, faudrait
+     que ça soit des gemmes et pas des diamants. Enfin, vois ce qui est le
+     mieux. » C'est mieux, pour trois raisons :
+   - l'icône EST une gemme : la pierre taillée bleue que tous les téléphones
+     appellent « gem stone » (💎) — un saphir, pas un diamant, qui est
+     incolore ;
+   - c'est le mot des jeux : on gagne et on dépense des gemmes ;
+   - c'est le mot de la Bible : les pierres précieuses du pectoral (Exode 28),
+     les fondements de la Jérusalem nouvelle, « ornés de pierres précieuses de
+     toute espèce » (Apocalypse 21). Le coffre en verse de plusieurs
+     couleurs ; le compteur garde le saphir.
+   Seuls les MOTS changent (« gemmes », « gems », « gemas ») : les noms
+   internes — DIAMANTS, gagnerDiamants, bt_tresor et ses clés — restent ce
+   qu'ils sont, et le solde de chacun avec eux. */
 const DIAMANTS = { lecon:10, parfait:5, quete:20, coffre:30, jeu:10 };   // (v376) un jeu du chemin, comme une leçon
 const PRIX_GEL = 50;
 function tresorValide(x){
@@ -25168,8 +25496,8 @@ function rattraperDiamants(){
   });
   if(!n) return 0;
   saveTresor(t);
-  achToastQueue.push({ clr:"blue", ico:ICONS.diamant, tete:T("Des diamants pour tes leçons"),
-    t: n > 1 ? Tf("{n} leçons déjà faites\u00a0: +{d} diamants", { n, d:n * DIAMANTS.lecon }) : Tf("1 leçon déjà faite\u00a0: +{d} diamants", { d:DIAMANTS.lecon }) });
+  achToastQueue.push({ clr:"blue", ico:ICONS.diamant, tete:T("Des gemmes pour tes leçons"),
+    t: n > 1 ? Tf("{n} leçons déjà faites\u00a0: +{d} gemmes", { n, d:n * DIAMANTS.lecon }) : Tf("1 leçon déjà faite\u00a0: +{d} gemmes", { d:DIAMANTS.lecon }) });
   try{ pumpAchToast(); }catch(e){}
   return n;
 }
@@ -25207,6 +25535,7 @@ function questionsDeQuete(u, qi){
    tente avant que le chrono parte. */
 function commencerQuete(u, qi){
   if(!queteOuverte(u, qi)) return;
+  choisirEtape(etapeDeLUnite(u));   // (v379)
   const Q = QUETES[qi];
   showModal({ title:T(Q.nom), message:T(Q.regle), okLabel:T("Commencer"), cancelLabel:T("Plus tard"),
     onOk:()=>{ setTimeout(()=>lancerQuete(u, qi), 0); return true; } });
@@ -25253,15 +25582,112 @@ function sansChrono(){ return !!state.revision || (!!state.lecon && !state.lecon
    cinq sont faites (il bat, comme la leçon à faire) ; ouvert pour toujours
    une fois touché — ses trente diamants sont au registre. */
 function coffrePret(u, p){ return Array.from({ length:LECONS_PAR_UNITE }, (_, l) => leconFaite(u, l, p)).every(Boolean); }
+/* ===== (v379) LE COFFRE, MODÉLISÉ =====
+   « De vrais coffres modélisés qui s'ouvrent, dans la DA du jeu. » Puis :
+   « Je veux un coffre bien modélisé — pas forcément détaillé — et surtout
+     ultra cohérent avec le reste du jeu. »
+   Les coffres d'avant étaient des dessins vus de FACE : un rectangle, pas de
+   profondeur, et ouvert, un pavé sombre. Celui-ci est un objet : une caisse
+   et un couvercle bombé de vrai volume, vus de trois quarts, posés sur leur
+   ombre. Il est construit en 3D (des formes arrondies, des planches, deux
+   ferrures, une serrure et son moraillon — rien de plus), éclairé doucement
+   comme les pierres du chemin, puis figé en images : le bois brun chaud et
+   lisse, l'or satiné des ferrures, l'intérieur sombre. Pas de grain ni de
+   rivets partout : des volumes justes, la même matière douce que le jeu.
+   Sur le chemin : fermé (au loin, il reste éteint), PRÊT (une lueur d'or
+   filtre sous le couvercle), ouvert (le trésor éclairé). À l'ouverture, le
+   couvercle se lève en vingt images, bute et se pose, pendant que la lumière
+   monte et que des gemmes de couleur jaillissent. Les images de l'ouverture
+   (300 Ko) ne se chargent qu'au Parcours ; sans elles (hors ligne, premier
+   coffre), les deux images fixes prennent le relais. */
+const COFFRE_IMG = { ferme:"img/coffre/ferme.webp", pret:"img/coffre/pret.webp", ouvert:"img/coffre/ouvert.webp", anim:"img/coffre/ouverture.webp" };
+const COFFRE_IMAGES = 20;
+function coffreImg(etat){
+  /* (v379) Décodée tout de suite : une image du chemin ne doit jamais
+     arriver après son écran (huit kilo-octets, rien à attendre). */
+  return `<img class="cf-img" src="${COFFRE_IMG[etat] || COFFRE_IMG.ferme}" alt="" width="216" height="167" decoding="sync" draggable="false">`;
+}
+/* L'ouverture, chargée d'avance quand le Parcours s'affiche (une fois).
+   ===== (v379) LE COFFRE NE RETARDE PAS LE CHEMIN =====
+   Sur un téléphone lent (processeur ralenti six fois, ressort.js), l'écran
+   du Parcours apparaissait à 21 % de sa course au lieu de moins de 10 % :
+   au premier passage, le chemin lançait le chargement des vingt images de
+   l'ouverture (300 Ko) et décodait les images du coffre PENDANT que l'écran
+   arrivait. L'ouverture se charge maintenant une fois le passage fini, et
+   les trois images fixes (fermé, prêt, ouvert : 8 Ko chacune) sont décodées
+   au repos, peu après l'ouverture du jeu — le chemin les trouve prêtes. */
+const COFFRE_APRES_PASSAGE = 1200;
+const coffreFixes = [];
+function prechargerCoffreFixes(){
+  if(coffreFixes.length) return;
+  try{ ["ferme", "pret", "ouvert"].forEach(k => { const i = new Image(); i.src = COFFRE_IMG[k]; if(i.decode) i.decode().catch(()=>{}); coffreFixes.push(i); }); }catch(e){}
+}
+setTimeout(prechargerCoffreFixes, 2500);
+let coffreAnim = null;
+function prechargerCoffre(){
+  if(coffreAnim) return;
+  try{ coffreAnim = new Image(); coffreAnim.decoding = "async"; coffreAnim.src = COFFRE_IMG.anim; }catch(e){}
+}
+function coffreAnimPrete(){ return !!(coffreAnim && coffreAnim.complete && coffreAnim.naturalWidth > 0); }
+/* Une gemme qui jaillit, de l'une des couleurs du trésor. */
+const GEMMES_COULEURS = [["#4F8DF5", "#1F56D6", "#9CC2FF"], ["#2FCB7E", "#11935A", "#8EF0BE"], ["#F2455E", "#B8172F", "#FF9AAA"], ["#A06BF0", "#6A35C2", "#D1B5FF"], ["#F7B730", "#C9850B", "#FFE08A"]];
+function gemmeSvg(k){
+  const [m, f, c] = GEMMES_COULEURS[(k || 0) % GEMMES_COULEURS.length];
+  return `<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M7 3h10l5 6-10 12L2 9z" fill="${m}"/><path d="M2 9h20L12 21z" fill="${f}"/><path d="M7 3l3 6H2zM17 3l-3 6h8z" fill="${c}"/><path d="M10 9h4l-2 12z" fill="${m}"/></svg>`;
+}
+/* ===== (v379) LE COFFRE S'OUVRE =====
+   Une scène, pas un message : le coffre tombe en place, frémit, puis son
+   couvercle se lève dans une lumière d'or ; les gemmes en jaillissent, et le
+   compte monte jusqu'au gain. « Continuer » arrive une fois le geste fini (un
+   toucher sur le fond ferme aussi, à partir de là). Le gain est écrit en
+   entier dès le départ pour un lecteur d'écran : seul le nombre qui monte
+   est un décor. */
+function sceneCoffre(n){
+  closeModal();
+  const veil = document.createElement("div");
+  veil.className = "modal-veil coffre-veil"; veil.id = "modalVeil";
+  const anim = coffreAnimPrete();
+  const gemmes = [[-118, -128, -22], [-58, -166, 12], [0, -186, -6], [62, -160, 20], [116, -122, -14], [-92, -62, 30], [96, -70, -28]];
+  const coffre = anim
+    ? `<span class="cs-anim" style="background-image:url('${COFFRE_IMG.anim}')"></span>`
+    : `<span class="cs-ferme">${coffreImg("pret")}</span><span class="cs-ouvert">${coffreImg("ouvert")}</span>`;
+  veil.innerHTML = `<div class="coffre-modal coffre-scene" role="dialog" aria-label="${escapeHtml(T("Coffre ouvert !"))}">
+      <div class="cs-centre">
+        <div class="cs-rayons" aria-hidden="true"></div>
+        <div class="cs-halo" aria-hidden="true"></div>
+        <div class="cs-coffre${anim ? " anim" : ""}" aria-hidden="true">${coffre}</div>
+        <div class="cs-gemmes" aria-hidden="true">${gemmes.map(([x, y, r], i) => `<span class="cs-gemme" style="--gx:${x}px;--gy:${y}px;--gr:${r}deg;--gd:${i * 45}ms">${gemmeSvg(i)}</span>`).join("")}</div>
+      </div>
+      <div class="cs-texte">
+        <div class="cs-titre">${T("Coffre ouvert !")}</div>
+        <div class="cs-gain"><span class="ico">${ICONS.diamant}</span><b aria-hidden="true">+0</b><span class="cs-lu">${escapeHtml(Tf("+{n} gemmes", { n }))}</span></div>
+        <p class="cs-solde">${escapeHtml(Tf("Tu as maintenant {n} gemmes.", { n:soldeDiamants() }))}</p>
+      </div>
+      <button class="btn-primary cs-ok" id="modalOk">${T("Continuer")}</button>
+    </div>`;
+  document.body.appendChild(veil);
+  const fermer = ()=> closeModal();
+  veil.querySelector("#modalOk").onclick = fermer;
+  setTimeout(()=>{ veil.addEventListener("click", (e)=>{ if(e.target === veil) fermer(); }); }, 1500);
+  /* Le compte qui monte, sur l'horloge du geste. */
+  const b = veil.querySelector(".cs-gain b");
+  const t0 = performance.now() + 1150, duree = 650;
+  const pas = ()=>{
+    if(!veil.isConnected) return;
+    const k = Math.max(0, Math.min(1, (performance.now() - t0) / duree));
+    b.textContent = "+" + Math.round(n * (1 - Math.pow(1 - k, 3)));
+    if(k < 1) requestAnimationFrame(pas);
+  };
+  requestAnimationFrame(pas);
+  setTimeout(()=>{ try{ if(veil.isConnected) playWin(); }catch(e){} }, 950);
+}
 function ouvrirCoffre(u){
   const U = PARCOURS[u];
   if(!U || !coffrePret(u)) return;
   const n = gagnerDiamants("coffre:" + U.id, DIAMANTS.coffre);
   if(!n) return;
   if(state.screen === "chemin") render();
-  showModal({ title:T("Coffre ouvert\u00a0!"), message:Tf("+{n} diamants", { n }), cardClass:"coffre-modal",
-    bodyHtml:`<div class="cm-ico"><span class="ico">${ICONS.coffreOuvert}</span></div><p class="cm-solde">${escapeHtml(Tf("Tu as maintenant {n} diamants.", { n:soldeDiamants() }))}</p>`,
-    okLabel:T("Continuer"), hideCancel:true });
+  sceneCoffre(n);
 }
 /* ===================== (v368) LA BOUTIQUE =====================
    Une page, comme les Réglages : le solde, ce qu'on peut acheter, et
@@ -25270,17 +25696,17 @@ function ouvrirCoffre(u){
    maximum, un jour chacun : on peut s'offrir un filet, pas des vacances. */
 function boutiqueHtml(){
   const solde = soldeDiamants(), d = loadDaily(), plein = d.gels >= GEL_MAX, manque = Math.max(0, PRIX_GEL - solde);
-  const etat = plein ? T("Réserve pleine") : (manque ? Tf("Il te manque {n} diamants", { n:manque }) : "");
+  const etat = plein ? T("Réserve pleine") : (manque ? (manque > 1 ? Tf("Il te manque {n} gemmes", { n:manque }) : T("Il te manque 1 gemme")) : "");
   const gains = [[T("Une leçon terminée"), DIAMANTS.lecon], [T("Une leçon sans faute, une fois"), DIAMANTS.parfait],
                  [T("Une quête réussie"), DIAMANTS.quete], [T("Le coffre d'une unité"), DIAMANTS.coffre], [T("Un jeu du chemin terminé"), DIAMANTS.jeu]];
-  return `<div class="bq-solde"><span class="bq-gemme"><span class="ico">${ICONS.diamant}</span></span><span class="bq-n"><b>${solde}</b><small>${T("Tes diamants")}</small></span></div>
+  return `<div class="bq-solde"><span class="bq-gemme"><span class="ico">${ICONS.diamant}</span></span><span class="bq-n"><b>${solde}</b><small>${T("Tes gemmes")}</small></span></div>
     <div class="bq-article">
       <span class="bq-ico"><span class="ico">${ICONS.flammeGelee}</span></span>
       <span class="bq-txt"><b>${T("Gel de série")}</b><small>${T("Il protège ta flamme pour UN jour manqué. Deux en réserve au maximum.")}</small>
         <small class="bq-reserve">${escapeHtml(Tf("En réserve\u00a0: {n}/{m}", { n:d.gels, m:GEL_MAX }))}</small></span>
       <div class="bq-achat">${etat ? `<small class="bq-etat">${escapeHtml(etat)}</small>` : ""}<button class="bq-acheter" onclick="acheterGel()" ${plein || manque ? "disabled" : ""} aria-label="${escapeHtml(T("Acheter") + " · " + PRIX_GEL)}"><span class="ico">${ICONS.diamant}</span>${PRIX_GEL}</button></div>
     </div>
-    <h2 class="bq-h">${T("Comment gagner des diamants")}</h2>
+    <h2 class="bq-h">${T("Comment gagner des gemmes")}</h2>
     <div class="bq-gains">${gains.map(([l, n]) => `<div class="bq-ligne"><span>${escapeHtml(l)}</span><b><span class="ico">${ICONS.diamant}</span>+${n}</b></div>`).join("")}</div>`;
 }
 function ouvrirBoutique(){ ouvrirFeuilleGroupe("boutiqueVeil", T("Boutique"), ICONS.boutique, boutiqueHtml()); }
@@ -25293,7 +25719,7 @@ function majBoutique(){
 function acheterGel(){
   const d = loadDaily();
   if(d.gels >= GEL_MAX){ showMiniToast(T("Ta réserve est pleine\u00a0: deux gels au maximum.")); return; }
-  if(!depenserDiamants("gel", PRIX_GEL)){ showMiniToast(Tf("Il te manque {n} diamants", { n:Math.max(1, PRIX_GEL - soldeDiamants()) })); return; }
+  if(!depenserDiamants("gel", PRIX_GEL)){ const m = Math.max(1, PRIX_GEL - soldeDiamants()); showMiniToast(m > 1 ? Tf("Il te manque {n} gemmes", { n:m }) : T("Il te manque 1 gemme")); return; }
   saveDaily({ gels:Math.min(GEL_MAX, d.gels + 1) });
   showMiniToast(T("Gel acheté — il couvre UN jour manqué."));
   majBoutique();
@@ -25304,7 +25730,24 @@ function acheterGel(){
    jeu posé avant une leçon déjà faite n'est pas « la première pierre à
    faire » : il ne ramène personne en arrière. { u, l } pour une leçon,
    { u, g, jeu:true } pour un jeu ; i, son rang. null : la dernière est faite. */
-function positionParcours(p){
+/* ===== (v379) CHAQUE ÉTAPE À SON PAS =====
+   « Maintenant qu'il y a les grands récits, l'Ancien Testament et le Nouveau
+     Testament dans le Parcours : si je suis sur les grands récits et que
+     j'ai envie de partir au Nouveau Testament, que je puisse le faire. »
+   Oui : les trois étapes sont trois voyages, pas trois marches. Un joueur
+   qui connaît les grands récits, ou qui veut d'abord les Évangiles, n'a pas
+   à traverser soixante leçons pour y arriver. Chaque étape est donc ouverte
+   et garde SA pierre à faire — celle qui suit la dernière pierre faite DANS
+   cette étape. Dans une étape, rien ne change : on avance dans l'ordre, et
+   personne ne recule.
+   L'étape ACTIVE est celle où l'on a joué en dernier (bt_etape, posée au
+   départ d'une leçon, d'un jeu du chemin ou d'une quête) : c'est sur elle
+   que l'onglet s'ouvre. Finie, elle passe la main à la suivante qui ne
+   l'est pas. Sans choix encore (un joueur d'avant), c'est l'étape de sa
+   pierre à faire, comme avant : rien ne bouge pour lui.
+   Rien de ce qui a été fait n'est touché : les leçons faites restent faites,
+   où qu'elles soient. */
+function positionGlobale(p){
   p = p || loadParcours();
   const { S } = sequenceParcours();
   let i = S.length - 1;
@@ -25313,14 +25756,51 @@ function positionParcours(p){
   if(!f) return null;
   return f.k === "j" ? { u:f.u, g:f.g, jeu:true, i:i + 1 } : { u:f.u, l:f.l, i:i + 1 };
 }
+/* La pierre à faire d'UNE étape : celle qui suit la dernière pierre faite de
+   l'étape (sa première, si rien n'y est fait). null : l'étape est finie. */
+function positionDansEtape(p, e){
+  p = p || loadParcours();
+  const { S } = sequenceParcours();
+  let premier = -1, fin = -1, dernier = -1;
+  for(let i = 0; i < S.length; i++){
+    if(etapeDeLUnite(S[i].u) !== e) continue;
+    if(premier < 0) premier = i;
+    fin = i;
+    if(p.faites[S[i].cle]) dernier = i;
+  }
+  if(premier < 0) return null;
+  const k = dernier < 0 ? premier : dernier + 1;
+  if(k > fin) return null;
+  const f = S[k];
+  return f.k === "j" ? { u:f.u, g:f.g, jeu:true, i:k } : { u:f.u, l:f.l, i:k };
+}
+function etapeActive(p){
+  p = p || loadParcours();
+  let e = null;
+  try{ const v = localStorage.getItem("bt_etape"); if(v !== null && v !== "" && ETAPES[+v]) e = +v; }catch(err){}
+  if(e === null){ const g = positionGlobale(p); return g ? etapeDeLUnite(g.u) : ETAPES.length - 1; }
+  if(positionDansEtape(p, e)) return e;
+  for(let k = 1; k < ETAPES.length; k++){ const f = (e + k) % ETAPES.length; if(positionDansEtape(p, f)) return f; }
+  return e;
+}
+function choisirEtape(e){ if(ETAPES[e]) try{ localStorage.setItem("bt_etape", String(e)); }catch(err){} }
+function parcoursFini(p){ return ETAPES.every((E, e) => !positionDansEtape(p, e)); }
+/* Où en est le joueur : la pierre à faire d'une étape (par défaut,
+   l'étape active). { u, l } pour une leçon, { u, g, jeu:true } pour un
+   jeu ; i, son rang sur tout le chemin. null : l'étape est finie. */
+function positionParcours(p, e){
+  p = p || loadParcours();
+  return positionDansEtape(p, (e === undefined || e === null) ? etapeActive(p) : e);
+}
 /* Une pierre s'ouvre si elle est faite, ou si elle n'est pas au-delà de la
-   pierre à faire : tout ce qui la précède s'ouvre (un jeu arrivé derrière
-   soi se joue en bonus). */
+   pierre à faire DE SON ÉTAPE : tout ce qui la précède s'ouvre (un jeu
+   arrivé derrière soi se joue en bonus). */
 function pierreOuverte(u, s, p, pos){
   p = p || loadParcours();
   const cle = clePierre(u, s);
   if(p.faites[cle]) return true;
-  if(pos === undefined) pos = positionParcours(p);
+  const e = etapeDeLUnite(u);
+  if(pos === undefined || (pos && etapeDeLUnite(pos.u) !== e)) pos = positionDansEtape(p, e);
   const r = sequenceParcours().rang.get(cle);
   return !pos || (r !== undefined && r <= pos.i);
 }
@@ -25361,6 +25841,7 @@ function commencerLecon(u, l){
   const qs = questionsDeLecon(u, l);
   if(!qs.length) return;
   if(!avantAutrePartie(()=> commencerLecon(u, l))) return;   // (v369)
+  choisirEtape(etapeDeLUnite(u));   // (v379) l'étape où l'on joue devient l'étape active
   finirPlaces();
   marquerJoue();
   bumpModeUse("parcours");
@@ -25389,7 +25870,7 @@ function terminerLecon(){
   L.gain = gagnerDiamants("lecon:" + k, DIAMANTS.lecon) + ((L.ok | 0) >= (L.n | 0) ? gagnerDiamants("parfait:" + k, DIAMANTS.parfait) : 0);
 }
 /* (v368) Ce qu'une leçon ou une quête vient de rapporter. */
-function gainHtml(n){ return n > 0 ? `<div class="end-diamants"><span class="ico">${ICONS.diamant}</span>${escapeHtml(Tf("+{n} diamants", { n }))}</div>` : ""; }
+function gainHtml(n){ return n > 0 ? `<div class="end-diamants"><span class="ico">${ICONS.diamant}</span>${escapeHtml(Tf("+{n} gemmes", { n }))}</div>` : ""; }
 function leconFinHtml(){
   const L = state.lecon, u = PARCOURS[L.u], t = L.n | 0, ok = Math.min(t, L.ok | 0);
   if(L.quete !== undefined){
@@ -25455,11 +25936,19 @@ function uniteHtml(u, i, p, pos, vient, t, rang){
         ${qi < 0 ? "" : queteHtml(i, qi, x, sens, faites, t, vient)}
       </div>`;
   }).join("");
-  return `<section class="ch-unite ${etat}" aria-label="${escapeHtml(Tf("Unité {n}", { n:rang + 1 }) + " · " + T(u.nom))}">
+  /* ===== (v379) CE QUI EST VERROUILLÉ NE DIT PAS SON NOM =====
+     « Les parties qui sont verrouillées ne doivent pas être dévoilées par
+       leur nom : ça doit être caché pour le moment, pour que ce soit de la
+       découverte. » Une unité pas encore atteinte garde son numéro et dit
+     « À découvrir » — ni son titre, ni ses livres ; un jeu ou une quête
+     verrouillés disent « Jeu », « Quête ». Le nom apparaît quand on y
+     arrive. (Ce qui est déjà fait, ou ouvert, se lit toujours en entier.) */
+  const cache = etat === "fermee";
+  return `<section class="ch-unite ${etat}" aria-label="${escapeHtml(Tf("Unité {n}", { n:rang + 1 }) + " · " + (cache ? T("À découvrir") : T(u.nom)))}">
       <div class="ch-bandeau ch-t-${u.teinte}">
         <span class="ch-num">${Tf("Unité {n}", { n:rang + 1 })}</span>
-        <b>${escapeHtml(T(u.nom))}</b>
-        <small>${escapeHtml(livresDeLUnite(u))}</small>
+        <b>${escapeHtml(cache ? T("À découvrir") : T(u.nom))}</b>
+        ${cache ? "" : `<small>${escapeHtml(livresDeLUnite(u))}</small>`}
         <span class="ch-score">${n}/${LECONS_PAR_UNITE}</span>
       </div>
       <div class="ch-pas">${pierres}${coffreHtml(u, i, n === LECONS_PAR_UNITE, t)}</div>
@@ -25475,11 +25964,11 @@ function pierreDeJeuHtml(i, s, x, p, pos, vient){
   const ouverte = fait || courante || pierreOuverte(i, s, p, pos);
   const cls = fait ? "faite" : (courante ? "courante" : (ouverte ? "ouverte" : "fermee"));
   const allume = (vient && vient.u === i && vient.g === s.g) ? " s-allume" : "";
-  const nom = T(def.nom) + " · " + (fait ? T("fait") : (ouverte ? T("à faire") : T("verrouillé")));
+  const nom = (ouverte ? T(def.nom) : T("Jeu")) + " · " + (fait ? T("fait") : (ouverte ? T("à faire") : T("verrouillé")));   // (v379) voir CE QUI EST VERROUILLÉ NE DIT PAS SON NOM
   return `<div class="ch-jeu ${cls}${allume}" style="--x:${x.toFixed(2)}">
       <button class="ch-tuile ch-t-${def.teinte}" ${ouverte ? `onclick="commencerJeuDuChemin(${i}, ${s.g})"` : "disabled"} aria-label="${escapeHtml(nom)}"><span class="ico">${ouverte ? ICONS[def.ico] : ICONS.cadenas}</span>${fait ? `<span class="ch-tuile-ok">${ICONS.coche}</span>` : ""}</button>
       ${courante ? `<button class="ch-bulle" onclick="commencerJeuDuChemin(${i}, ${s.g})">${T("Jouer")}</button>`
-        : `<span class="ch-etiq ch-jeu-nom"><small>${escapeHtml(T(def.nom))}</small></span>`}
+        : `<span class="ch-etiq ch-jeu-nom"><small>${escapeHtml(ouverte ? T(def.nom) : T("Jeu"))}</small></span>`}
     </div>`;
 }
 /* (v368) UNE QUÊTE AU BORD DU CHEMIN. Elle se pose du côté où le chemin ne
@@ -25493,11 +25982,11 @@ function queteHtml(i, qi, ecart, sens, faites, t, vient){
   const etat = reussie ? "reussie" : (ouverte ? "ouverte" : "fermee");
   const qx = (-sens * 5.6 - ecart * 4.4).toFixed(2);
   const ico = reussie ? ICONS.coche : (ouverte ? ICONS[Q.ico] : ICONS.cadenas);
-  const nom = T(Q.nom) + " · " + (reussie ? T("réussie") : ouverte ? T("à faire") : Tf("après la leçon {n}", { n:Q.apres + 1 }));
+  const nom = ((reussie || ouverte) ? T(Q.nom) : T("Quête")) + " · " + (reussie ? T("réussie") : ouverte ? T("à faire") : Tf("après la leçon {n}", { n:Q.apres + 1 }));
   const allume = (vient && vient.u === i && vient.q === qi) ? " s-allume" : "";
   return `<div class="ch-quete ${etat}${allume}" style="--qx:${qx}">
       <button class="ch-medaillon" ${ouverte ? `onclick="commencerQuete(${i}, ${qi})"` : "disabled"} aria-label="${escapeHtml(nom)}"><span class="ico">${ico}</span></button>
-      <span class="ch-etiq"><small>${escapeHtml(T(Q.nom))}</small><span class="ch-prime"><span class="ico">${ICONS.diamant}</span>+${DIAMANTS.quete}</span></span>
+      <span class="ch-etiq"><small>${escapeHtml((reussie || ouverte) ? T(Q.nom) : T("Quête"))}</small><span class="ch-prime"><span class="ico">${ICONS.diamant}</span>+${DIAMANTS.quete}</span></span>
     </div>`;
 }
 /* (v368) LE COFFRE, au bout de l'unité. */
@@ -25506,7 +25995,7 @@ function coffreHtml(u, i, fini, t){
   const etat = ouvert ? "ouvert" : (fini ? "pret" : "ferme");
   const nom = T("Coffre") + " · " + (ouvert ? T("ouvert") : fini ? T("à ouvrir") : T("au bout de l'unité"));
   return `<div class="ch-coffre ${etat}">
-      <button class="ch-coffre-btn" ${etat === "pret" ? `onclick="ouvrirCoffre(${i})"` : "disabled"} aria-label="${escapeHtml(nom)}"><span class="ico">${ouvert ? ICONS.coffreOuvert : ICONS.coffre}</span></button>
+      <button class="ch-coffre-btn" ${etat === "pret" ? `onclick="ouvrirCoffre(${i})"` : "disabled"} aria-label="${escapeHtml(nom)}">${coffreImg(etat)}</button>
       ${etat === "pret" ? `<button class="ch-bulle" onclick="ouvrirCoffre(${i})">${T("Ouvrir le coffre")}</button>`
         : `<span class="ch-etiq ch-coffre-l">${ouvert ? `<span class="ico">${ICONS.diamant}</span>+${DIAMANTS.coffre}` : escapeHtml(T("Coffre"))}</span>`}
     </div>`;
@@ -25515,13 +26004,14 @@ let etapeVue = null;   // (v376) l'étape montrée ; null : celle de la pierre �
 function renderChemin(){
   const el = document.createElement("div");
   el.className = "screen chemin-ecran";
-  const p = loadParcours(), pos = positionParcours(p);
+  const p = loadParcours();
   const vient = cheminVient; cheminVient = null;
   rattraperDiamants();   // (v368) les leçons faites avant les diamants
+  setTimeout(prechargerCoffre, COFFRE_APRES_PASSAGE);    // (v379) l'ouverture du coffre, une fois l'écran arrivé (voir LE COFFRE NE RETARDE PAS LE CHEMIN)
   /* (v376) Une étape à la fois : celle de ce qu'on vient de faire, sinon
-     celle de la pierre à faire, sinon (tout est fait) la dernière. */
-  if(etapeVue === null || !ETAPES[etapeVue]) etapeVue = vient ? etapeDeLUnite(vient.u) : (pos ? etapeDeLUnite(pos.u) : ETAPES.length - 1);
-  const e = etapeVue, E = ETAPES[e], unites = unitesDeLEtape(e);
+     (v379) l'étape active (voir CHAQUE ÉTAPE À SON PAS). */
+  if(etapeVue === null || !ETAPES[etapeVue]) etapeVue = vient ? etapeDeLUnite(vient.u) : etapeActive(p);
+  const e = etapeVue, E = ETAPES[e], unites = unitesDeLEtape(e), pos = positionParcours(p, e);
   const total = unites.length * LECONS_PAR_UNITE, faites = leconsFaitesDe(unites, p);
   const t = loadTresor(), solde = soldeDiamants(t);
   const etape = Tf("Étape {n} sur {m}", { n:e + 1, m:ETAPES.length });
@@ -25550,7 +26040,7 @@ function renderChemin(){
         <small class="ch-compte">${escapeHtml(Tf(faites > 1 ? "{n} leçons sur {t}" : "{n} leçon sur {t}", { n:faites, t:total }))}</small>
         <small class="ch-aide">${T("Six questions par leçon. Une erreur revient à la fin.")}</small>
       </button>
-      <button class="ch-diamants" onclick="ouvrirBoutique()" aria-label="${escapeHtml(Tf("{n} diamants · Boutique", { n:solde }))}"><span class="ico">${ICONS.diamant}</span><b>${solde}</b><span class="chev">${ICONS.chevronRight}</span></button>
+      <button class="ch-diamants" onclick="ouvrirBoutique()" aria-label="${escapeHtml(Tf(solde > 1 ? "{n} gemmes · Boutique" : "{n} gemme · Boutique", { n:solde }))}"><span class="ico">${ICONS.diamant}</span><b>${solde}</b><span class="chev">${ICONS.chevronRight}</span></button>
     </div>
     <div class="ch-unites">${unites.map((u, k) => uniteHtml(PARCOURS[u], u, p, pos, vient, t, k)).join("")}</div>
     ${suiteEtapeHtml(e, pos)}`;
@@ -25565,28 +26055,28 @@ function renderChemin(){
    la dernière, une fois tout fait : le bout du chemin. */
 function suiteEtapeHtml(e, pos){
   const S = ETAPES[e + 1];
-  if(!S) return pos ? "" : `<div class="card ch-suite fin"><span class="ch-suite-sur">${T("Parcours terminé")}</span>
+  if(!S) return !parcoursFini(loadParcours()) ? "" : `<div class="card ch-suite fin"><span class="ch-suite-sur">${T("Parcours terminé")}</span>
       <b class="ch-suite-titre">${T("Le bout du chemin")}</b><small class="ch-suite-tour">${T("Tu as traversé toute la Bible, trois fois.")}</small></div>`;
-  const ouverte = !pos || etapeDeLUnite(pos.u) > e;
+  /* (v379) Toujours ouverte (voir CHAQUE ÉTAPE À SON PAS) : la phrase qui
+     disait quand elle s'ouvrirait est partie avec la serrure. */
   const n = unitesDeLEtape(e + 1).length;
-  return `<div class="card ch-suite${ouverte ? "" : " fermee"}">
+  return `<div class="card ch-suite">
       <span class="ch-suite-sur">${T("Étape suivante")}</span>
       <b class="ch-suite-titre">${escapeHtml(T(S.nom))}</b>
       <small class="ch-suite-tour">${escapeHtml(T(S.tour) + " · " + Tf("{n} unités", { n }))}</small>
-      ${ouverte ? `<button class="btn-primary ch-suite-btn" onclick="voirEtape(${e + 1})">${escapeHtml(Tf("Aller à l'étape {n}", { n:e + 2 }))}</button>`
-        : `<small class="ch-suite-cle"><span class="ico">${ICONS.cadenas}</span>${T("Elle s'ouvre quand cette étape est finie.")}</small>`}
+      <button class="btn-primary ch-suite-btn" onclick="voirEtape(${e + 1})">${escapeHtml(Tf("Aller à l'étape {n}", { n:e + 2 }))}</button>
     </div>`;
 }
 /* (v376) LES TROIS ÉTAPES, sur une page (comme la boutique) : chacune son
    voyage, sa jauge, où l'on en est. On peut regarder une étape fermée : ses
    pierres y sont fermées, mais on voit ce qui vient. */
 function etapesHtml(){
-  const p = loadParcours(), pos = positionParcours(p), ici = pos ? etapeDeLUnite(pos.u) : ETAPES.length;
-  return `<p class="et-intro">${T("Trois voyages à travers la Bible\u00a0: les grands récits, puis chaque livre, de plus près.")}</p>
+  const p = loadParcours(), ici = etapeActive(p);
+  return `<p class="et-intro">${T("Trois voyages à travers la Bible\u00a0: les grands récits, puis chaque livre, de plus près.")} ${T("Commence par celui que tu veux\u00a0: chacun avance à son pas.")}</p>
     ${ETAPES.map((E, e) => {
       const unites = unitesDeLEtape(e), total = unites.length * LECONS_PAR_UNITE, faites = leconsFaitesDe(unites, p);
-      const ouverte = e <= ici || faites > 0;
-      const etat = faites >= total ? T("Terminée") : (ouverte ? T("En cours") : Tf("Après l'étape {n}", { n:e }));
+      const ouverte = true;   // (v379) voir CHAQUE ÉTAPE À SON PAS
+      const etat = faites >= total ? T("Terminée") : ((faites > 0 || e === ici) ? T("En cours") : T("À commencer"));
       return `<button class="et-ligne${ouverte ? "" : " fermee"}" onclick="voirEtape(${e})" aria-label="${escapeHtml(Tf("Étape {n} sur {m}", { n:e + 1, m:ETAPES.length }) + " · " + T(E.nom))}">
           <span class="et-num ch-t-${E.teinte}">${e + 1}</span>
           <span class="et-txt"><b>${escapeHtml(T(E.nom))}</b>
@@ -26239,7 +26729,7 @@ function ouvrirFlamme(){
           <span class="flam-jour">${phraseDuJour()}</span>
           <span class="ft-g">${ICONS.flammeGelee}${escapeHtml(reserve)}</span>
           <span class="flam-regle">${Tf("Un gel tous les {p} jours d'affilée ou toutes les {g} parties, {m} en réserve au maximum. Il couvre un seul jour manqué : deux jours de suite et la flamme s'éteint.", {p:GEL_PALIER, g:GEL_PARTIES, m:GEL_MAX})}</span>
-          <span class="flam-regle">${Tf("Ou à la boutique du Parcours, pour {prix} diamants.", { prix:PRIX_GEL })}</span>
+          <span class="flam-regle">${Tf("Ou à la boutique du Parcours, pour {prix} gemmes.", { prix:PRIX_GEL })}</span>
         </span>
       </div>
       <div class="flam-leg"><span class="fj fait"></span><b>${T("joué")}</b><span class="fj gele"></span><b>${T("gelé")}</b></div>
@@ -28998,6 +29488,7 @@ function manchesDuChemin(id, u){
 function commencerJeuDuChemin(u, g){
   const s = PARCOURS[u] && pierresDeLUnite(u).find(x => x.k === "j" && x.g === g);
   if(!s || !pierreOuverte(u, s)) return;
+  choisirEtape(etapeDeLUnite(u));   // (v379)
   let id = s.id, manches = manchesDuChemin(id, u);
   /* Jamais une pierre qui bloque : si l'unité et son Testament n'ont pas de
      quoi faire deux manches, le jeu se tire de toute la Bible. */
@@ -29894,7 +30385,7 @@ function renderJeuFin(){
         <div class="jx-bons">${escapeHtml(Tf("{n} sur {t} réussies", { n:jeu.bons, t:total }))}</div>
         <p class="jx-mot-fin">${jeu.bons >= total ? T("Sans faute\u00a0!") : T("Jeu terminé\u00a0!")}</p>
         <small class="jx-unite">${escapeHtml(T(U.nom))}</small>
-        ${jeu.gain ? `<div class="jx-gain"><span class="ico">${ICONS.diamant}</span>${escapeHtml(Tf("+{n} diamants", { n:jeu.gain }))}</div>` : ""}
+        ${jeu.gain ? `<div class="jx-gain"><span class="ico">${ICONS.diamant}</span>${escapeHtml(Tf("+{n} gemmes", { n:jeu.gain }))}</div>` : ""}
         <div class="jx-chiffres"><span><b>${jeu.points}</b> pts</span><span><span class="ico">${ICONS.flame}</span><b>${jeu.meilleure}</b> ${T("de suite")}</span></div>
       </div>
       <button class="btn-primary jx-rejouer" onclick="retourChemin()">${T("Continuer")}</button>
@@ -29956,7 +30447,7 @@ async function listesAJour(){
 async function chargerListesUneFois(){
   const [mes, pub] = await Promise.all([
     listeGroupe("mes_groupes"),
-    listeGroupe("groupes_publics", { p_recherche:grp.recherche || "", p_langue:LANGUE, p_limite:30 })
+    listeGroupe("groupes_publics", { p_recherche:grp.recherche || "", p_langue:LANGUE, p_limite:50 })
   ]);
   /* Une panne réseau ne vide rien : on garde ce qu'on avait, et on le dit
      seulement s'il n'y avait encore rien à montrer. */
@@ -30170,29 +30661,74 @@ function lignesPublics(){
      deux fois sur l'écran. Mais Découvrir est LA LISTE des groupes publics :
      on y cherche, on y montre à un ami où il est. Il y reste donc, à sa
      place, avec « Ouvrir » au lieu de « Rejoindre ». */
-  const l = grp.publics;
+  const l = grp.recherche ? grp.publics : vitrinePublics(grp.publics);
   if(!l.length){
     return `<div class="grp-vide">${grp.recherche ? T("Aucun groupe ne correspond.") : T("Aucun groupe public pour l'instant.")}</div>`;
   }
+  /* (v379) Les trois premiers de la vitrine du jour portent « À la une ». */
+  const une = (!grp.recherche && l.length >= 4) ? 3 : 0;
   /* (v339) TOUTE LA LIGNE OUVRE LA PRÉSENTATION DU GROUPE (voir
      apercuPublic). Une ligne ne peut pas être un bouton qui en contient un
      autre : elle porte donc une zone, un vrai bouton posé dessous les deux
      choses qu'on touche pour autre chose — la pilule, qui rejoint ou ouvre
      tout de suite comme avant, et la photo, qui s'ouvre en grand. */
-  return l.map(g=>`<div class="grp-ligne grp-pub">
+  return l.map((g, i)=>`<div class="grp-ligne grp-pub">
       <button class="grp-pub-zone" onclick="apercuPublic('${g.id}')" aria-label="${escapeHtml(g.nom)}"></button>
       ${pastilleGroupe(g)}
-      <span class="grp-txt"><b>${escapeHtml(g.nom)}</b>${g.description ? `<small>${escapeHtml(g.description)}</small>` : ""}<small class="grp-nb">${escapeHtml(nbMembres(g.nb_membres))}</small></span>
+      <span class="grp-txt">${i < une ? `<small class="grp-une"><span class="ico">${ICONS.etoile}</span>${T("À la une")}</small>` : ""}<b>${escapeHtml(g.nom)}</b>${g.description ? `<small>${escapeHtml(g.description)}</small>` : ""}<small class="grp-nb">${escapeHtml(nbMembres(g.nb_membres))}</small></span>
       ${g.membre ? `<button class="grp-pill calme" onclick="ouvrirGroupe('${g.id}')">${T("Ouvrir")}</button>`
                  : `<button class="grp-pill" onclick="rejoindrePublic('${g.id}', this)">${T("Rejoindre")}</button>`}
     </div>`).join("");
+}
+/* ===== (v379) LA VITRINE TOURNE =====
+   « Pour les groupes publics, quand il y en aura beaucoup : plutôt qu'un
+     classement — celui qui a le plus de membres et d'activité serait
+     toujours premier, et les autres toujours derniers, donc inexistants —
+     une plaque tournante, avec des critères pour en mettre en avant à
+     certains moments. Un groupe qui n'a pas beaucoup de joueurs peut ainsi
+     en gagner. »
+   Le serveur rend les groupes les plus vivants d'abord. Le jeu ne garde pas
+   cet ordre : chaque jour, il tire une vitrine NEUVE — un tirage propre à ce
+   joueur et à ce jour (le même toute la journée, un autre demain, un autre
+   chez un ami) —, que des critères penchent sans la figer :
+   - un groupe qui a parlé dans les quinze derniers jours passe nettement
+     devant un groupe endormi (on n'envoie personne dans une pièce vide) ;
+   - un petit groupe (moins de six membres) a plus de chances d'être en
+     tête, un groupe moyen un peu plus : c'est à eux que la vitrine sert ;
+   - une description, une photo : un groupe qui se présente se montre mieux ;
+   - un groupe dont on est déjà membre recule (il est déjà dans « Mes
+     groupes ») ; il reste dans la liste, à sa place.
+   Les trois premiers portent « À la une ». Une recherche, elle, garde
+   l'ordre du serveur : on cherche un nom, pas une découverte. */
+function graineVitrine(){
+  let g = "";
+  try{ g = localStorage.getItem("bt_vitrine") || ""; if(!g){ g = Math.random().toString(36).slice(2, 10); localStorage.setItem("bt_vitrine", g); } }catch(e){}
+  return (monId() || g || "yada") + "|" + dayKey(0);
+}
+function hasardVitrine(texte){
+  /* FNV-1a, puis ramené entre 0 et 1 : le même texte, le même nombre. */
+  let h = 2166136261;
+  for(let i = 0; i < texte.length; i++){ h ^= texte.charCodeAt(i); h = Math.imul(h, 16777619); }
+  return ((h >>> 0) % 100000) / 100000;
+}
+function vitrinePublics(l){
+  if(!Array.isArray(l) || l.length < 2) return l || [];
+  const graine = graineVitrine(), maintenant = Date.now();
+  const poids = (g) => {
+    const t = Date.parse(g.dernier_message || "") || 0;
+    const vivant = t && maintenant - t < 15 * 86400000;
+    const n = g.nb_membres | 0;
+    return (vivant ? 1 : 0.4) * (n < 6 ? 1.45 : (n < 20 ? 1.2 : 1)) * (g.description ? 1.1 : 1) * (g.photo_maj ? 1.06 : 1) * (g.membre ? 0.45 : 1);
+  };
+  return l.map(g => [g, (0.25 + hasardVitrine(graine + "|" + g.id)) * poids(g)])
+          .sort((a, b) => b[1] - a[1]).map(x => x[0]);
 }
 let rechercheT = 0;
 function chercherGroupes(v){
   grp.recherche = String(v || "").trim().slice(0, 40);
   clearTimeout(rechercheT);
   rechercheT = setTimeout(async ()=>{
-    const pub = await listeGroupe("groupes_publics", { p_recherche:grp.recherche, p_langue:LANGUE, p_limite:30 });
+    const pub = await listeGroupe("groupes_publics", { p_recherche:grp.recherche, p_langue:LANGUE, p_limite:50 });
     if(pub){ grp.publics = pub; const b = document.getElementById("grpPublics"); if(b){ b.innerHTML = lignesPublics(); try{ glassRelayout(); queueGlassSync(); }catch(e){} } }
   }, 280);
 }
@@ -31976,8 +32512,8 @@ function bulleHtml(m){
         <b>${moi ? T("Tu as lancé une partie") : escapeHtml(Tf("{nom} a lancé une partie", { nom }))}</b>
         ${venus.length ? `<span class="bp-venus">${visagesVenus(venus)}<small>${escapeHtml(avecQui(venus))}</small></span>` : ""}
         ${recap ? `<span class="bp-recap"><span class="bp-coupe">${ICONS.trophy}</span><small>${escapeHtml(vainqueurDit(rangs, true))}</small><span class="bp-chev">${ICONS.chevronRight}</span></span>`
-          : finie ? `<small>${T("Partie terminée")}</small>` : lancee ? `<small>${T("Partie en cours")}</small>` : (moi ? `<small>${escapeHtml(Tf("Code {code}", { code }))}</small>` : "")}
-        ${code && !finie && !lancee && !ici ? `<button class="grp-pill" onclick="event.stopPropagation(); rejoindrePartieGroupe('${code}')">${moiVenu ? T("Revenir dans la partie") : T("Rejoindre la partie")}</button>` : ""}
+          : finie ? `<small>${(d.fermee && d.lancee !== true) ? T("Partie annulée") : T("Partie terminée")}</small>` : lancee ? `<small>${T("Partie en cours")}</small>` : (moi ? `<small>${escapeHtml(Tf("Code {code}", { code }))}</small>` : "")}
+        ${code && !finie && !lancee && !ici ? `<button class="grp-pill" onclick="event.stopPropagation(); rejoindrePartieGroupe('${code}', '${m.id}')">${moiVenu ? T("Revenir dans la partie") : T("Rejoindre la partie")}</button>` : ""}
       </div>`;
   }
   return `<button class="b-bulle${m.id < 0 ? " envoi" : ""}${mentionneMoi(m) ? " me-nomme" : ""}${citeDe(m) ? " a-cite" : ""}" data-m="${m.id}" onclick="toucherBulle('${m.id}')">${citeHtml(m)}${texteAvecMentions(m)}</button>`;
@@ -32662,8 +33198,41 @@ async function retirerInvitation(id, jouee){
     majFil();
   }
 }
-function rejoindrePartieGroupe(code){
+/* (v379) Une invitation qui n'est plus ouverte : fermée, commencée, retirée
+   (ce téléphone l'a vue partir, ou le serveur l'a vidée), ou trop vieille. */
+function invitationPlusOuverte(m){
+  if(!m) return false;
+  const d = m.donnees || {};
+  return !!(d.fermee || d.lancee === true || m.supprime_le || (grp.retires && grp.retires.has(+m.id))
+    || Date.now() - new Date(m.cree_le || 0).getTime() > 45 * 60000);
+}
+function messageDeTousLesFils(id){
+  for(const gid of Object.keys(grp.fils || {})){
+    const f = grp.fils[gid];
+    const m = f && (f.messages || []).find(x => String(x.id) === String(id));
+    if(m) return m;
+  }
+  return null;
+}
+/* (v379) L'invitation du salon où j'attends vient d'être fermée ou retirée
+   (le direct des messages) : l'hôte est parti, on ne l'attend pas cinq
+   secondes de plus. */
+function partieFermeeEnDirect(m){
+  const iv = net.invitationVue;
+  if(!m || !iv || String(m.id) !== String(iv.id) || iv.code !== net.code) return;
+  if(!(m.supprime_le || (m.donnees && m.donnees.fermee))) return;
+  if(!net.room || net.isHost || (net.deck && net.deck.length) || ecranEnLigne() !== "online-room") return;
+  net.invitationVue = null;
+  const nom = (grp.profils[m.auteur] || {}).nom;
+  salonFermeParHote(nom ? Tf("{nom} a fermé la partie.", { nom }) : T("La partie a été fermée."));
+}
+function rejoindrePartieGroupe(code, mid){
   if(!/^[A-Z0-9]{4,8}$/.test(String(code || ""))) return;
+  /* (v379) Une invitation qui n'est plus ouverte ne se rejoint pas : on
+     resterait seul dans un salon que personne ne lancera (voir FERMER UNE
+     PARTIE QUI N'A PAS COMMENCÉ). */
+  const inv = mid ? messageDeTousLesFils(mid) : null;
+  if(inv && invitationPlusOuverte(inv) && !(partieDansLeFil() && net.code === code)){ showMiniToast(T("Cette partie n'est plus ouverte.")); majFil(); return; }
   if(!navigator.onLine || !onlineConfigured()){ showMiniToast(T("Pas de réseau. Réessaie dans un instant.")); return; }
   /* (v369) Déjà dans ce salon : on y va. Dans un autre : c'est demandé. */
   if(partieDansLeFil() && net.code === code){ ouvrirPartieDuGroupe(); return; }
@@ -32673,6 +33242,10 @@ function rejoindrePartieGroupe(code){
   /* (v365) Rejoint depuis la discussion, le salon s'y loge. */
   if(state.screen === "groupe" && grp.courant){ net.fil = grp.courant; net.phase = null; net.filReduit = false; }
   joinRoom(code, false);
+  /* (v379) Le message de l'invitation : s'il se ferme pendant qu'on attend,
+     on sort (voir partieFermeeEnDirect). */
+  const vue = inv || invitationDuCode(code);
+  net.invitationVue = vue ? { id:vue.id, code } : null;
 }
 /* ===== (v336) LA PARTIE SUIVIE =====
    « Quand un joueur crée une partie, il faut un message comme quoi il a
@@ -33177,6 +33750,7 @@ const dejaComptes = new Set();
 async function surMessageDirect(m, evt, direct){
   if(m.auteur && !deLaModeration(m) && !grp.profils[m.auteur]){ try{ await chargerProfils([m.auteur]); }catch(e){} }
   recevoirMessage(m);
+  try{ partieFermeeEnDirect(m); }catch(e){}   // (v379)
   if(evt === "INSERT"){
     if(dejaComptes.has(m.id)) return;
     dejaComptes.add(m.id);
@@ -34113,7 +34687,8 @@ function ouvrirMembre(qui){
   const p = grp.profils[qui] || {};
   const g = groupeCourant(); if(!g || !qui || qui === monId()) return;
   const nom = p.nom || T("Quelqu'un");
-  ouvrirFeuilleGroupe("grpMembreVeil", nom, avatarHtml(nom, p.couleur || "#8A8F98", 1.5, "u:" + qui), membreHtml(qui));
+  const v = ouvrirFeuilleGroupe("grpMembreVeil", nom, avatarHtml(nom, p.couleur || "#8A8F98", 1.5, "u:" + qui), membreHtml(qui));
+  if(v) v.classList.add("profil-page");   // (v379) voir LE HAUT DE LA PAGE D'UN JOUEUR
   chargerStatsDe(qui);      // (v356) ses chiffres, relus à chaque ouverture
 }
 /* ===================== (v356) LE PROFIL D'UN JOUEUR =====================
@@ -34147,9 +34722,14 @@ const CLE_STATS_PUB = "bt_stats_pub";
 function mesStats(){
   const p = loadProgress(), d = achDerived(p);
   const at = BIBLE_BOOKS.slice(0, BIBLE_AT_COUNT), nt = BIBLE_BOOKS.slice(BIBLE_AT_COUNT);
+  /* (v379) Et sa flamme : le nombre de jours tant qu'elle brûle, le jour du
+     dernier défi, et s'il reste un gel — de quoi savoir, chez les autres, si
+     elle brûle encore aujourd'hui (voir flammeDe). */
+  const j = loadDaily();
   return { livres:d.mastered, at:nMastered(at, d), nt:nMastered(nt, d),
            bonnes:Math.max(0, p.totalCorrect | 0), serie:Math.max(0, p.bestStreak | 0),
-           succes:ACHIEVEMENTS.filter(a => (p.ach && p.ach[a.id]) || a.cur(p, d) >= a.max).map(a => a.id) };
+           succes:ACHIEVEMENTS.filter(a => (p.ach && p.ach[a.id]) || a.cur(p, d) >= a.max).map(a => a.id),
+           flamme:dailyStreakShown(), flamme_le:/^\d{4}-\d{2}-\d{2}$/.test(j.last) ? j.last : "", gel:j.gels > 0 ? 1 : 0 };
 }
 async function publierMesStats(){
   if(statsEnVol || !statsServeur() || !participeGroupes() || !compteConnecte()) return;
@@ -34181,6 +34761,36 @@ function majCarteProfil(qui){
   document.querySelectorAll("#grpMembreVeil .mb-profil").forEach(c => {
     if(c.dataset.qui === qui) c.innerHTML = contenuProfilHtml(grp.stats ? grp.stats[qui] : undefined);
   });
+  document.querySelectorAll("#grpMembreVeil .mb-feu").forEach(c => {
+    if(c.dataset.qui === qui) c.innerHTML = flammeProfilHtml(grp.stats ? grp.stats[qui] : undefined);
+  });
+}
+/* (v379) SA FLAMME, TELLE QU'ELLE EST AUJOURD'HUI. Le jeu de ce joueur la
+   pose avec le jour de son dernier défi et s'il lui reste un gel (voir
+   mesStats) ; s'il n'a pas rouvert son jeu depuis, elle peut s'être éteinte
+   sans qu'il le sache encore. Même règle que chez lui (voir reglerFlamme) :
+   le défi d'aujourd'hui ou d'hier la tient ; un seul jour manqué, un gel le
+   couvre ; deux jours de suite, jamais. null : on ne sait pas (son jeu ou
+   le serveur ne la connaissent pas encore). */
+function flammeDe(s){
+  if(!s || typeof s !== "object" || !("flamme" in s)) return null;
+  const n = Math.max(0, Math.min(100000, Math.floor(+s.flamme || 0)));
+  if(!n) return 0;
+  const le = String(s.flamme_le || "");
+  if(!/^\d{4}-\d{2}-\d{2}$/.test(le)) return n;
+  if(le >= dayKey(-1)) return n;
+  if(le === dayKey(-2) && +s.gel > 0) return n;
+  return 0;
+}
+/* La pastille : le même objet que sur la rangée de la semaine — l'orange du
+   feu quand elle brûle, en sourdine à zéro, un tiret tant qu'on ne sait
+   pas. Sa largeur ne dépend pas du chiffre (deux caractères réservés) :
+   rien ne bouge quand il arrive. */
+function flammeProfilHtml(s){
+  const n = flammeDe(s);
+  const lu = n === null ? "\u2014" : n.toLocaleString(LANGUE);
+  const dit = n === null ? T("Ta flamme") : Tf("{n} jours d'affilée", { n });
+  return `<span class="mb-flamme${n ? "" : " eteinte"}" role="img" aria-label="${escapeHtml(dit)}">${ICONS.flame}<b>${lu}</b></span>`;
 }
 function carteProfilHtml(qui){
   if(!statsServeur()) return "";
@@ -34258,7 +34868,20 @@ function membreHtml(qui){
   const parRole = m.role !== "proprietaire" && (mon === "proprietaire" || (mon === "admin" && m.role === "membre"));
   const peutModerer = parRole || (modo && (pleine || m.role !== "proprietaire"));
   const sourdine = sourdineDe(m);
-  let h = `<p class="grp-membre-role">${escapeHtml([roleDe(m) || T("Membre"), sourdine].filter(Boolean).join(" · "))}</p>`;
+  /* ===== (v379) LE HAUT DE LA PAGE D'UN JOUEUR =====
+     « La page profil, je pense que tu peux la rendre plus attractive. » —
+     « Sur l'affiche des profils, ajoute aussi le nombre de flammes. »
+     La page commençait par une ligne grise (« Membre ») sous un en-tête où
+     la photo tenait dans un rond d'un centimètre. On y voit maintenant
+     QUELQU'UN : sa photo en grand, son nom, son rôle, et sa flamme — le
+     chiffre que tout le jeu fête, en orange quand elle brûle encore. Le nom
+     ne se répète pas dans l'en-tête : le haut de page le porte. */
+  const pr = grp.profils[qui] || {}, nomM = pr.nom || T("Quelqu'un");
+  let h = `<div class="mb-hero">
+      <span class="mb-av">${avatarHtml(nomM, pr.couleur || "#8A8F98", 5.4, "u:" + qui)}</span>
+      <b class="mb-nom">${escapeHtml(nomM)}</b>
+      <span class="mb-ligne"><span class="mb-role grp-membre-role">${escapeHtml([roleDe(m) || T("Membre"), sourdine].filter(Boolean).join(" · "))}</span>${statsServeur() ? `<span class="mb-feu" data-qui="${escapeHtml(qui)}">${flammeProfilHtml(grp.stats ? grp.stats[qui] : undefined)}</span>` : ""}</span>
+    </div>`;
   h += carteProfilHtml(qui);   // (v356) ses chiffres (voir LE PROFIL D'UN JOUEUR)
   /* (v336) En mode modération, tout ce qui se fait ici se fait au nom de la
      modération — et la page le dit avant le geste. */
@@ -39165,7 +39788,7 @@ const GLASS_SEL = ".app-header,.card,.mode-card,.question-card,.solo-summary,.so
    reflet, ni calage par image — la page est pleine, et ce qu'elle porte aussi. */
 /* (v335) Ni les pastilles du haut d'une partie (voir LES PASTILLES DU HAUT DE
    LA PARTIE SONT PLEINES) : elles se peignent elles-mêmes. */
-const GLASS_VIVANT = ":is(" + GLASS_SEL + "):not(.sheet-veil *):not(.play-meta > *):not(.modal-deroule)";   // (v375) « Comment jouer » est pleine
+const GLASS_VIVANT = ":is(" + GLASS_SEL + "):not(.sheet-veil *):not(.play-meta > *):not(.modal-deroule):not(.sem-flamme:not(.eteinte))";   // (v375) « Comment jouer » est pleine ; (v379) la flamme allumée est peinte (voir LA FLAMME EST PEINTE AVEC SA CARTE)
 const GLASS_SKIP = ".timer-chip.low,.btn-primary:disabled,.btn-next:disabled";
 /* LES SURFACES PLEINES (voir « UNE SURFACE PLEINE N'A PAS DE DÉCOR À
    MONTRER » dans la feuille de style). Ce sont les familles qui portent déjà

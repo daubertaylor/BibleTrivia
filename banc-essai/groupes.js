@@ -202,13 +202,18 @@ const dit = (quoi, bon, detail) => { console.log('  ' + (bon ? 'OK  ' : 'KO  ') 
     await attendre(pa, () => net.oppPresent === true, null, 10000);
     await pa.waitForTimeout(600);
     await pa.evaluate(() => document.querySelector('.grp-partie .gp-quitter').click());   // (v365) la croix du salon
+    /* (v379) Benoît l'a rejoint : la croix demande d'abord « Fermer la
+       partie ? » (voir FERMER UNE PARTIE QUI N'A PAS COMMENCÉ). */
+    await attendre(pa, () => !!document.getElementById('modalOk'), null, 3000);
+    await pa.waitForTimeout(450);
+    await pa.evaluate(() => document.getElementById('modalOk').click());
     dit('Taylor quitte son salon par la croix de sa carte : il reste dans la discussion', await auGroupe(pa));
     dit('Benoît, dans le salon fermé : retour dans la discussion', await auGroupe(pb));
-    dit('… avec le mot qui l\'explique', await toast(pb, /quitté le salon/));
+    dit('… avec le mot qui l\'explique — (v379) qui l\'a fermée', await toast(pb, /Taylor a fermé la partie/));
 
-    dit('… et sa bulle dit maintenant « Partie terminée », sans bouton', await attendre(pb, (c) => {
+    dit('… et sa bulle dit maintenant « Partie annulée » (fermée avant de commencer, v379), sans bouton', await attendre(pb, (c) => {
       const b = [...document.querySelectorAll('.b-partie')].pop();
-      return !!b && /Partie terminée/.test(b.textContent) && !b.querySelector('.grp-pill'); }, null, 8000));
+      return !!b && /Partie annulée/.test(b.textContent) && !b.querySelector('.grp-pill'); }, null, 8000));
     /* Un salon fermé SANS que la bulle le sache (le téléphone de l'hôte s'est
        éteint en pleine partie) : la bulle propose encore de rejoindre, et le
        salon vide ramène à la discussion avec le mot qui l'explique. */

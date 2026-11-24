@@ -127,9 +127,18 @@ const lireDurees = (p) => p.evaluate(() => {
     const zp = { x: bp.x - x0, y: bp.y - y0, w: bp.width, h: bp.height, largeur: tout.width };
     const zq = { x: bq.x - x0, y: bq.y - y0, w: bq.width, h: bq.height, largeur: tout.width };
     await f.geste();
+    /* (v379) L'encre finie, c'est l'encre qui COUVRE la puce : la goutte est
+       la puce agrandie (voir LA GOUTTE A LA FORME DE LA PUCE — LA VRAIE), et
+       dans une page la relève se fait à cet instant (le dégradé de la puce
+       remplace l'encre dans la même image). On la fige juste là — à son
+       échelle de couverture (--encre-p), un cheveu avant. */
     await p.evaluate((s) => { window.__fige = null; const el = document.querySelector(s);
       const guette = () => { const a = el.getAnimations({ subtree: true }).find(x => x.animationName === 'encreIn');
-        if (a && a.effect.getComputedTiming().progress >= 0.985) { a.pause(); window.__fige = a; return; }
+        const pb = parseFloat(el.style.getPropertyValue('--encre-p'));
+        let fin = false;
+        if (a && isFinite(pb) && pb > 0){ const m = /matrix\(([^,]+)/.exec(getComputedStyle(el, '::after').transform || ''); fin = !!m && parseFloat(m[1]) >= pb - 0.003; }
+        else if (a) fin = a.effect.getComputedTiming().progress >= 0.985;
+        if (a && fin) { a.pause(); window.__fige = a; return; }
         if (performance.now() - t0 < 6000) requestAnimationFrame(guette); };
       const t0 = performance.now(); requestAnimationFrame(guette); }, prise);
     const images = [];

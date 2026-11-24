@@ -13,9 +13,13 @@
      2. SEULS LES MEMBRES D'UN GROUPE PARTAGÉ LES LISENT (règle d'accès) ;
      3. LE JEU DE BENOÎT POSE SES CHIFFRES TOUT SEUL à la fin d'une partie —
         exactement les siens —, et ne les renvoie pas s'ils n'ont pas changé ;
+        (v379) sa flamme en fait partie : la première partie du jour l'allume
+        (un jour, aujourd'hui), et ses chiffres repartent — pas les suivantes ;
      4. TAYLOR OUVRE LA PAGE DE BENOÎT : ses trois chiffres, ses deux
         testaments, ses objectifs en couleur — et rien ne change de taille
-        quand ils arrivent (tirets, chiffres, ou la phrase d'attente) ;
+        quand ils arrivent (tirets, chiffres, ou la phrase d'attente) ; (v379)
+        en haut, sa photo en grand, son nom et sa flamme allumée, et la
+        pastille de la flamme garde sa place quand elle arrive ;
      5. toucher un objectif dit lequel c'est, et s'il l'a ;
      6. « VOIR LE PROFIL » en tenant un message de Taylor, chez Benoît (simple
         membre) : la page de Taylor, avec ses chiffres ;
@@ -126,6 +130,14 @@ const PROG_A = { books: {}, totalCorrect: 57, bestStreak: 9, flawless: 0, cibles
       && ['pas', 'centurion', 'erudit', 'premier-livre', 'explorateur', 'bibliophile', 'pentateuque', 'evangiles', 'serie10', 'serie20', 'sans-faute', 'fidele7'].every(x => sB.succes.includes(x))
       && !(await pb.evaluate(() => !!loadProgress().ach.pentateuque)),
       JSON.stringify({ sB, sienB }));
+    /* (v379) La première partie du jour ALLUME la flamme : ses chiffres
+       changent (la flamme, le jour du défi), ils partent. */
+    const avant3a = pb._appels.filter(n => n === 'poser_stats').length;
+    await pb.evaluate(() => compterPartie());
+    await pb.waitForTimeout(2600);
+    const sB3a = await stats(B), apres3a = pb._appels.filter(n => n === 'poser_stats').length, aujB = await pb.evaluate(() => dayKey(0));
+    dit('3. (v379) la première partie du jour allume la flamme de Benoît, et son jeu la pose : un jour, aujourd\'hui',
+      apres3a === avant3a + 1 && !!sB3a && sB3a.flamme === 1 && sB3a.flamme_le === aujB, JSON.stringify({ avant3a, apres3a, flamme: sB3a && sB3a.flamme, le: sB3a && sB3a.flamme_le }));
     const avant3 = pb._appels.filter(n => n === 'poser_stats').length;
     await pb.evaluate(() => compterPartie());
     await pb.waitForTimeout(2600);
@@ -154,6 +166,21 @@ const PROG_A = { books: {}, totalCorrect: 57, bestStreak: 9, flawless: 0, cibles
         on: [...c.querySelectorAll('.mb-ach')].map((b, i) => b.classList.contains('on') ? ACHIEVEMENTS[i].id : null).filter(Boolean),
         avant: !!c.nextElementSibling && c.compareDocumentPosition(document.querySelector('#grpMembreVeil .grp-liste-act')) === Node.DOCUMENT_POSITION_FOLLOWING };
     });
+    const haut = await pa.evaluate(() => {
+      const h = document.querySelector('#grpMembreVeil .mb-hero'), f = h && h.querySelector('.mb-flamme'), av = h && h.querySelector('.avatar');
+      return { nom: h ? (h.querySelector('.mb-nom') || {}).textContent : null, flamme: f ? f.textContent.trim() : null, allumee: !!f && !f.classList.contains('eteinte'),
+               avatar: av ? Math.round(av.getBoundingClientRect().width) : 0, avantCarte: !!h && !!(h.compareDocumentPosition(document.querySelector('#grpMembreVeil .mb-profil')) & Node.DOCUMENT_POSITION_FOLLOWING) };
+    });
+    dit('4. (v379) en haut de la page : la photo de Benoît en grand, son nom, et sa flamme allumée (1 jour)',
+      haut.nom === 'Benoît' && haut.flamme === '1' && haut.allumee && haut.avatar >= 72 && haut.avantCarte, JSON.stringify(haut));
+    const largeurs = await pa.evaluate(() => {
+      const f = document.querySelector('#grpMembreVeil .mb-feu');
+      const l = (x) => { f.innerHTML = flammeProfilHtml(x); return Math.round(f.getBoundingClientRect().width * 10) / 10; };
+      const r = { attente: l(undefined), ancien: l({ bonnes: 1 }), un: l({ flamme: 1, flamme_le: dayKey(0) }), douze: l({ flamme: 12, flamme_le: dayKey(0) }), eteinte: l({ flamme: 6, flamme_le: '2020-01-01' }) };
+      majCarteProfil(f.dataset.qui); return r;
+    });
+    dit('4. (v379) … la pastille de la flamme garde sa largeur quand elle arrive (tiret, 1, 12, éteinte)',
+      Math.max(...Object.values(largeurs)) - Math.min(...Object.values(largeurs)) < 1, JSON.stringify(largeurs));
     dit('4. la page de Benoît : ses trois chiffres, ses deux testaments, ses objectifs en couleur — avant les actions',
       carte.chiffres.join('|') === '12/66|839|21' && carte.tst.join('|') === '7/39|5/27' && carte.obj === sB3.succes.length + '/16'
       && JSON.stringify(carte.on) === JSON.stringify(sB3.succes) && carte.avant, JSON.stringify(carte));
