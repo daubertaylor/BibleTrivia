@@ -67,11 +67,26 @@ const RELEVE = function(sel, ms){
    Avec le seuil de 0,99 hérité de l'autre banc, le remplissage ne comptait que
    trois couleurs et j'ai cru que le bouton « claquait » : c'était ma règle qui
    regardait ailleurs, pas le jeu. Seuil à 0,05, et le fondu réapparaît. */
+/* (v379) LA GOUTTE EST LA PUCE AGRANDIE DEPUIS LE DOIGT (voir LA GOUTTE A LA
+   FORME DE LA PUCE — LA VRAIE). Son bord est net : un point de la puce passe
+   d'un coup du crème au rouge quand le bord le franchit, et un point seul ne
+   dit plus rien du geste. On compose donc la couleur MOYENNE de la puce : la
+   part qu'elle couvre (sa boîte, mise à l'échelle autour du doigt, croisée
+   avec la puce), à son opacité, sur la teinte. Une puce qui se vide en
+   balayant passe par autant de couleurs qu'un fondu ; une puce qui claque,
+   par deux. (Sans boîte — l'ancienne goutte —, la règle d'avant.) */
 function compose(r){
   const n = (s)=> (String(s).match(/[-\d.]+/g) || [0,0,0]).map(Number);
   const ech = (t)=>{ const m = n(t); return (t === 'none' || m.length < 4) ? 1 : m[0]; };
   const base = n(r[1]), lay = n(r[3]);
-  const o = (ech(r[4]) > 0.05) ? (parseFloat(r[2]) || 0) : 0;
+  let o = (ech(r[4]) > 0.05) ? (parseFloat(r[2]) || 0) : 0;
+  const g = r.slice(5).map(v => parseFloat(v));
+  if(g.length === 8 && g.every(v => isFinite(v)) && g[4] > 0 && g[0] > 0){
+    const [W, H, l, t, w, h, ox, oy] = g, s = ech(r[4]);
+    const L = l + ox - ox * s, T = t + oy - oy * s;
+    const fx = Math.max(0, Math.min(W, L + w * s) - Math.max(0, L)), fy = Math.max(0, Math.min(H, T + h * s) - Math.max(0, T));
+    o = (parseFloat(r[2]) || 0) * Math.round(1000 * fx * fy / (W * H)) / 1000;
+  }
   return [0,1,2].map(i => Math.round(lay[i]*o + base[i]*(1-o))).join(',');
 }
 function lire(rel){
@@ -144,7 +159,8 @@ function lire(rel){
       return new Promise((res)=>{
         const rel = { a:[], b:[] }; const t0 = performance.now();
         const lis = (el)=>{ const cs=getComputedStyle(el), ap=getComputedStyle(el,'::after');
-          return [+(performance.now()-t0).toFixed(0), (cs.getPropertyValue('--glass-tint')||'').trim(), ap.opacity, ap.backgroundColor, ap.transform]; };
+          return [+(performance.now()-t0).toFixed(0), (cs.getPropertyValue('--glass-tint')||'').trim(), ap.opacity, ap.backgroundColor, ap.transform,
+                  el.offsetWidth, el.offsetHeight].concat(['l','t','w','h','ox','oy'].map(k => cs.getPropertyValue('--encre-' + k).trim())); };
         const tic = ()=>{ rel.a.push(lis(window.__a)); rel.b.push(lis(window.__b));
           if(performance.now()-t0 < ms) requestAnimationFrame(tic); else res(rel); };
         requestAnimationFrame(tic);

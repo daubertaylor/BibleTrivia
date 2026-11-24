@@ -614,6 +614,10 @@ const ouvrirLaLangue = async (p, lg) => {
       state.screen='online-join'; render(); }],
     ['Salon refusé',       () => { net.error = T('Impossible de rejoindre ce salon. Réessaie.'); render(); }],
     ['Hôte parti',         () => { net.error = T("L'hôte a quitté le salon."); render(); }],
+    /* (v379) L'hôte ferme son salon et son nom n'est pas arrivé : le mot
+       le dit sans lui (voir FERMER UNE PARTIE QUI N'A PAS COMMENCÉ). */
+    ['Partie fermée, sans nom', () => { __fermerTout(); net.error=''; net.code='ABCD'; net.isHost=false; net.joueurs={};
+      state.screen='online-room'; render(); salonFermeParHote(T("La partie a été fermée.")); }],
     /* Le salon vu par un invité, et la ligne d'attente que le jeu écrit à la
        main (hors rendu) quand l'adversaire arrive ou non. */
     /* LA NOTE DE L'INVITÉ EST ÉCRITE PAR LA RETOUCHE EN PLACE, pas par le
@@ -844,6 +848,15 @@ const ouvrirLaLangue = async (p, lg) => {
     ['Groupes · nom refusé', () => { grp.message = T("Ce nom ne peut pas être utilisé dans les groupes. Change-le dans ton profil."); render(); }],
     ['Groupes · sans nom', () => { const n = profile.name; profile.name = ''; grp.message = T("Choisis d'abord un nom."); render(); profile.name = n; }],
     ['Groupes · liste',    () => { __fermerTout(); __grpDecor(); state.screen='groupes'; render(); }],
+    /* (v379) LA VITRINE : à partir de quatre groupes publics, les trois
+       premiers du jour portent « À la une ». */
+    ['Groupes · la vitrine', () => { __fermerTout(); __grpDecor(); grp.recherche = '';
+      grp.publics = [ { id:'g-2', nom:'Sam', description:'', nb_membres:2, teinte:0, membre:true },
+                      { id:'g-5', nom:'Ruth', description:'', nb_membres:1, teinte:3, membre:false },
+                      { id:'g-7', nom:'Kim', description:'', nb_membres:12, teinte:1, membre:false },
+                      { id:'g-8', nom:'Amos', description:'', nb_membres:7, teinte:2, membre:false },
+                      { id:'g-9', nom:'Job', description:'', nb_membres:5, teinte:5, membre:false } ];
+      state.screen='groupes'; render(); }],
     /* Le modérateur : des signalements attendent. Le bouclier et l'onglet
        le disent aussi au lecteur d'écran — dans la langue du joueur. */
     ['Groupes · signalements en attente', () => { grp.etat = { participe:'ok', moderateur:true, ouverts:true, a_traiter:2 }; render(); majBarre(); }],
@@ -921,12 +934,15 @@ const ouvrirLaLangue = async (p, lg) => {
       grp.fils['g-1'].messages.push(
         p(30, 'u-2', [ { id:'moi-0', nom:'Taylor' }, { id:'u-3', nom:'Lee' } ], { 'u-2':[60, 3], 'moi-0':[40, 2] }, 'nt', 50),
         p(31, 'moi-0', [ { id:'u-2', nom:'Sam' } ], { 'moi-0':[50, 2], 'u-2':[50, 2] }, 'tout', 40),
-        p(32, 'moi-0', [ { id:'u-3', nom:'Lee' } ], { 'moi-0':[70, 3], 'u-3':[30, 1] }, 'at', 30));
+        p(32, 'moi-0', [ { id:'u-3', nom:'Lee' } ], { 'moi-0':[70, 3], 'u-3':[30, 1] }, 'at', 30),
+        /* (v379) Fermée avant de commencer : « Partie annulée ». */
+        { id:33, groupe:'g-1', auteur:'u-2', genre:'partie', texte:'', cree_le:il(20), masque:false, supprime_le:null,
+          donnees:{ code:'NPQR', fermee:true, venus:[ { id:'moi-0', nom:'Taylor' } ] } });
       grp.courant = 'g-1'; state.screen = 'groupe'; render();
       await new Promise(r => setTimeout(r, 60)); descendreFil(); }],
     ['Groupes · récap d\'une partie', () => { ouvrirRecapPartie('30'); }],
     ['Groupes · récap, gagné', () => { __fermerTout(); ouvrirRecapPartie('32'); }],
-    ['Groupes · récap refermé', () => { __fermerTout(); grp.fils['g-1'].messages = grp.fils['g-1'].messages.filter(x => x.id < 30 || x.id > 32); majFil(); }],
+    ['Groupes · récap refermé', () => { __fermerTout(); grp.fils['g-1'].messages = grp.fils['g-1'].messages.filter(x => x.id < 30 || x.id > 33); majFil(); }],
     /* LES MENTIONS (v317). Taper « @ » propose les membres et, à qui peut
        s'en servir, « @tout le monde » ; un simple membre qui commence à
        l'écrire lit qu'il est réservé. Par majNoms, la fonction que la frappe
@@ -1278,6 +1294,10 @@ const ouvrirLaLangue = async (p, lg) => {
     ['Parcours · un gel acheté', () => { acheterGel(); }],
     ['Parcours · réserve pleine', () => { saveDaily({ gels:2 }); majBoutique(); acheterGel(); }],
     ['Parcours · solde trop court', () => { saveDaily({ gels:0 }); depenserDiamants('banc', Math.max(1, soldeDiamants() - 10)); majBoutique(); }],
+    /* (v379) Et à UNE gemme près : le singulier a sa propre phrase. */
+    ['Parcours · une gemme de moins', () => { const s = soldeDiamants();
+      if(s < PRIX_GEL - 1) gagnerDiamants('banc-une-gemme', PRIX_GEL - 1 - s); else if(s > PRIX_GEL - 1) depenserDiamants('banc', s - (PRIX_GEL - 1));
+      majBoutique(); }],
     ['Parcours · une leçon d\'avant', () => { __fermerTout();
       const p = loadParcours(); p.faites['exode:1'] = '2026-01-01'; localStorage.setItem('bt_parcours', JSON.stringify({ v:1, faites:p.faites }));
       try { achToastPause = false; achToastBusy = false; } catch(e){}
@@ -1305,6 +1325,11 @@ const ouvrirLaLangue = async (p, lg) => {
     ['Parcours · tout fait', () => { __fermerTout();
       const f = {}; PARCOURS.forEach((u, i) => { for(let l = 0; l < LECONS_PAR_UNITE; l++) f[cleLecon(i, l)] = '2026-01-01'; });
       localStorage.setItem('bt_parcours', JSON.stringify({ v:1, faites:f })); etapeVue = null; state.screen = 'chemin'; render(); }],   // (v376) l'étape où l'on en est : la dernière
+    /* (v379) Chaque étape à son pas : le chemin garde celle qu'on regardait.
+       Les deux autres se regardent donc exprès — avec tout fait, leurs
+       unités disent leur nom, et la troisième finit sur le bout du chemin. */
+    ['Parcours · l\'étape 2, tout fait', () => { __fermerTout(); voirEtape(1); }],
+    ['Parcours · l\'étape 3, tout fait', () => { __fermerTout(); voirEtape(2); }],
     ['Parcours · les étapes, tout fait', () => { ouvrirEtapes(); }],
     ['Parcours · accueil, tout fait', () => { __fermerTout(); state.screen = 'mode'; render(); }],
   ];

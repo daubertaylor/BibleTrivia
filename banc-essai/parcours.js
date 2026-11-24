@@ -92,8 +92,10 @@ async function finirLecon(p, fautes) {
         deborde: document.documentElement.scrollWidth - innerWidth,
         horsCadre: [...document.querySelectorAll('.ch-pierre, .ch-bulle, .ch-bandeau')].filter(e => { const r = e.getBoundingClientRect(); return r.left < 0 || r.right > innerWidth; }).length };
     });
-    dit('2. le chemin : douze unités dans l\'ordre de la Bible, cinq pierres chacune, une seule à faire, les autres fermées ; rien ne dépasse',
-      c2.n === 12 && c2.pierres.every(x => x === 5) && c2.noms[0] === 'Au commencement' && c2.noms[11] === 'Lettres et Apocalypse' && c2.livres === 'Genèse'
+    /* (v379) Ce qu'on n'a pas encore atteint garde son nom pour plus tard :
+       les onze unités d'après disent « À découvrir ». */
+    dit('2. le chemin : douze unités dans l\'ordre de la Bible, cinq pierres chacune, une seule à faire, les autres fermées (et « À découvrir ») ; rien ne dépasse',
+      c2.n === 12 && c2.pierres.every(x => x === 5) && c2.noms[0] === 'Au commencement' && c2.noms.slice(1).every(x => x === 'À découvrir') && c2.livres === 'Genèse'
       && c2.courante === 0 && c2.fermees === 59 && c2.deborde <= 0 && c2.horsCadre === 0, JSON.stringify(c2));
 
     /* 3 */
@@ -208,8 +210,8 @@ async function finirLecon(p, fautes) {
       await o.ctx.close();
     }
     dit('11. en anglais et en espagnol, le chemin parle la langue du joueur',
-      c11.en.entete === 'Path' && c11.en.unite === 'In the beginning' && c11.en.livres === 'Genesis' && c11.en.num === 'Unit 1' && c11.en.bulle === 'Start' && c11.en.derniere === 'Letters and Revelation'
-      && c11.es.entete === 'Camino' && c11.es.unite === 'En el principio' && c11.es.num === 'Unidad 1' && c11.es.bulle === 'Empezar', JSON.stringify(c11));
+      c11.en.entete === 'Path' && c11.en.unite === 'In the beginning' && c11.en.livres === 'Genesis' && c11.en.num === 'Unit 1' && c11.en.bulle === 'Start' && c11.en.derniere === 'To discover'
+      && c11.es.entete === 'Camino' && c11.es.unite === 'En el principio' && c11.es.num === 'Unidad 1' && c11.es.bulle === 'Empezar' && c11.es.derniere === 'Por descubrir', JSON.stringify(c11));
 
     /* 12 */
     {

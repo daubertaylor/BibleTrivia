@@ -19,10 +19,13 @@
         jamais d'un saut, et elle part petite ;
      3. ELLE COUVRE TOUT : à la fin, le cœur plein du disque atteint le coin le
         plus éloigné (géométrie), et en pixels les quatre coins de la puce sont
-        rouges — pas de frange claire ;
+        rouges — pas de frange claire ; (v379) la goutte est maintenant la puce
+        agrandie depuis le doigt : sa boîte, à son échelle finale, contient la
+        puce ;
      4. LA TEINTE PLEINE N'ARRIVE QUE SOUS UNE ENCRE QUI COUVRE TOUT — (v377)
-        lu sur l'animation elle-même, et non plus à heure fixe — et elle s'y
-        fond, par plusieurs nuances, au lieu de basculer ;
+        lu sur l'animation elle-même, et non plus à heure fixe — (v379) et
+        elle s'y pose d'un coup : la goutte atteint tout le bord dans la même
+        image (voir puce-bord.js), il n'y a plus de lisière à fondre ;
      5. LE MOT NE BLANCHIT QUE COUVERT : à l'instant où il bascule, le cœur de
         l'encre couvre toute la boîte du libellé ;
      6. UN SEUL ROUGE : la quantité totale de rouge sur la rangée (en pixels,
@@ -101,6 +104,7 @@ const lireDurees = (p) => p.evaluate(() => {
                teinte: cs.getPropertyValue('--glass-tint').trim(), couleur: cs.color,
                x: parseFloat(c.style.getPropertyValue('--encre-x')), y: parseFloat(c.style.getPropertyValue('--encre-y')),
                r: parseFloat(c.style.getPropertyValue('--encre-r')), rx: parseFloat(c.style.getPropertyValue('--encre-rx')), ry: parseFloat(c.style.getPropertyValue('--encre-ry')),
+               pb: parseFloat(c.style.getPropertyValue('--encre-p')),
                remplit: c.classList.contains('remplit') });
       if (performance.now() - t0 < dureeMax) requestAnimationFrame(tic); else res(l);
     };
@@ -153,7 +157,11 @@ const lireDurees = (p) => p.evaluate(() => {
 
   /* 3. elle couvre tout */
   const geo = pendant.length ? pendant[pendant.length - 1] : null;
-  if (geo) {
+  /* (v379) La goutte-boîte : à l'échelle pb, elle EST la puce ; au-delà, elle la contient. */
+  const boite = (e) => e && isFinite(e.pb) && e.pb > 0;
+  if (geo && boite(geo)) {
+    if (geo.ech + 0.005 < geo.pb) soucis.push('à la fin, la goutte (échelle ' + geo.ech.toFixed(3) + ') n\'a pas atteint la puce (échelle ' + geo.pb + ')');
+  } else if (geo) {
     /* (v345) La goutte est une ellipse aux proportions de la puce (rx, ry) :
        on mesure dans l'espace où elle est un cercle (largeurs divisées par k). */
     const k = (geo.rx > 0 && geo.ry > 0) ? geo.rx / geo.ry : 1, ry = geo.ry > 0 ? geo.ry : geo.r;
@@ -167,6 +175,15 @@ const lireDurees = (p) => p.evaluate(() => {
   const creme = (c) => { const v = (String(c).match(/\d+/g) || []).map(Number); return v[0] >= 250 && v[1] >= 245 && v[2] >= 238; };
   const iT = pendant.findIndex(e => !creme(e.teinte));
   if (iT < 0) soucis.push('la teinte pleine n\'arrive jamais sous l\'encre');
+  else if (boite(pendant[iT])) {
+    const e = pendant[iT], ech4 = iT > 0 ? pendant[iT - 1].ech : e.ech;
+    /* Elle se pose UNE image avant que la goutte couvre tout (l'iPhone qui
+       peindrait l'encre une image en retard) : la goutte est alors au ras du
+       bord — à l'échelle de couverture, à une image de course près. */
+    if (ech4 < e.pb - 0.06) soucis.push('la teinte pleine arrive avant que l\'encre couvre toute la puce : échelle ' + ech4.toFixed(3) + ' pour ' + e.pb);
+    const nuances = new Set(pendant.slice(iT).map(x => x.teinte).filter(x => !creme(x))).size;
+    console.log('  la teinte quitte le crème à ' + Math.round(e.t / LENT) + ' ms (temps réel), sous une encre à l\'échelle ' + ech4.toFixed(3) + ' (couverture à ' + e.pb + '), en ' + nuances + ' nuance(s)');
+  }
   else {
     const e = pendant[iT], k4 = (e.rx > 0 && e.ry > 0) ? e.rx / e.ry : 1, ry4 = e.ry > 0 ? e.ry : e.r;
     const loin4 = Math.max(...[[0, 0], [cible.w, 0], [0, cible.h], [cible.w, cible.h]].map(([a, b]) => Math.hypot((a - e.x) / k4, b - e.y)));
@@ -193,11 +210,22 @@ const lireDurees = (p) => p.evaluate(() => {
       }
       return { g, h, d, b };
     });
+    if (boite(bascule)) {
+      /* (v379) La goutte-boîte couvre le libellé quand, de chaque côté du
+         doigt, elle a fait le chemin jusqu'à lui. */
+      const W = cible.w, H = cible.h, x = bascule.x, y = bascule.y;
+      const fx = Math.max(0, x > 0 ? (x - libelle.g) / x : 0, W - x > 0 ? (libelle.d - x) / (W - x) : 0);
+      const fy = Math.max(0, y > 0 ? (y - libelle.h) / y : 0, H - y > 0 ? (libelle.b - y) / (H - y) : 0);
+      const besoin = bascule.pb * Math.max(fx, fy);
+      if (bascule.ech + 0.01 < besoin) soucis.push('le mot blanchit avant d\'être couvert : échelle ' + bascule.ech.toFixed(3) + ', il en faut ' + besoin.toFixed(3));
+      console.log('  le mot blanchit à ' + Math.round(bascule.t / LENT) + ' ms (temps réel) — encre à l\'échelle ' + bascule.ech.toFixed(3) + ' pour ' + besoin.toFixed(3) + ' de libellé');
+    } else {
     const kb = (bascule.rx > 0 && bascule.ry > 0) ? bascule.rx / bascule.ry : 1, ryb = bascule.ry > 0 ? bascule.ry : bascule.r;
     const besoin = Math.max(...[[libelle.g, libelle.h], [libelle.d, libelle.h], [libelle.g, libelle.b], [libelle.d, libelle.b]].map(([a, b]) => Math.hypot((a - bascule.x) / kb, b - bascule.y)));
     const coeur = 0.82 * ryb * bascule.ech;
     if (coeur + 0.5 < besoin) soucis.push('le mot blanchit avant d\'être couvert : cœur ' + coeur.toFixed(1) + ' px, il en faut ' + besoin.toFixed(1));
     console.log('  le mot blanchit à ' + Math.round(bascule.t / LENT) + ' ms (temps réel) — cœur de l\'encre ' + coeur.toFixed(1) + ' px pour ' + besoin.toFixed(1) + ' px de libellé');
+    }
   }
 
   /* 6. un seul rouge — rapporté au repos (la dernière image, tout posé) */

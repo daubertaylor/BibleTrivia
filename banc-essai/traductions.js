@@ -368,6 +368,8 @@ const PAS_DU_TEXTE = new Map([
   ['btn-ghost jx-autres',   'deux classes CSS (v347 : « Autres jeux »)'],
   ['[data-count-me]',       'un sélecteur CSS'],
   ['<button class="sem-flamme', 'un début de balise'],
+  ['):not(.sheet-veil *):not(.play-meta > *):not(.modal-deroule):not(.sem-flamme:not(.eteinte))',
+                            'un sélecteur CSS (GLASS_VIVANT, v379 : la flamme allumée est peinte avec sa carte)'],
   [' data-langue=',         'le nom d\'un attribut, coupé par une interpolation'],
   ['" data-langue="',       'idem, guillemets compris : la balise ouvrante n\'est pas fermée sur la ligne'],
   /* LA REMONTÉE D'ERREUR PARLE AU SERVEUR, PAS AU JOUEUR. Ces deux étiquettes

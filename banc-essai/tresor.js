@@ -220,7 +220,7 @@ const dit = (q, b, d) => { if (!b) ko++; console.log('  ' + (b ? 'OK  ' : 'KO  '
   const r10 = await p.evaluate(() => { const s = soldeDiamants(); ouvrirFlamme(); return s; });
   await p.waitForTimeout(900);
   const flamme = await p.evaluate(() => [...document.querySelectorAll('.flam-regle')].map(e => e.textContent).join(' | '));
-  dit('10. rechargé, le même solde ; la page de la flamme dit où acheter un gel', r10 === 35 && /boutique du Parcours, pour 50 diamants/.test(flamme), JSON.stringify({ r10, flamme: flamme.slice(0, 200) }));
+  dit('10. rechargé, le même solde ; la page de la flamme dit où acheter un gel', r10 === 35 && /boutique du Parcours, pour 50 gemmes/.test(flamme), JSON.stringify({ r10, flamme: flamme.slice(0, 200) }));
 
   dit('11. aucune erreur', errs.length === 0, errs.slice(0, 3).join(' | '));
   await nav.close();

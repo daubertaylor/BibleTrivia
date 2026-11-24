@@ -1391,15 +1391,25 @@ begin
       end if;
     end loop;
   end if;
+  -- (v379) LA FLAMME, sur la page d'un joueur. Trois choses, toutes bornées :
+  -- le nombre de jours (comme les autres compteurs), le JOUR du dernier défi
+  -- (une date, et rien d'autre), et s'il lui reste un gel. Avec les deux
+  -- dernières, la page sait si la flamme brûle encore aujourd'hui sans que
+  -- le joueur ait eu à rouvrir son jeu. Un jeu d'avant la v379 n'envoie
+  -- rien de tout cela : la page dit alors un tiret, pas un zéro.
   update public.profils set
-    stats = jsonb_build_object(
+    stats = jsonb_strip_nulls(jsonb_build_object(
       'v', 1,
       'livres', public._borne(p_stats -> 'livres', 66),
       'at',     public._borne(p_stats -> 'at', 39),
       'nt',     public._borne(p_stats -> 'nt', 27),
       'bonnes', public._borne(p_stats -> 'bonnes', 10000000),
       'serie',  public._borne(p_stats -> 'serie', 100000),
-      'succes', objectifs),
+      'succes', objectifs,
+      'flamme', case when p_stats ? 'flamme' then public._borne(p_stats -> 'flamme', 100000) end,
+      'flamme_le', case when jsonb_typeof(p_stats -> 'flamme_le') = 'string'
+                         and (p_stats ->> 'flamme_le') ~ '^[0-9]{4}-[0-9]{2}-[0-9]{2}$' then p_stats -> 'flamme_le' end,
+      'gel', case when p_stats ? 'gel' then least(1, public._borne(p_stats -> 'gel', 1)) end)),
     stats_maj = now()
   where id = moi;
   if not found then return jsonb_build_object('ok', false, 'erreur', 'sans_profil'); end if;
