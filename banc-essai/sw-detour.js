@@ -102,7 +102,7 @@ function cloudflare(req, res) {
     } catch (e) { errs.push('confidentialité : ' + e.message.split('\n')[0]); }
     const aConf = fs.existsSync(path.join(RACINE, 'confidentialite.html'));
     dit('5. la Confidentialité (/confidentialite.html → /confidentialite) s\'ouvre, elle, et pas le jeu',
-      !aConf || (!!conf && conf.titre === 'Yada — Confidentialité et mentions légales' && !conf.jeu && conf.adresse === '/confidentialite'), JSON.stringify({ aConf, conf }));
+      !aConf || (!!conf && conf.titre === 'Politique de confidentialité et mentions légales — Yada' && !conf.jeu && conf.adresse === '/confidentialite'), JSON.stringify({ aConf, conf }));
 
     /* 6 */
     const pose = await p.evaluate(async () => {

@@ -167,12 +167,14 @@ const v = (nom, bon, det) => { if (!bon) ko++; console.log('  ' + (bon ? 'OK ' :
       v('le bouton joue exactement ce qui est annoncé', joue.rev === true && joue.n === ecran.nb && joue.qs.every((q, i) => q === temoin.find(e => e.k === cinq[i].k).q), joue.n + ' jouées');
       v('le jeu s\'appelle « Seconde chance »', /Seconde chance/.test(joue.titre || ''), joue.titre);
 
-      /* ---- 5 ---- la première juste, la deuxième fausse, le reste juste. */
+      /* ---- 5 ---- la première juste, la deuxième fausse, le reste juste.
+         (v378) La fausse revient une fois en fin de séance (voir LA SÉRIE
+         SE FINIT AVEC ELLE) : on la rate encore, pour qu'elle reste. */
       const fin = await p.evaluate(async () => {
         const vus = [];
         for (let t = 0; t < 10 && state.screen === 'play'; t++) {
           const q = currentQ();
-          const juste = state.currentIndex !== 1;
+          const juste = state.currentIndex !== 1 && !currentQ().relance;
           soloAnswer(juste ? q.shuffledOptions.indexOf(q.correct) : q.shuffledOptions.findIndex(o => o !== q.correct));
           await new Promise(r => setTimeout(r, 30));
           vus.push((document.querySelector('.fact-card .fact-label') || {}).textContent || '');

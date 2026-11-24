@@ -9,7 +9,7 @@
         membre n'ait, sauf « Agir au nom de la modération » : « Signaler »
         comme tout membre (v339), mais pas « Bloquer » (elle doit voir ce
         qu'elle modère) ;
-     2. le menu d'un message de Chloé : « Gérer Chloé » et « Signaler », pas
+     2. le menu d'un message de Chloé : (v378) « Voir le profil » et « Signaler », pas
         « Supprimer le message », pas « Bloquer » ;
      3. les infos : ni « Modifier le groupe », ni « Personnes bannies », ni
         « Supprimer le groupe » ; « Signaler le groupe », comme tout membre ;
@@ -95,7 +95,7 @@ const dit = (quoi, bon, detail) => { console.log('  ' + (bon ? 'OK  ' : 'KO  ') 
 
     /* 2 */
     const l2 = await menu();
-    dit('2. le menu d\'un message de Chloé : « Gérer Chloé » et « Signaler », ni « Supprimer le message » ni « Bloquer »', l2.includes('Gérer Chloé') && l2.includes('Signaler') && !l2.includes('Supprimer le message') && !l2.some(t => /^Bloquer/.test(t)), JSON.stringify(l2));
+    dit('2. le menu d\'un message de Chloé : (v378) « Voir le profil » et « Signaler », ni « Supprimer le message » ni « Bloquer »', l2.includes('Voir le profil') && l2.includes('Signaler') && !l2.includes('Supprimer le message') && !l2.some(t => /^Bloquer/.test(t)), JSON.stringify(l2));
 
     /* 3 */
     const l3 = await infos();
@@ -115,7 +115,7 @@ const dit = (quoi, bon, detail) => { console.log('  ' + (bon ? 'OK  ' : 'KO  ') 
     const v5 = await bouclier();
     const memePage = await p.evaluate(() => document.querySelectorAll('#grpMembreVeil').length);
     dit('5. « Agir au nom de la modération » : la page se refait sur place, avec ses pouvoirs et « Ici, tu agis au nom de la modération » ; le bouclier à côté du champ ; le mot le dit',
-      memePage === 1 && JSON.stringify(p5.l) === JSON.stringify(['Mettre en sourdine une heure', 'Nommer admin', 'Confier le groupe', 'Retirer du groupe', 'Bannir du groupe'])
+      memePage === 1 && JSON.stringify(p5.l) === JSON.stringify(['Mettre en sourdine une heure', 'Nommer admin', 'Nommer propriétaire', 'Retirer du groupe', 'Bannir du groupe'])
         && p5.a === 'Ici, tu agis au nom de la modération.' && v5 === 'bouclier' && mot5 === 'Tu agis au nom de la modération.', JSON.stringify({ p5, v5, mot5 }));
 
     /* 6 */

@@ -192,8 +192,10 @@ function existe(rel){
       const n = document.getElementById('liens-site');
       const vis = n && getComputedStyle(n).display !== 'none';
       openSettings();
-      const a = document.querySelector('#settingsVeil a.lien-conf[href="a-propos/"]');
-      return { vis, apropos: !!a && a.target === '_blank' && /noopener/.test(a.rel), texte: a && a.textContent };
+      /* (v378) « À propos » s'ouvre DANS le jeu (voir LE SITE S'OUVRE DANS
+         LE JEU) : un bouton, plus un lien vers une autre fenêtre. */
+      const a = [...document.querySelectorAll('#settingsVeil .liens-legaux .lien-conf')].find(b => /ouvrirSite\('a-propos\/'\)/.test(b.getAttribute('onclick') || ''));
+      return { vis, apropos: !!a && a.tagName === 'BUTTON', texte: a && a.textContent };
     });
     await ctx.close();
     const big = await nav.newContext({ viewport: { width: 1366, height: 860 }, deviceScaleFactor: 1, serviceWorkers: 'block' });

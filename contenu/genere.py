@@ -153,6 +153,7 @@ def page(chemin, titre, description, corps, *, rubrique=None, bandeau=None, miet
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<script>try{{if(self!==top&&top.location.host===location.host)document.documentElement.classList.add("dans-app")}}catch(e){{}}</script>
 <title>{titre}</title>
 <meta name="description" content="{desc}">
 <link rel="canonical" href="{url}">
@@ -179,7 +180,7 @@ def page(chemin, titre, description, corps, *, rubrique=None, bandeau=None, miet
 <script type="speculationrules">{{"prefetch":[{{"where":{{"and":[{{"href_matches":"/*"}},{{"not":{{"href_matches":"/"}}}}]}},"eagerness":"moderate"}}]}}</script>
 {ld}</head>
 <body>
-<header class="entete"><div class="entete-in"><a class="marque" href="{r}"><img src="{r}icon-192.png" alt="" width="34" height="34">Yada</a><nav class="menu" aria-label="Le site">{menu}</nav><a class="jouer" href="{r}">Jouer</a></div><nav class="menu-mobile" aria-label="Le site (mobile)">{menu}</nav><script>(function(){{try{{var m=document.querySelector(".menu-mobile");if(!m)return;var k="yada-onglets";m.scrollLeft=+sessionStorage.getItem(k)||0;var a=m.querySelector("[aria-current]");if(a){{var r=a.getBoundingClientRect(),n=m.getBoundingClientRect();if(r.left<n.left+12||r.right>n.right-12)m.scrollLeft+=(r.left+r.width/2)-(n.left+n.width/2);}}addEventListener("pagehide",function(){{try{{sessionStorage.setItem(k,m.scrollLeft)}}catch(e){{}}}});}}catch(e){{}}}})();</script></header>
+<header class="entete"><div class="entete-in"><a class="marque" href="{r}"><img src="{r}icon-192.png" alt="" width="34" height="34">Yada</a><nav class="menu" aria-label="Le site">{menu}</nav><a class="jouer" href="{r}">Jouer</a></div><nav class="menu-mobile" aria-label="Le site (mobile)">{menu}</nav><script>(function(){{try{{var m=document.querySelector(".menu-mobile");if(!m)return;var k="yada-onglets";m.scrollLeft=+sessionStorage.getItem(k)||0;var a=m.querySelector("[aria-current]");if(a){{var r=a.getBoundingClientRect(),n=m.getBoundingClientRect();if(r.left<n.left+12||r.right>n.right-12)m.scrollLeft+=(r.left+r.width/2)-(n.left+n.width/2);}}var l=[].slice.call(m.querySelectorAll("a")),i=a?l.indexOf(a):l.length,p=sessionStorage.getItem("yada-onglet-i");if(p!==null&&i<+p)document.documentElement.setAttribute("data-vt","gauche");sessionStorage.setItem("yada-onglet-i",i);var v=[].slice.call(document.querySelectorAll(".entete [aria-current]")).filter(function(x){{return x.getClientRects().length}})[0];if(v)v.style.viewTransitionName="onglet";addEventListener("pagehide",function(){{try{{sessionStorage.setItem(k,m.scrollLeft)}}catch(e){{}}}});}}catch(e){{}}}})();</script></header>
 {haut}<main class="contenu">
 {fil}{corps}
 </main>

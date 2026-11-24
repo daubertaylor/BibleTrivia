@@ -391,6 +391,10 @@ const ouvrirLaLangue = async (p, lg) => {
           .forEach(f => { try { if(typeof window[f] === 'function') window[f](); } catch(e){} });
         document.querySelectorAll('.sheet-veil, .modal-veil').forEach(v => { try { v.remove(); } catch(e){} });
       };
+      /* (v378) Le site ouvert dans le jeu : rendu quand son cadre est chargé
+         (la feuille porte alors « site-pret »), et le titre suit l'onglet. */
+      window.__siteCharge = (v) => new Promise(r => { const t0 = Date.now();
+        const k = () => (!v || v.classList.contains('site-pret') || Date.now() - t0 > 4000) ? setTimeout(r, 60) : setTimeout(k, 40); k(); });
     });
 
   /* Chaque étape : un nom, et ce qu'il faut faire pour y être. On force l'état
@@ -1307,6 +1311,16 @@ const ouvrirLaLangue = async (p, lg) => {
   const ETAPES = [
     ['Accueil',           () => { state.screen='mode'; render(); }],
     ['Réglages',          () => { openSettings(); }],
+    /* (v378) Le site ouvert dans le jeu : sa page et son cadre. */
+    ['Réglages · À propos', () => { __fermerTout(); ouvrirSite('a-propos/'); }],
+    /* (v378) Chaque rubrique du site donne son nom au titre de la page du
+       jeu (voir brancherSite) : on attend que le site soit chargé. Et la
+       politique de confidentialité, ouverte depuis les Réglages. */
+    ['Le site · Quiz par livre', (u) => { __fermerTout(); return __siteCharge(ouvrirSite(u)); }, 'quiz-biblique/'],
+    ['Le site · Guide',          (u) => { __fermerTout(); return __siteCharge(ouvrirSite(u)); }, 'guide/'],
+    ['Le site · Nouveautés',     (u) => { __fermerTout(); return __siteCharge(ouvrirSite(u)); }, 'nouveautes/'],
+    ['Le site · FAQ',            (u) => { __fermerTout(); return __siteCharge(ouvrirSite(u)); }, 'faq/'],
+    ['Réglages · la politique de confidentialité', () => { __fermerTout(); return __siteCharge(ouvrirSite('confidentialite.html', 'Politique de confidentialité')); }],
     ['Versions de Bible', () => { __fermerTout(); openBibles(); }],
     ['Langues',           () => { __fermerTout(); openLangues(); }],
     ['Flamme',            () => { __fermerTout(); state.screen='mode'; render(); ouvrirFlamme(); }],
