@@ -18,6 +18,10 @@
      5. le jeu installé (son service worker) laisse passer la page : c'est
         elle qui s'ouvre, pas le jeu ;
      6. aucune erreur.
+   (v378) La page porte maintenant la politique COMPLÈTE (RGPD, AdSense,
+   traceurs) : le titre le dit, et l'e-mail de Yada y revient plusieurs fois
+   (exercer ses droits) — toujours lui, jamais un autre. Le point 7 vérifie
+   ce que le RGPD et les règles d'AdSense demandent d'y trouver.
    Usage : node banc-essai/page-confidentialite.js [url du jeu] */
 const { chromium } = require('/opt/node22/lib/node_modules/playwright');
 const URL_JEU = process.argv[2] || 'http://127.0.0.1:8099/index.html';
@@ -48,11 +52,24 @@ const net = (t) => String(t || '').replace(/ /g, ' ').replace(/\s+/g, ' ').trim
         texte: document.body.textContent.replace(/\s+/g, ' ') };
     });
     dit('1. la page est servie à part (pas le jeu), titrée, en trois langues',
-      rep && rep.status() === 200 && page.titre === 'Yada — Confidentialité et mentions légales' && !page.jeu && page.langs.join() === 'fr,en,es',
+      rep && rep.status() === 200 && page.titre === 'Politique de confidentialité et mentions légales — Yada' && !page.jeu && page.langs.join() === 'fr,en,es',
       JSON.stringify({ statut: rep && rep.status(), titre: page.titre, jeu: page.jeu, langs: page.langs }));
     dit('4. ni annonce ni script ; rien ne dépasse en largeur ; les polices du jeu',
       page.scripts === 0 && page.ins === 0 && page.deborde <= 0 && page.polices.includes('Inter') && page.polices.includes('Poppins'),
       JSON.stringify({ scripts: page.scripts, ins: page.ins, deborde: page.deborde, polices: page.polices }));
+
+    /* 7 : (v378) la politique complète, dans chaque langue */
+    {
+      const doit = {
+        fr: ['responsable du traitement', 'article 6.1.b', 'intérêt légitime', 'consentement', 'Data Privacy Framework', 'clauses contractuelles types', '30 jours', 'CNIL', '13 ans', '15 ans', 'Supabase', 'Cloudflare', 'paramètres des annonces Google', 'partner-sites', 'Supprimer mon compte'],
+        en: ['data controller', 'Article 6(1)(b)', 'legitimate interest', 'consent', 'Data Privacy Framework', 'standard contractual clauses', '30 days', 'CNIL', '13 and up', 'under 15', 'Supabase', 'Cloudflare', "Google's Ads Settings", 'partner-sites', 'Delete my account'],
+        es: ['responsable del tratamiento', 'artículo 6.1.b', 'interés legítimo', 'consentimiento', 'Data Privacy Framework', 'cláusulas contractuales tipo', '30 días', 'AEPD', '13 años', '15 años', 'Supabase', 'Cloudflare', 'configuración de anuncios de Google', 'partner-sites', 'Eliminar mi cuenta'],
+      };
+      const textes = await p.evaluate(() => Object.fromEntries(['fr', 'en', 'es'].map(l => [l, (document.getElementById(l) || {}).textContent || ''])));
+      const manque7 = [];
+      for (const lg of ['fr', 'en', 'es']) for (const m of doit[lg]) if (!textes[lg].replace(/\u00a0/g, ' ').includes(m)) manque7.push(lg + ' : ' + m);
+      dit('7. (v378) la politique complète, dans chaque langue : responsable, bases légales, destinataires, transferts, durées, droits et autorité, mineurs, traceurs et mentions AdSense', !manque7.length, manque7.slice(0, 6).join(' | '));
+    }
 
     /* 3 : les mentions */
     const adresse = await (async () => {
@@ -70,7 +87,7 @@ const net = (t) => String(t || '').replace(/ /g, ' ').replace(/\s+/g, ' ').trim
       && fr.some(x => /^Hébergeur : Cloudflare, Inc\., 101 Townsend Street, San Francisco, CA 94107, États-Unis — \+1 650 319 8930\. \(yadaquiz\.app\)$/.test(x))
       && fr.some(x => /^Hébergeur : GitHub, Inc\., 88 Colin P\. Kelly Jr\. Street/.test(x))
       && fr.some(x => /^Hébergeur des données : Supabase Pte\. Ltd\., 65 Chulia Street #38-02\/03, OCBC Centre, Singapour 049513/.test(x))
-      && page.tel.length === 3 && page.tel.every(t => t === 'tel:+33784045770 07 84 04 57 70') && page.mail.length === 3 && page.mail.every(m => m === 'mailto:yadaquiz.app@gmail.com')
+      && page.tel.length === 3 && page.tel.every(t => t === 'tel:+33784045770 07 84 04 57 70') && page.mail.length >= 3 && page.mail.every(m => m === 'mailto:yadaquiz.app@gmail.com')
       && (!adresse || fr.includes('Adresse : ' + adresse)) && !fuite,
       JSON.stringify({ tel: page.tel, mail: page.mail, fuite, adresse, mentions: fr.slice(-6) }));
     await ctx.close();
@@ -111,7 +128,7 @@ const net = (t) => String(t || '').replace(/ /g, ' ').replace(/\s+/g, ' ').trim
       await q.goto(URL_PAGE); await q.waitForTimeout(600);
       const r5 = await q.evaluate(() => ({ titre: document.title, jeu: typeof window.state !== 'undefined' }));
       dit('5. le jeu installé (son service worker aux commandes) laisse passer la page : c\'est elle qui s\'ouvre, pas le jeu',
-        sw === true && pilote && r5.titre === 'Yada — Confidentialité et mentions légales' && !r5.jeu, JSON.stringify({ sw, pilote, ...r5 }));
+        sw === true && pilote && r5.titre === 'Politique de confidentialité et mentions légales — Yada' && !r5.jeu, JSON.stringify({ sw, pilote, ...r5 }));
       await c.close();
     }
   } catch (e) { ko++; console.log('  KO  le banc a échoué : ' + e.message); }

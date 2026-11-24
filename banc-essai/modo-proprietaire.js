@@ -27,7 +27,7 @@
      8. « Retirer du groupe » : la fenêtre dit à qui le groupe passera, selon
         la règle (les mots de « Quitter ») ; confirmé, la phrase dit à qui
         (Dora), le serveur l'a fait, la discussion le montre ;
-     9. la page d'un membre (Benoît) offre « Confier le groupe » ; la fenêtre
+     9. la page d'un membre (Benoît) offre (v378) « Nommer propriétaire » ; la fenêtre
         nomme l'ancienne propriétaire, qui en reste admin ; confirmé, c'est
         fait, au nom de la modération ;
     10. la phrase « seul », en clair ;
@@ -157,8 +157,8 @@ const dit = (quoi, bon, detail) => { console.log('  ' + (bon ? 'OK  ' : 'KO  ') 
     await p.evaluate(() => document.getElementById('modalOk').click());
     await p.waitForTimeout(1800);
     const l9b = await lignes(1);
-    dit('9. la page de Benoît offre « Confier le groupe » ; la fenêtre nomme Dora, qui en reste admin ; confirmé, c\'est fait au nom de la modération',
-      l9.includes('Confier le groupe') && !l9.includes('Céder le groupe') && !!f9 && f9.titre === 'Confier le groupe à Benoît ?' && f9.msg === 'Benoît en devient propriétaire ; Dora en reste admin.' && f9.ok === 'Confier'
+    dit('9. la page de Benoît offre (v378) « Nommer propriétaire » ; la fenêtre nomme Dora, qui en reste admin ; confirmé, c\'est fait au nom de la modération',
+      l9.filter(t => t === 'Nommer propriétaire').length === 1 && !!f9 && f9.titre === 'Nommer Benoît propriétaire du groupe ?' && f9.msg === 'Benoît en devient propriétaire ; Dora en reste admin.' && f9.ok === 'Nommer'
         && (await role(B)) === 'proprietaire' && (await role(D)) === 'admin' && JSON.stringify(l9b) === JSON.stringify(['proprietaire:true/Benoît']),
       JSON.stringify({ l9, f9, l9b }));
 

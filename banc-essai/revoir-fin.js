@@ -3,14 +3,17 @@
      revient à l'accueil et que je veux revoir ma dernière erreur, ça me dit
      que j'ai terminé. Sauf que j'ai pas terminé. »
    « Ici, je ne veux pas qu'on puisse swiper vers le bas. »
-   Six erreurs récentes, une séance de cinq, toutes justes :
+   Neuf erreurs récentes, une séance de cinq, toutes justes (v378 : un
+   reste de sept au plus se joue d'un coup — six erreurs n'en laissent plus) :
      1. la fin de séance ne dit PAS « Tout est rattrapé » : « Séance
-        parfaite ! », « 1 encore à rattraper », et le bouton dit
+        parfaite ! », « 4 encore à rattraper », et le bouton dit
         « Continuer » (à côté de « Quitter ») ;
-     2. « Continuer » joue la dernière ; juste, elle donne cette fois « Tout
-        est rattrapé ! », « Plus rien à rattraper », et un seul bouton,
-        « Continuer », qui ramène sur « À revoir » — où tout est rattrapé ;
-     3. une séance ratée ne se dit jamais « Tout est rattrapé » ;
+     2. « Continuer » joue les quatre dernières ; justes, elles donnent cette
+        fois « Tout est rattrapé ! », « Plus rien à rattraper », et un seul
+        bouton, « Continuer », qui ramène sur « À revoir » — où tout est
+        rattrapé ;
+     3. une séance ratée ne se dit jamais « Tout est rattrapé » (la question
+        ratée, revenue en fin de séance, est ratée encore) ;
      4. l'écran « À revoir » tient dans le téléphone et ne défile pas (on ne
         peut pas le tirer), du plus petit iPhone au plus grand, avec 1, 5 ou
         15 erreurs ; une question y tient en deux lignes au plus, et le
@@ -44,8 +47,8 @@ const semer = (p, n) => p.evaluate((n) => { const t = Date.now(); const a = []; 
   saveErrbook(a); state.screen = 'revoir'; render(); }, n);
 /* Répondre à toute la séance : juste, ou faux pour les numéros donnés. */
 async function jouerSeance(p, faux) {
-  const nq = await p.evaluate(() => state.questions.length);
-  for (let i = 0; i < nq; i++) {
+  /* (v378) Jusqu'aux résultats : une erreur revient en fin de séance. */
+  for (let i = 0; i < 20 && (await p.evaluate(() => state.screen)) === 'play'; i++) {
     await p.evaluate(([rater]) => { const q = state.questions[state.currentIndex];
       const btns = [...document.querySelectorAll('.options-grid .option-btn')];
       const net = (t) => String(t || '').replace(/[  ]/g, ' ').replace(/\s+/g, ' ').trim().replace(/^[A-D]\s*/, '');
@@ -68,12 +71,12 @@ const fin = (p) => p.evaluate(() => ({ ecran: state.screen, titre: (document.que
   try {
     /* 1 et 2 */
     const { ctx, p } = await ouvrir(nav, 390, 844);
-    await semer(p, 6); await p.waitForTimeout(700);
+    await semer(p, 9); await p.waitForTimeout(700);
     await p.evaluate(() => lancerRevision()); await p.waitForTimeout(700);
     await jouerSeance(p, []);
     const f1 = await fin(p);
-    dit('1. cinq sur cinq, une erreur encore : « Séance parfaite ! », « 1 encore à rattraper », « Continuer » et « Quitter » — pas « Tout est rattrapé »',
-      f1.ecran === 'end' && net(f1.titre) === 'Séance parfaite !' && /1 encore à rattraper/.test(net(f1.reste)) && f1.aRatt === 1
+    dit('1. cinq sur cinq, quatre erreurs encore : « Séance parfaite ! », « 4 encore à rattraper », « Continuer » et « Quitter » — pas « Tout est rattrapé »',
+      f1.ecran === 'end' && net(f1.titre) === 'Séance parfaite !' && /4 encore à rattraper/.test(net(f1.reste)) && f1.aRatt === 4
       && f1.boutons.length === 2 && f1.boutons[0] === 'Continuer' && f1.boutons[1] === 'Quitter', JSON.stringify(f1));
     await p.evaluate(() => { document.querySelectorAll('.modal-veil').forEach(m => { const b = m.querySelector('.modal-btn.ok, .modal-btn'); if (b) b.click(); }); document.querySelector('.end-actions .btn-replay').click(); }); await p.waitForTimeout(900);
     const q2 = await p.evaluate(() => ({ ecran: state.screen, n: state.questions.length, revision: state.revision }));
@@ -81,14 +84,14 @@ const fin = (p) => p.evaluate(() => ({ ecran: state.screen, titre: (document.que
     const f2 = await fin(p);
     await p.evaluate(() => { document.querySelectorAll('.modal-veil').forEach(m => { const b = m.querySelector('.modal-btn.ok, .modal-btn'); if (b) b.click(); }); document.querySelector('.end-actions .btn-replay').click(); }); await p.waitForTimeout(1200);
     const apres = await p.evaluate(() => ({ ecran: state.screen, txt: (document.querySelector('.rv-chiffres') || {}).innerText }));
-    dit('2. « Continuer » joue la dernière ; juste : « Tout est rattrapé ! », un seul bouton, qui ramène sur « À revoir », où tout est rattrapé',
-      q2.ecran === 'play' && q2.n === 1 && q2.revision === true && net(f2.titre) === 'Tout est rattrapé !' && /Plus rien à rattraper/.test(net(f2.reste))
+    dit('2. « Continuer » joue les quatre dernières ; justes : « Tout est rattrapé ! », un seul bouton, qui ramène sur « À revoir », où tout est rattrapé',
+      q2.ecran === 'play' && q2.n === 4 && q2.revision === true && net(f2.titre) === 'Tout est rattrapé !' && /Plus rien à rattraper/.test(net(f2.reste))
       && f2.boutons.length === 1 && f2.boutons[0] === 'Continuer' && apres.ecran === 'revoir' && /Tout est rattrapé/.test(net(apres.txt)),
       JSON.stringify({ q2, f2, apres }));
     /* 3 */
     await semer(p, 3); await p.waitForTimeout(600);
     await p.evaluate(() => lancerRevision()); await p.waitForTimeout(700);
-    await jouerSeance(p, [1]);
+    await jouerSeance(p, [1, 3]);
     const f3 = await fin(p);
     dit('3. une séance avec une erreur ne se dit jamais « Tout est rattrapé » : « 2 rattrapées sur 3 », « 1 encore à rattraper »',
       net(f3.titre) === '2 rattrapées sur 3' && /1 encore à rattraper/.test(net(f3.reste)) && f3.boutons[0] === 'Continuer', JSON.stringify(f3));

@@ -208,8 +208,8 @@ const PHOTO = 'data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAAAQABAAD/2wBDAAgGBgcGBQ
     await p.evaluate((c) => ouvrirMembre(c), C);
     await p.waitForTimeout(900);
     const l12 = await lignesPage('grpMembreVeil');
-    dit('12. la page d\'un membre : nommer admin, confier le groupe, retirer, bannir ; ni Céder, ni Signaler, ni Bloquer',
-      JSON.stringify(l12) === JSON.stringify(['Mettre en sourdine une heure', 'Nommer admin', 'Confier le groupe', 'Retirer du groupe', 'Bannir du groupe']), JSON.stringify(l12));
+    dit('12. la page d\'un membre : nommer admin, (v378) nommer propriétaire, retirer, bannir ; ni Signaler, ni Bloquer',
+      JSON.stringify(l12) === JSON.stringify(['Mettre en sourdine une heure', 'Nommer admin', 'Nommer propriétaire', 'Retirer du groupe', 'Bannir du groupe']), JSON.stringify(l12));
     await p.evaluate(() => fermerFeuilleGroupe('grpMembreVeil')); await p.waitForTimeout(500);
 
     /* 13 : la sourdine du propriétaire, par sa page */
@@ -249,7 +249,7 @@ const PHOTO = 'data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAAAQABAAD/2wBDAAgGBgcGBQ
     await p.waitForFunction((id) => !!(grp.fils[grp.courant] && grp.fils[grp.courant].messages.some(x => x.id === id)), idC, { timeout: 6000 }).catch(() => {});
     await p.evaluate((id) => actionsMessage(String(id)), idC); await p.waitForTimeout(800);
     const l15 = await lignesPage('grpActionsVeil');
-    dit('15. le menu d\'un message de Chloé : « Gérer Chloé », ni Signaler ni Bloquer', l15.includes('Gérer Chloé') && !l15.some(t => /^Signaler|^Bloquer/.test(t)), JSON.stringify(l15));
+    dit('15. le menu d\'un message de Chloé : (v378) « Voir le profil », ni Signaler ni Bloquer', l15.includes('Voir le profil') && !l15.some(t => /^Signaler|^Bloquer/.test(t)), JSON.stringify(l15));
     await p.evaluate(() => fermerFeuilleGroupe('grpActionsVeil')); await p.waitForTimeout(400);
 
     /* 16 */
@@ -263,11 +263,11 @@ const PHOTO = 'data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAAAQABAAD/2wBDAAgGBgcGBQ
     });
     const attendu = {
       fr: ['La modération a retiré Chloé du groupe', 'La modération a banni Chloé du groupe', 'La modération a nommé Chloé admin du groupe', 'La modération a retiré le rôle d\'admin de Chloé',
-           'La modération a changé la photo du groupe', 'La modération a retiré la photo du groupe', 'La modération a confié le groupe à Chloé'],
+           'La modération a changé la photo du groupe', 'La modération a retiré la photo du groupe', 'La modération a nommé Chloé propriétaire du groupe'],
       en: ['Moderators removed Chloé from the group', 'Moderators banned Chloé from the group', 'Moderators made Chloé a group admin', 'Moderators removed Chloé\'s admin role',
-           'Moderators changed the group photo', 'Moderators removed the group photo', 'Moderators entrusted the group to Chloé'],
+           'Moderators changed the group photo', 'Moderators removed the group photo', 'Moderators made Chloé the group owner'],
       es: ['La moderación quitó a Chloé del grupo', 'La moderación expulsó a Chloé del grupo', 'La moderación nombró admin del grupo a Chloé', 'La moderación le quitó el rol de admin a Chloé',
-           'La moderación cambió la foto del grupo', 'La moderación quitó la foto del grupo', 'La moderación confió el grupo a Chloé'] };
+           'La moderación cambió la foto del grupo', 'La moderación quitó la foto del grupo', 'La moderación nombró a Chloé propietario del grupo'] };
     dit('16. les lignes de la discussion au nom de la modération, en français, en anglais et en espagnol — et dans le fil',
       ['fr', 'en', 'es'].every(l => JSON.stringify(l16[l]) === JSON.stringify(attendu[l])) && l16.fil.includes('La modération a banni Chloé du groupe') && l16.fil.includes('La modération a changé la photo du groupe'),
       JSON.stringify(l16).slice(0, 300));

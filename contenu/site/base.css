@@ -46,10 +46,21 @@ li{ margin:0.25rem 0; }
 .menu a[aria-current="page"]{ background:var(--carte); box-shadow:var(--ombre-douce); }
 .jouer{ display:inline-flex; align-items:center; justify-content:center; gap:0.45rem; flex-shrink:0; text-decoration:none; color:#fff;
   background:linear-gradient(150deg, var(--corail-a), var(--corail-b)); font-family:'Poppins',sans-serif; font-weight:600;
-  font-size:0.95rem; padding:0.55rem 1.05rem; border-radius:999px; box-shadow:0 4px 14px rgba(214,71,44,0.32); }
+  font-size:0.95rem; padding:0.55rem 1.05rem; border-radius:999px; box-shadow:0 4px 14px rgba(43,35,27,0.2); }
 .jouer:hover{ filter:brightness(1.05); }
 .jouer.grand{ font-size:1.05rem; padding:0.85rem 1.5rem; }
 .menu-mobile{ display:none; }
+/* ----- (v378) Ouvert dans le jeu -----
+   Le jeu porte la barre du haut (son retour, le titre) : le site n'y garde
+   que ses onglets. Pas de « Jouer » : on y est déjà. */
+html.dans-app .entete-in, html.dans-app .bandeau .actions, html.dans-app .appel, html.dans-app .fil, html.dans-app .pied{ display:none; }
+html.dans-app .entete{ padding-top:0.6rem; }
+html.dans-app .menu-mobile{ display:flex; gap:0.35rem; overflow-x:auto; scrollbar-width:none; padding:0 1rem 0.6rem; margin:0 auto; }
+html.dans-app .menu-mobile::-webkit-scrollbar{ display:none; }
+html.dans-app .menu-mobile a{ font-size:0.86rem; font-weight:600; color:var(--encre); text-decoration:none; padding:0.38rem 0.78rem; border-radius:999px;
+  background:rgba(255,253,249,0.75); white-space:nowrap; box-shadow:var(--ombre-douce); }
+html.dans-app .menu-mobile a[aria-current="page"]{ background:var(--encre); color:#fff; }
+html.dans-app .contenu{ padding-bottom:calc(env(safe-area-inset-bottom) + 2rem); }
 @media (max-width:760px){
   .menu{ display:none; }
   .marque{ margin-right:auto; }
@@ -203,12 +214,41 @@ li{ margin:0.25rem 0; }
    la nouvelle page est opaque en 0,1 s et finit de monter seule. Ailleurs,
    le lien marche comme avant. Courbes cubic-bezier : jouées par le
    téléphone, sur iPhone aussi. */
+/* (v378) « L'animation de changement de page est trop brusque, et sur le
+   côté droit de la page, un affichage bug lors du changement. » Les deux
+   étaient réels :
+   - la page arrivait opaque en un dixième de seconde, en montant de 22 px :
+     une apparition, pas un passage ;
+   - l'en-tête FONDAIT de l'ancienne page à la nouvelle — onglets compris. Or
+     d'une page à l'autre, la pastille sombre change d'onglet (FAQ → À propos,
+     à droite de la rangée) : pendant le fondu, on voyait deux pastilles à
+     moitié sombres, l'une sur l'autre. C'était « l'affichage qui bug ».
+   Maintenant, comme les pages du jeu : la page arrive en GLISSANT, du côté de
+   l'onglet touché (vers la droite de la rangée, elle vient de la droite ; en
+   revenant vers la gauche, l'ancienne repart à droite et découvre la
+   nouvelle), l'ancienne recule un peu et s'assombrit à peine dessous ;
+   l'en-tête ne bouge pas d'un pixel (il est le même) ; seule la pastille de
+   l'onglet GLISSE jusqu'au nouvel onglet. Le sens est posé par la rangée
+   elle-même (data-vt, voir genere.py). */
 @view-transition{ navigation:auto; }
 .entete{ view-transition-name:entete; }
-::view-transition-old(root){ animation:none; mix-blend-mode:normal; }
-::view-transition-new(root){ mix-blend-mode:normal; animation:vtEntre 0.36s both; }
-::view-transition-old(entete), ::view-transition-new(entete){ animation-duration:0.22s; animation-timing-function:cubic-bezier(0.33,1,0.68,1); }
-@keyframes vtEntre{
-  0%{ opacity:0; transform:translateY(22px); animation-timing-function:cubic-bezier(0.33,1,0.68,1); }
-  28%{ opacity:1; transform:translateY(9px); animation-timing-function:cubic-bezier(0.33,1,0.68,1); }
-  100%{ opacity:1; transform:translateY(0); } }
+::view-transition-group(entete), ::view-transition-new(entete){ animation:none; }
+::view-transition-old(entete){ animation:none; opacity:0; }
+::view-transition-group(onglet){ animation-duration:0.5s; animation-timing-function:cubic-bezier(0.32,0.72,0,1); }
+::view-transition-old(onglet), ::view-transition-new(onglet){ animation-duration:0.5s; animation-timing-function:cubic-bezier(0.32,0.72,0,1); height:100%; }
+::view-transition-old(root), ::view-transition-new(root){ mix-blend-mode:normal; animation-duration:0.5s; animation-timing-function:cubic-bezier(0.32,0.72,0,1); animation-fill-mode:both; }
+::view-transition-old(root){ animation-name:vtRecule; }
+::view-transition-new(root){ animation-name:vtArrive; box-shadow:-18px 0 42px rgba(24,16,10,0.2); }
+html[data-vt="gauche"]::view-transition-old(root){ animation-name:vtRepart; z-index:2; box-shadow:-18px 0 42px rgba(24,16,10,0.2); }
+html[data-vt="gauche"]::view-transition-new(root){ animation-name:vtRevient; z-index:1; box-shadow:none; }
+@keyframes vtArrive{ from{ transform:translateX(100%); } to{ transform:none; } }
+@keyframes vtRecule{ from{ transform:none; filter:brightness(1); } to{ transform:translateX(-24%); filter:brightness(0.93); } }
+@keyframes vtRepart{ from{ transform:none; } to{ transform:translateX(100%); } }
+@keyframes vtRevient{ from{ transform:translateX(-24%); filter:brightness(0.93); } to{ transform:none; filter:brightness(1); } }
+/* (v378) Pas de rectangle gris sous le doigt (iPhone) : une question de la
+   FAQ se presse en douceur, sa carte s'assombrit à peine. */
+html{ -webkit-tap-highlight-color:transparent; }
+.faq summary{ -webkit-tap-highlight-color:transparent; -webkit-user-select:none; user-select:none; outline:none; }
+.faq summary:focus-visible{ outline:2px solid rgba(43,35,27,0.35); outline-offset:3px; border-radius:0.4rem; }
+.faq details{ transition:background-color 0.15s ease; }
+.faq details:has(> summary:active){ background-color:#F3ECE1; }

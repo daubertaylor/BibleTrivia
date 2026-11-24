@@ -1309,6 +1309,8 @@
   .play-meta{ display:flex; flex-wrap:nowrap; justify-content:space-between; align-items:center; gap:0.38rem; margin-bottom:var(--e-3); }
   .play-meta > span{ flex-shrink:0; }
   .play-meta .tier-chip{ font-size:0.76rem; padding:calc(0.3rem + 1px) calc(0.58rem + 1px); gap:0.3rem; }
+  /* (v378) La question ratée qui revient en fin de séance ou de leçon. */
+  .play-meta .tier-chip.relance{ color:var(--primary); }
   .play-meta .q-counter, .play-meta .timer-chip, .play-meta .streak-chip{ font-size:0.76rem; padding:calc(0.3rem + 1px) calc(0.55rem + 1px); }
   .play-meta .timer-chip{ min-width:0; }
   .tier-chip{ display:inline-flex; align-items:center; gap:0.4rem; font-size:0.82rem; font-weight:600; background:rgba(255,255,255,0.5); backdrop-filter:blur(18px) saturate(180%); -webkit-backdrop-filter:blur(18px) saturate(180%); border:0; padding:calc(0.34rem + 1px) calc(0.7rem + 1px); border-radius:var(--r-full); }
@@ -3313,7 +3315,7 @@
   /* ---------- Modal maison ---------- */
   .modal-veil{ position:fixed; top:0; left:0; right:0; bottom:0; z-index:75; background:rgba(19,14,9,0.3); display:flex; align-items:center; justify-content:center; padding:1.6rem; animation:veilIn var(--tr-voile-in); }
   /* Même trou d'un pixel, même correctif : la fenêtre modale recouvre l'app. */
-  .modal-card{ width:100%; max-width:21rem; border:0; border-radius:var(--r-l); padding:calc(1.45rem + 1px) calc(1.25rem + 1px) calc(1.15rem + 1px); text-align:center; animation:modalIn var(--tr-ouvre); transform:translateZ(0); -webkit-transform:translateZ(0); --rim-cast:0 24px 60px rgba(18,12,6,0.42), 0 4px 12px rgba(18,12,6,0.22); }
+  .modal-card{ width:100%; max-width:21rem; border:0; border-radius:var(--r-l); padding:calc(1.45rem + 1px) calc(1.25rem + 1px) calc(1.15rem + 1px); text-align:center; animation:modalIn var(--tr-ouvre) backwards; transform:translateZ(0); -webkit-transform:translateZ(0); --rim-cast:0 24px 60px rgba(18,12,6,0.42), 0 4px 12px rgba(18,12,6,0.22); }
   .modal-title{ font-family:'Poppins',sans-serif; font-weight:700; font-size:1.15rem; color:var(--ink); }
   .modal-msg{ font-size:0.9rem; color:var(--ink-soft); line-height:1.5; margin-top:0.45rem; }
   /* (v354) « Comment jouer » : les trois gestes d'une manche, numérotés
@@ -4236,7 +4238,7 @@
      Le moteur de verre éteint l'animation des voiles ouverts (plus haut) :
      celle-ci la reprend, plus loin dans la feuille, à poids égal. La carte ne
      porte plus de verre : c'est une page. */
-  html .modal-veil.fete-page:not(.closing){ animation:pageIn var(--tr-ouvre); }
+  html .modal-veil.fete-page:not(.closing){ animation:pageIn var(--tr-ouvre) backwards; }
   html .modal-veil.fete-page.closing{ animation:pageOut var(--tr-ferme) forwards; }
   .modal-veil.fete-page{ display:block; padding:0; background:var(--page-fond); box-shadow:-18px 0 42px rgba(24,16,10,0.22); }
   .modal-veil.fete-page .modal-card.fete-flamme{ position:absolute; inset:0; width:auto; max-width:none; border-radius:0; margin:0;
@@ -5117,7 +5119,19 @@
   /* LA PASTILLE CORAIL, DÉFINIE UNE SEULE FOIS pour les deux boutons
      « Partager » : celui des réglages et celui de la fin de partie. C'est elle
      qui donne son allure au bouton — la carte blanche seule était plate. */
-  .share-btn .share-ico, .share-result .share-ico{ width:2rem; height:2rem; flex-shrink:0; display:flex; align-items:center; justify-content:center; padding:0.46rem; border-radius:var(--r-s); color:#fff; background:var(--pal-corail); box-shadow:inset 0 1px 0 rgba(255,255,255,0.26), 0 2px 7px var(--pal-corail-o); }
+  .share-btn .share-ico, .share-result .share-ico{ width:2rem; height:2rem; flex-shrink:0; display:flex; align-items:center; justify-content:center; padding:0.46rem; border-radius:var(--r-s); color:#fff; background:var(--pal-corail); box-shadow:inset 0 1px 0 rgba(255,255,255,0.26), 0 2px 6px rgba(43,35,27,0.18); }
+  /* (v378) « Le remplissage n'est pas à 100 %. » Capture de Taylor : sous le
+     doigt, le voile rose de « Partager le jeu » s'arrêtait un pixel avant le
+     bord droit — un filet clair. Le bouton prend la largeur de son texte
+     (fit-content), donc une largeur à virgule ; le voile, posé par un
+     transform, est une couche à part, calée au pixel entier : la dernière
+     colonne restait découverte. Il déborde maintenant d'un pixel, et c'est
+     le bouton (sa découpe arrondie) qui le retaille : un seul bord, net,
+     comme pour les surfaces de verre (voir ET IL DÉBORDE D'UN PIXEL). Et
+     l'ombre corail sous l'icône devient une ombre neutre : jamais de
+     couleur dans une ombre. */
+  .share-btn{ overflow:hidden; }
+  .share-btn::before{ inset:-1px; }
   .share-btn .share-ico svg, .share-result .share-ico svg{ width:100%; height:100%; }
   .share-btn .share-lbl{ padding-right:0.35rem; }
   /* (Rebord propre au bouton Partager retiré : il prend le rebord unique.) */
@@ -5307,7 +5321,25 @@
      qui saute à l'arrivée — reste évité ; ce qu'elle avait cassé sans le savoir
      est réparé. Et « will-change » reste, lui : c'est lui qui garde la couche
      promue, pas le remplissage. */
-  .settings-sheet.monte{ transform:translateZ(0) translateY(0); animation:sheetIn var(--tr-ouvre); }
+  /* ===== (v378) « ELLE S'OUVRE PUIS ELLE SE ROUVRE UNE DEUXIÈME FOIS » =====
+     Capture de Taylor : le menu d'une carte de partie (Répondre, Signaler,
+     Gérer…), tenu au doigt sur iPhone. Depuis que la montée est jouée par le
+     téléphone lui-même (v366 : plus de linear(), deux tronçons cubic-bezier),
+     Safari la confie à Core Animation. Or WebKit, pour une animation qui
+     démarre à une heure fixée et ne « remplit » pas en arrière, pose d'abord
+     la valeur COURANTE de la propriété jusqu'à son départ — c'est écrit dans
+     son code (GraphicsLayerCA, updateAnimations : « create a non-interpolating
+     animation to set the current value … until that animation begins »). Ici,
+     la valeur courante, c'est celle de « .monte » : translateY(0), la feuille
+     OUVERTE. Une image (davantage sur un téléphone chargé), le menu était
+     donc déjà en place — puis l'animation partait d'en bas et le remontait :
+     ouvert, puis rouvert. En sans-tête (Chromium), rien de tel : la montée
+     mesurée est d'un seul tenant, d'où un défaut invisible ici.
+     « backwards » : avant son départ, l'animation tient sa PREMIÈRE image (la
+     feuille au garage, hors champ). Sans délai, ça ne change rien ailleurs ;
+     et ce n'est pas « both » : à la fin, la main revient bien au style de base
+     (voir « ÇA NE SE SUPERPOSE PAS COMME D'HABITUDE », la feuille qui recule). */
+  .settings-sheet.monte{ transform:translateZ(0) translateY(0); animation:sheetIn var(--tr-ouvre) backwards; }
   /* ===== LE DÉCOR TIENT PAR LE MÊME MOTEUR QUE LA FEUILLE =====
      « Des fois ils s'ouvrent presque pareil, mais il y a un petit décalage. »
      La feuille monte par une ANIMATION : sur iPhone, c'est le système qui la
@@ -5330,7 +5362,7 @@
      contre-mouvement avec elle : le moteur reprend alors le suivi image par
      image, comme avant. */
   @keyframes contreMonte{ 0%{ transform:translate3d(var(--gx), var(--gy0), 0); animation-timing-function:cubic-bezier(0.2519,0,0.5558,0.5371); } 22.54%{ transform:translate3d(var(--gx), calc(var(--gy0) * 0.4911 + var(--gy1) * 0.5089), 0); animation-timing-function:cubic-bezier(0.2344,0.8699,0.4669,0.9745); } 100%{ transform:translate3d(var(--gx), var(--gy1), 0); } }
-  .settings-sheet.contre .gs{ animation:contreMonte var(--tr-ouvre) forwards; }
+  .settings-sheet.contre .gs{ animation:contreMonte var(--tr-ouvre) both; }
   .sheet-veil.closing .settings-sheet .gs{ animation:none; }
   @keyframes sheetOut{ to{ transform:translateZ(0) translateY(calc(100% - 190px)); } }
   @keyframes veilOut{ to{ opacity:0; } }
@@ -5930,10 +5962,32 @@
   /* Le clavier monte (une recherche, une adresse) : la barre s'efface. Sur
      Android elle remonterait avec la page et se poserait sur le champ. */
   html.kb .barre-bas{ transform:translate3d(-50%, calc(100% + var(--bb-bas) + 1rem), 0); pointer-events:none; }
-  .bb-curseur{ position:absolute; top:0.3rem; bottom:0.3rem; left:0.3rem; width:calc((100% - 0.6rem) / 2);
-    border-radius:var(--r-full); background:var(--primary);
+  .bb-curseur{ position:absolute; z-index:2; top:0.3rem; bottom:0.3rem; left:0.3rem; width:calc((100% - 0.6rem) / 2);
+    border-radius:var(--r-full); background:var(--primary); overflow:hidden; pointer-events:none;
     box-shadow:var(--relief);
     transition:transform var(--tr-ouvre); }
+  /* ===== (v378) LE BLANC N'EXISTE QUE SOUS LE CORAIL =====
+     « Lorsque je me déplace sur la barre du bas en cliquant, ça saute un
+       peu. » Filmé image par image (processeur ralenti quatre fois, comme un
+     téléphone), de l'Accueil aux Jeux : le mot « Jeux » passait au blanc en
+     0,18 s, pendant que la pastille était encore en route — blanc sur le
+     verre crème, il disparaissait, puis revenait quand le corail arrivait ;
+     « Accueil » repassait au sombre sous le corail qui partait. Deux mots
+     qui clignotent pour un seul geste.
+     Les mots ne changent plus de couleur. Ceux de la barre restent sombres ;
+     la pastille porte sa propre rangée d'icônes et de mots, en blanc
+     (.bb-blanc), posée exactement sur celle de la barre, et rognée à sa
+     forme. Quand la pastille glisse d'un onglet (translateX(k × 100 %)), sa
+     rangée glisse d'autant en sens inverse (translateX(−k × 25 %) d'une
+     rangée quatre fois plus large) : sur la même horloge, les deux
+     mouvements s'annulent à chaque image, et la rangée blanche reste
+     immobile à l'écran. Le blanc apparaît donc exactement là où le corail
+     passe, au pixel près, et nulle part ailleurs : un mot devient blanc à
+     mesure que la pastille le couvre. Au repos, rien n'a de couche à soi :
+     deux translations plates (voir LA PASTILLE N'A PAS DE COUCHE À ELLE), et
+     le mot blanc, dans la pastille, ne peut plus être peint dessous. */
+  .bb-blanc{ position:absolute; top:0; left:0; height:100%; width:400%; display:grid; grid-template-columns:repeat(4, 1fr);
+    color:#fff; transition:transform var(--tr-ouvre); }
   /* ===== LA PASTILLE N'A PAS DE COUCHE À ELLE (v318) =====
      « Lorsque je quitte une page, ça s'affiche pas directement. » Capture de
      Taylor, de retour sur les Groupes : la pastille corail est là, mais vide
@@ -5955,11 +6009,11 @@
      même image, le geste retour d'iOS qui montrait une PHOTO de l'écran, est
      fermé en même temps : voir SUR iPHONE ET iPAD, AUCUNE MARQUE.) */
   .barre-bas[data-o="groupes"] .bb-curseur{ transform:translateX(100%); }
-  .barre-bas.pose-nette .bb-curseur, .barre-bas.pose-nette .bb-onglet{ transition:none !important; }
-  .bb-onglet{ position:relative; z-index:1; display:flex; align-items:center; justify-content:center; gap:0.42rem;
+  .barre-bas.pose-nette .bb-curseur, .barre-bas.pose-nette .bb-blanc, .barre-bas.pose-nette .bb-onglet{ transition:none !important; }
+  .bb-onglet, .bb-cel{ position:relative; z-index:1; display:flex; align-items:center; justify-content:center; gap:0.42rem;
     border:0; background:none; color:var(--ink); font-family:'Poppins',sans-serif; font-weight:600; font-size:0.86rem;
-    border-radius:var(--r-full); -webkit-tap-highlight-color:transparent; transition:color 0.18s ease; }
-  .bb-onglet.actif{ color:#fff; }
+    border-radius:var(--r-full); -webkit-tap-highlight-color:transparent; }
+  .bb-cel{ color:#fff; }
   .bb-ico{ position:relative; width:1.32rem; height:1.32rem; display:inline-flex; flex-shrink:0; }
   .bb-ico svg{ width:100%; height:100%; }
   .bb-mot{ white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
@@ -5967,11 +6021,11 @@
      du verre par sa couleur et son ombre, pas par un trait. Elle déborde de
      l'icône vers le mot : tant qu'elle est là, l'onglet écarte le mot de ce
      qu'elle déborde (a-pastille, posé par majBarre), sinon elle mord le « G ». */
-  .bb-onglet.a-pastille{ gap:0.72rem; }
+  .bb-onglet.a-pastille, .bb-cel.a-pastille{ gap:0.72rem; }
   .bb-pastille{ position:absolute; top:-0.42rem; right:-0.5rem; min-width:1.1rem; height:1.1rem; padding:0 0.28rem;
     border-radius:var(--r-full); background:var(--primary); color:#fff; font-style:normal; font-size:0.66rem; font-weight:700;
-    display:flex; align-items:center; justify-content:center; box-shadow:0 2px 6px rgba(214,60,34,0.45); }
-  .bb-onglet.actif .bb-pastille{ background:#fff; color:var(--primary); }
+    display:flex; align-items:center; justify-content:center; box-shadow:var(--relief); }
+  .bb-cel .bb-pastille{ background:#fff; color:var(--primary); }
   .bb-pastille[hidden]{ display:none; }
   /* Le bouclier du modérateur porte la même pastille (voir majBouclier),
      posée à côté du rond de verre et non dedans : la découpe du verre la
@@ -6966,6 +7020,9 @@
      ligne jusque sur le plus petit iPhone (320 px) : un peu moins d'air sur
      les côtés, et toujours 44 px de haut sous le doigt. */
   .liens-legaux .lien-conf{ padding-left:0.55rem; padding-right:0.55rem; }
+  /* (v378) Dans la Confidentialité : « Mes choix de publicité » et la
+     politique complète, l'un sous l'autre, sous le résumé. */
+  .conf-liste .conf-choix, .conf-liste .conf-politique{ margin:0.3rem auto 0; }
   #liens-site{ display:none; }
   @media (min-width:1100px) and (hover:hover) and (pointer:fine){
     html:has(#barreBas:not(.cachee)) #liens-site{ position:fixed; left:1.1rem; bottom:1.1rem; z-index:2; display:flex; flex-direction:column; align-items:flex-start; gap:0.4rem; }
@@ -7000,6 +7057,17 @@
      relief dans l'ombre — comme les icônes de l'accueil. */
   .chemin-ecran{ padding-bottom:calc(var(--sab, 0px) + 2.2rem); }
   .ch-tete{ display:flex; flex-direction:column; gap:0.28rem; }
+  /* (v378) La carte est un bouton (voir TOUTE LA CARTE SE TOUCHE) : on lui
+     rend sa mise en page de carte, et la pastille des diamants se pose dans
+     son coin, au-dessus de son voile d'appui. */
+  .ch-tete-z{ position:relative; }
+  button.card.ch-tete{ width:100%; align-items:stretch; text-align:left; font:inherit; color:inherit; border:0; -webkit-appearance:none; appearance:none; cursor:pointer; }
+  .ch-tete .ch-haut{ min-height:2.05rem; }
+  .ch-tete-z > .ch-diamants{ position:absolute; z-index:4; top:calc(1.1rem + 1px - 0.32rem); right:calc(1rem + 1px - 0.3rem); }
+  .ch-titre-l{ display:flex; align-items:center; justify-content:space-between; gap:0.6rem; }
+  .ch-titre-l .chev{ width:1.05rem; height:1.05rem; display:flex; flex-shrink:0; color:var(--ink-soft); }
+  .ch-titre-l .chev svg{ width:100%; height:100%; }
+  .ch-tete .ch-jauge, .ch-tete .ch-compte, .ch-tete .ch-aide{ display:block; }
   .ch-sur{ font-family:'Poppins',sans-serif; font-size:0.72rem; font-weight:700; letter-spacing:0.09em; text-transform:uppercase; color:var(--ink-soft); }
   .ch-titre{ font-family:'Poppins',sans-serif; font-size:1.2rem; font-weight:600; color:var(--ink); line-height:1.25; }
   .ch-jauge{ height:0.5rem; border-radius:99px; background:rgba(60,45,30,0.1); overflow:hidden; margin:0.45rem 0 0.15rem; }
@@ -7396,8 +7464,13 @@
   .barre-bas[data-o="parcours"] .bb-curseur{ transform:translateX(100%); }
   .barre-bas[data-o="jeux"] .bb-curseur{ transform:translateX(200%); }
   .barre-bas[data-o="groupes"] .bb-curseur{ transform:translateX(300%); }
-  .bb-onglet{ flex-direction:column; gap:0.14rem; font-size:0.68rem; line-height:1.1; letter-spacing:0.01em; padding:0 0.15rem; min-width:0; }
-  .bb-onglet.a-pastille{ gap:0.14rem; }
+  /* (v378) La rangée blanche fait le chemin inverse : un quart de sa
+     largeur, c'est un onglet (voir LE BLANC N'EXISTE QUE SOUS LE CORAIL). */
+  .barre-bas[data-o="parcours"] .bb-blanc{ transform:translateX(-25%); }
+  .barre-bas[data-o="jeux"] .bb-blanc{ transform:translateX(-50%); }
+  .barre-bas[data-o="groupes"] .bb-blanc{ transform:translateX(-75%); }
+  .bb-onglet, .bb-cel{ flex-direction:column; gap:0.14rem; font-size:0.68rem; line-height:1.1; letter-spacing:0.01em; padding:0 0.15rem; min-width:0; }
+  .bb-onglet.a-pastille, .bb-cel.a-pastille{ gap:0.14rem; }
   .bb-ico{ width:1.28rem; height:1.28rem; }
   .bb-mot{ max-width:100%; }
   :root{ --bb-l:min(23rem, calc(100vw - 2rem)); }
@@ -7468,7 +7541,7 @@
      ouvert (html.gl-xf .sheet-veil:not(.closing), même poids). Une fois
      arrivée, la page passe « posée » et n'a plus d'animation du tout : sans
      ça, la moindre classe retirée la relançait depuis le bord. */
-  html .sheet-veil.page:not(.closing){ animation:pageIn var(--tr-ouvre); }
+  html .sheet-veil.page:not(.closing){ animation:pageIn var(--tr-ouvre) backwards; }   /* (v378) voir ELLE S'OUVRE PUIS ELLE SE ROUVRE */
   html .sheet-veil.page.posee:not(.closing){ animation:none; }
   html .sheet-veil.page.closing{ animation:pageOut var(--tr-ferme) forwards; }
   /* Tirée au doigt depuis le bord : elle suit le doigt, sans animation. */
@@ -7508,6 +7581,18 @@
     min-height:calc(env(safe-area-inset-top) + 3.7rem); padding:env(safe-area-inset-top) 3.45rem 0;
     margin:0 calc(-1 * var(--page-marge)) 0.85rem; background:var(--page-fond); transition:box-shadow 0.2s ease; }
   .page-tete.ombre{ box-shadow:0 10px 22px -14px rgba(24,16,10,0.34); }
+  /* (v378) Le site dans le jeu (voir LE SITE S'OUVRE DANS LE JEU) : la page
+     ne défile pas, c'est le site qui défile dans son cadre, sous la barre du
+     jeu. Une bande au bord gauche garde le geste qui referme la page (un
+     cadre garde ses touchers pour lui). */
+  #siteVeil .settings-sheet.settings-sheet{ display:flex; flex-direction:column; overflow:hidden; padding:0; }
+  #siteVeil .page-tete{ margin:0; flex-shrink:0; }
+  #siteVeil .grp-feuille-corps{ position:relative; flex:1; min-height:0; display:block; }
+  .site-cadre{ position:absolute; inset:0; width:100%; height:100%; border:0; background:var(--page-fond); opacity:0; transition:opacity 0.18s ease; }
+  #siteVeil.site-pret .site-cadre{ opacity:1; }
+  .site-attente{ position:absolute; left:50%; top:32%; margin:0 0 0 -1rem; }
+  #siteVeil.site-pret .site-attente{ display:none; }
+  .site-bord{ position:absolute; left:0; top:0; bottom:0; width:18px; z-index:2; }
   .page-tete .sheet-title{ margin:0; min-width:0; justify-content:center; font-size:1.02rem; gap:0.45rem; }
   .page-tete .sheet-title .st-ico{ width:1.3rem; height:1.3rem; }
   .page-tete .sheet-title.sans-ico .st-ico{ display:none; }
@@ -7781,6 +7866,12 @@ const TEXTES = {
     "Plus rien à rattraper, bravo\u00a0!":"Nothing left to fix, well done!",
     "{n} encore à rattraper":"{n} still to fix",
     "Rattrapée\u00a0!":"Fixed!",
+    "Le site de Yada":"The Yada website",
+    "Quiz par livre":"Quiz by book",
+    "Guide":"Guide",
+    "Nouveautés":"What's new",
+    "FAQ":"FAQ",
+    "Encore une fois":"One more try",
     /* ===== LES TABLES DE DONNÉES : SUCCÈS, PORTES D'« À REVOIR », MOTS DE FIN =====
        Ces phrases-là passaient DÉJÀ par T() au moment de s'afficher — le code
        était juste. Ce qui manquait, c'est leur traduction : T() retombe en
@@ -8251,10 +8342,10 @@ const TEXTES = {
     "La modération a retiré le rôle d'admin de {nom}":"Moderators removed {nom}'s admin role",
     "La modération a changé la photo du groupe":"Moderators changed the group photo",
     "La modération a retiré la photo du groupe":"Moderators removed the group photo",
-    "La modération a confié le groupe à {nom}":"Moderators entrusted the group to {nom}",
-    "Confier le groupe":"Entrust the group",
-    "Confier le groupe à {nom} ?":"Entrust the group to {nom}?",
-    "Confier":"Entrust",
+    "La modération a nommé {nom} propriétaire du groupe":"Moderators made {nom} the group owner",
+    "Nommer propriétaire":"Make owner",
+    "Nommer {nom} propriétaire du groupe ?":"Make {nom} the group owner?",
+    "Nommer":"Confirm",
     "{nom} en devient propriétaire ; {ancien} en reste admin.":"{nom} becomes its owner; {ancien} stays an admin.",
     "{nom} pourra revenir avec le code. Le groupe passera à son plus ancien admin encore actif, sinon à son plus ancien membre encore actif.":"{nom} can come back with the code. The group will pass to its longest-standing active admin, or else its longest-standing active member.",
     "{nom} ne pourra plus revenir, même avec le code. Le groupe passera à son plus ancien admin encore actif, sinon à son plus ancien membre encore actif.":"{nom} won't be able to come back, even with the code. The group will pass to its longest-standing active admin, or else its longest-standing active member.",
@@ -8601,12 +8692,9 @@ const TEXTES = {
     "Pas encore distribué":"Not delivered yet",
     "Pas encore lu":"Not read yet",
     "Personne ne l'a encore lu.":"Nobody has read it yet.",
-    "Céder le groupe":"Hand over the group",
     "{nom} est maintenant propriétaire du groupe.":"{nom} now owns the group.",
     "{nom} est maintenant propriétaire du groupe":"{nom} now owns the group",
-    "Céder le groupe à {nom} ?":"Hand the group over to {nom}?",
     "{nom} en devient propriétaire, et tu en restes admin.":"{nom} becomes its owner, and you stay an admin.",
-    "Céder":"Hand over",
     "Ta session s'est fermée. Reconnecte-toi : ta progression est intacte.":"Your session has closed. Sign in again: your progress is safe.",
     "Les rappels n'annoncent pas encore les messages des groupes : Supabase → SQL Editor → recolle notifications/installer.sql → Run.":"Reminders don't announce group messages yet: Supabase → SQL Editor → paste notifications/installer.sql again → Run.",
     "Les rappels annoncent aussi les messages des groupes · aucun téléphone ne peut encore les recevoir : chacun doit rouvrir Yada, connecté, rappels allumés.":"Reminders also announce group messages · no phone can receive them yet: each person needs to reopen Yada, signed in, with reminders on.",
@@ -8782,6 +8870,8 @@ const TEXTES = {
     "Supabase Pte. Ltd., 65 Chulia Street #38-02/03, OCBC Centre, Singapour 049513 — legal@supabase.io (comptes, sauvegardes, groupes).":"Supabase Pte. Ltd., 65 Chulia Street #38-02/03, OCBC Centre, Singapore 049513 — legal@supabase.io (accounts, backups, groups).",
     "Données personnelles :":"Personal data:",
     "Mes choix de publicité":"My ad choices",
+    "Politique de confidentialité complète":"Full privacy policy",
+    "Politique de confidentialité":"Privacy policy",
     "Photo du groupe":"Group photo",
     "Image du groupe":"Group picture",
     "Choisir une photo":"Choose a photo",
@@ -8854,6 +8944,12 @@ const TEXTES = {
     "Plus rien à rattraper, bravo\u00a0!":"¡Nada más por corregir, bien hecho!",
     "{n} encore à rattraper":"{n} aún por corregir",
     "Rattrapée\u00a0!":"¡Corregido!",
+    "Le site de Yada":"El sitio de Yada",
+    "Quiz par livre":"Quiz por libro",
+    "Guide":"Guía",
+    "Nouveautés":"Novedades",
+    "FAQ":"Preguntas frecuentes",
+    "Encore une fois":"Una vez más",
     /* ===== L'ESPAGNOL =====
        Même exigence qu'en anglais : chaque phrase du jeu, sans exception, et
        une seule voix. On tutoie, comme en français — c'est un jeu, pas un
@@ -9312,10 +9408,10 @@ const TEXTES = {
     "La modération a retiré le rôle d'admin de {nom}":"La moderación le quitó el rol de admin a {nom}",
     "La modération a changé la photo du groupe":"La moderación cambió la foto del grupo",
     "La modération a retiré la photo du groupe":"La moderación quitó la foto del grupo",
-    "La modération a confié le groupe à {nom}":"La moderación confió el grupo a {nom}",
-    "Confier le groupe":"Confiar el grupo",
-    "Confier le groupe à {nom} ?":"¿Confiar el grupo a {nom}?",
-    "Confier":"Confiar",
+    "La modération a nommé {nom} propriétaire du groupe":"La moderación nombró a {nom} propietario del grupo",
+    "Nommer propriétaire":"Nombrar propietario",
+    "Nommer {nom} propriétaire du groupe ?":"¿Nombrar a {nom} propietario del grupo?",
+    "Nommer":"Nombrar",
     "{nom} en devient propriétaire ; {ancien} en reste admin.":"El grupo pasa a ser de {nom}; {ancien} sigue como admin.",
     "{nom} pourra revenir avec le code. Le groupe passera à son plus ancien admin encore actif, sinon à son plus ancien membre encore actif.":"{nom} podrá volver con el código. El grupo pasará a su admin activo más antiguo o, si no lo hay, a su miembro activo más antiguo.",
     "{nom} ne pourra plus revenir, même avec le code. Le groupe passera à son plus ancien admin encore actif, sinon à son plus ancien membre encore actif.":"{nom} no podrá volver, ni siquiera con el código. El grupo pasará a su admin activo más antiguo o, si no lo hay, a su miembro activo más antiguo.",
@@ -9668,12 +9764,9 @@ const TEXTES = {
     "Pas encore distribué":"Aún no entregado",
     "Pas encore lu":"Aún no leído",
     "Personne ne l'a encore lu.":"Nadie lo ha leído todavía.",
-    "Céder le groupe":"Ceder el grupo",
     "{nom} est maintenant propriétaire du groupe.":"El grupo es ahora de {nom}.",
     "{nom} est maintenant propriétaire du groupe":"El grupo es ahora de {nom}",
-    "Céder le groupe à {nom} ?":"¿Ceder el grupo a {nom}?",
     "{nom} en devient propriétaire, et tu en restes admin.":"El grupo pasa a ser de {nom}, y tú sigues como admin.",
-    "Céder":"Ceder",
     "Ta session s'est fermée. Reconnecte-toi : ta progression est intacte.":"Tu sesión se ha cerrado. Vuelve a iniciar sesión: tu progreso está intacto.",
     "Les rappels n'annoncent pas encore les messages des groupes : Supabase → SQL Editor → recolle notifications/installer.sql → Run.":"Los recordatorios aún no anuncian los mensajes de los grupos: Supabase → SQL Editor → vuelve a pegar notifications/installer.sql → Run.",
     "Les rappels annoncent aussi les messages des groupes · aucun téléphone ne peut encore les recevoir : chacun doit rouvrir Yada, connecté, rappels allumés.":"Los recordatorios también anuncian los mensajes de los grupos · ningún teléfono puede recibirlos todavía: cada persona debe volver a abrir Yada, con la sesión iniciada y los recordatorios activados.",
@@ -9849,6 +9942,8 @@ const TEXTES = {
     "Supabase Pte. Ltd., 65 Chulia Street #38-02/03, OCBC Centre, Singapour 049513 — legal@supabase.io (comptes, sauvegardes, groupes).":"Supabase Pte. Ltd., 65 Chulia Street #38-02/03, OCBC Centre, Singapur 049513 — legal@supabase.io (cuentas, copias de seguridad, grupos).",
     "Données personnelles :":"Datos personales:",
     "Mes choix de publicité":"Mis opciones de publicidad",
+    "Politique de confidentialité complète":"Política de privacidad completa",
+    "Politique de confidentialité":"Política de privacidad",
     "Photo du groupe":"Foto del grupo",
     "Image du groupe":"Imagen del grupo",
     "Choisir une photo":"Elegir una foto",
@@ -12508,7 +12603,7 @@ const SUPABASE_ANON_KEY = "sb_publishable_FDJ_R0foC7uIeHmxVrj6rA_2NeIgW2a";
    remontée d'un téléphone ne vaut rien si on ne sait pas QUELLE version
    tournait. Elle doit rester égale au CACHE de sw.js — c'est ce que vérifie
    banc-essai/version.js, qui refuse de laisser publier les deux en désaccord. */
-const VERSION_JEU = "v377";
+const VERSION_JEU = "v378";
 
 /* ===================== QUAND ÇA CASSE CHEZ UN JOUEUR =====================
    « Si quelque chose casse chez cinq d'entre eux sur un modèle de téléphone
@@ -16727,7 +16822,7 @@ function reglagesHtml(){
       <div class="liens-legaux">
         <button class="lien-conf" onclick="ouvrirConfidentialite()">${T("Confidentialité")}</button>
         <button class="lien-conf" onclick="ouvrirMentions()">${T("Mentions légales")}</button>
-        <a class="lien-conf" href="a-propos/" target="_blank" rel="noopener">${T("À propos")}</a>
+        <button class="lien-conf" onclick="ouvrirSite('a-propos/')">${T("À propos")}</button>
       </div>
     </div>`;
 }
@@ -25432,17 +25527,30 @@ function renderChemin(){
   const etape = Tf("Étape {n} sur {m}", { n:e + 1, m:ETAPES.length });
   /* La carte du haut dit l'ÉTAPE (où elle mène, où l'on en est) ; on la
      touche pour voir les trois. Le nom de l'unité est juste en dessous, sur
-     sa bannière : pas deux fois. */
-  const tete = `<div class="ch-haut"><button class="ch-sur ch-etape-btn" onclick="ouvrirEtapes()" aria-label="${escapeHtml(etape + " · " + T("Ton parcours"))}">${escapeHtml(etape)}<span class="chev">${ICONS.chevronRight}</span></button>
-      <button class="ch-diamants" onclick="ouvrirBoutique()" aria-label="${escapeHtml(Tf("{n} diamants · Boutique", { n:solde }))}"><span class="ico">${ICONS.diamant}</span><b>${solde}</b><span class="chev">${ICONS.chevronRight}</span></button></div>
-    <b class="ch-titre">${escapeHtml(T(E.nom))}</b>`;
+     sa bannière : pas deux fois.
+     ===== (v378) TOUTE LA CARTE SE TOUCHE =====
+     « Le remplissage rose se fait mal : on ne veut pas du carré, mais
+       arrondi comme le reste du jeu. Et ce n'est pas assez visible qu'on
+       puisse cliquer : je voudrais que toute la carte soit cliquable, plutôt
+       qu'un petit texte à un endroit précis. » Seul « Étape 1 sur 3 » était
+       un bouton, sans marge ni arrondi : son voile d'appui en avait la forme,
+       un rectangle collé aux lettres. C'est maintenant la carte entière qui
+       est le bouton — son voile a son arrondi, elle s'enfonce sous le doigt
+       comme les cartes de l'accueil, et un chevron, au bout du titre, dit
+       qu'elle mène quelque part. La pastille des diamants reste un bouton à
+       elle (la boutique), posé sur la carte, pas dedans. */
+  const tete = `<span class="ch-haut"><span class="ch-sur">${escapeHtml(etape)}</span></span>
+    <span class="ch-titre-l"><b class="ch-titre">${escapeHtml(T(E.nom))}</b><span class="chev">${ICONS.chevronRight}</span></span>`;
   el.innerHTML = `
     ${enteteParcours()}
-    <div class="card ch-tete">
-      ${tete}
-      <div class="ch-jauge" role="progressbar" aria-valuemin="0" aria-valuemax="${total}" aria-valuenow="${faites}"><i style="--p:${(faites / total).toFixed(4)}"></i></div>
-      <small class="ch-compte">${escapeHtml(Tf(faites > 1 ? "{n} leçons sur {t}" : "{n} leçon sur {t}", { n:faites, t:total }))}</small>
-      <small class="ch-aide">${T("Six questions par leçon. Une erreur revient à la fin.")}</small>
+    <div class="ch-tete-z">
+      <button class="card ch-tete" onclick="ouvrirEtapes()" aria-label="${escapeHtml(etape + " · " + T(E.nom) + " · " + T("Ton parcours"))}">
+        ${tete}
+        <span class="ch-jauge" role="progressbar" aria-valuemin="0" aria-valuemax="${total}" aria-valuenow="${faites}"><i style="--p:${(faites / total).toFixed(4)}"></i></span>
+        <small class="ch-compte">${escapeHtml(Tf(faites > 1 ? "{n} leçons sur {t}" : "{n} leçon sur {t}", { n:faites, t:total }))}</small>
+        <small class="ch-aide">${T("Six questions par leçon. Une erreur revient à la fin.")}</small>
+      </button>
+      <button class="ch-diamants" onclick="ouvrirBoutique()" aria-label="${escapeHtml(Tf("{n} diamants · Boutique", { n:solde }))}"><span class="ico">${ICONS.diamant}</span><b>${solde}</b><span class="chev">${ICONS.chevronRight}</span></button>
     </div>
     <div class="ch-unites">${unites.map((u, k) => uniteHtml(PARCOURS[u], u, p, pos, vient, t, k)).join("")}</div>
     ${suiteEtapeHtml(e, pos)}`;
@@ -27074,7 +27182,21 @@ function aRattraper(){
 function rattrapees(){
   return dernieresErreurs().filter(x => (x.p | 0) > 0);
 }
-function fileDeRevision(){ return aRattraper().slice(0, CHANCE_LOT); }
+/* ===== (v378) LA SÉRIE SE FINIT AVEC ELLE =====
+   « Lorsque mes quinze questions vont être terminées, ça s'arrête à
+     quatorze, et ensuite ça vient me dire que j'ai oublié une question. »
+   Rejoué : quinze erreurs, trois séances de cinq, une seule réponse fausse
+   dans la troisième — l'écran disait « 14 rattrapées sur 15 », puis
+   proposait une quatrième séance… d'une seule question. Le jeu ne mentait
+   pas (elle était ratée), mais la série ne finissait jamais avec elle.
+   Deux choses changent :
+   - une erreur ratée de nouveau REVIENT UNE FOIS, à la fin de la même
+     séance (comme dans une leçon du Parcours) : rattrapée là, elle compte
+     (voir soloAnswer) — la série de quinze se termine à quinze ;
+   - un reste de sept au plus se joue en UNE séance : jamais plus de séance
+     d'une ou deux questions qui traîne derrière les autres. */
+function tailleSeance(n){ return n <= CHANCE_LOT + 2 ? n : CHANCE_LOT; }
+function fileDeRevision(){ const l = aRattraper(); return l.slice(0, tailleSeance(l.length)); }
 /* Le jour d'une erreur, dit comme on le dirait — et comme le disent déjà
    les messages des groupes : aujourd'hui, hier, puis le nom du jour (sur
    sept jours, il ne peut désigner que celui de cette semaine). */
@@ -28351,11 +28473,29 @@ function groupesSurCompte(){
    reste, et c'est ce qui la fait lire comme une barre et pas comme un
    morceau de l'accueil. */
 function barreHtml(){
-  return `<span class="bb-curseur" aria-hidden="true"></span>`
-    + `<button class="bb-onglet" data-o="accueil" onclick="allerOnglet('accueil')"><span class="bb-ico">${ICONS.maison}</span><span class="bb-mot">${T("Accueil")}</span></button>`
-    + `<button class="bb-onglet" data-o="parcours" onclick="allerOnglet('parcours')"><span class="bb-ico">${ICONS.chemin}</span><span class="bb-mot">${T("Parcours")}</span></button>`
-    + `<button class="bb-onglet" data-o="jeux" onclick="allerOnglet('jeux')"><span class="bb-ico">${ICONS.manette}</span><span class="bb-mot">${T("Jeux")}</span></button>`
-    + `<button class="bb-onglet" data-o="groupes" onclick="allerOnglet('groupes')"><span class="bb-ico">${ICONS.bulles}<i class="bb-pastille" hidden></i></span><span class="bb-mot">${T("Groupes")}</span></button>`;
+  /* (v378) Chaque onglet existe deux fois : sombre dans la barre (le bouton
+     qu'on touche), blanc dans la pastille (.bb-cel, qu'on ne touche pas).
+     Voir LE BLANC N'EXISTE QUE SOUS LE CORAIL. */
+  const ong = [["accueil", ICONS.maison, T("Accueil")], ["parcours", ICONS.chemin, T("Parcours")],
+               ["jeux", ICONS.manette, T("Jeux")], ["groupes", ICONS.bulles, T("Groupes")]];
+  const dedans = (o, ico, mot) => `<span class="bb-ico">${ico}${o === "groupes" ? '<i class="bb-pastille" hidden></i>' : ""}</span><span class="bb-mot">${mot}</span>`;
+  return `<span class="bb-curseur" aria-hidden="true"><span class="bb-blanc">${ong.map(([o, ico, mot]) => `<span class="bb-cel" data-o="${o}">${dedans(o, ico, mot)}</span>`).join("")}</span></span>`
+    + ong.map(([o, ico, mot]) => `<button class="bb-onglet" data-o="${o}" onclick="toucherOnglet('${o}')">${dedans(o, ico, mot)}</button>`).join("");
+}
+/* L'onglet de chaque écran qui porte la barre ; celui que le doigt vient
+   de toucher, tant que son écran n'est pas parti (voir LA PASTILLE PART
+   SOUS LE DOIGT). */
+const ONGLET_DE = { mode:"accueil", chemin:"parcours", jeux:"jeux", groupes:"groupes" };
+let ongletVise = null;
+/* La pastille se pose sur un onglet (la glissade, c'est la CSS). */
+function poserPastille(b, o){
+  if(!b) return;
+  b.querySelectorAll(".bb-onglet").forEach(x=>{
+    const actif = x.dataset.o === o;
+    x.classList.toggle("actif", actif);
+    if(actif) x.setAttribute("aria-current", "page"); else x.removeAttribute("aria-current");
+  });
+  b.dataset.o = o;
 }
 let barreDispoAvant = null;
 /* La page qu'on quitte disparaît-elle net ? Avec le verre du jeu (gl-xf,
@@ -28397,27 +28537,24 @@ function majBarre(){
      discussion et la modération sont dans les Groupes, l'accueil est
      l'Accueil, et tout le reste (Profil, Progression, une partie) la laisse
      où elle était. */
-  const o = (jeu && jeu.chemin && (state.screen === "jeu" || state.screen === "jeu-fin")) ? "parcours"   // (v376) un jeu du chemin est au Parcours
+  const o = (ongletVise !== null && ONGLET_DE[state.screen]) ? ongletVise   // (v378) en route sous le doigt
+    : (jeu && jeu.chemin && (state.screen === "jeu" || state.screen === "jeu-fin")) ? "parcours"   // (v376) un jeu du chemin est au Parcours
     : (({ groupes:"groupes", groupe:"groupes", moderation:"groupes", mode:"accueil", chemin:"parcours", jeux:"jeux", jeu:"jeux", "jeu-fin":"jeux" })[state.screen] || b.dataset.o || "accueil");
   const revient = montre && (b.classList.contains("cachee") || b.classList.contains("part-cote"));
   /* Elle ne glisse que sous les yeux, d'un onglet à l'autre. Une barre qui
      REVIENT arrive avec sa pastille déjà en place. */
   if(revient && b.dataset.o !== o) b.classList.add("pose-nette");
-  b.querySelectorAll(".bb-onglet").forEach(x=>{
-    const actif = x.dataset.o === o;
-    x.classList.toggle("actif", actif);
-    if(actif) x.setAttribute("aria-current", "page"); else x.removeAttribute("aria-current");
-  });
-  b.dataset.o = o;
+  poserPastille(b, o);
   if(b.classList.contains("pose-nette")){ void b.offsetWidth; b.classList.remove("pose-nette"); }
   /* La pastille compte ce qui attend : les messages non lus et, pour un
      modérateur, les signalements à traiter. C'est par elle qu'un
      signalement arrive jusqu'à lui sans qu'il ait à aller le chercher. */
-  const p = b.querySelector(".bb-pastille");
-  if(p){
+  const ps = b.querySelectorAll(".bb-pastille");
+  if(ps.length){
     const lus = grp.nonLus, sig = aTraiter(), n = lus + sig;
-    p.hidden = !(n > 0);
-    p.textContent = n > 99 ? "99+" : String(n);
+    /* (v378) Deux pastilles : celle de la barre et sa copie blanche. */
+    ps.forEach(p => { p.hidden = !(n > 0); p.textContent = n > 99 ? "99+" : String(n); });
+    b.querySelectorAll('.bb-cel[data-o="groupes"]').forEach(c => c.classList.toggle("a-pastille", n > 0));
     const btn = b.querySelector('.bb-onglet[data-o="groupes"]');
     if(btn){
       btn.classList.toggle("a-pastille", n > 0);
@@ -28497,6 +28634,43 @@ function majBarre(){
     b.classList.toggle("cachee", !montre);
     if(etait && montre){ try{ glassTrack(); }catch(e){} }
   }
+}
+/* ===== (v378) LA PASTILLE PART SOUS LE DOIGT =====
+   Filmé de l'Accueil aux Jeux, processeur ralenti quatre fois : après le
+   toucher, rien ne bougeait pendant 0,24 s — le temps de dessiner l'écran
+   des Jeux —, puis tout partait ensemble. La barre est la seule chose que
+   le doigt touche : comme celle d'une application, elle répond tout de
+   suite. La pastille part dans l'image qui suit le toucher, et l'écran
+   suivant n'est dessiné qu'ensuite, pendant qu'elle glisse : son
+   mouvement est joué par le téléphone (une transformation), le dessin de
+   l'écran ne le retient pas.
+   Seulement d'un onglet à un autre, la barre posée, et quand rien ne
+   retient le départ (une partie du groupe ouverte dans les messages
+   demande d'abord) ; sinon, tout se passe comme avant. Un second toucher
+   avant le départ ne fait que changer la cible. */
+function toucherOnglet(o){
+  const b = document.getElementById("barreBas");
+  if(ongletVise !== null){ ongletVise = o; poserPastille(b, o); return; }
+  const ici = ONGLET_DE[state.screen];
+  const libre = !!(b && ici && ici !== o && !passage && !pubEcranPlein
+    && !b.classList.contains("cachee") && !b.classList.contains("part-cote")
+    && !(o !== "groupes" && ECRANS_DES_MESSAGES.indexOf(state.screen) >= 0 && salonOuvert()));
+  if(!libre){ allerOnglet(o); return; }
+  ongletVise = o;
+  poserPastille(b, o);
+  const ecran = state.screen;
+  let parti = false;
+  const partir = ()=>{
+    if(parti) return;
+    parti = true;
+    const v = ongletVise; ongletVise = null;
+    if(state.screen !== ecran || v === ONGLET_DE[state.screen]){ majBarre(); return; }
+    allerOnglet(v);
+  };
+  /* L'image avec la pastille en route, puis l'écran. Le filet : une page
+     cachée ne donne plus d'images. */
+  requestAnimationFrame(()=> setTimeout(partir, 0));
+  setTimeout(partir, 160);
 }
 function allerOnglet(o){
   if(pubAvant(()=> allerOnglet(o))) return;  // (v349) « Autres jeux », la flèche, après un jeu fini
@@ -29901,7 +30075,7 @@ function texteSysteme(m){
     photo_retiree:"La modération a retiré la photo du groupe",
     /* (v338) La modération confie un groupe ; le suivant qui prend la main
        après un retrait garde la ligne de tous les jours. */
-    proprietaire:"La modération a confié le groupe à {nom}"
+    proprietaire:"La modération a nommé {nom} propriétaire du groupe"
   };
   if(d.moderation === true && deLaModo[m.texte]) return Tf(deLaModo[m.texte], { nom });
   /* (v336) L'ABSENCE DU PROPRIÉTAIRE : le groupe est passé au suivant parce
@@ -30262,6 +30436,74 @@ function fermerFeuilleGroupe(id){
     setTimeout(()=>{ try{ glassRelayout(); queueGlassSync(); }catch(e){} }, msPli() + 40);
   }
   setTimeout(()=>{ if(v.parentNode) v.remove(); }, msFerme() + 20);
+}
+/* ===== (v378) LE SITE S'OUVRE DANS LE JEU =====
+   « Dans le truc À propos, ça bug, c'est long à s'afficher, et même lorsque
+     je clique quelque part. » « Sur Android, il ne doit pas y avoir cette
+     barre au-dessus lorsque le jeu est installé » (capture : « Quiz
+     biblique… daubertaylor.github.io » et sa croix). « Je suis dans les
+     messages, je glisse mon doigt de la gauche vers la droite, et ça me
+     ramène sur la page À propos. Ça ne doit arriver nulle part. »
+   Les trois venaient du même lien : « À propos » ouvrait le site dans une
+   NOUVELLE fenêtre (target="_blank"). Android l'ouvre alors dans un onglet
+   personnalisé de Chrome — sa barre d'adresse et sa croix, par-dessus le
+   jeu. iPhone, lui, y emmenait le jeu lui-même : chaque page du site
+   devenait une page de l'historique, et le geste retour d'iOS, plus tard,
+   n'importe où dans le jeu, y revenait.
+   Le site s'ouvre maintenant dans une page du jeu, comme la
+   Confidentialité : la barre du haut du jeu, son retour, son geste depuis
+   le bord ; le site dedans, sans son en-tête (le jeu le remplace), avec
+   ses onglets (Guide, FAQ, Nouveautés…). On y passe d'une page à l'autre
+   en REMPLAÇANT la page (location.replace) : rien n'entre dans
+   l'historique, et la page se referme d'un geste, d'où qu'on soit. « Jouer »
+   ramène au jeu ; un lien vers un autre site s'ouvre à part ; une adresse
+   e-mail ouvre le courrier. */
+function ouvrirSite(chemin, titre){
+  const veil = ouvrirFeuilleGroupe("siteVeil", T(titre || "À propos"), titre ? ICONS.bouclier : ICONS.info,
+    `<iframe class="site-cadre" title="${escapeHtml(T("Le site de Yada"))}" src="${escapeHtml(chemin)}"></iframe>`
+    + `<span class="spinner site-attente" aria-hidden="true"></span><span class="site-bord" aria-hidden="true"></span>`);
+  veil.classList.add("site-page");
+  const f = veil.querySelector(".site-cadre");
+  f.addEventListener("load", ()=> brancherSite(veil, f));
+  return veil;
+}
+let siteChaud = false;
+function brancherSite(veil, f){
+  let doc = null;
+  try{ doc = f.contentDocument; }catch(e){}
+  veil.classList.add("site-pret");
+  if(!doc || !doc.documentElement) return;
+  /* Le titre de la page du jeu suit l'onglet du site — dans la langue du
+     jeu : le site est en français, la barre du jeu parle celle du joueur. */
+  try{
+    const a = doc.querySelector(".menu-mobile [aria-current], .menu [aria-current]");
+    const mot = veil.querySelector(".page-tete .st-mot");
+    const t = a ? a.textContent.trim() : "";
+    if(mot && t) mot.textContent = T(t);
+  }catch(e){}
+  /* Les autres rubriques, rangées d'avance par le service worker : on passe
+     de l'une à l'autre sans attendre le réseau. Une fois par lancement. */
+  if(!siteChaud){
+    siteChaud = true;
+    setTimeout(()=>{ ["a-propos/", "guide/", "faq/", "nouveautes/"].forEach(u => { try{ fetch(u).catch(()=>{}); }catch(e){} }); }, 1200);
+  }
+  if(doc._brancheParLeJeu) return;
+  doc._brancheParLeJeu = true;
+  doc.addEventListener("click", (e)=>{
+    const a = e.target && e.target.closest ? e.target.closest("a[href]") : null;
+    if(!a || e.defaultPrevented) return;
+    let u;
+    try{ u = new URL(a.getAttribute("href"), doc.baseURI); }catch(err){ return; }
+    if(u.protocol === "mailto:" || u.protocol === "tel:"){ e.preventDefault(); try{ window.location.href = u.href; }catch(err){} return; }
+    if(u.origin !== location.origin){ e.preventDefault(); try{ window.open(u.href, "_blank", "noopener"); }catch(err){} return; }
+    /* Le jeu lui-même (« Jouer », la marque, le fil d'Ariane) : on y revient. */
+    const racine = new URL("./", location.href).pathname;
+    if(u.pathname === racine || u.pathname === racine + "index.html"){ e.preventDefault(); fermerFeuilleGroupe("siteVeil"); return; }
+    /* Une ancre dans la même page : elle défile, comme sur le site. */
+    if(u.pathname === new URL(doc.URL).pathname && u.hash) return;
+    e.preventDefault();
+    try{ f.contentWindow.location.replace(u.href); }catch(err){}
+  }, true);
 }
 /* La petite phrase sous une feuille : une erreur, ou une confirmation (bon). */
 function motFeuille(id, texte, bon){
@@ -33119,6 +33361,11 @@ function trouverMessage(id){
 function actionsMessage(id){
   const m = trouverMessage(id);
   if(!m || m.id < 0 || m.supprime_le) return;
+  /* (v378) Le menu de ce message est déjà là (ou monte) : on ne le refait pas
+     — le recréer le ferait repartir d'en bas (voir ELLE S'OUVRE PUIS ELLE SE
+     ROUVRE). */
+  const deja = document.getElementById("grpActionsVeil");
+  if(deja && !deja.classList.contains("closing") && deja.dataset.m === String(m.id)) return;
   const moi = !!m.auteur && m.auteur === monId(), mod = deLaModeration(m);
   const p = grp.profils[m.auteur] || {};
   const nom = moi ? (String(profile.name || "").trim() || T("Toi")) : (mod ? T("La modération") : (p.nom || T("Quelqu'un")));
@@ -33155,13 +33402,18 @@ function actionsMessage(id){
     if(!m.masque && !modeModeration()) h += ligneAction(ICONS.drapeau, T("Signaler"), `signalerMessage('${m.id}')`);
     if(!estModo()) h += ligneAction(ICONS.bloquer, Tf("Bloquer {nom}", { nom }), `bloquerQuelquUn('${m.auteur}')`, true);
   }
-  if(peutGerer) h += ligneAction(ICONS.personne, Tf("Gérer {nom}", { nom }), `fermerFeuilleGroupe('grpActionsVeil'); ouvrirMembre('${m.auteur}')`);
+  /* (v378) « Là où il y a écrit "Gérer Stany", quand je clique, c'est la page
+     de son profil. » C'est elle, en effet — avec, plus bas, ce qu'on peut y
+     faire quand on gère le groupe. Le menu dit donc ce qu'on y trouve d'abord,
+     pour tout le monde : « Voir le profil ». */
+  if(peutGerer) h += ligneAction(ICONS.personne, T("Voir le profil"), `fermerFeuilleGroupe('grpActionsVeil'); ouvrirMembre('${m.auteur}')`);
   if(retirer) h += ligneAction(ICONS.corbeille, T("Supprimer le message"), `supprimerMessageGroupe('${m.id}')`, true);
   h += `</div><div class="grp-mot"><span></span></div>`;
   /* (v329) Mon message : qui l'a vu, qui pas encore — comme « Infos » sur
      WhatsApp. En tête du menu : c'est ce qu'on vient chercher. */
   if(moi && !m.masque) h = vusHtml(m) + h;
-  ouvrirFeuilleGroupe("grpActionsVeil", nom, (!moi && mod) ? avatarModeration(1.5) : avatarHtml(nom, moi ? (profile.color || "#4C86E8") : (p.couleur || "#8A8F98"), 1.5, moi ? true : "u:" + m.auteur), h);
+  const v = ouvrirFeuilleGroupe("grpActionsVeil", nom, (!moi && mod) ? avatarModeration(1.5) : avatarHtml(nom, moi ? (profile.color || "#4C86E8") : (p.couleur || "#8A8F98"), 1.5, moi ? true : "u:" + m.auteur), h);
+  if(v) v.dataset.m = String(m.id);
 }
 /* ===================== RÉPONDRE À UN MESSAGE (v332, v343) =====================
    « Je veux pouvoir rester appuyé sur un message ; la petite bulle qui
@@ -33481,6 +33733,11 @@ function allerAuMessage(id){
   let minuteur = 0, cible = null, x0 = 0, y0 = 0, tenu = false, leve = 0;
   const lacher = () => { if(minuteur){ clearTimeout(minuteur); minuteur = 0; } cible = null; };
   document.addEventListener("pointerdown", (e)=>{
+    /* (v378) Juste après un appui long au doigt, un « pointerdown » de souris
+       n'est pas un nouveau geste : c'est l'écho du lâcher (un téléphone ou une
+       tablette qui rejoue le toucher). Il ne relance ni l'appui long, ni le
+       clic qu'on vient d'avaler. */
+    if(leve && e.pointerType !== "touch" && performance.now() - leve < 450) return;
     leve = 0; tenu = false;
     if(e.pointerType === "mouse" && e.button !== 0) return;
     const b = e.target && e.target.closest ? e.target.closest(".b-bulle") : null;
@@ -33506,7 +33763,9 @@ function allerAuMessage(id){
     if(cible && Math.hypot(e.clientX - x0, e.clientY - y0) > BOUGE) lacher();
   }, { capture:true, passive:true });
   document.addEventListener("pointerup", ()=>{ if(tenu){ tenu = false; leve = performance.now(); } lacher(); }, { capture:true, passive:true });
-  document.addEventListener("pointercancel", ()=>{ tenu = false; lacher(); }, { capture:true, passive:true });
+  /* (v378) Un toucher ANNULÉ après l'ouverture du menu (iOS reprend parfois la
+     main sur un appui long) : son clic éventuel ne compte pas non plus. */
+  document.addEventListener("pointercancel", ()=>{ if(tenu) leve = performance.now(); tenu = false; lacher(); }, { capture:true, passive:true });
   /* (v375) Un doigt qui tient une bulle n'y sélectionne rien : le menu qui
      s'ouvre est la seule réponse à l'appui long (voir LA CARTE D'UNE PARTIE
      NE SE SÉLECTIONNE PAS). */
@@ -34018,8 +34277,14 @@ function membreHtml(qui){
       /* (v336) Céder son groupe est le geste d'un propriétaire, pas de la
          modération : avec son profil seulement. (v338) En mode modération,
          la modération le CONFIE. */
-      if(mon === "proprietaire" && !(modo && pleine)) h += ligneAction(ICONS.couronne, T("Céder le groupe"), `modererMembre('${qui}', 'ceder')`);
-      else if(modo && pleine && modoProprietaire()) h += ligneAction(ICONS.couronne, T("Confier le groupe"), `modererMembre('${qui}', 'ceder')`);
+      /* (v378) « Il y a une différence entre céder le groupe et confier le
+         groupe, en mode normal ou en modération : je ne comprends pas la
+         différence. » Il n'y en avait pas, sinon QUI le faisait : le
+         propriétaire « cédait », la modération « confiait » — le même geste,
+         qui fait de ce membre le propriétaire. Un seul mot, celui de ce qui
+         arrive, juste sous « Nommer admin » : « Nommer propriétaire ». */
+      if(mon === "proprietaire" && !(modo && pleine)) h += ligneAction(ICONS.couronne, T("Nommer propriétaire"), `modererMembre('${qui}', 'ceder')`);
+      else if(modo && pleine && modoProprietaire()) h += ligneAction(ICONS.couronne, T("Nommer propriétaire"), `modererMembre('${qui}', 'ceder')`);
       h += ligneAction(ICONS.retirer, T("Retirer du groupe"), `modererMembre('${qui}', 'exclure')`, true);
       h += ligneAction(ICONS.bannir, T("Bannir du groupe"), `modererMembre('${qui}', 'bannir')`, true);
     } else if(modo && pleine && modoProprietaire()){
@@ -34088,10 +34353,10 @@ async function modererMembre(qui, action){
   if(action === "ceder"){
     const ancien = (grp.profils[proprio.membre] || {}).nom || T("Quelqu'un");
     showModal({
-      title:confie ? Tf("Confier le groupe à {nom} ?", { nom }) : Tf("Céder le groupe à {nom} ?", { nom }),
+      title:Tf("Nommer {nom} propriétaire du groupe ?", { nom }),
       message:(confie && proprio.membre !== monId()) ? Tf("{nom} en devient propriétaire ; {ancien} en reste admin.", { nom, ancien })
                                                      : Tf("{nom} en devient propriétaire, et tu en restes admin.", { nom }),
-      okLabel:confie ? T("Confier") : T("Céder"), cancelLabel:T("Annuler"),
+      okLabel:T("Nommer"), cancelLabel:T("Annuler"),
       onOk:()=>{ faire(); return true; }
     });
     return;
@@ -34879,8 +35144,14 @@ function ouvrirConfidentialite(){
      message de consentement de Google est en place (AdSense → Confidentialité
      et messages) : sans lui, pas de bouton qui ne mènerait nulle part. */
   const choix = choixPubDispo() ? `<button class="lien-conf conf-choix" onclick="choixPublicite()">${T("Mes choix de publicité")}</button>` : "";
+  /* (v378) LA POLITIQUE COMPLÈTE, À UN TOUCHER. Ces lignes en sont le
+     résumé ; le détail que demande le RGPD (bases légales, destinataires,
+     transferts, durées, droits, traceurs) vit sur le site, à l'adresse
+     donnée à Google (yadaquiz.app/confidentialite). Elle s'ouvre dans le
+     jeu, comme l'À propos. */
+  const politique = `<button class="lien-conf conf-politique" onclick="ouvrirSite('confidentialite.html', 'Politique de confidentialité')">${T("Politique de confidentialité complète")}</button>`;
   ouvrirFeuilleGroupe("confidentialiteVeil", T("Confidentialité"), ICONS.bouclier,
-    `<div class="conf-liste">${lignes.map(([t, d])=>`<p class="conf-l"><b>${escapeHtml(T(t))}</b> ${escapeHtml(T(d))}</p>`).join("")}${choix}</div>`);
+    `<div class="conf-liste">${lignes.map(([t, d])=>`<p class="conf-l"><b>${escapeHtml(T(t))}</b> ${escapeHtml(T(d))}</p>`).join("")}${choix}${politique}</div>`);
 }
 function choixPubDispo(){ try{ return !!(window.googlefc && typeof window.googlefc.showRevocationMessage === "function"); }catch(e){ return false; } }
 function choixPublicite(){ try{ window.googlefc.showRevocationMessage(); }catch(e){} }
@@ -35080,7 +35351,7 @@ function renderRevoir(){
      tout ce qui attend : une porte qui annonce un nombre doit le tenir. Le
      reste se dit en petit, sous la liste, et la jauge de la semaine le
      compte. */
-  const n = liste.length, seance = liste.slice(0, CHANCE_LOT), suite = n - seance.length;
+  const n = liste.length, seance = liste.slice(0, tailleSeance(n)), suite = n - seance.length;
   const faites = rattrapees().length, semaine = faites + n;
   const fini = !n && faites > 0;
   const tete = n
@@ -35400,8 +35671,10 @@ function soloAnswer(idx){
     state.soloStreak += 1;
     if(state.lecon && !q.relance) state.lecon.ok = (state.lecon.ok | 0) + 1;   // (v353) du premier coup
     /* (v353) Une erreur rattrapée DANS la leçon reste au carnet : c'est lui
-       qui la juge, des jours plus tard. */
-    if(!q.relance) errbookRemove(q); // juste : elle monte d'un palier (voir REVOIR_ECHELLE)
+       qui la juge, des jours plus tard. (v378) Pas dans la seconde chance :
+       c'est elle qu'on est venu rattraper (voir LA SÉRIE SE FINIT AVEC ELLE). */
+    if(!q.relance || state.revision) errbookRemove(q); // juste : elle monte d'un palier (voir REVOIR_ECHELLE)
+    q.juste = true;
     if(state.soloStreak > state.soloBestStreak) state.soloBestStreak = state.soloStreak;
     progressCredit(q, state.soloStreak); // parcours : crédite le livre + objectifs
     playCorrect(); // toujours le même son, quelle que soit la série
@@ -35411,6 +35684,9 @@ function soloAnswer(idx){
     errbookAdd(q);
     /* (v353) LE PARCOURS : une erreur revient à la fin de la leçon, une fois. */
     if(state.lecon && state.lecon.quete === undefined && !q.relance) state.questions.push(Object.assign({}, q, { relance:true, shuffledOptions:shuffle(q.options) }));
+    /* (v378) La seconde chance aussi : elle revient une fois, en fin de séance. */
+    else if(state.revision && !q.relance) state.questions.push(Object.assign({}, q, { relance:true, juste:false, shuffledOptions:shuffle(q.options) }));
+    q.juste = false;
     playIncorrect();
   }
   render();
@@ -35511,7 +35787,7 @@ function fonduTexte(el, html){
   sortie.onfinish = () => {
     el.innerHTML = el._vise;
     const entree = el.animate([{ opacity:0, transform:"translateY(5px)" }, { opacity:1, transform:"none" }],
-      { duration: Math.round(msPli() * 0.8), easing: courbePli() });
+      { duration: Math.round(msPli() * 0.8), easing: courbePli(), fill: "backwards" });   // (v378) voir ELLE S'OUVRE PUIS ELLE SE ROUVRE
     sortie.cancel();
     el._fondu = entree;
     entree.onfinish = () => { el._fondu = null; if(el.innerHTML !== el._vise) fonduTexte(el, el._vise); };
@@ -35541,7 +35817,7 @@ function plierPodium(pod, ouvrir){
   const plein = { height: pod.offsetHeight + "px", opacity: 1, marginTop: cs.marginTop, marginBottom: cs.marginBottom, paddingTop: cs.paddingTop };
   const vide = { height: "0px", opacity: 0, marginTop: "0px", marginBottom: "0px", paddingTop: "0px" };
   pod.style.overflow = "hidden";
-  const a = pod.animate(ouvrir ? [vide, plein] : [plein, vide], { duration: msPli(), easing: courbePli(), fill: ouvrir ? "none" : "forwards" });
+  const a = pod.animate(ouvrir ? [vide, plein] : [plein, vide], { duration: msPli(), easing: courbePli(), fill: ouvrir ? "backwards" : "forwards" });
   a.onfinish = () => { if(ouvrir) pod.style.removeProperty("overflow"); else pod.remove(); try{ fitScroll(); }catch(e){} };
 }
 function majFinGroupe(teamIdx){
@@ -35638,7 +35914,7 @@ function majFinGroupe(teamIdx){
       const j = v.av._glisse;
       setTimeout(() => { if(v.av._glisse === j){ v.av.style.removeProperty("position"); v.av.style.removeProperty("z-index"); } }, msPli() + 60);
     } else if(!v.de){
-      v.av.animate([{ opacity:0, transform:"scale(0.6)" }, { opacity:1, transform:"none" }], { duration: msPli(), easing: courbePli() });
+      v.av.animate([{ opacity:0, transform:"scale(0.6)" }, { opacity:1, transform:"none" }], { duration: msPli(), easing: courbePli(), fill: "backwards" });
     }
   });
   try{ glassSuivre(msPli() + 160); }catch(e){}
@@ -35994,7 +36270,7 @@ function renderModeSelect(){
          descend de dix par jour, et la jauge de l'écran en dit la part
          franchie. */
       const revPast = nRev > 0
-        ? `<span class="dc-streak rv-n">${Math.min(nRev, CHANCE_LOT)}</span>` : "";
+        ? `<span class="dc-streak rv-n">${tailleSeance(nRev)}</span>` : "";
       const revoir = `<button class="daily-card revoir-card" onclick="ouvrirRevoir()"><span class="dc-ico rv-ico">${ICONS.bookOpen}</span><span class="dc-txt"><b>${T("À revoir")}</b><small>${revTxt}</small></span>${revPast}<span class="chev">${ICONS.chevronRight}</span></button>`;
       /* ===== LE DÉFI DU JOUR N'EST PLUS UNE CARTE =====
          « Le défi du jour ne sert à rien si ce n'est activer les flammes. Fais
@@ -36209,7 +36485,7 @@ function renderPlay(){
   el.innerHTML = `
     ${renderHeader(state.revision ? T("Seconde chance") : (state.lecon ? (state.lecon.quete !== undefined ? T(QUETES[state.lecon.quete].nom) : T(PARCOURS[state.lecon.u].nom)) : NOM_DU_JEU), true, "confirmLeaveGame()")}
     <div class="play-meta">
-      <span class="tier-chip ${info.cls}">${tierDotsHtml(info.level)}${T(info.label)} · ${info.pts} pts</span>
+      ${q.relance ? `<span class="tier-chip relance">${T("Encore une fois")}</span>` : `<span class="tier-chip ${info.cls}">${tierDotsHtml(info.level)}${T(info.label)} · ${info.pts} pts</span>`}
       <span class="q-counter">${state.currentIndex+1}/${total}</span>
       ${sansChrono() ? "" : state.revealed ? timerFigeHtml(chronoDeLaPartie()) : timerChipHtml(chronoDeLaPartie())}
       ${state.mode==="solo" ? `<span class="streak-chip${streakHot?' hot':''}"><span class="ico">${ICONS.flame}</span>${state.soloStreak}</span>` : ""}
@@ -36387,7 +36663,17 @@ function renderEndSolo(){
           /* LA SECONDE CHANCE SE COMPTE EN ERREURS RATTRAPÉES, pas en points :
              c'est ce qu'on est venu faire. Ce qui reste se dit d'après la porte
              d'où l'on vient — l'écran « À revoir » ou la dernière partie. */
-          const t = state.questions.length, ok = t - state.soloMissed.length;
+          /* (v378) Une erreur qui est revenue en fin de séance ne compte
+             qu'une fois : rattrapée si l'un des deux essais était juste. */
+          const premieres = state.questions.filter(x => !x.relance);
+          const t = premieres.length;
+          /* Une séance d'avant la v378 (reprise d'une partie sauvegardée)
+             ne dit pas, question par question, ce qui était juste : on lit
+             alors ses erreurs, comme avant. */
+          const rateeDansLaSeance = (x) => state.soloMissed.some(m => qKey(m) === qKey(x));
+          const justeDuPremierCoup = (x) => x.juste === true || (x.juste === undefined && !rateeDansLaSeance(x));
+          const ok = premieres.filter(x => justeDuPremierCoup(x) || state.questions.some(y => y.relance && y.juste === true && qKey(y) === qKey(x))).length;
+          const parfaite = premieres.every(justeDuPremierCoup);
           const reste = resteARattraper();
           /* (v364) « TOUT EST RATTRAPÉ » SEULEMENT QUAND C'EST VRAI. « Il me
              reste une série et précisément une erreur : ça me dit que j'ai
@@ -36396,7 +36682,7 @@ function renderEndSolo(){
              « 1 encore à rattraper ». Une séance parfaite qui laisse du
              travail se dit « Séance parfaite ! », et le bouton dit
              « Continuer ». */
-          return `<h1 class="end-title">${ok === t ? (reste > 0 ? T("Séance parfaite\u00a0!") : T("Tout est rattrapé !")) : Tf(ok > 1 ? "{n} rattrapées sur {t}" : "{n} rattrapée sur {t}", { n:ok, t })}</h1>
+          return `<h1 class="end-title">${ok === t && (parfaite || reste === 0) ? (reste > 0 ? T("Séance parfaite\u00a0!") : T("Tout est rattrapé !")) : Tf(ok > 1 ? "{n} rattrapées sur {t}" : "{n} rattrapée sur {t}", { n:ok, t })}</h1>
             <p class="end-sub">${soloPerformanceMessage(pct)}</p>
             <div class="end-best">${reste > 0 ? Tf("{n} encore à rattraper", { n:reste }) : T("Plus rien à rattraper, bravo !")}</div>`; })()
         : `<h1 class="end-title">${state.soloScore} ${T("points")}</h1>
@@ -40694,7 +40980,11 @@ function tryAutoFullscreen(e){
   if(toucheUnChamp(e) || champEnCours()) return;
   if(fsPending || !fsAvailable() || fsActive()) return;
   const avant = state.screen;
-  setTimeout(()=>{
+  const voir = ()=>{
+    /* (v378) L'onglet touché part une image après le toucher (voir LA
+       PASTILLE PART SOUS LE DOIGT) : on attend son départ pour savoir si
+       l'écran a changé. */
+    if(ongletVise !== null){ setTimeout(voir, 16); return; }
     if(state.screen === avant) return;
     if(fsPending || !fsAvailable() || fsActive() || champEnCours()) return;
     /* ===== (v343) PAS PENDANT LE GLISSEMENT =====
@@ -40733,7 +41023,8 @@ function tryAutoFullscreen(e){
       toggleFullscreen();
     };
     setTimeout(essayer, apresEntree());
-  }, 0);
+  };
+  setTimeout(voir, 0);
 }
 /* Android : au premier changement d'écran, on passe en plein écran immersif — la
    barre de navigation BLANCHE du système se masque alors d'elle-même (elle ne

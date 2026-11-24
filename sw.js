@@ -1,6 +1,6 @@
 /* Yada — service worker : rend l'app jouable hors connexion.
    À déposer à côté de index.html (même dossier, nom exact "sw.js"). */
-const CACHE = "yada-v377";
+const CACHE = "yada-v378";
 /* ===== LES BANQUES DE QUESTIONS NE SONT PAS DANS LE SOCLE =====
    questions-en.js y était, et questions-es.js allait l'y rejoindre : six cent
    mille octets téléchargés à l'installation par TOUT LE MONDE, y compris les
@@ -153,6 +153,21 @@ self.addEventListener("fetch", (e) => {
         .then((hit) => hit ? sansDetour(hit)
           : fetch(req).then((res) => (res && (res.ok || res.type === "opaqueredirect")) ? res : secours(req, res)).catch(() => secours(req, null)))
     );
+    return;
+  }
+  /* (v378) LE SITE OUVERT DANS LE JEU (un cadre, voir LE SITE S'OUVRE DANS
+     LE JEU dans index.html) : la copie rangée tout de suite — passer d'une
+     rubrique à l'autre est instantané —, et la fraîche, prise en même temps,
+     pour la fois suivante. Rien de rangé : le réseau, sinon le secours. */
+  if (req.mode === "navigate" && req.destination === "iframe") {
+    e.respondWith(caches.open(CACHE).then((c) => c.match(req).then((hit) => {
+      const frais = fetch(req).then((res) => {
+        if (res && res.ok) sansDetour(res.clone()).then((r) => c.put(req, r)).catch(() => {});
+        return res;
+      }).catch(() => null);
+      if (hit) { e.waitUntil(frais); return sansDetour(hit); }
+      return frais.then((res) => (res && (res.ok || res.type === "opaqueredirect")) ? res : secours(req, res));
+    })));
     return;
   }
   /* Les autres pages (la page d'essai) : réseau d'abord pour recevoir les
