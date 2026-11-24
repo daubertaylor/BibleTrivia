@@ -1,6 +1,6 @@
 /* Yada — service worker : rend l'app jouable hors connexion.
    À déposer à côté de index.html (même dossier, nom exact "sw.js"). */
-const CACHE = "yada-v379";
+const CACHE = "yada-v380";
 /* ===== LES BANQUES DE QUESTIONS NE SONT PAS DANS LE SOCLE =====
    questions-en.js y était, et questions-es.js allait l'y rejoindre : six cent
    mille octets téléchargés à l'installation par TOUT LE MONDE, y compris les
@@ -510,7 +510,40 @@ function motsMessage(c, langue){
   if(c.partie) return dire(mots.partie, { de });
   return dire(c.mention ? mots.mention : mots.ligne, { de, texte });
 }
+/* ===== (v380) UNE PARTIE LANCÉE A SA PROPRE NOTIFICATION =====
+   « Lorsqu'une personne lance une partie, je dois bien être notifié. »
+   Elle se fondait dans celle des messages du groupe : un « On joue ? » puis
+   la partie, vingt secondes plus tard, et la partie REMPLAÇAIT la
+   notification sans sonner (la rafale), sous un titre « 2 nouveaux
+   messages » qui ne disait rien d'une partie. Elle a maintenant la sienne
+   (étiquette « partie-<groupe> ») : le nom du groupe en titre, « Benoît a
+   lancé une partie » dessous, et elle sonne toujours — sauf jeu à l'écran,
+   où elle se pose sans bruit comme un message. Une nouvelle partie du même
+   groupe remplace l'ancienne (une seule à rejoindre) ; rejouée, elle ne
+   sonne pas deux fois. La toucher ouvre la discussion, où l'on rejoint ; lire
+   le groupe la range (effacerNotifsGroupe). */
+async function montrerPartie(c, langue, discret){
+  const groupe = String(c.groupe || "");
+  const tag = "partie-" + groupe;
+  let avant = null;
+  try {
+    const l = await self.registration.getNotifications({ tag });
+    avant = l.length ? l[l.length - 1] : null;
+  } catch(x){}
+  const d0 = (avant && avant.data) || {};
+  const ids = Array.isArray(d0.ids) ? d0.ids.slice(-10) : [];
+  const dejaLa = c.id != null && ids.indexOf(c.id) >= 0;
+  if(c.id != null && !dejaLa) ids.push(c.id);
+  const icone = vignetteMessage(c);
+  const nom = String(c.nom || "").trim() || "Yada";
+  await self.registration.showNotification(nom, {
+    body: motsMessage(c, langue), icon: icone, badge: BADGE,
+    tag, renotify: !discret && !dejaLa, requireInteraction: false, silent: !!discret || dejaLa,
+    data: { url: "./?discussion=" + encodeURIComponent(groupe), groupe, ids, partie: true, icone },
+  });
+}
 async function montrerMessage(c, langue, discret){
+  if(c.partie === true) return montrerPartie(c, langue, discret);
   const groupe = String(c.groupe || "");
   const tag = "grp-" + groupe;
   const mots = MOTS_MESSAGE[langue] || MOTS_MESSAGE.fr;

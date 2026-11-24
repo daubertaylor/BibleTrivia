@@ -108,15 +108,60 @@ LIVRE_ICO = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-w
 
 # ---------------------------------------------------------------- la mise en page
 MENU = [("quiz-biblique/", "Quiz par livre"), ("guide/", "Guide"), ("nouveautes/", "Nouveautés"), ("faq/", "FAQ"), ("a-propos/", "À propos")]
+
+# (v380) LE CODE DES ANNONCES, LÀ OÙ IL Y A À LIRE. AdSense refusait le site pour
+# « annonces sur des écrans sans contenu » : le seul code d'annonce était dans le
+# jeu (une application, presque sans texte), aucune page de lecture n'en portait.
+# Il est maintenant sur les pages qui ont du contenu (quiz par livre, guide, FAQ,
+# À propos, nouveautés) — jamais sur les pages légales ni sur la page 404. Posé
+# par le code, comme dans le jeu : seulement dans un vrai navigateur (jamais un
+# automate : du trafic invalide met le compte en danger), jamais dans le jeu qui
+# montre la page (iframe), et seulement à l'adresse que Google connaît.
+#
+# MES CHOIX DE PUBLICITÉ. En Europe, Google demande l'accord du visiteur
+# (le message « Confidentialité et messages » d'AdSense) et le visiteur doit
+# pouvoir le reprendre à tout moment. Le pied des pages à annonces porte un
+# bouton caché, « Mes choix de publicité » : il paraît quand l'outil de
+# consentement de Google est prêt (CONSENT_API_READY) et rouvre son message
+# (showRevocationMessage), la méthode que donne Google
+# (developers.google.com/funding-choices/fc-api-docs).
+PUB = ('<script>(function(){try{if(navigator.webdriver||self!==top||!/^(www\\.)?yadaquiz\\.app$/.test(location.hostname))return;'
+       'var s=document.createElement("script");s.async=true;s.crossOrigin="anonymous";s.setAttribute("data-yada","annonces");'
+       's.src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-4777080561806498";document.head.appendChild(s);'
+       'var g=window.googlefc=window.googlefc||{};g.callbackQueue=g.callbackQueue||[];'
+       'g.callbackQueue.push({CONSENT_API_READY:function(){var b=document.getElementById("choix-pub");if(b)b.hidden=false}})}catch(e){}})();</script>\n')
+CHOIX_PUB = ('<li id="choix-pub" hidden><button type="button" class="choix-pub" '
+             'onclick="try{googlefc.callbackQueue.push(googlefc.showRevocationMessage)}catch(e){}">Mes choix de publicité</button></li>')
+# (v380) UNE SEULE ADRESSE. Les mêmes fichiers sont servis aussi à
+# daubertaylor.github.io/BibleTrivia (l'ancienne adresse) et à
+# yada.yadaquiz-app.workers.dev : pour Google, des copies du site. Une page du
+# site ouverte là renvoie à la même page sur yadaquiz.app. (Le jeu, lui, ne
+# renvoie pas : la progression d'un ancien joueur est gardée à l'ancienne adresse.
+# Et une page montrée DANS le jeu, à l'ancienne adresse, reste où elle est : le
+# jeu la pilote, il doit pouvoir la lire.)
+HOTE = ('<script>try{if(self===top&&/(^|\\.)github\\.io$|\\.workers\\.dev$/.test(location.hostname))'
+        'location.replace("https://yadaquiz.app"+location.pathname.replace(/^\\/BibleTrivia(?=\\/|$)/,"")+location.search+location.hash)}catch(e){}</script>\n')
+TITRE_MAX, DESC_MAX = 60, 155
+def titre_court(candidats):
+    """(v380) Le premier titre qui tient dans ce que Google montre (60 signes)."""
+    for t in candidats:
+        if len(typo(t)) <= TITRE_MAX: return t
+    return candidats[-1]
+def desc_courte(d):
+    """(v380) Une description de 155 signes au plus, coupée entre deux mots."""
+    if len(d) <= DESC_MAX: return d
+    return d[:DESC_MAX - 1].rsplit(" ", 1)[0].rstrip(",;:—– ") + "…"
 PAGES = []   # (chemin, priorité) pour le plan du site
 
 def fil_json(miettes):
     return {"@context": "https://schema.org", "@type": "BreadcrumbList", "itemListElement": [
         {"@type": "ListItem", "position": i + 1, "name": n, "item": SITE + c} for i, (c, n) in enumerate(miettes)]}
 
-def page(chemin, titre, description, corps, *, rubrique=None, bandeau=None, miettes=None, jsonld=(), script_quiz=False, priorite="0.7"):
+def page(chemin, titre, description, corps, *, rubrique=None, bandeau=None, miettes=None, jsonld=(), script_quiz=False, priorite="0.7",
+         pub=True, index=True, fichier=None, racine=None):
     prof = chemin.count("/")
-    r = "../" * prof
+    r = racine if racine is not None else "../" * prof
+    assert len(typo(titre)) <= TITRE_MAX and len(typo(description)) <= DESC_MAX, (chemin, len(typo(titre)), len(typo(description)))
     menu = "".join('<a href="%s%s"%s>%s</a>' % (r, c, ' aria-current="page"' if c == rubrique else "", e(n)) for c, n in MENU)
     ld = list(jsonld)
     if miettes: ld.append(fil_json(miettes))
@@ -145,7 +190,7 @@ def page(chemin, titre, description, corps, *, rubrique=None, bandeau=None, miet
             + '<div><b>Le site</b><ul><li><a href="%squiz-biblique/">Quiz biblique par livre</a></li><li><a href="%sguide/">Guide du jeu</a></li><li><a href="%snouveautes/">Nouveautés</a></li><li><a href="%sfaq/">Questions fréquentes</a></li><li><a href="%sa-propos/">À propos</a></li></ul></div>' % (r, r, r, r, r)
             + "<div><b>Ancien Testament</b><ul>%s</ul></div>" % liste(vedette_at)
             + "<div><b>Nouveau Testament</b><ul>%s</ul></div>" % liste(vedette_nt)
-            + '<div><b>Contact</b><ul><li><a href="mailto:yadaquiz.app@gmail.com">yadaquiz.app@gmail.com</a></li><li><a href="%sconfidentialite">%s</a></li></ul></div>' % (r, e("Confidentialité et mentions légales"))
+            + '<div><b>Contact</b><ul><li><a href="%scontact/">%s</a></li><li><a href="mailto:yadaquiz.app@gmail.com">yadaquiz.app@gmail.com</a></li><li><a href="%sconfidentialite">%s</a></li><li><a href="%smentions-legales/">%s</a></li>%s</ul></div>' % (r, e("Nous écrire"), r, e("Confidentialité"), r, e("Mentions légales"), CHOIX_PUB if pub else "")
             + '<p class="bas">%s</p>' % e("© 2026 Yada · yadaquiz.app — Les citations bibliques sont tirées de versions du domaine public (Louis Segond 1910 par défaut). Mis à jour le %s." % date_fr(DATE))
             + "</div></footer>")
     doc = """<!DOCTYPE html>
@@ -153,11 +198,11 @@ def page(chemin, titre, description, corps, *, rubrique=None, bandeau=None, miet
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<script>try{{if(self!==top&&top.location.host===location.host)document.documentElement.classList.add("dans-app")}}catch(e){{}}</script>
+{hote}<script>try{{if(self!==top&&top.location.host===location.host)document.documentElement.classList.add("dans-app")}}catch(e){{}}</script>
 <title>{titre}</title>
 <meta name="description" content="{desc}">
 <link rel="canonical" href="{url}">
-<meta name="robots" content="index, follow, max-image-preview:large">
+<meta name="robots" content="{robots}">
 <meta property="og:type" content="website">
 <meta property="og:site_name" content="Yada">
 <meta property="og:locale" content="fr_FR">
@@ -170,7 +215,7 @@ def page(chemin, titre, description, corps, *, rubrique=None, bandeau=None, miet
 <meta name="twitter:card" content="summary_large_image">
 <meta name="theme-color" content="#F6F1E8">
 <meta name="google-adsense-account" content="ca-pub-4777080561806498">
-<link rel="icon" href="{r}icon-192.png">
+{pub}<link rel="icon" href="{r}icon-192.png">
 <link rel="apple-touch-icon" href="{r}apple-touch-icon.png">
 <link rel="stylesheet" href="{r}site/site.css">
 <link rel="preload" href="{r}site/decor.jpg" as="image" fetchpriority="high">
@@ -188,10 +233,11 @@ def page(chemin, titre, description, corps, *, rubrique=None, bandeau=None, miet
 {js}</body>
 </html>
 """.format(titre=attr(typo(titre)), desc=attr(typo(description)), url=SITE + chemin, site=SITE, r=r, ld=ld_html, menu=menu,
-           haut=haut, fil=fil, corps=corps, pied=pied,
+           haut=haut, fil=fil, corps=corps, pied=pied, hote=HOTE, pub=PUB if pub else "",
+           robots="index, follow, max-image-preview:large" if index else "noindex, follow",
            js=('<script src="%ssite/quiz.js" defer></script>\n' % r) if script_quiz else "")
-    ecrire(chemin + "index.html", doc)
-    PAGES.append((chemin, priorite))
+    ecrire(fichier or (chemin + "index.html"), doc)
+    if index: PAGES.append((chemin, priorite))
 
 # ---------------------------------------------------------------- une question
 def melange(q):
@@ -249,8 +295,7 @@ for idx, l in enumerate(LIVRES):
     chemin = "quiz-biblique/%s/" % l["slug"]
     resume = l["resume"]
     desc = "%s questions %s, avec la réponse et l'explication de chacune. %s" % (nombre(n), l["sur"], resume)
-    if len(desc) > 158:
-        desc = desc[:157].rsplit(" ", 1)[0].rstrip(",;:—– ") + "…"
+    desc = desc_courte(desc)
     chiffres = ('<ul class="chiffres"><li>%s <span>questions</span></li><li>%s <span>chapitres</span></li><li>%s <span>versets</span></li><li><span>Livre</span> %d <span>sur 66</span></li></ul>'
                 % (nombre(n), nombre(c["chapitres"]), nombre(c["versets"]), idx + 1)) if c["chapitres"] > 1 else (
                 '<ul class="chiffres"><li>%s <span>questions</span></li><li>1 <span>chapitre</span></li><li>%s <span>versets</span></li><li><span>Livre</span> %d <span>sur 66</span></li></ul>'
@@ -273,7 +318,11 @@ for idx, l in enumerate(LIVRES):
     corps = (nav + COMMENT + corps_q + SCORE + lsg + parcours
              + appel("Joue à ce quiz dans Yada", "Avec un chrono, des points, ta série et tes erreurs à revoir. Gratuit, sans compte.", "Jouer à Yada", "../../")
              + suite)
-    page(chemin, "Quiz biblique %s : %s questions avec réponses | Yada" % (l["sur"], nombre(n)), desc, corps,
+    titre = titre_court(["Quiz biblique %s : %s questions et réponses | Yada" % (l["sur"], nombre(n)),
+                         "Quiz biblique %s : %s questions | Yada" % (l["sur"], nombre(n)),
+                         "Quiz biblique %s : %s questions | Yada" % (l["nom"], nombre(n)),
+                         "Quiz biblique %s | Yada" % l["nom"]])
+    page(chemin, titre, desc, corps,
          rubrique="quiz-biblique/", script_quiz=True, priorite="0.8",
          bandeau=("%s · %s" % (test, sec["nom"]), "Quiz " + l["sur"], resume, chiffres),
          miettes=[("", "Yada"), ("quiz-biblique/", "Quiz biblique"), (chemin, l["nom"])])
@@ -301,8 +350,8 @@ methode = ('<div class="carte" id="methode"><h2>Comment ces questions sont écri
 nav_g, corps_g = bloc_questions(SANS_LIVRE, "general-")
 generales = ('<h2 id="culture-generale">%s</h2>\n<p>%s</p>\n' % (e("Culture biblique générale"), e("Quelques questions qui ne tiennent pas dans un seul livre : les langues de la Bible, le nombre de ses livres, les évangiles, les apôtres."))
              + corps_g)
-page("quiz-biblique/", "Quiz biblique : %s questions avec réponses, livre par livre | Yada" % nombre(TOTAL),
-     "%s questions de quiz biblique sur les 66 livres de la Bible, de la Genèse à l'Apocalypse, avec la réponse, l'explication et la référence de chacune. Gratuit." % nombre(TOTAL),
+page("quiz-biblique/", "Quiz biblique : %s questions, livre par livre | Yada" % nombre(TOTAL),
+     "%s questions de quiz biblique sur les 66 livres, de la Genèse à l'Apocalypse, avec la réponse, l'explication et la référence de chacune." % nombre(TOTAL),
      "".join(corps) + methode + generales + SCORE
      + appel("Joue à toutes ces questions dans Yada", "Un Parcours de 60 leçons, cinq jeux, des parties entre amis. Gratuit, sans compte.", "Jouer à Yada", "../"),
      rubrique="quiz-biblique/", script_quiz=True, priorite="0.9",
@@ -317,13 +366,25 @@ def entete(fragment):
     m = re.match(r"\s*<!--(\{.*?\})-->\s*", fragment, re.S)
     return json.loads(m.group(1)), fragment[m.end():]
 
-for nom in ("guide", "a-propos", "nouveautes"):
+LEGALES = ("mentions-legales", "contact")   # (v380) chacune sa page, sans annonces
+for nom in ("guide", "a-propos", "nouveautes") + LEGALES:
     meta, corps = entete(lire(os.path.join(ICI, "pages", nom + ".html")))
     corps = typo_html(corps.replace("1 796", nombre(TOTAL)))
     ch = meta["chemin"]
-    page(ch, meta["titre"], meta["description"], corps, rubrique=ch, priorite="0.8" if nom == "guide" else "0.6",
-         bandeau=(meta.get("sur_titre"), meta["h1"], meta.get("chapeau"), '<div class="actions"><a class="jouer grand" href="../">Jouer à Yada</a></div>' if nom != "nouveautes" else ""),
+    legale = nom in LEGALES
+    page(ch, meta["titre"], meta["description"], corps, rubrique=ch if not legale else None,
+         priorite="0.8" if nom == "guide" else ("0.3" if legale else "0.6"), pub=not legale,
+         bandeau=(meta.get("sur_titre"), meta["h1"], meta.get("chapeau"), '<div class="actions"><a class="jouer grand" href="../">Jouer à Yada</a></div>' if nom not in ("nouveautes",) + LEGALES else ""),
          miettes=[("", "Yada"), (ch, meta["titre_court"])])
+
+# (v380) LA PAGE INTROUVABLE. Une adresse qui n'existe pas montrait la page
+# d'erreur de l'hébergeur, sans un lien : elle ramène maintenant au jeu et au
+# site. Jamais indexée, jamais d'annonces ; ses liens sont absolus (elle peut
+# être servie à n'importe quelle profondeur).
+page("404/", "Page introuvable | Yada", "Cette page n'existe pas, ou plus. Retrouve le quiz biblique Yada, ses quiz par livre, son guide et ses questions fréquentes.",
+     '<p>%s</p>\n<ul class="liste-liens"><li><a href="%s">%s</a></li><li><a href="%squiz-biblique/">%s</a></li><li><a href="%sguide/">%s</a></li><li><a href="%sfaq/">%s</a></li></ul>\n'
+     % (e("L'adresse demandée ne mène à aucune page de Yada. Voici par où reprendre :"), SITE, e("Jouer à Yada"), SITE, e("Les quiz bibliques, livre par livre"), SITE, e("Le guide du jeu"), SITE, e("Les questions fréquentes")),
+     bandeau=("Erreur 404", "Page introuvable", None, ""), pub=False, index=False, fichier="404.html", racine=SITE)
 
 faq = json.loads(lire(os.path.join(ICI, "pages", "faq.json")))
 items = []
@@ -351,5 +412,12 @@ for ch, prio in urls:
     plan.append("  <url><loc>%s%s</loc><lastmod>%s</lastmod><priority>%s</priority></url>" % (SITE, ch, DATE, prio))
 plan.append("</urlset>")
 ecrire("sitemap.xml", "\n".join(plan) + "\n")
-ecrire("robots.txt", "# Yada — yadaquiz.app\nUser-agent: *\nAllow: /\n\nSitemap: %ssitemap.xml\n" % SITE)
+# (v380) Les dossiers de travail (bancs, SQL, sources du site, scripts des
+# Bibles) ne sont pas des pages : fermés aux robots. Tout ce que les pages
+# chargent (img/, fonts/, site/, questions-*.js) reste ouvert. L'ancienne page
+# d'essai reste ouverte, elle : Google doit pouvoir y lire qu'elle renvoie au
+# jeu et ne s'indexe pas, pour l'oublier.
+ecrire("robots.txt", "# Yada — yadaquiz.app\nUser-agent: *\nAllow: /\n"
+       + "".join("Disallow: /%s/\n" % d for d in ("banc-essai", "comptes", "groupes", "erreurs", "contenu", "bibles", "notifications"))
+       + "\nSitemap: %ssitemap.xml\n" % SITE)
 print("pages :", len(PAGES), "· questions :", TOTAL, "· sans livre :", len(SANS_LIVRE), "· plan :", len(urls), "adresses")

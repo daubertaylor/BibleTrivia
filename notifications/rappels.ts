@@ -77,7 +77,7 @@ const ABSENCES = [3, 7, 30];
 const FENETRE = 60;
 /* La version de ce code, dans chaque réponse : la page « Rappels » de la
    Modération dit ainsi si la fonction déployée est bien celle-ci. */
-const VERSION = 338;
+const VERSION = 380;   // (v380) une partie lancée appelle aussi les membres en « Mentions »
 /* Un essai demandé par un téléphone pour lui-même : un par minute au plus. */
 const ESSAI_DELAI = 60000;
 /* ===== LES MESSAGES DES GROUPES (v329) =====
@@ -398,7 +398,10 @@ Deno.serve(async (req: Request) => {
       const bloqueurs = new Set(blocs.map((b) => b.par));
       const d = m.donnees ?? {};
       const nommes = new Set(Array.isArray(d.mentions) ? d.mentions : []);
-      const pourTous = d.tous === true;
+      /* (v380) Une partie lancée appelle tout le groupe, comme « @tout le
+         monde » : un membre en « Mentions » est prévenu aussi. En « Muet »,
+         jamais. */
+      const pourTous = d.tous === true || m.genre === "partie";
       const dest = membres.filter((x) => {
         const mode = x.notifs ?? "tout";
         if (x.membre === m.auteur || bloqueurs.has(x.membre)) return false;

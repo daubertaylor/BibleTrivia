@@ -29,7 +29,20 @@
         bloqué non plus ;
     12. un succès à l'écran : le bandeau attend qu'il parte ;
     13. en anglais, les mots de l'anglais ;
-    14. aucune erreur.
+   (v380) « Lorsqu'une personne lance une partie, lorsque je suis sur le jeu
+     ou autre, je dois bien être notifié. »
+    14. l'app fermée pendant le lancement : à l'ouverture, il se dit (une
+        partie encore ouverte, récente, pas lue) ;
+    15. en Mentions, une partie lancée se dit (elle appelle tout le monde,
+        comme « @tout le monde »), et sonne ; en Muet, rien ;
+    16. PENDANT UNE PARTIE SOLO : elle se dit, et sonne — le bandeau porte la
+        manette, tient entre la flèche et la roue de l'en-tête, au-dessus du
+        chrono ; le toucher demande de quitter la partie, puis ouvre la
+        discussion, où l'invitation attend ;
+    17. pendant une partie de GROUPE : rien, pas un son ;
+    18. l'app cachée pendant le lancement : au retour, il se dit — une fois ;
+        fermé entre-temps, rien ;
+    19. aucune erreur.
    Usage : node banc-essai/bandeau-jeu.js [dossier des captures] */
 const { chromium } = require('/opt/node22/lib/node_modules/playwright');
 const { monter } = require('./faux-serveur-groupes.js');
@@ -86,8 +99,17 @@ const dit = (quoi, bon, detail) => { console.log('  ' + (bon ? 'OK  ' : 'KO  ') 
       if (!b || !b.classList.contains('vu')) return null;
       const r = b.getBoundingClientRect(), s = getComputedStyle(b);
       return { groupe: b.querySelector('b').textContent, ligne: b.querySelector('small').textContent, haut: Math.round(r.top), bas: Math.round(r.bottom), gauche: Math.round(r.left), droite: Math.round(r.right),
-        largeur: innerWidth, trait: s.borderTopWidth + ' ' + s.borderBottomWidth, g: b.dataset.g };
+        largeur: innerWidth, trait: s.borderTopWidth + ' ' + s.borderBottomWidth, g: b.dataset.g, manette: !!b.querySelector('.bm-manette') };
     });
+    /* (v380) Une partie de plus : celles de Taylor encore ouvertes se
+       ferment d'abord (une à la fois), et cinq secondes passent (la règle
+       du serveur). */
+    const relancer = async (g, code) => {
+      await m.sql("update public.messages set cree_le = cree_le - interval '6 seconds' where genre = 'partie'");
+      const ouvertes = String(await m.sql("select coalesce(string_agg(id::text, ','), '') from public.messages where genre = 'partie' and auteur = '" + A + "' and supprime_le is null and not coalesce((donnees->>'fermee')::boolean, false)") || '').split(',').filter(Boolean);
+      for (const id of ouvertes) await m.rpc(A, 'fermer_partie', { p_message: +id }).catch(() => {});
+      return ecrit(A, g, '', { code }, 'partie');
+    };
     const vient = (p, ms) => attendre(p, () => { const b = document.getElementById('bandeauMsg'); return !!b && b.classList.contains('vu') && +getComputedStyle(b).opacity > 0.95; }, null, ms || 4000);
     const aucun = async (p, ms) => { await p.waitForTimeout(ms || 1500); return !(await bandeau(p)); };
     const ranger = (p) => p.evaluate(() => { try { cacherBandeau(); } catch (e) {} });
@@ -130,7 +152,7 @@ const dit = (quoi, bon, detail) => { console.log('  ' + (bon ? 'OK  ' : 'KO  ') 
     await ecrit(A, amis, '', { code: 'ABCD12' }, 'partie');
     await vient(p);
     const b3 = await bandeau(p);
-    dit('3. une partie lancée : « Taylor a lancé une partie »', b3 && b3.ligne === 'Taylor a lancé une partie' && b3.groupe === 'Les amis', JSON.stringify(b3));
+    dit('3. une partie lancée : « Taylor a lancé une partie » — (v380) avec la manette', b3 && b3.ligne === 'Taylor a lancé une partie' && b3.groupe === 'Les amis' && b3.manette, JSON.stringify(b3));
 
     /* 4 */
     await p.locator('#bandeauMsg').tap();
@@ -257,7 +279,95 @@ const dit = (quoi, bon, detail) => { console.log('  ' + (bon ? 'OK  ' : 'KO  ') 
     dit('13. en anglais : « ' + (b13 && b13.ligne) + ' »', b13 && b13.ligne === 'Taylor started a game');
     await c13.close();
 
-    dit('14. aucune erreur', !erreurs.length, erreurs.slice(0, 3).join(' | '));
+    /* ===== (v380) UNE PARTIE LANCÉE SE DIT TOUJOURS ===== */
+    /* 14 — la partie de 13 a été lancée pendant que ce téléphone-ci était
+       fermé : à l'ouverture, elle se dit. */
+    const { ctx: c2, p: p2 } = await telephone();
+    const v14 = await vient(p2, 6000);
+    const b14 = await bandeau(p2);
+    dit('14. l\'app fermée pendant le lancement : à l\'ouverture, il se dit', v14 && b14 && b14.ligne === 'Taylor a lancé une partie' && b14.groupe === 'Les amis' && b14.manette, JSON.stringify(b14));
+    await ranger(p2);
+    await p2.evaluate(() => {
+      window.__sons = []; window.__osc = 0;
+      const a = window.sonMessage, b = window.sonGoutte;
+      const note = (nom, f) => function(){ const n0 = window.__osc; const r = f.apply(this, arguments); __sons.push(window.__osc > n0 ? nom : nom + '(muet)'); return r; };
+      window.sonMessage = note('message', a); window.sonGoutte = note('goutte', b);
+      const P = (window.AudioContext || window.webkitAudioContext).prototype, o = P.createOscillator;
+      P.createOscillator = function(){ window.__osc++; return o.apply(this, arguments); };
+      audioUnlocked = true;
+    });
+    const sons2 = () => p2.evaluate(() => ({ l: window.__sons.splice(0) }));
+    await p2.waitForTimeout(2200); await sons2();
+
+    /* 15 — en Mentions (la Chorale), en Muet (la Prière du soir) */
+    await relancer(chorale, 'CHOR15');
+    const v15 = await vient(p2);
+    const b15 = await bandeau(p2), s15 = await sons2();
+    await ranger(p2); await p2.waitForTimeout(2200); await sons2();
+    await relancer(priere, 'PRIE15');
+    const muet15 = await aucun(p2), s15b = await sons2();
+    dit('15. en Mentions, une partie lancée se dit (comme « @tout le monde »), et sonne ; en Muet, rien', v15 && b15 && b15.groupe === 'Chorale' && b15.ligne === 'Taylor a lancé une partie' && s15.l.join() === 'message' && muet15 && !s15b.l.length,
+      JSON.stringify({ b15: b15 && b15.groupe, s15: s15.l, muet: muet15, s15b: s15b.l }));
+
+    /* 16 — pendant une partie solo */
+    await p2.evaluate(() => startGame());
+    await attendre(p2, () => state.screen === 'play' && !!document.querySelector('#app > .screen:not(.screen-exit) .question-card'), null, 6000);
+    await p2.waitForTimeout(1600); await sons2();
+    await relancer(amis, 'SOLO16');
+    const v16 = await vient(p2);
+    const b16 = await bandeau(p2), s16 = await sons2();
+    const place16 = await p2.evaluate(() => {
+      const scr = document.querySelector('#app > .screen:not(.screen-exit)'), b = document.getElementById('bandeauMsg').getBoundingClientRect();
+      const btns = [...scr.querySelectorAll('.app-header .icon-btn')].map(x => x.getBoundingClientRect()).filter(r => r.width > 0);
+      const ch = scr.querySelector('.timer-chip').getBoundingClientRect(), q = scr.querySelector('.question-card').getBoundingClientRect();
+      const gauche = btns.filter(r => r.right <= innerWidth / 2), droite = btns.filter(r => r.left >= innerWidth / 2);
+      return { ok: gauche.length > 0 && gauche.every(r => b.left >= r.right) && droite.every(r => b.right <= r.left) && b.bottom <= ch.top && b.bottom <= q.top,
+        bandeau: [Math.round(b.left), Math.round(b.right), Math.round(b.bottom)], boutons: btns.map(r => [Math.round(r.left), Math.round(r.right)]), chrono: Math.round(ch.top) };
+    });
+    dit('16. pendant une partie solo : elle se dit, avec la manette, et sonne — entre la flèche et la roue, au-dessus du chrono',
+      v16 && b16 && b16.ligne === 'Taylor a lancé une partie' && b16.manette && s16.l.join() === 'message' && place16.ok, JSON.stringify({ s16: s16.l, place16 }));
+    await p2.locator('#bandeauMsg').tap();
+    const fenetre16 = await attendre(p2, () => !!document.querySelector('.modal-veil:not(.closing) .modal-btn.ok'), null, 3000);
+    const encore16 = await p2.evaluate(() => state.screen);
+    await p2.locator('.modal-veil:not(.closing) .modal-btn.ok').tap();
+    const ouvert16 = await attendre(p2, (g) => state.screen === 'groupe' && grp.courant === g && [...document.querySelectorAll('#fil .b-partie')].some(x => !x.classList.contains('finie')), amis.id, 8000);
+    dit('    le toucher demande de quitter la partie, puis ouvre la discussion, où l\'invitation attend', fenetre16 && encore16 === 'play' && ouvert16,
+      'fenêtre ' + fenetre16 + ' · avant : ' + encore16 + ' · après : ' + (await p2.evaluate(() => state.screen + ' / ' + grp.courant + ' / ' + document.querySelectorAll('#fil .b-partie').length)));
+    await p2.evaluate(() => retourGroupes());
+    await attendre(p2, () => state.screen === 'groupes', null, 4000);
+    await p2.evaluate(() => { state.screen = 'mode'; render(); });
+    await p2.waitForTimeout(2200); await sons2();
+
+    /* 17 — pendant une partie de groupe */
+    await p2.evaluate(() => { window.__ecran = state.screen; state.screen = 'online-play'; });
+    await relancer(amis, 'GRP17');
+    const rien17 = await aucun(p2), s17 = await sons2();
+    await p2.evaluate(() => { state.screen = window.__ecran; });
+    dit('17. pendant une partie de groupe : rien, pas un son', rien17 && !s17.l.length, JSON.stringify(s17));
+    await m.rpc(A, 'fermer_partie', { p_message: +(await m.sql("select max(id) from public.messages where genre = 'partie'")) }).catch(() => {});
+    await p2.waitForTimeout(1200);
+
+    /* 18 — l'app cachée pendant le lancement, puis revenue */
+    await p2.evaluate(() => { window.__cache = false; Object.defineProperty(document, 'hidden', { configurable: true, get(){ return window.__cache === true; } }); window.__cache = true; });
+    await relancer(amis, 'CACH18');
+    const cache18 = await aucun(p2, 1500);
+    await p2.evaluate(() => { window.__cache = false; chargerListes(); });
+    const v18 = await vient(p2, 5000);
+    const b18 = await bandeau(p2);
+    await ranger(p2); await p2.waitForTimeout(600);
+    await p2.evaluate(() => chargerListes());
+    const une18 = await aucun(p2, 2000);
+    await p2.evaluate(() => { window.__cache = true; });
+    const ferme = await relancer(amis, 'FERM18');
+    await m.rpc(A, 'fermer_partie', { p_message: +ferme }).catch(() => {});
+    await p2.waitForTimeout(1200);
+    await p2.evaluate(() => { window.__cache = false; chargerListes(); });
+    const ferme18 = await aucun(p2, 2500);
+    dit('18. l\'app cachée pendant le lancement : au retour, il se dit — une fois ; fermé entre-temps, rien',
+      cache18 && v18 && b18 && b18.ligne === 'Taylor a lancé une partie' && une18 && ferme18, JSON.stringify({ cache18, b18: b18 && b18.ligne, une18, ferme18 }));
+    await c2.close();
+
+    dit('19. aucune erreur', !erreurs.length, erreurs.slice(0, 3).join(' | '));
   } catch (e) {
     console.error(e); ko++;
   } finally {
