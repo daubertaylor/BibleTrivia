@@ -1769,6 +1769,18 @@
   /* Le texte reste bien à l'intérieur de l'anneau, sans jamais le toucher. */
   .ring-center{ position:absolute; inset:0; display:flex; flex-direction:column; align-items:center; justify-content:center; text-align:center; padding:0 0.7rem; }
   .ring-score{ font-family:'Poppins',sans-serif; font-weight:700; font-size:1.9rem; line-height:1; color:var(--ink); }
+  /* (v383) LE POURCENTAGE COMPTE SANS GLISSER DE CÔTÉ. Il compte de 0 % à
+     son score pendant que l'écran arrive ; centré, il se décalait de 4 à
+     9 px chaque fois qu'un chiffre s'ajoutait (« 9 % » → « 10 % »). Sa place
+     finale est réservée dès la première image (le score lui-même, caché,
+     fait la boîte) et il compte calé sur son bord droit : le « % » ne bouge
+     pas, les chiffres naissent à sa gauche, et à la fin tout est centré. Le
+     chiffre qui compte est posé PAR-DESSUS la boîte : un « 3 » plus large
+     qu'un « 7 » (les chiffres de cette police n'ont pas tous la même
+     largeur) ne la fait pas grandir, donc rien ne se recentre en route. */
+  .ring-score.rs-cale{ position:relative; display:inline-block; font-variant-numeric:tabular-nums; }
+  .ring-score.rs-cale > .rs-place{ visibility:hidden; }
+  .ring-score.rs-cale > .rs-vif{ position:absolute; top:0; right:0; white-space:nowrap; }
   .ring-label{ font-size:0.62rem; color:var(--ink-soft); text-transform:uppercase; letter-spacing:0.04em; margin-top:0.3rem; white-space:nowrap; }
   .solo-stats{ display:flex; justify-content:center; gap:0; margin-top:0.3rem; }
   .solo-stat{ flex:1; padding:0 0.5rem; }
@@ -2645,6 +2657,15 @@
     left:var(--encre-l, 0px); top:var(--encre-t, 0px); width:var(--encre-w, 100%); height:var(--encre-h, 100%);
     border-radius:var(--encre-br, inherit); transform-origin:var(--encre-ox, 50%) var(--encre-oy, 50%);
     background:rgb(236,60,26); }
+  /* (v383) La goutte posée (voir LA GOUTTE QUI A REMPLI LA PUCE RESTE POSÉE) :
+     exactement la dernière image de la goutte-puce, figée. Le fond reste
+     retiré dessous, comme pendant le remplissage (même nombre de couches au
+     bord : rien ne fonce, rien ne s'éclaircit). */
+  .chip.encre-posee::after, .len-chip.encre-posee::after, .bk-choix.encre-posee::after{
+    left:var(--encre-l, 0px); top:var(--encre-t, 0px); width:var(--encre-w, 100%); height:var(--encre-h, 100%);
+    border-radius:var(--encre-br, inherit); transform-origin:var(--encre-ox, 50%) var(--encre-oy, 50%);
+    background:rgb(236,60,26); transform:scale(1); opacity:1; animation:none; }
+  .chip.has-gs.encre-posee, .len-chip.has-gs.encre-posee{ background-color:transparent; }
   /* L'encre arrive un peu claire et fonce en s'étalant : elle « prend ». */
   @keyframes encreIn{ 0%{ transform:scale(0.03); opacity:0.62; } 40%{ opacity:1; } 100%{ transform:scale(1); opacity:1; } }
   /* Elle se retire en restant pleine — une couleur qui s'en va, pas une
@@ -5294,6 +5315,40 @@
   .switch::after{ content:""; position:absolute; top:0.16rem; left:0.16rem; width:1.23rem; height:1.23rem; border-radius:50%; background:#fff; box-shadow:0 1px 2px rgba(30,22,14,0.16), 0 2px 6px rgba(30,22,14,0.12); transition:transform 0.3s cubic-bezier(0.2,1.2,0.35,1); }
   .switch.on{ background:var(--pal-vert-b); --rim-edge:0 0 0 1px transparent; }
   .switch.on::after{ transform:translateX(1.2rem); }
+  /* ===== (v383) DES INTERRUPTEURS PLUS LONGS, ÉTIRÉS, MINIMALISTES =====
+     « Ces boutons-ci, affine-les, rends-les plus modernes, sans trop changer
+       leur style. » Puis : « Je veux qu'ils soient plus longs, de façon
+       moderne, pas juste un rond. De façon minimaliste, et plus étirés. »
+     Même rail plat — comme demandé en v355 (« plus plat, plus moderne ») :
+     un aplat, sans ombre ni trait autour, jamais de bordure de couleur —,
+     même vert, même blanc. Ce qui change, c'est la forme :
+       — un rail LONG : 4 rem sur 1,6 (66 × 27 sur un iPhone de 402 points),
+         au lieu de 2,75 sur 1,55 — près de moitié plus long (voir plus bas
+         pour les écrans plus étroits) ;
+       — un galet ÉTIRÉ en capsule, 2,5 rem sur 1,3, presque deux fois plus
+         long que haut, au lieu d'un rond : il occupe le rail, avec le même
+         jour fin tout autour (0,15 rem), allumé comme éteint ;
+       — minimaliste : un blanc plein, sans reflet ni dégradé, et une seule
+         ombre neutre, courte, qui le décolle du rail — le galet est seul à
+         en avoir une ;
+       — tenu au doigt, il s'étire encore vers où il va, et se pose d'un
+         petit ressort ; le vert arrive sur la courbe d'arrivée du jeu. */
+  /* SA LONGUEUR SUIT L'ÉCRAN, SA COURSE NE CHANGE PAS. 4 rem dès un iPhone de
+     402 points ; un peu moins en dessous, jusqu'à 3,3 rem sur 320 points —
+     sinon, à 360 points (bien des Android), le sous-titre de « Rapports de
+     bug » passait sur deux lignes, et à 320 celui d'un rappel. Le galet garde
+     toujours 1,5 rem de moins que le rail, et la même course (1,2 rem). */
+  .switch{ --sw-l:clamp(3.3rem, calc(3.3rem + (100vw - 320px) * 0.145), 4rem);
+    width:var(--sw-l); height:1.6rem; background-color:rgba(42,36,30,0.13); background-image:none; box-shadow:none;
+    transition:background-color 0.3s cubic-bezier(0.33,1,0.68,1); }
+  .switch.on{ background-color:var(--pal-vert-b); box-shadow:none; }
+  .switch::after{ top:0.15rem; left:0.15rem; width:calc(var(--sw-l) - 1.5rem); height:1.3rem; border-radius:var(--r-full);
+    background:#fff; box-shadow:0 1px 2px rgba(30,22,14,0.16), 0 2px 7px rgba(30,22,14,0.1);
+    transition:transform 0.36s cubic-bezier(0.25,1.25,0.4,1), width 0.22s cubic-bezier(0.33,1,0.68,1); }
+  .switch.on::after{ transform:translateX(1.2rem); }
+  .switch:active::after{ width:calc(var(--sw-l) - 1.15rem); }
+  .switch.on:active::after{ transform:translateX(0.85rem); }
+  .switch:disabled{ opacity:0.45; }
   .vol-row{ display:flex; align-items:center; gap:0.7rem; padding:0.15rem 0.1rem 0.4rem; }
   .vol-row .vr-ico{ width:1.05rem; height:1.05rem; color:var(--ink-soft); flex-shrink:0; display:inline-flex; }
   /* ===== LE CURSEUR DE VOLUME FAISAIT DIX PIXELS DE HAUT =====
@@ -7533,6 +7588,15 @@
   .bq-gemme{ width:3.1rem; height:3.1rem; border-radius:var(--r-ico); display:flex; align-items:center; justify-content:center; padding:0.64rem; color:#fff; background:var(--pal-ciel); flex-shrink:0;
     box-shadow:inset 0 1px 0 rgba(255,255,255,0.26), 0 2px 7px var(--pal-ciel-o); }
   .bq-gemme .ico{ width:100%; height:100%; display:flex; }
+  /* (v383) LE TAS DE TROIS GEMMES de la réserve : sur une tuile claire, comme
+     les autres articles (aucune ombre colorée) ; seule la gemme de devant se
+     décolle des deux autres, d'une ombre neutre et courte. */
+  .bq-gemme.bq-tas{ position:relative; padding:0; background:rgba(39,125,196,0.1); box-shadow:none; }
+  .bq-tas .g{ position:absolute; width:1.3rem; height:1.3rem; display:block; }
+  .bq-tas .g svg{ display:block; }
+  .bq-tas .g1{ left:0.43rem; top:0.62rem; transform:rotate(-14deg); }
+  .bq-tas .g2{ right:0.43rem; top:0.62rem; transform:rotate(14deg); }
+  .bq-tas .g0{ left:calc(50% - 0.7rem); top:1.12rem; width:1.4rem; height:1.4rem; filter:drop-shadow(0 1px 1.5px rgba(30,22,14,0.22)); }
   .bq-n{ display:flex; flex-direction:column; min-width:0; }
   .bq-n b{ font-family:'Poppins',sans-serif; font-size:1.6rem; font-weight:600; color:var(--ink); line-height:1.1; font-variant-numeric:tabular-nums; }
   .bq-n small{ font-size:0.8rem; color:var(--ink-soft); }
@@ -10735,7 +10799,17 @@ const ICONS = {
      facettes (des voiles de blanc et d'ombre sur sa couleur, sans dégradé
      nommé : il peut paraître dix fois dans une page) ; le coffre, la
      boutique au trait, comme leurs voisins. */
-  diamant: `<svg viewBox="0 0 24 24" stroke="none"><path fill="currentColor" d="M7 4h10l4.2 5.4L12 20.6 2.8 9.4Z"/><path fill="#fff" fill-opacity="0.42" d="M7 4h10l-2.6 5.4H9.6Z"/><path fill="#fff" fill-opacity="0.62" d="M7 4 9.6 9.4H2.8Z"/><path fill="#fff" fill-opacity="0.16" d="M2.8 9.4h6.8L12 20.6Z"/><path fill="#000" fill-opacity="0.12" d="M14.4 9.4h6.8L12 20.6Z"/></svg>`,
+  /* (v383) UNE GEMME, PAS UN DIAMANT DE DESSIN ANIMÉ. « Continue le travail
+     sur les gemmes et tout ce qui va avec. » Le mot est « gemmes » depuis la
+     v379 ; le dessin, lui, restait un diamant taillé en brillant, le 💎 de
+     tous les jeux. Le voici en pierre taillée : un octogone (son rondiste),
+     une table au centre, huit facettes — la lumière prise en haut, l'ombre
+     en bas, un reflet sur la table. Toujours d'une seule couleur (des voiles
+     de blanc et d'ombre sur currentColor, sans dégradé nommé) : la même
+     pierre prend le bleu du compteur, le bleu clair des scènes sombres, le
+     blanc du bouton d'achat, le gris quand il est grisé. Le nom interne
+     (ICONS.diamant) ne change pas. */
+  diamant: `<svg viewBox="0 0 24 24" stroke="none"><polygon fill="currentColor" points="8,2.5 16,2.5 21,7.5 21,16.5 16,21.5 8,21.5 3,16.5 3,7.5"/><path fill="#fff" fill-opacity="0.5" d="M8 2.5 16 2.5 14.3 7 9.7 7ZM3 7.5 8 2.5 9.7 7 7 9.7Z"/><path fill="#fff" fill-opacity="0.62" d="M16 2.5 21 7.5 17 9.7 14.3 7Z"/><path fill="#fff" fill-opacity="0.18" d="M3 16.5 3 7.5 7 9.7 7 14.3Z"/><path fill="#000" fill-opacity="0.24" d="M21 16.5 16 21.5 14.3 17 17 14.3ZM8 21.5 3 16.5 7 14.3 9.7 17Z"/><path fill="#000" fill-opacity="0.34" d="M16 21.5 8 21.5 9.7 17 14.3 17Z"/><polygon fill="#fff" fill-opacity="0.28" points="9.7,7 14.3,7 7,14.3 7,9.7"/></svg>`,
   coffre: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M4 10.4h16v7.8a1.8 1.8 0 0 1-1.8 1.8H5.8A1.8 1.8 0 0 1 4 18.2Z"/><path d="M4 10.4V8.6A4.6 4.6 0 0 1 8.6 4h6.8A4.6 4.6 0 0 1 20 8.6v1.8"/><rect x="10.2" y="9" width="3.6" height="4.4" rx="1"/></svg>`,
   coffreOuvert: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M4 12h16v6.2A1.8 1.8 0 0 1 18.2 20H5.8A1.8 1.8 0 0 1 4 18.2Z"/><path d="M4.6 12 3.3 6.9a1.2 1.2 0 0 1 .9-1.5l13.3-2.7a1.2 1.2 0 0 1 1.4 1l1 4.6"/><line x1="12" y1="14.6" x2="12" y2="16.8"/></svg>`,
   boutique: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M5.6 8h12.8l-1 11.2a1.8 1.8 0 0 1-1.8 1.6H8.4a1.8 1.8 0 0 1-1.8-1.6Z"/><path d="M9 8V6.6a3 3 0 0 1 6 0V8"/></svg>`,
@@ -12951,7 +13025,7 @@ const SUPABASE_ANON_KEY = "sb_publishable_FDJ_R0foC7uIeHmxVrj6rA_2NeIgW2a";
    remontée d'un téléphone ne vaut rien si on ne sait pas QUELLE version
    tournait. Elle doit rester égale au CACHE de sw.js — c'est ce que vérifie
    banc-essai/version.js, qui refuse de laisser publier les deux en désaccord. */
-const VERSION_JEU = "v382";
+const VERSION_JEU = "v383";
 
 /* ===================== QUAND ÇA CASSE CHEZ UN JOUEUR =====================
    « Si quelque chose casse chez cinq d'entre eux sur un modèle de téléphone
@@ -15250,6 +15324,29 @@ function sonderOuverture(f){
   if(!SONDE || !f) return;
   const t0 = performance.now(), l = [];
   let fin = -1, debut = -1;
+  /* (v383) « Les pages s'ouvrent, puis c'est comme si elles se chargeaient
+     une deuxième fois. » La sonde ne regardait que le bord HAUT d'une
+     feuille qui monte. Elle regarde maintenant aussi : la page qui arrive de
+     côté (recule-t-elle ?), les images trop longues (un arrêt en route se
+     voit comme un second départ), et tout ce qui se refait DANS la page
+     après son arrivée. */
+  const voileS = f.closest ? f.closest(".sheet-veil, .modal-veil") : null;
+  const lx = [], refaits = [];
+  let obsS = null;
+  try{
+    if(voileS){
+      obsS = new MutationObserver(ms => {
+        const t = Math.round(performance.now() - t0);
+        for(const m of ms){
+          const c = m.target && m.target.classList;
+          if(m.type === "attributes" && (m.target === voileS || m.target === f || (c && (c.contains("gs") || c.contains("glass-rim"))) || m.attributeName === "style")) continue;
+          if(m.type === "childList" && ![...m.addedNodes, ...m.removedNodes].some(n => !(n.classList && (n.classList.contains("gs") || n.classList.contains("glass-rim"))))) continue;
+          refaits.push([t, (m.target.className && typeof m.target.className === "string" ? m.target.className.split(" ")[0] : m.target.nodeName)]);
+        }
+      });
+      obsS.observe(voileS, { subtree:true, childList:true, characterData:true, attributes:true });
+    }
+  }catch(e){}
   f.addEventListener("animationstart", (e)=>{ if(e.target === f && debut < 0) debut = Math.round(performance.now() - t0); });
   f.addEventListener("animationend", (e)=>{ if(e.target === f && fin < 0) fin = Math.round(performance.now() - t0); });
   const montrer = ()=>{
@@ -15300,6 +15397,18 @@ function sonderOuverture(f){
           return "DESSOUS décor ±" + d.toFixed(2) + " px" + (d > 0.3 ? " @" + q + " ms" : "")
                + "   " + ld.length + " images";
         })();
+    /* (v383) La page de côté, les images, ce qui se refait. */
+    try{
+      if(obsS) obsS.disconnect();
+      let recul = 0, quandRecul = 0, finX = lx.length ? lx[lx.length - 1][1] : 0;
+      for(let i = 1; i < lx.length; i++){ const d = Math.abs(lx[i][1] - finX) - Math.abs(lx[i - 1][1] - finX); if(d > recul){ recul = d; quandRecul = lx[i][0]; } }
+      let longue = 0, quandLongue = 0, lentes = 0;
+      for(let i = 1; i < l.length; i++){ const d = l[i][0] - l[i - 1][0]; if(d > longue){ longue = d; quandLongue = l[i][0]; } if(d > 34) lentes++; }
+      const apres = refaits.filter(r => r[0] > 50);
+      box.textContent += "\nPAGE de côté : recule max " + recul.toFixed(2) + " px" + (recul > 0.3 ? " @" + quandRecul + " ms" : "")
+        + "\nIMAGE la plus longue " + longue + " ms @" + quandLongue + " ms · " + lentes + " au-dessus de 34 ms"
+        + "\nREFAIT dans la page : " + apres.length + (apres.length ? " (1er @" + apres[0][0] + " ms : " + apres[0][1] + ")" : "");
+    }catch(e){}
     box.addEventListener("click", ()=>{ try{ box.remove(); }catch(e){} });
     document.body.appendChild(box);
   };
@@ -15330,6 +15439,7 @@ function sonderOuverture(f){
       const b = f.getBoundingClientRect();
       const gs = f.querySelector(":scope > .gs");
       l.push([Math.round(t), b.top, b.height, gs ? gs.getBoundingClientRect().top : null]);
+      if(voileS && voileS.isConnected) lx.push([Math.round(t), voileS.getBoundingClientRect().left]);
     }
     if(dessous && dessous.isConnected){
       const g2 = dessous.querySelector(":scope > .gs");
@@ -15479,6 +15589,7 @@ function pageOuverte(veil){
     if(!veil.isConnected || veil.classList.contains("closing") || veil.classList.contains("posee")) return;
     veil.classList.add("posee");
     majPages();
+    viderApresPose(veil);      // (v383) voir CE QUI ARRIVE PENDANT QU'UNE PAGE GLISSE
   };
   veil.addEventListener("animationend", (e)=>{ if(e.target === veil && e.animationName === "pageIn") posee(); });
   /* Filet : onglet caché pendant l'arrivée, animation coupée. */
@@ -15506,6 +15617,39 @@ function pageOuverte(veil){
   /* La page qui commence à partir rend le dessous et l'historique. */
   try{ new MutationObserver(majPages).observe(veil, { attributes:true, attributeFilter:["class"] }); }catch(e){}
   majPages();
+}
+/* ===== (v383) CE QUI ARRIVE PENDANT QU'UNE PAGE GLISSE ATTEND QU'ELLE SOIT POSÉE =====
+   « Les pages s'ouvrent, puis c'est comme si elles se chargeaient une
+     deuxième fois. » Filmé image par image, avec un réseau de téléphone : la
+   page d'un joueur arrivait avec des tirets, et à +280 ms — en plein
+   glissement — ses chiffres, ses testaments, ses objectifs et sa flamme
+   étaient tous REFAITS d'un coup, même quand rien n'avait changé. Comme pour
+   les écrans (voir apresPassage), ce que le réseau apporte pendant qu'une
+   page glisse attend qu'elle soit posée, et une mise à jour identique ne
+   touche à rien. */
+function apresPose(el, fn, cle){
+  const v = el && el.closest ? el.closest(".sheet-veil") : null;
+  if(!v || !v.classList.contains("page") || v.classList.contains("posee") || v.classList.contains("closing") || !v.isConnected){ fn(); return; }
+  (v._apresPose = v._apresPose || new Map()).set(cle || ("f" + Math.random()), fn);
+}
+function viderApresPose(v){
+  const l = v && v._apresPose; if(!l || !l.size) return;
+  v._apresPose = null;
+  l.forEach(f => { try{ f(); }catch(e){} });
+}
+/* Un contenu neuf ne remplace l'ancien que s'il en diffère. Les deux sont
+   relus par le navigateur (escapeHtml n'écrit pas les apostrophes comme lui),
+   et les identifiants propres de chaque icône à dégradé (voir idsPropres :
+   « flA-i3 », puis « flA-i4 » pour la même flamme) ne comptent pas. */
+function poserSiChange(el, html){
+  if(!el) return false;
+  try{
+    const d = el.cloneNode(false); d.innerHTML = html;
+    const lu = (x)=> x.innerHTML.replace(/(id="|url\(#)([^")]*?)-i[0-9a-z]+(?=[")])/g, "$1$2");
+    if(lu(d) === lu(el)) return false;
+  }catch(e){}
+  el.innerHTML = html;
+  return true;
 }
 /* Le retrait d'un voile (fin de sortie) : on recompte. */
 try{ new MutationObserver(majPages).observe(document.body, { childList:true }); }catch(e){}
@@ -17768,7 +17912,7 @@ try{
     return [sorte, v, innerWidth, innerHeight, sabVif()].join(",");
   };
   let corrige = 0;     // la correction apprise appliquée à la dernière mesure (pour le relevé)
-  const hauteurVisible = ()=>{
+  const hauteurVisibleSansBorne = ()=>{
     const v = hauteurMesuree();
     corrige = 0;
     if(!ANDROID || !appris.length || !isField() || !(restH - v > 90)) return v;
@@ -17804,7 +17948,99 @@ try{
     let d = a.d;
     if(d > 0) d = Math.max(0, d - Math.max(0, compense - (+a.c || 0)));
     corrige = Math.round(d * part);
+    if(corrige && performance.now() - ouvertureT <= 750) apprisVus.add(a.s);   // (v383) voir UNE CORRECTION QUI NE SERT QU'EN PASSANT
     return Math.max(0, Math.min(vv.height, v - d * part));
+  };
+  /* ===== (v383) À L'OUVERTURE, LA BARRE NE MONTE PAS PLUS HAUT QUE LA DERNIÈRE FOIS =====
+     « Le clavier Android monte trop haut lors de l'ouverture, puis il
+       redescend parfaitement à la bonne taille. » La place finale est juste ;
+     c'est PENDANT la montée qu'une annonce passagère du téléphone (une
+     marge, une fenêtre, une sorte de clavier qui change d'une image à
+     l'autre — chaque navigateur, chaque mode d'installation le dit à sa
+     façon) faisait croire à un clavier plus haut qu'il n'est : la barre
+     montait au-dessus, puis redescendait quand l'annonce se reprenait.
+     Le jeu retient donc, pour cette fenêtre (sa largeur, sa hauteur au
+     repos) et ce clavier (texte ou chiffres), la place où la barre s'est
+     POSÉE la dernière fois (bt_clavier_fin).
+     Pendant les 0,75 s de l'ouverture suivante, elle ne monte jamais plus
+     haut : elle va droit à sa place. Une fois l'ouverture passée, la mesure
+     reprend toute la main — un clavier vraiment plus haut (les émojis, un
+     autre clavier) a sa place, un instant plus tard. Sur iPhone (qui dit son
+     clavier d'un coup) rien ne change. */
+  const CLE_FIN = "bt_clavier_fin";
+  let finsConnues = {}, ouvertureT = -1e9, poseOuverture = false;
+  const apprisVus = new Set();
+  try{
+    const f = JSON.parse(localStorage.getItem(CLE_FIN) || "null");
+    if(f && typeof f === "object") for(const k in f){ const x = f[k]; if(x && typeof x.v === "number" && Date.now() - (+x.t || 0) < 60 * 864e5) finsConnues[k] = x; }
+  }catch(e){}
+  /* La place dépend de la fenêtre (sa largeur, sa hauteur au repos) et du
+     CLAVIER : celui des chiffres (le code de connexion) est plus bas que
+     celui du texte — chacun la sienne. */
+  const cleFin = ()=>{
+    const a = document.activeElement;
+    const chiffres = !!a && (/^(numeric|decimal|tel)$/.test(a.inputMode || "") || /^(number|tel)$/.test(a.type || ""));
+    return innerWidth + "x" + restInner + (chiffres ? ":n" : ":t");
+  };
+  document.addEventListener("focusin", (e)=>{
+    const el = e.target;
+    if(ANDROID && el && (el.tagName === "INPUT" || el.tagName === "TEXTAREA") && !de.classList.contains("kb")){ ouvertureT = performance.now(); apprisVus.clear(); poseOuverture = true; }
+  }, true);
+  let borne = 0;       // ce que la borne a retenu à la dernière mesure (pour le relevé)
+  let finBorneT = 0;
+  const hauteurVisible = ()=>{
+    const v = hauteurVisibleSansBorne();
+    borne = 0;
+    const fc = ANDROID ? finsConnues[cleFin()] : null;
+    if(!fc || !isField() || !(restH - v > 90)) return v;
+    const ecoule = performance.now() - ouvertureT;
+    if(ecoule > 750) return v;
+    const b = Math.min(restH, fc.v);
+    if(v < b){
+      borne = Math.round(b - v);
+      /* La borne tombe d'elle-même à la fin de l'ouverture : un clavier
+         vraiment plus haut reprend alors sa place, même si rien ne bouge
+         plus (aucune annonce ne viendrait relancer la mesure). */
+      if(!finBorneT) finBorneT = setTimeout(()=>{ finBorneT = 0; try{ apply(); }catch(e){} }, Math.max(0, 750 - ecoule) + 30);
+      return b;
+    }
+    return v;
+  };
+  /* La place posée, retenue (au relevé « pose », clavier immobile depuis
+     0,9 s). */
+  /* ===== (v383) UNE CORRECTION QUI NE SERT QU'EN PASSANT S'OUBLIE =====
+     Ce que le geste a appris (v359) s'attache à une annonce précise du
+     clavier. L'ancien Chrome annonçait son clavier à sa façon ; celui
+     d'aujourd'hui l'annonce juste — mais il peut encore passer, pendant la
+     montée, par une annonce qui ressemble à l'ancienne. La correction apprise
+     s'y appliquait : la barre montait d'autant, puis redescendait quand
+     l'annonce juste arrivait (sans correction). Une correction qui a servi
+     pendant la montée (les 0,75 s de l'ouverture) mais PAS à la place où
+     cette ouverture s'est posée n'est donc plus utile sur ce téléphone :
+     elle s'oublie. Une correction qui sert à la place posée reste (le
+     navigateur qui ne compte les boutons qu'après un geste en a besoin à
+     chaque ouverture). */
+  const retenirFin = ()=>{
+    try{
+      if(!ANDROID || !isField()) return;
+      const v = Math.round(hauteurVisibleSansBorne());
+      if(!(restH - v > 90)) return;
+      finsConnues[cleFin()] = { v, t:Date.now() };
+      /* Six au plus (deux claviers, un écran tourné…), les plus récentes. */
+      const k = Object.keys(finsConnues).sort((a, b) => finsConnues[b].t - finsConnues[a].t);
+      k.slice(6).forEach(x => { delete finsConnues[x]; });
+      localStorage.setItem(CLE_FIN, JSON.stringify(finsConnues));
+      /* Seulement la pose qui CLÔT une ouverture : ce qu'un geste fait plus
+         tard (le navigateur qui se reprend sous le doigt) n'en dit rien. */
+      if(poseOuverture){
+        poseOuverture = false;
+        if(!corrige && apprisVus.size){
+          appris = appris.filter(x => !apprisVus.has(x.s));
+          localStorage.setItem(CLE_APPRIS, JSON.stringify(appris));
+        }
+        apprisVus.clear();
+      }
+    }catch(e){}
   };
   let toucherPage = 0, posee = null, avantGeste = null, apprendreT = 0;
   document.addEventListener("pointerdown", ()=>{ toucherPage = performance.now(); }, { capture:true, passive:true });
@@ -17871,18 +18107,55 @@ try{
         repos: { fen:restInner, vv:Math.round(restH), sab:sabRepos },
         ouvert: { fen:innerHeight, vv:Math.round(vv.height), vvTop:Math.round(vv.offsetTop || 0), sab:sabVif(), clavier:r },
         mesure: Math.round(hauteurMesuree()), visible: Math.round(hauteurVisible()), appris: corrige, boutons: compense,
+        /* (v383) Voir LE FILM DE L'OUVERTURE : [t, fenêtre, zone, décalage,
+           clavier [y, h], marge, mesure, appris, borne, visible, affichée,
+           bas du champ]. Et la place retenue de la dernière fois. */
+        ouverture: quoi === "pose" && filmOuv ? filmOuv.slice() : undefined, fin: (finsConnues[cleFin()] || {}).v || null,
         champ: { haut:Math.round(champ.top), bas:Math.round(champ.bottom) },
         ecran: (typeof state !== "undefined" && state) ? state.screen : "" };
       let l = [];
       try{ l = JSON.parse(localStorage.getItem(CLE_RELEVE) || "[]"); }catch(e){}
       if(!Array.isArray(l)) l = [];
       l.unshift(rel);
+      if(rel.ouverture) filmOuv = null;
       localStorage.setItem(CLE_RELEVE, JSON.stringify(l.slice(0, 6)));
     }catch(e){}
   };
+  /* ===== (v383) LE FILM DE L'OUVERTURE, DANS LE RELEVÉ =====
+     Le relevé disait où tout s'était POSÉ ; le défaut décrit est pendant
+     la montée. Pendant 1,2 s après qu'un champ prend le foyer (Android
+     seulement), chaque image où quelque chose change est notée : le temps,
+     la fenêtre, la zone visible et son décalage, le clavier annoncé, la
+     marge du bas, la mesure, la place retenue (la correction apprise et la
+     borne d'ouverture), la hauteur affichée, et le bas du champ à l'écran.
+     Il part avec le relevé « pose » qui suit. Rien n'est envoyé : il se
+     copie, comme le reste. */
+  let filmOuv = null;
+  document.addEventListener("focusin", (e)=>{
+    const el = e.target;
+    if(!ANDROID || !el || !(el.tagName === "INPUT" || el.tagName === "TEXTAREA") || de.classList.contains("kb")) return;
+    const t0 = performance.now(), l = [];
+    filmOuv = l;
+    let der = "";
+    const pas = ()=>{
+      if(filmOuv !== l) return;
+      const t = performance.now() - t0;
+      try{
+        let r = null;
+        try{ const b = vk && vk.boundingRect; if(b && b.height > 0) r = [Math.round(b.y), Math.round(b.height)]; }catch(err){}
+        const a = document.activeElement, ch = a && a.getBoundingClientRect ? Math.round(a.getBoundingClientRect().bottom) : null;
+        const vis = Math.round(hauteurVisible());
+        const ligne = [innerHeight, Math.round(vv.height), Math.round(vv.offsetTop || 0), r, sabVif(), Math.round(hauteurMesuree()), corrige, borne, vis, Math.round(vvhVu), ch];
+        const k = JSON.stringify(ligne);
+        if(k !== der && l.length < 60){ der = k; l.push([Math.round(t)].concat(ligne)); }
+      }catch(err){}
+      if(t < 1200) requestAnimationFrame(pas);
+    };
+    requestAnimationFrame(pas);
+  }, true);
   const relever = ()=>{
     clearTimeout(releveT);
-    releveT = setTimeout(()=>ecrireReleve("pose"), 900);
+    releveT = setTimeout(()=>{ retenirFin(); ecrireReleve("pose"); }, 900);
   };
   let gesteOuverture = 0, gesteNote = -1;
   document.addEventListener("focusin", ()=>{ gesteOuverture++; }, true);
@@ -24215,14 +24488,28 @@ function poserEncre(c, x, y, plein){
      l'ellipse), sa boîte est la puce. */
   const pb = plein == null ? ENCRE_BOITE : plein;
   const cs = getComputedStyle(c);
-  const coin = (v)=> ((parseFloat(v) || 0) / pb).toFixed(2) + "px";
+  /* (v383) UN PIXEL DE MARGE TOUT AUTOUR. offsetWidth et offsetHeight sont
+     des pixels ENTIERS, et une puce ne l'est presque jamais (la « Normale »
+     mesure 45,65 px de haut sur un iPhone de 402 px : 2,75 rem). Arrondie
+     en dessous, la goutte s'arrêtait un demi-pixel avant le bas de la puce
+     — un pixel et demi d'écran sur un iPhone —, et cette dernière ligne ne
+     devenait rouge qu'après, quand le fond de la puce reprenait la place de
+     l'encre : « ça se remplit parfaitement, mais ensuite ça remplit la
+     partie basse ». La goutte vise maintenant la puce agrandie d'un pixel de
+     chaque côté (ses arrondis aussi) : la puce la découpe à sa vraie forme,
+     et elle la couvre en entier, au demi-pixel près, dans l'image où elle
+     atteint le bord. Dans une page, la goutte EST le dégradé de la puce sur
+     sa boîte, et la relève se fait à cet instant même : elle garde sa boîte
+     exacte. */
+  const M = coeurEncre(c) === 1 ? 0 : 1;
+  const coin = (v)=> (((parseFloat(v) || 0) + M) / pb).toFixed(2) + "px";
   c.style.setProperty("--encre-p", String(pb));
-  c.style.setProperty("--encre-l", (x - x / pb).toFixed(2) + "px");
-  c.style.setProperty("--encre-t", (y - y / pb).toFixed(2) + "px");
-  c.style.setProperty("--encre-w", (W / pb).toFixed(2) + "px");
-  c.style.setProperty("--encre-h", (H / pb).toFixed(2) + "px");
-  c.style.setProperty("--encre-ox", (x / pb).toFixed(2) + "px");
-  c.style.setProperty("--encre-oy", (y / pb).toFixed(2) + "px");
+  c.style.setProperty("--encre-l", (x - (x + M) / pb).toFixed(2) + "px");
+  c.style.setProperty("--encre-t", (y - (y + M) / pb).toFixed(2) + "px");
+  c.style.setProperty("--encre-w", ((W + 2 * M) / pb).toFixed(2) + "px");
+  c.style.setProperty("--encre-h", ((H + 2 * M) / pb).toFixed(2) + "px");
+  c.style.setProperty("--encre-ox", ((x + M) / pb).toFixed(2) + "px");
+  c.style.setProperty("--encre-oy", ((y + M) / pb).toFixed(2) + "px");
   c.style.setProperty("--encre-br", [cs.borderTopLeftRadius, cs.borderTopRightRadius, cs.borderBottomRightRadius, cs.borderBottomLeftRadius].map(coin).join(" "));
   return { x, y, rayon, k, coeur, p: pb };
 }
@@ -24380,6 +24667,19 @@ function finirEncre(c, apres, duree, avance, attente){
        dans la MÊME image (encre-sort : voir LE FOND SE RETIRE PENDANT LE
        REMPLISSAGE). Plus de chevauchement non plus : sous l'encre, tout est
        déjà rouge. */
+    /* ===== (v383) LA GOUTTE QUI A REMPLI LA PUCE RESTE POSÉE =====
+       La goutte finie, l'encre s'en allait et le fond de la puce revenait
+       dessous, dans la même image : deux couches qui échangent leur rôle,
+       une demi-seconde APRÈS que la puce a l'air pleine. Là où elles ne
+       coïncident pas au pixel près — un bord, la bande du bas contre l'ombre,
+       sur un téléphone qui compose à sa façon —, ça se voit : « ensuite il
+       remplit la partie basse ». Rien ne s'échange plus : la goutte, qui a la
+       forme exacte de la puce, reste où elle est, à sa taille finale, sans
+       animation (encre-posee) — la même couche, le même dessin, au pixel
+       près. La puce suivante qu'on touche la reprend en se vidant, comme
+       avant. Rien ne se passe donc plus dans une puce après qu'elle s'est
+       remplie. */
+    if(boiteF){ c.classList.add("encre-posee"); c.classList.remove("remplit", "goutte-puce"); return; }
     const ote = ()=>{
       c.classList.add("encre-sort");
       c.classList.remove("remplit", "goutte-puce");
@@ -24471,10 +24771,39 @@ function basculerChoix(selecteur, classe, k){
       if(apres){
         duree = dureeCss(c, "--encre-duree", 500);
         if(enVol != null && enVol > 0.03 && valide(geometrie())){
-          /* Elle se vidait : elle se remplit d'où elle en est, depuis son centre. */
-          pose = geometrie();
-          avance = instantBezier(...COURBE_ENCRE_IN, Math.min(1, (enVol - 0.03) / 0.97)) * duree;
-          pose.boite = false;   // (v379) reprise en plein retrait : elle se remplit avec l'ellipse du retrait
+          /* Elle se vidait : elle se remplit d'où elle en est, depuis son centre.
+             (v383) AVEC LA GOUTTE À LA FORME DE LA PUCE, comme un remplissage
+             neuf. « Quand je passe de Courte à Normale, ça se remplit
+             parfaitement, mais ensuite ça remplit la partie basse : ça doit se
+             remplir en intégralité d'un coup. » Reprise en plein retrait
+             (Normale, Courte, Normale de nouveau, vite), la puce repartait
+             avec l'ELLIPSE de son retrait : elle touche le milieu des bords
+             d'abord, les coins et la bande du bas ensuite, et le rouge plein
+             ne se posait dessous qu'en fondu, de 476 à 608 ms (filmé). Elle
+             repart maintenant du centre de cette ellipse, avec la goutte qui
+             a la forme exacte de la puce, et elle atteint tout le bord — le
+             bas avec le reste — dans la même image.
+             Elle repart AUSSI GRANDE que l'ellipse l'était : autant de rouge
+             dans la puce, à l'image près (288 points de la puce, comptés sous
+             l'ellipse, au milieu de son bord adouci). La goutte qui part d'un
+             point couvre la puce réduite autour de lui : à l'échelle f de sa
+             couverture, f² de la puce. Sans ça, filmé, le rouge rétrécissait
+             d'un coup à la reprise (de 34 à 0 % du haut de la puce) avant de
+             regrandir. */
+          const g = geometrie(), Lw = c.offsetWidth, Lh = c.offsetHeight;
+          const erx = parseFloat(c.style.getPropertyValue("--encre-rx")), ery = parseFloat(c.style.getPropertyValue("--encre-ry"));
+          let dedans = 0;
+          if(erx > 0 && ery > 0){
+            const ax = erx * 0.91 * enVol, ay = ery * 0.91 * enVol;
+            for(let i = 0; i < 24; i++) for(let j = 0; j < 12; j++){
+              const dx = ((i + 0.5) / 24 * Lw - g.x) / ax, dy = ((j + 0.5) / 12 * Lh - g.y) / ay;
+              if(dx * dx + dy * dy <= 1) dedans++;
+            }
+          }
+          pose = poserEncre(c, Math.min(Lw, Math.max(0, g.x)), Math.min(Lh, Math.max(0, g.y)));
+          const s0 = Math.min(0.999, Math.max(0.03, pose.p * Math.sqrt(dedans / 288)));
+          avance = instantBezier(...COURBE_ENCRE_IN, Math.min(1, (s0 - 0.03) / 0.97)) * duree;
+          pose.boite = true;
         } else {
           /* Le point posé au contact est déjà sur la puce ; sinon, le centre. */
           const o = doigt ? geometrie() : null;
@@ -24524,7 +24853,7 @@ function basculerChoix(selecteur, classe, k){
     c._encre = { sens: apres ? "in" : "out", debut: performance.now() - avance, duree, attente: apres ? 0 : attente };
     /* Une animation ne se rejoue pas si sa classe est déjà là : on la retire,
        on force le calcul, on la remet. */
-    c.classList.remove("remplit", "devide", "encre-sort", "goutte-puce");
+    c.classList.remove("remplit", "devide", "encre-sort", "goutte-puce", "encre-posee");
     if(teinte) c.style.setProperty("--glass-tint", teinte);
     void c.offsetWidth;
     c.classList.toggle(classe, apres);
@@ -25832,9 +26161,17 @@ function prechargerCoffre(){
 function coffreAnimPrete(){ return !!(coffreAnim && coffreAnim.complete && coffreAnim.naturalWidth > 0); }
 /* Une gemme qui jaillit, de l'une des couleurs du trésor. */
 const GEMMES_COULEURS = [["#4F8DF5", "#1F56D6", "#9CC2FF"], ["#2FCB7E", "#11935A", "#8EF0BE"], ["#F2455E", "#B8172F", "#FF9AAA"], ["#A06BF0", "#6A35C2", "#D1B5FF"], ["#F7B730", "#C9850B", "#FFE08A"]];
+/* (v383) La pierre taillée de l'icône, dans les couleurs du trésor : ses
+   facettes du haut prises par la lumière (c), ses côtés dans sa couleur (m),
+   celles du bas dans l'ombre (f), et le reflet de la table. */
 function gemmeSvg(k){
   const [m, f, c] = GEMMES_COULEURS[(k || 0) % GEMMES_COULEURS.length];
-  return `<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M7 3h10l5 6-10 12L2 9z" fill="${m}"/><path d="M2 9h20L12 21z" fill="${f}"/><path d="M7 3l3 6H2zM17 3l-3 6h8z" fill="${c}"/><path d="M10 9h4l-2 12z" fill="${m}"/></svg>`;
+  return `<svg viewBox="0 0 24 24" aria-hidden="true"><polygon points="8,2.5 16,2.5 14.3,7 9.7,7" fill="${c}"/><polygon points="16,2.5 21,7.5 17,9.7 14.3,7" fill="${c}"/><polygon points="21,7.5 21,16.5 17,14.3 17,9.7" fill="${m}"/><polygon points="21,16.5 16,21.5 14.3,17 17,14.3" fill="${f}"/><polygon points="16,21.5 8,21.5 9.7,17 14.3,17" fill="${f}"/><polygon points="8,21.5 3,16.5 7,14.3 9.7,17" fill="${f}"/><polygon points="3,16.5 3,7.5 7,9.7 7,14.3" fill="${m}"/><polygon points="3,7.5 8,2.5 9.7,7 7,9.7" fill="${c}"/><polygon points="16,2.5 21,7.5 17,9.7 14.3,7" fill="#fff" fill-opacity="0.25"/><polygon points="16,21.5 8,21.5 9.7,17 14.3,17" fill="#000" fill-opacity="0.14"/><polygon points="3,16.5 3,7.5 7,9.7 7,14.3" fill="#fff" fill-opacity="0.18"/><polygon points="9.7,7 14.3,7 17,9.7 17,14.3 14.3,17 9.7,17 7,14.3 7,9.7" fill="${m}"/><polygon points="9.7,7 14.3,7 7,14.3 7,9.7" fill="#fff" fill-opacity="0.28"/></svg>`;
+}
+/* (v383) Un tas de trois gemmes — une verte et une rouge derrière, une bleue
+   devant —, l'image de la réserve dans la Boutique. */
+function tasDeGemmes(){
+  return `<span class="bq-gemme bq-tas" aria-hidden="true"><span class="g g1">${gemmeSvg(1)}</span><span class="g g2">${gemmeSvg(2)}</span><span class="g g0">${gemmeSvg(0)}</span></span>`;
 }
 /* ===== (v379) LE COFFRE S'OUVRE =====
    Une scène, pas un message : le coffre tombe en place, frémit, puis son
@@ -25900,7 +26237,7 @@ function boutiqueHtml(){
   const etat = plein ? T("Réserve pleine") : (manque ? (manque > 1 ? Tf("Il te manque {n} gemmes", { n:manque }) : T("Il te manque 1 gemme")) : "");
   const gains = [[T("Une leçon terminée"), DIAMANTS.lecon], [T("Une leçon sans faute, une fois"), DIAMANTS.parfait],
                  [T("Une quête réussie"), DIAMANTS.quete], [T("Le coffre d'une unité"), DIAMANTS.coffre], [T("Un jeu du chemin terminé"), DIAMANTS.jeu]];
-  return `<div class="bq-solde"><span class="bq-gemme"><span class="ico">${ICONS.diamant}</span></span><span class="bq-n"><b>${solde}</b><small>${T("Tes gemmes")}</small></span></div>
+  return `<div class="bq-solde">${tasDeGemmes()}<span class="bq-n"><b>${solde}</b><small>${T("Tes gemmes")}</small></span></div>
     <div class="bq-article">
       <span class="bq-ico"><span class="ico">${ICONS.flammeGelee}</span></span>
       <span class="bq-txt"><b>${T("Gel de série")}</b><small>${T("Il protège ta flamme pour UN jour manqué. Deux en réserve au maximum.")}</small>
@@ -29204,7 +29541,7 @@ function participeGroupes(){ return !!(grp.etat && grp.etat.participe === "ok");
 /* Le compte vient de changer (connexion, déconnexion, compte supprimé). */
 function groupesSurCompte(){
   if(!compteConnecte()){ oublierPhotosSrv(); oublierMemoire(); }
-  grp.etat = null; grp.liste = null; grp.publics = null; grp.fils = {}; grp.profils = {}; grp.membres = {}; grp.stats = {};
+  grp.etat = null; grp.liste = null; grp.publics = null; grp.fils = {}; grp.profils = {}; grp.membres = {}; grp.stats = {}; statsLuesLe = {};
   /* Le même compte qu'à la dernière fois : ses groupes reviennent tout de
      suite, le serveur suivra (voir LA MÉMOIRE DES GROUPES). */
   if(compteConnecte()) lireMemoire().then(()=>{
@@ -32614,6 +32951,7 @@ async function chargerMembres(id){
     grp.membres[id] = r.data;
     if(JSON.stringify(r.data) !== avant) memoriserMembres();   // (v382)
     await chargerProfils(r.data.map(x => x.membre), photosServeur());
+    chargerStatsDesMembres(id);                                  // (v383) voir LES CHIFFRES DES MEMBRES, LUS D'AVANCE
   }catch(e){ return; }
   if(grp.courant === id){
     majCompo(); majInfosMembres(); majVus();
@@ -35356,10 +35694,16 @@ function ligneMembre(x){
 /* La feuille des infos ouverte suit les membres sans se refermer. */
 function majInfosMembres(){
   const g = groupeCourant(); if(!g) return;
-  const d = document.querySelector("#grpInfosVeil .grp-defile");
-  if(d) d.innerHTML = membresTries(g).map(ligneMembre).join("");
-  const h = document.querySelector("#grpInfosVeil .grp-nb-h");
-  if(h) h.textContent = nbMembres(g.nb_membres);
+  const v = document.getElementById("grpInfosVeil"); if(!v) return;
+  /* (v383) Refaite après le glissement, et seulement si elle change (voir CE
+     QUI ARRIVE PENDANT QU'UNE PAGE GLISSE) : à chaque relève des membres, la
+     liste entière était refaite, identique. */
+  apresPose(v, ()=>{
+    const d = v.querySelector(".grp-defile");
+    if(d) poserSiChange(d, membresTries(g).map(ligneMembre).join(""));
+    const h = v.querySelector(".grp-nb-h");
+    if(h){ const t = nbMembres(g.nb_membres); if(h.textContent !== t) h.textContent = t; }
+  }, "membres");
 }
 function ouvrirMembre(qui){
   const p = grp.profils[qui] || {};
@@ -35436,12 +35780,42 @@ async function chargerStatsDe(qui){
   }catch(e){}
 }
 function majCarteProfil(qui){
-  document.querySelectorAll("#grpMembreVeil .mb-profil").forEach(c => {
-    if(c.dataset.qui === qui) c.innerHTML = contenuProfilHtml(grp.stats ? grp.stats[qui] : undefined);
-  });
-  document.querySelectorAll("#grpMembreVeil .mb-feu").forEach(c => {
-    if(c.dataset.qui === qui) c.innerHTML = flammeProfilHtml(grp.stats ? grp.stats[qui] : undefined);
-  });
+  /* (v383) Posée après le glissement, et seulement si elle change (voir CE
+     QUI ARRIVE PENDANT QU'UNE PAGE GLISSE). */
+  const v = document.getElementById("grpMembreVeil");
+  if(!v) return;
+  apresPose(v, ()=>{
+    v.querySelectorAll(".mb-profil").forEach(c => {
+      if(c.dataset.qui === qui) poserSiChange(c, contenuProfilHtml(grp.stats ? grp.stats[qui] : undefined));
+    });
+    v.querySelectorAll(".mb-feu").forEach(c => {
+      if(c.dataset.qui === qui) poserSiChange(c, flammeProfilHtml(grp.stats ? grp.stats[qui] : undefined));
+    });
+  }, "profil:" + qui);
+}
+/* ===== (v383) LES CHIFFRES DES MEMBRES, LUS D'AVANCE =====
+   La page d'un joueur arrivait avec des tirets, et ses chiffres tombaient
+   après (une lecture au serveur à chaque ouverture). Ils sont maintenant
+   lus avec les membres du groupe, d'une seule requête : quand on ouvre la
+   page d'un joueur, ils sont déjà là — la relecture de l'ouverture ne fait
+   que les rafraîchir, et ne touche à rien s'ils n'ont pas bougé. */
+let statsLuesLe = {};
+async function chargerStatsDesMembres(id){
+  if(!statsServeur() || !id) return;
+  if(Date.now() - (statsLuesLe[id] || 0) < 60000) return;      // une fois par minute et par groupe, au plus
+  const supa = initSupa(); if(!supa || !supa.from) return;
+  const ids = (grp.membres[id] || []).map(x => x.membre).filter(x => x && x !== monId());
+  if(!ids.length) return;
+  statsLuesLe[id] = Date.now();
+  try{
+    const r = await supa.from("profils").select("id,stats").in("id", ids.slice(0, 200));
+    if(r.error || !Array.isArray(r.data)) { statsLuesLe[id] = 0; return; }
+    grp.stats = grp.stats || {};
+    for(const qui of ids){
+      const l = r.data.find(x => x && x.id === qui);
+      if(l) grp.stats[qui] = (l.stats && typeof l.stats === "object") ? l.stats : null;
+    }
+  }catch(e){ statsLuesLe[id] = 0; }
 }
 /* (v379) SA FLAMME, TELLE QU'ELLE EST AUJOURD'HUI. Le jeu de ce joueur la
    pose avec le jour de son dernier défi et s'il lui reste un gel (voir
@@ -38069,7 +38443,7 @@ function renderEndSolo(){
           <circle class="ring-fg" style="stroke:url(#${anneauId})" cx="60" cy="60" r="${R}" stroke-dasharray="${C.toFixed(1)}" stroke-dashoffset="${C.toFixed(1)}" data-target="${offset.toFixed(1)}"></circle>
         </svg>
         <div class="ring-center">
-          <span class="ring-score" data-ring-pct data-target-pct="${pct}">0%</span>
+          <span class="ring-score rs-cale"><span class="rs-place" aria-hidden="true">${pct}%</span><span class="rs-vif" data-ring-pct data-target-pct="${pct}">0%</span></span>
           <span class="ring-label">${state.lecon ? T("au 1er essai") : T("du maximum")}</span>
         </div>
       </div>

@@ -31,7 +31,11 @@
      6. UN SEUL ROUGE : la quantité totale de rouge sur la rangée (en pixels,
         lettres exclues) reste entre 85 et 120 % de celle du repos pendant tout
         le passage — ni éclair (deux puces pleines à la fois) ni trou ;
-     7. AU REPOS, la couche d'encre n'est plus peinte.
+     7. AU REPOS, la couche d'encre ne bouge plus : (v383) celle qui a rempli
+        la puce y reste posée, à sa taille finale, sans animation — la forme
+        exacte de la puce, d'un pixel plus grande, découpée par elle (voir LA
+        GOUTTE QUI A REMPLI LA PUCE RESTE POSÉE) ; plus de relève de couches
+        une demi-seconde après qu'elle a l'air pleine.
 
    Le mouvement est ralenti (les durées se lisent dans des variables CSS, le
    JS les relit aussi : tout reste proportionné), pour échantillonner.
@@ -136,7 +140,13 @@ const lireDurees = (p) => p.evaluate(() => {
   const fin = await p.evaluate(() => {
     const c = document.querySelector('.chip[data-group="len"][data-k="normale"]');
     const a = getComputedStyle(c, '::after');
-    return { opacite: parseFloat(a.opacity), remplit: c.classList.contains('remplit'), actif: c.classList.contains('active') };
+    /* (v383) La goutte posée : immobile, à l'échelle 1, et sa boîte contient la puce. */
+    const an = (() => { try { return c.getAnimations({ subtree: true }).filter(x => x.playState === 'running').length; } catch (e) { return 0; } })();
+    const W = c.offsetWidth, H = c.offsetHeight;
+    const g = { l: parseFloat(a.left), t: parseFloat(a.top), w: parseFloat(a.width), h: parseFloat(a.height) };
+    const contient = g.l <= 0.01 && g.t <= 0.01 && g.l + g.w >= W - 0.01 && g.t + g.h >= H - 0.01;
+    return { opacite: parseFloat(a.opacity), remplit: c.classList.contains('remplit'), actif: c.classList.contains('active'),
+      posee: c.classList.contains('encre-posee'), echelle: a.transform, anims: an, contient, fond: getComputedStyle(c).backgroundColor };
   });
 
   /* 1. sous le doigt */
@@ -238,7 +248,9 @@ const lireDurees = (p) => p.evaluate(() => {
 
   /* 7. au repos, après */
   if (!fin.actif) soucis.push('la puce touchée n\'est pas choisie');
-  if (fin.remplit || fin.opacite > 0.01) soucis.push('après le geste, la couche d\'encre reste peinte (opacité ' + fin.opacite + ')');
+  if (fin.remplit) soucis.push('après le geste, l\'encre est encore en train de remplir');
+  else if (fin.opacite > 0.01 && !(fin.posee && fin.anims === 0 && /^(none|matrix\(1, 0, 0, 1, 0, 0\))$/.test(fin.echelle) && fin.contient))
+    soucis.push('après le geste, la couche d\'encre reste peinte sans être posée, immobile, sur toute la puce (opacité ' + fin.opacite + ', ' + JSON.stringify(fin) + ')');
 
   /* 3 bis. LES COINS, EN PIXELS. On rejoue un toucher (au bord opposé cette
      fois) et on FIGE la puce à 98 % du mouvement : l'encre est à pleine
