@@ -8792,6 +8792,7 @@ const TEXTES = {
     "Joue une partie avant minuit pour garder ta flamme. Il te reste {t}.":"Play one game before midnight to keep your flame. {t} left.",
     "Joue une partie avant minuit pour allumer ta flamme. Il te reste {t}.":"Play one game before midnight to light your flame. {t} left.",
     "Ta flamme":"Your flame",
+    "Sa flamme":"Their flame",
     "Aucune série en cours":"No streak running",
     "1 jour d'affilée":"1 day in a row",
     "{n} jours d'affilée":"{n} days in a row",
@@ -9870,6 +9871,7 @@ const TEXTES = {
     "Joue une partie avant minuit pour garder ta flamme. Il te reste {t}.":"Juega una partida antes de medianoche para mantener tu llama. Quedan {t}.",
     "Joue une partie avant minuit pour allumer ta flamme. Il te reste {t}.":"Juega una partida antes de medianoche para encender tu llama. Quedan {t}.",
     "Ta flamme":"Tu llama",
+    "Sa flamme":"Su llama",
     "Aucune série en cours":"Sin racha en curso",
     "1 jour d'affilée":"1 día seguido",
     "{n} jours d'affilée":"{n} días seguidos",
@@ -13025,7 +13027,7 @@ const SUPABASE_ANON_KEY = "sb_publishable_FDJ_R0foC7uIeHmxVrj6rA_2NeIgW2a";
    remontée d'un téléphone ne vaut rien si on ne sait pas QUELLE version
    tournait. Elle doit rester égale au CACHE de sw.js — c'est ce que vérifie
    banc-essai/version.js, qui refuse de laisser publier les deux en désaccord. */
-const VERSION_JEU = "v383";
+const VERSION_JEU = "v384";
 
 /* ===================== QUAND ÇA CASSE CHEZ UN JOUEUR =====================
    « Si quelque chose casse chez cinq d'entre eux sur un modèle de téléphone
@@ -35753,6 +35755,35 @@ function mesStats(){
            succes:ACHIEVEMENTS.filter(a => (p.ach && p.ach[a.id]) || a.cur(p, d) >= a.max).map(a => a.id),
            flamme:dailyStreakShown(), flamme_le:/^\d{4}-\d{2}-\d{2}$/.test(j.last) ? j.last : "", gel:j.gels > 0 ? 1 : 0 };
 }
+/* (v384) SA FLAMME, MÊME ENVOYÉE AVANT LE BON SQL. « Sur le profil d'un
+   utilisateur, où il est censé avoir ses flammes, je ne vois pas son nombre
+   de flammes. » Un serveur d'avant le SQL de la v379 garde les chiffres d'un
+   joueur mais jette sa flamme (poser_stats ne garde que ce qu'il connaît) ;
+   et le jeu, qui les avait bien envoyés, ne les renvoyait plus tant qu'ils
+   ne changeaient pas : même le SQL recollé, la flamme d'un joueur restait un
+   tiret chez les autres jusqu'à sa prochaine partie. Maintenant, tant que ce
+   téléphone n'a pas VU sa flamme chez le serveur, il relit sa propre fiche,
+   une fois par ouverture (une seule ligne, la sienne) ; si elle n'y est pas,
+   ses chiffres repartent. Dès qu'il l'y a vue, il le retient (bt_stats_srv)
+   et ne relit plus rien. */
+const CLE_STATS_SRV = "bt_stats_srv";
+let flammeVerifiee = "";                    // le compte déjà relu à cette ouverture
+async function flammeChezLeServeur(qui){
+  try{ if(localStorage.getItem(CLE_STATS_SRV) === qui) return true; }catch(e){}       // le compte dont la flamme a été vue
+  if(flammeVerifiee === qui) return true;         // déjà relue à cette ouverture
+  flammeVerifiee = qui;
+  const supa = initSupa(); if(!supa || !supa.from) return true;
+  try{
+    const r = await supa.from("profils").select("id,stats").eq("id", qui);
+    if(r.error || !Array.isArray(r.data)) return true;          // on ne sait pas : rien de plus
+    const l = r.data.find(x => x && x.id === qui), st = l && l.stats;
+    if(st && typeof st === "object" && "flamme" in st){
+      try{ localStorage.setItem(CLE_STATS_SRV, qui); }catch(e){}
+      return true;
+    }
+    return false;
+  }catch(e){ return true; }
+}
 async function publierMesStats(){
   if(statsEnVol || !statsServeur() || !participeGroupes() || !compteConnecte()) return;
   let s, j;
@@ -35760,7 +35791,10 @@ async function publierMesStats(){
   let deja = "";
   try{ deja = localStorage.getItem(CLE_STATS_PUB) || ""; }catch(e){}
   const qui = monId();
-  if(deja === qui + "|" + j) return;              // rien de neuf depuis la dernière fois
+  /* Rien de neuf depuis la dernière fois — et la flamme est bien chez le
+     serveur (voir SA FLAMME, MÊME ENVOYÉE AVANT LE BON SQL). */
+  if(deja === qui + "|" + j && await flammeChezLeServeur(qui)) return;
+  if(statsEnVol) return;
   statsEnVol = true;
   try{
     const r = await appelGroupe("poser_stats", { p_stats:s });
@@ -35841,7 +35875,7 @@ function flammeDe(s){
 function flammeProfilHtml(s){
   const n = flammeDe(s);
   const lu = n === null ? "\u2014" : n.toLocaleString(LANGUE);
-  const dit = n === null ? T("Ta flamme") : Tf("{n} jours d'affilée", { n });
+  const dit = n === null ? T("Sa flamme") : Tf("{n} jours d'affilée", { n });   // (v384) la flamme d'un autre
   return `<span class="mb-flamme${n ? "" : " eteinte"}" role="img" aria-label="${escapeHtml(dit)}">${ICONS.flame}<b>${lu}</b></span>`;
 }
 function carteProfilHtml(qui){

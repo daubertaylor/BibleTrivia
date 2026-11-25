@@ -258,7 +258,10 @@ maintenant sa flamme : le nombre de jours d'affilée, en orange si elle brûle
 encore. Le serveur ne gardait jusqu'ici que les trois chiffres et les
 objectifs : comme aux étapes 6 à 15, recoller `groupes/table.sql` **en
 entier** dans **SQL Editor** → **Run**. Rien d'autre ne change. Avant ce
-geste, la page montre un tiret à la place du nombre.
+geste, la page montre un tiret à la place du nombre. Après, la flamme de
+chacun arrive dès qu'il rouvre son jeu : depuis la v384, le jeu relit sa
+propre fiche tant qu'il n'y a pas vu sa flamme, et la renvoie si elle n'y
+est pas — même s'il l'avait envoyée avant le collage.
 
 **Une seule fois suffit pour les étapes 6 à 16 ensemble**, quelle que soit
 la version déjà installée : le fichier d'aujourd'hui se colle par-dessus
