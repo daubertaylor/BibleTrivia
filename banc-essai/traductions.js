@@ -247,6 +247,7 @@ net = net.replace(/<title>[\s\S]*?<\/title>/g, blanc);
 net = net.replace(/<meta\b[^>]*>/g, blanc);
 net = net.replace(/<script type="application\/ld\+json">[\s\S]*?<\/script>/g, blanc);
 net = net.replace(/<nav id="liens-site"[\s\S]*?<\/nav>/g, blanc);
+net = net.replace(/<aside id="vitrine-site"[\s\S]*?<\/aside>/g, blanc);   // (v381) la vitrine du site, en français, comme ses liens
 net = net.replace(/<noscript>[\s\S]*?<\/noscript>/g, blanc);
 net = net.replace(/\/\*[\s\S]*?\*\//g, blanc);
 net = net.replace(/(^|\s)\/\/[^\n]*/g, (m, d) => d + blanc(m.slice(d.length)));

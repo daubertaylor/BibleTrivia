@@ -140,7 +140,11 @@ const v = (nom) => ICONES + nom + '.png';
       m1.icon === v('message') && m2.icon === v('message') && m3.icon === v('partie') && m5.icon === v('moderation')
         && [m1, m2, m3, m5].every(n => n.badge === BADGE),
       [m1, m2, m3, m5].map(n => (n.icon || '').replace(ICONES, '') + '·' + (n.badge || '').replace(ICONES, '')).join('  '));
-    dit('   rejoué, il se repose tel qu\'il était : le même texte, la même image', m4.title === m3.title && m4.body === m3.body && m4.icon === m3.icon && m4.badge === BADGE,
+    /* (v380) La partie lancée (m3) a sa notification à elle (partie-<groupe>) :
+       le message rejoué repose celle des MESSAGES (grp-<groupe>) telle qu'elle
+       était après le dernier message compté (m2), sans rien compter de plus. */
+    dit('   rejoué, il se repose tel qu\'il était : le même texte, la même image', m4.title === m2.title && m4.body === m2.body && m4.icon === m2.icon && m4.badge === BADGE
+        && m4.tag === m2.tag && m3.tag !== m2.tag,
       '« ' + m4.title + ' » · ' + m4.icon);
 
     /* ===== 3. PLUS JAMAIS L'ICÔNE DE L'APP ===== */
