@@ -9,7 +9,9 @@
      1. quinze erreurs, tout juste : trois séances de cinq, « Tout est
         rattrapé ! » à la troisième, 15 rattrapées sur 15 ;
      2. une réponse fausse dans la troisième séance : la question revient une
-        fois en fin de séance (6/6, « Encore une fois »), juste cette fois,
+        fois en fin de séance (« ↺ 1/1 », « Encore une fois » — v382 : le
+        compte de la séance ne grandit plus, celles qui reviennent se
+        comptent à part), juste cette fois,
         elle compte — « Tout est rattrapé ! », 15 sur 15, pas de quatrième
         séance ;
      3. fausse deux fois : elle reste à rattraper (14 sur 15), et ne revient
@@ -17,8 +19,10 @@
      4. douze erreurs : une séance de cinq, puis les sept qui restent
         ensemble — plus de séance d'une ou deux questions à la traîne ; la
         pastille de l'accueil annonce la même taille que la séance ;
-     5. une leçon du Parcours garde sa règle : la question rejouée en fin de
-        leçon ne fait pas monter le carnet ;
+     5. une leçon du Parcours : la question rejouée en fin de leçon, juste
+        cette fois, est rattrapée — elle monte d'un palier (v382 : « il dit
+        que la leçon est finie, mais il rajoute des questions » : de la v353 à
+        la v381, elle restait « à rattraper ») ;
      6. aucune erreur.
    Usage : node banc-essai/revoir-serie.js [url] */
 const { chromium } = require('/opt/node22/lib/node_modules/playwright');
@@ -87,7 +91,7 @@ async function seance(p, fautes) {
     { const { ctx, p } = await page(nav); await poser(p, 15);
       const s = [await seance(p, []), await seance(p, []), await seance(p, [3])];
       const e = await ecran(p); const der = s[2].vus[s[2].vus.length - 1] || {};
-      dit('2. une réponse fausse : elle revient en fin de séance, rattrapée, et la série finit à quinze', s[2].joue === 6 && der.relance && der.puce === 'Encore une fois' && der.compte === '6/6' && /Tout est rattrapé/.test(s[2].fin.titre || '') && e.faites === 15 && e.reste === 0,
+      dit('2. une réponse fausse : elle revient en fin de séance, rattrapée, et la série finit à quinze', s[2].joue === 6 && der.relance && der.puce === 'Encore une fois' && der.compte === '↺1/1' && /Tout est rattrapé/.test(s[2].fin.titre || '') && e.faites === 15 && e.reste === 0,
         `séance 3 : ${s[2].joue} questions, dernière ${JSON.stringify(der)}, « ${s[2].fin.titre} » ; ${e.faites} rattrapées, ${e.reste} à rattraper`);
       erreurs.push(...p.__erreurs); await ctx.close(); }
     /* ---- 3 ---- */
@@ -120,7 +124,7 @@ async function seance(p, fautes) {
         state.lecon = null; state.screen = 'mode'; render();
         return { apresFaute, palier: e ? e.p : null };
       });
-      dit('5. une leçon du Parcours : la question rejouée ne fait pas monter le carnet', r.apresFaute === 2 && r.palier === 0, JSON.stringify(r));
+      dit('5. une leçon du Parcours : la question rejouée, juste, est rattrapée (un palier)', r.apresFaute === 2 && r.palier === 1, JSON.stringify(r));
       erreurs.push(...p.__erreurs); await ctx.close(); }
   } catch (e) {
     dit('le banc a planté', false, e.stack || e.message);

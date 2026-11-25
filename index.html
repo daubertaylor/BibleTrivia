@@ -1344,6 +1344,7 @@
   .tier-facile{ color:#1F6E48; }
   .tier-moyen{ color:#7C5A14; }
   .tier-difficile{ color:#A7395C; }
+  .q-counter .qc-rel{ margin-right:0.22em; font-weight:800; }
   .q-counter{ font-size:0.8rem; color:var(--ink); font-weight:700; font-variant-numeric:tabular-nums; letter-spacing:0.01em; background:rgba(255,255,255,0.5); backdrop-filter:blur(18px) saturate(180%); -webkit-backdrop-filter:blur(18px) saturate(180%); border:0; padding:calc(0.34rem + 1px) calc(0.7rem + 1px); border-radius:var(--r-full); }
   /* Verre peint comme les autres puces (plus de backdrop-filter, invisible
      sur iOS) : la teinte passe par --glass-tint, le fond photo transparaît. */
@@ -6915,6 +6916,9 @@
   .b-vu svg{ width:100%; height:100%; }
   .b-vu.lu{ color:var(--pal-ciel-b); opacity:1; }
   .b-vu.attente{ width:0.82rem; }
+  /* (v382) La place des coches tant que les membres ne sont pas connus :
+     elles s'y posent sans pousser l'heure. */
+  .b-vu-place{ display:inline-flex; width:1.05rem; height:0.82rem; }
   .grp-vus .gv-h .b-vu{ width:0.95rem; height:0.74rem; margin-right:0.35rem; vertical-align:-0.05rem; }
   .grp-vus{ display:flex; flex-direction:column; margin:0.1rem 0 0.35rem; }
   .grp-vus .gv-h{ font-family:'Poppins',sans-serif; font-size:0.74rem; font-weight:700; letter-spacing:0.06em; text-transform:uppercase; color:var(--ink-soft); margin:0.35rem 0.6rem 0.25rem; }
@@ -7650,6 +7654,15 @@
   .option-btn.jx-tient .jx-point, .option-btn.jx-vise .jx-point{ transform:scale(1.3); }
   .jx-point.jx-claque{ animation:jxClaque 0.34s cubic-bezier(0.2,1.4,0.4,1); }
   @keyframes jxClaque{ 0%{ transform:scale(0.55); } 55%{ transform:scale(1.4); } 100%{ transform:scale(1); } }
+  /* (v383) Les liens posés : des fils tendus d'une pastille à l'autre. */
+  .jx-deux{ position:relative; }
+  .jx-liens{ position:absolute; left:0; top:0; width:100%; height:100%; overflow:visible; pointer-events:none; z-index:3; }
+  .jx-liens path{ fill:none; stroke:var(--fil); stroke-width:3; stroke-linecap:round; opacity:0.92; transition:opacity 0.16s ease; }
+  .jx-liens path.jade{ --fil:var(--pal-jade-b); }
+  .jx-liens path.indigo{ --fil:var(--pal-indigo-b); }
+  .jx-liens path.bronze{ --fil:var(--pal-bronze-b); }
+  .jx-liens path.rose{ --fil:var(--pal-rose-b); }
+  .jx-liens path.jx-decroche{ opacity:0; }
   .jx-fil{ position:fixed; left:0; top:0; width:100%; height:100%; overflow:visible; pointer-events:none; z-index:9000; --fil:rgba(42,36,30,0.42); transition:opacity 0.18s ease; }
   .jx-fil.jade{ --fil:var(--pal-jade-b); }
   .jx-fil.indigo{ --fil:var(--pal-indigo-b); }
@@ -7668,7 +7681,9 @@
   .jx-mot{ display:inline; font:inherit; color:inherit; background:none; border:0; padding:0.22rem 0.12rem; margin:0 -0.06rem; border-radius:0.45rem;
     -webkit-tap-highlight-color:transparent; touch-action:manipulation; transition:background-color var(--tr-onde); }
   .jx-mot:active{ background:rgba(214,71,44,0.12); }
-  .jx-mot.faux{ background:rgba(47,169,110,0.2); color:#1E7A4C; font-weight:600; }
+  .jx-mot.faux{ background:rgba(47,169,110,0.16); color:#1E7A4C; font-weight:600; }
+  .jx-mot.faux s{ color:var(--error); font-weight:500; text-decoration-thickness:0.09em; opacity:0.85; }
+  .jx-mot.faux b{ font-weight:700; }
   .jx-mot.rate{ background:rgba(226,75,55,0.16); color:var(--error); }
   .jx-vide{ color:var(--ink-soft); font-size:0.92rem; }
   .jx-pose{ display:inline; font:inherit; color:inherit; border:0; border-radius:0.5rem; padding:0.16rem 0.32rem; margin:0.1rem 0;
@@ -7676,8 +7691,8 @@
   .jx-pose.bien{ background:rgba(47,169,110,0.18); }
   .jx-pose.mal{ background:rgba(226,75,55,0.16); }
   .jx-bouts{ display:flex; flex-wrap:wrap; justify-content:center; gap:0.5rem; }
-  .jx-bouts .option-btn{ width:auto; flex:0 1 auto; padding:0.62rem 0.85rem; min-height:0; }
-  .jx-bouts .option-btn .opt-text{ font-size:0.9rem; text-align:center; }
+  .jx-bouts .option-btn{ width:auto; flex:0 1 auto; padding:0.66rem 0.95rem; min-height:2.75rem; }
+  .jx-bouts .option-btn .opt-text{ font-size:1rem; text-align:center; }
   /* Un morceau posé laisse sa forme, vide : rien ne bouge, et l'on voit ce qui reste. */
   .option-btn.jx-utilise{ opacity:0.32; transform:scale(0.96); pointer-events:none; }
   .option-btn.jx-utilise .opt-text{ visibility:hidden; }
@@ -9171,6 +9186,7 @@ const TEXTES = {
     "La réponse\u00a0: {n} ({ref}).":"The answer: {n} ({ref}).",
     "Le texte dit «\u00a0{mot}\u00a0» ({ref}).":"The text says “{mot}” ({ref}).",
     "{ref}, dans la version choisie.":"{ref}, in the chosen version.",
+    "«\u00a0{v}\u00a0» ({ref})":"“{v}” ({ref})",
     "Bien joué\u00a0!":"Well done!",
     "Suivant":"Next",
     "Belle partie\u00a0!":"Nice game!",
@@ -10254,6 +10270,7 @@ const TEXTES = {
     "La réponse\u00a0: {n} ({ref}).":"La respuesta: {n} ({ref}).",
     "Le texte dit «\u00a0{mot}\u00a0» ({ref}).":"El texto dice «{mot}» ({ref}).",
     "{ref}, dans la version choisie.":"{ref}, en la versión elegida.",
+    "«\u00a0{v}\u00a0» ({ref})":"«{v}» ({ref})",
     "Bien joué\u00a0!":"¡Bien hecho!",
     "Suivant":"Siguiente",
     "Belle partie\u00a0!":"¡Buena partida!",
@@ -12934,7 +12951,7 @@ const SUPABASE_ANON_KEY = "sb_publishable_FDJ_R0foC7uIeHmxVrj6rA_2NeIgW2a";
    remontée d'un téléphone ne vaut rien si on ne sait pas QUELLE version
    tournait. Elle doit rester égale au CACHE de sw.js — c'est ce que vérifie
    banc-essai/version.js, qui refuse de laisser publier les deux en désaccord. */
-const VERSION_JEU = "v381";
+const VERSION_JEU = "v382";
 
 /* ===================== QUAND ÇA CASSE CHEZ UN JOUEUR =====================
    « Si quelque chose casse chez cinq d'entre eux sur un modèle de téléphone
@@ -28734,7 +28751,10 @@ function carteCompteHtml(){
      carte pendant que le sondage courait encore : si la table n'existait pas,
      le joueur voyait un bouton apparaître puis rester là, parce que rien ne
      l'enlevait ensuite. On n'offre une porte qu'une fois sûr qu'elle ouvre. */
-  if(compte.dispo !== true) return "";
+  /* (v382) Sauf quand on est connecté : une session n'existe que si les
+     comptes existent. Le Profil s'ouvrait alors sans sa carte, qui arrivait
+     après la sonde et poussait tout l'écran (mesuré : 39 px, à +0,8 s). */
+  if(compte.dispo !== true && !(compte.dispo === null && compteConnecte())) return "";
   /* L'EMPLACEMENT DU MOT EXISTE TOUJOURS, vide quand il n'y a rien à dire
      (.compte-mot:empty le cache) : d'un message à l'autre, la carte garde
      les mêmes enfants dans le même ordre, et majCarteCompte peut la mettre à
@@ -29650,10 +29670,14 @@ function manchesErreur(n, ordre){
 }
 /* Verset en morceaux : quatre à six morceaux, coupés de préférence après
    une ponctuation ; une ponctuation seule ne fait jamais un morceau. */
-function morceauxDe(texte){
+function morceauxDe(texte, cible){
   const mots = [];
   texte.split(/\s+/).filter(Boolean).forEach(m => { if(/^[«»"“”:;!?,.—–-]+$/.test(m) && mots.length) mots[mots.length - 1] += " " + m; else mots.push(m); });
-  const n = Math.max(4, Math.min(6, Math.round(mots.length / 4)));
+  /* (v383) LE NOMBRE DE MORCEAUX MONTE AVEC LA PARTIE : quatre aux premières
+     manches, cinq au milieu, six aux dernières (deux mots par morceau au
+     moins). Sans cible (un appel d'avant), la longueur du verset décide,
+     comme avant. */
+  const n = cible ? Math.max(4, Math.min(cible, Math.floor(mots.length / 2))) : Math.max(4, Math.min(6, Math.round(mots.length / 4)));
   const bornes = [];
   for(let i = 1; i < n; i++){
     const ideal = Math.round(i * mots.length / n);
@@ -29670,20 +29694,27 @@ function morceauxDe(texte){
   return parts.filter(Boolean);
 }
 function manchesMorceaux(n, ordre){
-  const out = [];
+  /* Les versets de la partie, tirés comme avant… */
+  const choisis = [];
   for(const v of (ordre || melanger(HERO_VERSES))){
-    if(out.length >= n) break;
+    if(choisis.length >= n) break;
     const t = texteVerset(v.r, v.t);
     const nb = t ? t.split(/\s+/).length : 0;
     if(nb < 9 || nb > 32) continue;
-    const parts = morceauxDe(t);
-    if(parts.length < 4) continue;
-    /* Jamais dans l'ordre au départ : ce serait déjà résolu. */
-    let ordre = melanger(parts.map((p, i) => i));
-    for(let g = 0; g < 8 && ordre.every((x, i) => parts[x] === parts[i]); g++) ordre = melanger(ordre);
-    out.push({ r:v.r, parts, melange:ordre, pose:[] });
+    if(morceauxDe(t).length < 4) continue;
+    choisis.push({ v, t, nb });
   }
-  return out;
+  /* (v383) …puis joués du plus court au plus long, et coupés en plus de
+     morceaux à mesure qu'on avance (quatre, puis cinq, puis six) : la partie
+     monte, et un verset court n'arrive jamais quand on attend six morceaux. */
+  choisis.sort((a, b) => a.nb - b.nb);
+  return choisis.map(({ v, t }, i) => {
+    const parts = morceauxDe(t, 4 + Math.min(2, Math.floor(i * 3 / Math.max(1, n))));
+    /* Jamais dans l'ordre au départ : ce serait déjà résolu. */
+    let ordre = melanger(parts.map((p, k) => k));
+    for(let g = 0; g < 8 && ordre.every((x, k) => parts[x] === parts[k]); g++) ordre = melanger(ordre);
+    return { r:v.r, parts, melange:ordre, pose:[] };
+  });
 }
 const PREPARER = { livres:manchesLivres, quiou:manchesQuiou, combien:manchesCombien, erreur:manchesErreur, morceaux:manchesMorceaux };
 /* ===== (v376) LES JEUX DU CHEMIN =====
@@ -30078,9 +30109,46 @@ function majQuiou(m){
     JX_LIENS.forEach(c => p.classList.toggle(c, qui !== undefined && JX_LIENS[+qui] === c));
     b.classList.toggle("jx-relie", qui !== undefined);
   });
+  dessinerLiens(m);   // (v383) voir LES LIENS RESTENT
   /* (v351) La dernière paire reliée ne valide plus : « Valider ». */
   majValider(m);
 }
+/* ===== (v383) LES LIENS RESTENT, COMME DES FILS =====
+   « Améliore Qui ? Où ? » Un lien fait ne se lisait qu'à la couleur : la
+   pastille du lieu prenait celle du personnage, et il fallait comparer les
+   pastilles deux à deux pour savoir qui allait où — à quatre couleurs, on
+   s'y perdait. Le fil qu'on tire au doigt (v356) RESTE maintenant, tendu
+   d'une pastille à l'autre, de la couleur du personnage : d'un coup d'œil,
+   on voit ses quatre paires, et une paire qui se croise avec une autre.
+   Toucher un lieu relié le dénoue, son fil s'en va ; tirer un fil déjà
+   posé le décroche le temps du geste. Le dessin se fait dans le cadre des
+   deux colonnes (en coordonnées du cadre : l'écran peut glisser, les fils
+   suivent), avant la première image après chaque changement. */
+function dessinerLiens(m){
+  const z = document.getElementById("jxZone");
+  const svg = z && z.querySelector(".jx-liens");
+  if(!svg || !m) return;
+  const box = svg.getBoundingClientRect();
+  if(!(box.width > 0)) return;
+  let h = "";
+  Object.keys(m.liens).forEach(k => {
+    const a = z.querySelector('.jx-qui[data-i="' + k + '"]'), b = z.querySelector('.jx-ou[data-l="' + m.liens[k] + '"]');
+    if(!a || !b) return;
+    const p = centrePastille(a), q = centrePastille(b);
+    const x0 = p.x - box.left, y0 = p.y - box.top, x1 = q.x - box.left, y1 = q.y - box.top;
+    const d = Math.hypot(x1 - x0, y1 - y0), pend = Math.min(16, d * 0.1);
+    h += '<path class="' + JX_LIENS[+k] + '" data-i="' + k + '" data-l="' + m.liens[k] + '" d="M' + x0.toFixed(1) + " " + y0.toFixed(1)
+      + " Q" + ((x0 + x1) / 2).toFixed(1) + " " + ((y0 + y1) / 2 + pend).toFixed(1) + " " + x1.toFixed(1) + " " + y1.toFixed(1) + '"/>';
+  });
+  if(svg._h !== h){ svg.innerHTML = h; svg._h = h; }
+  else if(!glisseQuiou) svg.querySelectorAll(".jx-decroche").forEach(pa => pa.classList.remove("jx-decroche"));
+}
+/* Un écran de Qui ? Où ? posé avec des liens (un rendu sur place) : les
+   fils sont tendus avant qu'il ne se peigne. */
+function liensApresRendu(){
+  Promise.resolve().then(()=>{ try{ if(jeu && jeu.id === "quiou" && !jeu.revele) dessinerLiens(mancheCourante()); }catch(e){} });
+}
+window.addEventListener("resize", ()=>{ try{ if(jeu && jeu.id === "quiou" && !jeu.revele) dessinerLiens(mancheCourante()); }catch(e){} });
 /* ===== (v356) QUI ? OÙ ? SE RELIE AU DOIGT =====
    « Relier chaque personnage à son lieu, je préfère que ce soit un truc où
      on les prend, où on les relie à son lieu directement, au lieu de
@@ -30154,6 +30222,9 @@ function tirerFil(g){
   /* Le doigt n'appuie plus, il tire : l'onde d'appui s'efface. */
   try{ if(ondeCourante === g.el) ondeRanger(); }catch(e){}
   if(m.choisi !== null){ m.choisi = null; majQuiou(m); }
+  /* (v383) Le fil posé de ce personnage (ou vers ce lieu) se décroche le
+     temps du geste : on ne voit que celui qu'on tire. */
+  g.zone.querySelectorAll(".jx-liens path").forEach(pa => { if(g.qui ? pa.dataset.i === String(g.n) : pa.dataset.l === String(g.n)) pa.classList.add("jx-decroche"); });
   try{ if(navigator.vibrate) navigator.vibrate(8); }catch(e){}
   return true;
 }
@@ -30208,8 +30279,10 @@ function lacherFil(g, annule){
     if(g.svg){ const s = g.svg; s.classList.add("jx-fondu"); setTimeout(()=> s.remove(), 220); }
     return;
   }
-  /* Lâché ailleurs : le fil se rembobine jusqu'à sa pastille. */
+  /* Lâché ailleurs : le fil se rembobine jusqu'à sa pastille, et le fil
+     posé (s'il y en avait un) se raccroche. */
   rembobinerFil(g);
+  g.zone.querySelectorAll(".jx-liens path.jx-decroche").forEach(pa => pa.classList.remove("jx-decroche"));
 }
 function rembobinerFil(g){
   const s = g.svg; if(!s) return;
@@ -30539,7 +30612,7 @@ function zoneJeu(m){
     if(rv){
       return `<div class="jx-liste">${m.paires.map((p, i) => `<div class="option-btn jx-paire ${m.liens[i] === i ? "correct" : "incorrect"}"><span class="opt-text"><b>${escapeHtml(p[0][L])}</b> — ${escapeHtml(p[1][L])}<small class="jx-ref">${escapeHtml(refLivre(p[2]))}</small></span></div>`).join("")}</div>`;
     }
-    return `<div class="jx-deux">
+    return `<div class="jx-deux"><svg class="jx-liens" aria-hidden="true"></svg>
         <div class="jx-col">${m.paires.map((p, i) => `<button class="option-btn jx-qui" data-i="${i}" onclick="toucherQui(${i})"><span class="opt-text">${escapeHtml(p[0][L])}</span><span class="jx-point ${JX_LIENS[i]}"></span></button>`).join("")}</div>
         <div class="jx-col">${m.lieux.map(l => `<button class="option-btn jx-ou" data-l="${l}" onclick="toucherOu(${l})"><span class="jx-point"></span><span class="opt-text">${escapeHtml(m.paires[l][1][L])}</span></button>`).join("")}</div>
       </div>
@@ -30557,6 +30630,10 @@ function zoneJeu(m){
       let cls = "jx-mot";
       if(rv && k === m.faux) cls += " faux";
       if(rv && k === m.choix && k !== m.faux) cls += " rate";
+      /* (v383) Révélé, le mot changé est barré, et le vrai mot écrit à côté :
+         « gloire » barré, « grâce » — il était seulement surligné en vert, la
+         couleur du juste, comme si c'était la bonne réponse. */
+      if(rv && k === m.faux) return `<span class="${cls}"><s>${escapeHtml(frSpace(String(w).replace(/[,;:.!?»”"]+$/, "")))}</s> <b>${escapeHtml(frSpace(m.juste))}</b></span>`;
       return rv ? `<span class="${cls}">${escapeHtml(frSpace(w))}</span>` : `<button class="${cls}" onclick="toucherMot(${k})">${escapeHtml(frSpace(w))}</button>`;
     }).join(" ")}</div>`;
   }
@@ -30584,7 +30661,8 @@ function faitJeu(m){
   if(jeu.id === "quiou") return T("Chaque paire se lit dans le chapitre indiqué.");
   if(jeu.id === "combien") return Tf("La réponse\u00a0: {n} ({ref}).", { n:m.f[1].toLocaleString(LANGUE), ref:refLivre(m.f[0]) });
   if(jeu.id === "erreur") return Tf("Le texte dit «\u00a0{mot}\u00a0» ({ref}).", { mot:String(m.juste).replace(/[«»"“”,;:.!?]/g, ""), ref:refLivre(m.r) });
-  return Tf("{ref}, dans la version choisie.", { ref:refLivre(m.r) });
+  /* (v383) Le verset entier, à lire d'un trait : c'est lui qu'on retient. */
+  return Tf("«\u00a0{v}\u00a0» ({ref})", { v:m.parts.join(" "), ref:refLivre(m.r) });
 }
 function renderJeu(){
   const el = document.createElement("div");
@@ -30616,7 +30694,7 @@ function renderJeu(){
   oublierGlisseMorceau();
   if(def.id === "morceaux" && !jeu.revele) brancherGlisseMorceaux(el.querySelector("#jxZone"));
   if(def.id === "livres" && !jeu.revele) brancherGlisseLivres(el.querySelector("#jxLivres"));
-  if(def.id === "quiou" && !jeu.revele) brancherGlisseQuiou(el.querySelector("#jxZone"));
+  if(def.id === "quiou" && !jeu.revele){ brancherGlisseQuiou(el.querySelector("#jxZone")); liensApresRendu(); }
   return el;
 }
 /* ===== LA FIN D'UNE PARTIE ===== */
@@ -30672,11 +30750,11 @@ function renderJeuFin(){
 /* ===================== L'ÉCRAN DES GROUPES ===================== */
 function ouvrirGroupes(){
   grp.message = "";
-  if(compte.dispo === null){ sonderComptes().then(()=>{ if(state.screen === "groupes") render(); }); }
+  if(compte.dispo === null){ sonderComptes().then(redessinerGroupes); }   // (v382) seulement si ça change
   /* Une session rangée sur ce téléphone se réveille ici si elle dormait encore. */
   try{ compteDemarrer(); }catch(e){}
   if(!compteConnecte()) return;
-  const suite = ()=>{ if(participeGroupes()) chargerListes(); else if(state.screen === "groupes") render(); };
+  const suite = ()=>{ if(participeGroupes()) chargerListes(); else redessinerGroupes(); };
   if(!grp.etat) chargerEtatGroupes().then(suite);
   else{ suite(); if(grp.etat.moderateur) chargerEtatGroupes(); }
 }
@@ -30722,12 +30800,14 @@ async function chargerListesUneFois(){
   majBarre();
   majListes();
   if(mes) setTimeout(annoncerPartieManquee, 0);   // (v380) voir UNE PARTIE LANCÉE SE DIT TOUJOURS
+  if(mes) prechargerFilsBientot();                 // (v382) voir LES DISCUSSIONS LUES D'AVANCE
   return grp.liste;
 }
 /* Les deux listes se redessinent SUR PLACE, à l'intérieur de leur carte : la
    carte porte le verre, et refaire son contenu entier lui ôtait sa couche. */
 function majListes(){
   if(state.screen !== "groupes") return;
+  if(passage && passage.cote){ apresPassage(majListes, "listes"); return; }   // (v382)
   const m = document.getElementById("grpMes"), p = document.getElementById("grpPublics");
   /* (v328) Relues toutes les 30 s (voir LES LISTES SE RELISENT) : rien ne se
      redessine si rien n'a changé. */
@@ -31021,8 +31101,27 @@ function enteteGroupes(){
 function renderGroupes(){
   const el = document.createElement("div");
   el.className = "screen groupes-ecran";
-  el.innerHTML = enteteGroupes() + corpsGroupes();
+  const h = enteteGroupes() + corpsGroupes();
+  el.innerHTML = h;
+  /* (v382) CE QUE L'ÉCRAN MONTRE, IL S'EN SOUVIENT. Les deux listes se
+     redessinent sur place seulement si elles changent (majListes) — mais
+     l'écran les posait sans laisser de trace : la première relecture, à
+     chaque entrée, refaisait toutes les lignes à l'identique (mesuré :
+     +300 ms, photos des groupes comprises, qu'un iPhone repeint en
+     clignant). Et l'écran entier se souvient de ce qu'il montre : une sonde
+     qui revient sans rien changer ne le refait plus (redessinerGroupes). */
+  el._html = h;
+  const m = el.querySelector("#grpMes"); if(m) m._html = lignesMes();
+  const pb = el.querySelector("#grpPublics"); if(pb) pb._html = lignesPublics();
   return el;
+}
+/* Redessine l'écran des Groupes seulement s'il montrerait autre chose. */
+function redessinerGroupes(){
+  if(state.screen !== "groupes") return;
+  const e = (passage && passage.entrant && passage.entrant.classList && passage.entrant.classList.contains("groupes-ecran"))
+    ? passage.entrant : [...document.querySelectorAll("#app > .groupes-ecran")].pop();
+  if(e && e._html === enteteGroupes() + corpsGroupes()) return;
+  render();
 }
 /* CE QUE MONTRE L'ÉCRAN DES GROUPES, selon où en est le joueur : pas de
    compte, suspendu, groupes pas encore ouverts, règles à accepter — ou ses
@@ -32303,7 +32402,7 @@ function lireMemoire(){
   if(!compte){ memoireP = Promise.resolve(null); return memoireP; }
   memoireP = baseGroupes().then(db => new Promise((res)=>{
     if(!db){ res(null); return; }
-    const m = { compte, fils:{}, liste:null, profils:null, brouillons:null, etat:null };
+    const m = { compte, fils:{}, liste:null, profils:null, brouillons:null, etat:null, membres:null };
     try{
       const tx = db.transaction(["fils", "meta"], "readonly");
       const rf = tx.objectStore("fils").openCursor();
@@ -32327,6 +32426,10 @@ function appliquerMemoire(){
   if(!grp.etat && m.etat && m.etat.participe === "ok") grp.etat = Object.assign({}, m.etat, { depuisMemoire:true });
   if(!grp.liste && Array.isArray(m.liste)){ grp.liste = m.liste; grp.listeDeMemoire = true; }
   if(m.profils && typeof m.profils === "object") Object.keys(m.profils).forEach(k => { if(!grp.profils[k]) grp.profils[k] = m.profils[k]; });
+  /* (v382) Les membres de chaque groupe (qui a reçu, qui a lu) : les coches
+     d'un message s'affichent avec lui, au lieu d'arriver une demi-seconde
+     après en poussant l'heure de côté. Le serveur les redit à l'ouverture. */
+  if(m.membres && typeof m.membres === "object") Object.keys(m.membres).forEach(k => { if(!grp.membres[k] && Array.isArray(m.membres[k])) grp.membres[k] = m.membres[k]; });
   Object.keys(m.fils).forEach(id => {
     const v = m.fils[id];
     if(!grp.fils[id] && v && Array.isArray(v.messages)) grp.fils[id] = { messages:v.messages.slice(), charge:true, tout:!!v.tout, lu:+v.lu || 0 };
@@ -32369,6 +32472,19 @@ function memoriserListeMaintenant(){
     marquerMemoire();
   }
 }
+/* (v382) Les membres de mes groupes, gardés comme le reste de la mémoire. */
+function memoriserMembres(){
+  if(!compteConnecte()) return;
+  clearTimeout(memoireT.membres);
+  memoireT.membres = setTimeout(()=>{ memoireT.membres = 0; memoriserMembresMaintenant(); }, 600);
+}
+function memoriserMembresMaintenant(){
+  if(!compteConnecte() || !grp.liste) return;
+  const o = {};
+  grp.liste.forEach(g => { if(Array.isArray(grp.membres[g.id])) o[g.id] = grp.membres[g.id]; });
+  ecrireBase("meta", "membres", o);
+  marquerMemoire();
+}
 function memoriserBrouillon(id, texte){
   if(!id) return;
   if(texte) brouillons[id] = texte; else delete brouillons[id];
@@ -32383,6 +32499,7 @@ function viderMemoireEnAttente(){
     clearTimeout(t); memoireT[k] = 0;
     if(k === "liste") memoriserListeMaintenant();
     else if(k === "brouillons"){ if(compteConnecte()) ecrireBase("meta", "brouillons", brouillons); }
+    else if(k === "membres") memoriserMembresMaintenant();   // (v382)
     else if(k[0] === "f") memoriserFilMaintenant(k.slice(1));
   });
 }
@@ -32479,9 +32596,13 @@ async function chargerGroupe(id){
 function signatureGroupe(g){ return g ? [g.nom, g.description, g.ouvert, g.teinte, g.logo, g.nb_membres].join("|") : ""; }
 function majTeteGroupe(g){
   if(!g || grp.courant !== g.id || state.screen !== "groupe") return;
+  if(passage && passage.cote){ apresPassage(()=> majTeteGroupe(groupeCourant()), "tete"); return; }   // (v382)
   const t = document.getElementById("grpTete");
   const sig = signatureGroupe(g) + "|" + (valeurPhotoSrv("g:" + g.id) || "");
-  if(t && t._sig !== sig){ t.innerHTML = teteGroupeHtml(g); t._sig = sig; }
+  /* (v382) Une signature qui change sans que rien ne change à l'œil (un logo
+     « inconnu » devenu « aucun », une description vide relue) ne refait plus
+     l'en-tête : on compare ce qu'il montrerait. */
+  if(t && t._sig !== sig){ const h = teteGroupeHtml(g); if(t._html !== h){ t.innerHTML = h; t._html = h; } t._sig = sig; }
   majInfosGroupe(g);
 }
 async function chargerMembres(id){
@@ -32489,7 +32610,9 @@ async function chargerMembres(id){
   try{
     const r = await supa.from("membres").select("membre,role,muet_jusqu,lu_jusqu,rejoint_le" + (distribuesServeur() ? ",recu_jusqu" : "")).eq("groupe", id);
     if(r.error || !Array.isArray(r.data)) return;
+    const avant = JSON.stringify(grp.membres[id] || null);
     grp.membres[id] = r.data;
+    if(JSON.stringify(r.data) !== avant) memoriserMembres();   // (v382)
     await chargerProfils(r.data.map(x => x.membre), photosServeur());
   }catch(e){ return; }
   if(grp.courant === id){
@@ -32529,14 +32652,66 @@ async function chargerFil(id){
     memoriserFil(id);
   }catch(e){ return; }
   if(grp.courant === id && state.screen === "groupe"){
-    const z = document.getElementById("fil");
     /* La première lecture pose le fil au bas ; une relecture (retour sur
-       l'app, réouverture) ne bouge pas qui lisait plus haut. */
-    if(z && premiere){ z.innerHTML = filHtml(id); descendreFil(false); }
-    else if(z) majFil();
+       l'app, réouverture) ne bouge pas qui lisait plus haut. (v382) Arrivée
+       pendant que l'écran glisse, elle attend qu'il soit posé. */
+    const poser = ()=>{
+      if(grp.courant !== id || state.screen !== "groupe") return;
+      const z = document.getElementById("fil");
+      if(z && premiere){ z.innerHTML = filHtml(id); descendreFil(false); }
+      else if(z) majFil();
+    };
+    apresPassage(poser, "fil");
     releverFil();
   }
   marquerLu(id);
+}
+/* ===== (v382) LES DISCUSSIONS LUES D'AVANCE =====
+   « Même quand je rentre dans les groupes… ça s'affiche trop tard. » Une
+   discussion déjà lue sur ce téléphone s'ouvre pleine (LA MÉMOIRE DES
+   GROUPES) ; la toute première fois, elle arrivait vide, et ses messages
+   tombaient une demi-seconde plus tard. La liste des groupes arrivée, on lit
+   donc d'avance, une à une et sans se presser, les discussions que ce
+   téléphone ne connaît pas encore (les plus vivantes d'abord, huit au plus) —
+   comme la mémoire les garderait. Lire d'avance n'est pas lire : rien n'est
+   marqué lu, personne ne voit « Vu » ; on ouvre seulement sur ce qui est
+   déjà là. */
+let prechargeFils = null;
+function prechargerFilsBientot(){
+  clearTimeout(prechargerFilsBientot.t);
+  prechargerFilsBientot.t = setTimeout(()=> apresPassage(prechargerFils, "prechargerFils"), 1500);
+}
+function prechargerFils(){
+  if(prechargeFils || !compteConnecte() || !participeGroupes()) return;
+  const supa = initSupa(); if(!supa || !supa.from) return;
+  const connu = (id)=> !!(grp.fils[id] && grp.fils[id].charge);
+  const quand = (g)=> (g.apercu && +g.apercu.id) || 0;
+  const l = (grp.liste || []).filter(g => g && g.id && !connu(g.id)).sort((a, b) => quand(b) - quand(a)).slice(0, 8);
+  if(!l.length) return;
+  prechargeFils = (async ()=>{
+    for(const g of l){
+      if(connu(g.id) || !compteConnecte()) continue;
+      try{
+        const r = await supa.from("messages").select(COLONNES_FIL).eq("groupe", g.id).order("id", { ascending:false }).limit(FIL_PAGE);
+        if(r.error || !Array.isArray(r.data) || connu(g.id)) continue;
+        const m = r.data.slice().reverse();
+        await chargerProfils(m.filter(x => !deLaModeration(x)).map(x => x.auteur));
+        if(connu(g.id)) continue;   // ouverte entre-temps : sa propre lecture gagne
+        grp.fils[g.id] = { messages:m, charge:true, tout:r.data.length < FIL_PAGE };
+        m.forEach(x => dejaComptes.add(x.id));
+        memoriserFil(g.id);
+        /* Et ses membres : les coches « Vu » de ses messages sont prêtes aussi. */
+        if(!grp.membres[g.id]){
+          const rm = await supa.from("membres").select("membre,role,muet_jusqu,lu_jusqu,rejoint_le" + (distribuesServeur() ? ",recu_jusqu" : "")).eq("groupe", g.id);
+          if(!rm.error && Array.isArray(rm.data) && !grp.membres[g.id]){
+            grp.membres[g.id] = rm.data;
+            await chargerProfils(rm.data.map(x => x.membre));
+            memoriserMembres();
+          }
+        }
+      }catch(e){}
+    }
+  })().finally(()=>{ prechargeFils = null; });
 }
 async function chargerPlusAncien(btn){
   const id = grp.courant, f = grp.fils[id];
@@ -32696,6 +32871,11 @@ function renderGroupe(){
       : `<div class="compo" id="compo">${compoCiteHtml()}<div class="compo-in">${compoHtml()}</div></div>`}`;
   const t = el.querySelector("#compoTexte");
   if(t && brouillons[g.id]){ t.value = brouillons[g.id]; const b = el.querySelector("#compoEnvoi"); if(b) b.disabled = !t.value.trim(); }
+  /* (v382) L'en-tête posé ici est celui que majTeteGroupe dessinerait : il
+     en garde la signature, et une relecture qui n'apporte rien ne le refait
+     plus (il était refait à l'identique deux fois à l'entrée, photo du
+     groupe comprise). */
+  { const tt = el.querySelector("#grpTete"); if(tt){ tt._sig = signatureGroupe(g) + "|" + (valeurPhotoSrv("g:" + g.id) || ""); tt._html = teteGroupeHtml(g); } }
   /* ===== LE FIL S'OUVRE EN BAS, SANS GLISSER =====
      « Lorsque je ferme ou que je rouvre une page, le bas doit rester sur
      les messages, sans bouger. » La descente attendait un setTimeout : le
@@ -32822,7 +33002,7 @@ function etatVu(m){
 function cochesHtml(m){
   /* Tant que les membres ne sont pas arrivés, on ne sait rien : pas de coche
      plutôt qu'une coche fausse (majVus la pose à leur arrivée). */
-  if(!grp.membres[m.groupe]) return "";
+  if(!grp.membres[m.groupe]) return `<span class="b-vu-place" aria-hidden="true"></span>`;   // (v382) la place, gardée (pas une coche : rien n'est dit)
   const e = etatVu(m);
   const dit = e === "lu" ? T("Lu") : (e === "distribue" ? T("Distribué") : T("Envoyé"));
   return `<span class="b-vu ${e}" role="img" aria-label="${escapeHtml(dit)}">${e === "envoye" ? COCHE_UNE : COCHE_DEUX}</span>`;
@@ -32843,6 +33023,9 @@ function vusHtml(m){
   return h + `</div>`;
 }
 /* Les coches se mettent à jour SUR PLACE : rien d'autre du fil ne bouge. */
+function memeNoeud(el, html){
+  try{ const t = document.createElement("template"); t.innerHTML = html; const n = t.content.firstElementChild; return !!(n && n.isEqualNode(el)); }catch(e){ return false; }
+}
 function majVus(){
   const z = document.getElementById("fil");
   if(!z || !grp.courant || state.screen !== "groupe") return;
@@ -32850,8 +33033,12 @@ function majVus(){
   z.querySelectorAll(".b-moi .b-heure[data-der]").forEach(h => {
     const m = f.messages.find(x => String(x.id) === h.getAttribute("data-der"));
     if(!m) return;
-    const neuf = cochesHtml(m), ancien = h.querySelector(".b-vu");
-    if(!neuf || (ancien && ancien.outerHTML === neuf)) return;
+    const neuf = cochesHtml(m), ancien = h.querySelector(".b-vu, .b-vu-place");
+    /* (v382) La place gardée (.b-vu-place) est remplacée par les coches.
+       Comparée nœud à nœud : le texte de l'étiquette passe par
+       escapeHtml, que le navigateur ne relit pas pareil (une apostrophe) —
+       chaque relève remplaçait des coches identiques. */
+    if(!neuf || (ancien && (ancien.outerHTML === neuf || memeNoeud(ancien, neuf)))) return;
     if(ancien) ancien.outerHTML = neuf; else h.insertAdjacentHTML("beforeend", neuf);
   });
 }
@@ -36812,10 +36999,15 @@ function soloAnswer(idx){
     state.soloCorrect += 1;
     state.soloStreak += 1;
     if(state.lecon && !q.relance) state.lecon.ok = (state.lecon.ok | 0) + 1;   // (v353) du premier coup
-    /* (v353) Une erreur rattrapée DANS la leçon reste au carnet : c'est lui
-       qui la juge, des jours plus tard. (v378) Pas dans la seconde chance :
-       c'est elle qu'on est venu rattraper (voir LA SÉRIE SE FINIT AVEC ELLE). */
-    if(!q.relance || state.revision) errbookRemove(q); // juste : elle monte d'un palier (voir REVOIR_ECHELLE)
+    /* Juste : elle monte d'un palier (voir REVOIR_ECHELLE). (v382) Rejouée
+       en fin de leçon et juste cette fois, elle est RATTRAPÉE — comme dans la
+       seconde chance (v378). De la v353 à la v381, la leçon la laissait au
+       carnet, « à rattraper » : « il dit que la leçon est finie, mais il
+       rajoute des questions » — la leçon finie, À revoir grossissait de
+       questions qu'on venait de corriger. Elle reste au carnet, un palier
+       plus haut : le jeu la reposera dans quelques jours (aRevoir), et c'est
+       là qu'on verra si elle est sue. */
+    errbookRemove(q);
     q.juste = true;
     if(state.soloStreak > state.soloBestStreak) state.soloBestStreak = state.soloStreak;
     progressCredit(q, state.soloStreak); // parcours : crédite le livre + objectifs
@@ -37535,6 +37727,41 @@ function animateCount(el, from, to, duration, suffix){
   }
   requestAnimationFrame(step);
 }
+/* ===== (v382) LE COMPTE D'UNE PARTIE NE GRANDIT PLUS EN ROUTE =====
+   « Le mode À revoir déconne des fois : il dit que la leçon est finie, mais
+     il rajoute des questions. »
+   Une erreur revient une fois en fin de séance (À revoir) ou de leçon (le
+   Parcours) — et le compteur la comptait comme une question de plus : « 7/7 »,
+   une faute, « 7/8 » ; la barre, elle, reculait. On croyait avoir fini, et une
+   question s'ajoutait.
+   Le compte se fait maintenant sur les questions de la séance : « 3/7 » ne
+   change plus de total. Celles qui reviennent se comptent à part, après :
+   « ↺ 1/2 » — leur nombre est connu dès qu'on y arrive (elles s'ajoutent
+   pendant le premier tour, et une question rejouée ne revient pas une
+   troisième fois). La barre avance quand une question est RÉGLÉE — juste du
+   premier coup, ou rejouée — et ne recule jamais : une faute ne la fait pas
+   avancer, puisque la question reviendra. Elle est pleine à la dernière. */
+function premieresQuestions(){ return state.questions.filter(x => !x.relance).length; }
+function compteurPartie(q){
+  const i = state.currentIndex, l = state.questions;
+  if(q && q.relance){
+    const r = l.slice(0, i + 1).filter(x => x.relance).length, nr = l.filter(x => x.relance).length;
+    return `<span class="qc-rel" aria-hidden="true">↺</span>${r}/${nr}`;
+  }
+  return `${l.slice(0, i + 1).filter(x => !x.relance).length}/${premieresQuestions()}`;
+}
+function avanceePartie(){
+  const l = state.questions, n = premieresQuestions();
+  if(!n) return 0;
+  let reglees = 0;
+  l.forEach((x, i) => {
+    if(!(i < state.currentIndex || (i === state.currentIndex && state.revealed))) return;
+    if(x.relance){ reglees++; return; }
+    /* Une première fois ratée attend sa relance : elle n'est pas réglée. */
+    if(!l.some((y, j) => j > i && y.relance && qKey(y) === qKey(x))) reglees++;
+  });
+  return Math.min(1, reglees / n);
+}
 function renderPlay(){
   const el = document.createElement("div");
   el.className = "screen" + (state.mode === "group" && state.revealed ? " groupe-revele" : "");
@@ -37628,12 +37855,12 @@ function renderPlay(){
     ${renderHeader(state.revision ? T("Seconde chance") : (state.lecon ? (state.lecon.quete !== undefined ? T(QUETES[state.lecon.quete].nom) : T(PARCOURS[state.lecon.u].nom)) : NOM_DU_JEU), true, "confirmLeaveGame()")}
     <div class="play-meta">
       ${q.relance ? `<span class="tier-chip relance">${T("Encore une fois")}</span>` : `<span class="tier-chip ${info.cls}">${tierDotsHtml(info.level)}${T(info.label)} · ${info.pts} pts</span>`}
-      <span class="q-counter">${state.currentIndex+1}/${total}</span>
+      <span class="q-counter">${compteurPartie(q)}</span>
       ${sansChrono() ? "" : state.revealed ? timerFigeHtml(chronoDeLaPartie()) : timerChipHtml(chronoDeLaPartie())}
       ${state.mode==="solo" ? `<span class="streak-chip${streakHot?' hot':''}"><span class="ico">${ICONS.flame}</span>${state.soloStreak}</span>` : ""}
     </div>
     <div class="progress-track">
-      <div class="progress-fill" style="--p:${barreP}" data-p="${(state.currentIndex + (state.revealed?1:0)) / total}"></div>
+      <div class="progress-fill" style="--p:${barreP}" data-p="${avanceePartie().toFixed(4)}"></div>
     </div>
     <div class="flex-sp" style="flex-grow:0.5"></div>
     <div class="question-card${fresh?' animate':''}"><div class="qtext">${escapeHtml(texteQuestion(q))}</div></div>
@@ -38744,7 +38971,7 @@ function renderProfile(){
   /* Ouvrir le Profil est le premier geste de quelqu'un qui veut un compte :
      si le réveil différé n'a pas encore eu lieu, il a lieu maintenant. */
   try{ compteDemarrer(); }catch(e){}
-  if(compte.dispo === null) sonderComptes().then(()=>{ if(compte.dispo) majProfilCompte(el); });
+  if(compte.dispo === null) sonderComptes().then(()=>{ if(compte.dispo) majProfilCompte(el); else if(compte.dispo === false) majCarteCompte(); });   // (v382) montrée d'avance (connecté), elle se replie si la sonde dit non
   else if(compte.dispo === true && sondeMemorisee() === null) sonderComptes(true).then(()=>{ if(compte.dispo === false) majCarteCompte(); });
   return el;
 }
@@ -39496,6 +39723,31 @@ function finirPassage(fini){
   if(typeof p.barreFin === "function"){ try{ p.barreFin(fini); }catch(e){} }
   if(typeof p.barrePartieFin === "function"){ try{ p.barrePartieFin(fini); }catch(e){} }   // (v373)
   if(fini){ try{ majBarre(); }catch(e){} }
+  viderApresPassage();
+}
+/* ===== (v382) CE QUI ARRIVE PENDANT UN GLISSEMENT ATTEND QU'IL SOIT FINI =====
+   « Fais en sorte que toutes les pages soient bien chargées au moment d'une
+     transition, pour qu'elles n'apparaissent pas brusquement. »
+   Une réponse du réseau tombe souvent pendant que l'écran glisse (il glisse
+   une demi-seconde ; le réseau d'un téléphone répond en 100 à 400 ms). La
+   dessiner à ce moment-là, c'est construire des lignes, des bulles et leur
+   verre sur le fil même qui doit nourrir le mouvement : sur un téléphone, des
+   images sautent, et ce qui arrive se voit arriver. Ce qui n'est pas déjà là
+   au départ attend donc l'arrêt, puis se pose d'un coup. Une clé par chose à
+   faire : la dernière demande compte. */
+let apresLePassage = new Map(), apresLePassageN = 0;
+function apresPassage(fn, cle){
+  if(!passage || !passage.cote){ fn(); return; }
+  apresLePassage.set(cle || ("f" + (++apresLePassageN)), fn);
+}
+function viderApresPassage(){
+  if(!apresLePassage.size) return;
+  setTimeout(()=>{
+    if(passage && passage.cote) return;   // un autre glissement est parti : il videra à sa fin
+    const l = [...apresLePassage.values()];
+    apresLePassage = new Map();
+    l.forEach(f => { try{ f(); }catch(e){} });
+  }, 0);
 }
 /* LA BARRE DU BAS SUIT LE PASSAGE. Elle vit hors des écrans, posée
    au-dessus : on lui fait faire ce que ferait sa page. Elle part avec
