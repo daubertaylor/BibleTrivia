@@ -329,7 +329,10 @@ const MEME_DANS_LES_DEUX = [
    morceau par morceau (« Verset en morceaux »), et des références : un mot,
    un morceau ou « Job 1:21 » peuvent être les mêmes dans deux langues, pour
    la même raison que le verset de l'accueil (hero-verse). */
-const LIEUX_LIBRES = /avatar|grp-av|code-big|rank-pts|scorebar|q-counter|timer|logo|st-ico|ficon|ico\b|opt-text|q-text|rev-q|rev-a|rev-fact|ftext|fact-|hero-verse|jx-mot|jx-pose|jx-cref|jx-ref/;
+/* (v380) L'adresse d'une page du site (« yadaquiz.app/confidentialite », la
+   carte de la Confidentialité et des Mentions légales) : une adresse, la même
+   dans toutes les langues. */
+const LIEUX_LIBRES = /avatar|grp-av|code-big|rank-pts|scorebar|q-counter|timer|logo|st-ico|ficon|ico\b|opt-text|q-text|rev-q|rev-a|rev-fact|ftext|fact-|hero-verse|jx-mot|jx-pose|jx-cref|jx-ref|pa-url/;
 
 /* ===== UNE LANGUE PAS ENCORE OUVERTE SE RELIT QUAND MÊME =====
    Le jeu refuse une langue déclarée « dispo:false » : elle s'affiche grisée
@@ -1274,6 +1277,9 @@ const ouvrirLaLangue = async (p, lg) => {
       commencerLecon(0, 4);
       for(let i = 0; i < 20 && state.screen === 'play'; i++){ const q = currentQ(); soloAnswer(q.shuffledOptions.findIndex(o => o === q.correct)); nextQuestion(); } }],
     ['Parcours · le chemin après', () => { __fermerTout(); state.screen = 'chemin'; render(); }],
+    /* (v381) La flèche qui ramène à sa leçon : le chemin descendu tout en bas. */
+    ['Parcours · la flèche vers sa leçon', () => { __fermerTout(); state.screen = 'chemin'; render();
+      return new Promise(r => setTimeout(() => { const a = document.getElementById('app'); a.scrollTop = a.scrollHeight; setTimeout(() => { majRetourLecon(); setTimeout(r, 450); }, 250); }, 900)); }],
     /* (v368) LE PARCOURS ENRICHI. Le chemin d'après a crédité d'un coup les
        leçons posées à la main (le bandeau « Des diamants pour tes leçons ») ;
        puis le coffre de la Genèse, les règles des deux quêtes, une quête

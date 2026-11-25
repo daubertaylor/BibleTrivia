@@ -198,7 +198,7 @@ def page(chemin, titre, description, corps, *, rubrique=None, bandeau=None, miet
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-{hote}<script>try{{if(self!==top&&top.location.host===location.host)document.documentElement.classList.add("dans-app")}}catch(e){{}}</script>
+{hote}<script>try{{if(self!==top&&top.location.host===location.host){{var h=document.documentElement;h.classList.add("dans-app");if(top.__ongletsJeu)h.classList.add("onglets-jeu")}}}}catch(e){{}}</script>
 <title>{titre}</title>
 <meta name="description" content="{desc}">
 <link rel="canonical" href="{url}">
@@ -315,15 +315,32 @@ for idx, l in enumerate(LIVRES):
     phrase += (", parmi %s." % groupe) if groupe else "."
     lsg = '<p class="note">%s</p>\n' % e(phrase + " Ses chapitres et ses versets sont comptés dans la Louis Segond 1910.")
     parcours = "<p>%s</p>\n" % (e("Dans le Parcours de Yada, %s fait partie de l'unité %d, « %s »." % (l["titre"], u_num, u_nom)).replace("Parcours de Yada", '<a href="../../guide/#parcours">Parcours de Yada</a>', 1))
+    # (v381) LES AUTRES LIVRES DE LA SECTION : un lecteur de Jonas veut Michée ou
+    # Nahum ; Google suit ces liens d'un livre à ses voisins (le maillage interne).
+    autres = [x for x in LIVRES if x["section"] == l["section"] and x["slug"] != l["slug"]]
+    voisins = ('<h2 class="voisins-titre">%s <span class="note">(%s)</span></h2>\n<ul class="livres">%s</ul>\n'
+               % (e("Les autres quiz de la section"), e(sec["nom"]),
+                  "".join('<li><a href="../%s/"><b>%s</b><span>%s</span></a></li>' % (x["slug"], e(x["nom"]), e("%s questions" % nombre(len(PAR_LIVRE[x["nom"]])))) for x in autres))) if autres else ""
     corps = (nav + COMMENT + corps_q + SCORE + lsg + parcours
              + appel("Joue à ce quiz dans Yada", "Avec un chrono, des points, ta série et tes erreurs à revoir. Gratuit, sans compte.", "Jouer à Yada", "../../")
-             + suite)
+             + voisins + suite)
+    # (v381) LE QUIZ EN DONNÉES STRUCTURÉES (schema.org/Quiz) : chaque question,
+    # ses propositions, la bonne réponse et son explication, ce que la page
+    # montre déjà — dit aussi aux moteurs dans leur langue.
+    ld_quiz = {"@context": "https://schema.org", "@type": "Quiz", "name": "Quiz " + l["sur"], "url": SITE + chemin,
+               "inLanguage": "fr", "isAccessibleForFree": True, "educationalUse": "Quiz biblique",
+               "about": {"@type": "Thing", "name": l["nom"], "description": resume},
+               "isPartOf": {"@type": "WebSite", "name": "Yada", "url": SITE},
+               "hasPart": [{"@type": "Question", "eduQuestionType": "Multiple choice", "position": i + 1, "text": q["q"],
+                            "suggestedAnswer": [{"@type": "Answer", "text": o} for o in q["options"] if o != q["correct"]],
+                            "acceptedAnswer": {"@type": "Answer", "text": q["correct"], "answerExplanation": {"@type": "Comment", "text": q["fact"]}}}
+                           for i, q in enumerate(qs)]}
     titre = titre_court(["Quiz biblique %s : %s questions et réponses | Yada" % (l["sur"], nombre(n)),
                          "Quiz biblique %s : %s questions | Yada" % (l["sur"], nombre(n)),
                          "Quiz biblique %s : %s questions | Yada" % (l["nom"], nombre(n)),
                          "Quiz biblique %s | Yada" % l["nom"]])
     page(chemin, titre, desc, corps,
-         rubrique="quiz-biblique/", script_quiz=True, priorite="0.8",
+         rubrique="quiz-biblique/", script_quiz=True, priorite="0.8", jsonld=[ld_quiz],
          bandeau=("%s · %s" % (test, sec["nom"]), "Quiz " + l["sur"], resume, chiffres),
          miettes=[("", "Yada"), ("quiz-biblique/", "Quiz biblique"), (chemin, l["nom"])])
 
